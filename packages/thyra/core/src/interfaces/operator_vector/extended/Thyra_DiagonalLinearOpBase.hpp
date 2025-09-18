@@ -29,7 +29,7 @@ namespace Thyra {
  \verbatim
 
  y = alpha*op(M)*x + beta*y
- 
+
  =>
 
  y(i) = alpha*diag(i)*x(i) + beta*y(i), for i = 0 ... n-1
@@ -39,10 +39,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DiagonalLinearOpBase : virtual public LinearOpBase<Scalar> {
-public:
-
+ public:
   /** @name Pure virtual functions that must be overridden in subclass */
   //@{
 
@@ -71,9 +70,8 @@ public:
   virtual Teuchos::RCP<const VectorBase<Scalar> > getDiag() const = 0;
 
   //@}
-
 };
 
-}	// end namespace Thyra
+}  // end namespace Thyra
 
-#endif	// THYRA_DIAGONAL_LINEAR_OP_BASE_HPP
+#endif  // THYRA_DIAGONAL_LINEAR_OP_BASE_HPP

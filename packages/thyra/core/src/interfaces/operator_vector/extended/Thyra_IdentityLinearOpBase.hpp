@@ -18,7 +18,7 @@ namespace Thyra {
  *
  * This interface represents a identity linear operator <tt>M</tt> of the form:
  \verbatim
- 
+
  M = I
  \endverbatim
  *
@@ -32,10 +32,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
-class IdentityLinearOpBase : virtual public LinearOpBase<Scalar>
-{};
+template <class Scalar>
+class IdentityLinearOpBase : virtual public LinearOpBase<Scalar> {};
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif	// THYRA_IDENTITY_LINEAR_OP_BASE_HPP
+#endif  // THYRA_IDENTITY_LINEAR_OP_BASE_HPP

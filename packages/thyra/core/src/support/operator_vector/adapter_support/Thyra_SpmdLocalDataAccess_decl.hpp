@@ -10,12 +10,9 @@
 #ifndef THYRA_SPMD_LOCAL_DATA_ACCESS_DECL_HPP
 #define THYRA_SPMD_LOCAL_DATA_ACCESS_DECL_HPP
 
-
 #include "Thyra_OperatorVectorTypes.hpp"
 
-
 namespace Thyra {
-
 
 /** \defgroup Thyra_Op_Vec_adapters_spmd_local_data_access_grp Official utilities for accessing local data in SPMD vectors and multi-vectors.
  *
@@ -49,52 +46,46 @@ namespace Thyra {
  * ToDo: Finish Documentation!
  */
 
-
 /** \brief Return a contiguous non-const semi-persisting view of the local
  * process data of a VectorBase object.
  *
  * \ingroup Thyra_Op_Vec_adapters_spmd_local_data_access_grp
  */
-template<class Scalar>
+template <class Scalar>
 RTOpPack::SubVectorView<Scalar>
 getNonconstLocalSubVectorView(
-  const RCP<VectorBase<Scalar> > &vec);
-
+    const RCP<VectorBase<Scalar> > &vec);
 
 /** \brief Return a contiguous const semi-persisting view of the local process
  * data of a VectorBase object.
  *
  * \ingroup Thyra_Op_Vec_adapters_spmd_local_data_access_grp
  */
-template<class Scalar>
+template <class Scalar>
 RTOpPack::ConstSubVectorView<Scalar>
 getLocalSubVectorView(
-  const RCP<const VectorBase<Scalar> > &vec);
-
+    const RCP<const VectorBase<Scalar> > &vec);
 
 /** \brief Return a contiguous non-const semi-persisting view of the local
  * process data of a MultiVectorBase object.
  *
  * \ingroup Thyra_Op_Vec_adapters_spmd_local_data_access_grp
  */
-template<class Scalar>
+template <class Scalar>
 RTOpPack::SubMultiVectorView<Scalar>
 getNonconstLocalSubMultiVectorView(
-  const RCP<MultiVectorBase<Scalar> > &multivec);
-
+    const RCP<MultiVectorBase<Scalar> > &multivec);
 
 /** \brief Return a contiguous const semi-persisting view of the local process
  * data of a MultiVectorBase object.
  *
  * \ingroup Thyra_Op_Vec_adapters_spmd_local_data_access_grp
  */
-template<class Scalar>
+template <class Scalar>
 RTOpPack::ConstSubMultiVectorView<Scalar>
 getLocalSubMultiVectorView(
-  const RCP<const MultiVectorBase<Scalar> > &multivec);
+    const RCP<const MultiVectorBase<Scalar> > &multivec);
 
+}  // end namespace Thyra
 
-} // end namespace Thyra
-
-
-#endif // THYRA_SPMD_LOCAL_DATA_ACCESS_DECL_HPP
+#endif  // THYRA_SPMD_LOCAL_DATA_ACCESS_DECL_HPP

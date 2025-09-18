@@ -13,9 +13,7 @@
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_LinearOpDefaultBase_decl.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Node subclass that uses a default <tt>MultiVectorBase</tt>
  * implementation</tt> to provide default implementations for as many other
@@ -34,13 +32,11 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class MultiVectorDefaultBase
-  : virtual public MultiVectorBase<Scalar>
-  , virtual protected LinearOpDefaultBase<Scalar>
-{
-public:
-
+  : virtual public MultiVectorBase<Scalar>,
+    virtual protected LinearOpDefaultBase<Scalar> {
+ public:
   /** \name Overridden public member functions from MultiVectorBase */
   //@{
 
@@ -56,8 +52,7 @@ public:
 
   //@}
 
-protected:
-
+ protected:
   /** \name Overridden protected member functions from MultiVectorBase */
   //@{
 
@@ -65,60 +60,54 @@ protected:
   virtual void assignImpl(Scalar alpha);
 
   /** \brief Default implementation of assign(MV) using RTOps. */
-  virtual void assignMultiVecImpl(const MultiVectorBase<Scalar>& mv);
+  virtual void assignMultiVecImpl(const MultiVectorBase<Scalar> &mv);
 
   /** \brief Default implementation of scale using RTOps. */
   virtual void scaleImpl(Scalar alpha);
 
   /** \brief Default implementation of update using RTOps. */
   virtual void updateImpl(
-    Scalar alpha,
-    const MultiVectorBase<Scalar>& mv
-    );
+      Scalar alpha,
+      const MultiVectorBase<Scalar> &mv);
 
   /** \brief Default implementation of linear_combination using RTOps. */
   virtual void linearCombinationImpl(
-    const ArrayView<const Scalar>& alpha,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
-    const Scalar& beta
-    );
+      const ArrayView<const Scalar> &alpha,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &mv,
+      const Scalar &beta);
 
   /** \brief Default implementation of dots using RTOps. */
   virtual void dotsImpl(
-    const MultiVectorBase<Scalar>& mv,
-    const ArrayView<Scalar>& prods
-    ) const;
+      const MultiVectorBase<Scalar> &mv,
+      const ArrayView<Scalar> &prods) const;
 
   /** \brief Default implementation of norms_1 using RTOps. */
   virtual void norms1Impl(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const;
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
   /** \brief Default implementation of norms_2 using RTOps. */
   virtual void norms2Impl(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const;
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
   /** \brief Default implementation of norms_inf using RTOps. */
   virtual void normsInfImpl(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const;
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) const;
 
   /** \brief . */
   RCP<const MultiVectorBase<Scalar> >
-  contigSubViewImpl( const Range1D& colRng ) const;
+  contigSubViewImpl(const Range1D &colRng) const;
 
   /** \brief . */
   RCP<MultiVectorBase<Scalar> >
-  nonconstContigSubViewImpl( const Range1D& colRng );
+  nonconstContigSubViewImpl(const Range1D &colRng);
 
   /** \brief . */
   RCP<const MultiVectorBase<Scalar> >
-  nonContigSubViewImpl( const ArrayView<const int> &cols ) const;
+  nonContigSubViewImpl(const ArrayView<const int> &cols) const;
 
   /** \brief . */
   RCP<MultiVectorBase<Scalar> >
-  nonconstNonContigSubViewImpl( const ArrayView<const int> &cols );
+  nonconstNonContigSubViewImpl(const ArrayView<const int> &cols);
 
   /** \brief .
    *
@@ -126,12 +115,11 @@ protected:
    * <tt>this->col(j)</tt> for <tt>j = 0 ... this->range()->dim()-1</tt>.
    */
   virtual void mvMultiReductApplyOpImpl(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-    const Ordinal primary_global_offset
-    ) const;
+      const RTOpPack::RTOpT<Scalar> &primary_op,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+      const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+      const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+      const Ordinal primary_global_offset) const;
 
   /** \brief .
    *
@@ -139,13 +127,12 @@ protected:
    * objects is taken.
    */
   virtual void mvSingleReductApplyOpImpl(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const RTOpPack::RTOpT<Scalar> &secondary_op,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal primary_global_offset
-    ) const;
+      const RTOpPack::RTOpT<Scalar> &primary_op,
+      const RTOpPack::RTOpT<Scalar> &secondary_op,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+      const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+      const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+      const Ordinal primary_global_offset) const;
 
   /** \brief .
    *
@@ -163,10 +150,9 @@ protected:
    * which is a companion to this function's implementation.
    */
   virtual void acquireDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
-    ) const;
+      const Range1D &rowRng,
+      const Range1D &colRng,
+      RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv) const;
 
   /** \brief .
    *
@@ -175,8 +161,7 @@ protected:
    * overridden by a subclass then this function must be overridden also!
    */
   virtual void releaseDetachedMultiVectorViewImpl(
-    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
-    ) const;
+      RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv) const;
 
   /** \brief .
    *
@@ -194,10 +179,9 @@ protected:
    * which is a companion to this function's implementation.
    */
   virtual void acquireNonconstDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
-    );
+      const Range1D &rowRng,
+      const Range1D &colRng,
+      RTOpPack::SubMultiVectorView<Scalar> *sub_mv);
 
   /** \brief .
    *
@@ -206,39 +190,34 @@ protected:
    * overridden by a subclass then this function must be overridden also!
    */
   virtual void commitNonconstDetachedMultiVectorViewImpl(
-    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
-    );
+      RTOpPack::SubMultiVectorView<Scalar> *sub_mv);
 
   //@}
-
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#define THYRA_ASSERT_MV_COLS(FUNCNAME, cols) \
-  do { \
-    const int numCols = cols.size(); \
-    const Thyra::Ordinal dimDomain = this->domain()->dim(); \
-    const std::string msgErr = this->description()+"::"+FUNCNAME; \
-    TEUCHOS_TEST_FOR_EXCEPTION( !( 1 <= numCols && numCols <= dimDomain ), \
-      std::invalid_argument, msgErr<<"Error!"); \
-    for (int k = 0; k < numCols; ++k) { \
-      const int col_k = cols[k]; \
-      TEUCHOS_TEST_FOR_EXCEPTION( \
-        !( 0<= col_k && col_k < dimDomain ), std::out_of_range, \
-        msgErr<<": col["<<k<<"] = " << col_k \
-        << " is not in the range [0,"<<(dimDomain-1)<<"]!" \
-        ); \
-    } \
+#define THYRA_ASSERT_MV_COLS(FUNCNAME, cols)                                \
+  do {                                                                      \
+    const int numCols              = cols.size();                           \
+    const Thyra::Ordinal dimDomain = this->domain()->dim();                 \
+    const std::string msgErr       = this->description() + "::" + FUNCNAME; \
+    TEUCHOS_TEST_FOR_EXCEPTION(!(1 <= numCols && numCols <= dimDomain),     \
+                               std::invalid_argument, msgErr << "Error!");  \
+    for (int k = 0; k < numCols; ++k) {                                     \
+      const int col_k = cols[k];                                            \
+      TEUCHOS_TEST_FOR_EXCEPTION(                                           \
+          !(0 <= col_k && col_k < dimDomain), std::out_of_range,            \
+          msgErr << ": col[" << k << "] = " << col_k                        \
+                 << " is not in the range [0," << (dimDomain - 1) << "]!"); \
+    }                                                                       \
   } while (false)
 
 #ifdef THYRA_DEBUG
-#  define THYRA_DEBUG_ASSERT_MV_COLS(FUNCNAME, cols) \
+#define THYRA_DEBUG_ASSERT_MV_COLS(FUNCNAME, cols) \
   THYRA_ASSERT_MV_COLS(FUNCNAME, cols)
 #else
-#  define THYRA_DEBUG_ASSERT_MV_COLS(FUNCNAME, cols)
+#define THYRA_DEBUG_ASSERT_MV_COLS(FUNCNAME, cols)
 #endif
 
-#endif // THYRA_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP
+#endif  // THYRA_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP

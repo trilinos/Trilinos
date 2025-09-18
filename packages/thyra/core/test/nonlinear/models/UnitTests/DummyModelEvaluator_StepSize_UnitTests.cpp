@@ -15,21 +15,16 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
-
 namespace Thyra {
-
 
 using Teuchos::null;
 typedef ModelEvaluatorBase MEB;
-
 
 //
 // Unit tests
 //
 
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( StepSize_checker, step_size , Scalar )
-{
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(StepSize_checker, step_size, Scalar) {
   RCP<DummyTestModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
   TEST_ASSERT(model != null);
   TEST_EQUALITY(model->Np(), 0);
@@ -46,15 +41,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( StepSize_checker, step_size , Scalar )
   TEST_ASSERT(inArgs.supports(MEB::IN_ARG_x));
   TEST_ASSERT(inArgs.supports(MEB::IN_ARG_step_size));
   TEST_EQUALITY(inArgs.Np(), 0);
-  
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
-  StepSize_checker, step_size)
+    StepSize_checker, step_size)
 
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( StepSize_checker, stageNumber , Scalar )
-{
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(StepSize_checker, stageNumber, Scalar) {
   RCP<DummyTestModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
   TEST_ASSERT(model != null);
   TEST_EQUALITY(model->Np(), 0);
@@ -71,15 +63,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( StepSize_checker, stageNumber , Scalar )
   TEST_ASSERT(inArgs.supports(MEB::IN_ARG_x));
   TEST_ASSERT(inArgs.supports(MEB::IN_ARG_stage_number));
   TEST_EQUALITY(inArgs.Np(), 0);
-  
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
-  StepSize_checker, stageNumber)
+    StepSize_checker, stageNumber)
 
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( StepSize_checker, stepSizeAndStageNumber , Scalar )
-{
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(StepSize_checker, stepSizeAndStageNumber, Scalar) {
   RCP<DummyTestModelEvaluator<Scalar> > model = dummyTestModelEvaluator<Scalar>();
   TEST_ASSERT(model != null);
   TEST_EQUALITY(model->Np(), 0);
@@ -97,10 +86,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( StepSize_checker, stepSizeAndStageNumber , Sc
   TEST_ASSERT(inArgs.supports(MEB::IN_ARG_step_size));
   TEST_ASSERT(inArgs.supports(MEB::IN_ARG_stage_number));
   TEST_EQUALITY(inArgs.Np(), 0);
-  
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES(
-  StepSize_checker, stepSizeAndStageNumber)
+    StepSize_checker, stepSizeAndStageNumber)
 
-} // namespace Thyra
+}  // namespace Thyra

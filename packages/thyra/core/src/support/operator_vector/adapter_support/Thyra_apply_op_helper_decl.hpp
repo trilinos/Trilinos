@@ -13,9 +13,7 @@
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "RTOpPack_RTOpT.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Validate the inputs to <tt>VectorBase::applyOp()</tt>.
  *
@@ -24,17 +22,15 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 void apply_op_validate_input(
-  const std::string &func_name,
-  const VectorSpaceBase<Scalar> &space,
-  const RTOpPack::RTOpT<Scalar> &op,
-  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
-  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
-  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal global_offset
-  );
-
+    const std::string &func_name,
+    const VectorSpaceBase<Scalar> &space,
+    const RTOpPack::RTOpT<Scalar> &op,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+    const Ordinal global_offset);
 
 /** \brief Validate the inputs to <tt>MultiVectorBase::applyOp()</tt>.
  *
@@ -43,20 +39,17 @@ void apply_op_validate_input(
  *
  * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 void apply_op_validate_input(
-  const std::string &func_name,
-  const VectorSpaceBase<Scalar> &domain,
-  const VectorSpaceBase<Scalar> &range,
-  const RTOpPack::RTOpT<Scalar> &primary_op,
-  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-  const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-  const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Ordinal primary_global_offset
-  );
+    const std::string &func_name,
+    const VectorSpaceBase<Scalar> &domain,
+    const VectorSpaceBase<Scalar> &range,
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+    const Ordinal primary_global_offset);
 
+}  // end namespace Thyra
 
-} // end namespace Thyra
-
-
-#endif // THYRA_APPLY_OP_HELPER_DECL_HPP
+#endif  // THYRA_APPLY_OP_HELPER_DECL_HPP

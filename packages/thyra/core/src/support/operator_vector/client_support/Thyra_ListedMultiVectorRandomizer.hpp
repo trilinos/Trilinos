@@ -13,9 +13,7 @@
 #include "Thyra_MultiVectorRandomizerBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief <tt>MultiVectorRandomizerBase</tt> subclass that returns a revolving
  * list of preset <tt>MultiVectorBase</tt> objects.
@@ -26,32 +24,26 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class ListedMultiVectorRandomizer : public MultiVectorRandomizerBase<Scalar> {
-public:
-
+ public:
   /** \brief Calls <tt>this->initialize()</tt>. */
   ListedMultiVectorRandomizer(
-    const Teuchos::RCP<const MultiVectorBase<Scalar> >    multiVecs[]
-    ,const int                                                    numMultiVecs
-    );
+      const Teuchos::RCP<const MultiVectorBase<Scalar> > multiVecs[], const int numMultiVecs);
 
   /** \brief . */
   void initialize(
-    const Teuchos::RCP<const MultiVectorBase<Scalar> >    multiVecs[]
-    ,const int                                                    numMultiVecs
-    );
+      const Teuchos::RCP<const MultiVectorBase<Scalar> > multiVecs[], const int numMultiVecs);
 
   /** \name Overridden from MultiVectorRandomizerBase */
   //@{
 
   /** \brief . */
-  bool isCompatible( const VectorSpaceBase<Scalar> &space ) const;
+  bool isCompatible(const VectorSpaceBase<Scalar> &space) const;
 
   //@}
 
-private:
-
+ private:
   /** \name Overridded private functions */
   //@{
 
@@ -60,75 +52,56 @@ private:
 
   //@}
 
-private:
-
+ private:
   typedef std::vector<Teuchos::RCP<const MultiVectorBase<Scalar> > > multiVecs_t;
-  multiVecs_t  multiVecs_;
-  int          curr_mv_i_;
-  
+  multiVecs_t multiVecs_;
+  int curr_mv_i_;
 };
-
 
 // //////////////////////////////
 // Definitions
 
-
-template<class Scalar>
+template <class Scalar>
 ListedMultiVectorRandomizer<Scalar>::ListedMultiVectorRandomizer(
-  const Teuchos::RCP<const MultiVectorBase<Scalar> >    multiVecs[]
-  ,const int                                                    numMultiVecs
-  )
-{
-  initialize(multiVecs,numMultiVecs);
+    const Teuchos::RCP<const MultiVectorBase<Scalar> > multiVecs[], const int numMultiVecs) {
+  initialize(multiVecs, numMultiVecs);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void ListedMultiVectorRandomizer<Scalar>::initialize(
-  const Teuchos::RCP<const MultiVectorBase<Scalar> >    multiVecs[]
-  ,const int                                                    numMultiVecs
-  )
-{
+    const Teuchos::RCP<const MultiVectorBase<Scalar> > multiVecs[], const int numMultiVecs) {
   multiVecs_.resize(numMultiVecs);
-  std::copy( multiVecs, multiVecs + numMultiVecs, multiVecs_.begin() );
+  std::copy(multiVecs, multiVecs + numMultiVecs, multiVecs_.begin());
   curr_mv_i_ = 0;
 }
 
-
 // Overridden from MultiVectorRandomizerBase
 
-
-template<class Scalar>
-bool ListedMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Scalar> &space ) const
-{
+template <class Scalar>
+bool ListedMultiVectorRandomizer<Scalar>::isCompatible(const VectorSpaceBase<Scalar> &space) const {
   return multiVecs_[curr_mv_i_]->range()->isCompatible(space);
 }
 
-
 // Overridded private functions
 
-
-template<class Scalar>
+template <class Scalar>
 void ListedMultiVectorRandomizer<Scalar>::randomizeImpl(
-  const Ptr<MultiVectorBase<Scalar> > &mv)
-{
+    const Ptr<MultiVectorBase<Scalar> > &mv) {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( multiVecs_.size()==0 );
+  TEUCHOS_TEST_FOR_EXCEPT(multiVecs_.size() == 0);
 #endif
   const Teuchos::RCP<const MultiVectorBase<Scalar> > currMV = multiVecs_[curr_mv_i_];
 #ifdef TEUCHOS_DEBUG
-  THYRA_ASSERT_VEC_SPACES("ListedMultiVectorRandomizer<Scalar>::randomize(mv)", *currMV->range(), *mv->range() );
-  THYRA_ASSERT_VEC_SPACES("ListedMultiVectorRandomizer<Scalar>::randomize(mv)", *currMV->domain(), *mv->domain() );
+  THYRA_ASSERT_VEC_SPACES("ListedMultiVectorRandomizer<Scalar>::randomize(mv)", *currMV->range(), *mv->range());
+  THYRA_ASSERT_VEC_SPACES("ListedMultiVectorRandomizer<Scalar>::randomize(mv)", *currMV->domain(), *mv->domain());
 #endif
-  Thyra::assign( mv, *currMV );
-  if( curr_mv_i_ == static_cast<int>(multiVecs_.size()) - 1 )
+  Thyra::assign(mv, *currMV);
+  if (curr_mv_i_ == static_cast<int>(multiVecs_.size()) - 1)
     curr_mv_i_ = 0;
   else
     ++curr_mv_i_;
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_LISTED_MULTI_VECTOR_RANDOMIZER_HPP
+#endif  // THYRA_LISTED_MULTI_VECTOR_RANDOMIZER_HPP

@@ -27,26 +27,25 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_examples_cg_grp
  */
-template<class Scalar>
+template <class Scalar>
 void sillyModifiedGramSchmidt(
-  const Ptr<MultiVectorBase<Scalar> > &V,
-  const Ptr<RCP<MultiVectorBase<Scalar> > > &R_out
-  )
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST; using Teuchos::as;
+    const Ptr<MultiVectorBase<Scalar> > &V,
+    const Ptr<RCP<MultiVectorBase<Scalar> > > &R_out) {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  using Teuchos::as;
   const int n = V->domain()->dim();
-  *R_out = createMembers(V->domain(), V->domain());
+  *R_out      = createMembers(V->domain(), V->domain());
   DetachedMultiVectorView<Scalar> R(*(*R_out));
   for (int k = 0; k < n; ++k) {
-    R(k,k) = norm(*V->col(k));
-    Vt_S(V->col(k).ptr(), ST::one()/R(k,k));
-    for (int j = k+1; j < n; ++j) {
-      R(k,j) = scalarProd(*V->col(k), *V->col(j));
-      Vp_StV(V->col(j).ptr(), -R(k,j), *V->col(k));
+    R(k, k) = norm(*V->col(k));
+    Vt_S(V->col(k).ptr(), ST::one() / R(k, k));
+    for (int j = k + 1; j < n; ++j) {
+      R(k, j) = scalarProd(*V->col(k), *V->col(j));
+      Vp_StV(V->col(j).ptr(), -R(k, j), *V->col(k));
     }
   }
-} // end sillyModifiedGramSchmidt
+}  // end sillyModifiedGramSchmidt
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // THYRA_SILLY_MODIFIED_GRAM_SHMIDT_HPP
+#endif  // THYRA_SILLY_MODIFIED_GRAM_SHMIDT_HPP

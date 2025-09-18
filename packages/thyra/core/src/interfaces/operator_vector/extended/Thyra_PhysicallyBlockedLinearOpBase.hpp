@@ -12,9 +12,7 @@
 
 #include "Thyra_BlockedLinearOpBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base interface for physically blocked linear operators.
  *
@@ -27,12 +25,10 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class PhysicallyBlockedLinearOpBase
-  : virtual public BlockedLinearOpBase<Scalar>
-{
-public:
-
+  : virtual public BlockedLinearOpBase<Scalar> {
+ public:
   /** \brief Begin a block fill where the product range and domain spaces will
    * be created on the fly and the number of block rows and columns is not
    * known in advance.
@@ -61,8 +57,7 @@ public:
    * </ul>
    */
   virtual void beginBlockFill(
-    const int numRowBlocks, const int numColBlocks
-    ) = 0;
+      const int numRowBlocks, const int numColBlocks) = 0;
 
   /** \brief Begin a block fill where the product range and domain spaces
    * are set a priori.
@@ -84,10 +79,8 @@ public:
    * </ul>
    */
   virtual void beginBlockFill(
-    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >    &productRange
-    ,const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >  &productDomain
-    ) = 0;
-  
+      const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productRange, const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain) = 0;
+
   /** \brief Determines if a block fill is active or not . */
   virtual bool blockFillIsActive() const = 0;
 
@@ -106,7 +99,7 @@ public:
    * </ul>
    */
   virtual bool acceptsBlock(const int i, const int j) const = 0;
-  
+
   /** \brief Set a non-const block linear operator.
    *
    * \param  i  [in] Zero-based index for the block row.
@@ -119,10 +112,8 @@ public:
    * </ul>
    */
   virtual void setNonconstBlock(
-    const int i, const int j
-    ,const Teuchos::RCP<LinearOpBase<Scalar> > &block
-    ) = 0;
-  
+      const int i, const int j, const Teuchos::RCP<LinearOpBase<Scalar> > &block) = 0;
+
   /** \brief Set a const block linear operator.
    *
    * \param  i  [in] Zero-based index for the block row.
@@ -135,10 +126,8 @@ public:
    * </ul>
    */
   virtual void setBlock(
-    const int i, const int j
-    ,const Teuchos::RCP<const LinearOpBase<Scalar> > &block
-    ) = 0;
-  
+      const int i, const int j, const Teuchos::RCP<const LinearOpBase<Scalar> > &block) = 0;
+
   /** \brief End a block fill after which <tt>*this</tt> object can be used.
    *
    * If a valid linear operator object can not be formed from what was set
@@ -151,7 +140,7 @@ public:
    * </ul>
    */
   virtual void endBlockFill() = 0;
-  
+
   /** \brief Set to uninitlaized.
    *
    * <b>Postconditions:</b><ul>
@@ -162,16 +151,12 @@ public:
    */
   virtual void uninitialize() = 0;
 
-private:
-  
+ private:
   // Not defined and not to be called
-  PhysicallyBlockedLinearOpBase<Scalar>&
-  operator=(const PhysicallyBlockedLinearOpBase<Scalar>&);
-
+  PhysicallyBlockedLinearOpBase<Scalar> &
+  operator=(const PhysicallyBlockedLinearOpBase<Scalar> &);
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_PHYSICALLY_BLOCKED_LINEAR_OP_BASE_HPP
+#endif  // THYRA_PHYSICALLY_BLOCKED_LINEAR_OP_BASE_HPP

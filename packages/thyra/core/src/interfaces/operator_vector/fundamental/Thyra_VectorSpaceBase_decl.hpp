@@ -13,19 +13,16 @@
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Teuchos_Describable.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Helper function that clones a <tt>VectorSpaceBase</tt> object if
  * the <tt>RCP</tt> does not have ownership.
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-makeHaveOwnership( const RCP<const VectorSpaceBase<Scalar> > &vs );
-
+makeHaveOwnership(const RCP<const VectorSpaceBase<Scalar> > &vs);
 
 /** \brief Create a vector member from the vector space.
  *
@@ -34,37 +31,19 @@ makeHaveOwnership( const RCP<const VectorSpaceBase<Scalar> > &vs );
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
-RCP< VectorBase<Scalar> >
+template <class Scalar>
+RCP<VectorBase<Scalar> >
 createMember(
-  const RCP<const VectorSpaceBase<Scalar> > &vs,
-  const std::string &label=""
-  );
-
+    const RCP<const VectorSpaceBase<Scalar> > &vs,
+    const std::string &label = "");
 
 /** \brief Calls <tt>createMember(Teuchos::rcp(&vs,false))</tt>.
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
-RCP< VectorBase<Scalar> >
-createMember( const VectorSpaceBase<Scalar> &vs, const std::string &label="" );
-
-
-/** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from the vector space.
- *
- * Calls <tt>VectorSpaceBase::createMembers()</tt> on <tt>vs</tt> but the
- * returned <tt>MultiVectorBase</tt> object can live past <tt>vs</tt>.
- *
- * \relates VectorSpaceBase
- */
-template<class Scalar>
-RCP< MultiVectorBase<Scalar> >
-createMembers(
-  const RCP<const VectorSpaceBase<Scalar> > &vs, int numMembers,
-  const std::string &label=""
-  );
-
+template <class Scalar>
+RCP<VectorBase<Scalar> >
+createMember(const VectorSpaceBase<Scalar> &vs, const std::string &label = "");
 
 /** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from the vector space.
  *
@@ -73,26 +52,35 @@ createMembers(
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
-RCP< MultiVectorBase<Scalar> >
+template <class Scalar>
+RCP<MultiVectorBase<Scalar> >
 createMembers(
-  const RCP<const VectorSpaceBase<Scalar> > &vs,
-  const RCP<const VectorSpaceBase<Scalar> > &domain,
-  const std::string &label=""
-  );
+    const RCP<const VectorSpaceBase<Scalar> > &vs, int numMembers,
+    const std::string &label = "");
 
+/** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from the vector space.
+ *
+ * Calls <tt>VectorSpaceBase::createMembers()</tt> on <tt>vs</tt> but the
+ * returned <tt>MultiVectorBase</tt> object can live past <tt>vs</tt>.
+ *
+ * \relates VectorSpaceBase
+ */
+template <class Scalar>
+RCP<MultiVectorBase<Scalar> >
+createMembers(
+    const RCP<const VectorSpaceBase<Scalar> > &vs,
+    const RCP<const VectorSpaceBase<Scalar> > &domain,
+    const std::string &label = "");
 
 /** \brief Calls <tt>createMembers(Teuchos::rcp(&vs,false),numMembers)</tt>.
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
-RCP< MultiVectorBase<Scalar> >
+template <class Scalar>
+RCP<MultiVectorBase<Scalar> >
 createMembers(
-  const VectorSpaceBase<Scalar> &vs, int numMembers,
-  const std::string &label=""
-  );
-
+    const VectorSpaceBase<Scalar> &vs, int numMembers,
+    const std::string &label = "");
 
 /** \brief Create a vector member that is a non-<tt>const</tt> view of raw data.
  *
@@ -101,27 +89,23 @@ createMembers(
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
+template <class Scalar>
 RCP<VectorBase<Scalar> >
 createMemberView(
-  const RCP<const VectorSpaceBase<Scalar> > &vs,
-  const RTOpPack::SubVectorView<Scalar> &raw_v,
-  const std::string &label=""
-  );
-
+    const RCP<const VectorSpaceBase<Scalar> > &vs,
+    const RTOpPack::SubVectorView<Scalar> &raw_v,
+    const std::string &label = "");
 
 /** \brief Calls <tt>createMemberView(Teuchos::rcp(&vs,false),raw_v)</tt>.
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
+template <class Scalar>
 RCP<VectorBase<Scalar> >
 createMemberView(
-  const VectorSpaceBase<Scalar> &vs,
-  const RTOpPack::SubVectorView<Scalar> &raw_v,
-  const std::string &label=""
-  );
-
+    const VectorSpaceBase<Scalar> &vs,
+    const RTOpPack::SubVectorView<Scalar> &raw_v,
+    const std::string &label = "");
 
 /** \brief Create a vector member that is a <tt>const</tt> view of raw data.
  *
@@ -130,27 +114,23 @@ createMemberView(
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const VectorBase<Scalar> >
 createMemberView(
-  const RCP<const VectorSpaceBase<Scalar> > &vs,
-  const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
-  const std::string &label=""
-  );
-
+    const RCP<const VectorSpaceBase<Scalar> > &vs,
+    const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
+    const std::string &label = "");
 
 /** \brief Calls <tt>createMemberView(Teuchos::rcp(&vs,false),raw_v)</tt>.
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const VectorBase<Scalar> >
 createMemberView(
-  const VectorSpaceBase<Scalar> &vs,
-  const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
-  const std::string &label=""
-  );
-
+    const VectorSpaceBase<Scalar> &vs,
+    const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
+    const std::string &label = "");
 
 /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of raw data.
  *
@@ -159,27 +139,23 @@ createMemberView(
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
+template <class Scalar>
 RCP<MultiVectorBase<Scalar> >
 createMembersView(
-  const RCP<const VectorSpaceBase<Scalar> > &vs,
-  const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
-  const std::string &label=""
-  );
-
+    const RCP<const VectorSpaceBase<Scalar> > &vs,
+    const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
+    const std::string &label = "");
 
 /** \brief Calls <tt>createMembersView(Teuchos::rcp(&vs,false),raw_mv)</tt>.
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
+template <class Scalar>
 RCP<MultiVectorBase<Scalar> >
 createMembersView(
-  const VectorSpaceBase<Scalar> &vs,
-  const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
-  const std::string &label=""
-  );
-
+    const VectorSpaceBase<Scalar> &vs,
+    const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
+    const std::string &label = "");
 
 /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw data.
  *
@@ -188,27 +164,23 @@ createMembersView(
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const MultiVectorBase<Scalar> >
 createMembersView(
-  const RCP<const VectorSpaceBase<Scalar> > &vs,
-  const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
-  const std::string &label=""
-  );
-
+    const RCP<const VectorSpaceBase<Scalar> > &vs,
+    const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
+    const std::string &label = "");
 
 /** \brief Calls <tt>createMembersView(Teuchos::rcp(&vs,false),raw_mv)</tt>.
  *
  * \relates VectorSpaceBase
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const MultiVectorBase<Scalar> >
 createMembersView(
-  const VectorSpaceBase<Scalar> &vs,
-  const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
-  const std::string &label=""
-  );
-
+    const VectorSpaceBase<Scalar> &vs,
+    const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
+    const std::string &label = "");
 
 /** \brief Abstract interface for objects that represent a space for vectors.
  *
@@ -263,10 +235,9 @@ createMembersView(
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class VectorSpaceBase : virtual public Teuchos::Describable {
-public:
-
+ public:
   /** @name Public pure virtual functions that must be overridden */
   //@{
 
@@ -300,7 +271,7 @@ public:
    *
    * </ul>
    */
-  virtual bool isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const = 0;
+  virtual bool isCompatible(const VectorSpaceBase<Scalar> &vecSpc) const = 0;
 
   /** \brief Return a <tt>VectorSpaceFactoryBase</tt> object for the creation
    * of (usually serial) vector spaces with a small dimension.
@@ -309,7 +280,7 @@ public:
    * <li><tt>this->dim() > 0</tt>
    * </ul>
    */
-  virtual RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const = 0;
+  virtual RCP<const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const = 0;
 
   /** \brief Return the scalar product of two vectors in the vector space.
    *
@@ -324,8 +295,7 @@ public:
    * </ul>
    */
   virtual Scalar scalarProd(
-    const VectorBase<Scalar>& x, const VectorBase<Scalar>& y
-    ) const = 0;
+      const VectorBase<Scalar> &x, const VectorBase<Scalar> &y) const = 0;
 
   /** \brief Return the scalar product of each column in two multi-vectors in
    * the vector space.
@@ -353,12 +323,10 @@ public:
    * </ul>
    */
   void scalarProds(
-    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-    const ArrayView<Scalar> &scalarProds_out
-    ) const
-    {
-      scalarProdsImpl(X, Y, scalarProds_out);
-    }
+      const MultiVectorBase<Scalar> &X, const MultiVectorBase<Scalar> &Y,
+      const ArrayView<Scalar> &scalarProds_out) const {
+    scalarProdsImpl(X, Y, scalarProds_out);
+  }
 
   //@}
 
@@ -418,10 +386,9 @@ public:
    * are provided).
    */
   virtual bool hasInCoreView(
-    const Range1D &rng = Range1D(),
-    const EViewType viewType = VIEW_TYPE_DETACHED,
-    const EStrideType strideType = STRIDE_TYPE_NONUNIT
-    ) const;
+      const Range1D &rng           = Range1D(),
+      const EViewType viewType     = VIEW_TYPE_DETACHED,
+      const EStrideType strideType = STRIDE_TYPE_NONUNIT) const;
 
   /** \brief Clone this object (if supported).
    *
@@ -434,7 +401,7 @@ public:
    *
    * The default implementation returns <tt>returnVal.get()==NULL</tt>.
    */
-  virtual RCP< const VectorSpaceBase<Scalar> > clone() const;
+  virtual RCP<const VectorSpaceBase<Scalar> > clone() const;
 
   //@}
 
@@ -445,54 +412,48 @@ public:
   /** \name Public friend functions */
   //@{
 
-  friend RCP< VectorBase<Scalar> >
-  createMember<>( 
-    const RCP<const VectorSpaceBase<Scalar> > &vs,
-    const std::string &label
-    );
+  friend RCP<VectorBase<Scalar> >
+  createMember<>(
+      const RCP<const VectorSpaceBase<Scalar> > &vs,
+      const std::string &label);
 
-  friend RCP< MultiVectorBase<Scalar> >
+  friend RCP<MultiVectorBase<Scalar> >
   createMembers<>(
-    const RCP<const VectorSpaceBase<Scalar> > &vs,
-    int numMembers, const std::string &label
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &vs,
+      int numMembers, const std::string &label);
 
   friend RCP<VectorBase<Scalar> >
   createMemberView<>(
-    const RCP<const VectorSpaceBase<Scalar> > &vs,
-    const RTOpPack::SubVectorView<Scalar> &raw_v,
-    const std::string &label
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &vs,
+      const RTOpPack::SubVectorView<Scalar> &raw_v,
+      const std::string &label);
 
   friend RCP<const VectorBase<Scalar> >
   createMemberView<>(
-    const RCP<const VectorSpaceBase<Scalar> > &vs,
-    const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
-    const std::string &label
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &vs,
+      const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
+      const std::string &label);
 
   friend RCP<MultiVectorBase<Scalar> >
   createMembersView<>(
-    const RCP<const VectorSpaceBase<Scalar> > &vs,
-    const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
-    const std::string &label
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &vs,
+      const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
+      const std::string &label);
 
   friend RCP<const MultiVectorBase<Scalar> >
   createMembersView<>(
-    const RCP<const VectorSpaceBase<Scalar> > &vs,
-    const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
-    const std::string &label
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &vs,
+      const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
+      const std::string &label);
 
   //@}
 
-#endif // DOXYGEN_COMPILE
+#endif  // DOXYGEN_COMPILE
 
-#endif // TEMPLATE_FRIENDS_NOT_SUPPORTED
+#endif  // TEMPLATE_FRIENDS_NOT_SUPPORTED
 
 #ifndef TEMPLATE_FRIENDS_NOT_SUPPORTED
-protected:
+ protected:
 #endif
 
   /** @name Protected pure virtual functions that must be overridden */
@@ -523,7 +484,7 @@ protected:
    * faster execution times.  Note that <tt>returnVal->space().get() ==
    * this</tt> need not be true.
    */
-  virtual RCP< VectorBase<Scalar> > createMember() const = 0;
+  virtual RCP<VectorBase<Scalar> > createMember() const = 0;
 
   /** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from
    * the vector space.
@@ -551,7 +512,7 @@ protected:
    * <tt>returnVal->range().get()==this</tt> does not have to be true but will
    * be in may cases.
    */
-  virtual RCP< MultiVectorBase<Scalar> >
+  virtual RCP<MultiVectorBase<Scalar> >
   createMembers(int numMembers) const = 0;
 
   /** \brief Create a vector member that is a non-<tt>const</tt> view of raw vector data.
@@ -586,7 +547,7 @@ protected:
    * using explicit vector access.
    */
   virtual RCP<VectorBase<Scalar> >
-  createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const = 0;
+  createMemberView(const RTOpPack::SubVectorView<Scalar> &raw_v) const = 0;
 
   /** \brief Create a vector member that is a <tt>const</tt> view of raw vector data.
    *
@@ -610,7 +571,7 @@ protected:
    * </ul>
    */
   virtual RCP<const VectorBase<Scalar> >
-  createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const = 0;
+  createMemberView(const RTOpPack::ConstSubVectorView<Scalar> &raw_v) const = 0;
 
   /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of
    * raw multi-vector data.
@@ -644,7 +605,7 @@ protected:
    * <tt>MultiVectorBase</tt> object using explicit vector access.
    */
   virtual RCP<MultiVectorBase<Scalar> >
-  createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const = 0;
+  createMembersView(const RTOpPack::SubMultiVectorView<Scalar> &raw_mv) const = 0;
 
   /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw
    * multi-vector data.
@@ -675,11 +636,9 @@ protected:
    */
   virtual RCP<const MultiVectorBase<Scalar> >
   createMembersView(
-    const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const = 0;
-
+      const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv) const = 0;
 
  public:
-
   /** \brief Create a (possibly) cached multi-vector member that is a non-<tt>const</tt> view of
    * raw multi-vector data. The caching mechanism must be implemented by child classes, by default
    * this just calls the regular <tt>createMembersView</tt>.
@@ -713,7 +672,7 @@ protected:
    * <tt>MultiVectorBase</tt> object using explicit vector access.
    */
   virtual RCP<MultiVectorBase<Scalar> >
-  createCachedMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv, bool initialize = true) const { return this->createMembersView(raw_mv); };
+  createCachedMembersView(const RTOpPack::SubMultiVectorView<Scalar> &raw_mv, bool initialize = true) const { return this->createMembersView(raw_mv); };
 
   /** \brief Create a (possibly) cached multi-vector member that is a <tt>const</tt> view of raw
    * multi-vector data. The caching mechanism must be implemented by child classes, by default
@@ -744,32 +703,25 @@ protected:
    * </ul>
    */
   virtual RCP<const MultiVectorBase<Scalar> >
-  createCachedMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const { return this->createMembersView(raw_mv); };
+  createCachedMembersView(const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv) const { return this->createMembersView(raw_mv); };
 
   //@}
 
-protected:
-
+ protected:
   /** \name Protected virtual funtions. */
 
   /** \brief . */
   virtual void scalarProdsImpl(
-    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-    const ArrayView<Scalar> &scalarProds
-    ) const = 0;
+      const MultiVectorBase<Scalar> &X, const MultiVectorBase<Scalar> &Y,
+      const ArrayView<Scalar> &scalarProds) const = 0;
 
-public:
-
-private:
-  
+ public:
+ private:
   // Not defined and not to be called
-  VectorSpaceBase<Scalar>&
-  operator=(const VectorSpaceBase<Scalar>&);
-
+  VectorSpaceBase<Scalar> &
+  operator=(const VectorSpaceBase<Scalar> &);
 };
 
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 #endif  // THYRA_VECTOR_SPACE_BASE_DECL_HPP
