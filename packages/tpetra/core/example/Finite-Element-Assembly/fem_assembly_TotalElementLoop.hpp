@@ -318,7 +318,6 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
 
   const global_ordinal_type GO_INVALID = Teuchos::OrdinalTraits<global_ordinal_type>::invalid();
   const local_ordinal_type LO_INVALID  = Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
-  using pair_type                      = Kokkos::pair<int, int>;
 
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
