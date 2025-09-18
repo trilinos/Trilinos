@@ -10,15 +10,13 @@
 #ifndef THYRA_BLOCKED_LINEAR_OP_BASE_HPP
 #define THYRA_BLOCKED_LINEAR_OP_BASE_HPP
 
-
 #include "Thyra_LinearOpBase.hpp"
-
 
 namespace Thyra {
 
-
 /** \brief . */
-template <class Scalar> class ProductVectorSpaceBase;
+template <class Scalar>
+class ProductVectorSpaceBase;
 
 /** \brief Base interface for linear operators that can be accessed as
  * sub-blocks.
@@ -27,12 +25,10 @@ template <class Scalar> class ProductVectorSpaceBase;
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class BlockedLinearOpBase
-  : virtual public LinearOpBase<Scalar>
-{
-public:
-
+  : virtual public LinearOpBase<Scalar> {
+ public:
   /** \brief Return the product space for the range.
    *
    * A return value of <tt>return.get()==NULL</tt> is an indication that
@@ -59,7 +55,7 @@ public:
    * <li><tt>0 <= j && j < this->productDomain()->numBlocks()</tt>
    * </ul>
    */
-  virtual bool blockExists(const int i, const int j) const = 0; 
+  virtual bool blockExists(const int i, const int j) const = 0;
 
   /** \brief Return if the block <tt>(i,j)</tt> is const only or not.
    *
@@ -71,7 +67,7 @@ public:
    * <li><tt>0 <= j && j < this->productDomain()->numBlocks()</tt>
    * </ul>
    */
-  virtual bool blockIsConst(const int i, const int j) const = 0; 
+  virtual bool blockIsConst(const int i, const int j) const = 0;
 
   /** \brief Return a non-const view of the block <tt>(i,j)</tt> if it exists.
    *
@@ -90,7 +86,7 @@ public:
    * </ul>
    */
   virtual Teuchos::RCP<LinearOpBase<Scalar> >
-  getNonconstBlock(const int i, const int j) = 0; 
+  getNonconstBlock(const int i, const int j) = 0;
 
   /** \brief Return a const view of the block <tt>(i,j)</tt> if it exists.
    *
@@ -108,12 +104,9 @@ public:
    * </ul>
    */
   virtual Teuchos::RCP<const LinearOpBase<Scalar> >
-  getBlock(const int i, const int j) const = 0; 
-
+  getBlock(const int i, const int j) const = 0;
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_BLOCKED_LINEAR_OP_BASE_HPP
+#endif  // THYRA_BLOCKED_LINEAR_OP_BASE_HPP

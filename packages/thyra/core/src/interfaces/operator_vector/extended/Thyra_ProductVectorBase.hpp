@@ -10,12 +10,9 @@
 #ifndef THYRA_PRODUCT_VECTOR_BASE_HPP
 #define THYRA_PRODUCT_VECTOR_BASE_HPP
 
-
 #include "Thyra_ProductMultiVectorBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base interface for product vectors.
  *
@@ -35,7 +32,7 @@ namespace Thyra {
  this =  [ .              ]
          [ v[numBlocks-1] ]
  \endverbatim
- 
+
  * The constituent vectors <tt>v[k]</tt> can be accessed through the
  * <tt>const</tt> and non-<tt>const</tt> access functions
  * <tt>getBlock()</tt>.
@@ -51,13 +48,11 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class ProductVectorBase
-  : virtual public VectorBase<Scalar>
-  , virtual public ProductMultiVectorBase<Scalar>
-{
-public:
-
+  : virtual public VectorBase<Scalar>,
+    virtual public ProductMultiVectorBase<Scalar> {
+ public:
   /** \brief Returns a non-persisting non-<tt>const</tt> view of the
    * (zero-based) <tt>k</tt>th block vector.
    *
@@ -80,7 +75,7 @@ public:
    * described above.
    */
   virtual RCP<VectorBase<Scalar> >
-  getNonconstVectorBlock(const int k) = 0; 
+  getNonconstVectorBlock(const int k) = 0;
 
   /** \brief Returns a non-persisting <tt>const</tt> view of the (zero-based)
    * <tt>k</tt>th block vector.
@@ -94,49 +89,38 @@ public:
    * </ul>
    */
   virtual RCP<const VectorBase<Scalar> >
-  getVectorBlock(const int k) const = 0; 
+  getVectorBlock(const int k) const = 0;
 
-private:
-  
+ private:
   // Not defined and not to be called
-  ProductVectorBase<Scalar>&
-  operator=(const ProductVectorBase<Scalar>&);
-
+  ProductVectorBase<Scalar> &
+  operator=(const ProductVectorBase<Scalar> &);
 };
-
 
 /** \brief Dynamic cast from a <tt>VectorBase</tt> to a
  * <tt>ProductVectorBase</tt> object and thow exception if this fails.
  *
  * \relates ProductVectorBase
  */
-template<class Scalar>
-inline
-RCP<Thyra::ProductVectorBase<Scalar> >
+template <class Scalar>
+inline RCP<Thyra::ProductVectorBase<Scalar> >
 nonconstProductVectorBase(
-  const RCP<Thyra::VectorBase<Scalar> > &v
-  )
-{
+    const RCP<Thyra::VectorBase<Scalar> > &v) {
   return Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(v, true);
 }
-
 
 /** \brief Dynamic cast from a <tt>const VectorBase</tt> to a <tt>const
  * ProductVectorBase</tt> object and thow exception if this fails.
  *
  * \relates ProductVectorBase
  */
-template<class Scalar>
-inline
-RCP<const Thyra::ProductVectorBase<Scalar> >
+template <class Scalar>
+inline RCP<const Thyra::ProductVectorBase<Scalar> >
 productVectorBase(
-  const RCP<const Thyra::VectorBase<Scalar> > &v
-  )
-{
+    const RCP<const Thyra::VectorBase<Scalar> > &v) {
   return Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(v, true);
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-#endif // THYRA_PRODUCT_VECTOR_BASE_HPP
+#endif  // THYRA_PRODUCT_VECTOR_BASE_HPP

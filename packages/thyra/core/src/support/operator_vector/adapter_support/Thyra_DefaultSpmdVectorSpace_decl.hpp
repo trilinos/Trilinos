@@ -10,13 +10,10 @@
 #ifndef THYRA_DEFAULT_SPMD_VECTOR_SPACE_DECL_HPP
 #define THYRA_DEFAULT_SPMD_VECTOR_SPACE_DECL_HPP
 
-
 #include "Thyra_SpmdVectorSpaceDefaultBase_decl.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Concrete implementation of an SPMD vector space subclass which
  * creates <tt>DefaultSpmdVector</tt> and <tt>DefaultSpmdMultiVector</tt>
@@ -32,12 +29,10 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultSpmdVectorSpace
-  : public SpmdVectorSpaceDefaultBase<Scalar>
-{
-public:
-
+  : public SpmdVectorSpaceDefaultBase<Scalar> {
+ public:
   /** @name Constructors and initializers */
   //@{
 
@@ -108,10 +103,9 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<const Teuchos::Comm<Ordinal> > &comm,
-    const Ordinal localSubDim, const Ordinal globalDim,
-    const bool isLocallyReplicated = false
-    );
+      const RCP<const Teuchos::Comm<Ordinal> > &comm,
+      const Ordinal localSubDim, const Ordinal globalDim,
+      const bool isLocallyReplicated = false);
 
   /** \brief Set to an uninitialized state.
    *
@@ -131,14 +125,12 @@ public:
    * process.
    */
   bool hasInCoreView(
-    const Range1D& rng, const EViewType viewType, const EStrideType strideType
-    ) const;
+      const Range1D &rng, const EViewType viewType, const EStrideType strideType) const;
   /** \brief . */
-  RCP< const VectorSpaceBase<Scalar> > clone() const;
+  RCP<const VectorSpaceBase<Scalar> > clone() const;
   //@}
 
-protected:
-
+ protected:
   /** @name Protected overridden from VectorSpaceBase */
   //@{
 
@@ -150,21 +142,20 @@ protected:
   createMembers(int numMembers) const;
   /** \brief . */
   RCP<VectorBase<Scalar> >
-  createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const;
+  createMemberView(const RTOpPack::SubVectorView<Scalar> &raw_v) const;
   /** \brief . */
   RCP<const VectorBase<Scalar> >
-  createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const;
+  createMemberView(const RTOpPack::ConstSubVectorView<Scalar> &raw_v) const;
   /** \brief . */
   RCP<MultiVectorBase<Scalar> >
-  createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const;
+  createMembersView(const RTOpPack::SubMultiVectorView<Scalar> &raw_mv) const;
   /** \brief . */
   RCP<const MultiVectorBase<Scalar> >
-  createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const;
+  createMembersView(const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv) const;
 
   //@}
 
-public:
-
+ public:
   /** @name Public overridden from SpmdVectorSpaceDefaultBase */
   //@{
 
@@ -175,8 +166,7 @@ public:
 
   //@}
 
-private:
-
+ private:
   // //////////////////////////////////////
   // Private data members
 
@@ -188,81 +178,68 @@ private:
 
   // /////////////////////////////////////
   // Private member functions
- 
+
   DefaultSpmdVectorSpace();
 
-public:
-
-}; // end class DefaultSpmdVectorSpace
-
+ public:
+};  // end class DefaultSpmdVectorSpace
 
 /** \brief Nonmember consturctor that creats an uninitialized vector space.
  *
  * \relates DefaultSpmdVectorSpace
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultSpmdVectorSpace<Scalar> >
-defaultSpmdVectorSpace()
-{
+defaultSpmdVectorSpace() {
   return DefaultSpmdVectorSpace<Scalar>::create();
 }
-
 
 /** \brief Nonmember consturctor that creats a serial vector space.
  *
  * \relates DefaultSpmdVectorSpace
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultSpmdVectorSpace<Scalar> >
-defaultSpmdVectorSpace( const Ordinal dim )
-{
+defaultSpmdVectorSpace(const Ordinal dim) {
   RCP<DefaultSpmdVectorSpace<Scalar> > vs =
-    DefaultSpmdVectorSpace<Scalar>::create();
+      DefaultSpmdVectorSpace<Scalar>::create();
   vs->initialize(dim);
   return vs;
 }
-
 
 /** \brief Nonmember consturctor function that creates a distributed or
  * locally-replicated parallel vector space.
  *
  * \relates DefaultSpmdVectorSpace
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultSpmdVectorSpace<Scalar> >
 defaultSpmdVectorSpace(
-  const RCP<const Teuchos::Comm<Ordinal> > &comm,
-  const Ordinal localSubDim, const Ordinal globalDim,
-  const bool isLocallyReplicated = false
-  )
-{
+    const RCP<const Teuchos::Comm<Ordinal> > &comm,
+    const Ordinal localSubDim, const Ordinal globalDim,
+    const bool isLocallyReplicated = false) {
   RCP<DefaultSpmdVectorSpace<Scalar> > vs =
-    DefaultSpmdVectorSpace<Scalar>::create();
+      DefaultSpmdVectorSpace<Scalar>::create();
   vs->initialize(comm, localSubDim, globalDim, isLocallyReplicated);
   return vs;
 }
-
 
 /** \brief Nonmember consturctor function that creates a locally-replicated
  * parallel vector space.
  *
  * \relates DefaultSpmdVectorSpace
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultSpmdVectorSpace<Scalar> >
 locallyReplicatedDefaultSpmdVectorSpace(
-  const RCP<const Teuchos::Comm<Ordinal> > &comm,
-  const Ordinal globalDim
-  )
-{
+    const RCP<const Teuchos::Comm<Ordinal> > &comm,
+    const Ordinal globalDim) {
   RCP<DefaultSpmdVectorSpace<Scalar> > vs =
-    DefaultSpmdVectorSpace<Scalar>::create();
+      DefaultSpmdVectorSpace<Scalar>::create();
   vs->initialize(comm, globalDim, globalDim, true);
   return vs;
 }
 
+}  // end namespace Thyra
 
-} // end namespace Thyra
-
-
-#endif // THYRA_DEFAULT_SPMD_VECTOR_SPACE_DECL_HPP
+#endif  // THYRA_DEFAULT_SPMD_VECTOR_SPACE_DECL_HPP

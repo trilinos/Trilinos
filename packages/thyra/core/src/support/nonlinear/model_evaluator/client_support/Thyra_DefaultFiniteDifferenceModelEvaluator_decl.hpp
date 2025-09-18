@@ -15,9 +15,7 @@
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief This class wraps any ModelEvaluator object and computes certain
  * derivatives using finite differences.
@@ -26,27 +24,23 @@ namespace Thyra {
  *
  * \ingroup Thyra_Nonlin_ME_support_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultFiniteDifferenceModelEvaluator
-  : virtual public ModelEvaluatorDelegatorBase<Scalar>
-{
-public:
-
+  : virtual public ModelEvaluatorDelegatorBase<Scalar> {
+ public:
   /** \name Constructors/initializers/accessors/utilities. */
   //@{
 
   /** \brief Utility object that computes directional finite differences */
   STANDARD_COMPOSITION_MEMBERS(
-    DirectionalFiniteDiffCalculator<Scalar>, direcFiniteDiffCalculator );
+      DirectionalFiniteDiffCalculator<Scalar>, direcFiniteDiffCalculator);
 
   /** \brief . */
   DefaultFiniteDifferenceModelEvaluator();
 
   /** \brief . */
   void initialize(
-    const RCP<ModelEvaluator<Scalar> > &thyraModel
-    ,const RCP<DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
-    );
+      const RCP<ModelEvaluator<Scalar> > &thyraModel, const RCP<DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator);
 
   //@}
 
@@ -58,8 +52,7 @@ public:
 
   //@}
 
-private:
-
+ private:
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
 
@@ -67,46 +60,37 @@ private:
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
   void evalModelImpl(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
+      const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
- 
 };
-
 
 /** \brief Nonmember constructor.
  *
  * \relates DefaultFiniteDifferenceModelEvaluator
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultFiniteDifferenceModelEvaluator<Scalar> >
-defaultFiniteDifferenceModelEvaluator()
-{
+defaultFiniteDifferenceModelEvaluator() {
   return Teuchos::rcp(new DefaultFiniteDifferenceModelEvaluator<Scalar>());
 }
 
-
 /** \brief Nonmember constructor.
  *
  * \relates DefaultFiniteDifferenceModelEvaluator
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultFiniteDifferenceModelEvaluator<Scalar> >
 defaultFiniteDifferenceModelEvaluator(
-  const RCP<ModelEvaluator<Scalar> > &thyraModel,
-  const RCP<DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
-  )
-{
+    const RCP<ModelEvaluator<Scalar> > &thyraModel,
+    const RCP<DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator) {
   RCP<DefaultFiniteDifferenceModelEvaluator<Scalar> > fdModel =
-    defaultFiniteDifferenceModelEvaluator<Scalar>();
+      defaultFiniteDifferenceModelEvaluator<Scalar>();
   fdModel->initialize(thyraModel, direcFiniteDiffCalculator);
   return fdModel;
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_DEFAULT_FINITE_DIFFERENCE_MODEL_EVALUATOR_DECL_HPP
+#endif  // THYRA_DEFAULT_FINITE_DIFFERENCE_MODEL_EVALUATOR_DECL_HPP

@@ -10,13 +10,10 @@
 #ifndef THYRA_DEFAULT_ADDED_LINEAR_OP_DECL_HPP
 #define THYRA_DEFAULT_ADDED_LINEAR_OP_DECL_HPP
 
-
 #include "Thyra_AddedLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Concrete composite <tt>LinearOpBase</tt> subclass that creates an
  * implicitly added linear operator out of one or more constituent
@@ -25,11 +22,11 @@ namespace Thyra {
  * This class represents a added linear operator <tt>M</tt> of the form:
 
  \verbatim
- 
+
  M = Op[0] + Op[1] + ... + Op[numOps-1]
- 
+
  \endverbatim
- 
+
  * where <tt>Op[]</tt> is an array of <tt>numOps</tt> <tt>LinearOp</tt>
  * objects.  Of course the operator <tt>M</tt> is not constructed explicitly
  * but instead just applies the constituent linear operators accordingly using
@@ -49,11 +46,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
-class DefaultAddedLinearOp : virtual public AddedLinearOpBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class DefaultAddedLinearOp : virtual public AddedLinearOpBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
@@ -149,12 +144,12 @@ public:
   /** \brief Returns <tt>this->getOp(0).range() if <t>this->numOps() > 0</tt>
    * and returns <tt>Teuchos::null</tt> otherwise.
    */
-  RCP< const VectorSpaceBase<Scalar> > range() const;
+  RCP<const VectorSpaceBase<Scalar> > range() const;
 
   /** \brief Returns <tt>this->getOp(this->numOps()-1).domain()</tt> if
    * <t>this->numOps() > 0</tt> and returns <tt>Teuchos::null</tt> otherwise.
    */
-  RCP< const VectorSpaceBase<Scalar> > domain() const;
+  RCP<const VectorSpaceBase<Scalar> > domain() const;
 
   /** \brief . */
   RCP<const LinearOpBase<Scalar> > clone() const;
@@ -163,7 +158,7 @@ public:
 
   /** @name Overridden from Teuchos::Describable */
   //@{
-                                                
+
   /** \brief Prints just the name <tt>DefaultAddedLinearOp</tt> along with
    * the overall dimensions and the number of constituent operators.
    */
@@ -177,14 +172,12 @@ public:
    * ToDo: Finish documentation!
    */
   void describe(
-    Teuchos::FancyOStream &out,
-    const Teuchos::EVerbosityLevel verbLevel
-    ) const;
+      Teuchos::FancyOStream &out,
+      const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
 
-protected:
-
+ protected:
   /** @name Overridden from LinearOpBase */
   //@{
 
@@ -195,18 +188,16 @@ protected:
 
   /** \brief . */
   void applyImpl(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const;
 
   //@}
 
-private:
-
-  std::vector<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > >   Ops_;
+ private:
+  std::vector<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > > Ops_;
 
   inline void assertInitialized() const;
   inline std::string getClassName() const;
@@ -217,95 +208,75 @@ private:
   void setupDefaultObjectLabel();
 
   // Not defined and not to be called
-  DefaultAddedLinearOp(const DefaultAddedLinearOp&);
-  DefaultAddedLinearOp& operator=(const DefaultAddedLinearOp&);
-
+  DefaultAddedLinearOp(const DefaultAddedLinearOp &);
+  DefaultAddedLinearOp &operator=(const DefaultAddedLinearOp &);
 };
 
-
 /** \brief Non-member constructor. */
-template<class Scalar>
-inline
-RCP<DefaultAddedLinearOp<Scalar> >
-defaultAddedLinearOp()
-{
+template <class Scalar>
+inline RCP<DefaultAddedLinearOp<Scalar> >
+defaultAddedLinearOp() {
   return Teuchos::rcp(new DefaultAddedLinearOp<Scalar>);
 }
 
-
 /** \brief Non-member constructor. */
-template<class Scalar>
-inline
-RCP<DefaultAddedLinearOp<Scalar> >
-defaultAddedLinearOp(const ArrayView<const RCP<LinearOpBase<Scalar> > > &Ops)
-{
+template <class Scalar>
+inline RCP<DefaultAddedLinearOp<Scalar> >
+defaultAddedLinearOp(const ArrayView<const RCP<LinearOpBase<Scalar> > > &Ops) {
   return Teuchos::rcp(new DefaultAddedLinearOp<Scalar>(Ops));
 }
 
-
 /** \brief Non-member constructor. */
-template<class Scalar>
-inline
-RCP<DefaultAddedLinearOp<Scalar> >
-defaultAddedLinearOp(const ArrayView<const RCP<const LinearOpBase<Scalar> > > &Ops)
-{
+template <class Scalar>
+inline RCP<DefaultAddedLinearOp<Scalar> >
+defaultAddedLinearOp(const ArrayView<const RCP<const LinearOpBase<Scalar> > > &Ops) {
   return Teuchos::rcp(new DefaultAddedLinearOp<Scalar>(Ops));
 }
-
 
 /** \brief Form an implicit addition of two linear operators: <tt>M = A + B</tt>.
  *
  * \relates DefaultAddedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
 nonconstAdd(
-  const RCP<LinearOpBase<Scalar> > &A,
-  const RCP<LinearOpBase<Scalar> > &B,
-  const std::string &label = ""
-  );
-
+    const RCP<LinearOpBase<Scalar> > &A,
+    const RCP<LinearOpBase<Scalar> > &B,
+    const std::string &label = "");
 
 /** \brief Form an implicit addition of two linear operators: <tt>M = A + B</tt>.
  *
  * \relates DefaultAddedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const LinearOpBase<Scalar> >
 add(
-  const RCP<const LinearOpBase<Scalar> > &A,
-  const RCP<const LinearOpBase<Scalar> > &B,
-  const std::string &label = ""
-  );
-
+    const RCP<const LinearOpBase<Scalar> > &A,
+    const RCP<const LinearOpBase<Scalar> > &B,
+    const std::string &label = "");
 
 /** \brief Form an implicit subtraction of two linear operators: <tt>M = A - B</tt>.
  *
  * \relates DefaultAddedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
 nonconstSubtract(
-  const RCP<LinearOpBase<Scalar> > &A,
-  const RCP<LinearOpBase<Scalar> > &B,
-  const std::string &label = ""
-  );
-
+    const RCP<LinearOpBase<Scalar> > &A,
+    const RCP<LinearOpBase<Scalar> > &B,
+    const std::string &label = "");
 
 /** \brief Form an implicit subtraction of two linear operators: <tt>M = A - B</tt>.
  *
  * \relates DefaultAddedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const LinearOpBase<Scalar> >
 subtract(
-  const RCP<const LinearOpBase<Scalar> > &A,
-  const RCP<const LinearOpBase<Scalar> > &B,
-  const std::string &label = ""
-  );
+    const RCP<const LinearOpBase<Scalar> > &A,
+    const RCP<const LinearOpBase<Scalar> > &B,
+    const std::string &label = "");
 
+}  // end namespace Thyra
 
-}	// end namespace Thyra
-
-
-#endif	// THYRA_DEFAULT_ADDED_LINEAR_OP_DECL_HPP
+#endif  // THYRA_DEFAULT_ADDED_LINEAR_OP_DECL_HPP

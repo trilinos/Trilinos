@@ -13,9 +13,7 @@
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_MultiVectorDefaultBase_decl.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Convenient node subclass for concrete <tt>VectorBase</tt>
  * subclasses that relies on a default <tt>MultiVectorBase</tt>
@@ -37,13 +35,11 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class VectorDefaultBase
   : virtual public VectorBase<Scalar>,
-    virtual protected MultiVectorDefaultBase<Scalar>
-{
-public:
-
+    virtual protected MultiVectorDefaultBase<Scalar> {
+ public:
   /** @name Public functions overridden from Teuchos::Describable */
   //@{
 
@@ -56,7 +52,7 @@ public:
    * class (and possibly its instance name) and then if
    * <tt>verbLevel>=VERB_HIGH</tt>, then the vector elements themselves are
    * printed as well.  The format of the output is is shown below:
-   
+
    \verbatim
 
    type = 'this->description()', size = n
@@ -73,9 +69,7 @@ public:
    * <tt>n-1:xn</tt> entry.
    */
   virtual void describe(
-    Teuchos::FancyOStream                &out
-    ,const Teuchos::EVerbosityLevel      verbLevel
-    ) const;
+      Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
 
@@ -83,11 +77,11 @@ public:
   //@{
 
   /** \brief Returns <tt>this->space()</tt>. */
-  virtual RCP< const VectorSpaceBase<Scalar> > range() const;
+  virtual RCP<const VectorSpaceBase<Scalar> > range() const;
   /** \brief Returns a <tt>DefaultSerialVectorSpace</tt> object with dimension
    * 1.
    */
-  virtual RCP< const VectorSpaceBase<Scalar> > domain() const;
+  virtual RCP<const VectorSpaceBase<Scalar> > domain() const;
 
   //@}
 
@@ -109,8 +103,7 @@ public:
 
   //@}
 
-protected:
-
+ protected:
   /** @name Overridden protected functions from MultiVectorBase */
   //@{
 
@@ -131,15 +124,14 @@ protected:
 
   /** \brief Default implementation of update using RTOps. */
   virtual void updateVecImpl(
-    Scalar alpha,
-    const VectorBase<Scalar>& x);
+      Scalar alpha,
+      const VectorBase<Scalar>& x);
 
   /** \brief Default implementation of linear_combination using RTOps. */
   virtual void linearCombinationVecImpl(
-    const ArrayView<const Scalar>& alpha,
-    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
-    const Scalar& beta
-    );
+      const ArrayView<const Scalar>& alpha,
+      const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+      const Scalar& beta);
 
   /** \brief Default implementation of dot using RTOps. */
   virtual Scalar dotImpl(const VectorBase<Scalar>& x) const;
@@ -164,36 +156,32 @@ protected:
   virtual RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
   virtual RCP<const MultiVectorBase<Scalar> >
-  contigSubViewImpl( const Range1D& col_rng ) const;
+  contigSubViewImpl(const Range1D& col_rng) const;
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
   virtual RCP<MultiVectorBase<Scalar> >
-  nonconstContigSubViewImpl( const Range1D& col_rng );
+  nonconstContigSubViewImpl(const Range1D& col_rng);
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
   virtual RCP<const MultiVectorBase<Scalar> >
-  nonContigSubViewImpl( const ArrayView<const int> &cols ) const;
+  nonContigSubViewImpl(const ArrayView<const int>& cols) const;
   /** \brief Returns <tt>Teuchos::rcp(this,false)</tt>. */
   virtual RCP<MultiVectorBase<Scalar> >
-  nonconstNonContigSubViewImpl( const ArrayView<const int> &cols );
+  nonconstNonContigSubViewImpl(const ArrayView<const int>& cols);
   /** \brief Implemented in terms of <tt>this->acquireDetachedView()</tt>. */
   virtual void acquireDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
-    ) const;
+      const Range1D& rowRng,
+      const Range1D& colRng,
+      RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv) const;
   /** \brief Implemented in terms of <tt>this->releaseDetachedView()</tt>. */
   virtual void releaseDetachedMultiVectorViewImpl(
-    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
-    ) const;
+      RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv) const;
   /** \brief Implemented in terms of <tt>this->acquireDetachedView()</tt>. */
   virtual void acquireNonconstDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
-    );
+      const Range1D& rowRng,
+      const Range1D& colRng,
+      RTOpPack::SubMultiVectorView<Scalar>* sub_mv);
   /** \brief Implemented in terms of <tt>this->commitDetachedView()</tt>. */
   virtual void commitNonconstDetachedMultiVectorViewImpl(
-    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
-    );
+      RTOpPack::SubMultiVectorView<Scalar>* sub_mv);
 
   //@}
 
@@ -215,8 +203,7 @@ protected:
    * to this function's implementation.
    */
   virtual void acquireDetachedVectorViewImpl(
-    const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
-    ) const;
+      const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec) const;
   /** \brief .
    *
    * This implementation is a companion to the implementation for the
@@ -225,8 +212,7 @@ protected:
    * must be overridden also!
    */
   virtual void releaseDetachedVectorViewImpl(
-    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
-    ) const;
+      RTOpPack::ConstSubVectorView<Scalar>* sub_vec) const;
   /** \brief .
    *
    * This implementation is based on a vector reduction operator class (see
@@ -241,8 +227,7 @@ protected:
    * implementation.
    */
   virtual void acquireNonconstDetachedVectorViewImpl(
-    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
-    );
+      const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec);
   /** \brief .
    *
    * This function has an implementation which is a companion to the
@@ -250,8 +235,7 @@ protected:
    * is overridden by a subclass then this function must be overridden also!
    */
   virtual void commitNonconstDetachedVectorViewImpl(
-    RTOpPack::SubVectorView<Scalar>* sub_vec
-    );
+      RTOpPack::SubVectorView<Scalar>* sub_vec);
   /** \brief .
    *
    * This implementation uses a transformation operator class (see
@@ -261,7 +245,7 @@ protected:
    * applications, this is entirely adequate.  For parallel applications this
    * may be bad!
    */
-  virtual void setSubVectorImpl( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec );
+  virtual void setSubVectorImpl(const RTOpPack::SparseSubVectorT<Scalar>& sub_vec);
 
   //@}
 
@@ -278,17 +262,15 @@ protected:
    * operator.
    */
   void applyImpl(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar>& X,
+      const Ptr<MultiVectorBase<Scalar> >& Y,
+      const Scalar alpha,
+      const Scalar beta) const;
 
   //@}
 
-private:
-
+ private:
   // /////////////////////////////////////
   // Private data members
 
@@ -298,13 +280,10 @@ private:
   // /////////////////////////////////////
   // Private member functions
 
-  void validateColRng( const Range1D &rowRng ) const;
-  void validateColIndexes( const ArrayView<const int> &cols ) const;
-
+  void validateColRng(const Range1D& rowRng) const;
+  void validateColIndexes(const ArrayView<const int>& cols) const;
 };
 
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 #endif  // THYRA_VECTOR_DEFAULT_BASE_DECL_HPP

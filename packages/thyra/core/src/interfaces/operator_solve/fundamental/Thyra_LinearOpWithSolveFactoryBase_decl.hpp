@@ -15,9 +15,7 @@
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Factory interface for creating <tt>LinearOpWithSolveBase</tt>
  * objects from compatible <tt>LinearOpBase</tt> objects.
@@ -340,12 +338,12 @@ namespace Thyra {
  * preconditioner input matrix, then the function
  * <tt>initializeAndReuseOp()</tt> can be called to reuse the internal
  * preconditioner but this is implementation defined.
- * 
+ *
  * \section LOWSFB_verbosity_level_sec Output and verbosity
  *
  * <b>TODO:</b> Provide some guidance on how clients and subclasses should
  * interpret Teuchos::EVerbLevel.
- * 
+ *
  * \section LOWSFB_developer_notes_sec Notes to subclass developers
  *
  * This interface assumes a minimal default set of functionality that is
@@ -368,14 +366,12 @@ namespace Thyra {
  * this is determined by the return value from
  * <tt>supportsPreconditionerInputType()</tt>.
  */
-template<class Scalar>
+template <class Scalar>
 class LinearOpWithSolveFactoryBase
-  : virtual public Teuchos::Describable, 
+  : virtual public Teuchos::Describable,
     virtual public Teuchos::VerboseObject<LinearOpWithSolveFactoryBase<Scalar> >,
-    virtual public Teuchos::ParameterListAcceptor
-{
-public:
-
+    virtual public Teuchos::ParameterListAcceptor {
+ public:
   /** @name Preconditioner Factory Management */
   //@{
 
@@ -407,9 +403,8 @@ public:
    * the default implementation <tt>acceptsPreconditionerFactory()==false</tt>.
    */
   virtual void setPreconditionerFactory(
-    const RCP<PreconditionerFactoryBase<Scalar> >  &precFactory,
-    const std::string &precFactoryName
-    );
+      const RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
+      const std::string &precFactoryName);
 
   /** \brief Get a preconditioner factory object.
    *
@@ -427,9 +422,8 @@ public:
    * The default implementation returns <tt>Teuchos::null</tt>.
    */
   virtual void unsetPreconditionerFactory(
-    RCP<PreconditionerFactoryBase<Scalar> >  *precFactory = NULL,
-    std::string *precFactoryName = NULL
-    );
+      RCP<PreconditionerFactoryBase<Scalar> > *precFactory = NULL,
+      std::string *precFactoryName                         = NULL);
 
   //@}
 
@@ -440,7 +434,7 @@ public:
    * <tt>*this</tt> factory object.
    */
   virtual bool isCompatible(
-    const LinearOpSourceBase<Scalar> &fwdOpSrc ) const = 0;
+      const LinearOpSourceBase<Scalar> &fwdOpSrc) const = 0;
 
   /** \brief Create an (uninitialized) <tt>LinearOpWithSolveBase</tt> object
    * to be initialized later in <tt>this->initializeOp()</tt>.
@@ -527,10 +521,9 @@ public:
    * </ul>
    */
   virtual void initializeOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    LinearOpWithSolveBase<Scalar> *Op,
-    const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
-    ) const = 0;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      LinearOpWithSolveBase<Scalar> *Op,
+      const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED) const = 0;
 
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" <tt>LinearOpBase</tt> object but allow for reuse of
@@ -599,9 +592,8 @@ public:
    * implementation.
    */
   virtual void initializeAndReuseOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    LinearOpWithSolveBase<Scalar> *Op
-    ) const;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      LinearOpWithSolveBase<Scalar> *Op) const;
 
   /** \brief Uninitialize a <tt>LinearOpWithSolveBase</tt> object and return
    * its remembered forward linear operator and potentially also its
@@ -663,13 +655,12 @@ public:
    * could be left in an inconsistent state.  However, this is not required.
    */
   virtual void uninitializeOp(
-    LinearOpWithSolveBase<Scalar> *Op,
-    RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc = NULL,
-    RCP<const PreconditionerBase<Scalar> > *prec = NULL,
-    RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc = NULL,
-    ESupportSolveUse *supportSolveUse = NULL
-    ) const = 0;
-  
+      LinearOpWithSolveBase<Scalar> *Op,
+      RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc       = NULL,
+      RCP<const PreconditionerBase<Scalar> > *prec           = NULL,
+      RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc = NULL,
+      ESupportSolveUse *supportSolveUse                      = NULL) const = 0;
+
   //@}
 
   /** @name Creation/Initialization of Preconditioned LinearOpWithSolveBase objects */
@@ -754,7 +745,7 @@ public:
    * <li><t>Op->solveTransposeSupportsConj(conj)==this->solveTransposeSupportsConj(conj)</tt>
    *
    * <li><tt>fwdOpSrc.count()</tt> after output is greater than <tt>fwdOpSrc.count()</tt>
-   *     just before this call and therefore the client can assume that the <tt>*fwdOpSrc</tt> object will 
+   *     just before this call and therefore the client can assume that the <tt>*fwdOpSrc</tt> object will
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
    *     not to modify the <tt>*fwdOpSrc</tt> object or else the <tt>*Op</tt> object may also
    *     be modified.
@@ -799,11 +790,10 @@ public:
    * that preconditioners can not be supported..
    */
   virtual void initializePreconditionedOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    const RCP<const PreconditionerBase<Scalar> > &prec,
-    LinearOpWithSolveBase<Scalar> *Op,
-    const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
-    ) const;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      const RCP<const PreconditionerBase<Scalar> > &prec,
+      LinearOpWithSolveBase<Scalar> *Op,
+      const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED) const;
 
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" forward <tt>LinearOpBase</tt> object and an
@@ -831,24 +821,19 @@ public:
    * ToDo: finish documentation!
    */
   virtual void initializeApproxPreconditionedOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-    LinearOpWithSolveBase<Scalar> *Op,
-    const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
-    ) const;
-  
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
+      LinearOpWithSolveBase<Scalar> *Op,
+      const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED) const;
+
   //@}
 
-private:
-  
+ private:
   // Not defined and not to be called
-  LinearOpWithSolveFactoryBase<Scalar>&
-  operator=(const LinearOpWithSolveFactoryBase<Scalar>&);
-
+  LinearOpWithSolveFactoryBase<Scalar> &
+  operator=(const LinearOpWithSolveFactoryBase<Scalar> &);
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_LINEAR_OP_WITH_SOLVE_FACTORY_BASE_DECL_HPP
+#endif  // THYRA_LINEAR_OP_WITH_SOLVE_FACTORY_BASE_DECL_HPP

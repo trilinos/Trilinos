@@ -18,6 +18,6 @@ namespace Thyra {
 
 TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(LinearOpDefaultBase)
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // HAVE_THYRA_EXPLICIT_INSTANTIATION
+#endif  // HAVE_THYRA_EXPLICIT_INSTANTIATION

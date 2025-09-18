@@ -18,11 +18,9 @@ namespace Thyra {
 /** \brief Default implementation of a <tt>LinearOpSourceBase</tt> that just
  * accepts and gives up a single linear operator object.
  */
-template<class Scalar>
-class DefaultLinearOpSource : virtual public LinearOpSourceBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class DefaultLinearOpSource : virtual public LinearOpSourceBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
@@ -33,26 +31,22 @@ public:
   /** \brief Construct with a non-const linear operator.
    */
   DefaultLinearOpSource(
-    const Teuchos::RCP<LinearOpBase<Scalar> >    &op
-    );
+      const Teuchos::RCP<LinearOpBase<Scalar> > &op);
 
   /** \brief Construct with a const linear operator.
    */
   DefaultLinearOpSource(
-    const Teuchos::RCP<const LinearOpBase<Scalar> >    &op
-    );
+      const Teuchos::RCP<const LinearOpBase<Scalar> > &op);
 
   /** \brief Initialize with a non-const linear operator.
    */
   void initialize(
-    const Teuchos::RCP<LinearOpBase<Scalar> >    &op
-    );
+      const Teuchos::RCP<LinearOpBase<Scalar> > &op);
 
   /** \brief Initialize with a const linear operator.
    */
   void initialize(
-    const Teuchos::RCP<const LinearOpBase<Scalar> >    &op
-    );
+      const Teuchos::RCP<const LinearOpBase<Scalar> > &op);
 
   /** \brief Uninitialize.
    *
@@ -75,11 +69,9 @@ public:
   /** \brief . */
   Teuchos::RCP<const LinearOpBase<Scalar> > getOp() const;
   //@}
-  
-private:
-  
-  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> >  op_;
-  
+
+ private:
+  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > op_;
 };
 
 // //////////////////////////////
@@ -93,12 +85,10 @@ private:
 template <class Scalar>
 Teuchos::RCP<const DefaultLinearOpSource<Scalar> >
 defaultLinearOpSource(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >    &op
-  )
-{
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &op) {
   return Teuchos::rcp(new DefaultLinearOpSource<Scalar>(op));
 }
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // THYRA_DEFUALT_LINEAR_OP_SOURCE_DECL_HPP
+#endif  // THYRA_DEFUALT_LINEAR_OP_SOURCE_DECL_HPP

@@ -10,7 +10,6 @@
 #ifndef THYRA_DEFAUL_LUMPED_PARAMETER_LUMPED_MODEL_EVALUATOR_HPP
 #define THYRA_DEFAUL_LUMPED_PARAMETER_LUMPED_MODEL_EVALUATOR_HPP
 
-
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_DetachedVectorView.hpp"
@@ -20,11 +19,9 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
 
-#include "sillyModifiedGramSchmidt.hpp" // This is just an example!
-
+#include "sillyModifiedGramSchmidt.hpp"  // This is just an example!
 
 namespace Thyra {
-
 
 /** \brief Decorator class that wraps any ModelEvaluator object and lumps
  * parameters together using a linear basis matrix.
@@ -36,7 +33,7 @@ namespace Thyra {
  * parameter subvectors of the underlying model
  * <tt>*getUnderlyingModel()</tt>.  This class provides an affine model for
  * the reduced parameters:
- 
+
  \verbatim
 
    p_orig = B * p + p_orig_base
@@ -118,7 +115,7 @@ namespace Thyra {
  *
  * To support the (overdetermined) mapping from <tt>p_orig</tt> to <tt>p</tt>,
  * we choose <tt>p</tt> to solve the classic linear least squares problem:
- 
+
  \verbatim
 
    min   0.5 * (B*p + p_orig_base - p_orig)^T * (B*p + p_orig_base - p_orig)
@@ -126,13 +123,13 @@ namespace Thyra {
  \endverbatim
 
  * This well known linear least squares problem has the solution:
- 
+
  \verbatim
 
    p = inv(B^T * B) * (B^T * (-p_orig_base+p_oirg))
 
  \endverbatim
- 
+
  * This approach has the unfortunate side effect that we can not completely
  * represent an arbitrary vector <tt>p_orig</tt> with a reduced <tt>p</tt> but
  * this is the nature of this approximation for both good and bad.
@@ -204,13 +201,11 @@ namespace Thyra {
  *
  * \ingroup Thyra_Nonlin_ME_support_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultLumpedParameterModelEvaluator
-  : virtual public ModelEvaluatorDelegatorBase<Scalar>
-  , virtual public Teuchos::ParameterListAcceptor
-{
-public:
-
+  : virtual public ModelEvaluatorDelegatorBase<Scalar>,
+    virtual public Teuchos::ParameterListAcceptor {
+ public:
   /** \name Constructors/initializers/accessors/utilities. */
   //@{
 
@@ -219,13 +214,11 @@ public:
 
   /** \brief . */
   void initialize(
-    const RCP<ModelEvaluator<Scalar> > &thyraModel
-    );
+      const RCP<ModelEvaluator<Scalar> > &thyraModel);
 
   /** \brief . */
   void uninitialize(
-    RCP<ModelEvaluator<Scalar> > *thyraModel
-    );
+      RCP<ModelEvaluator<Scalar> > *thyraModel);
 
   // 2007/07/30: rabartl: ToDo: Add functions to set and get the underlying
   // basis matrix!
@@ -244,7 +237,7 @@ public:
   //@{
 
   /** \brief .  */
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(RCP<Teuchos::ParameterList> const &paramList);
   /** \brief . */
   RCP<Teuchos::ParameterList> getNonconstParameterList();
   /** \brief . */
@@ -271,14 +264,12 @@ public:
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief . */
   void reportFinalPoint(
-    const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
-    const bool wasSolved
-    );
+      const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+      const bool wasSolved);
 
   //@}
 
-private:
-
+ private:
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
 
@@ -286,14 +277,12 @@ private:
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
   void evalModelImpl(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
+      const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
 
-private:
-
+ private:
   // ////////////////////////////////
   // Private data members
 
@@ -361,292 +350,239 @@ private:
 
   // Map from p -> p_orig.
   RCP<VectorBase<Scalar> >
-  map_from_p_to_p_orig( const VectorBase<Scalar> &p ) const;
+  map_from_p_to_p_orig(const VectorBase<Scalar> &p) const;
 
   // Set up the arguments for DhDp_orig to be computed by the underlying model.
   void setupWrappedParamDerivOutArgs(
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs, // in
-    ModelEvaluatorBase::OutArgs<Scalar> *wrappedOutArgs // in/out
-    ) const;
+      const ModelEvaluatorBase::OutArgs<Scalar> &outArgs,  // in
+      ModelEvaluatorBase::OutArgs<Scalar> *wrappedOutArgs  // in/out
+  ) const;
 
   // Create DhDp_orig needed to assembled DhDp
   ModelEvaluatorBase::Derivative<Scalar>
   create_deriv_wrt_p_orig(
-    const ModelEvaluatorBase::Derivative<Scalar> &DhDp,
-    const ModelEvaluatorBase::EDerivativeMultiVectorOrientation requiredOrientation
-    ) const;
+      const ModelEvaluatorBase::Derivative<Scalar> &DhDp,
+      const ModelEvaluatorBase::EDerivativeMultiVectorOrientation requiredOrientation) const;
 
   // After DhDp_orig has been computed, assemble DhDp or DhDp^T for all deriv
   // output arguments.
   void assembleParamDerivOutArgs(
-    const ModelEvaluatorBase::OutArgs<Scalar> &wrappedOutArgs, // in
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs // in/out
-    ) const;
+      const ModelEvaluatorBase::OutArgs<Scalar> &wrappedOutArgs,  // in
+      const ModelEvaluatorBase::OutArgs<Scalar> &outArgs          // in/out
+  ) const;
 
   // Given a single DhDp_orig, assemble DhDp
   void assembleParamDeriv(
-    const ModelEvaluatorBase::Derivative<Scalar> &DhDp_orig, // in
-    const ModelEvaluatorBase::Derivative<Scalar> &DhDp // in/out
-    ) const;
-
+      const ModelEvaluatorBase::Derivative<Scalar> &DhDp_orig,  // in
+      const ModelEvaluatorBase::Derivative<Scalar> &DhDp        // in/out
+  ) const;
 };
-
 
 /** \brief Non-member constructor.
  *
  * \relates DefaultLumpedParameterModelEvaluator
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultLumpedParameterModelEvaluator<Scalar> >
 defaultLumpedParameterModelEvaluator(
-  const RCP<ModelEvaluator<Scalar> > &thyraModel
-  )
-{
+    const RCP<ModelEvaluator<Scalar> > &thyraModel) {
   RCP<DefaultLumpedParameterModelEvaluator<Scalar> >
-    paramLumpedModel = Teuchos::rcp(new DefaultLumpedParameterModelEvaluator<Scalar>);
+      paramLumpedModel = Teuchos::rcp(new DefaultLumpedParameterModelEvaluator<Scalar>);
   paramLumpedModel->initialize(thyraModel);
   return paramLumpedModel;
 }
 
-
 // /////////////////////////////////
 // Implementations
 
-
 // Static data members
 
-
-template<class Scalar>
+template <class Scalar>
 const std::string
-DefaultLumpedParameterModelEvaluator<Scalar>::ParameterSubvectorIndex_name_
-= "Parameter Subvector Index";
+    DefaultLumpedParameterModelEvaluator<Scalar>::ParameterSubvectorIndex_name_ = "Parameter Subvector Index";
 
-template<class Scalar>
+template <class Scalar>
 const int
-DefaultLumpedParameterModelEvaluator<Scalar>::ParameterSubvectorIndex_default_
-= 0;
+    DefaultLumpedParameterModelEvaluator<Scalar>::ParameterSubvectorIndex_default_ = 0;
 
-
-template<class Scalar>
+template <class Scalar>
 const std::string
-DefaultLumpedParameterModelEvaluator<Scalar>::AutogenerateBasisMatrix_name_
-= "Auto-generate Basis Matrix";
+    DefaultLumpedParameterModelEvaluator<Scalar>::AutogenerateBasisMatrix_name_ = "Auto-generate Basis Matrix";
 
-template<class Scalar>
+template <class Scalar>
 const bool
-DefaultLumpedParameterModelEvaluator<Scalar>::AutogenerateBasisMatrix_default_
-= true;
+    DefaultLumpedParameterModelEvaluator<Scalar>::AutogenerateBasisMatrix_default_ = true;
 
-
-template<class Scalar>
+template <class Scalar>
 const std::string
-DefaultLumpedParameterModelEvaluator<Scalar>::NumberOfBasisColumns_name_
-= "Number of Basis Columns";
+    DefaultLumpedParameterModelEvaluator<Scalar>::NumberOfBasisColumns_name_ = "Number of Basis Columns";
 
-template<class Scalar>
+template <class Scalar>
 const int
-DefaultLumpedParameterModelEvaluator<Scalar>::NumberOfBasisColumns_default_
-= 1;
+    DefaultLumpedParameterModelEvaluator<Scalar>::NumberOfBasisColumns_default_ = 1;
 
-
-template<class Scalar>
+template <class Scalar>
 const std::string
-DefaultLumpedParameterModelEvaluator<Scalar>::NominalValueIsParameterBase_name_
-= "Nominal Value is Parameter Base";
+    DefaultLumpedParameterModelEvaluator<Scalar>::NominalValueIsParameterBase_name_ = "Nominal Value is Parameter Base";
 
-template<class Scalar>
+template <class Scalar>
 const bool
-DefaultLumpedParameterModelEvaluator<Scalar>::NominalValueIsParameterBase_default_
-= true;
+    DefaultLumpedParameterModelEvaluator<Scalar>::NominalValueIsParameterBase_default_ = true;
 
-
-template<class Scalar>
+template <class Scalar>
 const std::string
-DefaultLumpedParameterModelEvaluator<Scalar>::ParameterBaseVector_name_
-= "Parameter Base Vector";
+    DefaultLumpedParameterModelEvaluator<Scalar>::ParameterBaseVector_name_ = "Parameter Base Vector";
 
-
-template<class Scalar>
+template <class Scalar>
 const std::string
-DefaultLumpedParameterModelEvaluator<Scalar>::IgnoreParameterBounds_name_
-= "Ignore Parameter Bounds";
+    DefaultLumpedParameterModelEvaluator<Scalar>::IgnoreParameterBounds_name_ = "Ignore Parameter Bounds";
 
-template<class Scalar>
+template <class Scalar>
 const bool
-DefaultLumpedParameterModelEvaluator<Scalar>::IgnoreParameterBounds_default_
-= false;
+    DefaultLumpedParameterModelEvaluator<Scalar>::IgnoreParameterBounds_default_ = false;
 
-
-template<class Scalar>
+template <class Scalar>
 const std::string
-DefaultLumpedParameterModelEvaluator<Scalar>::DumpBasisMatrix_name_
-= "Dump Basis Matrix";
+    DefaultLumpedParameterModelEvaluator<Scalar>::DumpBasisMatrix_name_ = "Dump Basis Matrix";
 
-template<class Scalar>
+template <class Scalar>
 const bool
-DefaultLumpedParameterModelEvaluator<Scalar>::DumpBasisMatrix_default_
-= false;
-
+    DefaultLumpedParameterModelEvaluator<Scalar>::DumpBasisMatrix_default_ = false;
 
 // Constructors/initializers/accessors/utilities
 
-
-template<class Scalar>
+template <class Scalar>
 DefaultLumpedParameterModelEvaluator<Scalar>::DefaultLumpedParameterModelEvaluator()
-  :isInitialized_(false),
-   nominalValuesAndBoundsUpdated_(false),
-   p_idx_(ParameterSubvectorIndex_default_),
-   autogenerateBasisMatrix_(AutogenerateBasisMatrix_default_),
-   numberOfBasisColumns_(NumberOfBasisColumns_default_),
-   nominalValueIsParameterBase_(NominalValueIsParameterBase_default_),
-   ignoreParameterBounds_(IgnoreParameterBounds_default_),
-   localVerbLevel_(Teuchos::VERB_DEFAULT),
-   dumpBasisMatrix_(DumpBasisMatrix_default_)
-{}
+  : isInitialized_(false)
+  , nominalValuesAndBoundsUpdated_(false)
+  , p_idx_(ParameterSubvectorIndex_default_)
+  , autogenerateBasisMatrix_(AutogenerateBasisMatrix_default_)
+  , numberOfBasisColumns_(NumberOfBasisColumns_default_)
+  , nominalValueIsParameterBase_(NominalValueIsParameterBase_default_)
+  , ignoreParameterBounds_(IgnoreParameterBounds_default_)
+  , localVerbLevel_(Teuchos::VERB_DEFAULT)
+  , dumpBasisMatrix_(DumpBasisMatrix_default_) {}
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultLumpedParameterModelEvaluator<Scalar>::initialize(
-  const RCP<ModelEvaluator<Scalar> > &thyraModel
-  )
-{
-  isInitialized_ = false;
+    const RCP<ModelEvaluator<Scalar> > &thyraModel) {
+  isInitialized_                 = false;
   nominalValuesAndBoundsUpdated_ = false;
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultLumpedParameterModelEvaluator<Scalar>::uninitialize(
-  RCP<ModelEvaluator<Scalar> > *thyraModel
-  )
-{
+    RCP<ModelEvaluator<Scalar> > *thyraModel) {
   isInitialized_ = false;
-  if(thyraModel) *thyraModel = this->getUnderlyingModel();
+  if (thyraModel) *thyraModel = this->getUnderlyingModel();
   this->ModelEvaluatorDelegatorBase<Scalar>::uninitialize();
 }
 
-
 // Public functions overridden from Teuchos::Describable
 
-
-template<class Scalar>
+template <class Scalar>
 std::string
-DefaultLumpedParameterModelEvaluator<Scalar>::description() const
-{
+DefaultLumpedParameterModelEvaluator<Scalar>::description() const {
   const RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
+      thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
   oss << "Thyra::DefaultLumpedParameterModelEvaluator{";
   oss << "thyraModel=";
-  if(thyraModel.get())
-    oss << "\'"<<thyraModel->description()<<"\'";
+  if (thyraModel.get())
+    oss << "\'" << thyraModel->description() << "\'";
   else
     oss << "NULL";
   oss << "}";
   return oss.str();
 }
 
-
 // Overridden from Teuchos::ParameterListAcceptor
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultLumpedParameterModelEvaluator<Scalar>::setParameterList(
-  RCP<Teuchos::ParameterList> const& paramList
-  )
-{
-
+    RCP<Teuchos::ParameterList> const &paramList) {
   using Teuchos::getParameterPtr;
   using Teuchos::rcp;
   using Teuchos::sublist;
 
-  isInitialized_ = false;
+  isInitialized_                 = false;
   nominalValuesAndBoundsUpdated_ = false;
 
   // Validate and set the parameter list
   TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
-  paramList->validateParameters(*getValidParameters(),0);
+  paramList->validateParameters(*getValidParameters(), 0);
   paramList_ = paramList;
 
   // Read in parameters
   p_idx_ = paramList_->get(
-    ParameterSubvectorIndex_name_, ParameterSubvectorIndex_default_ );
+      ParameterSubvectorIndex_name_, ParameterSubvectorIndex_default_);
   autogenerateBasisMatrix_ = paramList_->get(
-    AutogenerateBasisMatrix_name_, AutogenerateBasisMatrix_default_ );
+      AutogenerateBasisMatrix_name_, AutogenerateBasisMatrix_default_);
   if (autogenerateBasisMatrix_) {
     numberOfBasisColumns_ = paramList_->get(
-      NumberOfBasisColumns_name_, NumberOfBasisColumns_default_ );
+        NumberOfBasisColumns_name_, NumberOfBasisColumns_default_);
   }
   nominalValueIsParameterBase_ = paramList_->get(
-    NominalValueIsParameterBase_name_, NominalValueIsParameterBase_default_ );
+      NominalValueIsParameterBase_name_, NominalValueIsParameterBase_default_);
   if (!nominalValueIsParameterBase_) {
     TEUCHOS_TEST_FOR_EXCEPT("ToDo: Implement reading parameter base vector from file!");
   }
   ignoreParameterBounds_ = paramList_->get(
-    IgnoreParameterBounds_name_, IgnoreParameterBounds_default_ );
+      IgnoreParameterBounds_name_, IgnoreParameterBounds_default_);
   dumpBasisMatrix_ = paramList_->get(
-    DumpBasisMatrix_name_, DumpBasisMatrix_default_ );
+      DumpBasisMatrix_name_, DumpBasisMatrix_default_);
 
   // Verbosity settings
   localVerbLevel_ = this->readLocalVerbosityLevelValidatedParameter(*paramList_);
-  Teuchos::readVerboseObjectSublist(&*paramList_,this);
+  Teuchos::readVerboseObjectSublist(&*paramList_, this);
 
 #ifdef TEUCHOS_DEBUG
-  paramList_->validateParameters(*getValidParameters(),0);
+  paramList_->validateParameters(*getValidParameters(), 0);
 #endif
-
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<Teuchos::ParameterList>
-DefaultLumpedParameterModelEvaluator<Scalar>::getNonconstParameterList()
-{
+DefaultLumpedParameterModelEvaluator<Scalar>::getNonconstParameterList() {
   return paramList_;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<Teuchos::ParameterList>
-DefaultLumpedParameterModelEvaluator<Scalar>::unsetParameterList()
-{
+DefaultLumpedParameterModelEvaluator<Scalar>::unsetParameterList() {
   RCP<Teuchos::ParameterList> _paramList = paramList_;
-  paramList_ = Teuchos::null;
+  paramList_                             = Teuchos::null;
   return _paramList;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const Teuchos::ParameterList>
-DefaultLumpedParameterModelEvaluator<Scalar>::getParameterList() const
-{
+DefaultLumpedParameterModelEvaluator<Scalar>::getParameterList() const {
   return paramList_;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const Teuchos::ParameterList>
-DefaultLumpedParameterModelEvaluator<Scalar>::getValidParameters() const
-{
-  if(validParamList_.get()==NULL) {
+DefaultLumpedParameterModelEvaluator<Scalar>::getValidParameters() const {
+  if (validParamList_.get() == NULL) {
     RCP<Teuchos::ParameterList>
-      pl = Teuchos::rcp(new Teuchos::ParameterList());
-    pl->set( ParameterSubvectorIndex_name_, ParameterSubvectorIndex_default_,
-      "Determines the index of the parameter subvector in the underlying model\n"
-      "for which the reduced basis representation will be determined." );
-    pl->set( AutogenerateBasisMatrix_name_, AutogenerateBasisMatrix_default_,
-      "If true, then a basis matrix will be auto-generated for a given number\n"
-      " of basis vectors." );
-    pl->set( NumberOfBasisColumns_name_, NumberOfBasisColumns_default_,
-      "If a basis is auto-generated, then this parameter gives the number\n"
-      "of columns in the basis matrix that will be created.  Warning!  This\n"
-      "number must be less than or equal to the number of original parameters\n"
-      "or an exception will be thrown!" );
-    pl->set( NominalValueIsParameterBase_name_, NominalValueIsParameterBase_default_,
-      "If true, then the nominal values for the full parameter subvector from the\n"
-      "underlying model will be used for p_orig_base.  This allows p==0 to give\n"
-      "the nominal values for the parameters." );
+        pl = Teuchos::rcp(new Teuchos::ParameterList());
+    pl->set(ParameterSubvectorIndex_name_, ParameterSubvectorIndex_default_,
+            "Determines the index of the parameter subvector in the underlying model\n"
+            "for which the reduced basis representation will be determined.");
+    pl->set(AutogenerateBasisMatrix_name_, AutogenerateBasisMatrix_default_,
+            "If true, then a basis matrix will be auto-generated for a given number\n"
+            " of basis vectors.");
+    pl->set(NumberOfBasisColumns_name_, NumberOfBasisColumns_default_,
+            "If a basis is auto-generated, then this parameter gives the number\n"
+            "of columns in the basis matrix that will be created.  Warning!  This\n"
+            "number must be less than or equal to the number of original parameters\n"
+            "or an exception will be thrown!");
+    pl->set(NominalValueIsParameterBase_name_, NominalValueIsParameterBase_default_,
+            "If true, then the nominal values for the full parameter subvector from the\n"
+            "underlying model will be used for p_orig_base.  This allows p==0 to give\n"
+            "the nominal values for the parameters.");
     /*
     if(this->get_parameterBaseIO().get())
       parameterBaseReader_.set_fileIO(this->get_parameterBaseIO());
@@ -654,12 +590,12 @@ DefaultLumpedParameterModelEvaluator<Scalar>::getValidParameters() const
       *parameterBaseReader_.getValidParameters()
       );
     */
-    pl->set( IgnoreParameterBounds_name_, IgnoreParameterBounds_default_,
-      "If true, then any bounds on the parameter subvector will be ignored." );
-    pl->set( DumpBasisMatrix_name_, DumpBasisMatrix_default_,
-      "If true, then the basis matrix will be printed the first time it is created\n"
-      "as part of the verbose output and as part of the Describable::describe(...)\n"
-      "output for any verbositiy level >= \"low\"." );
+    pl->set(IgnoreParameterBounds_name_, IgnoreParameterBounds_default_,
+            "If true, then any bounds on the parameter subvector will be ignored.");
+    pl->set(DumpBasisMatrix_name_, DumpBasisMatrix_default_,
+            "If true, then the basis matrix will be printed the first time it is created\n"
+            "as part of the verbose output and as part of the Describable::describe(...)\n"
+            "output for any verbositiy level >= \"low\".");
     this->setLocalVerbosityLevelValidatedParameter(&*pl);
     Teuchos::setupVerboseObjectSublist(&*pl);
     validParamList_ = pl;
@@ -667,73 +603,58 @@ DefaultLumpedParameterModelEvaluator<Scalar>::getValidParameters() const
   return validParamList_;
 }
 
-
 // Overridden from ModelEvaulator.
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const VectorSpaceBase<Scalar> >
-DefaultLumpedParameterModelEvaluator<Scalar>::get_p_space(int l) const
-{
+DefaultLumpedParameterModelEvaluator<Scalar>::get_p_space(int l) const {
   finishInitialization();
   if (l == p_idx_)
     return B_->domain();
   return this->getUnderlyingModel()->get_p_space(l);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const Array<std::string> >
-DefaultLumpedParameterModelEvaluator<Scalar>::get_p_names(int l) const
-{
+DefaultLumpedParameterModelEvaluator<Scalar>::get_p_names(int l) const {
   finishInitialization();
   if (l == p_idx_)
-    return Teuchos::null; // Names for these parameters would be meaningless!
+    return Teuchos::null;  // Names for these parameters would be meaningless!
   return this->getUnderlyingModel()->get_p_names(l);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
-DefaultLumpedParameterModelEvaluator<Scalar>::getNominalValues() const
-{
+DefaultLumpedParameterModelEvaluator<Scalar>::getNominalValues() const {
   updateNominalValuesAndBounds();
   return nominalValues_;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
-DefaultLumpedParameterModelEvaluator<Scalar>::getLowerBounds() const
-{
+DefaultLumpedParameterModelEvaluator<Scalar>::getLowerBounds() const {
   updateNominalValuesAndBounds();
   return lowerBounds_;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
-DefaultLumpedParameterModelEvaluator<Scalar>::getUpperBounds() const
-{
+DefaultLumpedParameterModelEvaluator<Scalar>::getUpperBounds() const {
   updateNominalValuesAndBounds();
   return upperBounds_;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultLumpedParameterModelEvaluator<Scalar>::reportFinalPoint(
-  const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
-  const bool wasSolved
-  )
-{
-
+    const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+    const bool wasSolved) {
   typedef ModelEvaluatorBase MEB;
 
   // Make sure that everything has been initialized
   updateNominalValuesAndBounds();
 
   const RCP<ModelEvaluator<Scalar> >
-    thyraModel = this->getNonconstUnderlyingModel();
+      thyraModel = this->getNonconstUnderlyingModel();
 
   // By default, copy all input arguments since they will all be the same
   // except for the given reduced p.  We will then replace the reduced p with
@@ -743,24 +664,20 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::reportFinalPoint(
 
   // Replace p with p_orig.
   RCP<const VectorBase<Scalar> > p;
-  if (!is_null(p=finalPoint.get_p(p_idx_))) {
+  if (!is_null(p = finalPoint.get_p(p_idx_))) {
     wrappedFinalPoint.set_p(p_idx_, map_from_p_to_p_orig(*p));
   }
 
-  thyraModel->reportFinalPoint(wrappedFinalPoint,wasSolved);
-
+  thyraModel->reportFinalPoint(wrappedFinalPoint, wasSolved);
 }
-
 
 // Private functions overridden from ModelEvaulatorDefaultBase
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
-DefaultLumpedParameterModelEvaluator<Scalar>::createOutArgsImpl() const
-{
+DefaultLumpedParameterModelEvaluator<Scalar>::createOutArgsImpl() const {
   ModelEvaluatorBase::OutArgsSetup<Scalar>
-    outArgs = this->getUnderlyingModel()->createOutArgs();
+      outArgs = this->getUnderlyingModel()->createOutArgs();
   outArgs.setModelEvalDescription(this->description());
   return outArgs;
   // 2007/07/31: rabartl: ToDo: We need to manually set the forms of the
@@ -768,24 +685,20 @@ DefaultLumpedParameterModelEvaluator<Scalar>::createOutArgsImpl() const
   // on tests of what the forms of derivatives the underlying model supports.
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultLumpedParameterModelEvaluator<Scalar>::evalModelImpl(
-  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-  ) const
-{
-
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const {
   // This routine is pretty simple for the most part.  By default, we just
   // pass everything through to the underlying model evaluator except for
   // arguments reated to the parameter subvector with index
   // p_idx_.
 
+  using Teuchos::OSTab;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
-  using Teuchos::OSTab;
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef ModelEvaluatorBase MEB;
 
@@ -793,8 +706,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::evalModelImpl(
   updateNominalValuesAndBounds();
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_LOCALVERBLEVEL_BEGIN(
-    "Thyra::DefaultLumpedParameterModelEvaluator",inArgs,outArgs,localVerbLevel_
-    );
+      "Thyra::DefaultLumpedParameterModelEvaluator", inArgs, outArgs, localVerbLevel_);
 
   //
   // A) Setup InArgs
@@ -805,18 +717,15 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::evalModelImpl(
   // p_orig below.
   MEB::InArgs<Scalar> wrappedInArgs = thyraModel->createInArgs();
   wrappedInArgs.setArgs(inArgs);
-  
+
   // Replace p with p_orig.
   RCP<const VectorBase<Scalar> > p;
-  if (!is_null(p=wrappedInArgs.get_p(p_idx_))) {
+  if (!is_null(p = wrappedInArgs.get_p(p_idx_))) {
     if (
-      dumpBasisMatrix_
-      && includesVerbLevel(localVerbLevel,Teuchos::VERB_MEDIUM)
-      )
-    {
-      *out << "\nB = " << Teuchos::describe(*B_,Teuchos::VERB_EXTREME);
+        dumpBasisMatrix_ && includesVerbLevel(localVerbLevel, Teuchos::VERB_MEDIUM)) {
+      *out << "\nB = " << Teuchos::describe(*B_, Teuchos::VERB_EXTREME);
     }
-    wrappedInArgs.set_p(p_idx_,map_from_p_to_p_orig(*p));
+    wrappedInArgs.set_p(p_idx_, map_from_p_to_p_orig(*p));
   }
 
   //
@@ -832,17 +741,17 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::evalModelImpl(
 
   // Set derivative output arguments for p_orig if derivatives for p are
   // reqeusted in outArgs
-  setupWrappedParamDerivOutArgs(outArgs,&wrappedOutArgs);
+  setupWrappedParamDerivOutArgs(outArgs, &wrappedOutArgs);
 
   //
   // C) Evaluate the underlying model functions
   //
 
-  if (includesVerbLevel(localVerbLevel,Teuchos::VERB_LOW))
+  if (includesVerbLevel(localVerbLevel, Teuchos::VERB_LOW))
     *out << "\nEvaluating the fully parameterized underlying model ...\n";
   // Compute the underlying functions in terms of p_orig, including
   // derivatives w.r.t. p_orig.
-  thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
+  thyraModel->evalModel(wrappedInArgs, wrappedOutArgs);
 
   //
   // D) Postprocess the output arguments
@@ -850,20 +759,15 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::evalModelImpl(
 
   // Assemble the derivatives for p given derivatives for p_orig computed
   // above.
-  assembleParamDerivOutArgs(wrappedOutArgs,outArgs);
-  
-  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
-  
-}
+  assembleParamDerivOutArgs(wrappedOutArgs, outArgs);
 
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
+}
 
 // private
 
-
-template<class Scalar>
-void DefaultLumpedParameterModelEvaluator<Scalar>::finishInitialization() const
-{
-
+template <class Scalar>
+void DefaultLumpedParameterModelEvaluator<Scalar>::finishInitialization() const {
   typedef ScalarTraits<Scalar> ST;
   typedef ModelEvaluatorBase MEB;
 
@@ -875,11 +779,11 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::finishInitialization() const
   //
 
   const RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
+      thyraModel = this->getUnderlyingModel();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    is_null(thyraModel), std::logic_error,
-    "Error, the underlying model evaluator must be set!" );
+      is_null(thyraModel), std::logic_error,
+      "Error, the underlying model evaluator must be set!");
 
   //
   // B) Create B for the reduced affine model for the given parameter subvector
@@ -887,38 +791,34 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::finishInitialization() const
 
   if (autogenerateBasisMatrix_) {
     generateParameterBasisMatrix();
-  }
-  else {
+  } else {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Error, we don't handle a client-set parameter basis matrix yet!" );
+        true, std::logic_error,
+        "Error, we don't handle a client-set parameter basis matrix yet!");
   }
 
   isInitialized_ = true;
-
 }
 
-
-template<class Scalar>
-void DefaultLumpedParameterModelEvaluator<Scalar>::generateParameterBasisMatrix() const
-{
-
+template <class Scalar>
+void DefaultLumpedParameterModelEvaluator<Scalar>::generateParameterBasisMatrix() const {
   using Teuchos::as;
   typedef ScalarTraits<Scalar> ST;
 
   const RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
+      thyraModel = this->getUnderlyingModel();
 
   const RCP<const VectorSpaceBase<Scalar> >
-    p_orig_space = thyraModel->get_p_space(p_idx_);
+      p_orig_space = thyraModel->get_p_space(p_idx_);
 
   const Ordinal p_orig_dim = p_orig_space->dim();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    !( 1 <= numberOfBasisColumns_ && numberOfBasisColumns_ <= p_orig_dim ),
-    std::logic_error,
-    "Error, the number of basis columns = " << numberOfBasisColumns_ << " does not\n"
-    "fall in the range [1,"<<p_orig_dim<<"]!" );
+      !(1 <= numberOfBasisColumns_ && numberOfBasisColumns_ <= p_orig_dim),
+      std::logic_error,
+      "Error, the number of basis columns = " << numberOfBasisColumns_ << " does not\n"
+                                                                          "fall in the range [1,"
+                                              << p_orig_dim << "]!");
 
   //
   // Create and randomize B
@@ -930,12 +830,12 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::generateParameterBasisMatrix(
   // are finished.
 
   const RCP<MultiVectorBase<Scalar> >
-    B = createMembers(p_orig_space,numberOfBasisColumns_);
-  assign( B->col(0).ptr(), ST::one() );
+      B = createMembers(p_orig_space, numberOfBasisColumns_);
+  assign(B->col(0).ptr(), ST::one());
   if (numberOfBasisColumns_ > 1) {
     seed_randomize<double>(0);
-    Thyra::randomize( as<Scalar>(0.5*ST::one()), as<Scalar>(1.5*ST::one()),
-      B.ptr() );
+    Thyra::randomize(as<Scalar>(0.5 * ST::one()), as<Scalar>(1.5 * ST::one()),
+                     B.ptr());
   }
 
   //
@@ -943,21 +843,17 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::generateParameterBasisMatrix(
   //
 
   RCP<MultiVectorBase<double> > R;
-  sillyModifiedGramSchmidt( B.ptr(), Teuchos::outArg(R) );
+  sillyModifiedGramSchmidt(B.ptr(), Teuchos::outArg(R));
 
   // Above:
   // 1) On output, B will have orthonomal columns which makes it a good basis
-  // 2) We just discard the "R" factor since we don't need it for anything 
+  // 2) We just discard the "R" factor since we don't need it for anything
 
   B_ = B;
-
 }
 
-
-template<class Scalar>
-void DefaultLumpedParameterModelEvaluator<Scalar>::updateNominalValuesAndBounds() const
-{
-
+template <class Scalar>
+void DefaultLumpedParameterModelEvaluator<Scalar>::updateNominalValuesAndBounds() const {
   typedef ScalarTraits<Scalar> ST;
   typedef ModelEvaluatorBase MEB;
 
@@ -967,44 +863,42 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::updateNominalValuesAndBounds(
   finishInitialization();
 
   const RCP<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
+      thyraModel = this->getUnderlyingModel();
 
   const MEB::InArgs<Scalar> origNominalValues = thyraModel->getNominalValues();
-  const MEB::InArgs<Scalar> origLowerBounds = thyraModel->getLowerBounds();
-  const MEB::InArgs<Scalar> origUpperBounds = thyraModel->getUpperBounds();
+  const MEB::InArgs<Scalar> origLowerBounds   = thyraModel->getLowerBounds();
+  const MEB::InArgs<Scalar> origUpperBounds   = thyraModel->getUpperBounds();
 
   // p_orig_base
 
   if (nominalValueIsParameterBase_) {
     const RCP<const VectorBase<Scalar> >
-      p_orig_init = origNominalValues.get_p(p_idx_);
+        p_orig_init = origNominalValues.get_p(p_idx_);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      is_null(p_orig_init), std::logic_error,
-      "Error, if the user requested that the nominal values be used\n"
-      "as the base vector p_orig_base then that vector has to exist!" );
+        is_null(p_orig_init), std::logic_error,
+        "Error, if the user requested that the nominal values be used\n"
+        "as the base vector p_orig_base then that vector has to exist!");
     p_orig_base_ = p_orig_init->clone_v();
-  }
-  else {
+  } else {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Error, we don't handle reading in the parameter base vector yet!" );
+        true, std::logic_error,
+        "Error, we don't handle reading in the parameter base vector yet!");
   }
 
   // Nominal values
 
   nominalValues_ = origNominalValues;
-  
+
   if (nominalValueIsParameterBase_) {
     // A value of p==0 will give p_orig = p_orig_init!
     const RCP<VectorBase<Scalar> >
-      p_init = createMember(B_->domain());
-    assign( p_init.ptr(), ST::zero() );
+        p_init = createMember(B_->domain());
+    assign(p_init.ptr(), ST::zero());
     nominalValues_.set_p(p_idx_, p_init);
-  }
-  else {
+  } else {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error,
-      "Error, we don't handle creating p_init when p_orig_base != p_orig_init yet!" );
+        true, std::logic_error,
+        "Error, we don't handle creating p_init when p_orig_base != p_orig_init yet!");
   }
 
   // Bounds
@@ -1012,166 +906,145 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::updateNominalValuesAndBounds(
   lowerBounds_ = origLowerBounds;
   upperBounds_ = origUpperBounds;
 
-  lowerBounds_.set_p(p_idx_,Teuchos::null);
-  upperBounds_.set_p(p_idx_,Teuchos::null);
+  lowerBounds_.set_p(p_idx_, Teuchos::null);
+  upperBounds_.set_p(p_idx_, Teuchos::null);
 
   if (!ignoreParameterBounds_) {
     const RCP<const VectorBase<Scalar> >
-      p_orig_l = origLowerBounds.get_p(p_idx_),
-      p_orig_u = origUpperBounds.get_p(p_idx_);
-    if ( !is_null(p_orig_l) || !is_null(p_orig_u) ) {
+        p_orig_l = origLowerBounds.get_p(p_idx_),
+        p_orig_u = origUpperBounds.get_p(p_idx_);
+    if (!is_null(p_orig_l) || !is_null(p_orig_u)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::logic_error,
-        "Error, we don't handle bounds on p_orig yet!" );
+          true, std::logic_error,
+          "Error, we don't handle bounds on p_orig yet!");
     }
   }
 
   nominalValuesAndBoundsUpdated_ = true;
-
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<VectorBase<Scalar> >
 DefaultLumpedParameterModelEvaluator<Scalar>::map_from_p_to_p_orig(
-  const VectorBase<Scalar> &p
-  ) const
-{
+    const VectorBase<Scalar> &p) const {
   // p_orig = B*p + p_orig_base
   const RCP<VectorBase<Scalar> > p_orig = createMember(B_->range());
-  apply( *B_, NOTRANS, p, p_orig.ptr() );
-  Vp_V( p_orig.ptr(), *p_orig_base_ );
+  apply(*B_, NOTRANS, p, p_orig.ptr());
+  Vp_V(p_orig.ptr(), *p_orig_base_);
   return p_orig;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultLumpedParameterModelEvaluator<Scalar>::setupWrappedParamDerivOutArgs(
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs, // in
-  ModelEvaluatorBase::OutArgs<Scalar> *wrappedOutArgs_inout // in/out
-  ) const
-{
-
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs,        // in
+    ModelEvaluatorBase::OutArgs<Scalar> *wrappedOutArgs_inout  // in/out
+) const {
   typedef ModelEvaluatorBase MEB;
   typedef MEB::Derivative<Scalar> Deriv;
 
-  TEUCHOS_TEST_FOR_EXCEPT(wrappedOutArgs_inout==0);
+  TEUCHOS_TEST_FOR_EXCEPT(wrappedOutArgs_inout == 0);
   MEB::OutArgs<Scalar> &wrappedOutArgs = *wrappedOutArgs_inout;
-    
+
   Deriv DfDp;
-  if ( !(DfDp=outArgs.get_DfDp(p_idx_)).isEmpty() ) {
-    wrappedOutArgs.set_DfDp(p_idx_,create_deriv_wrt_p_orig(DfDp,MEB::DERIV_MV_BY_COL));
+  if (!(DfDp = outArgs.get_DfDp(p_idx_)).isEmpty()) {
+    wrappedOutArgs.set_DfDp(p_idx_, create_deriv_wrt_p_orig(DfDp, MEB::DERIV_MV_BY_COL));
   }
 
   const int Ng = outArgs.Ng();
-  for ( int j = 0; j < Ng; ++j ) {
+  for (int j = 0; j < Ng; ++j) {
     Deriv DgDp;
-    if ( !(DgDp=outArgs.get_DgDp(j,p_idx_)).isEmpty() ) {
+    if (!(DgDp = outArgs.get_DgDp(j, p_idx_)).isEmpty()) {
       wrappedOutArgs.set_DgDp(
-        j, p_idx_,
-        create_deriv_wrt_p_orig(DgDp,DgDp.getMultiVectorOrientation())
-        );
+          j, p_idx_,
+          create_deriv_wrt_p_orig(DgDp, DgDp.getMultiVectorOrientation()));
     }
   }
-
 }
 
-
-template<class Scalar>
+template <class Scalar>
 ModelEvaluatorBase::Derivative<Scalar>
 DefaultLumpedParameterModelEvaluator<Scalar>::create_deriv_wrt_p_orig(
-  const ModelEvaluatorBase::Derivative<Scalar> &DhDp,
-  const ModelEvaluatorBase::EDerivativeMultiVectorOrientation requiredOrientation
-  ) const
-{
-
+    const ModelEvaluatorBase::Derivative<Scalar> &DhDp,
+    const ModelEvaluatorBase::EDerivativeMultiVectorOrientation requiredOrientation) const {
   typedef ModelEvaluatorBase MEB;
 
   const RCP<const MultiVectorBase<Scalar> >
-    DhDp_mv = DhDp.getMultiVector();
+      DhDp_mv = DhDp.getMultiVector();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    is_null(DhDp_mv) || (DhDp.getMultiVectorOrientation() != requiredOrientation),
-    std::logic_error,
-    "Error, we currently can't handle non-multi-vector derivatives!" );
+      is_null(DhDp_mv) || (DhDp.getMultiVectorOrientation() != requiredOrientation),
+      std::logic_error,
+      "Error, we currently can't handle non-multi-vector derivatives!");
 
   RCP<MultiVectorBase<Scalar> > DhDp_orig_mv;
   switch (requiredOrientation) {
     case MEB::DERIV_MV_BY_COL:
       // DhDp = DhDp_orig * B
-      DhDp_orig_mv = createMembers(DhDp_mv->range(),B_->range()->dim());
+      DhDp_orig_mv = createMembers(DhDp_mv->range(), B_->range()->dim());
       // Above, we could just request DhDp_orig as a LinearOpBase object since
       // we just need to apply it!
       break;
     case MEB::DERIV_TRANS_MV_BY_ROW:
       // (DhDp^T) = B^T * (DhDp_orig^T)  [DhDp_orig_mv is transposed!]
-      DhDp_orig_mv = createMembers(B_->range(),DhDp_mv->domain()->dim());
+      DhDp_orig_mv = createMembers(B_->range(), DhDp_mv->domain()->dim());
       // Above, we really do need DhDp_orig as the gradient form multi-vector
       // since it must be the RHS for a linear operator apply!
       break;
     default:
-      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true);  // Should never get here!
   }
-  
-  return MEB::Derivative<Scalar>(DhDp_orig_mv,requiredOrientation);
-  
+
+  return MEB::Derivative<Scalar>(DhDp_orig_mv, requiredOrientation);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultLumpedParameterModelEvaluator<Scalar>::assembleParamDerivOutArgs(
-  const ModelEvaluatorBase::OutArgs<Scalar> &wrappedOutArgs, // in
-  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs // in/out
-  ) const
-{
-
+    const ModelEvaluatorBase::OutArgs<Scalar> &wrappedOutArgs,  // in
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs          // in/out
+) const {
   typedef ModelEvaluatorBase MEB;
   typedef MEB::Derivative<Scalar> Deriv;
-    
+
   Deriv DfDp;
-  if ( !(DfDp=outArgs.get_DfDp(p_idx_)).isEmpty() ) {
-    assembleParamDeriv( wrappedOutArgs.get_DfDp(p_idx_), DfDp );
+  if (!(DfDp = outArgs.get_DfDp(p_idx_)).isEmpty()) {
+    assembleParamDeriv(wrappedOutArgs.get_DfDp(p_idx_), DfDp);
   }
 
   const int Ng = outArgs.Ng();
-  for ( int j = 0; j < Ng; ++j ) {
+  for (int j = 0; j < Ng; ++j) {
     Deriv DgDp;
-    if ( !(DgDp=outArgs.get_DgDp(j,p_idx_)).isEmpty() ) {
-      assembleParamDeriv( wrappedOutArgs.get_DgDp(j,p_idx_), DgDp );
+    if (!(DgDp = outArgs.get_DgDp(j, p_idx_)).isEmpty()) {
+      assembleParamDeriv(wrappedOutArgs.get_DgDp(j, p_idx_), DgDp);
     }
   }
-
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DefaultLumpedParameterModelEvaluator<Scalar>::assembleParamDeriv(
-  const ModelEvaluatorBase::Derivative<Scalar> &DhDp_orig, // in
-  const ModelEvaluatorBase::Derivative<Scalar> &DhDp // in/out
-  ) const
-{
-
+    const ModelEvaluatorBase::Derivative<Scalar> &DhDp_orig,  // in
+    const ModelEvaluatorBase::Derivative<Scalar> &DhDp        // in/out
+) const {
   typedef ModelEvaluatorBase MEB;
 
   const RCP<const MultiVectorBase<Scalar> >
-    DhDp_orig_mv = DhDp_orig.getMultiVector();
+      DhDp_orig_mv = DhDp_orig.getMultiVector();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    is_null(DhDp_orig_mv), std::logic_error,
-    "Error, we currently can't handle non-multi-vector derivatives!" );
+      is_null(DhDp_orig_mv), std::logic_error,
+      "Error, we currently can't handle non-multi-vector derivatives!");
 
   const RCP<MultiVectorBase<Scalar> >
-    DhDp_mv = DhDp.getMultiVector();
+      DhDp_mv = DhDp.getMultiVector();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    is_null(DhDp_mv), std::logic_error,
-    "Error, we currently can't handle non-multi-vector derivatives!" );
+      is_null(DhDp_mv), std::logic_error,
+      "Error, we currently can't handle non-multi-vector derivatives!");
 
-  switch( DhDp_orig.getMultiVectorOrientation() ) {
+  switch (DhDp_orig.getMultiVectorOrientation()) {
     case MEB::DERIV_MV_BY_COL:
       // DhDp = DhDp_orig * B
 #ifdef TEUCHSO_DEBUG
       TEUCHOS_ASSERT(
-        DhDp.getMultiVectorOrientation() == MEB::DERIV_MV_BY_COL );
+          DhDp.getMultiVectorOrientation() == MEB::DERIV_MV_BY_COL);
 #endif
-      apply( *DhDp_orig_mv, NOTRANS, *B_, DhDp_mv.ptr() );
+      apply(*DhDp_orig_mv, NOTRANS, *B_, DhDp_mv.ptr());
       // Above, we could generalize DhDp_oirg to just be a general linear
       // operator.
       break;
@@ -1179,18 +1052,15 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::assembleParamDeriv(
       // (DhDp^T) = B^T * (DhDp_orig^T)  [DhDp_orig_mv is transposed!]
 #ifdef TEUCHSO_DEBUG
       TEUCHOS_ASSERT(
-        DhDp.getMultiVectorOrientation() == MEB::DERIV_TRANS_MV_BY_ROW );
+          DhDp.getMultiVectorOrientation() == MEB::DERIV_TRANS_MV_BY_ROW);
 #endif
-      apply( *B_, CONJTRANS, *DhDp_orig_mv, DhDp_mv.ptr() );
+      apply(*B_, CONJTRANS, *DhDp_orig_mv, DhDp_mv.ptr());
       break;
     default:
-      TEUCHOS_TEST_FOR_EXCEPT(true); // Should never get here!
+      TEUCHOS_TEST_FOR_EXCEPT(true);  // Should never get here!
   }
-
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_DEFAUL_LUMPED_PARAMETER_LUMPED_MODEL_EVALUATOR_HPP
+#endif  // THYRA_DEFAUL_LUMPED_PARAMETER_LUMPED_MODEL_EVALUATOR_HPP

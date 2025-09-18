@@ -14,9 +14,7 @@
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Abstract strategy interface for reading and writing
  * (multi)vector objects to and from files.
@@ -46,15 +44,13 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class MultiVectorFileIOBase
-  : virtual public Teuchos::VerboseObject<MultiVectorFileIOBase<Scalar> >
-{
-public:
-
+  : virtual public Teuchos::VerboseObject<MultiVectorFileIOBase<Scalar> > {
+ public:
   /** \brief Return if the given multi-vector is compatible with this
    * implementation.*/
-  virtual bool isCompatible( const MultiVectorBase<Scalar> &mv ) const = 0;
+  virtual bool isCompatible(const MultiVectorBase<Scalar> &mv) const = 0;
 
   /** \brief Read a (multi)vector from a file given the file base name.
    *
@@ -73,10 +69,9 @@ public:
    * </ul>
    */
   virtual void readMultiVectorFromFile(
-    const std::string &fileNameBase,
-    Thyra::MultiVectorBase<Scalar> *mv
-    ) const = 0;
-  
+      const std::string &fileNameBase,
+      Thyra::MultiVectorBase<Scalar> *mv) const = 0;
+
   /** \brief Write a (multi)vector to a file given the file base name.
    *
    * \param mv [in] The multi-vector that will be written to file(s).
@@ -89,35 +84,28 @@ public:
    * </ul>
    */
   virtual void writeMultiVectorToFile(
-    const Thyra::MultiVectorBase<Scalar> &mv,
-    const std::string &fileNameBase
-    ) const = 0;
-  
-  //@}
-  
-};
+      const Thyra::MultiVectorBase<Scalar> &mv,
+      const std::string &fileNameBase) const = 0;
 
+  //@}
+};
 
 /** \brief Read a vector from file(s) given the file base name and a vector
  * space.
  *
  * \relates MultiVectorFileIOBase
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<VectorBase<Scalar> >
 readVectorFromFile(
-  const MultiVectorFileIOBase<Scalar> &fileIO,
-  const std::string &fileNameBase,
-  const VectorSpaceBase<Scalar> &vecSpc
-  )
-{
+    const MultiVectorFileIOBase<Scalar> &fileIO,
+    const std::string &fileNameBase,
+    const VectorSpaceBase<Scalar> &vecSpc) {
   Teuchos::RCP<VectorBase<Scalar> > v = createMember(vecSpc);
-  fileIO.readMultiVectorFromFile(fileNameBase,&*v);
+  fileIO.readMultiVectorFromFile(fileNameBase, &*v);
   return v;
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_MULTI_VECTOR_FILE_IO_BASE_HPP
+#endif  // THYRA_MULTI_VECTOR_FILE_IO_BASE_HPP

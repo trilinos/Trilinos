@@ -12,20 +12,16 @@
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base interface for <ttLinearOpBase</tt> objects that are implemented
  * in terms of the solve function on a <tt>LinearOpWithSolveBase</tt> object.
  *
  * \ingroup Thyra_Op_Solve_extended_interfaces_code_grp
  */
-template<class Scalar>
-class InverseLinearOpBase : virtual public LinearOpBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class InverseLinearOpBase : virtual public LinearOpBase<Scalar> {
+ public:
   /** \brief Determine if the underlying <tt>LinearOpWithSolveBase</tt> is
    * const-only or not.
    */
@@ -35,18 +31,15 @@ public:
    * <tt>LinearOpWithSolveBase</tt> object.
    */
   virtual Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
-  getNonconstLows() = 0; 
+  getNonconstLows() = 0;
 
   /** \brief Extra a const view of the underlying
    * <tt>LinearOpWithSolveBase</tt> object.
    */
   virtual Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
-  getLows() const = 0; 
-
+  getLows() const = 0;
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_INVERSE_LINEAR_OP_BASE_HPP
+#endif  // THYRA_INVERSE_LINEAR_OP_BASE_HPP

@@ -10,14 +10,11 @@
 #ifndef THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_FACTORY_DECL_HPP
 #define THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_FACTORY_DECL_HPP
 
-
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_LinearOpSourceBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Implicit subclass that takes a blocked triangular LOWB object and
  * turns it into a LOWSB object.
@@ -34,10 +31,10 @@ namespace Thyra {
 
        [ M(0,0)                   ]
    M = [ M(1,0)   M(1,1)          ]
-       [ M(2,0)   M(2,1)   M(2,2) ]  
+       [ M(2,0)   M(2,1)   M(2,2) ]
 
  \endverbatim
- 
+
  * This class object will then create a new LOWSB object (of type
  * <tt>DefaultBlockedTriangularLinearOpWithSolve</tt>) that looks like:
 
@@ -45,7 +42,7 @@ namespace Thyra {
 
           [ invM(0,0)                       ]
    invM = [ M(1,0)     invM(1,1)            ]
-          [ M(2,0)     M(2,1)     invM(2,2) ]  
+          [ M(2,0)     M(2,1)     invM(2,2) ]
 
  \endverbatim
 
@@ -57,15 +54,13 @@ namespace Thyra {
  *
  * ToDo: Finish Documentation!
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultBlockedTriangularLinearOpWithSolveFactory
-  : virtual public LinearOpWithSolveFactoryBase<Scalar>
-{
-public:
-
+  : virtual public LinearOpWithSolveFactoryBase<Scalar> {
+ public:
   /** @name Overridden from Constructors/Initializers/Accessors */
   //@{
-  
+
   /** \brief Create given a single non-const LOWSFB object.
    *
    * \param lowsf [in,persisting] The LOWSFB object that will be used to
@@ -77,10 +72,8 @@ public:
    *
    */
   DefaultBlockedTriangularLinearOpWithSolveFactory(
-    const RCP<LinearOpWithSolveFactoryBase<Scalar> > &lowsf
-    );
+      const RCP<LinearOpWithSolveFactoryBase<Scalar> > &lowsf);
 
-  
   /** \brief Create given a single const LOWSFB object.
    *
    * \param lowsf [in,persisting] The LOWSFB object that will be used to
@@ -92,8 +85,7 @@ public:
    *
    */
   DefaultBlockedTriangularLinearOpWithSolveFactory(
-    const RCP<const LinearOpWithSolveFactoryBase<Scalar> > &lowsf
-    );
+      const RCP<const LinearOpWithSolveFactoryBase<Scalar> > &lowsf);
 
   // 2007/10/02: rabartl: Add versions of constructor that accept an array of
   // LOWSFB objects when needed.  This will be needed for multi-physics
@@ -119,7 +111,7 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(RCP<ParameterList> const& paramList);
+  void setParameterList(RCP<ParameterList> const &paramList);
   /** \brief . */
   RCP<ParameterList> getNonconstParameterList();
   /** \brief . */
@@ -133,15 +125,14 @@ public:
 
   /** \name Overridden from LinearOpWithSolveFactoyBase */
   //@{
-  
+
   /** \brief returns false. */
   virtual bool acceptsPreconditionerFactory() const;
 
   /** \brief Throws exception. */
   virtual void setPreconditionerFactory(
-    const RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
-    const std::string &precFactoryName
-    );
+      const RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
+      const std::string &precFactoryName);
 
   /** \brief Returns null . */
   virtual RCP<PreconditionerFactoryBase<Scalar> >
@@ -149,65 +140,56 @@ public:
 
   /** \brief Throws exception. */
   virtual void unsetPreconditionerFactory(
-    RCP<PreconditionerFactoryBase<Scalar> > *precFactory,
-    std::string *precFactoryName
-    );
+      RCP<PreconditionerFactoryBase<Scalar> > *precFactory,
+      std::string *precFactoryName);
 
   /** \brief . */
   virtual bool isCompatible(
-    const LinearOpSourceBase<Scalar> &fwdOpSrc
-    ) const;
+      const LinearOpSourceBase<Scalar> &fwdOpSrc) const;
 
   /** \brief . */
   virtual RCP<LinearOpWithSolveBase<Scalar> > createOp() const;
 
   /** \brief . */
   virtual void initializeOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    LinearOpWithSolveBase<Scalar> *Op,
-    const ESupportSolveUse supportSolveUse
-    ) const;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      LinearOpWithSolveBase<Scalar> *Op,
+      const ESupportSolveUse supportSolveUse) const;
 
   /** \brief . */
   virtual void initializeAndReuseOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    LinearOpWithSolveBase<Scalar> *Op
-    ) const;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      LinearOpWithSolveBase<Scalar> *Op) const;
 
   /** \brief . */
   virtual void uninitializeOp(
-    LinearOpWithSolveBase<Scalar> *Op,
-    RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
-    RCP<const PreconditionerBase<Scalar> > *prec,
-    RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
-    ESupportSolveUse *supportSolveUse
-    ) const;
- 
+      LinearOpWithSolveBase<Scalar> *Op,
+      RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
+      RCP<const PreconditionerBase<Scalar> > *prec,
+      RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
+      ESupportSolveUse *supportSolveUse) const;
+
   /** \brief . */
   virtual bool supportsPreconditionerInputType(
-    const EPreconditionerInputType precOpType
-    ) const;
+      const EPreconditionerInputType precOpType) const;
 
   /** \brief . */
   virtual void initializePreconditionedOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    const RCP<const PreconditionerBase<Scalar> > &prec,
-    LinearOpWithSolveBase<Scalar> *Op,
-    const ESupportSolveUse supportSolveUse
-    ) const;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      const RCP<const PreconditionerBase<Scalar> > &prec,
+      LinearOpWithSolveBase<Scalar> *Op,
+      const ESupportSolveUse supportSolveUse) const;
 
   /** \brief . */
   virtual void initializeApproxPreconditionedOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-    LinearOpWithSolveBase<Scalar> *Op,
-    const ESupportSolveUse supportSolveUse
-    ) const;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
+      LinearOpWithSolveBase<Scalar> *Op,
+      const ESupportSolveUse supportSolveUse) const;
 
   //@}
 
-protected:
-
+ protected:
   /** \brief Overridden from Teuchos::VerboseObjectBase */
   //@{
 
@@ -216,51 +198,39 @@ protected:
 
   //@}
 
-private:
-
+ private:
   typedef Teuchos::ConstNonconstObjectContainer<LinearOpWithSolveFactoryBase<Scalar> > LOWSF_t;
-  
+
   LOWSF_t lowsf_;
 
   // Not defined and not to be called
   DefaultBlockedTriangularLinearOpWithSolveFactory();
-
 };
 
+/** \brief Nonmember constructor.
+ *
+ * \releates DefaultBlockedTriangularLinearOpWithSolveFactory
+ */
+template <class Scalar>
+RCP<DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar> >
+defaultBlockedTriangularLinearOpWithSolveFactory(
+    const RCP<LinearOpWithSolveFactoryBase<Scalar> > &lowsf) {
+  return Teuchos::rcp(
+      new DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>(lowsf));
+}
 
 /** \brief Nonmember constructor.
  *
  * \releates DefaultBlockedTriangularLinearOpWithSolveFactory
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar> >
 defaultBlockedTriangularLinearOpWithSolveFactory(
-  const RCP<LinearOpWithSolveFactoryBase<Scalar> > &lowsf
-  )
-{
+    const RCP<const LinearOpWithSolveFactoryBase<Scalar> > &lowsf) {
   return Teuchos::rcp(
-    new DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>(lowsf)
-    );
+      new DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>(lowsf));
 }
 
+}  // namespace Thyra
 
-/** \brief Nonmember constructor.
- *
- * \releates DefaultBlockedTriangularLinearOpWithSolveFactory
- */
-template<class Scalar>
-RCP<DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar> >
-defaultBlockedTriangularLinearOpWithSolveFactory(
-  const RCP<const LinearOpWithSolveFactoryBase<Scalar> > &lowsf
-  )
-{
-  return Teuchos::rcp(
-    new DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>(lowsf)
-    );
-}
-
-
-} // namespace Thyra
-
-
-#endif // THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_FACTORY_DECL_HPP
+#endif  // THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_FACTORY_DECL_HPP

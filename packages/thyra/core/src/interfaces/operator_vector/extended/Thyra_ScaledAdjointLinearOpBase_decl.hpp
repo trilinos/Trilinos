@@ -12,9 +12,7 @@
 
 #include "Thyra_LinearOpBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base class for <tt>LinearOpBase</tt> decorator subclasses that wrap
 a <tt>LinearOpBase</tt> object and adds on an extra scaling factor and/or a
@@ -24,7 +22,7 @@ This interface class represents a scaled, adjointed (transposed) linear
 operator <tt>M</tt> of the form:
 
 \verbatim
- 
+
   M = scalar * op(Op)
 \endverbatim
 
@@ -37,10 +35,9 @@ a <tt>Scalar</tt>, and the operation <tt>op(Op)</tt> is specified by a
 \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
 
 */
-template<class Scalar>
+template <class Scalar>
 class ScaledAdjointLinearOpBase : virtual public LinearOpBase<Scalar> {
-public:
-
+ public:
 #ifdef THYRA_INJECT_USING_DECLARATIONS
   using LinearOpBase<Scalar>::apply;
 #endif
@@ -68,9 +65,7 @@ public:
   virtual RCP<const LinearOpBase<Scalar> > getOrigOp() const = 0;
 
   //@}
-
 };
-
 
 /** \brief Extract the <tt>overallScalar</tt>, <tt>overallTransp</tt> and
  * <tt>const</tt> <tt>origOp</tt> from a <tt>const</tt>
@@ -106,14 +101,12 @@ public:
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 void unwrap(
-  const LinearOpBase<Scalar> &Op,
-  Scalar *scalar,
-  EOpTransp *transp,
-  const LinearOpBase<Scalar>* *origOp
-  );
-
+    const LinearOpBase<Scalar> &Op,
+    Scalar *scalar,
+    EOpTransp *transp,
+    const LinearOpBase<Scalar> **origOp);
 
 /** \brief Extract the <tt>overallScalar</tt>, <tt>overallTransp</tt> and
  * <tt>RCP</tt> wrapped <tt>const</tt> <tt>origOp</tt> from a
@@ -150,16 +143,13 @@ void unwrap(
  *
  * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
  */
-template<class Scalar>
+template <class Scalar>
 void unwrap(
-  const RCP<const LinearOpBase<Scalar> > &Op,
-  Scalar *scalar,
-  EOpTransp *transp,
-  RCP<const LinearOpBase<Scalar> > *origOp
-  );
+    const RCP<const LinearOpBase<Scalar> > &Op,
+    Scalar *scalar,
+    EOpTransp *transp,
+    RCP<const LinearOpBase<Scalar> > *origOp);
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif	// THYRA_SCALED_ADJOINT_LINEAR_OP_BASE_DECL_HPP
+#endif  // THYRA_SCALED_ADJOINT_LINEAR_OP_BASE_DECL_HPP
