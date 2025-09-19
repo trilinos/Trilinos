@@ -279,9 +279,13 @@ namespace Amesos2 {
         nnz = Teuchos::as<typename KV_GS::value_type>(nnz_tmp);
 
         typedef typename KV_GS::value_type view_gs_t;
-        Kokkos::resize(pointers, pointers_tmp.extent(0)); // update size, if needed (e.g., for empty local matrix, shrunk to zero)
-        for (i = 0; i < pointers.extent(0); ++i){
-          pointers(i) = Teuchos::as<view_gs_t>(pointers_tmp(i));
+        if (pointers.extent(0) == 1) {
+            // the local matrix is empty (pointer_tmp.extent(0) == 0)
+            pointers(0) = 0;
+        } else {
+          for (i = 0; i < pointers.extent(0); ++i){
+            pointers(i) = Teuchos::as<view_gs_t>(pointers_tmp(i));
+          }
         }
         nnz = Teuchos::as<view_gs_t>(nnz_tmp);
       }
