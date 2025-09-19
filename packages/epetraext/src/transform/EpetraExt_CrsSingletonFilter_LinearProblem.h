@@ -352,6 +352,9 @@ class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearP
   int TConstructRedistributeExporter(Epetra_Map * SourceMap, Epetra_Map * TargetMap,
 				    Epetra_Export * & RedistributeExporter,
 				    Epetra_Map * & RedistributeMap);
+
+  // EXTRAS to REMOVE
+  bool outputRank_;
 };
 
 } //namespace EpetraExt
