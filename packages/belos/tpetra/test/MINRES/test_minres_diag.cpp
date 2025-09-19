@@ -137,7 +137,7 @@ class TrilinosInterface : public OP {
 
   virtual ~TrilinosInterface(){};
 
-  bool hasTransposeApply() const { return (use_transpose); };  // always set to false (in fact the default)
+  bool hasTransposeApply() const override { return (use_transpose); };  // always set to false (in fact the default)
 
   RCP<const MP> getDomainMap() const override { return pMap; }
   RCP<const MP> getRangeMap() const override { return pMap; }

@@ -171,7 +171,7 @@ class TrilinosInterface : public OP
 
     virtual ~TrilinosInterface() {};
 
-    bool hasTransposeApply() const {return(use_transpose);};
+    bool hasTransposeApply() const override {return(use_transpose);};
 
     Teuchos::RCP<const MP> getDomainMap() const override {return pMap; }
 
