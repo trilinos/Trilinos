@@ -312,9 +312,9 @@ int main(int argc, char *argv[]) {
         zname << nvec[i] << "_control.txt";
         std::ofstream zfile;
         zfile.open(zname.str());
-        for (int i = 0; i < controlDim; i++) {
+        for (int j = 0; j < controlDim; j++) {
           zfile << std::scientific << std::setprecision(15)
-                << std::setw(25) << (*z_ptr)[i]
+                << std::setw(25) << (*z_ptr)[j]
                 << std::endl;
         }
         zfile.close();
