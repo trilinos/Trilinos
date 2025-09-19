@@ -315,7 +315,7 @@ main (int argc, char *argv[])
   // subclass, given a name for the subclass.  The name is not the
   // same as the class' syntactic name: e.g., "DKGS" is the name of
   // DkgsOrthoManager.
-  Belos::OrthoManagerFactory< scalar_type, MV, OP > factory;
+  Belos::OrthoManagerFactory< scalar_type, MV, OP, serial_matrix_type > factory;
   // The name of the (Mat)OrthoManager subclass to instantiate.
   std::string ortho (factory.defaultName());
 
@@ -528,7 +528,7 @@ main (int argc, char *argv[])
     // should return zero).
     int numFailed = 0;
     {
-      typedef Belos::Test::OrthoManagerTester<scalar_type, MV> tester_type;
+      typedef Belos::Test::OrthoManagerTester<scalar_type, MV, serial_matrix_type> tester_type;
       debugOut << "Running OrthoManager tests..." << endl;
       numFailed = tester_type::runTests (OM, isRankRevealing, S,
           sizeX1, sizeX2, outMan);

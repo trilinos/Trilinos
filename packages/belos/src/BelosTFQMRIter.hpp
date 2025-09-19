@@ -35,8 +35,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -90,14 +88,13 @@ namespace Belos {
   
   //@}
 
-
-  template <class ScalarType, class MV, class OP>
-  class TFQMRIter : public Iteration<ScalarType,MV,OP> { 
+  template<class ScalarType, class MV, class OP, class DM>
+  class TFQMRIter : public Iteration<ScalarType,MV,OP,DM> { 
   public:
     //
     // Convenience typedefs
     //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -108,7 +105,7 @@ namespace Belos {
     //! %Belos::TFQMRIter constructor.
     TFQMRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 	       const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-	       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+	       const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 	       Teuchos::ParameterList &params );
     
     //! %Belos::TFQMRIter destructor.
@@ -241,14 +238,13 @@ namespace Belos {
     //
     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >       stest_;
     
     //
     // Algorithmic parameters
     //      
 
     // Storage for QR factorization of the least squares system.
-    // Teuchos::SerialDenseMatrix<int,ScalarType> alpha_, rho_, rho_old_;
     std::vector<ScalarType> alpha_, rho_, rho_old_;
     std::vector<MagnitudeType> tau_, cs_, theta_;
     
@@ -287,10 +283,10 @@ namespace Belos {
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template <class ScalarType, class MV, class OP>
-  TFQMRIter<ScalarType,MV,OP>::TFQMRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  template <class ScalarType, class MV, class OP, class DM>
+  TFQMRIter<ScalarType,MV,OP,DM>::TFQMRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 					 const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-					 const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+					 const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 					 Teuchos::ParameterList &/* params */ 
 					 ) : 
     lp_(problem), 
@@ -310,9 +306,9 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute native residual from TFQMR recurrence.
-  template <class ScalarType, class MV, class OP>
+  template <class ScalarType, class MV, class OP, class DM>
   Teuchos::RCP<const MV> 
-  TFQMRIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
+  TFQMRIter<ScalarType,MV,OP,DM>::getNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
   {
     MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
     if (normvec)
@@ -324,8 +320,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Setup the state storage.
-  template <class ScalarType, class MV, class OP>
-  void TFQMRIter<ScalarType,MV,OP>::setStateSize ()
+  template <class ScalarType, class MV, class OP, class DM>
+  void TFQMRIter<ScalarType,MV,OP,DM>::setStateSize ()
   {
     if (!stateStorageInitialized_) {
 
@@ -359,8 +355,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
-  template <class ScalarType, class MV, class OP>
-  void TFQMRIter<ScalarType,MV,OP>::initializeTFQMR(const TFQMRIterState<ScalarType,MV> & newstate)
+  template <class ScalarType, class MV, class OP, class DM>
+  void TFQMRIter<ScalarType,MV,OP,DM>::initializeTFQMR(const TFQMRIterState<ScalarType,MV> & newstate)
   {
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_)
@@ -422,8 +418,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void TFQMRIter<ScalarType,MV,OP>::iterate() 
+  template <class ScalarType, class MV, class OP, class DM>
+  void TFQMRIter<ScalarType,MV,OP,DM>::iterate() 
   {
     //
     // Allocate/initialize data structures
