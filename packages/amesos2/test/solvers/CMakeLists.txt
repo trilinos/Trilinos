@@ -227,7 +227,7 @@ IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
     ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 2 # Need to determine if we want more MPI when not running OpenMP with threads
-    COMM serial mpi
+    COMM mpi
     )
 
 ENDIF()
