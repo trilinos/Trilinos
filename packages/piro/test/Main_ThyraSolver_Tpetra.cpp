@@ -53,18 +53,24 @@ int main(int argc, char *argv[]) {
 
     Piro::SolverFactory solverFactory;
 
-    int numTests = 3;
+    int numTests = 5;
 
     for (int iTest = 0; iTest < numTests; iTest++) {
         if (doAll) {
             switch (iTest) {
                 case 0:
-                    inputFile = "input_Solve_NOX_ForwardSensitivities_Thyra.xml";
+                    inputFile = "input_Solve_NOX_ForwardSensitivities_MatrixFree_Thyra.xml";
                     break;
                 case 1:
-                    inputFile = "input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml";
+                    inputFile = "input_Solve_NOX_ForwardSensitivities_Thyra.xml";
                     break;
                 case 2:
+                    inputFile = "input_Solve_LOCA_Thyra.xml";
+                    break;
+                case 3:
+                    inputFile = "input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml";
+                    break;
+                case 4:
                     inputFile = "input_Solve_NOX_AdjointSensitivities_ExplicitAdjointME_Thyra.xml";
                     break;
                 default:
@@ -186,11 +192,10 @@ int main(int argc, char *argv[]) {
               out << "\nError: Responses pointer is null" << std::endl;
               status += 33;
             } else {
-                out << "\nResponses! {8.0}\n"
-                    << *g1 << std::endl;
                 Thyra::DetachedVectorView<double> g_view(g1);
                 double g_computed = g_view(0);
                 double g_exact = 8.0;
+                out << "\nResponses! {8.0}\n"  << g_computed << std::endl;
 
                 double diff = std::abs(g_exact - g_computed);
                 if (diff > tol) {
@@ -205,9 +210,10 @@ int main(int argc, char *argv[]) {
               out << "\nError: solution pointer is null" << std::endl;
               status += 33;
             } else {
-                out << "\nSolution! {1,2,3,4}\n"
-                    << *gx << std::endl;
+                
                 Thyra::DetachedVectorView<double> x_view(gx);
+                out << "\nSolution! {1,2,3,4}\n " <<  x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << std::endl;
+
                 double x_exact[4] = {1, 2, 3, 4};
 
                 double l2_diff = std::sqrt(std::pow(x_view(0) - x_exact[0], 2) +
@@ -226,10 +232,11 @@ int main(int argc, char *argv[]) {
               out << "\nError: sensitivities pointer is null" << std::endl;
               status += 33;
             } else {
-                out << "\nSensitivities {6.66667, -8.0}\n"
-                    << *dgdp << std::endl;
+             
                 Thyra::DetachedVectorView<double> dgdp_view(dgdp->col(0));
                 double dgdp_exact[2] = {20./3, -8.};
+                out << "\nSensitivities {6.66667, -8.0}\n"
+                    << dgdp_view(0) << " "  << dgdp_view(1) << std::endl;
 
                 double l2_diff = std::sqrt(std::pow(dgdp_view(0) - dgdp_exact[0], 2) +
                                            std::pow(dgdp_view(1) - dgdp_exact[1], 2));
@@ -273,13 +280,10 @@ int main(int argc, char *argv[]) {
         overall_status += status;
     }
 
-    if (Proc == 0) {
-        if (overall_status == 0)
-            std::cout << "\nTEST PASSED\n"
-                      << std::endl;
-        else
-            std::cout << "\nTEST Failed:  " << overall_status << std::endl;
-    }
+    if (overall_status == 0)
+      out << "\nTEST PASSED\n" << std::endl;
+    else
+      out << "\nTEST Failed:  " << overall_status << std::endl;
 
     return status;
 }
