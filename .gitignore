@@ -37,9 +37,6 @@ doxygen_objdb_*.tmp
 # Ignore local gitdist config file (.gitdis.default is in git repo)
 /.gitdist
 
-# Ignore user-specific pre-commit files
-/.pre-commit-config.yaml
-
 # Allow github Kokkos to be cloned under Trilinos
 /kokkos/
 

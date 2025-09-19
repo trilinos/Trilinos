@@ -1,0 +1,58 @@
+# This file needs to be on the default branch for the workflow to run.
+
+name: pre-commit-comment
+
+on:
+  workflow_run:
+    workflows: [pre-commit-run]
+    types:
+      - completed
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  pre-commit-comment:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+
+    steps:
+    - name: 'Download artifact'
+      uses: actions/github-script@v8
+      with:
+        script: |
+          let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+             owner: context.repo.owner,
+             repo: context.repo.repo,
+             run_id: context.payload.workflow_run.id,
+          });
+          let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
+            return artifact.name == "format_patch_message"
+          })[0];
+          let download = await github.rest.actions.downloadArtifact({
+             owner: context.repo.owner,
+             repo: context.repo.repo,
+             artifact_id: matchArtifact.id,
+             archive_format: 'zip',
+          });
+          const fs = require('fs');
+          const path = require('path');
+          const temp = '${{ runner.temp }}/artifacts';
+          if (!fs.existsSync(temp)){
+            fs.mkdirSync(temp);
+          }
+          fs.writeFileSync(path.join(temp, 'format_patch_message.zip'), Buffer.from(download.data));
+
+    - run: |
+        cd ${{ runner.temp }}/artifacts
+        unzip format_patch_message.zip
+        MY_PR_NUMBER=$(cat pr_number)
+        echo "PR_NUMBER=$MY_PR_NUMBER" >> $GITHUB_ENV
+
+    - name: Post artifact in issue comment
+      uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
+      with:
+        message-id: format-patch
+        issue:  ${{ env.PR_NUMBER }}
+        refresh-message-position: true
+        message-path: ${{ runner.temp }}/artifacts/format_patch_message.txt
