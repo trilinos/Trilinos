@@ -76,9 +76,9 @@ class TransientInterface : public Interface
     // ---------------------------
     // -------- Constructor ------
     // ---------------------------
-    TransientInterface(int NumGlobalElements, Epetra_Comm& Comm,
-        double xmin = 0.0, double xmax = 1.0) :
-      Interface(NumGlobalElements, Comm, xmin, xmax),
+    TransientInterface(int NumGlobalElements_, Epetra_Comm& Comm_,
+        double xmin_ = 0.0, double xmax_ = 1.0) :
+      Interface(NumGlobalElements_, Comm_, xmin_, xmax_),
       dt(0.0),
       oldSolution(0),
       exactSolution(0)

@@ -508,7 +508,7 @@ Epetra_CrsGraph& Brusselator::getGraph()
 }
 
 
-Epetra_CrsGraph& Brusselator::generateGraphUsingNodes(Epetra_CrsGraph& AA)
+Epetra_CrsGraph& Brusselator::generateGraphUsingNodes(Epetra_CrsGraph& AA_)
 {
 
   int row, column;
@@ -538,19 +538,19 @@ Epetra_CrsGraph& Brusselator::generateGraphUsingNodes(Epetra_CrsGraph& AA)
         for (int m = 0; m < NumSpecies; m++) {
           column = NumSpecies * dependNode + m;
           //printf("\t\tWould like to insert -> (%d, %d)\n",row,column);
-          AA.InsertGlobalIndices(row, 1, &column);
+          AA_.InsertGlobalIndices(row, 1, &column);
         }
       }
     }
   }
 
-  AA.FillComplete();
+  AA_.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
-  return AA;
+  return AA_;
 }
 
-Epetra_CrsGraph& Brusselator::generateGraphUsingElements(Epetra_CrsGraph& AA)
+Epetra_CrsGraph& Brusselator::generateGraphUsingElements(Epetra_CrsGraph& AA_)
 {
 
   // Declare required variables
@@ -578,16 +578,16 @@ Epetra_CrsGraph& Brusselator::generateGraphUsingElements(Epetra_CrsGraph& AA)
             for (int m=0; m<NumSpecies; m++) {
               column=OverlapMap->GID( NumSpecies*(ne+j) + m);
               //printf("\t\tWould like to insert -> (%d, %d)\n",row,column);
-              AA.InsertGlobalIndices(row, 1, &column);
+              AA_.InsertGlobalIndices(row, 1, &column);
             }
           }
         }
       }
     }
   }
-  AA.FillComplete();
+  AA_.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
-  return AA;
+  return AA_;
 }
 
