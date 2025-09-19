@@ -83,7 +83,7 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
   A->FillComplete();
 
   // Do setup for linear unknown info
-  int NumMyElements = StandardMap->NumMyElements();
+  NumMyElements = StandardMap->NumMyElements();
   int MinMyGID = StandardMap->MinMyGID();
 
   double dx=1.0/((double) NumGlobalElements-1);
@@ -307,7 +307,7 @@ Teuchos::RCP<Epetra_CrsGraph> FiniteElementProblem::getGraph()
   return AA;
 }
 
-Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
+Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA_)
 {
 
   // Declare required variables
@@ -328,13 +328,13 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
     // If this row is owned by current processor, add the index
     if (StandardMap->MyGID(row)) {
       column=OverlapMap->GID(ne+j);
-      AA.InsertGlobalIndices(row, 1, &column);
+      AA_.InsertGlobalIndices(row, 1, &column);
     }
       }
     }
   }
-  AA.FillComplete();
+  AA_.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
-  return AA;
+  return AA_;
 }

@@ -145,10 +145,10 @@ int main(int argc, char *argv[]) {
   
   {
     Teuchos::Time timer("Timer - using cell topology data struct");
-    int cellDim = myCellData.dimension;
+    int myCellDim = myCellData.dimension;
     timer.start();
     for(int i = 0; i < numCycles1; i++) {
-      for(int dim = 0; dim < cellDim; dim++){
+      for(int dim = 0; dim < myCellDim; dim++){
         subcCount = myCellData.subcell_count[dim];   
       }
     }
@@ -158,10 +158,10 @@ int main(int argc, char *argv[]) {
   
   {
     Teuchos::Time timer("Timer -  using getCellTopologyData<Traits>() ->");
-    int cellDim = getCellTopologyData<Hexahedron<8> >() -> dimension;
+    int myCellDim = getCellTopologyData<Hexahedron<8> >() -> dimension;
     timer.start();
     for(int i = 0; i < numCycles1; i++) {
-      for(int dim = 0; dim < cellDim; dim++){
+      for(int dim = 0; dim < myCellDim; dim++){
         subcCount = getCellTopologyData<Hexahedron<8> >() -> subcell_count[dim];   
       }
     }
@@ -171,10 +171,10 @@ int main(int argc, char *argv[]) {
   
   {
     Teuchos::Time timer("Timer - using CellTopology object");
-    int cellDim = myCell.getDimension();
+    int myCellDim = myCell.getDimension();
     timer.start();
     for(int i = 0; i < numCycles1; i++) {
-      for(int dim = 0; dim < cellDim; dim++){
+      for(int dim = 0; dim < myCellDim; dim++){
         subcCount = myCell.getSubcellCount(dim);   
       }
     }
@@ -249,8 +249,8 @@ int main(int argc, char *argv[]) {
           
           // number of vertices in the subcell
           int numVert = myCellData.subcell[dim][ord].topology -> vertex_count;
-          for(int i = 0; i < numVert; i++){
-            vertexOrd = myCellData.subcell[dim][ord].node[i]; 
+          for(int j = 0; j < numVert; j++){
+            vertexOrd = myCellData.subcell[dim][ord].node[j];
           }
         }
       }
@@ -265,17 +265,17 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < numCycles2; i++) {
       
       // subcell dimension
-      int cellDim = getCellTopologyData<Hexahedron<8> >() -> dimension;
-      for(int dim = 0; dim < cellDim; dim++){
+      int myqCellDim = getCellTopologyData<Hexahedron<8> >() -> dimension;
+      for(int dim = 0; dim < myqCellDim; dim++){
         
         // number of subcells of specified dimension
-        int subcCount = getCellTopologyData<Hexahedron<8> >() -> subcell_count[dim];
-        for(int ord = 0; ord < subcCount; ord++) {
+        int mySubcCount = getCellTopologyData<Hexahedron<8> >() -> subcell_count[dim];
+        for(int ord = 0; ord < mySubcCount; ord++) {
           
           // number of vertices in the subcell
           int numVert = getCellTopologyData<Hexahedron<8> >() -> subcell[dim][ord].topology -> vertex_count;
-          for(int i = 0; i < numVert; i++){
-            vertexOrd = getCellTopologyData<Hexahedron<8> >() -> subcell[dim][ord].node[i]; 
+          for(int j = 0; j < numVert; j++){
+            vertexOrd = getCellTopologyData<Hexahedron<8> >() -> subcell[dim][ord].node[j];
           }
         }
       }
@@ -297,8 +297,8 @@ int main(int argc, char *argv[]) {
           
           // number of vertices in the subcell
           int numVert = myCell.getVertexCount(dim,ord);
-          for(int i = 0; i < numVert; i++){
-            vertexOrd = myCell.getNodeMap(dim, ord, i); 
+          for(int j = 0; j < numVert; j++){
+            vertexOrd = myCell.getNodeMap(dim, ord, j);
           }
         }
       }

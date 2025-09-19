@@ -45,8 +45,8 @@ public:
   // return the Jacobian from the problem
   Epetra_CrsMatrix* getJacobian() 
   {
-    Epetra_CrsMatrix& Jac = problem.getJacobian(); 
-    return(&Jac);
+    Epetra_CrsMatrix& Jac_ = problem.getJacobian();
+    return(&Jac_);
   }
   
   // return the graph from the problem

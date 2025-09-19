@@ -356,7 +356,7 @@ RefCountPtr<Epetra_CrsMatrix> NLNML::StripZeros(
       if (gcol<0) { std::cout << "ERROR: gcol<0 \n"; exit(0); }
       if (fabs(values[j])<eps && gcol != grow)
         continue;
-      int err = out->InsertGlobalValues(grow,1,&values[j],&gcol);
+      err = out->InsertGlobalValues(grow,1,&values[j],&gcol);
       if (err) { std::cout << "InsertGlobalValues returned " << err << std::endl; exit(0);}
     }
   }

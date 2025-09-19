@@ -119,13 +119,13 @@ bool Interface::computeF(const Epetra_Vector& x,
 }
 
 bool Interface::computeJacobian(const Epetra_Vector& x,
-                Epetra_Operator& Jac)
+                Epetra_Operator& Jac_)
 {
   return evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0);
 }
 
 bool Interface::computePreconditioner(const Epetra_Vector& x,
-                      Epetra_Operator& Prec,
+                      Epetra_Operator& Prec_,
                       Teuchos::ParameterList* precParams)
 {
   std::cout << "ERROR: Interface::preconditionVector() - "

@@ -417,8 +417,8 @@ namespace FROSch {
 
                     DDInterface_->sortVerticesEdgesFaces(nodeList);
 
-                    EntitySetPtr interface = DDInterface_->getInterface();
-                    EntitySetPtr interior = DDInterface_->getInterior();
+                    // EntitySetPtr interface = DDInterface_->getInterface();
+                    // EntitySetPtr interior = DDInterface_->getInterior();
 
                     ////////////////////////////////
                     // Build Processor Map Coarse //

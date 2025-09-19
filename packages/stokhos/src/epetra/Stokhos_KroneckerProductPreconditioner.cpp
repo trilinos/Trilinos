@@ -216,7 +216,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   // Apply (G^{-1} x I)
   {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-    TEUCHOS_FUNC_TIME_MONITOR("Stokhos: G Preconditioner Apply Inverse");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stokhos: G Preconditioner Apply Inverse", g_prec);
 #endif
     G_prec->ApplyInverse(*result_MVT, *result_MVT);
   }
@@ -233,7 +233,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   // Apply (I x A_0^{-1})
   {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-    TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Mean Preconditioner Apply Inverse");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stokhos: Mean Preconditioner Apply Inverse", mean_prec);
 #endif
     for (int i=0; i<NumMyElements; i++) {
       mean_prec->ApplyInverse(*(sg_result.GetBlock(i)), 
