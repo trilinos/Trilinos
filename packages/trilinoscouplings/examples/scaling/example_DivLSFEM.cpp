@@ -1303,7 +1303,7 @@ int main(int argc, char *argv[]) {
 
   // Containers for right hand side boundary term
     FieldContainer<double> gDBoundary         (1, numFieldsD);
-    FieldContainer<double> refFacePoints      (numFacePoints,spaceDim);
+    // FieldContainer<double> refFacePoints      (numFacePoints,spaceDim);
     FieldContainer<double> cellNodes          (1, numNodesPerElem, spaceDim);
     FieldContainer<double> worksetFacePoints  (1, numFacePoints, spaceDim);
     FieldContainer<double> faceJacobians      (1, numFacePoints, spaceDim, spaceDim);

@@ -887,7 +887,7 @@ int main(int argc, char *argv[]) {
       for (int k=0; k<numFacesPerElem; k++){
          int iface=elemToFace(i,k);
          if (faceIsOwned[iface] && !faceDone2(iface)){
-             double vals[4];
+             double vals2[4];
              int rowNum = globalFaceIds[iface];
              int colNum[4];
 
@@ -897,8 +897,8 @@ int main(int argc, char *argv[]) {
               if (indm >= numEdgesPerFace) indm=0;
               if (edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),0) ||
                  edgeToNode(faceToEdge(iface,m),1) == edgeToNode(faceToEdge(iface,indm),1)){
-                 vals[m]=1.0;}
-              else vals[m]=-1.0;
+                 vals2[m]=1.0;}
+              else vals2[m]=-1.0;
 
             // This is a convoluted way to account for edge orientations that
             // may be incorrect on the local processor because the edge is
@@ -912,10 +912,10 @@ int main(int argc, char *argv[]) {
              }
                if (edgeIndex != -1 && edgeIndex < 8){
                  if (edgeIndex < 4 && faceIsOwned[elemToFace(i,4)]){
-                   vals[m]=-1.0*vals[m];
+                   vals2[m]=-1.0*vals[m];
                  }
                  else if (edgeIndex > 3 && faceIsOwned[elemToFace(i,5)]){
-                   vals[m]=-1.0*vals[m];
+                   vals2[m]=-1.0*vals[m];
                  }
                }
             } // end loop over face edges
@@ -1428,8 +1428,8 @@ int main(int argc, char *argv[]) {
 
 
    for(int i=0;i<jointVector.MyLength();i++){
-     int id=jointVector.Map().GID(i);
-     jointVectorGIDs[0][i]=id;
+     int id2=jointVector.Map().GID(i);
+     jointVectorGIDs[0][i]=id2;
    }
 // Assemble over multiple processors, if necessary
    StiffG.GlobalAssemble(); StiffG.FillComplete();

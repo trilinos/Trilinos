@@ -1551,8 +1551,6 @@ void getPamgenMesh(FieldContainer<Scalar>    & localNodeCoordsFC,
                    const string &              message,
                    const int                   verbose) {
 
-  typedef long long                     int128;
-
   // All cells in a Pamgen grid have Hexahedron<8> type.
   ShardsCellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >() );
   int spaceDim = hex_8.getDimension();
