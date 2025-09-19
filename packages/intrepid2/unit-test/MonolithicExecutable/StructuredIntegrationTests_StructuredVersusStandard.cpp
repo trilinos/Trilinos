@@ -744,9 +744,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStan
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HGRAD, GRAD,  HCURL, VALUE)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HGRAD, VALUE, HDIV,  DIV)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HGRAD, VALUE, HCURL, CURL)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HDIV,  DIV,   HDIV,  DIV)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HDIV,  DIV,   HVOL,  VALUE)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HCURL, CURL,  HVOL,  VALUE)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HVOL,  VALUE, HGRAD, VALUE)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HVOL,  VALUE, HDIV,  DIV)
+TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P1_P1, HVOL,  VALUE, HVOL,  VALUE)
 // p2, p1:
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, HGRAD, GRAD,  HGRAD, GRAD)
 TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(StructuredIntegration, StructuredVersusStandard_D2_P2_P1, HGRAD, GRAD,  HDIV,  VALUE)
