@@ -48,16 +48,19 @@ namespace Intrepid2 {
     bool isWeightedPermutation;
   public:
     //! general constructor.  Sets isWeightedPermutation to false.
+    KOKKOS_INLINE_FUNCTION
     OrientationOperator(UnmanagedOrdinalView rowIndices_,
                         UnmanagedOrdinalView offsetsForRowOrdinal_,
                         UnmanagedOrdinalView packedColumnIndices_,
                         UnmanagedDoubleView       packedWeights_);
     
     //! weighted-permutation constructor.  Sets isWeightedPermutation to true.
+    KOKKOS_INLINE_FUNCTION
     OrientationOperator(UnmanagedOrdinalView rowIndices_,
                         UnmanagedOrdinalView packedColumnIndices_,
                         UnmanagedDoubleView       packedWeights_);
     
+    KOKKOS_INLINE_FUNCTION
     OrientationOperator();
   };
 }

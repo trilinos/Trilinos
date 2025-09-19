@@ -23,6 +23,7 @@
 namespace Intrepid2 {
 
 template<class DeviceType>
+KOKKOS_INLINE_FUNCTION
 OrientationOperator<DeviceType>::OrientationOperator(typename OrientationOperator<DeviceType>::UnmanagedOrdinalView rowIndices_,
                                                      typename OrientationOperator<DeviceType>::UnmanagedOrdinalView offsetsForRowOrdinal_,
                                                      typename OrientationOperator<DeviceType>::UnmanagedOrdinalView packedColumnIndices_,
@@ -36,6 +37,7 @@ isWeightedPermutation(false)
 {}
 
 template<class DeviceType>
+KOKKOS_INLINE_FUNCTION
 OrientationOperator<DeviceType>::OrientationOperator(typename OrientationOperator<DeviceType>::UnmanagedOrdinalView rowIndices_,
                                                      typename OrientationOperator<DeviceType>::UnmanagedOrdinalView packedColumnIndices_,
                                                      typename OrientationOperator<DeviceType>::UnmanagedDoubleView  packedWeights_)
@@ -47,6 +49,7 @@ isWeightedPermutation(true)
 {}
 
 template<class DeviceType>
+KOKKOS_INLINE_FUNCTION
 OrientationOperator<DeviceType>::OrientationOperator()
 :
 isWeightedPermutation(true)
