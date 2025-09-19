@@ -20,13 +20,14 @@
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
 // Forward declaration of Comm.
-template <class OrdinalType> class Comm;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+template <class OrdinalType>
+class Comm;
+}  // namespace Teuchos
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 namespace Details {
-  
+
 /// \brief Print on one process of the given communicator, or at least
 ///   try to do so (if MPI is not initialized).
 ///
@@ -39,12 +40,11 @@ namespace Details {
 ///
 /// \param comm [in] Communicator; if nullptr, print on all processes,
 ///   else, print based on above rule.
-void
-printOnce (std::ostream& out,
-	   const std::string& s,
-	   const Teuchos::Comm<int>* comm);
+void printOnce(std::ostream& out,
+               const std::string& s,
+               const Teuchos::Comm<int>* comm);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_PRINTONCE_HPP
+#endif  // TPETRA_DETAILS_PRINTONCE_HPP

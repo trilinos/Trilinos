@@ -481,10 +481,10 @@ public:
     ROL::Ptr<const vector> zp = getVector(z);
 
     // Apply Jacobian
-    vector V;
-    V.assign(vp->begin(),vp->end());
-    FEM_->set_boundary_conditions(V);
-    FEM_->apply_jacobian(*jvp,V,*zp);
+    vector lV;
+    lV.assign(vp->begin(),vp->end());
+    FEM_->set_boundary_conditions(lV);
+    FEM_->apply_jacobian(*jvp,lV,*zp);
   }
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
@@ -545,10 +545,10 @@ public:
     ROL::Ptr<const vector> zp = getVector(z);
 
     // apply jacobian
-    vector V;
-    V.assign(vp->begin(),vp->end());
-    FEM_->set_boundary_conditions(V);
-    FEM_->apply_jacobian(*ajvp,V,*zp);
+    vector lV;
+    lV.assign(vp->begin(),vp->end());
+    FEM_->set_boundary_conditions(lV);
+    FEM_->apply_jacobian(*ajvp,lV,*zp);
   }
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
@@ -564,10 +564,10 @@ public:
     vector U;
     U.assign(up->begin(),up->end());
     FEM_->set_boundary_conditions(U);
-    std::vector<Real> V;
-    V.assign(vp->begin(),vp->end());
-    FEM_->set_boundary_conditions(V);
-    FEM_->apply_adjoint_jacobian(*ajvp,U,*zp,V);
+    std::vector<Real> lV;
+    lV.assign(vp->begin(),vp->end());
+    FEM_->set_boundary_conditions(lV);
+    FEM_->apply_adjoint_jacobian(*ajvp,U,*zp,lV);
   }
 
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &iajv, const ROL::Vector<Real> &v,
@@ -849,10 +849,10 @@ public:
     hv.zero();
     if ( !useLC_ ) {
       vector KV(vp->size(),0.0);
-      vector V;
-      V.assign(vp->begin(),vp->end());
-      FEM_->set_boundary_conditions(V);
-      FEM_->apply_jacobian(KV,V,*zp);
+      vector lV;
+      lV.assign(vp->begin(),vp->end());
+      FEM_->set_boundary_conditions(lV);
+      FEM_->apply_jacobian(KV,lV,*zp);
       for (uint i=0; i<vp->size(); i++) {
         (*hvp)[i] = 2.0*KV[i];
       }
@@ -909,10 +909,10 @@ public:
       std::vector<Real> U;
       U.assign(up->begin(),up->end());
       FEM_->set_boundary_conditions(U);
-      std::vector<Real> V;
-      V.assign(vp->begin(),vp->end());
-      FEM_->set_boundary_conditions(V);
-      FEM_->apply_adjoint_jacobian(*hvp,U,*zp,V);
+      std::vector<Real> lV;
+      lV.assign(vp->begin(),vp->end());
+      FEM_->set_boundary_conditions(lV);
+      FEM_->apply_adjoint_jacobian(*hvp,U,*zp,lV);
       for (uint i=0; i<hvp->size(); i++) {
         (*hvp)[i] *= 2.0;
       }
@@ -939,9 +939,9 @@ public:
       vector U;
       U.assign(up->begin(),up->end());
       FEM_->set_boundary_conditions(U);
-      vector V;
-      V.assign(vp->begin(),vp->end());
-      FEM_->set_boundary_conditions(V);
+      vector lV;
+      lV.assign(vp->begin(),vp->end());
+      FEM_->set_boundary_conditions(lV);
       FEM_->apply_adjoint_jacobian(*hvp,U,*zp,*vp,U);
     }
     // Compute Moreau-Yoshida term
@@ -999,7 +999,7 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  typedef typename std::vector<RealT>::size_type uint;
+  typedef typename std::vector<RealT>::size_type luint;
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
@@ -1017,8 +1017,8 @@ int main(int argc, char *argv[]) {
   try {
     // FEM problem description.
     int prob = 1;  // prob = 0 is the MBB beam example, prob = 1 is the cantilever beam example.
-    uint nx  = 12; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
-    uint ny  = 8; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
+    luint nx  = 12; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
+    luint ny  = 8; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
     int P    = 1;  // SIMP penalization power.
     ROL::Ptr<FEM<RealT> > pFEM = ROL::makePtr<FEM<RealT>>(nx,ny,P,prob);
     // Objective function description.
@@ -1066,14 +1066,14 @@ int main(int argc, char *argv[]) {
     if (derivCheck) {
       // Initialize control vectors.
       ROL::Ptr<std::vector<RealT> > yz_ptr = ROL::makePtr<std::vector<RealT>>(pFEM->numZ(), 0.0);
-      for (uint i=0; i<pFEM->numZ(); i++) {
+      for (luint i=0; i<pFEM->numZ(); i++) {
         (*yz_ptr)[i] = frac * (RealT)rand()/(RealT)RAND_MAX;
       }
       ROL::StdVector<RealT> yz(yz_ptr);
       ROL::Ptr<ROL::Vector<RealT> > yzp = ROL::makePtrFromRef(yz);
       // Initialize state vectors.
       ROL::Ptr<std::vector<RealT> > yu_ptr = ROL::makePtr<std::vector<RealT>>(pFEM->numU(), 0.0);
-      for (uint i=0; i<pFEM->numU(); i++) {
+      for (luint i=0; i<pFEM->numU(); i++) {
       (*u_ptr)[i]  = (RealT)rand()/(RealT)RAND_MAX;
         (*yu_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       }
@@ -1134,9 +1134,9 @@ int main(int argc, char *argv[]) {
         }
         // Compute volume.
         RealT vol = 0.0;
-        for (uint i=0; i<nx; i++) {
-          for (uint j=0; j<ny; j++) {
-            vol += (*z_ptr)[i+j*nx];
+        for (luint li=0; li<nx; li++) {
+          for (luint lj=0; lj<ny; lj++) {
+            vol += (*z_ptr)[li+lj*nx];
           }
         }
         *outStream << "The volume fraction is " << vol/pFEM->numZ() << "\n";
@@ -1149,10 +1149,10 @@ int main(int argc, char *argv[]) {
       std::ofstream file;
       file.open(name.str().c_str());
       RealT val = 0.0;
-      for (uint i=0; i<nx; i++) {
-        for (uint j=0; j<ny; j++) {
-          val = (*z_ptr)[i+j*nx];
-          file << i << "  " << j << "  " << val << "\n"; 
+      for (luint i=0; i<nx; i++) {
+        for (luint lj=0; lj<ny; lj++) {
+          val = (*z_ptr)[i+lj*nx];
+          file << i << "  " << lj << "  " << val << "\n"; 
         }
       }
       file.close();

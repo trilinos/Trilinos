@@ -415,7 +415,6 @@ template <typename T, typename MemSpace, Layout DataLayout>
 void
 ConstFieldData<T, MemSpace, DataLayout>::sync_to_host(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout)
 {
-  ProfilingBlock prof("ConstFieldData::sync_to_host()");
   impl::transpose_to_pinned_and_mapped_memory<T>(execSpace, this->m_deviceFieldMetaData, hostDataLayout);
   execSpace.fence();
 }
@@ -425,7 +424,6 @@ template <typename T, typename MemSpace, Layout DataLayout>
 void
 ConstFieldData<T, MemSpace, DataLayout>::sync_to_device(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout)
 {
-  ProfilingBlock prof("ConstFieldData::sync_to_device()");
   impl::transpose_from_pinned_and_mapped_memory<T>(execSpace, this->m_deviceFieldMetaData, hostDataLayout);
   execSpace.fence();
 }
@@ -448,13 +446,17 @@ ConstFieldData<T, MemSpace, DataLayout>::update(const stk::ngp::ExecSpace& execS
 
   deviceFieldDataManager->set_device_field_meta_data(*this);
 
-  int fieldIndex = -1;
-  const auto deviceBucketsModified = std::any_cast<DeviceBucketsModifiedCollectionType<MemSpace>>(
-      deviceFieldDataManager->get_device_bucket_is_modified(this->field_ordinal(), fieldIndex));
 
-  impl::transpose_modified_buckets_to_device<T>(execSpace, this->m_deviceFieldMetaData, fieldIndex,
-                                                deviceBucketsModified, hostDataLayout);
+  if (not deviceFieldDataManager->has_unified_device_storage(this->field_ordinal())) {
+    int fieldIndex = -1;
+    const auto deviceBucketsModified = std::any_cast<DeviceBucketsModifiedCollectionType<MemSpace>>(
+        deviceFieldDataManager->get_device_bucket_is_modified(this->field_ordinal(), fieldIndex));
+
+    impl::transpose_modified_buckets_to_device<T>(execSpace, this->m_deviceFieldMetaData, fieldIndex,
+                                                  deviceBucketsModified, hostDataLayout);
+  }
   execSpace.fence();
+
   deviceFieldDataManager->clear_bucket_is_modified(this->field_ordinal());
 
   this->m_deviceFastMeshIndices = this->mesh().template get_updated_fast_mesh_indices<MemSpace>();

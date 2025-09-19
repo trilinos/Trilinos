@@ -16,9 +16,9 @@
 namespace Tpetra {
 namespace Details {
 
-template<class ExecutionSpace>
+template <class ExecutionSpace>
 class Static_Random_XorShift64_Pool {
-public:
+ public:
   // The resetPool function will re-initialize the pool based on the system RNG and the MPI rank.
   // On GPU architectures, this will likely involve non-trivial host-to-device transfers.
   static void resetPool(int mpi_rank);
@@ -26,17 +26,16 @@ public:
   // The isSet function returns true if resetPool has been callled.
   static bool isSet();
   // The getPool function will return the existing pool.
-  static Kokkos::Random_XorShift64_Pool<ExecutionSpace> & getPool();
+  static Kokkos::Random_XorShift64_Pool<ExecutionSpace>& getPool();
 
   // Do not access this directly.  This is public only for deallocation purposes
   static Kokkos::Random_XorShift64_Pool<ExecutionSpace>* pool_;
-private:
-  static unsigned int getSeedFromRank(int mpi_rank);
 
+ private:
+  static unsigned int getSeedFromRank(int mpi_rank);
 };
 
+}  // namespace Details
+}  // namespace Tpetra
 
-} // namespace Details
-} // namespace Tpetra
-
-#endif // TPETRA_DETAILS_RANDOM_DECL_HPP
+#endif  // TPETRA_DETAILS_RANDOM_DECL_HPP

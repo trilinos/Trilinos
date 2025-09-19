@@ -17,10 +17,10 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
-template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template <class Scalar        = ::Tpetra::Details::DefaultTypes::scalar_type,
+          class LocalOrdinal  = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+          class Node          = ::Tpetra::Details::DefaultTypes::node_type>
 class CrsMatrix;
 
 /// \class is_crs_matrix
@@ -37,9 +37,7 @@ struct is_crs_matrix<const CrsMatrix<P...>> : public std::true_type {};
 template <typename T>
 inline constexpr bool is_crs_matrix_v = is_crs_matrix<T>::value;
 
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+}  // namespace Tpetra
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
-
-
-#endif // TPETRA_CRSMATRIX_FWD_HPP
+#endif  // TPETRA_CRSMATRIX_FWD_HPP

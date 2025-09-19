@@ -66,6 +66,11 @@ struct SimdLength<float> {
 };
 
 template <>
+struct SimdLength<int> {
+  static constexpr int length = 1;
+};
+
+template <>
 struct SimdLength<simd::Float> {
   static constexpr int length = simd::nfloats;
 };

@@ -46,7 +46,7 @@ namespace simd {
 
 struct Double {
   using native_simd_t = SIMD_NAMESPACE::native_simd<double>;
-
+  
 #if !defined(STK_VOLATILE_SIMD)
   static_assert(std::is_trivially_copyable<native_simd_t>::value,
                  "native_simd<double> must be trivially copyable");
@@ -56,8 +56,8 @@ struct Double {
 
   STK_MATH_FORCE_INLINE Double() {}
 
-  template <typename T>
-  STK_MATH_FORCE_INLINE Double(const T x, typename std::enable_if<std::is_convertible<T,double>::value, void*>::type=0)
+  template <typename T, typename = typename std::enable_if<std::is_convertible<T, double>::value>::type>
+  STK_MATH_FORCE_INLINE Double(const T x)
     : _data(static_cast<double>(x)) {
   }
 
@@ -66,7 +66,7 @@ struct Double {
   }
 
   STK_MATH_FORCE_INLINE Double(const Double& x)
-    : _data(x._data.get()) {
+    : _data(x._data) {
   }
 
 #ifdef STK_VOLATILE_SIMD
@@ -80,8 +80,8 @@ struct Double {
     return *this;
   }
 
-  template <typename T>
-  STK_MATH_FORCE_INLINE typename std::enable_if<std::is_convertible<T,double>::value, Double&>::type operator= (const T x) {
+  template <typename T, typename = typename std::enable_if<std::is_convertible<T, double>::value>::type>
+  STK_MATH_FORCE_INLINE Double& operator=(const T x) {
     _data = static_cast<double>(x);
     return *this;
   }
@@ -136,8 +136,15 @@ struct Double {
     return Double(-_data);
   }
 
-  STK_MATH_FORCE_INLINE double& operator[](int i) {return (reinterpret_cast<double*>(&_data))[i];}
-  STK_MATH_FORCE_INLINE const double& operator[](int i) const {return (reinterpret_cast<const double*>(&_data))[i];}
+  STK_MATH_FORCE_INLINE double& operator[](int i) {
+    assert(i >= 0 && static_cast<std::size_t>(i) < ndoubles);
+    return (reinterpret_cast<double*>(&_data))[i];
+  }
+
+  STK_MATH_FORCE_INLINE const double& operator[](int i) const {
+    assert(i >= 0 && static_cast<std::size_t>(i) < ndoubles);
+    return (reinterpret_cast<const double*>(&_data))[i];
+  }
 
   native_simd_t _data; // the "_" means you should try not to use this directly
   // it is made public to avoid function call overhead 

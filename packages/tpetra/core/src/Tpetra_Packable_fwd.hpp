@@ -17,10 +17,10 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
-template<class Packet,
-         class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type>
+template <class Packet,
+          class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type>
 class Packable;
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+}  // namespace Tpetra
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
-#endif // TPETRA_PACKABLE_FWD_HPP
+#endif  // TPETRA_PACKABLE_FWD_HPP

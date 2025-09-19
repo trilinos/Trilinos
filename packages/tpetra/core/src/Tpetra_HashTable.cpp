@@ -17,16 +17,15 @@
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_HashTable_def.hpp"
 
-
 namespace Tpetra {
 
 namespace Details {
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_LG(TPETRA_HASHTABLE_INSTANT_DEFAULTNODE)
-} // namespace Details
+TPETRA_INSTANTIATE_LG(TPETRA_HASHTABLE_INSTANT_DEFAULTNODE)
+}  // namespace Details
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif  // HAVE_TPETRA_EXPLICIT_INSTANTIATION

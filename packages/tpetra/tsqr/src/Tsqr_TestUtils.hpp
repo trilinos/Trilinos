@@ -17,11 +17,11 @@
 #include "TpetraTSQR_config.h"
 
 namespace Teuchos {
-  // Forward declaration of Teuchos::Comm, so that we can use
-  // RCP<Comm<int> > as the argument of methods defined in this header
-  // file, without needing to include Teuchos_Comm.hpp.
-  template<class Ordinal>
-  class Comm;
-}
+// Forward declaration of Teuchos::Comm, so that we can use
+// RCP<Comm<int> > as the argument of methods defined in this header
+// file, without needing to include Teuchos_Comm.hpp.
+template <class Ordinal>
+class Comm;
+}  // namespace Teuchos
 
-#endif // TSQR_TESTUTILS_HPP
+#endif  // TSQR_TESTUTILS_HPP

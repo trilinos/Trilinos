@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -120,10 +120,12 @@ C   --   LENSTR - (STRLIB) Find string length
       IF (NOUT .LE. 0) THEN
          WRITE (*, 10000) BLANK(:NCEN(L)), BANR(:L)
          WRITE (*, 10030)
+         WRITE (NOUT, 10040)
          WRITE (*, *)
       ELSE
          WRITE (NOUT, 10000) BLANK(:NCEN(L)), BANR(:L)
          WRITE (NOUT, 10030)
+         WRITE (NOUT, 10040)
          WRITE (NOUT, *)
       END IF
 
@@ -132,5 +134,7 @@ C   --   LENSTR - (STRLIB) Find string length
 10010  FORMAT ('Run on ', A4, '-', A2, '-', A2, ' at ', A8)
 10020  FORMAT ('Run on ', A8, ' at ', A8)
 10030  FORMAT (/,15x,
-     *   '==== Email gdsjaar@sandia.gov for support ====')
+     *   '==== Email sierra-help@sandia.gov for support ====')
+10040  FORMAT (/,15x,
+     *   '==== https://github.com/sandialabs/seacas/issues ====')
       END

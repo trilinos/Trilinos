@@ -40,7 +40,6 @@
 #include <array>
 #include <climits>
 #include <cstddef>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <map>
@@ -1280,6 +1279,12 @@ namespace Ioss {
       // Add name as alias to itself to simplify later uses...
       add_alias_nl(assembly);
 
+      // Also add "assembly_{id}" as an alias.
+      auto id = assembly->get_optional_property(id_str(), -1);
+      if (id != -1) {
+        std::string as_alias = fmt::format("assembly_{}", id);
+        add_alias_nl(assembly->name(), as_alias, assembly->type());
+      }
       return true;
     }
     return false;

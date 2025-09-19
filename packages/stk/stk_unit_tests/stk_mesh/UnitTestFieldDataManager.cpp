@@ -122,7 +122,7 @@ void testAllocateFieldData(stk::mesh::BulkData& bulkData, const size_t extraCapa
         size_t bytesPerEntity = field->get_meta_data_for_field()[bucket->bucket_id()].m_bytesPerEntity;
         size_t numEntitiesAllocated = bucket->capacity();
         totalBytesAllocatedForField += stk::adjust_up_to_alignment_boundary(numEntitiesAllocated*bytesPerEntity,
-                                                                            fieldDataManager.get_alignment_bytes());
+                                                                            fieldDataManager.get_alignment_padding_size());
         auto fieldValues = fieldData.bucket_values(*bucket);
         for (stk::mesh::EntityIdx entity : bucket->entities()) {
           for (stk::mesh::ComponentIdx component : fieldValues.components()) {

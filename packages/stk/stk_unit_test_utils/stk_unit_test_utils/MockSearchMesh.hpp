@@ -180,7 +180,6 @@ class Hex8SendMesh : public stk::search::SourceMeshInterface<Hex8SendMesh>
     return stk::search::get_part_membership(m_bulk, k, m_parts);
   }
 
-  //BEGINSource_bounding_boxes
   void bounding_boxes(std::vector<BoundingBox>& boxes, [[maybe_unused]] bool /*includeGhosts*/=false) const override
   {
     Point min_corner, max_corner;
@@ -202,9 +201,7 @@ class Hex8SendMesh : public stk::search::SourceMeshInterface<Hex8SendMesh>
     std::sort(boxes.begin(), boxes.end(),
         [](const BoundingBox& a, const BoundingBox& b) { return a.second.id() < b.second.id(); });
   }
-  //ENDSource_bounding_boxes
 
-  //BEGINSource_find_parametric_coords
   void find_parametric_coords(const EntityKey& k,
       const std::vector<double>& toCoords,
       std::vector<double>& parametricCoords,
@@ -240,7 +237,6 @@ class Hex8SendMesh : public stk::search::SourceMeshInterface<Hex8SendMesh>
 
     isWithinParametricTolerance = parametricDistance <= (1 + m_parametricTolerance);
   }
-  //ENDSource_find_parametric_coords
 
   bool modify_search_outside_parametric_tolerance(const EntityKey& /*k*/,
       const std::vector<double>& /*toCoords*/,

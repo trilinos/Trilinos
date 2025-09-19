@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>    V;
   typedef ROL::StdVector<RealT> SV;
 
-  typedef typename vector::size_type uint;
+  typedef typename vector::size_type luint;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -330,8 +330,8 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    uint nx     = 100;   // Set spatial discretization.
-    uint nt     = 300;   // Set temporal discretization.
+    luint nx     = 100;   // Set spatial discretization.
+    luint nt     = 300;   // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-2; // Set penalty parameter.
     vector u0(nx,0.0); // Set initial conditions
@@ -341,7 +341,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(nt, 0.0);
     ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(nt, 0.0);
 
-    for (uint i=0; i<nt; i++) {
+    for (luint i=0; i<nt; i++) {
       (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*y_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
@@ -386,7 +386,7 @@ int main(int argc, char *argv[]) {
     // Output control to file.
     std::ofstream file;
     file.open("control_PDAS.txt");
-    for ( uint i = 0; i < nt; i++ ) {
+    for ( luint i = 0; i < nt; i++ ) {
       file << (*x_ptr)[i] << "\n";
     }
     file.close();
@@ -405,7 +405,7 @@ int main(int argc, char *argv[]) {
 
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
-    for ( uint i = 0; i < nt; i++ ) {
+    for ( luint i = 0; i < nt; i++ ) {
       file_tr << (*y_ptr)[i] << "\n";
     }
     file_tr.close();

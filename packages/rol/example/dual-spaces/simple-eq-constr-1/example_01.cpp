@@ -412,7 +412,7 @@ int main(int argc, char *argv[]) {
   //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   typedef std::vector<RealT> vector;
-  typedef vector::size_type  uint;
+  typedef vector::size_type  luint;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -431,8 +431,8 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    uint dim = 5;
-    uint nc = 3;
+    luint dim = 5;
+    luint nc = 3;
     ROL::Ptr<ROL::Objective<RealT> > obj;
     ROL::Ptr<ROL::Constraint<RealT> > constr;
     ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);
@@ -464,14 +464,14 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ConStdVector<RealT>>     vc = ROL::makePtr<ConStdVector<RealT>>(vc_ptr);
     ROL::Ptr<ConDualStdVector<RealT>> vl = ROL::makePtr<ConDualStdVector<RealT>>(vl_ptr);
     // set xtest, d, v
-    for (uint i=0; i<dim; i++) {
+    for (luint i=0; i<dim; i++) {
       (*xtest_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*d_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*gd_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*v_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
     // set vc, vl
-    for (uint i=0; i<nc; i++) {
+    for (luint i=0; i<nc; i++) {
       (*vc_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*vl_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }

@@ -25,9 +25,9 @@ namespace Impl {
 /// Methods are virtual because they are meant to be called from host.
 /// (For the CUDA case, we plan to make cuSOLVER calls from host; we
 /// don't need to call QR from device.)
-template<class Scalar>
+template <class Scalar>
 class RawQR {
-public:
+ public:
   using value_type = Scalar;
 
   virtual ~RawQR() = default;
@@ -97,7 +97,7 @@ public:
                      value_type WORK[], const int lwork) const = 0;
 };
 
-} // namespace Impl
-} // namespace TSQR
+}  // namespace Impl
+}  // namespace TSQR
 
-#endif // TSQR_IMPL_RAWQR_HPP
+#endif  // TSQR_IMPL_RAWQR_HPP

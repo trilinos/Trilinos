@@ -25,9 +25,9 @@ namespace Details {
 ///
 /// \tparam T The type of the data to pack / unpack.
 /// \tparam D The Kokkos "device" type; where the data live.
-template<class T, class D>
+template <class T, class D>
 struct ScalarViewTraits {
-  using value_type = T;
+  using value_type  = T;
   using device_type = D;
 
   /// \brief Given an instance of \c value_type allocated with the
@@ -60,10 +60,9 @@ struct ScalarViewTraits {
   ///   might be able just to use this implementation as-is, and just
   ///   reimplement numValuesPerScalar().
   static Kokkos::View<value_type*, device_type>
-  allocateArray (const value_type& x,
-                 const size_t numEnt,
-                 const std::string& label = "")
-  {
+  allocateArray(const value_type& x,
+                const size_t numEnt,
+                const std::string& label = "") {
     using view_type = Kokkos::View<value_type*, device_type>;
 
     // When the traits::specialize type is non-void this exploits
@@ -74,17 +73,16 @@ struct ScalarViewTraits {
     // that value.
     // Otherwise, the number of arguments must match the dynamic rank
     // (i.e. number *'s with the value_type of the View)
-    const size_t numVals = PackTraits<value_type>::numValuesPerScalar (x);
-    if (std::is_same<typename view_type::traits::specialize, void>::value ) {
-      return view_type (label, numEnt);
-    }
-    else {
-      return view_type (label, numEnt, numVals);
+    const size_t numVals = PackTraits<value_type>::numValuesPerScalar(x);
+    if (std::is_same<typename view_type::traits::specialize, void>::value) {
+      return view_type(label, numEnt);
+    } else {
+      return view_type(label, numEnt, numVals);
     }
   }
-}; // struct ScalarViewTraits
+};  // struct ScalarViewTraits
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_SCALARVIEWTRAITS_HPP
+#endif  // TPETRA_DETAILS_SCALARVIEWTRAITS_HPP

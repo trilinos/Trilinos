@@ -23,21 +23,18 @@
  * they are cached for future use.  Therefore, to test several values of an
  * environment variable, several tests need to be created (one for each distinct
  * value of the environment variable).
-*/
+ */
 
 namespace {
 
-TEUCHOS_STATIC_SETUP()
-{
+TEUCHOS_STATIC_SETUP() {
   setenv("TPETRA_DEBUG", "OFF", 1);
   setenv("TPETRA_VERBOSE", "OFF", 1);
   setenv("TPETRA_ASSUME_GPU_AWARE_MPI", "OFF", 1);
   setenv("CUDA_LAUNCH_BLOCKING", "0", 1);
 }
 
-TEUCHOS_UNIT_TEST(Behavior, Off)
-{
-
+TEUCHOS_UNIT_TEST(Behavior, Off) {
   // TPETRA_DEBUG was set globally in TEUCHOS_STATIC_SETUP to OFF, so any query
   // on TPETRA_DEBUG should evaluate to false, including named variants.
   bool dbg = Tpetra::Details::Behavior::debug();
@@ -59,4 +56,4 @@ TEUCHOS_UNIT_TEST(Behavior, Off)
 
   TEST_ASSERT(!Tpetra::Details::Behavior::cudaLaunchBlocking());
 }
-} // namespace (anonymous)
+}  // namespace

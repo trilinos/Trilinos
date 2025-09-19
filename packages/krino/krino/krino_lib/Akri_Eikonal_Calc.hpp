@@ -14,10 +14,6 @@
 
 namespace krino {
 
-double calculate_gradient_magnitude_triangle(const std::array<stk::math::Vector3d,3> & x, const std::array<double,3> & d);
-
-double calculate_gradient_magnitude_tetrahedron(const std::array<stk::math::Vector3d,4> & x, const std::array<double,4> & d);
-
 double calculate_gradient_magnitude(const int npe,
     const stk::mesh::Entity * elem_nodes,
     const FieldRef dRef,

@@ -12,13 +12,16 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
-#include <cassert>
-#include <fmt/ostream.h>
-#include <iosfwd>
-#include <numeric>
-#include <stdint.h>
-
 #include "Ioss_Utils.h"
+
+#include <array>
+#include <cassert>
+#include <cstdint>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <numeric>
+#include <vector>
+
 #include "robin_set.h"
 
 // Options for generating hash function key...

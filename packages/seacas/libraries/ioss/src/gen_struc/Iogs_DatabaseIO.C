@@ -1,37 +1,37 @@
-// Copyright(C) 1999-2020, 2022, 2023, 2024, 2025 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include "Ioss_CodeTypes.h" // for Int64Vector, IntVector
-#include "Ioss_SideBlock.h" // for SideBlock
-#include "Ioss_Utils.h"     // for Utils, IOSS_ERROR
+#include "Ioss_CodeTypes.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_State.h"
+#include "Ioss_Utils.h"
 #include "gen_struc/Iogs_DatabaseIO.h"
-#include "gen_struc/Iogs_GeneratedMesh.h" // for GeneratedMesh
-#include <cassert>                        // for assert
-#include <cmath>                          // for sqrt
+#include "gen_struc/Iogs_GeneratedMesh.h"
+#include <cassert>
+#include <cmath>
 #include <cstdlib>
 #include <fmt/format.h>
-#include <iostream> // for ostringstream, operator<<, etc
-#include <string>   // for string, operator==, etc
+#include <string>
 
-#include "Ioss_CommSet.h"         // for CommSet
-#include "Ioss_DBUsage.h"         // for DatabaseUsage
-#include "Ioss_DatabaseIO.h"      // for DatabaseIO
-#include "Ioss_EntityType.h"      // for EntityType, etc
-#include "Ioss_Field.h"           // for Field, etc
-#include "Ioss_GroupingEntity.h"  // for GroupingEntity
-#include "Ioss_IOFactory.h"       // for IOFactory
-#include "Ioss_Map.h"             // for Map, MapContainer
-#include "Ioss_NodeBlock.h"       // for NodeBlock
-#include "Ioss_ParallelUtils.h"   // for ParallelUtils
-#include "Ioss_Property.h"        // for Property
-#include "Ioss_PropertyManager.h" // for PropertyManager
-#include "Ioss_Region.h"          // for Region
-#include "Ioss_SideSet.h"         // for SideSet
+#include "Ioss_CommSet.h"
+#include "Ioss_DBUsage.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_EntityType.h"
+#include "Ioss_Field.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_IOFactory.h"
+#include "Ioss_Map.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Property.h"
+#include "Ioss_PropertyManager.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideSet.h"
 #include "Ioss_StructuredBlock.h"
-#include "Ioss_VariableType.h" // for VariableType
+#include "Ioss_VariableType.h"
 
 namespace {
   template <typename INT>

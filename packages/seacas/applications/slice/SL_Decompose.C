@@ -104,7 +104,7 @@ namespace {
     std::ostringstream errmsg;
     fmt::print(
         errmsg,
-        "Exodus error ({}) {} at line {} in file Slice.C. Please report to gdsjaar@sandia.gov "
+        "Exodus error ({}) {} at line {} in file Slice.C. Please report to sierra-help@sandia.gov "
         "if you need help.",
         exerrval, ex_strerror(exerrval), lineno);
 

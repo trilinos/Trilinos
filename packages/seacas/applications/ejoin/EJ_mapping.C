@@ -15,6 +15,7 @@
 #include "Ioss_Sort.h"
 #include <algorithm>
 #include <cstddef>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <numeric>
 #include <utility>

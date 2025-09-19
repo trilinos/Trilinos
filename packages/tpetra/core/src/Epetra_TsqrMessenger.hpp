@@ -42,39 +42,35 @@
 #include <Teuchos_RCP.hpp>
 #include <Tsqr_TeuchosMessenger.hpp>
 
-
 namespace TSQR {
-  namespace Epetra {
+namespace Epetra {
 
-    /// \brief Return the Teuchos communicator corresponding to the
-    ///   given Epetra communicator.
-    ///
-    /// If the input Epetra_Comm is really an Epetra_MpiComm, return a
-    /// Teuchos-wrapped version of its raw MPI_Comm MPI communicator
-    /// object.  Otherwise, return a Teuchos::SerialComm instance.  It
-    /// should be one of these two things, but if it's not, this
-    /// function throws std::invalid_argument.
-    TPETRA_DEPRECATED_MSG("epetra removal")
-    Teuchos::RCP<const Teuchos::Comm<int> >
-    extractTeuchosComm (const Teuchos::RCP<const Epetra_Comm>& epetraComm);
+/// \brief Return the Teuchos communicator corresponding to the
+///   given Epetra communicator.
+///
+/// If the input Epetra_Comm is really an Epetra_MpiComm, return a
+/// Teuchos-wrapped version of its raw MPI_Comm MPI communicator
+/// object.  Otherwise, return a Teuchos::SerialComm instance.  It
+/// should be one of these two things, but if it's not, this
+/// function throws std::invalid_argument.
+TPETRA_DEPRECATED_MSG("epetra removal")
+Teuchos::RCP<const Teuchos::Comm<int> >
+extractTeuchosComm(const Teuchos::RCP<const Epetra_Comm>& epetraComm);
 
-    //! Wrap the given Epetra_Comm in an object that TSQR understands.
-    template<class Datum>
-    TPETRA_DEPRECATED_MSG("epetra removal")
-    Teuchos::RCP<TSQR::MessengerBase<Datum> >
-    makeTsqrMessenger (const Teuchos::RCP<const Epetra_Comm>& pComm)
-    {
-      typedef TSQR::MessengerBase<Datum> base_mess_type;
-      typedef TSQR::TeuchosMessenger<Datum> mess_type;
+//! Wrap the given Epetra_Comm in an object that TSQR understands.
+template <class Datum>
+TPETRA_DEPRECATED_MSG("epetra removal")
+Teuchos::RCP<TSQR::MessengerBase<Datum> > makeTsqrMessenger(const Teuchos::RCP<const Epetra_Comm>& pComm) {
+  typedef TSQR::MessengerBase<Datum> base_mess_type;
+  typedef TSQR::TeuchosMessenger<Datum> mess_type;
 
-      Teuchos::RCP<mess_type> pMess =
-        Teuchos::rcp (new mess_type (extractTeuchosComm (pComm)));
-      return Teuchos::rcp_implicit_cast<base_mess_type> (pMess);
-    }
-  } // namespace Epetra
-} // namespace TSQR
+  Teuchos::RCP<mess_type> pMess =
+      Teuchos::rcp(new mess_type(extractTeuchosComm(pComm)));
+  return Teuchos::rcp_implicit_cast<base_mess_type>(pMess);
+}
+}  // namespace Epetra
+}  // namespace TSQR
 
-#endif // defined(TPETRA_ENABLE_DEPRECATED_CODE) && defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
+#endif  // defined(TPETRA_ENABLE_DEPRECATED_CODE) && defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
-#endif // EPETRA_TSQRMESSENGER_HPP
-
+#endif  // EPETRA_TSQRMESSENGER_HPP

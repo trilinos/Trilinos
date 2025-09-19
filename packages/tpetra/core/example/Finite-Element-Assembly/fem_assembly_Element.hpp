@@ -12,8 +12,7 @@
 
 #include <iomanip>
 
-namespace TpetraExamples
-{
+namespace TpetraExamples {
 
 //
 // This function does a very rough approximation of 2D finite-difference
@@ -39,17 +38,14 @@ namespace TpetraExamples
 //    3 |-1      -1   2
 //
 
-
-
 template <class ScalarType>
 KOKKOS_INLINE_FUNCTION void ReferenceQuad4(ScalarType elementMatrix[4][4], ScalarType elementRHS[4]) {
-  size_t lr[4] = {1,0,3,2};
-  size_t ud[4] = {3,2,1,0};
+  size_t lr[4] = {1, 0, 3, 2};
+  size_t ud[4] = {3, 2, 1, 0};
 
-  for (size_t i=0; i<4; i++)  {
-
+  for (size_t i = 0; i < 4; i++) {
     // Zero everything
-    for (size_t j=0; j<4; j++) {
+    for (size_t j = 0; j < 4; j++) {
       elementMatrix[i][j] = 0.0;
     }
 
@@ -65,25 +61,21 @@ KOKKOS_INLINE_FUNCTION void ReferenceQuad4(ScalarType elementMatrix[4][4], Scala
   }
 }
 
-
 // This function prints out the quad4 array in a nice way.
 //  rows x cols?
 //
-void PrettyPrintQuad4(scalar_2d_array_type & elementMatrix)
-{
+void PrettyPrintQuad4(scalar_2d_array_type& elementMatrix) {
   size_t nr = elementMatrix.extent(0);
   size_t nc = elementMatrix.extent(1);
-  for(size_t row_idx=0; row_idx<nr; row_idx++)
-  {
+  for (size_t row_idx = 0; row_idx < nr; row_idx++) {
     std::cout << "[ ";
-    for(size_t col_idx=0; col_idx<nc; col_idx++) {
+    for (size_t col_idx = 0; col_idx < nc; col_idx++) {
       std::cout << std::setw(2) << elementMatrix(row_idx, col_idx) << " ";
     }
     std::cout << "]" << std::endl;
   }
 }
 
-} // end of namespace TpetraExamples
-
+}  // end of namespace TpetraExamples
 
 #endif  // TPETRAEXAMPLES_FEM_ASSEMBLY_ELEMENT_HPP

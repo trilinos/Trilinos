@@ -57,12 +57,11 @@ namespace Details {
 ///
 /// \param comm [in] The communicator over which this operation is a
 ///   collective.
-void
-gathervPrint (std::ostream& out,
-              const std::string& s,
-              const Teuchos::Comm<int>& comm);
+void gathervPrint(std::ostream& out,
+                  const std::string& s,
+                  const Teuchos::Comm<int>& comm);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_GATHERPRINT_HPP
+#endif  // TPETRA_DETAILS_GATHERPRINT_HPP

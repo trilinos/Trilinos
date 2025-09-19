@@ -9,20 +9,22 @@
 #include "edge_block.h" // for Edge_Block
 #include "exo_block.h"  // for Exo_Block
 #include "exo_read.h"
-#include "exodusII.h"   // for ex_init_params, ex_opts, etc
-#include "face_block.h" // for Face_Block
-#include "fmt/ostream.h"
-#include "fmt/ranges.h"
+#include "exodusII.h"     // for ex_init_params, ex_opts, etc
+#include "face_block.h"   // for Face_Block
 #include "node_set.h"     // for Node_Set
 #include "side_set.h"     // for Side_Set
 #include "smart_assert.h" // for SMART_ASSERT, Assert, etc
 #include "stringx.h"      // for chop_whitespace
 #include "util.h"         // for free_name_array, etc
-#include <algorithm>      // for copy
-#include <cstdint>        // for int64_t
-#include <cstdio>         // for fclose, FILE, fopen
-#include <cstdlib>        // for exit
-#include <cstring>        // for strlen
+
+#include <algorithm> // for copy
+#include <cstdint>   // for int64_t
+#include <cstdio>    // for fclose, FILE, fopen
+#include <cstdlib>   // for exit
+#include <cstring>   // for strlen
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <iostream>
 #include <set>    // for set
 #include <string> // for string, char_traits, etc

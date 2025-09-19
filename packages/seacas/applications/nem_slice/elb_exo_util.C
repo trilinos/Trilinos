@@ -15,6 +15,7 @@
 #include <cstdio>  // for nullptr
 #include <cstdlib> // for malloc, free, calloc
 #include <cstring> // for strlen
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <string>
 #include <vector>

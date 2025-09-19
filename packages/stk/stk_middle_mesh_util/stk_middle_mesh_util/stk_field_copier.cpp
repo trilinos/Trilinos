@@ -46,16 +46,18 @@ void StkFieldCopier::copy(const stk::mesh::Field<double>& stkField, mesh::FieldP
   int numCompPerNode = middleMeshFieldPtr->get_num_comp();
   auto& middleMeshField = *middleMeshFieldPtr;
 
+  auto stkVertFieldData = m_stkVertField->data<stk::mesh::ReadOnly>();
+  auto stkFieldData     = stkField.data<stk::mesh::ReadOnly>();
   for (const stk::mesh::Bucket* bucket : buckets)
     for (stk::mesh::Entity node : *bucket)
     {
-      VertIdType* stkNodeFieldData = stk::mesh::field_data(*m_stkVertField, node);
-      int meshVertId = static_cast<int>(stkNodeFieldData[0]);
+      VertIdType meshVertId = stkVertFieldData.entity_values(node)(0_comp);
       mesh::MeshEntityPtr vert = m_middleMesh->get_vertices()[meshVertId];
-      const double* stkFieldData = stk::mesh::field_data(stkField, node);
-      for (int i=0; i < numNodesPerEntity; ++i)
-        for (int j=0; j < numCompPerNode; ++j)
-          middleMeshField(vert, i, j) = stkFieldData[i * numCompPerNode + j];
+
+      auto stkFieldDataForNode = stkFieldData.entity_values(node);
+      for (stk::mesh::CopyIdx i=0_copy; i < numNodesPerEntity; ++i)
+        for (stk::mesh::ComponentIdx j=0_comp; j < numCompPerNode; ++j)
+          middleMeshField(vert, i, j) = stkFieldDataForNode(i, j);
     }
 }
 
@@ -70,17 +72,19 @@ void StkFieldCopier::copy(const mesh::FieldPtr<double> middleMeshFieldPtr, stk::
   int numNodesPerEntity = middleMeshFieldPtr->get_field_shape().get_num_nodes(0);
   int numCompPerNode = middleMeshFieldPtr->get_num_comp();
   auto& middleMeshField = *middleMeshFieldPtr;
+
+  auto stkVertFieldData = m_stkVertField->data<stk::mesh::ReadOnly>();
+  auto stkFieldData = stkField.data<stk::mesh::ReadWrite>();
   for (const stk::mesh::Bucket* bucket : buckets)
     for (stk::mesh::Entity node : *bucket)
     {
-      VertIdType* stkNodeFieldData = stk::mesh::field_data(*m_stkVertField, node);
-      int meshVertId = static_cast<int>(stkNodeFieldData[0]);
+      VertIdType meshVertId = stkVertFieldData.entity_values(node)(0_comp);
       mesh::MeshEntityPtr vert = m_middleMesh->get_vertices()[meshVertId];
 
-      double* stkFieldData = stk::mesh::field_data(stkField, node);
-      for (int i=0; i < numNodesPerEntity; ++i)
-        for (int j=0; j < numCompPerNode; ++j)
-          stkFieldData[i * numCompPerNode + j] = middleMeshField(vert, i, j);
+      auto stkFieldDataForNode = stkFieldData.entity_values(node);
+      for (stk::mesh::CopyIdx i=0_copy; i < numNodesPerEntity; ++i)
+        for (stk::mesh::ComponentIdx j=0_comp; j < numCompPerNode; ++j)
+          stkFieldDataForNode(i, j) = middleMeshField(vert, i, j);
     }
 }
 

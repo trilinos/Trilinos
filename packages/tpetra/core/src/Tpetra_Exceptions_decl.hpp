@@ -44,23 +44,23 @@ namespace Details {
 ///
 /// \tparam GlobalOrdinal Same as the GlobalOrdinal template
 ///   parameter of Map, CrsGraph, CrsMatrix, MultiVector, etc.
-template<class GlobalOrdinal>
+template <class GlobalOrdinal>
 class InvalidGlobalIndex : public std::domain_error {
-public:
+ public:
   /// \brief Constructor.
   ///
   /// \param msg [in] The exception message.
   /// \param globalIndex [in] The offending global index.
-  InvalidGlobalIndex (const std::string& msg, const GlobalOrdinal globalIndex)
-    : std::domain_error (msg), glInd_ (globalIndex) 
-    {}
-  
+  InvalidGlobalIndex(const std::string& msg, const GlobalOrdinal globalIndex)
+    : std::domain_error(msg)
+    , glInd_(globalIndex) {}
+
   //! The offending global index.
-  GlobalOrdinal offendingIndex () const { return glInd_; }
-  
-private:
+  GlobalOrdinal offendingIndex() const { return glInd_; }
+
+ private:
   //! The offending global index.
-  const GlobalOrdinal glInd_; 
+  const GlobalOrdinal glInd_;
 };
 
 /// \class InvalidGlobalRowIndex
@@ -68,19 +68,18 @@ private:
 ///
 /// \tparam GlobalOrdinal Same as the GlobalOrdinal template
 ///   parameter of Map, CrsGraph, CrsMatrix, MultiVector, etc.
-template<class GlobalOrdinal>
+template <class GlobalOrdinal>
 class InvalidGlobalRowIndex : public InvalidGlobalIndex<GlobalOrdinal> {
-public:
+ public:
   /// \brief Constructor.
   ///
   /// \param msg [in] The exception message.
   /// \param globalIndex [in] The offending global index.
-  InvalidGlobalRowIndex (const std::string& msg, const GlobalOrdinal globalIndex)
-    : InvalidGlobalIndex<GlobalOrdinal> (msg, globalIndex)
-    {}
+  InvalidGlobalRowIndex(const std::string& msg, const GlobalOrdinal globalIndex)
+    : InvalidGlobalIndex<GlobalOrdinal>(msg, globalIndex) {}
 };
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_EXCEPTIONS_DECL_HPP
+#endif  // TPETRA_EXCEPTIONS_DECL_HPP

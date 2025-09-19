@@ -8,7 +8,6 @@
 
 #include <Akri_Cutting_Surface.hpp>
 #include <Akri_DiagWriter.hpp>
-#include <Akri_LevelSet.hpp>
 
 #include <math.h>
 #include <iostream>

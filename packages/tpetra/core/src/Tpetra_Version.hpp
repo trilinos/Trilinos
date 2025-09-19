@@ -14,8 +14,8 @@
 
 namespace Tpetra {
 
-  std::string version();
+std::string version();
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_VERSION_HPP
+#endif  // TPETRA_VERSION_HPP

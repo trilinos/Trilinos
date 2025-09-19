@@ -40,6 +40,7 @@
 #include <malloc.h>
 #endif
 
+#include <cstdlib>
 #include <stdlib.h>
 #include <memory>
 

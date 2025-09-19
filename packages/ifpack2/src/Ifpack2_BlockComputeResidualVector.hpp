@@ -572,8 +572,8 @@ struct ComputeResidualVector {
     // subview pattern
     auto bb          = Kokkos::subview(b, block_range, 0);
     auto xx          = bb;
-    auto yy          = Kokkos::subview(y, block_range, 0);
-    auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
+    auto yy          = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
+    auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(tpetra_values.data(), blocksize, blocksize);
 
     const local_ordinal_type row = lr * blocksize;
     for (local_ordinal_type col = 0; col < num_vectors; ++col) {
@@ -720,12 +720,10 @@ struct ComputeResidualVector {
     const local_ordinal_type num_local_rows = lclrow.extent(0);
 
     // subview pattern
-    using subview_1D_right_t  = decltype(Kokkos::subview(b, block_range, 0));
-    using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
-    subview_1D_right_t bb(nullptr, blocksize);
-    subview_1D_right_t xx(nullptr, blocksize);
-    subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride(1)));
-    auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
+    auto bb          = Kokkos::subview(b, block_range, 0);
+    auto xx          = bb;
+    auto yy          = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
+    auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(tpetra_values.data(), blocksize, blocksize);
 
     // Get shared allocation for a local copy of x, Ax, and A
     impl_scalar_type *local_Ax = reinterpret_cast<impl_scalar_type *>(member.team_scratch(0).get_shmem(blocksize * sizeof(impl_scalar_type)));
@@ -816,13 +814,11 @@ struct ComputeResidualVector {
     const local_ordinal_type num_local_rows = lclrow.extent(0);
 
     // subview pattern
-    using subview_1D_right_t  = decltype(Kokkos::subview(b, block_range, 0));
-    using subview_1D_stride_t = decltype(Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0));
-    subview_1D_right_t bb(nullptr, blocksize);
-    subview_1D_right_t xx(nullptr, blocksize);
-    subview_1D_right_t xx_remote(nullptr, blocksize);
-    subview_1D_stride_t yy(nullptr, Kokkos::LayoutStride(blocksize, y_packed_scalar.stride(1)));
-    auto A_block_cst    = ConstUnmanaged<tpetra_block_access_view_type>(NULL, blocksize, blocksize);
+    auto bb             = Kokkos::subview(b, block_range, 0);
+    auto xx             = bb;
+    auto xx_remote      = bb;
+    auto yy             = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
+    auto A_block_cst    = ConstUnmanaged<tpetra_block_access_view_type>(tpetra_values.data(), blocksize, blocksize);
     auto colindsub_used = overlap ? colindsub_remote : colindsub;
     auto rowptr_used    = overlap ? rowptr_remote : rowptr;
 

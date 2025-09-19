@@ -31,9 +31,9 @@ class CuBlasHandle;
 //! Get TSQR's global cuBLAS handle wrapper.
 std::shared_ptr<CuBlasHandle> getCuBlasHandleSingleton();
 
-} // namespace Impl
-} // namespace TSQR
+}  // namespace Impl
+}  // namespace TSQR
 
-#endif // HAVE_TPETRATSQR_CUBLAS
+#endif  // HAVE_TPETRATSQR_CUBLAS
 
-#endif // TSQR_IMPL_CUBLASHANDLE_FWD_HPP
+#endif  // TSQR_IMPL_CUBLASHANDLE_FWD_HPP

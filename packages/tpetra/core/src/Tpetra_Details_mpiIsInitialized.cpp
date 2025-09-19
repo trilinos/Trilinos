@@ -9,38 +9,36 @@
 
 #include "Tpetra_Details_mpiIsInitialized.hpp"
 #ifdef HAVE_TPETRACORE_MPI
-#  include "mpi.h"
-#  include <iostream>
-#endif // HAVE_TPETRACORE_MPI
+#include "mpi.h"
+#include <iostream>
+#endif  // HAVE_TPETRACORE_MPI
 
 namespace Tpetra {
-  namespace Details {
+namespace Details {
 
-    bool mpiIsInitialized ()
-    {
+bool mpiIsInitialized() {
 #ifdef HAVE_TPETRACORE_MPI
-      int isInitialized = 0;
-      const int errCode = MPI_Initialized (&isInitialized);
-      // If the call failed, then assume MPI wasn't implemented
-      // correctly and return false.
-      return errCode == MPI_SUCCESS && (isInitialized != 0);
+  int isInitialized = 0;
+  const int errCode = MPI_Initialized(&isInitialized);
+  // If the call failed, then assume MPI wasn't implemented
+  // correctly and return false.
+  return errCode == MPI_SUCCESS && (isInitialized != 0);
 #else
-      return false; // Tpetra was not built with MPI support
-#endif // HAVE_TPETRACORE_MPI
-    }
+  return false;  // Tpetra was not built with MPI support
+#endif  // HAVE_TPETRACORE_MPI
+}
 
-    bool mpiIsFinalized ()
-    {
+bool mpiIsFinalized() {
 #ifdef HAVE_TPETRACORE_MPI
-      int isFinalized = 0;
-      const int errCode = MPI_Finalized (&isFinalized);
-      // If the call failed, then assume MPI wasn't implemented
-      // correctly and return false.
-      return errCode == MPI_SUCCESS && (isFinalized != 0);
+  int isFinalized   = 0;
+  const int errCode = MPI_Finalized(&isFinalized);
+  // If the call failed, then assume MPI wasn't implemented
+  // correctly and return false.
+  return errCode == MPI_SUCCESS && (isFinalized != 0);
 #else
-      return false; // Tpetra was not built with MPI support
-#endif // HAVE_TPETRACORE_MPI
-    }
+  return false;  // Tpetra was not built with MPI support
+#endif  // HAVE_TPETRACORE_MPI
+}
 
-  } // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra

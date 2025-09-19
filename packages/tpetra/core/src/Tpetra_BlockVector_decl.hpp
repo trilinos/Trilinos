@@ -41,16 +41,16 @@ namespace Tpetra {
 /// "multivectors" that are not "multi."  That is, a BlockVector has a
 /// single vector (column).  Please refer to the documentation of
 /// BlockMultiVector for details.
-template<class Scalar,
-         class LO,
-         class GO,
-         class Node>
+template <class Scalar,
+          class LO,
+          class GO,
+          class Node>
 class BlockVector : public BlockMultiVector<Scalar, LO, GO, Node> {
-private:
+ private:
   typedef BlockMultiVector<Scalar, LO, GO, Node> base_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
-public:
+ public:
   //! \name Typedefs to facilitate template metaprogramming.
   //@{
 
@@ -88,19 +88,19 @@ public:
   /// little_vec_type or const_little_vec_type.  This gives us a
   /// porting strategy to move from "classic" Tpetra to the Kokkos
   /// refactor version.
-  typedef typename base_type::little_vec_type 
-                              little_vec_type;
-  typedef typename base_type::little_host_vec_type 
-                              little_host_vec_type;
+  typedef typename base_type::little_vec_type
+      little_vec_type;
+  typedef typename base_type::little_host_vec_type
+      little_host_vec_type;
 
   /// \brief "Const block view" of all degrees of freedom at a mesh point.
   ///
   /// This is just like little_vec_type, except that you can't modify
   /// its entries.
-  typedef typename base_type::const_little_vec_type 
-                              const_little_vec_type;
-  typedef typename base_type::const_little_host_vec_type 
-                              const_little_host_vec_type;
+  typedef typename base_type::const_little_vec_type
+      const_little_vec_type;
+  typedef typename base_type::const_little_host_vec_type
+      const_little_host_vec_type;
 
   //@}
   //! \name Constructors
@@ -110,25 +110,25 @@ public:
   ///
   /// Creates an empty BlockVector.  An empty BlockVector has zero
   /// rows, and block size zero.
-  BlockVector ();
+  BlockVector();
 
   //! Copy constructor (shallow copy).
-  BlockVector (const BlockVector<Scalar, LO, GO, Node>&) = default;
+  BlockVector(const BlockVector<Scalar, LO, GO, Node>&) = default;
 
   //! Move constructor (shallow move).
-  BlockVector (BlockVector<Scalar, LO, GO, Node>&&) = default;
+  BlockVector(BlockVector<Scalar, LO, GO, Node>&&) = default;
 
   //! Copy assigment (shallow copy).
   BlockVector<Scalar, LO, GO, Node>&
-  operator= (const BlockVector<Scalar, LO, GO, Node>&) = default;
+  operator=(const BlockVector<Scalar, LO, GO, Node>&) = default;
 
   //! Move assigment (shallow move).
   BlockVector<Scalar, LO, GO, Node>&
-  operator= (BlockVector<Scalar, LO, GO, Node>&&) = default;
+  operator=(BlockVector<Scalar, LO, GO, Node>&&) = default;
 
   //! "Copy constructor" with option to deep copy.
-  BlockVector (const BlockVector<Scalar, LO, GO, Node>& in,
-               const Teuchos::DataAccess copyOrView);
+  BlockVector(const BlockVector<Scalar, LO, GO, Node>& in,
+              const Teuchos::DataAccess copyOrView);
 
   /// \brief Constructor that takes a mesh Map and a block size.
   ///
@@ -159,15 +159,15 @@ public:
   /// column.  This lets users solve linear systems with Trilinos'
   /// solvers and preconditioners, that expect vectors as
   /// Tpetra::MultiVector or Tpetra::Vector instances.
-  BlockVector (const map_type& meshMap, const LO blockSize);
+  BlockVector(const map_type& meshMap, const LO blockSize);
 
   /// \brief Constructor that takes a mesh Map, a point Map, and a
   ///   block size.
   ///
   /// See the documentation of the two-argument constructor above.
-  BlockVector (const map_type& meshMap,
-               const map_type& pointMap,
-               const LO blockSize);
+  BlockVector(const map_type& meshMap,
+              const map_type& pointMap,
+              const LO blockSize);
 
   /// \brief View an existing Vector or MultiVector.
   ///
@@ -182,9 +182,9 @@ public:
   ///
   /// \param blockSize [in] The number of degrees of freedom per mesh
   ///   point.  We assume that this is the same for all mesh points.
-  BlockVector (const mv_type& X_mv,
-               const map_type& meshMap,
-               const LO blockSize);
+  BlockVector(const mv_type& X_mv,
+              const map_type& meshMap,
+              const LO blockSize);
 
   /// \brief View an existing Vector.
   ///
@@ -198,26 +198,26 @@ public:
   ///
   /// \param blockSize [in] The number of degrees of freedom per mesh
   ///   point.  We assume that this is the same for all mesh points.
-  BlockVector (const vec_type& X_vec,
-               const map_type& meshMap,
-               const LO blockSize);
+  BlockVector(const vec_type& X_vec,
+              const map_type& meshMap,
+              const LO blockSize);
 
   /// \brief View an existing BlockVector using a different mesh
   ///   Map, supplying the corresponding point Map.
   ///
   /// This method corresponds to MultiVector's "offset view" constructor.
-  BlockVector (const BlockVector<Scalar, LO, GO, Node>& X,
-               const map_type& newMeshMap,
-               const map_type& newPointMap,
-               const size_t offset = 0);
+  BlockVector(const BlockVector<Scalar, LO, GO, Node>& X,
+              const map_type& newMeshMap,
+              const map_type& newPointMap,
+              const size_t offset = 0);
 
   /// \brief View an existing BlockVector using a different mesh
   ///   Map; compute the new point Map.
   ///
   /// This method corresponds to MultiVector's "offset view" constructor.
-  BlockVector (const BlockVector<Scalar, LO, GO, Node>& X,
-               const map_type& newMeshMap,
-               const size_t offset = 0);
+  BlockVector(const BlockVector<Scalar, LO, GO, Node>& X,
+              const map_type& newMeshMap,
+              const size_t offset = 0);
 
   //@}
   //! \name Access to Maps, the block size, and a Vector view.
@@ -227,7 +227,7 @@ public:
   ///
   /// This is how you can give a BlockVector to Trilinos' solvers and
   /// preconditioners.
-  vec_type getVectorView ();
+  vec_type getVectorView();
 
   //@}
   //! \name Fine-grained data access
@@ -248,7 +248,7 @@ public:
   ///   do not change pointers.  They do, of course, change the values
   ///   in the BlockVector, but that does not require marking the
   ///   methods as nonconst.
-  bool replaceLocalValues (const LO localRowIndex, const Scalar vals[]);
+  bool replaceLocalValues(const LO localRowIndex, const Scalar vals[]);
 
   /// \brief Replace all values at the given mesh point, using a global index.
   ///
@@ -259,7 +259,7 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given global index of the mesh point
   ///   is invalid on the calling process.
-  bool replaceGlobalValues (const GO globalRowIndex, const Scalar vals[]);
+  bool replaceGlobalValues(const GO globalRowIndex, const Scalar vals[]);
 
   /// \brief Sum into all values at the given mesh point, using a local index.
   ///
@@ -270,7 +270,7 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given local index of the mesh point
   ///   is invalid on the calling process.
-  bool sumIntoLocalValues (const LO localRowIndex, const Scalar vals[]);
+  bool sumIntoLocalValues(const LO localRowIndex, const Scalar vals[]);
 
   /// \brief Sum into all values at the given mesh point, using a global index.
   ///
@@ -281,7 +281,7 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given global index of the mesh point
   ///   is invalid on the calling process.
-  bool sumIntoGlobalValues (const GO globalRowIndex, const Scalar vals[]);
+  bool sumIntoGlobalValues(const GO globalRowIndex, const Scalar vals[]);
 
   /// \brief Get a view of the degrees of freedom at the given mesh point,
   ///   using a local index.
@@ -292,15 +292,15 @@ public:
   /// different types to implement little_vec_type.  This gives us a
   /// porting strategy to move from "classic" Tpetra to the Kokkos
   /// refactor version.
-  const_little_host_vec_type getLocalBlockHost (const LO localRowIndex,
-                                                Access::ReadOnlyStruct) const;
-  little_host_vec_type getLocalBlockHost (const LO localRowIndex,
-                                          Access::OverwriteAllStruct);
-  little_host_vec_type getLocalBlockHost (const LO localRowIndex,
-                                          Access::ReadWriteStruct);
+  const_little_host_vec_type getLocalBlockHost(const LO localRowIndex,
+                                               Access::ReadOnlyStruct) const;
+  little_host_vec_type getLocalBlockHost(const LO localRowIndex,
+                                         Access::OverwriteAllStruct);
+  little_host_vec_type getLocalBlockHost(const LO localRowIndex,
+                                         Access::ReadWriteStruct);
   //@}
 };
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_BLOCKMULTIVECTOR_DECL_HPP
+#endif  // TPETRA_BLOCKMULTIVECTOR_DECL_HPP

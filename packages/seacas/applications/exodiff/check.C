@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <fmt/ostream.h>
+#include <fmt/ranges.h>
+#include <smart_assert.h>
 #include <vector>
 
 #include "ED_SystemInterface.h"
@@ -15,11 +18,8 @@
 #include "exo_block.h"
 #include "exo_read.h"
 #include "exodusII.h"
-#include "fmt/ostream.h"
-#include "fmt/ranges.h"
 #include "node_set.h"
 #include "side_set.h"
-#include "smart_assert.h"
 #include "stringx.h"
 
 namespace {

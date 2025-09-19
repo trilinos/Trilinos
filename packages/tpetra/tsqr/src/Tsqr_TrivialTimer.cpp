@@ -12,31 +12,27 @@
 
 namespace TSQR {
 
-  TrivialTimer::TrivialTimer (const std::string& theName, bool doStart) :
-    name_ (theName), counter_ (0), isRunning_ (false)
-  {
-    if (doStart)
-      start();
-  }
+TrivialTimer::TrivialTimer(const std::string& theName, bool doStart)
+  : name_(theName)
+  , counter_(0)
+  , isRunning_(false) {
+  if (doStart)
+    start();
+}
 
-  void
-  TrivialTimer::verifyConcept()
-  {
-    TSQR::Test::verifyTimerConcept<TrivialTimer> ();
-  }
+void TrivialTimer::verifyConcept() {
+  TSQR::Test::verifyTimerConcept<TrivialTimer>();
+}
 
-  void
-  TrivialTimer::start (bool reset)
-  {
-    isRunning_ = true;
-  }
+void TrivialTimer::start(bool reset) {
+  isRunning_ = true;
+}
 
-  double
-  TrivialTimer::stop ()
-  {
-    isRunning_ = false;
-    ++counter_;
-    return static_cast<double> (counter_);
-  }
+double
+TrivialTimer::stop() {
+  isRunning_ = false;
+  ++counter_;
+  return static_cast<double>(counter_);
+}
 
-} // namespace TSQR
+}  // namespace TSQR

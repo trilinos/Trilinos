@@ -17,7 +17,7 @@ jobs:
 
     - uses: DoozyX/clang-format-lint-action@bcb4eb2cb0d707ee4f3e5cc3b456eb075f12cf73 # v0.20
       with:
-        source: './packages/galeri/src-xpetra ./packages/galeri/example-tpetra ./packages/galeri/example-xpetra ./packages/galeri/test ./packages/ifpack2 ./packages/muelu ./packages/tempus ./packages/teko ./packages/xpetra'
+        source: './packages/galeri/src-xpetra ./packages/galeri/example-tpetra ./packages/galeri/example-xpetra ./packages/galeri/test ./packages/ifpack2 ./packages/muelu ./packages/tempus ./packages/teko ./packages/tpetra ./packages/xpetra'
         exclude: './packages/tempus/examples'
         extensions: 'cpp,hpp'
         clangFormatVersion: 14

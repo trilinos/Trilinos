@@ -30,7 +30,8 @@ USAGE="Usage: blot [-help] [--options option] [--] filename [device]"
    echo "      (show database filename below plot)"
    echo "    --help           (Prints this message)"
    echo "    "
-   echo "  Contact: gdsjaar@sandia.gov"
+   echo "  Contact: sierra-help@sandia.gov"
+   echo "           https://github.com/sandialabs/seacas/issues"
    echo "  Documentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#blot"
    echo "  "
     show_device
@@ -124,7 +125,8 @@ fi
 echo " "
 echo "=============================================================="
 echo "| Sandia Engineering Analysis Access procedure for: ${codename}"
-echo "| Send email to gdsjaar@sandia.gov for help"
+echo "| sierra-help@sandia.gov or "
+echo "|   https://github.com/sandialabs/seacas/issues for help"
 echo "=============================================================="
 
 aprepro="false"
@@ -226,8 +228,6 @@ fi
 if [ ! -x "${ACCESS_BIN}/${codename}${sep}${device}" ]
 then
    echo "${txtred}ERROR: ${ACCESS_BIN}/${codename}${sep}${device} does not exist.${txtrst}"
-   echo "    Contact gdsjaar@sandia.gov if you need this device;"
-   echo "    otherwise use one of the supported devices:"
    show_device
    exit 1
 fi

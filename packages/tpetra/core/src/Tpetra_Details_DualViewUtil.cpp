@@ -13,14 +13,9 @@
 namespace Tpetra {
 namespace Details {
 
-auto view_alloc_no_init (const std::string& label) ->
-  decltype (Kokkos::view_alloc (label, Kokkos::WithoutInitializing))
-{
-  return Kokkos::view_alloc (label, Kokkos::WithoutInitializing);
+auto view_alloc_no_init(const std::string& label) -> decltype(Kokkos::view_alloc(label, Kokkos::WithoutInitializing)) {
+  return Kokkos::view_alloc(label, Kokkos::WithoutInitializing);
 }
 
-} // namespace Details
-} // namespace Tpetra
-
-
-
+}  // namespace Details
+}  // namespace Tpetra

@@ -14,20 +14,20 @@
 
 namespace TSQR {
 
-  // Forward declaration
-  template< class Scalar >
-  class MessengerBase;
+// Forward declaration
+template <class Scalar>
+class MessengerBase;
 
-  /// Produce global time statistics out of all the local ones.
-  ///
-  /// \param comm [in] Encapsulation of the interprocess communicator
-  /// \param localStats [in] Local (to this process) time statistics
-  ///
-  /// \return Global (over all processes) time statistics
-  TimeStats
-  globalTimeStats (MessengerBase<double>& comm,
-                   const TimeStats& localStats);
+/// Produce global time statistics out of all the local ones.
+///
+/// \param comm [in] Encapsulation of the interprocess communicator
+/// \param localStats [in] Local (to this process) time statistics
+///
+/// \return Global (over all processes) time statistics
+TimeStats
+globalTimeStats(MessengerBase<double>& comm,
+                const TimeStats& localStats);
 
-} // namespace TSQR
+}  // namespace TSQR
 
-#endif // __TSQR_GlobalTimeStats_hpp
+#endif  // __TSQR_GlobalTimeStats_hpp

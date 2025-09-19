@@ -59,15 +59,8 @@ using HostBucketRawDataCollectionType = Kokkos::View<HostBucketRawDataType*, stk
 class TestTranspose : public ::testing::Test
 {
 public:
-  TestTranspose() {}
-
-  ~TestTranspose()
-  {
-    for(std::byte* ptr : rawHostBucketAllocations) {
-      fieldDataAllocator.deallocate(ptr, bytesPerBucket);
-    }
-    rawHostBucketAllocations.clear();
-  }
+  TestTranspose() = default;
+  ~TestTranspose() = default;
 
   double get_value(unsigned bktIndex, unsigned entityIndex, unsigned component)
   {
@@ -89,9 +82,9 @@ public:
   {
     rawHostBucketAllocations.resize(numBuckets);
     for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
-      rawHostBucketAllocations[bucketId] = fieldDataAllocator.allocate(bytesPerBucket);
-      ASAN_UNPOISON_MEMORY_REGION(rawHostBucketAllocations[bucketId], bytesPerBucket);
-      double* hostBucketPtr = reinterpret_cast<double*>(rawHostBucketAllocations[bucketId]);
+      rawHostBucketAllocations[bucketId] = fieldDataAllocator.host_allocate(bytesPerBucket);
+      ASAN_UNPOISON_MEMORY_REGION(rawHostBucketAllocations[bucketId].data(), bytesPerBucket);
+      double* hostBucketPtr = reinterpret_cast<double*>(rawHostBucketAllocations[bucketId].data());
 
       for (unsigned entityIndex = 0; entityIndex < bucketCapacity; ++entityIndex) {
         for (unsigned component = 0; component < numScalarsPerEntity; ++component) {
@@ -102,22 +95,7 @@ public:
   }
 
   std::byte* get_host_bucket_pointer_for_device(unsigned bucketId) {
-    std::byte* hostBucketPtr = reinterpret_cast<std::byte*>(rawHostBucketAllocations[bucketId]);
-    std::byte* deviceBucketPtr = hostBucketPtr;  // Device-side pointer to host-pinned memory
-
-    if (hostBucketPtr != nullptr) {
-#ifdef KOKKOS_ENABLE_CUDA
-      cudaError_t status = cudaHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
-      STK_ThrowRequireMsg(status == cudaSuccess, "Something went wrong during cudaHostGetDevicePointer: " +
-                          std::string(cudaGetErrorString(status)));
-#elif defined(KOKKOS_ENABLE_HIP)
-      hipError_t status = hipHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
-      STK_ThrowRequireMsg(status == hipSuccess, "Something went wrong during hipHostGetDevicePointer: " +
-                          std::string(hipGetErrorString(status)));
-#endif
-    }
-
-    return deviceBucketPtr;
+    return fieldDataAllocator.get_host_pointer_for_device(rawHostBucketAllocations[bucketId].data());
   }
 
   void fill_device_field_meta_data(unsigned numBuckets)
@@ -189,7 +167,7 @@ public:
     Kokkos::fence();
 
     for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
-      const double* hostBucketPtr = reinterpret_cast<const double*>(rawHostBucketAllocations[bucketId]);
+      const double* hostBucketPtr = reinterpret_cast<const double*>(rawHostBucketAllocations[bucketId].data());
       for (unsigned entityIndex = 0; entityIndex < bucketCapacity; ++entityIndex) {
         for (unsigned component = 0; component < numScalarsPerEntity; ++component) {
           EXPECT_NEAR(goldHostFieldData(bucketId)(entityIndex, component),
@@ -200,8 +178,10 @@ public:
   }
 
 protected:
-  stk::mesh::AllocatorAdaptor<stk::impl::FieldDataAllocator<std::byte>> fieldDataAllocator;
-  std::vector<std::byte*> rawHostBucketAllocations;
+  using AllocationType = stk::FieldDataAllocator<std::byte>::HostAllocationType;
+
+  stk::FieldDataAllocator<std::byte> fieldDataAllocator;
+  std::vector<AllocationType> rawHostBucketAllocations;
 
   DeviceBucketRawDataCollectionType<stk::mesh::NgpMeshDefaultMemSpace> deviceFieldData;
   HostBucketRawDataCollectionType goldHostFieldData;

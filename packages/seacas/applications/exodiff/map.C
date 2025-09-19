@@ -7,16 +7,17 @@
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <iomanip>
 #include <numeric>
+#include <smart_assert.h>
 
 #include "ED_SystemInterface.h"
 #include "Tolerance.h"
 #include "exo_block.h"
 #include "exo_read.h"
-#include "fmt/ostream.h"
 #include "iqsort.h"
-#include "smart_assert.h"
 #include "util.h"
 
 namespace {

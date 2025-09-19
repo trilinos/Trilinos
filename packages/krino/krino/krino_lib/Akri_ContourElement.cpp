@@ -14,7 +14,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <Akri_MasterElementDeterminer.hpp>
-#include "Akri_LevelSet.hpp"
+#include <Akri_Sign.hpp>
 
 namespace krino{
 
@@ -335,7 +335,7 @@ int ContourElement::compute_conservative_nonlinear_distance_sign(const double sn
 
   if (all_hi || all_lo)
   {
-    return LevelSet::sign(minDist);
+    return sign(minDist);
   }
 
   return 0;
@@ -351,7 +351,7 @@ int ContourElement::compute_linear_distance_sign(const double snapTol, const uns
   for ( unsigned n = 0; n < numDist; n++ )
   {
     const double nodeDist = (std::abs(dist[n]) < snapTol) ? 0. : dist[n];
-    if (LevelSet::sign(nodeDist) < 0)
+    if (sign(nodeDist) < 0)
     {
       if (hasPos)
         return 0;

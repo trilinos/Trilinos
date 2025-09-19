@@ -7,7 +7,7 @@
  */
 
 #include <cstdlib> // for exit, EXIT_SUCCESS, getenv
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <stdio.h>
 #include <string> // for char_traits, string
@@ -82,7 +82,7 @@ bool Modify::Interface::parse_options(int argc, char **argv)
     fmt::print(stderr,
                "\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-modify\n\n");
-    fmt::print(stderr, "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
+    fmt::print(stderr, "\t->->-> Send email to sierra-help@sandia.gov for {} support.<-<-<-\n",
                options_.program_name());
     exit(EXIT_SUCCESS);
   }

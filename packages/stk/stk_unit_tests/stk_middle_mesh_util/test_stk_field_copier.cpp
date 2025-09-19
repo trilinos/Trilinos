@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "stk_mesh/base/FieldBase.hpp"
+#include "stk_mesh/base/Types.hpp"
 #include "stk_middle_mesh_util/stk_field_copier.hpp"
 
 using namespace stk::middle_mesh;
@@ -35,21 +36,19 @@ void set_field(std::shared_ptr<stk::mesh::BulkData> bulkDataPtr, stk::mesh::Fiel
   stk::mesh::Selector selector(field);
   const stk::mesh::BucketVector& buckets = bulkDataPtr->get_buckets(stk::topology::NODE_RANK, selector);
 
+  auto coordFieldData = coordField.data<double, stk::mesh::ReadOnly>();
+  auto fieldData = field.data<stk::mesh::OverwriteAll>();
   for (stk::mesh::Bucket* bucket : buckets)
-  {
-    int dim0 = stk::mesh::field_extent0_per_entity(field, *bucket);
-    int dim1 = stk::mesh::field_extent1_per_entity(field, *bucket);
     for (stk::mesh::Entity node : *bucket)
     {
-      double* coordData = static_cast<double*>(stk::mesh::field_data(coordField, node));
-      double* fieldData = stk::mesh::field_data(field, node);
-      double valStart = getCoordValue({coordData[0], coordData[1], coordData[2]});
+      auto coordData = coordFieldData.entity_values(node);
+      auto nodeFieldData = fieldData.entity_values(node);
+      double valStart = getCoordValue({coordData(0_comp), coordData(1_comp), coordData(2_comp)});
 
-      for (int i=0; i < dim1; ++i)
-        for (int j=0; j < dim0; ++j)
-          fieldData[i * dim0 + j] = valStart + i * dim0 + j;
+      for (stk::mesh::CopyIdx i : nodeFieldData.copies())
+        for (stk::mesh::ComponentIdx j : nodeFieldData.components())
+          nodeFieldData(i, j) = valStart + static_cast<int>(i * nodeFieldData.num_components()) + static_cast<int>(j);
     }
-  }
 }
 
 void check_field(mesh::FieldPtr<double> meshFieldPtr)
@@ -78,22 +77,20 @@ void check_field(std::shared_ptr<stk::mesh::BulkData> bulkDataPtr, stk::mesh::Fi
   stk::mesh::Selector selector(field & (meshMetaDataPtr->locally_owned_part() | meshMetaDataPtr->globally_shared_part()));
   const stk::mesh::BucketVector& buckets = bulkDataPtr->get_buckets(stk::topology::NODE_RANK, selector);
 
+  auto coordFieldData = coordField.data<double, stk::mesh::ReadOnly>();
+  auto fieldData      = field.data<stk::mesh::ReadOnly>();
   for (stk::mesh::Bucket* bucket : buckets)
-  {
-    int dim0 = stk::mesh::field_extent0_per_entity(field, *bucket);
-    int dim1 = stk::mesh::field_extent1_per_entity(field, *bucket);
     for (stk::mesh::Entity node : *bucket)
     {
-      double* coordData = static_cast<double*>(stk::mesh::field_data(coordField, node));
-      double* fieldData = stk::mesh::field_data(field, node);
-      double valStart = getCoordValue({coordData[0], coordData[1], coordData[2]});
+      auto coordData = coordFieldData.entity_values(node);
+      auto nodeFieldData = fieldData.entity_values(node);
+      double valStart = getCoordValue({coordData(0_comp), coordData(1_comp), coordData(2_comp)});
 
+      for (stk::mesh::CopyIdx i : nodeFieldData.copies())
+        for (stk::mesh::ComponentIdx j : nodeFieldData.components())
+          EXPECT_EQ(nodeFieldData(i, j), valStart + static_cast<int>(i * nodeFieldData.num_components()) + static_cast<int>(j));
 
-      for (int i=0; i < dim1; ++i)
-        for (int j=0; j < dim0; ++j)
-          EXPECT_EQ(fieldData[i * dim0 + j], valStart + i * dim0 + j);
     }
-  }
 }
 
 }

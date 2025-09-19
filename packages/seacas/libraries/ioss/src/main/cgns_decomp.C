@@ -23,7 +23,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <fmt/core.h>
 #include <iostream>
 #include <map>
 #include <numeric>

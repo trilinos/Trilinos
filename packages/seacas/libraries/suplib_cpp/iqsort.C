@@ -6,6 +6,7 @@
 #include "iqsort.h"
 #include <assert.h>
 #include <cstdint>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 
 namespace {

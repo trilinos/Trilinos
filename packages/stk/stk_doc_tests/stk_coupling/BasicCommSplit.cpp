@@ -168,6 +168,7 @@ TEST(StkCouplingDocTest, sync_info_exchange_multi_colors)
 
   SyncInfo syncInfo("exchange_info");
   SplitComms splitComms(commWorld, color);
+  splitComms.set_free_comms_in_destructor(true);
 
   syncInfo.set_value<int>("value", intToExchange);
 
@@ -220,6 +221,7 @@ TEST(StkCouplingDocTest, sync_info_check_sync_mode)
   SyncMode modeToCheck = (color == 0) ? stk::coupling::Send : stk::coupling::Receive;
 
   SplitComms splitComms(commWorld, color);
+  splitComms.set_free_comms_in_destructor(true);
   SyncInfo syncInfo("exchange_info");
   syncInfo.set_value(stk::coupling::TimeSyncMode, modeToCheck);
 
