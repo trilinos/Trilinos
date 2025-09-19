@@ -63,6 +63,74 @@ namespace Test {
     }
 
 template<typename ValueType, typename DeviceType>
+struct DivProjectionNormReduceFunctor {
+  using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
+  ordinal_type numRefCoords;
+  ordinal_type basisCardinality;
+  ordinal_type dim;
+  
+  DynRankView basisCoeffsHDiv;
+  DynRankView transformedBasisValuesAtRefCoordsOriented;
+  DynRankView transformedBasisDivsAtRefCoordsOriented;
+  DynRankView weights;
+  DynRankView jacobianAtRefCoords_det;
+  
+  DynRankView funAtRefCoords;
+  DynRankView projectedFunAtRefCoords;
+  DynRankView funDivAtRefCoordsOriented;
+  DynRankView funDivAtPhysRefCoords;
+  
+  DivProjectionNormReduceFunctor(ordinal_type numRefCoords_,
+                                 ordinal_type basisCardinality_,
+                                 ordinal_type dim_,
+                                 
+                                 DynRankView basisCoeffsHDiv_,
+                                 DynRankView transformedBasisValuesAtRefCoordsOriented_,
+                                 DynRankView transformedBasisDivsAtRefCoordsOriented_,
+                                 DynRankView weights_, DynRankView jacobianAtRefCoords_det_,
+                                 
+                                 DynRankView funAtRefCoords_, DynRankView projectedFunAtRefCoords_,
+                                 DynRankView funDivAtRefCoordsOriented_, DynRankView funDivAtPhysRefCoords_)
+  :
+  numRefCoords(numRefCoords_),
+  basisCardinality(basisCardinality_),
+  dim(dim_),
+  
+  basisCoeffsHDiv(basisCoeffsHDiv_),
+  transformedBasisValuesAtRefCoordsOriented(transformedBasisValuesAtRefCoordsOriented_),
+  transformedBasisDivsAtRefCoordsOriented(transformedBasisDivsAtRefCoordsOriented_),
+  weights(weights_),
+  jacobianAtRefCoords_det(jacobianAtRefCoords_det_),
+  
+  funAtRefCoords(funAtRefCoords_),
+  projectedFunAtRefCoords(projectedFunAtRefCoords_),
+  funDivAtRefCoordsOriented(funDivAtRefCoordsOriented_),
+  funDivAtPhysRefCoords(funDivAtPhysRefCoords_)
+  {}
+  
+  KOKKOS_INLINE_FUNCTION
+  void
+  operator()(const int &i, double &norm2Update) const {
+    for(ordinal_type j=0; j<numRefCoords; ++j) {
+      for(ordinal_type k=0; k<basisCardinality; ++k) {
+        for(ordinal_type d=0; d<dim; ++d)
+          projectedFunAtRefCoords(i,j,d) += basisCoeffsHDiv(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j,d);
+        funDivAtRefCoordsOriented(i,j) += basisCoeffsHDiv(i,k)*transformedBasisDivsAtRefCoordsOriented(i,k,j);
+      }
+
+      for(ordinal_type d=0; d<dim; ++d) {
+        norm2Update += (funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d))*
+            (funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d))*
+            weights(j)*jacobianAtRefCoords_det(i,j);
+      }
+      norm2Update += (funDivAtPhysRefCoords(i,j) - funDivAtRefCoordsOriented(i,j))*
+          (funDivAtPhysRefCoords(i,j) - funDivAtRefCoordsOriented(i,j))*
+          weights(j)*jacobianAtRefCoords_det(i,j);
+    }
+  }
+};
+
+template<typename ValueType, typename DeviceType>
 int ConvergenceHex(const bool verbose) {
 
   using ExecSpaceType = typename DeviceType::execution_space;
@@ -785,7 +853,6 @@ int ConvergenceHex(const bool verbose) {
 
         //Compute physical Dof Coordinates and Reference coordinates
         DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
-        DynRankView ConstructWithLabel(physDofCoords, numElems, basisCardinality, dim);
         {
           Basis_HGRAD_HEX_C1_FEM<DeviceType,ValueType,ValueType> linearBasis; //used for computing physical coordinates
           DynRankView ConstructWithLabel(linearBasisValuesAtRefCoords, numNodesPerElem, numRefCoords);
@@ -960,27 +1027,20 @@ int ConvergenceHex(const bool verbose) {
         DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords, dim);
         DynRankView ConstructWithLabel(funDivAtRefCoordsOriented, numElems, numRefCoords);
 
+        /*
+         rocmcc 6.0.0 with llvm has trouble (compiler crash) when compiling
+         the KOKKOS_LAMBDA below if we also compile the corresponding H1 norm KOKKOS_LAMBDA
+         above.  So, here we try replacing with a functor in hopes of avoiding whatever collision
+         is happening.
+         */
         //compute error of projection in HDIV norm
         ValueType norm2(0);
-        Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
-        KOKKOS_LAMBDA (const int &i, double &norm2Update) {
-          for(ordinal_type j=0; j<numRefCoords; ++j) {
-            for(ordinal_type k=0; k<basisCardinality; ++k) {
-              for(ordinal_type d=0; d<dim; ++d)
-                projectedFunAtRefCoords(i,j,d) += basisCoeffsHDiv(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j,d);
-              funDivAtRefCoordsOriented(i,j) += basisCoeffsHDiv(i,k)*transformedBasisDivsAtRefCoordsOriented(i,k,j);
-            }
-
-            for(ordinal_type d=0; d<dim; ++d) {
-              norm2Update += (funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d))*
-                  (funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d))*
-                  weights(j)*jacobianAtRefCoords_det(i,j);
-            }
-            norm2Update += (funDivAtPhysRefCoords(i,j) - funDivAtRefCoordsOriented(i,j))*
-                (funDivAtPhysRefCoords(i,j) - funDivAtRefCoordsOriented(i,j))*
-                weights(j)*jacobianAtRefCoords_det(i,j);
-          }
-        },norm2);
+        using DivNormFunctor = DivProjectionNormReduceFunctor<ValueType,DeviceType>;
+        DivNormFunctor divNormFunctor(numRefCoords, basisCardinality, dim, basisCoeffsHDiv,
+                                      transformedBasisValuesAtRefCoordsOriented, transformedBasisDivsAtRefCoordsOriented,
+                                      weights, jacobianAtRefCoords_det, funAtRefCoords, projectedFunAtRefCoords,
+                                      funDivAtRefCoordsOriented, funDivAtPhysRefCoords);
+        Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),divNormFunctor,norm2);
         ExecSpaceType().fence();
         hdivNorm[iter] = std::sqrt(norm2);
         auto expected_error = useL2Projection ? hdiv_errors_L2[iter] : hdiv_errors[iter];
