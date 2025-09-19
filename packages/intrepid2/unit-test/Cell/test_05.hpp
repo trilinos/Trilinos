@@ -103,8 +103,6 @@ namespace Intrepid2 {
         typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
         typedef CellTools<DeviceType> ct;
 
-        std::vector<shards::CellTopology> standardBaseTopologies;
-        shards::getTopologies(standardBaseTopologies, 4, shards::STANDARD_CELL, shards::BASE_TOPOLOGY);
         const ordinal_type topoSize = standardBaseTopologies.size();
         
         // Loop over admissible topologies
