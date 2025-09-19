@@ -90,8 +90,8 @@ void compare_fields(const stk::mesh::BulkData& bulk1,
     auto data2 = field2Data.entity_values(entity2);
 
     ASSERT_TRUE(data1.num_components() == data2.num_components());
-    for(stk::mesh::ComponentIdx i : data1.components()) {
-      ASSERT_EQ(data1(i), data2(i));
+    for(stk::mesh::ComponentIdx j : data1.components()) {
+      ASSERT_EQ(data1(j), data2(j));
     }
   }
 }
