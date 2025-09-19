@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -438,16 +438,14 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
   /* Generate a QA record for the utility */
-  time_t date_time = time(nullptr);
-  auto  *lt        = std::localtime(&date_time);
-
   char qa_time[MAX_STR_LENGTH + 1];
   char qa_name[MAX_STR_LENGTH + 1];
   char qa_vers[MAX_STR_LENGTH + 1];
   char qa_date[MAX_STR_LENGTH + 1];
 
-  std::string time = fmt::format("{:%H:%M:%S}", *lt);
-  std::string date = fmt::format("{:%Y/%m/%d}", *lt);
+  auto        now  = std::chrono::system_clock::now();
+  std::string time = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
+  std::string date = fmt::format("{:%Y/%m/%d}", now);
   copy_string(qa_date, date);
   copy_string(qa_time, time);
   copy_string(qa_name, UTIL_NAME);
