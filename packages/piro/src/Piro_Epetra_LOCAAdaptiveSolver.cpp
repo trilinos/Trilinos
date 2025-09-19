@@ -400,12 +400,12 @@ void Piro::Epetra::LOCAAdaptiveSolver::evalModel( const InArgs& inArgs,
       Teuchos::RCP<Epetra_MultiVector> dfdp  =
 	model_outargs.get_DfDp(i).getMultiVector();
       if (dfdp != Teuchos::null) {
-	int numParameters = dfdp->NumVectors();
+	int dfdp_numParameters = dfdp->NumVectors();
 
 	// (2) Calculate dx/dp multivector from -(J^{-1}*df/dp)
 	Teuchos::RCP<Epetra_MultiVector> dxdp =
 	  Teuchos::rcp(new Epetra_MultiVector(*(model->get_x_map()),
-					      numParameters) );
+					      dfdp_numParameters) );
 	NOX::Epetra::MultiVector dfdp_nox(dfdp, NOX::DeepCopy,
 					  NOX::Epetra::MultiVector::CreateView);
 	NOX::Epetra::MultiVector dxdp_nox(dxdp, NOX::DeepCopy,

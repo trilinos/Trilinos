@@ -676,7 +676,6 @@ evalModelImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
-  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
   using Teuchos::RCP;
   using Thyra::VectorBase;
   using Thyra::MultiVectorBase;
