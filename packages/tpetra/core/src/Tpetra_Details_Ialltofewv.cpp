@@ -73,12 +73,12 @@ namespace Tpetra::Details {
 
 struct Ialltofewv::Cache::impl {
   impl()
-    : rootBufDev("rootBufDev")
-    , rootBufHost("rootBufHost")
-    , aggBufDev("aggBufDev")
-    , aggBufHost("rootBufHost")
-    , argsDev("argsDev")
-    , argsHost("argsHost")
+    : rootBufDev("rootBufDev", 0)
+    , rootBufHost("rootBufHost", 0)
+    , aggBufDev("aggBufDev", 0)
+    , aggBufHost("rootBufHost", 0)
+    , argsDev("argsDev", 0)
+    , argsHost("argsHost", 0)
     , rootBufGets_(0)
     , rootBufHits_(0)
     , aggBufGets_(0)
