@@ -105,7 +105,7 @@ static KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float, 4) operator+(const Vector<SIM
 KOKKOS_FORCEINLINE_FUNCTION
 static KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double, 4) operator+(const Vector<SIMD<double>, 4> &a,
                                                                  const Vector<SIMD<double>, 4> &b) {
-  double4 r_val;
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double, 4)::data_type r_val;
   r_val.x = a.double4().x + b.double4().x;
   r_val.y = a.double4().y + b.double4().y;
   r_val.z = a.double4().z + b.double4().z;
@@ -281,7 +281,7 @@ static KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float, 4) operator-(const Vector<SIM
 KOKKOS_FORCEINLINE_FUNCTION
 static KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double, 4) operator-(const Vector<SIMD<double>, 4> &a,
                                                                  const Vector<SIMD<double>, 4> &b) {
-  double4 r_val;
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double, 4)::data_type r_val;
   r_val.x = a.double4().x - b.double4().x;
   r_val.y = a.double4().y - b.double4().y;
   r_val.z = a.double4().z - b.double4().z;
@@ -487,7 +487,7 @@ static KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float, 4) operator*(const Vector<SIM
 KOKKOS_FORCEINLINE_FUNCTION
 static KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double, 4) operator*(const Vector<SIMD<double>, 4> &a,
                                                                  const Vector<SIMD<double>, 4> &b) {
-  double4 r_val;
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double, 4)::data_type r_val;
   r_val.x = a.double4().x * b.double4().x;
   r_val.y = a.double4().y * b.double4().y;
   r_val.z = a.double4().z * b.double4().z;
@@ -729,7 +729,7 @@ static KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(float, 4) operator/(const Vector<SIM
 KOKKOS_FORCEINLINE_FUNCTION
 static KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double, 4) operator/(const Vector<SIMD<double>, 4> &a,
                                                                  const Vector<SIMD<double>, 4> &b) {
-  double4 r_val;
+  KOKKOSKERNELS_SIMD_ARITH_RETURN_TYPE(double, 4)::data_type r_val;
   r_val.x = a.double4().x / b.double4().x;
   r_val.y = a.double4().y / b.double4().y;
   r_val.z = a.double4().z / b.double4().z;

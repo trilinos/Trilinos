@@ -40,7 +40,7 @@ Member Types
    :header-rows: 1
    :align: left
 
-   * - Memeber type
+   * - Member type
      - Definition
 
    * - execution_space
@@ -144,6 +144,15 @@ Member Functions
    * - :ref:`numCols <crsmatrix_numCols>`
      - Returns the number of columns in the matrix.
 
+   * - :ref:`setNumCols <crsmatrix_setNumCols>`
+     - Modify the number of columns in the matrix.
+
+   * - :ref:`numPointRows <crsmatrix_numPointRows>`
+     - Equivalent to `numRows()`.
+
+   * - :ref:`numPointCols <crsmatrix_numPointCols>`
+     - Equivalent to `numCols()`.
+
    * - :ref:`nnz <crsmatrix_nnz>`
      - Returns the number of structural non-zero values in the matrix (some of these might actually store zero).
 
@@ -186,6 +195,40 @@ numCols
   KOKKOS_INLINE_FUNCTION ordinal_type numCols() const;
 
 Returns the number of columns in the matrix.
+
+.. _crsmatrix_setNumCols:
+
+setNumCols
+^^^^^^^^^^
+
+.. code:: cppkokkos
+
+  void setNumCols(ordinal_type c);
+
+Modify the number of columns in the sparse matrix.
+This invalidates any algorithm handles which previously used this matrix.
+
+.. _crsmatrix_numPointRows:
+
+numPointRows
+^^^^^^^^^^^^
+
+.. code:: cppkokkos
+
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const;
+
+Equivalent to `numRows()`, since this is not a block matrix type.
+
+.. _crsmatrix_numPointCols:
+
+numPointCols
+^^^^^^^^^^^^
+
+.. code:: cppkokkos
+
+  KOKKOS_INLINE_FUNCTION ordinal_type numPointCols() const;
+
+Equivalent to `numCols()`, since this is not a block matrix type.
 
 .. _crsmatrix_nnz:
 
