@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, SimpleTiledCrsProductTensorCi
 
 template <typename Scalar, typename Device, bool Pack>
 bool test_coo_product_tensor_cijk(
-  const KokkosKernelsUnitTest::UnitTestSetup<Device>& setup,
+  const KokkosKernelsUnitTest::UnitTestSetup<Device>& setup_,
   Teuchos::FancyOStream& out) {
   bool success = true;
 
@@ -162,7 +162,7 @@ bool test_coo_product_tensor_cijk(
 
   tensor_type tensor =
     Stokhos::create_coo_product_tensor<Device, Pack>(
-      *setup.basis, *setup.Cijk );
+      *setup_.basis, *setup_.Cijk );
 
   const size_t nEntry = tensor.entry_count();
   size_t i, j, k;
@@ -170,9 +170,9 @@ bool test_coo_product_tensor_cijk(
     tensor.coord(entry, i, j, k);
     value_type c2 = tensor.value(entry);
     if (j == k) c2 *= 2.0;
-    value_type c = setup.Cijk->getValue(i,j,k);
+    value_type c = setup_.Cijk->getValue(i,j,k);
 
-    if (std::abs(c-c2) > std::abs(c)*setup.rel_tol + setup.abs_tol) {
+    if (std::abs(c-c2) > std::abs(c)*setup_.rel_tol + setup_.abs_tol) {
       out << "(" << i << "," << j << "," << k << "):  " << c
           << " == " << c2 << " failed!" << std::endl;
       success = false;
