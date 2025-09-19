@@ -1307,7 +1307,7 @@ test_original_matrix_free_view(
         n_apply += nj;
         jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-          vec_type tmp_y_view =
+          vec_type tmp_y_view2 =
             Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
           kji_iterator i_begin = Cijk->i_begin(j_it);
           kji_iterator i_end =  Cijk->i_end(j_it);
@@ -1315,7 +1315,7 @@ test_original_matrix_free_view(
             int i = index(i_it);
             value_type c = value(i_it);
             vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
-            Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
+            Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view2 );
             ++n_add;
           }
         }
@@ -1456,7 +1456,7 @@ test_original_matrix_free_kokkos(
         n_apply += nj;
         jdx = 0;
         for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-          vec_type tmp_y_view =
+          vec_type tmp_y_view2 =
             Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
           kji_iterator i_begin = Cijk->i_begin(j_it);
           kji_iterator i_end =  Cijk->i_end(j_it);
@@ -1464,8 +1464,8 @@ test_original_matrix_free_kokkos(
             int i = index(i_it);
             value_type c = value(i_it);
             vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
-            //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
-            KokkosBlas::update(value_type(1.0) , y_view, c, tmp_y_view, value_type(0.0), y_view);
+            //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view2 );
+            KokkosBlas::update(value_type(1.0) , y_view, c, tmp_y_view2, value_type(0.0), y_view);
             ++n_add;
           }
         }

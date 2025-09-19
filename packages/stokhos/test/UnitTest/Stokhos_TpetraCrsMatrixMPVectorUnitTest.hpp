@@ -935,7 +935,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       for (LocalOrdinal j=0; j<VectorSize; ++j)
         val.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(
           nrow, VectorSize, row, j);
-        x_view(i,0) = val;
+      x_view(i,0) = val;
     }
   }
 

@@ -108,8 +108,8 @@ TEUCHOS_UNIT_TEST(basis_interaction_graph, test_isotropic_rect)
    out << "Master Array Basis = \n";
    for(int i=0;i<masterBasis->size();i++) {
      Stokhos::MultiIndex<int> masterArray = masterBasis->term(i);
-      for(int i=0;i<num_KL;i++) { 
-         out << masterArray[i] << " ";
+      for(int j=0;j<num_KL;j++) {
+         out << masterArray[j] << " ";
       }
       out << std::endl;
    }
@@ -117,8 +117,8 @@ TEUCHOS_UNIT_TEST(basis_interaction_graph, test_isotropic_rect)
    out << "Row Array Basis = \n";
    for(int i=0;i<rowBasis->size();i++) {
      Stokhos::MultiIndex<int> rowArray = rowBasis->term(i);
-      for(int i=0;i<num_KL;i++) { 
-         out << rowArray[i] << " ";
+      for(int j=0;j<num_KL;j++) {
+         out << rowArray[j] << " ";
       }
       out << std::endl;
    }

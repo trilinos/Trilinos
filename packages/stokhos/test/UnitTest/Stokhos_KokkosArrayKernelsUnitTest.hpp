@@ -620,7 +620,7 @@ bool test_crs_matrix_free_view(const UnitTestSetup<Device>& setup,
       Stokhos::multiply( matrix[k] , tmp_x_view , tmp_y_view, smo );
       jdx = 0;
       for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-        vec_type tmp_y_view =
+        vec_type tmp_y_view2 =
           Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
         kji_iterator i_begin = setup.Cijk->i_begin(j_it);
         kji_iterator i_end = setup.Cijk->i_end(j_it);
@@ -628,7 +628,7 @@ bool test_crs_matrix_free_view(const UnitTestSetup<Device>& setup,
           int i = index(i_it);
           value_type c = value(i_it);
           vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
-          Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
+          Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view2 );
         }
       }
     }
@@ -724,7 +724,7 @@ bool test_crs_matrix_free_kokkos(const UnitTestSetup<Device>& setup,
       KokkosSparse::spmv(  "N", value_type(1.0), matrix[k] , tmp_x_view , value_type(0.0) , tmp_y_view );
       jdx = 0;
       for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-        vec_type tmp_y_view =
+        vec_type tmp_y_view2 =
           Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
         kji_iterator i_begin = setup.Cijk->i_begin(j_it);
         kji_iterator i_end = setup.Cijk->i_end(j_it);
@@ -732,8 +732,8 @@ bool test_crs_matrix_free_kokkos(const UnitTestSetup<Device>& setup,
           int i = index(i_it);
           value_type c = value(i_it);
           vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
-          //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
-          KokkosBlas::update(c, tmp_y_view, value_type(1.0), y_view, value_type(0.0), y_view);
+          //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view2 );
+          KokkosBlas::update(c, tmp_y_view2, value_type(1.0), y_view, value_type(0.0), y_view);
         }
       }
     }
