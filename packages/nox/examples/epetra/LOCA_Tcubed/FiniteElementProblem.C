@@ -270,7 +270,7 @@ bool FiniteElementProblem::evaluate(FillType f,
     if ((flag == F_ONLY)    || (flag == ALL))
        (*rhs)[lastDof] = (*soln)[lastDof] - rightBC;
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
-       int row = StandardMap->MaxAllGID();
+       row = StandardMap->MaxAllGID();
        column = row;
       jac=1.0*jac_coeff;
       A->ReplaceGlobalValues(row, 1, &jac, &column);
