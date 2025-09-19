@@ -147,7 +147,7 @@ applyJacobianInverse(Teuchos::ParameterList &params,
       dx->PutScalar(0.0);
       // Solve linear system
       {
-       TEUCHOS_FUNC_TIME_MONITOR("Total deterministic solve Time");
+       TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total deterministic solve Time", deterministic);
        det_solver->applyJacobianInverse(det_solver_params, nox_df, nox_dx);
       }
 

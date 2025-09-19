@@ -138,7 +138,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     // Apply deterministic preconditioner
     for(int i=0; i<myBlockRows; i++) {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-      TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total AJ Deterministic Preconditioner Time");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stokhos: Total AJ Deterministic Preconditioner Time", deterministic);
 #endif
       mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)),
 			      *(result_block.GetBlock(i)));
