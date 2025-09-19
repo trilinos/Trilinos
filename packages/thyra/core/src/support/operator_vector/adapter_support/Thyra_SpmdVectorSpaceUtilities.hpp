@@ -18,16 +18,16 @@ namespace Thyra {
 namespace SpmdVectorSpaceUtilities {
 
 /** \brief . */
-Ordinal computeMapCode( const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim );
+Ordinal computeMapCode(const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim);
 
 /** \brief . */
-Ordinal computeLocalOffset( const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim );
+Ordinal computeLocalOffset(const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim);
 
 /** \brief . */
-Ordinal computeGlobalDim( const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim );
+Ordinal computeGlobalDim(const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim);
 
-} // namespace SpmdVectorSpaceUtiltities
+}  // namespace SpmdVectorSpaceUtilities
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // THYRA_SPMD_VECTOR_SPACE_UTILITIES_HPP
+#endif  // THYRA_SPMD_VECTOR_SPACE_UTILITIES_HPP

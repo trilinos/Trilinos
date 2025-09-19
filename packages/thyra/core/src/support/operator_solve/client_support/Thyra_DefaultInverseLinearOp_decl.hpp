@@ -13,19 +13,16 @@
 #include "Thyra_InverseLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Determines what to do if inverse solve fails.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 enum EThrowOnSolveFailure {
-  THROW_ON_SOLVE_FAILURE=1, ///< Throw an exception if a solve fails to converge
-  IGNORE_SOLVE_FAILURE=0  ///< Don't throw an exception if a solve fails to converge
+  THROW_ON_SOLVE_FAILURE = 1,  ///< Throw an exception if a solve fails to converge
+  IGNORE_SOLVE_FAILURE   = 0   ///< Don't throw an exception if a solve fails to converge
 };
-
 
 /** \brief Concrete <tt>LinearOpBase</tt> subclass that creates an implicit
  * <tt>LinearOpBase</tt> object using the inverse action of a
@@ -34,11 +31,11 @@ enum EThrowOnSolveFailure {
  * This class represents an implicit inverse linear operator:
 
  \verbatim
- 
+
  M = inv(A)
- 
+
  \endverbatim
- 
+
  * where <tt>A</tt> is any <tt>LinearOpWithSolveBase</tt> object.
  * Specifically, the <tt>solve(...)</tt> function <tt>A</tt> is used to
  * implement <tt>this->apply()</tt> and the <tt>solveTranspose(...)</tt>
@@ -50,11 +47,9 @@ enum EThrowOnSolveFailure {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
-class DefaultInverseLinearOp : virtual public InverseLinearOpBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class DefaultInverseLinearOp : virtual public InverseLinearOpBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
@@ -66,12 +61,11 @@ public:
   /** Calls <tt>initialize()</tt>.
    */
   DefaultInverseLinearOp(
-    const RCP<LinearOpWithSolveBase<Scalar> > &lows,
-    const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
-    const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
-    const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
-    const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE
-    );
+      const RCP<LinearOpWithSolveBase<Scalar> > &lows,
+      const SolveCriteria<Scalar> *fwdSolveCriteria     = NULL,
+      const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
+      const SolveCriteria<Scalar> *adjSolveCriteria     = NULL,
+      const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE);
 
   /** Calls <tt>initialize()</tt>.
    *
@@ -79,12 +73,11 @@ public:
    * functions described \ref Thyra_Op_Vec_AddedLinearOp_helpers_grp "here".
    */
   DefaultInverseLinearOp(
-    const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
-    const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
-    const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
-    const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
-    const EThrowOnSolveFailure throwOnAdjSolveFailure  = THROW_ON_SOLVE_FAILURE
-    );
+      const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
+      const SolveCriteria<Scalar> *fwdSolveCriteria     = NULL,
+      const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
+      const SolveCriteria<Scalar> *adjSolveCriteria     = NULL,
+      const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE);
 
   /** \brief Initialize given a non-const <tt>LinearOpWithSolveBase</tt>
    * object and an optional <tt>.
@@ -121,12 +114,11 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<LinearOpWithSolveBase<Scalar> > &lows,
-    const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
-    const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
-    const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
-    const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE
-    );
+      const RCP<LinearOpWithSolveBase<Scalar> > &lows,
+      const SolveCriteria<Scalar> *fwdSolveCriteria     = NULL,
+      const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
+      const SolveCriteria<Scalar> *adjSolveCriteria     = NULL,
+      const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE);
 
   /** \brief Initialize given a non-const <tt>LinearOpWithSolveBase</tt>
    * object and an optional <tt>.
@@ -163,12 +155,11 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
-    const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
-    const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
-    const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
-    const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE
-    );
+      const RCP<const LinearOpWithSolveBase<Scalar> > &lows,
+      const SolveCriteria<Scalar> *fwdSolveCriteria     = NULL,
+      const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
+      const SolveCriteria<Scalar> *adjSolveCriteria     = NULL,
+      const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE);
 
   /** \brief Set to uninitialized.
    *
@@ -189,10 +180,10 @@ public:
   bool isLowsConst() const;
   /** \brief . */
   RCP<LinearOpWithSolveBase<Scalar> >
-  getNonconstLows(); 
+  getNonconstLows();
   /** \brief . */
   RCP<const LinearOpWithSolveBase<Scalar> >
-  getLows() const; 
+  getLows() const;
 
   //@}
 
@@ -203,13 +194,13 @@ public:
    * <t>this->getLows().get()!=NULL</tt> and returns <tt>Teuchos::null</tt>
    * otherwise.
    */
-  RCP< const VectorSpaceBase<Scalar> > range() const;
+  RCP<const VectorSpaceBase<Scalar> > range() const;
 
   /** \brief Returns <tt>this->getLows()->range() if
    * <t>this->getLows().get()!=NULL</tt> and returns <tt>Teuchos::null</tt>
    * otherwise.
    */
-  RCP< const VectorSpaceBase<Scalar> > domain() const;
+  RCP<const VectorSpaceBase<Scalar> > domain() const;
 
   /** \brief . */
   RCP<const LinearOpBase<Scalar> > clone() const;
@@ -218,20 +209,18 @@ public:
 
   /** @name Overridden from Teuchos::Describable */
   //@{
-                                                
+
   /** \brief . */
   std::string description() const;
 
   /** \brief . */
   void describe(
-    FancyOStream &out,
-    const Teuchos::EVerbosityLevel verbLevel
-    ) const;
+      FancyOStream &out,
+      const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
 
-protected:
-
+ protected:
   /** @name Overridden from LinearOpBase */
   //@{
 
@@ -242,86 +231,72 @@ protected:
 
   /** \brief . */
   void applyImpl(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const;
 
   //@}
 
-private:
-
+ private:
   Teuchos::ConstNonconstObjectContainer<LinearOpWithSolveBase<Scalar> > lows_;
   RCP<SolveCriteria<Scalar> > fwdSolveCriteria_;
   EThrowOnSolveFailure throwOnFwdSolveFailure_;
   RCP<SolveCriteria<Scalar> > adjSolveCriteria_;
   EThrowOnSolveFailure throwOnAdjSolveFailure_;
-  
+
   void assertInitialized() const;
 
-  template<class LOWS>
+  template <class LOWS>
   void initializeImpl(
-    const RCP<LOWS> &lows,
-    const SolveCriteria<Scalar> *fwdSolveCriteria,
-    const EThrowOnSolveFailure throwOnFwdSolveFailure,
-    const SolveCriteria<Scalar> *adjSolveCriteria,
-    const EThrowOnSolveFailure throwOnAdjSolveFailure
-    );
+      const RCP<LOWS> &lows,
+      const SolveCriteria<Scalar> *fwdSolveCriteria,
+      const EThrowOnSolveFailure throwOnFwdSolveFailure,
+      const SolveCriteria<Scalar> *adjSolveCriteria,
+      const EThrowOnSolveFailure throwOnAdjSolveFailure);
 
   // Not defined and not to be called
-  DefaultInverseLinearOp(const DefaultInverseLinearOp&);
-  DefaultInverseLinearOp& operator=(const DefaultInverseLinearOp&);
-
+  DefaultInverseLinearOp(const DefaultInverseLinearOp &);
+  DefaultInverseLinearOp &operator=(const DefaultInverseLinearOp &);
 };
-
 
 /** \brief Form a non-const implicit inverse operator <tt>M = inv(A)</tt>.
  *
  * \relates DefaultInverseLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
 nonconstInverse(
-  const RCP<LinearOpWithSolveBase<Scalar> > &A,
-  const Ptr<const SolveCriteria<Scalar> > &fwdSolveCriteria = Teuchos::null,
-  const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
-  const Ptr<const SolveCriteria<Scalar> > &adjSolveCriteria = Teuchos::null,
-  const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE
-  );
-
+    const RCP<LinearOpWithSolveBase<Scalar> > &A,
+    const Ptr<const SolveCriteria<Scalar> > &fwdSolveCriteria = Teuchos::null,
+    const EThrowOnSolveFailure throwOnFwdSolveFailure         = THROW_ON_SOLVE_FAILURE,
+    const Ptr<const SolveCriteria<Scalar> > &adjSolveCriteria = Teuchos::null,
+    const EThrowOnSolveFailure throwOnAdjSolveFailure         = THROW_ON_SOLVE_FAILURE);
 
 /** \brief Form a const implicit inverse operator <tt>M = inv(A)</tt>.
  *
  * \relates DefaultInverseLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpBase<Scalar> >
 inverse(
-  const RCP<const LinearOpWithSolveBase<Scalar> > &A,
-  const Ptr<const SolveCriteria<Scalar> > &fwdSolveCriteria = Teuchos::null,
-  const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
-  const Ptr<const SolveCriteria<Scalar> > &adjSolveCriteria = Teuchos::null,
-  const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE
-  );
-
+    const RCP<const LinearOpWithSolveBase<Scalar> > &A,
+    const Ptr<const SolveCriteria<Scalar> > &fwdSolveCriteria = Teuchos::null,
+    const EThrowOnSolveFailure throwOnFwdSolveFailure         = THROW_ON_SOLVE_FAILURE,
+    const Ptr<const SolveCriteria<Scalar> > &adjSolveCriteria = Teuchos::null,
+    const EThrowOnSolveFailure throwOnAdjSolveFailure         = THROW_ON_SOLVE_FAILURE);
 
 // /////////////////////////////////
 // Inline members
 
-
-template<class Scalar>
-inline
-void DefaultInverseLinearOp<Scalar>::assertInitialized() const
-{
+template <class Scalar>
+inline void DefaultInverseLinearOp<Scalar>::assertInitialized() const {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( !lows_.getConstObj().get() );
+  TEUCHOS_TEST_FOR_EXCEPT(!lows_.getConstObj().get());
 #endif
 }
 
+}  // end namespace Thyra
 
-} // end namespace Thyra
-
-
-#endif	// THYRA_DEFAULT_INVERSE_LINEAR_OP_DECL_HPP
+#endif  // THYRA_DEFAULT_INVERSE_LINEAR_OP_DECL_HPP

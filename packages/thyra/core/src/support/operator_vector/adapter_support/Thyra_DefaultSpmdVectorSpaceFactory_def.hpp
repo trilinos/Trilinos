@@ -16,20 +16,17 @@
 
 namespace Thyra {
 
-template<class Scalar>
+template <class Scalar>
 DefaultSpmdVectorSpaceFactory<Scalar>::DefaultSpmdVectorSpaceFactory(
-  const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm
-  )
-  :comm_(comm)
-{}
+    const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm)
+  : comm_(comm) {}
 
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<const VectorSpaceBase<Scalar> >
-DefaultSpmdVectorSpaceFactory<Scalar>::createVecSpc(int dim) const
-{
+DefaultSpmdVectorSpaceFactory<Scalar>::createVecSpc(int dim) const {
   return locallyReplicatedDefaultSpmdVectorSpace<Scalar>(comm_, dim);
 }
 
-} // end namespace Thyra
+}  // end namespace Thyra
 
-#endif // THYRA_DEFAULT_SPMD_VECTOR_SPACE_FACTORY_HPP
+#endif  // THYRA_DEFAULT_SPMD_VECTOR_SPACE_FACTORY_HPP

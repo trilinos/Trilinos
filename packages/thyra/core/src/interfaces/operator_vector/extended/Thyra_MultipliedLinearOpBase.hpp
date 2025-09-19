@@ -10,9 +10,7 @@
 #ifndef THYRA_MULTIPLIED_LINEAR_OP_BASE_HPP
 #define THYRA_MULTIPLIED_LINEAR_OP_BASE_HPP
 
-
 #include "Thyra_LinearOpBase.hpp"
-
 
 namespace Thyra {
 
@@ -20,7 +18,7 @@ namespace Thyra {
  *
  * This interface represents a multiplied linear operator <tt>M</tt> of the form:
  \verbatim
- 
+
  M = Op[0] * Op[1] * ... * Op[numOps-1]
  \endverbatim
  *
@@ -39,10 +37,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class MultipliedLinearOpBase : virtual public LinearOpBase<Scalar> {
-public:
-
+ public:
   /** @name Pure virtual functions that must be overridden by subclasses */
   //@{
 
@@ -85,11 +82,8 @@ public:
   virtual Teuchos::RCP<const LinearOpBase<Scalar> > getOp(const int k) const = 0;
 
   //@}
-
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif	// THYRA_MULTIPLIED_LINEAR_OP_BASE_HPP
+#endif  // THYRA_MULTIPLIED_LINEAR_OP_BASE_HPP

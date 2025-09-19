@@ -10,13 +10,10 @@
 #ifndef THYRA_DELAYED_LINEAR_OP_WITH_SOLVE_FACTORY_DECL_HPP
 #define THYRA_DELAYED_LINEAR_OP_WITH_SOLVE_FACTORY_DECL_HPP
 
-
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Thyra_LinearOpSourceBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief General delayed construction LinearOpWithSolveFactoryBase subclass.
  *
@@ -26,19 +23,16 @@ namespace Thyra {
  * DelayedLinearOpWithSolve.  The class object DelayedLinearOpWithSolve
  * actually implements the delayed linear solver construction.
  */
-template<class Scalar>
+template <class Scalar>
 class DelayedLinearOpWithSolveFactory
-  : virtual public LinearOpWithSolveFactoryBase<Scalar>
-{
-public:
-
+  : virtual public LinearOpWithSolveFactoryBase<Scalar> {
+ public:
   /** @name Overridden from Constructors/Initializers/Accessors */
   //@{
-  
+
   /** \brief . */
   DelayedLinearOpWithSolveFactory(
-    const RCP<LinearOpWithSolveFactoryBase<Scalar> > &lowsf
-    );
+      const RCP<LinearOpWithSolveFactoryBase<Scalar> > &lowsf);
 
   /** \brief . */
   RCP<LinearOpWithSolveFactoryBase<Scalar> > getUnderlyingLOWSF();
@@ -60,7 +54,7 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(RCP<ParameterList> const& paramList);
+  void setParameterList(RCP<ParameterList> const &paramList);
   /** \brief . */
   RCP<ParameterList> getNonconstParameterList();
   /** \brief . */
@@ -74,15 +68,14 @@ public:
 
   /** \name Overridden from LinearOpWithSolveFactoyBase */
   //@{
-  
+
   /** \brief . */
   virtual bool acceptsPreconditionerFactory() const;
 
   /** \brief . */
   virtual void setPreconditionerFactory(
-    const RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
-    const std::string &precFactoryName
-    );
+      const RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
+      const std::string &precFactoryName);
 
   /** \brief . */
   virtual RCP<PreconditionerFactoryBase<Scalar> >
@@ -90,65 +83,56 @@ public:
 
   /** \brief . */
   virtual void unsetPreconditionerFactory(
-    RCP<PreconditionerFactoryBase<Scalar> > *precFactory,
-    std::string *precFactoryName
-    );
+      RCP<PreconditionerFactoryBase<Scalar> > *precFactory,
+      std::string *precFactoryName);
 
   /** \brief . */
   virtual bool isCompatible(
-    const LinearOpSourceBase<Scalar> &fwdOpSrc
-    ) const;
+      const LinearOpSourceBase<Scalar> &fwdOpSrc) const;
 
   /** \brief . */
   virtual RCP<LinearOpWithSolveBase<Scalar> > createOp() const;
 
   /** \brief . */
   virtual void initializeOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    LinearOpWithSolveBase<Scalar> *Op,
-    const ESupportSolveUse supportSolveUse
-    ) const;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      LinearOpWithSolveBase<Scalar> *Op,
+      const ESupportSolveUse supportSolveUse) const;
 
   /** \brief . */
   virtual void initializeAndReuseOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    LinearOpWithSolveBase<Scalar> *Op
-    ) const;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      LinearOpWithSolveBase<Scalar> *Op) const;
 
   /** \brief . */
   virtual void uninitializeOp(
-    LinearOpWithSolveBase<Scalar> *Op,
-    RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
-    RCP<const PreconditionerBase<Scalar> > *prec,
-    RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
-    ESupportSolveUse *supportSolveUse
-    ) const;
- 
+      LinearOpWithSolveBase<Scalar> *Op,
+      RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
+      RCP<const PreconditionerBase<Scalar> > *prec,
+      RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
+      ESupportSolveUse *supportSolveUse) const;
+
   /** \brief . */
   virtual bool supportsPreconditionerInputType(
-    const EPreconditionerInputType precOpType
-    ) const;
+      const EPreconditionerInputType precOpType) const;
 
   /** \brief . */
   virtual void initializePreconditionedOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    const RCP<const PreconditionerBase<Scalar> > &prec,
-    LinearOpWithSolveBase<Scalar> *Op,
-    const ESupportSolveUse supportSolveUse
-    ) const;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      const RCP<const PreconditionerBase<Scalar> > &prec,
+      LinearOpWithSolveBase<Scalar> *Op,
+      const ESupportSolveUse supportSolveUse) const;
 
   /** \brief . */
   virtual void initializeApproxPreconditionedOp(
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-    LinearOpWithSolveBase<Scalar> *Op,
-    const ESupportSolveUse supportSolveUse
-    ) const;
+      const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+      const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
+      LinearOpWithSolveBase<Scalar> *Op,
+      const ESupportSolveUse supportSolveUse) const;
 
   //@}
 
-protected:
-
+ protected:
   /** \brief Overridden from Teuchos::VerboseObjectBase */
   //@{
 
@@ -157,17 +141,13 @@ protected:
 
   //@}
 
-private:
-
+ private:
   RCP<LinearOpWithSolveFactoryBase<Scalar> > lowsf_;
 
   // Not defined and not to be called
   DelayedLinearOpWithSolveFactory();
-
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_DELAYED_LINEAR_OP_WITH_SOLVE_FACTORY_DECL_HPP
+#endif  // THYRA_DELAYED_LINEAR_OP_WITH_SOLVE_FACTORY_DECL_HPP

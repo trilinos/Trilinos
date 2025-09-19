@@ -15,9 +15,7 @@
 #include "Teuchos_ExpandScalarTypeMacros.hpp"
 #include "Teuchos_PromotionTraits.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base class for all linear operators.
  *
@@ -155,10 +153,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class LinearOpBase : virtual public Teuchos::Describable {
-public:
-
+ public:
   /** @name Public interface functions */
   //@{
 
@@ -177,7 +174,7 @@ public:
    * object embedded in <tt>return</tt> must be valid past the lifetime of
    * <tt>*this</tt> linear operator object.
    */
-  virtual RCP< const VectorSpaceBase<Scalar> > range() const = 0;
+  virtual RCP<const VectorSpaceBase<Scalar> > range() const = 0;
 
   /** \brief Return a smart pointer for the domain space for <tt>this</tt> operator.
    *
@@ -194,7 +191,7 @@ public:
    * object embedded in <tt>return</tt> must be valid past the lifetime of
    * <tt>*this</tt> linear operator object.
    */
-  virtual RCP< const VectorSpaceBase<Scalar> > domain() const = 0;
+  virtual RCP<const VectorSpaceBase<Scalar> > domain() const = 0;
 
   /** \brief Return if the <tt>M_trans</tt> operation of <tt>apply()</tt> is
    * supported or not.
@@ -207,10 +204,9 @@ public:
    * <tt>ETrans</tt> (i.e. the transposed or the non-transposed operations
    * must be supported, both can not be unsupported)
    */
-  bool opSupported(EOpTransp M_trans) const
-    {
-      return opSupportedImpl(M_trans);
-    }
+  bool opSupported(EOpTransp M_trans) const {
+    return opSupportedImpl(M_trans);
+  }
 
   /** \brief Apply the linear operator to a multi-vector : <tt>Y =
    * alpha*op(M)*X + beta*Y</tt>.
@@ -228,7 +224,7 @@ public:
    *
    * \param beta [in] The multiplier for the target multi-vector <tt>Y</tt>.
    * The default value of <tt>beta</tt> is <tt>0.0</tt>.
-   * 
+   *
    * <b>Preconditions:</b><ul>
    *
    * <li> <tt>nonnull(this->domain()) && nonnull(this->range())</tt>
@@ -258,15 +254,13 @@ public:
    * </ul>
    */
   void apply(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const
-    {
-      applyImpl(M_trans, X, Y, alpha, beta);
-    }
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const {
+    applyImpl(M_trans, X, Y, alpha, beta);
+  }
 
   /** \brief Clone the linear operator object (if supported).
    *
@@ -284,8 +278,7 @@ public:
 
   //@}
 
-protected:
-
+ protected:
   /** \name Protected virtual functions to be overridden by subclasses. */
   //@{
 
@@ -294,74 +287,63 @@ protected:
 
   /** \brief Override in subclass. */
   virtual void applyImpl(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const = 0;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const = 0;
 
   //@}
 
-private:
-  
+ private:
   // Not defined and not to be called
-  LinearOpBase<Scalar>&
-  operator=(const LinearOpBase<Scalar>&);
-
+  LinearOpBase<Scalar> &
+  operator=(const LinearOpBase<Scalar> &);
 };
-
 
 /** \brief Determines if a linear operator is in the "Fully Uninitialized"
  * state or not.
  *
  * \relates LinearOpBase
  */
-template<class Scalar>
-bool isFullyUninitialized( const LinearOpBase<Scalar> &M );
-
+template <class Scalar>
+bool isFullyUninitialized(const LinearOpBase<Scalar> &M);
 
 /** \brief Determines if a linear operator is in the "Partially Initialized"
  * state or not.
  *
  * \relates LinearOpBase
  */
-template<class Scalar>
-bool isPartiallyInitialized( const LinearOpBase<Scalar> &M );
-
+template <class Scalar>
+bool isPartiallyInitialized(const LinearOpBase<Scalar> &M);
 
 /** \brief Determines if a linear operator is in the "Fully Initialized"
  * state or not.
  *
  * \relates LinearOpBase
  */
-template<class Scalar>
-bool isFullyInitialized( const LinearOpBase<Scalar> &M );
-
+template <class Scalar>
+bool isFullyInitialized(const LinearOpBase<Scalar> &M);
 
 /** \brief Determines if an operation is supported for a single scalar type.
  *
  * \relates LinearOpBase
  */
-template<class Scalar>
-inline
-bool opSupported( const LinearOpBase<Scalar> &M, EOpTransp M_trans );
-
+template <class Scalar>
+inline bool opSupported(const LinearOpBase<Scalar> &M, EOpTransp M_trans);
 
 /** \brief Non-member function call for <tt>M.apply(...)</tt>.
  *
  * \relates LinearOpBase
  */
-template<class Scalar>
+template <class Scalar>
 void apply(
-  const LinearOpBase<Scalar> &M,
-  const EOpTransp M_trans,
-  const MultiVectorBase<Scalar> &X,
-  const Ptr<MultiVectorBase<Scalar> > &Y,
-  const Scalar alpha = static_cast<Scalar>(1.0),
-  const Scalar beta = static_cast<Scalar>(0.0)
-  );
-
+    const LinearOpBase<Scalar> &M,
+    const EOpTransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
+    const Scalar alpha = static_cast<Scalar>(1.0),
+    const Scalar beta  = static_cast<Scalar>(0.0));
 
 /** \brief Calls <tt>apply<double>(...)</tt>.
  *
@@ -369,83 +351,52 @@ void apply(
  *
  * \relates LinearOpBase
  */
-inline
-void apply(
-  const LinearOpBase<double> &M,
-  const EOpTransp M_trans,
-  const MultiVectorBase<double> &X,
-  const Ptr<MultiVectorBase<double> > &Y,
-  const double alpha = 1.0,
-  const double beta = 0.0
-  );
+inline void apply(
+    const LinearOpBase<double> &M,
+    const EOpTransp M_trans,
+    const MultiVectorBase<double> &X,
+    const Ptr<MultiVectorBase<double> > &Y,
+    const double alpha = 1.0,
+    const double beta  = 0.0);
 
-
-}	// end namespace Thyra
-
+}  // end namespace Thyra
 
 //
 // Inline and other Template Implementations
 //
 
-
-template<class Scalar>
-inline
-bool Thyra::isFullyUninitialized( const LinearOpBase<Scalar> &M )
-{
-  return ( is_null(M.range()) || is_null(M.domain()) );
+template <class Scalar>
+inline bool Thyra::isFullyUninitialized(const LinearOpBase<Scalar> &M) {
+  return (is_null(M.range()) || is_null(M.domain()));
 }
 
-
-template<class Scalar>
-bool Thyra::isPartiallyInitialized( const LinearOpBase<Scalar> &M )
-{
-  return
-    (
-      ( !is_null(M.range()) && !is_null(M.domain()) )
-      && 
-      (
-        !opSupported(M,NOTRANS) && !opSupported(M,CONJ)
-        && !opSupported(M,TRANS) && !opSupported(M,CONJTRANS)
-        )
-      );
+template <class Scalar>
+bool Thyra::isPartiallyInitialized(const LinearOpBase<Scalar> &M) {
+  return (
+      (!is_null(M.range()) && !is_null(M.domain())) &&
+      (!opSupported(M, NOTRANS) && !opSupported(M, CONJ) && !opSupported(M, TRANS) && !opSupported(M, CONJTRANS)));
 }
 
-
-template<class Scalar>
-bool Thyra::isFullyInitialized( const LinearOpBase<Scalar> &M )
-{
-  return
-    (
-      ( !is_null(M.range()) && !is_null(M.domain()) )
-      && 
-      (
-        opSupported(M,NOTRANS) || opSupported(M,CONJ)
-        || opSupported(M,TRANS) || opSupported(M,CONJTRANS)
-        )
-      );
+template <class Scalar>
+bool Thyra::isFullyInitialized(const LinearOpBase<Scalar> &M) {
+  return (
+      (!is_null(M.range()) && !is_null(M.domain())) &&
+      (opSupported(M, NOTRANS) || opSupported(M, CONJ) || opSupported(M, TRANS) || opSupported(M, CONJTRANS)));
 }
 
-
-template<class Scalar>
-inline
-bool Thyra::opSupported( const LinearOpBase<Scalar> &M, EOpTransp M_trans )
-{
+template <class Scalar>
+inline bool Thyra::opSupported(const LinearOpBase<Scalar> &M, EOpTransp M_trans) {
   return M.opSupported(M_trans);
 }
 
-
-inline
-void Thyra::apply(
-  const LinearOpBase<double> &M,
-  const EOpTransp M_trans,
-  const MultiVectorBase<double> &X,
-  const Ptr<MultiVectorBase<double> > &Y,
-  const double alpha,
-  const double beta
-  )
-{
+inline void Thyra::apply(
+    const LinearOpBase<double> &M,
+    const EOpTransp M_trans,
+    const MultiVectorBase<double> &X,
+    const Ptr<MultiVectorBase<double> > &Y,
+    const double alpha,
+    const double beta) {
   apply<double>(M, M_trans, X, Y, alpha, beta);
 }
 
-
-#endif	// THYRA_LINEAR_OP_DECL_HPP
+#endif  // THYRA_LINEAR_OP_DECL_HPP

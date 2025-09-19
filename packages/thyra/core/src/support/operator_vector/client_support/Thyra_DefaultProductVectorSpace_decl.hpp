@@ -16,7 +16,6 @@
 
 namespace Thyra {
 
-
 /** \brief Standard concrete implementation of a product vector space.
  *
  * This subclass allows <tt>%VectorSpaceBase</tt> objects to be built out of
@@ -100,13 +99,11 @@ x
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultProductVectorSpace
   : virtual public ProductVectorSpaceBase<Scalar>,
-    virtual protected VectorSpaceDefaultBase<Scalar>
-{
-public:
-
+    virtual protected VectorSpaceDefaultBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
@@ -115,9 +112,8 @@ public:
 
   /** Construct to an initialized state (calls <tt>initialize</tt>). */
   DefaultProductVectorSpace(
-    const ArrayView<const RCP<const VectorSpaceBase<Scalar> > > &vecSpaces
-    );
-  
+      const ArrayView<const RCP<const VectorSpaceBase<Scalar> > >& vecSpaces);
+
   /** \brief Initialize with a list of constituent vector spaces.
    *
    * \param numBlocks [in] The number of constituent vector spaces.
@@ -157,8 +153,7 @@ public:
    * </ul>
    */
   virtual void initialize(
-    const ArrayView<const RCP<const VectorSpaceBase<Scalar> > > &vecSpaces
-    );
+      const ArrayView<const RCP<const VectorSpaceBase<Scalar> > >& vecSpaces);
 
   /** \brief Return if <tt>this</tt> vector space was cloned.
    *
@@ -189,8 +184,7 @@ public:
    * object is still using them.
    */
   virtual void uninitialize(
-    const ArrayView<RCP<const VectorSpaceBase<Scalar> > > &vecSpaces = Teuchos::null
-    );
+      const ArrayView<RCP<const VectorSpaceBase<Scalar> > >& vecSpaces = Teuchos::null);
 
   /** \brief Returns a pointer to an array (of length <tt>this->numBlocks()</tt>)
    * to the constituent vector spaces.
@@ -240,8 +234,8 @@ public:
    *
    * </ul>
    */
-  void getVecSpcPoss( Ordinal i, int* kth_vector_space, Ordinal* kth_global_offset ) const;
-  
+  void getVecSpcPoss(Ordinal i, int* kth_vector_space, Ordinal* kth_global_offset) const;
+
   //@}
 
   /** @name Overridden from DefaultProductVectorSpace */
@@ -250,7 +244,7 @@ public:
   /** \brief . */
   int numBlocks() const;
   /** \brief . */
-  RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const; 
+  RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const;
 
   //@}
 
@@ -263,44 +257,44 @@ public:
   /** \brief Returns true only if also a product vector space and all
    * constituent vectors are compatible.
    */
-  bool isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const;
+  bool isCompatible(const VectorSpaceBase<Scalar>& vecSpc) const;
 
   /** \brief Returns a <tt>DefaultProductVector</tt> object. */
-  RCP< VectorBase<Scalar> > createMember() const;
+  RCP<VectorBase<Scalar> > createMember() const;
 
   /** \brief Returns the sum of the scalar products of the constituent
    * vectors.
    */
   Scalar scalarProd(
-    const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
+      const VectorBase<Scalar>& x, const VectorBase<Scalar>& y) const;
 
   /** \brief Returns the sum of the scalar products of each of the columns of
    * the constituent multi-vectors.
    */
   void scalarProdsImpl(
-    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-    const ArrayView<Scalar> &scalarProds ) const;
+      const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+      const ArrayView<Scalar>& scalarProds) const;
 
   /** \brief Returns true if all of the constituent vector spaces return
    * true.
    */
   bool hasInCoreView(const Range1D& rng, const EViewType viewType,
-    const EStrideType strideType) const;
+                     const EStrideType strideType) const;
 
   /** \brief Returns <tt>getBlock(0)->smallVecSpcFcty()</tt>. */
-  RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
+  RCP<const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
 
   /** \brief Returns a <tt>DefaultProductMultiVector</tt> object. */
-  RCP< MultiVectorBase<Scalar> > createMembers(int numMembers) const;
+  RCP<MultiVectorBase<Scalar> > createMembers(int numMembers) const;
 
   /** \brief Clones the object as promised. */
-  RCP< const VectorSpaceBase<Scalar> > clone() const;
+  RCP<const VectorSpaceBase<Scalar> > clone() const;
 
   //@}
 
   /** @name Overridden from Teuchos::Describable */
   //@{
-                                                
+
   /** \brief Prints just the name <tt>DefaultProductVectorSpace</tt> along
    * with the overall dimension and the number of blocks.
    */
@@ -314,25 +308,22 @@ public:
    * ToDo: Finish documentation!
    */
   void describe(
-    Teuchos::FancyOStream &out,
-    const Teuchos::EVerbosityLevel verbLevel
-    ) const;
+      Teuchos::FancyOStream& out,
+      const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
 
-protected:
-
+ protected:
   // ///////////////////////////////////
   // Protected member functions
 
-private:
- 
+ private:
   // ///////////////////////////////////
   // Private types
 
   typedef Array<RCP<const VectorSpaceBase<Scalar> > > vecSpaces_t;
   typedef Array<Ordinal> vecSpacesOffsets_t;
- 
+
   // ///////////////////////////////////
   // Private data members
 
@@ -347,97 +338,73 @@ private:
   // Private member functions
 
   void assertInitialized() const;
-
 };
-
 
 /** \brief Nonmember constructor that constructs to uninitialized.
  *
  * \relates DefaultProductVectorSpace
  */
-template<class Scalar>
-inline
-RCP<DefaultProductVectorSpace<Scalar> >
-productVectorSpace()
-{
+template <class Scalar>
+inline RCP<DefaultProductVectorSpace<Scalar> >
+productVectorSpace() {
   return Teuchos::rcp(new DefaultProductVectorSpace<Scalar>);
 }
-
 
 /** \brief Nonmember constructor that takes an array of vector spaces.
  *
  * \relates DefaultProductVectorSpace
  */
-template<class Scalar>
-inline
-RCP<DefaultProductVectorSpace<Scalar> >
+template <class Scalar>
+inline RCP<DefaultProductVectorSpace<Scalar> >
 productVectorSpace(
-  const ArrayView<RCP<const VectorSpaceBase<Scalar> > > &vecSpaces
-  )
-{
+    const ArrayView<RCP<const VectorSpaceBase<Scalar> > >& vecSpaces) {
   return Teuchos::rcp(new DefaultProductVectorSpace<Scalar>(vecSpaces));
 }
-
 
 /** \brief Nonmember constructor that duplicates a block vector space
  * <tt>numBlock</tt> times to form a product space.
  *
  * \relates DefaultProductVectorSpace
  */
-template<class Scalar>
-inline
-RCP<DefaultProductVectorSpace<Scalar> >
+template <class Scalar>
+inline RCP<DefaultProductVectorSpace<Scalar> >
 productVectorSpace(
-  const RCP<const VectorSpaceBase<Scalar> > &vecSpace,
-  const int numBlocks
-  )
-{
+    const RCP<const VectorSpaceBase<Scalar> >& vecSpace,
+    const int numBlocks) {
   Array<RCP<const VectorSpaceBase<Scalar> > > vecSpaceBlocks;
-  for ( int i = 0; i < numBlocks; ++i )
+  for (int i = 0; i < numBlocks; ++i)
     vecSpaceBlocks.push_back(vecSpace);
   return productVectorSpace<Scalar>(vecSpaceBlocks());
 }
 
-
 // /////////////////////////////////
 // Inline members
 
-
-template<class Scalar>
+template <class Scalar>
 inline const RCP<const VectorSpaceBase<Scalar> >*
-DefaultProductVectorSpace<Scalar>::vecSpaces() const
-{
-  return ( dim_ ? &(*vecSpaces_)[0] : NULL );
+DefaultProductVectorSpace<Scalar>::vecSpaces() const {
+  return (dim_ ? &(*vecSpaces_)[0] : NULL);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 inline const Ordinal*
-DefaultProductVectorSpace<Scalar>::vecSpacesOffsets() const
-{
-  return ( dim_ ? &(*vecSpacesOffsets_)[0] : NULL );
+DefaultProductVectorSpace<Scalar>::vecSpacesOffsets() const {
+  return (dim_ ? &(*vecSpacesOffsets_)[0] : NULL);
 }
 
-
-template<class Scalar>
-inline bool DefaultProductVectorSpace<Scalar>::hasBeenCloned() const
-{
+template <class Scalar>
+inline bool DefaultProductVectorSpace<Scalar>::hasBeenCloned() const {
   return vecSpaces_.strong_count() > 1;
 }
 
-
-template<class Scalar>
-inline
-void DefaultProductVectorSpace<Scalar>::assertInitialized() const
-{
+template <class Scalar>
+inline void DefaultProductVectorSpace<Scalar>::assertInitialized() const {
   using Teuchos::implicit_cast;
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( is_null(vecSpaces_) );
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(vecSpaces_));
 #endif
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_DEFAULT_PRODUCT_VECTOR_SPACE_DECL_HPP
+#endif  // THYRA_DEFAULT_PRODUCT_VECTOR_SPACE_DECL_HPP

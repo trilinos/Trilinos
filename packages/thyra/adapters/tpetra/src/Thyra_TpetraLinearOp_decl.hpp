@@ -18,17 +18,15 @@
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
 #if defined(HAVE_THYRA_EPETRA) && defined(HAVE_TPETRA_EPETRA)
-#  define HAVE_THYRA_TPETRA_EPETRA
+#define HAVE_THYRA_TPETRA_EPETRA
 #endif
 
 #ifdef HAVE_THYRA_TPETRA_EPETRA
-#  include "Thyra_EpetraLinearOpBase.hpp"
-#  include "Tpetra_EpetraRowMatrix.hpp"
+#include "Thyra_EpetraLinearOpBase.hpp"
+#include "Tpetra_EpetraRowMatrix.hpp"
 #endif
 
-
 namespace Thyra {
-
 
 /** \brief Concrete Thyra::LinearOpBase subclass for Tpetra::Operator.
  *
@@ -36,18 +34,18 @@ namespace Thyra {
  *
  * \ingroup Tpetra_Thyra_Op_Vec_adapters_grp
  */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal,
-  class Node=Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal = LocalOrdinal,
+          class Node = Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>
 class TpetraLinearOp
   : virtual public Thyra::LinearOpDefaultBase<Scalar>,
     virtual public ScaledLinearOpBase<Scalar>,
     virtual public Thyra::RowStatLinearOpBase<Scalar>
 #ifdef HAVE_THYRA_TPETRA_EPETRA
-  , virtual public EpetraLinearOpBase
+  ,
+    virtual public EpetraLinearOpBase
 #endif
 {
-public:
-
+ public:
   /** \name Constructors/initializers. */
   //@{
 
@@ -56,24 +54,22 @@ public:
 
   /** \brief Initialize. */
   void initialize(
-    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-    const RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraOperator
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+      const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+      const RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &tpetraOperator);
 
   /** \brief Initialize. */
   void constInitialize(
-    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-    const RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraOperator
-    );
+      const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+      const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+      const RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &tpetraOperator);
 
   /** \brief Get embedded non-const Tpetra::Operator. */
-  RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   getTpetraOperator();
 
   /** \brief Get embedded const Tpetra::Operator. */
-  RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   getConstTpetraOperator() const;
 
   //@}
@@ -96,25 +92,22 @@ public:
 
   /** \brief . */
   void getNonconstEpetraOpView(
-    const Ptr<RCP<Epetra_Operator> > &epetraOp,
-    const Ptr<EOpTransp> &epetraOpTransp,
-    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
-    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
-    );
+      const Ptr<RCP<Epetra_Operator> > &epetraOp,
+      const Ptr<EOpTransp> &epetraOpTransp,
+      const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+      const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport);
   /** \brief . */
   void getEpetraOpView(
-    const Ptr<RCP<const Epetra_Operator> > &epetraOp,
-    const Ptr<EOpTransp> &epetraOpTransp,
-    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
-    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
-    ) const;
+      const Ptr<RCP<const Epetra_Operator> > &epetraOp,
+      const Ptr<EOpTransp> &epetraOpTransp,
+      const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+      const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport) const;
 
   //@}
 
-#endif // HAVE_THYRA_TPETRA_EPETRA
+#endif  // HAVE_THYRA_TPETRA_EPETRA
 
-protected:
-
+ protected:
   /** \name Protected Overridden functions from LinearOpBase. */
   //@{
 
@@ -123,12 +116,11 @@ protected:
 
   /** \brief . */
   void applyImpl(
-    const Thyra::EOpTransp M_trans,
-    const Thyra::MultiVectorBase<Scalar> &X_in,
-    const Teuchos::Ptr<Thyra::MultiVectorBase<Scalar> > &Y_inout,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const Thyra::EOpTransp M_trans,
+      const Thyra::MultiVectorBase<Scalar> &X_in,
+      const Teuchos::Ptr<Thyra::MultiVectorBase<Scalar> > &Y_inout,
+      const Scalar alpha,
+      const Scalar beta) const;
 
   //@}
 
@@ -146,7 +138,7 @@ protected:
 
   /** \brief . */
   virtual void scaleRightImpl(const VectorBase<Scalar> &col_scaling);
-  
+
   //@}
 
   /** \name Protected member functions overridden from RowStatLinearOpBase. */
@@ -154,39 +146,35 @@ protected:
 
   /** \brief . */
   virtual bool rowStatIsSupportedImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
+      const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
 
   /** \brief . */
   virtual void getRowStatImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat,
-    const Ptr<VectorBase<Scalar> > &rowStatVec) const;
+      const RowStatLinearOpBaseUtils::ERowStat rowStat,
+      const Ptr<VectorBase<Scalar> > &rowStatVec) const;
 
   //@}
 
-private:
+ private:
+  RCP<const VectorSpaceBase<Scalar> >
+      rangeSpace_;
 
   RCP<const VectorSpaceBase<Scalar> >
-  rangeSpace_;
+      domainSpace_;
 
-  RCP<const VectorSpaceBase<Scalar> >
-  domainSpace_;
-
-  Teuchos::ConstNonconstObjectContainer<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  tpetraOperator_;
+  Teuchos::ConstNonconstObjectContainer<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+      tpetraOperator_;
 
 #ifdef HAVE_THYRA_TPETRA_EPETRA
   mutable RCP<Epetra_Operator> epetraOp_;
 #endif
 
-  template<class TpetraOperator_t>
+  template <class TpetraOperator_t>
   void initializeImpl(
-    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-    const RCP<TpetraOperator_t> &tpetraOperator
-  );
-
+      const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+      const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+      const RCP<TpetraOperator_t> &tpetraOperator);
 };
-
 
 /** \brief Nonmmeber constructor for TpetraLinearOp.
  *
@@ -195,17 +183,14 @@ private:
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 tpetraLinearOp(
-  const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-  const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-  const RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraOperator
-  )
-{
+    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+    const RCP<Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &tpetraOperator) {
   const RCP<TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
-    Teuchos::rcp(new TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
+      Teuchos::rcp(new TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
   op->initialize(rangeSpace, domainSpace, tpetraOperator);
   return op;
 }
-
 
 /** \brief Nonmmeber constructor for TpetraLinearOp.
  *
@@ -214,19 +199,15 @@ tpetraLinearOp(
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 constTpetraLinearOp(
-  const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
-  const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
-  const RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraOperator
-  )
-{
+    const RCP<const VectorSpaceBase<Scalar> > &rangeSpace,
+    const RCP<const VectorSpaceBase<Scalar> > &domainSpace,
+    const RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &tpetraOperator) {
   const RCP<TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op =
-    Teuchos::rcp(new TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
+      Teuchos::rcp(new TpetraLinearOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>);
   op->constInitialize(rangeSpace, domainSpace, tpetraOperator);
   return op;
 }
 
-
 }  // namespace Thyra
 
-
-#endif	// THYRA_TPETRA_LINEAR_OP_DECL_HPP
+#endif  // THYRA_TPETRA_LINEAR_OP_DECL_HPP

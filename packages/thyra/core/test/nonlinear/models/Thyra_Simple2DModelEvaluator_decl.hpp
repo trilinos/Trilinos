@@ -10,24 +10,20 @@
 #ifndef THYRA_SIMPLE_2D_MODEL_EVALUATOR_DECL_HPP
 #define THYRA_SIMPLE_2D_MODEL_EVALUATOR_DECL_HPP
 
-
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
-
 
 namespace Thyra {
 
-
-template<class Scalar> class Simple2DModelEvaluator;
-
+template <class Scalar>
+class Simple2DModelEvaluator;
 
 /** \brief Nonmember constuctor.
  *
  * \relates Simple2DModelEvaluator
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<Simple2DModelEvaluator<Scalar> >
 simple2DModelEvaluator();
-
 
 /** \brief Simple 2d simulation only ModelEvaluator for f(x) = 0.
  *
@@ -43,7 +39,7 @@ simple2DModelEvaluator();
  * The Matrix <tt>W = d(f)/d(x)</tt> is implemented as a
  * <tt>Thyra::MultiVectorBase</tt> object and the class
  * <tt>Thyra::DefaultSerialDenseLinearOpWithSolveFactory</tt> is used to
- * create the linear solver.  
+ * create the linear solver.
  *
  * This class also supports an app-defined preconditioner <tt>W_prec</tt> but
  * it is not used by the linear solver object.  The preconditioner operator is
@@ -54,12 +50,10 @@ simple2DModelEvaluator();
  * However, it is a very simple Thyra-only example and therefore is not a bad
  * starting point.
  */
-template<class Scalar>
+template <class Scalar>
 class Simple2DModelEvaluator
-  : public Thyra::StateFuncModelEvaluatorBase<Scalar>
-{
-public:
-
+  : public Thyra::StateFuncModelEvaluatorBase<Scalar> {
+ public:
   /** \name Initializers/Accessors */
   //@{
 
@@ -100,13 +94,11 @@ public:
 #ifndef TEMPLATE_FRIENDS_NOT_SUPPORTED
 
   friend Teuchos::RCP<Simple2DModelEvaluator<Scalar> > simple2DModelEvaluator<>();
-  
-private:
 
-#endif // TEMPLATE_FRIENDS_NOT_SUPPORTED
+ private:
+#endif  // TEMPLATE_FRIENDS_NOT_SUPPORTED
 
-private:
-
+ private:
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
 
@@ -114,14 +106,12 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
   void evalModelImpl(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
 
-private: // data members
-
+ private:  // data members
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory_;
@@ -134,17 +124,14 @@ private: // data members
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
 #ifdef TEMPLATE_FRIENDS_NOT_SUPPORTED
-public: // member functions
+ public:  // member functions
 #else
-private: // member functions
+ private:  // member functions
 #endif
 
   Simple2DModelEvaluator();
-
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_SIMPLE_2D_MODEL_EVALUATOR_DECL_HPP
+#endif  // THYRA_SIMPLE_2D_MODEL_EVALUATOR_DECL_HPP

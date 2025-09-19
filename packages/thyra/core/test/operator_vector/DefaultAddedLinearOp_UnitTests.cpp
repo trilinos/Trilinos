@@ -17,30 +17,23 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Thyra_UnitTestHelpers.hpp"
 
-
 namespace Thyra {
-
 
 //
 // Helper code and declarations
 //
 
-
-using Teuchos::null;
+using Teuchos::fancyOStream;
 using Teuchos::is_null;
+using Teuchos::null;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
-using Teuchos::fancyOStream;
-
 
 //
 // Unit Tests
 //
 
-
-TEUCHOS_UNIT_TEST( DefaultAddedLinearOp, defaultConstruct )
-{
-
+TEUCHOS_UNIT_TEST(DefaultAddedLinearOp, defaultConstruct) {
   typedef double Scalar;
 
   const RCP<DefaultAddedLinearOp<Scalar> > M = defaultAddedLinearOp<Scalar>();
@@ -51,7 +44,7 @@ TEUCHOS_UNIT_TEST( DefaultAddedLinearOp, defaultConstruct )
   TEST_ASSERT(!isPartiallyInitialized(*M));
   TEST_ASSERT(!isFullyInitialized(*M));
 
-#  if defined(HAVE_GCC_ABI_DEMANGLE) && defined(HAVE_TEUCHOS_DEMANGLE)
+#if defined(HAVE_GCC_ABI_DEMANGLE) && defined(HAVE_TEUCHOS_DEMANGLE)
 
   const std::string M_description = M->description();
   TEST_EQUALITY_CONST(M_description, "Thyra::DefaultAddedLinearOp<double>{numOps=0,rangeDim=0,domainDim=0}");
@@ -64,11 +57,10 @@ TEUCHOS_UNIT_TEST( DefaultAddedLinearOp, defaultConstruct )
 
     std::ostringstream expected_msg;
     expected_msg
-      << "' " << M_description << "\n'";
+        << "' " << M_description << "\n'";
 
-    TEST_EQUALITY_CONST( describe_msg.str(), expected_msg.str() );
+    TEST_EQUALITY_CONST(describe_msg.str(), expected_msg.str());
   }
-
 
   {
     std::ostringstream describe_msg;
@@ -78,37 +70,31 @@ TEUCHOS_UNIT_TEST( DefaultAddedLinearOp, defaultConstruct )
 
     std::ostringstream expected_msg;
     expected_msg
-      << "' " << M_description << "\n"
-      << "  Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n'";
+        << "' " << M_description << "\n"
+        << "  Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n'";
 
-    TEST_EQUALITY_CONST( describe_msg.str(), expected_msg.str() );
+    TEST_EQUALITY_CONST(describe_msg.str(), expected_msg.str());
   }
 
-#  endif // defined(HAVE_GCC_ABI_DEMANGLE) && defined(HAVE_TEUCHOS_DEMANGLE)
-
+#endif  // defined(HAVE_GCC_ABI_DEMANGLE) && defined(HAVE_TEUCHOS_DEMANGLE)
 }
-
 
 #ifdef TEUCHOS_DEBUG
 
 const Ordinal m = 5;
 const Ordinal n = 3;
 
-TEUCHOS_UNIT_TEST( DefaultAddedLinearOp, addConst )
-{
+TEUCHOS_UNIT_TEST(DefaultAddedLinearOp, addConst) {
   typedef double Scalar;
 
   const RCP<const VectorSpaceBase<Scalar> > vs = defaultSpmdVectorSpace<Scalar>(m);
-  const RCP<const MultiVectorBase<Scalar> > A = createMembers(vs, n, "A");
+  const RCP<const MultiVectorBase<Scalar> > A  = createMembers(vs, n, "A");
 
   TEST_THROW(
-    const RCP<const LinearOpBase<Scalar> > M = add<Scalar>(A, adjoint<Scalar>(A)),
-    Exceptions::IncompatibleVectorSpaces
-    );
+      const RCP<const LinearOpBase<Scalar> > M = add<Scalar>(A, adjoint<Scalar>(A)),
+      Exceptions::IncompatibleVectorSpaces);
 }
 
+#endif  // TEUCHOS_DEBUG
 
-#endif // TEUCHOS_DEBUG
-
-
-} // namespace Thyra
+}  // namespace Thyra

@@ -18,7 +18,7 @@ namespace Thyra {
  *
  * This interface represents a added linear operator <tt>M</tt> of the form:
  \verbatim
- 
+
  M = Op[0] + Op[1] + ... + Op[numOps-1]
  \endverbatim
  *
@@ -37,10 +37,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class AddedLinearOpBase : virtual public LinearOpBase<Scalar> {
-public:
-
+ public:
   /** @name Pure virtual functions that must be overridden by subclasses */
   //@{
 
@@ -83,9 +82,8 @@ public:
   virtual Teuchos::RCP<const LinearOpBase<Scalar> > getOp(const int k) const = 0;
 
   //@}
-
 };
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif	// THYRA_ADDED_LINEAR_OP_BASE_HPP
+#endif  // THYRA_ADDED_LINEAR_OP_BASE_HPP

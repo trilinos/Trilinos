@@ -13,9 +13,7 @@
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base interface for linear operators with a solve that can be
  * accessed as sub-blocks.
@@ -24,32 +22,27 @@ namespace Thyra {
  *
  * ToDo: Finish Documentation.
  */
-template<class Scalar>
+template <class Scalar>
 class BlockedLinearOpWithSolveBase
   : virtual public LinearOpWithSolveBase<Scalar>,
     virtual public BlockedLinearOpBase<Scalar>
-  
-{
-public:
 
+{
+ public:
   /** \brief . */
   virtual Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
-  getNonconstLOWSBlock(const int i, const int j) = 0; 
+  getNonconstLOWSBlock(const int i, const int j) = 0;
 
   /** \brief . */
   virtual Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
-  getLOWSBlock(const int i, const int j) const = 0; 
+  getLOWSBlock(const int i, const int j) const = 0;
 
-private:
-  
+ private:
   // Not defined and not to be called
   BlockedLinearOpWithSolveBase<Scalar>&
   operator=(const BlockedLinearOpWithSolveBase<Scalar>&);
-
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_BLOCKED_LINEAR_OP_WITH_SOLVE_BASE_HPP
+#endif  // THYRA_BLOCKED_LINEAR_OP_WITH_SOLVE_BASE_HPP
