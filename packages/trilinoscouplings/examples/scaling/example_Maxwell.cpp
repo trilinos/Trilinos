@@ -1835,9 +1835,9 @@ int body(int argc, char *argv[]) {
           for (int nF = 0; nF < numFieldsC; nF++){
             for(int nPt = 0; nPt < numFacePoints; nPt++){
               bcFieldDotNormal(0,nF,nPt)=0.0;
-              for (int dim = 0; dim < spaceDim; dim++){
-                bcFieldDotNormal(0,nF,nPt) += bcCValsTransformed(0,nF,nPt,dim)
-                  * faceNormal(0,nPt,dim) * paramFaceWeights(nPt);
+              for (int dim2 = 0; dim2 < spaceDim; dim2++){
+                bcFieldDotNormal(0,nF,nPt) += bcCValsTransformed(0,nF,nPt,dim2)
+                  * faceNormal(0,nPt,dim2) * paramFaceWeights(nPt);
               } //dim
             } //nPt
           } //nF
@@ -2343,8 +2343,8 @@ int body(int argc, char *argv[]) {
       double y = physCubPointsE(0,nPt,1);
       double z = physCubPointsE(0,nPt,2);
       evalu(uExact1, uExact2, uExact3, x, y, z);
-      double mu = 1.0; // use mu=1 to get the curl without material parameter
-      evalCurlu(curluExact1, curluExact2, curluExact3, x, y, z, mu);
+      double mu2 = 1.0; // use mu=1 to get the curl without material parameter
+      evalCurlu(curluExact1, curluExact2, curluExact3, x, y, z, mu2);
 
       // calculate approximate solution and curls
       double uApprox1 = 0.0;
