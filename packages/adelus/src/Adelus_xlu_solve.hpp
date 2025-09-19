@@ -140,8 +140,10 @@ void lusolve_(HandleType& ahandle, ZRHSViewType& ZRHS, double *secs)
   // Solve time secs
 
   *secs = run_secs;
+#ifdef GET_TIMING
   showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
            "Total time in Factor and Solve", &run_secs);
+#endif
   }
 }
 
