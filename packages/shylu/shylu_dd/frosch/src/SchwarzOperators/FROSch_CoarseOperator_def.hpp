@@ -348,8 +348,8 @@ namespace FROSch {
                             CoarseMatrix_->insertGlobalValues(globalRow,indicesGlob(),values);
                         } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
                             GOVec indicesGlob(1,CoarseSolveMap_->getGlobalElement(i));
-                            SCVec values(1,ScalarTraits<SC>::one());
-                            CoarseMatrix_->insertGlobalValues(globalRow,indicesGlob(),values());
+                            SCVec values2(1,ScalarTraits<SC>::one());
+                            CoarseMatrix_->insertGlobalValues(globalRow,indicesGlob(),values2());
                             numDiagonalsAdded++;
                         }
                     }
@@ -374,9 +374,9 @@ namespace FROSch {
                         if (indices.size()>0) {
                             CoarseMatrix_->insertGlobalValues(globalRow,indices,values);
                         } else { // Add diagonal unit for zero rows // Todo: Do you we need to sort the coarse matrix "NodeWise"?
-                            GOVec indices(1,globalRow);
-                            SCVec values(1,ScalarTraits<SC>::one());
-                            CoarseMatrix_->insertGlobalValues(globalRow,indices(),values());
+                            GOVec indices2(1,globalRow);
+                            SCVec values2(1,ScalarTraits<SC>::one());
+                            CoarseMatrix_->insertGlobalValues(globalRow,indices2(),values2());
                             numDiagonalsAdded++;
                         }
                     }
