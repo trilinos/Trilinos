@@ -289,9 +289,9 @@ bool tTpetraThyraConverter::test_blockThyraToTpetraTpetraVec(int verbosity, std:
 
   // how big is this vector
   LO myElmts = 1000;
-  GO glElmts = myElmts * numProc;
 
-  auto tpetraMap = Teuchos::rcp(new Tpetra::Map<LO, GO, NT>(Teuchos::OrdinalTraits<GO>::invalid(), myElmts, 0, Teuchos::rcpFromRef(Comm)));
+  auto tpetraMap = Teuchos::rcp(new Tpetra::Map<LO, GO, NT>(Teuchos::OrdinalTraits<GO>::invalid(),
+                                                            myElmts, 0, Teuchos::rcpFromRef(Comm)));
 
   // build vector space
   const RCP<const Thyra::VectorSpaceBase<ST> > vs =
@@ -429,9 +429,9 @@ bool tTpetraThyraConverter::test_blockTpetraToThyraTpetraVec(int verbosity, std:
 
   // how big is this vector
   LO myElmts = 1000;
-  GO glElmts = myElmts * numProc;
 
-  auto tpetraMap = Teuchos::rcp(new Tpetra::Map<LO, GO, NT>(Teuchos::OrdinalTraits<GO>::invalid(), myElmts, 0, Teuchos::rcpFromRef(Comm)));
+  auto tpetraMap = Teuchos::rcp(new Tpetra::Map<LO, GO, NT>(Teuchos::OrdinalTraits<GO>::invalid(),
+                                                            myElmts, 0, Teuchos::rcpFromRef(Comm)));
 
   // build vector space
   const RCP<const Thyra::VectorSpaceBase<ST> > vs =
