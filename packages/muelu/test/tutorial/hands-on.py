@@ -88,9 +88,9 @@ class ProblemHandler():
   """Class for handling demonstration problems"""
 
   def __init__(self):
-    self.problem    = "Laplace 2D"
+    self.problem    = "Laplace2D"
     self.solver     = "cg"
-    self.executable = "MueLu_Tutorial_laplace2d.exe"
+    self.executable = "MueLu_TutorialDriver.exe"
     self.bcolors    = usecolors()
     self.meshx      = 50
     self.meshy      = 50
@@ -98,15 +98,15 @@ class ProblemHandler():
     self.numprocs   = 2
     self.xmlFileName = "s2a.xml"
 
-    self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
-    self.proc5 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
+    self.proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
+    self.proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
+    self.proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
+    self.proc5 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
 
     self.isDirty = True                   # flag to store, whether problem has to be rerun or not
 
-    self.editor = "gedit"    # TODO replace me by local editor...
+    self.editor = os.environ.get("H_EDITOR", "nano") # text editor is specified by the env var H_EDITOR, nano by default
 
   def main(self):
     self.printMainMenu()
@@ -126,32 +126,32 @@ class ProblemHandler():
 
 
   def doLaplace2Dn(self):
-    self.problem    = "Laplace 2D"
-    self.executable = "MueLu_Tutorial_laplace2d.exe"
+    self.problem    = "Laplace2D"
+    self.executable = "MueLu_TutorialDriver.exe"
     self.solver     = "cg"
     self.meshx      = input("Mesh: Elements in x direction = ")
     self.meshy      = input("Mesh: Elements in y direction = ")
     self.runLaplaceProblem()
 
   def doLaplace2D50(self):
-    self.problem    = "Laplace 2D"
-    self.executable = "MueLu_Tutorial_laplace2d.exe"
+    self.problem    = "Laplace2D"
+    self.executable = "MueLu_TutorialDriver.exe"
     self.solver     = "cg"
     self.meshx      = 50
     self.meshy      = 50
     self.runLaplaceProblem()
 
   def doRecirc2Dn(self):
-    self.problem    = "Recirc 2D"
-    self.executable = "MueLu_Tutorial_recirc2d.exe"
+    self.problem    = "Recirc2D"
+    self.executable = "MueLu_TutorialDriver.exe"
     self.solver     = "gmres"
     self.meshx      = input("Mesh: Elements in x direction = ")
     self.meshy      = input("Mesh: Elements in y direction = ")
     self.runLaplaceProblem() # we can use the same routine as for Laplace...
 
   def doRecirc2D50(self):
-    self.problem    = "Recirc 2D"
-    self.executable = "MueLu_Tutorial_recirc2d.exe"
+    self.problem    = "Recirc2D"
+    self.executable = "MueLu_TutorialDriver.exe"
     self.solver     = "gmres"
     self.meshx      = 50
     self.meshy      = 50
@@ -160,23 +160,27 @@ class ProblemHandler():
   def doChallenge1(self):
     m = MueLu_XMLChallengeMode()
     m.numProcs      = 1      # number of processors
-    m.globalNumDofs = 16641   # number of DOFs
-    m.nDofsPerNode  = 1      # DOFs per node
-    m.solver        = "gmres"        # AztecOO solver
+    #m.globalNumDofs = 16641   # number of DOFs
+    #m.nDofsPerNode  = 1      # DOFs per node
+    m.solver        = "gmres"        # Belos solver
     m.tol           = 1e-12       # solver tolerance
-    m.executable    = "./MueLu_Challenge_XML.exe" # executable
-    m.problem       = "condif2d"   # string describing problem
+    m.executable    = "./MueLu_TutorialDriver.exe" # executable
+    m.problem       = "Recirc2D"   # string describing problem
+    m.meshx = 129
+    m.meshy = 129
     m.main()
 
   def doChallenge2(self):
     m = MueLu_XMLChallengeMode()
     m.numProcs      = 1      # number of processors
-    m.globalNumDofs = 7020   # number of DOFs
-    m.nDofsPerNode  = 2      # DOFs per node
-    m.solver        = "cg"        # AztecOO solver
+    #m.globalNumDofs = 7020   # number of DOFs
+    #m.nDofsPerNode  = 2      # DOFs per node
+    m.solver        = "cg"        # Belos solver
     m.tol           = 1e-12       # solver tolerance
-    m.executable    = "./MueLu_Challenge_XML.exe" # executable
-    m.problem       = "stru2d"   # string describing problem
+    m.executable    = "./MueLu_TutorialDriver.exe" # executable
+    m.problem       = "Elasticity2D"   # string describing problem
+    m.meshx = 78
+    m.meshy = 90
     m.main()
 
   def runLaplaceProblem(self):
@@ -213,7 +217,7 @@ class ProblemHandler():
     cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt nodes*.txt"
     runCommand(cmd)
     print("RUN EXAMPLE")
-    cmd = "mpirun -np " + str(self.numprocs) + " " + str(self.executable) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --mgridSweeps=" + str(self.mgsweeps) + " --xml=" + str(self.xmlFileName) + " | tee output.log 2>&1"
+    cmd = "mpirun -np " + str(self.numprocs) + " " + str(self.executable) + " --matrixType=" + str(self.problem) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --mgridSweeps=" + str(self.mgsweeps) + " --xml=" + str(self.xmlFileName) + " | tee output.log 2>&1"
     print(cmd)
     runCommand(cmd)
     runCommand("echo 'Press q to return.' >> output.log")
@@ -230,9 +234,9 @@ class ProblemHandler():
     #cmd = "set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n set style data lines\n set nolabel \n set key off\n set autoscale\n splot " + "example.txt" + " using 3:4:5\n quit\n_TTT_"
     #runCommand(cmd)
 
-    #proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    #proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
     self.proc1.stdin.write("set term x11 1\n")
-    self.proc1.stdin.write("set title \"Solution\"\n")
+    self.proc1.stdin.write("set title \"Exact solution\"\n")
     self.proc1.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
     self.proc1.stdin.write("set style data lines\n")
     self.proc1.stdin.write("set nolabel\n")
@@ -242,7 +246,7 @@ class ProblemHandler():
     #self.proc1.stdin.write("quit\n") #close the gnuplot window
     self.proc1.stdin.flush()
 
-    #proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    #proc2 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
     self.proc2.stdin.write("set term x11 2\n") #wxt
     if (self.mgsweeps==1):
       self.proc2.stdin.write("set title \"Multigrid solution after " + str(self.mgsweeps) + " multigrid sweep\"\n")
@@ -257,7 +261,7 @@ class ProblemHandler():
     #self.proc2.stdin.write("quit\n") #close the gnuplot window
     self.proc2.stdin.flush()
 
-    #proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    #proc3 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
     self.proc3.stdin.write("set term x11 3\n")
     if (self.mgsweeps==1):
       self.proc3.stdin.write("set title \"Error (Exact vs. " + str(self.mgsweeps) + " multigrid sweep)\"\n")
@@ -276,7 +280,7 @@ class ProblemHandler():
     #self.proc3.stdin.write("quit\n") #close the gnuplot window
     self.proc3.stdin.flush()
 
-    #proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    #proc4 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
     self.proc4.stdin.write("set term x11 4\n")
     self.proc4.stdin.write("set title \"Distribution of processors\"\n")
     self.proc4.stdin.write("set dgrid3d " + str(self.meshy) + "," + str(self.meshx) + "\n")
@@ -288,9 +292,9 @@ class ProblemHandler():
     self.proc4.stdin.write("set hidden3d\n")
     self.proc4.stdin.write("set style line 1 lt 4 lw .5\n")
     self.proc4.stdin.write("set pm3d\n")
-    self.proc4.stdin.write("splot \"example.txt\" using 3:4:1 with points palette\n")
-    #self.proc3.stdin.write("quit\n") #close the gnuplot window
-    self.proc3.stdin.flush()
+    self.proc4.stdin.write("splot \"example.txt\" using 3:4:1:1 with points palette\n")
+    #self.proc4.stdin.write("quit\n") #close the gnuplot window
+    self.proc4.stdin.flush()
 
   def postprocessAggregates(self):
     # check whether "example.txt" is available
@@ -335,10 +339,13 @@ class ProblemHandler():
     waitForKey()
 
   def openXMLfile(self):
-    editor = subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, )
+    if self.editor in ["nano", "vim", "vi"]:
+        subprocess.run([self.editor, self.xmlFileName])
+    else:
+        subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, text=True)
 
   def printProblemSelectionMenu(self):
-    options = ['Laplace 2D (50x50)', 'Laplace 2D', 'Recirc 2D (50x50)', 'Recirc 2D', 'Challenge: Convection diffusion', 'Challenge: Elasticity problem', 'Exit']
+    options = ['Laplace2D (50x50)', 'Laplace2D', 'Recirc2D (50x50)', 'Recirc2D', 'Challenge: Convection diffusion', 'Challenge: Elasticity problem', 'Exit']
     callbacks = [self.doLaplace2D50,self.doLaplace2Dn,self.doRecirc2D50,self.doRecirc2Dn,self.doChallenge1,self.doChallenge2, self.doExitProgram]
     while True:
       self.runMenu(options,callbacks)
@@ -371,7 +378,7 @@ class ProblemHandler():
 
     # prepare residual output file
     cmd = "grep iter: output.log > output.res"
-    runCommand(cmd)
+    runCommand(cmd) 
 
     self.proc5.stdin.write("set term x11 1\n")
     self.proc5.stdin.write("set title \"Residual norm over " + str(self.solver) + " iterations\"\n")
@@ -380,8 +387,7 @@ class ProblemHandler():
     self.proc5.stdin.write("set ylabel \"Relative residual\"\n")
     self.proc5.stdin.write("set autoscale\n")
     self.proc5.stdin.write("set logscale y\n")
-    printcmd = "plot \"output.res\" using 5 w linespoints title \"" + str(self.xmlFileName) + "\"\n"
-    self.proc5.stdin.write(printcmd)
+    self.proc5.stdin.write("plot '< sed \"s/[{}]//g\" output.res' using 2:5 w linespoints title \"" + str(self.xmlFileName) + "\"\n")
     self.proc5.stdin.flush()
 
   def printMainMenu(self):
@@ -394,7 +400,7 @@ class ProblemHandler():
 
   def doExitProgram(self):
     print("CLEAN UP temporary data")
-    cmd = "rm *.vtp *.mat example*.txt output.log aggs*.txt nodes*.txt"
+    cmd = "rm *.vtp *.mat example*.txt output.log output.res aggs*.txt nodes*.txt"
     runCommand(cmd)
     print("QUIT")
     sys.exit()
@@ -421,33 +427,33 @@ class MueLu_XMLChallengeMode():
     self.numProcs      = 1      # number of processors
     self.globalNumDofs = 7020   # number of DOFs
     self.nDofsPerNode  = 2      # DOFs per node
-    self.solver        = "cg"        # AztecOO solver
+    self.solver        = "cg"        # Belos solver
     self.tol           = 1e-12       # solver tolerance
-    self.executable    = "./MueLu_Challenge_XML.exe" # executable
-    self.problem       = "stru2d"   # string describing problem
+    self.executable    = "./MueLu_TutorialDriver.exe" # executable
+    self.problem       = "Elasticity2D"   # string describing problem
     self.xmlReferenceFileName = ""
     self.xmlFileName   = ""
     self.bcolors       = usecolors()
     self.isDirty       = True  # dirty flag
-    self.editor        = "gedit" ### fix me
-    self.has_coords    = False
+    self.editor = os.environ.get("H_EDITOR", "nano") # text editor is specified by the env var H_EDITOR, nano by default
+    self.has_coords    = False ### never used?
 
-    self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
+    self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, text=True)
 
   def main(self):
 
     # check if tar.gz file with data is in subfolder challenges:
-    if os.path.isfile("challenges/" + self.problem + ".tar.gz") == False:
-      cmd = "rm -Rf challenges"
-      runCommand(cmd)
-      print("Download additional files")
-      print(self.bcolors.WARNING+"https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"+self.bcolors.ENDC)
-      cmd = "wget --no-check-certificate https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"
-      runCommand(cmd)
-      print("Extract files...")
-      cmd = "tar xvf MueLu_tutorial_challenges.tar.gz"
-      runCommand(cmd)
-      print(self.bcolors.OKDARKGREEN + "Success!" + self.bcolors.ENDC)
+#    if os.path.isfile("challenges/" + self.problem + ".tar.gz") == False:
+#      cmd = "rm -Rf challenges"
+#      runCommand(cmd)
+#      print("Download additional files")
+#      print(self.bcolors.WARNING+"https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"+self.bcolors.ENDC)
+#      cmd = "wget --no-check-certificate https://trilinos.org/wordpress/wp-content/uploads/2015/07/MueLu_tutorial_challenges.tar.gz"
+#      runCommand(cmd)
+#      print("Extract files...")
+#      cmd = "tar xvf MueLu_tutorial_challenges.tar.gz"
+#      runCommand(cmd)
+#      print(self.bcolors.OKDARKGREEN + "Success!" + self.bcolors.ENDC)
 
     # generate results for reference xml files
     self.xmlReferenceFileName = "challenges/" + self.problem + "_reference.xml"
@@ -533,7 +539,8 @@ class MueLu_XMLChallengeMode():
     # runs example
     cmd = "rm -f *.vtp *.mat example*.txt output.log output.res reference.log reference.res aggs*.txt nodes*.txt"
     runCommand(cmd)
-    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlReferenceFileName + " --problem=challenges/" + str(self.problem) + " --coordinates=challenges/" + str(self.problem) + "_coords.txt" + " | tee reference.log 2>&1"
+    #cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlReferenceFileName + " --problem=challenges/" + str(self.problem) + " --coordinates=challenges/" + str(self.problem) + "_coords.txt" + " | tee reference.log 2>&1"
+    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --matrixType=" + str(self.problem) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlReferenceFileName + " | tee reference.log 2>&1"
     runCommand(cmd)
     self.isDirty = False
 
@@ -544,7 +551,9 @@ class MueLu_XMLChallengeMode():
     cmd = "rm -f *.vtp *.mat example*.txt output.log output.res aggs*.txt nodes*.txt"
     runCommand(cmd)
     print("RUN EXAMPLE")
-    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlFileName + " --problem=challenges/" + str(self.problem) + " --coordinates=challenges/" + str(self.problem) + "_coords.txt" + " | tee output.log 2>&1"
+    #cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlFileName + " --problem=challenges/" + str(self.problem) + " --coordinates=challenges/" + str(self.problem) + "_coords.txt" + " | tee output.log 2>&1"
+    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --matrixType=" + str(self.problem) + " --nx=" + str(self.meshx) + " --ny=" + str(self.meshy) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlFileName + " | tee output.log 2>&1"
+    runCommand(cmd)
     print(cmd)
     runCommand(cmd)
     runCommand("echo 'Press q to return.' >> output.log")
@@ -575,7 +584,10 @@ class MueLu_XMLChallengeMode():
       self.xmlFileName = m.xmlFileName # store xml file
 
   def openXMLfile(self):
-    editor = subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, )
+    if self.editor in ["nano", "vim", "vi"]:
+        subprocess.run([self.editor, self.xmlFileName])
+    else:
+        subprocess.Popen([self.editor + " " + self.xmlFileName], shell=True, stdin=subprocess.PIPE, text=True)
 
   def changeProcs(self):
     self.numProcs = input("Number of processors: ")
@@ -616,8 +628,7 @@ class MueLu_XMLChallengeMode():
     self.proc1.stdin.write("set ylabel \"Relative residual\"\n")
     self.proc1.stdin.write("set autoscale\n")
     self.proc1.stdin.write("set logscale y\n")
-    printcmd = "plot \"reference.res\" using 5 w linespoints title \"REFERENCE\", \"output.res\" using 5 w linespoints title \"" + str(self.xmlFileName) + "\"\n"
-    self.proc1.stdin.write(printcmd)
+    self.proc1.stdin.write("plot '< sed \"s/[{}]//g\" output.res' using 2:5 w linespoints title \"" + str(self.xmlFileName) + "\"\n")
 
     self.proc1.stdin.flush()
 

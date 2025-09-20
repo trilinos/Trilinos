@@ -17,7 +17,7 @@ Run the *hands-on.sh* script and choose the option 4 for the convection-diffusio
 .. image:: pics/tut1_16.png
     :width: 10cm
 
-When using the reference settings for the multigrid preconditioner we need 94 linear iterations. The challenge is to find optimized multigrid settings which results in a significantly lower number of linear iterations and -- even more important -- a lower computational time.
+When using the reference settings for the multigrid preconditioner we need 85 linear iterations. The challenge is to find optimized multigrid settings which results in a significantly lower number of linear iterations and -- even more important -- a lower computational time.
 
 .. note::
     Please notice that we have automatically chosen GMRES as solver as the linear systems arising from convection-diffusion problems are non-symmetric (due to the convective term). A CG methods would not converge.
@@ -25,7 +25,7 @@ When using the reference settings for the multigrid preconditioner we need 94 li
 
 .. admonition:: Exercise 1
 
-    Open the *condif2d_parameters.xml* file by pressing option 3. Try to find optimized multigrid settings using your knowledge from the previous tutorials. Save the file and rerun the example (using option 0). Compare your results with the reference results. With option 6 you can plot the convergence of the relative residual of the iterative solver (for comparison).
+    Open the *Recirc2D_parameters.xml* file by pressing option 3. Try to find optimized multigrid settings using your knowledge from the previous tutorials. Save the file and rerun the example (using option 0). Compare your results with the reference results. With option 6 you can plot the convergence of the relative residual of the iterative solver (for comparison).
 
 .. _cd_example/generalhints:
 
