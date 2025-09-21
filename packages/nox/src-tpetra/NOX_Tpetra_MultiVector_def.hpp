@@ -38,7 +38,7 @@ MultiVector(const multivector_type& source, CopyType type)
             break;
     }
 
-    noxTpetraVecs = std::vector<nox_tpetra_vector_type>(source.getNumVectors());
+    noxTpetraVecs = std::vector<std::optional<nox_tpetra_vector_type>>(source.getNumVectors());
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -63,7 +63,7 @@ MultiVector(const MultiVector& source, CopyType type)
         do_implicit_weighting = source.do_implicit_weighting;
     }
 
-    noxTpetraVecs = std::vector<nox_tpetra_vector_type>(source.numVectors());
+    noxTpetraVecs = std::vector<std::optional<nox_tpetra_vector_type>>(source.numVectors());
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -296,8 +296,8 @@ template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typena
 Abstract::MultiVector& MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 setBlock(const MultiVector& source, const std::vector<int>& indices)
 {
-    for (auto idx : indices) {
-        tpetraMultiVec->getVectorNonConst(idx)->assign(*(source.getTpetraMultiVector()->getVector(idx)));
+    for (size_t idx = 0; idx < indices.size(); ++idx) {
+        tpetraMultiVec->getVectorNonConst(indices[idx])->assign(*(source.getTpetraMultiVector()->getVector(idx)));
     }
     return *this;
 }
@@ -327,7 +327,7 @@ augment(const MultiVector& source)
 
     tpetraMultiVec = std::move(newTpetraMultiVec);
 
-    noxTpetraVecs.resize(tpetraMultiVec->getNumVectors() + source.numVectors());
+    noxTpetraVecs = std::vector<std::optional<nox_tpetra_vector_type>>(tpetraMultiVec->getNumVectors() + source.numVectors());
 
     return *this;
 }
@@ -343,20 +343,20 @@ template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typena
 Abstract::Vector& MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 operator[](int i)
 {
-    if (noxTpetraVecs[i].getTpetraVector().is_null()) {
-        noxTpetraVecs[i] = nox_tpetra_vector_type(tpetraMultiVec->getVectorNonConst(i));
+    if (!noxTpetraVecs[i].has_value()) {
+        noxTpetraVecs[i].emplace(tpetraMultiVec->getVectorNonConst(i));
     }
-    return noxTpetraVecs[i];
+    return noxTpetraVecs[i].value();
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 const Abstract::Vector& MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 operator[](int i) const
 {
-    if (noxTpetraVecs[i].getTpetraVector().is_null()) {
-        noxTpetraVecs[i] = nox_tpetra_vector_type(tpetraMultiVec->getVectorNonConst(i));
+    if (!noxTpetraVecs[i].has_value()) {
+        noxTpetraVecs[i].emplace(tpetraMultiVec->getVectorNonConst(i));
     }
-    return noxTpetraVecs[i];
+    return noxTpetraVecs[i].value();
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -397,7 +397,7 @@ multiply(double alpha, const MultiVector& y, Abstract::MultiVector::DenseMatrix&
 {
     for (int irow = 0; irow < y.numVectors(); ++irow)
     {
-        for (int icol = 0; icol < static_cast<int>(tpetraMultiVec->getNumVectors()); icol++) {
+        for (int icol = 0; icol < static_cast<int>(tpetraMultiVec->getNumVectors()); ++icol) {
             b(irow, icol) = alpha * y.getTpetraMultiVector()->getVector(irow)->dot(*(tpetraMultiVec->getVector(icol)));
         }
     }

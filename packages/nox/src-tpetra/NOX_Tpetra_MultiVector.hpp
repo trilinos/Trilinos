@@ -263,7 +263,7 @@ private:
      * @note The @ref NOX::Tpetra::Vector objects are constructed lazily, i.e., only when the
      *       corresponding column is accessed for the first time.
      */
-    mutable std::vector<nox_tpetra_vector_type> noxTpetraVecs;
+    mutable std::vector<std::optional<nox_tpetra_vector_type>> noxTpetraVecs;
 
     //! Shared pointer holding the @ref ::Tpetra::Vector used for weighting inner products and norms.
     Teuchos::RCP<const vector_type> weightVec = Teuchos::null;
