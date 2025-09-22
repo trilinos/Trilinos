@@ -42,3 +42,10 @@
    - id: check-yaml
      files: "(.*yaml|.*yml)"
      exclude: "packages/teuchos/.*"
+
+ - repo: https://github.com/cheshirekow/cmake-format-precommit
+   rev: v0.6.13
+   hooks:
+   - id: cmake-format
+     name: cmake-format MueLu
+     files: "packages/muelu/.*CMakeLists.txt"
