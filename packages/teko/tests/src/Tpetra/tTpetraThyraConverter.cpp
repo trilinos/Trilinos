@@ -283,13 +283,7 @@ bool tTpetraThyraConverter::test_blockThyraToTpetraTpetraVec(int verbosity, std:
   const RCP<const Teuchos::Comm<Teuchos::Ordinal> > tComm =
       Thyra::convertTpetraToThyraComm(rcpFromRef(Comm));
 
-  // get process information
-  int numProc = Comm.getSize();
-  // int myPID   = Comm.MyPID();
-
-  // how big is this vector
-  LO myElmts = 1000;
-
+  LO myElmts     = 1000;
   auto tpetraMap = Teuchos::rcp(new Tpetra::Map<LO, GO, NT>(Teuchos::OrdinalTraits<GO>::invalid(),
                                                             myElmts, 0, Teuchos::rcpFromRef(Comm)));
 
@@ -423,13 +417,7 @@ bool tTpetraThyraConverter::test_blockTpetraToThyraTpetraVec(int verbosity, std:
   const RCP<const Teuchos::Comm<Teuchos::Ordinal> > tComm =
       Thyra::convertTpetraToThyraComm(rcpFromRef(Comm));
 
-  // get process information
-  int numProc = Comm.getSize();
-  // int myPID   = Comm.MyPID();
-
-  // how big is this vector
-  LO myElmts = 1000;
-
+  LO myElmts     = 1000;
   auto tpetraMap = Teuchos::rcp(new Tpetra::Map<LO, GO, NT>(Teuchos::OrdinalTraits<GO>::invalid(),
                                                             myElmts, 0, Teuchos::rcpFromRef(Comm)));
 
