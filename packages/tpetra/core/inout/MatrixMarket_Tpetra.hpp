@@ -3596,16 +3596,16 @@ class Reader {
       cerr << "-- Verifying Maps" << endl;
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
-        as<global_size_t>(dims[0]) != rangeMap->getGlobalNumElements(),
+        as<global_ordinal_type>(dims[0]) != rangeMap->getMaxAllGlobalIndex() + 1 - rangeMap->getIndexBase(),
         std::invalid_argument,
-        "The range Map has " << rangeMap->getGlobalNumElements()
-                             << " entries, but the matrix has a global number of rows " << dims[0]
+        "The range Map has " << rangeMap->getMaxAllGlobalIndex()
+                             << " max entry, but the matrix has a global number of rows " << dims[0]
                              << ".");
     TEUCHOS_TEST_FOR_EXCEPTION(
-        as<global_size_t>(dims[1]) != domainMap->getGlobalNumElements(),
+        as<global_ordinal_type>(dims[1]) != domainMap->getMaxAllGlobalIndex() + 1 - domainMap->getIndexBase(),
         std::invalid_argument,
-        "The domain Map has " << domainMap->getGlobalNumElements()
-                              << " entries, but the matrix has a global number of columns "
+        "The domain Map has " << domainMap->getMaxAllGlobalIndex()
+                              << " max entry, but the matrix has a global number of columns "
                               << dims[1] << ".");
 
     // Create a row Map which is entirely owned on Proc 0.
@@ -6039,8 +6039,8 @@ class Writer {
     RCP<const map_type> domainMap = matrix.getDomainMap();
     RCP<const map_type> rangeMap  = matrix.getRangeMap();
 
-    const global_size_t numRows = rangeMap->getGlobalNumElements();
-    const global_size_t numCols = domainMap->getGlobalNumElements();
+    const global_size_t numRows = rangeMap->getMaxAllGlobalIndex() + 1 - rangeMap->getIndexBase();
+    const global_size_t numCols = domainMap->getMaxAllGlobalIndex() + 1 - domainMap->getIndexBase();
 
     if (debug && myRank == 0) {
       std::ostringstream os;
@@ -6155,8 +6155,8 @@ class Writer {
       // corresponds to the "linear-algebraic" number of columns
       // when the column map is uniquely owned (a.k.a. one-to-one),
       // which only happens if the matrix is (block) diagonal.
-      out << newMatrix->getRangeMap()->getGlobalNumElements() << " "
-          << newMatrix->getDomainMap()->getGlobalNumElements() << " "
+      out << newMatrix->getRangeMap()->getMaxAllGlobalIndex() + 1 - newMatrix->getRangeMap()->getIndexBase() << " "
+          << newMatrix->getDomainMap()->getMaxAllGlobalIndex() + 1 - newMatrix->getDomainMap()->getIndexBase() << " "
           << newMatrix->getGlobalNumEntries() << endl;
 
       // The Matrix Market format expects one-based row and column
@@ -6445,8 +6445,8 @@ class Writer {
       // when the column map is uniquely owned
       // (a.k.a. one-to-one), which only happens if the graph is
       // block diagonal (one block per process).
-      out << newGraph.getRangeMap()->getGlobalNumElements() << " "
-          << newGraph.getDomainMap()->getGlobalNumElements() << " "
+      out << newGraph.getRangeMap()->getMaxAllGlobalIndex() + 1 - newGraph.getRangeMap()->getIndexBase() << " "
+          << newGraph.getDomainMap()->getMaxAllGlobalIndex() + 1 - newGraph.getDomainMap()->getIndexBase() << " "
           << newGraph.getGlobalNumEntries() << endl;
 
       // The Matrix Market format expects one-based row and column
