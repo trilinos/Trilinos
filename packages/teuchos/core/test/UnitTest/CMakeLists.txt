@@ -177,3 +177,17 @@ TRIBITS_ADD_TEST(
   COMM mpi
   STANDARD_PASS_OUTPUT
   )
+
+
+#
+# SystemInformation unit tests
+#
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SystemInformation_UnitTests
+  SOURCES
+    SystemInformation_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
