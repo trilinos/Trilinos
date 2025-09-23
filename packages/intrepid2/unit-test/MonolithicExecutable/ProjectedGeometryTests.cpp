@@ -118,7 +118,7 @@ namespace
   }
 
   template<typename PointScalar, int spaceDim, typename DeviceType>
-  void testLinearGeometryIsExact(const int &meshWidth, const double &relTol, const double &absTol,
+  void testLinearGeometryIsExact(int meshWidth, const double &relTol, const double &absTol,
                                  Teuchos::FancyOStream &out, bool &success)
   {
     Kokkos::Array<PointScalar,spaceDim> origin;
@@ -154,7 +154,7 @@ namespace
   }
 
   template<typename PointScalar, int spaceDim, typename DeviceType>
-  void testLinearGeometryIsExact(const int &meshWidth, int polyOrderForBasis, const double &relTol, const double &absTol,
+  void testLinearGeometryIsExact(int meshWidth, int polyOrderForBasis, const double &relTol, const double &absTol,
                                  Teuchos::FancyOStream &out, bool &success)
   {
     Kokkos::Array<PointScalar,spaceDim> origin;
@@ -246,7 +246,7 @@ namespace
   TEUCHOS_UNIT_TEST( ProjectedGeometry, CircularGeometryConvergesInP_MultiCell )
   {
     using Scalar = double;
-    using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
+    using DeviceType = DefaultTestDeviceType;
     const int meshWidth = 4;
     testCircularGeometryProjectionConvergesInP<Scalar, DeviceType>(meshWidth, out, success);
   }
@@ -256,7 +256,7 @@ namespace
     // 1D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 1;
-    using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
+    using DeviceType = DefaultTestDeviceType;
     
     const int meshWidth = 4;
     
@@ -277,7 +277,7 @@ namespace
     // 2D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 2;
-    using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
+    using DeviceType = DefaultTestDeviceType;
     
     const int meshWidth = 4;
     
@@ -298,7 +298,7 @@ namespace
     // 3D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 3;
-    using DeviceType = Kokkos::DefaultExecutionSpace::device_type;
+    using DeviceType = DefaultTestDeviceType;
     
     const int meshWidth = 2;
     
@@ -325,10 +325,10 @@ namespace
     // we expect (-1,0), (0,-1), (1,0), and (0,1) to map to themselves
     using Point = Kokkos::Array<Scalar,2>;
     
-    Point left   { -1,  0};
-    Point bottom {  0, -1};
-    Point right  {  1,  0};
-    Point top    {  0,  1};
+    Point left   {{ -1,  0}};
+    Point bottom {{  0, -1}};
+    Point right  {{  1,  0}};
+    Point top    {{  0,  1}};
     
     std::vector< Point > points {left, bottom, right, top};
     for (const auto &point : points)
@@ -341,10 +341,10 @@ namespace
     }
     
     // the corners of the "unit" square should each map to ± sqrt(2)/2
-    Point bottom_left  { -1, -1};
-    Point bottom_right {  1, -1};
-    Point top_right    {  1,  1};
-    Point top_left     { -1,  1};
+    Point bottom_left  {{ -1, -1}};
+    Point bottom_right {{  1, -1}};
+    Point top_right    {{  1,  1}};
+    Point top_left     {{ -1,  1}};
     
     points = std::vector<Point> {bottom_left, bottom_right, top_right, top_left};
     
