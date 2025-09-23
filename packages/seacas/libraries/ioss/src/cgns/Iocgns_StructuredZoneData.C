@@ -9,7 +9,6 @@
 #include "cgns/Iocgns_StructuredZoneData.h"
 #include <assert.h>
 #include <cstdlib>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #if !defined __NVCC__
 #include <fmt/color.h>

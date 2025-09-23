@@ -289,7 +289,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
         stderr,
         "\n\tCan also set options via EJOIN_OPTIONS environment variable.\n"
         "\n\tDocumentation: https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#ejoin\n"
-        "\n\t->->-> Send email to gdsjaar@sandia.gov for ejoin support.<-<-<-\n");
+        "\n\t->->-> Send email to sierra-help@sandia.gov for ejoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 

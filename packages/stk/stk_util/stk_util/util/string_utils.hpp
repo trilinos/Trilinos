@@ -38,6 +38,8 @@
 #include <string>  // for string
 #include <vector>  // for vector
 
+#define STK_STRINGIZE(x) #x
+
 namespace stk {
 
 std::string angle_it(const std::string &s);

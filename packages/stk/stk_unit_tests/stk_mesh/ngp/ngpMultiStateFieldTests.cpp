@@ -506,7 +506,11 @@ NGP_TEST_F(NgpMultiStateFieldTest, multistateField_rotateAllStates_withMeshModif
 
 // This is a meaningless test without separate device storage, because it explicitly exercises a fundamentally-broken
 // swap function that only partially rotates the data.  The HostMesh version of this function does nothing.
-#ifdef STK_USE_DEVICE_MESH
+// If in a unified-memory build, then leaving the other memory space unrotated and relying on syncs to fill in
+// the correct value will not work as expected.  It's not that the other memory space has an unrotated copy of
+// the data, but that the other memory space has a pointer back into the wrong state in the opposite memory
+// space.
+#if defined(STK_USE_DEVICE_MESH) && !defined(STK_UNIFIED_MEMORY)
 NGP_TEST_F(NgpMultiStateFieldTest, multistateField_useAwfulSwapFunction_withSyncsBackToHost)
 {
   if (get_parallel_size() != 1) GTEST_SKIP();

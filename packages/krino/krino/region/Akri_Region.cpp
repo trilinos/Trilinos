@@ -102,6 +102,7 @@ void Region::commit()
   LevelSet::setup(meta);
   CDFEM_Support & cdfem_support = CDFEM_Support::get(meta);
   RefinementSupport & refinementSupport = RefinementSupport::get(meta);
+  AuxMetaData & auxMeta = AuxMetaData::get(meta);
 
   myPostProcessors.commit(meta);
 
@@ -113,17 +114,16 @@ void Region::commit()
     if (cdfem_support.get_num_initial_decomposition_cycles() > 1 || my_simulation.is_transient())
       cdfem_support.register_parent_node_ids_field(); // For non-transient simulations, still needed for piecewise linear location on previously cut edges
 
-    cdfem_support.setup_fields();
+    cdfem_support.set_coords_field(auxMeta.get_current_coordinates());
   }
 
-  auto & active_part = AuxMetaData::get(meta).active_part();
+  auto & active_part = auxMeta.active_part();
   stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
 
   if (cdfem_support.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
   {
     auto_aura_option = stk::mesh::BulkData::AUTO_AURA;
     cdfem_support.register_cdfem_snap_displacements_field();
-    cdfem_support.add_edge_interpolation_field(cdfem_support.get_cdfem_snap_displacements_field());
   }
 
   if (refinementSupport.get_initial_refinement_levels() > 0 || refinementSupport.get_interface_maximum_refinement_level() > 0 ||
@@ -154,7 +154,7 @@ void Region::commit()
   myMesh->populate_mesh(auto_aura_option);
   stkOutput().set_bulk_data( mesh_bulk_data() );
 
-  if (AuxMetaData::get(mesh_meta_data()).get_assert_32bit_flag())
+  if (auxMeta.get_assert_32bit_flag())
   {
     const bool has_64bit_ids_in_use = stk::is_true_on_any_proc(mesh_bulk_data().parallel(), locally_has_64bit_ids_in_use_for_nodes_or_elements(mesh_bulk_data()));
     STK_ThrowErrorMsgIf(has_64bit_ids_in_use, "Option use_32_bit ids is active, but input file uses 64 bit ids.");

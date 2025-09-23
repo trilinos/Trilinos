@@ -7,6 +7,7 @@
 #include "ED_SystemInterface.h"
 
 #include <algorithm>
+#include <fmt/ostream.h>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -19,7 +20,6 @@
 #include "ED_Version.h"
 #include "copy_string_cpp.h"
 #include "copyright.h"
-#include "fmt/ostream.h"
 #include "stringx.h"
 #include <SL_tokenize.h>
 
@@ -526,7 +526,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
       fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
       fmt::print("\n\t\tDocumentation: "
                  "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
-      fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
+      fmt::print("\t\t->->-> Send email to sierra-help@sandia.gov for exodiff support.<-<-<-\n");
       exit(EXIT_SUCCESS);
     }
   }
@@ -536,7 +536,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
     fmt::print("\n\t\tCan also set options via EXODIFF_OPTIONS environment variable.\n");
     fmt::print("\n\t\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exodiff\n");
-    fmt::print("\t\t->->-> Send email to gdsjaar@sandia.gov for exodiff support.<-<-<-\n");
+    fmt::print("\t\t->->-> Send email to sierra-help@sandia.gov for exodiff support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 

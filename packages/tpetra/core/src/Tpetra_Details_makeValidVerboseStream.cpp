@@ -14,15 +14,13 @@ namespace Tpetra {
 namespace Details {
 
 Teuchos::RCP<Teuchos::FancyOStream>
-makeValidVerboseStream (const Teuchos::RCP<Teuchos::FancyOStream>& out)
-{
-  if (out.is_null ()) {
-    return Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
-  }
-  else {
+makeValidVerboseStream(const Teuchos::RCP<Teuchos::FancyOStream>& out) {
+  if (out.is_null()) {
+    return Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cerr));
+  } else {
     return out;
   }
 }
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra

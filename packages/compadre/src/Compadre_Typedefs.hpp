@@ -20,6 +20,7 @@
 #include <functional>
 #include <string>
 
+namespace Compadre {
 /*!
  
   Data types in Compadre Toolkit:
@@ -106,30 +107,8 @@ typedef Kokkos::View<int*, host_execution_space>
 typedef Kokkos::Random_XorShift64_Pool<> pool_type;
 typedef typename pool_type::generator_type generator_type;
 
-// KOKKOS_VERSION % 100 is the patch level
-// KOKKOS_VERSION / 100 % 100 is the minor version
-// KOKKOS_VERSION / 10000 is the major version
-#ifdef KOKKOS_VERSION
-  #define COMPADRE_KOKKOS_VERSION_MAJOR KOKKOS_VERSION / 10000
-  #define COMPADRE_KOKKOS_VERSION_MINOR KOKKOS_VERSION / 100 % 100 
-  #if COMPADRE_KOKKOS_VERSION_MAJOR < 4
-    #if COMPADRE_KOKKOS_VERSION_MINOR >= 7
-        using KokkosInitArguments = Kokkos::InitializationSettings;
-        #define COMPADRE_KOKKOS_GREATEREQUAL_3_7
-        constexpr char KOKKOS_THREADS_ARG[] = "--kokkos-num-threads";
-    #elif COMPADRE_KOKKOS_VERSION_MINOR < 7
-        using KokkosInitArguments = Kokkos::InitArguments;
-        constexpr char KOKKOS_THREADS_ARG[] = "--kokkos-threads";
-    #endif
-  #elif COMPADRE_KOKKOS_VERSION_MAJOR >= 4
-      using KokkosInitArguments = Kokkos::InitializationSettings;
-      #define COMPADRE_KOKKOS_GREATEREQUAL_3_7
-      constexpr char KOKKOS_THREADS_ARG[] = "--kokkos-num-threads";
-  #endif
-#else // older version
-  using KokkosInitArguments = Kokkos::InitArguments;
-  constexpr char KOKKOS_THREADS_ARG[] = "--kokkos-threads";
-#endif
+using KokkosInitArguments = Kokkos::InitializationSettings;
+constexpr char KOKKOS_THREADS_ARG[] = "--kokkos-num-threads";
 
 template< bool B, class T = void >
 using enable_if_t = typename std::enable_if<B,T>::type;
@@ -205,5 +184,7 @@ typename std::enable_if<2==T::rank,T>::type createView(std::string str, int dim_
 #endif
 //! compadre_kernel_assert_extreme_debug is similar to compadre_assert_debug, but is a call on the device, 
 //! namely inside of a function marked KOKKOS_INLINE_FUNCTION
+
+}  // Compadre namespace
 
 #endif

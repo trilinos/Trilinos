@@ -26,13 +26,14 @@
 #include <Akri_BoundingBox.hpp>
 #include <Akri_Composite_Surface.hpp>
 #include <Akri_NodalSurfaceDistance.hpp>
+#include <Akri_Sign.hpp>
 
 namespace krino{
 
 namespace {
 double relative_crossing_position(const double ls0, const double ls1)
 {
-  return LevelSet::sign_change(ls0, ls1) ? ls0 / ( ls0 - ls1 ) : -10.;
+  return sign_change(ls0, ls1) ? ls0 / ( ls0 - ls1 ) : -10.;
 }
 }
 

@@ -13,4 +13,4 @@
 #include "GDSW_Proxy_decl.hpp"
 #include "GDSW_Proxy_def.hpp"
 
-#endif // GDSW_PROXY_HPP
+#endif  // GDSW_PROXY_HPP

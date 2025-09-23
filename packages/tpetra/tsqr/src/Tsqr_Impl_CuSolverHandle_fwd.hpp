@@ -32,9 +32,9 @@ class CuSolverHandle;
 //! Get TSQR's global cuSOLVER handle wrapper.
 std::shared_ptr<CuSolverHandle> getCuSolverHandleSingleton();
 
-} // namespace Impl
-} // namespace TSQR
+}  // namespace Impl
+}  // namespace TSQR
 
-#endif // HAVE_TPETRATSQR_CUSOLVER
+#endif  // HAVE_TPETRATSQR_CUSOLVER
 
-#endif // TSQR_IMPL_CUSOLVERHANDLE_FWD_HPP
+#endif  // TSQR_IMPL_CUSOLVERHANDLE_FWD_HPP

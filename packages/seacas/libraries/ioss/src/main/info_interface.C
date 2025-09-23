@@ -7,7 +7,7 @@
  */
 #include <cstdlib> // for exit, EXIT_SUCCESS, getenv
 #include <cstring>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <stdio.h>
 #include <string> // for char_traits, string
@@ -199,7 +199,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
                "\n\tCan also set options via IO_INFO_OPTIONS environment variable.\n\n"
                "\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-info\n\n"
-               "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
+               "\t->->-> Send email to sierra-help@sandia.gov for {} support.<-<-<-\n",
                options_.program_name());
     exit(EXIT_SUCCESS);
   }

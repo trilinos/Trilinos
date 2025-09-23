@@ -6,7 +6,7 @@
  * See packages/seacas/LICENSE for details
  */
 #include <cstdlib> // for exit, EXIT_SUCCESS, getenv
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <stdio.h>
 #include <string> // for char_traits, string
@@ -191,7 +191,7 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
                "\n\tCan also set options via IO_SKINNER_OPTIONS environment variable.\n\n"
                "\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#skinner\n\n"
-               "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
+               "\t->->-> Send email to sierra-help@sandia.gov for {} support.<-<-<-\n",
                options_.program_name());
     exit(EXIT_SUCCESS);
   }

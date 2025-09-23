@@ -59,11 +59,8 @@ exe git checkout master
 exe git merge upstream/master
 exe git push origin master
 
-if git branch --list $SNAPSHOT_BRANCH > /dev/null; then
-    exe git branch -D $SNAPSHOT_BRANCH
-    exe git push origin --delete $SNAPSHOT_BRANCH
-fi
-exe git checkout -b $SNAPSHOT_BRANCH
+exe git branch -f $SNAPSHOT_BRANCH
+exe git checkout $SNAPSHOT_BRANCH
 exe git reset --hard upstream/$TRILINOS_BRANCH
 
 update_package krino

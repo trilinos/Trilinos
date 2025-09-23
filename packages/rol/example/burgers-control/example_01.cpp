@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>    V;
   typedef ROL::StdVector<RealT> SV;
 
-  typedef typename vector::size_type uint;
+  typedef typename vector::size_type luint;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -55,13 +55,13 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    uint nx     = 1028;  // Set spatial discretization.
+    luint nx     = 1028;  // Set spatial discretization.
     RealT alpha = 1.e-3; // Set penalty parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx);
     // Initialize iteration vectors.
     ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(nx+2, 1.0);
     ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(nx+2, 0.0);
-    for (uint i=0; i<nx+2; i++) {
+    for (luint i=0; i<nx+2; i++) {
       (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*y_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }

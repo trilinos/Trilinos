@@ -943,9 +943,9 @@ template <typename T, typename ... P>
 struct is_dynrankview_fad< DynRankView<T,P...> > {
   typedef DynRankView<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFad >::value ||
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
@@ -953,7 +953,7 @@ template <typename T, typename ... P>
 struct is_dynrankview_fad_contiguous< DynRankView<T,P...> > {
   typedef DynRankView<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 

@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2022 National Technology & Engineering Solutions
+C Copyright(C) 1999-2022, 2025 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -78,6 +78,9 @@ C      --INFREC - the information records
 
       call cpyrgt (0, '1988')
 
+      call prterr('CMDSPEC',
+     $     'Use EJOIN instead of GJOIN if at all possible ***')
+      
 C     --Open LOG file if running interactively
       IF (.NOT. BATCH()) THEN
          KLOG = 99
