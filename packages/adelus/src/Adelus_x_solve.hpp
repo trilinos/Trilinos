@@ -41,6 +41,7 @@ void solve_(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, PViewType& perm
 #endif
 
 #ifdef PRINT_STATUS
+  using value_type      = typename ZViewType::value_type;
   using execution_space = typename ZViewType::device_type::execution_space;
   using memory_space    = typename ZViewType::device_type::memory_space;
 #endif
@@ -126,8 +127,10 @@ void solve_(HandleType& ahandle, ZViewType& Z, RHSViewType& RHS, PViewType& perm
     run_secs = (double) tsecs;
 
     *secs = run_secs;
+#ifdef GET_TIMING
     showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
               "Total time in Solve", &run_secs );
+#endif
   }
 }
 
