@@ -15,7 +15,7 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint, const Teuchos::RCP<Teuchos::ParameterList>& problemList, bool hessianSupport)
+MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, int paramVecDim, bool adjoint, const Teuchos::RCP<Teuchos::ParameterList>& problemList, bool hessianSupport)
 {
     comm = appComm;
     adjointModel = adjoint;
@@ -37,8 +37,11 @@ MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos:
     g_map = rcp(new const Tpetra_Map(numResponses , 0, comm, Tpetra::LocallyReplicated));
 
     //set up parameters
-    const int numParameters= 2;
-    p_map = rcp(new const Tpetra_Map(numParameters, 0, comm, Tpetra::LocallyReplicated));
+    TEUCHOS_TEST_FOR_EXCEPTION((paramVecDim < 1) || (paramVecDim > 2), std::logic_error,
+                     std::endl <<
+                     "Error!  MockModelEval_A_Tpetra::dimension of parameer space should be 1 or 2. Dimension provided: " << paramVecDim << std::endl);
+
+    p_map = rcp(new const Tpetra_Map(paramVecDim, 0, comm, Tpetra::LocallyReplicated));
 
     Teuchos::RCP<const Thyra::VectorSpaceBase<double>> p_space =
         Thyra::createVectorSpace<double>(p_map);
@@ -47,11 +50,9 @@ MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos:
     Teuchos::RCP<Tpetra_Vector> p_init = rcp(new Tpetra_Vector(p_map));
     Teuchos::RCP<Tpetra_Vector> p_lo = rcp(new Tpetra_Vector(p_map));
     Teuchos::RCP<Tpetra_Vector> p_up = rcp(new Tpetra_Vector(p_map));
-    for (int i=0; i<numParameters; i++) {
-      p_init->getDataNonConst()[i]= 1.0;
-      p_lo->getDataNonConst()[i]= 0.1;
-      p_up->getDataNonConst()[i]= 10.0;
-    }
+    p_init->putScalar(1.0);
+    p_lo->putScalar(0.1);
+    p_up->putScalar(10.0);
 
     p_vec = rcp(new Tpetra_Vector(p_map));
     p_vec->assign(*p_init);
@@ -68,14 +69,14 @@ MockModelEval_A_Tpetra::MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos:
     crs_graph->fillComplete();
 
     //set up hessian graph
-    hess_crs_graph = rcp(new Tpetra_CrsGraph(p_map, numParameters));
+    hess_crs_graph = rcp(new Tpetra_CrsGraph(p_map, paramVecDim));
     if (comm->getRank() == 0)
     {
-      std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices(numParameters);
-      for (int i=0; i<numParameters; i++) indices[i]=i;
+      std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices(paramVecDim);
+      for (int i=0; i<paramVecDim; i++) indices[i]=i;
       const int nodeNumElements = p_map->getLocalNumElements();
       for (int i=0; i<nodeNumElements; i++)
-        hess_crs_graph->insertGlobalIndices(p_map->getGlobalElement(i), numParameters, &indices[0]);
+        hess_crs_graph->insertGlobalIndices(p_map->getGlobalElement(i), paramVecDim, &indices[0]);
     }
     hess_crs_graph->fillComplete();
 
@@ -268,12 +269,13 @@ void MockModelEval_A_Tpetra::evalModelImpl(
           Teuchos::null;
 
 
-  const Teuchos::RCP<const Thyra::VectorBase<double>> p_in = inArgs.get_p(0);
-  if (Teuchos::nonnull(p_in))
-    p_vec->assign(*ConverterT::getConstTpetraVector(p_in));
+  const Teuchos::RCP<const Thyra::VectorBase<double>> p_in_thyra = inArgs.get_p(0);
+  if (Teuchos::nonnull(p_in_thyra)) {
+    const Teuchos::RCP<const Tpetra_Vector> p_in = ConverterT::getConstTpetraVector(p_in_thyra);
+    p_vec->assign(*p_in);
+  }
 
-
-
+  int num_p = p_map->getLocalNumElements();
   int vecLength = x_in->getGlobalLength();
   int myVecLength = x_in->getLocalLength();
 
@@ -410,10 +412,13 @@ void MockModelEval_A_Tpetra::evalModelImpl(
         if (gid==0) { // f_0 = (x_0)^3 - p_0
           f_out_data[i] = x[i] * x[i] * x[i] -  p[0];
         }
-        else // f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_1) - 0.5*(x_0 - p_0),  (for i != 0)
+        else{ // f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_j) - 0.5*(x_0 - p_0),  (for i != 0);   j=1 if num_p>1, j=0 otherwise
+          int j = (num_p > 1) ? 1 : 0;
           f_out_data[i] = x[i] - (gid + p[1]) - 0.5*(x0 - p[0]) + x[i] * (x0 - std::cbrt(p[0]));
+        }
       }
     }
+
     if (W_out != Teuchos::null) {
       Teuchos::RCP<Tpetra_CrsMatrix> W_out_crs =
         Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(W_out, true);
@@ -475,15 +480,18 @@ void MockModelEval_A_Tpetra::evalModelImpl(
     if (Teuchos::nonnull(dfdp_out)) {
       dfdp_out->putScalar(0.0);
       auto dfdp_out_data_0 = dfdp_out->getVectorNonConst(0)->getDataNonConst();
-      auto dfdp_out_data_1 = dfdp_out->getVectorNonConst(1)->getDataNonConst();
       for (int i=0; i<myVecLength; i++) {
         const int gid = x_in->getMap()->getGlobalElement(i);
         if  (gid==0) {
           dfdp_out_data_0[i] = -1.0;
         }
         else {
+          if(num_p > 1) {
           dfdp_out_data_0[i] = 0.5 - x[i] / (3.0 * std::cbrt(p[0]*p[0]));
-          dfdp_out_data_1[i] = -1.0;
+          dfdp_out->getVectorNonConst(1)->getDataNonConst()[i] = -1.0;
+          } else {
+            dfdp_out_data_0[i] = -0.5 - x[i] / (3.0 * std::cbrt(p[0]*p[0]));
+          }
         }
       }
     }
@@ -492,12 +500,11 @@ void MockModelEval_A_Tpetra::evalModelImpl(
   // min g(x(p), p) s.t. f(x, p) = 0 reached for p_0 = 1, p_1 = 3
 
   double term1, term2;
-  term1 = x_in->meanValue();
+  term1 = x_in->meanValue()*vecLength - p_vec->meanValue()*num_p -12;
 
   {
     auto p_host = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
     auto p = Kokkos::subview(p_host,Kokkos::ALL(),0);
-    term1 =  vecLength * term1 - (p[0] + p[1]) - 12.0;
     term2 = p[0] - 1.0;
   }
 
@@ -512,7 +519,8 @@ void MockModelEval_A_Tpetra::evalModelImpl(
   if (dgdp_out != Teuchos::null) {
     dgdp_out->putScalar(0.0);
     dgdp_out->getVectorNonConst(0)->getDataNonConst()[0] = -term1 + term2;
-    dgdp_out->getVectorNonConst(0)->getDataNonConst()[1] = -term1;
+    if(num_p  > 1)
+      dgdp_out->getVectorNonConst(0)->getDataNonConst()[1] = -term1;
   }
 
   if (Teuchos::nonnull(f_hess_xx_v_out)) {
@@ -608,22 +616,30 @@ void MockModelEval_A_Tpetra::evalModelImpl(
   if (Teuchos::nonnull(g_hess_xp_v_out)) {
     TEUCHOS_ASSERT(Teuchos::nonnull(p_direction));
     const auto direction_p = p_direction->getVector(0)->getData();
-    for (int j=0; j<myVecLength; j++)
-      g_hess_xp_v_out->getVectorNonConst(0)->getDataNonConst()[j] = - mult*(direction_p[0]+direction_p[1]);
+    for (int j=0; j<myVecLength; j++){
+      g_hess_xp_v_out->getVectorNonConst(0)->getDataNonConst()[j] = - mult*direction_p[0];
+      if(num_p > 1)
+        g_hess_xp_v_out->getVectorNonConst(0)->getDataNonConst()[j] -= mult*direction_p[1];
+    }
   }
 
   if (Teuchos::nonnull(g_hess_px_v_out)) {
     TEUCHOS_ASSERT(Teuchos::nonnull(x_direction));
     term1 = x_direction->getVector(0)->meanValue() * vecLength;
     g_hess_px_v_out->getVectorNonConst(0)->getDataNonConst()[0] = - mult*term1;
-    g_hess_px_v_out->getVectorNonConst(0)->getDataNonConst()[1] = - mult*term1;
+    if(num_p > 1)
+      g_hess_px_v_out->getVectorNonConst(0)->getDataNonConst()[1] = - mult*term1;
   }
 
   if (Teuchos::nonnull(g_hess_pp_v_out)) {
     TEUCHOS_ASSERT(Teuchos::nonnull(p_direction));
     const auto direction_p = p_direction->getVector(0)->getData();
-    g_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[0] = mult*(2.0*direction_p[0]+direction_p[1]);
-    g_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[1] = mult*(direction_p[0]+direction_p[1]);
+    if (num_p ==1) {
+      g_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[0] = mult*2.0*direction_p[0];
+    } else {
+      g_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[0] = mult*(2.0*direction_p[0]+direction_p[1]);
+      g_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[1] = mult*(direction_p[0]+direction_p[1]);
+    }
   }
 
   // Modify for time dependent (implicit time integration or eigensolves)
@@ -643,6 +659,7 @@ void MockModelEval_A_Tpetra::evalModelImpl(
         f_out_data[i] = -x_dot_in->getData()[i] + f_out->getData()[i];
       }
     }
+
     if (W_out != Teuchos::null) {
       // W(x, x_dot) = beta * W(x) - alpha * Id
       const Teuchos::RCP<Tpetra_CrsMatrix> W_out_crs =

@@ -386,9 +386,6 @@ void MockModelEval_C_Tpetra::evalModelImpl(
         ConverterT::getTpetraMultiVector(g_hess_pp_v) :
         Teuchos::null;
 
-  auto x = x_in->getData();
-  auto p = p_vec->getData();
-
   Teuchos::RCP<const Tpetra_Vector> x_dotdot_in;
   double omega(0.0);
   // This assumes we are using Piro second order integrator 
@@ -407,6 +404,7 @@ void MockModelEval_C_Tpetra::evalModelImpl(
   const double damping = 0;
   if (Teuchos::nonnull(f_out)) {
     f_out->putScalar(0.0);
+    auto p = p_vec->getData();
     auto f_out_data = f_out->getDataNonConst();
     for (int i=0; i<myVecLength; i++)
       f_out_data[i] = -p[0];

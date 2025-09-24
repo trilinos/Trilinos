@@ -13,7 +13,6 @@
 #include "Piro_NOXSolver.hpp"
 #include "Thyra_AdaptiveSolutionManager.hpp"
 #include "Piro_LOCASolver.hpp"
-#include "Piro_LOCAAdaptiveSolver.hpp"
 #include "Piro_TrapezoidRuleSolver.hpp"
 #endif /* HAVE_PIRO_NOX */
 

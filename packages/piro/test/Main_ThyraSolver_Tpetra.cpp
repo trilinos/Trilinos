@@ -95,14 +95,16 @@ int main(int argc, char *argv[]) {
                 rcp(new Teuchos::ParameterList("Piro Parameters"));
             Teuchos::updateParametersFromXmlFile(inputFile, piroParams.ptr());
 
+            bool isLocaTest = (iTest==2);
+            int numParams = (iTest==2) ?  1:  2;   //only one parameter for loca
             std::vector<int> p_indices{0};
-            const RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_A_Tpetra(appComm));
+            const RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_A_Tpetra(appComm,numParams));
             const RCP<Thyra::ModelEvaluator<double>> model = rcp(new Piro::ProductModelEvaluator<double>(model_tmp,p_indices));
             bool adjoint = (piroParams->get("Sensitivity Method", "Forward") == "Adjoint");
             bool explicitAdjointME = adjoint && piroParams->get("Explicit Adjoint Model Evaluator", false);
             RCP<Thyra::ModelEvaluator<double>> adjointModel = Teuchos::null;
             if(explicitAdjointME) {
-              const RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_A_Tpetra(appComm,true));
+              const RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_A_Tpetra(appComm,numParams,true));
               adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
             }
 
@@ -170,32 +172,14 @@ int main(int argc, char *argv[]) {
                 << "\n-----------------------------------------------------------------"
                 << std::setprecision(9) << std::endl;
 
-            if (Teuchos::is_null(p1)) {
-              out << "\nError: parameters pointer is null" << std::endl;
-              status += 33;
-            } else {
-                out << "\nParameters! {1,1}\n"
-                    << *p1 << std::endl;
-                Thyra::DetachedVectorView<double> p_view(p1->clone_v());
-                double p_exact[2] = {1, 1};
-
-                double l2_diff = std::sqrt(std::pow(p_view(0) - p_exact[0], 2) + std::pow(p_view(1) - p_exact[1], 2));
-                if (l2_diff > tol) {
-                    status += 100;
-                    out << "\nPiro_AnalysisDrvier:  Expected parameter values are: {"
-                        << p_exact[0] << ", " << p_exact[1] << "}, but the values are: {"
-                        << p_view(0) << ", " << p_view(1) << "}.\n"
-                        << "Difference in l2 norm: " << l2_diff << " > tol: " << tol << std::endl;
-                }
-            }
             if (Teuchos::is_null(g1)) {
               out << "\nError: Responses pointer is null" << std::endl;
               status += 33;
             } else {
                 Thyra::DetachedVectorView<double> g_view(g1);
                 double g_computed = g_view(0);
-                double g_exact = 8.0;
-                out << "\nResponses! {8.0}\n"  << g_computed << std::endl;
+                double g_exact = isLocaTest ? 245.0 : 8.0;
+                out << "\nResponses! {" << g_exact << "}\n"  << g_computed << std::endl;
 
                 double diff = std::abs(g_exact - g_computed);
                 if (diff > tol) {
@@ -212,9 +196,14 @@ int main(int argc, char *argv[]) {
             } else {
                 
                 Thyra::DetachedVectorView<double> x_view(gx);
-                out << "\nSolution! {1,2,3,4}\n " <<  x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << std::endl;
 
-                double x_exact[4] = {1, 2, 3, 4};
+                double x_exact[4] = {1.0, 2.0, 3.0, 4.0};
+                if(isLocaTest) {
+                  out << "\nSolution! {2,-2,-1,0}\n " <<  x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << std::endl;
+                  x_exact[0] = 2.0; x_exact[1] = -2.0; x_exact[2] = -1.0; x_exact[3] = 0.0; 
+                } else {
+                  out << "\nSolution! {1,2,3,4}\n " <<  x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << std::endl;
+                }
 
                 double l2_diff = std::sqrt(std::pow(x_view(0) - x_exact[0], 2) +
                                            std::pow(x_view(1) - x_exact[1], 2) +
@@ -223,17 +212,29 @@ int main(int argc, char *argv[]) {
                 if (l2_diff > tol) {
                     status += 100;
                     out << "\nPiro_AnalysisDrvier:  Expected solution vector is : {"
-                        << x_exact[0] << ", " << x_exact[1] << "}, but computed solution vector is: {"
-                        << x_view(0) << ", " << x_view(1) << "}.\n"
+                        << x_exact[0] << ", " << x_exact[1] << ", " << x_exact[2] << ", " << x_exact[3] << "}, but computed solution vector is: {"
+                        << x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << "}.\n"
                         << "Difference in l2 norm: " << l2_diff << " > tol: " << tol << std::endl;
                 }
             }
             if (Teuchos::is_null(dgdp)) {
               out << "\nError: sensitivities pointer is null" << std::endl;
               status += 33;
-            } else {
-             
-                Thyra::DetachedVectorView<double> dgdp_view(dgdp->col(0));
+            } else {             
+              Thyra::DetachedVectorView<double> dgdp_view(dgdp->col(0));
+              if(isLocaTest) {
+                double dgdp_exact = -63.0/8.0;
+                out << "\nSensitivities {-7.785}\n" << dgdp_view(0) << " "  << std::endl;
+
+                double l2_diff = std::abs(dgdp_view(0) - dgdp_exact);
+                if (l2_diff > tol) {
+                    status += 100;
+                    out << "\nPiro_AnalysisDrvier:  Expected sensitivity is: {"
+                        << dgdp_exact << "}, but computed sensitivity is: {"
+                        << dgdp_view(0) << "}.\n"
+                        << "Difference in l2 norm: " << l2_diff << " > tol: " << tol << std::endl;
+                }
+              } else {
                 double dgdp_exact[2] = {20./3, -8.};
                 out << "\nSensitivities {6.66667, -8.0}\n"
                     << dgdp_view(0) << " "  << dgdp_view(1) << std::endl;
@@ -247,6 +248,7 @@ int main(int argc, char *argv[]) {
                         << dgdp_view(0) << ", " << dgdp_view(1) << "}.\n"
                         << "Difference in l2 norm: " << l2_diff << " > tol: " << tol << std::endl;
                 }
+              }
             }
 
             if (Teuchos::is_null(hv)) {

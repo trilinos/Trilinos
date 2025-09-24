@@ -16,9 +16,9 @@
       <Parameter  name="Continuation Method" type="string" value="Natural"/>
       <Parameter  name="Initial Value" type="double" value="1.0"/>
       <Parameter  name="Continuation Parameter" type="string" value="Parameter 0"/>
-      <Parameter  name="Max Steps" type="int" value="0"/>
-      <Parameter  name="Max Value" type="double" value="12.25"/>
-      <Parameter  name="Min Value" type="double" value="0.5"/>
+      <Parameter  name="Max Steps" type="int" value="5"/>
+      <Parameter  name="Max Value" type="double" value="8.0"/>
+      <Parameter  name="Min Value" type="double" value="0.25"/>
       <Parameter  name="Compute Eigenvalues" type="bool" value="1"/>
       <ParameterList name="Eigensolver">
         <Parameter name="Method" type="string" value="Anasazi"/>
