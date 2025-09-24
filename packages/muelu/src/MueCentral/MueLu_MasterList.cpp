@@ -298,7 +298,7 @@ namespace MueLu {
   "<Parameter name=\"filtered matrix: Dirichlet threshold\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
-  "<Parameter name=\"filtered matrix: count negative diagonals\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"filtered matrix: count negative diagonals\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"matrix: compute analysis\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"emin: iterative method\" type=\"string\" value=\"cg\"/>"
   "<Parameter name=\"emin: num iterations\" type=\"int\" value=\"2\"/>"
