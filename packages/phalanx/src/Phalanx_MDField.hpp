@@ -20,6 +20,7 @@
 #include <Kokkos_Core_fwd.hpp>
 #if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
 #include "Sacado.hpp"
+#include "Kokkos_DynRankView.hpp"
 #else
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"

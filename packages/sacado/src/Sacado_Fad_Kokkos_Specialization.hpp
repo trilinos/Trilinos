@@ -105,16 +105,14 @@ KOKKOS_INLINE_FUNCTION auto subview(
         ,
         typename Impl::RemoveAlignedMemoryTrait<
             D, Kokkos::LayoutContiguous<LayoutStride, StrideSrc>, P...>::type,
-        Args...>::type(src,
-                       Impl::transform_kokkos_slice_to_mdspan_slice(args)...);
+        Args...>::type(src, args...);
   } else {
     return typename Kokkos::Impl::ViewMapping<
         void /* deduce subview type from source view traits */
         ,
         typename Impl::RemoveAlignedMemoryTrait<
             D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...>::type,
-        Args...>::type(src,
-                       Impl::transform_kokkos_slice_to_mdspan_slice(args)...);
+        Args...>::type(src, args...);
   }
 }
 
@@ -138,16 +136,14 @@ subview(const DynRankView<D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>,
         ,
         typename Impl::RemoveAlignedMemoryTrait<
             D, Kokkos::LayoutContiguous<LayoutStride, StrideSrc>, P...>::type,
-        Args...>::type(src,
-                       Impl::transform_kokkos_slice_to_mdspan_slice(args)...);
+        Args...>::type(src, args...);
   } else {
     return typename Kokkos::Impl::ViewMapping<
         void /* deduce subview type from source view traits */
         ,
         typename Impl::RemoveAlignedMemoryTrait<
             D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...>::type,
-        Args...>::type(src,
-                       Impl::transform_kokkos_slice_to_mdspan_slice(args)...);
+        Args...>::type(src, args...);
   }
 }
 
