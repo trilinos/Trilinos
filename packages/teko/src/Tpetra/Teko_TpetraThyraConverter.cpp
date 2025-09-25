@@ -96,7 +96,7 @@ void blockTpetraToThyra(int numVectors, Teuchos::ArrayRCP<const ST> tpetraData, 
 
 void blockTpetraToThyraTpetraVec(const Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX,
                                  const Teuchos::Ptr<Thyra::ProductMultiVectorBase<ST>>& prodMV) {
-  auto view = tpetraX.getLocalViewDevice(Tpetra::Access::ReadOnlyStruct{});
+  auto view = tpetraX.getLocalViewDevice(Tpetra::Access::ReadOnly);
 
   // loop over all the blocks in the vector space
   size_t offset        = 0;
@@ -106,7 +106,7 @@ void blockTpetraToThyraTpetraVec(const Tpetra::MultiVector<ST, LO, GO, NT>& tpet
     const auto blockMV  = rcp_dynamic_cast<Thyra::TpetraMultiVector<ST, LO, GO, NT>>(blockVec, true)
                              ->getTpetraMultiVector();
 
-    auto blockView = blockMV->getLocalViewDevice(Tpetra::Access::OverwriteAllStruct{});
+    auto blockView = blockMV->getLocalViewDevice(Tpetra::Access::OverwriteAll);
     auto subView =
         Kokkos::subview(view, Kokkos::pair(offset, blockView.extent(0) + offset), Kokkos::ALL);
     Kokkos::deep_copy(decltype(blockView)::execution_space{}, blockView, subView);
@@ -215,7 +215,7 @@ void blockThyraToTpetra(LO numVectors, Teuchos::ArrayRCP<ST> tpetraData, LO lead
 void blockThyraToTpetraTpetraVec(
     const Teuchos::RCP<const Thyra::ProductMultiVectorBase<ST>>& prodMV,
     Tpetra::MultiVector<ST, LO, GO, NT>& tpetraX) {
-  auto view = tpetraX.getLocalViewDevice(Tpetra::Access::OverwriteAllStruct{});
+  auto view = tpetraX.getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
   // loop over all the blocks in the vector space
   size_t offset        = 0;
@@ -226,7 +226,7 @@ void blockThyraToTpetraTpetraVec(
         rcp_dynamic_cast<const Thyra::TpetraMultiVector<ST, LO, GO, NT>>(blockVec, true)
             ->getConstTpetraMultiVector();
 
-    auto blockView = blockMV->getLocalViewDevice(Tpetra::Access::ReadOnlyStruct{});
+    auto blockView = blockMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
     auto subView =
         Kokkos::subview(view, Kokkos::pair(offset, blockView.extent(0) + offset), Kokkos::ALL);
     Kokkos::deep_copy(decltype(blockView)::execution_space{}, subView, blockView);
