@@ -42,21 +42,21 @@ public:
 
   //! Constructor.
   SUPGVariational(const int NumQuadratureNodes,
-                  double (*diff)(const double&, const double&, const double&),
+                  double (*_diff)(const double&, const double&, const double&),
                   double (*bx)(const double&, const double&, const double&),
                   double (*by)(const double&, const double&, const double&),
                   double (*bz)(const double&, const double&, const double&),
-                  double (*source)(const double&, const double&, const double&),
-                  double (*force)(const double&, const double&, const double&),
+                  double (*_source)(const double&, const double&, const double&),
+                  double (*_force)(const double&, const double&, const double&),
                   double (*bc)(const double&, const double&, const double&, const int&),
                   int (*bc_type)(const int&)) :
   T(NumQuadratureNodes),
-  diff_(diff),
-  source_(source),
+  diff_(_diff),
+  source_(_source),
   conv_x_(bx),
   conv_y_(by),
   conv_z_(bz),
-  force_(force),
+  force_(_force),
   bc_(bc),
   bc_type_(bc_type)
   {}
