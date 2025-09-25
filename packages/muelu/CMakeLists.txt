@@ -23,11 +23,14 @@ ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
 
 # You can only get Avatar one way
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_AvatarT)
-IF( TPL_ENABLE_AVATAR AND ${PACKAGE_NAME}_ENABLE_AvatarT)
+IF(TPL_ENABLE_AVATAR AND ${PACKAGE_NAME}_ENABLE_AvatarT)
   MESSAGE(FATAL_ERROR "MueLu does not support Avatar being built both as a TPL and as an external package.")
 ENDIF()
 
-IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7") AND NOT TPL_ENABLE_CUDA)
+IF((CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+   AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7")
+   AND NOT TPL_ENABLE_CUDA
+)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
 ENDIF()
 
@@ -43,15 +46,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Whether MueLu enables deprecated code (that is, anything marked with the MUELU_DEPRECATED macro) at compile time.  Default is ON (deprecated code enabled).  If OFF, then deprecated code does not exist."
   YES
 )
-IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE)
+IF(HAVE_${PACKAGE_NAME_UC}_DEPRECATED_CODE)
   MESSAGE(STATUS "MueLu: Enabling deprecated code")
-ELSE ()
+ELSE()
   MESSAGE(STATUS "MueLu: Disabling deprecated code")
-ENDIF ()
+ENDIF()
 
-IF (NOT ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE AND ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS)
+IF(NOT ${PACKAGE_NAME}_ENABLE_DEPRECATED_CODE AND ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS)
   MESSAGE(FATAL_ERROR "MueLu: You cannot enable deprecated tests when deprecated codes is disabled!")
-ENDIF ()
+ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_DEPRECATED_TESTS
@@ -60,9 +63,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   NO
 )
 
-IF (HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS)
+IF(HAVE_${PACKAGE_NAME_UC}_DEPRECATED_TESTS)
   MESSAGE(STATUS "MueLu: Enabling deprecated tests")
-ENDIF ()
+ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_COALESCEDROP_ALLOW_OLD_PARAMETERS
@@ -71,21 +74,19 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   YES
 )
 
-
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
   MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
 ENDIF()
 
-
 # If you want MueLu Epetra, you need Xpetra Epetra
 ASSERT_DEFINED(Xpetra_ENABLE_Epetra)
-IF (NOT Xpetra_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
+IF(NOT Xpetra_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Epetra)
   MESSAGE(FATAL_ERROR "MueLu Epetra support requires Xpetra Epetra support")
 ENDIF()
 
 # If you want MueLu Epetra, you need Xpetra Tpetra
 ASSERT_DEFINED(Xpetra_ENABLE_Tpetra)
-IF (NOT Xpetra_ENABLE_Tpetra)
+IF(NOT Xpetra_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "MueLu Tpetra support requires Xpetra Tpetra support")
 ENDIF()
 
@@ -95,26 +96,26 @@ GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 
 # Print a warning when we might be lacking a coarse solver.
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Amesos)
+IF(${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Amesos)
   MESSAGE(WARNING "MueLu's Epetra backend is enabled, but Amesos is disabled. This means only iterative coarse solves are available when using Epetra.")
-ENDIF ()
+ENDIF()
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
-IF (NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF(NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
   MESSAGE(WARNING "MueLu's Amesos2 backend is disabled. This means only iterative coarse solves are available when using Tpetra.")
-ENDIF ()
-
+ENDIF()
 
 # Enable experimental code
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
   HAVE_${PACKAGE_NAME_UC}_EXPERIMENTAL
   "Enable experimental code."
-  NO)
-IF (${PACKAGE_NAME}_ENABLE_Experimental AND NOT Xpetra_ENABLE_Experimental)
+  NO
+)
+IF(${PACKAGE_NAME}_ENABLE_Experimental AND NOT Xpetra_ENABLE_Experimental)
   MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_Experimental=ON requires Xpetra_ENABLE_Experimental=ON.")
-ENDIF ()
+ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
+IF(${PACKAGE_NAME}_ENABLE_Experimental)
   MESSAGE(STATUS "MueLu: Enabling experimental code")
 ENDIF()
 
@@ -123,83 +124,97 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ADDITIVE_VARIANT
   HAVE_${PACKAGE_NAME_UC}_ADDITIVE_VARIANT
   "Enable Additive Variant."
-  NO)
+  NO
+)
 
 # Enable matrix splitting
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_REGION_SPLITTING
   HAVE_${PACKAGE_NAME_UC}_REGION_SPLITTING
   "Enable Region Splitting."
-  NO)
+  NO
+)
 
 # mfh 12 Sep 2017: See #1726.  If Tpetra is enabled, then MueLu's
 # Tutorial should not build unless GO=int and Node=OpenMP or Serial
 # are all enabled.
 
 SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT YES)
-IF (NOT DEFINED Tpetra_INST_INT_INT OR NOT Tpetra_INST_INT_INT)
+IF(NOT DEFINED Tpetra_INST_INT_INT OR NOT Tpetra_INST_INT_INT)
   SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
-ENDIF ()
-IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
-  IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
+ENDIF()
+IF(NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
+  IF(NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
     SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
-  ENDIF ()
-ENDIF ()
-IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
-  IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
-    MESSAGE (STATUS "MueLu's tutorial requires that either the Serial or OpenMP Nodes in Tpetra be enabled.  Thus, I am disabling MueLu's tutorial by default.")
+  ENDIF()
+ENDIF()
+IF(NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
+  IF(NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
+    MESSAGE(STATUS "MueLu's tutorial requires that either the Serial or OpenMP Nodes in Tpetra be enabled.  Thus, I am disabling MueLu's tutorial by default.")
     SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
-  ENDIF ()
-ENDIF ()
+  ENDIF()
+ENDIF()
 
-IF (NOT ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT)
-  MESSAGE (STATUS "MueLu's tutorial requires for a correct build that if Tpetra is enabled, then GlobalOrdinal=int must be enabled, and either the Serial or OpenMP Nodes in Tpetra be enabled.  Since this is not the case, I am disabling MueLu's tutorial by default.  See Trilinos GitHub Issue #1726 for details: https://github.com/trilinos/Trilinos/issues/1726")
-ENDIF ()
+IF(NOT ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT)
+  MESSAGE(
+    STATUS
+      "MueLu's tutorial requires for a correct build that if Tpetra is enabled, then GlobalOrdinal=int must be enabled, and either the Serial or OpenMP Nodes in Tpetra be enabled.  Since this is not the case, I am disabling MueLu's tutorial by default.  See Trilinos GitHub Issue #1726 for details: https://github.com/trilinos/Trilinos/issues/1726"
+  )
+ENDIF()
 
 # cmake option to enable building of MueLu Tutorial
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Tutorial
   ""
   "Enable MueLu tutorial."
-  ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT)
+  ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT
+)
 
-IF (NOT ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT AND ${PACKAGE_NAME}_ENABLE_Tutorial)
-  MESSAGE (STATUS "You chose to enable MueLu's tutorial, even though I told you that it may not build correctly.  You are responsible for whatever build or link errors may occur as a result.")
-ENDIF ()
+IF(NOT ${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT AND ${PACKAGE_NAME}_ENABLE_Tutorial)
+  MESSAGE(STATUS "You chose to enable MueLu's tutorial, even though I told you that it may not build correctly.  You are responsible for whatever build or link errors may occur as a result.")
+ENDIF()
 
 # Split ETI cpp files
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES
   HAVE_${PACKAGE_NAME_UC}_SPLIT_ETI_CPP_FILES
   "Split ETI cpp files into extra files for each enabled configuration (not recommended)."
-  NO)
-IF (${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
+  NO
+)
+IF(${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
   MESSAGE(STATUS "Split MueLu ETI files: this may slow down the compilation process.")
 ENDIF()
 
 # Memory testing
-IF (${PACKAGE_NAME}_ENABLE_MEMORY_TESTING)
+IF(${PACKAGE_NAME}_ENABLE_MEMORY_TESTING)
   SET(MUELU_VALGRIND_TESTING YES)
 ELSE()
   SET(MUELU_VALGRIND_TESTING NO)
 ENDIF()
 
 # Profiling (expert users only. There is no TPL for Google Perftools)
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GOOGLE_PERFTOOLS
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_GOOGLE_PERFTOOLS
   HAVE_${PACKAGE_NAME_UC}_GOOGLE_PERFTOOLS
   "Enable detailed memory profiling using Google Perftools."
-  OFF)
+  OFF
+)
 
 # Boost
 # We don't actually need this option, but boost is not *really* needed, and
 # I really want to hide unnecessary warnings
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Boost_for_real
   HAVE_${PACKAGE_NAME_UC}_BOOST_FOR_REAL
   "Enable Boost"
-  OFF)
+  OFF
+)
 
-IF (DEFINED ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
-  MESSAGE(WARNING "MueLu no longer uses the option \'MueLu_ENABLE_Kokkos_Refactor\' and will always build with Kokkos code enabled. \'MueLu_ENABLE_Kokkos_Refactor\' can safely be removed from the CMake invocation.")
+IF(DEFINED ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+  MESSAGE(
+    WARNING
+      "MueLu no longer uses the option \'MueLu_ENABLE_Kokkos_Refactor\' and will always build with Kokkos code enabled. \'MueLu_ENABLE_Kokkos_Refactor\' can safely be removed from the CMake invocation."
+  )
 ENDIF()
 
 # Define HAVE_MUELU_STRATIMIKOS if Stratimikos package is enabled
@@ -255,7 +270,6 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_DOUBLE_INT_LONGINT OFF)
   ENDIF()
 
-
   # <double, int, long long int>
   IF(Tpetra_INST_DOUBLE AND Tpetra_INST_INT_LONG_LONG)
     GLOBAL_SET(${PACKAGE_NAME}_HAVE_GO_LONG_LONG ON)
@@ -296,7 +310,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_INST_FLOAT_INT_INT OFF)
   ENDIF()
 
-# <float, int, long long>
+  # <float, int, long long>
   IF(Tpetra_INST_FLOAT AND Tpetra_INST_INT_LONG_LONG)
     GLOBAL_SET(${PACKAGE_NAME}_HAVE_GO_LONG_LONG ON)
     GLOBAL_SET(${PACKAGE_NAME}_INST_FLOAT_INT_LONG_LONG ON)
@@ -327,19 +341,19 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
       MESSAGE(STATUS "MueLu: Default GO: long long")
     ENDIF()
   ELSE()
-      MESSAGE(STATUS "MueLu: Default GO: int")
+    MESSAGE(STATUS "MueLu: Default GO: int")
   ENDIF()
 
   # Determine which Tpetra Nodes are used
-  GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ${Tpetra_INST_SERIAL})
-  GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_OPENMP  ${Tpetra_INST_OPENMP})
-  GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_CUDA    ${Tpetra_INST_CUDA})
-  GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_HIP     ${Tpetra_INST_HIP})
-  GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SYCL    ${Tpetra_INST_SYCL})
-  IF (${PACKAGE_NAME}_ENABLE_Epetra)
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_SERIAL ${Tpetra_INST_SERIAL})
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_OPENMP ${Tpetra_INST_OPENMP})
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_CUDA ${Tpetra_INST_CUDA})
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_HIP ${Tpetra_INST_HIP})
+  GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_SYCL ${Tpetra_INST_SYCL})
+  IF(${PACKAGE_NAME}_ENABLE_Epetra)
     # If Epetra is active, always activate SerialNode
-    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL ON)
-  ENDIF ()
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_SERIAL ON)
+  ENDIF()
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_SERIAL       : ${HAVE_${PACKAGE_NAME_UC}_SERIAL}")
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_OPENMP       : ${HAVE_${PACKAGE_NAME_UC}_OPENMP}")
   MESSAGE(STATUS "   HAVE_${PACKAGE_NAME_UC}_CUDA         : ${HAVE_${PACKAGE_NAME_UC}_CUDA}")
@@ -361,9 +375,9 @@ ELSE()
   # If Epetra only is enabled, ETI is off by default. We have to make sure that
   # the HAVE_MUELU_SERIAL variable is set such that the IfpackSmoother and other
   # purely Epetra-related routines are enabled properly
-  IF (${PACKAGE_NAME}_ENABLE_Epetra)
+  IF(${PACKAGE_NAME}_ENABLE_Epetra)
     # If Epetra only is active, only activate SerialNode by default
-    GLOBAL_SET (HAVE_${PACKAGE_NAME_UC}_SERIAL  ON)
+    GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_SERIAL ON)
   ENDIF()
 
   # With ETI off, free to leave int as the default GO
@@ -375,9 +389,7 @@ ENDIF()
 # - HAVE_MUELU_INST_COMPLEX_INT_INT
 #
 # TODO: do we want also a MueLu_ENABLE_Complex option that turns ON automatically what we need?
-IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPLEX)
-    OR
-    (HAVE_MUELU_INST_COMPLEX_INT_INT))
+IF(((NOT ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION) AND Teuchos_ENABLE_COMPLEX) OR (HAVE_MUELU_INST_COMPLEX_INT_INT))
   SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX ON)
 ELSE()
   SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
@@ -395,18 +407,19 @@ ENDIF()
 # special stub implementations for the MueLu::Tpetra stack with GO=int.
 # taw 9 Oct 2015: This is independent from ETI on/off
 ASSERT_DEFINED(Tpetra_INST_INT_INT)
-SET (${PACKAGE_NAME}_TPETRA_INST_INT_INT ${Tpetra_INST_INT_INT})
-GLOBAL_SET (HAVE_MUELU_TPETRA_INST_INT_INT ${${PACKAGE_NAME}_TPETRA_INST_INT_INT})
+SET(${PACKAGE_NAME}_TPETRA_INST_INT_INT ${Tpetra_INST_INT_INT})
+GLOBAL_SET(HAVE_MUELU_TPETRA_INST_INT_INT ${${PACKAGE_NAME}_TPETRA_INST_INT_INT})
 
 # ML's MMM
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ML_MMM
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_ML_MMM
   HAVE_${PACKAGE_NAME_UC}_ML_MMM
   "Use ML's Matrix-Matrix-Multiply when available"
-  OFF)
-IF (${PACKAGE_NAME}_ENABLE_ML_MMM AND NOT ${PACKAGE_NAME}_ENABLE_ML)
+  OFF
+)
+IF(${PACKAGE_NAME}_ENABLE_ML_MMM AND NOT ${PACKAGE_NAME}_ENABLE_ML)
   MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_ML_MMM=ON requires MueLu_ENABLE_ML=ON.")
-ENDIF ()
-
+ENDIF()
 
 #
 # C) Add the libraries, tests, and examples
@@ -414,30 +427,31 @@ ENDIF ()
 
 ADD_SUBDIRECTORY(src)
 
-if(TPL_ENABLE_MATLAB)
-  IF(NOT Tpetra_INST_INT_INT OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
+IF(TPL_ENABLE_MATLAB)
+  IF(NOT Tpetra_INST_INT_INT
+     OR Tpetra_INST_INT_LONG
+     OR Tpetra_INST_INT_LONG_LONG
+  )
     MESSAGE(FATAL_ERROR "Muemex interfaces require that Tpetra only be instantiated with Tpetra_INST_INT_INT, not Tpetra_INST_INT_LONG or Tpetra_INST_INT_LONG_LONG")
   ENDIF()
 
-  IF (NOT ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  IF(NOT ${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     MESSAGE(FATAL_ERROR "Muemex interfaces require \"-D${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON\".")
   ENDIF()
 ENDIF()
 
 # Not: adapters needs to come before matlab
 ADD_SUBDIRECTORY(adapters)
-if(TPL_ENABLE_MATLAB)
+IF(TPL_ENABLE_MATLAB)
   ADD_SUBDIRECTORY(matlab)
   ADD_SUBDIRECTORY(matlab/bin)
   ADD_SUBDIRECTORY(matlab/tests)
 ENDIF()
 
 #address bugzilla bug#6236
-IF (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc
-    AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/doc/CMakeLists.txt)
+IF(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/doc/CMakeLists.txt)
   ADD_SUBDIRECTORY(doc)
 ENDIF()
-
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 ADD_SUBDIRECTORY(research)
