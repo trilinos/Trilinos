@@ -90,24 +90,24 @@ struct InitExecSpace<Kokkos::Cuda> {
 };
 #endif  // KOKKOS_ENABLE_CUDA
 
-#ifdef KOKKOS_ENABLE_SERIAL
+#ifdef HAVE_TPETRA_INST_SERIAL
 template <>
 bool InitExecSpace<Kokkos::Serial>::registeredExitHook_ = false;
-#endif  // KOKKOS_ENABLE_SERIAL
+#endif  // HAVE_TPETRA_INST_SERIAL
 
-#ifdef KOKKOS_ENABLE_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
 template <>
 bool InitExecSpace<Kokkos::OpenMP>::registeredExitHook_ = false;
-#endif  // KOKKOS_ENABLE_OPENMP
+#endif  // HAVE_TPETRA_INST_OPENMP
 
-#ifdef KOKKOS_ENABLE_THREADS
+#ifdef HAVE_TPETRA_INST_PTHREAD
 template <>
 bool InitExecSpace<Kokkos::Threads>::registeredExitHook_ = false;
-#endif  // KOKKOS_ENABLE_THREADS
+#endif  // HAVE_TPETRA_INST_PTHREAD
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
 bool InitExecSpace<Kokkos::Cuda>::registeredExitHook_ = false;
-#endif  // KOKKOS_ENABLE_CUDA
+#endif  // HAVE_TPETRA_INST_CUDA
 
 template <class KeyType, class ValueType, class DeviceType>
 struct TestFixedHashTable {
@@ -858,7 +858,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorNoDupKeys, ValueType
   // copy constructor.
   bool testedAtLeastOnce = false;
 
-#ifdef KOKKOS_ENABLE_SERIAL
+#ifdef HAVE_TPETRA_INST_SERIAL
   if (!std::is_same<execution_space, Kokkos::Serial>::value) {
     out << "Testing copy constructor to Serial" << endl;
     // The test initializes the output device's execution space if necessary.
@@ -868,9 +868,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorNoDupKeys, ValueType
                                    typeid(DeviceType).name());
     testedAtLeastOnce = true;
   }
-#endif  // KOKKOS_ENABLE_SERIAL
+#endif  // HAVE_TPETRA_INST_SERIAL
 
-#ifdef KOKKOS_ENABLE_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
   if (!std::is_same<execution_space, Kokkos::OpenMP>::value) {
     out << "Testing copy constructor to OpenMP" << endl;
     TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
@@ -879,9 +879,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorNoDupKeys, ValueType
                                    typeid(DeviceType).name());
     testedAtLeastOnce = true;
   }
-#endif  // KOKKOS_ENABLE_OPENMP
+#endif  // HAVE_TPETRA_INST_OPENMP
 
-#ifdef KOKKOS_ENABLE_THREADS
+#ifdef c
   if (!std::is_same<execution_space, Kokkos::Threads>::value) {
     out << "Testing copy constructor to Threads" << endl;
     TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
@@ -890,9 +890,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorNoDupKeys, ValueType
                                    typeid(DeviceType).name());
     testedAtLeastOnce = true;
   }
-#endif  // KOKKOS_ENABLE_THREADS
+#endif  // OPENMP
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
 #ifdef HAVE_TPETRA_SHARED_ALLOCS
   if (!std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
     out << "Testing copy constructor to CudaUVMSpace" << endl;
@@ -912,7 +912,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorNoDupKeys, ValueType
     testedAtLeastOnce = true;
   }
 #endif  // HAVE_TPETRA_SHARED_ALLOCS
-#endif  // KOKKOS_ENABLE_CUDA
+#endif  // HAVE_TPETRA_INST_CUDA
   if (!testedAtLeastOnce) {
     out << "*** WARNING: Did not actually test FixedHashTable's templated "
            "copy constructor, since only one Kokkos execution space is enabled!"
@@ -1009,7 +1009,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorDupKeys, ValueType, 
   // copy constructor.
   bool testedAtLeastOnce = false;
 
-#ifdef KOKKOS_ENABLE_SERIAL
+#ifdef HAVE_TPETRA_INST_SERIAL
   if (!std::is_same<execution_space, Kokkos::Serial>::value) {
     out << "Testing copy constructor to Serial" << endl;
     // The test initializes the output device's execution space if necessary.
@@ -1019,9 +1019,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorDupKeys, ValueType, 
                                    typeid(DeviceType).name(), testValues);
     testedAtLeastOnce = true;
   }
-#endif  // KOKKOS_ENABLE_SERIAL
+#endif  // HAVE_TPETRA_INST_SERIAL
 
-#ifdef KOKKOS_ENABLE_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
   if (!std::is_same<execution_space, Kokkos::OpenMP>::value) {
     out << "Testing copy constructor to OpenMP" << endl;
     TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace>,
@@ -1030,9 +1030,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorDupKeys, ValueType, 
                                    typeid(DeviceType).name(), testValues);
     testedAtLeastOnce = true;
   }
-#endif  // KOKKOS_ENABLE_OPENMP
+#endif  // HAVE_TPETRA_INST_OPENMP
 
-#ifdef KOKKOS_ENABLE_THREADS
+#ifdef HAVE_TPETRA_INST_PTHREAD
   if (!std::is_same<execution_space, Kokkos::Threads>::value) {
     out << "Testing copy constructor to Threads" << endl;
     TestCopyCtor<KeyType, ValueType, Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace>,
@@ -1041,9 +1041,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorDupKeys, ValueType, 
                                    typeid(DeviceType).name(), testValues);
     testedAtLeastOnce = true;
   }
-#endif  // KOKKOS_ENABLE_THREADS
+#endif  // HAVE_TPETRA_INST_PTHREAD
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
 #ifdef HAVE_TPETRA_SHARED_ALLOCS
   if (!std::is_same<typename DeviceType::memory_space, Kokkos::CudaUVMSpace>::value) {
     out << "Testing copy constructor to CudaUVMSpace" << endl;
@@ -1063,7 +1063,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(FixedHashTable_T, CopyCtorDupKeys, ValueType, 
     testedAtLeastOnce = true;
   }
 #endif  // HAVE_TPETRA_SHARED_ALLOCS
-#endif  // KOKKOS_ENABLE_CUDA
+#endif  // HAVE_TPETRA_INST_CUDA
   if (!testedAtLeastOnce) {
     out << "*** WARNING: Did not actually test FixedHashTable's templated "
            "copy constructor, since only one Kokkos execution space is enabled!"
@@ -1117,7 +1117,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // The typedefs below are there because macros don't like arguments
 // with commas in them.
 
-#ifdef KOKKOS_ENABLE_SERIAL
+#ifdef HAVE_TPETRA_INST_SERIAL
 typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> serial_device_type;
 
 #define UNIT_TEST_GROUP_SERIAL(LO, GO) \
@@ -1127,9 +1127,9 @@ TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP_SERIAL)
 
 #else
 #define UNIT_TEST_GROUP_SERIAL(LO, GO)
-#endif  // KOKKOS_ENABLE_SERIAL
+#endif  // HAVE_TPETRA_INST_SERIAL
 
-#ifdef KOKKOS_ENABLE_OPENMP
+#ifdef HAVE_TPETRA_INST_OPENMP
 typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> openmp_device_type;
 
 #define UNIT_TEST_GROUP_OPENMP(LO, GO) \
@@ -1139,9 +1139,9 @@ TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP_OPENMP)
 
 #else
 #define UNIT_TEST_GROUP_OPENMP(LO, GO)
-#endif  // KOKKOS_ENABLE_OPENMP
+#endif  // HAVE_TPETRA_INST_OPENMP
 
-#ifdef KOKKOS_ENABLE_THREADS
+#ifdef HAVE_TPETRA_INST_PTHREAD
 typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> threads_device_type;
 
 #define UNIT_TEST_GROUP_PTHREAD(LO, GO) \
@@ -1151,9 +1151,9 @@ TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP_PTHREAD)
 
 #else
 #define UNIT_TEST_GROUP_PTHREAD(LO, GO)
-#endif  // KOKKOS_ENABLE_THREADS
+#endif  // HAVE_TPETRA_INST_PTHREAD
 
-#ifdef KOKKOS_ENABLE_CUDA
+#ifdef HAVE_TPETRA_INST_CUDA
 #ifdef HAVE_TPETRA_SHARED_ALLOCS
 typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> cuda_device_type;
 #else
@@ -1167,6 +1167,6 @@ TPETRA_INSTANTIATE_LG(UNIT_TEST_GROUP_CUDA)
 
 #else
 #define UNIT_TEST_GROUP_CUDA(LO, GO)
-#endif  // KOKKOS_ENABLE_CUDA
+#endif  // HAVE_TPETRA_INST_CUDA
 
 }  // namespace

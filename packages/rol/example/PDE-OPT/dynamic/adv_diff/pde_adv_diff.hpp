@@ -315,7 +315,7 @@ private:
     adv[1] =     a*x[1];
     // Get time
     if (!isLTI_) {
-      const Real one(1), two(2), pi2(2.0*M_PI), ten(10), c(5e-2);
+      const Real one(1), two(2), pi2(2.0*M_PI), c(5e-2);
       const Real t = PDE<Real>::getTime()/T_;
       // U0(t,x,y) =  cos((x-t)*2*pi).*sin((y-t)*2*pi).*exp(-2*t)/(2*pi) + 5e-2*(7.5 - 2.5*x).*exp(20*(t-1));
       // V0(t,x,y) = -sin((x-t)*2*pi).*cos((y-t)*2*pi).*exp(-2*t)/(2*pi) + 5e-2*(      2.5*y).*exp(20*(t-1));

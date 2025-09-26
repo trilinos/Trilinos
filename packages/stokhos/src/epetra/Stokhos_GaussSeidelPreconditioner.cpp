@@ -172,7 +172,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 	// Solve linear system
 	{
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-	  TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total deterministic solve Time");
+	  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stokhos: Total deterministic solve Time", deterministic);
 #endif
 	  det_solver->applyJacobianInverse(det_solver_params, nox_df, nox_dx);
 	}

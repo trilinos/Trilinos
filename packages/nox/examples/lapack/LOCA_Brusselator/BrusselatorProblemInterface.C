@@ -94,22 +94,22 @@ BrusselatorProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J,
 
 bool
 BrusselatorProblemInterface::computeShiftedMatrix(
-                    double alpha, double beta,
+                    double alpha_, double beta_,
                     const NOX::LAPACK::Vector& x,
                     NOX::LAPACK::Matrix<double>& A)
 {
   bool res = true;
-  if (alpha != 0.0) {
+  if (alpha_ != 0.0) {
     res = computeJacobian(A, x);
-    A.scale(alpha);
+    A.scale(alpha_);
   }
   else
     A.scale(0.0);
-  if (beta != 0.0) {
+  if (beta_ != 0.0) {
     // Note:  the mass matrix terms for the BCs are zero
     for (int i=1; i<n-1; i++) {
-      A(i,i) += beta;
-      A(i+n,i+n) += beta;
+      A(i,i) += beta_;
+      A(i+n,i+n) += beta_;
     }
   }
   return res;

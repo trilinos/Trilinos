@@ -229,7 +229,7 @@ Teuchos::RCP<Epetra_CrsMatrix> FiniteElementProblem::getJacobian()
   return A;
 }
 
-Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
+Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA_)
 {
 
   // Declare required variables
@@ -250,13 +250,13 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
     // If this row is owned by current processor, add the index
     if (StandardMap->MyGID(row)) {
       column=OverlapMap->GID(ne+j);
-      AA.InsertGlobalIndices(row, 1, &column);
+      AA_.InsertGlobalIndices(row, 1, &column);
     }
       }
     }
   }
-  AA.FillComplete();
+  AA_.FillComplete();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
-  return AA;
+  return AA_;
 }

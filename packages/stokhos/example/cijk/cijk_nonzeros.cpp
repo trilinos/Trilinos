@@ -296,9 +296,9 @@ int main(int argc, char **argv)
       for (int k_tile=0; k_tile<nk_tiles; ++k_tile) {
 
 	// Count nonzeros for each i, for each tile
-	Cijk_type::k_iterator k_begin = Cijk_tile[j_tile][k_tile]->k_begin();
-	Cijk_type::k_iterator k_end = Cijk_tile[j_tile][k_tile]->k_end();
-	for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+	Cijk_type::k_iterator k_begin2 = Cijk_tile[j_tile][k_tile]->k_begin();
+	Cijk_type::k_iterator k_end2 = Cijk_tile[j_tile][k_tile]->k_end();
+	for (Cijk_type::k_iterator k_it=k_begin2; k_it!=k_end2; ++k_it) {
 	  //int k = index(k_it);
 	  Cijk_type::kj_iterator j_begin = 
 	    Cijk_tile[j_tile][k_tile]->j_begin(k_it);
@@ -337,9 +337,9 @@ int main(int argc, char **argv)
 	std::cout << std::endl 
 		  << "Tile (" << j_tile << ", " << k_tile << "):" << std::endl;
 	for (int i=0; i<sorted_nz_tile[j_tile][k_tile].size(); ++i) {
-	  int idx = sorted_nz_tile[j_tile][k_tile][i].first;
-	  std::cout << std::setw(w_index) << idx << " " 
-		    << basis->term(idx) << ": " 
+	  int idx2 = sorted_nz_tile[j_tile][k_tile][i].first;
+	  std::cout << std::setw(w_index) << idx2 << " "
+		    << basis->term(idx2) << ": "
 		    << std::setw(w_nz) << sorted_nz_tile[j_tile][k_tile][i].second
 		    << std::endl;
 	  if (i % 32 == 31)

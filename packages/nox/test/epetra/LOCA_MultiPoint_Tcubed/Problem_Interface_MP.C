@@ -33,7 +33,7 @@ bool Problem_Interface_MP::computeF(const Epetra_Vector& x, Epetra_Vector& F, Fi
 }
 
 bool Problem_Interface_MP::computeJacobian(const Epetra_Vector& x,
-                    Epetra_Operator& Jac)
+                    Epetra_Operator& Jac_)
 {
   return problem.evaluate(MATRIX_ONLY, &x, NULL,&problem.getJacobian());
 }

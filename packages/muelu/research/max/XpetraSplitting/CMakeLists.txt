@@ -13,5 +13,4 @@ IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   #  SOURCES Test_xpetra.cpp
   #  )
 
-
 ENDIF()

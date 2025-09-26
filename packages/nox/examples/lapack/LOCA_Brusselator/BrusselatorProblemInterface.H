@@ -68,7 +68,7 @@ public:
    * Jacobian matrix and M is the mass matrix.  Returns true if
    * computation was successful.
    */
-  virtual bool computeShiftedMatrix(double alpha, double beta,
+  virtual bool computeShiftedMatrix(double alpha_, double beta_,
                     const NOX::LAPACK::Vector& x,
                     NOX::LAPACK::Matrix<double>& A);
 

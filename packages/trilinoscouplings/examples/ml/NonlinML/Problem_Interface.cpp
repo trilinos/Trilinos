@@ -41,15 +41,15 @@ bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, Fi
   return ok;
 }
 
-bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
+bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac_)
 {
-  Epetra_RowMatrix* Jacobian = dynamic_cast<Epetra_RowMatrix*>(&Jac);
-  if (Jacobian == NULL) {
+  Epetra_RowMatrix* Jacobian_ = dynamic_cast<Epetra_RowMatrix*>(&Jac_);
+  if (Jacobian_ == NULL) {
     std::cout << "ERROR: Problem_Interface::computeJacobian() - The supplied"
 	 << "Epetra_Operator is NOT an Epetra_RowMatrix!" << std::endl;
     throw -1;
   }
-  return problem.evaluate(MATRIX_ONLY, &x, NULL, Jacobian);
+  return problem.evaluate(MATRIX_ONLY, &x, NULL, Jacobian_);
 }
 
 //-----------------------------------------------------------------------------

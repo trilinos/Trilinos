@@ -447,7 +447,7 @@ log(const OrthogPoly<T,Storage>& a)
   TEUCHOS_FUNC_TIME_MONITOR("LOG");
   OrthogPoly<T,Storage> c(a.expansion(), 0);
   {
-    TEUCHOS_FUNC_TIME_MONITOR("OPA LOG");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("OPA LOG", log);
     a.expansion()->log(c.getOrthogPolyApprox(), a.getOrthogPolyApprox());
   }
 

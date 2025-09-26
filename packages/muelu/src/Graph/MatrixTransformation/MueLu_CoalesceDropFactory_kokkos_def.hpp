@@ -78,6 +78,7 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
   SET_VALID_ENTRY("filtered matrix: spread lumping diag dom growth factor");
   SET_VALID_ENTRY("filtered matrix: spread lumping diag dom cap");
   SET_VALID_ENTRY("filtered matrix: Dirichlet threshold");
+  SET_VALID_ENTRY("filtered matrix: count negative diagonals");
 
 #undef SET_VALID_ENTRY
   validParamList->set<bool>("lightweight wrap", true, "Experimental option for lightweight graph access");
@@ -563,6 +564,12 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
     auto colorGraph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "coloring graph"));
     Set(currentLevel, "Coloring Graph", colorGraph);
+  }
+
+  if (pL.get<bool>("filtered matrix: count negative diagonals")) {
+    // Count the negative diagonals (and display that information)
+    GlobalOrdinal neg_count = MueLu::Utilities<SC, LO, GO, NO>::CountNegativeDiagonalEntries(*filteredA);
+    GetOStream(Runtime0) << "CoalesceDrop: Negative diagonals: " << neg_count << std::endl;
   }
 
   LO dofsPerNode = 1;

@@ -5808,8 +5808,8 @@
     {
       bool in_geom = is_in_geometry_parts(geometry_file_name, part);
       bool stk_auto = stk::mesh::is_auto_declared_part(*part);
-      bool auto_part = part->attribute<AutoPart>() != 0;
-      return in_geom || stk_auto || auto_part;
+      bool auto_part2 = part->attribute<AutoPart>() != 0;
+      return in_geom || stk_auto || auto_part2;
     }
 
     //static
@@ -5889,8 +5889,8 @@
       for (unsigned ii=0; ii < parts.size(); ++ii)
         {
           stk::mesh::Part& part = *parts[ii];
-          bool auto_part = 0 != part.attribute<AutoPart>();
-          if (stk::mesh::is_auto_declared_part(part) || auto_part || part.primary_entity_rank() != rank)
+          bool auto_part2 = 0 != part.attribute<AutoPart>();
+          if (stk::mesh::is_auto_declared_part(part) || auto_part2 || part.primary_entity_rank() != rank)
             continue;
           parts_of_rank.push_back(&part);
         }
