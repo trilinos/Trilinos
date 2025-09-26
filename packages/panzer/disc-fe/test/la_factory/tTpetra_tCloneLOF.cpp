@@ -107,9 +107,8 @@ namespace panzer
 
    TEUCHOS_UNIT_TEST(tCloneLOF, blocked_tpetra)
    {
-      // TODO: Uncomment when BlockedTpetraLinearObjFactory will be supported in cloneWithNewDomain method
-      // typedef Thyra::ProductVectorBase<double> PVector;
-      // typedef Thyra::BlockedLinearOpBase<double> BLinearOp;
+      typedef Thyra::ProductVectorBase<double> PVector;
+      typedef Thyra::BlockedLinearOpBase<double> BLinearOp;
 
 // build global (or serial communicator)
 #ifdef HAVE_MPI
@@ -128,7 +127,7 @@ namespace panzer
 
       RCP<panzer::BlockedDOFManager> indexer = rcp(new panzer::BlockedDOFManager());
       {
-         std::vector<std::vector<std::string>> fieldOrder(2);
+         std::vector<std::vector<std::string> > fieldOrder(2);
 
          indexer->setConnManager(connManager, MPI_COMM_WORLD);
          indexer->addField("U", patternC1);
@@ -160,49 +159,45 @@ namespace panzer
 
       // setup factory
       RCP<BlockedTpetraLinObjFactoryType> bt_lof = Teuchos::rcp(new BlockedTpetraLinObjFactoryType(tComm, indexer));
+      RCP<const LinearObjFactory<Traits>> control_lof = cloneWithNewDomain(*bt_lof, control_indexer);
 
-      // NOT supported yet
-      TEST_THROW(cloneWithNewDomain(*bt_lof, control_indexer), std::logic_error);
+      TEST_ASSERT(nullptr != control_lof.getRawPtr());
 
-      // TODO: Uncomment when BlockedTpetraLinearObjFactory will be supported in cloneWithNewDomain method
-      // // this is the member we are testing!
-      // RCP<const LinearObjFactory<Traits>> control_lof = cloneWithNewDomain(*bt_lof, control_indexer);
-      // RCP<const BlockedTpetraLinObjFactoryType> bt_control_lof = rcp_dynamic_cast<const BlockedTpetraLinObjFactoryType>(control_lof);
+      RCP<const BlockedTpetraLinObjFactoryType> bt_control_lof = rcp_dynamic_cast<const BlockedTpetraLinObjFactoryType>(control_lof, true);
 
-      // RCP<BLinearOp> mat = rcp_dynamic_cast<BLinearOp>(bt_control_lof->getThyraMatrix());
-      // RCP<BLinearOp> gmat = rcp_dynamic_cast<BLinearOp>(bt_control_lof->getGhostedThyraMatrix());
-      // RCP<PVector> x = rcp_dynamic_cast<PVector>(bt_control_lof->getThyraDomainVector());
-      // RCP<PVector> gx = rcp_dynamic_cast<PVector>(bt_control_lof->getGhostedThyraDomainVector());
-      // RCP<PVector> f = rcp_dynamic_cast<PVector>(bt_control_lof->getThyraRangeVector());
-      // RCP<PVector> gf = rcp_dynamic_cast<PVector>(bt_control_lof->getGhostedThyraRangeVector());
+      RCP<BLinearOp> mat = rcp_dynamic_cast<BLinearOp>(bt_control_lof->getThyraMatrix());
+      RCP<BLinearOp> gmat = rcp_dynamic_cast<BLinearOp>(bt_control_lof->getGhostedThyraMatrix());
+      RCP<PVector> x = rcp_dynamic_cast<PVector>(bt_control_lof->getThyraDomainVector());
+      RCP<PVector> gx = rcp_dynamic_cast<PVector>(bt_control_lof->getGhostedThyraDomainVector());
+      RCP<PVector> f = rcp_dynamic_cast<PVector>(bt_control_lof->getThyraRangeVector());
+      RCP<PVector> gf = rcp_dynamic_cast<PVector>(bt_control_lof->getGhostedThyraRangeVector());
 
-      // TEST_EQUALITY(x->productSpace()->numBlocks(), 1);
-      // TEST_EQUALITY(x->productSpace()->dim(), 18);
-      // TEST_EQUALITY(gx->productSpace()->numBlocks(), 1);
-      // TEST_EQUALITY(gx->productSpace()->dim(), 10 + 15);
+      TEST_EQUALITY(x->productSpace()->numBlocks(), 1);
+      TEST_EQUALITY(x->productSpace()->dim(), 18);
+      TEST_EQUALITY(gx->productSpace()->numBlocks(), 1);
+      TEST_EQUALITY(gx->productSpace()->dim(), 10 + 15);
 
-      // TEST_EQUALITY(f->productSpace()->numBlocks(), 2);
-      // TEST_EQUALITY(f->productSpace()->dim(), 36);
-      // TEST_EQUALITY(gf->productSpace()->numBlocks(), 2);
-      // TEST_EQUALITY(gf->productSpace()->dim(), 50);
+      TEST_EQUALITY(f->productSpace()->numBlocks(), 2);
+      TEST_EQUALITY(f->productSpace()->dim(), 36);
+      TEST_EQUALITY(gf->productSpace()->numBlocks(), 2);
+      TEST_EQUALITY(gf->productSpace()->dim(), 50);
 
-      // TEST_EQUALITY(mat->productRange()->numBlocks(), 2);
-      // TEST_EQUALITY(mat->productRange()->dim(), 36);
-      // TEST_EQUALITY(mat->productDomain()->numBlocks(), 1);
-      // TEST_EQUALITY(mat->productDomain()->dim(), 18);
+      TEST_EQUALITY(mat->productRange()->numBlocks(), 2);
+      TEST_EQUALITY(mat->productRange()->dim(), 36);
+      TEST_EQUALITY(mat->productDomain()->numBlocks(), 1);
+      TEST_EQUALITY(mat->productDomain()->dim(), 18);
 
-      // TEST_EQUALITY(gmat->productRange()->numBlocks(), 2);
-      // TEST_EQUALITY(gmat->productRange()->dim(), 50);
-      // TEST_EQUALITY(gmat->productDomain()->numBlocks(), 1);
-      // TEST_EQUALITY(gmat->productDomain()->dim(), 10 + 15);
+      TEST_EQUALITY(gmat->productRange()->numBlocks(), 2);
+      TEST_EQUALITY(gmat->productRange()->dim(), 50);
+      TEST_EQUALITY(gmat->productDomain()->numBlocks(), 1);
+      TEST_EQUALITY(gmat->productDomain()->dim(), 10 + 15);
    }
 
    TEUCHOS_UNIT_TEST(tCloneLOF, blocked_tpetra_nonblocked_domain)
    {
-      // TODO: Uncomment when BlockedTpetraLinearObjFactory will be supported in cloneWithNewDomain method
-      // typedef Thyra::ProductVectorBase<double> PVector;
-      // typedef Thyra::BlockedLinearOpBase<double> BLinearOp;
-      // typedef Thyra::VectorBase<double> Vector;
+      typedef Thyra::ProductVectorBase<double> PVector;
+      typedef Thyra::BlockedLinearOpBase<double> BLinearOp;
+      typedef Thyra::VectorBase<double> Vector;
 
 // build global (or serial communicator)
 #ifdef HAVE_MPI
@@ -243,45 +238,39 @@ namespace panzer
       }
 
       // setup factory
-      out << "build lof" << std::endl;
       RCP<BlockedTpetraLinObjFactoryType> bt_lof = Teuchos::rcp(new BlockedTpetraLinObjFactoryType(tComm, indexer));
 
-      // NOT supported yet
-      TEST_THROW(cloneWithNewDomain(*bt_lof, control_indexer), std::logic_error);
+      // this is the member we are testing!
+      RCP<const LinearObjFactory<Traits>> control_lof = cloneWithNewDomain(*bt_lof, control_indexer);
+      TEST_ASSERT(nullptr != control_lof.getRawPtr());
 
-      // TODO: Uncomment when BlockedTpetraLinearObjFactory will be supported in cloneWithNewDomain method
-      // // this is the member we are testing!
-      // out << "cloning lof" << std::endl;
-      // RCP<const LinearObjFactory<Traits>> control_lof = cloneWithNewDomain(*bt_lof, control_indexer);
+      RCP<const BlockedTpetraLinObjFactoryType> bt_control_lof = rcp_dynamic_cast<const BlockedTpetraLinObjFactoryType>(control_lof, true);
+      TEST_ASSERT(nullptr != bt_control_lof.getRawPtr());
 
-      // out << "casting lof" << std::endl;
-      // RCP<const BlockedTpetraLinObjFactoryType> bt_control_lof = rcp_dynamic_cast<const BlockedTpetraLinObjFactoryType>(control_lof, true);
+      RCP<BLinearOp> mat = rcp_dynamic_cast<BLinearOp>(bt_control_lof->getThyraMatrix(), true);
+      RCP<BLinearOp> gmat = rcp_dynamic_cast<BLinearOp>(bt_control_lof->getGhostedThyraMatrix(), true);
+      RCP<Vector> x = bt_control_lof->getThyraDomainVector();
+      RCP<Vector> gx = bt_control_lof->getGhostedThyraDomainVector();
+      RCP<PVector> f = rcp_dynamic_cast<PVector>(bt_control_lof->getThyraRangeVector(), true);
+      RCP<PVector> gf = rcp_dynamic_cast<PVector>(bt_control_lof->getGhostedThyraRangeVector(), true);
 
-      // out << "using casted lof" << std::endl;
-      // RCP<BLinearOp> mat = rcp_dynamic_cast<BLinearOp>(bt_control_lof->getThyraMatrix(), true);
-      // RCP<BLinearOp> gmat = rcp_dynamic_cast<BLinearOp>(bt_control_lof->getGhostedThyraMatrix(), true);
-      // RCP<Vector> x = bt_control_lof->getThyraDomainVector();
-      // RCP<Vector> gx = bt_control_lof->getGhostedThyraDomainVector();
-      // RCP<PVector> f = rcp_dynamic_cast<PVector>(bt_control_lof->getThyraRangeVector(), true);
-      // RCP<PVector> gf = rcp_dynamic_cast<PVector>(bt_control_lof->getGhostedThyraRangeVector(), true);
+      TEST_EQUALITY(x->space()->dim(), 18);
+      TEST_EQUALITY(gx->space()->dim(), 10 + 15);
 
-      // TEST_EQUALITY(x->space()->dim(), 18);
-      // TEST_EQUALITY(gx->space()->dim(), 10 + 15);
+      TEST_EQUALITY(f->productSpace()->numBlocks(), 2);
+      TEST_EQUALITY(f->productSpace()->dim(), 36);
+      TEST_EQUALITY(gf->productSpace()->numBlocks(), 2);
+      TEST_EQUALITY(gf->productSpace()->dim(), 50);
 
-      // TEST_EQUALITY(f->productSpace()->numBlocks(), 2);
-      // TEST_EQUALITY(f->productSpace()->dim(), 36);
-      // TEST_EQUALITY(gf->productSpace()->numBlocks(), 2);
-      // TEST_EQUALITY(gf->productSpace()->dim(), 50);
+      TEST_EQUALITY(mat->productRange()->numBlocks(), 2);
+      TEST_EQUALITY(mat->productRange()->dim(), 36);
+      TEST_EQUALITY(mat->productDomain()->numBlocks(), 1);
+      TEST_EQUALITY(mat->productDomain()->dim(), 18);
 
-      // TEST_EQUALITY(mat->productRange()->numBlocks(), 2);
-      // TEST_EQUALITY(mat->productRange()->dim(), 36);
-      // TEST_EQUALITY(mat->productDomain()->numBlocks(), 1);
-      // TEST_EQUALITY(mat->productDomain()->dim(), 18);
-
-      // TEST_EQUALITY(gmat->productRange()->numBlocks(), 2);
-      // TEST_EQUALITY(gmat->productRange()->dim(), 50);
-      // TEST_EQUALITY(gmat->productDomain()->numBlocks(), 1);
-      // TEST_EQUALITY(gmat->productDomain()->dim(), 10 + 15);
+      TEST_EQUALITY(gmat->productRange()->numBlocks(), 2);
+      TEST_EQUALITY(gmat->productRange()->dim(), 50);
+      TEST_EQUALITY(gmat->productDomain()->numBlocks(), 1);
+      TEST_EQUALITY(gmat->productDomain()->dim(), 10 + 15);
    }
 
 }

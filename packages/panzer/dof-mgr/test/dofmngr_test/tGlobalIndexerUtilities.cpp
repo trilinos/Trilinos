@@ -13,6 +13,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include <Teuchos_DefaultComm.hpp>
 
 #include <string>
 #include <iostream>
@@ -36,7 +37,6 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,GhostedFieldVector)
 {
-
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -136,10 +136,8 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,updateGhostedDataVector)
 {
-
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
-   // build global (or serial communicator)
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -217,7 +215,6 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,updateGhostedDataVector)
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 {
-
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
@@ -291,7 +288,6 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector)
 {
-
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
@@ -355,7 +351,6 @@ TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector)
 
 TEUCHOS_UNIT_TEST(tGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 {
-
    typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
