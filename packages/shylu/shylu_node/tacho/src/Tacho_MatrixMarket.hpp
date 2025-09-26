@@ -169,6 +169,10 @@ template <typename ValueType> struct MatrixMarket {
         ordinal_type row, col;
         value_type val;
 
+        if (file.eof()) {
+          std::cout << " ERROR: Reached the end of file before nnz (invalid nnz?)" << std::endl << std::endl;
+          return -1;
+        }
         impl_read_value_from_file(file, cmplx, row, col, val);
 
         row -= mm_base;
