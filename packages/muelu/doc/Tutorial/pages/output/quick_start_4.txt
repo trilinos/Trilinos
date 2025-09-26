@@ -1,0 +1,28 @@
+***************************   PROBLEM   ****************************
+Problem type:          Laplace 2D
+Mesh:                  50x50
+
+Solver xml parameters:              s1_easy.xml
+Number of processors:               2
+Number of Multigrid solving sweeps: 1
+***************************   PROBLEM   ****************************
+
+DO NOT FORGET TO RUN THE EXAMPLE (option 0)
+
+0. Rerun simulation
+1. Show screen output
+2. Change solver
+3. Open xml file
+4. Change procs
+5. Change MG sweeps
+6. Plot solution
+7. Plot residual norm over cg solver iterations
+8. Postprocess aggregates
+9. Exit
+your choice? 0
+PREPARE SIMULATON
+RUN EXAMPLE
+mpirun -np 2 MueLu_TutorialDriver.exe --matrixType=Laplace2D --nx=50 --ny=50 --mgridSweeps=1 --xml=s1_easy.xml | tee output.log 2>&1
+POSTPROCESSING...
+COMPLETE
+Press any key to continue...
