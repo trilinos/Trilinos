@@ -117,6 +117,48 @@ class Factory {
   /** \brief Create an instance of Ifpack2_Preconditioner given the string
    * name of the preconditioner type.
    *
+   * \warning This version of the constructor is only used for RILUK with
+   *   streams where recursive coordinate bisection (RCB) is employed for
+   *   row distribution into streams.
+   *
+   * \param precType [in] Name of preconditioner type to be created.
+   * \param matrix [in] Matrix used to define the preconditioner
+   * \param coordinates [in] Coordinates associated with matrix rows
+   *
+   * Throw an exception if the preconditioner with that input name
+   * does not exist.  Otherwise, return a newly created preconditioner
+   * object.
+   */
+  template <class MatrixType>
+  static Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
+                                     typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> >
+  create(const std::string& precType,
+         const Teuchos::RCP<const MatrixType>& matrix,
+         const Teuchos::RCP<const Tpetra::MultiVector<typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType,
+                                                      typename MatrixType::local_ordinal_type,
+                                                      typename MatrixType::global_ordinal_type,
+                                                      typename MatrixType::node_type> >& coordinates) {
+    using Teuchos::RCP;
+    using Teuchos::rcp_implicit_cast;
+    typedef typename MatrixType::scalar_type SC;
+    typedef typename MatrixType::local_ordinal_type LO;
+    typedef typename MatrixType::global_ordinal_type GO;
+    typedef typename MatrixType::node_type NT;
+    typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
+
+    RCP<const row_matrix_type> A;
+    if (!matrix.is_null()) {
+      A = rcp_implicit_cast<const row_matrix_type>(matrix);
+    }
+    Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
+    return factory.create(precType, A, coordinates);
+  }
+
+  /** \brief Create an instance of Ifpack2_Preconditioner given the string
+   * name of the preconditioner type.
+   *
    * \warning This version of the constructor is DEPRECATED, because
    *   the single-argument version suffices; users may specify the
    *   overlap level via the "schwarz: overlap level" parameter.
