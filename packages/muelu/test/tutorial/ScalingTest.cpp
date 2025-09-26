@@ -94,18 +94,18 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
-#include "BelosXpetraAdapter.hpp" // this header defines Belos::XpetraOp()
-#include "BelosMueLuAdapter.hpp"  // this header defines Belos::MueLuOp()
+#include "BelosXpetraAdapter.hpp"  // this header defines Belos::XpetraOp()
+#include "BelosMueLuAdapter.hpp"   // this header defines Belos::MueLuOp()
 #endif
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[])
-{
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int argc, char *argv[]) {
 #include "MueLu_UseShortNames.hpp"
 
-  using Teuchos::RCP; using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
   using Teuchos::TimeMonitor;
-  //using Galeri::Xpetra::CreateCartesianCoordinates;
+  // using Galeri::Xpetra::CreateCartesianCoordinates;
 
   Teuchos::oblackholestream blackhole;
 
@@ -116,9 +116,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   out->setOutputToRootOnly(0);
   *out << MueLu::MemUtils::PrintMemoryUsage() << std::endl;
 
-  #ifndef HAVE_XPETRA_INT_LONG_LONG
+#ifndef HAVE_XPETRA_INT_LONG_LONG
   *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
-  #endif
+#endif
 
   //
   // SET TEST PARAMETERS
@@ -126,62 +126,80 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Default is Laplace1D with nx = 8748.
   // It's a nice size for 1D and perfect aggregation. (6561 = 3^8)
-  //Nice size for 1D and perfect aggregation on small numbers of processors. (8748 = 4*3^7)
-  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748); // manage parameters of the test case
-  Xpetra::Parameters xpetraParameters(clp);                   // manage parameters of xpetra
+  // Nice size for 1D and perfect aggregation on small numbers of processors. (8748 = 4*3^7)
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);  // manage parameters of the test case
+  Xpetra::Parameters xpetraParameters(clp);                    // manage parameters of xpetra
 
   // Custom command line parameters
   // - Debug
-  int optDump    = 0;                     clp.setOption("dump",           &optDump,               "write matrix to file");
-  int optTimings = 0;                     clp.setOption("timings",        &optTimings,            "print timings to screen");
+  int optDump = 0;
+  clp.setOption("dump", &optDump, "write matrix to file");
+  int optTimings = 0;
+  clp.setOption("timings", &optTimings, "print timings to screen");
 
   // - Levels
-  LO  optMaxLevels     = 2;               clp.setOption("maxLevels",      &optMaxLevels,          "maximum number of levels allowed");
-  int optMaxCoarseSize = 50;              clp.setOption("maxCoarseSize",  &optMaxCoarseSize,      "maximum #dofs in coarse operator"); //FIXME clp doesn't like long long int
+  LO optMaxLevels = 2;
+  clp.setOption("maxLevels", &optMaxLevels, "maximum number of levels allowed");
+  int optMaxCoarseSize = 50;
+  clp.setOption("maxCoarseSize", &optMaxCoarseSize, "maximum #dofs in coarse operator");  // FIXME clp doesn't like long long int
 
   // - Smoothed-Aggregation
 <<<<<<< HEAD
-  Scalar optSaDamping = 4./3;             clp.setOption("saDamping",      &optSaDamping,          "prolongator damping factor");
+  Scalar optSaDamping = 4. / 3;
+  clp.setOption("saDamping", &optSaDamping, "prolongator damping factor");
 =======
   double optSaDamping = 4. / 3;
   clp.setOption("saDamping", &optSaDamping, "prolongator damping factor");
 >>>>>>> 5abb8856f7 (MueLu: fix tutorial example for complex scalar)
 
   // - Aggregation
-  std::string optAggOrdering = "natural"; clp.setOption("aggOrdering",    &optAggOrdering,        "aggregation ordering strategy (natural, random, graph)");
-  int optMinPerAgg = 2;                   clp.setOption("minPerAgg",      &optMinPerAgg,          "minimum #DOFs per aggregate");
-  int optMaxNbrSel = 0;                   clp.setOption("maxNbrSel",      &optMaxNbrSel,          "maximum # of nbrs allowed to be in other aggregates");
+  std::string optAggOrdering = "natural";
+  clp.setOption("aggOrdering", &optAggOrdering, "aggregation ordering strategy (natural, random, graph)");
+  int optMinPerAgg = 2;
+  clp.setOption("minPerAgg", &optMinPerAgg, "minimum #DOFs per aggregate");
+  int optMaxNbrSel = 0;
+  clp.setOption("maxNbrSel", &optMaxNbrSel, "maximum # of nbrs allowed to be in other aggregates");
 
   // - R
-  int optExplicitR = 1;                   clp.setOption("explicitR",      &optExplicitR,          "restriction will be explicitly stored as transpose of prolongator");
+  int optExplicitR = 1;
+  clp.setOption("explicitR", &optExplicitR, "restriction will be explicitly stored as transpose of prolongator");
 
   // - Smoothers
-  std::string optSmooType = "sgs";        clp.setOption("smooType",       &optSmooType,           "smoother type ('l1-sgs', 'sgs 'or 'cheby')");
-  int optSweeps = 2;                      clp.setOption("sweeps",         &optSweeps,             "sweeps to be used in SGS (or Chebyshev degree)");
+  std::string optSmooType = "sgs";
+  clp.setOption("smooType", &optSmooType, "smoother type ('l1-sgs', 'sgs 'or 'cheby')");
+  int optSweeps = 2;
+  clp.setOption("sweeps", &optSweeps, "sweeps to be used in SGS (or Chebyshev degree)");
 
   // - Repartitioning
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN2)
-  int optRepartition = 1;                 clp.setOption("repartition",    &optRepartition,        "enable repartitioning (0=no repartitioning, 1=Zoltan2 RCB");
-  LO optMinRowsPerProc = 2000;            clp.setOption("minRowsPerProc", &optMinRowsPerProc,     "min #rows allowable per proc before repartitioning occurs");
-  double optNnzImbalance = 1.2;           clp.setOption("nnzImbalance",   &optNnzImbalance,       "max allowable nonzero imbalance before repartitioning occurs");
+  int optRepartition = 1;
+  clp.setOption("repartition", &optRepartition, "enable repartitioning (0=no repartitioning, 1=Zoltan2 RCB");
+  LO optMinRowsPerProc = 2000;
+  clp.setOption("minRowsPerProc", &optMinRowsPerProc, "min #rows allowable per proc before repartitioning occurs");
+  double optNnzImbalance = 1.2;
+  clp.setOption("nnzImbalance", &optNnzImbalance, "max allowable nonzero imbalance before repartitioning occurs");
 #else
   int optRepartition = 0;
-#endif // HAVE_MPI && HAVE_MUELU_ZOLTAN2
+#endif  // HAVE_MPI && HAVE_MUELU_ZOLTAN2
 
   // - Solve
-  int    optFixPoint = 1;                 clp.setOption("fixPoint",       &optFixPoint,           "apply multigrid as solver");
-  int    optPrecond  = 1;                 clp.setOption("precond",        &optPrecond,            "apply multigrid as preconditioner");
-  LO     optIts      = 10;                clp.setOption("its",            &optIts,                "number of multigrid cycles");
-  double optTol      = 1e-7;              clp.setOption("tol",            &optTol,                "stopping tolerance for Krylov method");
+  int optFixPoint = 1;
+  clp.setOption("fixPoint", &optFixPoint, "apply multigrid as solver");
+  int optPrecond = 1;
+  clp.setOption("precond", &optPrecond, "apply multigrid as preconditioner");
+  LO optIts = 10;
+  clp.setOption("its", &optIts, "number of multigrid cycles");
+  double optTol = 1e-7;
+  clp.setOption("tol", &optTol, "stopping tolerance for Krylov method");
 
   switch (clp.parse(argc, argv)) {
-  case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
-  case Teuchos::CommandLineProcessor::PARSE_ERROR:
-  case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-  case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS; break;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
-  RCP<TimeMonitor> globalTimeMonitor = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
+  RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
 
   matrixParameters.check();
   xpetraParameters.check();
@@ -204,17 +222,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build"));
 
     map = MapFactory::Build(lib, matrixParameters.GetNumGlobalElements(), 0, comm);
-    Teuchos::RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList()); //TODO: Matrix vs. CrsMatrixWrap
+    Teuchos::RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());  // TODO: Matrix vs. CrsMatrixWrap
     A = Pr->BuildMatrix();
 
     if (matrixParameters.GetMatrixType() == "Laplace1D") {
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("1D", map, matrixParameters.GetParameterList());
-    }
-    else if (matrixParameters.GetMatrixType() == "Laplace2D") {
+    } else if (matrixParameters.GetMatrixType() == "Laplace2D") {
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("2D", map, matrixParameters.GetParameterList());
-    }
-    else if (matrixParameters.GetMatrixType() == "Laplace3D") {
+    } else if (matrixParameters.GetMatrixType() == "Laplace3D") {
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC, LO, GO, Map, MultiVector>("3D", map, matrixParameters.GetParameterList());
     }
   }
@@ -226,14 +242,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // dump matrix to file
   if (optDump) {
     std::string fileName = "Amat.mm";
-    Xpetra::IO<SC,LO,GO,NO>::Write(fileName, *A);
+    Xpetra::IO<SC, LO, GO, NO>::Write(fileName, *A);
   }
 
   //! [DefineNearNullSpace begin]
   // define near null space
   RCP<MultiVector> nullspace = MultiVectorFactory::Build(map, 1);
-  nullspace->putScalar( (SC) 1.0);
- //! [DefineNearNullSpace end]
+  nullspace->putScalar((SC)1.0);
+  //! [DefineNearNullSpace end]
   Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
 
   nullspace->norm1(norms);
@@ -262,7 +278,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // instantiate new Hierarchy object
     H = rcp(new Hierarchy());
     H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-    H->SetMaxCoarseSize((GO) optMaxCoarseSize);
+    H->SetMaxCoarseSize((GO)optMaxCoarseSize);
     //! [InstantiateNewHierarchyObject end]
 
     //
@@ -273,10 +289,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // create a fine level object
     RCP<Level> Finest = H->GetLevel();
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
-    Finest->Set("A",           A);
-    Finest->Set("Nullspace",   nullspace);
-    Finest->Set("Coordinates", coordinates); //! [CreateFineLevelObject end] //FIXME: XCoordinates, YCoordinates, ..
-       
+    Finest->Set("A", A);
+    Finest->Set("Nullspace", nullspace);
+    Finest->Set("Coordinates", coordinates);  //! [CreateFineLevelObject end] //FIXME: XCoordinates, YCoordinates, ..
 
     //
     // FactoryManager
@@ -297,20 +312,25 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       *out << "========================= Aggregate option summary =========================" << std::endl;
       *out << "min DOFs per aggregate :                " << optMinPerAgg << std::endl;
       *out << "min # of root nbrs already aggregated : " << optMaxNbrSel << std::endl;
-      AggregationFact->SetMinNodesPerAggregate(optMinPerAgg);  //TODO should increase if run anything othpermRFacter than 1D
+      AggregationFact->SetMinNodesPerAggregate(optMinPerAgg);  // TODO should increase if run anything othpermRFacter than 1D
       AggregationFact->SetMaxNeighAlreadySelected(optMaxNbrSel);
       std::transform(optAggOrdering.begin(), optAggOrdering.end(), optAggOrdering.begin(), ::tolower);
       if (optAggOrdering == "natural" || optAggOrdering == "random" || optAggOrdering == "graph") {
         *out << "aggregate ordering :                    " << optAggOrdering << std::endl;
         AggregationFact->SetOrdering(optAggOrdering);
       } else {
-        std::string msg = "main: bad aggregation option """ + optAggOrdering + """.";
+        std::string msg =
+            "main: bad aggregation option "
+            "" +
+            optAggOrdering +
+            ""
+            ".";
         throw(MueLu::Exceptions::RuntimeError(msg));
       }
-      //AggregationFact->SetPhase3AggCreation(0.5);
+      // AggregationFact->SetPhase3AggCreation(0.5);
       M.SetFactory("Aggregates", AggregationFact);
 
-    *out << "=============================================================================" << std::endl;
+      *out << "=============================================================================" << std::endl;
     }
 
     //
@@ -322,12 +342,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       // Non rebalanced factories
       //
 
-      //! [DeclareSomeFactories begin]       
+      //! [DeclareSomeFactories begin]
       // declare some factories (potentially overwrite default factories)
       RCP<SaPFactory> PFact = rcp(new SaPFactory());
       PFact->SetParameter("sa: damping factor", Teuchos::ParameterEntry(optSaDamping));
 
-      RCP<Factory>    RFact = rcp(new TransPFactory());
+      RCP<Factory> RFact = rcp(new TransPFactory());
 
       RCP<RAPFactory> AcFact = rcp(new RAPFactory());
       AcFact->setVerbLevel(Teuchos::VERB_HIGH);
@@ -338,7 +358,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         Teuchos::ParameterList Aclist = *(AcFact->GetValidParameterList());
         Aclist.set("transpose: use implicit", true);
         AcFact->SetParameterList(Aclist);
-        if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
+        if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n"
+                                            << std::endl;
       }
 
       //
@@ -348,12 +369,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       if (optRepartition == 0) {
         // No repartitioning
 
-        //! [ConfigureFactoryManager begin]         
+        //! [ConfigureFactoryManager begin]
         // configure factory manager
         M.SetFactory("P", PFact);
         M.SetFactory("R", RFact);
         M.SetFactory("A", AcFact);
-        //! [ConfigureFactoryManager end] 
+        //! [ConfigureFactoryManager end]
 
       } else {
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ZOLTAN2)
@@ -368,7 +389,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
         // Transfer coordinates
         RCP<CoordinatesTransferFactory> TransferCoordinatesFact = rcp(new CoordinatesTransferFactory());
-        //AcFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
+        // AcFact->AddTransferFactory(TransferCoordinatesFact); // FIXME REMOVE
 
         // Repartitioning heuristic (decides whether to rebalance based on params)
         RCP<RepartitionHeuristicFactory> RepHeuFact = Teuchos::rcp(new RepartitionHeuristicFactory());
@@ -394,7 +415,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
         RebalancedPFact->SetFactory("P", PFact);
         RebalancedPFact->SetFactory("Coordinates", TransferCoordinatesFact);
-        RebalancedPFact->SetFactory("Nullspace", M.GetFactory("Ptent")); // TODO
+        RebalancedPFact->SetFactory("Nullspace", M.GetFactory("Ptent"));  // TODO
 
         RCP<Factory> RebalancedRFact = rcp(new RebalanceTransferFactory());
         RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
@@ -408,16 +429,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         M.SetFactory("A", RebalancedAFact);
         M.SetFactory("P", RebalancedPFact);
         M.SetFactory("R", RebalancedRFact);
-        M.SetFactory("Nullspace",   RebalancedPFact);
+        M.SetFactory("Nullspace", RebalancedPFact);
         M.SetFactory("Coordinates", RebalancedPFact);
-        M.SetFactory("Importer",    RepartitionFact);
+        M.SetFactory("Importer", RepartitionFact);
 
 #else
         TEUCHOS_TEST_FOR_EXCEPT(true);
 #endif
-      } // optRepartition
+      }  // optRepartition
 
-    } // Transfer
+    }  // Transfer
 
     //
     // Smoothers
@@ -428,8 +449,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       // define smoother object
       std::string ifpackType;
       Teuchos::ParameterList ifpackList;
-      ifpackList.set("relaxation: sweeps", (LO) optSweeps);
-      ifpackList.set("relaxation: damping factor", (SC) 1.0);
+      ifpackList.set("relaxation: sweeps", (LO)optSweeps);
+      ifpackList.set("relaxation: damping factor", (SC)1.0);
       if (optSmooType == "sgs") {
         ifpackType = "RELAXATION";
         ifpackList.set("relaxation: type", "Symmetric Gauss-Seidel");
@@ -441,16 +462,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         ifpackList.set("relaxation: use l1", true);
       } else if (optSmooType == "cheby") {
         ifpackType = "CHEBYSHEV";
-        ifpackList.set("chebyshev: degree", (LO) optSweeps);
+        ifpackList.set("chebyshev: degree", (LO)optSweeps);
 
         if (matrixParameters.GetMatrixType() == "Laplace1D") {
-          ifpackList.set("chebyshev: ratio eigenvalue", (SC) 3);
-        }
-        else if (matrixParameters.GetMatrixType() == "Laplace2D") {
-          ifpackList.set("chebyshev: ratio eigenvalue", (SC) 7);
-        }
-        else if (matrixParameters.GetMatrixType() == "Laplace3D") {
-          ifpackList.set("chebyshev: ratio eigenvalue", (SC) 20);
+          ifpackList.set("chebyshev: ratio eigenvalue", (SC)3);
+        } else if (matrixParameters.GetMatrixType() == "Laplace2D") {
+          ifpackList.set("chebyshev: ratio eigenvalue", (SC)7);
+        } else if (matrixParameters.GetMatrixType() == "Laplace3D") {
+          ifpackList.set("chebyshev: ratio eigenvalue", (SC)20);
         }
         // ifpackList.set("chebyshev: max eigenvalue", (double) -1.0);
         // ifpackList.set("chebyshev: min eigenvalue", (double) 1.0);
@@ -473,7 +492,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     H->Setup(M, startLevel, optMaxLevels);
     //! [SetupMultigridHierarchy end]
 
-  } // end of Setup TimeMonitor
+  }  // end of Setup TimeMonitor
 
   /*{ // some debug output
     // print out content of levels
@@ -491,7 +510,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   //
   //
 
-  //! [DefineXB begin] 
+  //! [DefineXB begin]
   // Define X, B
   RCP<MultiVector> X = MultiVectorFactory::Build(map, 1);
   RCP<MultiVector> B = MultiVectorFactory::Build(map, 1);
@@ -500,23 +519,22 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   X->randomize();
   A->apply(*X, *B, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
   B->norm2(norms);
-  B->scale(1.0/norms[0]);
-  //! [DefineXB end] 
+  B->scale(1.0 / norms[0]);
+  //! [DefineXB end]
 
   //
   // Use AMG directly as an iterative method
   //
 
   if (optFixPoint) {
-
-    X->putScalar( (SC) 0.0);
+    X->putScalar((SC)0.0);
 
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 3 - Fixed Point Solve"));
 
     H->IsPreconditioner(false);
     H->Iterate(*B, *X, optIts);
 
-  } // optFixedPt
+  }  // optFixedPt
 
   //
   // Use AMG as a preconditioner in Belos
@@ -525,45 +543,45 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef HAVE_MUELU_BELOS
 
   if (optPrecond) {
-
     RCP<TimeMonitor> tm;
-    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
 
-    //! [OperatorAndMultivectorTypeBelos begin] 
+    //! [OperatorAndMultivectorTypeBelos begin]
     // Operator and Multivector type that will be used with Belos
-    typedef MultiVector          MV;
+    typedef MultiVector MV;
     typedef Belos::OperatorT<MV> OP;
     H->IsPreconditioner(true);
 
     // Define Operator and Preconditioner
-    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Operator object into a Belos operator
-    Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
+    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A));  // Turns a Xpetra::Operator object into a Belos operator
+    Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));   // Turns a MueLu::Hierarchy object into a Belos operator
 
     // Construct a Belos LinearProblem object
-    RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
+    RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
     belosProblem->setLeftPrec(belosPrec);
 
     bool set = belosProblem->setProblem();
     if (set == false) {
       if (comm->getRank() == 0)
-        std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+        std::cout << std::endl
+                  << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
       return EXIT_FAILURE;
     }
-    //! [OperatorAndMultivectorTypeBelos end] 
+    //! [OperatorAndMultivectorTypeBelos end]
 
     //! [BelosParameterList begin]
     // Belos parameter list
     int maxIts = 100;
     Teuchos::ParameterList belosList;
-    belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-    belosList.set("Convergence Tolerance", optTol);    // Relative convergence tolerance requested
-    //belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
+    belosList.set("Maximum Iterations", maxIts);     // Maximum number of iterations allowed
+    belosList.set("Convergence Tolerance", optTol);  // Relative convergence tolerance requested
+    // belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::StatusTestDetails);
     belosList.set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     belosList.set("Output Frequency", 1);
     belosList.set("Output Style", Belos::Brief);
 
     // Create an iterative solver manager
-    RCP< Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+    RCP<Belos::SolverManager<SC, MV, OP> > solver = rcp(new Belos::BlockCGSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
     //! [BelosParameterList end]
 
     // Perform solve
@@ -571,11 +589,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     try {
       {
         TimeMonitor tm2(*TimeMonitor::getNewTimer("ScalingTest: 5bis - Belos Internal Solve"));
-        //! [SolveLinearSystem begin] 
+        //! [SolveLinearSystem begin]
         // solve linear system
         ret = solver->solve();
-        //! [SolveLinearSystem end] 
-      } // end of TimeMonitor
+        //! [SolveLinearSystem end]
+      }  // end of TimeMonitor
 
       // Get the number of iterations for this solve.
       if (comm->getRank() == 0)
@@ -583,50 +601,54 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
       // Compute actual residuals.
       int numrhs = 1;
-      std::vector<double> actual_resids( numrhs ); //TODO: double?
-      std::vector<double> rhs_norm( numrhs );
+      std::vector<double> actual_resids(numrhs);  // TODO: double?
+      std::vector<double> rhs_norm(numrhs);
       RCP<MultiVector> resid = MultiVectorFactory::Build(map, numrhs);
 
-      typedef Belos::OperatorTraits<SC, MV, OP>  OPT;
-      typedef Belos::MultiVecTraits<SC, MV>     MVT;
+      typedef Belos::OperatorTraits<SC, MV, OP> OPT;
+      typedef Belos::MultiVecTraits<SC, MV> MVT;
 
-      OPT::Apply( *belosOp, *X, *resid );
-      MVT::MvAddMv( -1.0, *resid, 1.0, *B, *resid );
-      MVT::MvNorm( *resid, actual_resids );
-      MVT::MvNorm( *B, rhs_norm );
-      *out<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
-      for ( int i = 0; i<numrhs; i++) {
-        double actRes = actual_resids[i]/rhs_norm[i];
-        *out<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-        //if (actRes > tol) { badRes = true; }
+      OPT::Apply(*belosOp, *X, *resid);
+      MVT::MvAddMv(-1.0, *resid, 1.0, *B, *resid);
+      MVT::MvNorm(*resid, actual_resids);
+      MVT::MvNorm(*B, rhs_norm);
+      *out << "---------- Actual Residuals (normalized) ----------" << std::endl
+           << std::endl;
+      for (int i = 0; i < numrhs; i++) {
+        double actRes = actual_resids[i] / rhs_norm[i];
+        *out << "Problem " << i << " : \t" << actRes << std::endl;
+        // if (actRes > tol) { badRes = true; }
       }
 
-    } //try
+    }  // try
 
-    catch(...) {
+    catch (...) {
       if (comm->getRank() == 0)
-        std::cout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+        std::cout << std::endl
+                  << "ERROR:  Belos threw an error! " << std::endl;
     }
 
     //! [CheckConvergence begin]
     // Check convergence
     if (ret != Belos::Converged) {
-      if (comm->getRank() == 0) std::cout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+      if (comm->getRank() == 0) std::cout << std::endl
+                                          << "ERROR:  Belos did not converge! " << std::endl;
     } else {
-      if (comm->getRank() == 0) std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+      if (comm->getRank() == 0) std::cout << std::endl
+                                          << "SUCCESS:  Belos converged!" << std::endl;
     }
     //! [CheckConvergence end]
     tm = Teuchos::null;
 
-  } //if (optPrecond)
+  }  // if (optPrecond)
 
-#endif // HAVE_MUELU_BELOS
+#endif  // HAVE_MUELU_BELOS
 
   //
   // Timer final summaries
   //
 
-  globalTimeMonitor = Teuchos::null; // stop this timer before summary
+  globalTimeMonitor = Teuchos::null;  // stop this timer before summary
 
   if (optTimings)
     TimeMonitor::summarize();
@@ -634,16 +656,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   //
 
   return EXIT_SUCCESS;
-} // main_
+}  // main_
 
 //-----------------------------------------------------------
 #define MUELU_AUTOMATIC_TEST_ETI_NAME main_
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-  return Automatic_Test_ETI(argc,argv);
+  return Automatic_Test_ETI(argc, argv);
 }
-
 
 // TODO: add warning if:
 // DEBUG_MODE, LONG_LONG or KLU
