@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
 
             ::Thyra::seed_randomize<double>(seed);
             directions.resize(np);
-            int n_directions = 2;
+            int n_directions = numParams;
             for (int l = 0; l < np; l++) {
                 auto p_space = piro->getNominalValues().get_p(l)->space();
                 directions[l] = Thyra::createMembers(p_space, n_directions);
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
             } else {
                 Thyra::DetachedVectorView<double> g_view(g1);
                 double g_computed = g_view(0);
-                double g_exact = isLocaTest ? 245.0 : 8.0;
+                double g_exact = isLocaTest ? 29.0 : 8.0;
                 out << "\nResponses! {" << g_exact << "}\n"  << g_computed << std::endl;
 
                 double diff = std::abs(g_exact - g_computed);
@@ -199,8 +199,8 @@ int main(int argc, char *argv[]) {
 
                 double x_exact[4] = {1.0, 2.0, 3.0, 4.0};
                 if(isLocaTest) {
-                  out << "\nSolution! {2,-2,-1,0}\n " <<  x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << std::endl;
-                  x_exact[0] = 2.0; x_exact[1] = -2.0; x_exact[2] = -1.0; x_exact[3] = 0.0; 
+                  out << "\nSolution! {2,6,7,8}\n " <<  x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << std::endl;
+                  x_exact[0] = 2.0; x_exact[1] = 6.0; x_exact[2] = 7.0; x_exact[3] = 8.0; 
                 } else {
                   out << "\nSolution! {1,2,3,4}\n " <<  x_view(0) << ", " << x_view(1) << ", " << x_view(2) << ", " << x_view(3) << std::endl;
                 }
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
             } else {             
               Thyra::DetachedVectorView<double> dgdp_view(dgdp->col(0));
               if(isLocaTest) {
-                double dgdp_exact = -63.0/8.0;
+                double dgdp_exact = 73.0/8.0;
                 out << "\nSensitivities {-7.785}\n" << dgdp_view(0) << " "  << std::endl;
 
                 double l2_diff = std::abs(dgdp_view(0) - dgdp_exact);

@@ -414,7 +414,7 @@ void MockModelEval_A_Tpetra::evalModelImpl(
         }
         else{ // f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_j) - 0.5*(x_0 - p_0),  (for i != 0);   j=1 if num_p>1, j=0 otherwise
           int j = (num_p > 1) ? 1 : 0;
-          f_out_data[i] = x[i] - (gid + p[1]) - 0.5*(x0 - p[0]) + x[i] * (x0 - std::cbrt(p[0]));
+          f_out_data[i] = x[i] - (gid + p[j]) - 0.5*(x0 - p[0]) + x[i] * (x0 - std::cbrt(p[0]));
         }
       }
     }
@@ -460,9 +460,9 @@ void MockModelEval_A_Tpetra::evalModelImpl(
       Teuchos::RCP<Tpetra_CrsMatrix> H_pp_out_crs =
         Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(ConverterT::getTpetraOperator(H_pp_out->getMatrix()), true);
       H_pp_out_crs->resumeFill();
-      H_pp_out_crs->setAllToScalar(0.0);
+      H_pp_out_crs->setAllToScalar(2.0);
       
-      if (comm->getRank() == 0) {
+      if ((comm->getRank() == 0) && (num_p > 1)) {
         std::vector<double> vals = {2, 1};
         std::vector<typename Tpetra_CrsGraph::global_ordinal_type> indices = {0, 1};
         H_pp_out_crs->replaceGlobalValues(0, 2, &vals[0], &indices[0]);
@@ -487,8 +487,8 @@ void MockModelEval_A_Tpetra::evalModelImpl(
         }
         else {
           if(num_p > 1) {
-          dfdp_out_data_0[i] = 0.5 - x[i] / (3.0 * std::cbrt(p[0]*p[0]));
-          dfdp_out->getVectorNonConst(1)->getDataNonConst()[i] = -1.0;
+            dfdp_out_data_0[i] = 0.5 - x[i] / (3.0 * std::cbrt(p[0]*p[0]));
+            dfdp_out->getVectorNonConst(1)->getDataNonConst()[i] = -1.0;
           } else {
             dfdp_out_data_0[i] = -0.5 - x[i] / (3.0 * std::cbrt(p[0]*p[0]));
           }
