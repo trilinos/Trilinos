@@ -1,16 +1,16 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 #pragma once
 
-#include "EJ_CodeTypes.h" // for StringIdVector, Omissions, etc
-#include "EJ_vector3d.h"  // for vector3d
-#include "GetLongOpt.h"   // for GetLongOption
-#include <climits>        // for INT_MAX
-#include <string>         // for string
-#include <vector>         // for vector
+#include "EJ_CodeTypes.h"
+#include "EJ_vector3d.h"
+#include "GetLongOpt.h"
+#include <climits>
+#include <string>
+#include <vector>
 
 class SystemInterface
 {
@@ -24,6 +24,7 @@ public:
   double tolerance() const { return tolerance_; }
   bool   match_node_ids() const { return matchNodeIds_; }
   bool   match_node_xyz() const { return matchNodeXYZ_; }
+  bool   match_nodeset_nodes() const { return !nodesetMatch_.empty(); }
   bool   match_elem_ids() const { return matchElemIds_; }
   bool   omit_nodesets() const { return omitNodesets_; }
   bool   omit_sidesets() const { return omitSidesets_; }
@@ -48,19 +49,30 @@ public:
   int step_max() const { return stepMax_; }
   int step_interval() const { return stepInterval_; }
 
-  vector3d                offset() const { return offset_; }
-  const std::vector<int> &information_record_parts() const { return infoRecordParts_; }
-  const StringIdVector   &global_var_names() const { return globalVarNames_; }
-  const StringIdVector   &node_var_names() const { return nodeVarNames_; }
-  const StringIdVector   &elem_var_names() const { return elemVarNames_; }
-  const StringIdVector   &nset_var_names() const { return nsetVarNames_; }
-  const StringIdVector   &sset_var_names() const { return ssetVarNames_; }
+  bool               combine_nodesets() const { return combineNodesets_; }
+  bool               combine_sidesets() const { return combineSidesets_; }
+  bool               combine_element_blocks() const { return combineElementBlocks_; }
+  const std::string &elementblock_combines() const { return elementBlockCombines_; }
+  const std::string &nodeset_combines() const { return nodesetCombines_; }
+  const std::string &sideset_combines() const { return sidesetCombines_; }
+
+  const std::vector<vector3d> &offset() const { return offset_; }
+  const vector3d              &offset(size_t part) const { return offset_[part]; }
+  const std::vector<vector3d> &scale() const { return scale_; }
+  const vector3d              &scale(size_t part) const { return scale_[part]; }
+  const std::vector<int>      &information_record_parts() const { return infoRecordParts_; }
+  const StringIdVector        &global_var_names() const { return globalVarNames_; }
+  const StringIdVector        &node_var_names() const { return nodeVarNames_; }
+  const StringIdVector        &elem_var_names() const { return elemVarNames_; }
+  const StringIdVector        &nodeset_var_names() const { return nodesetVarNames_; }
+  const StringIdVector        &sideset_var_names() const { return sidesetVarNames_; }
 
   const Omissions &block_inclusions() const { return blockInclusions_; }
   const Omissions &block_omissions() const { return blockOmissions_; }
-  const Omissions &nset_omissions() const { return nsetOmissions_; }
-  const Omissions &sset_omissions() const { return ssetOmissions_; }
+  const Omissions &nodeset_omissions() const { return nodesetOmissions_; }
+  const Omissions &sideset_omissions() const { return sidesetOmissions_; }
   const Omissions &assembly_omissions() const { return assemblyOmissions_; }
+  const Omissions &nodeset_match() const { return nodesetMatch_; }
 
   const std::string &block_prefix() const { return blockPrefix_; }
 
@@ -110,18 +122,29 @@ private:
   bool useNetcdf4_{false};
   bool ignoreElementIds_{false};
 
+  bool combineElementBlocks_{false};
+  bool combineNodesets_{false};
+  bool combineSidesets_{false};
+
   bool createAssemblies_{true};
 
   std::string blockPrefix_{"p"};
 
-  vector3d offset_;
-  double   tolerance_{0.0};
+  std::vector<vector3d> offset_;
+  std::vector<vector3d> scale_;
+  double                tolerance_{0.0};
 
   Omissions blockInclusions_;
   Omissions blockOmissions_;
   Omissions assemblyOmissions_;
-  Omissions nsetOmissions_;
-  Omissions ssetOmissions_;
+  Omissions nodesetOmissions_;
+  Omissions sidesetOmissions_;
+
+  Omissions nodesetMatch_;
+
+  std::string elementBlockCombines_{};
+  std::string nodesetCombines_{};
+  std::string sidesetCombines_{};
 
   std::vector<int> nodesetConvertParts_;
   std::vector<int> infoRecordParts_;
@@ -129,6 +152,6 @@ private:
   StringIdVector globalVarNames_;
   StringIdVector nodeVarNames_;
   StringIdVector elemVarNames_;
-  StringIdVector nsetVarNames_;
-  StringIdVector ssetVarNames_;
+  StringIdVector nodesetVarNames_;
+  StringIdVector sidesetVarNames_;
 };

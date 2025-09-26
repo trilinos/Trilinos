@@ -21,6 +21,7 @@
 // Add my bcstrategies here
 #include "user_app_BCStrategy_Dirichlet_Constant.hpp"
 #include "user_app_BCStrategy_Neumann_Constant.hpp"
+#include "user_app_BCStrategy_Neumann_WeakDirichletEnergy.hpp"
 
 namespace user_app {
   
@@ -28,6 +29,8 @@ namespace user_app {
     user_app::BCStrategy_Dirichlet_Constant, BCStrategy_Dirichlet_Constant)
   PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(
     user_app::BCStrategy_Neumann_Constant, BCStrategy_Neumann_Constant)
+  PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER(
+    user_app::BCStrategy_Neumann_WeakDirichletEnergy, BCStrategy_Neumann_WeakDirichletEnergy)
 
   struct BCFactory : public panzer::BCStrategyFactory {
 
@@ -44,6 +47,8 @@ namespace user_app {
         BCStrategy_Dirichlet_Constant)
       PANZER_BUILD_BCSTRATEGY_OBJECTS("Neumann Constant",
         BCStrategy_Neumann_Constant)
+      PANZER_BUILD_BCSTRATEGY_OBJECTS("Weak Dirichlet Energy",
+        BCStrategy_Neumann_WeakDirichletEnergy)
 
       TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
 			 "Error - the BC Strategy called \"" << bc.strategy() <<

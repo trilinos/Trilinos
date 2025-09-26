@@ -199,9 +199,9 @@ namespace Teuchos {
     typedef Sacado::ELRCacheFad::SFad<ValueT,Num> FadType;
     typedef ValueTypeSerializer<Ordinal,ValueT> ValueSerializer;
     typedef Sacado::Fad::SerializerImp< Ordinal,FadType,ValueSerializer> Base;
-    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& vs,
-                        Ordinal sz = 0) :
-      Base(vs, sz) {}
+    ValueTypeSerializer(const Teuchos::RCP<const ValueSerializer>& avs,
+                        Ordinal asz = 0) :
+      Base(avs, asz) {}
   };
 }
 #endif

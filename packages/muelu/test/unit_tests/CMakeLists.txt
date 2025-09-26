@@ -31,11 +31,13 @@ APPEND_SET(SOURCES
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
   ClassicalPFactory.cpp
+  Emin.cpp
   FineLevelInputDataFactory.cpp
   GeneralGeometricPFactory.cpp
   GenericRFactory.cpp
   Hierarchy.cpp
   IndexManager.cpp
+  InterfaceAggregationFactory.cpp
   Level.cpp
   LowPrecision.cpp
   LWGraph.cpp

@@ -56,7 +56,7 @@ class DataExchangeUnknownPatternNonBlockingPrepost
     static constexpr int Unknown = -1;
     static constexpr size_t MAX_MESSAGE_SIZE = std::numeric_limits<int>::max();
 
-    DataExchangeUnknownPatternNonBlockingPrepost(MPI_Comm comm, int tag_hint=11173) :
+    DataExchangeUnknownPatternNonBlockingPrepost(MPI_Comm comm, [[maybe_unused]] int /*tag_hint*/=11173) :
       m_recvSizeCounter(comm),
       m_exchanger(comm)
     {
@@ -70,7 +70,7 @@ class DataExchangeUnknownPatternNonBlockingPrepost
     template <typename T>
     void start_nonblocking(std::vector< std::vector<T> > &sendLists,
                            std::vector< std::vector<T> > &recvLists,
-                           int numRecvsExpected=Unknown)
+                           [[maybe_unused]] int /*numRecvsExpected*/=Unknown)
     {
       STK_ThrowRequireMsg(!m_areSendsInProgress, "must complete sends before starting new round of communication");      
       STK_ThrowRequireMsg(!m_areRecvsInProgress, "must complete receives before starting new round of communication");      
@@ -88,7 +88,7 @@ class DataExchangeUnknownPatternNonBlockingPrepost
     }
 
     template <typename T>
-    void post_nonblocking_receives(std::vector< std::vector<T> > &recvLists) {}
+    void post_nonblocking_receives(std::vector< std::vector<T> > & /*recvLists*/) {}
 
     // Wait for the receives to finish, calling func on each receive
     // buffer as it becomes ready.

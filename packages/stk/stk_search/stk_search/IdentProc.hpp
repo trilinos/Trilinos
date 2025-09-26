@@ -60,6 +60,9 @@ public:
     : m_value(p,i)
   {}
 
+  KOKKOS_FORCEINLINE_FUNCTION ident_type & id()  {return m_value.second; }
+  KOKKOS_FORCEINLINE_FUNCTION proc_type & proc()  {return m_value.first; }
+
   KOKKOS_FORCEINLINE_FUNCTION ident_type const& id() const {return m_value.second; }
   KOKKOS_FORCEINLINE_FUNCTION proc_type const& proc() const {return m_value.first; }
 

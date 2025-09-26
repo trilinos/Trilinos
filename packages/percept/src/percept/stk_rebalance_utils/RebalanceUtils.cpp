@@ -24,7 +24,7 @@ double stk::rebalance::check_balance(mesh::BulkData &    bulk_data,
                                       const stk::mesh::EntityRank rank,
                                      const mesh::Selector *selector,
                                      stk::mesh::EntityVector *provided_elements,
-                                     bool debug_print)
+                                     bool /*debug_print*/)
 {
   const ParallelMachine    &comm = bulk_data.parallel();
   double my_load = 0.0;

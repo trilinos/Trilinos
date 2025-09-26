@@ -278,6 +278,12 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
       if constexpr (std::is_same_v<ExecutionSpace, Kokkos::Cuda>) {
         useNative = useNative || (Conjugate[0] == mode[0]);
       }
+      // cuSPARSE 12 requires that the output (y) vector is 16-byte aligned for
+      // all scalar types
+#if defined(CUSPARSE_VER_MAJOR) && (CUSPARSE_VER_MAJOR == 12)
+      uintptr_t yptr = uintptr_t((void*)y.data());
+      if (yptr % 16 != 0) useNative = true;
+#endif
 #endif
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
       if constexpr (std::is_same_v<ExecutionSpace, Kokkos::HIP>) {
@@ -747,15 +753,12 @@ void spmv_struct(const ExecutionSpace& space, const char mode[], const int stenc
     }
   }
 
-  typedef KokkosSparse::CrsMatrix<typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
-                                  typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
-                                  typename AMatrix::const_size_type>
-      AMatrix_Internal;
-
-  AMatrix_Internal A_i = A;
-
   // Call single-vector version if appropriate
   if (x.extent(1) == 1) {
+    typedef KokkosSparse::CrsMatrix<typename AMatrix::const_value_type, typename AMatrix::const_ordinal_type,
+                                    typename AMatrix::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>,
+                                    typename AMatrix::const_size_type>
+        AMatrix_Internal;
     typedef Kokkos::View<typename XVector::const_value_type*, typename YVector::array_layout,
                          typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>
         XVector_SubInternal;
@@ -763,13 +766,14 @@ void spmv_struct(const ExecutionSpace& space, const char mode[], const int stenc
                          typename YVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
         YVector_SubInternal;
 
+    AMatrix_Internal A_i    = A;
     XVector_SubInternal x_i = Kokkos::subview(x, Kokkos::ALL(), 0);
     YVector_SubInternal y_i = Kokkos::subview(y, Kokkos::ALL(), 0);
 
     // spmv_struct (mode, alpha, A, x_i, beta, y_i);
     if (Impl::SPMV2D1D_STRUCT<AlphaType, AMatrix_Internal, XVector_SubInternal, BetaType, YVector_SubInternal,
                               typename XVector_SubInternal::array_layout>::spmv2d1d_struct(space, mode, stencil_type,
-                                                                                           structure, alpha, A, x_i,
+                                                                                           structure, alpha, A_i, x_i,
                                                                                            beta, y_i)) {
       return;
     }

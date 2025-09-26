@@ -61,7 +61,7 @@ namespace percept {
     {
     }
 
-    void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+    void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh ) override
     {
       bp.resize(1);
 
@@ -73,8 +73,8 @@ namespace percept {
         bp.resize(0);
     }
 
-    virtual void doBreak() {}
-    void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+    virtual void doBreak() override {}
+    void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
     {
       needed_entities.resize(1);
       needed_entities[0].first = m_eMesh.edge_rank();
@@ -82,13 +82,13 @@ namespace percept {
     }
 
     // FIXME - for now, create more than we need (to fix this right we need a change to the Refiner.cpp interface)
-    virtual unsigned getNumNewElemPerElem() { return 4; }
+    virtual unsigned getNumNewElemPerElem() override { return 4; }
 
     void
-    createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                      stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
-                      vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                      stk::mesh::FieldBase *proc_rank_field=0)
+    createNewElements(percept::PerceptMesh& /*eMesh*/, NodeRegistry& /*nodeRegistry*/,
+                      stk::mesh::Entity /*element*/,  NewSubEntityNodesType& /*new_sub_entity_nodes*/, vector<stk::mesh::Entity>::iterator& /*element_pool*/,
+                      vector<stk::mesh::Entity>::iterator& /*ft_element_pool*/,
+                      stk::mesh::FieldBase */*proc_rank_field*/=0) override
     {
     }
 
@@ -140,7 +140,7 @@ namespace percept {
       if (m_edge_breaker) delete m_edge_breaker;
     }
 
-    void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+    void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh ) override
     {
       EXCEPTWATCH;
       bp.resize(2);
@@ -156,8 +156,8 @@ namespace percept {
         }
     }
 
-    virtual void doBreak() {}
-    void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+    virtual void doBreak() override {}
+    void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
     {
       needed_entities.resize(2);
       needed_entities[0].first = m_eMesh.edge_rank();
@@ -166,13 +166,13 @@ namespace percept {
     }
 
     // FIXME - for now, create more than we need (to fix this right we need a change to the Refiner.cpp interface)
-    virtual unsigned getNumNewElemPerElem() { return 8; }
+    virtual unsigned getNumNewElemPerElem() override { return 8; }
 
     void
     createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                       stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                       vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                      stk::mesh::FieldBase *proc_rank_field=0)
+                      stk::mesh::FieldBase *proc_rank_field=0) override
     {
       const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
       static vector<quad_to_tri_tuple_type> elems(8);
@@ -394,7 +394,7 @@ namespace percept {
       if (m_edge_breaker) delete m_edge_breaker;
     }
 
-    void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+    void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh ) override
     {
       EXCEPTWATCH;
       bp.resize(2);
@@ -409,8 +409,8 @@ namespace percept {
         }
     }
 
-    virtual void doBreak() {}
-    void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+    virtual void doBreak() override {}
+    void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
     {
       needed_entities.resize(2);
       needed_entities[0].first = m_eMesh.edge_rank();
@@ -419,13 +419,13 @@ namespace percept {
     }
 
     // FIXME - for now, create more than we need (to fix this right we need a change to the Refiner.cpp interface)
-    virtual unsigned getNumNewElemPerElem() { return 3; }
+    virtual unsigned getNumNewElemPerElem() override { return 3; }
 
     void
     createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                       stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                       vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                      stk::mesh::FieldBase *proc_rank_field=0)
+                      stk::mesh::FieldBase *proc_rank_field=0) override
     {
       const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);
       static vector<quad_to_tri_tuple_type> elems_tri(8);
@@ -675,7 +675,7 @@ namespace percept {
         }
     }
 
-    void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+    void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh ) override
     {
       EXCEPTWATCH;
       bp.resize(0);
@@ -695,10 +695,10 @@ namespace percept {
 
     }
 
-    virtual void doBreak() {
+    virtual void doBreak() override {
       throw std::runtime_error("shouldn't call RefinerPattern_Quad4_Het_N::doBreak()");
     }
-    void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+    void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
     {
       needed_entities.resize(2);
       needed_entities[0].first = m_eMesh.edge_rank();
@@ -706,36 +706,36 @@ namespace percept {
       setToOne(needed_entities);
     }
 
-    virtual unsigned getNumNewElemPerElem() { return 8; }
+    virtual unsigned getNumNewElemPerElem() override { return 8; }
 
-    virtual unsigned getFromTypeKey()
+    virtual unsigned getFromTypeKey() override
     {
       return shards::Quadrilateral<4>::key;
     }
 
     // this is a bit bogus, but need to return something
-    virtual unsigned getToTypeKey()
+    virtual unsigned getToTypeKey() override
     {
       return shards::Quadrilateral<4>::key;
     }
 
-    virtual std::string getFromTopoPartName() {
+    virtual std::string getFromTopoPartName() override {
       shards::CellTopology cell_topo(getFromTopology());
       return cell_topo.getName();
     }
-    virtual std::string getToTopoPartName() {
+    virtual std::string getToTopoPartName() override {
       shards::CellTopology cell_topo(getToTopology());
       return cell_topo.getName();
     }
 
-    virtual const CellTopologyData * getFromTopology() { return shards::getCellTopologyData< shards::Quadrilateral<4> >(); }
-    virtual const CellTopologyData * getToTopology() { return shards::getCellTopologyData< shards::Quadrilateral<4> >(); }
+    virtual const CellTopologyData * getFromTopology() override { return shards::getCellTopologyData< shards::Quadrilateral<4> >(); }
+    virtual const CellTopologyData * getToTopology() override { return shards::getCellTopologyData< shards::Quadrilateral<4> >(); }
 
     void
     createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                       stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                      stk::mesh::FieldBase *proc_rank_field=0)
+                      stk::mesh::FieldBase *proc_rank_field=0) override
     {
       // quads
 

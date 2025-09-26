@@ -1,18 +1,20 @@
 #!/bin/bash
 
 module load aue/cmake/3.27.7
-module load aue/gcc/10.3.0
-module load aue/metis/5.1.0-gcc-10.3.0
-module load aue/netlib-lapack/3.11.0-gcc-10.3.0
+module load aue/gcc/12.3.0
+module load aue/metis/5.1.0-gcc-12.3.0
+module load aue/netlib-lapack/3.11.0-gcc-12.3.0
 
 export BLAS_LIBRARIES=${BLAS_LIBRARIES:-$BLAS_ROOT/lib64/libblas.so}
 export LAPACK_LIBRARIES=${LAPACK_LIBRARIES:-$LAPACK_ROOT/lib64/liblapack.so}
 export TPL_BLAS_LIBRARIES=${BLAS_LIBRARIES:-$BLAS_ROOT/lib64/libblas.so}
 export TPL_LAPACK_LIBRARIES=${LAPACK_LIBRARIES:-$LAPACK_ROOT/lib64/liblapack.so}
 
-module load aue/openmpi/4.1.6-gcc-10.3.0
-module load aue/hdf5/1.14.2-gcc-10.3.0-openmpi-4.1.6
-module load aue/netcdf-c/4.9.2-gcc-10.3.0-openmpi-4.1.6
-module load aue/parmetis/4.0.3-gcc-10.3.0-openmpi-4.1.6
-module load aue/parallel-netcdf/1.12.3-gcc-10.3.0-openmpi-4.1.6
+module load aue/openmpi/4.1.6-gcc-12.3.0
+module load aue/hdf5/1.14.3-gcc-12.3.0-openmpi-4.1.6
+module load aue/parmetis/4.0.3-gcc-12.3.0-openmpi-4.1.6
+module load aue/parallel-netcdf/1.12.3-gcc-12.3.0-openmpi-4.1.6
+module load aue/netcdf-c/4.9.2-gcc-12.3.0-openmpi-4.1.6
+
+export LD_LIBRARY_PATH=$LIBRARY_PATH:$LD_LIBRARY_PATH
 

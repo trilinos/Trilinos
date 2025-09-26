@@ -6,9 +6,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <Akri_QualityMetric.hpp>
 #include <Akri_SmoothInfo.hpp>
 
-#include <Akri_MeshHelpers.hpp>
 #include <stk_math/StkVector.hpp>
 #include <stk_util/util/ReportHandler.hpp>
 #include <vector>

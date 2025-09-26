@@ -93,7 +93,7 @@ int ex_get_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_inq_varid(exoid, name, &propid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, name, &propid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate property array %s in file id %d",
                name, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -102,7 +102,7 @@ int ex_get_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
 
     /*   compare stored attribute name with passed property name   */
     memset(tmpstr, 0, MAX_STR_LENGTH + 1);
-    if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) != NC_NOERR) {
+    if ((status = nc_get_att_text(exoid, propid, ATT_PROP_NAME, tmpstr)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get property name in file id %d", exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -150,7 +150,7 @@ int ex_get_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
   if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
     long long l_val;
     status = nc_get_var1_longlong(exoid, propid, start, &l_val);
-    if (status == NC_NOERR) {
+    if (status == EX_NOERR) {
       int64_t *val = (int64_t *)value;
       *val         = l_val;
     }
@@ -158,13 +158,13 @@ int ex_get_prop(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, const c
   else {
     int i_val;
     status = nc_get_var1_int(exoid, propid, start, &i_val);
-    if (status == NC_NOERR) {
+    if (status == EX_NOERR) {
       int *val = (int *)value;
       *val     = i_val;
     }
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to read value in %s property array in file id %d",
              ex_name_of_object(obj_type), exoid);

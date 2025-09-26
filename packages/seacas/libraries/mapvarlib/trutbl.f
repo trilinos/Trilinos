@@ -45,7 +45,9 @@ C ... For later sanity check
  1      continue
  2    continue
 
-      CALL EXGVTT (NTP2EX,NBLKSA,NVAREL,ITRTA,IERR)
+      if (nvarel .gt. 0) then
+         CALL EXGVTT (NTP2EX,NBLKSA,NVAREL,ITRTA,IERR)
+      end if
 
 C Match element block I.D.'s from donor and recipient mesh
 
@@ -94,7 +96,9 @@ C ... Sanity check
  80     continue
  90   continue
 
-      CALL EXPVTT(NTP4EX,NBLKSB,NVAREL,ITRTB,IERR)
+      if (nvarel .gt. 0) then
+         CALL EXPVTT(NTP4EX,NBLKSB,NVAREL,ITRTB,IERR)
+      end if
 
  1000 FORMAT(5X,'MAPPING BACK INTO DONOR MESH FOR',/,
      1'          RECIPIENT MESH ELEMENT BLOCK NUMBER',I7,/,

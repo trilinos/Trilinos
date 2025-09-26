@@ -22,24 +22,24 @@
 
 namespace Ifpack2 {
 
-  #include "Ifpack2_HypreParameterMap.hpp"
+#include "Ifpack2_HypreParameterMap.hpp"
 
-  void IFPACK2_CHK_ERRV(int code) {
-    if(code<0) {
-      std::ostringstream ofs;
-      ofs << "Ifpack2::Hypre: Error with code "<<code<<std::endl;
-      throw std::runtime_error(ofs.str());
-    }
+void IFPACK2_CHK_ERRV(int code) {
+  if (code < 0) {
+    std::ostringstream ofs;
+    ofs << "Ifpack2::Hypre: Error with code " << code << std::endl;
+    throw std::runtime_error(ofs.str());
   }
-
-  void IFPACK2_CHK_ERR(int code) {
-    if(code<0) {
-      std::ostringstream ofs;
-      ofs << "Ifpack2::Hypre: Error with code "<<code<<std::endl;
-      throw std::runtime_error(ofs.str());
-    }
-  }
-
 }
 
-#endif // HAVE_IFPACK2_HYPRE && HAVE_IFPACK2_MPI
+void IFPACK2_CHK_ERR(int code) {
+  if (code < 0) {
+    std::ostringstream ofs;
+    ofs << "Ifpack2::Hypre: Error with code " << code << std::endl;
+    throw std::runtime_error(ofs.str());
+  }
+}
+
+}  // namespace Ifpack2
+
+#endif  // HAVE_IFPACK2_HYPRE && HAVE_IFPACK2_MPI

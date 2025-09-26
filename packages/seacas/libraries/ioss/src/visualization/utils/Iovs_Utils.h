@@ -81,16 +81,13 @@ namespace Iovs {
     void loadPluginLibrary();
     void setPythonPathForParaViewPythonZipFile(std::string &paraviewPythonZipFilePath);
 
-    bool getCatalystPluginPath(std::string &catalystPluginPath, std::string &libOSMesaPath);
-
-    std::string getSierraInstallDirectory();
+    void getCatalystPluginPath(std::string &catalystPluginPath);
 
     std::string getCatalystAdapterInstallDirectory();
 
     void *getDlHandle();
 
-    void *dlHandle          = nullptr;
-    void *dlHandleLibOSMesa = nullptr;
+    void *dlHandle = nullptr;
 
 #if defined(__APPLE__)
     const char *CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libcatalystioss.dylib";
@@ -98,14 +95,11 @@ namespace Iovs {
     const char *CATALYST_PLUGIN_DYNAMIC_LIBRARY = "libcatalystioss.so";
 #endif
     const char *CATALYST_PLUGIN_PYTHON_MODULE     = "PhactoriDriver.py";
-    const char *CATALYST_PLUGIN_PATH              = "viz/catalyst/install";
     const char *CATALYST_FILE_SUFFIX              = ".dummy.pv.catalyst.e";
     const char *CATALYST_OUTPUT_DIRECTORY         = "CatalystOutput";
     const char *CATALYST_INSTALL_LIB_DIR          = "/lib/";
     const char *CATALYST_INSTALL_PHACTORI_DIR     = "/phactori/";
     const char *CATALYST_IOSS_CATALYST_PLUGIN_DIR = "/current_ioss_catalyst_plugin_version";
-    const char *CATALYST_LIB_OSMESA               = "libOSMesa.so";
-    const char *CATALYST_LIB_OSMESA_DIR           = "/current_paraview_install/lib/";
     const char *CATALYST_PARAVIEW_PYTHON_ZIP_FILE =
         "/current_paraview_lib_python/site-packages/_paraview.zip";
   };

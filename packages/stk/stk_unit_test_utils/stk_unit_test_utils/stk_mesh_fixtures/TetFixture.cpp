@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
@@ -66,7 +66,7 @@ TetFixture::TetFixture(MetaData& meta,
     elem_id_start(eid_start),
     m_meta( meta ),
     m_bulk_data( bulk ),
-    m_elem_parts( ),
+    m_elem_parts( 1, &m_meta.declare_part_with_topology("tet_part", stk::topology::TET_4) ),
     m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
     m_coord_field( &m_meta.declare_field<double>(stk::topology::NODE_RANK, "Coordinates") ),
     owns_mesh(false)
@@ -193,13 +193,10 @@ void TetFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_processor
                           {1, 6, 2, 0}};
 
     // Declare the elements that belong on this process
-    std::vector<size_t>::iterator ib = hex_range_on_this_processor.begin();
-    const std::vector<size_t>::iterator ie = hex_range_on_this_processor.end();
     stk::mesh::EntityIdVector elem_nodes(8);
     stk::mesh::EntityIdVector tet_nodes(4);
 
-    for (; ib != ie; ++ib) {
-      size_t hex_id = *ib;
+      for (size_t hex_id : hex_range_on_this_processor) {
       size_t ix = 0, iy = 0, iz = 0;
       hex_x_y_z(hex_id, ix, iy, iz);
 
@@ -233,9 +230,14 @@ void TetFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_processor
           size_t nx = 0, ny = 0, nz = 0;
           node_x_y_z(tet_nodes[i], nx, ny, nz);
 
-          Scalar * data = stk::mesh::field_data( *m_coord_field , node );
+          auto data = m_coord_field->data().entity_values(node);
+          std::array<double, 3> data_array{data(0_comp), data(1_comp), data(2_comp)};
 
-          coordMap.getNodeCoordinates(data, nx, ny, nz);
+          coordMap.getNodeCoordinates(data_array.data(), nx, ny, nz);
+
+          for (stk::mesh::ComponentIdx d : data.components()) {
+            data(d) = data_array[d];
+          }
         }
       }
     }

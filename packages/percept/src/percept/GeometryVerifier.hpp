@@ -29,7 +29,7 @@ using namespace shards;
   namespace percept
   {
 
-    template<typename T> class Histogram;
+    template<typename T> struct Histogram;
 
     class GeometryVerifier
     {

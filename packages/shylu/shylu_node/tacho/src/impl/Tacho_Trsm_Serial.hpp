@@ -41,9 +41,9 @@ struct Trsm<ArgSide, ArgUplo, ArgTransA, Algo::Serial> {
 
       if (m > 0 && n > 0)
         //Blas<value_type>::trsm(ArgSide::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n, value_type(alpha),
-        //                       A.data(), A.stride_1(), B.data(), B.stride_1());
+        //                       A.data(), A.stride(1), B.data(), B.stride(1));
         BlasSerial<value_type>::trsm(ArgSide::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n, value_type(alpha),
-                                     A.data(), A.stride_1(), B.data(), B.stride_1());
+                                     A.data(), A.stride(1), B.data(), B.stride(1));
     } else {
       TACHO_TEST_FOR_ABORT(true, "This function is only allowed in host space.");
     }

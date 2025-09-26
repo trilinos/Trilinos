@@ -20,6 +20,11 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES Panzer_xml_to_yaml.cpp
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  write_exodus_initial_condition
+  SOURCES write_exodus_initial_condition.cpp ${PANZER_UNIT_TEST_MAIN}
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
   SOURCE_FILES
     energy-ss.xml
@@ -36,7 +41,14 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(main_driver_files
     periodic_wedge.xml
     periodic_wedge.pam
     energy-periodic-32bit-limit.xml
-  EXEDEPS main_driver
+    energy-ss-tp-multiblock-ic-bc-issue.xml
+    energy-ss-tp-multiblock-ic-bc-issue.jou
+    energy-ss-tp-multiblock-ic-bc-issue.gen
+    make-mesh.sh
+    do-runs-multiblock.sh
+    set_seacas_decomp.sh
+    energy-load-cell-data.xml
+  EXEDEPS main_driver xml_to_yaml
   )
 
 IF(PANZER_HAVE_EPETRA_STACK)
@@ -105,6 +117,27 @@ TRIBITS_ADD_ADVANCED_TEST(
     ARGS  --i=energy-neumann.xml --flux-calc
     PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
     NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy-ss-tp-multiblock-ic-bc-issue
+  TEST_0 EXEC main_driver
+    ARGS  --i=energy-ss-tp-multiblock-ic-bc-issue.xml --time
+    PASS_REGULAR_EXPRESSION "panzer::MainDriver run completed."
+    NUM_MPI_PROCS 2
+    ENVIRONMENT IOSS_PROPERTIES=DECOMPOSITION_METHOD=rib
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(
+  main_driver_energy_load_cell_data
+  TEST_0 EXEC write_exodus_initial_condition
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+  TEST_1 EXEC main_driver
+    ARGS  --i=energy-load-cell-data.xml --time
+    PASS_REGULAR_EXPRESSION ": 0.970"
+    NUM_MPI_PROCS 2
+    ENVIRONMENT IOSS_PROPERTIES=DECOMPOSITION_METHOD=rib
   )
 
 IF(${PACKAGE_NAME}_ENABLE_Teko)

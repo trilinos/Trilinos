@@ -43,10 +43,10 @@
 
 #if @IS_DEVICE_NODE@
 
-// Add instantiation on HostMirror for device nodes.
+// Add instantiation on host_mirror_type for device nodes.
 #define INSTANTIATE_MP_VECTOR_S_SD(INSTMACRO, N) \
   typedef Stokhos::DeviceForNode<N>::type DFN_CPU_ ## N; \
-  typedef Kokkos::View<double*, N::device_type>::HostMirror::device_type host_device_type_##N; \
+  typedef Kokkos::View<double*, N::device_type>::host_mirror_type::device_type host_device_type_##N; \
   INSTANTIATE_MP_VECTOR_S_D_SD(INSTMACRO, DFN_CPU_ ## N, N) \
   INSTANTIATE_MP_VECTOR_S_D_SD(INSTMACRO, DFN_CPU_ ## N, host_device_type_##N)
 

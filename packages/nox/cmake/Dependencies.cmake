@@ -1,7 +1,7 @@
 SET(LIB_REQUIRED_DEP_PACKAGES Teuchos)
 SET(LIB_OPTIONAL_DEP_PACKAGES
   Epetra EpetraExt ThyraCore ThyraEpetraAdapters ThyraEpetraExtAdapters Amesos AztecOO Ifpack ML Belos
-  Anasazi Stratimikos Teko)
+  Anasazi Stratimikos Teko Tpetra)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES Stratimikos Isorropia Tpetra ThyraTpetraAdapters Ifpack2)
 SET(LIB_REQUIRED_DEP_TPLS)

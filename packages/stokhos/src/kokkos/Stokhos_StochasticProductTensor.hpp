@@ -150,7 +150,7 @@ public:
     // Allocate and transfer data to the device-resident object.
 
     typedef Kokkos::View< size_type** , execution_space > int_array_type ;
-    typedef typename int_array_type::HostMirror host_int_array_type ;
+    typedef typename int_array_type::host_mirror_type host_int_array_type ;
 
     OrdinalType basis_sz = basis.size();
     OrdinalType basis_dim = basis.dimension();

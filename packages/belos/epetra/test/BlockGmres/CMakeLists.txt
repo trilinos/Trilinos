@@ -38,7 +38,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES orsirr1.hb 
     EXEDEPS bl_gmres_hb
   )
@@ -77,7 +77,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       )
 
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockPGmresFiles
-      SOURCE_DIR ${Ifpack_SOURCE_DIR}/test/AztecOO
+      SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
       SOURCE_FILES nos1.rsa
       EXEDEPS bl_pgmres_hb
       )

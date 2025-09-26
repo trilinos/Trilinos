@@ -45,77 +45,77 @@ protected:
 TYPED_TEST_SUITE_P(TraitsTests);
 
 TYPED_TEST_P(TraitsTests, testScalarType) {
-  typedef decltype(this->ad1) ad1_t;
-  typedef decltype(this->ad2) ad2_t;
+  typedef decltype(this->ad1) lad1_t;
+  typedef decltype(this->ad2) lad2_t;
 
-  bool same = std::is_same< typename Sacado::ScalarType<ad1_t>::type, double >::value;
+  bool same = std::is_same< typename Sacado::ScalarType<lad1_t>::type, double >::value;
   ASSERT_TRUE(same == true);
 
-same = std::is_same< typename Sacado::ScalarType<ad2_t>::type,double >::value;
+same = std::is_same< typename Sacado::ScalarType<lad2_t>::type,double >::value;
   ASSERT_TRUE(same == true);
 }
 
 TYPED_TEST_P(TraitsTests, testValueType) {
-  typedef decltype(this->ad1) ad1_t;
-  typedef decltype(this->ad2) ad2_t;
+  typedef decltype(this->ad1) lad1_t;
+  typedef decltype(this->ad2) lad2_t;
 
-  bool same = std::is_same< typename Sacado::ValueType<ad1_t>::type,double >::value;
+  bool same = std::is_same< typename Sacado::ValueType<lad1_t>::type,double >::value;
   ASSERT_TRUE(same == true);
 
-  same = std::is_same< typename Sacado::ValueType<ad2_t>::type,ad1_t >::value;
+  same = std::is_same< typename Sacado::ValueType<lad2_t>::type,lad1_t >::value;
   ASSERT_TRUE(same == true);
 }
 
 TYPED_TEST_P(TraitsTests, testIsADType) {
-  typedef decltype(this->ad1) ad1_t;
-  typedef decltype(this->ad2) ad2_t;
+  typedef decltype(this->ad1) lad1_t;
+  typedef decltype(this->ad2) lad2_t;
 
-  ASSERT_TRUE(Sacado::IsADType<ad1_t>::value == true);
-  ASSERT_TRUE(Sacado::IsADType<ad2_t>::value == true);
+  ASSERT_TRUE(Sacado::IsADType<lad1_t>::value == true);
+  ASSERT_TRUE(Sacado::IsADType<lad2_t>::value == true);
 }
 
 TYPED_TEST_P(TraitsTests, testIsScalarType) {
-  typedef decltype(this->ad1) ad1_t;
-  typedef decltype(this->ad2) ad2_t;
+  typedef decltype(this->ad1) lad1_t;
+  typedef decltype(this->ad2) lad2_t;
 
-  ASSERT_TRUE(Sacado::IsScalarType<ad1_t>::value == false);
-  ASSERT_TRUE(Sacado::IsScalarType<ad2_t>::value == false);
+  ASSERT_TRUE(Sacado::IsScalarType<lad1_t>::value == false);
+  ASSERT_TRUE(Sacado::IsScalarType<lad2_t>::value == false);
 }
 
 TYPED_TEST_P(TraitsTests, testValue) {
-  typedef decltype(this->ad1) ad1_t;
-  typedef decltype(this->ad2) ad2_t;
+  typedef decltype(this->ad1) lad1_t;
+  typedef decltype(this->ad2) lad2_t;
 
   double val = this->urand.number();
-  ad1_t a(val);
-  ASSERT_TRUE(Sacado::Value<ad1_t>::eval(a) == val);
+  lad1_t a(val);
+  ASSERT_TRUE(Sacado::Value<lad1_t>::eval(a) == val);
 
-  ad2_t b(a);
-  ASSERT_TRUE(Sacado::Value<ad2_t>::eval(b) == a);
+  lad2_t b(a);
+  ASSERT_TRUE(Sacado::Value<lad2_t>::eval(b) == a);
 }
 
 TYPED_TEST_P(TraitsTests, testScalarValue) {
-  typedef decltype(this->ad1) ad1_t;
-  typedef decltype(this->ad2) ad2_t;
+  typedef decltype(this->ad1) lad1_t;
+  typedef decltype(this->ad2) lad2_t;
 
   double val = this->urand.number();
-  ad1_t a(val);
-  ASSERT_TRUE(Sacado::ScalarValue<ad1_t>::eval(a) == val);
+  lad1_t a(val);
+  ASSERT_TRUE(Sacado::ScalarValue<lad1_t>::eval(a) == val);
 
-  ad2_t b(a);
-  ASSERT_TRUE(Sacado::ScalarValue<ad2_t>::eval(b) == val);
+  lad2_t b(a);
+  ASSERT_TRUE(Sacado::ScalarValue<lad2_t>::eval(b) == val);
 }
 
 TYPED_TEST_P(TraitsTests, testStringName) {
-  typedef decltype(this->ad1) ad1_t;
-  typedef decltype(this->ad2) ad2_t;
+  typedef decltype(this->ad1) lad1_t;
+  typedef decltype(this->ad2) lad2_t;
 
   // Currently we can't check the string name, here we are just making sure
   // it compiles
-  Sacado::StringName<ad1_t>::eval();
-  Sacado::StringName<ad2_t>::eval();
-  // ASSERT_TRUE(Sacado::StringName<ad1_t>::eval() == name + "< double, double >");
-  // ASSERT_TRUE(Sacado::StringName<ad2_t>::eval() == name + "< " + name + "< double, double >, double >");
+  Sacado::StringName<lad1_t>::eval();
+  Sacado::StringName<lad2_t>::eval();
+  // ASSERT_TRUE(Sacado::StringName<lad1_t>::eval() == name + "< double, double >");
+  // ASSERT_TRUE(Sacado::StringName<lad2_t>::eval() == name + "< " + name + "< double, double >, double >");
 }
 
 REGISTER_TYPED_TEST_SUITE_P(

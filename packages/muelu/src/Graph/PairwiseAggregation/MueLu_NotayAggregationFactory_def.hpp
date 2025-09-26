@@ -207,7 +207,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(L
         agg2vertex[agg].push_back(i);
       }
 
-      typename row_sum_type::HostMirror rowSum_h = Kokkos::create_mirror_view(rowSum);
+      typename row_sum_type::host_mirror_type rowSum_h = Kokkos::create_mirror_view(rowSum);
       for (LO i = 0; i < numRows; i++) {
         // If not aggregated already, skip this guy
         if (aggStat[i] != AGGREGATED)
@@ -511,19 +511,19 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   double tie_less      = 1.0 - tie_criterion;
   double tie_more      = 1.0 + tie_criterion;
 
-  typename row_sum_type::HostMirror rowSum_h = Kokkos::create_mirror_view(rowSum);
+  typename row_sum_type::host_mirror_type rowSum_h = Kokkos::create_mirror_view(rowSum);
   Kokkos::deep_copy(rowSum_h, rowSum);
 
   // Extracting the diagonal of a KokkosSparse::CrsMatrix
   // is not currently provided in kokkos-kernels so here
   // is an ugly way to get that done...
   const LO numRows = static_cast<LO>(coarseA.numRows());
-  typename local_matrix_type::values_type::HostMirror diagA_h("diagA host", numRows);
-  typename local_matrix_type::row_map_type::HostMirror row_map_h = Kokkos::create_mirror_view(coarseA.graph.row_map);
+  typename local_matrix_type::values_type::host_mirror_type diagA_h("diagA host", numRows);
+  typename local_matrix_type::row_map_type::host_mirror_type row_map_h = Kokkos::create_mirror_view(coarseA.graph.row_map);
   Kokkos::deep_copy(row_map_h, coarseA.graph.row_map);
-  typename local_matrix_type::index_type::HostMirror entries_h = Kokkos::create_mirror_view(coarseA.graph.entries);
+  typename local_matrix_type::index_type::host_mirror_type entries_h = Kokkos::create_mirror_view(coarseA.graph.entries);
   Kokkos::deep_copy(entries_h, coarseA.graph.entries);
-  typename local_matrix_type::values_type::HostMirror values_h = Kokkos::create_mirror_view(coarseA.values);
+  typename local_matrix_type::values_type::host_mirror_type values_h = Kokkos::create_mirror_view(coarseA.values);
   Kokkos::deep_copy(values_h, coarseA.values);
   for (LO rowIdx = 0; rowIdx < numRows; ++rowIdx) {
     for (LO entryIdx = static_cast<LO>(row_map_h(rowIdx));
@@ -640,10 +640,10 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   const int numRows = static_cast<int>(localA.numRows());
   row_pointer_type rowPtr("onrankA row pointer", numRows + 1);
-  typename row_pointer_type::HostMirror rowPtr_h                   = Kokkos::create_mirror_view(rowPtr);
-  typename local_graph_type::row_map_type::HostMirror origRowPtr_h = Kokkos::create_mirror_view(localA.graph.row_map);
-  typename local_graph_type::entries_type::HostMirror origColind_h = Kokkos::create_mirror_view(localA.graph.entries);
-  typename values_type::HostMirror origValues_h                    = Kokkos::create_mirror_view(localA.values);
+  typename row_pointer_type::host_mirror_type rowPtr_h                   = Kokkos::create_mirror_view(rowPtr);
+  typename local_graph_type::row_map_type::host_mirror_type origRowPtr_h = Kokkos::create_mirror_view(localA.graph.row_map);
+  typename local_graph_type::entries_type::host_mirror_type origColind_h = Kokkos::create_mirror_view(localA.graph.entries);
+  typename values_type::host_mirror_type origValues_h                    = Kokkos::create_mirror_view(localA.values);
   Kokkos::deep_copy(origRowPtr_h, localA.graph.row_map);
   Kokkos::deep_copy(origColind_h, localA.graph.entries);
   Kokkos::deep_copy(origValues_h, localA.values);
@@ -665,8 +665,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // Now use nnz per row to allocate matrix views and store column indices and values
   col_indices_type colInd("onrankA column indices", rowPtr_h(numRows));
   values_type values("onrankA values", rowPtr_h(numRows));
-  typename col_indices_type::HostMirror colInd_h = Kokkos::create_mirror_view(colInd);
-  typename values_type::HostMirror values_h      = Kokkos::create_mirror_view(values);
+  typename col_indices_type::host_mirror_type colInd_h = Kokkos::create_mirror_view(colInd);
+  typename values_type::host_mirror_type values_h      = Kokkos::create_mirror_view(values);
   int entriesInRow;
   for (int rowIdx = 0; rowIdx < numRows; ++rowIdx) {
     entriesInRow = 0;
@@ -718,8 +718,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   row_pointer_type rowPtr("intermediateP row pointer", numRows + 1);
   col_indices_type colInd("intermediateP column indices", intermediatePnnz);
   values_type values("intermediateP values", intermediatePnnz);
-  typename row_pointer_type::HostMirror rowPtr_h = Kokkos::create_mirror_view(rowPtr);
-  typename col_indices_type::HostMirror colInd_h = Kokkos::create_mirror_view(colInd);
+  typename row_pointer_type::host_mirror_type rowPtr_h = Kokkos::create_mirror_view(rowPtr);
+  typename col_indices_type::host_mirror_type colInd_h = Kokkos::create_mirror_view(colInd);
 
   rowPtr_h(0) = 0;
   for (int rowIdx = 0; rowIdx < numRows; ++rowIdx) {
@@ -777,8 +777,8 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   values_type valuesPt(Kokkos::ViewAllocateWithoutInitializing("Pt values"),
                        intermediateP.nnz());
 
-  typename row_pointer_type::HostMirror rowPtrPt_h = Kokkos::create_mirror_view(rowPtrPt);
-  typename col_indices_type::HostMirror entries_h  = Kokkos::create_mirror_view(intermediateP.graph.entries);
+  typename row_pointer_type::host_mirror_type rowPtrPt_h = Kokkos::create_mirror_view(rowPtrPt);
+  typename col_indices_type::host_mirror_type entries_h  = Kokkos::create_mirror_view(intermediateP.graph.entries);
   Kokkos::deep_copy(entries_h, intermediateP.graph.entries);
   Kokkos::deep_copy(rowPtrPt_h, 0);
   for (size_type entryIdx = 0; entryIdx < intermediateP.nnz(); ++entryIdx) {
@@ -789,15 +789,15 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
   Kokkos::deep_copy(rowPtrPt, rowPtrPt_h);
 
-  typename row_pointer_type::HostMirror rowPtrP_h = Kokkos::create_mirror_view(intermediateP.graph.row_map);
+  typename row_pointer_type::host_mirror_type rowPtrP_h = Kokkos::create_mirror_view(intermediateP.graph.row_map);
   Kokkos::deep_copy(rowPtrP_h, intermediateP.graph.row_map);
-  typename col_indices_type::HostMirror colIndP_h = Kokkos::create_mirror_view(intermediateP.graph.entries);
+  typename col_indices_type::host_mirror_type colIndP_h = Kokkos::create_mirror_view(intermediateP.graph.entries);
   Kokkos::deep_copy(colIndP_h, intermediateP.graph.entries);
-  typename values_type::HostMirror valuesP_h = Kokkos::create_mirror_view(intermediateP.values);
+  typename values_type::host_mirror_type valuesP_h = Kokkos::create_mirror_view(intermediateP.values);
   Kokkos::deep_copy(valuesP_h, intermediateP.values);
-  typename col_indices_type::HostMirror colIndPt_h = Kokkos::create_mirror_view(colIndPt);
-  typename values_type::HostMirror valuesPt_h      = Kokkos::create_mirror_view(valuesPt);
-  const col_index_type invalidColumnIndex          = KokkosSparse::OrdinalTraits<col_index_type>::invalid();
+  typename col_indices_type::host_mirror_type colIndPt_h = Kokkos::create_mirror_view(colIndPt);
+  typename values_type::host_mirror_type valuesPt_h      = Kokkos::create_mirror_view(valuesPt);
+  const col_index_type invalidColumnIndex                = KokkosSparse::OrdinalTraits<col_index_type>::invalid();
   Kokkos::deep_copy(colIndPt_h, invalidColumnIndex);
 
   col_index_type colIdx = 0;

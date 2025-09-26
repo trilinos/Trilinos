@@ -895,7 +895,7 @@ namespace percept
   }
 
   // walks relations to ensure there are the proper number and also that entities are valid
-  bool AdaptedMeshVerifier::is_valid_relations_and_entities(PerceptMesh& eMesh, stk::mesh::EntityRank rank, bool exclude_parents)
+  bool AdaptedMeshVerifier::is_valid_relations_and_entities(PerceptMesh& eMesh, stk::mesh::EntityRank rank, bool /*exclude_parents*/)
   {
     bool result = true;
 

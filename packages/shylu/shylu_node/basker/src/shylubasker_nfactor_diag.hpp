@@ -448,16 +448,6 @@ namespace BaskerNS
       }
     }
 
-    // initialize perm vector
-    // gperm_array(i) = k means that the current i-th row is the k-th row before pivot
-    #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
-    for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
-    {
-      gperm_array(k) = k;
-      gpermi_array(k) = k;
-    }
-    #endif
-
     //for each column
     for(Int k = btf_tabs(c); k < btf_tabs(c+1); ++k)
     {
@@ -573,12 +563,12 @@ namespace BaskerNS
           // NaN
           if (Options.verbose == BASKER_TRUE)
           {
-            cout << endl;
-            cout << "---------------------------" << endl;
-            cout << "Error: NaN found blk: "
-              << c 
-              << " Column: "
-              << k << std::endl;
+            std::cout << std::endl;
+            std::cout << "---------------------------" << std::endl;
+            std::cout << "Error: NaN found blk: "
+                      << c 
+                      << " Column: "
+                      << k << std::endl;
           }
           thread_array(kid).error_type = BASKER_ERROR_NAN;
           thread_array(kid).error_blk = c;
@@ -589,15 +579,9 @@ namespace BaskerNS
 
         #ifdef BASKER_DEBUG_NFACTOR_DIAG
         if (Options.verbose == BASKER_TRUE) {
-          #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
-          printf("\nconsider X(%d)=%e -> %e, c=%d, i=%d, k=%d->%d: j=%d t=%d: perm=%d, permi=%d: val=%e,max=%e (off=%d, %d, %d)\n",
-                 (int)j,X(j),absv, (int)c, (int)i, (int)k,(int)(k-L.scol), (int)j, (int)t,
-                 (int)gperm_array(j+L.srow),(int)gpermi_array(j+L.srow), value,maxv, (int)L.srow,(int)L.scol,(int)btf_tabs(c));
-          #else
           printf("\nconsider X(%d)=%e -> %e, c=%d, i=%d, k=%d->%d: j=%d t=%d: val=%e,max=%e (off=%d, %d, %d)\n",
                  (int)j,std::real(X(j)),absv, (int)c, (int)i, (int)k,(int)(k-L.scol), (int)j, (int)t,
                  std::real(value),maxv, (int)L.srow,(int)L.scol,(int)btf_tabs(c));
-          #endif
         }
         #endif
 
@@ -617,21 +601,13 @@ namespace BaskerNS
             }
             #endif
           }
-          #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
-          if (gpermi_array(j+L.srow) == k)
-          #else
           if (j+L.srow == k)
-          #endif
           {
             digv = absv;
             digindex = j;
             #ifdef BASKER_DEBUG_NFACTOR_DIAG
             if (Options.verbose == BASKER_TRUE) {
-              #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
-              printf( " digv=%e (k=%d, permii(%d) = %d, brow=%d,bcol=%d)\n",absv,k,j+L.srow,gpermi_array(j+L.srow),M.scol,M.srow);
-              #else
               printf( " digv=%e (k=%d, brow=%d,bcol=%d)\n", absv, (int)(k), (int)(M.scol), (int)(M.srow));
-              #endif
             }
             #endif
           }
@@ -681,33 +657,33 @@ namespace BaskerNS
         const Mag normA = A.gnorm;
         if (Options.verbose == BASKER_TRUE)
         {
-          cout << endl;
-          cout << "---------------------------"
-            << endl;
-          cout << "Error: Diag Matrix is singular, blk: "
-            << c 
-            << " Column: "
-            << k
-            << " Size: "
-            << btf_tabs(c+1)-btf_tabs(c)
-            << endl;
-          cout << "MaxIndex: " << maxindex 
-            << " pivot " 
-            << pivot << endl;
+          std::cout << std::endl;
+          std::cout << "---------------------------"
+                    << std::endl;
+          std::cout << "Error: Diag Matrix is singular, blk: "
+                    << c 
+                    << " Column: "
+                    << k
+                    << " Size: "
+                    << btf_tabs(c+1)-btf_tabs(c)
+                    << std::endl;
+          std::cout << "MaxIndex: " << maxindex 
+                    << " pivot " 
+                    << pivot << std::endl;
           if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
-            cout << "  replace zero pivot with " << normA_blk * eps
-                 << " (normA = " << normA << ", normA_blk = " << normA_blk << ", eps = " << eps << ")" << endl;
+            std::cout << "  replace zero pivot with " << normA_blk * eps
+                      << " (normA = " << normA << ", normA_blk = " << normA_blk << ", eps = " << eps << ")" << std::endl;
           } else {
             if (!Options.replace_zero_pivot) {
-              cout << " replace_zero_pivot disabled, ";
+              std::cout << " replace_zero_pivot disabled, ";
             }
             if (normA_blk <= abs(zero)) {
-              cout << " empty block, ";
+              std::cout << " empty block, ";
             }
             if (maxindex == BASKER_MAX_IDX) {
-              cout << " empty column, ";
+              std::cout << " empty column, ";
             }
-            cout << endl;
+            std::cout << std::endl;
           }
         }
         if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
@@ -731,27 +707,6 @@ namespace BaskerNS
       #ifdef BASKER_TIMER
       pivot_time += timer_nfactor.seconds();
       #endif
-      // > maxindex is in the original row (before pivot)
-      #ifdef BASKER_CHECK_WITH_DIAG_AFTER_PIVOT
-      int pivot_index = gpermi_array(maxindex+L.srow);
-      if (k != pivot_index) {
-        // update global perm vector for figuring out diagonal entry
-        //
-        // swap perm
-        int pivot_row = gperm_array(k);
-        gperm_array(k) = gperm_array(pivot_index);
-        gperm_array(pivot_index) = pivot_row;
-
-        // swap iperm
-        int row1 = gperm_array(k);
-        int row2 = gperm_array(pivot_index);
-
-        pivot_row = gpermi_array(row1);
-        gpermi_array(row1) = gpermi_array(row2);
-        gpermi_array(row2) = pivot_row;
-        //printf( " > swap(%d, %d)\n",row1,row2 );
-      }
-      #endif
       #ifdef BASKER_DEBUG_NFACTOR_DIAG
       if (Options.verbose == BASKER_TRUE) {
         printf( " > gperm(%d+%d = %d) = %d\n", (int)maxindex, (int)L.scol, (int)(maxindex+L.scol), (int)k );
@@ -762,7 +717,7 @@ namespace BaskerNS
         {
           cout << " >> Permuting Pivot: " << k
                << " as row " 
-               << maxindex+L.scol << endl;
+               << maxindex+L.scol << std::endl;
         }
       }
       #endif
@@ -982,7 +937,7 @@ namespace BaskerNS
 
 
   template <class Int, class Entry, class Exe_Space>
-  BASKER_FINLINE
+  BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::t_local_reach_short_btf
   (
    const Int kid,

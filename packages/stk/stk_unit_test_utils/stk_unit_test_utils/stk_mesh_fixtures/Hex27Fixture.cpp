@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, etc
@@ -245,9 +245,14 @@ void Hex27Fixture::generate_mesh(std::vector<size_t> & hex_range_on_this_process
         size_t nx = 0, ny = 0, nz = 0;
         node_x_y_z(elem_nodes[i], nx, ny, nz);
 
-        Scalar * data = stk::mesh::field_data( *m_coord_field , node );
+        auto data = m_coord_field->data().entity_values(node);
+        std::array<double, 3> data_array{data(0_comp), data(1_comp), data(2_comp)};
 
-        coordMap.getNodeCoordinates(data, nx, ny, nz);
+        coordMap.getNodeCoordinates(data_array.data(), nx, ny, nz);
+
+        for (stk::mesh::ComponentIdx d : data.components()) {
+          data(d) = data_array[d];
+        }
       }
     }
   }

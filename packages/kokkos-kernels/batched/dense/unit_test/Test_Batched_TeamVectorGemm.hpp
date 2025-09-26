@@ -105,9 +105,9 @@ void impl_test_batched_teamvectorgemm(const int N, const int matAdim1, const int
   vgemm.A_t = std::is_same<transA, Trans::Transpose>::value;
   vgemm.B_t = std::is_same<transB, Trans::Transpose>::value;
   vgemm.A_c = vgemm.B_c = false;
-  vgemm.A               = a_expected;
-  vgemm.B               = b_expected;
-  vgemm.C               = c_expected;
+  vgemm.A_              = a_expected;
+  vgemm.B_              = b_expected;
+  vgemm.C_              = c_expected;
   vgemm.alpha           = alpha;
   vgemm.beta            = beta;
   vgemm.run();  // Compute c_expected

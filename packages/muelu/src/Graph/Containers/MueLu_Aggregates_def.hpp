@@ -88,8 +88,8 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateSizes(bool forceR
 
     int myPID = GetMap()->getComm()->getRank();
 
-    auto vertex2AggId = vertex2AggId_->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    auto procWinner   = procWinner_->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto vertex2AggId = vertex2AggId_->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    auto procWinner   = procWinner_->getLocalViewDevice(Xpetra::Access::ReadOnly);
 
     typename AppendTrait<decltype(aggregateSizes_), Kokkos::Atomic>::type aggregateSizesAtomic = aggregateSizes;
     Kokkos::parallel_for(
@@ -139,8 +139,8 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetGraph() const {
   if (static_cast<LO>(graph_.numRows()) == numAggregates)
     return graph_;
 
-  auto vertex2AggId = vertex2AggId_->getDeviceLocalView(Xpetra::Access::ReadOnly);
-  auto procWinner   = procWinner_->getDeviceLocalView(Xpetra::Access::ReadOnly);
+  auto vertex2AggId = vertex2AggId_->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  auto procWinner   = procWinner_->getLocalViewDevice(Xpetra::Access::ReadOnly);
   auto sizes        = ComputeAggregateSizes();
 
   // FIXME_KOKKOS: replace by ViewAllocateWithoutInitializing + rows(0) = 0.
@@ -162,8 +162,8 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetGraph() const {
 
   size_type numNNZ;
   {
-    Kokkos::View<size_type, device_type> numNNZ_device                    = Kokkos::subview(rows, numAggregates);
-    typename Kokkos::View<size_type, device_type>::HostMirror numNNZ_host = Kokkos::create_mirror_view(numNNZ_device);
+    Kokkos::View<size_type, device_type> numNNZ_device                          = Kokkos::subview(rows, numAggregates);
+    typename Kokkos::View<size_type, device_type>::host_mirror_type numNNZ_host = Kokkos::create_mirror_view(numNNZ_device);
     Kokkos::deep_copy(numNNZ_host, numNNZ_device);
     numNNZ = numNNZ_host();
   }
@@ -192,7 +192,7 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::ComputeNodesInAggregate(LO_view& aggPtr, LO_view& aggNodes, LO_view& unaggregated) const {
   LO numAggs                                          = GetNumAggregates();
   LO numNodes                                         = vertex2AggId_->getLocalLength();
-  auto vertex2AggId                                   = vertex2AggId_->getDeviceLocalView(Xpetra::Access::ReadOnly);
+  auto vertex2AggId                                   = vertex2AggId_->getLocalViewDevice(Xpetra::Access::ReadOnly);
   typename aggregates_sizes_type::const_type aggSizes = ComputeAggregateSizes(true);
   LO INVALID                                          = Teuchos::OrdinalTraits<LO>::invalid();
 
@@ -251,7 +251,7 @@ std::string Aggregates<LocalOrdinal, GlobalOrdinal, Node>::description() const {
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
+void Aggregates<LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos::FancyOStream& out, const VerbLevel verbLevel) const {
   MUELU_DESCRIBE;
 
   if (verbLevel & Statistics1) {

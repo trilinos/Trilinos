@@ -195,9 +195,9 @@ int main( int argc, char* argv[] )
     ViewVectorType X0  ( "X0", N );                              //store the reference solution vector on device
 
     // Create host views
-    ViewMatrixType::HostMirror h_my_A = Kokkos::create_mirror( my_A );     //backup data for multiple runs
+    ViewMatrixType::host_mirror_type h_my_A = Kokkos::create_mirror( my_A );     //backup data for multiple runs
 #if defined(HOSTPTR_API) && (defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP))
-    ViewMatrixType::HostMirror h_my_A_hptr = Kokkos::create_mirror( my_A );//in place of my_A, for testing host pointer API with CUDA or HIP enabled
+    ViewMatrixType::host_mirror_type h_my_A_hptr = Kokkos::create_mirror( my_A );//in place of my_A, for testing host pointer API with CUDA or HIP enabled
 #endif
     ViewVectorType_Host h_X ( "h_X",  N );                                 //store the final solution vector on host
     ViewVectorType_Host h_X0( "h_X0", N );                                 //store the referencen solution vector on host for error checking

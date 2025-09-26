@@ -190,8 +190,8 @@ struct SerialDot<Trans::Transpose> {
 #endif
     return SerialDotInternal::template invoke<typename XViewType::non_const_value_type,
                                               typename NormViewType::non_const_value_type>(
-        X.extent(0), X.extent(1), X.data(), X.stride_0(), X.stride_1(), Y.data(), Y.stride_0(), Y.stride_1(),
-        dot.data(), dot.stride_0());
+        X.extent(0), X.extent(1), X.data(), X.stride(0), X.stride(1), Y.data(), Y.stride(0), Y.stride(1), dot.data(),
+        dot.stride(0));
   }
 };
 
@@ -225,8 +225,8 @@ struct SerialDot<Trans::NoTranspose> {
 #endif
     return SerialDotInternal::template invoke<typename XViewType::non_const_value_type,
                                               typename NormViewType::non_const_value_type>(
-        X.extent(1), X.extent(0), X.data(), X.stride_1(), X.stride_0(), Y.data(), Y.stride_1(), Y.stride_0(),
-        dot.data(), dot.stride_0());
+        X.extent(1), X.extent(0), X.data(), X.stride(1), X.stride(0), Y.data(), Y.stride(1), Y.stride(0), dot.data(),
+        dot.stride(0));
   }
 };
 
@@ -273,8 +273,8 @@ struct TeamDot<MemberType, Trans::Transpose> {
 
     return TeamDotInternal::template invoke<MemberType, typename XViewType::non_const_value_type,
                                             typename NormViewType::non_const_value_type>(
-        member, X.extent(0), X.extent(1), X.data(), X.stride_0(), X.stride_1(), Y.data(), Y.stride_0(), Y.stride_1(),
-        dot.data(), dot.stride_0());
+        member, X.extent(0), X.extent(1), X.data(), X.stride(0), X.stride(1), Y.data(), Y.stride(0), Y.stride(1),
+        dot.data(), dot.stride(0));
   }
 };
 
@@ -316,8 +316,8 @@ struct TeamDot<MemberType, Trans::NoTranspose> {
 
     return TeamDotInternal::template invoke<MemberType, typename XViewType::non_const_value_type,
                                             typename NormViewType::non_const_value_type>(
-        member, X.extent(1), X.extent(0), X.data(), X.stride_1(), X.stride_0(), Y.data(), Y.stride_1(), Y.stride_0(),
-        dot.data(), dot.stride_0());
+        member, X.extent(1), X.extent(0), X.data(), X.stride(1), X.stride(0), Y.data(), Y.stride(1), Y.stride(0),
+        dot.data(), dot.stride(0));
   }
 };
 
@@ -364,8 +364,8 @@ struct TeamVectorDot<MemberType, Trans::Transpose> {
 
     return TeamVectorDotInternal::template invoke<MemberType, typename XViewType::non_const_value_type,
                                                   typename NormViewType::non_const_value_type>(
-        member, X.extent(0), X.extent(1), X.data(), X.stride_0(), X.stride_1(), Y.data(), Y.stride_0(), Y.stride_1(),
-        dot.data(), dot.stride_0());
+        member, X.extent(0), X.extent(1), X.data(), X.stride(0), X.stride(1), Y.data(), Y.stride(0), Y.stride(1),
+        dot.data(), dot.stride(0));
   }
 };
 
@@ -407,8 +407,8 @@ struct TeamVectorDot<MemberType, Trans::NoTranspose> {
 
     return TeamVectorDotInternal::template invoke<MemberType, typename XViewType::non_const_value_type,
                                                   typename NormViewType::non_const_value_type>(
-        member, X.extent(1), X.extent(0), X.data(), X.stride_1(), X.stride_0(), Y.data(), Y.stride_1(), Y.stride_0(),
-        dot.data(), dot.stride_0());
+        member, X.extent(1), X.extent(0), X.data(), X.stride(1), X.stride(0), Y.data(), Y.stride(1), Y.stride(0),
+        dot.data(), dot.stride(0));
   }
 };
 

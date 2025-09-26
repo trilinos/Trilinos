@@ -13,7 +13,6 @@
 #include <stk_mesh/base/MetaData.hpp> // for get_cell_topology
 #include <Akri_MasterElementCalc.hpp>
 
-#include <Teuchos_RCP.hpp>
 #include <Kokkos_DynRankView.hpp>
 #include <Intrepid2_Cubature.hpp>
 #include <Intrepid2_DefaultCubatureFactory.hpp>
@@ -153,7 +152,7 @@ MasterElementHybrid::shape_fcn_deriv(
 
 void
 MasterElementHybrid::interpolate_point(
-    const int  npar_coord,
+    const int  /*npar_coord*/,
     const double * par_coord,      // (npar_coord)
     const int  ncomp_field,
     const double * field,          // (ncomp_field,num_nodes)

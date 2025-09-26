@@ -246,7 +246,7 @@ static void fill_intersecting_nonlocal_facets(const BoundingBox & localFacetBBox
 }
 
 template<class FACET>
-void Faceted_Surface<FACET>::prepare_to_compute(const double time, const BoundingBox & point_bbox, const double truncation_length)
+void Faceted_Surface<FACET>::prepare_to_compute(const double /*time*/, const BoundingBox & point_bbox, const double truncation_length)
 {
   build_local_facets(point_bbox);
 
@@ -376,10 +376,17 @@ static std::vector<const FACET*> find_candidate_surface_facets_for_intersection_
 }
 
 template<class FACET>
-std::pair<int, double> Faceted_Surface<FACET>::compute_intersection_with_segment(const stk::math::Vector3d &pt0, const stk::math::Vector3d &pt1, const double edgeCrossingTol) const
+std::pair<int, double> Faceted_Surface<FACET>::compute_intersection_with_segment(const stk::math::Vector3d &pt0, const stk::math::Vector3d &pt1, const double /*edgeCrossingTol*/) const
 {
-  const double dist0 = point_signed_distance(pt0);
-  const double dist1 = point_signed_distance(pt1);
+  const double narrowBand = (pt0-pt1).length();
+
+  const double dist0 = truncated_point_signed_distance(pt0, narrowBand, narrowBand);
+  if (dist0 == narrowBand)
+    return {0, -1.};
+  const double dist1 = truncated_point_signed_distance(pt1, narrowBand, narrowBand);
+  if (dist1 == narrowBand)
+      return {0, -1.};
+
   if (sign_change(dist0, dist1))
   {
     constexpr double tightEnoughTolToCalcDistanceAtSignedDistCrossing = 0.001;

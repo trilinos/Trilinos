@@ -29,6 +29,11 @@ namespace panzer_stk {
 using Teuchos::RCP;
 using Teuchos::rcp;
 
+// Initialize statics
+bool STKConnManager::cache_connectivity_{false};
+std::vector<STKConnManager::CachedEntry> STKConnManager::cached_conn_managers_{};
+int STKConnManager::cached_reuse_count_{0};
+
 // Object describing how to sort a vector of elements using
 // local ID as the key
 class LocalIdCompare {
@@ -44,8 +49,26 @@ private:
 };
 
 STKConnManager::STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB)
-   : stkMeshDB_(stkMeshDB), ownedElementCount_(0)
+  : stkMeshDB_(stkMeshDB), ownedElementCount_(0)
 {
+}
+
+STKConnManager::STKConnManager(const panzer_stk::STKConnManager & cm)
+  : stkMeshDB_(cm.stkMeshDB_),
+    elements_(cm.elements_),
+    elementBlocks_(cm.elementBlocks_),
+    neighborElementBlocks_(cm.neighborElementBlocks_),
+    blockIdToIndex_(cm.blockIdToIndex_),
+    elmtLidToConn_(cm.elmtLidToConn_),
+    connSize_(cm.connSize_),
+    connectivity_(cm.connectivity_),
+    ownedElementCount_(cm.ownedElementCount_),
+    sidesetsToAssociate_(cm.sidesetsToAssociate_),
+    sidesetYieldedAssociations_(cm.sidesetYieldedAssociations_)
+{
+  elmtToAssociatedElmts_.resize(cm.elmtToAssociatedElmts_.size());
+  for (size_t i=0; i < elmtToAssociatedElmts_.size(); ++i)
+    elmtToAssociatedElmts_[i] = cm.elmtToAssociatedElmts_[i];
 }
 
 Teuchos::RCP<panzer::ConnManager>
@@ -222,7 +245,37 @@ STKConnManager::modifySubcellConnectivities(const panzer::FieldPattern & fp, stk
 void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
 {
    PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::STKConnManager::buildConnectivity", build_connectivity);
-  
+
+   if (cache_connectivity_) {
+    auto fp_rcp = fp.clone();
+    auto search = std::find_if(cached_conn_managers_.begin(),
+                               cached_conn_managers_.end(),
+                               FieldPatternCompare(fp_rcp));
+    if (search != cached_conn_managers_.end()) {
+      PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::STKConnManager::copyingCachedConnectivity", copy_cached_connectivity);
+      {
+        STKConnManager& cm = *(search->second);
+        elements_ = cm.elements_;
+        elementBlocks_ = cm.elementBlocks_;
+        neighborElementBlocks_ = cm.neighborElementBlocks_;
+        blockIdToIndex_ = cm.blockIdToIndex_;
+        elmtLidToConn_ = cm.elmtLidToConn_;
+        connSize_ = cm.connSize_;
+        connectivity_ = cm.connectivity_;
+        ownedElementCount_ = cm.ownedElementCount_;
+        sidesetsToAssociate_ = cm.sidesetsToAssociate_;
+        sidesetYieldedAssociations_ = cm.sidesetYieldedAssociations_;
+        {
+          elmtToAssociatedElmts_.resize(cm.elmtToAssociatedElmts_.size());
+          for (size_t i=0; i < elmtToAssociatedElmts_.size(); ++i)
+            elmtToAssociatedElmts_[i] = cm.elmtToAssociatedElmts_[i];
+        }
+        ++cached_reuse_count_;
+      }
+      return;
+    }
+  }
+
    stk::mesh::BulkData& bulkData = *stkMeshDB_->getBulkData();
 
    // get element info from STK_Interface
@@ -244,7 +297,7 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
     // std::cout << "cell: count = " << cellIdCnt << ", offset = " << cellOffset << std::endl;
 
    // Connectivity only requires lowest order mesh node information
-   // With the notion of extended topologies used by shards, it is 
+   // With the notion of extended topologies used by shards, it is
    // sufficient to take the first num_vertices nodes for connectivity purposes.
    const unsigned num_vertices = fp.getCellTopology().getVertexCount();
 
@@ -283,14 +336,19 @@ void STKConnManager::buildConnectivity(const panzer::FieldPattern & fp)
    // connectivity_.
    if (hasAssociatedNeighbors())
      applyInterfaceConditions();
+
+   if (cache_connectivity_) {
+     auto fp_rcp = fp.clone();
+     cached_conn_managers_.push_back(std::make_pair(fp_rcp,Teuchos::rcp(new panzer_stk::STKConnManager(*this))));
+   }
 }
 
 std::string STKConnManager::getBlockId(STKConnManager::LocalOrdinal localElmtId) const
 {
-   // walk through the element blocks and figure out which this ID belongs to
-   stk::mesh::Entity element = (*elements_)[localElmtId];
+  // walk through the element blocks and figure out which this ID belongs to
+  stk::mesh::Entity element = (*elements_)[localElmtId];
 
-   return stkMeshDB_->containingBlockId(element);
+  return stkMeshDB_->containingBlockId(element);
 }
 
 void STKConnManager::applyPeriodicBCs(const panzer::FieldPattern & fp, GlobalOrdinal nodeOffset, GlobalOrdinal edgeOffset,
@@ -353,7 +411,7 @@ void STKConnManager::getDofCoords(const std::string & blockId,
    int dim = coordProvider.getDimension();
    int numIds = coordProvider.numberIds();
 
-   // grab element nodes 
+   // grab element nodes
    Kokkos::DynRankView<double,PHX::Device> nodes;
    workset_utils::getIdsAndNodes(*stkMeshDB_,blockId,localCellIds,nodes);
 

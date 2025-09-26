@@ -16,8 +16,8 @@ MonomialGramSchmidtPCEBasis(
   ordinal_type max_p,
   const Teuchos::Array< Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
   const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
-  const Teuchos::ParameterList& params) :
-  GSReducedPCEBasisBase<ordinal_type,value_type>(max_p, pce, quad, params),
+  const Teuchos::ParameterList& aparams) :
+  GSReducedPCEBasisBase<ordinal_type,value_type>(max_p, pce, quad, aparams),
   name("Monomial Gram Schmidt PCE Basis")
 {
   this->setup(max_p, pce, quad);

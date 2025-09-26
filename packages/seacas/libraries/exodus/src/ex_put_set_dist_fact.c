@@ -50,7 +50,7 @@ int ex_put_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_id set_id
   }
 
   /* first check if any sets are specified */
-  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss specified in file id %d",
              ex_name_of_object(set_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -99,7 +99,7 @@ int ex_put_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_id set_id
   /* find id of distribution factors variable
    */
 
-  if ((status = nc_inq_varid(exoid, factptr, &dist_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, factptr, &dist_id)) != EX_NOERR) {
     /* this test is only needed for node set because we're using
        DIM_NUM_NOD_NS instead of  DIM_NUM_DF_NS*/
     if (status == NC_ENOTVAR) {
@@ -124,7 +124,7 @@ int ex_put_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_id set_id
     status = nc_put_var_double(exoid, dist_id, set_dist_fact);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to store dist factors for %s %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);

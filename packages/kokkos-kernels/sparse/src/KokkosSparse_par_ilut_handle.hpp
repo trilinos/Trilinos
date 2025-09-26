@@ -18,8 +18,8 @@
 #include <iostream>
 #include <string>
 
-#ifndef _PAR_ILUTHANDLE_HPP
-#define _PAR_ILUTHANDLE_HPP
+#ifndef KOKKOSSPARSE_PAR_ILUTHANDLE_HPP
+#define KOKKOSSPARSE_PAR_ILUTHANDLE_HPP
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -72,14 +72,20 @@ class PAR_ILUTHandle {
   float_t residual_norm_delta_stop;  /// When the change in residual from
                                      /// iteration to iteration drops below
                                      /// this, the algorithm will stop (even if
-                                     /// max_iters has not been hit)
+                                     /// max_iters has not been hit). If this is set to
+                                     /// zero, computing residual step will be skipped which
+                                     /// can reduce overall memory use and speed up the individual
+                                     /// iterations (it will always do max_iter iterations though).
   float_t fill_in_limit;             /// The threshold for removing candidates
                                      /// from the intermediate L and U is set such
                                      /// that the resulting sparsity pattern has
                                      /// at most `fill_in_limit` times the number
                                      /// of non-zeros of the ILU(0)
                                      /// factorization. This selection is executed
-                                     /// separately for both factors L and U.
+                                     /// separately for both factors L and U. A higher fill limit
+                                     /// (2 or 3) may be necessary for very sparse matrices to achieve a
+                                     /// good preconditioner but this will increase the resources needed
+                                     /// by par_ilut.
   bool async_update;                 /// Whether compute LU factors should do asychronous
                                      /// updates. When ON, the algorithm will usually converge
                                      /// faster but it makes the algorithm non-deterministic.

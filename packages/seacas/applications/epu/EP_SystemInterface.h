@@ -56,6 +56,7 @@ namespace Excn {
 
     bool add_nodal_communication_map() const { return addNodalCommunicationMap_; }
     bool add_processor_id_field() const { return addProcessorIdField_; }
+    void set_processor_id_field(bool yes_no) { addProcessorIdField_ = yes_no; }
     bool add_processor_id_map() const { return addProcessorIdMap_; }
     bool sum_shared_nodes() const { return sumSharedNodes_; }
     bool use_netcdf4() const { return useNetcdf4_; }

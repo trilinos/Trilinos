@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2022 National Technology & Engineering Solutions
+# Copyright(C) 1999-2022, 2025 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -27,7 +27,7 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_unit_test
  TEST_0 EXEC aprepro
-        ARGS -q ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app test_unit.output
+        ARGS -q --legacy_output_format ${CMAKE_CURRENT_SOURCE_DIR}/test.inp_app test_unit.output
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_1 CMND diff ARGS -w
@@ -42,7 +42,7 @@ TRIBITS_ADD_ADVANCED_TEST(
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_array_test
  TEST_0 EXEC aprepro
-	ARGS -q --info=aprepro-array.dump --include=${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test-array.i
+	ARGS -q --legacy_output_format --info=aprepro-array.dump --include=${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test-array.i
 	test-array.out
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
@@ -111,7 +111,7 @@ IF (${CMAKE_PROJECT_NAME}_ENABLE_SEACASExodus)
 TRIBITS_ADD_ADVANCED_TEST(
  aprepro_test_exodus
  TEST_0 EXEC aprepro
-        ARGS --include=${CMAKE_CURRENT_SOURCE_DIR} -q ${CMAKE_CURRENT_SOURCE_DIR}/exodus-test.apr test_exo.output
+        ARGS --legacy_output_format --include=${CMAKE_CURRENT_SOURCE_DIR} -q ${CMAKE_CURRENT_SOURCE_DIR}/exodus-test.apr test_exo.output
   NOEXEPREFIX NOEXESUFFIX
   PASS_ANY
  TEST_1 CMND diff ARGS -w

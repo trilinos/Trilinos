@@ -26,7 +26,6 @@
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_Utilities.hpp>
 #include <MueLu_UseDefaultTypesComplex.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
 
 // Belos
 #include <BelosConfigDefs.hpp>
@@ -72,11 +71,14 @@ int main(int argc, char *argv[]) {
     ny = 100;
     nz = 100;
     double stretchx, stretchy, stretchz, h, delta;
-    stretchx = 1.0;
-    stretchy = 1.0;
-    stretchz = 1.0;
-    h        = 0.01;
-    delta    = 2.0;
+    stretchx   = 1.0;
+    stretchy   = 1.0;
+    stretchz   = 1.0;
+    h          = 0.01;
+    delta      = 2.0;
+    double Kxx = 1.0, Kxy = 0., Kyy = 1.0;
+    double dt            = 1.0;
+    std::string meshType = "tri";
     int PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR;
     PMLXL = 10;
     PMLXR = 10;
@@ -89,6 +91,7 @@ int main(int argc, char *argv[]) {
     shift = 0.5;
 
     Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx, ny, nz, "Helmholtz1D", 0, stretchx, stretchy, stretchz,
+                                                    Kxx, Kxy, Kyy, dt, meshType,
                                                     h, delta, PMLXL, PMLXR, PMLYL, PMLYR, PMLZL, PMLZR, omega, shift);
     Xpetra::Parameters xpetraParameters(clp);
 
@@ -178,8 +181,7 @@ int main(int argc, char *argv[]) {
     RCP<TBelosSolver> solver = rcp(new TBelosGMRES(belosProblem, rcp(&belosList, false)));
 
     // Perform solve
-    Belos::ReturnType ret = Belos::Unconverged;
-    ret                   = solver->solve();
+    const Belos::ReturnType ret = solver->solve();
     if (comm->getRank() == 0)
       std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
@@ -192,17 +194,13 @@ int main(int argc, char *argv[]) {
                                           << "SUCCESS:  Belos converged!" << std::endl;
     }
 
-    // Get the number of iterations for this solve.
-    if (comm->getRank() == 0)
-      std::cout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-
     tm = Teuchos::null;
 
     globalTimeMonitor = Teuchos::null;
 
     TimeMonitor::summarize();
 
-    success = true;
+    success = (ret == Belos::Converged);
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

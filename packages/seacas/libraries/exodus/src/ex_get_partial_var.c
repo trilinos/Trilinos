@@ -89,7 +89,7 @@ int ex_get_partial_var(int exoid, int time_step, ex_entity_type var_type, int va
   /* inquire previously defined variable */
 
   if ((status = nc_inq_varid(exoid, exi_name_var_of_object(var_type, var_index, obj_id_ndx),
-                             &varid)) != NC_NOERR) {
+                             &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s %" PRId64 " var %d in file id %d",
              ex_name_of_object(var_type), obj_id, var_index, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -113,7 +113,7 @@ int ex_get_partial_var(int exoid, int time_step, ex_entity_type var_type, int va
     status = nc_get_vara_double(exoid, varid, start, count, var_vals);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get %s %" PRId64 " variable %d in file id %d",
              ex_name_of_object(var_type), obj_id, var_index, exoid);

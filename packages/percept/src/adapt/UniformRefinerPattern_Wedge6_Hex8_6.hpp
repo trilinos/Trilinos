@@ -156,9 +156,9 @@
         if (m_face_breaker_tri) delete m_face_breaker_tri;
       }
 
-      virtual void doBreak() {}
+      virtual void doBreak() override {}
 
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(3);
         needed_entities[0].first = m_eMesh.edge_rank();
@@ -167,7 +167,7 @@
         setToOne(needed_entities);
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ ) override
       {
         EXCEPTWATCH;
         bp.resize(3);
@@ -176,13 +176,13 @@
         bp[2] = m_face_breaker_tri;
       }
 
-      virtual unsigned getNumNewElemPerElem() { return 6u; }
+      virtual unsigned getNumNewElemPerElem() override { return 6u; }
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         EXCEPTWATCH;
         const CellTopologyData * const cell_topo_data = m_eMesh.get_cell_topology(element);

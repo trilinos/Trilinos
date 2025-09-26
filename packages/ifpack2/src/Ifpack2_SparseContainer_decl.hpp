@@ -97,14 +97,12 @@ namespace Ifpack2 {
 /// to modify the extract() method, so that it translates explicitly
 /// between local row and column indices, instead of just assuming
 /// that they are the same.
-template<typename MatrixType, typename InverseType>
+template <typename MatrixType, typename InverseType>
 class SparseContainer
-: public ContainerImpl<MatrixType, typename InverseType::scalar_type>
-{
-
+  : public ContainerImpl<MatrixType, typename InverseType::scalar_type> {
   //! @name Internal type aliases (private)
   //@{
-private:
+ private:
   /// \brief The first template parameter of this class.
   ///
   /// This must be either a Tpetra::RowMatrix specialization or a
@@ -129,23 +127,24 @@ private:
   using typename Container<MatrixType>::vector_type;
   using typename Container<MatrixType>::import_type;
 
-  using InverseScalar = typename InverseType::scalar_type;
-  using InverseLocalOrdinal = typename InverseType::local_ordinal_type;
+  using InverseScalar        = typename InverseType::scalar_type;
+  using InverseLocalOrdinal  = typename InverseType::local_ordinal_type;
   using InverseGlobalOrdinal = typename InverseType::global_ordinal_type;
-  using InverseNode = typename InverseType::node_type;
+  using InverseNode          = typename InverseType::node_type;
 
   using typename ContainerImpl<MatrixType, InverseScalar>::block_crs_matrix_type;
 
   using inverse_mv_type = Tpetra::MultiVector<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
-  using InverseCrs = Tpetra::CrsMatrix<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
-  using InverseMap = typename Tpetra::Map<InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
-  using InverseGraph = typename InverseCrs::crs_graph_type;
+  using InverseCrs      = Tpetra::CrsMatrix<InverseScalar, InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
+  using InverseMap      = typename Tpetra::Map<InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
+  using InverseGraph    = typename InverseCrs::crs_graph_type;
   using typename Container<MatrixType>::HostView;
   using typename Container<MatrixType>::ConstHostView;
   using HostViewInverse = typename inverse_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,
-                  Tpetra::RowMatrix<SC, LO, GO, NO>>::value, "Ifpack2::SparseContainer: Please use MatrixType = Tpetra::RowMatrix.");
+                             Tpetra::RowMatrix<SC, LO, GO, NO>>::value,
+                "Ifpack2::SparseContainer: Please use MatrixType = Tpetra::RowMatrix.");
 
   /// \brief The (base class) type of the input matrix.
   ///
@@ -158,7 +157,7 @@ private:
   using typename Container<MatrixType>::row_matrix_type;
   //@}
 
-public:
+ public:
   //! \name Constructor and destructor
   //@{
 
@@ -172,10 +171,10 @@ public:
   /// \param pointIndexed [in] If the input matrix is a \c Tpetra::BlockCrsMatrix,
   ///    whether elements of \c partitions[k] identify rows within blocks (true) or
   ///    whole blocks (false).
-  SparseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                   const Teuchos::Array<Teuchos::Array<LO> >& partitions,
-                   const Teuchos::RCP<const import_type>& importer,
-                   bool pointIndexed);
+  SparseContainer(const Teuchos::RCP<const row_matrix_type>& matrix,
+                  const Teuchos::Array<Teuchos::Array<LO>>& partitions,
+                  const Teuchos::RCP<const import_type>& importer,
+                  bool pointIndexed);
 
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~SparseContainer();
@@ -195,31 +194,31 @@ public:
   virtual void initialize();
 
   //! Initialize and compute all blocks.
-  virtual void compute ();
+  virtual void compute();
 
-  //! Free all per-block resources: <tt>Inverses_</tt>, and <tt>diagBlocks_</tt>. 
+  //! Free all per-block resources: <tt>Inverses_</tt>, and <tt>diagBlocks_</tt>.
   //! Called by \c BlockRelaxation when the input matrix is changed. Also calls
   //! \c Container::clearBlocks()
-  void clearBlocks ();
+  void clearBlocks();
 
   //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   virtual void
-  apply (ConstHostView X,
-         HostView Y,
-         int blockIndex,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         SC alpha = Teuchos::ScalarTraits<SC>::one(),
-         SC beta = Teuchos::ScalarTraits<SC>::zero()) const;
+  apply(ConstHostView X,
+        HostView Y,
+        int blockIndex,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        SC alpha              = Teuchos::ScalarTraits<SC>::one(),
+        SC beta               = Teuchos::ScalarTraits<SC>::zero()) const;
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
-  weightedApply (ConstHostView X,
-                 HostView Y,
-                 ConstHostView W,
-                 int blockIndex,
-                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                 SC alpha = Teuchos::ScalarTraits<SC>::one(),
-                 SC beta = Teuchos::ScalarTraits<SC>::zero()) const;
+  weightedApply(ConstHostView X,
+                HostView Y,
+                ConstHostView W,
+                int blockIndex,
+                Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                SC alpha              = Teuchos::ScalarTraits<SC>::one(),
+                SC beta               = Teuchos::ScalarTraits<SC>::zero()) const;
 
   //@}
   //! \name Miscellaneous methods
@@ -235,27 +234,26 @@ public:
   //@{
 
   //! A one-line description of this object.
-  virtual std::string description () const;
+  virtual std::string description() const;
 
   //! Print the object with some verbosity level to the given FancyOStream.
   virtual void
-  describe (Teuchos::FancyOStream &out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const;
   //@}
 
   /// \brief Get the name of this container type for Details::constructContainer()
   static std::string getName();
 
-private:
-
+ private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
-  SparseContainer (const SparseContainer<MatrixType,InverseType>& rhs);
+  SparseContainer(const SparseContainer<MatrixType, InverseType>& rhs);
 
   //! Extract the submatrices identified by the local indices set by the constructor.
-  void extract ();
-  void extractGraph ();
-  void extractValues ();
+  void extract();
+  void extractGraph();
+  void extractValues();
 
   /// \brief Post-permutation, post-view version of apply().
   ///
@@ -295,11 +293,10 @@ private:
   //! Serial communicator (containing only MPI_COMM_SELF if MPI is used).
   Teuchos::RCP<Teuchos::Comm<int>> localComm_;
 
-
   //! Parameters for the InverseType linear solve operator.
   Teuchos::ParameterList List_;
 };
 
-}// namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_SPARSECONTAINER_HPP
+#endif  // IFPACK2_SPARSECONTAINER_HPP

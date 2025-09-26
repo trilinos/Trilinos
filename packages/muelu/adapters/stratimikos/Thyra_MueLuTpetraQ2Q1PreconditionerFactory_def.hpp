@@ -293,10 +293,10 @@ MueLuTpetraQ2Q1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>:
   RCP<TP_Crs> TpetCrsA12     = rcp_dynamic_cast<TP_Crs>(TpetA12);
   RCP<TP_Crs> TpetCrsA11_9Pt = rcp_dynamic_cast<TP_Crs>(TpetA11_9Pt);
 
-  RCP<Matrix> A_11     = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA11);
-  RCP<Matrix> tmp_A_21 = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA21);  // needs map modification
-  RCP<Matrix> tmp_A_12 = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA12);  // needs map modification
-  RCP<Matrix> A_11_9Pt = MueLu::TpetraCrs_To_XpetraMatrix(TpetCrsA11_9Pt);
+  RCP<Matrix> A_11     = Xpetra::toXpetra(TpetCrsA11);
+  RCP<Matrix> tmp_A_21 = Xpetra::toXpetra(TpetCrsA21);  // needs map modification
+  RCP<Matrix> tmp_A_12 = Xpetra::toXpetra(TpetCrsA12);  // needs map modification
+  RCP<Matrix> A_11_9Pt = Xpetra::toXpetra(TpetCrsA11_9Pt);
 
   Xpetra::global_size_t numVel  = A_11->getRowMap()->getLocalNumElements();
   Xpetra::global_size_t numPres = tmp_A_21->getRowMap()->getLocalNumElements();

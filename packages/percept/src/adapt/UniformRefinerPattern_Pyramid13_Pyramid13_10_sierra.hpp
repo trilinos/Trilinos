@@ -33,7 +33,7 @@
 
     public:
 
-      UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Pyramid<13>, shards::Pyramid<13>  >(eMesh)
+      UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType /*block_names*/ = BlockNamesType()) :  URP<shards::Pyramid<13>, shards::Pyramid<13>  >(eMesh)
       {
         m_primaryEntityRank = stk::topology::ELEMENT_RANK;
         Elem::StdMeshObjTopologies::bootstrap();
@@ -44,7 +44,7 @@
       {
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ ) override
       {
         EXCEPTWATCH;
         bp.resize(1);
@@ -52,8 +52,8 @@
         bp[0] = this;
       }
 
-      virtual void doBreak() {}
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      virtual void doBreak() override {}
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(3);
         needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u);
@@ -61,14 +61,14 @@
         needed_entities[2] = NeededEntityType(stk::topology::ELEMENT_RANK, 4u);
       }
 
-      virtual unsigned getNumNewElemPerElem() { return 6; }
+      virtual unsigned getNumNewElemPerElem() override { return 6; }
 
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         genericRefine_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool, ft_element_pool,
@@ -84,7 +84,7 @@
 
     public:
 
-      UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType block_names = BlockNamesType()) :  URP<shards::Pyramid<13>, shards::Tetrahedron<10>  >(eMesh)
+      UniformRefinerPattern(percept::PerceptMesh& eMesh, BlockNamesType /*block_names*/ = BlockNamesType()) :  URP<shards::Pyramid<13>, shards::Tetrahedron<10>  >(eMesh)
       {
         m_primaryEntityRank = stk::topology::ELEMENT_RANK;
 
@@ -97,7 +97,7 @@
       {
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ ) override
       {
         EXCEPTWATCH;
         bp.resize(1);
@@ -105,8 +105,8 @@
         bp[0] = this;
       }
 
-      virtual void doBreak() {}
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      virtual void doBreak() override {}
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(3);
         needed_entities[0] = NeededEntityType(m_eMesh.edge_rank(), 3u);
@@ -114,13 +114,13 @@
         needed_entities[2] = NeededEntityType(stk::topology::ELEMENT_RANK, 4u);
       }
 
-      virtual unsigned getNumNewElemPerElem() { return 4; }
+      virtual unsigned getNumNewElemPerElem() override { return 4; }
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         genericRefine_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool, ft_element_pool,
@@ -202,7 +202,7 @@
           }
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ ) override
       {
         EXCEPTWATCH;
 
@@ -212,32 +212,32 @@
         bp[2] = m_face_breaker_tri;
       }
 
-      virtual void doBreak()
+      virtual void doBreak() override
       {
         throw std::runtime_error("shouldn't call URP_Pyramid13_Pyramid13::doBreak()");
       }
-      virtual unsigned getFromTypeKey()
+      virtual unsigned getFromTypeKey() override
       {
         //throw std::runtime_error("shouldn't call URP_Pyramid13_Pyramid13::getFromTypeKey()");
         return shards::Pyramid<13>::key;
       }
-      virtual unsigned getToTypeKey()
+      virtual unsigned getToTypeKey() override
       {
         //throw std::runtime_error("shouldn't call URP_Pyramid13_Pyramid13::getToTypeKey()");
         return shards::Pyramid<13>::key;
       }
 
-      virtual std::string getFromTopoPartName() {
+      virtual std::string getFromTopoPartName() override {
         shards::CellTopology cell_topo(getFromTopology());
         return cell_topo.getName();
       }
-      virtual std::string getToTopoPartName() {
+      virtual std::string getToTopoPartName() override {
         shards::CellTopology cell_topo(getToTopology());
         return cell_topo.getName();
       }
 
-      virtual const CellTopologyData * getFromTopology() { return shards::getCellTopologyData< shards::Pyramid<13> >(); }
-      virtual const CellTopologyData * getToTopology() { return shards::getCellTopologyData< shards::Pyramid<13> >(); }
+      virtual const CellTopologyData * getFromTopology() override { return shards::getCellTopologyData< shards::Pyramid<13> >(); }
+      virtual const CellTopologyData * getToTopology() override { return shards::getCellTopologyData< shards::Pyramid<13> >(); }
 
       //       virtual const CellTopologyData *  getFromTopology()
       //       {
@@ -248,7 +248,7 @@
       //         throw std::runtime_error("shouldn't call URP_Pyramid13_Pyramid13::getToTopology()");
       //       }
 
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         //throw std::runtime_error("shouldn't call URP_Pyramid13_Pyramid13::fillNeededEntities()");
         needed_entities.resize(3);
@@ -257,7 +257,7 @@
         needed_entities[2] = NeededEntityType(stk::topology::ELEMENT_RANK, 4u);
       }
 
-      virtual unsigned getNumNewElemPerElem()
+      virtual unsigned getNumNewElemPerElem() override
       {
         //throw std::runtime_error("shouldn't call URP_Pyramid13_Pyramid13::getNumNewElemPerElem()");
         return 10;
@@ -267,7 +267,7 @@
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         //throw std::runtime_error("shouldn't call URP_Pyramid13_Pyramid13::createNewElements()");
 

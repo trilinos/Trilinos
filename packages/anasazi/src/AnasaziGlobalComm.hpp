@@ -12,7 +12,7 @@
 
 #include "AnasaziConfigDefs.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 
 #include <mpi.h>
 #include <mutex>
@@ -33,6 +33,6 @@ inline MPI_Comm get_global_comm() {
 }
 } // namespace Anasazi
 
-#endif // HAVE_MPI
+#endif // HAVE_ANASAZI_MPI
 
 #endif // ANASAZI_GLOBAL_COMM_HPP

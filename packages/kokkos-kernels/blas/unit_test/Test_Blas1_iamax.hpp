@@ -13,6 +13,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //@HEADER
+
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -22,9 +23,9 @@
 namespace Test {
 template <class ViewTypeA, class Device>
 void impl_test_iamax(int N) {
-  typedef typename ViewTypeA::non_const_value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
-  typedef typename AT::mag_type mag_type;
+  using ScalarA   = typename ViewTypeA::non_const_value_type;
+  using AT        = Kokkos::ArithTraits<ScalarA>;
+  using mag_type  = typename AT::mag_type;
   using size_type = typename ViewTypeA::size_type;
 
   view_stride_adapter<ViewTypeA> a("X", N);

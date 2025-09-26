@@ -83,7 +83,7 @@ namespace {
 Excn::ExodusFile::ExodusFile(int processor) : myProcessor_(processor)
 {
   SMART_ASSERT(processor < processorCount_)(processor)(processorCount_);
-  SMART_ASSERT(fileids_.size() == (size_t)processorCount_);
+  SMART_ASSERT(fileids_.size() == static_cast<size_t>(processorCount_));
   if (!keepOpen_ && processor != 0) {
     float version          = 0.0;
     int   cpu_word_size    = cpuWordSize_;
@@ -228,7 +228,6 @@ void Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
   activeChangeSet_ = si.selected_change_set();
   if (si.selected_change_set() > 0) {
     onlySelectedChangeSet_ = true;
-    ;
   }
 
   // EPU always wants entity (block, set, map) ids as 64-bit quantities...

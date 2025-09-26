@@ -130,7 +130,7 @@ void device_runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMethod sea
 
   stk::search::coarse_search(domain, range, searchMethod, comm, intersections);
 
-  Kokkos::View<IdentProcIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentProcIntersection*>::host_mirror_type hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   if (procId == 0 || procId == numProc - 1) {
@@ -510,7 +510,7 @@ void device_local_runBoxOverlappingEightSurroundingBoxes(stk::search::SearchMeth
 
   stk::search::local_coarse_search(domain, range, searchMethod, intersections);
 
-  Kokkos::View<IdentIntersection*>::HostMirror hostIntersections = Kokkos::create_mirror_view(intersections);
+  Kokkos::View<IdentIntersection*>::host_mirror_type hostIntersections = Kokkos::create_mirror_view(intersections);
   Kokkos::deep_copy(hostIntersections, intersections);
 
   ASSERT_EQ(intersections.extent(0), numExpectedResults);

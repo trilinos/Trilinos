@@ -11,9 +11,19 @@
 //  to Epetra and Thyra.
 //
 
+#include "AnasaziConfigDefs.hpp"
+#include "AnasaziMVOPTester.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziBasicOutputManager.hpp"
+
+#include "AnasaziThyraAdapter.hpp"
+#include "AnasaziThyraDebugAdapter.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #endif
@@ -24,22 +34,10 @@
 #include "Epetra_SerialComm.h"
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#include "AnasaziConfigDefs.hpp"
-#include "AnasaziMVOPTester.hpp"
-#include "AnasaziEpetraAdapter.hpp"
-#include "AnasaziBasicOutputManager.hpp"
-
-#ifdef HAVE_EPETRA_THYRA
-#include "AnasaziThyraAdapter.hpp"
-#include "AnasaziThyraDebugAdapter.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#endif
-
 int runTest(
 int argc,
 char* argv[],
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 Teuchos::RCP<Epetra_MpiComm>& Comm
 #else
 Teuchos::RCP<Epetra_SerialComm>& Comm
@@ -69,14 +67,6 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
   if (verbose) {
     MyOM->setVerbosity( Anasazi::Warnings );
   }
-
-#ifndef HAVE_EPETRA_THYRA
-  MyOM->stream(Anasazi::Warnings)
-    << "Please configure Anasazi with:" << endl
-    << "--enable-epetra-thyra" << endl
-    << "--enable-anasazi-thyra" << endl;
-  return -1;
-#endif
 
   // Construct a Map that puts approximately the same number of
   // equations on each processor.
@@ -147,7 +137,6 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
   Teuchos::RCP<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(*Map, blockSize) );
   ivec->Random();
 
-#ifdef HAVE_EPETRA_THYRA
   typedef Thyra::MultiVectorBase<double> TMVB;
   typedef Thyra::LinearOpBase<double>    TLOB;
   typedef Anasazi::MultiVec<double>      AMV;
@@ -209,7 +198,6 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
   }
 
   Teuchos::TimeMonitor::summarize(MyOM->stream(Anasazi::Warnings));
-#endif
 
   if (gerr == false) {
     MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");
@@ -226,7 +214,7 @@ Teuchos::RCP<Epetra_SerialComm>& Comm
 int main(int argc, char *argv[])
 {
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
   Teuchos::RCP<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
@@ -244,7 +232,7 @@ int main(int argc, char *argv[])
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
   Comm = Teuchos::null;
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize();
 #endif
 

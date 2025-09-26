@@ -169,9 +169,9 @@ public:
     tensor.m_value = value_array_type( "value" , Cijk.num_entries() );
 
     // Create mirror, is a view if is host memory
-    typename coord_array_type::HostMirror host_coord =
+    typename coord_array_type::host_mirror_type host_coord =
       Kokkos::create_mirror_view( tensor.m_coord );
-    typename value_array_type::HostMirror host_value =
+    typename value_array_type::host_mirror_type host_value =
       Kokkos::create_mirror_view( tensor.m_value );
 
     // Fill flat 3 tensor

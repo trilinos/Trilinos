@@ -127,8 +127,8 @@ void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
     // Construct and launch functor to fill coarse coordinates values
     // function should take a const view really
     coarseCoordinatesBuilderFunctor myCoarseCoordinatesBuilder(geoData,
-                                                               fineCoordinates->getDeviceLocalView(Xpetra::Access::ReadWrite),
-                                                               coarseCoordinates->getDeviceLocalView(Xpetra::Access::OverwriteAll));
+                                                               fineCoordinates->getLocalViewDevice(Xpetra::Access::ReadWrite),
+                                                               coarseCoordinates->getLocalViewDevice(Xpetra::Access::OverwriteAll));
     Kokkos::parallel_for("GeometricInterpolation: build coarse coordinates",
                          Kokkos::RangePolicy<execution_space>(0, geoData->getNumCoarseNodes()),
                          myCoarseCoordinatesBuilder);

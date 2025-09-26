@@ -30,7 +30,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestTFQMRFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES orsirr1.hb orsirr1_scaled.hb
     EXEDEPS Tpetra_tfqmr_hb
     )

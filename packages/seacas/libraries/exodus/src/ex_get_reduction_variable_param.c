@@ -88,7 +88,7 @@ int ex_get_reduction_variable_param(int exoid, ex_entity_type obj_type, int *num
     EX_FUNC_LEAVE(EX_WARN);
   }
 
-  if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != EX_NOERR) {
     *num_vars = 0;
     if (status == NC_EBADDIM) {
       EX_FUNC_LEAVE(EX_NOERR); /* no reduction variables defined */
@@ -101,7 +101,7 @@ int ex_get_reduction_variable_param(int exoid, ex_entity_type obj_type, int *num
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_dimlen(exoid, dimid, &dimlen)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, dimid, &dimlen)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of %s reduction variables in file id %d",
              ex_name_of_object(obj_type), exoid);

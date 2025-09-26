@@ -17,7 +17,7 @@
 
 namespace Tpetra {
 namespace Details {
-#ifdef HAVE_TPETRACORE_CUDA
+#if defined(HAVE_TPETRACORE_CUDA) && defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
   //Verify that for pre-Pascal CUDA architectures, $CUDA_LAUNCH_BLOCKING == 1
   inline void checkOldCudaLaunchBlocking()
   {

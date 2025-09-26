@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_util_string_case_compare_hpp
 #define stk_util_string_case_compare_hpp
@@ -151,6 +151,34 @@ struct GreaterEqualCase {
   /** \brief  Case-insensitive greater-than-or-equal-to compare binary function object. */
   bool operator()( const std::string & lhs , const std::string & rhs ) const
     { return greater_equal_case( lhs , rhs ); }
+};
+
+/** \brief  Case-insensitive equality compare unary function object. */
+class EqualCaseUnary {
+  public:
+    EqualCaseUnary(const std::string& str) :
+      m_str(str)
+    {}
+
+    bool operator()( const std::string & lhs) const
+      { return equal_case( lhs , m_str ); }
+
+  private:
+    const std::string& m_str;
+};
+
+/** \brief  Case-insensitive inequality compare unary function object. */
+class NotEqualCaseUnary {
+  public:
+    NotEqualCaseUnary(const std::string& str) :
+      m_str(str)
+    {}
+
+    bool operator()( const std::string & lhs) const
+      { return not_equal_case( lhs , m_str ); }
+
+  private:
+    const std::string& m_str;
 };
 
 //----------------------------------------------------------------------

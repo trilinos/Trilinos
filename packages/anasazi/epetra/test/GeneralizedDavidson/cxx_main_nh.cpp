@@ -325,7 +325,7 @@ int main (int argc, char *argv[]) {
       if (verbose && MyPID == 0) {
         cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
       }
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
       MPI_Finalize() ;
 #endif
       return -1;

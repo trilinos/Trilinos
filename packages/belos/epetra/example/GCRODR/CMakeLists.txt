@@ -11,7 +11,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleGCRODRFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/GCRODR
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
     SOURCE_FILES sherman5.hb
     EXEDEPS GCRODR_Epetra_File_Ex
     )

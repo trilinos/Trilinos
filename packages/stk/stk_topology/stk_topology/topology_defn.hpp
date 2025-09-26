@@ -189,29 +189,6 @@ bool topology::is_super_topology() const
   return is_superelement() || is_superface() || is_superedge();
 }
 
-#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Feb 2025
-STK_INLINE_FUNCTION
-bool topology::is_shell_side_ordinal(unsigned ord) const
-{
-  return is_shell_with_face_sides() && ord >= num_faces();
-}
-
-STK_INLINE_FUNCTION
-bool topology::is_shell_with_face_sides() const {
-  using functor = topology_detail::is_shell_with_face_sides_impl;
-  topology::apply_functor< functor > apply;
-  return apply(m_value);
-}
-
-STK_INLINE_FUNCTION
-topology topology::shell_side_topology(unsigned ordinal) const {
-  using functor = topology_detail::shell_side_topology_impl;
-  functor f(ordinal);
-  topology::apply_functor< functor > apply( f );
-  return apply(m_value);
-}
-#endif
-
 STK_INLINE_FUNCTION
 bool topology::has_homogeneous_faces() const {
   using functor = topology_detail::has_homogeneous_faces_impl;

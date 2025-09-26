@@ -43,10 +43,10 @@ template <typename size_type, typename key_type, typename value_type, typename h
  * \var values:      This store the numerical values (matrix elements) [Values]
  *
  * Private members:
- * \var __max_value_size: The length of the two arrays (keys and hash_nexts)
- * \var __hashOpRHS:      The right hand side of the requested hash operation.
- * \var __insert_success: Value to return upon insertion success.
- * \var __insert_full:    Value to return upon insertion failure.
+ * \var max_value_size: The length of the two arrays (keys and hash_nexts)
+ * \var hashOpRHS_:      The right hand side of the requested hash operation.
+ * \var insert_success: Value to return upon insertion success.
+ * \var insert_full:    Value to return upon insertion failure.
  */
 struct BlockHashmapAccumulator {
   // begin public members
@@ -63,14 +63,14 @@ struct BlockHashmapAccumulator {
   // size_type used_size;
 
   // issue-508, TODO: The hash_begins, hash_nexts, keys, values,
-  // __insert_success, and __insert_full members should all be private as well.
+  // insert_success, and insert_full members should all be private as well.
   // They should be managed solely by this BlockHashmapAccumulator class:
   // initialized in the constructor(s) and only managed by
   // BlockHashmapAccumulator insertion routines. Making these members private
   // requires major refactoring throughout the kokkos-kernels code base. If
   // allocations for these members must really live outside this class, we need
   // new members that break
-  // __max_value_size into: hash_begins_len, hash_nexts_len, keys_len, and
+  // max_value_size into: hash_begins_len, hash_nexts_len, keys_len, and
   // values_len...!
 
   size_type *hash_begins;
@@ -82,17 +82,17 @@ struct BlockHashmapAccumulator {
 
   /**
    * \brief default constructor BlockHashmapAccumulator
-   * Sets used_size to 0, __insert_success to 0, __insert_full to 1, and
-   * __hashOpRHS to 0.
+   * Sets used_size to 0, insert_success to 0, insert_full to 1, and
+   * hashOpRHS_ to 0.
    *
    * Assumption: hash_begins_ are all initialized to -1.
    */
   KOKKOS_INLINE_FUNCTION
-  BlockHashmapAccumulator() : hash_begins(), hash_nexts(), keys(), values(), __max_value_size(), __hashOpRHS(0) {}
+  BlockHashmapAccumulator() : hash_begins(), hash_nexts(), keys(), values(), max_value_size(), hashOpRHS_(0) {}
 
   /**
    * \brief parameterized constructor BlockHashmapAccumulator
-   * Sets used_size to 0, __insert_success to 0, and __insert_full to 1.
+   * Sets used_size to 0, insert_success to 0, and insert_full to 1.
    *
    * \param max_value_size_: The length of the two arrays (keys and hash_nexts)
    * \param hashOpRHS:       The right hand side of the requested hash
@@ -114,11 +114,11 @@ struct BlockHashmapAccumulator {
         values(values_),
         block_dim(block_dim_),
         block_size(block_dim_ * block_dim_),
-        __max_value_size(max_value_size_),
-        __hashOpRHS(hashOpRHS) {
-    // Substract 1 and use the bitwiseAnd __compute_hash member.
+        max_value_size(max_value_size_),
+        hashOpRHS_(hashOpRHS) {
+    // Substract 1 and use the bitwiseAnd compute_hash member.
     if (std::is_same<hash_type, HashOpType::pow2Modulo>::value) {
-      __hashOpRHS -= 1;
+      hashOpRHS_ -= 1;
     }
   }
 
@@ -134,9 +134,9 @@ struct BlockHashmapAccumulator {
 
     if (key == -1) return;
 
-    // issue-508, TODO: ensure that i < __max_value_size, but
+    // issue-508, TODO: ensure that i < max_value_size, but
     // need information about length of keys, values, and hash_nexts first!
-    hash = __compute_hash(key, __hashOpRHS);
+    hash = compute_hash(key, hashOpRHS_);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         KokkosSparse::Impl::kk_block_add_mul(block_dim, values + i * block_size, valueA, valueB);
@@ -163,7 +163,7 @@ struct BlockHashmapAccumulator {
   KOKKOS_INLINE_FUNCTION
   void sequential_insert_into_hash_simple(key_type key, const value_type *a_val, const value_type *b_val,
                                           size_type &used_size, size_type *used_hashes) {
-    for (size_type hash = (key * HASHSCALAR) & __hashOpRHS;; hash = (hash + 1) & __hashOpRHS) {
+    for (size_type hash = (key * HASHSCALAR) & hashOpRHS_;; hash = (hash + 1) & hashOpRHS_) {
       if (keys[hash] == -1) {
         used_hashes[used_size++] = hash;
         keys[hash]               = key;
@@ -202,26 +202,26 @@ struct BlockHashmapAccumulator {
                                                           size_type *used_hash_size, size_type *used_hashes) {
     size_type hash, i, my_write_index, hashbeginning;
 
-    if (key == -1) return __insert_success;
+    if (key == -1) return insert_success;
 
-    hash = __compute_hash(key, __hashOpRHS);
+    hash = compute_hash(key, hashOpRHS_);
     if (hash != -1) {
       i = hash_begins[hash];
 
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
           KokkosSparse::Impl::kk_block_add_mul(block_dim, values + i * block_size, valA, valB);
-          return __insert_success;
+          return insert_success;
         }
       }
     } else {
-      return __insert_success;
+      return insert_success;
     }
 
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= __max_value_size) {
-      return __insert_full;
+    if (my_write_index >= max_value_size) {
+      return insert_full;
     } else {
       keys[my_write_index] = key;
       KokkosSparse::Impl::kk_block_set_mul(block_dim, values + my_write_index * block_size, valA, valB);
@@ -257,7 +257,7 @@ struct BlockHashmapAccumulator {
         used_hashes[Kokkos::atomic_fetch_add(used_hash_size, size_type(1))] = hash;
       }
       hash_nexts[my_write_index] = hashbeginning;
-      return __insert_success;
+      return insert_success;
     }
   }
 
@@ -266,30 +266,30 @@ struct BlockHashmapAccumulator {
       const team_member_t & /* teamMember */, const int /* vector_size */, size_type hash, const key_type key,
       const value_type *valA, const value_type *valB, volatile size_type *used_size_, const size_type max_value_size_) {
     // Cannot compute hash here due to impl_speed use-case
-    // hash = __compute_hash(key, __hashOpRHS);
-    if (key == -1) return __insert_success;
+    // hash = compute_hash(key, hashOpRHS_);
+    if (key == -1) return insert_success;
 
     if (hash != -1) {
       size_type i = hash_begins[hash];
       for (; i != -1; i = hash_nexts[i]) {
         if (keys[i] == key) {
           KokkosSparse::Impl::kk_block_add_mul(block_dim, values + i * block_size, valA, valB);
-          return __insert_success;
+          return insert_success;
         }
       }
     } else {
-      return __insert_success;
+      return insert_success;
     }
 
     // Ensure that threads don't continue incrementing used_size_ if the hashmap
     // is full, used_size_ could overflow and result in undefined behavior.
     if (used_size_[0] >= max_value_size_) {
-      return __insert_full;
+      return insert_full;
     }
     size_type my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
     if (my_write_index >= max_value_size_) {
-      return __insert_full;
+      return insert_full;
     } else {
       keys[my_write_index] = key;
       KokkosSparse::Impl::kk_block_set_mul(block_dim, values + my_write_index * block_size, valA, valB);
@@ -326,7 +326,7 @@ struct BlockHashmapAccumulator {
       // hash_nexts[my_write_index] = hash_begins[hash]
       size_type hashbeginning    = Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
-      return __insert_success;
+      return insert_success;
     }
   }
 
@@ -340,10 +340,10 @@ struct BlockHashmapAccumulator {
   KOKKOS_INLINE_FUNCTION
   int vector_atomic_insert_into_hash_mergeAdd(const key_type key, const value_type *valA, const value_type *valB,
                                               volatile size_type *used_size_) {
-    if (key == -1) return __insert_success;
+    if (key == -1) return insert_success;
 
     return vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(
-        nullptr, 0, __compute_hash(key, __hashOpRHS), key, valA, valB, used_size_, __max_value_size);
+        nullptr, 0, compute_hash(key, hashOpRHS_), key, valA, valB, used_size_, max_value_size);
   }
 
 #if 0
@@ -353,19 +353,19 @@ struct BlockHashmapAccumulator {
                                      volatile size_type *used_size_) {
     size_type hash, i, my_write_index, hashbeginning;
 
-    if (key == -1) return __insert_success;
+    if (key == -1) return insert_success;
 
-    hash = __compute_hash(key, __hashOpRHS);
+    hash = compute_hash(key, hashOpRHS_);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
-        return __insert_success;
+        return insert_success;
       }
     }
 
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= __max_value_size) {
-      return __insert_full;
+    if (my_write_index >= max_value_size) {
+      return insert_full;
     } else {
       keys[my_write_index] = key;
 
@@ -387,7 +387,7 @@ struct BlockHashmapAccumulator {
       hashbeginning =
           Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
-      return __insert_success;
+      return insert_success;
     }
   }
 
@@ -403,20 +403,20 @@ struct BlockHashmapAccumulator {
                                              volatile size_type *used_size_) {
     size_type hash, i, my_write_index, hashbeginning;
 
-    if (key == -1) return __insert_success;
+    if (key == -1) return insert_success;
 
-    hash = __compute_hash(key, __hashOpRHS);
+    hash = compute_hash(key, hashOpRHS_);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values[i] = values[i] | value;
-        return __insert_success;
+        return insert_success;
       }
     }
 
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= __max_value_size) {
-      return __insert_full;
+    if (my_write_index >= max_value_size) {
+      return insert_full;
     } else {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
@@ -439,7 +439,7 @@ struct BlockHashmapAccumulator {
       hashbeginning =
           Kokkos::atomic_exchange(hash_begins + hash, my_write_index);
       hash_nexts[my_write_index] = hashbeginning;
-      return __insert_success;
+      return insert_success;
     }
   }
 
@@ -456,20 +456,20 @@ struct BlockHashmapAccumulator {
       size_type *used_hashes) {
     size_type hash, i, my_write_index, hashbeginning;
 
-    if (key == -1) return __insert_success;
+    if (key == -1) return insert_success;
 
-    hash = __compute_hash(key, __hashOpRHS);
+    hash = compute_hash(key, hashOpRHS_);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
         values[i] = values[i] | value;
-        return __insert_success;
+        return insert_success;
       }
     }
 
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= __max_value_size) {
-      return __insert_full;
+    if (my_write_index >= max_value_size) {
+      return insert_full;
     } else {
       keys[my_write_index]   = key;
       values[my_write_index] = value;
@@ -496,7 +496,7 @@ struct BlockHashmapAccumulator {
             hash;
       }
       hash_nexts[my_write_index] = hashbeginning;
-      return __insert_success;
+      return insert_success;
     }
   }
 
@@ -507,19 +507,19 @@ struct BlockHashmapAccumulator {
                                                  size_type *used_hashes) {
     size_type hash, i, my_write_index, hashbeginning;
 
-    if (key == -1) return __insert_success;
+    if (key == -1) return insert_success;
 
-    hash = __compute_hash(key, __hashOpRHS);
+    hash = compute_hash(key, hashOpRHS_);
     for (i = hash_begins[hash]; i != -1; i = hash_nexts[i]) {
       if (keys[i] == key) {
-        return __insert_success;
+        return insert_success;
       }
     }
 
     my_write_index = Kokkos::atomic_fetch_add(used_size_, size_type(1));
 
-    if (my_write_index >= __max_value_size) {
-      return __insert_full;
+    if (my_write_index >= max_value_size) {
+      return insert_full;
     } else {
       keys[my_write_index] = key;
 
@@ -545,36 +545,36 @@ struct BlockHashmapAccumulator {
             hash;
       }
       hash_nexts[my_write_index] = hashbeginning;
-      return __insert_success;
+      return insert_success;
     }
   }
 #endif
   // end public members
  private:
-  size_type __max_value_size;
-  size_type __hashOpRHS;
-  static constexpr int __insert_success = 0;
-  static constexpr int __insert_full    = 1;
+  size_type max_value_size;
+  size_type hashOpRHS_;
+  static constexpr int insert_success = 0;
+  static constexpr int insert_full    = 1;
 
   template <typename U = hash_type, typename std::enable_if<std::is_same<U, HashOpType::bitwiseAnd>::value ||
                                                                 std::is_same<U, HashOpType::pow2Modulo>::value,
                                                             std::size_t>::type = 0>
-  KOKKOS_INLINE_FUNCTION int __compute_hash(size_type key, size_type bitmask) {
+  KOKKOS_INLINE_FUNCTION int compute_hash(size_type key, size_type bitmask) {
     size_type hash = key & bitmask;
 #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
-    if (hash == -1) Kokkos::abort("__compute_hash: hash = -1");
-    if (key == -1) Kokkos::abort("__compute_hash: key = -1");
+    if (hash == -1) Kokkos::abort("compute_hash: hash = -1");
+    if (key == -1) Kokkos::abort("compute_hash: key = -1");
 #endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
     return hash;
   }
 
   template <typename U                                                                             = hash_type,
             typename std::enable_if<std::is_same<U, HashOpType::modulo>::value, std::size_t>::type = 0>
-  KOKKOS_INLINE_FUNCTION int __compute_hash(size_type key, size_type divisor) {
+  KOKKOS_INLINE_FUNCTION int compute_hash(size_type key, size_type divisor) {
     size_type hash = key % divisor;
 #ifdef HASHMAPACCUMULATOR_ASSERT_ENABLED
-    if (hash == -1) Kokkos::abort("__compute_hash: hash = -1");
-    if (key == -1) Kokkos::abort("__compute_hash: key = -1");
+    if (hash == -1) Kokkos::abort("compute_hash: hash = -1");
+    if (key == -1) Kokkos::abort("compute_hash: key = -1");
 #endif  // HASHMAPACCUMULATOR_ASSERT_ENABLED
     return hash;
   }

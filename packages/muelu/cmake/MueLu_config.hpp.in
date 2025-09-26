@@ -25,6 +25,8 @@
 
 #cmakedefine HAVE_MUELU_DEPRECATED_TESTS
 
+#cmakedefine HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
+
 /* Optional Dependencies */
 
 #cmakedefine HAVE_MUELU_AMESOS

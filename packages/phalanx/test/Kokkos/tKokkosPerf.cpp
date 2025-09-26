@@ -129,12 +129,12 @@ namespace phalanx_test {
     T = Kokkos::View<FadType**,DevLayout,PHX::Device>("T",num_cells,num_ip,deriv_dim);
     k = Kokkos::View<FadType*,DevLayout,PHX::Device>("k",1,deriv_dim);
 
-    Kokkos::View<FadType**,DevLayout,PHX::Device>::HostMirror host_P;
-    Kokkos::View<FadType**,DevLayout,PHX::Device>::HostMirror host_T;
-    Kokkos::View<FadType*,DevLayout,PHX::Device>::HostMirror host_k;
-    host_P = Kokkos::View<FadType**,DevLayout,PHX::Device>::HostMirror("host_P",num_cells,num_ip,deriv_dim);
-    host_T = Kokkos::View<FadType**,DevLayout,PHX::Device>::HostMirror("host_T",num_cells,num_ip,deriv_dim);
-    host_k = Kokkos::View<FadType*,DevLayout,PHX::Device>::HostMirror("host_k",1,deriv_dim);
+    Kokkos::View<FadType**,DevLayout,PHX::Device>::host_mirror_type host_P;
+    Kokkos::View<FadType**,DevLayout,PHX::Device>::host_mirror_type host_T;
+    Kokkos::View<FadType*,DevLayout,PHX::Device>::host_mirror_type host_k;
+    host_P = Kokkos::View<FadType**,DevLayout,PHX::Device>::host_mirror_type("host_P",num_cells,num_ip,deriv_dim);
+    host_T = Kokkos::View<FadType**,DevLayout,PHX::Device>::host_mirror_type("host_T",num_cells,num_ip,deriv_dim);
+    host_k = Kokkos::View<FadType*,DevLayout,PHX::Device>::host_mirror_type("host_k",1,deriv_dim);
 
 
     for (int i=0; i< num_cells; i++){
@@ -191,9 +191,9 @@ namespace phalanx_test {
       PHX::View<FadType**> phx_T("phx_T",num_cells,num_ip,deriv_dim);
       PHX::View<FadType*> phx_k("phx_k",1,deriv_dim);
 
-      auto phx_host_P = PHX::View<FadType**>::HostMirror("phx_host_P",num_cells,num_ip,deriv_dim);
-      auto phx_host_T = PHX::View<FadType**>::HostMirror("phx_host_T",num_cells,num_ip,deriv_dim);
-      auto phx_host_k = PHX::View<FadType*>::HostMirror("phx_host_k",1,deriv_dim);
+      auto phx_host_P = PHX::View<FadType**>::host_mirror_type("phx_host_P",num_cells,num_ip,deriv_dim);
+      auto phx_host_T = PHX::View<FadType**>::host_mirror_type("phx_host_T",num_cells,num_ip,deriv_dim);
+      auto phx_host_k = PHX::View<FadType*>::host_mirror_type("phx_host_k",1,deriv_dim);
 
       for (int i=0; i< num_cells; i++){
 	for (int j=0; j< num_ip; j++){

@@ -531,7 +531,7 @@ stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
 int get_entity_subcell_id(const BulkData& mesh,
         const Entity entity,
         [[maybe_unused]] const EntityRank subcell_rank,
-        stk::topology subcell_topology,
+        stk::topology /*subcell_topology*/,
         const std::vector<Entity>& subcell_nodes)
 {
     STK_ThrowAssert(subcell_rank <= stk::topology::ELEMENT_RANK);
@@ -549,32 +549,6 @@ int get_entity_subcell_id(const BulkData& mesh,
     }
 
     return INVALID_SIDE;
-}
-
-void get_parts_with_topology(stk::topology topology,
-                             stk::mesh::BulkData& mesh,
-                             stk::mesh::PartVector& parts,
-                             bool skip_topology_root_parts)
-{
-  parts.clear();
-
-  const stk::mesh::MetaData & fem_meta = mesh.mesh_meta_data();
-
-  const stk::mesh::PartVector& all_parts = fem_meta.get_parts();
-
-  stk::mesh::PartVector::const_iterator
-    iter = all_parts.begin(),
-    iter_end = all_parts.end();
-
-  for(; iter!=iter_end; ++iter) {
-    stk::mesh::Part* part =  *iter;
-    if (fem_meta.get_topology(*part) == topology) {
-      if (skip_topology_root_parts && stk::mesh::is_topology_root_part(*part)) {
-        continue;
-      }
-      parts.push_back(part);
-    }
-  }
 }
 
 stk::mesh::Entity get_side_entity_for_elem_side_pair_of_rank(const stk::mesh::BulkData &bulk, Entity elem, int sideOrdinal, stk::mesh::EntityRank sideRank)

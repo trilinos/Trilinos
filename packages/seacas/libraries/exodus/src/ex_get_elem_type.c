@@ -52,7 +52,7 @@ int ex_get_elem_type(int exoid, ex_entity_id elem_blk_id, char *elem_type)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if ((status = nc_inq_varid(exoid, VAR_CONN(el_blk_id_ndx), &connid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_CONN(el_blk_id_ndx), &connid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find connectivity variable in file ID %d",
              exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -60,7 +60,7 @@ int ex_get_elem_type(int exoid, ex_entity_id elem_blk_id, char *elem_type)
   }
 
   /* get the element type name */
-  if ((status = nc_inq_attlen(exoid, connid, ATT_NAME_ELB, &len)) != NC_NOERR) {
+  if ((status = nc_inq_attlen(exoid, connid, ATT_NAME_ELB, &len)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find attribute in file ID %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
 
@@ -78,7 +78,7 @@ int ex_get_elem_type(int exoid, ex_entity_id elem_blk_id, char *elem_type)
   /* Make sure the end of the string is terminated with a null character */
   elem_type[MAX_STR_LENGTH] = '\0';
 
-  if ((status = nc_get_att_text(exoid, connid, ATT_NAME_ELB, elem_type)) != NC_NOERR) {
+  if ((status = nc_get_att_text(exoid, connid, ATT_NAME_ELB, elem_type)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get attribute \"%s\" in file ID %d",
              ATT_NAME_ELB, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

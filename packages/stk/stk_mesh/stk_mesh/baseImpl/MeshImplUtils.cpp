@@ -403,7 +403,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
   std::sort( ghosted_change.begin() , ghosted_change.end() , EntityLess(mesh) );
 }
 
-stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys)
+stk::mesh::EntityVector convert_keys_to_entities(const stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys)
 {
     stk::mesh::EntityVector nodes(node_keys.size());
     for (size_t i=0;i<nodes.size();++i)
@@ -851,7 +851,7 @@ Entity connect_element_to_side<stk::mesh::ConstPartVector>(BulkData & mesh, Enti
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
-                                                     stk::mesh::EntityId new_face_global_id,
+                                                     stk::mesh::EntityId /*new_face_global_id*/,
                                                      const stk::mesh::PartVector & parts)
 {
     stk::mesh::Entity new_face = stk::mesh::Entity();
@@ -1762,6 +1762,22 @@ void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face)
                   "Face with id: " << bulk.identifier(face) << " has no valid connectivity to elements");
 }
 
+bool part_is_on_upward_entity_except(const stk::mesh::BulkData& bulk,
+                                     stk::mesh::Entity entity,
+                                     stk::mesh::EntityRank upwardRank,
+                                     const stk::mesh::Part& part,
+                                     stk::mesh::Entity entityToSkip)
+{
+  const stk::mesh::ConnectedEntities conn = bulk.get_connected_entities(entity, upwardRank);
+  for(unsigned i=0; i<conn.size(); ++i) {
+    if (conn[i] != entityToSkip && bulk.bucket(conn[i]).member(part)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 bool has_upward_recv_ghost_connectivity(const stk::mesh::BulkData &bulk,
                                         const stk::mesh::Ghosting& ghosting,
                                         stk::mesh::Entity entity)
@@ -2107,6 +2123,38 @@ void connect_element_to_existing_sides(BulkData & mesh, const Entity elem)
     }
     else {
       connect_element_to_existing_side(mesh, elem, ordinal);
+    }
+  }
+}
+
+void set_local_ids(BulkData& mesh)
+{
+  const MetaData& meta = mesh.mesh_meta_data();
+
+  Selector owned = meta.locally_owned_part();
+  Selector shared = meta.globally_shared_part();
+  Selector sharedNotOwned = shared & (!owned);
+  Selector ghost = (!owned) & (!shared);
+
+  const EntityRank endRank = static_cast<EntityRank>(mesh.mesh_meta_data().entity_rank_count());
+
+  EntityVector entities;
+  const bool sortById = true;
+  for(EntityRank rank=stk::topology::NODE_RANK; rank<endRank; ++rank) {
+    get_entities(mesh, rank, owned, entities, sortById);
+    unsigned localId = 0;
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
+    }
+
+    get_entities(mesh, rank, sharedNotOwned, entities, sortById);
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
+    }
+
+    get_entities(mesh, rank, ghost, entities, sortById);
+    for(Entity entity : entities) {
+      mesh.set_local_id(entity, localId++);
     }
   }
 }

@@ -1,9 +1,10 @@
-// Copyright(C) 1999-2020, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
+// clang-format off
 #include "aprepro.h" // for Aprepro
 #include <iostream>  // for cout, ostream, etc
 #include <string>    // for string, operator<<
@@ -16,6 +17,10 @@ int main(int, char **)
   SEAMS::Aprepro aprepro;
 
   aprepro.ap_options.warning_msg = false;
+  SEAMS::symrec *ptr             = aprepro.getsym("_FORMAT");
+  if (ptr != nullptr) {
+    ptr->value.svar = "%.10g";
+  }
 
   std::vector<std::string> strings = build_strings();
   bool                     result  = aprepro.parse_strings(strings, "My list of strings");
@@ -58,10 +63,8 @@ std::vector<std::string> build_strings()
   strings.emplace_back(R"({cd = tand(180/4)}	{180-4*atand(cd)}	$ tan(180/4))");
   strings.emplace_back(R"()");
   strings.emplace_back(R"(Test max, min, sign, dim, abs)");
-  strings.emplace_back(
-      R"({pmin = min(0.5, 1.0)}	{nmin = min(-0.5, -1.0)} $ Should be 0.5, -1)");
-  strings.emplace_back(
-      R"({pmax = max(0.5, 1.0)}	{nmax = max(-0.5, -1.0)} $ Should be 1.0, -0.5)");
+  strings.emplace_back(R"({pmin = min(0.5, 1.0)}	{nmin = min(-0.5, -1.0)} $ Should be 0.5, -1)");
+  strings.emplace_back(R"({pmax = max(0.5, 1.0)}	{nmax = max(-0.5, -1.0)} $ Should be 1.0, -0.5)");
   strings.emplace_back(R"({zero = 0} {sign(0.5, zero) + sign(0.5, -zero)}	$ Should be 0 1)");
   strings.emplace_back(
       R"({nonzero = 1} {sign(0.5, nonzero) + sign(0.5, -nonzero)} $ Should be 1 0)");

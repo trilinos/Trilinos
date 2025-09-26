@@ -29,12 +29,12 @@ template <typename ArgTrans> struct Gemv<ArgTrans, Algo::OnDevice> {
     if (m > 0 && n > 0) {
       if (n == 1) {
         const int mm = A.extent(0), nn = A.extent(1);
-        Blas<value_type>::gemv(ArgTrans::param, mm, nn, value_type(alpha), A.data(), A.stride_1(), B.data(),
-                               B.stride_0(), value_type(beta), C.data(), C.stride_0());
+        Blas<value_type>::gemv(ArgTrans::param, mm, nn, value_type(alpha), A.data(), A.stride(1), B.data(),
+                               B.stride(0), value_type(beta), C.data(), C.stride(0));
       } else {
         const int mm = C.extent(0), nn = C.extent(1), kk = B.extent(0);
         Blas<value_type>::gemm(ArgTrans::param, Trans::NoTranspose::param, mm, nn, kk, value_type(alpha), A.data(),
-                               A.stride_1(), B.data(), B.stride_1(), value_type(beta), C.data(), C.stride_1());
+                               A.stride(1), B.data(), B.stride(1), value_type(beta), C.data(), C.stride(1));
       }
     }
     return 0;
@@ -51,13 +51,13 @@ template <typename ArgTrans> struct Gemv<ArgTrans, Algo::OnDevice> {
     if (m > 0 && n > 0) {
       if (n == 1) {
         const int mm = A.extent(0), nn = A.extent(1);
-        r_val = Blas<value_type>::gemv(handle, ArgTrans::cublas_param, mm, nn, alpha, A.data(), A.stride_1(), B.data(),
-                                       B.stride_0(), beta, C.data(), C.stride_0());
+        r_val = Blas<value_type>::gemv(handle, ArgTrans::cublas_param, mm, nn, alpha, A.data(), A.stride(1), B.data(),
+                                       B.stride(0), beta, C.data(), C.stride(0));
       } else {
         const int mm = C.extent(0), nn = C.extent(1), kk = B.extent(0);
         r_val =
             Blas<value_type>::gemm(handle, ArgTrans::cublas_param, Trans::NoTranspose::cublas_param, mm, nn, kk, alpha,
-                                   A.data(), A.stride_1(), B.data(), B.stride_1(), beta, C.data(), C.stride_1());
+                                   A.data(), A.stride(1), B.data(), B.stride(1), beta, C.data(), C.stride(1));
       }
     }
     return r_val;
@@ -76,13 +76,13 @@ template <typename ArgTrans> struct Gemv<ArgTrans, Algo::OnDevice> {
     if (m > 0 && n > 0) {
       if (n == 1) {
         const int mm = A.extent(0), nn = A.extent(1);
-        r_val = Blas<value_type>::gemv(handle, ArgTrans::rocblas_param, mm, nn, alpha, A.data(), A.stride_1(), B.data(),
-                                       B.stride_0(), beta, C.data(), C.stride_0());
+        r_val = Blas<value_type>::gemv(handle, ArgTrans::rocblas_param, mm, nn, alpha, A.data(), A.stride(1), B.data(),
+                                       B.stride(0), beta, C.data(), C.stride(0));
       } else {
         const int mm = C.extent(0), nn = C.extent(1), kk = B.extent(0);
         r_val =
             Blas<value_type>::gemm(handle, ArgTrans::rocblas_param, Trans::NoTranspose::rocblas_param, mm, nn, kk,
-                                   alpha, A.data(), A.stride_1(), B.data(), B.stride_1(), beta, C.data(), C.stride_1());
+                                   alpha, A.data(), A.stride(1), B.data(), B.stride(1), beta, C.data(), C.stride(1));
       }
     }
     return r_val;

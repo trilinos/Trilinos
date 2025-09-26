@@ -32,7 +32,7 @@ static int ex_put_var_names_int(int exoid, char *tname, char *dnumvar, char *vna
   int  dimid;
   char errmsg[MAX_ERR_LENGTH];
 
-  if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, dnumvar, &dimid)) != EX_NOERR) {
     if (status == NC_EBADDIM) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s variables defined in file id %d", tname,
                exoid);
@@ -46,7 +46,7 @@ static int ex_put_var_names_int(int exoid, char *tname, char *dnumvar, char *vna
     return EX_FATAL;
   }
 
-  if ((status = nc_inq_varid(exoid, vnames, varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vnames, varid)) != EX_NOERR) {
     if (status == NC_ENOTVAR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %s variable names defined in file id %d", tname,
                exoid);

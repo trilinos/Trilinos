@@ -217,8 +217,8 @@ struct PackTraits<Sacado::UQ::PCE<S>> {
         size_t numBytesTotal = 0;
         for (size_t i = 0; i < numEnt; ++i) {
           const char* inBufVal = inBuf + numBytesTotal;
-          const size_t numBytes = unpackValue (outBuf[i], inBufVal);
-          numBytesTotal += numBytes;
+          const size_t lnumBytes = unpackValue (outBuf[i], inBufVal);
+          numBytesTotal += lnumBytes;
         }
         return return_type (errorCode, numBytesTotal);
       }

@@ -142,9 +142,9 @@ class GetCoeffsEvaluator
 
 template<typename EvalT, typename Traits>
 GetCoeffsEvaluator<EvalT, Traits>::
-GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
+GetCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> in_basis,
                    std::string & eShape, const size_t numNodesPerElem, const size_t dim) 
-  : basis(basis)
+  : basis(in_basis)
 {
 
   // set up coeffs
@@ -305,7 +305,7 @@ class CheckCoeffsEvaluator
   public:
 
     CheckCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
-                         Teuchos::RCP<std::vector<double> > errors);
+                         Teuchos::RCP<std::vector<double> > in_errors);
 
     void
     evaluateFields(
@@ -324,9 +324,9 @@ class CheckCoeffsEvaluator
 
 template<typename EvalT, typename Traits>
 CheckCoeffsEvaluator<EvalT, Traits>::
-CheckCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> basis,
-Teuchos::RCP<std::vector<double> > errors)
-  : basis(basis), errors(errors)
+CheckCoeffsEvaluator(std::string & name, Teuchos::RCP<panzer::PureBasis> in_basis,
+Teuchos::RCP<std::vector<double> > in_errors)
+  : basis(in_basis), errors(in_errors)
 {
   
   // set up fields

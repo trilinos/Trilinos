@@ -29,7 +29,7 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
   }
 
   /* first check if any sets are specified */
-  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s sets stored in file id %d",
              ex_name_of_object(set_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -74,7 +74,7 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
   }
 
   /* inquire id's of previously defined dimensions and variables */
-  if ((status = nc_inq_varid(exoid, factptr, &dist_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, factptr, &dist_id)) != EX_NOERR) {
     /* not an error for node sets because this is how we check that df's exist
      */
     if (set_type == EX_NODE_SET) {
@@ -106,7 +106,7 @@ int ex_get_partial_set_dist_fact(int exoid, ex_entity_type set_type, ex_entity_i
     status = nc_get_vara_double(exoid, dist_id, start, count, set_dist_fact);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get dist factors list for %s set %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);

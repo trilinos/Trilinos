@@ -32,60 +32,67 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include <stk_io/FillMesh.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MeshBuilder.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetEntities.hpp>        // for get_selected_entities
+#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#ifdef STK_HAS_MPI
-#include "mpi.h"
-#endif
 
 #include <gtest/gtest.h>
-#include <string>
 #include <complex>
 #include <vector>
-#include <limits>
 #include <sstream>
+#include <memory>
 
-template<class A>
-struct BLASFixture {
+namespace {
 
-  A initial_value1;
-  A initial_value2;
-  A initial_value3;
-  unsigned int numEntitiesUniversal;
-  unsigned int numEntitiesOwned;
-  unsigned int numEntitiesGlobal;
-  stk::io::StkMeshIoBroker * stkMeshIoBroker;
-  stk::mesh::BulkData  * stkMeshBulkData;
-  stk::mesh::Field<A>  * field1;
-  stk::mesh::FieldBase * fieldBase1;
-  stk::mesh::Field<A>  * field2;
-  stk::mesh::FieldBase * fieldBase2;
-  stk::mesh::Field<A>  * field3;
-  stk::mesh::FieldBase * fieldBase3;
+constexpr stk::mesh::Layout LayoutRight = stk::mesh::Layout::Right;
+constexpr stk::mesh::Layout LayoutLeft  = stk::mesh::Layout::Left;
 
-  stk::mesh::Part * pPartA;
-  stk::mesh::Part * pPartB;
-  unsigned int numPartAEntitiesOwned;
-  unsigned int numPartBEntitiesOwned;
-  unsigned int numPartAEntitiesGlobal;
-  unsigned int numPartBEntitiesGlobal;
+//==============================================================================
+template <typename T,
+          stk::mesh::Layout Layout1 = LayoutRight,
+          stk::mesh::Layout Layout2 = LayoutRight,
+          stk::mesh::Layout Layout3 = LayoutRight>
+struct BLASFixtureScalar
+{
+  T initial_value1;
+  T initial_value2;
+  T initial_value3;
+  unsigned numEntitiesUniversal;
+  unsigned numEntitiesOwned;
+  unsigned numEntitiesGlobal;
 
-  BLASFixture(const A init1, const A init2 = A(), const A init3 = A());
-  ~BLASFixture();
+  std::shared_ptr<stk::mesh::BulkData> bulk;
+  stk::mesh::Field<T, Layout1>* field1;
+  stk::mesh::FieldBase* fieldBase1;
+  stk::mesh::Field<T, Layout2>* field2;
+  stk::mesh::FieldBase* fieldBase2;
+  stk::mesh::Field<T, Layout3>* field3;
+  stk::mesh::FieldBase* fieldBase3;
 
+  stk::mesh::Part* pPartA;
+  stk::mesh::Part* pPartB;
+  unsigned numPartAEntitiesOwned;
+  unsigned numPartBEntitiesOwned;
+  unsigned numPartAEntitiesGlobal;
+  unsigned numPartBEntitiesGlobal;
+
+  BLASFixtureScalar(T init1, T init2 = T(), T init3 = T());
+  ~BLASFixtureScalar() = default;
 };
 
-template<class A>
-BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
+template <typename T, stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, stk::mesh::Layout Layout3>
+BLASFixtureScalar<T, Layout1, Layout2, Layout3>::BLASFixtureScalar(T init1, T init2, T init3)
 {
   initial_value1 = init1;
   initial_value2 = init2;
@@ -96,50 +103,53 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
   const double fractionToPartA = 0.3;
   const double fractionToPartB = 0.3;
 
-  const unsigned int meshSizeX = 1;
+  const unsigned int meshSizeX = 8;
   const unsigned int meshSizeY = 4;
   const unsigned int meshSizeZ = 4;
 
-  stkMeshIoBroker = new stk::io::StkMeshIoBroker(my_comm);
-  stk::io::StkMeshIoBroker & io = *stkMeshIoBroker;
-  std::ostringstream osstr;
-  osstr << "generated:" << meshSizeX << "x" << meshSizeY << "x" << meshSizeZ;
-  io.add_mesh_database(osstr.str(), stk::io::READ_MESH);
-  io.create_input_mesh();
-  stk::mesh::MetaData &meta_data = io.meta_data();
+  // Keep small-ish Buckets so that there are many of them, to exercise OpenMP parallelization
+  bulk = stk::mesh::MeshBuilder(my_comm).set_spatial_dimension(3)
+                                        .set_maximum_bucket_capacity(16).create();
+  stk::mesh::MetaData &meta = bulk->mesh_meta_data();
 
-  field1 = &meta_data.declare_field<A>(stk::topology::NODE_RANK, "field1");
-  stk::mesh::put_field_on_mesh(*field1,field1->mesh_meta_data().universal_part(),&initial_value1);
+  field1 = &meta.declare_field<T, Layout1>(stk::topology::NODE_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*field1, meta.universal_part(), &initial_value1);
   fieldBase1 = field1;
 
-  field2 = &meta_data.declare_field<A>(stk::topology::NODE_RANK, "field2");
-  stk::mesh::put_field_on_mesh(*field2,field2->mesh_meta_data().universal_part(),&initial_value2);
+  field2 = &meta.declare_field<T, Layout2>(stk::topology::NODE_RANK, "field2");
+  stk::mesh::put_field_on_mesh(*field2, meta.universal_part(), &initial_value2);
   fieldBase2 = field2;
 
-  field3 = &meta_data.declare_field<A>(stk::topology::NODE_RANK, "field3");
-  stk::mesh::put_field_on_mesh(*field3,field3->mesh_meta_data().universal_part(),&initial_value3);
+  field3 = &meta.declare_field<T, Layout3>(stk::topology::NODE_RANK, "field3");
+  stk::mesh::put_field_on_mesh(*field3, meta.universal_part(), &initial_value3);
   fieldBase3 = field3;
 
-  io.populate_bulk_data();
-  stkMeshBulkData = &io.bulk_data();
+  std::ostringstream osstr;
+  osstr << "generated:" << meshSizeX << "x" << meshSizeY << "x" << meshSizeZ;
+  stk::io::fill_mesh(osstr.str(), *bulk);
 
-  pPartA = &meta_data.declare_part( "PartA" , stk::topology::NODE_RANK );
-  pPartB = &meta_data.declare_part( "PartB" , stk::topology::NODE_RANK );
+  pPartA = &meta.declare_part("PartA", stk::topology::NODE_RANK);
+  pPartB = &meta.declare_part("PartB", stk::topology::NODE_RANK);
 
-  std::vector<stk::mesh::Entity> entities;
-  stk::mesh::get_selected_entities(meta_data.locally_owned_part(), stkMeshBulkData->buckets(stk::topology::NODE_RANK), entities);
+  std::vector<stk::mesh::Entity> entities = stk::mesh::get_entities(*bulk, stk::topology::NODE_RANK,
+                                                                    meta.locally_owned_part());
 
-  stkMeshBulkData->modification_begin();
-  size_t numToPartA = entities.size() * fractionToPartA;
-  for (unsigned int i=0; i<numToPartA; i++)
-    stkMeshBulkData->change_entity_parts(entities[i],stk::mesh::ConstPartVector{pPartA});
-  size_t numToPartB = entities.size() * fractionToPartB;
-  for (unsigned int i=numToPartA; i<numToPartA+numToPartB; i++)
-    stkMeshBulkData->change_entity_parts(entities[i],stk::mesh::ConstPartVector{pPartB});
-  stkMeshBulkData->modification_end();
+  bulk->modification_begin();
+
+  unsigned numToPartA = entities.size() * fractionToPartA;
+  for (unsigned i = 0; i < numToPartA; ++i) {
+    bulk->change_entity_parts(entities[i], stk::mesh::ConstPartVector{pPartA});
+  }
+
+  unsigned numToPartB = entities.size() * fractionToPartB;
+  for (unsigned i = numToPartA; i < numToPartA+numToPartB; ++i) {
+    bulk->change_entity_parts(entities[i], stk::mesh::ConstPartVector{pPartB});
+  }
+
+  bulk->modification_end();
 
 
-  numEntitiesUniversal=0;
+  numEntitiesUniversal = 0;
   unsigned int numPartAEntitiesUniversal = 0;
   numPartAEntitiesOwned = 0;
   unsigned int numPartBEntitiesUniversal = 0;
@@ -148,8 +158,8 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
   unsigned int numPartlessEntities = 0;
   numEntitiesOwned = 0;
 
-  const stk::mesh::BucketVector & nodeBuckets = stkMeshBulkData->get_buckets(stk::topology::NODE_RANK, meta_data.universal_part());
-  for(const stk::mesh::Bucket *bucket : nodeBuckets) {
+  const stk::mesh::BucketVector& nodeBuckets = bulk->get_buckets(stk::topology::NODE_RANK, meta.universal_part());
+  for (const stk::mesh::Bucket* bucket : nodeBuckets) {
     const unsigned bucketSize = bucket->size();
     numEntitiesUniversal += bucketSize;
 
@@ -170,180 +180,344 @@ BLASFixture<A>::BLASFixture(const A init1, const A init2, const A init3)
       numPartBEntitiesUniversal += bucketSize;
     }
     bool haveABEntities = bucket->member(*pPartA) && bucket->member(*pPartB);
-    EXPECT_TRUE( !haveABEntities);
+    EXPECT_TRUE(!haveABEntities);
     if (!bucket->member(*pPartA) && !bucket->member(*pPartB)) {
       numPartlessEntities += bucketSize;
     }
   }
+
   EXPECT_EQ(numEntitiesUniversal, numPartAEntitiesUniversal+numPartBEntitiesUniversal+numPartlessEntities);
 
   numEntitiesGlobal = 0;
   numPartAEntitiesGlobal = 0;
   numPartBEntitiesGlobal = 0;
-  stk::all_reduce_sum(stkMeshBulkData->parallel(),&numEntitiesOwned     ,&numEntitiesGlobal     ,1u);
-  stk::all_reduce_sum(stkMeshBulkData->parallel(),&numPartAEntitiesOwned,&numPartAEntitiesGlobal,1u);
-  stk::all_reduce_sum(stkMeshBulkData->parallel(),&numPartBEntitiesOwned,&numPartBEntitiesGlobal,1u);
+  stk::all_reduce_sum(bulk->parallel(), &numEntitiesOwned,      &numEntitiesGlobal,      1u);
+  stk::all_reduce_sum(bulk->parallel(), &numPartAEntitiesOwned, &numPartAEntitiesGlobal, 1u);
+  stk::all_reduce_sum(bulk->parallel(), &numPartBEntitiesOwned, &numPartBEntitiesGlobal, 1u);
+
   EXPECT_EQ(numEntitiesGlobal, (meshSizeX+1) * (meshSizeY+1) * (meshSizeZ+1));
 }
 
-template<class A>
-BLASFixture<A>::~BLASFixture() {
-  delete stkMeshIoBroker;
+
+template <typename T, stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, stk::mesh::Layout Layout3>
+void checkScalarFields(BLASFixtureScalar<T, Layout1, Layout2, Layout3>& fixture,
+                       T val1, T val2, T val3, double tol=1.0e-5)
+{
+  const stk::mesh::Selector selector = stk::mesh::selectField(*fixture.field1) &
+                                       fixture.field1->get_mesh().mesh_meta_data().locally_owned_part();
+  checkScalarFields(fixture, val1, val2, val3, selector, tol);
 }
 
-template<class Scalar>
-void testFieldValidation(BLASFixture<Scalar> & Fixture, Scalar val1, Scalar val2, Scalar val3, double tol=1.0e-5)
+template <typename T, stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, stk::mesh::Layout Layout3>
+void checkScalarFields(BLASFixtureScalar<T, Layout1, Layout2, Layout3>& fixture,
+                       T val1, T val2, T val3, stk::mesh::Selector selector, double tol=1.0e-5)
 {
-  const stk::mesh::Selector selector = stk::mesh::selectField(*Fixture.field1);
-  testFieldValidation(Fixture,val1,val2,val3,selector,tol);
-}
-
-template<class Scalar>
-void testFieldValidation(BLASFixture<Scalar> & Fixture, Scalar val1, Scalar val2, Scalar val3, stk::mesh::Selector selector, double tol=1.0e-5)
-{
-  const stk::mesh::BucketVector& buckets = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),selector);
-  for(size_t j = 0; j < buckets.size(); j++) {
-    const stk::mesh::Bucket& bucket = *buckets[j];
-    for(size_t i=0; i<bucket.size(); i++) {
-      Scalar* field_value1 = reinterpret_cast<Scalar*>(stk::mesh::field_data(*Fixture.field1, bucket[i]));
-      EXPECT_NEAR(val1,*field_value1,tol);
-
-      Scalar* field_value2 = reinterpret_cast<Scalar*>(stk::mesh::field_data(*Fixture.field2, bucket[i]));
-      EXPECT_NEAR(val2,*field_value2,tol);
-
-      Scalar* field_value3 = reinterpret_cast<Scalar*>(stk::mesh::field_data(*Fixture.field3, bucket[i]));
-      EXPECT_NEAR(val3,*field_value3,tol);
+  const stk::mesh::BucketVector& buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(), selector);
+  auto field1Data = fixture.field1->template data<stk::mesh::ReadOnly>();
+  auto field2Data = fixture.field2->template data<stk::mesh::ReadOnly>();
+  auto field3Data = fixture.field3->template data<stk::mesh::ReadOnly>();
+  for (stk::mesh::Bucket* bucket : buckets) {
+    auto field1Values = field1Data.bucket_values(*bucket);
+    auto field2Values = field2Data.bucket_values(*bucket);
+    auto field3Values = field3Data.bucket_values(*bucket);
+    for (stk::mesh::EntityIdx entity : bucket->entities()) {
+      EXPECT_NEAR(field1Values(entity), val1, tol);
+      EXPECT_NEAR(field2Values(entity), val2, tol);
+      EXPECT_NEAR(field3Values(entity), val3, tol);
     }
-
   }
 }
 
-template<class Scalar>
-void testFieldValidation(BLASFixture<std::complex<Scalar> > & Fixture,
-                         std::complex<Scalar> val1, std::complex<Scalar> val2, std::complex<Scalar> val3,
-                         stk::mesh::Selector selector, double tol=1.0e-5)
+template <typename T, stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, stk::mesh::Layout Layout3>
+void checkScalarFields(BLASFixtureScalar<std::complex<T>, Layout1, Layout2, Layout3>& fixture,
+                       std::complex<T> val1, std::complex<T> val2, std::complex<T> val3,
+                       stk::mesh::Selector selector, double tol=1.0e-5)
 {
-  const stk::mesh::BucketVector& buckets = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),selector);
-  for(size_t j = 0; j < buckets.size(); j++) {
-    const stk::mesh::Bucket& bucket = *buckets[j];
-    for(size_t i=0; i<bucket.size(); i++) {
-      std::complex<Scalar>* field_value1 = reinterpret_cast<std::complex<Scalar>* >(stk::mesh::field_data(*Fixture.field1, bucket[i]));
-      EXPECT_LT(std::abs(val1-*field_value1),tol);
-
-      std::complex<Scalar>* field_value2 = reinterpret_cast<std::complex<Scalar>* >(stk::mesh::field_data(*Fixture.field2, bucket[i]));
-      EXPECT_LT(std::abs(val2-*field_value2),tol);
-
-      std::complex<Scalar>* field_value3 = reinterpret_cast<std::complex<Scalar>* >(stk::mesh::field_data(*Fixture.field3, bucket[i]));
-      EXPECT_LT(std::abs(val3-*field_value3),tol);
+  const stk::mesh::BucketVector& buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(), selector);
+  auto field1Data = fixture.field1->template data<stk::mesh::ReadOnly>();
+  auto field2Data = fixture.field2->template data<stk::mesh::ReadOnly>();
+  auto field3Data = fixture.field3->template data<stk::mesh::ReadOnly>();
+  for (stk::mesh::Bucket* bucket : buckets) {
+    auto field1Values = field1Data.bucket_values(*bucket);
+    auto field2Values = field2Data.bucket_values(*bucket);
+    auto field3Values = field3Data.bucket_values(*bucket);
+    for (stk::mesh::EntityIdx entity : bucket->entities()) {
+      EXPECT_LT(std::abs(field1Values(entity) - val1), tol);
+      EXPECT_LT(std::abs(field2Values(entity) - val2), tol);
+      EXPECT_LT(std::abs(field3Values(entity) - val3), tol);
     }
-
   }
 }
 
-template<class Scalar>
-void test_axpy(const Scalar alpha,const Scalar initial1,const Scalar initial2)
-{
-  BLASFixture<Scalar> Fixture (initial1,initial2);
 
-  stk::mesh::field_axpy(alpha,*Fixture.field1,*Fixture.field2);
-  testFieldValidation(Fixture,initial1,alpha*initial1+initial2,Scalar());
-  stk::mesh::field_axpy(alpha,*Fixture.fieldBase1,*Fixture.fieldBase2);
-  testFieldValidation(Fixture,initial1,alpha*initial1*Scalar(2)+initial2,Scalar());
+//==============================================================================
+template <typename T,
+          stk::mesh::Layout Layout1 = LayoutRight,
+          stk::mesh::Layout Layout2 = LayoutRight,
+          stk::mesh::Layout Layout3 = LayoutRight>
+struct BLASFixtureVector
+{
+  std::array<T, 3> init1;
+  std::array<T, 3> init2;
+  std::array<T, 3> init3;
+  unsigned numEntitiesUniversal;
+  unsigned numEntitiesOwned;
+  unsigned numEntitiesGlobal;
+
+  std::shared_ptr<stk::mesh::BulkData> bulk;
+  stk::mesh::Field<T, Layout1>* field1;
+  stk::mesh::FieldBase* fieldBase1;
+  stk::mesh::Field<T, Layout2>* field2;
+  stk::mesh::FieldBase* fieldBase2;
+  stk::mesh::Field<T, Layout3>* field3;
+  stk::mesh::FieldBase* fieldBase3;
+
+  stk::mesh::Part* pPartA;
+  stk::mesh::Part* pPartB;
+  unsigned numPartAEntitiesOwned;
+  unsigned numPartBEntitiesOwned;
+  unsigned numPartAEntitiesGlobal;
+  unsigned numPartBEntitiesGlobal;
+
+  BLASFixtureVector(const std::array<T, 3>& init1_input, const std::array<T, 3>& init2_input = {T(), T(), T()},
+                    const std::array<T, 3>& init3_input = {T(), T(), T()});
+  ~BLASFixtureVector() = default;
+};
+
+template <typename T, stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, stk::mesh::Layout Layout3>
+BLASFixtureVector<T, Layout1, Layout2, Layout3>::BLASFixtureVector(const std::array<T, 3>& init1_input,
+                                                                   const std::array<T, 3>& init2_input,
+                                                                   const std::array<T, 3>& init3_input)
+{
+  init1 = init1_input;
+  init2 = init2_input;
+  init3 = init3_input;
+
+  MPI_Comm my_comm = MPI_COMM_WORLD;
+
+  const double fractionToPartA = 0.3;
+  const double fractionToPartB = 0.3;
+
+  const unsigned int meshSizeX = 8;
+  const unsigned int meshSizeY = 4;
+  const unsigned int meshSizeZ = 4;
+
+  // Keep small-ish Buckets so that there are many of them, to exercise OpenMP parallelization
+  bulk = stk::mesh::MeshBuilder(my_comm).set_spatial_dimension(3)
+                                        .set_maximum_bucket_capacity(16).create();
+  stk::mesh::MetaData &meta = bulk->mesh_meta_data();
+
+  field1 = &meta.declare_field<T, Layout1>(stk::topology::NODE_RANK, "field1");
+  stk::mesh::put_field_on_mesh(*field1, meta.universal_part(), 3, init1.data());
+  fieldBase1 = field1;
+
+  field2 = &meta.declare_field<T, Layout2>(stk::topology::NODE_RANK, "field2");
+  stk::mesh::put_field_on_mesh(*field2, meta.universal_part(), 3, init2.data());
+  fieldBase2 = field2;
+
+  field3 = &meta.declare_field<T, Layout3>(stk::topology::NODE_RANK, "field3");
+  stk::mesh::put_field_on_mesh(*field3, meta.universal_part(), 3, init3.data());
+  fieldBase3 = field3;
+
+  std::ostringstream osstr;
+  osstr << "generated:" << meshSizeX << "x" << meshSizeY << "x" << meshSizeZ;
+  stk::io::fill_mesh(osstr.str(), *bulk);
+
+  pPartA = &meta.declare_part("PartA", stk::topology::NODE_RANK);
+  pPartB = &meta.declare_part("PartB", stk::topology::NODE_RANK);
+
+  std::vector<stk::mesh::Entity> entities = stk::mesh::get_entities(*bulk, stk::topology::NODE_RANK,
+                                                                    meta.locally_owned_part());
+
+  bulk->modification_begin();
+
+  unsigned numToPartA = entities.size() * fractionToPartA;
+  for (unsigned i = 0; i < numToPartA; ++i) {
+    bulk->change_entity_parts(entities[i], stk::mesh::ConstPartVector{pPartA});
+  }
+
+  unsigned numToPartB = entities.size() * fractionToPartB;
+  for (unsigned i = numToPartA; i < numToPartA+numToPartB; ++i) {
+    bulk->change_entity_parts(entities[i], stk::mesh::ConstPartVector{pPartB});
+  }
+
+  bulk->modification_end();
+
+
+  numEntitiesUniversal = 0;
+  unsigned int numPartAEntitiesUniversal = 0;
+  numPartAEntitiesOwned = 0;
+  unsigned int numPartBEntitiesUniversal = 0;
+  numPartBEntitiesOwned = 0;
+
+  unsigned int numPartlessEntities = 0;
+  numEntitiesOwned = 0;
+
+  const stk::mesh::BucketVector& nodeBuckets = bulk->get_buckets(stk::topology::NODE_RANK, meta.universal_part());
+  for (const stk::mesh::Bucket* bucket : nodeBuckets) {
+    const unsigned bucketSize = bucket->size();
+    numEntitiesUniversal += bucketSize;
+
+    if (bucket->owned()) {
+      numEntitiesOwned += bucketSize;
+      if (bucket->member(*pPartA)) {
+        numPartAEntitiesOwned += bucketSize;
+      }
+      if (bucket->member(*pPartB)) {
+        numPartBEntitiesOwned += bucketSize;
+      }
+    }
+
+    if (bucket->member(*pPartA)) {
+      numPartAEntitiesUniversal += bucketSize;
+    }
+    if (bucket->member(*pPartB)) {
+      numPartBEntitiesUniversal += bucketSize;
+    }
+    bool haveABEntities = bucket->member(*pPartA) && bucket->member(*pPartB);
+    EXPECT_TRUE(!haveABEntities);
+    if (!bucket->member(*pPartA) && !bucket->member(*pPartB)) {
+      numPartlessEntities += bucketSize;
+    }
+  }
+
+  EXPECT_EQ(numEntitiesUniversal, numPartAEntitiesUniversal+numPartBEntitiesUniversal+numPartlessEntities);
+
+  numEntitiesGlobal = 0;
+  numPartAEntitiesGlobal = 0;
+  numPartBEntitiesGlobal = 0;
+  stk::all_reduce_sum(bulk->parallel(), &numEntitiesOwned,      &numEntitiesGlobal,      1u);
+  stk::all_reduce_sum(bulk->parallel(), &numPartAEntitiesOwned, &numPartAEntitiesGlobal, 1u);
+  stk::all_reduce_sum(bulk->parallel(), &numPartBEntitiesOwned, &numPartBEntitiesGlobal, 1u);
+
+  EXPECT_EQ(numEntitiesGlobal, (meshSizeX+1) * (meshSizeY+1) * (meshSizeZ+1));
 }
 
-TEST(FieldBLAS,axpy_double)
+template <typename T, stk::mesh::Layout Layout>
+void checkVectorField(const stk::mesh::Field<T, Layout>& field, const std::array<T, 3>& expectedValue,
+                      const double tol=1.5e-3)
 {
+  const stk::mesh::BucketVector& buckets = field.get_mesh().get_buckets(field.entity_rank(),
+                                                                        stk::mesh::selectField(field) &
+                                                                        field.get_mesh().mesh_meta_data().locally_owned_part());
+  auto fieldData = field.template data<stk::mesh::ReadOnly>();
+  for (stk::mesh::Bucket* bucket : buckets) {
+    auto fieldValues = fieldData.bucket_values(*bucket);
+    for (stk::mesh::EntityIdx entity : bucket->entities()) {
+      for (stk::mesh::ComponentIdx component : fieldValues.components()) {
+        EXPECT_NEAR(fieldValues(entity, component), expectedValue[component], tol);
+      }
+    }
+  }
+}
+
+template <typename T, stk::mesh::Layout Layout>
+void checkVectorField(const stk::mesh::Field<std::complex<T>, Layout>& field,
+                      const std::array<std::complex<T>, 3>& expectedValue,
+                      const double tol=1.5e-3)
+{
+  const stk::mesh::BucketVector& buckets = field.get_mesh().get_buckets(field.entity_rank(),
+                                                                        stk::mesh::selectField(field) &
+                                                                        field.get_mesh().mesh_meta_data().locally_owned_part());
+  auto fieldData = field.template data<stk::mesh::ReadOnly>();
+  for (stk::mesh::Bucket* bucket : buckets) {
+    auto fieldValues = fieldData.bucket_values(*bucket);
+    for (stk::mesh::EntityIdx entity : bucket->entities()) {
+      for (stk::mesh::ComponentIdx component : fieldValues.components()) {
+        EXPECT_LT(std::abs(fieldValues(entity, component) - expectedValue[component]), tol);
+      }
+    }
+  }
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_axpy(T alpha, T initial1, T initial2)
+{
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(initial1, initial2);
+
+  stk::mesh::field_axpy(alpha, *fixture.field1, *fixture.field2);
+  checkScalarFields(fixture, initial1, alpha*initial1+initial2, T());
+
+  stk::mesh::field_axpy(alpha, *fixture.fieldBase1, *fixture.fieldBase2);
+  checkScalarFields(fixture, initial1, alpha*initial1*T(2)+initial2, T());
+}
+
+TEST(FieldBLAS, scalar_double_axpy)
+{
+  const double alpha    = 7.11;
   const double initial1 = 4.27;
   const double initial2 = -3.73;
-  const double alpha    = 7.11;
-  test_axpy(alpha,initial1,initial2);
+
+  test_axpy<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_axpy<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_axpy<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_axpy<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-TEST(FieldBLAS,axpy_float)
+TEST(FieldBLAS, scalar_float_axpy)
 {
+  const float alpha    = 4.1;
   const float initial1 = 1.2;
   const float initial2 = -3.1;
-  const float alpha    = 4.1;
-  test_axpy(alpha,initial1,initial2);
+
+  test_axpy<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_axpy<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_axpy<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_axpy<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-TEST(FieldBLAS,axpy_complex)
+TEST(FieldBLAS, scalar_complex_axpy)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21,-1.23);
-  const std::complex<double> alpha    = std::complex<double>(-3.11,2.00);
-  test_axpy(alpha,initial1,initial2);
+  const std::complex<double> alpha    = std::complex<double>(-3.11, 2.00);
+  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+
+  test_axpy<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_axpy<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_axpy<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_axpy<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-TEST(FieldBLAS,axpy_int)
+TEST(FieldBLAS, scalar_int_axpy)
 {
+  const int alpha    = 7;
   const int initial1 = 4;
   const int initial2 = -3;
-  const int alpha    = 7;
-  test_axpy(alpha,initial1,initial2);
+
+  test_axpy<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_axpy<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_axpy<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_axpy<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-template<class Scalar>
-void test_axpby(const Scalar alpha, const Scalar initial1, const Scalar beta, const Scalar initial2)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_axpy_selector(T initial1, T initial2, T alpha_1, T alpha_2, T alpha_all)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial2);
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(initial1, initial2);
 
-  stk::mesh::field_axpby(alpha,*Fixture.field1,beta,*Fixture.field2);
-  testFieldValidation(Fixture,initial1,alpha*initial1+beta*initial2,Scalar());
+  stk::mesh::field_axpy(alpha_1, *fixture.field1, *fixture.field2, stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, initial1, alpha_1*initial1+initial2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, initial1, initial2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, initial1, initial2, T(),
+                    stk::mesh::Selector(*fixture.pPartA).complement() & stk::mesh::Selector(*fixture.pPartB).complement());
 
-  stk::mesh::field_axpby(alpha,*Fixture.fieldBase1,beta,*Fixture.fieldBase2);
-  testFieldValidation(Fixture,initial1,alpha*initial1*Scalar(2)+beta*initial2,Scalar());
+  stk::mesh::field_axpy(alpha_2, *fixture.fieldBase1, *fixture.fieldBase2, stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, initial1, alpha_1*initial1+initial2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, initial1, alpha_2*initial1+initial2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, initial1, initial2, T(),
+                    stk::mesh::Selector(*fixture.pPartA).complement() & stk::mesh::Selector(*fixture.pPartB).complement());
+
+  stk::mesh::field_axpy(alpha_all, *fixture.field1, *fixture.field2);
+  checkScalarFields(fixture, initial1, (alpha_1+alpha_all)*initial1+initial2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, initial1, (alpha_2+alpha_all)*initial1+initial2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, initial1, alpha_all*initial1+initial2, T(),
+                    stk::mesh::Selector(*fixture.pPartA).complement() & stk::mesh::Selector(*fixture.pPartB).complement());
 }
 
-TEST(FieldBLAS,axpby_double)
-{
-  const double initial1 = 4.27;
-  const double initial2 = -3.73;
-  const double alpha    = 7.11;
-  const double beta     = 1.0;
-  test_axpby(alpha,initial1,beta,initial2);
-}
-
-TEST(FieldBLAS,axpby_float)
-{
-  const float initial1 = 1.2;
-  const float initial2 = -3.1;
-  const float alpha    = 4.1;
-  const float beta     = 1.0;
-  test_axpby(alpha,initial1,beta,initial2);
-}
-
-TEST(FieldBLAS,axpby_complex)
-{
-  const std::complex<double> initial1 = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21,-1.23);
-  const std::complex<double> alpha    = std::complex<double>(-3.11,2.00);
-  const std::complex<double> beta     = std::complex<double>(1.0,0.0);
-  test_axpby(alpha,initial1,beta,initial2);
-}
-
-template<class Scalar>
-void test_axpy_selector(Scalar initial1,Scalar initial2,Scalar alpha_1,Scalar alpha_2,Scalar alpha_all)
-{
-  BLASFixture<Scalar> Fixture (initial1,initial2);
-
-  stk::mesh::field_axpy(alpha_1,*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,alpha_1*initial1+initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-
-  stk::mesh::field_axpy(alpha_2,*Fixture.fieldBase1,*Fixture.fieldBase2,stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,alpha_1*initial1+initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,alpha_2*initial1+initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-
-  stk::mesh::field_axpy(alpha_all,*Fixture.field1,*Fixture.field2);
-  testFieldValidation(Fixture,initial1,(alpha_1+alpha_all)*initial1+initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,(alpha_2+alpha_all)*initial1+initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,alpha_all*initial1+initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-}
-
-TEST(FieldBLAS,axpy_selector_double)
+TEST(FieldBLAS, scalar_double_selector_axpy)
 {
   const double initial1 = 4.27;
   const double initial2 = -3.73;
@@ -352,10 +526,13 @@ TEST(FieldBLAS,axpy_selector_double)
   const double alpha_2   = 4.05;
   const double alpha_all = -2.04;
 
-  test_axpy_selector(initial1,initial2,alpha_1,alpha_2,alpha_all);
+  test_axpy_selector<LayoutRight, LayoutRight>(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutRight, LayoutLeft >(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutLeft,  LayoutRight>(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutLeft,  LayoutLeft >(initial1, initial2, alpha_1, alpha_2, alpha_all);
 }
 
-TEST(FieldBLAS,axpy_selector_float)
+TEST(FieldBLAS, scalar_float_selector_axpy)
 {
   const float initial1 = 4.2;
   const float initial2 = -3.7;
@@ -364,22 +541,28 @@ TEST(FieldBLAS,axpy_selector_float)
   const float alpha_2   = 4.7;
   const float alpha_all = -2.3;
 
-  test_axpy_selector(initial1,initial2,alpha_1,alpha_2,alpha_all);
+  test_axpy_selector<LayoutRight, LayoutRight>(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutRight, LayoutLeft >(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutLeft,  LayoutRight>(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutLeft,  LayoutLeft >(initial1, initial2, alpha_1, alpha_2, alpha_all);
 }
 
-TEST(FieldBLAS,axpy_selector_complex)
+TEST(FieldBLAS, scalar_complex_selector_axpy)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27,2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73,1.04);
+  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
+  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
 
-  const std::complex<double> alpha_1   = std::complex<double>(7.11,-42.1);
-  const std::complex<double> alpha_2   = std::complex<double>(4.05,7.22);
-  const std::complex<double> alpha_all = std::complex<double>(-2.04,3.14);
+  const std::complex<double> alpha_1   = std::complex<double>(7.11, -42.1);
+  const std::complex<double> alpha_2   = std::complex<double>(4.05, 7.22);
+  const std::complex<double> alpha_all = std::complex<double>(-2.04, 3.14);
 
-  test_axpy_selector(initial1,initial2,alpha_1,alpha_2,alpha_all);
+  test_axpy_selector<LayoutRight, LayoutRight>(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutRight, LayoutLeft >(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutLeft,  LayoutRight>(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutLeft,  LayoutLeft >(initial1, initial2, alpha_1, alpha_2, alpha_all);
 }
 
-TEST(FieldBLAS,axpy_selector_int)
+TEST(FieldBLAS, scalar_int_selector_axpy)
 {
   const int initial1 = 4;
   const int initial2 = -3;
@@ -388,2151 +571,3358 @@ TEST(FieldBLAS,axpy_selector_int)
   const int alpha_2   = 5;
   const int alpha_all = -2;
 
-  test_axpy_selector(initial1,initial2,alpha_1,alpha_2,alpha_all);
+  test_axpy_selector<LayoutRight, LayoutRight>(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutRight, LayoutLeft >(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutLeft,  LayoutRight>(initial1, initial2, alpha_1, alpha_2, alpha_all);
+  test_axpy_selector<LayoutLeft,  LayoutLeft >(initial1, initial2, alpha_1, alpha_2, alpha_all);
 }
 
-template<class Scalar>
-void test_copy(const Scalar initial1,const Scalar initial2,const Scalar initial3)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_axpy(T alpha, const std::array<T, 3>& init1, const std::array<T, 3>& init2)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial2,initial3);
+  BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
 
-  stk::mesh::field_copy(*Fixture.field1,*Fixture.field2);
-  testFieldValidation(Fixture,initial1,initial1,initial3);
+  stk::mesh::field_axpy(alpha, *fixture.field1, *fixture.field2);
+  checkVectorField(*fixture.field1, init1);
+  checkVectorField(*fixture.field2,
+                   {alpha*init1[0] + init2[0], alpha*init1[1] + init2[1], alpha*init1[2] + init2[2]});
 
-  stk::mesh::field_copy(*Fixture.field3,*Fixture.field1);
-  testFieldValidation(Fixture,initial3,initial1,initial3);
+  stk::mesh::field_axpy(alpha, *fixture.fieldBase1, *fixture.fieldBase2);
+  checkVectorField(*fixture.field1, init1);
+  checkVectorField(*fixture.field2,
+                   {alpha*T(2)*init1[0] + init2[0], alpha*T(2)*init1[1] + init2[1], alpha*T(2)*init1[2] + init2[2]});
 }
 
-TEST(FieldBLAS,copy_double)
+TEST(FieldBLAS, vector_double_axpy)
+{
+  const double alpha = 4.11;
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
+
+  test_axpy<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_axpy<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_axpy<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_axpy<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+TEST(FieldBLAS, vector_float_axpy)
+{
+  const float alpha = 4.1;
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
+
+  test_axpy<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_axpy<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_axpy<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_axpy<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+TEST(FieldBLAS, vector_complex_axpy)
+{
+  const std::complex<double> alpha(4.11, -32.1);
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.1),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.2),
+                                             std::complex<double>(11.27, 4.21)};
+
+  test_axpy<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_axpy<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_axpy<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_axpy<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+TEST(FieldBLAS, vector_int_axpy)
+{
+  const int alpha = 4;
+  std::array<int, 3> init1 = {4, 1, -2};
+  std::array<int, 3> init2 = {3, 4, 11};
+
+  test_axpy<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_axpy<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_axpy<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_axpy<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_axpby(T alpha, T init1, T beta, T init2)
+{
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
+
+  stk::mesh::field_axpby(alpha, *fixture.field1, beta, *fixture.field2);
+  checkScalarFields(fixture, init1, alpha*init1 + beta*init2, T());
+
+  stk::mesh::field_axpby(alpha, *fixture.fieldBase1, beta, *fixture.fieldBase2);
+  checkScalarFields(fixture, init1, alpha*init1 + alpha*beta*init1 + beta*beta*init2, T());
+}
+
+TEST(FieldBLAS, scalar_double_unityBeta_axpby)
 {
   const double initial1 = 4.27;
   const double initial2 = -3.73;
-  const double initial3 = 82.47;
+  const double alpha    = 7.11;
+  const double beta     = 1.0;
 
-  test_copy(initial1,initial2,initial3);
+  test_axpby<LayoutRight, LayoutRight>(alpha, initial1, beta, initial2);
+  test_axpby<LayoutRight, LayoutLeft >(alpha, initial1, beta, initial2);
+  test_axpby<LayoutLeft,  LayoutRight>(alpha, initial1, beta, initial2);
+  test_axpby<LayoutLeft,  LayoutLeft >(alpha, initial1, beta, initial2);
 }
 
-TEST(FieldBLAS,copy_float)
-{
-  const float initial1 = 4.2;
-  const float initial2 = -3.7;
-  const float initial3 = 82.4;
-
-  test_copy(initial1,initial2,initial3);
-}
-
-TEST(FieldBLAS,copy_complex)
-{
-  const std::complex<double> initial1 = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21,-1.23);
-  const std::complex<double> initial3 = std::complex<double>(82.21,71.23);
-
-  test_copy(initial1,initial2,initial3);
-}
-
-TEST(FieldBLAS,copy_int)
-{
-  const int initial1 = 4;
-  const int initial2 = -3;
-  const int initial3 = 2;
-
-  test_copy(initial1,initial2,initial3);
-}
-
-template<class Scalar>
-void test_copy_selector(Scalar initial1,Scalar initial2)
-{
-  BLASFixture<Scalar> Fixture (initial1,initial2);
-
-  stk::mesh::field_copy(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,initial1,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-
-  stk::mesh::field_copy(*Fixture.fieldBase2,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial1,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial2,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-
-  stk::mesh::field_copy(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  testFieldValidation(Fixture,initial1,initial1,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial2,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial1,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-}
-
-TEST(FieldBLAS,copy_selector_double)
+TEST(FieldBLAS, scalar_double_axpby)
 {
   const double initial1 = 4.27;
   const double initial2 = -3.73;
+  const double alpha    = 7.11;
+  const double beta     = 2.0;
 
-  test_copy_selector(initial1,initial2);
+  test_axpby<LayoutRight, LayoutRight>(alpha, initial1, beta, initial2);
+  test_axpby<LayoutRight, LayoutLeft >(alpha, initial1, beta, initial2);
+  test_axpby<LayoutLeft,  LayoutRight>(alpha, initial1, beta, initial2);
+  test_axpby<LayoutLeft,  LayoutLeft >(alpha, initial1, beta, initial2);
 }
 
-TEST(FieldBLAS,copy_selector_float)
+TEST(FieldBLAS, scalar_float_axpby)
 {
-  const float initial1 = 4.2;
-  const float initial2 = -3.7;
+  const float initial1 = 1.2;
+  const float initial2 = -3.1;
+  const float alpha    = 4.1;
+  const float beta     = 1.1;
 
-  test_copy_selector(initial1,initial2);
+  test_axpby<LayoutRight, LayoutRight>(alpha, initial1, beta, initial2);
+  test_axpby<LayoutRight, LayoutLeft >(alpha, initial1, beta, initial2);
+  test_axpby<LayoutLeft,  LayoutRight>(alpha, initial1, beta, initial2);
+  test_axpby<LayoutLeft,  LayoutLeft >(alpha, initial1, beta, initial2);
 }
 
-TEST(FieldBLAS,copy_selector_complex)
+TEST(FieldBLAS, scalar_complex_axpby)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27,2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73,1.04);
+  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+  const std::complex<double> alpha    = std::complex<double>(-3.11, 2.00);
+  const std::complex<double> beta     = std::complex<double>(1.0, 0.5);
 
-  test_copy_selector(initial1,initial2);
+  test_axpby<LayoutRight, LayoutRight>(alpha, initial1, beta, initial2);
+  test_axpby<LayoutRight, LayoutLeft >(alpha, initial1, beta, initial2);
+  test_axpby<LayoutLeft,  LayoutRight>(alpha, initial1, beta, initial2);
+  test_axpby<LayoutLeft,  LayoutLeft >(alpha, initial1, beta, initial2);
 }
 
-TEST(FieldBLAS,copy_selector_int)
+TEST(FieldBLAS, scalar_int_axpby)
 {
   const int initial1 = 4;
   const int initial2 = -3;
+  const int alpha    = 7;
+  const int beta     = 2;
 
-  test_copy_selector(initial1,initial2);
+  test_axpby<LayoutRight, LayoutRight>(alpha, initial1, beta, initial2);
+  test_axpby<LayoutRight, LayoutLeft >(alpha, initial1, beta, initial2);
+  test_axpby<LayoutLeft,  LayoutRight>(alpha, initial1, beta, initial2);
+  test_axpby<LayoutLeft,  LayoutLeft >(alpha, initial1, beta, initial2);
 }
 
-template<class Scalar>
-void test_product(const Scalar initial1, const Scalar initial2, const Scalar initial3)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_axpby(T alpha, const std::array<T, 3>& init1, T beta, const std::array<T, 3>& init2)
 {
-  BLASFixture<Scalar> Fixture (initial1, initial2, initial3);
-  testFieldValidation(Fixture,
-                      Scalar(pow(initial1,1))*Scalar(pow(initial2,0))*Scalar(pow(initial3,0)),
-                      Scalar(pow(initial1,0))*Scalar(pow(initial2,1))*Scalar(pow(initial3,0)),
-                      Scalar(pow(initial1,0))*Scalar(pow(initial2,0))*Scalar(pow(initial3,1)),1.0e-1);
+  BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
 
-  stk::mesh::field_product(*Fixture.field1,*Fixture.field2,*Fixture.field3);
-  testFieldValidation(Fixture,
-                      Scalar(pow(initial1,1))*Scalar(pow(initial2,0))*Scalar(pow(initial3,0)),
-                      Scalar(pow(initial1,0))*Scalar(pow(initial2,1))*Scalar(pow(initial3,0)),
-                      Scalar(pow(initial1,1))*Scalar(pow(initial2,1))*Scalar(pow(initial3,0)),1.0e-1);
+  stk::mesh::field_axpby(alpha, *fixture.field1, beta, *fixture.field2);
+  checkVectorField(*fixture.field1, init1);
+  checkVectorField(*fixture.field2,
+                   {alpha*init1[0] + beta*init2[0], alpha*init1[1] + beta*init2[1], alpha*init1[2] + beta*init2[2]});
 
-  stk::mesh::field_product(*Fixture.field3,*Fixture.field1,*Fixture.field1);
-  testFieldValidation(Fixture,
-                      Scalar(pow(initial1,2))*Scalar(pow(initial2,1))*Scalar(pow(initial3,0)),
-                      Scalar(pow(initial1,0))*Scalar(pow(initial2,1))*Scalar(pow(initial3,0)),
-                      Scalar(pow(initial1,1))*Scalar(pow(initial2,1))*Scalar(pow(initial3,0)),1.0e-1);
+  stk::mesh::field_axpby(alpha, *fixture.fieldBase1, beta, *fixture.fieldBase2);
+  checkVectorField(*fixture.field1, init1);
+  checkVectorField(*fixture.field2,
+                   {alpha*init1[0] + alpha*beta*init1[0] + beta*beta*init2[0],
+                    alpha*init1[1] + alpha*beta*init1[1] + beta*beta*init2[1],
+                    alpha*init1[2] + alpha*beta*init1[2] + beta*beta*init2[2]});
 }
 
-TEST(FieldBLAS,product_double)
+TEST(FieldBLAS, vector_double_unityBeta_axpby)
+{
+  const double alpha = 4.11;
+  const double beta = 1.0;
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
+
+  test_axpby<LayoutRight, LayoutRight>(alpha, init1, beta, init2);
+  test_axpby<LayoutRight, LayoutLeft >(alpha, init1, beta, init2);
+  test_axpby<LayoutLeft,  LayoutRight>(alpha, init1, beta, init2);
+  test_axpby<LayoutLeft,  LayoutLeft >(alpha, init1, beta, init2);
+}
+
+TEST(FieldBLAS, vector_double_axpby)
+{
+  const double alpha = 4.11;
+  const double beta = 1.1;
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
+
+  test_axpby<LayoutRight, LayoutRight>(alpha, init1, beta, init2);
+  test_axpby<LayoutRight, LayoutLeft >(alpha, init1, beta, init2);
+  test_axpby<LayoutLeft,  LayoutRight>(alpha, init1, beta, init2);
+  test_axpby<LayoutLeft,  LayoutLeft >(alpha, init1, beta, init2);
+}
+
+TEST(FieldBLAS, vector_float_axpby)
+{
+  const float alpha = 4.1;
+  const float beta = 1.1;
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
+
+  test_axpby<LayoutRight, LayoutRight>(alpha, init1, beta, init2);
+  test_axpby<LayoutRight, LayoutLeft >(alpha, init1, beta, init2);
+  test_axpby<LayoutLeft,  LayoutRight>(alpha, init1, beta, init2);
+  test_axpby<LayoutLeft,  LayoutLeft >(alpha, init1, beta, init2);
+}
+
+TEST(FieldBLAS, vector_complex_axpby)
+{
+  const std::complex<double> alpha(4.11, -32.1);
+  const std::complex<double> beta(1.1, 1.2);
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.1),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.2),
+                                             std::complex<double>(11.27, 4.21)};
+
+  test_axpby<LayoutRight, LayoutRight>(alpha, init1, beta, init2);
+  test_axpby<LayoutRight, LayoutLeft >(alpha, init1, beta, init2);
+  test_axpby<LayoutLeft,  LayoutRight>(alpha, init1, beta, init2);
+  test_axpby<LayoutLeft,  LayoutLeft >(alpha, init1, beta, init2);
+}
+
+TEST(FieldBLAS, vector_int_axpby)
+{
+  const int alpha = 4;
+  const int beta = 2;
+  std::array<int, 3> init1 = {4, 1, -2};
+  std::array<int, 3> init2 = {3, 4, 11};
+
+  test_axpby<LayoutRight, LayoutRight>(alpha, init1, beta, init2);
+  test_axpby<LayoutRight, LayoutLeft >(alpha, init1, beta, init2);
+  test_axpby<LayoutLeft,  LayoutRight>(alpha, init1, beta, init2);
+  test_axpby<LayoutLeft,  LayoutLeft >(alpha, init1, beta, init2);
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, stk::mesh::Layout Layout3, typename T>
+void test_product(T init1, T init2, T init3)
+{
+  BLASFixtureScalar<T, Layout1, Layout2, Layout3> fixture(init1, init2, init3);
+  checkScalarFields(fixture, init1, init2, init3);
+
+  stk::mesh::field_product(*fixture.field1, *fixture.field2, *fixture.field3);
+  checkScalarFields(fixture, init1, init2, init1*init2);
+
+  stk::mesh::field_product(*fixture.field3, *fixture.field1, *fixture.field1);
+  checkScalarFields(fixture, init1*init1*init2, init2, init1*init2);
+}
+
+TEST(FieldBLAS, scalar_double_product)
 {
   const double initial1 = 4.27;
   const double initial2 = -3.73;
   const double initial3 = 28.12;
 
-  test_product(initial1,initial2,initial3);
+  test_product<LayoutRight, LayoutRight, LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutRight, LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutLeft,  LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutLeft,  LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutRight, LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutRight, LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutLeft >(initial1, initial2, initial3);
 }
 
-TEST(FieldBLAS,product_float)
+TEST(FieldBLAS, scalar_float_product)
 {
   const float initial1 = 4.2;
   const float initial2 = -3.7;
   const float initial3 = 28.1;
 
-  test_product(initial1,initial2,initial3);
+  test_product<LayoutRight, LayoutRight, LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutRight, LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutLeft,  LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutLeft,  LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutRight, LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutRight, LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutLeft >(initial1, initial2, initial3);
 }
 
-TEST(FieldBLAS,product_complex)
+TEST(FieldBLAS, scalar_complex_product)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21,-1.23);
-  const std::complex<double> initial3 = std::complex<double>(1.28,3.11);
+  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+  const std::complex<double> initial3 = std::complex<double>(1.28, 3.11);
 
-  test_product(initial1,initial2,initial3);
+  test_product<LayoutRight, LayoutRight, LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutRight, LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutLeft,  LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutLeft,  LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutRight, LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutRight, LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutLeft >(initial1, initial2, initial3);
 }
 
-TEST(FieldBLAS,product_int)
+TEST(FieldBLAS, scalar_int_product)
 {
   const int initial1 = 4;
   const int initial2 = -3;
   const int initial3 = 1;
 
-  test_product(initial1,initial2,initial3);
+  test_product<LayoutRight, LayoutRight, LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutRight, LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutLeft,  LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutRight, LayoutLeft,  LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutRight, LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutRight, LayoutLeft >(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutRight>(initial1, initial2, initial3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutLeft >(initial1, initial2, initial3);
 }
 
-template<class Scalar>
-void test_product_selector(Scalar initial1,Scalar initial2)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_product_selector(T init1, T init2)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial2);
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
-  stk::mesh::field_product(*Fixture.field1,*Fixture.field2,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,initial1*initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
+  stk::mesh::field_product(*fixture.field1, *fixture.field2, *fixture.field2, stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1, init1*init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, init2, T(),
+                    stk::mesh::Selector(*fixture.pPartA).complement() & stk::mesh::Selector(*fixture.pPartB).complement());
 
-  stk::mesh::field_product(*Fixture.fieldBase2,*Fixture.fieldBase1,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial1*initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1*initial2,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
+  stk::mesh::field_product(*fixture.fieldBase2, *fixture.fieldBase1, *fixture.fieldBase1,
+                           stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, init1*init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1*init2, init2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, init2, T(),
+                    stk::mesh::Selector(*fixture.pPartA).complement() & stk::mesh::Selector(*fixture.pPartB).complement());
 
-  stk::mesh::field_product(*Fixture.field1,*Fixture.field2,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  stk::mesh::field_product(*Fixture.field1,*Fixture.field2,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  testFieldValidation(Fixture,initial1,initial1*initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1*initial2,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,Scalar(pow(initial1,2))*initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
+  stk::mesh::field_product(*fixture.field1, *fixture.field2, *fixture.field2,
+                           stk::mesh::Selector(*fixture.pPartA).complement() & stk::mesh::Selector(*fixture.pPartB).complement());
+  stk::mesh::field_product(*fixture.field1, *fixture.field2, *fixture.field2,
+                           stk::mesh::Selector(*fixture.pPartA).complement() & stk::mesh::Selector(*fixture.pPartB).complement());
+  checkScalarFields(fixture, init1, init1*init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1*init2, init2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, T(pow(init1, 2))*init2, T(),
+                    stk::mesh::Selector(*fixture.pPartA).complement() & stk::mesh::Selector(*fixture.pPartB).complement());
 }
 
-TEST(FieldBLAS,product_selector_double)
-{
-  const double initial1 = 4.27;
-  const double initial2 = -3.73;
-
-  test_product_selector(initial1,initial2);
-}
-
-TEST(FieldBLAS,product_selector_float)
-{
-  const float initial1 = 4.2;
-  const float initial2 = -3.7;
-
-  test_product_selector(initial1,initial2);
-}
-
-TEST(FieldBLAS,product_selector_complex)
-{
-  const std::complex<double> initial1 = std::complex<double>(4.27,2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73,1.04);
-
-  test_product_selector(initial1,initial2);
-}
-
-TEST(FieldBLAS,product_selector_int)
-{
-  const int initial1 = 4;
-  const int initial2 = -3;
-
-  test_product_selector(initial1,initial2);
-}
-
-template<class Scalar>
-void test_dot(const Scalar initial1,const Scalar initial2,const double TOL = 0.5)
-{
-  BLASFixture<Scalar> Fixture (initial1,initial2);
-
-  Scalar field_result = stk::mesh::field_dot(*Fixture.field1,*Fixture.field2);
-  EXPECT_LT(std::abs(field_result-initial1*initial2*Scalar(Fixture.numEntitiesGlobal)),TOL);
-
-  Scalar fieldBase_result;
-  stk::mesh::field_dot(fieldBase_result,*Fixture.fieldBase1,*Fixture.fieldBase2);
-  EXPECT_LT(std::abs(fieldBase_result-initial1*initial2*Scalar(Fixture.numEntitiesGlobal)),TOL);
-}
-
-TEST(FieldBLAS,dot_double)
-{
-  const double initial1 = 4.27;
-  const double initial2 = -3.73;
-  test_dot(initial1,initial2);
-}
-
-TEST(FieldBLAS,dot_float)
-{
-  const float initial1 = 4.2;
-  const float initial2 = -3.7;
-  test_dot(initial1,initial2);
-}
-
-TEST(FieldBLAS,dot_complex)
-{
-  const std::complex<double> initial1 = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21,-1.23);
-  test_dot(initial1,initial2);
-}
-
-TEST(FieldBLAS,dot_int)
-{
-  const int initial1 = 4;
-  const int initial2 = -3;
-  test_dot(initial1,initial2);
-}
-
-template<class Scalar>
-void test_dot_selector(Scalar initial1,Scalar initial2,const double TOL = 1.0e-1)
-{
-  BLASFixture<Scalar> Fixture (initial1,initial2);
-
-  Scalar resultA=stk::mesh::field_dot(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA));
-  EXPECT_LT(std::abs(initial1*initial2*Scalar(Fixture.numPartAEntitiesGlobal)-resultA),TOL);
-
-  Scalar resultB;
-  stk::mesh::field_dot(resultB,*Fixture.fieldBase2,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartB));
-  EXPECT_LT(std::abs(initial1*initial2*Scalar(Fixture.numPartBEntitiesGlobal)-resultB),TOL);
-
-  Scalar resultABc=stk::mesh::field_dot(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  EXPECT_LT(std::abs(initial1*initial2*Scalar(Fixture.numEntitiesGlobal-Fixture.numPartAEntitiesGlobal-Fixture.numPartBEntitiesGlobal)-resultABc),TOL);
-}
-
-TEST(FieldBLAS,dot_selector_double)
+TEST(FieldBLAS, scalar_double_selector_product)
 {
   const double initial1 = 4.27;
   const double initial2 = -3.73;
 
-  test_dot_selector(initial1,initial2);
+  test_product_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_product_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_product_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_product_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,dot_selector_float)
+TEST(FieldBLAS, scalar_float_selector_product)
 {
   const float initial1 = 4.2;
   const float initial2 = -3.7;
 
-  test_dot_selector(initial1,initial2);
+  test_product_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_product_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_product_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_product_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,dot_selector_complex)
+TEST(FieldBLAS, scalar_complex_selector_product)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27,2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73,1.04);
+  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
+  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
 
-  test_dot_selector(initial1,initial2);
+  test_product_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_product_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_product_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_product_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,dot_selector_int)
+TEST(FieldBLAS, scalar_int_selector_product)
 {
   const int initial1 = 4;
   const int initial2 = -3;
 
-  test_dot_selector(initial1,initial2);
+  test_product_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_product_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_product_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_product_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-template<class Scalar>
-void test_scale(const Scalar alpha,const Scalar initial1)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, stk::mesh::Layout Layout3, typename T>
+void test_product(const std::array<T, 3>& init1, const std::array<T, 3>& init2, const std::array<T, 3>& init3)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial1);
+  BLASFixtureVector<T, Layout1, Layout2, Layout3> fixture(init1, init2, init3);
+  checkVectorField(*fixture.field1, init1);
+  checkVectorField(*fixture.field2, init2);
+  checkVectorField(*fixture.field3, init3);
 
-  stk::mesh::field_scale(alpha,*Fixture.field1);
-  stk::mesh::field_scale(alpha,*Fixture.fieldBase2);
-  testFieldValidation(Fixture,alpha*initial1,alpha*initial1,Scalar());
+  stk::mesh::field_product(*fixture.field1, *fixture.field2, *fixture.field3);
+  checkVectorField(*fixture.field1, {init1[0], init1[1], init1[2]});
+  checkVectorField(*fixture.field2, {init2[0], init2[1], init2[2]});
+  checkVectorField(*fixture.field3, {init1[0]*init2[0], init1[1]*init2[1], init1[2]*init2[2]});
+
+  stk::mesh::field_product(*fixture.fieldBase3, *fixture.fieldBase1, *fixture.fieldBase2);
+  checkVectorField(*fixture.field1, {init1[0], init1[1], init1[2]});
+  checkVectorField(*fixture.field2, {init1[0]*init1[0]*init2[0], init1[1]*init1[1]*init2[1], init1[2]*init1[2]*init2[2]});
+  checkVectorField(*fixture.field3, {init1[0]*init2[0], init1[1]*init2[1], init1[2]*init2[2]});
 }
 
-TEST(FieldBLAS,scale_double)
+TEST(FieldBLAS, vector_double_product)
+{
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
+  std::array<double, 3> init3 {0.24, -7.11, 3.21};
+
+  test_product<LayoutRight, LayoutRight, LayoutRight>(init1, init2, init3);
+  test_product<LayoutRight, LayoutRight, LayoutLeft >(init1, init2, init3);
+  test_product<LayoutRight, LayoutLeft,  LayoutRight>(init1, init2, init3);
+  test_product<LayoutRight, LayoutLeft,  LayoutLeft >(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutRight, LayoutRight>(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutRight, LayoutLeft >(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutRight>(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutLeft >(init1, init2, init3);
+}
+
+TEST(FieldBLAS, vector_float_product)
+{
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
+  std::array<float, 3> init3 {0.2, -7.1, 3.2};
+
+  test_product<LayoutRight, LayoutRight, LayoutRight>(init1, init2, init3);
+  test_product<LayoutRight, LayoutRight, LayoutLeft >(init1, init2, init3);
+  test_product<LayoutRight, LayoutLeft,  LayoutRight>(init1, init2, init3);
+  test_product<LayoutRight, LayoutLeft,  LayoutLeft >(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutRight, LayoutRight>(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutRight, LayoutLeft >(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutRight>(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutLeft >(init1, init2, init3);
+}
+
+TEST(FieldBLAS, vector_complex_product)
+{
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.1),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.2),
+                                             std::complex<double>(11.27, 4.21)};
+  std::array<std::complex<double>, 3> init3 {std::complex<double>(0.24, -1.22),
+                                             std::complex<double>(-7.11, 42.1),
+                                             std::complex<double>(3.21, 7.11)};
+
+  test_product<LayoutRight, LayoutRight, LayoutRight>(init1, init2, init3);
+  test_product<LayoutRight, LayoutRight, LayoutLeft >(init1, init2, init3);
+  test_product<LayoutRight, LayoutLeft,  LayoutRight>(init1, init2, init3);
+  test_product<LayoutRight, LayoutLeft,  LayoutLeft >(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutRight, LayoutRight>(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutRight, LayoutLeft >(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutRight>(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutLeft >(init1, init2, init3);
+}
+
+TEST(FieldBLAS, vector_int_product)
+{
+  std::array<int, 3> init1 {4, 1, -2};
+  std::array<int, 3> init2 {3, 4, 11};
+  std::array<int, 3> init3 {8, -7, 3};
+
+  test_product<LayoutRight, LayoutRight, LayoutRight>(init1, init2, init3);
+  test_product<LayoutRight, LayoutRight, LayoutLeft >(init1, init2, init3);
+  test_product<LayoutRight, LayoutLeft,  LayoutRight>(init1, init2, init3);
+  test_product<LayoutRight, LayoutLeft,  LayoutLeft >(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutRight, LayoutRight>(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutRight, LayoutLeft >(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutRight>(init1, init2, init3);
+  test_product<LayoutLeft,  LayoutLeft,  LayoutLeft >(init1, init2, init3);
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_copy(T initial1, T initial2)
+{
+  {
+    BLASFixtureScalar<T, Layout1, Layout2> fixture(initial1, initial2);
+
+    stk::mesh::field_copy(*fixture.field1, *fixture.field2);
+    checkScalarFields(fixture, initial1, initial1, T(0));
+
+    if (fixture.field1->has_device_data()) {
+      EXPECT_EQ(fixture.field1->need_sync_to_device(), false);
+    }
+    else {
+      EXPECT_EQ(fixture.field1->need_sync_to_device(), true);
+    }
+
+    EXPECT_EQ(fixture.field2->need_sync_to_device(), true);
+  }
+
+  {
+    BLASFixtureScalar<T, Layout1, Layout2> fixture(initial1, initial2);
+
+    stk::mesh::field_copy(*fixture.field2, *fixture.field1);
+    checkScalarFields(fixture, initial2, initial2, T(0));
+
+    EXPECT_EQ(fixture.field1->need_sync_to_device(), true);
+    EXPECT_EQ(fixture.field2->need_sync_to_device(), true);
+  }
+}
+
+TEST(FieldBLAS, scalar_double_copy)
+{
+  const double initial1 = 4.27;
+  const double initial2 = -3.73;
+
+  test_copy<LayoutRight, LayoutRight>(initial1, initial2);
+  test_copy<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_copy<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_copy<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_float_copy)
+{
+  const float initial1 = 4.2;
+  const float initial2 = -3.7;
+
+  test_copy<LayoutRight, LayoutRight>(initial1, initial2);
+  test_copy<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_copy<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_copy<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_complex_copy)
+{
+  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+
+  test_copy<LayoutRight, LayoutRight>(initial1, initial2);
+  test_copy<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_copy<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_copy<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_int_copy)
+{
+  const int initial1 = 4;
+  const int initial2 = -3;
+
+  test_copy<LayoutRight, LayoutRight>(initial1, initial2);
+  test_copy<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_copy<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_copy<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_copy_selector(T init1, T init2)
+{
+  {
+    BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
+
+    stk::mesh::field_copy(*fixture.field1, *fixture.field2, stk::mesh::Selector(*fixture.pPartA));
+    checkScalarFields(fixture, init1, init1, T(), stk::mesh::Selector(*fixture.pPartA));
+    checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartB));
+    checkScalarFields(fixture, init1, init2, T(),
+                      stk::mesh::Selector(*fixture.pPartA).complement() &
+                      stk::mesh::Selector(*fixture.pPartB).complement());
+  }
+}
+
+TEST(FieldBLAS, scalar_double_selector_copy)
+{
+  const double initial1 = 4.27;
+  const double initial2 = -3.73;
+
+  test_copy_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_copy_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_copy_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_copy_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_float_selector_copy)
+{
+  const float initial1 = 4.2;
+  const float initial2 = -3.7;
+
+  test_copy_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_copy_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_copy_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_copy_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_complex_selector_copy)
+{
+  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
+  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+
+  test_copy_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_copy_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_copy_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_copy_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_int_selector_copy)
+{
+  const int initial1 = 4;
+  const int initial2 = -3;
+
+  test_copy_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_copy_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_copy_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_copy_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_copy(const std::array<T, 3>& init1, const std::array<T, 3>& init2)
+{
+  {
+    BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
+    checkVectorField(*fixture.field1, init1);
+    checkVectorField(*fixture.field2, init2);
+
+    stk::mesh::field_copy(*fixture.field1, *fixture.field2);
+    checkVectorField(*fixture.field1, init1);
+    checkVectorField(*fixture.field2, init1);
+  }
+  {
+    BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
+    checkVectorField(*fixture.field1, init1);
+    checkVectorField(*fixture.field2, init2);
+
+    stk::mesh::field_copy(*fixture.field2, *fixture.field1);
+    checkVectorField(*fixture.field1, init2);
+    checkVectorField(*fixture.field2, init2);
+  }
+}
+
+TEST(FieldBLAS, vector_double_copy)
+{
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
+
+  test_copy<LayoutRight, LayoutRight>(init1, init2);
+  test_copy<LayoutRight, LayoutLeft >(init1, init2);
+  test_copy<LayoutLeft,  LayoutRight>(init1, init2);
+  test_copy<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+TEST(FieldBLAS, vector_float_copy)
+{
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
+
+  test_copy<LayoutRight, LayoutRight>(init1, init2);
+  test_copy<LayoutRight, LayoutLeft >(init1, init2);
+  test_copy<LayoutLeft,  LayoutRight>(init1, init2);
+  test_copy<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+TEST(FieldBLAS, vector_complex_copy)
+{
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.1),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.2),
+                                             std::complex<double>(11.27, 4.21)};
+
+  test_copy<LayoutRight, LayoutRight>(init1, init2);
+  test_copy<LayoutRight, LayoutLeft >(init1, init2);
+  test_copy<LayoutLeft,  LayoutRight>(init1, init2);
+  test_copy<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+TEST(FieldBLAS, vector_int_copy)
+{
+  std::array<int, 3> init1 {4, 1, -2};
+  std::array<int, 3> init2 {3, 4, 11};
+
+  test_copy<LayoutRight, LayoutRight>(init1, init2);
+  test_copy<LayoutRight, LayoutLeft >(init1, init2);
+  test_copy<LayoutLeft,  LayoutRight>(init1, init2);
+  test_copy<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_dot(T init1, T init2, double tol = 1.0e-3)
+{
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
+
+  T field_result = stk::mesh::field_dot(*fixture.field1, *fixture.field2);
+  EXPECT_LT(std::abs(field_result - init1 * init2 * T(fixture.numEntitiesGlobal)), tol);
+
+  T fieldBase_result;
+  stk::mesh::field_dot(fieldBase_result, *fixture.fieldBase1, *fixture.fieldBase2);
+  EXPECT_LT(std::abs(fieldBase_result - init1 * init2 * T(fixture.numEntitiesGlobal)), tol);
+}
+
+TEST(FieldBLAS, scalar_double_dot)
+{
+  const double initial1 = 4.27;
+  const double initial2 = -3.73;
+
+  test_dot<LayoutRight, LayoutRight>(initial1, initial2);
+  test_dot<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_dot<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_dot<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_float_dot)
+{
+  const float initial1 = 4.2;
+  const float initial2 = -3.7;
+
+  test_dot<LayoutRight, LayoutRight>(initial1, initial2);
+  test_dot<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_dot<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_dot<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_complex_dot)
+{
+  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+
+  test_dot<LayoutRight, LayoutRight>(initial1, initial2);
+  test_dot<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_dot<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_dot<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_int_dot)
+{
+  const int initial1 = 4;
+  const int initial2 = -3;
+
+  test_dot<LayoutRight, LayoutRight>(initial1, initial2);
+  test_dot<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_dot<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_dot<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_dot_selector(T init1, T init2, double tol = 1.0e-3)
+{
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
+
+  T resultA = stk::mesh::field_dot(*fixture.field1, *fixture.field2, stk::mesh::Selector(*fixture.pPartA));
+  EXPECT_LT(std::abs(init1 * init2 *T(fixture.numPartAEntitiesGlobal) - resultA), tol);
+
+  T resultB {};
+  stk::mesh::field_dot(resultB, *fixture.fieldBase2, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartB));
+  EXPECT_LT(std::abs(init1 * init2 * T(fixture.numPartBEntitiesGlobal) - resultB), tol);
+
+  T resultABc = stk::mesh::field_dot(*fixture.field1, *fixture.field2,
+                                     stk::mesh::Selector(*fixture.pPartA).complement() &
+                                     stk::mesh::Selector(*fixture.pPartB).complement());
+  EXPECT_LT(std::abs(init1 * init2 * T(fixture.numEntitiesGlobal - fixture.numPartAEntitiesGlobal -
+                                       fixture.numPartBEntitiesGlobal) - resultABc), tol);
+}
+
+TEST(FieldBLAS, scalar_double_selector_dot)
+{
+  const double initial1 = 4.27;
+  const double initial2 = -3.73;
+
+  test_dot_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_dot_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_dot_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_dot_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_float_selector_dot)
+{
+  const float initial1 = 4.2;
+  const float initial2 = -3.7;
+
+  test_dot_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_dot_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_dot_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_dot_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_complex_selector_dot)
+{
+  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
+  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+
+  test_dot_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_dot_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_dot_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_dot_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_int_selector_dot)
+{
+  const int initial1 = 4;
+  const int initial2 = -3;
+
+  test_dot_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_dot_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_dot_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_dot_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_dot(const std::array<T, 3>& init1, const std::array<T, 3>& init2, double tol = 1.e-3)
+{
+  {
+    BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
+    checkVectorField(*fixture.field1, init1);
+    checkVectorField(*fixture.field2, init2);
+
+    const T result = stk::mesh::field_dot(*fixture.field1, *fixture.field2);
+    const T expectedResult = (init1[0] * init2[0] + init1[1] * init2[1] + init1[2] * init2[2]) *
+                             T(fixture.numEntitiesGlobal);
+    EXPECT_LT(std::abs(result - expectedResult), tol);
+  }
+  {
+    BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
+    checkVectorField(*fixture.field1, init1);
+    checkVectorField(*fixture.field2, init2);
+
+    T result;
+    stk::mesh::field_dot(result, *fixture.fieldBase1, *fixture.fieldBase2);
+    const T expectedResult = (init1[0] * init2[0] + init1[1] * init2[1] + init1[2] * init2[2]) *
+                             T(fixture.numEntitiesGlobal);
+    EXPECT_LT(std::abs(result - expectedResult), tol);
+  }
+}
+
+TEST(FieldBLAS, vector_double_dot)
+{
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
+
+  test_dot<LayoutRight, LayoutRight>(init1, init2);
+  test_dot<LayoutRight, LayoutLeft >(init1, init2);
+  test_dot<LayoutLeft,  LayoutRight>(init1, init2);
+  test_dot<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+TEST(FieldBLAS, vector_float_dot)
+{
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
+
+  test_dot<LayoutRight, LayoutRight>(init1, init2);
+  test_dot<LayoutRight, LayoutLeft >(init1, init2);
+  test_dot<LayoutLeft,  LayoutRight>(init1, init2);
+  test_dot<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+TEST(FieldBLAS, vector_complex_dot)
+{
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.1),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.2),
+                                             std::complex<double>(11.27, 4.21)};
+
+  test_dot<LayoutRight, LayoutRight>(init1, init2);
+  test_dot<LayoutRight, LayoutLeft >(init1, init2);
+  test_dot<LayoutLeft,  LayoutRight>(init1, init2);
+  test_dot<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+TEST(FieldBLAS, vector_int_dot)
+{
+  std::array<int, 3> init1 {4, 1, -2};
+  std::array<int, 3> init2 {3, 4, 11};
+
+  test_dot<LayoutRight, LayoutRight>(init1, init2);
+  test_dot<LayoutRight, LayoutLeft >(init1, init2);
+  test_dot<LayoutLeft,  LayoutRight>(init1, init2);
+  test_dot<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_nrm2(T init1, T init2, double tol = 1.0e-3)
+{
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
+
+  T fieldResult1 = stk::mesh::field_nrm2(*fixture.field1);
+  EXPECT_LT(std::abs(fieldResult1 - T(sqrt(std::abs(init1)*std::abs(init1)*double(fixture.numEntitiesGlobal)))), tol);
+  T fieldResult2 = stk::mesh::field_nrm2(*fixture.field2);
+  EXPECT_LT(std::abs(fieldResult2 - T(sqrt(std::abs(init2)*std::abs(init2)*double(fixture.numEntitiesGlobal)))), tol);
+
+  T fieldBaseResult1;
+  stk::mesh::field_nrm2(fieldBaseResult1, *fixture.fieldBase1);
+  EXPECT_LT(std::abs(fieldBaseResult1 - T(sqrt(std::abs(init1)*std::abs(init1)*double(fixture.numEntitiesGlobal)))), tol);
+  T fieldBaseResult2;
+  stk::mesh::field_nrm2(fieldBaseResult2, *fixture.fieldBase2);
+  EXPECT_LT(std::abs(fieldBaseResult2 - T(sqrt(std::abs(init2)*std::abs(init2)*double(fixture.numEntitiesGlobal)))), tol);
+}
+
+TEST(FieldBLAS, scalar_double_nrm2)
+{
+  const double initial1 = 4.27;
+  const double initial2 = -3.73;
+
+  test_nrm2<LayoutRight, LayoutRight>(initial1, initial2);
+  test_nrm2<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_nrm2<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_nrm2<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_float_nrm2)
+{
+  const float initial1 = 4.2;
+  const float initial2 = -3.7;
+
+  test_nrm2<LayoutRight, LayoutRight>(initial1, initial2);
+  test_nrm2<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_nrm2<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_nrm2<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_complex_nrm2)
+{
+  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
+
+  test_nrm2<LayoutRight, LayoutRight>(initial1, initial2);
+  test_nrm2<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_nrm2<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_nrm2<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_int_nrm2)
+{
+  const int initial1 = 4;
+  const int initial2 = -3;
+
+  test_nrm2<LayoutRight, LayoutRight>(initial1, initial2);
+  test_nrm2<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_nrm2<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_nrm2<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_nrm2_selector(T init1, T init2, double tol = 1.0e-1)
+{
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
+
+  T resultA = stk::mesh::field_nrm2(*fixture.field1, stk::mesh::Selector(*fixture.pPartA));
+  EXPECT_LT(std::abs(T(std::abs(init1)*sqrt(T(fixture.numPartAEntitiesGlobal))) - resultA), tol);
+
+  T resultB;
+  stk::mesh::field_nrm2(resultB, *fixture.fieldBase2, stk::mesh::Selector(*fixture.pPartB));
+  EXPECT_LT(std::abs(T(std::abs(init2)*sqrt(T(fixture.numPartBEntitiesGlobal))) - resultB), tol);
+
+  T resultABc = stk::mesh::field_nrm2(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                      stk::mesh::Selector(*fixture.pPartB).complement());
+  EXPECT_LT(std::abs(T(std::abs(init1)*sqrt(T(fixture.numEntitiesGlobal - fixture.numPartAEntitiesGlobal -
+                                              fixture.numPartBEntitiesGlobal))) - resultABc), tol);
+}
+
+TEST(FieldBLAS, scalar_double_selector_nrm2)
+{
+  const double initial1 = 4.27;
+  const double initial2 = -3.73;
+
+  test_nrm2_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_nrm2_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_nrm2_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_nrm2_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_float_selector_nrm2)
+{
+  const float initial1 = 4.2;
+  const float initial2 = -3.7;
+
+  test_nrm2_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_nrm2_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_nrm2_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_nrm2_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_complex_selector_nrm2)
+{
+  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
+  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+
+  test_nrm2_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_nrm2_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_nrm2_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_nrm2_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+TEST(FieldBLAS, scalar_int_selector_nrm2)
+{
+  const int initial1 = 4;
+  const int initial2 = -3;
+
+  test_nrm2_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_nrm2_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_nrm2_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_nrm2_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
+}
+
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_nrm2(const std::array<T, 3>& init1, const std::array<T, 3>& init2, double tol = 1.e-3)
+{
+  BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
+  checkVectorField(*fixture.field1, init1);
+  checkVectorField(*fixture.field2, init2);
+
+  {
+    const T result = stk::mesh::field_nrm2(*fixture.field1);
+    const T expectedResult = std::sqrt((std::pow(std::abs(init1[0]), 2) + std::pow(std::abs(init1[1]), 2) +
+                                        std::pow(std::abs(init1[2]), 2)) * T(fixture.numEntitiesGlobal));
+    EXPECT_LT(std::abs(result - expectedResult), tol);
+  }
+
+  {
+    T result {};
+    stk::mesh::field_nrm2(result, *fixture.fieldBase2);
+    const T expectedResult = std::sqrt((std::pow(std::abs(init2[0]), 2) + std::pow(std::abs(init2[1]), 2) +
+                                        std::pow(std::abs(init2[2]), 2)) * T(fixture.numEntitiesGlobal));
+    EXPECT_LT(std::abs(result - expectedResult), tol);
+  }
+}
+
+TEST(FieldBLAS, vector_double_nrm2)
+{
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
+
+  test_nrm2<LayoutRight, LayoutRight>(init1, init2);
+  test_nrm2<LayoutRight, LayoutLeft >(init1, init2);
+  test_nrm2<LayoutLeft,  LayoutRight>(init1, init2);
+  test_nrm2<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+TEST(FieldBLAS, vector_float_nrm2)
+{
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
+
+  test_nrm2<LayoutRight, LayoutRight>(init1, init2);
+  test_nrm2<LayoutRight, LayoutLeft >(init1, init2);
+  test_nrm2<LayoutLeft,  LayoutRight>(init1, init2);
+  test_nrm2<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+TEST(FieldBLAS, vector_complex_nrm2)
+{
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.1),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.2),
+                                             std::complex<double>(11.27, 4.21)};
+
+  test_nrm2<LayoutRight, LayoutRight>(init1, init2);
+  test_nrm2<LayoutRight, LayoutLeft >(init1, init2);
+  test_nrm2<LayoutLeft,  LayoutRight>(init1, init2);
+  test_nrm2<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+TEST(FieldBLAS, vector_int_nrm2)
+{
+  std::array<int, 3> init1 {4, 1, -2};
+  std::array<int, 3> init2 {3, 4, 11};
+
+  test_nrm2<LayoutRight, LayoutRight>(init1, init2);
+  test_nrm2<LayoutRight, LayoutLeft >(init1, init2);
+  test_nrm2<LayoutLeft,  LayoutRight>(init1, init2);
+  test_nrm2<LayoutLeft,  LayoutLeft >(init1, init2);
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_scale(T alpha, T init1)
+{
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init1);
+
+  stk::mesh::field_scale(alpha, *fixture.field1);
+  stk::mesh::field_scale(alpha, *fixture.fieldBase2);
+  checkScalarFields(fixture, alpha*init1, alpha*init1, T{});
+}
+
+TEST(FieldBLAS, scalar_double_scale)
 {
   const double alpha = 4.27;
   const double initial1 = -3.73;
-  test_scale(alpha,initial1);
+
+  test_scale<LayoutRight, LayoutRight>(alpha, initial1);
+  test_scale<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_scale<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_scale<LayoutLeft,  LayoutLeft >(alpha, initial1);
 }
 
-TEST(FieldBLAS,scale_float)
+TEST(FieldBLAS, scalar_float_scale)
 {
   const float alpha = 4.2;
   const float initial1 = -3.7;
-  test_scale(alpha,initial1);
+
+  test_scale<LayoutRight, LayoutRight>(alpha, initial1);
+  test_scale<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_scale<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_scale<LayoutLeft,  LayoutLeft >(alpha, initial1);
 }
 
-TEST(FieldBLAS,scale_complex)
+TEST(FieldBLAS, scalar_complex_scale)
 {
-  const std::complex<double> alpha = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial1 = std::complex<double>(-7.21,-1.23);
-  test_scale(alpha,initial1);
+  const std::complex<double> alpha = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial1 = std::complex<double>(-7.21, -1.23);
+
+  test_scale<LayoutRight, LayoutRight>(alpha, initial1);
+  test_scale<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_scale<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_scale<LayoutLeft,  LayoutLeft >(alpha, initial1);
 }
 
-TEST(FieldBLAS,scale_int)
+TEST(FieldBLAS, scalar_int_scale)
 {
   const int alpha = 4;
   const int initial1 = -3;
-  test_scale(alpha,initial1);
+
+  test_scale<LayoutRight, LayoutRight>(alpha, initial1);
+  test_scale<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_scale<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_scale<LayoutLeft,  LayoutLeft >(alpha, initial1);
 }
 
-template<class Scalar>
-void test_scale_selector(Scalar alpha,Scalar initial1,Scalar initial2)
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_scale_selector(T alpha, T init1, T init2)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial2);
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
-  stk::mesh::field_scale(alpha,*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,alpha*initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
+  stk::mesh::field_scale(alpha, *fixture.field1, stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, alpha*init1, init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
 
-  stk::mesh::field_scale(alpha,*Fixture.fieldBase2,stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,alpha*initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,alpha*initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
+  stk::mesh::field_scale(alpha, *fixture.fieldBase2, stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, alpha*init1, init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1, alpha*init2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
 
-  stk::mesh::field_scale(alpha,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  testFieldValidation(Fixture,alpha*initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,alpha*initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,alpha*initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
+  stk::mesh::field_scale(alpha, *fixture.field2, stk::mesh::Selector(*fixture.pPartA).complement() &
+                         stk::mesh::Selector(*fixture.pPartB).complement());
+  checkScalarFields(fixture, alpha*init1, init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1, alpha*init2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, alpha*init2, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
 }
 
-TEST(FieldBLAS,scale_selector_double)
+TEST(FieldBLAS, scalar_double_selector_scale)
 {
   const double initial1 = 4.27;
   const double initial2 = -3.73;
-
   const double alpha = 2.13;
 
-  test_scale_selector(alpha,initial1,initial2);
+  test_scale_selector<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_scale_selector<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_scale_selector<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_scale_selector<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-TEST(FieldBLAS,scale_selector_float)
+TEST(FieldBLAS, scalar_float_selector_scale)
 {
   const float initial1 = 4.2;
   const float initial2 = -3.7;
-
   const float alpha = 7.21;
 
-  test_scale_selector(alpha,initial1,initial2);
+  test_scale_selector<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_scale_selector<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_scale_selector<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_scale_selector<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-TEST(FieldBLAS,scale_selector_complex)
+TEST(FieldBLAS, scalar_complex_selector_scale)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27,2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73,1.04);
-
+  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
+  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
   const std::complex<double> alpha = -4.2;
 
-  test_scale_selector(alpha,initial1,initial2);
+  test_scale_selector<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_scale_selector<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_scale_selector<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_scale_selector<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-TEST(FieldBLAS,scale_selector_int)
+TEST(FieldBLAS, scalar_int_selector_scale)
 {
   const int initial1 = 4;
   const int initial2 = -3;
-
   const int alpha = 2;
 
-  test_scale_selector(alpha,initial1,initial2);
+  test_scale_selector<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_scale_selector<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_scale_selector<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_scale_selector<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-template<class Scalar>
-void test_fill(const Scalar alpha,const Scalar initial1)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_scale(T alpha, const std::array<T, 3>& init1, const std::array<T, 3>& init2)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial1);
+  BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
+  checkVectorField(*fixture.field1, init1);
+  checkVectorField(*fixture.field2, init2);
 
-  stk::mesh::field_fill(alpha,*Fixture.field1);
-  stk::mesh::field_fill(alpha,*Fixture.fieldBase2);
-  testFieldValidation(Fixture,alpha,alpha,Scalar());
+  stk::mesh::field_scale(alpha, *fixture.field1);
+  checkVectorField(*fixture.field1, {alpha*init1[0], alpha*init1[1], alpha*init1[2]});
+
+  stk::mesh::field_scale(alpha, *fixture.fieldBase2);
+  checkVectorField(*fixture.field2, {alpha*init2[0], alpha*init2[1], alpha*init2[2]});
 }
 
-template<class Scalar>
-void test_fill_many(const Scalar alpha,const Scalar initial1)
+TEST(FieldBLAS, vector_double_scale)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial1,initial1);
+  const double alpha = 4.11;
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
 
-  stk::mesh::field_fill(alpha,{Fixture.fieldBase1, Fixture.fieldBase2, Fixture.fieldBase3});
-  testFieldValidation(Fixture,alpha,alpha,alpha);
+  test_scale<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_scale<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_scale<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_scale<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
 }
 
-TEST(FieldBLAS,fill_double)
+TEST(FieldBLAS, vector_float_scale)
+{
+  const float alpha = 4.1;
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
+
+  test_scale<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_scale<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_scale<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_scale<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+TEST(FieldBLAS, vector_complex_scale)
+{
+  const std::complex<double> alpha = std::complex<double>(4.11, -32.1);
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.1),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.2),
+                                             std::complex<double>(11.27, 4.21)};
+
+  test_scale<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_scale<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_scale<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_scale<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+TEST(FieldBLAS, vector_int_scale)
+{
+  const int alpha = 4;
+  std::array<int, 3> init1 {4, 1, -2};
+  std::array<int, 3> init2 {3, 4, 11};
+
+  test_scale<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_scale<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_scale<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_scale<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_fill(const T alpha, const T init1)
+{
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init1);
+
+  stk::mesh::field_fill(alpha, *fixture.field1);
+  stk::mesh::field_fill(alpha, *fixture.fieldBase2);
+  checkScalarFields(fixture, alpha, alpha, T());
+}
+
+TEST(FieldBLAS, scalar_double_fill)
 {
   const double alpha = 4.27;
   const double initial1 = -3.73;
-  test_fill(alpha,initial1);
+
+  test_fill<LayoutRight, LayoutRight>(alpha, initial1);
+  test_fill<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_fill<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_fill<LayoutLeft,  LayoutLeft >(alpha, initial1);
 }
 
-TEST(FieldBLAS,fill_many_double)
+TEST(FieldBLAS, scalar_float_fill)
+{
+  const float alpha = 4.2;
+  const float initial1 = -3.7;
+
+  test_fill<LayoutRight, LayoutRight>(alpha, initial1);
+  test_fill<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_fill<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_fill<LayoutLeft,  LayoutLeft >(alpha, initial1);
+}
+
+TEST(FieldBLAS, scalar_complex_fill)
+{
+  const std::complex<double> alpha = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial1 = std::complex<double>(-7.21, -1.23);
+
+  test_fill<LayoutRight, LayoutRight>(alpha, initial1);
+  test_fill<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_fill<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_fill<LayoutLeft,  LayoutLeft >(alpha, initial1);
+}
+
+TEST(FieldBLAS, scalar_int_fill)
+{
+  const int alpha = 4;
+  const int initial1 = -3;
+
+  test_fill<LayoutRight, LayoutRight>(alpha, initial1);
+  test_fill<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_fill<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_fill<LayoutLeft,  LayoutLeft >(alpha, initial1);
+}
+
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_fill_many(const T alpha, const T init1)
+{
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init1);
+
+  stk::mesh::field_fill(alpha, {fixture.fieldBase1, fixture.fieldBase2});
+  checkScalarFields(fixture, alpha, alpha, T{});
+}
+
+TEST(FieldBLAS, scalar_double_many_fill)
 {
   const double alpha = 4.27;
   const double initial1 = -3.73;
-  test_fill_many(alpha,initial1);
+
+  test_fill_many<LayoutRight, LayoutRight>(alpha, initial1);
+  test_fill_many<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_fill_many<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_fill_many<LayoutLeft,  LayoutLeft >(alpha, initial1);
 }
 
-TEST(FieldBLAS,fill_float)
+TEST(FieldBLAS, scalar_float_many_fill)
 {
   const float alpha = 4.2;
   const float initial1 = -3.7;
-  test_fill(alpha,initial1);
+
+  test_fill_many<LayoutRight, LayoutRight>(alpha, initial1);
+  test_fill_many<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_fill_many<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_fill_many<LayoutLeft,  LayoutLeft >(alpha, initial1);
 }
 
-TEST(FieldBLAS,fill_float_many)
+TEST(FieldBLAS, scalar_complex_many_fill)
 {
-  const float alpha = 4.2;
-  const float initial1 = -3.7;
-  test_fill_many(alpha,initial1);
+  const std::complex<double> alpha = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial1 = std::complex<double>(-7.21, -1.23);
+
+  test_fill_many<LayoutRight, LayoutRight>(alpha, initial1);
+  test_fill_many<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_fill_many<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_fill_many<LayoutLeft,  LayoutLeft >(alpha, initial1);
 }
 
-TEST(FieldBLAS,fill_complex)
-{
-  const std::complex<double> alpha = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial1 = std::complex<double>(-7.21,-1.23);
-  test_fill(alpha,initial1);
-}
-
-TEST(FieldBLAS,fill_complex_many)
-{
-  const std::complex<double> alpha = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial1 = std::complex<double>(-7.21,-1.23);
-  test_fill_many(alpha,initial1);
-}
-
-TEST(FieldBLAS,fill_int)
+TEST(FieldBLAS, scalar_int_many_fill)
 {
   const int alpha = 4;
   const int initial1 = -3;
-  test_fill(alpha,initial1);
+
+  test_fill_many<LayoutRight, LayoutRight>(alpha, initial1);
+  test_fill_many<LayoutRight, LayoutLeft >(alpha, initial1);
+  test_fill_many<LayoutLeft,  LayoutRight>(alpha, initial1);
+  test_fill_many<LayoutLeft,  LayoutLeft >(alpha, initial1);
 }
 
-TEST(FieldBLAS,fill_int_many)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_fill_selector(T alpha, T init1, T init2)
 {
-  const int alpha = 4;
-  const int initial1 = -3;
-  test_fill_many(alpha,initial1);
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
+
+  stk::mesh::field_fill(alpha, *fixture.field1, stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, alpha, init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
+
+  stk::mesh::field_fill(alpha, *fixture.fieldBase2, stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, alpha, init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1, alpha, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
+
+  stk::mesh::field_fill(T(0.0), *fixture.fieldBase1);
+  checkScalarFields(fixture, T(0.0), init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, T(0.0), alpha, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, T(0.0), init2, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
+
+  stk::mesh::field_fill(alpha, *fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                        stk::mesh::Selector(*fixture.pPartB).complement());
+  checkScalarFields(fixture, T(0.0), init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, T(0.0), alpha, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, alpha, init2, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
 }
 
-template<class Scalar>
-void test_fill_selector(Scalar alpha,Scalar initial1,Scalar initial2)
+TEST(FieldBLAS, scalar_double_selector_fill)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial2);
-
-  stk::mesh::field_fill(alpha,*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,alpha,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-
-  stk::mesh::field_fill(alpha,*Fixture.fieldBase2,stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,alpha,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,alpha,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-
-  stk::mesh::field_fill(Scalar(0.0),*Fixture.fieldBase1);
-  testFieldValidation(Fixture,Scalar(0.0),initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,Scalar(0.0),alpha,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,Scalar(0.0),initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-
-  stk::mesh::field_fill(alpha,*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  testFieldValidation(Fixture,Scalar(0.0),initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,Scalar(0.0),alpha,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,alpha,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-}
-
-TEST(FieldBLAS,fill_selector_double)
-{
-  const double initial1 = 4.27;
-  const double initial2 = -3.73;
-
   const double alpha = 2.13;
+  const double initial1 = 4.27;
+  const double initial2 = -3.73;
 
-  test_fill_selector(alpha,initial1,initial2);
+  test_fill_selector<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_fill_selector<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_fill_selector<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_fill_selector<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-TEST(FieldBLAS,fill_selector_float)
+TEST(FieldBLAS, scalar_float_selector_fill)
 {
-  const float initial1 = 4.2;
-  const float initial2 = -3.7;
-
   const float alpha = 7.21;
+  const float initial1 = 4.2;
+  const float initial2 = -3.7;
 
-  test_fill_selector(alpha,initial1,initial2);
+  test_fill_selector<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_fill_selector<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_fill_selector<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_fill_selector<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-TEST(FieldBLAS,fill_selector_complex)
+TEST(FieldBLAS, scalar_complex_selector_fill)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27,2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73,1.04);
-
   const std::complex<double> alpha = -4.2;
+  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
+  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
 
-  test_fill_selector(alpha,initial1,initial2);
+  test_fill_selector<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_fill_selector<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_fill_selector<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_fill_selector<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-TEST(FieldBLAS,fill_selector_int)
+TEST(FieldBLAS, scalar_int_selector_fill)
 {
-  const int initial1 = 4;
-  const int initial2 = -3;
   const int alpha = 2;
-
-  test_fill_selector(alpha,initial1,initial2);
-}
-
-template<class Scalar>
-void test_swap(const Scalar initial1, const Scalar initial2, const Scalar initial3)
-{
-  BLASFixture<Scalar> Fixture (initial1, initial2, initial3);
-
-  stk::mesh::field_swap(*Fixture.field1,*Fixture.field3);
-  testFieldValidation(Fixture,initial3,initial2,initial1);
-
-  stk::mesh::field_swap(*Fixture.field1,*Fixture.field2);
-  testFieldValidation(Fixture,initial2,initial3,initial1);
-}
-
-TEST(FieldBLAS,swap_double)
-{
-  const double initial1 = 4.27;
-  const double initial2 = -3.73;
-  const double initial3 = 1.12;
-
-  test_swap(initial1,initial2,initial3);
-}
-
-TEST(FieldBLAS,swap_float)
-{
-  const float initial1 = 4.2;
-  const float initial2 = -3.7;
-  const float initial3 = 1.1;
-
-  test_swap(initial1,initial2,initial3);
-}
-
-TEST(FieldBLAS,swap_complex)
-{
-  const std::complex<double> initial1 = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21,-1.23);
-  const std::complex<double> initial3 = std::complex<double>(-2.71,1.12);
-
-  test_swap(initial1,initial2,initial3);
-}
-
-TEST(FieldBLAS,swap_int)
-{
-  const int initial1 = 4;
-  const int initial2 = -3;
-  const int initial3 = 7;
-
-  test_swap(initial1,initial2,initial3);
-}
-
-template<class Scalar>
-void test_swap_selector(Scalar initial1,Scalar initial2)
-{
-  BLASFixture<Scalar> Fixture (initial1,initial2);
-
-  stk::mesh::field_swap(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial2,initial1,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-
-  stk::mesh::field_swap(*Fixture.fieldBase2,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial2,initial1,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial2,initial1,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-
-  stk::mesh::field_swap(*Fixture.fieldBase2,*Fixture.fieldBase1);
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial2,initial1,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-
-  stk::mesh::field_swap(*Fixture.field1,*Fixture.field2,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartB));
-  testFieldValidation(Fixture,initial1,initial2,Scalar(),stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-}
-
-TEST(FieldBLAS,swap_selector_double)
-{
-  const double initial1 = 4.27;
-  const double initial2 = -3.73;
-
-  test_swap_selector(initial1,initial2);
-}
-
-TEST(FieldBLAS,swap_selector_float)
-{
-  const float initial1 = 4.2;
-  const float initial2 = -3.7;
-
-  test_swap_selector(initial1,initial2);
-}
-
-TEST(FieldBLAS,swap_selector_complex)
-{
-  const std::complex<double> initial1 = std::complex<double>(4.27,2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73,1.04);
-
-  test_swap_selector(initial1,initial2);
-}
-
-TEST(FieldBLAS,swap_selector_int)
-{
   const int initial1 = 4;
   const int initial2 = -3;
 
-  test_swap_selector(initial1,initial2);
+  test_fill_selector<LayoutRight, LayoutRight>(alpha, initial1, initial2);
+  test_fill_selector<LayoutRight, LayoutLeft >(alpha, initial1, initial2);
+  test_fill_selector<LayoutLeft,  LayoutRight>(alpha, initial1, initial2);
+  test_fill_selector<LayoutLeft,  LayoutLeft >(alpha, initial1, initial2);
 }
 
-template<class Scalar>
-void test_nrm2(const Scalar initial1,const Scalar initial2,const double TOL = 1.0e-1)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_fill(T alpha, const std::array<T, 3>& init1, const std::array<T, 3>& init2)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial2);
+  BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
 
-  Scalar field_result1 = stk::mesh::field_nrm2(*Fixture.field1);
-  EXPECT_LT(std::abs(field_result1-Scalar(sqrt(std::abs(initial1)*std::abs(initial1)*double(Fixture.numEntitiesGlobal)))),TOL);
-  Scalar field_result2 = stk::mesh::field_nrm2(*Fixture.field2);
-  EXPECT_LT(std::abs(field_result2-Scalar(sqrt(std::abs(initial2)*std::abs(initial2)*double(Fixture.numEntitiesGlobal)))),TOL);
+  stk::mesh::field_fill(alpha, *fixture.field1);
+  stk::mesh::field_fill(alpha, *fixture.fieldBase2);
 
-  Scalar fieldBase_result1;
-  stk::mesh::field_nrm2(fieldBase_result1,*Fixture.fieldBase1);
-  EXPECT_LT(std::abs(fieldBase_result1-Scalar(sqrt(std::abs(initial1)*std::abs(initial1)*double(Fixture.numEntitiesGlobal)))),TOL);
-  Scalar fieldBase_result2;
-  stk::mesh::field_nrm2(fieldBase_result2,*Fixture.fieldBase2);
-  EXPECT_LT(std::abs(fieldBase_result2-Scalar(sqrt(std::abs(initial2)*std::abs(initial2)*double(Fixture.numEntitiesGlobal)))),TOL);
+  checkVectorField(*fixture.field1, {alpha, alpha, alpha});
+  checkVectorField(*fixture.field2, {alpha, alpha, alpha});
 }
 
-TEST(FieldBLAS,nrm2_double)
+TEST(FieldBLAS, vector_double_fill)
 {
-  const double initial1 = 4.27;
-  const double initial2 = -3.73;
-  test_nrm2(initial1,initial2);
+  const double alpha = 4.11;
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
+
+  test_fill<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_fill<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_fill<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_fill<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
 }
 
-TEST(FieldBLAS,nrm2_float)
+TEST(FieldBLAS, vector_float_fill)
 {
-  const float initial1 = 4.2;
-  const float initial2 = -3.7;
-  test_nrm2(initial1,initial2);
+  const float alpha = 4.1;
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
+
+  test_fill<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_fill<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_fill<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_fill<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
 }
 
-TEST(FieldBLAS,nrm2_complex)
+TEST(FieldBLAS, vector_complex_fill)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21,-1.23);
-  test_nrm2(initial1,initial2);
+  const std::complex<double> alpha = std::complex<double>(4.11, -32.1);
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.1),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.2),
+                                             std::complex<double>(11.27, 4.21)};
+
+  test_fill<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_fill<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_fill<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_fill<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
 }
 
-TEST(FieldBLAS,nrm2_int)
+TEST(FieldBLAS, vector_int_fill)
 {
-  const int initial1 = 4;
-  const int initial2 = -3;
-  test_nrm2(initial1,initial2,5);
+  const int alpha = 4;
+  std::array<int, 3> init1 {4, 1, -2};
+  std::array<int, 3> init2 {3, 4, 11};
+
+  test_fill<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_fill<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_fill<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_fill<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
 }
 
-template<class Scalar>
-void test_nrm2_selector(Scalar initial1,Scalar initial2,const double TOL = 1.0e-1)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_fill_component(const std::array<T, 3>& alpha, const std::array<T, 3>& init1, const std::array<T, 3>& init2)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial2);
+  BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
+  stk::mesh::field_fill_component(alpha.data(), *fixture.field1);
+  stk::mesh::field_fill_component(alpha.data(), *fixture.fieldBase2);
 
-  Scalar resultA=stk::mesh::field_nrm2(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA));
-  EXPECT_LT(std::abs(Scalar(std::abs(initial1)*sqrt(Scalar(Fixture.numPartAEntitiesGlobal)))-resultA),TOL);
-
-  Scalar resultB;
-  stk::mesh::field_nrm2(resultB,*Fixture.fieldBase2,stk::mesh::Selector(*Fixture.pPartB));
-  EXPECT_LT(std::abs(Scalar(std::abs(initial2)*sqrt(Scalar(Fixture.numPartBEntitiesGlobal)))-resultB),TOL);
-
-  Scalar resultABc=stk::mesh::field_nrm2(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  EXPECT_LT(std::abs(Scalar(std::abs(initial1)*sqrt(Scalar(Fixture.numEntitiesGlobal-Fixture.numPartAEntitiesGlobal-Fixture.numPartBEntitiesGlobal)))-resultABc),TOL);
+  checkVectorField(*fixture.field1, alpha);
+  checkVectorField(*fixture.field2, alpha);
 }
 
-TEST(FieldBLAS,nrm2_selector_double)
+TEST(FieldBLAS, vector_double_fill_component)
+{
+  std::array<double, 3> alpha {4.11, 2.11, -3.12};
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
+
+  test_fill_component<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_fill_component<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_fill_component<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_fill_component<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+TEST(FieldBLAS, vector_float_fill_component)
+{
+  std::array<float, 3> alpha {4.1, 2.1, -3.1};
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
+
+  test_fill_component<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_fill_component<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_fill_component<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_fill_component<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+TEST(FieldBLAS, vector_complex_fill_component)
+{
+  std::array<std::complex<double>, 3> alpha {std::complex<double>(4.11, -3.1),
+                                             std::complex<double>(2.17, -0.25),
+                                             std::complex<double>(7.14, -38.1)};
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.13),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.24),
+                                             std::complex<double>(11.27, 4.21)};
+
+  test_fill_component<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_fill_component<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_fill_component<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_fill_component<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+TEST(FieldBLAS, vector_int_fill_component)
+{
+  std::array<int, 3> alpha {2, -3, 6};
+  std::array<int, 3> init1 {4, 1, -2};
+  std::array<int, 3> init2 {3, 4, 11};
+
+  test_fill_component<LayoutRight, LayoutRight>(alpha, init1, init2);
+  test_fill_component<LayoutRight, LayoutLeft >(alpha, init1, init2);
+  test_fill_component<LayoutLeft,  LayoutRight>(alpha, init1, init2);
+  test_fill_component<LayoutLeft,  LayoutLeft >(alpha, init1, init2);
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_swap(const T init1, const T init2)
+{
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
+
+  stk::mesh::field_swap(*fixture.field1, *fixture.fieldBase2);
+  checkScalarFields(fixture, init2, init1, T{});
+}
+
+TEST(FieldBLAS, scalar_double_swap)
 {
   const double initial1 = 4.27;
   const double initial2 = -3.73;
 
-  test_nrm2_selector(initial1,initial2);
+  test_swap<LayoutRight, LayoutRight>(initial1, initial2);
+  test_swap<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_swap<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_swap<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,nrm2_selector_float)
+TEST(FieldBLAS, scalar_float_swap)
 {
   const float initial1 = 4.2;
   const float initial2 = -3.7;
 
-  test_nrm2_selector(initial1,initial2);
+  test_swap<LayoutRight, LayoutRight>(initial1, initial2);
+  test_swap<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_swap<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_swap<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,nrm2_selector_complex)
+TEST(FieldBLAS, scalar_complex_swap)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27,2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73,1.04);
+  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
 
-  test_nrm2_selector(initial1,initial2);
+  test_swap<LayoutRight, LayoutRight>(initial1, initial2);
+  test_swap<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_swap<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_swap<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,nrm2_selector_int)
-{
-  const int initial1 = 4;
-  const int initial2 = -3;
-
-  test_nrm2_selector(initial1,initial2,5);
-}
-
-template<class Scalar>
-void test_asum(const Scalar initial1,const Scalar initial2,const double TOL = 1.0e-1)
-{
-  BLASFixture<Scalar> Fixture (initial1,initial2);
-
-  Scalar field_result1 = stk::mesh::field_asum(*Fixture.field1);
-  EXPECT_LT(std::abs(field_result1-std::abs(initial1)*Scalar(Fixture.numEntitiesGlobal)),TOL);
-  Scalar field_result2 = stk::mesh::field_asum(*Fixture.field2);
-  EXPECT_LT(std::abs(field_result2-std::abs(initial2)*Scalar(Fixture.numEntitiesGlobal)),TOL);
-
-  Scalar fieldBase_result1;
-  stk::mesh::field_asum(fieldBase_result1,*Fixture.fieldBase1);
-  EXPECT_LT(std::abs(fieldBase_result1-std::abs(initial1)*Scalar(Fixture.numEntitiesGlobal)),TOL);
-  Scalar fieldBase_result2;
-  stk::mesh::field_asum(fieldBase_result2,*Fixture.fieldBase2);
-  EXPECT_LT(std::abs(fieldBase_result2-std::abs(initial2)*Scalar(Fixture.numEntitiesGlobal)),TOL);
-}
-
-TEST(FieldBLAS,asum_double)
-{
-  const double initial1 = 4.27;
-  const double initial2 = -3.73;
-  test_asum(initial1,initial2);
-}
-
-TEST(FieldBLAS,asum_float)
-{
-  const float initial1 = 4.2;
-  const float initial2 = -3.7;
-  test_asum(initial1,initial2);
-}
-
-TEST(FieldBLAS,asum_complex)
-{
-  const std::complex<double> initial1 = std::complex<double>(4.11,-7.63);
-  const std::complex<double> initial2 = std::complex<double>(-7.21,-1.23);
-  test_asum(initial1,initial2);
-}
-
-TEST(FieldBLAS,asum_int)
+TEST(FieldBLAS, scalar_int_swap)
 {
   const int initial1 = 4;
   const int initial2 = -3;
-  test_asum(initial1,initial2);
+
+  test_swap<LayoutRight, LayoutRight>(initial1, initial2);
+  test_swap<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_swap<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_swap<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-template<class Scalar>
-void test_asum_selector(Scalar initial1,Scalar initial2,const double TOL = 1.0e-1)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_swap_selector(T init1, T init2)
 {
-  BLASFixture<Scalar> Fixture (initial1,initial2);
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
-  Scalar resultA=stk::mesh::field_asum(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA));
-  EXPECT_LT(std::abs(std::abs(initial1)*Scalar(Fixture.numPartAEntitiesGlobal)-resultA),TOL);
+  stk::mesh::field_swap(*fixture.field1, *fixture.field2, stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init2, init1, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
 
-  Scalar resultB;
-  stk::mesh::field_asum(resultB,*Fixture.fieldBase2,stk::mesh::Selector(*Fixture.pPartB));
-  EXPECT_LT(std::abs(std::abs(initial2)*Scalar(Fixture.numPartBEntitiesGlobal)-resultB),TOL);
+  stk::mesh::field_swap(*fixture.fieldBase2, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init2, init1, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init2, init1, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
 
-  Scalar resultABc=stk::mesh::field_asum(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  EXPECT_LT(std::abs(std::abs(initial1)*Scalar(Fixture.numEntitiesGlobal-Fixture.numPartAEntitiesGlobal-Fixture.numPartBEntitiesGlobal)-resultABc),TOL);
+  stk::mesh::field_swap(*fixture.fieldBase2, *fixture.fieldBase1);
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init2, init1, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
+
+  stk::mesh::field_swap(*fixture.field1, *fixture.field2, stk::mesh::Selector(*fixture.pPartA).complement() &
+                        stk::mesh::Selector(*fixture.pPartB).complement());
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartA));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartB));
+  checkScalarFields(fixture, init1, init2, T(), stk::mesh::Selector(*fixture.pPartA).complement() &
+                    stk::mesh::Selector(*fixture.pPartB).complement());
 }
 
-TEST(FieldBLAS,asum_selector_double)
+TEST(FieldBLAS, swap_selector_double)
 {
   const double initial1 = 4.27;
   const double initial2 = -3.73;
 
-  test_asum_selector(initial1,initial2);
+  test_swap_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_swap_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_swap_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_swap_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,asum_selector_float)
+TEST(FieldBLAS, swap_selector_float)
 {
   const float initial1 = 4.2;
   const float initial2 = -3.7;
 
-  test_asum_selector(initial1,initial2);
+  test_swap_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_swap_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_swap_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_swap_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,asum_selector_complex)
+TEST(FieldBLAS, swap_selector_complex)
 {
-  const std::complex<double> initial1 = std::complex<double>(4.27,2.1);
-  const std::complex<double> initial2 = std::complex<double>(-3.73,1.04);
+  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
+  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
 
-  test_asum_selector(initial1,initial2);
+  test_swap_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_swap_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_swap_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_swap_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,asum_selector_int)
+TEST(FieldBLAS, swap_selector_int)
 {
   const int initial1 = 4;
   const int initial2 = -3;
 
-  test_asum_selector(initial1,initial2);
+  test_swap_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_swap_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_swap_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_swap_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-template<class Scalar>
-void test_amax(Scalar low_val,Scalar high_val)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_swap(const std::array<T, 3>& init1, const std::array<T, 3>& init2)
 {
-  BLASFixture<Scalar> Fixture (low_val,low_val);
+  BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
+  stk::mesh::field_swap(*fixture.field1, *fixture.fieldBase2);
 
-  const stk::mesh::MetaData &metaData = Fixture.stkMeshBulkData->mesh_meta_data();
-  const stk::mesh::BucketVector buckets = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                               metaData.universal_part() &
-                                                                               stk::mesh::selectField(*Fixture.field1) &
-                                                                               metaData.locally_owned_part());
-  double MPI_frac = double(stk::parallel_machine_rank(Fixture.stkMeshBulkData->parallel())+1)/double(stk::parallel_machine_size(Fixture.stkMeshBulkData->parallel()));
-  stk::mesh::Bucket & b = *buckets[buckets.size()/3u];
-  Scalar * x = (Scalar*)stk::mesh::field_data(*Fixture.field1, b);
-  x[b.size()/3u]=high_val*std::abs(low_val/high_val)+Scalar(high_val-high_val*std::abs(low_val/high_val))*MPI_frac;
-
-  Scalar field_result = stk::mesh::field_amax(*Fixture.field1);
-  EXPECT_EQ(field_result,std::abs(high_val));
-
-  Scalar fieldBase_result;
-  stk::mesh::field_amax(fieldBase_result,*Fixture.fieldBase1);
-  EXPECT_EQ(fieldBase_result,std::abs(high_val));
+  checkVectorField(*fixture.field1, init2);
+  checkVectorField(*fixture.field2, init1);
 }
 
-TEST(FieldBLAS,amax_double)
+TEST(FieldBLAS, vector_double_swap)
 {
-  const double low_val  = 2.73;
-  const double high_val = -10.27;
-  test_amax(low_val,high_val);
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
+
+  test_swap<LayoutRight, LayoutRight>(init1, init2);
+  test_swap<LayoutRight, LayoutLeft >(init1, init2);
+  test_swap<LayoutLeft,  LayoutRight>(init1, init2);
+  test_swap<LayoutLeft,  LayoutLeft >(init1, init2);
 }
 
-TEST(FieldBLAS,amax_float)
+TEST(FieldBLAS, vector_float_swap)
 {
-  const float low_val  = 3.7;
-  const float high_val = -10.2;
-  test_amax(low_val,high_val);
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
+
+  test_swap<LayoutRight, LayoutRight>(init1, init2);
+  test_swap<LayoutRight, LayoutLeft >(init1, init2);
+  test_swap<LayoutLeft,  LayoutRight>(init1, init2);
+  test_swap<LayoutLeft,  LayoutLeft >(init1, init2);
 }
 
-TEST(FieldBLAS,amax_complex)
+TEST(FieldBLAS, vector_complex_swap)
 {
-  const std::complex<double> low_val  = std::complex<double>(-1.11,-2.63);
-  const std::complex<double> high_val = std::complex<double>(-100.21,-250.23);
-  test_amax(low_val,high_val);
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.1),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.2),
+                                             std::complex<double>(11.27, 4.21)};
+
+  test_swap<LayoutRight, LayoutRight>(init1, init2);
+  test_swap<LayoutRight, LayoutLeft >(init1, init2);
+  test_swap<LayoutLeft,  LayoutRight>(init1, init2);
+  test_swap<LayoutLeft,  LayoutLeft >(init1, init2);
 }
 
-TEST(FieldBLAS,amax_int)
+TEST(FieldBLAS, vector_int_swap)
 {
-  const int low_val  = 2;
-  const int high_val = -10;
-  test_amax(low_val,high_val);
+  std::array<int, 3> init1 {4, 1, -2};
+  std::array<int, 3> init2 {3, 4, 11};
+
+  test_swap<LayoutRight, LayoutRight>(init1, init2);
+  test_swap<LayoutRight, LayoutLeft >(init1, init2);
+  test_swap<LayoutLeft,  LayoutRight>(init1, init2);
+  test_swap<LayoutLeft,  LayoutLeft >(init1, init2);
 }
 
-template<class Scalar>
-void test_amax_selector(Scalar low_value,Scalar high_valueA,Scalar high_valueAB,Scalar high_valueABc,const double TOL = 1.0e-1)
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_asum(T init1, T init2, double tol = 1.0e-3)
 {
-  BLASFixture<Scalar> Fixture (low_value,low_value);
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
-  const stk::mesh::MetaData &metaData = Fixture.stkMeshBulkData->mesh_meta_data();
-  double MPI_frac = double(stk::parallel_machine_rank(Fixture.stkMeshBulkData->parallel())+1)/double(stk::parallel_machine_size(Fixture.stkMeshBulkData->parallel()));
+  T fieldResult1 = stk::mesh::field_asum(*fixture.field1);
+  EXPECT_LT(std::abs(fieldResult1 - std::abs(init1) * T(fixture.numEntitiesGlobal)), tol);
+  T fieldResult2 = stk::mesh::field_asum(*fixture.field2);
+  EXPECT_LT(std::abs(fieldResult2 - std::abs(init2) * T(fixture.numEntitiesGlobal)), tol);
 
-  Scalar tmp_result;
-
-  const stk::mesh::BucketVector bucketsA = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                stk::mesh::Selector(*Fixture.pPartA) &
-                                                                                metaData.locally_owned_part());
-  stk::mesh::Bucket & bA = *bucketsA[bucketsA.size()/3];
-  Scalar* xA = (Scalar*)stk::mesh::field_data(*Fixture.field1, bA);
-  xA[bA.size()/3u]=high_valueA*std::abs(low_value/high_valueA)+Scalar(high_valueA-high_valueA*std::abs(low_value/high_valueA))*MPI_frac;
-
-  stk::mesh::field_amax(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-  EXPECT_LT(std::abs(std::abs(high_valueA)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(low_value)-stk::mesh::field_amax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB))),TOL);
-  stk::mesh::field_amax(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-  EXPECT_LT(std::abs(std::abs(high_valueA)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(low_value)-stk::mesh::field_amax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement())),TOL);
-  stk::mesh::field_amax(tmp_result,*Fixture.fieldBase1);
-  EXPECT_LT(std::abs(std::abs(high_valueA)-tmp_result),TOL);
-
-  const stk::mesh::BucketVector bucketsB = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                stk::mesh::Selector(*Fixture.pPartB) &
-                                                                                metaData.locally_owned_part());
-  stk::mesh::Bucket & bB = *bucketsB[bucketsB.size()/3];
-  Scalar* xB = (Scalar*)stk::mesh::field_data(*Fixture.field1, bB);
-  xB[bB.size()/3u]=high_valueAB*std::abs(low_value/high_valueAB)+Scalar(high_valueAB-high_valueAB*std::abs(low_value/high_valueAB))*MPI_frac;
-
-  EXPECT_LT(std::abs(std::abs(high_valueA)-stk::mesh::field_amax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA))),TOL);
-  stk::mesh::field_amax(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartB));
-  EXPECT_LT(std::abs(std::abs(high_valueAB)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(high_valueAB)-stk::mesh::field_amax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB))),TOL);
-  stk::mesh::field_amax(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  EXPECT_LT(std::abs(std::abs(low_value)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(high_valueAB)-stk::mesh::field_amax(*Fixture.field1)),TOL);
-
-  const stk::mesh::BucketVector bucketsABc = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                  stk::mesh::Selector(*Fixture.pPartA).complement() &
-                                                                                  stk::mesh::Selector(*Fixture.pPartB).complement() &
-                                                                                  metaData.locally_owned_part());
-  stk::mesh::Bucket & bABc = *bucketsABc[bucketsABc.size()/3];
-  Scalar* xABc = (Scalar*)stk::mesh::field_data(*Fixture.field1, bABc);
-  xABc[bABc.size()/3u]=high_valueABc*std::abs(low_value/high_valueABc)+Scalar(high_valueABc-high_valueABc*std::abs(low_value/high_valueABc))*MPI_frac;
-
-  stk::mesh::field_amax(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-  EXPECT_LT(std::abs(std::abs(high_valueA)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(high_valueAB)-stk::mesh::field_amax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB))),TOL);
-  stk::mesh::field_amax(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-  EXPECT_LT(std::abs(std::abs(high_valueAB)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(high_valueABc)-stk::mesh::field_amax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement())),TOL);
-  stk::mesh::field_amax(tmp_result,*Fixture.fieldBase1);
-  EXPECT_LT(std::abs(std::abs(high_valueABc)-tmp_result),TOL);
+  T fieldBaseResult1;
+  stk::mesh::field_asum(fieldBaseResult1, *fixture.fieldBase1);
+  EXPECT_LT(std::abs(fieldBaseResult1 - std::abs(init1) * T(fixture.numEntitiesGlobal)), tol);
+  T fieldBaseResult2;
+  stk::mesh::field_asum(fieldBaseResult2, *fixture.fieldBase2);
+  EXPECT_LT(std::abs(fieldBaseResult2 - std::abs(init2) * T(fixture.numEntitiesGlobal)), tol);
 }
 
-TEST(FieldBLAS,amax_selector_double)
+TEST(FieldBLAS, scalar_double_asum)
 {
-  const double low_value     = 1.27;
-  const double high_valueA   = -3.73;
-  const double high_valueAB  = -4.43;
-  const double high_valueABc = -5.03;
+  const double initial1 = 4.27;
+  const double initial2 = -3.73;
 
-  test_amax_selector(low_value,high_valueA,high_valueAB,high_valueABc);
+  test_asum<LayoutRight, LayoutRight>(initial1, initial2);
+  test_asum<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_asum<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_asum<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,amax_selector_float)
+TEST(FieldBLAS, scalar_float_asum)
 {
-  const float low_value     = 1.3;
-  const float high_valueA   = -3.7;
-  const float high_valueAB  = -4.4;
-  const float high_valueABc = -5.0;
+  const float initial1 = 4.2;
+  const float initial2 = -3.7;
 
-  test_amax_selector(low_value,high_valueA,high_valueAB,high_valueABc);
+  test_asum<LayoutRight, LayoutRight>(initial1, initial2);
+  test_asum<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_asum<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_asum<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,amax_selector_complex)
+TEST(FieldBLAS, scalar_complex_asum)
 {
-  const std::complex<double> low_value     = std::complex<double>(0.51,0.32);
-  const std::complex<double> high_valueA   = std::complex<double>(-3.73,4.04);
-  const std::complex<double> high_valueAB  = std::complex<double>(4.95,-5.12);
-  const std::complex<double> high_valueABc = std::complex<double>(-6.03,6.11);
+  const std::complex<double> initial1 = std::complex<double>(4.11, -7.63);
+  const std::complex<double> initial2 = std::complex<double>(-7.21, -1.23);
 
-  test_amax_selector(low_value,high_valueA,high_valueAB,high_valueABc);
+  test_asum<LayoutRight, LayoutRight>(initial1, initial2);
+  test_asum<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_asum<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_asum<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,amax_selector_int)
+TEST(FieldBLAS, scalar_int_asum)
 {
-  const int low_value     = 1;
-  const int high_valueA   = -3;
-  const int high_valueAB  = -4;
-  const int high_valueABc = -5;
+  const int initial1 = 4;
+  const int initial2 = -3;
 
-  test_amax_selector(low_value,high_valueA,high_valueAB,high_valueABc);
+  test_asum<LayoutRight, LayoutRight>(initial1, initial2);
+  test_asum<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_asum<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_asum<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-template<class Scalar>
-void test_eamax(Scalar low_val,Scalar high_val)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_asum_selector(T init1, T init2, double tol = 1.0e-3)
 {
-  BLASFixture<Scalar> Fixture (low_val,low_val);
-  const stk::mesh::MetaData &metaData = Fixture.stkMeshBulkData->mesh_meta_data();
-  const stk::mesh::BucketVector buckets = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                               metaData.universal_part() &
-                                                                               stk::mesh::selectField(*Fixture.field1) &
-                                                                               metaData.locally_owned_part());
-  double MPI_frac = double(stk::parallel_machine_rank(Fixture.stkMeshBulkData->parallel())+1)/double(stk::parallel_machine_size(Fixture.stkMeshBulkData->parallel()));
-  stk::mesh::Bucket & b = *buckets[buckets.size()/3u];
-  Scalar * x = (Scalar*)stk::mesh::field_data(*Fixture.field1, b);
-  x[b.size()/3u]=high_val*std::abs(low_val/high_val)+Scalar(high_val-high_val*std::abs(low_val/high_val))*MPI_frac;
+  BLASFixtureScalar<T, Layout1, Layout2> fixture(init1, init2);
 
-  stk::mesh::Entity field_result = stk::mesh::field_eamax(*Fixture.field1);
-  EXPECT_EQ(MPI_frac==1.0,field_result.is_local_offset_valid());
-  if (field_result.is_local_offset_valid()) { EXPECT_EQ(*stk::mesh::field_data(*Fixture.field1,field_result),high_val); }
+  T resultA = stk::mesh::field_asum(*fixture.field1, stk::mesh::Selector(*fixture.pPartA));
+  EXPECT_LT(std::abs(std::abs(init1) * T(fixture.numPartAEntitiesGlobal) - resultA), tol);
 
-  stk::mesh::Entity fieldBase_result=stk::mesh::field_eamax(*Fixture.fieldBase1);
-  EXPECT_EQ(MPI_frac==1.0,fieldBase_result.is_local_offset_valid());
-  if (fieldBase_result.is_local_offset_valid()) { EXPECT_EQ(*stk::mesh::field_data(*Fixture.field1,fieldBase_result),high_val); }
+  T resultB;
+  stk::mesh::field_asum(resultB, *fixture.fieldBase2, stk::mesh::Selector(*fixture.pPartB));
+  EXPECT_LT(std::abs(std::abs(init2) * T(fixture.numPartBEntitiesGlobal) - resultB), tol);
+
+  T resultABc=stk::mesh::field_asum(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                    stk::mesh::Selector(*fixture.pPartB).complement());
+  EXPECT_LT(std::abs(std::abs(init1) * T(fixture.numEntitiesGlobal - fixture.numPartAEntitiesGlobal -
+                                         fixture.numPartBEntitiesGlobal) - resultABc), tol);
 }
 
-TEST(FieldBLAS,eamax_double)
+TEST(FieldBLAS, scalar_double_selector_asum)
 {
-  const double low_val  = 2.731;
-  const double high_val = -10.27;
-  test_eamax(low_val,high_val);
+  const double initial1 = 4.27;
+  const double initial2 = -3.73;
+
+  test_asum_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_asum_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_asum_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_asum_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,eamax_float)
+TEST(FieldBLAS, scalar_float_selector_asum)
 {
-  const float low_val  = 3.7;
-  const float high_val = -10.2;
-  test_eamax(low_val,high_val);
+  const float initial1 = 4.2;
+  const float initial2 = -3.7;
+
+  test_asum_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_asum_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_asum_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_asum_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,eamax_complex)
+TEST(FieldBLAS, scalar_complex_selector_asum)
 {
-  const std::complex<double> low_val  = std::complex<double>(-1.11,-2.63);
-  const std::complex<double> high_val = std::complex<double>(-100.21,-250.23);
-  test_eamax(low_val,high_val);
+  const std::complex<double> initial1 = std::complex<double>(4.27, 2.1);
+  const std::complex<double> initial2 = std::complex<double>(-3.73, 1.04);
+
+  test_asum_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_asum_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_asum_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_asum_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-TEST(FieldBLAS,eamax_int)
+TEST(FieldBLAS, scalar_int_selector_asum)
 {
-  const int low_val  = 2;
-  const int high_val = -10;
-  test_eamax(low_val,high_val);
+  const int initial1 = 4;
+  const int initial2 = -3;
+
+  test_asum_selector<LayoutRight, LayoutRight>(initial1, initial2);
+  test_asum_selector<LayoutRight, LayoutLeft >(initial1, initial2);
+  test_asum_selector<LayoutLeft,  LayoutRight>(initial1, initial2);
+  test_asum_selector<LayoutLeft,  LayoutLeft >(initial1, initial2);
 }
 
-template<class Scalar>
-void test_eamax_selector(Scalar low_value,Scalar high_valueA,Scalar high_valueAB,Scalar high_valueABc,const double TOL = 1.0e-3)
+
+template <stk::mesh::Layout Layout1, stk::mesh::Layout Layout2, typename T>
+void test_asum(const std::array<T, 3>& init1, const std::array<T, 3>& init2, double tol = 2.0e-3)
 {
-  BLASFixture<Scalar> Fixture (low_value,low_value);
+  BLASFixtureVector<T, Layout1, Layout2> fixture(init1, init2);
 
-  const stk::mesh::MetaData &metaData = Fixture.stkMeshBulkData->mesh_meta_data();
-  double MPI_frac = double(stk::parallel_machine_rank(Fixture.stkMeshBulkData->parallel())+1)/double(stk::parallel_machine_size(Fixture.stkMeshBulkData->parallel()));
-  stk::mesh::Entity tmp_result;
+  T result1 = stk::mesh::field_asum(*fixture.field1);
 
-  const stk::mesh::BucketVector bucketsA = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                stk::mesh::Selector(*Fixture.pPartA) &
-                                                                                metaData.locally_owned_part());
-  stk::mesh::Bucket & bA = *bucketsA[bucketsA.size()/3];
-  Scalar* xA = (Scalar*)stk::mesh::field_data(*Fixture.field1, bA);
-  xA[bA.size()/3u]=high_valueA*std::abs(low_value/high_valueA)+Scalar(high_valueA-high_valueA*std::abs(low_value/high_valueA))*MPI_frac;
+  T result2 {};
+  stk::mesh::field_asum(result2, *fixture.fieldBase2);
 
-  tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1);
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  const stk::mesh::BucketVector bucketsB = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                stk::mesh::Selector(*Fixture.pPartB) &
-                                                                                metaData.locally_owned_part());
-  stk::mesh::Bucket & bB = *bucketsB[bucketsB.size()/3];
-  Scalar* xB = (Scalar*)stk::mesh::field_data(*Fixture.field1, bB);
-  xB[bB.size()/3]=high_valueAB*std::abs(low_value/high_valueAB)+Scalar(high_valueAB-high_valueAB*std::abs(low_value/high_valueAB))*MPI_frac;
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1);
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  const stk::mesh::BucketVector bucketsABc = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                  stk::mesh::Selector(*Fixture.pPartA).complement() &
-                                                                                  stk::mesh::Selector(*Fixture.pPartB).complement() &
-                                                                                  metaData.locally_owned_part());
-  stk::mesh::Bucket & bABc = *bucketsABc[bucketsABc.size()/3];
-  Scalar* xABc = (Scalar*)stk::mesh::field_data(*Fixture.field1, bABc);
-  xABc[bABc.size()/3]=high_valueABc*std::abs(low_value/high_valueABc)+Scalar(high_valueABc-high_valueABc*std::abs(low_value/high_valueABc))*MPI_frac;
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamax(*Fixture.fieldBase1);
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
+  EXPECT_LT(std::abs(result1 - (std::abs(init1[0]) + std::abs(init1[1]) + std::abs(init1[2])) *
+                     T(fixture.numEntitiesGlobal)), tol);
+  EXPECT_LT(std::abs(result2 - (std::abs(init2[0]) + std::abs(init2[1]) + std::abs(init2[2])) *
+                     T(fixture.numEntitiesGlobal)), tol);
 }
 
-TEST(FieldBLAS,eamax_selector_double)
+TEST(FieldBLAS, vector_double_asum)
 {
-  const double low_value     = 1.27;
-  const double high_valueA   = -3.73;
-  const double high_valueAB  = -4.43;
-  const double high_valueABc = -5.03;
+  std::array<double, 3> init1 {4.21, 1.23, -2.13};
+  std::array<double, 3> init2 {1.32, 4.17, 11.27};
 
-  test_eamax_selector(low_value,high_valueA,high_valueAB,high_valueABc);
+  test_asum<LayoutRight, LayoutRight>(init1, init2);
+  test_asum<LayoutRight, LayoutLeft >(init1, init2);
+  test_asum<LayoutLeft,  LayoutRight>(init1, init2);
+  test_asum<LayoutLeft,  LayoutLeft >(init1, init2);
 }
 
-TEST(FieldBLAS,eamax_selector_float)
+TEST(FieldBLAS, vector_float_asum)
 {
-  const float low_value     = 1.3;
-  const float high_valueA   = -3.7;
-  const float high_valueAB  = -4.4;
-  const float high_valueABc = -5.0;
+  std::array<float, 3> init1 {4.2, 1.2, -2.1};
+  std::array<float, 3> init2 {1.3, 4.1, 11.2};
 
-  test_eamax_selector(low_value,high_valueA,high_valueAB,high_valueABc);
+  test_asum<LayoutRight, LayoutRight>(init1, init2);
+  test_asum<LayoutRight, LayoutLeft >(init1, init2);
+  test_asum<LayoutLeft,  LayoutRight>(init1, init2);
+  test_asum<LayoutLeft,  LayoutLeft >(init1, init2);
 }
 
-TEST(FieldBLAS,eamax_selector_complex)
+TEST(FieldBLAS, vector_complex_asum)
 {
-  const std::complex<double> low_value     = std::complex<double>(0.51,0.32);
-  const std::complex<double> high_valueA   = std::complex<double>(-3.73,4.04);
-  const std::complex<double> high_valueAB  = std::complex<double>(4.95,-5.12);
-  const std::complex<double> high_valueABc = std::complex<double>(-6.03,6.11);
+  std::array<std::complex<double>, 3> init1 {std::complex<double>(4.21, 0.24),
+                                             std::complex<double>(1.23, -0.1),
+                                             std::complex<double>(-2.13, 4.11)};
+  std::array<std::complex<double>, 3> init2 {std::complex<double>(1.32, 23.1),
+                                             std::complex<double>(4.17, -0.2),
+                                             std::complex<double>(11.27, 4.21)};
 
-  test_eamax_selector(low_value,high_valueA,high_valueAB,high_valueABc);
+  test_asum<LayoutRight, LayoutRight>(init1, init2);
+  test_asum<LayoutRight, LayoutLeft >(init1, init2);
+  test_asum<LayoutLeft,  LayoutRight>(init1, init2);
+  test_asum<LayoutLeft,  LayoutLeft >(init1, init2);
 }
 
-TEST(FieldBLAS,eamax_selector_int)
+TEST(FieldBLAS, vector_int_asum)
 {
-  const int low_value     = 1;
-  const int high_valueA   = -3;
-  const int high_valueAB  = -4;
-  const int high_valueABc = -5;
+  std::array<int, 3> init1 {4, 1, -2};
+  std::array<int, 3> init2 {3, 4, 11};
 
-  test_eamax_selector(low_value,high_valueA,high_valueAB,high_valueABc);
+  test_asum<LayoutRight, LayoutRight>(init1, init2);
+  test_asum<LayoutRight, LayoutLeft >(init1, init2);
+  test_asum<LayoutLeft,  LayoutRight>(init1, init2);
+  test_asum<LayoutLeft,  LayoutLeft >(init1, init2);
 }
 
-template<class Scalar>
-void test_amin(Scalar low_val,Scalar high_val,const double TOL = 1.0e-5)
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, typename T>
+void test_amax(T lowVal, T highVal, const double tol = 1.0e-3)
 {
-  BLASFixture<Scalar> Fixture (high_val,high_val);
-  const stk::mesh::MetaData &metaData = Fixture.stkMeshBulkData->mesh_meta_data();
-  const stk::mesh::BucketVector buckets = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                               metaData.universal_part() &
-                                                                               stk::mesh::selectField(*Fixture.field1) &
-                                                                               metaData.locally_owned_part());
-  double MPI_frac = double(stk::parallel_machine_rank(Fixture.stkMeshBulkData->parallel())+1)/double(stk::parallel_machine_size(Fixture.stkMeshBulkData->parallel()));
-  stk::mesh::Bucket & b = *buckets[buckets.size()/3u];
-  Scalar * x = (Scalar*)stk::mesh::field_data(*Fixture.field1, b);
-  x[b.size()/3u]=low_val*std::abs(high_val/low_val)+Scalar(low_val-low_val*std::abs(high_val/low_val))*MPI_frac;
+  BLASFixtureScalar<T, Layout1> fixture(lowVal);
 
-  Scalar field_result = stk::mesh::field_amin(*Fixture.field1);
-  EXPECT_LT(std::abs(field_result-std::abs(low_val)),TOL);
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                    stk::mesh::selectField(*fixture.field1) &
+                                                                    meta.locally_owned_part());
 
-  Scalar fieldBase_result;
-  stk::mesh::field_amin(fieldBase_result,*Fixture.field1);
-  EXPECT_LT(std::abs(fieldBase_result-std::abs(low_val)),TOL);
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
+
+  auto fieldData = fixture.field1->template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
+
+  stk::mesh::EntityIdx targetEntity(fieldValues.num_entities()/3);
+  fieldValues(targetEntity) = highVal*std::abs(lowVal/highVal) + T(highVal - highVal*std::abs(lowVal/highVal))*mpiFrac;
+
+  T fieldResult = stk::mesh::field_amax(*fixture.field1);
+  EXPECT_LT(std::abs(fieldResult - std::abs(highVal)), tol);
+
+  T fieldBaseResult {};
+  stk::mesh::field_amax(fieldBaseResult, *fixture.fieldBase1);
+  EXPECT_LT(std::abs(fieldBaseResult - std::abs(highVal)), tol);
 }
 
-TEST(FieldBLAS,amin_double)
+TEST(FieldBLAS, scalar_double_amax)
 {
-  const double low_val  = 2.73;
-  const double high_val = -10.27;
-  test_amin(low_val,high_val);
+  const double lowVal  = 2.73;
+  const double highVal = -10.27;
+
+  test_amax<LayoutRight>(lowVal, highVal);
+  test_amax<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,amin_float)
+TEST(FieldBLAS, scalar_float_amax)
 {
-  const float low_val  = 3.7;
-  const float high_val = -10.2;
-  test_amin(low_val,high_val);
+  const float lowVal  = 3.7;
+  const float highVal = -10.2;
+
+  test_amax<LayoutRight>(lowVal, highVal);
+  test_amax<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,amin_complex)
+TEST(FieldBLAS, scalar_complex_amax)
 {
-  const std::complex<double> low_val  = std::complex<double>(-1.11,-2.63);
-  const std::complex<double> high_val = std::complex<double>(-100.21,-250.23);
-  test_amin(low_val,high_val);
+  const std::complex<double> lowVal  = std::complex<double>(-1.11, -2.63);
+  const std::complex<double> highVal = std::complex<double>(-100.21, -250.23);
+
+  test_amax<LayoutRight>(lowVal, highVal);
+  test_amax<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,amin_int)
+TEST(FieldBLAS, scalar_int_amax)
 {
-  const int low_val  = 2;
-  const int high_val = -10;
-  test_amin(low_val,high_val);
+  const int lowVal  = 2;
+  const int highVal = -10;
+
+  test_amax<LayoutRight>(lowVal, highVal);
+  test_amax<LayoutLeft >(lowVal, highVal);
 }
 
-template<class Scalar>
-void test_amin_selector(Scalar high_value,Scalar low_valueA,Scalar low_valueAB,Scalar low_valueABc,const double TOL = 1.0e-1)
+
+template <stk::mesh::Layout Layout1, typename T>
+void test_amax_empty_selector(T lowVal, T highVal, const double tol = 1.0e-12)
 {
-  BLASFixture<Scalar> Fixture (high_value,high_value);
+  BLASFixtureScalar<T, Layout1> fixture(lowVal);
 
-  const stk::mesh::MetaData &metaData = Fixture.stkMeshBulkData->mesh_meta_data();
-  double MPI_frac = double(stk::parallel_machine_rank(Fixture.stkMeshBulkData->parallel())+1)/double(stk::parallel_machine_size(Fixture.stkMeshBulkData->parallel()));
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                    stk::mesh::selectField(*fixture.field1) &
+                                                                    meta.locally_owned_part());
 
-  Scalar tmp_result;
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
 
-  const stk::mesh::BucketVector bucketsA = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                stk::mesh::Selector(*Fixture.pPartA) &
-                                                                                metaData.locally_owned_part());
-  stk::mesh::Bucket & bA = *bucketsA[bucketsA.size()/3];
-  Scalar* xA = (Scalar*)stk::mesh::field_data(*Fixture.field1, bA);
-  xA[bA.size()/3u]=low_valueA*std::abs(high_value/low_valueA)+Scalar(low_valueA-low_valueA*std::abs(high_value/low_valueA))*MPI_frac;
+  auto fieldData = fixture.field1->template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
 
-  stk::mesh::field_amin(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-  EXPECT_LT(std::abs(std::abs(low_valueA)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(high_value)-stk::mesh::field_amin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB))),TOL);
-  stk::mesh::field_amin(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-  EXPECT_LT(std::abs(std::abs(low_valueA)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(high_value)-stk::mesh::field_amin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement())),TOL);
-  stk::mesh::field_amin(tmp_result,*Fixture.fieldBase1);
-  EXPECT_LT(std::abs(std::abs(low_valueA)-tmp_result),TOL);
+  stk::mesh::EntityIdx targetEntity(fieldValues.num_entities()/3);
+  fieldValues(targetEntity) = highVal*std::abs(lowVal/highVal) + T(highVal - highVal*std::abs(lowVal/highVal))*mpiFrac;
 
-  const stk::mesh::BucketVector bucketsB = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                stk::mesh::Selector(*Fixture.pPartB) &
-                                                                                metaData.locally_owned_part());
-  stk::mesh::Bucket & bB = *bucketsB[bucketsB.size()/3];
-  Scalar* xB = (Scalar*)stk::mesh::field_data(*Fixture.field1, bB);
-  xB[bB.size()/3u]=low_valueAB*std::abs(high_value/low_valueAB)+Scalar(low_valueAB-low_valueAB*std::abs(high_value/low_valueAB))*MPI_frac;
+  T fieldResult = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector());
+  EXPECT_LT(std::abs(fieldResult - T{}), tol);
 
-  EXPECT_LT(std::abs(std::abs(low_valueA)-stk::mesh::field_amin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA))),TOL);
-  stk::mesh::field_amin(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartB));
-  EXPECT_LT(std::abs(std::abs(low_valueAB)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(low_valueAB)-stk::mesh::field_amin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB))),TOL);
-  stk::mesh::field_amin(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  EXPECT_LT(std::abs(std::abs(high_value)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(low_valueAB)-stk::mesh::field_amin(*Fixture.field1)),TOL);
-
-  const stk::mesh::BucketVector bucketsABc = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                  stk::mesh::Selector(*Fixture.pPartA).complement() &
-                                                                                  stk::mesh::Selector(*Fixture.pPartB).complement() &
-                                                                                  metaData.locally_owned_part());
-  stk::mesh::Bucket & bABc = *bucketsABc[bucketsABc.size()/3];
-  Scalar* xABc = (Scalar*)stk::mesh::field_data(*Fixture.field1, bABc);
-  xABc[bABc.size()/3u]=low_valueABc*std::abs(high_value/low_valueABc)+Scalar(low_valueABc-low_valueABc*std::abs(high_value/low_valueABc))*MPI_frac;
-
-  stk::mesh::field_amin(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-  EXPECT_LT(std::abs(std::abs(low_valueA)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(low_valueAB)-stk::mesh::field_amin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB))),TOL);
-  stk::mesh::field_amin(tmp_result,*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-  EXPECT_LT(std::abs(std::abs(low_valueAB)-tmp_result),TOL);
-  EXPECT_LT(std::abs(std::abs(low_valueABc)-stk::mesh::field_amin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement())),TOL);
-  stk::mesh::field_amin(tmp_result,*Fixture.fieldBase1);
-  EXPECT_LT(std::abs(std::abs(low_valueABc)-tmp_result),TOL);
+  T fieldBaseResult {};
+  stk::mesh::field_amax(fieldBaseResult, *fixture.fieldBase1, stk::mesh::Selector());
+  EXPECT_LT(std::abs(fieldBaseResult - T{}), tol);
 }
 
-TEST(FieldBLAS,amin_selector_double)
+TEST(FieldBLAS, scalar_double_amax_empty_selector)
 {
-  const double high_value   = -6.27;
-  const double low_valueA   = 5.73;
-  const double low_valueAB  = 4.43;
-  const double low_valueABc = 3.03;
+  const double lowVal  = 2.73;
+  const double highVal = -10.27;
 
-  test_amin_selector(high_value,low_valueA,low_valueAB,low_valueABc);
+  test_amax_empty_selector<LayoutRight>(lowVal, highVal);
+  test_amax_empty_selector<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,amin_selector_float)
+template <stk::mesh::Layout Layout1, typename T>
+void test_amax_field_not_on_part(T lowVal, T highVal, const double tol = 1.0e-12)
 {
-  const float high_value   = -6.3;
-  const float low_valueA   = 5.7;
-  const float low_valueAB  = 4.4;
-  const float low_valueABc = 3.1;
+  BLASFixtureScalar<T, Layout1> fixture(lowVal);
 
-  test_amin_selector(high_value,low_valueA,low_valueAB,low_valueABc);
+  stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  meta.enable_late_fields();
+
+  auto& partialField = meta.declare_field<double, Layout1>(stk::topology::NODE_RANK, "partial_field");
+  stk::mesh::put_field_on_mesh(partialField, *fixture.pPartA, &lowVal);
+
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(partialField.entity_rank(),
+                                                                    *fixture.pPartA & meta.locally_owned_part());
+
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
+
+  auto fieldData = partialField.template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
+
+  stk::mesh::EntityIdx targetEntity(fieldValues.num_entities()/3);
+  fieldValues(targetEntity) = highVal*std::abs(lowVal/highVal) + T(highVal - highVal*std::abs(lowVal/highVal))*mpiFrac;
+
+  T fieldResult = stk::mesh::field_amax(partialField, meta.universal_part());
+  EXPECT_LT(std::abs(fieldResult - std::abs(highVal)), tol);
 }
 
-TEST(FieldBLAS,amin_selector_complex)
+TEST(FieldBLAS, scalar_double_amax_field_not_on_part)
 {
-  const std::complex<double> high_value   = std::complex<double>(7.51,-8.32);
-  const std::complex<double> low_valueA   = std::complex<double>(-6.73,6.04);
-  const std::complex<double> low_valueAB  = std::complex<double>(4.95,-5.12);
-  const std::complex<double> low_valueABc = std::complex<double>(-4.03,4.11);
+  const double lowVal  = 2.73;
+  const double highVal = -10.27;
 
-  test_amin_selector(high_value,low_valueA,low_valueAB,low_valueABc);
+  test_amax_field_not_on_part<LayoutRight>(lowVal, highVal);
+  test_amax_field_not_on_part<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,amin_selector_int)
+template <stk::mesh::Layout Layout1, typename T>
+void test_amax_selector(T lowVal, T highValA, T highValAB, T highValABc, const double tol = 1.0e-3)
 {
-  const int high_value   = -6;
-  const int low_valueA   = 5;
-  const int low_valueAB  = 4;
-  const int low_valueABc = 3;
+  BLASFixtureScalar<T, Layout1> fixture(lowVal);
 
-  test_amin_selector(high_value,low_valueA,low_valueAB,low_valueABc);
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel()) + 1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+
+  {
+    const stk::mesh::BucketVector bucketsA = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                       stk::mesh::Selector(*fixture.pPartA) &
+                                                                       meta.locally_owned_part());
+    stk::mesh::Bucket& bA = *bucketsA[bucketsA.size()/3];
+
+    auto fieldDataA = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesA = fieldDataA.bucket_values(bA);
+
+    stk::mesh::EntityIdx targetEntityA(fieldValuesA.num_entities()/3);
+    fieldValuesA(targetEntityA) = highValA*std::abs(lowVal/highValA) +
+                                  T(highValA - highValA*std::abs(lowVal/highValA))*mpiFrac;
+
+    T result;
+    stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
+    EXPECT_LT(std::abs(std::abs(highValA) - result), tol);
+
+    result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(lowVal) - result), tol);
+
+    stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
+                          stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(highValA) - result), tol);
+
+    result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                   stk::mesh::Selector(*fixture.pPartB).complement());
+    EXPECT_LT(std::abs(std::abs(lowVal) - result), tol);
+
+    stk::mesh::field_amax(result, *fixture.fieldBase1);
+    EXPECT_LT(std::abs(std::abs(highValA) - result), tol);
+  }
+  {
+    const stk::mesh::BucketVector bucketsB = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                       stk::mesh::Selector(*fixture.pPartB) &
+                                                                       meta.locally_owned_part());
+    stk::mesh::Bucket& bB = *bucketsB[bucketsB.size()/3];
+
+    auto fieldDataB = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesB = fieldDataB.bucket_values(bB);
+
+    stk::mesh::EntityIdx targetEntityB(fieldValuesB.num_entities()/3);
+    fieldValuesB(targetEntityB) = highValAB*std::abs(lowVal/highValAB) +
+                                  T(highValAB - highValAB*std::abs(lowVal/highValAB))*mpiFrac;
+
+    T result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA));
+    EXPECT_LT(std::abs(std::abs(highValA) - result), tol);
+
+    stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(highValAB) - result), tol);
+
+    result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA) |
+                                   stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(highValAB) - result), tol);
+
+    stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                          stk::mesh::Selector(*fixture.pPartB).complement());
+    EXPECT_LT(std::abs(std::abs(lowVal) - result), tol);
+    EXPECT_LT(std::abs(std::abs(highValAB) - stk::mesh::field_amax(*fixture.field1)), tol);
+  }
+  {
+    const stk::mesh::BucketVector bucketsABc = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                         stk::mesh::Selector(*fixture.pPartA).complement() &
+                                                                         stk::mesh::Selector(*fixture.pPartB).complement() &
+                                                                         meta.locally_owned_part());
+    stk::mesh::Bucket& bABc = *bucketsABc[bucketsABc.size()/3];
+
+    auto fieldDataABc = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesABc = fieldDataABc.bucket_values(bABc);
+
+    stk::mesh::EntityIdx targetEntityABc(fieldValuesABc.num_entities()/3);
+    fieldValuesABc(targetEntityABc) = highValABc*std::abs(lowVal/highValABc) +
+                                      T(highValABc - highValABc*std::abs(lowVal/highValABc))*mpiFrac;
+
+    T result;
+    stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
+    EXPECT_LT(std::abs(std::abs(highValA) - result), tol);
+
+    result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(highValAB) - result), tol);
+
+    stk::mesh::field_amax(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
+                          stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(highValAB) - result), tol);
+
+    result = stk::mesh::field_amax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                   stk::mesh::Selector(*fixture.pPartB).complement());
+    EXPECT_LT(std::abs(std::abs(highValABc) - result), tol);
+
+    stk::mesh::field_amax(result, *fixture.fieldBase1);
+    EXPECT_LT(std::abs(std::abs(highValABc) - result), tol);
+  }
 }
 
-template<class Scalar>
-void test_eamin(Scalar low_val,Scalar high_val,const double TOL = 1.5e-4)
+TEST(FieldBLAS, scalar_double_selector_amax)
 {
-  BLASFixture<Scalar> Fixture (high_val,high_val);
-  const stk::mesh::MetaData &metaData = Fixture.stkMeshBulkData->mesh_meta_data();
-  const stk::mesh::BucketVector buckets = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                               metaData.universal_part() &
-                                                                               stk::mesh::selectField(*Fixture.field1) &
-                                                                               metaData.locally_owned_part());
-  double MPI_frac = double(stk::parallel_machine_rank(Fixture.stkMeshBulkData->parallel())+1)/double(stk::parallel_machine_size(Fixture.stkMeshBulkData->parallel()));
-  stk::mesh::Bucket & b = *buckets[buckets.size()/3u];
-  Scalar * x = (Scalar*)stk::mesh::field_data(*Fixture.field1, b);
-  x[b.size()/3u]=low_val*std::abs(high_val/low_val)+Scalar(low_val-low_val*std::abs(high_val/low_val))*MPI_frac;
+  const double lowVal     = 1.27;
+  const double highValA   = -3.73;
+  const double highValAB  = -4.43;
+  const double highValABc = -5.03;
 
-  stk::mesh::Entity field_result = stk::mesh::field_eamin(*Fixture.field1);
-  if (field_result.is_local_offset_valid()) { EXPECT_LT(std::abs(*stk::mesh::field_data(*Fixture.field1,field_result)-low_val),TOL); }
-
-  stk::mesh::Entity fieldBase_result=stk::mesh::field_eamin(*Fixture.fieldBase1);
-  if (fieldBase_result.is_local_offset_valid()) { EXPECT_LT(std::abs(*stk::mesh::field_data(*Fixture.field1,fieldBase_result)-low_val),TOL); }
+  test_amax_selector<LayoutRight>(lowVal, highValA, highValAB, highValABc);
+  test_amax_selector<LayoutLeft >(lowVal, highValA, highValAB, highValABc);
 }
 
-TEST(FieldBLAS,eamin_double)
+TEST(FieldBLAS, scalar_float_selector_amax)
 {
-  const double low_val  = 2.73;
-  const double high_val = -10.27;
-  test_eamin(low_val,high_val);
+  const float lowVal     = 1.3;
+  const float highValA   = -3.7;
+  const float highValAB  = -4.4;
+  const float highValABc = -5.0;
+
+  test_amax_selector<LayoutRight>(lowVal, highValA, highValAB, highValABc);
+  test_amax_selector<LayoutLeft >(lowVal, highValA, highValAB, highValABc);
 }
 
-TEST(FieldBLAS,eamin_float)
+TEST(FieldBLAS, scalar_complex_selector_amax)
 {
-  const float low_val  = 3.7;
-  const float high_val = -10.2;
-  test_eamin(low_val,high_val);
+  const std::complex<double> lowVal     = std::complex<double>(0.51, 0.32);
+  const std::complex<double> highValA   = std::complex<double>(-3.73, 4.04);
+  const std::complex<double> highValAB  = std::complex<double>(4.95, -5.12);
+  const std::complex<double> highValABc = std::complex<double>(-6.03, 6.11);
+
+  test_amax_selector<LayoutRight>(lowVal, highValA, highValAB, highValABc);
+  test_amax_selector<LayoutLeft >(lowVal, highValA, highValAB, highValABc);
 }
 
-TEST(FieldBLAS,eamin_complex)
+TEST(FieldBLAS, scalar_int_selector_amax)
 {
-  const std::complex<double> low_val  = std::complex<double>(-1.11,-2.63);
-  const std::complex<double> high_val = std::complex<double>(-100.21,-250.23);
-  test_eamin(low_val,high_val);
+  const int lowVal     = 1;
+  const int highValA   = -3;
+  const int highValAB  = -4;
+  const int highValABc = -5;
+
+  test_amax_selector<LayoutRight>(lowVal, highValA, highValAB, highValABc);
+  test_amax_selector<LayoutLeft >(lowVal, highValA, highValAB, highValABc);
 }
 
-TEST(FieldBLAS,eamin_int)
+
+template <stk::mesh::Layout Layout1, typename T>
+void test_amax(const std::array<T, 3>& lowVal, const std::array<T, 3>& highVal, const double tol = 1.0e-3)
 {
-  const int low_val  = 2;
-  const int high_val = -10;
-  test_eamin(low_val,high_val);
-}
+  BLASFixtureVector<T, Layout1> fixture(lowVal);
 
-template<class Scalar>
-void test_eamin_selector(Scalar high_value,Scalar low_valueA,Scalar low_valueAB,Scalar low_valueABc,const double TOL = 1.0e-1)
-{
-  BLASFixture<Scalar> Fixture (high_value,high_value);
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                    stk::mesh::selectField(*fixture.field1) &
+                                                                    meta.locally_owned_part());
 
-  const stk::mesh::MetaData &metaData = Fixture.stkMeshBulkData->mesh_meta_data();
-  double MPI_frac = double(Fixture.stkMeshBulkData->parallel_rank()+1)/double(Fixture.stkMeshBulkData->parallel_size());
-  stk::mesh::Entity tmp_result;
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
 
-  const stk::mesh::BucketVector bucketsA = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                stk::mesh::Selector(*Fixture.pPartA) &
-                                                                                metaData.locally_owned_part());
-  stk::mesh::Bucket & bA = *bucketsA[bucketsA.size()/3u];
-  Scalar* xA = (Scalar*)stk::mesh::field_data(*Fixture.field1, bA);
-  Scalar temp = low_valueA*std::abs(high_value/low_valueA);
-  xA[bA.size()/3u]=temp+Scalar(low_valueA-temp)*MPI_frac;
+  auto fieldData = fixture.field1->template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
 
-  tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1);
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  const stk::mesh::BucketVector bucketsB = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                stk::mesh::Selector(*Fixture.pPartB) &
-                                                                                metaData.locally_owned_part());
-  stk::mesh::Bucket & bB = *bucketsB[bucketsB.size()/3];
-  Scalar* xB = (Scalar*)stk::mesh::field_data(*Fixture.field1, bB);
-  xB[bB.size()/3]=low_valueAB*std::abs(high_value/low_valueAB)+Scalar(low_valueAB-low_valueAB*std::abs(high_value/low_valueAB))*MPI_frac;
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(high_value-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1);
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  const stk::mesh::BucketVector bucketsABc = Fixture.stkMeshBulkData->get_buckets(Fixture.field1->entity_rank(),
-                                                                                  stk::mesh::Selector(*Fixture.pPartA).complement() &
-                                                                                  stk::mesh::Selector(*Fixture.pPartB).complement() &
-                                                                                  metaData.locally_owned_part());
-  stk::mesh::Bucket & bABc = *bucketsABc[bucketsABc.size()/3];
-  Scalar* xABc = (Scalar*)stk::mesh::field_data(*Fixture.field1, bABc);
-  xABc[bABc.size()/3]=low_valueABc*std::abs(high_value/low_valueABc)+Scalar(low_valueABc-low_valueABc*std::abs(high_value/low_valueABc))*MPI_frac;
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueA-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1,stk::mesh::Selector(*Fixture.pPartA)|stk::mesh::Selector(*Fixture.pPartB));
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueAB-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.field1,stk::mesh::Selector(*Fixture.pPartA).complement()&stk::mesh::Selector(*Fixture.pPartB).complement());
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-
-  tmp_result = stk::mesh::field_eamin(*Fixture.fieldBase1);
-  if (tmp_result.is_local_offset_valid()) { EXPECT_LT(std::abs(low_valueABc-*stk::mesh::field_data(*Fixture.field1,tmp_result)),TOL); }
-}
-
-TEST(FieldBLAS,eamin_selector_double)
-{
-  const double high_value   = -6.27;
-  const double low_valueA   = 5.73;
-  const double low_valueAB  = 4.43;
-  const double low_valueABc = 3.03;
-
-  test_eamin_selector(high_value,low_valueA,low_valueAB,low_valueABc);
-}
-
-TEST(FieldBLAS,eamin_selector_float)
-{
-  const float high_value   = -6.3;
-  const float low_valueA   = 5.7;
-  const float low_valueAB  = 4.4;
-  const float low_valueABc = 3.1;
-
-  test_eamin_selector(high_value,low_valueA,low_valueAB,low_valueABc);
-}
-
-TEST(FieldBLAS,eamin_selector_complex)
-{
-  const std::complex<double> high_value   = std::complex<double>(7.51,-8.32);
-  const std::complex<double> low_valueA   = std::complex<double>(-6.73,6.04);
-  const std::complex<double> low_valueAB  = std::complex<double>(4.95,-5.12);
-  const std::complex<double> low_valueABc = std::complex<double>(-4.03,4.11);
-
-  test_eamin_selector(high_value,low_valueA,low_valueAB,low_valueABc);
-}
-
-TEST(FieldBLAS,eamin_selector_int)
-{
-  const int high_value   = -6;
-  const int low_valueA   = 5;
-  const int low_valueAB  = 4;
-  const int low_valueABc = 3;
-
-  test_eamin_selector(high_value,low_valueA,low_valueAB,low_valueABc);
-}
-
-template<class A>
-struct BLASFixture3d {
-
-  A* init1;
-  A* init2;
-  A* init3;
-
-  stk::io::StkMeshIoBroker * stkMeshIoBroker;
-  stk::mesh::BulkData * stkMeshBulkData;
-  stk::mesh::Field<A> * field1;
-  stk::mesh::FieldBase * fieldBase1;
-  stk::mesh::Field<A> * field2;
-  stk::mesh::FieldBase * fieldBase2;
-  stk::mesh::Field<A> * field3;
-  stk::mesh::FieldBase * fieldBase3;
-
-  unsigned int numEntitiesOwned;
-  unsigned int numEntitiesUniversal;
-  unsigned int numEntitiesGlobal;
-
-  BLASFixture3d(A* init1_input, A* init2_input, A* init3_input);
-  ~BLASFixture3d();
-};
-
-template<class A>
-BLASFixture3d<A>::BLASFixture3d(A* init1_input, A* init2_input, A* init3_input)
-{
-  init1=init1_input;
-  init2=init2_input;
-  init3=init3_input;
-
-  const unsigned int meshSizeX = 1;
-  const unsigned int meshSizeY = 1;
-  const unsigned int meshSizeZ = 4;
-
-  MPI_Comm my_comm = MPI_COMM_WORLD;
-  stkMeshIoBroker = new stk::io::StkMeshIoBroker(my_comm);
-  stk::io::StkMeshIoBroker & io = *stkMeshIoBroker;
-  std::ostringstream osstr;
-  osstr<<"generated:"<<meshSizeX<<"x"<<meshSizeY<<"x"<<meshSizeZ;
-  io.add_mesh_database(osstr.str(), stk::io::READ_MESH);
-  io.create_input_mesh();
-  stk::mesh::MetaData &meta_data = io.meta_data();
-
-  field1 = &meta_data.declare_field<A>(stk::topology::NODE_RANK, "field1");
-  stk::mesh::put_field_on_mesh(*field1, field1->mesh_meta_data().universal_part(), 3, init1);
-  fieldBase1 = field1;
-
-  field2 = &meta_data.declare_field<A>(stk::topology::NODE_RANK, "field2");
-  stk::mesh::put_field_on_mesh(*field2, field2->mesh_meta_data().universal_part(), 3, init2);
-  fieldBase2 = field2;
-
-  field3 = &meta_data.declare_field<A>(stk::topology::NODE_RANK, "field3");
-  stk::mesh::put_field_on_mesh(*field3, field3->mesh_meta_data().universal_part(), 3, init3);
-  fieldBase3 = field3;
-
-  io.populate_bulk_data(); // THIS IS THE SLOW LINE
-  stkMeshBulkData = &io.bulk_data();
-
-  numEntitiesOwned     = 0;
-  numEntitiesUniversal = 0;
-  const stk::mesh::BucketVector & buckets = stkMeshBulkData->get_buckets(stk::topology::NODE_RANK, meta_data.universal_part());
-  for(const stk::mesh::Bucket *bucket : buckets) {
-    numEntitiesUniversal += bucket->size();
-    if (bucket->owned())
-      numEntitiesOwned += bucket->size();
+  stk::mesh::EntityIdx targetEntity(fieldValues.num_entities()/3);
+  for (stk::mesh::ScalarIdx scalar : fieldValues.scalars()) {
+    fieldValues(targetEntity, scalar) = highVal[scalar]*std::abs(lowVal[scalar]/highVal[scalar]) +
+        T(highVal[scalar] - highVal[scalar]*std::abs(lowVal[scalar]/highVal[scalar]))*mpiFrac;
   }
 
-  numEntitiesGlobal = 0;
-  stk::all_reduce_sum(stkMeshBulkData->parallel(),&numEntitiesOwned,&numEntitiesGlobal,1u);
-  EXPECT_EQ(numEntitiesGlobal, (meshSizeX+1) * (meshSizeY+1) * (meshSizeZ+1));
+  T maxHighVal = std::max({std::abs(highVal[0]), std::abs(highVal[1]), std::abs(highVal[2])});
+
+  T fieldResult = stk::mesh::field_amax(*fixture.field1);
+  EXPECT_LT(std::abs(fieldResult - maxHighVal), tol);
+
+  T fieldBaseResult {};
+  stk::mesh::field_amax(fieldBaseResult, *fixture.fieldBase1);
+  EXPECT_LT(std::abs(fieldBaseResult - maxHighVal), tol);
 }
 
-template<class A>
-BLASFixture3d<A>::~BLASFixture3d() {
-  delete stkMeshIoBroker;
-}
-
-template<class A>
-bool test3dfield(const stk::mesh::Field<A> & field,const A* expected_value,const double tol=1.5e-3)
+TEST(FieldBLAS, vector_double_amax)
 {
-  bool result=true;
-  const stk::mesh::BucketVector& buckets_init = field.get_mesh().get_buckets(field.entity_rank(),field.mesh_meta_data().universal_part() & stk::mesh::selectField(field));
-  for(size_t j = 0; j < buckets_init.size(); j++) {
-    const stk::mesh::Bucket& bucket = *buckets_init[j];
-    for(size_t i=0; i<bucket.size(); i++) {
-      A* field_value = reinterpret_cast<A*>(stk::mesh::field_data(field,bucket[i]));
-      if (result) {
-        for (unsigned int k=0;k<3u;k++) {
-          EXPECT_NEAR(expected_value[k],field_value[k],tol);
-          if (std::abs(expected_value[k]-field_value[k])>tol) result=false;
-        }
-      }
+  std::array<double, 3> lowVal  {2.73, 1.23, 0.49};
+  std::array<double, 3> highVal {-10.27, -9.66, 8.52};
+
+  test_amax<LayoutRight>(lowVal, highVal);
+  test_amax<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, vector_float_amax)
+{
+  std::array<float, 3> lowVal  {2.7, 1.2, 0.4};
+  std::array<float, 3> highVal {-9.6, -10.2, 8.5};
+
+  test_amax<LayoutRight>(lowVal, highVal);
+  test_amax<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, vector_complex_amax)
+{
+  std::array<std::complex<double>, 3> lowVal  = {std::complex<double>(-1.11, -2.63),
+                                                 std::complex<double>(-2.22, -1.65),
+                                                 std::complex<double>(-1.58, -1.27)};
+  std::array<std::complex<double>, 3> highVal = {std::complex<double>(-100.21, -250.23),
+                                                 std::complex<double>(-110.54, -260.28),
+                                                 std::complex<double>(-150.61, -331.87)};
+
+  test_amax<LayoutRight>(lowVal, highVal);
+  test_amax<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, vector_int_amax)
+{
+  std::array<int, 3> lowVal  {2, 3, 5};
+  std::array<int, 3> highVal {-10, -11, -28};
+
+  test_amax<LayoutRight>(lowVal, highVal);
+  test_amax<LayoutLeft >(lowVal, highVal);
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, typename T>
+void test_eamax(T lowVal, T highVal, const double tol = 1.0e-3)
+{
+  BLASFixtureScalar<T, Layout1> fixture(lowVal);
+
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                    stk::mesh::selectField(*fixture.field1) &
+                                                                    meta.locally_owned_part());
+
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
+
+  auto fieldData = fixture.field1->template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
+
+  stk::mesh::EntityIdx targetEntityIdx(fieldValues.num_entities()/3);
+  fieldValues(targetEntityIdx) = highVal*std::abs(lowVal/highVal) +
+                                 T(highVal - highVal*std::abs(lowVal/highVal))*mpiFrac;
+  stk::mesh::Entity targetEntity = b[targetEntityIdx];
+
+  stk::mesh::Entity fieldResult = stk::mesh::field_eamax(*fixture.field1);
+  EXPECT_EQ(mpiFrac==1.0, fieldResult.is_local_offset_valid());
+  if (fieldResult.is_local_offset_valid()) {
+    EXPECT_EQ(fieldResult, targetEntity);
+  }
+
+  stk::mesh::Entity fieldBaseResult = stk::mesh::field_eamax(*fixture.fieldBase1);
+  EXPECT_EQ(mpiFrac==1.0, fieldBaseResult.is_local_offset_valid());
+  if (fieldBaseResult.is_local_offset_valid()) {
+    EXPECT_EQ(fieldBaseResult, targetEntity);
+  }
+}
+
+TEST(FieldBLAS, scalar_double_eamax)
+{
+  const double lowVal  = 2.731;
+  const double highVal = -10.27;
+
+  test_eamax<LayoutRight>(lowVal, highVal);
+  test_eamax<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, scalar_float_eamax)
+{
+  const float lowVal  = 3.7;
+  const float highVal = -10.2;
+
+  test_eamax<LayoutRight>(lowVal, highVal);
+  test_eamax<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, scalar_complex_eamax)
+{
+  const std::complex<double> lowVal  = std::complex<double>(-1.11, -2.63);
+  const std::complex<double> highVal = std::complex<double>(-100.21, -250.23);
+
+  test_eamax<LayoutRight>(lowVal, highVal);
+  test_eamax<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, scalar_int_eamax)
+{
+  const int lowVal  = 2;
+  const int highVal = -10;
+
+  test_eamax<LayoutRight>(lowVal, highVal);
+  test_eamax<LayoutLeft >(lowVal, highVal);
+}
+
+
+template <stk::mesh::Layout Layout1, typename T>
+void test_eamax_selector(T lowVal, T highValA, T highValAB, T highValABc, const double tol = 1.0e-3)
+{
+  BLASFixtureScalar<T, Layout1> fixture(lowVal);
+
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel()) + 1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+
+  {
+    const stk::mesh::BucketVector bucketsA = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                       stk::mesh::Selector(*fixture.pPartA) &
+                                                                       meta.locally_owned_part());
+    stk::mesh::Bucket& bA = *bucketsA[bucketsA.size()/3];
+
+    auto fieldDataA = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesA = fieldDataA.bucket_values(bA);
+
+    stk::mesh::EntityIdx targetEntityIdxA(fieldValuesA.num_entities()/3);
+    fieldValuesA(targetEntityIdxA) = highValA*std::abs(lowVal/highValA) +
+                                     T(highValA - highValA*std::abs(lowVal/highValA))*mpiFrac;
+
+    auto result = stk::mesh::field_eamax(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesA = fieldDataA.entity_values(result);
+      EXPECT_LT(std::abs(highValA - entityValuesA()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesA = fieldDataA.entity_values(result);
+      EXPECT_LT(std::abs(lowVal - entityValuesA()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
+                                    stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesA = fieldDataA.entity_values(result);
+      EXPECT_LT(std::abs(highValA - entityValuesA()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                    stk::mesh::Selector(*fixture.pPartB).complement());
+    if (result.is_local_offset_valid()) {
+      auto entityValuesA = fieldDataA.entity_values(result);
+      EXPECT_LT(std::abs(lowVal - entityValuesA()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.fieldBase1);
+    if (result.is_local_offset_valid()) {
+      auto entityValuesA = fieldDataA.entity_values(result);
+      EXPECT_LT(std::abs(highValA - entityValuesA()), tol);
     }
   }
-  return result;
-}
+  {
+    const stk::mesh::BucketVector bucketsB = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                       stk::mesh::Selector(*fixture.pPartB) &
+                                                                       meta.locally_owned_part());
+    stk::mesh::Bucket & bB = *bucketsB[bucketsB.size()/3];
 
-template<class A>
-bool test3dfield(const stk::mesh::Field<std::complex<A>> & field,
-                 const std::complex<A>* expected_value, const double tol=1.5e-3)
-{
-  bool result=true;
-  const stk::mesh::BucketVector& buckets_init = field.get_mesh().get_buckets(field.entity_rank(),field.mesh_meta_data().universal_part() & stk::mesh::selectField(field));
-  for(size_t j = 0; j < buckets_init.size(); j++) {
-    const stk::mesh::Bucket& bucket = *buckets_init[j];
-    for(size_t i=0; i<bucket.size(); i++) {
-      std::complex<A>* field_value = reinterpret_cast<std::complex<A>*>(stk::mesh::field_data(field,bucket[i]));
-      if (result) {
-        for (unsigned int k=0;k<3u;k++) {
-          EXPECT_LT(std::abs(expected_value[k]-field_value[k]),tol);
-          if (std::abs(expected_value[k]-field_value[k])>tol) result=false;
-        }
-      }
+    auto fieldDataB = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesB = fieldDataB.bucket_values(bB);
+
+    stk::mesh::EntityIdx targetEntityB(fieldValuesB.num_entities()/3);
+    fieldValuesB(targetEntityB) = highValAB*std::abs(lowVal/highValAB) +
+                                  T(highValAB - highValAB*std::abs(lowVal/highValAB))*mpiFrac;
+
+    auto result = stk::mesh::field_eamax(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesB = fieldDataB.entity_values(result);
+      EXPECT_LT(std::abs(highValA - entityValuesB()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesB = fieldDataB.entity_values(result);
+      EXPECT_LT(std::abs(highValAB - entityValuesB()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
+                                    stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesB = fieldDataB.entity_values(result);
+      EXPECT_LT(std::abs(highValAB - entityValuesB()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                    stk::mesh::Selector(*fixture.pPartB).complement());
+    if (result.is_local_offset_valid()) {
+      auto entityValuesB = fieldDataB.entity_values(result);
+      EXPECT_LT(std::abs(lowVal - entityValuesB()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.fieldBase1);
+    if (result.is_local_offset_valid()) {
+      auto entityValuesB = fieldDataB.entity_values(result);
+      EXPECT_LT(std::abs(highValAB - entityValuesB()), tol);
     }
   }
-  return result;
+  {
+    const stk::mesh::BucketVector bucketsABc = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                         stk::mesh::Selector(*fixture.pPartA).complement() &
+                                                                         stk::mesh::Selector(*fixture.pPartB).complement() &
+                                                                         meta.locally_owned_part());
+    stk::mesh::Bucket & bABc = *bucketsABc[bucketsABc.size()/3];
+
+    auto fieldDataABc = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesABc = fieldDataABc.bucket_values(bABc);
+
+    stk::mesh::EntityIdx targetEntityABc(fieldValuesABc.num_entities()/3);
+    fieldValuesABc(targetEntityABc) = highValABc*std::abs(lowVal/highValABc) +
+                                      T(highValABc - highValABc*std::abs(lowVal/highValABc))*mpiFrac;
+
+    auto result = stk::mesh::field_eamax(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesABc = fieldDataABc.entity_values(result);
+      EXPECT_LT(std::abs(highValA - entityValuesABc()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesABc = fieldDataABc.entity_values(result);
+      EXPECT_LT(std::abs(highValAB - entityValuesABc()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
+                                    stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesABc = fieldDataABc.entity_values(result);
+      EXPECT_LT(std::abs(highValAB - entityValuesABc()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                    stk::mesh::Selector(*fixture.pPartB).complement());
+    if (result.is_local_offset_valid()) {
+      auto entityValuesABc = fieldDataABc.entity_values(result);
+      EXPECT_LT(std::abs(highValABc - entityValuesABc()), tol);
+    }
+
+    result = stk::mesh::field_eamax(*fixture.fieldBase1);
+    if (result.is_local_offset_valid()) {
+      auto entityValuesABc = fieldDataABc.entity_values(result);
+      EXPECT_LT(std::abs(highValABc - entityValuesABc()), tol);
+    }
+  }
 }
 
-template<class Scalar>
-void test_coordinate_axpy(BLASFixture3d<Scalar> &fixture,const Scalar alpha)
+TEST(FieldBLAS, scalar_double_selector_eamax)
 {
-  Scalar result2 [3];
-  for (int i=0;i<3;i++) result2[i]=fixture.init1[i]*alpha+fixture.init2[i];
-  Scalar result3 [3];
-  for (int i=0;i<3;i++) result3[i]=fixture.init1[i]*alpha+fixture.init3[i];
+  const double lowVal     = 1.27;
+  const double highValA   = -3.73;
+  const double highValAB  = -4.43;
+  const double highValABc = -5.03;
 
-  stk::mesh::field_axpy(alpha,*fixture.field1,*fixture.field2);
-  stk::mesh::field_axpy(alpha,*fixture.fieldBase1,*fixture.fieldBase3);
-
-  EXPECT_TRUE(test3dfield(*fixture.field1,fixture.init1));
-  EXPECT_TRUE(test3dfield(*fixture.field2,result2));
-  EXPECT_TRUE(test3dfield(*fixture.field3,result3));
+  test_eamax_selector<LayoutRight>(lowVal, highValA, highValAB, highValABc);
+  test_eamax_selector<LayoutLeft >(lowVal, highValA, highValAB, highValABc);
 }
 
-
-TEST(FieldBLAS,coordinate_axpy_double)
+TEST(FieldBLAS, scalar_float_selector_eamax)
 {
-  const double alpha = 4.11;
-  double init1 [3]   = {4.21,1.23,-2.13};
-  double init2 [3]   = {1.32,4.17,11.27};
-  double init3 [3]   = {0.24,-7.11,3.21};
-  BLASFixture3d<double> fixture (init1,init2,init3);
-  test_coordinate_axpy<double>(fixture,alpha);
+  const float lowVal     = 1.3;
+  const float highValA   = -3.7;
+  const float highValAB  = -4.4;
+  const float highValABc = -5.0;
+
+  test_eamax_selector<LayoutRight>(lowVal, highValA, highValAB, highValABc);
+  test_eamax_selector<LayoutLeft >(lowVal, highValA, highValAB, highValABc);
 }
 
-TEST(FieldBLAS,coordinate_axpy_float)
+TEST(FieldBLAS, scalar_complex_selector_eamax)
 {
-  const float alpha = 4.1;
-  float init1 [3]   = {4.2,1.2,-2.1};
-  float init2 [3]   = {1.3,4.1,11.2};
-  float init3 [3]   = {0.2,-7.1,3.2};
-  BLASFixture3d<float> fixture (init1,init2,init3);
-  test_coordinate_axpy<float>(fixture,alpha);
+  const std::complex<double> lowVal     = std::complex<double>(0.51, 0.32);
+  const std::complex<double> highValA   = std::complex<double>(-3.73, 4.04);
+  const std::complex<double> highValAB  = std::complex<double>(4.95, -5.12);
+  const std::complex<double> highValABc = std::complex<double>(-6.03, 6.11);
+
+  test_eamax_selector<LayoutRight>(lowVal, highValA, highValAB, highValABc);
+  test_eamax_selector<LayoutLeft >(lowVal, highValA, highValAB, highValABc);
 }
 
-TEST(FieldBLAS,coordinate_axpy_complex)
+TEST(FieldBLAS, scalar_int_selector_eamax)
 {
-  const std::complex<double> alpha = std::complex<double>(4.11,-32.1);
-  std::complex<double>   init1 [3] = {std::complex<double>(4.21,0.24),std::complex<double>(1.23,-0.1),std::complex<double>(-2.13,4.11)};
-  std::complex<double>   init2 [3] = {std::complex<double>(1.32,23.1),std::complex<double>(4.17,-0.2),std::complex<double>(11.27,4.21)};
-  std::complex<double>   init3 [3] = {std::complex<double>(0.24,-1.22),std::complex<double>(-7.11,42.1),std::complex<double>(3.21,7.11)};
-  BLASFixture3d<std::complex<double> > fixture (init1,init2,init3);
+  const int lowVal     = 1;
+  const int highValA   = -3;
+  const int highValAB  = -4;
+  const int highValABc = -5;
 
-  test_coordinate_axpy<std::complex<double> >(fixture,alpha);
-}
-
-TEST(FieldBLAS,coordinate_axpy_int)
-{
-  const int alpha = 4;
-  int init1 [3] = {4,1,-2};
-  int init2 [3] = {3,4,11};
-  int init3 [3] = {8,-7,3};
-  BLASFixture3d<int> fixture (init1,init2,init3);
-
-  test_coordinate_axpy<int>(fixture,alpha);
-}
-
-template<class Scalar>
-void test_coordinate_copy(BLASFixture3d<Scalar> &fixture)
-{
-  stk::mesh::field_copy(*fixture.field1,*fixture.field2);
-  stk::mesh::field_copy(*fixture.fieldBase3,*fixture.fieldBase1);
-
-  EXPECT_TRUE(test3dfield(*fixture.field1,fixture.init3));
-  EXPECT_TRUE(test3dfield(*fixture.field2,fixture.init1));
-  EXPECT_TRUE(test3dfield(*fixture.field3,fixture.init3));
-}
-
-
-TEST(FieldBLAS,coordinate_copy_double)
-{
-  double init1 [3]   = {4.21,1.23,-2.13};
-  double init2 [3]   = {1.32,4.17,11.27};
-  double init3 [3]   = {0.24,-7.11,3.21};
-  BLASFixture3d<double> fixture (init1,init2,init3);
-  test_coordinate_copy<double>(fixture);
-}
-
-TEST(FieldBLAS,coordinate_copy_float)
-{
-  float init1 [3]   = {4.2,1.2,-2.1};
-  float init2 [3]   = {1.3,4.1,11.2};
-  float init3 [3]   = {0.2,-7.1,3.2};
-  BLASFixture3d<float> fixture (init1,init2,init3);
-  test_coordinate_copy<float>(fixture);
-}
-
-TEST(FieldBLAS,coordinate_copy_complex)
-{
-  std::complex<double>   init1 [3] = {std::complex<double>(4.21,0.24),std::complex<double>(1.23,-0.1),std::complex<double>(-2.13,4.11)};
-  std::complex<double>   init2 [3] = {std::complex<double>(1.32,23.1),std::complex<double>(4.17,-0.2),std::complex<double>(11.27,4.21)};
-  std::complex<double>   init3 [3] = {std::complex<double>(0.24,-1.22),std::complex<double>(-7.11,42.1),std::complex<double>(3.21,7.11)};
-  BLASFixture3d<std::complex<double> > fixture (init1,init2,init3);
-
-  test_coordinate_copy<std::complex<double> >(fixture);
-}
-
-TEST(FieldBLAS,coordinate_copy_int)
-{
-  int init1 [3] = {4,1,-2};
-  int init2 [3] = {3,4,11};
-  int init3 [3] = {8,-7,3};
-  BLASFixture3d<int> fixture (init1,init2,init3);
-
-  test_coordinate_copy<int>(fixture);
-}
-
-template<class Scalar>
-void test_coordinate_product(BLASFixture3d<Scalar> &fixture)
-{
-  Scalar result3 [3];
-  for (int i=0;i<3;i++) result3[i]=fixture.init1[i]*fixture.init2[i];
-  Scalar result2 [3];
-  for (int i=0;i<3;i++) result2[i]=fixture.init1[i]*result3[i];
-
-  stk::mesh::field_product(*fixture.field1,*fixture.field2,*fixture.field3);
-  stk::mesh::field_product(*fixture.fieldBase3,*fixture.fieldBase1,*fixture.fieldBase2);
-
-  EXPECT_TRUE(test3dfield(*fixture.field1,fixture.init1));
-  EXPECT_TRUE(test3dfield(*fixture.field2,result2));
-  EXPECT_TRUE(test3dfield(*fixture.field3,result3));
+  test_eamax_selector<LayoutRight>(lowVal, highValA, highValAB, highValABc);
+  test_eamax_selector<LayoutLeft >(lowVal, highValA, highValAB, highValABc);
 }
 
 
-TEST(FieldBLAS,coordinate_product_double)
+template <stk::mesh::Layout Layout1, typename T>
+void test_eamax(const std::array<T, 3>& lowVal, const std::array<T, 3>& highVal, const double tol = 1.0e-3)
 {
-  double init1 [3]   = {4.21,1.23,-2.13};
-  double init2 [3]   = {1.32,4.17,11.27};
-  double init3 [3]   = {0.24,-7.11,3.21};
-  BLASFixture3d<double> fixture (init1,init2,init3);
-  test_coordinate_product<double>(fixture);
+  BLASFixtureVector<T, Layout1> fixture(lowVal);
+
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                    stk::mesh::selectField(*fixture.field1) &
+                                                                    meta.locally_owned_part());
+
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
+
+  auto fieldData = fixture.field1->template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
+
+  stk::mesh::EntityIdx targetEntityIdx(fieldValues.num_entities()/3);
+  for (stk::mesh::ScalarIdx scalar : fieldValues.scalars()) {
+    fieldValues(targetEntityIdx, scalar) = highVal[scalar]*std::abs(lowVal[scalar]/highVal[scalar]) +
+        T(highVal[scalar] - highVal[scalar]*std::abs(lowVal[scalar]/highVal[scalar]))*mpiFrac;
+  }
+  stk::mesh::Entity targetEntity = b[targetEntityIdx];
+
+  stk::mesh::Entity fieldResult = stk::mesh::field_eamax(*fixture.field1);
+  EXPECT_EQ(mpiFrac==1.0, fieldResult.is_local_offset_valid());
+  if (fieldResult.is_local_offset_valid()) {
+    EXPECT_EQ(fieldResult, targetEntity);
+  }
+
+  stk::mesh::Entity fieldBaseResult = stk::mesh::field_eamax(*fixture.fieldBase1);
+  EXPECT_EQ(mpiFrac==1.0, fieldBaseResult.is_local_offset_valid());
+  if (fieldBaseResult.is_local_offset_valid()) {
+    EXPECT_EQ(fieldBaseResult, targetEntity);
+  }
 }
 
-TEST(FieldBLAS,coordinate_product_float)
+TEST(FieldBLAS, vector_double_eamax)
 {
-  float init1 [3]   = {4.2,1.2,-2.1};
-  float init2 [3]   = {1.3,4.1,11.2};
-  float init3 [3]   = {0.2,-7.1,3.2};
-  BLASFixture3d<float> fixture (init1,init2,init3);
-  test_coordinate_product<float>(fixture);
+  std::array<double, 3> lowVal  {2.73, 1.23, 0.49};
+  std::array<double, 3> highVal {-10.27, -9.66, 8.52};
+
+  test_eamax<LayoutRight>(lowVal, highVal);
+  test_eamax<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,coordinate_product_complex)
+TEST(FieldBLAS, vector_float_eamax)
 {
-  std::complex<double>   init1 [3] = {std::complex<double>(4.21,0.24),std::complex<double>(1.23,-0.1),std::complex<double>(-2.13,4.11)};
-  std::complex<double>   init2 [3] = {std::complex<double>(1.32,23.1),std::complex<double>(4.17,-0.2),std::complex<double>(11.27,4.21)};
-  std::complex<double>   init3 [3] = {std::complex<double>(0.24,-1.22),std::complex<double>(-7.11,42.1),std::complex<double>(3.21,7.11)};
-  BLASFixture3d<std::complex<double> > fixture (init1,init2,init3);
+  std::array<float, 3> lowVal  {2.7, 1.2, 0.4};
+  std::array<float, 3> highVal {-9.6, -10.2, 8.5};
 
-  test_coordinate_product<std::complex<double> >(fixture);
+  test_eamax<LayoutRight>(lowVal, highVal);
+  test_eamax<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,coordinate_product_int)
+TEST(FieldBLAS, vector_complex_eamax)
 {
-  int init1 [3] = {4,1,-2};
-  int init2 [3] = {3,4,11};
-  int init3 [3] = {8,-7,3};
-  BLASFixture3d<int> fixture (init1,init2,init3);
+  std::array<std::complex<double>, 3> lowVal  = {std::complex<double>(-1.11, -2.63),
+                                                 std::complex<double>(-2.22, -1.65),
+                                                 std::complex<double>(-1.58, -1.27)};
+  std::array<std::complex<double>, 3> highVal = {std::complex<double>(-100.21, -250.23),
+                                                 std::complex<double>(-110.54, -260.28),
+                                                 std::complex<double>(-150.61, -331.87)};
 
-  test_coordinate_product<int>(fixture);
+  test_eamax<LayoutRight>(lowVal, highVal);
+  test_eamax<LayoutLeft >(lowVal, highVal);
 }
 
-template<class Scalar>
-void test_coordinate_dot(BLASFixture3d<Scalar> &fixture,const double tol=1.5e-3)
+TEST(FieldBLAS, vector_int_eamax)
 {
-  Scalar expected_result12(0.0);
-  for (int i=0;i<3;i++) expected_result12+=fixture.init1[i]*fixture.init2[i];
-  Scalar expected_result23(0.0);
-  for (int i=0;i<3;i++) expected_result23+=fixture.init2[i]*fixture.init3[i];
+  std::array<int, 3> lowVal  {2, 3, 5};
+  std::array<int, 3> highVal {-10, -11, -28};
 
-  Scalar field_result = stk::mesh::field_dot(*fixture.field1,*fixture.field2);
-  EXPECT_NEAR(field_result,expected_result12*Scalar(fixture.numEntitiesGlobal),tol);
-
-  Scalar fieldBase_result;
-  stk::mesh::field_dot(fieldBase_result,*fixture.fieldBase2,*fixture.fieldBase3);
-  EXPECT_NEAR(fieldBase_result,expected_result23*Scalar(fixture.numEntitiesGlobal),tol);
-}
-
-template<class Scalar>
-void test_coordinate_dot(BLASFixture3d<std::complex<Scalar> > &fixture,const double tol=1.5e-3)
-{
-  std::complex<Scalar> result=std::complex<Scalar>(0.0);
-  for (int i=0;i<3;i++) result+=fixture.init1[i]*fixture.init2[i];
-  std::complex<Scalar> result2=std::complex<Scalar>(0.0);
-  for (int i=0;i<3;i++) result2+=fixture.init2[i]*fixture.init3[i];
-
-  EXPECT_LT(std::abs(stk::mesh::field_dot(*fixture.field1,*fixture.field2)-result*Scalar(fixture.numEntitiesGlobal)),tol);
-  std::complex<Scalar> tmp;
-  stk::mesh::field_dot(tmp,*fixture.fieldBase2,*fixture.fieldBase3);
-  EXPECT_LT(std::abs(tmp-result2*Scalar(fixture.numEntitiesGlobal)),tol);
-}
-
-TEST(FieldBLAS,coordinate_dot_double)
-{
-  double init1 [3]   = {4.21,1.23,-2.13};
-  double init2 [3]   = {1.32,4.17,11.27};
-  double init3 [3]   = {0.24,-7.11,3.21};
-  BLASFixture3d<double> fixture (init1,init2,init3);
-  test_coordinate_dot(fixture);
-}
-
-TEST(FieldBLAS,coordinate_dot_float)
-{
-  float init1 [3]   = {4.2,1.2,-2.1};
-  float init2 [3]   = {1.3,4.1,11.2};
-  float init3 [3]   = {0.2,-7.1,3.2};
-  BLASFixture3d<float> fixture (init1,init2,init3);
-  test_coordinate_dot(fixture,0.5);
-}
-
-TEST(FieldBLAS,coordinate_dot_complex)
-{
-  std::complex<double>   init1 [3] = {std::complex<double>(4.21,0.24),std::complex<double>(1.23,-0.1),std::complex<double>(-2.13,4.11)};
-  std::complex<double>   init2 [3] = {std::complex<double>(1.32,23.1),std::complex<double>(4.17,-0.2),std::complex<double>(11.27,4.21)};
-  std::complex<double>   init3 [3] = {std::complex<double>(0.24,-1.22),std::complex<double>(-7.11,42.1),std::complex<double>(3.21,7.11)};
-  BLASFixture3d<std::complex<double> > fixture (init1,init2,init3);
-
-  test_coordinate_dot(fixture);
-}
-
-TEST(FieldBLAS,coordinate_dot_int)
-{
-  int init1 [3] = {4,1,-2};
-  int init2 [3] = {3,4,11};
-  int init3 [3] = {8,-7,3};
-  BLASFixture3d<int> fixture (init1,init2,init3);
-
-  test_coordinate_dot(fixture);
-}
-
-template<class Scalar>
-void test_coordinate_scale(BLASFixture3d<Scalar> &fixture,const Scalar alpha)
-{
-  Scalar result2 [3];
-  for (int i=0;i<3;i++) result2[i]=fixture.init2[i]*alpha;
-  Scalar result3 [3];
-  for (int i=0;i<3;i++) result3[i]=fixture.init3[i]*alpha;
-
-  stk::mesh::field_scale(alpha,*fixture.field2);
-  stk::mesh::field_scale(alpha,*fixture.fieldBase3);
-
-  EXPECT_TRUE(test3dfield(*fixture.field1,fixture.init1));
-  EXPECT_TRUE(test3dfield(*fixture.field2,result2));
-  EXPECT_TRUE(test3dfield(*fixture.field3,result3));
+  test_eamax<LayoutRight>(lowVal, highVal);
+  test_eamax<LayoutLeft >(lowVal, highVal);
 }
 
 
-TEST(FieldBLAS,coordinate_scale_double)
+//==============================================================================
+template <stk::mesh::Layout Layout1, typename T>
+void test_amin(T lowVal, T highVal, const double tol = 1.0e-3)
 {
-  const double alpha = 4.11;
-  double init1 [3]   = {4.21,1.23,-2.13};
-  double init2 [3]   = {1.32,4.17,11.27};
-  double init3 [3]   = {0.24,-7.11,3.21};
-  BLASFixture3d<double> fixture (init1,init2,init3);
+  BLASFixtureScalar<T, Layout1> fixture(highVal);
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                    stk::mesh::selectField(*fixture.field1) &
+                                                                    meta.locally_owned_part());
 
-  test_coordinate_scale<double>(fixture,alpha);
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
+
+  auto fieldData = fixture.field1->template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
+
+  stk::mesh::EntityIdx targetEntityIdx(fieldValues.num_entities()/3);
+  fieldValues(targetEntityIdx) = lowVal*std::abs(highVal/lowVal) + T(lowVal - lowVal*std::abs(highVal/lowVal))*mpiFrac;
+
+  T fieldResult = stk::mesh::field_amin(*fixture.field1);
+  EXPECT_LT(std::abs(fieldResult - std::abs(lowVal)), tol);
+
+  T fieldBaseResult {};
+  stk::mesh::field_amin(fieldBaseResult, *fixture.fieldBase1);
+  EXPECT_LT(std::abs(fieldBaseResult - std::abs(lowVal)), tol);
 }
 
-TEST(FieldBLAS,coordinate_scale_float)
+TEST(FieldBLAS, scalar_double_amin)
 {
-  const float alpha = 4.1;
-  float init1 [3]   = {4.2,1.2,-2.1};
-  float init2 [3]   = {1.3,4.1,11.2};
-  float init3 [3]   = {0.2,-7.1,3.2};
-  BLASFixture3d<float> fixture (init1,init2,init3);
+  const double lowVal  = 2.73;
+  const double highVal = -10.27;
 
-  test_coordinate_scale<float>(fixture,alpha);
+  test_amin<LayoutRight>(lowVal, highVal);
+  test_amin<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,coordinate_scale_complex)
+TEST(FieldBLAS, scalar_float_amin)
 {
-  const std::complex<double> alpha = std::complex<double>(4.11,-32.1);
-  std::complex<double>   init1 [3] = {std::complex<double>(4.21,0.24),std::complex<double>(1.23,-0.1),std::complex<double>(-2.13,4.11)};
-  std::complex<double>   init2 [3] = {std::complex<double>(1.32,23.1),std::complex<double>(4.17,-0.2),std::complex<double>(11.27,4.21)};
-  std::complex<double>   init3 [3] = {std::complex<double>(0.24,-1.22),std::complex<double>(-7.11,42.1),std::complex<double>(3.21,7.11)};
-  BLASFixture3d<std::complex<double> > fixture (init1,init2,init3);
+  const float lowVal  = 3.7;
+  const float highVal = -10.2;
 
-  test_coordinate_scale<std::complex<double> >(fixture,alpha);
+  test_amin<LayoutRight>(lowVal, highVal);
+  test_amin<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,coordinate_scale_int)
+TEST(FieldBLAS, scalar_complex_amin)
 {
-  const int alpha = 4;
-  int init1 [3] = {4,1,-2};
-  int init2 [3] = {3,4,11};
-  int init3 [3] = {8,-7,3};
-  BLASFixture3d<int> fixture (init1,init2,init3);
+  const std::complex<double> lowVal  = std::complex<double>(-1.11, -2.63);
+  const std::complex<double> highVal = std::complex<double>(-100.21, -250.23);
 
-  test_coordinate_scale<int>(fixture,alpha);
+  test_amin<LayoutRight>(lowVal, highVal);
+  test_amin<LayoutLeft >(lowVal, highVal);
 }
 
-template<class Scalar>
-void test_coordinate_fill(BLASFixture3d<Scalar> &fixture,const Scalar alpha)
+TEST(FieldBLAS, scalar_int_amin)
 {
-  Scalar alpha_list [3] = {alpha,alpha,alpha};
-  stk::mesh::field_fill(alpha,*fixture.field2);
-  stk::mesh::field_fill(alpha,*fixture.fieldBase3);
+  const int lowVal  = 2;
+  const int highVal = -10;
 
-  EXPECT_TRUE(test3dfield(*fixture.field1,fixture.init1));
-  EXPECT_TRUE(test3dfield(*fixture.field2,alpha_list));
-  EXPECT_TRUE(test3dfield(*fixture.field3,alpha_list));
+  test_amin<LayoutRight>(lowVal, highVal);
+  test_amin<LayoutLeft >(lowVal, highVal);
 }
 
-
-TEST(FieldBLAS,coordinate_fill_double)
+template <stk::mesh::Layout Layout1, typename T>
+void test_amin_empty_selector(T lowVal, T highVal, const double tol = 1.0e-12)
 {
-  const double alpha = 4.11;
-  double init1 [3]   = {4.21,1.23,-2.13};
-  double init2 [3]   = {1.32,4.17,11.27};
-  double init3 [3]   = {0.24,-7.11,3.21};
-  BLASFixture3d<double> fixture (init1,init2,init3);
-  test_coordinate_fill<double>(fixture,alpha);
+  BLASFixtureScalar<T, Layout1> fixture(highVal);
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                    stk::mesh::selectField(*fixture.field1) &
+                                                                    meta.locally_owned_part());
+
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
+
+  auto fieldData = fixture.field1->template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
+
+  stk::mesh::EntityIdx targetEntityIdx(fieldValues.num_entities()/3);
+  fieldValues(targetEntityIdx) = lowVal*std::abs(highVal/lowVal) + T(lowVal - lowVal*std::abs(highVal/lowVal))*mpiFrac;
+
+  T fieldResult = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector());
+  EXPECT_LT(std::abs(fieldResult - std::numeric_limits<T>::max()), tol);
+
+  T fieldBaseResult {};
+  stk::mesh::field_amin(fieldBaseResult, *fixture.fieldBase1, stk::mesh::Selector());
+  EXPECT_LT(std::abs(fieldBaseResult - std::numeric_limits<T>::max()), tol);
 }
 
-TEST(FieldBLAS,coordinate_fill_float)
+TEST(FieldBLAS, scalar_double_amin_empty_selector)
 {
-  const float alpha = 4.1;
-  float init1 [3]   = {4.2,1.2,-2.1};
-  float init2 [3]   = {1.3,4.1,11.2};
-  float init3 [3]   = {0.2,-7.1,3.2};
-  BLASFixture3d<float> fixture (init1,init2,init3);
-  test_coordinate_fill<float>(fixture,alpha);
-}
+  const double lowVal  = 2.73;
+  const double highVal = -10.27;
 
-TEST(FieldBLAS,coordinate_fill_complex)
-{
-  const std::complex<double> alpha = std::complex<double>(4.11,-32.1);
-  std::complex<double>   init1 [3] = {std::complex<double>(4.21,0.24),std::complex<double>(1.23,-0.1),std::complex<double>(-2.13,4.11)};
-  std::complex<double>   init2 [3] = {std::complex<double>(1.32,23.1),std::complex<double>(4.17,-0.2),std::complex<double>(11.27,4.21)};
-  std::complex<double>   init3 [3] = {std::complex<double>(0.24,-1.22),std::complex<double>(-7.11,42.1),std::complex<double>(3.21,7.11)};
-  BLASFixture3d<std::complex<double> > fixture (init1,init2,init3);
-
-  test_coordinate_fill<std::complex<double> >(fixture,alpha);
-}
-
-TEST(FieldBLAS,coordinate_fill_int)
-{
-  const int alpha = 4;
-  int init1 [3] = {4,1,-2};
-  int init2 [3] = {3,4,11};
-  int init3 [3] = {8,-7,3};
-  BLASFixture3d<int> fixture (init1,init2,init3);
-
-  test_coordinate_fill<int>(fixture,alpha);
-}
-
-template<class Scalar>
-void test_coordinate_fill_component(BLASFixture3d<Scalar> &fixture,const Scalar* alpha)
-{
-  stk::mesh::field_fill_component(alpha,*fixture.field2);
-  stk::mesh::field_fill_component(alpha,*fixture.fieldBase3);
-
-  EXPECT_TRUE(test3dfield(*fixture.field1,fixture.init1));
-  EXPECT_TRUE(test3dfield(*fixture.field2,alpha));
-  EXPECT_TRUE(test3dfield(*fixture.field3,alpha));
+  test_amin_empty_selector<LayoutRight>(lowVal, highVal);
+  test_amin_empty_selector<LayoutLeft >(lowVal, highVal);
 }
 
 
-TEST(FieldBLAS,coordinate_fill_component_double)
+template <stk::mesh::Layout Layout1, typename T>
+void test_amin_selector(T highVal, T lowValA, T lowValAB, T lowValABc, const double tol = 1.0e-1)
 {
-  double alpha [3] = {4.11,2.11,-3.12};
-  double init1 [3] = {4.21,1.23,-2.13};
-  double init2 [3] = {1.32,4.17,11.27};
-  double init3 [3] = {0.24,-7.11,3.21};
-  BLASFixture3d<double> fixture (init1,init2,init3);
-  test_coordinate_fill_component<double>(fixture,alpha);
+  BLASFixtureScalar<T, Layout1> fixture(highVal);
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+
+  {
+    const stk::mesh::BucketVector bucketsA = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                       stk::mesh::Selector(*fixture.pPartA) &
+                                                                       meta.locally_owned_part());
+    stk::mesh::Bucket& bA = *bucketsA[bucketsA.size()/3];
+
+    auto fieldDataA = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesA = fieldDataA.bucket_values(bA);
+
+    stk::mesh::EntityIdx targetEntityA(fieldValuesA.num_entities()/3);
+    fieldValuesA(targetEntityA) = lowValA*std::abs(highVal/lowValA) +
+                                  T(lowValA - lowValA*std::abs(highVal/lowValA))*mpiFrac;
+
+    T result;
+    stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
+    EXPECT_LT(std::abs(std::abs(lowValA) - result), tol);
+
+    result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(highVal) - result), tol);
+
+    stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
+                          stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(lowValA) - result), tol);
+
+    result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                   stk::mesh::Selector(*fixture.pPartB).complement());
+    EXPECT_LT(std::abs(std::abs(highVal) - result), tol);
+
+    stk::mesh::field_amin(result, *fixture.fieldBase1);
+    EXPECT_LT(std::abs(std::abs(lowValA) - result), tol);
+  }
+  {
+    const stk::mesh::BucketVector bucketsB = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                       stk::mesh::Selector(*fixture.pPartB) &
+                                                                       meta.locally_owned_part());
+    stk::mesh::Bucket& bB = *bucketsB[bucketsB.size()/3];
+
+    auto fieldDataB = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesB = fieldDataB.bucket_values(bB);
+
+    stk::mesh::EntityIdx targetEntityB(fieldValuesB.num_entities()/3);
+    fieldValuesB(targetEntityB) = lowValAB*std::abs(highVal/lowValAB) +
+                                  T(lowValAB - lowValAB*std::abs(highVal/lowValAB))*mpiFrac;
+
+    T result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA));
+    EXPECT_LT(std::abs(std::abs(lowValA) - result), tol);
+
+    stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(lowValAB) - result), tol);
+
+    result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA) |
+                                   stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(lowValAB) - result), tol);
+
+    stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                          stk::mesh::Selector(*fixture.pPartB).complement());
+    EXPECT_LT(std::abs(std::abs(highVal) - result), tol);
+    EXPECT_LT(std::abs(std::abs(lowValAB) - stk::mesh::field_amin(*fixture.field1)), tol);
+  }
+  {
+    const stk::mesh::BucketVector bucketsABc = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                         stk::mesh::Selector(*fixture.pPartA).complement() &
+                                                                         stk::mesh::Selector(*fixture.pPartB).complement() &
+                                                                         meta.locally_owned_part());
+    stk::mesh::Bucket& bABc = *bucketsABc[bucketsABc.size()/3];
+
+    auto fieldDataABc = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesABc = fieldDataABc.bucket_values(bABc);
+
+    stk::mesh::EntityIdx targetEntityABc(fieldValuesABc.num_entities()/3);
+    fieldValuesABc(targetEntityABc) = lowValABc*std::abs(highVal/lowValABc) +
+                                      T(lowValABc - lowValABc*std::abs(highVal/lowValABc))*mpiFrac;
+
+    T result;
+    stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
+    EXPECT_LT(std::abs(std::abs(lowValA) - result), tol);
+
+    result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(lowValAB) - result), tol);
+
+    stk::mesh::field_amin(result, *fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
+                          stk::mesh::Selector(*fixture.pPartB));
+    EXPECT_LT(std::abs(std::abs(lowValAB) - result), tol);
+
+    result = stk::mesh::field_amin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                   stk::mesh::Selector(*fixture.pPartB).complement());
+    EXPECT_LT(std::abs(std::abs(lowValABc) - result), tol);
+
+    stk::mesh::field_amin(result, *fixture.fieldBase1);
+    EXPECT_LT(std::abs(std::abs(lowValABc) - result), tol);
+  }
 }
 
-TEST(FieldBLAS,coordinate_fill_component_float)
+TEST(FieldBLAS, scalar_double_selector_amin)
 {
-  float alpha [3] = {4.1,2.1,-3.1};
-  float init1 [3] = {4.2,1.2,-2.1};
-  float init2 [3] = {1.3,4.1,11.2};
-  float init3 [3] = {0.2,-7.1,3.2};
-  BLASFixture3d<float> fixture (init1,init2,init3);
-  test_coordinate_fill_component<float>(fixture,alpha);
+  const double highVal   = -6.27;
+  const double lowValA   = 5.73;
+  const double lowValAB  = 4.43;
+  const double lowValABc = 3.03;
+
+  test_amin_selector<LayoutRight>(highVal, lowValA, lowValAB, lowValABc);
+  test_amin_selector<LayoutLeft >(highVal, lowValA, lowValAB, lowValABc);
 }
 
-TEST(FieldBLAS,coordinate_fill_component_complex)
+TEST(FieldBLAS, scalar_float_selector_amin)
 {
-  std::complex<double> alpha [3] = {std::complex<double>(4.11,-3.1),std::complex<double>(2.17,-0.25),std::complex<double>(7.14,-38.1)};
-  std::complex<double> init1 [3] = {std::complex<double>(4.21,0.24),std::complex<double>(1.23,-0.13),std::complex<double>(-2.13,4.11)};
-  std::complex<double> init2 [3] = {std::complex<double>(1.32,23.1),std::complex<double>(4.17,-0.24),std::complex<double>(11.27,4.21)};
-  std::complex<double> init3 [3] = {std::complex<double>(0.24,-1.22),std::complex<double>(-7.11,42.1),std::complex<double>(3.21,7.11)};
-  BLASFixture3d<std::complex<double> > fixture (init1,init2,init3);
+  const float highVal   = -6.3;
+  const float lowValA   = 5.7;
+  const float lowValAB  = 4.4;
+  const float lowValABc = 3.1;
 
-  test_coordinate_fill_component<std::complex<double> >(fixture,alpha);
+  test_amin_selector<LayoutRight>(highVal, lowValA, lowValAB, lowValABc);
+  test_amin_selector<LayoutLeft >(highVal, lowValA, lowValAB, lowValABc);
 }
 
-TEST(FieldBLAS,coordinate_fill_component_int)
+TEST(FieldBLAS, scalar_complex_selector_amin)
 {
-  int alpha [3] = {2,-3,6};
-  int init1 [3] = {4,1,-2};
-  int init2 [3] = {3,4,11};
-  int init3 [3] = {8,-7,3};
-  BLASFixture3d<int> fixture (init1,init2,init3);
+  const std::complex<double> highVal   = std::complex<double>(7.51, -8.32);
+  const std::complex<double> lowValA   = std::complex<double>(-6.73, 6.04);
+  const std::complex<double> lowValAB  = std::complex<double>(4.95, -5.12);
+  const std::complex<double> lowValABc = std::complex<double>(-4.03, 4.11);
 
-  test_coordinate_fill_component<int>(fixture,alpha);
+  test_amin_selector<LayoutRight>(highVal, lowValA, lowValAB, lowValABc);
+  test_amin_selector<LayoutLeft >(highVal, lowValA, lowValAB, lowValABc);
 }
 
-template<class Scalar>
-void test_coordinate_swap(BLASFixture3d<Scalar> &fixture)
+TEST(FieldBLAS, scalar_int_selector_amin)
 {
-  stk::mesh::field_swap(*fixture.field1,*fixture.field2);
-  stk::mesh::field_swap(*fixture.fieldBase3,*fixture.fieldBase1);
+  const int highVal   = -6;
+  const int lowValA   = 5;
+  const int lowValAB  = 4;
+  const int lowValABc = 3;
 
-  EXPECT_TRUE(test3dfield(*fixture.field1,fixture.init3));
-  EXPECT_TRUE(test3dfield(*fixture.field2,fixture.init1));
-  EXPECT_TRUE(test3dfield(*fixture.field3,fixture.init2));
-}
-
-TEST(FieldBLAS,coordinate_swap_double)
-{
-  double init1 [3]   = {4.21,1.23,-2.13};
-  double init2 [3]   = {1.32,4.17,11.27};
-  double init3 [3]   = {0.24,-7.11,3.21};
-  BLASFixture3d<double> fixture (init1,init2,init3);
-  test_coordinate_swap<double>(fixture);
-}
-
-TEST(FieldBLAS,coordinate_swap_float)
-{
-  float init1 [3]   = {4.2,1.2,-2.1};
-  float init2 [3]   = {1.3,4.1,11.2};
-  float init3 [3]   = {0.2,-7.1,3.2};
-  BLASFixture3d<float> fixture (init1,init2,init3);
-  test_coordinate_swap<float>(fixture);
-}
-
-TEST(FieldBLAS,coordinate_swap_complex)
-{
-  std::complex<double>   init1 [3] = {std::complex<double>(4.21,0.24),std::complex<double>(1.23,-0.1),std::complex<double>(-2.13,4.11)};
-  std::complex<double>   init2 [3] = {std::complex<double>(1.32,23.1),std::complex<double>(4.17,-0.2),std::complex<double>(11.27,4.21)};
-  std::complex<double>   init3 [3] = {std::complex<double>(0.24,-1.22),std::complex<double>(-7.11,42.1),std::complex<double>(3.21,7.11)};
-  BLASFixture3d<std::complex<double> > fixture (init1,init2,init3);
-
-  test_coordinate_swap<std::complex<double> >(fixture);
-}
-
-TEST(FieldBLAS,coordinate_swap_int)
-{
-  int init1 [3] = {4,1,-2};
-  int init2 [3] = {3,4,11};
-  int init3 [3] = {8,-7,3};
-  BLASFixture3d<int> fixture (init1,init2,init3);
-
-  test_coordinate_swap<int>(fixture);
-}
-
-template<class Scalar>
-void test_coordinate_nrm2(BLASFixture3d<Scalar> &fixture,const double tol=1.5e-3)
-{
-  double result1 = 0.0;
-  for (int i=0; i<3; i++) result1+=pow(std::abs(fixture.init1[i]),2);
-  result1=sqrt(result1);
-  double result2=0.0;
-  for (int i=0; i<3; i++) result2+=pow(std::abs(fixture.init2[i]),2);
-  result2=sqrt(result2);
-
-  EXPECT_LT(std::abs(stk::mesh::field_nrm2(*fixture.field1)-Scalar(result1*sqrt(double(fixture.numEntitiesGlobal)))),tol);
-  Scalar tmp;
-  stk::mesh::field_nrm2(tmp,*fixture.fieldBase2);
-  EXPECT_LT(std::abs(tmp-Scalar(result2*sqrt(double(fixture.numEntitiesGlobal)))),tol);
-}
-
-TEST(FieldBLAS,coordinate_nrm2_double)
-{
-  double init1 [3]   = {4.21,1.23,-2.13};
-  double init2 [3]   = {1.32,4.17,11.27};
-  double init3 [3]   = {0.24,-7.11,3.21};
-  BLASFixture3d<double> fixture (init1,init2,init3);
-  test_coordinate_nrm2<double>(fixture);
-}
-
-TEST(FieldBLAS,coordinate_nrm2_float)
-{
-  float init1 [3]   = {4.2,1.2,-2.1};
-  float init2 [3]   = {1.3,4.1,11.2};
-  float init3 [3]   = {0.2,-7.1,3.2};
-  BLASFixture3d<float> fixture (init1,init2,init3);
-  test_coordinate_nrm2<float>(fixture,0.5);
-}
-
-TEST(FieldBLAS,coordinate_nrm2_complex)
-{
-  std::complex<double>   init1 [3] = {std::complex<double>(4.21,0.24),std::complex<double>(1.23,-0.1),std::complex<double>(-2.13,4.11)};
-  std::complex<double>   init2 [3] = {std::complex<double>(1.32,23.1),std::complex<double>(4.17,-0.2),std::complex<double>(11.27,4.21)};
-  std::complex<double>   init3 [3] = {std::complex<double>(0.24,-1.22),std::complex<double>(-7.11,42.1),std::complex<double>(3.21,7.11)};
-  BLASFixture3d<std::complex<double> > fixture (init1,init2,init3);
-
-  test_coordinate_nrm2<std::complex<double> >(fixture);
-}
-
-TEST(FieldBLAS,coordinate_nrm2_int)
-{
-  int init1 [3] = {4,1,-2};
-  int init2 [3] = {3,4,11};
-  int init3 [3] = {8,-7,3};
-  BLASFixture3d<int> fixture (init1,init2,init3);
-
-  test_coordinate_nrm2<int>(fixture,2);
-}
-
-template<class Scalar>
-void test_coordinate_asum(BLASFixture3d<Scalar> &fixture,const double tol=1.5e-3)
-{
-  Scalar result1(0.0);
-  for (int i=0;i<3;i++) result1+=std::abs(fixture.init1[i]);
-  Scalar result2(0.0);
-  for (int i=0;i<3;i++) result2+=std::abs(fixture.init2[i]);
-
-  EXPECT_LT(std::abs(stk::mesh::field_asum(*fixture.field1)-result1*Scalar(fixture.numEntitiesGlobal)),tol);
-  Scalar tmp;
-  stk::mesh::field_asum(tmp,*fixture.fieldBase2);
-  EXPECT_LT(std::abs(tmp-result2*Scalar(fixture.numEntitiesGlobal)),tol);
+  test_amin_selector<LayoutRight>(highVal, lowValA, lowValAB, lowValABc);
+  test_amin_selector<LayoutLeft >(highVal, lowValA, lowValAB, lowValABc);
 }
 
 
-TEST(FieldBLAS,coordinate_asum_double)
+template <stk::mesh::Layout Layout1, typename T>
+void test_amin(const std::array<T, 3>& lowVal, const std::array<T, 3>& highVal, const double tol = 1.0e-3)
 {
-  double init1 [3]   = {4.21,1.23,-2.13};
-  double init2 [3]   = {1.32,4.17,11.27};
-  double init3 [3]   = {0.24,-7.11,3.21};
-  BLASFixture3d<double> fixture (init1,init2,init3);
-  test_coordinate_asum<double>(fixture);
+  BLASFixtureVector<T, Layout1> fixture(highVal);
+
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                    stk::mesh::selectField(*fixture.field1) &
+                                                                    meta.locally_owned_part());
+
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
+
+  auto fieldData = fixture.field1->template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
+
+  stk::mesh::EntityIdx targetEntity(fieldValues.num_entities()/3);
+  for (stk::mesh::ScalarIdx scalar : fieldValues.scalars()) {
+    fieldValues(targetEntity, scalar) = lowVal[scalar]*std::abs(highVal[scalar]/lowVal[scalar]) +
+        T(lowVal[scalar] - lowVal[scalar]*std::abs(highVal[scalar]/lowVal[scalar]))*mpiFrac;
+  }
+
+  T minLowVal = std::min({std::abs(lowVal[0]), std::abs(lowVal[1]), std::abs(lowVal[2])});
+
+  T fieldResult = stk::mesh::field_amin(*fixture.field1);
+  EXPECT_LT(std::abs(fieldResult - minLowVal), tol);
+
+  T fieldBaseResult {};
+  stk::mesh::field_amin(fieldBaseResult, *fixture.fieldBase1);
+  EXPECT_LT(std::abs(fieldBaseResult - minLowVal), tol);
 }
 
-TEST(FieldBLAS,coordinate_asum_float)
+TEST(FieldBLAS, vector_double_amin)
 {
-  float init1 [3]   = {4.2,1.2,-2.1};
-  float init2 [3]   = {1.3,4.1,11.2};
-  float init3 [3]   = {0.2,-7.1,3.2};
-  BLASFixture3d<float> fixture (init1,init2,init3);
-  test_coordinate_asum<float>(fixture,0.5);
+  std::array<double, 3> lowVal  {2.73, 1.23, 0.49};
+  std::array<double, 3> highVal {-10.27, -9.66, 8.52};
+
+  test_amin<LayoutRight>(lowVal, highVal);
+  test_amin<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,coordinate_asum_complex)
+TEST(FieldBLAS, vector_float_amin)
 {
-  std::complex<double>   init1 [3] = {std::complex<double>(4.21,0.24),std::complex<double>(1.23,-0.1),std::complex<double>(-2.13,4.11)};
-  std::complex<double>   init2 [3] = {std::complex<double>(1.32,23.1),std::complex<double>(4.17,-0.2),std::complex<double>(11.27,4.21)};
-  std::complex<double>   init3 [3] = {std::complex<double>(0.24,-1.22),std::complex<double>(-7.11,42.1),std::complex<double>(3.21,7.11)};
-  BLASFixture3d<std::complex<double> > fixture (init1,init2,init3);
+  std::array<float, 3> lowVal  {2.7, 1.2, 0.4};
+  std::array<float, 3> highVal {-9.6, -10.2, 8.5};
 
-  test_coordinate_asum<std::complex<double> >(fixture);
+  test_amin<LayoutRight>(lowVal, highVal);
+  test_amin<LayoutLeft >(lowVal, highVal);
 }
 
-TEST(FieldBLAS,coordinate_asum_int)
+TEST(FieldBLAS, vector_complex_amin)
 {
-  int init1 [3] = {4,1,-2};
-  int init2 [3] = {3,4,11};
-  int init3 [3] = {8,-7,3};
-  BLASFixture3d<int> fixture (init1,init2,init3);
+  std::array<std::complex<double>, 3> lowVal  = {std::complex<double>(-1.11, -2.63),
+                                                 std::complex<double>(-2.22, -1.65),
+                                                 std::complex<double>(-1.58, -1.27)};
+  std::array<std::complex<double>, 3> highVal = {std::complex<double>(-100.21, -250.23),
+                                                 std::complex<double>(-110.54, -260.28),
+                                                 std::complex<double>(-150.61, -331.87)};
 
-  test_coordinate_asum<int>(fixture);
+  test_amin<LayoutRight>(lowVal, highVal);
+  test_amin<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, vector_int_amin)
+{
+  std::array<int, 3> lowVal  {2, 3, 5};
+  std::array<int, 3> highVal {-10, -11, -28};
+
+  test_amin<LayoutRight>(lowVal, highVal);
+  test_amin<LayoutLeft >(lowVal, highVal);
+}
+
+
+//==============================================================================
+template <stk::mesh::Layout Layout1, typename T>
+void test_eamin(T lowVal, T highVal, const double tol = 1.0e-3)
+{
+  BLASFixtureScalar<T, Layout1> fixture(highVal);
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                    stk::mesh::selectField(*fixture.field1) &
+                                                                    meta.locally_owned_part());
+
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
+
+  auto fieldData = fixture.field1->template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
+
+  stk::mesh::EntityIdx targetEntityIdx(fieldValues.num_entities()/3);
+  fieldValues(targetEntityIdx) = lowVal*std::abs(highVal/lowVal) + T(lowVal - lowVal*std::abs(highVal/lowVal))*mpiFrac;
+  stk::mesh::Entity targetEntity = b[targetEntityIdx];
+
+  stk::mesh::Entity fieldResult = stk::mesh::field_eamin(*fixture.field1);
+  EXPECT_EQ(mpiFrac==1.0, fieldResult.is_local_offset_valid());
+  if (fieldResult.is_local_offset_valid()) {
+    EXPECT_EQ(fieldResult, targetEntity);
+  }
+
+  stk::mesh::Entity fieldBaseResult = stk::mesh::field_eamin(*fixture.fieldBase1);
+  EXPECT_EQ(mpiFrac==1.0, fieldBaseResult.is_local_offset_valid());
+  if (fieldBaseResult.is_local_offset_valid()) {
+    EXPECT_EQ(fieldBaseResult, targetEntity);
+  }
+}
+
+TEST(FieldBLAS, scalar_double_eamin)
+{
+  const double lowVal  = 2.73;
+  const double highVal = -10.27;
+
+  test_eamin<LayoutRight>(lowVal, highVal);
+  test_eamin<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, scalar_float_eamin)
+{
+  const float lowVal  = 3.7;
+  const float highVal = -10.2;
+
+  test_eamin<LayoutRight>(lowVal, highVal);
+  test_eamin<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, scalar_complex_eamin)
+{
+  const std::complex<double> lowVal  = std::complex<double>(-1.11, -2.63);
+  const std::complex<double> highVal = std::complex<double>(-100.21, -250.23);
+
+  test_eamin<LayoutRight>(lowVal, highVal);
+  test_eamin<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, scalar_int_eamin)
+{
+  const int lowVal  = 2;
+  const int highVal = -10;
+
+  test_eamin<LayoutRight>(lowVal, highVal);
+  test_eamin<LayoutLeft >(lowVal, highVal);
+}
+
+
+template <stk::mesh::Layout Layout1, typename T>
+void test_eamin_selector(T highVal, T lowValA, T lowValAB, T lowValABc, const double tol = 1.0e-3)
+{
+  BLASFixtureScalar<T, Layout1> fixture(highVal);
+
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel()) + 1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+
+  {
+    const stk::mesh::BucketVector bucketsA = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                       stk::mesh::Selector(*fixture.pPartA) &
+                                                                       meta.locally_owned_part());
+    stk::mesh::Bucket& bA = *bucketsA[bucketsA.size()/3];
+
+    auto fieldDataA = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesA = fieldDataA.bucket_values(bA);
+
+    stk::mesh::EntityIdx targetEntityIdxA(fieldValuesA.num_entities()/3);
+    fieldValuesA(targetEntityIdxA) = lowValA*std::abs(highVal/lowValA) +
+                                     T(lowValA - lowValA*std::abs(highVal/lowValA))*mpiFrac;
+
+    auto result = stk::mesh::field_eamin(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesA = fieldDataA.entity_values(result);
+      EXPECT_LT(std::abs(lowValA - entityValuesA()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesA = fieldDataA.entity_values(result);
+      EXPECT_LT(std::abs(highVal - entityValuesA()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
+                                    stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesA = fieldDataA.entity_values(result);
+      EXPECT_LT(std::abs(lowValA - entityValuesA()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                    stk::mesh::Selector(*fixture.pPartB).complement());
+    if (result.is_local_offset_valid()) {
+      auto entityValuesA = fieldDataA.entity_values(result);
+      EXPECT_LT(std::abs(highVal - entityValuesA()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.fieldBase1);
+    if (result.is_local_offset_valid()) {
+      auto entityValuesA = fieldDataA.entity_values(result);
+      EXPECT_LT(std::abs(lowValA - entityValuesA()), tol);
+    }
+  }
+  {
+    const stk::mesh::BucketVector bucketsB = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                       stk::mesh::Selector(*fixture.pPartB) &
+                                                                       meta.locally_owned_part());
+    stk::mesh::Bucket& bB = *bucketsB[bucketsB.size()/3];
+
+    auto fieldDataB = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesB = fieldDataB.bucket_values(bB);
+
+    stk::mesh::EntityIdx targetEntityIdxB(fieldValuesB.num_entities()/3);
+    fieldValuesB(targetEntityIdxB) = lowValAB*std::abs(highVal/lowValAB) +
+                                     T(lowValAB - lowValAB*std::abs(highVal/lowValAB))*mpiFrac;
+
+    auto result = stk::mesh::field_eamin(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesB = fieldDataB.entity_values(result);
+      EXPECT_LT(std::abs(lowValA - entityValuesB()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesB = fieldDataB.entity_values(result);
+      EXPECT_LT(std::abs(lowValAB - entityValuesB()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
+                                    stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesB = fieldDataB.entity_values(result);
+      EXPECT_LT(std::abs(lowValAB - entityValuesB()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                    stk::mesh::Selector(*fixture.pPartB).complement());
+    if (result.is_local_offset_valid()) {
+      auto entityValuesB = fieldDataB.entity_values(result);
+      EXPECT_LT(std::abs(highVal - entityValuesB()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.fieldBase1);
+    if (result.is_local_offset_valid()) {
+      auto entityValuesB = fieldDataB.entity_values(result);
+      EXPECT_LT(std::abs(lowValAB - entityValuesB()), tol);
+    }
+  }
+  {
+    const stk::mesh::BucketVector bucketsABc = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                         stk::mesh::Selector(*fixture.pPartA).complement() &
+                                                                         stk::mesh::Selector(*fixture.pPartB).complement() &
+                                                                         meta.locally_owned_part());
+    stk::mesh::Bucket& bABc = *bucketsABc[bucketsABc.size()/3];
+
+    auto fieldDataABc = fixture.field1->template data<stk::mesh::Unsynchronized>();
+    auto fieldValuesABc = fieldDataABc.bucket_values(bABc);
+
+    stk::mesh::EntityIdx targetEntityIdxABc(fieldValuesABc.num_entities()/3);
+    fieldValuesABc(targetEntityIdxABc) = lowValABc*std::abs(highVal/lowValABc) +
+                                         T(lowValABc - lowValABc*std::abs(highVal/lowValABc))*mpiFrac;
+
+    auto result = stk::mesh::field_eamin(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesABc = fieldDataABc.entity_values(result);
+      EXPECT_LT(std::abs(lowValA - entityValuesABc()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.field1, stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesABc = fieldDataABc.entity_values(result);
+      EXPECT_LT(std::abs(lowValAB - entityValuesABc()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.fieldBase1, stk::mesh::Selector(*fixture.pPartA) |
+                                    stk::mesh::Selector(*fixture.pPartB));
+    if (result.is_local_offset_valid()) {
+      auto entityValuesABc = fieldDataABc.entity_values(result);
+      EXPECT_LT(std::abs(lowValAB - entityValuesABc()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.field1, stk::mesh::Selector(*fixture.pPartA).complement() &
+                                    stk::mesh::Selector(*fixture.pPartB).complement());
+    if (result.is_local_offset_valid()) {
+      auto entityValuesABc = fieldDataABc.entity_values(result);
+      EXPECT_LT(std::abs(lowValABc - entityValuesABc()), tol);
+    }
+
+    result = stk::mesh::field_eamin(*fixture.fieldBase1);
+    if (result.is_local_offset_valid()) {
+      auto entityValuesABc = fieldDataABc.entity_values(result);
+      EXPECT_LT(std::abs(lowValABc - entityValuesABc()), tol);
+    }
+  }
+}
+
+TEST(FieldBLAS, scalar_double_selector_eamin)
+{
+  const double highVal   = -6.27;
+  const double lowValA   = 5.73;
+  const double lowValAB  = 4.43;
+  const double lowValABc = 3.03;
+
+  test_eamin_selector<LayoutRight>(highVal, lowValA, lowValAB, lowValABc);
+  test_eamin_selector<LayoutLeft >(highVal, lowValA, lowValAB, lowValABc);
+}
+
+TEST(FieldBLAS, scalar_float_selector_eamin)
+{
+  const float highVal   = -6.3;
+  const float lowValA   = 5.7;
+  const float lowValAB  = 4.4;
+  const float lowValABc = 3.1;
+
+  test_eamin_selector<LayoutRight>(highVal, lowValA, lowValAB, lowValABc);
+  test_eamin_selector<LayoutLeft >(highVal, lowValA, lowValAB, lowValABc);
+}
+
+TEST(FieldBLAS, scalar_complex_selector_eamin)
+{
+  const std::complex<double> highVal   = std::complex<double>(7.51, -8.32);
+  const std::complex<double> lowValA   = std::complex<double>(-6.73, 6.04);
+  const std::complex<double> lowValAB  = std::complex<double>(4.95, -5.12);
+  const std::complex<double> lowValABc = std::complex<double>(-4.03, 4.11);
+
+  test_eamin_selector<LayoutRight>(highVal, lowValA, lowValAB, lowValABc);
+  test_eamin_selector<LayoutLeft >(highVal, lowValA, lowValAB, lowValABc);
+}
+
+TEST(FieldBLAS, scalar_int_selector_eamin)
+{
+  const int highVal   = -6;
+  const int lowValA   = 5;
+  const int lowValAB  = 4;
+  const int lowValABc = 3;
+
+  test_eamin_selector<LayoutRight>(highVal, lowValA, lowValAB, lowValABc);
+  test_eamin_selector<LayoutLeft >(highVal, lowValA, lowValAB, lowValABc);
+}
+
+
+template <stk::mesh::Layout Layout1, typename T>
+void test_eamin(const std::array<T, 3>& lowVal, const std::array<T, 3>& highVal, const double tol = 1.0e-3)
+{
+  BLASFixtureVector<T, Layout1> fixture(highVal);
+
+  const stk::mesh::MetaData& meta = fixture.bulk->mesh_meta_data();
+  const stk::mesh::BucketVector buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(),
+                                                                    stk::mesh::selectField(*fixture.field1) &
+                                                                    meta.locally_owned_part());
+
+  double mpiFrac = double(stk::parallel_machine_rank(fixture.bulk->parallel())+1) /
+                   double(stk::parallel_machine_size(fixture.bulk->parallel()));
+  stk::mesh::Bucket& b = *buckets[buckets.size()/3];
+
+  auto fieldData = fixture.field1->template data<stk::mesh::Unsynchronized>();
+  auto fieldValues = fieldData.bucket_values(b);
+
+  stk::mesh::EntityIdx targetEntityIdx(fieldValues.num_entities()/3);
+  for (stk::mesh::ScalarIdx scalar : fieldValues.scalars()) {
+    fieldValues(targetEntityIdx, scalar) = lowVal[scalar]*std::abs(highVal[scalar]/lowVal[scalar]) +
+        T(lowVal[scalar] - lowVal[scalar]*std::abs(highVal[scalar]/lowVal[scalar]))*mpiFrac;
+  }
+  stk::mesh::Entity targetEntity = b[targetEntityIdx];
+
+  stk::mesh::Entity fieldResult = stk::mesh::field_eamin(*fixture.field1);
+  EXPECT_EQ(mpiFrac==1.0, fieldResult.is_local_offset_valid());
+  if (fieldResult.is_local_offset_valid()) {
+    EXPECT_EQ(fieldResult, targetEntity);
+  }
+
+  stk::mesh::Entity fieldBaseResult = stk::mesh::field_eamin(*fixture.fieldBase1);
+  EXPECT_EQ(mpiFrac==1.0, fieldBaseResult.is_local_offset_valid());
+  if (fieldBaseResult.is_local_offset_valid()) {
+    EXPECT_EQ(fieldBaseResult, targetEntity);
+  }
+}
+
+TEST(FieldBLAS, vector_double_eamin)
+{
+  std::array<double, 3> lowVal  {2.73, 1.23, 0.49};
+  std::array<double, 3> highVal {-10.27, -9.66, 8.52};
+
+  test_eamin<LayoutRight>(lowVal, highVal);
+  test_eamin<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, vector_float_eamin)
+{
+  std::array<float, 3> lowVal  {2.7, 1.2, 0.4};
+  std::array<float, 3> highVal {-9.6, -10.2, 8.5};
+
+  test_eamin<LayoutRight>(lowVal, highVal);
+  test_eamin<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, vector_complex_eamin)
+{
+  std::array<std::complex<double>, 3> lowVal  = {std::complex<double>(-1.11, -2.63),
+                                                 std::complex<double>(-2.22, -1.65),
+                                                 std::complex<double>(-1.58, -1.27)};
+  std::array<std::complex<double>, 3> highVal = {std::complex<double>(-100.21, -250.23),
+                                                 std::complex<double>(-110.54, -260.28),
+                                                 std::complex<double>(-150.61, -331.87)};
+
+  test_eamin<LayoutRight>(lowVal, highVal);
+  test_eamin<LayoutLeft >(lowVal, highVal);
+}
+
+TEST(FieldBLAS, vector_int_eamin)
+{
+  std::array<int, 3> lowVal  {2, 3, 5};
+  std::array<int, 3> highVal {-10, -11, -28};
+
+  test_eamin<LayoutRight>(lowVal, highVal);
+  test_eamin<LayoutLeft >(lowVal, highVal);
+}
+
 }

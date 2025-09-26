@@ -50,7 +50,7 @@ public:
       result[ip*2 + 1] = ( 1.0 + x ) * 0.5;
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT /*p_coords*/, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -119,7 +119,7 @@ public:
       result[ip*3 + 2] = y;
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT /*p_coords*/, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {
@@ -320,7 +320,7 @@ public:
       result[ip*4 + 3] = z;
     }
   }
-  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT p_coords, double* ATTR_RESTRICT result) const override
+  void shape_fcn_deriv(const int nint, const double* ATTR_RESTRICT /*p_coords*/, double* ATTR_RESTRICT result) const override
   {
     for ( int ip(0); ip < nint; ++ip )
     {

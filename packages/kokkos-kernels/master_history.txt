@@ -31,3 +31,6 @@ tag: 4.4.01     date: 09/12/2024  master: 0608a337    release: 6b340287
 tag: 4.5.00     date: 11/11/2024  master: 0b43169e    release: 4a7590af
 tag: 4.5.01     date: 12/17/2024  master: 957ac849    release: 0b3d5a3b
 tag: 4.6.00     date: 03/26/2025  master: 6e2ba940    release: e14a4f80
+tag: 4.6.01     date: 04/29/2025  master: 8fddd113    release: 6eb5e0f6
+tag: 4.6.02     date: 07/09/2025  master: 38ed37e8    release: c138a8b9
+tag: 4.7.00     date: 08/08/2025  master: 312235c4    release: 0b295b07

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,7 +18,7 @@ template <typename INT>
 Exo_Block<INT>::Exo_Block(int file_id, size_t exo_block_id) : Exo_Entity(file_id, exo_block_id)
 {
   SMART_ASSERT(file_id >= 0);
-  SMART_ASSERT((int)exo_block_id > EX_INVALID_ID);
+  SMART_ASSERT(static_cast<int>(exo_block_id) > EX_INVALID_ID);
 
   initialize(file_id, exo_block_id);
 }

@@ -43,7 +43,10 @@ public:
    FieldAggPattern(std::vector<std::tuple<int,panzer::FieldType,Teuchos::RCP<const FieldPattern> > > & patterns,
                    const Teuchos::RCP<const FieldPattern> & geomAggPattern=Teuchos::null);
 
-   virtual ~FieldAggPattern() {}
+  Teuchos::RCP<panzer::FieldPattern> clone() const
+  {return Teuchos::rcp(new FieldAggPattern(*this));}
+
+  virtual ~FieldAggPattern() {}
 
    /** Return the geometric field pattern associated with the set of field patterns.
      */

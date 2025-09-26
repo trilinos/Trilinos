@@ -25,6 +25,7 @@
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>

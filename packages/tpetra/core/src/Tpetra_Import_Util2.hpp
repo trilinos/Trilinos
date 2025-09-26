@@ -700,7 +700,7 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
                         const Teuchos::ArrayView<Ordinal> & CRS_colind)
 {
   Teuchos::ArrayView<Tpetra::Details::DefaultTypes::scalar_type> CRS_vals;
-  return sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
+  return sortAndMergeCrsEntries<Tpetra::Details::DefaultTypes::scalar_type, Ordinal>(CRS_rowptr, CRS_colind, CRS_vals);
 }
 
 template<class rowptr_view_type, class colind_view_type, class vals_view_type>
@@ -988,8 +988,8 @@ lowCommunicationMakeColMapAndReindex (
   auto colind_GID_view = Details::create_mirror_view_from_raw_host_array(exec, colind_GID.getRawPtr(), colind_GID.size(), true, "colind_GID");
   auto owningPIDs_view = Details::create_mirror_view_from_raw_host_array(exec, owningPIDs.getRawPtr(), owningPIDs.size(), true, "owningPIDs");
 
-  typename decltype(colind_LID_view)::HostMirror colind_LID_host(colind_LID.getRawPtr(), colind_LID.size());
-  typename decltype(colind_GID_view)::HostMirror colind_GID_host(colind_GID.getRawPtr(), colind_GID.size());
+  typename decltype(colind_LID_view)::host_mirror_type colind_LID_host(colind_LID.getRawPtr(), colind_LID.size());
+  typename decltype(colind_GID_view)::host_mirror_type colind_GID_host(colind_GID.getRawPtr(), colind_GID.size());
 
   Kokkos::deep_copy(colind_LID_view, colind_LID_host);
   Kokkos::deep_copy(colind_GID_view, colind_GID_host);

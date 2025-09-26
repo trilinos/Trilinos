@@ -44,7 +44,7 @@ public:
 protected:
 
 	virtual int get_num_stages() { return 2; }
-	virtual void run_algorithm();
+	virtual void run_algorithm() override;
 	virtual double run_one_iteration();
 
 	void sync_fields(int iter=0);

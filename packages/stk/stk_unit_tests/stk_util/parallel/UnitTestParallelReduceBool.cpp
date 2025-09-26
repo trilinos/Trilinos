@@ -4,15 +4,6 @@
 
 #ifdef STK_HAS_MPI
 
-TEST(ParallelReduceBool, MPI_Cxx_Bool)
-{
-  if (stk::util::get_common_coupling_version() < 7 &&
-      stk::util::get_common_coupling_version() >= 3)
-  {
-    EXPECT_NE(MPI_CXX_BOOL, MPI_DATATYPE_NULL);
-  }
-}
-
 //-----------------------------------------------------------------------------
 // is_true_on_any_proc test
 

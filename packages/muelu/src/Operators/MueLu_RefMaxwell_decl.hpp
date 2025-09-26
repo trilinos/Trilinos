@@ -11,7 +11,7 @@
 #define MUELU_REFMAXWELL_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_BaseClass.hpp"
+#include "MueLu_VerboseObject.hpp"
 
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
@@ -222,9 +222,9 @@ class RefMaxwell : public VerboseObject, public Xpetra::Operator<Scalar, LocalOr
 #include "MueLu_UseShortNames.hpp"
 
  public:
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  typedef typename Teuchos::ScalarTraits<Scalar>::coordinateType coordinateType;
-  typedef typename Xpetra::MultiVector<coordinateType, LO, GO, NO> RealValuedMultiVector;
+  using magnitudeType         = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  using coordinateType        = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
+  using RealValuedMultiVector = typename Xpetra::MultiVector<coordinateType, LO, GO, NO>;
 
   //! Constructor
   RefMaxwell()
@@ -428,7 +428,7 @@ class RefMaxwell : public VerboseObject, public Xpetra::Operator<Scalar, LocalOr
              bool ComputePrec = true);
 
   //! Destructor.
-  virtual ~RefMaxwell() {}
+  virtual ~RefMaxwell() = default;
 
   //! Returns the Xpetra::Map object associated with the domain of this operator.
   const Teuchos::RCP<const Map> getDomainMap() const;

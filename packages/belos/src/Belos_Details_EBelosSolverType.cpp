@@ -37,6 +37,9 @@ getCanonicalNameFromAlias (const std::string& candidateAlias)
   else if (candidateAlias == "CG") {
     return std::make_pair (std::string ("PSEUDOBLOCK CG"), true);
   }
+  else if (candidateAlias == "SINGLE-REDUCE CG") {
+    return std::make_pair (std::string ("BLOCK CG"), true);
+  }
   else if (candidateAlias == "PSEUDOBLOCKCG") {
     return std::make_pair (std::string ("PSEUDOBLOCK CG"), true);
   }
@@ -186,9 +189,10 @@ reviseParameterListForAlias (const std::string& aliasName,
     // our alias, we prefer the all-capitals "GMRES" that the
     // algorithm's authors (Saad and Schultz) used.
     solverParams.set ("Flexible Gmres", true);
+  } else if (aliasName == "SINGLE-REDUCE CG") {
+    solverParams.set ("Use Single Reduction", true);
   }
 }
 
 } // namespace Details
 } // namespace Belos
-

@@ -3,4 +3,6 @@
 
 #cmakedefine HAVE_PYTRILINOS2_MUELU
 
+#cmakedefine PYBIND11_DETAILED_ERROR_MESSAGES
+
 #endif

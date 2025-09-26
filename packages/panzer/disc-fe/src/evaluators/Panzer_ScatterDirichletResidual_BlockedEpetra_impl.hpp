@@ -206,7 +206,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       auto field_h = Kokkos::create_mirror_view(field);
       Kokkos::deep_copy(field_h, field);
 
-      BCFieldType::array_type::HostMirror applyBC_h;
+      BCFieldType::array_type::host_mirror_type applyBC_h;
       if(checkApplyBC_){
         auto applyBC = applyBC_[fieldIndex].get_static_view();
         applyBC_h = Kokkos::create_mirror_view(applyBC);
@@ -432,7 +432,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       auto field_h = Kokkos::create_mirror_view(field);
       Kokkos::deep_copy(field_h, field);
 
-      BCFieldType::array_type::HostMirror applyBC_h;
+      BCFieldType::array_type::host_mirror_type applyBC_h;
       if(checkApplyBC_){
         auto applyBC = applyBC_[fieldIndex].get_static_view();
         applyBC_h = Kokkos::create_mirror_view(applyBC);
@@ -652,7 +652,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       auto field_h = Kokkos::create_mirror_view(field);
       Kokkos::deep_copy(field_h, field);
 
-      BCFieldType::array_type::HostMirror applyBC_h;
+      BCFieldType::array_type::host_mirror_type applyBC_h;
       if(checkApplyBC_){
         auto applyBC = applyBC_[fieldIndex].get_static_view();
         applyBC_h = Kokkos::create_mirror_view(applyBC);

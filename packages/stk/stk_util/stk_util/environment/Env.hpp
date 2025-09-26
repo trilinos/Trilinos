@@ -101,8 +101,6 @@ enum NemoVersion {
   NEMO_1       = 101
 };
 
-bool is_comm_valid();
-
 /**
  * @ingroup EnvCommandLineDetail
  * @brief Function <b>query_env_param</b> searches the command line options for the
@@ -349,14 +347,6 @@ MPI_Comm parallel_world_comm();
  *              communicator.
  */
 MPI_Comm parallel_intercomm();
-
-/**
- * @brief Function <b>peer_group</b> returns the peer group rank for an application of type
- *        EXEC_TYPE_PEER.
- *
- * @return			a <b>int</b> value of the peer group for the peer application.
- */
-int peer_group();
 
 /**
  * @ingroup EnvMPIDetail

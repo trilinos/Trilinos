@@ -44,7 +44,7 @@ Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::HostSpace> Q("Q", Nullspace->getNumVectors(), Nullspace->getNumVectors());
   int LDQ;
   {
-    auto dots = tempMV->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto dots = tempMV->getLocalViewHost(Xpetra::Access::ReadOnly);
     Kokkos::deep_copy(Q, dots);
     LDQ = Q.stride(1);
   }
@@ -75,7 +75,7 @@ void Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // Nullspace_ ^T * X
   Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, X.getNumVectors());
   tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace_, X, ZERO);
-  auto dots      = tempMV->getHostLocalView(Xpetra::Access::ReadOnly);
+  auto dots      = tempMV->getLocalViewHost(Xpetra::Access::ReadOnly);
   bool doProject = true;
   for (size_t i = 0; i < X.getNumVectors(); i++) {
     for (size_t j = 0; j < Nullspace_->getNumVectors(); j++) {
@@ -231,8 +231,8 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
 
     // form normalization * nullspace * nullspace^T
     {
-      auto lclNullspace        = Nullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
-      auto lclGhostedNullspace = ghostedNullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
+      auto lclNullspace        = Nullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclGhostedNullspace = ghostedNullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
       Kokkos::parallel_for(
           "MueLu:Amesos2Smoother::fixNullspace_1", range_type(0, lclNumRows + 1),
           KOKKOS_LAMBDA(const size_t i) {

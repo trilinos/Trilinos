@@ -17,7 +17,7 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-bool MeshModification::modification_begin(const std::string /*description*/)
+bool MeshModification::modification_begin(const std::string /*description*/, bool resetSymGhostInfo)
 {
     if (m_bulkData.m_runConsistencyCheck) {
       parallel_machine_barrier( m_bulkData.parallel() );
@@ -52,21 +52,13 @@ bool MeshModification::modification_begin(const std::string /*description*/)
     this->set_sync_state_modifiable();
     this->reset_shared_entity_changed_parts();
 
-    if (m_bulkData.has_symmetric_ghost_info() && m_bulkData.parallel_size() > 2) {
+    if (m_bulkData.has_symmetric_ghost_info() && m_bulkData.parallel_size() > 2 && resetSymGhostInfo) {
       m_bulkData.remove_symmetric_ghost_info();
     }
 
     const stk::mesh::FieldVector allFields = m_bulkData.mesh_meta_data().get_fields();
     for (FieldBase * stkField : allFields) {
       stkField->sync_to_host();
-    }
-
-    if (m_bulkData.mesh_meta_data().is_field_sync_debugger_enabled()) {
-      for (FieldBase * stkField : allFields) {
-        if (stkField->has_ngp_field()) {
-          impl::get_ngp_field(*stkField)->debug_modification_begin();
-        }
-      }
     }
 
     this->increment_sync_count();
@@ -227,7 +219,8 @@ bool MeshModification::change_entity_owner( const EntityProcVec & arg_change)
     m_bulkData.notifier.notify_elements_about_to_move_procs(local_change);
 
     modification_optimization mod_optimization = MOD_END_SORT;
-    modification_begin("change_entity_owner");
+    constexpr bool resetSymGhostInfo = true;
+    modification_begin("change_entity_owner", resetSymGhostInfo);
     internal_change_entity_owner(local_change, mod_optimization);
     m_bulkData.update_sharing_after_change_entity_owner();
     m_bulkData.internal_modification_end_for_change_entity_owner(mod_optimization);

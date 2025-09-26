@@ -209,9 +209,9 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
         }
         lapack.GELS('N', dim*numRefCoords, fullBasisCardinality-dofsToExclude.size(),1,
             cellMassMat.data(),
-            cellMassMat.stride_1(),
+            cellMassMat.stride(1),
             cellRhsMat.data(),
-            cellRhsMat.stride_1(),
+            cellRhsMat.stride(1),
             work.data(),
             fullBasisCardinality-dofsToExclude.size()+dim*numRefCoords,
             &info[ic]);
@@ -245,7 +245,6 @@ int OrientationPyrTriFaceNewBasis(const bool verbose) {
   typedef std::array<ordinal_type,3> faceType;
   typedef CellTools<DeviceType> ct;
   typedef OrientationTools<DeviceType> ots;
-  typedef RealSpaceTools<DeviceType> rst;
   typedef FunctionSpaceTools<DeviceType> fst;
 
   using  basisType = Basis<DeviceType,ValueType,ValueType>;

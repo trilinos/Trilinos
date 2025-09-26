@@ -835,6 +835,29 @@ TEST(DetectHinge3D, GeneratedMesh)
   output_mesh(bulk);
 }
 
+TEST(DetectHinge3D, TextMesh_skipHingesNotConnectedToSolid)
+{
+  if (stk::parallel_machine_size(stk::parallel_machine_world()) != 1) { GTEST_SKIP(); }
+
+  std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(3,MPI_COMM_WORLD);
+  stk::mesh::BulkData& bulk = *bulkPtr;
+  std::string meshDesc = "0,1,SHELL_TRI_3, 1, 2, 3\n"
+                         "0,2,SHELL_TRI_3, 1, 2, 3\n"
+                         "0,3,SHELL_TRI_3, 2, 3, 4";
+  std::vector<double> coords = {0,0,0, 1,0,0, 0,1,0, 1,1,0};
+  stk::unit_test_util::setup_text_mesh(*bulkPtr, stk::unit_test_util::get_full_text_mesh_desc(meshDesc, coords));
+
+  stk::tools::impl::HingeNodeVector hingeNodes;
+  stk::tools::impl::HingeEdgeVector hingeEdges;
+  const bool onlyIfConnectedToSolidElements = true;
+  fill_mesh_hinges(bulk, hingeNodes, hingeEdges, onlyIfConnectedToSolidElements);
+  print_hinge_info(bulk, hingeNodes, hingeEdges);
+
+  EXPECT_EQ(0u, hingeNodes.size());
+  EXPECT_EQ(0u, hingeEdges.size());
+  output_mesh(bulk);
+}
+
 TEST(DetectHinge3D, SingleBlockFourHexTwoNodeHingeOneEdgeHinge)
 {
   if(stk::parallel_machine_size(MPI_COMM_WORLD) != 3)

@@ -599,7 +599,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       //A.print_matrix("A.dat");
 
       Entry one(1.0);
-      int num_match = min(A.nrow, A.ncol);
+      int num_match = std::min(A.nrow, A.ncol);
       MALLOC_INT_1DARRAY(order_match_array, A.nrow);
       MALLOC_ENTRY_1DARRAY (scale_row_array, A.nrow);
       MALLOC_ENTRY_1DARRAY (scale_col_array, A.nrow);
@@ -682,7 +682,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       //printf( " match_array\n" );
       //for(Int j = 0; j < A.ncol; j++) printf( " > %d\n",order_match_array(j) );
       //A.print_matrix("B.dat");
-      if(num_match < min(A.nrow, A.ncol)) {
+      if(num_match < std::min(A.nrow, A.ncol)) {
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " ++ Num of matches returned " << num_match
                     << " is less than nrow = " << A.nrow << " or ncol = " << A.ncol
@@ -753,7 +753,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     verbose(_verbose)
     {}
 
-    KOKKOS_INLINE_FUNCTION
+    BASKER_INLINE
     void operator()(const int id) const {
       for (Int b = id; b < nblks; b += nleaves) {
         Int frow = col_tabs(b);
@@ -948,7 +948,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         #endif
         kokkos_amd_order<Int> amd_functor(nleaves, nblks, tree.col_tabs, AAT.col_ptr, AAT.row_idx,
                                           tempp, temp_col, temp_row, order_csym_array, Options.verbose);
-        Kokkos::parallel_for("BLK_AMD on A", Kokkos::RangePolicy<Exe_Space>(0, nleaves), amd_functor);
+        Kokkos::parallel_for("BLK_AMD on A", RangePolicy(0, nleaves), amd_functor);
         Kokkos::fence();
         if(Options.verbose == BASKER_TRUE) {
           std::cout << " ++ Basker AMD_functor on A ++ " << std::endl << std::endl;
@@ -1385,9 +1385,18 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
   )
   {
     //Permute
-    for(Int i = 0; i < n; i++) {
-      xcon(p(i))  = y[i];
-      ycon(i)     = (Entry) 0.0;
+    if(Options.small_matrix == BASKER_TRUE) {
+      for(Int i = 0; i < n; i++) {
+        xcon(p(i))  = y[i];
+        ycon(i)     = (Entry) 0.0;
+      }
+    } else {
+      Kokkos::parallel_for(
+        "permute_inv_and_init_for_solve", RangePolicy(0, n),
+        BASKER_LAMBDA(const int i) {
+          xcon(p(i))  = y[i];
+          ycon(i)     = (Entry) 0.0;
+        });
     }
     return 0;
   }
@@ -1404,34 +1413,39 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
    Int n
   )
   {
-    /*
-    // Steps from original code - this works with ND
-    for(Int i = btf_tabs(btf_tabs_offset); i < n; i++) // final step from serial_btf_solve
-    {
-      xconv(i) = yconv(i);
-    }
-
-    for(Int i = 0; i < n; i++) //perm xconv back to original ordering and copy back to raw lhs pointer
-    { x[i] = xconv(p(i)); }
-    */
-
     const Int poffset = btf_tabs(btf_tabs_offset);
-    for(Int i = 0; i < n; i++) //perm xconv back to original ordering and copy back to raw lhs pointer
-    { 
-      Int permi = p(i);
-      if ( permi < poffset )
-      {
-      // ND blocks
-        //x[i] = xconv(p(i)); 
-        x[i] = xconv(permi);
-      } 
-      else {
-      // btf blocks
-        //x[i] = yconv(p(i)); 
-        x[i] = yconv(permi); 
+    if(Options.small_matrix == BASKER_TRUE) {
+      for(Int i = 0; i < n; i++) //perm xconv back to original ordering and copy back to raw lhs pointer
+      { 
+        Int permi = p(i);
+        if ( permi < poffset )
+        {
+        // ND blocks
+          //x[i] = xconv(p(i)); 
+          x[i] = xconv(permi);
+        } 
+        else {
+        // btf blocks
+          //x[i] = yconv(p(i)); 
+          x[i] = yconv(permi); 
+        }
       }
+    } else {
+      Kokkos::parallel_for(
+        "permute_and_finalcopy_after_solve", RangePolicy(0, n),
+        BASKER_LAMBDA(const int i) {
+          Int permi = p(i);
+          if ( permi < poffset )
+          {
+          // ND blocks
+            x[i] = xconv(permi);
+          } 
+          else {
+          // btf blocks
+            x[i] = yconv(permi); 
+          }
+        });
     }
-
     return 0;
   }
 
@@ -1583,17 +1597,31 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
    Int offset
   )
   {
-    //Permute
-    for(Int i = 0; i < n; ++i)
-    {
-      perm_comp_iworkspace_array(p(i+offset)) = vec(istart+i);
+    if(Options.small_matrix == BASKER_TRUE) {
+      //Permute
+      for(Int i = 0; i < n; ++i)
+      {
+        perm_comp_iworkspace_array(p(i+offset)) = vec(istart+i);
+      }
+      //Copy back
+      for(Int i = 0; i < n; ++i)
+      {
+        vec(istart+i) = perm_comp_iworkspace_array(i);
+      }
+    } else {
+      //Permute
+      Kokkos::parallel_for(
+        "permute_inv_with_workspace::perm", RangePolicy(0, n),
+        BASKER_LAMBDA(const int i) {
+          perm_comp_iworkspace_array(p(i+offset)) = vec(istart+i);
+        });
+      //Copy back
+      Kokkos::parallel_for(
+        "permute_inv_with_workspace::copy-back", RangePolicy(0, n),
+        BASKER_LAMBDA(const int i) {
+          vec(istart+i) = perm_comp_iworkspace_array(i);
+        });
     }
-    //Copy back
-    for(Int i = 0; i < n; ++i)
-    {
-      vec(istart+i) = perm_comp_iworkspace_array(i);
-    }
-
     return BASKER_SUCCESS;
   }
 
@@ -1676,15 +1704,30 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
    Int n
   )
   {
-    //Permute
-    for(Int i = 0; i < n; ++i)
-    {
-      perm_comp_fworkspace_array(p(i)) = vec(i);
-    }
-    //Copy back
-    for(Int i = 0; i < n; ++i)
-    {
-      vec(i) = perm_comp_fworkspace_array(i);
+    if(Options.small_matrix == BASKER_TRUE) {
+      //Permute
+      for(Int i = 0; i < n; ++i)
+      {
+        perm_comp_fworkspace_array(p(i)) = vec(i);
+      }
+      //Copy back
+      for(Int i = 0; i < n; ++i)
+      {
+        vec(i) = perm_comp_fworkspace_array(i);
+      }
+    } else {
+      //Permute
+      Kokkos::parallel_for(
+        "permute_inv_with_workspace::perm", RangePolicy(0, n),
+        BASKER_LAMBDA(const int i) {
+          perm_comp_fworkspace_array(p(i)) = vec(i);
+        });
+      //Copy back
+      Kokkos::parallel_for(
+        "permute_inv_with_workspace::copy-back", RangePolicy(0, n),
+        BASKER_LAMBDA(const int i) {
+          vec(i) = perm_comp_fworkspace_array(i);
+        });
     }
 
     return BASKER_SUCCESS;
@@ -2019,8 +2062,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     //Determine column ptr of output matrix
     Kokkos::parallel_for(
-      "permute_col", n,
-      KOKKOS_LAMBDA(const int j) {
+      "permute_col", RangePolicy(0, n),
+      BASKER_LAMBDA(const int j) {
         Int i = col (j);
         temp_p (i+1) = M.col_ptr (j+1) - M.col_ptr (j);
       });
@@ -2035,8 +2078,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     //copy idxs
     Kokkos::parallel_for(
-      "permute_col", n,
-      KOKKOS_LAMBDA(const int ii) {
+      "permute_col", RangePolicy(0, n),
+      BASKER_LAMBDA(const int ii) {
         Int ko = temp_p (col (ii) );
         for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
         {
@@ -2050,8 +2093,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     Kokkos::fence();
     // copy the indexes for the remaining columns
     Kokkos::parallel_for(
-      "permute_col", Kokkos::RangePolicy<Exe_Space> (n, M.ncol),
-      KOKKOS_LAMBDA(const int ii) {
+      "permute_col", RangePolicy(n, M.ncol),
+      BASKER_LAMBDA(const int ii) {
         for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
         {
           vals_order_perm(k) = k;
@@ -2060,13 +2103,13 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     //copy back into A
     Kokkos::parallel_for(
-      "permute_col", n+1,
-      KOKKOS_LAMBDA(const int ii) {
+      "permute_col", RangePolicy(0, n+1),
+      BASKER_LAMBDA(const int ii) {
         M.col_ptr (ii) = temp_p (ii);
       });
     Kokkos::parallel_for(
-      "permute_col", nnz,
-      KOKKOS_LAMBDA(const int ii) {
+      "permute_col", RangePolicy(0, nnz),
+      BASKER_LAMBDA(const int ii) {
         M.row_idx (ii) = temp_i (ii);
         M.val (ii) = temp_v (ii);
       });
@@ -2134,8 +2177,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     //copy idxs
     Kokkos::parallel_for(
-      "permute_col", Kokkos::RangePolicy<Exe_Space> (frow, frow+n),
-      KOKKOS_LAMBDA(const int ii) {
+      "permute_col", RangePolicy(frow, frow+n),
+      BASKER_LAMBDA(const int ii) {
         Int ko = temp_p (col (ii-frow));
         for(Int k = M.col_ptr (ii); k < M.col_ptr (ii+1); k++)
         {
@@ -2148,15 +2191,15 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     //copy back into A
     Kokkos::parallel_for(
-      "permute_col", Kokkos::RangePolicy<Exe_Space> (frow, frow+n),
-      KOKKOS_LAMBDA(const int ii) {
+      "permute_col", RangePolicy(frow, frow+n),
+      BASKER_LAMBDA(const int ii) {
         M.col_ptr (ii+1) = M.col_ptr (frow) + temp_p (ii-frow+1);
       });
     Kokkos::fence();
 
     Kokkos::parallel_for(
-      "permute_col", nnz,
-      KOKKOS_LAMBDA(const int ii) {
+      "permute_col", RangePolicy(0, nnz),
+      BASKER_LAMBDA(const int ii) {
         M.row_idx (M.col_ptr (frow) + ii) = temp_i (ii);
         M.val (M.col_ptr (frow) + ii) = temp_v (ii);
       });
@@ -2185,8 +2228,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     //permute
     Kokkos::parallel_for(
-      "permute_row", nnz,
-      KOKKOS_LAMBDA(const int &k) {
+      "permute_row", RangePolicy(0, nnz),
+      BASKER_LAMBDA(const int &k) {
         row_idx[k] = row[row_idx[k]];
       });
     Kokkos::fence();
@@ -2414,7 +2457,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     dwork_global(_dwork_global)
     {}
 
-    KOKKOS_INLINE_FUNCTION
+    BASKER_INLINE
     void operator()(const int id) const {
       //#define BASKER_TIMER_AMD_FUNCTOR
       #if defined(BASKER_TIMER_AMD_FUNCTOR)
@@ -2534,8 +2577,8 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     Int nids = num_threads;
     Kokkos::parallel_for(
-      "ndsort_matrix_store_valperms", nids,
-      KOKKOS_LAMBDA(const int id) {
+      "ndsort_matrix_store_valperms", RangePolicy(0, nids),
+      BASKER_LAMBDA(const int id) {
         for (Int k = id; k < nblks; k += nids) {
           for (Int i = tree.row_tabs[k]; i < tree.row_tabs[k+1]; i++) {
             nd_map(i) = k;
@@ -2620,7 +2663,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       #if 0 // seems not enough work within each column to parallelize
       Kokkos::parallel_for(
         "permute_col", num_rows,
-        KOKKOS_LAMBDA(const int i) {
+        BASKER_LAMBDA(const int i) {
           order_vals_perms(start_row + i) = perm[i];
           M.val[start_row + i]     = dwork[i];
           M.row_idx[start_row + i] = iwork[i];
@@ -2662,12 +2705,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     #if 0
     kokkos_nd_sorter<Int, Entry> sorter_functor(nids, M.nrow, nblks, nd_map, order_vals_perms, M.col_ptr, M.row_idx, M.val,
                                                 nd_ptr_global, perm_global, iwork_global, dwork_global);
-    Kokkos::parallel_for("ND SORTER on A", Kokkos::RangePolicy<Exe_Space>(0, nids), sorter_functor);
+    Kokkos::parallel_for("ND SORTER on A", RangePolicy(0, nids), sorter_functor);
     #else
     using range_type = Kokkos::pair<int, int>;
     Kokkos::parallel_for(
       "ndsort_matrix_store_valperms", nids,
-      KOKKOS_LAMBDA(const int id) {
+      BASKER_LAMBDA(const int id) {
 
         //#define BASKER_TIMER_AMD_FUNCTOR
         #ifdef BASKER_TIMER_AMD_FUNCTOR

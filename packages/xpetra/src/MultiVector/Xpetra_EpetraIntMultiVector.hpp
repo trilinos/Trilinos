@@ -398,15 +398,15 @@ class EpetraIntMultiVectorT<int, EpetraNode>
 
   typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
-  typename dual_view_type::t_host_const_um getHostLocalView(Access::ReadOnlyStruct) const override { return getHostLocalView(Access::ReadWrite); }
+  typename dual_view_type::t_host_const_um getLocalViewHost(Access::ReadOnlyStruct) const override { return getLocalViewHost(Access::ReadWrite); }
 
-  typename dual_view_type::t_dev_const_um getDeviceLocalView(Access::ReadOnlyStruct) const override { return getDeviceLocalView(Access::ReadWrite); }
+  typename dual_view_type::t_dev_const_um getLocalViewDevice(Access::ReadOnlyStruct) const override { return getLocalViewDevice(Access::ReadWrite); }
 
-  typename dual_view_type::t_host_um getHostLocalView(Access::OverwriteAllStruct) const override { return getHostLocalView(Access::ReadWrite); }
+  typename dual_view_type::t_host_um getLocalViewHost(Access::OverwriteAllStruct) const override { return getLocalViewHost(Access::ReadWrite); }
 
-  typename dual_view_type::t_dev_um getDeviceLocalView(Access::OverwriteAllStruct) const override { return getDeviceLocalView(Access::ReadWrite); }
+  typename dual_view_type::t_dev_um getLocalViewDevice(Access::OverwriteAllStruct) const override { return getLocalViewDevice(Access::ReadWrite); }
 
-  typename dual_view_type::t_host_um getHostLocalView(Access::ReadWriteStruct) const override {
+  typename dual_view_type::t_host_um getLocalViewHost(Access::ReadWriteStruct) const override {
     typedef Kokkos::View<typename dual_view_type::t_host::data_type,
                          Kokkos::LayoutLeft,
                          typename dual_view_type::t_host::device_type,
@@ -426,7 +426,7 @@ class EpetraIntMultiVectorT<int, EpetraNode>
     return ret;
   }
 
-  typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const override { return getHostLocalView(Access::ReadWrite); }
+  typename dual_view_type::t_dev_um getLocalViewDevice(Access::ReadWriteStruct) const override { return getLocalViewHost(Access::ReadWrite); }
 
   //@}
 

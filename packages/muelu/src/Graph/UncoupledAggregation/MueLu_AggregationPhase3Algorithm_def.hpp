@@ -202,8 +202,8 @@ void AggregationPhase3Algorithm<LocalOrdinal, GlobalOrdinal, Node>::
   const LO numRows = graph.GetNodeNumVertices();
   const int myRank = graph.GetComm()->getRank();
 
-  auto vertex2AggId  = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
-  auto procWinner    = aggregates.GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+  auto vertex2AggId  = aggregates.GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadWrite);
+  auto procWinner    = aggregates.GetProcWinner()->getLocalViewDevice(Xpetra::Access::ReadWrite);
   auto colors        = aggregates.GetGraphColors();
   const LO numColors = aggregates.GetGraphNumColors();
 

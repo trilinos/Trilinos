@@ -42,17 +42,17 @@ void check_field_data_on_host(const stk::mesh::HostMesh& stkMesh,
                               int component = -1,
                               T componentValue = 0)
 {
+  auto stkFieldData = stkField.template data<T,stk::mesh::ReadOnly>();
   stk::mesh::for_each_entity_run(stkMesh, stkField.entity_rank(), selector,
     [&](const stk::mesh::FastMeshIndex& fastMeshIndex) {
       stk::mesh::Entity entity = stkMesh.get_entity(stkField.entity_rank(), fastMeshIndex);
-      const int numComponents = stk::mesh::field_scalars_per_entity(stkField, entity);
-      const T* fieldData = reinterpret_cast<const T*>(stk::mesh::field_data(stkField, entity));
-      for(int i=0; i<numComponents; ++i) {
+      auto fieldValues = stkFieldData.entity_values(entity);
+      for(stk::mesh::ComponentIdx i : fieldValues.components()) {
         if (i == component) {
-          STK_ThrowRequireMsg(fieldData[i] == componentValue, "expected "<<componentValue<<" but actual value is "<<fieldData[i]<<"; i=="<<i<<", component=="<<component);
+          STK_ThrowRequireMsg(fieldValues(i) == componentValue, "expected "<<componentValue<<" but actual value is "<<fieldValues(i)<<"; i=="<<i<<", component=="<<component);
         }
         else {
-          STK_ThrowRequireMsg(fieldData[i] == expectedValue, "expected "<<expectedValue<<" but actual value is "<<fieldData[i]<<"; i=="<<i<<", entity="<<stkField.entity_rank()<<","<<stkMesh.identifier(entity));
+          STK_ThrowRequireMsg(fieldValues(i) == expectedValue, "expected "<<expectedValue<<" but actual value is "<<fieldValues(i)<<"; i=="<<i<<", entity="<<stkField.entity_rank()<<","<<stkMesh.identifier(entity));
         }
       }
     }
@@ -67,16 +67,16 @@ void check_field_data_on_host(const stk::mesh::BulkData& stkMesh,
                               int component = -1,
                               T componentValue = 0)
 {
+  auto stkFieldData = stkField.template data<T,stk::mesh::ReadOnly>();
   stk::mesh::for_each_entity_run(stkMesh, stkField.entity_rank(), selector,
     [&](const stk::mesh::BulkData& bulk, const stk::mesh::Entity entity) {
-      const int numComponents = stk::mesh::field_scalars_per_entity(stkField, entity);
-      const T* fieldData = reinterpret_cast<const T*>(stk::mesh::field_data(stkField, entity));
-      for(int i=0; i<numComponents; ++i) {
+      auto fieldValues = stkFieldData.entity_values(entity);
+      for(stk::mesh::ComponentIdx i : fieldValues.components()) {
         if (i == component) {
-          STK_ThrowRequireMsg(fieldData[i] == componentValue, "expected "<<componentValue<<" but actual value is "<<fieldData[i]<<"; i=="<<i<<", component=="<<component);
+          STK_ThrowRequireMsg(fieldValues(i) == componentValue, "expected "<<componentValue<<" but actual value is "<<fieldValues(i)<<"; i=="<<i<<", component=="<<component);
         }
         else {
-          STK_ThrowRequireMsg(fieldData[i] == expectedValue, "expected "<<expectedValue<<" but actual value is "<<fieldData[i]<<"; i=="<<i<<", entity="<<bulk.entity_key(entity));
+          STK_ThrowRequireMsg(fieldValues(i) == expectedValue, "expected "<<expectedValue<<" but actual value is "<<fieldValues(i)<<"; i=="<<i<<", entity="<<bulk.entity_key(entity));
         }
       }
     }
@@ -86,17 +86,19 @@ void check_field_data_on_host(const stk::mesh::BulkData& stkMesh,
 inline void set_field_data_on_host(const stk::mesh::BulkData& stkMesh,
                             const stk::mesh::FieldBase& stkField,
                             const stk::mesh::Selector& selector,
-                            std::function<std::vector<double>(const double*)> func)
+                            std::function<std::vector<double>(stk::mesh::EntityValues<const double>)> func)
 {
   const stk::mesh::FieldBase* coordField = stkMesh.mesh_meta_data().coordinate_field();
+  auto coordFieldData = coordField->data<double,stk::mesh::ReadOnly>();
+  auto stkFieldData = stkField.data<double,stk::mesh::ReadWrite>();
+
   stk::mesh::for_each_entity_run(stkMesh, stkField.entity_rank(), selector,
     [&](const stk::mesh::BulkData& /*bulk*/, const stk::mesh::Entity entity) {
-      double* entityCoords = static_cast<double*>(stk::mesh::field_data(*coordField, entity));
+      auto entityCoords = coordFieldData.entity_values(entity);
       auto expectedValues = func(entityCoords);
-      const int numComponents = stk::mesh::field_scalars_per_entity(stkField, entity);
-      double* fieldData = static_cast<double*>(stk::mesh::field_data(stkField, entity));
-      for(int i=0; i<numComponents; ++i) {
-          fieldData[i] = expectedValues[i];
+      auto fieldValues = stkFieldData.entity_values(entity);
+      for(stk::mesh::ComponentIdx i : fieldValues.components()) {
+          fieldValues(i) = expectedValues[i];
         }
       }
   );
@@ -106,24 +108,27 @@ inline void check_field_data_on_host_func(const stk::mesh::BulkData& stkMesh,
                             const stk::mesh::FieldBase& stkField,
                             const stk::mesh::Selector& selector,
                             const std::vector<const stk::mesh::FieldBase*>& otherFields,
-                            std::function<std::vector<double>(const double*)> func)
+                            std::function<std::vector<double>(stk::mesh::EntityValues<const double>)> func)
 {
   const stk::mesh::FieldBase* coordField = stkMesh.mesh_meta_data().coordinate_field();
+  auto coordFieldData = coordField->data<double,stk::mesh::ReadOnly>();
+  auto stkFieldData = stkField.data<double,stk::mesh::ReadWrite>();
+
   stk::mesh::for_each_entity_run(stkMesh, stkField.entity_rank(), selector,
     [&](const stk::mesh::BulkData& /*bulk*/, const stk::mesh::Entity entity) {
-      double* entityCoords = static_cast<double*>(stk::mesh::field_data(*coordField, entity));
+      auto entityCoords = coordFieldData.entity_values(entity);
       auto expectedValues = func(entityCoords);
 
-      unsigned int numComponents = stk::mesh::field_scalars_per_entity(stkField, entity);
+      int numComponents = stk::mesh::field_scalars_per_entity(stkField, entity);
       for (const stk::mesh::FieldBase* otherField : otherFields)
       {
-        numComponents = std::min(numComponents, stk::mesh::field_scalars_per_entity(*otherField, entity));
+        numComponents = std::min(numComponents, static_cast<int>(stk::mesh::field_scalars_per_entity(*otherField, entity)));
       }
-      const double* fieldData = reinterpret_cast<const double*>(stk::mesh::field_data(stkField, entity));
-      for(unsigned int i=0; i<numComponents; ++i) {
-          EXPECT_FLOAT_EQ(fieldData[i], expectedValues[i]);
-        }
+      auto fieldValues = stkFieldData.entity_values(entity);
+      for(stk::mesh::ComponentIdx i=0_comp; i<numComponents; ++i) {
+          EXPECT_FLOAT_EQ(fieldValues(i), expectedValues[i]);
       }
+    }
   );
 }
 

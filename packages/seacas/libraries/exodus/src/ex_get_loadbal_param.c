@@ -85,7 +85,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   }
 
   /* Get the status for this node map */
-  if ((status = nc_inq_varid(exoid, VAR_INT_N_STAT, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_INT_N_STAT, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" from file ID %d",
              VAR_INT_N_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -100,7 +100,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     start[0] = 0;
   }
 
-  if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
+  if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file ID %d",
              VAR_INT_N_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -120,7 +120,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     /* check if I need to get the dimension of the internal node map */
     if (varidx[1] == -1) {
       /* Get the dimension ID for the number of internal nodes */
-      if ((status = nc_inq_dimid(exoid, DIM_NUM_INT_NODES, &dimid)) != NC_NOERR) {
+      if ((status = nc_inq_dimid(exoid, DIM_NUM_INT_NODES, &dimid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_NUM_INT_NODES,
                  exoid);
@@ -133,7 +133,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
        * Get the value of the dimension representing the total number of
        * internal FEM nodes.
        */
-      if ((status = nc_inq_dimlen(exoid, dimid, &nin)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, &nin)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d",
                  DIM_NUM_INT_NODES, exoid);
@@ -156,7 +156,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   }
 
   /* Get the status for this node map */
-  if ((status = nc_inq_varid(exoid, VAR_BOR_N_STAT, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_BOR_N_STAT, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" from file ID %d",
              VAR_BOR_N_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -171,7 +171,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     start[0] = 0;
   }
 
-  if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
+  if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file ID %d",
              VAR_BOR_N_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -191,7 +191,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     /* check if I need to get the dimension of the border node map */
     if (varidx[1] == -1) {
       /* Get the dimension ID for the number of border nodes */
-      if ((status = nc_inq_dimid(exoid, DIM_NUM_BOR_NODES, &dimid)) != NC_NOERR) {
+      if ((status = nc_inq_dimid(exoid, DIM_NUM_BOR_NODES, &dimid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_NUM_BOR_NODES,
                  exoid);
@@ -204,7 +204,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
        * Get the value of the dimension representing the number of border
        * FEM nodes.
        */
-      if ((status = nc_inq_dimlen(exoid, dimid, &nbn)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, &nbn)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d",
                  DIM_NUM_BOR_NODES, exoid);
@@ -227,7 +227,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   }
 
   /* Get the status for this node map */
-  if ((status = nc_inq_varid(exoid, VAR_EXT_N_STAT, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_EXT_N_STAT, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" from file ID %d",
              VAR_EXT_N_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -242,7 +242,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     start[0] = 0;
   }
 
-  if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
+  if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file ID %d",
              VAR_EXT_N_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -262,7 +262,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     /* check if I need to get the dimension of the external node map */
     if (varidx[1] == -1) {
       /* Get the dimension ID for the number of external nodes */
-      if ((status = nc_inq_dimid(exoid, DIM_NUM_EXT_NODES, &dimid)) != NC_NOERR) {
+      if ((status = nc_inq_dimid(exoid, DIM_NUM_EXT_NODES, &dimid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_NUM_EXT_NODES,
                  exoid);
@@ -275,7 +275,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
        * Get the value of the dimension representing the number of external
        * FEM nodes.
        */
-      if ((status = nc_inq_dimlen(exoid, dimid, &nen)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, &nen)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d",
                  DIM_NUM_EXT_NODES, exoid);
@@ -297,7 +297,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   }
 
   /* Get the status for this element map */
-  if ((status = nc_inq_varid(exoid, VAR_INT_E_STAT, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_INT_E_STAT, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" from file ID %d",
              VAR_INT_E_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -311,7 +311,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     start[0] = 0;
   }
 
-  if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
+  if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file ID %d",
              VAR_INT_E_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -331,7 +331,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     /* check if I need to get the dimension of the internal element map */
     if (varidx[1] == -1) {
       /* Get the dimension ID for the number of internal elements */
-      if ((status = nc_inq_dimid(exoid, DIM_NUM_INT_ELEMS, &dimid)) != NC_NOERR) {
+      if ((status = nc_inq_dimid(exoid, DIM_NUM_INT_ELEMS, &dimid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find dimension ID for \"%s\" from file ID %d", DIM_NUM_INT_ELEMS,
                  exoid);
@@ -344,7 +344,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
        * Get the value of the dimension representing the number of internal
        * FEM elements.
        */
-      if ((status = nc_inq_dimlen(exoid, dimid, &nie)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, &nie)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d",
                  DIM_NUM_INT_ELEMS, exoid);
@@ -366,7 +366,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   }
 
   /* Get the status for this element map */
-  if ((status = nc_inq_varid(exoid, VAR_BOR_E_STAT, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_BOR_E_STAT, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" from file ID %d",
              VAR_BOR_E_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -380,7 +380,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     start[0] = 0;
   }
 
-  if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != NC_NOERR) {
+  if ((status = nc_get_var1_int(exoid, varid, start, &nmstat)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get status for \"%s\" from file ID %d",
              VAR_BOR_E_STAT, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -400,7 +400,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
     /* check if I need to get the dimension of the border element map */
     if (varidx[1] == -1) {
       /* Get the dimension ID for the number of border elements */
-      if ((status = nc_inq_dimid(exoid, DIM_NUM_BOR_ELEMS, &dimid)) != NC_NOERR) {
+      if ((status = nc_inq_dimid(exoid, DIM_NUM_BOR_ELEMS, &dimid)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find dimension ID for \"%s\" from file ID %d", DIM_NUM_BOR_ELEMS,
                  exoid);
@@ -413,7 +413,7 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
        * Get the value of the dimension representing the number of border
        * FEM elements.
        */
-      if ((status = nc_inq_dimlen(exoid, dimid, &nbe)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, &nbe)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d",
                  DIM_NUM_BOR_ELEMS, exoid);
@@ -445,11 +445,11 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   /* check if I need to get the dimension of the nodal comm map */
   if (varidx[1] == -1) {
     /* Get the nodal comm map information */
-    if ((status = nc_inq_dimid(exoid, DIM_NUM_N_CMAPS, &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, DIM_NUM_N_CMAPS, &dimid)) != EX_NOERR) {
       varidx[1] = 0;
     }
     else {
-      if ((status = nc_inq_dimlen(exoid, dimid, &nncm)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, &nncm)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_N_CMAPS,
                  exoid);
@@ -479,11 +479,11 @@ int ex_get_loadbal_param(int exoid, void_int *num_int_nodes, void_int *num_bor_n
   /* check if I need to get the dimension of the elemental comm map */
   if (varidx[1] == -1) {
     /* Get the elemental comm map information */
-    if (nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid) != NC_NOERR) {
+    if (nc_inq_dimid(exoid, DIM_NUM_E_CMAPS, &dimid) != EX_NOERR) {
       varidx[1] = 0;
     }
     else {
-      if ((status = nc_inq_dimlen(exoid, dimid, &necm)) != NC_NOERR) {
+      if ((status = nc_inq_dimlen(exoid, dimid, &necm)) != EX_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_E_CMAPS,
                  exoid);

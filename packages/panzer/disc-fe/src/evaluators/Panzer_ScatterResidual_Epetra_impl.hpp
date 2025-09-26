@@ -382,7 +382,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    auto colLIDs_h = Kokkos::create_mirror_view(colLIDs);
    Kokkos::deep_copy(LIDs_h, LIDs);
    Kokkos::deep_copy(colLIDs_h, colLIDs);
-   std::vector<typename decltype(scatterFields_[0].get_static_view())::HostMirror> scatterFields_h;
+   std::vector<typename decltype(scatterFields_[0].get_static_view())::host_mirror_type> scatterFields_h;
    for ( std::size_t i=0; i< scatterFields_.size(); ++i) {
      scatterFields_h.push_back(Kokkos::create_mirror_view(scatterFields_[i].get_static_view()));
      Kokkos::deep_copy(scatterFields_h[i], scatterFields_[i].get_static_view());

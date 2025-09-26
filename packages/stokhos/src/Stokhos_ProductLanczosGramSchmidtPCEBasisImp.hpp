@@ -365,9 +365,9 @@ isInvariant(const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce) cons
   Teuchos::Array<ordinal_type> dependent_dims;
   tmp_pce.reset(basis);
   for (ordinal_type i=0; i<dim; i++) {
-    ordinal_type p = prod_basis->getCoordinateBases()[i]->order();
+    ordinal_type ap = prod_basis->getCoordinateBases()[i]->order();
     tmp_pce.init(0.0);
-    for (ordinal_type j=1; j<=p; j++)
+    for (ordinal_type j=1; j<=ap; j++)
       tmp_pce.term(i,j) = pce.term(i,j);
     value_type nrm = tmp_pce.two_norm();
     if (nrm > tol) dependent_dims.push_back(i);

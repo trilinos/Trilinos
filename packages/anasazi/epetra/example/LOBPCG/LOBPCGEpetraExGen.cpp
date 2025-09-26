@@ -28,7 +28,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
@@ -42,7 +42,7 @@ using namespace Anasazi;
 
 int main(int argc, char *argv[]) {
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   // Initialize MPI
   //
   MPI_Init(&argc,&argv);
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
   try {
     // Create an Epetra communicator
     //
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
     Epetra_SerialComm Comm;
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
 

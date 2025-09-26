@@ -13,7 +13,10 @@ SET(SOURCES
     user_app_BCStrategy_Dirichlet_Constant_impl.hpp
     user_app_BCStrategy_Neumann_Constant.hpp
     user_app_BCStrategy_Neumann_Constant_impl.hpp
+    user_app_BCStrategy_Neumann_WeakDirichletEnergy.hpp
+    user_app_BCStrategy_Neumann_WeakDirichletEnergy_impl.hpp
     user_app_BCStrategy_Factory.hpp
+    user_app_Evaluator_EnergyFlux.hpp
     ) 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(

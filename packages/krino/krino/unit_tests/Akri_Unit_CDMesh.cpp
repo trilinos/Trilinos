@@ -37,10 +37,10 @@
 #include <Akri_Unit_Single_Element_Fixtures.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <Akri_Quality.hpp>
-#include <Akri_RefinementInterface.hpp>
 #include <Akri_RefinementSupport.hpp>
 #include <Akri_Unit_DecompositionFixture.hpp>
 #include <Akri_MeshSpecs.hpp>
+#include <Akri_RefinementManager.hpp>
 
 namespace krino
 {
@@ -362,7 +362,7 @@ public:
     stk::mesh::BulkData & mesh = fixture.bulk_data();
     stk::mesh::MetaData & meta = fixture.meta_data();
     AuxMetaData & aux_meta = AuxMetaData::get(meta);
-    RefinementInterface * refinement = nullptr;
+    RefinementManager * refinement = nullptr;
 
     if (parallel_size != 2) return;
 

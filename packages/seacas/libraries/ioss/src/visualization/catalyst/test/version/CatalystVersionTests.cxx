@@ -4,8 +4,8 @@
 //
 // See packages/seacas/LICENSE for details
 
-#include "catch.hpp"
 #include <Iovs_CatalystVersion.h>
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE_METHOD(Iovs::CatalystVersion, "CatalystVersion", "[catalystVersion]")
 {

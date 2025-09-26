@@ -458,8 +458,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP
     auto aggGraph = aggregates->GetGraph();
     auto numAggs  = aggGraph.numRows();
 
-    auto fineCoordsView   = fineCoords->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    auto coarseCoordsView = coarseCoords->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+    auto fineCoordsView   = fineCoords->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    auto coarseCoordsView = coarseCoords->getLocalViewDevice(Xpetra::Access::OverwriteAll);
 
     // Fill in coarse coordinates
     {
@@ -583,8 +583,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GO globalOffset = amalgInfo->GlobalOffset();
 
   // Extract aggregation info (already in Kokkos host views)
-  auto procWinner            = aggregates->GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadOnly);
-  auto vertex2AggId          = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadOnly);
+  auto procWinner            = aggregates->GetProcWinner()->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  auto vertex2AggId          = aggregates->GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadOnly);
   const size_t numAggregates = aggregates->GetNumAggregates();
 
   int myPID = aggregates->GetMap()->getComm()->getRank();
@@ -680,8 +680,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
 
   // Pull out the nullspace vectors so that we can have random access (on the device)
-  auto fineNS   = fineNullspace->getDeviceLocalView(Xpetra::Access::ReadWrite);
-  auto coarseNS = coarseNullspace->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+  auto fineNS   = fineNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
+  auto coarseNS = coarseNullspace->getLocalViewDevice(Xpetra::Access::OverwriteAll);
 
   size_t nnz = 0;  // actual number of nnz
 
@@ -785,7 +785,7 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             }
           });
 
-      typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
+      typename status_type::host_mirror_type statusHost = Kokkos::create_mirror_view(status);
       Kokkos::deep_copy(statusHost, status);
       for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
         if (statusHost(i)) {
@@ -853,7 +853,7 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_qr_loop", policy, localQRFunctor, nnz);
     }
 
-    typename status_type::HostMirror statusHost = Kokkos::create_mirror_view(status);
+    typename status_type::host_mirror_type statusHost = Kokkos::create_mirror_view(status);
     Kokkos::deep_copy(statusHost, status);
     for (decltype(statusHost.size()) i = 0; i < statusHost.size(); i++)
       if (statusHost(i)) {
@@ -1021,8 +1021,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // GO globalOffset = amalgInfo->GlobalOffset();
 
   // Extract aggregation info (already in Kokkos host views)
-  auto procWinner            = aggregates->GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadOnly);
-  auto vertex2AggId          = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadOnly);
+  auto procWinner            = aggregates->GetProcWinner()->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  auto vertex2AggId          = aggregates->GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadOnly);
   const size_t numAggregates = aggregates->GetNumAggregates();
 
   int myPID = aggregates->GetMap()->getComm()->getRank();
@@ -1089,8 +1089,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   coarseNullspace = MultiVectorFactory::Build(coarsePointMap, NSDim);
 
   // Pull out the nullspace vectors so that we can have random access (on the device)
-  auto fineNS   = fineNullspace->getDeviceLocalView(Xpetra::Access::ReadWrite);
-  auto coarseNS = coarseNullspace->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+  auto fineNS   = fineNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
+  auto coarseNS = coarseNullspace->getLocalViewDevice(Xpetra::Access::OverwriteAll);
 
   typedef typename Xpetra::Matrix<SC, LO, GO, NO>::local_matrix_type local_matrix_type;
   typedef typename local_matrix_type::row_map_type::non_const_type rows_type;

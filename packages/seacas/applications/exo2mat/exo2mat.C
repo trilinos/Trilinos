@@ -58,8 +58,9 @@ namespace {
   FILE  *m_file   = nullptr; /* file for m file output */
   mat_t *mat_file = nullptr; /* file for binary .mat output */
   bool   debug    = false;
+  bool   do_info  = true;
 
-  const std::array<std::string, 3> qainfo{"exo2mat", "2025/02/03", "4.09"};
+  const std::array<std::string, 3> qainfo{"exo2mat", "2025/04/10", "4.10"};
 
   void logger(const char *message)
   {
@@ -69,21 +70,22 @@ namespace {
 
   void usage()
   {
-    const auto *v5default = MAT_FT_DEFAULT == MAT_FT_MAT5 ? "[default]" : "";
-    const auto *v7default = MAT_FT_DEFAULT == MAT_FT_MAT73 ? "[default]" : "";
+    const auto *v5default = (MAT_FT_DEFAULT == MAT_FT_MAT5 ? "[default]" : "");
+    const auto *v7default = (MAT_FT_DEFAULT == MAT_FT_MAT73 ? "[default]" : "");
     fmt::print("exo2mat [options] exodus_file_name.\n"
                "   the exodus_file_name is required (exodus only).\n"
                "   Options:\n"
                "   -t    write a text (.m) file rather than a binary .mat\n"
                "   -o    output file name (rather than auto generate)\n"
+               "   -i    do *NOT* output the info records to mat file\n"
                "   -c    use cell arrays for transient variables.\n"
                "   -v5   output version 5 mat file {}\n"
                "   -v73  output version 7.3 mat file (hdf5-based) {}\n"
-               "   -v7.3 output version 7.3 mat file (hdf5-based)\n"
+               "   -v7.3 output version 7.3 mat file (hdf5-based) {}\n"
                "   -change_set cs_#  Read from change set #.\n"
                " ** note **\n"
                "Binary files are written by default on all platforms.\n",
-               v5default, v7default);
+               v5default, v7default, v7default);
   }
 
   /* put a string into an m file. If the string has
@@ -928,8 +930,6 @@ int main(int argc, char *argv[])
   int num_blocks;
   int num_side_sets;
   int num_node_sets;
-  int num_time_steps;
-  int num_info_lines;
   int num_global_vars;
   int num_nodal_vars;
   int num_element_vars;
@@ -961,6 +961,12 @@ int main(int argc, char *argv[])
       del_arg(&argc, argv, j);
       j--;
       debug = true;
+      continue;
+    }
+    if (strcmp(argv[j], "-i") == 0) { /* do not write info records */
+      del_arg(&argc, argv, j);
+      j--;
+      do_info = false;
       continue;
     }
     if (strcmp(argv[j], "-c") == 0) { /* use cell arrays */
@@ -1113,8 +1119,8 @@ int main(int argc, char *argv[])
   std::array<char, MAX_LINE_LENGTH + 1> line;
   ex_get_init(exo_file, line.data(), &num_axes, &num_nodes, &num_elements, &num_blocks,
               &num_node_sets, &num_side_sets);
-  num_info_lines = ex_inquire_int(exo_file, EX_INQ_INFO);
-  num_time_steps = ex_inquire_int(exo_file, EX_INQ_TIME);
+  int num_info_lines = ex_inquire_int(exo_file, EX_INQ_INFO);
+  int num_time_steps = ex_inquire_int(exo_file, EX_INQ_TIME);
   ex_get_variable_param(exo_file, EX_GLOBAL, &num_global_vars);
   ex_get_variable_param(exo_file, EX_NODAL, &num_nodal_vars);
   ex_get_variable_param(exo_file, EX_ELEM_BLOCK, &num_element_vars);
@@ -1136,7 +1142,7 @@ int main(int argc, char *argv[])
   PutInt("nssvars", num_sideset_vars);
 
   /* allocate -char- scratch space*/
-  int nstr2   = num_info_lines;
+  int nstr2   = do_info ? num_info_lines : 0;
   nstr2       = std::max(nstr2, num_blocks);
   nstr2       = std::max(nstr2, num_node_sets);
   nstr2       = std::max(nstr2, num_side_sets);
@@ -1146,7 +1152,7 @@ int main(int argc, char *argv[])
   PutStr("Title", line.data());
 
   /* information records */
-  if (num_info_lines > 0) {
+  if (do_info && num_info_lines > 0) {
     ex_get_info(exo_file, str2);
     std::string ostr;
     for (int i = 0; i < num_info_lines; i++) {

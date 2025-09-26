@@ -29,7 +29,7 @@ int ex_get_group_ids(int parent_id, int *num_groups, int *group_ids)
   }
 
   status = nc_inq_grps(parent_id, num_groups, group_ids);
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Failed to get child group ids in file id %d",
              parent_id);
     ex_err_fn(parent_id, __func__, errmsg, status);

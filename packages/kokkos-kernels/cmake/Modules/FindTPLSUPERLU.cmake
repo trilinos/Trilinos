@@ -1,3 +1,5 @@
+include(CheckCSourceCompiles)
+
 IF (NOT SUPERLU_ROOT)
   SET(SUPERLU_ROOT $ENV{SUPERLU_ROOT})
 ENDIF()

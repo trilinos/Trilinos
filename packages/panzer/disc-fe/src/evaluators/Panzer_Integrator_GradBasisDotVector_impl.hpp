@@ -118,11 +118,10 @@ namespace panzer
   /////////////////////////////////////////////////////////////////////////////
   template<typename EvalT, typename Traits>
   Integrator_GradBasisDotVector<EvalT, Traits>::
-  Integrator_GradBasisDotVector(
-    const Teuchos::ParameterList& p)
+  Integrator_GradBasisDotVector(const Teuchos::ParameterList& p,
+                                const panzer::EvaluatorStyle es)
     :
-    Integrator_GradBasisDotVector(
-      panzer::EvaluatorStyle::EVALUATES,
+    Integrator_GradBasisDotVector(es,
       p.get<std::string>("Residual Name"),
       p.get<std::string>("Flux Name"),
       (*p.get<Teuchos::RCP<panzer::BasisIRLayout>>("Basis")),

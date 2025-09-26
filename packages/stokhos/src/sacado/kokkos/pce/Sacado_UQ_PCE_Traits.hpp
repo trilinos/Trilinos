@@ -156,9 +156,9 @@ namespace Teuchos {
     typedef ValueTypeSerializer<Ordinal,typename S::value_type> ValueSerializer;
     typedef Sacado::UQ::PCESerializerImp< Ordinal,PCEType,ValueSerializer> Base;
     typedef typename Base::cijk_type cijk_type;
-    ValueTypeSerializer(const cijk_type& cijk,
-                        const Teuchos::RCP<const ValueSerializer>& vs) :
-      Base(cijk,vs) {}
+    ValueTypeSerializer(const cijk_type& acijk,
+                        const Teuchos::RCP<const ValueSerializer>& avs) :
+      Base(acijk,avs) {}
   };
 
 // Should also do TypeTo, and TypeTo,TypeFrom as UQ::PCE, but the real way

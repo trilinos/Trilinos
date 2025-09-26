@@ -21,9 +21,7 @@
 
 #include "KokkosSparse_BsrMatrix.hpp"
 
-#if KOKKOSKERNELS_VERSION >= 40299
 #include "Tpetra_Details_MatrixApplyHelper.hpp"
-#endif
 
 namespace Tpetra {
 
@@ -189,7 +187,7 @@ public:
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_block_type;
-  typedef typename little_block_type::HostMirror little_block_host_type;
+  typedef typename little_block_type::host_mirror_type little_block_host_type;
 
   //! The type used to access const matrix blocks.
   typedef Kokkos::View<const impl_scalar_type**,
@@ -236,7 +234,6 @@ public:
                           void,
                           typename local_graph_device_type::size_type>;
 
-#if KOKKOSKERNELS_VERSION >= 40299
 private:
   // TODO: When KokkosKernels 4.4 is released, local_matrix_device_type can be permanently modified to use the default_size_type
   // of KK. This is always a type that is enabled by KK's ETI (preferring int if both or neither int and size_t are enabled).
@@ -271,10 +268,13 @@ public:
       return applyHelper;
     }
 
-#endif
-
+#if KOKKOS_VERSION >= 40799
+  using local_matrix_host_type =
+    typename local_matrix_device_type::host_mirror_type;
+#else
   using local_matrix_host_type =
     typename local_matrix_device_type::HostMirror;
+#endif
 
   //@}
   //! \name Constructors and destructor
@@ -542,7 +542,7 @@ public:
   getLocalRowViewNonConst (LO LocalRow,
                            local_inds_host_view_type &indices,
                            nonconst_values_host_view_type &values) const;
-  
+
   /// \brief Not implemented.
   virtual void
   getLocalRowCopy (LO LocalRow,
@@ -623,7 +623,7 @@ public:
 
 
   /// Get KokkosSparce::Experimental::BsrMatrix representation
-  /// of this BlockCrsMatrix 
+  /// of this BlockCrsMatrix
   local_matrix_device_type getLocalMatrixDevice () const;
 
   /// \brief Whether this object had an error on the calling process.
@@ -852,7 +852,7 @@ private:
   /// Kokkos::DualView has extra Views in it for the "modified" flags,
   /// and we don't want the (modest) overhead of creating and storing
   /// those.
-  using graph_row_offset_host_type = typename crs_graph_type::local_graph_device_type::row_map_type::HostMirror;
+  using graph_row_offset_host_type = typename crs_graph_type::local_graph_device_type::row_map_type::host_mirror_type;
   graph_row_offset_host_type ptrHost_;
 
   /// \brief Host version of the graph's array of column indices.
@@ -860,7 +860,7 @@ private:
   /// The device version of this is already stored in the graph.  We
   /// need the host version here, because this class' interface needs
   /// to access it on host.  See notes on ptrHost_ above.
-  using graph_column_indices_host_type =   typename crs_graph_type::local_graph_device_type::entries_type::HostMirror;
+  using graph_column_indices_host_type =   typename crs_graph_type::local_graph_device_type::entries_type::host_mirror_type;
   graph_column_indices_host_type indHost_;
 
   /// \brief The array of values in the matrix.

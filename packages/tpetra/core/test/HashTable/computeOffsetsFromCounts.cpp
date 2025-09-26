@@ -196,9 +196,9 @@ namespace { // (anonymous)
       Teuchos::OSTab tab2 (out);
 
       // Kokkos guarantees that if an execution space is initialized,
-      // its HostMirror's execution space is also initialized.
-      typedef typename Kokkos::View<CountType*, DeviceType>::HostMirror::execution_space host_execution_space;
-      // If DeviceType::memory_space is CudaUVMSpace, HostMirror's
+      // its host_mirror_type's execution space is also initialized.
+      typedef typename Kokkos::View<CountType*, DeviceType>::host_mirror_type::execution_space host_execution_space;
+      // If DeviceType::memory_space is CudaUVMSpace, host_mirror_type's
       // memory space may also be CudaUVMSpace (since this is
       // accessible from host).  We really want the count array to
       // live in host memory for this test.
@@ -436,7 +436,7 @@ namespace { // (anonymous)
     // Test the default execution space, and the execution space of
     // its host mirror.  Kokkos::initialize always initializes both.
     testComputeOffsets<device_type> (success, out, debug);
-    typedef Kokkos::View<int*, device_type>::HostMirror::device_type host_device_type;
+    typedef Kokkos::View<int*, device_type>::host_mirror_type::device_type host_device_type;
     // The host mirror may be the same; don't run the test again in
     // that case.  It's still correct to compile the test again in
     // that case.

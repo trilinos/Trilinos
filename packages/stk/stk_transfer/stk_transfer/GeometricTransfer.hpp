@@ -84,16 +84,14 @@ public :
                     const std::string &name,
                     stk::ParallelMachine pm,
                     const double expansion_factor = 1.5,
-                    const stk::search::SearchMethod search_method = stk::search::KDTREE,
-                    const double expansion_tolerance = std::numeric_limits<double>::max())
+                    const stk::search::SearchMethod search_method = stk::search::KDTREE)
   : m_mesha(mesha),
   m_meshb(meshb),
   m_name (name),
   m_has_parallel_machine(true),
   m_parallel_machine(pm),
   m_expansion_factor(expansion_factor),
-  m_search_method(search_method),
-  m_expansion_tolerance(expansion_tolerance)
+  m_search_method(search_method)
   {
   }
 
@@ -101,16 +99,13 @@ public :
                     std::shared_ptr<MeshB> &meshb,
                     const std::string &name,
                     const double expansion_factor = 1.5,
-                    const stk::search::SearchMethod search_method = stk::search::KDTREE,
-                    const double expansion_tolerance = std::numeric_limits<double>::max())
+                    const stk::search::SearchMethod search_method = stk::search::KDTREE)
   : m_mesha(mesha),
   m_meshb(meshb),
   m_name (name),
   m_has_parallel_machine(false),
   m_expansion_factor(expansion_factor),
-  m_search_method(search_method),
-  m_expansion_tolerance(expansion_tolerance)
-
+  m_search_method(search_method)
   {
   }
 
@@ -136,7 +131,6 @@ protected :
   stk::ParallelMachine m_parallel_machine;
   const double          m_expansion_factor;
   const stk::search::SearchMethod m_search_method;
-  const double m_expansion_tolerance;
 
   EntityProcRelationVec m_global_range_to_domain;
   EntityKeyMap          m_local_range_to_domain;
@@ -156,8 +150,7 @@ void GeometricTransfer<INTERPOLATE>::coarse_search()
                 m_mesha.get(),
                 m_meshb.get(),
                 m_search_method,
-                m_expansion_factor,
-                m_expansion_tolerance);
+                m_expansion_factor);
 }
 
 template <class INTERPOLATE>

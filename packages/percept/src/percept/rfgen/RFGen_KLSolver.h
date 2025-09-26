@@ -10,22 +10,30 @@
 #ifndef RFGen_KLSolver_h
 #define RFGen_KLSolver_h
 
-#include "Epetra_Operator.h"
-#include "Epetra_MpiComm.h"
+#include "Tpetra_Operator.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 #include "RFGen_API_KLSolver.h"
 #include "RFGen_CovarianceFunction.h"
 
-class Epetra_CrsMatrix;
-
 namespace RFGen
 {
 
 class KLSolver 
-  : public Epetra_Operator
+  : public Tpetra::Operator<double>
 {
- public:
+private:
+  using Scalar = double;
+  using Operator = Tpetra::Operator<Scalar>;
+  using LocalOrdinal = Operator::local_ordinal_type;
+  using GlobalOrdinal = Operator::global_ordinal_type;
+  using Node = Operator::node_type;
+  using CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using Vector = Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+public:
   explicit KLSolver(const unsigned spatialDim);
 
   ~KLSolver() {}
@@ -34,7 +42,6 @@ class KLSolver
   {
     appInterface_ = appInterface;
     mpiComm_      = appInterface_->getParallelComm();
-    epetraComm_   = Epetra_MpiComm(mpiComm_);
   }
 
   void setCovarianceFunction(const Teuchos::RCP<const CovarianceFunction> &covarFunc)
@@ -49,31 +56,16 @@ class KLSolver
   void solve(const int maxNev);
 
   // virtuals from Epetra_Operator
-  int SetUseTranspose(bool UseTranspose);
+  bool hasTransposeApply() const override { return false; }
 
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const override { return map_; }
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const override { return map_; }
 
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-
-  virtual double NormInf() const;
-    //! Returns a character string describing the operator
-  virtual const char * Label() const;
-    //! Returns the current UseTranspose setting.
-  virtual bool UseTranspose() const;
-
-  //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
-  virtual bool HasNormInf() const;
-  
-  //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
-  virtual const Epetra_Comm & Comm() const;
-  
-  //! Returns the Epetra_Map object associated with the domain of this operator.
-  virtual const Epetra_Map & OperatorDomainMap() const;
-  
-  //! Returns the Epetra_Map object associated with the range of this operator.
-  virtual const Epetra_Map & OperatorRangeMap() const;
-
-  // END virtuals from Epetra_Operator
+  void apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+          Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+          Teuchos::ETransp mode,
+          Scalar alpha,
+          Scalar beta) const override;
 
  private:
   //void assembleMatrixFreeCovariance();
@@ -86,16 +78,17 @@ class KLSolver
     const shards::Array<double,shards::NaturalOrder,Cell,Point> nonlocalVolumeWeights);
 
   void partialMatVec(
+    const double alpha,
     const shards::Array<double,shards::NaturalOrder,Cell,Point,Dim> &nonlocalIntgPtCoords,
     const shards::Array<double,shards::NaturalOrder,Cell,Point> &nonlocalVolumeWeights,
     const shards::Array<double,shards::NaturalOrder,Eigen,Cell> &X_vec,
     shards::Array<double,shards::NaturalOrder,Eigen,Cell> &Y_vec) const;
 
   // covariance operator
-  Teuchos::RCP<const Epetra_Operator> covarianceOp_;
+  Teuchos::RCP<const Operator> covarianceOp_;
 
   // vector space
-  Teuchos::RCP<const Epetra_Map> epetra_Map_;
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> map_;
 
   // application class to: 
   //   1) read in intg pt coords and volume weights
@@ -104,7 +97,6 @@ class KLSolver
   Teuchos::RCP<API_KLSolver> appInterface_;
 
   MPI_Comm mpiComm_;
-  Epetra_MpiComm epetraComm_;
 
   Teuchos::ParameterList pl_;
 
@@ -115,18 +107,16 @@ class KLSolver
 
   bool useMatrixFree_;
 
-  std::vector<int> localElemIDs_, nonlocalElemIDs_;
+  std::vector<GlobalOrdinal> localElemIDs_, nonlocalElemIDs_;
 
   Teuchos::RCP<const CovarianceFunction> covarFunc_;
 
-  Teuchos::RCP<Epetra_CrsMatrix> epetra_covarianceMat_, epetra_massMat_;
+  Teuchos::RCP<CrsMatrix> tpetra_covarianceMat_, tpetra_massMat_;
 
   std::vector<double> lambda_mem_;
 
   shards::Array<double,shards::NaturalOrder,Cell,Point,Dim> localIntgPtCoords_;
   shards::Array<double,shards::NaturalOrder,Cell,Point> localVolumeWeights_;
-
-  bool log_debug_;
 };
 
 Teuchos::RCP<KLSolver> 

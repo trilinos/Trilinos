@@ -7,12 +7,10 @@
 // *****************************************************************************
 // @HEADER
 
-
 /*! \file Ifpack2_UnitTestHeap.cpp
 
 \brief Ifpack2 Unit test for the Heap templates.
 */
-
 
 #include <Teuchos_ConfigDefs.hpp>
 #include <Ifpack2_ConfigDefs.hpp>
@@ -25,11 +23,10 @@
 
 namespace {
 
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2Heap, Test1, Scalar, GlobalOrdinal)
-{
-//we are now in a class method declared by the above macro, and
-//that method has these input arguments:
-//Teuchos::FancyOStream& out, bool& success
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2Heap, Test1, Scalar, GlobalOrdinal) {
+  // we are now in a class method declared by the above macro, and
+  // that method has these input arguments:
+  // Teuchos::FancyOStream& out, bool& success
 
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
@@ -60,11 +57,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2Heap, Test1, Scalar, GlobalOrdinal)
   TEST_EQUALITY(heap1.front() == 3, true);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2Heap, Test3, Scalar, GlobalOrdinal)
-{
-//we are now in a class method declared by the above macro, and
-//that method has these input arguments:
-//Teuchos::FancyOStream& out, bool& success
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2Heap, Test3, Scalar, GlobalOrdinal) {
+  // we are now in a class method declared by the above macro, and
+  // that method has these input arguments:
+  // Teuchos::FancyOStream& out, bool& success
 
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
@@ -75,7 +71,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2Heap, Test3, Scalar, GlobalOrdinal)
   vals[2] = 1;
   vals[3] = 0;
 
-  Ifpack2::greater_indirect<Scalar,GlobalOrdinal> vals_comp(vals);
+  Ifpack2::greater_indirect<Scalar, GlobalOrdinal> vals_comp(vals);
 
   Teuchos::Array<GlobalOrdinal> heap1;
   typename Teuchos::Array<GlobalOrdinal>::size_type heap1_len = 0;
@@ -112,12 +108,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2Heap, Test3, Scalar, GlobalOrdinal)
   TEST_EQUALITY(heap1_len, 0);
 }
 
-#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Ifpack2Heap, Test1, Scalar, GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Ifpack2Heap, Test3, Scalar, GlobalOrdinal)
+#define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar, GlobalOrdinal)                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Ifpack2Heap, Test1, Scalar, GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(Ifpack2Heap, Test3, Scalar, GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int)
 UNIT_TEST_GROUP_SCALAR_ORDINAL(float, int)
 
-}//namespace <anonymous>
-
+}  // namespace

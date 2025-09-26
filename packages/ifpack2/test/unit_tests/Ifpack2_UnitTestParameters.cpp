@@ -7,7 +7,6 @@
 // *****************************************************************************
 // @HEADER
 
-
 /*! \file Ifpack2_UnitTestParameters.cpp
 
 \brief Ifpack2 Parameters testing.
@@ -20,15 +19,14 @@
 #include <iostream>
 #include <Ifpack2_Parameters.hpp>
 
-TEUCHOS_UNIT_TEST(Ifpack2Parameters, Test0)
-{
-//we are now in a class method declared by the above macro, and
-//that method has these input arguments:
-//Teuchos::FancyOStream& out, bool& success
+TEUCHOS_UNIT_TEST(Ifpack2Parameters, Test0) {
+  // we are now in a class method declared by the above macro, and
+  // that method has these input arguments:
+  // Teuchos::FancyOStream& out, bool& success
 
   Teuchos::ParameterList params;
 
-  params.set("fact: iluk level-of-fill", (int) 2);
+  params.set("fact: iluk level-of-fill", (int)2);
 
   Teuchos::ParameterList validparams;
 
@@ -38,12 +36,11 @@ TEUCHOS_UNIT_TEST(Ifpack2Parameters, Test0)
 
   int level_of_fill = 0;
 
-  //call getParameter with a wrong name:
+  // call getParameter with a wrong name:
   Ifpack2::getParameter(params, "level-of-fill", level_of_fill);
   TEST_EQUALITY(level_of_fill, 0)
 
-  //call getParameter with a valid name:
+  // call getParameter with a valid name:
   Ifpack2::getParameter(params, "fact: iluk level-of-fill", level_of_fill);
   TEST_EQUALITY(level_of_fill, 2)
 }
-

@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM,LM,SR,LR,SI,or LI).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -297,7 +297,7 @@ int main(int argc, char *argv[]) {
     if (verbose && MyPID == 0) {
       std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
     }
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
     return -1;

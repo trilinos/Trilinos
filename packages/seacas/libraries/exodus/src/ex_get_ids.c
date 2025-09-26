@@ -63,7 +63,7 @@ static int ex_get_nonstandard_ids(int exoid, ex_entity_type obj_type, void_int *
     for (int varid = root_var_count; varid < nvars + root_var_count; varid++) {
       int status;
       if ((status = nc_inq_var(exoid, varid, var.name, &var.type, &var.ndims, var.dims,
-                               &var.natts)) != NC_NOERR) {
+                               &var.natts)) != EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable parameters in file id %d",
                  exoid);
@@ -85,7 +85,7 @@ static int ex_get_nonstandard_ids(int exoid, ex_entity_type obj_type, void_int *
         if (num_found == count) {
           break;
         }
-        if (status != NC_NOERR) {
+        if (status != EX_NOERR) {
           char errmsg[MAX_ERR_LENGTH];
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s ids in file id %d",
                    ex_name_of_object(obj_type), exoid);
@@ -139,7 +139,7 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
   }
 
   /* Determine if there are any 'obj-type' objects */
-  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(obj_type), &varid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(obj_type), &varid)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s defined in file id %d",
              ex_name_of_object(obj_type), exoid);
@@ -148,7 +148,7 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
   }
 
   /* inquire id's of previously defined dimensions and variables  */
-  if ((status = nc_inq_varid(exoid, varidobj, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, varidobj, &varid)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s ids variable in file id %d",
              ex_name_of_object(obj_type), exoid);
@@ -164,7 +164,7 @@ int ex_get_ids(int exoid, ex_entity_type obj_type, void_int *ids)
     status = nc_get_var_int(exoid, varid, ids);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to return %s ids in file id %d",
              ex_name_of_object(obj_type), exoid);

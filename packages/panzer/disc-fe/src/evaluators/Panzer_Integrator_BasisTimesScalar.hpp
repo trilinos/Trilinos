@@ -139,8 +139,8 @@ namespace panzer
        *                 integral you're computing (\f$ a(x) \f$, \f$ b(x) \f$,
        *                 etc.).
        */
-      Integrator_BasisTimesScalar(
-        const Teuchos::ParameterList& p);
+    Integrator_BasisTimesScalar(const Teuchos::ParameterList& p,
+                                const panzer::EvaluatorStyle = panzer::EvaluatorStyle::EVALUATES);
 
       /**
        *  \brief Post-Registration Setup.

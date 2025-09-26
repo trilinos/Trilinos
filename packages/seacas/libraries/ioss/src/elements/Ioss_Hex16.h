@@ -12,7 +12,7 @@
 #include "Ioss_ElementTopology.h" // for ElementTopology
 
 namespace Ioss {
-  class IOSS_EXPORT Hex16 : public Ioss::ElementTopology
+  class IOSS_EXPORT Hex16 final : public Ioss::ElementTopology
   {
 
   public:

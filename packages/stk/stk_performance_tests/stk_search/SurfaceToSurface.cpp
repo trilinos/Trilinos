@@ -670,6 +670,7 @@ void run_imported_surface_to_surface_test_pll_local_with_views(const std::string
 
 using MemSpace = stk::ngp::ExecSpace::memory_space;
 
+#ifdef STK_HAS_ARBORX
 template<typename BoxIdentType>
 void run_imported_surface_to_surface_test_local_with_views_rawArborX(const std::string& boxFileBaseName,
                                                            const int numIterations,
@@ -757,6 +758,7 @@ TEST(StkSearch_SurfaceToSurface, a001_intent_strong_link_floatBox_local_with_vie
   const int numIterations = 20;
   run_imported_surface_to_surface_test_pll_local_with_views<FloatBoxIdent>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
+#endif // STK_HAS_ARBORX
 
 TEST(StkSearch_SurfaceToSurface, a001_intent_strong_link_floatBox_local_with_views_MORTON_LBVH)
 {
@@ -788,6 +790,7 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_MORTON_LBVH)
   run_imported_surface_to_surface_test_local<FloatBoxIdentVector>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
 }
 
+#ifdef STK_HAS_ARBORX
 TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_ARBORX)
 {
   std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
@@ -797,6 +800,7 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_ARBORX)
   const int numIterations = 4;
   run_imported_surface_to_surface_test_local<FloatBoxIdentVector>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
+#endif
 
 TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_with_views_MORTON_LBVH)
 {
@@ -808,6 +812,7 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_with_views_MORTON_LBVH)
   run_imported_surface_to_surface_test_local_with_views<FloatBoxIdent>(boxFileBaseName, numIterations, stk::search::MORTON_LBVH);
 }
 
+#ifdef STK_HAS_ARBORX
 TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_with_views_ARBORX)
 {
   std::string boxFileBaseName = stk::unit_test_util::get_option("-m", "none-specified");
@@ -817,6 +822,7 @@ TEST(StkSearch_SurfaceToSurface, ecsl_floatBox_local_with_views_ARBORX)
   const int numIterations = 4;
   run_imported_surface_to_surface_test_local_with_views<FloatBoxIdent>(boxFileBaseName, numIterations, stk::search::ARBORX);
 }
+#endif
 
 } // namespace
 

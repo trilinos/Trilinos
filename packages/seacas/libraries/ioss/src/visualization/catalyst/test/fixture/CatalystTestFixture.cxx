@@ -6,7 +6,6 @@
 
 #include "CatalystTestFixture.h"
 #include "TestDataDirectoryPath.h"
-#include "catch.hpp"
 #include "vtkAbstractArray.h"
 #include "vtkCellData.h"
 #include "vtkDataAssembly.h"
@@ -21,6 +20,7 @@
 #include "vtkXMLPartitionedDataSetCollectionReader.h"
 #include <Iovs_Utils.h>
 #include <cstdlib>
+#include <catch2/catch_test_macros.hpp>
 
 CatalystTestFixture::CatalystTestFixture() {}
 
@@ -53,11 +53,11 @@ void CatalystTestFixture::checkMeshOutputVariables(const std::string        &inp
   auto assembly   = vpdc->GetDataAssembly();
   auto childNodes = assembly->GetChildNodes(assembly->GetFirstNodeByPath(blockPath.c_str()));
   bool foundBlockThatHasAllVars = false;
-  for (int i = 0; i < childNodes.size(); i++) {
+  for (size_t i = 0; i < childNodes.size(); i++) {
     auto dsi = assembly->GetDataSetIndices(childNodes[i]);
-    for (int j = 0; j < dsi.size(); j++) {
+    for (size_t j = 0; j < dsi.size(); j++) {
       auto pds = vpdc->GetPartitionedDataSet(dsi[j]);
-      for (int k = 0; k < pds->GetNumberOfPartitions(); k++) {
+      for (unsigned int k = 0; k < pds->GetNumberOfPartitions(); k++) {
         vtkDataSet *ds = pds->GetPartition(k);
         if (ds == nullptr) {
           continue;
@@ -103,14 +103,13 @@ void CatalystTestFixture::checkPartitionedDataSetCollectionStructure(const std::
   REQUIRE(vpdc->GetDataAssembly()->GetRootNodeName() == std::string("IOSS"));
   REQUIRE(vpdc->GetNumberOfPartitionedDataSets() == partitions.size());
   int numCellsCount = 0;
-  for (int i = 0; i < vpdc->GetNumberOfPartitionedDataSets(); i++) {
+  for (unsigned int i = 0; i < vpdc->GetNumberOfPartitionedDataSets(); i++) {
     REQUIRE(vpdc->HasMetaData(i));
     REQUIRE(vpdc->GetMetaData(i)->Get(vtkCompositeDataSet::NAME()) == partitions[i]);
     auto pds = vpdc->GetPartitionedDataSet(i);
     REQUIRE(pds != nullptr);
     auto num_parts = pds->GetNumberOfPartitions();
-    for (int j = 0; j < num_parts; j++) {
-      auto ds           = pds->GetPartition(j);
+    for (unsigned int j = 0; j < num_parts; j++) {
       int  partNumCells = pds->GetPartition(j)->GetNumberOfCells();
       REQUIRE(partNumCells > 0);
       numCellsCount += partNumCells;
@@ -177,35 +176,6 @@ void CatalystTestFixture::runCatalystLoggingTest(Ioss::PropertyManager *logging_
 {
   ioapp.setAdditionalProperties(logging_properties);
   runPhactoriJSONTest(jsonFile, inputFile);
-}
-
-void CatalystTestFixture::checkPhactoriStringValidParse(const std::string &phactoriSyntax,
-                                                        const Json::Value &parsedJSONResult)
-{
-
-  Iovs::CatalystManagerBase::ParseResult pres;
-  Iovs::Utils::getInstance().getCatalystManager().parsePhactoriString(phactoriSyntax, pres);
-  REQUIRE(!pres.parseFailed);
-
-  Json::CharReaderBuilder builder{};
-  auto                    reader = std::unique_ptr<Json::CharReader>(builder.newCharReader());
-  Json::Value             parseRoot{};
-  std::string             errors{};
-
-  auto parseWorked = reader->parse(pres.jsonParseResult.c_str(),
-                                   pres.jsonParseResult.c_str() + pres.jsonParseResult.length(),
-                                   &parseRoot, &errors);
-
-  REQUIRE(parseWorked);
-  REQUIRE(parseRoot == parsedJSONResult);
-}
-
-void CatalystTestFixture::checkPhactoriStringInvalidParse(const std::string &phactoriSyntax)
-{
-
-  Iovs::CatalystManagerBase::ParseResult pres;
-  Iovs::Utils::getInstance().getCatalystManager().parsePhactoriString(phactoriSyntax, pres);
-  REQUIRE(pres.parseFailed);
 }
 
 Json::Value CatalystTestFixture::getDefaultPhactoriJSON()

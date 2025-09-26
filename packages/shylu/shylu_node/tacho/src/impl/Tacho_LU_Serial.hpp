@@ -38,7 +38,7 @@ template <> struct LU<Algo::Serial> {
       const ordinal_type m = A.extent(0), n = A.extent(1);
       if (m > 0 && n > 0) {
         /// factorize LU
-        LapackSerial<value_type>::getrf(m, n, A.data(), A.stride_1(), P.data(), &r_val);
+        LapackSerial<value_type>::getrf(m, n, A.data(), A.stride(1), P.data(), &r_val);
         TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LAPACK (getrf) returns non-zero error code.");
       }
     } else {

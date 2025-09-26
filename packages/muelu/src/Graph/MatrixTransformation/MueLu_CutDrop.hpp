@@ -113,7 +113,7 @@ class UnscaledComparison {
   @class ScaledComparison
   @brief Orders entries of row \f$i\f$ by \f$\frac{|A_{ij}|^2}{|A_{ii}| |A_{jj}|}\f$.
 */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, Misc::StrengthMeasure measure>
 class ScaledComparison {
  public:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -139,9 +139,15 @@ class ScaledComparison {
   ScaledComparison(matrix_type& A_, results_view& results_)
     : A(A_.getLocalMatrixDevice())
     , results(results_) {
-    diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
-    auto lclDiag2d = diagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
+      diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+      diagVec    = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixMaxMinusOffDiagonal(A_);
+      auto lcl2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      diag       = Kokkos::subview(lcl2d, Kokkos::ALL(), 0);
+    }
   }
 
   template <class local_matrix_type2, class diag_view_type2>
@@ -154,6 +160,7 @@ class ScaledComparison {
 
     using ATS           = Kokkos::ArithTraits<scalar_type>;
     using magnitudeType = typename ATS::magnitudeType;
+    using mATS          = Kokkos::ArithTraits<magnitudeType>;
 
     const local_matrix_type2 A;
     const diag_view_type2 diag;
@@ -172,9 +179,24 @@ class ScaledComparison {
 
     KOKKOS_INLINE_FUNCTION
     magnitudeType get_value(size_t x) const {
-      auto x_aij    = ATS::magnitude(A.values(offset + x) * A.values(offset + x));
-      auto x_aiiajj = ATS::magnitude(diag(rlid) * diag(A.graph.entries(offset + x)));
-      return (x_aij / x_aiiajj);
+      if constexpr (measure == Misc::SmoothedAggregationMeasure) {
+        auto x_aij    = ATS::magnitude(A.values(offset + x) * A.values(offset + x));
+        auto x_aiiajj = ATS::magnitude(diag(rlid) * diag(A.graph.entries(offset + x)));
+        return (x_aij / x_aiiajj);
+      } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+        auto val         = A.values(offset + x);
+        auto neg_aij     = -ATS::real(val);
+        auto max_neg_aik = ATS::real(diag(rlid));
+        return ATS::magnitude(neg_aij / max_neg_aik);
+      } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
+        auto val                  = A.values(offset + x);
+        auto x_aiiajj             = ATS::magnitude(diag(rlid) * diag(A.graph.entries(offset + x)));
+        const bool is_nonpositive = ATS::real(val) <= mATS::zero();
+        magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);
+        if (is_nonpositive)
+          aij2 = -aij2;
+        return (aij2 / x_aiiajj);
+      }
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -206,6 +228,19 @@ class ScaledComparison {
   }
 };
 
+// helper function to allow partial template deduction
+template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+auto make_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
+                             typename ScaledComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, measure>::results_view& results_) {
+  if constexpr (measure == Misc::UnscaledMeasure) {
+    auto functor = UnscaledComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A_, results_);
+    return functor;
+  } else {
+    auto functor = ScaledComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, measure>(A_, results_);
+    return functor;
+  }
+}
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
 class UnscaledDistanceLaplacianComparison {
  public:
@@ -236,7 +271,7 @@ class UnscaledDistanceLaplacianComparison {
     , dist2(dist2_) {
     // Construct ghosted distance Laplacian diagonal
     diagVec        = DistanceLaplacian::getDiagonal(A_, dist2);
-    auto lclDiag2d = diagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
     diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
   }
 
@@ -275,7 +310,7 @@ class UnscaledDistanceLaplacianComparison {
       auto clid = A.graph.entries(offset + x);
       scalar_type val;
       if (rlid != clid) {
-        val = one / dist2->distance2(rlid, clid);
+        val = -one / dist2->distance2(rlid, clid);
       } else {
         val = diag(rlid);
       }
@@ -316,7 +351,7 @@ class UnscaledDistanceLaplacianComparison {
   @class ScaledDistanceLaplacianComparison
   @brief Orders entries of row \f$i\f$ by \f$\frac{|d_{ij}|^2}{|d_{ii}| |d_{jj}|}\f$ where \f$d_ij\f$ is the distance Laplacian.
 */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType, Misc::StrengthMeasure measure>
 class ScaledDistanceLaplacianComparison {
  public:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -345,9 +380,15 @@ class ScaledDistanceLaplacianComparison {
     , results(results_)
     , dist2(dist2_) {
     // Construct ghosted distance Laplacian diagonal
-    diagVec        = DistanceLaplacian::getDiagonal(A_, dist2);
-    auto lclDiag2d = diagVec->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
+      diagVec        = DistanceLaplacian::getDiagonal(A_, dist2);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+      diagVec        = DistanceLaplacian::getMaxMinusOffDiagonal(A_, dist2);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    }
   }
 
   template <class local_matrix_type2, class DistanceFunctorType2, class diag_view_type2>
@@ -360,6 +401,7 @@ class ScaledDistanceLaplacianComparison {
 
     using ATS           = Kokkos::ArithTraits<scalar_type>;
     using magnitudeType = typename ATS::magnitudeType;
+    using mATS          = Kokkos::ArithTraits<magnitudeType>;
 
     const local_matrix_type2 A;
     const diag_view_type2 diag;
@@ -368,7 +410,9 @@ class ScaledDistanceLaplacianComparison {
     const local_ordinal_type offset;
     const results_view results;
 
-    const scalar_type one = ATS::one();
+    const scalar_type one     = ATS::one();
+    const scalar_type zero    = ATS::zero();
+    const magnitudeType mzero = mATS::zero();
 
    public:
     KOKKOS_INLINE_FUNCTION
@@ -385,13 +429,31 @@ class ScaledDistanceLaplacianComparison {
       auto clid = A.graph.entries(offset + x);
       scalar_type val;
       if (rlid != clid) {
-        val = one / dist2->distance2(rlid, clid);
+        val = -one / dist2->distance2(rlid, clid);
       } else {
         val = diag(rlid);
       }
-      auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
-      auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
-      return (aij2 / aiiajj);
+
+      if constexpr (measure == Misc::SmoothedAggregationMeasure) {
+        auto aiiajj = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
+        auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                // |a_ij|^2
+        return (aij2 / aiiajj);
+      } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+        auto neg_aij     = -ATS::real(val);
+        auto max_neg_aik = ATS::real(diag(rlid));
+        if (ATS::real(neg_aij) >= mzero)
+          return ATS::magnitude(neg_aij / max_neg_aik);
+        else
+          return -ATS::magnitude(neg_aij / max_neg_aik);
+      } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
+        auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
+        const bool is_nonpositive = ATS::real(val) <= mATS::zero();
+        magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+        // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
+        if (is_nonpositive)
+          aij2 = -aij2;
+        return aij2 / aiiajj;
+      }
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -422,6 +484,20 @@ class ScaledDistanceLaplacianComparison {
     return comparator_type(A, diag, &dist2, rlid, results);
   }
 };
+
+// helper function to allow partial template deduction
+template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+auto make_dlap_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
+                                  DistanceFunctorType& dist2_,
+                                  typename ScaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::results_view& results_) {
+  if constexpr (measure == Misc::UnscaledMeasure) {
+    auto functor = UnscaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType>(A_, dist2_, results_);
+    return functor;
+  } else {
+    auto functor = ScaledDistanceLaplacianComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, dist2_, results_);
+    return functor;
+  }
+}
 
 /*!
   @class CutDropFunctor
@@ -464,6 +540,16 @@ class CutDropFunctor {
     auto row_permutation = Kokkos::subview(index, Kokkos::make_pair(A.graph.row_map(rlid), A.graph.row_map(rlid + 1)));
 
     auto comparator = comparison.getComparator(rlid);
+
+#ifdef MUELU_COALESCE_DROP_DEBUG
+    {
+      Kokkos::printf("SoC:        ");
+      for (local_ordinal_type k = 0; k < row.length; ++k) {
+        Kokkos::printf("%5f ", comparator.get_value(k));
+      }
+      Kokkos::printf("\n");
+    }
+#endif
 
     for (size_t i = 0; i < nnz; ++i) {
       row_permutation(i) = i;

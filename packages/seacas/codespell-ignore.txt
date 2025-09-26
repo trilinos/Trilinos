@@ -46,3 +46,7 @@ hist
 dof
 varns
 inout
+lene
+indx
+delt
+rin

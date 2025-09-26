@@ -35,6 +35,7 @@
 #define SIMD_FLOATING_POINT_FIXTURE_HPP 
 
 #include <functional>
+#include <gtest/gtest.h>
 
 #include "stk_simd/Simd.hpp"
 

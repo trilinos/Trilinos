@@ -49,8 +49,6 @@ namespace Iovs {
     vtkNew<vtkTrivialProducer> producer;
     producer->SetOutput(dobj);
     vtkMultiProcessController *controller = vtkMultiProcessController::GetGlobalController();
-    int                        myRank     = controller->GetLocalProcessId();
-    int                        numRanks   = controller->GetNumberOfProcesses();
 
     vtkNew<vtkXMLPartitionedDataSetCollectionWriter> writer;
     writer->SetController(controller);

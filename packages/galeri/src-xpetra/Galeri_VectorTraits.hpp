@@ -17,27 +17,26 @@
 #define GALERI_XPETRAVECTORTRAITS_HPP
 
 #ifdef HAVE_GALERI_XPETRA
-#  include "Xpetra_Map.hpp"  // needed for specialized traits
-#  include "Xpetra_BlockedMultiVector.hpp"
-#  include "Xpetra_BlockedVector.hpp"
-#  include "Xpetra_MultiVectorFactory.hpp"
+#include "Xpetra_Map.hpp"  // needed for specialized traits
+#include "Xpetra_BlockedMultiVector.hpp"
+#include "Xpetra_BlockedVector.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 #endif
 
 namespace Galeri {
 
-  namespace Xpetra {
+namespace Xpetra {
 
-    using Teuchos::RCP;
+using Teuchos::RCP;
 
-    // Default traits
-    template <class Map, class Vector>
-    class VectorTraits
-    {
-    public:
-      static RCP<Vector> Build(const RCP<const Map> &map, size_t numVectors, bool zeroOut) {
-        return rcp( new Vector(map, numVectors, zeroOut) );
-      }
-    };
+// Default traits
+template <class Map, class Vector>
+class VectorTraits {
+ public:
+  static RCP<Vector> Build(const RCP<const Map> &map, size_t numVectors, bool zeroOut) {
+    return rcp(new Vector(map, numVectors, zeroOut));
+  }
+};
 
 #ifdef HAVE_GALERI_XPETRA
 
@@ -53,20 +52,18 @@ namespace Galeri {
     };
 */
 
-    // Specialized traits for     Map = Xpetra::Map<...>, Vector = Xpetra::MultiVector<...>
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    class VectorTraits < ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node>, ::Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, Node> >
-    {
-    public:
-      static RCP< ::Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal, Node> >
-      Build(const RCP<const ::Xpetra::Map<LocalOrdinal,GlobalOrdinal, Node> > &map, size_t numVectors, bool zeroOut)
-      { return ::Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node>::Build(map, numVectors, zeroOut);};
-    };
+// Specialized traits for     Map = Xpetra::Map<...>, Vector = Xpetra::MultiVector<...>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class VectorTraits< ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>, ::Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > {
+ public:
+  static RCP< ::Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  Build(const RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &map, size_t numVectors, bool zeroOut) { return ::Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, numVectors, zeroOut); };
+};
 
 #endif
 
-  } // namespace Xpetra
+}  // namespace Xpetra
 
-} // namespace Galeri
+}  // namespace Galeri
 
-#endif //ifndef GALERI_XPETRAVECTORTRAITS_HPP
+#endif  // ifndef GALERI_XPETRAVECTORTRAITS_HPP

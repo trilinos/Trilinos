@@ -35,7 +35,7 @@ template <> struct LU<Algo::Internal> {
     const ordinal_type m = A.extent(0), n = A.extent(1);
     if (m > 0 && n > 0) {
       /// factorize LU
-      LapackTeam<value_type>::getrf(member, m, n, A.data(), A.stride_1(), P.data(), &r_val);
+      LapackTeam<value_type>::getrf(member, m, n, A.data(), A.stride(1), P.data(), &r_val);
     }
     return r_val;
   }
@@ -53,7 +53,7 @@ template <> struct LU<Algo::Internal> {
     const ordinal_type m = A.extent(0), n = A.extent(1);
     if (m > 0 && n > 0) {
       /// factorize LU
-      LapackTeam<value_type>::getrf(member, tol, m, n, A.data(), A.stride_1(), P.data(), &r_val);
+      LapackTeam<value_type>::getrf(member, tol, m, n, A.data(), A.stride(1), P.data(), &r_val);
     }
     return r_val;
   }

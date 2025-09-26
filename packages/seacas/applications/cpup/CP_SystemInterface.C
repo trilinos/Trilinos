@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -474,7 +474,7 @@ void Cpup::SystemInterface::parse_step_option(const char *tokens)
 
         tmp_str[k] = '\0';
         if (strlen(tmp_str) > 0) {
-          val = strtol(tmp_str, nullptr, 0);
+          val = std::stoi(tmp_str);
         }
 
         if (tokens[j++] == '\0') {
@@ -490,7 +490,7 @@ void Cpup::SystemInterface::parse_step_option(const char *tokens)
     }
     else {
       // Does not contain a separator, min == max
-      stepMin_ = stepMax_ = strtol(tokens, nullptr, 0);
+      stepMin_ = stepMax_ = std::stoi(tokens);
     }
   }
 }

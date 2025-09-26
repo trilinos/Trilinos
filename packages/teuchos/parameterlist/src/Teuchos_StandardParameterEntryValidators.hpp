@@ -285,7 +285,7 @@ public:
     std::string const& paramName,
     std::string const& sublistName
     ) const;
-  
+
 #if defined(HAVE_TEUCHOS_MODIFY_DEFAULTS_DURING_VALIDATION)
   void validateAndModify(
     std::string const& paramName,
@@ -310,7 +310,7 @@ private:
   const bool caseSensitive_;
 
   /** \brief Auxiliary method to simplify constructors
-   * 
+   *
    * \param strings [in] Array of unique names for the enum or integer
    *   values.  These are the strings which users will see and use
    *   when setting parameters.  <tt>strings[i]</tt> will be
@@ -320,7 +320,7 @@ private:
    * \param integralValues [in] Array of the enum or integer values
    *   associated with <tt>strings[]</tt>.
   */
-  void init(const ArrayView<const std::string>& strings, 
+  void init(const ArrayView<const std::string>& strings,
             const ArrayView<const IntegralType>& integralValues);
 
   void setValidValues(
@@ -1879,7 +1879,7 @@ public:
    *
    * @param validStrings A list of valid string values for this validator.
    */
-  StringValidator(const Teuchos::Array<std::string> &validStrings);
+  StringValidator(const Teuchos::Array<std::string> &validStrings, bool caseSensitive=true);
 
   //@}
 
@@ -1895,6 +1895,14 @@ public:
    */
   ValidStringsList setValidStrings(
     const Teuchos::Array<std::string> &validStrings);
+
+  /// \brief Whether this validator is case sensitive.
+  ///
+  /// Case sensitivity is with respect to the string names, not the
+  /// parameter name.
+  bool isCaseSensitive () const {
+    return caseSensitive_;
+  }
 
   //@}
 
@@ -1924,6 +1932,15 @@ private:
   /** \brief An array containing a list of all the valid string values.
    */
   ValidStringsList validStrings_;
+
+  bool caseSensitive_;
+
+  //! Return an upper-case copy of the string s.
+  static std::string upperCase (const std::string s) {
+    std::string s_upper = s;
+    std::transform (s_upper.begin (), s_upper.end (), s_upper.begin (), ::toupper);
+    return s_upper;
+  }
 
   //@}
 

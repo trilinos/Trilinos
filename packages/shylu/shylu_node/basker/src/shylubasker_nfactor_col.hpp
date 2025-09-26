@@ -666,12 +666,12 @@ namespace BaskerNS
     //#endif
 
 
+    // --------------
+    // solve with L
     #ifdef BASKER_INC_LVL
     //Note we have not made a t_back_solve_atomic_selective
     t_back_solve_selective(kid, l,l, k, top, xnnz);
-     
     #else //BASKER_INC_LVL
-
     #ifdef BASKER_ATOMIC_2
     t_back_solve(kid, l, l, k, top, xnnz);
     #else
@@ -681,6 +681,8 @@ namespace BaskerNS
     #endif
     #endif //BASKER_INC_LVL
 
+
+    // --------------
     //move over nnz to U 
     for(Int i = top; i < ws_size && info == BASKER_SUCCESS; ++i)
     {
@@ -1303,20 +1305,20 @@ namespace BaskerNS
     {
       if(Options.verbose == BASKER_TRUE)
       {
-        cout << endl << endl;
-        cout << "---------------------------" << endl;
-        cout << "Error: Col Matrix is singular, col k = " << k
-             << ", lvl = " << lvl << ", l = " << l << endl;
-        cout << "MaxIndex: " << maxindex << " pivot " << pivot << endl;
-        cout << " norm(A)   = " << normA     << " (global)" << endl
-             << " norm(A)   = " << normA_blk << " (block)"  << endl
-             << " replace_zero_pivot = " << Options.replace_zero_pivot << endl;
+        std::cout << std::endl << std::endl;
+        std::cout << "---------------------------" << std::endl;
+        std::cout << "Error: Col Matrix is singular, col k = " << k
+                  << ", lvl = " << lvl << ", l = " << l << std::endl;
+        std::cout << "MaxIndex: " << maxindex << " pivot " << pivot << std::endl;
+        std::cout << " norm(A)   = " << normA     << " (global)" << std::endl
+                  << " norm(A)   = " << normA_blk << " (block)"  << std::endl
+                  << " replace_zero_pivot = " << Options.replace_zero_pivot << std::endl;
         if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
-          cout << "  + replace zero pivot with " << normA_blk * sqrt(eps) << endl;
+          std::cout << "  + replace zero pivot with " << normA_blk * sqrt(eps) << std::endl;
         } else if (Options.replace_zero_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
-          cout << "  - replace zero pivot with " << normA_blk * eps << endl;
+          std::cout << "  - replace zero pivot with " << normA_blk * eps << std::endl;
         }
-        cout << "---------------------------" << endl;
+        std::cout << "---------------------------" << std::endl;
       }
        
       if (Options.replace_tiny_pivot && normA_blk > abs(zero) && maxindex != BASKER_MAX_IDX) {
@@ -1336,14 +1338,14 @@ namespace BaskerNS
     } else if (Options.replace_tiny_pivot && normA_blk > abs(zero) && abs(pivot) < normA_blk * sqrt(eps)) {
       if (Options.verbose == BASKER_TRUE)
       {
-        cout << endl << endl;
-        cout << "---------------------------" << endl;
-        cout << "Col Matrix : replace tiny pivot col k = " << k
-             << ", lvl = " << lvl << ", l = " << l << endl;
-        cout << " pivot " << pivot << " -> "
-             << (STS::real(pivot) >= abs(zero) ? normA_blk * sqrt(eps) : -normA_blk * sqrt(eps))
-             << endl;
-        cout << "---------------------------" << endl;
+        std::cout << std::endl << std::endl;
+        std::cout << "---------------------------" << std::endl;
+        std::cout << "Col Matrix : replace tiny pivot col k = " << k
+                  << ", lvl = " << lvl << ", l = " << l << std::endl;
+        std::cout << " pivot " << pivot << " -> "
+                  << (STS::real(pivot) >= abs(zero) ? normA_blk * sqrt(eps) : -normA_blk * sqrt(eps))
+                  << std::endl;
+        std::cout << "---------------------------" << std::endl;
       }
       if (STS::real(pivot) >= abs(zero)) {
         pivot = normA_blk * sqrt(eps);
@@ -1367,9 +1369,9 @@ namespace BaskerNS
       newsize = lnnz * 1.1 + 2 *A.nrow + 1;
       if (Options.verbose == BASKER_TRUE)
       {
-        cout << "Lower Col Reallocing L oldsize: " << llnnz 
-             << " newsize: " << newsize << " kid = " << kid
-             << endl;
+        std::cout << "Lower Col Reallocing L oldsize: " << llnnz 
+                  << " newsize: " << newsize << " kid = " << kid
+                  << std::endl;
         //cout << " > k = " << k << " lnnz = " << lnnz << " lcnt = " << lcnt << endl;
         //cout << " > L_col = " << L_col << " L_row = " << L_row << endl;
       }
@@ -1394,9 +1396,9 @@ namespace BaskerNS
       newsize = uunnz*1.1 + 2*A.nrow+1;
       if (Options.verbose == BASKER_TRUE)
       {
-        cout << "Lower Col Reallocing U oldsize: " << uunnz 
-             << " newsize " << newsize << " kid = " << kid
-             << endl;
+        std::cout << "Lower Col Reallocing U oldsize: " << uunnz 
+                  << " newsize " << newsize << " kid = " << kid
+                  << std::endl;
       }
 
       thread_array(kid).error_blk    = U_col;

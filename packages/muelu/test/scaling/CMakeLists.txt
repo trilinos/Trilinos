@@ -67,21 +67,80 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     )
     math(EXPR COUNTER "${COUNTER} + 1")
   ENDWHILE()
-  
+
   # This an artifact to reproduce the old 4-rank test that is weak scaled by only adding guys in (x,y)
   TRIBITS_ADD_TEST(
       Driver
-      NAME SetupSolve_Performance_4
+      NAME SetupSolve_Performance
       COMM mpi
       ARGS "--stacked-timer --nx=240 --ny=240 --nz=120 --matrixType=Laplace3D"
-      NUM_MPI_PROCS ${NP}
+      NUM_MPI_PROCS 4
       PASS_REGULAR_EXPRESSION "Belos converged"
       RUN_SERIAL
       CATEGORIES PERFORMANCE
-    ) 
+    )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling_apex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml recurMG.xml anisotropic.xml  comp_rotations.xml generalBlkSmoothing.xml GblkMap.dat GblkAmat.dat GblkRhs.dat Gblks.dat blkSmooEquivOlapSchwarz.xml oLapSchwarzEquivBlkSmoo.xml regularOverLap.dat zeroAggTest.xml blkDiag3x3And6x6.mat  coords2.mm aux1.mat aux2.mat  coords1.mat  coords2.mat  multiPhys4x4.mat multiPhys4x4.mat  null1.mat null2.mat comboP.xml material.xml material.mm
+    SOURCE_FILES 
+      amgx.json
+      amgx.xml
+      anisotropic.xml
+      aux1.mat
+      aux2.mat
+      blkDiag3x3And6x6.mat
+      blkSmooEquivOlapSchwarz.xml
+      block_diagonal_drop.xml
+      blocknumber.mm
+      circ_nsp_dependency.xml
+      comboP.xml
+      comp_rotations.xml
+      conchas_milestone_zoltan2_complex.xml
+      conchas_milestone_zoltan2.xml
+      conchas_milestone_zoltan.xml
+      coords1.mat
+      coords2.mat
+      coords2.mm
+      elasticity3D.xml
+      emin_with_dl_elasticity3D.xml
+      emin_with_dl_material_elasticity3D.xml
+      GblkAmat.dat
+      GblkMap.dat
+      GblkRhs.dat
+      Gblks.dat
+      generalBlkSmoothing.xml
+      iso_poisson.xml
+      isorropia.xml
+      material.mm
+      material.xml
+      multiPhys4x4.mat
+      multiPhys4x4.mat
+      null1.mat
+      null2.mat
+      oLapSchwarzEquivBlkSmoo.xml
+      pairwise.xml
+      rap.xml
+      recurMG.xml
+      regularOverLap.dat
+      sa_enforce_constraints.xml
+      sa_with_Ifpack2_line_detection.xml
+      sa_with_ilu.xml
+      scaling_apex.xml
+      scaling-complex-withglobalconstants.xml
+      scaling-complex.xml
+      scaling_distance2_agg.xml
+      scaling-gpu.xml
+      scaling-ml.xml
+      scaling_sendtype.xml
+      scaling-withglobalconstants.xml
+      scaling-with-rerun.xml
+      scaling.xml
+      scaling.yaml
+      smoother_complex.xml
+      smoother.xml
+      smooVecCoalesce.xml
+      smooVec.mm
+      tripleMatrixProduct.xml
+      zeroAggTest.xml
     CATEGORIES BASIC PERFORMANCE
    )
 
@@ -146,6 +205,15 @@ TRIBITS_ADD_TEST(
   #FIXME JHU: 2023-Nov-20 In OpenMP build, this test converges in 190 iterations
   #FIXME                  For other builds, test converges in less than 66 iterations
   ARGS "--xml=anisotropic.xml --tol=1e-6"
+  NUM_MPI_PROCS 4
+  COMM mpi # HAVE_MPI required
+  PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+
+TRIBITS_ADD_TEST(
+  Driver
+  NAME Driver_sendtype
+  ARGS "--xml=scaling_sendtype.xml"
   NUM_MPI_PROCS 4
   COMM mpi # HAVE_MPI required
   PASS_REGULAR_EXPRESSION "Belos converged"
@@ -381,6 +449,24 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     PASS_REGULAR_EXPRESSION "Belos converged"
   )
 
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "BlockDiagonalization"
+    ARGS "--linAlgebra=Tpetra --xml=block_diagonal_drop.xml --matrixType=Laplace2D --nx=100  --ny=100  --its=20 --blocknumber=blocknumber.mm"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "DriverTpetra_Rerun"
+    POSTFIX_AND_ARGS_0 "InputDeck" --linAlgebra=Tpetra --xml=scaling-with-rerun.xml
+    POSTFIX_AND_ARGS_1 "Repeat"    --linAlgebra=Tpetra --reruns=3 --stacked-timer
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+  )
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
@@ -391,14 +477,6 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         Driver
         NAME "DriverTpetra"
         ARGS "--linAlgebra=Tpetra --xml=scaling-complex.xml"
-        NUM_MPI_PROCS 4
-        COMM mpi # HAVE_MPI required
-        )
-
-      TRIBITS_ADD_TEST(
-        Driver
-        NAME "DriverTpetra_Rerun"
-        ARGS "--linAlgebra=Tpetra --xml=scaling-with-rerun.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         )
@@ -550,6 +628,23 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "Belos converged"
       )
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+      Driver
+      NAME "AnisotropicElasticityEmin"
+      ARGS "--linAlgebra=Tpetra --xml=emin_with_dl_elasticity3D.xml  --matrixType=Elasticity3D --nx=20 --ny=20 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace"
+      NUM_MPI_PROCS 4
+      COMM serial mpi
+      PASS_REGULAR_EXPRESSION "Belos converged"
+      )
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+      Driver
+      NAME "MaterialAnisotropicElasticityEmin"
+      POSTFIX_AND_ARGS_0 "ConstantScalar" --linAlgebra=Tpetra --xml=emin_with_dl_material_elasticity3D.xml --matrixType=Elasticity3D --nx=20 --ny=20 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace --scalarCoefficient
+      POSTFIX_AND_ARGS_1 "ConstantTensor" --linAlgebra=Tpetra --xml=emin_with_dl_material_elasticity3D.xml --matrixType=Elasticity3D --nx=20 --ny=20 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace --tensorCoefficient
+      NUM_MPI_PROCS 4
+      COMM serial mpi
+      PASS_REGULAR_EXPRESSION "Belos converged"
+      )
 
   IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
     MUELU_ADD_SERIAL_AND_MPI_TEST(
@@ -608,7 +703,7 @@ TRIBITS_ADD_EXECUTABLE(
   SpMVPerformance
   SOURCES SpMVPerformance.cpp
   COMM mpi
-  CATEGORIES PERFORMANCE
+  CATEGORIES BASIC PERFORMANCE
 )
 
 IF(Tpetra_INST_SERIAL)

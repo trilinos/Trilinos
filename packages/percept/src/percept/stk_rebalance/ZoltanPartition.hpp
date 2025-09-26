@@ -135,7 +135,7 @@ public:
 
   virtual void set_mesh_info ( const std::vector<mesh::Entity > &mesh_entities,
                                const stk::mesh::FieldBase   * nodal_coord_ref,
-                               const stk::mesh::FieldBase   * elem_weight_ref=NULL);
+                               const stk::mesh::FieldBase   * elem_weight_ref=NULL) override;
 
   /** \brief Reset owning processor.
    *
@@ -185,7 +185,7 @@ public:
   virtual ~Zoltan();
 
   /** \brief Return the total number of mesh entities in all lists. */
-  unsigned num_elems() const { return m_total_number_entities_ ; }
+  unsigned num_elems() const override { return m_total_number_entities_ ; }
 
   /** \brief Return the owning processor.*/
   double entity_weight(const unsigned moid) const;
@@ -250,7 +250,7 @@ public:
    * partition is different than the old one.
    */
 
-  virtual void determine_new_partition (bool & RebalancingNeeded);
+  virtual void determine_new_partition (bool & RebalancingNeeded) override;
 
   /** \brief Perform communication to create new partition.
    *
@@ -266,10 +266,10 @@ public:
    * mesh entities before rebalancing is performed
    * again.
    */
-  virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition);
+  virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition) override;
 
   /** \brief Query whether element dependents need to be rebalanced outside this Partition. */
-  bool partition_dependents_needed() const
+  bool partition_dependents_needed() const override
   { return true; /* Zoltan partitions elements and leaves the rest to someone else */ }
 
   /**
@@ -300,7 +300,7 @@ public:
                  int     *ncuts,
                  double  *cut_wgt,
                  int     *nboundary,
-                 int     *nadj  );
+                 int     *nadj  ) override;
 
   /** \brief Return version of Zoltan linked into executable */
   double zoltan_version()  const;

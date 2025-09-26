@@ -609,10 +609,10 @@ T *align_cast(void *p)
   enum {mask = alignment - 1};
 
   char * c = reinterpret_cast<char *>(p);
-  size_t front_misalign = (c - static_cast<char*>(0)) & mask;
+  size_t front_misalign = (reinterpret_cast<size_t>(c)) & mask;
   if (front_misalign > 0) {
     size_t correction = alignment - front_misalign;
-    T *q = reinterpret_cast<T *>((c - static_cast<char*>(0)) + correction);
+    T *q = reinterpret_cast<T *>((reinterpret_cast<size_t>(c)) + correction);
     return q;
   }
 

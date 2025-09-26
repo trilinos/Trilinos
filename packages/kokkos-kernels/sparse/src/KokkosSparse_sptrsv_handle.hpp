@@ -119,9 +119,9 @@ class SPTRSVHandle {
   struct cuSparseHandleType {
     cusparseHandle_t handle;
     cusparseOperation_t transpose;
-    cusparseSpMatDescr_t matDescr;
-    cusparseDnVecDescr_t vecBDescr, vecBDescr_dummy;
-    cusparseDnVecDescr_t vecXDescr, vecXDescr_dummy;
+    cusparseSpMatDescr_t matDescr{nullptr};
+    cusparseDnVecDescr_t vecBDescr{nullptr}, vecBDescr_dummy{nullptr};
+    cusparseDnVecDescr_t vecXDescr{nullptr}, vecXDescr_dummy{nullptr};
     cusparseSpSVDescr_t spsvDescr;
     void *pBuffer{nullptr};
 
@@ -147,6 +147,10 @@ class SPTRSVHandle {
       KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(matDescr));
       KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseSpSV_destroyDescr(spsvDescr));
       KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroy(handle));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecBDescr_dummy));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecXDescr_dummy));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecBDescr));
+      KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecXDescr));
     }
   };
 #else  // CUDA_VERSION < 11030

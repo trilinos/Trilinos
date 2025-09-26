@@ -939,7 +939,6 @@ TEST(Selector, get_parts_intersection_ranked)
   EXPECT_EQ(1u, selector1Parts.size());
   EXPECT_EQ(rankedPart.mesh_meta_data_ordinal(), selector1Parts[0]->mesh_meta_data_ordinal());
 
-  stk::mesh::Selector selector2 = unrankedPart & rankedPart;
   stk::mesh::PartVector selector2Parts;
   selector1.get_parts(selector2Parts);
   EXPECT_EQ(1u, selector2Parts.size());

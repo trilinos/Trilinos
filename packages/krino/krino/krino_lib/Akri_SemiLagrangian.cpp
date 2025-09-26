@@ -29,7 +29,7 @@ template <typename FACET>
 ExtensionVelocityFunction build_extension_velocity_at_closest_point_using_facets_with_velocity(const FacetedSurfaceBase & facets)
 {
   const auto & facetsWithVelocity = facets.as_derived_type<FACET>();
-  auto extv = [&](const double time, const stk::math::Vector3d & closestPt)
+  auto extv = [&](const double /*time*/, const stk::math::Vector3d & closestPt)
   {
     const auto * nearest = facetsWithVelocity.get_closest_facet(closestPt);
     return nearest->velocity_at_closest_point(closestPt);
@@ -129,7 +129,7 @@ BoundingBox compute_padded_node_bounding_box_for_semilagrangian_using_facets_wit
   return nodeBBox;
 }
 
-static stk::math::Vector3d compute_semilagrangian_departure_point(const int dim,
+static stk::math::Vector3d compute_semilagrangian_departure_point(const int /*dim*/,
     const double timeN,
     const double timeNp1,
     const stk::math::Vector3d & pt,
@@ -205,7 +205,7 @@ static stk::math::Vector3d compute_semilagrangian_departure_point(const int dim,
   return coordsNp1;
 }
 
-static stk::math::Vector3d compute_predicted_departure_point(const int dim,
+static stk::math::Vector3d compute_predicted_departure_point(const int /*dim*/,
     const double timeN,
     const double timeNp1,
     const stk::math::Vector3d & pt,
@@ -218,7 +218,7 @@ static stk::math::Vector3d compute_predicted_departure_point(const int dim,
   return coordsTilde;
 }
 
-static stk::math::Vector3d compute_corrected_departure_point(const int dim,
+static stk::math::Vector3d compute_corrected_departure_point(const int /*dim*/,
     const double timeN,
     const double timeNp1,
     const stk::math::Vector3d & pt,

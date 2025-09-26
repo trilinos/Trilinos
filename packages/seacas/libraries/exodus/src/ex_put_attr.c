@@ -85,7 +85,7 @@ int ex_put_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
     EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate attribute variable for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);
@@ -101,7 +101,7 @@ int ex_put_attr(int exoid, ex_entity_type blk_type, ex_entity_id blk_id, const v
     status = nc_put_var_double(exoid, attrid, attrib);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to put attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(blk_type), blk_id, exoid);

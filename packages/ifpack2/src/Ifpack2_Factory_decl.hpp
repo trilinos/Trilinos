@@ -23,7 +23,7 @@
 namespace Ifpack2 {
 
 //! \C true if the specified preconditioner type supports nonsymmetric matrices, else false.
-bool supportsUnsymmetric (const std::string& prec_type);
+bool supportsUnsymmetric(const std::string& prec_type);
 
 /*!
 \class Factory
@@ -80,7 +80,7 @@ prec->compute ();
 \endcode
 */
 class Factory {
-public:
+ public:
   /** \brief Create an instance of Ifpack2_Preconditioner given the string
    * name of the preconditioner type.
    *
@@ -91,15 +91,13 @@ public:
    * does not exist.  Otherwise, return a newly created preconditioner
    * object.
    */
-  template<class MatrixType>
-  static
-  Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
-                              typename MatrixType::local_ordinal_type,
-                              typename MatrixType::global_ordinal_type,
-                              typename MatrixType::node_type> >
-  create (const std::string& precType,
-          const Teuchos::RCP<const MatrixType>& matrix)
-  {
+  template <class MatrixType>
+  static Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
+                                     typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> >
+  create(const std::string& precType,
+         const Teuchos::RCP<const MatrixType>& matrix) {
     using Teuchos::RCP;
     using Teuchos::rcp_implicit_cast;
     typedef typename MatrixType::scalar_type SC;
@@ -109,11 +107,11 @@ public:
     typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
 
     RCP<const row_matrix_type> A;
-    if (! matrix.is_null ()) {
-      A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    if (!matrix.is_null()) {
+      A = rcp_implicit_cast<const row_matrix_type>(matrix);
     }
     Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
-    return factory.create (precType, A);
+    return factory.create(precType, A);
   }
 
   /** \brief Create an instance of Ifpack2_Preconditioner given the string
@@ -131,16 +129,14 @@ public:
    * does not exist.  Otherwise, return a newly created preconditioner
    * object.
    */
-  template<class MatrixType>
-  static
-  Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
-                              typename MatrixType::local_ordinal_type,
-                              typename MatrixType::global_ordinal_type,
-                              typename MatrixType::node_type> >
-  create (const std::string& precType,
-          const Teuchos::RCP<const MatrixType>& matrix,
-          const int overlap)
-  {
+  template <class MatrixType>
+  static Teuchos::RCP<Preconditioner<typename MatrixType::scalar_type,
+                                     typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> >
+  create(const std::string& precType,
+         const Teuchos::RCP<const MatrixType>& matrix,
+         const int overlap) {
     using Teuchos::RCP;
     using Teuchos::rcp_implicit_cast;
     typedef typename MatrixType::scalar_type SC;
@@ -150,29 +146,38 @@ public:
     typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
 
     RCP<const row_matrix_type> A;
-    if (! matrix.is_null ()) {
-      A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    if (!matrix.is_null()) {
+      A = rcp_implicit_cast<const row_matrix_type>(matrix);
     }
     Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
-    return factory.create (precType, A, overlap);
+    return factory.create(precType, A, overlap);
   }
 
-  template<class MatrixType>
-  static
-  bool
-  isSupported (const std::string& precType)
-  {
+  template <class MatrixType>
+  static std::vector<std::string>
+  getSupportedNames() {
+    using SC = typename MatrixType::scalar_type;
+    using LO = typename MatrixType::local_ordinal_type;
+    using GO = typename MatrixType::global_ordinal_type;
+    using NT = typename MatrixType::node_type;
+
+    Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
+    return factory.getSupportedNames();
+  }
+
+  template <class MatrixType>
+  static bool
+  isSupported(const std::string& precType) {
     typedef typename MatrixType::scalar_type SC;
     typedef typename MatrixType::local_ordinal_type LO;
     typedef typename MatrixType::global_ordinal_type GO;
     typedef typename MatrixType::node_type NT;
 
     Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
-    return factory.isSupported (precType);
+    return factory.isSupported(precType);
   }
-
 };
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_FACTORY_DECL_HPP
+#endif  // IFPACK2_FACTORY_DECL_HPP

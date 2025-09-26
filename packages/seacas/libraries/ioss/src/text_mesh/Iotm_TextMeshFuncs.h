@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 
@@ -18,6 +18,14 @@
 #include <iostream>
 #include <stdexcept>
 #include <numeric>
+
+#if defined(_WIN32) && !defined(__MINGW32__)
+#include <string.h>
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#else
+#include <strings.h>
+#endif
 
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
@@ -85,12 +93,12 @@ namespace Iotm {
       return tokens;
     }
 
-    inline void convert_to_upper_case(std::string &str)
+    inline void convert_to_uppercase(std::string &str)
     {
       std::transform(str.begin(), str.end(), str.begin(), ::toupper);
     }
 
-    inline void convert_to_lower_case(std::string &str)
+    inline void convert_to_lowercase(std::string &str)
     {
       std::transform(str.begin(), str.end(), str.begin(), ::tolower);
     }

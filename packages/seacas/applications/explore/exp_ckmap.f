@@ -28,6 +28,23 @@ C     simple check.  Instead, we do an indexed sort and check for no
 C     duplicate adjacent values.
 
       nerr = 0
+
+      ibad = 0
+      do iel = 1, icnt
+         if (map(iel) .le. 0) then
+            ibad = ibad + 1
+            indx(ibad) = iel
+         end if
+      end do
+      if (ibad .gt. 0) then
+         write (stra, 10002) ibad, type
+10002    FORMAT('MAP ERROR: There are ',I12,' ',A,
+     $        ' with invalid global ids (<= 0): ')
+         call sqzstr(stra, lstra)
+         CALL PRTERR ('CMDSPEC', STRA(:lstra))
+         call formlist(indx, ibad)
+      end if
+
       if (icnt .le. 1) return
 
       CALL INDEXI (MAP, INDX, ICNT, .TRUE.)
@@ -49,26 +66,29 @@ C     debugging potential database corruption issues.  Do it here.
       CALL PRTERR ('CMDSPEC', STRA(:lstra))
 
       ILAST = MAP(INDX(1))
-      DO 100 IEL = 2, ICNT
-        if (map(indx(iel)) .eq. ilast) then
-           if (nerr .lt. maxerrs .or. maxerrs .le. 0) then
-              write (stra, 10000) type, ilast, type,
-     *             indx(iel-1), indx(iel)
-10000         FORMAT('MAP ERROR: ',A,' global  id ',I12,
-     *             ' assigned to ',A,'s', I12,' and ',I12,'.')
-              call sqzstr(stra, lstra)
-              CALL PRTERR ('CMDSPEC', STRA(:lstra))
-           else if (nerr .eq. maxerrs .and. maxerrs .gt. 0) then
-              call prterr('CMDSPEC',
-     $             '...skipping additional errors...')
-           end if
-           nerr = nerr + 1
-        end if
-        ilast = map(indx(iel))
-  100 CONTINUE
-      if (nerr .gt. 0) then
-         write (stra, 10010) nerr, type
-10010    FORMAT('MAP ERROR: Found ',I12,' errors in ',A,' map check.')
+      DO IEL = 2, ICNT
+         if (map(indx(iel)) .eq. ilast) then
+            if (ilast .ne. 0) then
+               if (nerr .lt. maxerrs .or. maxerrs .le. 0) then
+                  write (stra, 10000) type, ilast, type,
+     *                 indx(iel-1), indx(iel)
+10000             FORMAT('MAP ERROR: ',A,' global  id ',I12,
+     *                 ' assigned to ',A,'s', I12,' and ',I12,'.')
+                  call sqzstr(stra, lstra)
+                  CALL PRTERR ('CMDSPEC', STRA(:lstra))
+               else if (nerr .eq. maxerrs .and. maxerrs .gt. 0) then
+                  call prterr('CMDSPEC',
+     $                 '...skipping additional errors...')
+               end if
+               nerr = nerr + 1
+            end if
+         end if
+         ilast = map(indx(iel))
+      END DO
+      if (ibad .gt. 0 .or. nerr .gt. 0) then
+         write (stra, 10010) ibad, nerr, type
+10010    FORMAT('MAP ERROR: Found ',I12, ' bad ids and ',I12,
+     $        ' other errors in ',A,' map check.')
          call sqzstr(stra, lstra)
          CALL PRTERR ('CMDSPEC', STRA(:lstra))
       end if

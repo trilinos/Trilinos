@@ -22,7 +22,13 @@
 #include <functional>
 #include <stdexcept>
 #include <numeric>
+#if defined(_WIN32) && !defined(__MINGW32__)
+#include <string.h>
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#else
 #include <strings.h>
+#endif
 
 #include "Iotm_TextMeshFuncs.h"
 
@@ -118,7 +124,7 @@ namespace Iotm {
 
       const GroupData *get_group_data(std::string name) const
       {
-        convert_to_upper_case(name);
+        convert_to_uppercase(name);
         if (is_registered(name)) {
           return &m_groupDataVec[m_groupDataMap[name]];
         }
@@ -164,7 +170,7 @@ namespace Iotm {
       {
         GroupData &groupData = m_groupDataVec[index];
 
-        convert_to_upper_case(groupData.name);
+        convert_to_uppercase(groupData.name);
         validate_group_meta_data(groupData);
 
         m_partNames.push_back(groupData.name);

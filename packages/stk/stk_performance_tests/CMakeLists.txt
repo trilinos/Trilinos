@@ -6,25 +6,35 @@ if(HAVE_STK_Trilinos)
 
 else()
 
+  FILE(GLOB SOURCES_MIDDLE_MESH CONFIGURE_DEPENDS stk_middle_mesh/*.cpp)
+
   FILE(GLOB SOURCES CONFIGURE_DEPENDS stk_balance/*.cpp
                                       stk_io/*.cpp
                                       stk_mesh/*.cpp
                                       stk_mesh/entity_sorting/*.cpp
                                       general/*.cpp
-                                      stk_middle_mesh/*.cpp
                                       stk_search/*.cpp
+                                      stk_transfer/*.cpp
                                       stk_util/*.cpp
       )
+
+  if (STK_ENABLE_STKMiddle_mesh_util)
+    LIST(APPEND SOURCES ${SOURCES_MIDDLE_MESH})
+  endif()
 
   FILE(GLOB HEADERS CONFIGURE_DEPENDS stk_mesh/*.hpp)
 
   add_executable(stk_performance_tests ${SOURCES})
   target_link_libraries(stk_performance_tests stk_unit_main)
   target_link_libraries(stk_performance_tests stk_balance_lib)
-  target_link_libraries(stk_performance_tests stk_middle_mesh_util)
-  target_link_libraries(stk_performance_tests stk_middle_mesh)
+  if (STK_ENABLE_STKMiddle_mesh_util)
+    target_link_libraries(stk_performance_tests stk_middle_mesh_util)
+    target_link_libraries(stk_performance_tests stk_middle_mesh)
+  endif()
   target_link_libraries(stk_performance_tests stk_coupling)
   target_link_libraries(stk_performance_tests stk_search)
+  target_link_libraries(stk_performance_tests stk_search_util)  
+  target_link_libraries(stk_performance_tests stk_transfer_util)
   target_link_libraries(stk_performance_tests stk_io_util)
   target_link_libraries(stk_performance_tests stk_util_diag)
   target_link_libraries(stk_performance_tests stk_tools_lib)

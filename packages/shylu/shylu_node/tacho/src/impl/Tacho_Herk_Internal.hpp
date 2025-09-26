@@ -37,7 +37,7 @@ template <typename ArgUplo, typename ArgTrans> struct Herk<ArgUplo, ArgTrans, Al
 
     if (n > 0 && k > 0)
       BlasTeam<value_type>::herk(member, ArgUplo::param, ArgTrans::param, n, k, value_type(alpha), A.data(),
-                                 A.stride_1(), value_type(beta), C.data(), C.stride_1());
+                                 A.stride(1), value_type(beta), C.data(), C.stride(1));
     return 0;
   }
 };

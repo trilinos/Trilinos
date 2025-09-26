@@ -18,6 +18,7 @@ using namespace Iocatalyst;
 class ManagerTest : public ::testing::Test
 {
 protected:
+  std::string                         phactoriDriverPath = "/path/to/my/PhactoriDriver.py";
   Ioss::PropertyManager               props;
   Ioss::ParallelUtils                 putils;
   CatalystManager::CatalystProps      catalystProps;
@@ -63,6 +64,13 @@ protected:
     EXPECT_EQ(n[dp + CatalystManager::FS + CatalystManager::CYCLE].as_int(), state - 1);
     EXPECT_EQ(n[dp + CatalystManager::FS + CatalystManager::TIMESTEP].as_int(), state - 1);
   }
+
+  void setPhactoriEnvVar()
+  {
+    setenv(CatalystManager::PHACTORI_DRIVER_SCRIPT_PATH.c_str(), phactoriDriverPath.c_str(), 1);
+  }
+
+  void unsetPhactoriEnvVar() { unsetenv(CatalystManager::PHACTORI_DRIVER_SCRIPT_PATH.c_str()); }
 };
 
 TEST_F(LoggingTest, LoggingDefault)
@@ -107,8 +115,11 @@ TEST_F(ManagerTest, CATALYST_BLOCK_PARSE_JSON_STRING)
 {
   std::string jsonScript = "{foo: 12}";
   props.add(Ioss::Property("CATALYST_BLOCK_PARSE_JSON_STRING", jsonScript));
+  setPhactoriEnvVar();
   initialize();
   EXPECT_EQ(catalystProps.catalystBlockJSON, jsonScript);
+  EXPECT_EQ(phactoriDriverPath, CatalystManager::getInstance().getCatalystPythonDriverPath());
+  unsetPhactoriEnvVar();
 }
 
 TEST_F(ManagerTest, PHACTORI_JSON_SCRIPT)
@@ -120,17 +131,26 @@ TEST_F(ManagerTest, PHACTORI_JSON_SCRIPT)
   jsonFile << jsonScript;
   jsonFile.close();
   props.add(Ioss::Property(CatalystManager::PHACTORI_JSON_SCRIPT, jsonFileName));
+  setPhactoriEnvVar();
   initialize();
   EXPECT_EQ(catalystProps.catalystBlockJSON, jsonScript);
+  EXPECT_EQ(phactoriDriverPath, CatalystManager::getInstance().getCatalystPythonDriverPath());
   remove(jsonFileName.c_str());
+  unsetPhactoriEnvVar();
+}
+
+TEST_F(ManagerTest, PHACTORI_DRIVER_PATH)
+{
+  EXPECT_THROW(CatalystManager::getInstance().getCatalystPythonDriverPath(), std::runtime_error);
+
+  setPhactoriEnvVar();
+  initialize();
+  EXPECT_EQ(phactoriDriverPath, CatalystManager::getInstance().getCatalystPythonDriverPath());
+  unsetPhactoriEnvVar();
 }
 
 TEST_F(ManagerTest, CATALYST_SCRIPT)
 {
-  initialize();
-  EXPECT_EQ(catalystProps.catalystPythonFilename,
-            CatalystManager::getInstance().getCatalystPythonDriverPath());
-
   std::string catalystFileName = "/path/to/file/catalystFile.txt";
   props.add(Ioss::Property(CatalystManager::CATALYST_SCRIPT, catalystFileName));
   initialize();
@@ -236,7 +256,9 @@ TEST_F(ManagerTest, InitializeConduitPhactoriJSON)
   props.add(Ioss::Property(CatalystManager::CATALYST_OUTPUT_DIRECTORY, "temp"));
   props.add(Ioss::Property(CatalystManager::CATALYST_ENABLE_LOGGING, true));
   props.add(Ioss::Property(CatalystManager::CATALYST_DEBUG_LEVEL, 11));
+  setPhactoriEnvVar();
   initialize();
+  unsetPhactoriEnvVar();
   CatalystManager::getInstance().addScriptProps(n, catalystProps);
   compareConduit(CatalystManager::getInstance().getInitializeConduit(), n);
 }

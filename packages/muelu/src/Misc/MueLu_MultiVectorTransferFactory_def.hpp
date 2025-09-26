@@ -134,8 +134,8 @@ void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
 
     coarseVector = MultiVectorFactory::Build(coarseVectorMap, fineVector->getNumVectors());
 
-    auto lcl_fineVector   = fineVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
-    auto lcl_coarseVector = coarseVector->getDeviceLocalView(Xpetra::Access::OverwriteAll);
+    auto lcl_fineVector   = fineVector->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    auto lcl_coarseVector = coarseVector->getLocalViewDevice(Xpetra::Access::OverwriteAll);
 
     Kokkos::parallel_for(
         "MueLu:MultiVectorTransferFactory",

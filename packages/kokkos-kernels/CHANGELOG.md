@@ -1,5 +1,103 @@
 # Change Log
 
+## [4.7.00](https://github.com/kokkos/kokkos-kernels/tree/4.7.00)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.6.02...4.7.00)
+
+### New Features
+
+#### Batched updates
+- Implement batched serial gbtrf [\#2489](https://github.com/kokkos/kokkos-kernels/pull/2489)
+- Implement batched serial gbtrs [\#2539](https://github.com/kokkos/kokkos-kernels/pull/2539)
+
+### Enhancements:
+
+#### BLAS
+- Uses BLAS1 axpy execution space for internal deep_copy and fill operations [\#2663](https://github.com/kokkos/kokkos-kernels/pull/2663)
+- blas(dot): modernize `DotFunctor` [\#2606](https://github.com/kokkos/kokkos-kernels/pull/2606)
+- Rework dot performance tests [\#2544](https://github.com/kokkos/kokkos-kernels/pull/2544)
+
+#### LAPACK
+- Lapack - SVD: Unifying SVector layout to LayoutLeft [\#2621](https://github.com/kokkos/kokkos-kernels/pull/2621)
+
+#### Batched
+- Add getrf-getrs example [\#2672](https://github.com/kokkos/kokkos-kernels/pull/2672)
+- Add batched serial gbtrf/gbtrs example [\#2664](https://github.com/kokkos/kokkos-kernels/pull/2664)
+- Add pbtrf/pbtrs example [\#2659](https://github.com/kokkos/kokkos-kernels/pull/2659)
+- Add pttrf/pttrs example [\#2655](https://github.com/kokkos/kokkos-kernels/pull/2655)
+- Refactor batched serial pttrs implementation details and tests [\#2555](https://github.com/kokkos/kokkos-kernels/pull/2555)
+- Refactor batched serial pttrf implementation details and tests [\#2530](https://github.com/kokkos/kokkos-kernels/pull/2530)
+
+#### TPL support
+- Improve TPL singletons [\#2630](https://github.com/kokkos/kokkos-kernels/pull/2630)
+- sptrsv_cusparse: must call cusparseSpSV_analysis when matrix values have changed [\#2568](https://github.com/kokkos/kokkos-kernels/pull/2568)
+
+### Build System:
+- Remove redundant `ADD_LIBRARY(Kokkos::kokkoskernels)` [\#2652](https://github.com/kokkos/kokkos-kernels/pull/2652)
+- CMake: Remove unused export set [\#2647](https://github.com/kokkos/kokkos-kernels/pull/2647)
+- FindTPLSUPERLU.cmake: Add missing CheckCSourceCompiles [\#2637](https://github.com/kokkos/kokkos-kernels/pull/2637)
+- FIND_PACKAGE(CUDAToolkit) to find CUDA TPLs [\#2547](https://github.com/kokkos/kokkos-kernels/pull/2547)
+- std::filesystem library for gcc < 9.1 and Clang < 9.0 [\#2545](https://github.com/kokkos/kokkos-kernels/pull/2545)
+- rocTPLs: modifying cmake logic to prioritize find_package [\#2554](https://github.com/kokkos/kokkos-kernels/pull/2554)
+
+### Bug Fixes:
+- Update partition_space() call to match Kokkos core changes [\#2685](https://github.com/kokkos/kokkos-kernels/pull/2685)
+- Don't lint deprecated macro [\#2674](https://github.com/kokkos/kokkos-kernels/pull/2674)
+- Fixing an issue revealed by CodeQL/dependabot [\#2673](https://github.com/kokkos/kokkos-kernels/pull/2673)
+- SYCL: fixing issues revealed with icpx 2025 [\#2669](https://github.com/kokkos/kokkos-kernels/pull/2669)
+- CrsMatrix / BsrMatrix: set row_block_offsets when using deprecated StaticCrsGraph [\#2666](https://github.com/kokkos/kokkos-kernels/pull/2666)
+- BLAS1 reciprocal: Disable some vectorization for GCC 12/13 [\#2653](https://github.com/kokkos/kokkos-kernels/pull/2653)
+- Random fixes necessary to build after OSX update... [\#2649](https://github.com/kokkos/kokkos-kernels/pull/2649)
+- Lapack - SVD: fixing build issue [\#2640](https://github.com/kokkos/kokkos-kernels/pull/2640)
+- Use old Kokkos::StaticCrsGraph interface when deprecated code enabled [\#2662](https://github.com/kokkos/kokkos-kernels/pull/2662)
+- Stride name fix [\#2634](https://github.com/kokkos/kokkos-kernels/pull/2634)
+- Fix unused variable warning [\#2629](https://github.com/kokkos/kokkos-kernels/pull/2629)
+- Fix team Gemm quick return [\#2626](https://github.com/kokkos/kokkos-kernels/pull/2626)
+- Add missing header to KokkosSparse_par_ilut.hpp [\#2613](https://github.com/kokkos/kokkos-kernels/pull/2613)
+- Fix illegal use of stride [\#2593](https://github.com/kokkos/kokkos-kernels/pull/2593)
+- Fix #2336: in StaticCrsGraph use default_size_type [\#2553](https://github.com/kokkos/kokkos-kernels/pull/2553)
+
+### Deprecations:
+- Warn about __KOKKOSBATCHED_PROMOTION__ deprecation [\#2657](https://github.com/kokkos/kokkos-kernels/pull/2657)
+- __KOKKOSBATCHED_ENABLE_AVX__ -> KOKKOSBATCHED_IMPL_ENABLE_AVX [\#2451](https://github.com/kokkos/kokkos-kernels/pull/2451)
+- Deprecate __KOKKOSBATCHED_ENABLE_LAPACKE__ [\#2450](https://github.com/kokkos/kokkos-kernels/pull/2450)
+- Deprecate __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ [\#2449](https://github.com/kokkos/kokkos-kernels/pull/2449)
+
+### Cleanup:
+- Rename reserved identifiers in library [\#2658](https://github.com/kokkos/kokkos-kernels/pull/2658) ,[\#2574](https://github.com/kokkos/kokkos-kernels/pull/2574) ,[\#2573](https://github.com/kokkos/kokkos-kernels/pull/2573) ,[\#2571](https://github.com/kokkos/kokkos-kernels/pull/2571) ,[\#2689](https://github.com/kokkos/kokkos-kernels/pull/2689) ,[\#2677](https://github.com/kokkos/kokkos-kernels/pull/2677) ,[\#2675](https://github.com/kokkos/kokkos-kernels/pull/2675), [\#2642](https://github.com/kokkos/kokkos-kernels/pull/2642), [\#2686](https://github.com/kokkos/kokkos-kernels/pull/2686)
+- sparse(static-crs-graph): remove useless initializers and add copy-convert constructor [\#2654](https://github.com/kokkos/kokkos-kernels/pull/2654)
+- trtri perf test: remove unused function [\#2690](https://github.com/kokkos/kokkos-kernels/pull/2690)
+- Perftests benchmark cleanup [\#2639](https://github.com/kokkos/kokkos-kernels/pull/2639)
+- Replace uses of get_suggested_vector__size with kk_get_suggested_vector_size [\#2572](https://github.com/kokkos/kokkos-kernels/pull/2572)
+- Remove _-prefixed include guard [\#2577](https://github.com/kokkos/kokkos-kernels/pull/2577)
+- Remove log-style printf from NewtonSolve [\#2549](https://github.com/kokkos/kokkos-kernels/pull/2549)
+- Remove `KokkosBlas_dot_mv_perf_test` [\#2548](https://github.com/kokkos/kokkos-kernels/pull/2548)
+- Remove more reserved identifiers [\#2534](https://github.com/kokkos/kokkos-kernels/pull/2534)
+- Remove some use of deprecated macros [\#2532](https://github.com/kokkos/kokkos-kernels/pull/2532), [\#2531](https://github.com/kokkos/kokkos-kernels/pull/2531)
+
+### Documentation and Testing:
+- docs: `KokkosBlas2_gemm.hpp` -> `KokkosBlas3_gemm.hpp` [\#2699](https://github.com/kokkos/kokkos-kernels/pull/2699)
+- docs: testing literalinclude as proposed by Yuuichi [\#2644](https://github.com/kokkos/kokkos-kernels/pull/2644)
+- docs: Minor fixes [\#2638](https://github.com/kokkos/kokkos-kernels/pull/2638)
+- docs: adding API documentation template [\#2579](https://github.com/kokkos/kokkos-kernels/pull/2579)
+- Documentation changes enforcement [\#2559](https://github.com/kokkos/kokkos-kernels/pull/2559)
+- Unit test for KOKKOSKERNELS_CUDA_INDEPENDENT_THREADS [\#2569](https://github.com/kokkos/kokkos-kernels/pull/2569)
+- Add CUDA 12.6.2 + compute sanitizer PR test [\#2641](https://github.com/kokkos/kokkos-kernels/pull/2641)
+- PR tests on ROCm 6.2.1 [\#2556](https://github.com/kokkos/kokkos-kernels/pull/2556)
+- Benchmark: adding a label for benchmark tests [\#2687](https://github.com/kokkos/kokkos-kernels/pull/2687)
+
+## [4.6.02](https://github.com/kokkos/kokkos-kernels/tree/4.6.02)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.6.01...4.6.02)
+
+### Bug Fixes:
+- Sycl: Avoid warning for explicit instantiations with storage class [\#2615](https://github.com/kokkos/kokkos-kernels/pull/2615)
+- Sycl: Fix constexpr condition to test long double complex type [\#2688](https://github.com/kokkos/kokkos-kernels/pull/2688)
+
+## [4.6.01](https://github.com/kokkos/kokkos-kernels/tree/4.6.01)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.6.00...4.6.01)
+
+### Bug Fixes:
+- Par_ilut enhancements and fixes [\#2605](https://github.com/kokkos/kokkos-kernels/pull/2605)
+
 ## [4.6.00](https://github.com/kokkos/kokkos-kernels/tree/4.6.00)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.5.01...4.6.00)
 

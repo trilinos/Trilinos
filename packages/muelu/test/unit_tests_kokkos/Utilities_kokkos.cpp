@@ -145,7 +145,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, GetMatrixDiagonal, Scalar, L
 
   auto A        = MueLu_TestHelper_Factory::Build1DPoisson(100);
   auto diag     = Utils::GetMatrixDiagonal(*A);
-  auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
+  auto diagView = diag->getLocalViewHost(Xpetra::Access::ReadOnly);
 
   TEST_EQUALITY(diagView.extent(0), A->getLocalNumRows());
 
@@ -166,7 +166,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, GetMatrixDiagonalInverse, Sc
 
   auto A        = MueLu_TestHelper_Factory::Build1DPoisson(100);
   auto diag     = Utils::GetMatrixDiagonalInverse(*A);
-  auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
+  auto diagView = diag->getLocalViewHost(Xpetra::Access::ReadOnly);
 
   TEST_EQUALITY(diagView.extent(0), A->getLocalNumRows());
 
@@ -186,7 +186,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, GetMatrixOverlappedDiagonal,
 
   auto A        = MueLu_TestHelper_Factory::Build1DPoisson(100);
   auto diag     = Utils::GetMatrixOverlappedDiagonal(*A);
-  auto diagView = diag->getHostLocalView(Xpetra::Access::ReadOnly);
+  auto diagView = diag->getLocalViewHost(Xpetra::Access::ReadOnly);
 
   for (size_t idx = 0; idx < diagView.extent(0); ++idx) {
     TEST_EQUALITY(diagView(idx, 0), Scalar(2));
@@ -206,14 +206,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, FindNonZeros, Scalar, LocalO
   auto A          = MueLu_TestHelper_Factory::Build1DPoisson(100);
   auto map        = A->getMap();
   auto vector     = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
-  auto vectorView = vector->getDeviceLocalView(Xpetra::Access::ReadOnly);
+  auto vectorView = vector->getLocalViewDevice(Xpetra::Access::ReadOnly);
 
   Kokkos::View<bool *, typename Node::device_type> nonZeros("", vectorView.extent(0));
   unsigned int result = 0;
 
   // Zero-ed out Vector
   {
-    Utils::FindNonZeros(vector->getDeviceLocalView(Xpetra::Access::ReadOnly), nonZeros);
+    Utils::FindNonZeros(vector->getLocalViewDevice(Xpetra::Access::ReadOnly), nonZeros);
 
     Kokkos::parallel_reduce(
         "", RangeType(0, nonZeros.extent(0)),
@@ -226,7 +226,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, FindNonZeros, Scalar, LocalO
   {
     vector->putScalar(TST::one());
 
-    Utils::FindNonZeros(vector->getDeviceLocalView(Xpetra::Access::ReadOnly), nonZeros);
+    Utils::FindNonZeros(vector->getLocalViewDevice(Xpetra::Access::ReadOnly), nonZeros);
 
     Kokkos::parallel_reduce(
         "", RangeType(0, nonZeros.extent(0)),
@@ -306,7 +306,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, ZeroDirichletRows, Scalar, L
     const auto zeroVal = Scalar(0.25);
     Utils::ZeroDirichletRows(vector, dcols, zeroVal);
 
-    auto vecView = vector->getHostLocalView(Xpetra::Access::ReadOnly);
+    auto vecView = vector->getLocalViewHost(Xpetra::Access::ReadOnly);
 
     for (size_t idx = 0; idx < vecView.extent(0); ++idx) {
       TEST_EQUALITY(vecView(localRowToZero, idx), zeroVal);
@@ -381,41 +381,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, ApplyRowSumCriterion, Scalar
     TEST_EQUALITY(dRowsHost(idx), true);
   }
 }  // ApplyRowSumCriterion
-
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, MyOldScaleMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-#include <MueLu_UseShortNames.hpp>
-  MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-
-  using TST                      = Teuchos::ScalarTraits<Scalar>;
-  using Utils                    = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using MueLu_TestHelper_Factory = MueLuTests::TestHelpers_kokkos::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-  auto A = MueLu_TestHelper_Factory::Build1DPoisson(100);
-  auto B = MueLu_TestHelper_Factory::Build1DPoisson(100);
-
-  Teuchos::ArrayRCP<Scalar> arr(100, Scalar(2.0));
-
-  Utils::MyOldScaleMatrix(*A, arr, false);
-
-  const auto localMatrixScaled   = A->getLocalMatrixHost();
-  const auto localMatrixOriginal = B->getLocalMatrixHost();
-  const auto numRows             = A->getLocalNumRows();
-  for (size_t row = 0; row < numRows; ++row) {
-    auto scaledRowView = localMatrixScaled.row(row);
-    auto origRowView   = localMatrixOriginal.row(row);
-    auto length        = scaledRowView.length;
-
-    for (int colID = 0; colID < length; colID++) {
-      TEST_EQUALITY(scaledRowView.value(colID), Scalar(2.0) * origRowView.value(colID));
-    }
-  }
-
-#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-  TEST_THROW(Utils::MyOldScaleMatrix_Epetra(*A, arr, false, false), MueLu::Exceptions::RuntimeError);
-#endif
-
-}  // MyOldScaleMatrix
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, ApplyOAZToMatrixRows, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
@@ -523,10 +488,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, TransformFunctions, Scalar, 
   TEST_EQUALITY(transposeRes->getGlobalNumRows(), A->getGlobalNumRows());
   TEST_EQUALITY(transposeRes->getLocalNumRows(), A->getLocalNumRows());
 
-  auto tpetraRow = Utils::Op2TpetraRow(A);
+  auto tpetraRow = Xpetra::toTpetraRowMatrix(A);
   compareMat(*A, *tpetraRow);
 
-  auto nonConstTpetraRow = Utils::Op2NonConstTpetraRow(A);
+  auto nonConstTpetraRow = Xpetra::toTpetraRowMatrix(A);
   compareMat(*A, *nonConstTpetraRow);
 
   auto tpetraMap = toTpetra(map);
@@ -613,7 +578,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, UtilsFunctions, Scalar, Loca
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ZeroDirichletRows, SC, LO, GO, NO)             \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ZeroDirichletCols, SC, LO, GO, NO)             \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ApplyRowSumCriterion, SC, LO, GO, NO)          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, MyOldScaleMatrix, SC, LO, GO, NO)              \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, ApplyOAZToMatrixRows, SC, LO, GO, NO)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, TransformFunctions, SC, LO, GO, NO)            \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities_kokkos, UtilsFunctions, SC, LO, GO, NO)

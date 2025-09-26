@@ -149,12 +149,12 @@ void Gemm(const int NN) {
               const double one = 1.0;
               if (std::is_same<value_type, double>::value) {
                 cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, BlkSize, BlkSize, BlkSize, one,
-                            (double *)aa.data(), aa.stride_0(), (double *)bb.data(), bb.stride_0(), one,
-                            (double *)cc.data(), cc.stride_0());
+                            (double *)aa.data(), aa.stride(0), (double *)bb.data(), bb.stride(0), one,
+                            (double *)cc.data(), cc.stride(0));
               } else if (std::is_same<value_type, Kokkos::complex<double> >::value) {
                 cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, BlkSize, BlkSize, BlkSize, (void *)&one,
-                            (void *)aa.data(), aa.stride_0(), (void *)bb.data(), bb.stride_0(), (void *)&one,
-                            (void *)cc.data(), cc.stride_0());
+                            (void *)aa.data(), aa.stride(0), (void *)bb.data(), bb.stride(0), (void *)&one,
+                            (void *)cc.data(), cc.stride(0));
               }
             });
 
@@ -191,9 +191,9 @@ void Gemm(const int NN) {
       double tavg = 0, tmin = tmax;
 
       MKL_INT blksize[1] = {BlkSize};
-      MKL_INT lda[1]     = {a.stride_1()};
-      MKL_INT ldb[1]     = {b.stride_1()};
-      MKL_INT ldc[1]     = {c.stride_1()};
+      MKL_INT lda[1]     = {a.stride(1)};
+      MKL_INT ldb[1]     = {b.stride(1)};
+      MKL_INT ldc[1]     = {c.stride(1)};
 
       CBLAS_TRANSPOSE transA[1] = {CblasNoTrans};
       CBLAS_TRANSPOSE transB[1] = {CblasNoTrans};
@@ -279,14 +279,14 @@ void Gemm(const int NN) {
 
           if (std::is_same<value_type, double>::value) {
             mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_NOTRANS, BlkSize, BlkSize, BlkSize, done,
-                              (const double *)a.data(), (MKL_INT)a.stride_1(), (const double *)b.data(),
-                              (MKL_INT)b.stride_1(), done, (double *)c.data(), (MKL_INT)c.stride_1(), format,
+                              (const double *)a.data(), (MKL_INT)a.stride(1), (const double *)b.data(),
+                              (MKL_INT)b.stride(1), done, (double *)c.data(), (MKL_INT)c.stride(1), format,
                               N * VectorLength);
           } else if (std::is_same<value_type, Kokkos::complex<double> >::value) {
             mkl_zgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_NOTRANS, BlkSize, BlkSize, BlkSize,
-                              (MKL_Complex16 *)&zone, (const double *)a.data(), (MKL_INT)a.stride_1(),
-                              (const double *)b.data(), (MKL_INT)b.stride_1(), (MKL_Complex16 *)&zone,
-                              (double *)c.data(), (MKL_INT)c.stride_1(), format, N * VectorLength);
+                              (MKL_Complex16 *)&zone, (const double *)a.data(), (MKL_INT)a.stride(1),
+                              (const double *)b.data(), (MKL_INT)b.stride(1), (MKL_Complex16 *)&zone,
+                              (double *)c.data(), (MKL_INT)c.stride(1), format, N * VectorLength);
           }
 
           HostSpaceType().fence();
@@ -319,7 +319,7 @@ void Gemm(const int NN) {
     Kokkos::View<value_type ***, Kokkos::LayoutRight, HostSpaceType> a("a", N * VectorLength, BlkSize, BlkSize),
         b("b", N * VectorLength, BlkSize, BlkSize), c("c", N * VectorLength, BlkSize, BlkSize);
 
-    libxsmm_blasint lda = a.stride_1(), ldb = b.stride_1(), ldc = c.stride_1();
+    libxsmm_blasint lda = a.stride(1), ldb = b.stride(1), ldc = c.stride(1);
 
     {
       const Kokkos::RangePolicy<HostSpaceType, ScheduleType> policy(0, N * VectorLength);

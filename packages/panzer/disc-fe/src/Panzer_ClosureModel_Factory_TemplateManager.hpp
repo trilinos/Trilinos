@@ -25,7 +25,7 @@ namespace panzer {
   template<typename Traits>
   class ClosureModelFactory_TemplateManager : 
     public PHX::TemplateManager<typename Traits::EvalTypes,
-				panzer::ClosureModelFactoryBase,
+				                        panzer::ClosureModelFactoryBase,
                                 panzer::ClosureModelFactory<_> > {
 
   public:

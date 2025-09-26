@@ -38,8 +38,6 @@
 
 #include <MueLu_Utilities.hpp>
 
-#include <MueLu_MutuallyExclusiveTime.hpp>
-
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
@@ -745,7 +743,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
     if (printTimings) {
       TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
-      MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
     }
 
     success = true;

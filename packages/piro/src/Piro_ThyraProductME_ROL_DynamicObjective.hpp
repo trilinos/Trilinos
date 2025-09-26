@@ -109,7 +109,9 @@ public:
 
   void gradient_z( Teuchos::RCP<Thyra::VectorBase<Real>> &g, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x, const Teuchos::RCP<const Thyra::VectorBase<Real>> &x_dot, 
                     const Teuchos::RCP<const Thyra::VectorBase<Real>> &p, const Real &t) const;
-
+  
+  using ROL::DynamicObjective<Real>::update;
+  
   void update( const ROL::Vector<Real> &x, ROL::UpdateType type, int iter = -1 ) {
     (void) x;
     (void) type;
@@ -194,7 +196,6 @@ value( const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
               const ROL::Vector<Real> &p, const ROL::TimeStamp<Real> &timeStamp ) const
 {
   using Teuchos::RCP;
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   if(onlyFinalTime_ && (int) timeStamp.k != Nt_-1) {
     if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
@@ -238,7 +239,6 @@ gradient_uo( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
               const ROL::Vector<Real> &p, const ROL::TimeStamp<Real> &timeStamp ) const
 {
   using Teuchos::RCP;
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
     *out_ << "Piro::ThyraProductME_ROL_DynamicObjective::gradient_uo " << timeStamp.t[0] << " " << timeStamp.t[timeStamp.t.size()-1] << " " << timeStamp.k << " " << Nt_ << std::endl;
@@ -285,7 +285,6 @@ gradient_un( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL:
               const ROL::Vector<Real> &p, const ROL::TimeStamp<Real> &timeStamp ) const
 {
   using Teuchos::RCP;
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   if(onlyFinalTime_ && (int) timeStamp.k != Nt_-1) {
     if(verbosityLevel_ >= Teuchos::VERB_EXTREME)
@@ -333,7 +332,6 @@ gradient_z( ROL::Vector<Real> &grad, const ROL::Vector<Real> &u_old, const ROL::
               const ROL::Vector<Real> &p, const ROL::TimeStamp<Real> &timeStamp ) const
 {
   using Teuchos::RCP;
-  typedef Thyra::ModelEvaluatorBase MEB;
 
   if(onlyFinalTime_ && (int) timeStamp.k != Nt_-1) {
     if(verbosityLevel_ >= Teuchos::VERB_EXTREME)

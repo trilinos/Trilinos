@@ -1,0 +1,54 @@
+<ParameterList name="MueLu">
+
+  <!--
+    For 3D elasticity, these are the recommended settings for MueLu.
+  -->
+
+  <!-- ===========  GENERAL ================ -->
+    <Parameter        name="problem: type"                        type="string"   value="Elasticity-3D"/>
+
+    <Parameter        name="use kokkos refactor"                  type="bool"     value="true"/>
+    <Parameter        name="verbosity"                            type="string"   value="high"/>
+
+    <Parameter        name="coarse: max size"                     type="int"      value="1000"/>
+
+    <Parameter        name="multigrid algorithm"                  type="string"   value="emin"/>
+
+    <!-- reduces setup cost for symmetric problems -->
+    <Parameter        name="transpose: use implicit"              type="bool"     value="true"/>
+
+    <!-- start of default values for general options (can be omitted) -->
+    <Parameter        name="max levels"                	          type="int"      value="10"/>
+    <Parameter        name="number of equations"                  type="int"      value="3"/>
+
+  <!-- ===========  AGGREGATION  =========== -->
+    <Parameter        name="aggregation: type"                      type="string"   value="uncoupled"/>
+    <Parameter        name="aggregation: drop scheme"               type="string"   value="distance laplacian"/>
+    <Parameter        name="aggregation: distance laplacian metric" type="string"   value="material"/>
+    <Parameter        name="aggregation: drop tol"                  type="double"   value="0.04"/>
+
+  <!-- ===========  SMOOTHING  =========== -->
+    <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/>
+    <ParameterList    name="smoother: params">
+      <Parameter      name="chebyshev: degree"                    type="int"      value="2"/>>
+      <Parameter      name="chebyshev: ratio eigenvalue"          type="double"   value="7"/>
+      <Parameter      name="chebyshev: min eigenvalue"            type="double"   value="1.0"/>
+      <Parameter      name="chebyshev: zero starting solution"    type="bool"     value="true"/>
+    </ParameterList>
+
+  <!-- ===========  REPARTITIONING  =========== -->
+    <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
+    <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
+    <Parameter        name="repartition: start level"             type="int"      value="2"/>
+    <Parameter        name="repartition: min rows per proc"       type="int"      value="800"/>
+    <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
+    <Parameter        name="repartition: remap parts"             type="bool"     value="false"/>
+    <!-- start of default values for repartitioning (can be omitted) -->
+    <Parameter name="repartition: remap parts"                type="bool"     value="true"/>
+    <Parameter name="repartition: rebalance P and R"          type="bool"     value="false"/>
+    <ParameterList name="repartition: params">
+       <Parameter name="algorithm" type="string" value="multijagged"/>
+    </ParameterList>
+    <!-- end of default values -->
+
+</ParameterList>

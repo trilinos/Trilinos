@@ -138,45 +138,61 @@ clone_meta_data_parts_and_fields(const stk::mesh::MetaData & in_meta, stk::mesh:
 void copy_field_data(const stk::mesh::BulkData & inMesh, stk::mesh::BulkData & outMesh,
                      const stk::mesh::FieldBase & inField, const stk::mesh::FieldBase & outField)
 {
-  if ( !inField.data_traits().is_pod ) {
-    return;
-  }
 
-  inField.sync_to_host();
-  outField.sync_to_host();
-  outField.modify_on_host();
+  inField.synchronize<stk::mesh::ReadOnly>();
+  outField.synchronize<stk::mesh::ReadWrite>();
 
   stk::mesh::EntityRank entityRank = outField.entity_rank();
   STK_ThrowRequire(inField.entity_rank() == entityRank);
 
-  stk::mesh::MetaData & outMeta = outMesh.mesh_meta_data();
-  const bool outMeshAuraFromCommunication = outMesh.is_automatic_aura_on() && !inMesh.is_automatic_aura_on();
-  stk::mesh::Selector fieldSelector =
-      outMeshAuraFromCommunication ?
-      (stk::mesh::selectField(outField) & !outMeta.aura_part()) : stk::mesh::selectField(outField);
+  const stk::mesh::MetaData & inMeta = inMesh.mesh_meta_data();
+  const stk::mesh::MetaData & outMeta = outMesh.mesh_meta_data();
 
-  const stk::mesh::BucketVector & buckets = outMesh.get_buckets(entityRank, fieldSelector);
+  stk::mesh::Selector inFieldSelector = stk::mesh::selectField(inField) & !inMeta.aura_part();
+  const stk::mesh::BucketVector & inBuckets = inMesh.get_buckets(entityRank, inFieldSelector);
 
-  for ( auto && bucketPtr : buckets ) {
-    const stk::mesh::Bucket & b = *bucketPtr;
-    const unsigned bucketLength = b.size();
-    const unsigned outLength = stk::mesh::field_bytes_per_entity(outField, b);
-    unsigned char * const outBucketData = reinterpret_cast<unsigned char *>( stk::mesh::field_data( outField, b ) );
+  stk::mesh::Selector outFieldSelector = stk::mesh::selectField(outField) & !outMeta.aura_part();
+  const stk::mesh::BucketVector & outBuckets = outMesh.get_buckets(entityRank, outFieldSelector);
 
-    for (unsigned ib=0; ib<bucketLength; ++ib) {
-      stk::mesh::Entity outEntity = b[ib];
-      stk::mesh::Entity inEntity = inMesh.get_entity( entityRank, outMesh.identifier(outEntity) );
-      const auto inLength = stk::mesh::field_bytes_per_entity(inField, inEntity);
-      STK_ThrowRequireMsg(inMesh.is_valid(inEntity), "Missing entity " << outMesh.entity_key(outEntity));
-      STK_ThrowRequireMsg(inLength == outLength,
-          "Mismatched field size for field " << inField.name() << " in_length = " << inLength << " outLength = " << outLength << "\n"
-          << " for input entity " << inMesh.entity_key(inEntity) << " on " << inMesh.parallel_owner_rank(inEntity)
-          << " and output entity " << outMesh.entity_key(outEntity) << " on " << outMesh.parallel_owner_rank(outEntity) );
+  STK_ThrowRequire(inBuckets.size() == outBuckets.size());
 
-      unsigned char * const outData = outBucketData + ib*outLength;
-      unsigned char * const inData = reinterpret_cast<unsigned char *>( stk::mesh::field_data( inField, inEntity ) );
-      for ( unsigned i = 0; i < outLength; i++ ) outData[i] = inData[i];
+  auto copy_bytes = [&](auto& inBucketBytes, auto& outBucketBytes) {
+    STK_ThrowRequireMsg(inBucketBytes.num_bytes() == outBucketBytes.num_bytes(),
+                        "Mismatched field size for field " << inField.name() << " inLength = "
+                        << inBucketBytes.num_bytes() << " outLength = " << outBucketBytes.num_bytes() << "\n");
+
+    STK_ThrowRequireMsg(inBucketBytes.num_entities() == outBucketBytes.num_entities(),
+                        "Mismatched bucket length for field " << inField.name() << " inLength = "
+                        << inBucketBytes.num_entities() << " outLength = " << outBucketBytes.num_entities() << "\n");
+
+    for (stk::mesh::EntityIdx entity : inBucketBytes.entities()) {
+      for (stk::mesh::ByteIdx idx : inBucketBytes.bytes()) {
+        outBucketBytes(entity,idx) = inBucketBytes(entity,idx);
+      }
     }
+  };
+
+  auto inFieldBytes = inField.data_bytes<const std::byte>();
+  auto outFieldBytes = outField.data_bytes<std::byte>();
+
+  if (inField.host_data_layout() == stk::mesh::Layout::Right) {
+    for (size_t i = 0; i<inBuckets.size(); ++i) {
+      auto inBucketBytes = inFieldBytes.bucket_bytes<stk::mesh::Layout::Right>(*inBuckets[i]);
+      auto outBucketBytes = outFieldBytes.bucket_bytes<stk::mesh::Layout::Right>(*outBuckets[i]);
+      copy_bytes(inBucketBytes, outBucketBytes);
+    }
+  }
+
+  else if (inField.host_data_layout() == stk::mesh::Layout::Left) {
+    for (size_t i = 0; i<inBuckets.size(); ++i) {
+      auto inBucketBytes = inFieldBytes.bucket_bytes<stk::mesh::Layout::Left>(*inBuckets[i]);
+      auto outBucketBytes = outFieldBytes.bucket_bytes<stk::mesh::Layout::Left>(*outBuckets[i]);
+      copy_bytes(inBucketBytes, outBucketBytes);
+    }
+  }
+
+  else {
+    STK_ThrowErrorMsg("Unsupported host Field data layout: " << inField.host_data_layout());
   }
 }
 
@@ -200,6 +216,26 @@ void copy_field_data(const stk::mesh::BulkData & inMesh, stk::mesh::BulkData & o
   if (outMeshAuraFromCommunication) {
     const std::vector<stk::mesh::Ghosting *> ghostings = outMesh.ghostings();
     const std::vector<const stk::mesh::FieldBase *> const_fields(outFields.begin(), outFields.end());
+    stk::mesh::communicate_field_data(*ghostings[stk::mesh::BulkData::AURA], const_fields);
+  }
+}
+
+void copy_field_data(const stk::mesh::BulkData & inMesh, std::vector<stk::mesh::FieldBase*>& inFieldsToCopyFrom, stk::mesh::BulkData & outMesh, std::vector<stk::mesh::FieldBase*>& outFieldsToCopyTo )
+{
+
+//  STK_ThrowAssert(inFields.size() == outFields.size());
+
+  unsigned numFields = std::min(inFieldsToCopyFrom.size(), outFieldsToCopyTo.size());
+  for ( unsigned fieldIndex=0; fieldIndex < numFields; ++fieldIndex ) {
+    const stk::mesh::FieldBase & inField = *inFieldsToCopyFrom[fieldIndex];
+    const stk::mesh::FieldBase & outField = *outFieldsToCopyTo[fieldIndex];
+    copy_field_data(inMesh, outMesh, inField, outField);
+  }
+
+  const bool outMeshAuraFromCommunication = outMesh.is_automatic_aura_on() && !inMesh.is_automatic_aura_on();
+  if (outMeshAuraFromCommunication) {
+    const std::vector<stk::mesh::Ghosting *> ghostings = outMesh.ghostings();
+    const std::vector<const stk::mesh::FieldBase *> const_fields(outFieldsToCopyTo.begin(), outFieldsToCopyTo.end());
     stk::mesh::communicate_field_data(*ghostings[stk::mesh::BulkData::AURA], const_fields);
   }
 }

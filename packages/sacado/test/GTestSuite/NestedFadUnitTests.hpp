@@ -134,7 +134,7 @@ TYPED_TEST_SUITE_P(FadFadOpsUnitTest);
 #define BINARY_OP_TEST(FIXTURENAME,TESTNAME,OP)        \
   TYPED_TEST_P(FIXTURENAME, TESTNAME) {                \
     typedef decltype(this->a_dfad_) FadFadType;                   \
-    typedef typename Sacado::ValueType<FadFadType>::type FadType; \
+    typedef typename Sacado::ValueType<FadFadType>::type lFadType; \
     auto a_dfad = this->a_dfad_;                       \
     auto b_dfad = this->b_dfad_;                       \
     auto c_dfad = this->c_dfad_;                       \
@@ -147,18 +147,18 @@ TYPED_TEST_SUITE_P(FadFadOpsUnitTest);
                                                        \
     double val = this->urand.number();                 \
     c_dfad = a_dfad OP val;                            \
-    c_fad = a_fad OP FadType(val);                     \
+    c_fad = a_fad OP lFadType(val);                     \
     COMPARE_NESTED_FADS(c_dfad, c_fad);                \
                                                        \
     c_dfad = val OP b_dfad;                            \
-    c_fad = FadType(val) OP b_fad;                     \
+    c_fad = lFadType(val) OP b_fad;                     \
     COMPARE_NESTED_FADS(c_dfad, c_fad);                \
   }
 
 #define RELOP_TEST(FIXTURENAME,TESTNAME,OP)     \
   TYPED_TEST_P(FIXTURENAME, TESTNAME) {         \
     typedef decltype(this->a_dfad_) FadFadType;                   \
-    typedef typename Sacado::ValueType<FadFadType>::type FadType; \
+    typedef typename Sacado::ValueType<FadFadType>::type lFadType; \
     auto a_dfad = this->a_dfad_;                \
     auto b_dfad = this->b_dfad_;                \
     auto a_fad = this->a_fad_;                  \
@@ -169,18 +169,18 @@ TYPED_TEST_SUITE_P(FadFadOpsUnitTest);
                                                 \
     double val = this->urand.number();          \
     r1 = a_dfad OP val;                         \
-    r2 = a_fad OP FadType(val);                 \
+    r2 = a_fad OP lFadType(val);                 \
     ASSERT_TRUE(r1 == r2);                      \
                                                 \
     r1 = val OP b_dfad;                         \
-    r2 = FadType(val) OP b_fad;                 \
+    r2 = lFadType(val) OP b_fad;                 \
     ASSERT_TRUE(r1 == r2);                      \
   }
 
 #define BINARY_FUNC_TEST(FIXTURENAME,TESTNAME,FUNC)    \
   TYPED_TEST_P(FIXTURENAME, TESTNAME) {                \
     typedef decltype(this->a_dfad_) FadFadType;                   \
-    typedef typename Sacado::ValueType<FadFadType>::type FadType; \
+    typedef typename Sacado::ValueType<FadFadType>::type lFadType; \
     auto a_dfad = this->a_dfad_;                       \
     auto b_dfad = this->b_dfad_;                       \
     auto c_dfad = this->c_dfad_;                       \
@@ -193,11 +193,11 @@ TYPED_TEST_SUITE_P(FadFadOpsUnitTest);
                                                        \
     double val = this->urand.number();                 \
     c_dfad = FUNC (a_dfad,val);                        \
-    c_fad = FUNC (a_fad,FadType(val));                 \
+    c_fad = FUNC (a_fad,lFadType(val));                 \
     COMPARE_NESTED_FADS(c_dfad, c_fad);                \
                                                        \
     c_dfad = FUNC (val,b_dfad);                        \
-    c_fad = FUNC (FadType(val),b_fad);                 \
+    c_fad = FUNC (lFadType(val),b_fad);                 \
     COMPARE_NESTED_FADS(c_dfad, c_fad);                \
   }
 
@@ -283,9 +283,9 @@ UNARY_ASSIGNOP_TEST(FadFadOpsUnitTest, testDivideEquals, /=)
 
 TYPED_TEST_P(FadFadOpsUnitTest, testMax) {
   typedef decltype(this->a_dfad_) FadFadType;
-  typedef typename Sacado::ValueType<FadFadType>::type FadType;
+  typedef typename Sacado::ValueType<FadFadType>::type lFadType;
 
-  FadType val;
+  lFadType val;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
@@ -327,7 +327,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testMax) {
   c_dfad = max(a_dfad, val);
   COMPARE_FADS(c_dfad.val(), val);
   for (int i=0; i<this->n1; i++) {
-    COMPARE_FADS(c_dfad.dx(i), FadType(0.0));
+    COMPARE_FADS(c_dfad.dx(i), lFadType(0.0));
   }
 
   val = a_dfad.val() - 1;
@@ -342,7 +342,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testMax) {
   c_dfad = max(val, b_dfad);
   COMPARE_FADS(c_dfad.val(), val);
   for (int i=0; i<this->n1; i++) {
-    COMPARE_FADS(c_dfad.dx(i), FadType(0.0));
+    COMPARE_FADS(c_dfad.dx(i), lFadType(0.0));
   }
 
   val = b_dfad.val() - 1;
@@ -356,9 +356,9 @@ TYPED_TEST_P(FadFadOpsUnitTest, testMax) {
 
 TYPED_TEST_P(FadFadOpsUnitTest, testMin) {
   typedef decltype(this->a_dfad_) FadFadType;
-  typedef typename Sacado::ValueType<FadFadType>::type FadType;
+  typedef typename Sacado::ValueType<FadFadType>::type lFadType;
 
-  FadType val;
+  lFadType val;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
@@ -386,7 +386,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testMin) {
   c_dfad = min(a_dfad, val);
   COMPARE_FADS(c_dfad.val(), val);
   for (int i=0; i<this->n1; i++) {
-    COMPARE_FADS(c_dfad.dx(i), FadType(0.0));
+    COMPARE_FADS(c_dfad.dx(i), lFadType(0.0));
   }
 
   val = a_dfad.val() + 1;
@@ -401,7 +401,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testMin) {
   c_dfad = min(val, b_dfad);
   COMPARE_FADS(c_dfad.val(), val);
   for (int i=0; i<this->n1; i++) {
-    COMPARE_FADS(c_dfad.dx(i), FadType(0.0));
+    COMPARE_FADS(c_dfad.dx(i), lFadType(0.0));
   }
 
   val = b_dfad.val() + 1;
@@ -428,7 +428,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testComposite1) {
 
 TYPED_TEST_P(FadFadOpsUnitTest, testPlusLR) {
   typedef decltype(this->a_dfad_) FadFadType;
-  typedef typename Sacado::ValueType<FadFadType>::type FadType;
+  typedef typename Sacado::ValueType<FadFadType>::type lFadType;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
@@ -436,9 +436,9 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPlusLR) {
   auto b_fad = this->b_fad_;
 
   FadFadType aa_dfad = a_dfad;
-  FAD::Fad< FadType > aa_fad = a_fad;
+  FAD::Fad< lFadType > aa_fad = a_fad;
   aa_dfad = 1.0;
-  aa_fad = FadType(1.0);
+  aa_fad = lFadType(1.0);
   aa_dfad = aa_dfad + b_dfad;
   aa_fad = aa_fad + b_fad;
   COMPARE_NESTED_FADS(aa_dfad, aa_fad);
@@ -446,7 +446,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPlusLR) {
 
 TYPED_TEST_P(FadFadOpsUnitTest, testMinusLR) {
   typedef decltype(this->a_dfad_) FadFadType;
-  typedef typename Sacado::ValueType<FadFadType>::type FadType;
+  typedef typename Sacado::ValueType<FadFadType>::type lFadType;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
@@ -454,9 +454,9 @@ TYPED_TEST_P(FadFadOpsUnitTest, testMinusLR) {
   auto b_fad = this->b_fad_;
 
   FadFadType aa_dfad = a_dfad;
-  FAD::Fad< FadType > aa_fad = a_fad;
+  FAD::Fad< lFadType > aa_fad = a_fad;
   aa_dfad = 1.0;
-  aa_fad = FadType(1.0);
+  aa_fad = lFadType(1.0);
   aa_dfad = aa_dfad - b_dfad;
   aa_fad = aa_fad - b_fad;
   COMPARE_NESTED_FADS(aa_dfad, aa_fad);
@@ -464,7 +464,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testMinusLR) {
 
 TYPED_TEST_P(FadFadOpsUnitTest, testTimesLR) {
   typedef decltype(this->a_dfad_) FadFadType;
-  typedef typename Sacado::ValueType<FadFadType>::type FadType;
+  typedef typename Sacado::ValueType<FadFadType>::type lFadType;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
@@ -472,9 +472,9 @@ TYPED_TEST_P(FadFadOpsUnitTest, testTimesLR) {
   auto b_fad = this->b_fad_;
 
   FadFadType aa_dfad = a_dfad;
-  FAD::Fad< FadType > aa_fad = a_fad;
+  FAD::Fad< lFadType > aa_fad = a_fad;
   aa_dfad = 2.0;
-  aa_fad = FadType(2.0);
+  aa_fad = lFadType(2.0);
   aa_dfad = aa_dfad * b_dfad;
   aa_fad = aa_fad * b_fad;
   COMPARE_NESTED_FADS(aa_dfad, aa_fad);
@@ -482,7 +482,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testTimesLR) {
 
 TYPED_TEST_P(FadFadOpsUnitTest, testDivideLR) {
   typedef decltype(this->a_dfad_) FadFadType;
-  typedef typename Sacado::ValueType<FadFadType>::type FadType;
+  typedef typename Sacado::ValueType<FadFadType>::type lFadType;
 
   auto a_dfad = this->a_dfad_;
   auto b_dfad = this->b_dfad_;
@@ -490,9 +490,9 @@ TYPED_TEST_P(FadFadOpsUnitTest, testDivideLR) {
   auto b_fad = this->b_fad_;
 
   FadFadType aa_dfad = a_dfad;
-  FAD::Fad< FadType > aa_fad = a_fad;
+  FAD::Fad< lFadType > aa_fad = a_fad;
   aa_dfad = 2.0;
-  aa_fad = FadType(2.0);
+  aa_fad = lFadType(2.0);
   aa_dfad = aa_dfad / b_dfad;
   aa_fad = aa_fad / b_fad;
   COMPARE_NESTED_FADS(aa_dfad, aa_fad);
@@ -501,8 +501,8 @@ TYPED_TEST_P(FadFadOpsUnitTest, testDivideLR) {
   // Check various corner cases for pow()
 TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   typedef decltype(this->a_dfad_) FadFadType;
-  typedef typename Sacado::ValueType<FadFadType>::type FadType;
-  typedef typename Sacado::ScalarType<FadFadType>::type ScalarType;
+  typedef typename Sacado::ValueType<FadFadType>::type lFadType;
+  typedef typename Sacado::ScalarType<FadFadType>::type lScalarType;
 
   auto a_dfad = this->a_dfad_;
 
@@ -512,14 +512,14 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   a = a_dfad;
   b = 3.456;
   c = pow(a, b);
-  ScalarType f = pow(a.val().val(), b.val().val());
-  ScalarType fp = b.val().val()*pow(a.val().val(),b.val().val()-1);
-  ScalarType fpp = b.val().val()*(b.val().val()-1)*pow(a.val().val(),b.val().val()-2);
-  cc = FadFadType(this->n1,FadType(this->n2,f));
+  lScalarType f = pow(a.val().val(), b.val().val());
+  lScalarType fp = b.val().val()*pow(a.val().val(),b.val().val()-1);
+  lScalarType fpp = b.val().val()*(b.val().val()-1)*pow(a.val().val(),b.val().val()-2);
+  cc = FadFadType(this->n1,lFadType(this->n2,f));
   for (int i=0; i<this->n2; ++i)
     cc.val().fastAccessDx(i) = fp*a.val().dx(i);
   for (int i=0; i<this->n1; ++i) {
-    cc.fastAccessDx(i) = FadType(this->n2,fp*a.dx(i).val());
+    cc.fastAccessDx(i) = lFadType(this->n2,fp*a.dx(i).val());
     for (int j=0; j<this->n2; ++j)
       cc.fastAccessDx(i).fastAccessDx(j) = fpp*a.dx(i).val()*a.val().dx(j) + fp*a.dx(i).dx(j);
   }
@@ -534,14 +534,14 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   // Constant b == 0
   b = 0.0;
   c = pow(a, b);
-  cc.val() = FadType(this->n2,1.0);
+  cc.val() = lFadType(this->n2,1.0);
   for (int i=0; i<this->n1; ++i)
     cc.fastAccessDx(i) = 0.0;
   COMPARE_NESTED_FADS(c, cc);
 
   // Constant scalar b == 0
   c = pow(a, b.val());
-  cc.val() = FadType(this->n2,1.0);
+  cc.val() = lFadType(this->n2,1.0);
   for (int i=0; i<this->n1; ++i)
     cc.fastAccessDx(i) = 0.0;
   COMPARE_NESTED_FADS(c, cc);
@@ -551,13 +551,13 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   // a == 0 and constant b as a Fad
   // This only works for DFad/SLFad, because there is no such thing as a
   // constant SFad.
-  if (!Sacado::IsStaticallySized<FadType>::value) {
+  if (!Sacado::IsStaticallySized<lFadType>::value) {
     a.val() = 0.0;
     b = 3.456;
     c = pow(a, b);
     cc.val() = 0.0;
     for (int i=0; i<this->n1; ++i)
-      cc.fastAccessDx(i) = FadType(this->n2,0.0);
+      cc.fastAccessDx(i) = lFadType(this->n2,0.0);
     COMPARE_NESTED_FADS(c, cc);
   }
 
@@ -567,7 +567,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   c = pow(a, b.val());
   cc.val() = 0.0;
   for (int i=0; i<this->n1; ++i)
-    cc.fastAccessDx(i) = FadType(this->n2,0.0);
+    cc.fastAccessDx(i) = lFadType(this->n2,0.0);
   COMPARE_NESTED_FADS(c, cc);
   c = pow(a, b.val().val());
   COMPARE_NESTED_FADS(c, cc);
@@ -577,7 +577,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   cc.val() = 1.0;
   for (int i=0; i<this->n1; ++i)
     cc.fastAccessDx(i) = 0.0;
-  if (!Sacado::IsStaticallySized<FadType>::value) {
+  if (!Sacado::IsStaticallySized<lFadType>::value) {
     c = pow(a, b);
     COMPARE_NESTED_FADS(c, cc);
     c = pow(a, b.val());
@@ -594,17 +594,17 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   f = pow(a.val().val(), b.val().val());
   fp = b.val().val()*pow(a.val().val(),b.val().val()-1);
   fpp = b.val().val()*(b.val().val()-1)*pow(a.val().val(),b.val().val()-2);
-  cc = FadFadType(this->n1,FadType(this->n2,f));
+  cc = FadFadType(this->n1,lFadType(this->n2,f));
   for (int i=0; i<this->n2; ++i)
     cc.val().fastAccessDx(i) = fp*a.val().dx(i);
   for (int i=0; i<this->n1; ++i) {
-    cc.fastAccessDx(i) = FadType(this->n2,fp*a.dx(i).val());
+    cc.fastAccessDx(i) = lFadType(this->n2,fp*a.dx(i).val());
     for (int j=0; j<this->n2; ++j)
       cc.fastAccessDx(i).fastAccessDx(j) = fpp*a.dx(i).val()*a.val().dx(j) + fp*a.dx(i).dx(j);
   }
 
   // a.val().val() == 0 with a.val().dx() != 0
-  if (!Sacado::IsStaticallySized<FadType>::value) {
+  if (!Sacado::IsStaticallySized<lFadType>::value) {
     COMPARE_NESTED_FADS(c, cc);
     c = pow(a, b.val());
     COMPARE_NESTED_FADS(c, cc);
@@ -616,7 +616,7 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   b = 1.0;
   c = pow(a, b);
   cc = a;
-  if (!Sacado::IsStaticallySized<FadType>::value) {
+  if (!Sacado::IsStaticallySized<lFadType>::value) {
     COMPARE_NESTED_FADS(c, cc);
     c = pow(a, b.val());
     COMPARE_NESTED_FADS(c, cc);
@@ -627,10 +627,10 @@ TYPED_TEST_P(FadFadOpsUnitTest, testPowConstB) {
   // a.val().val() == 0 and b == 0
   b = 0.0;
   c = pow(a, b);
-  cc.val() = FadType(this->n2, 1.0);
+  cc.val() = lFadType(this->n2, 1.0);
   for (int i=0; i<this->n1; ++i)
     cc.fastAccessDx(i) = 0.0;
-  if (!Sacado::IsStaticallySized<FadType>::value) {
+  if (!Sacado::IsStaticallySized<lFadType>::value) {
     COMPARE_NESTED_FADS(c, cc);
     c = pow(a, b.val());
     COMPARE_NESTED_FADS(c, cc);

@@ -25,6 +25,14 @@ TEST_F(LoggingTest, CatalystLoggingEnabled)
   EXPECT_EQ(log.getLogOutputDirectoryPath(), "/projects/bar/");
 }
 
+TEST_F(LoggingTest, CatalystLoggingFileInvalid)
+{
+  props.add(Ioss::Property("CATALYST_LOGGING_ENABLED", true));
+  props.add(Ioss::Property("CATALYST_LOGGING_OUTPUT_DIRECTORY_PATH", "/dev/null/invalid/"));
+  log.setProperties(&props);
+  EXPECT_NO_THROW(log.writeToLogFile());
+}
+
 TEST_F(LoggingTest, WriteLogDefault)
 {
   props.add(Ioss::Property("CATALYST_LOGGING_ENABLED", true));

@@ -96,6 +96,7 @@ else()
 
   target_link_libraries(stk_balance_lib PUBLIC search_tolerance_algs)
   target_link_libraries(stk_balance_lib PUBLIC stk_io)
+  target_link_libraries(stk_balance_lib PUBLIC stk_transfer_util)
   target_link_libraries(stk_balance_lib PUBLIC stk_tools_lib)
   target_link_libraries(stk_balance_lib PUBLIC stk_util_registry)
   target_link_libraries(stk_balance_lib PUBLIC stk_util_command_line)

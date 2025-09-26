@@ -40,6 +40,7 @@
 #include "KokkosKernels_Error.hpp"
 #include "KokkosSparse_par_ilut_symbolic_spec.hpp"
 #include "KokkosSparse_par_ilut_numeric_spec.hpp"
+#include "std_algorithms/Kokkos_IsSorted.hpp"
 
 namespace KokkosSparse {
 namespace Experimental {
@@ -325,13 +326,24 @@ void par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap, AEntriesType&
   if (handle->get_par_ilut_handle()->is_symbolic_complete() == false) {
     std::ostringstream os;
     os << "KokkosSparse::Experimental::par_ilut_numeric: par_ilut_symbolic "
-          "must be "
-          "called before par_ilut_numeric.";
+          "must be called before par_ilut_numeric.";
     KokkosKernels::Impl::throw_runtime_exception(os.str());
   }
 
-  KK_REQUIRE_MSG(KokkosSparse::Impl::isCrsGraphSorted(L_rowmap, L_entries), "L is not sorted");
-  KK_REQUIRE_MSG(KokkosSparse::Impl::isCrsGraphSorted(U_rowmap, U_entries), "U is not sorted");
+  // Rowmap sizes should match
+  if (A_rowmap.extent(0) != 0) {
+    KK_REQUIRE_MSG(A_rowmap.size() == L_rowmap.size(), "A rows does not match L rows");
+    KK_REQUIRE_MSG(A_rowmap.size() == U_rowmap.size(), "A rows does not match U rows");
+  }
+
+  // Clear contents of outputs
+  Kokkos::deep_copy(L_entries, 0);
+  Kokkos::deep_copy(U_entries, 0);
+  Kokkos::deep_copy(L_values, 0);
+  Kokkos::deep_copy(U_values, 0);
+
+  // Check that A is sorted
+  KK_REQUIRE_MSG(KokkosSparse::Impl::isCrsGraphSorted(A_rowmap, A_entries), "A is not sorted");
 
   using c_size_t   = typename KernelHandle::const_size_type;
   using c_lno_t    = typename KernelHandle::const_nnz_lno_t;
@@ -340,6 +352,10 @@ void par_ilut_numeric(KernelHandle* handle, ARowMapType& A_rowmap, AEntriesType&
   using c_exec_t    = typename KernelHandle::HandleExecSpace;
   using c_temp_t    = typename KernelHandle::HandleTempMemorySpace;
   using c_persist_t = typename KernelHandle::HandlePersistentMemorySpace;
+
+  // Check that L and U rowmaps are valid
+  KK_REQUIRE_MSG(Kokkos::Experimental::is_sorted(c_exec_t(), L_rowmap), "L_rowmap is invalid");
+  KK_REQUIRE_MSG(Kokkos::Experimental::is_sorted(c_exec_t(), U_rowmap), "U_rowmap is invalid");
 
   using const_handle_type = typename KokkosKernels::Experimental::KokkosKernelsHandle<c_size_t, c_lno_t, c_scalar_t,
                                                                                       c_exec_t, c_temp_t, c_persist_t>;

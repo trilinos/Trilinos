@@ -903,9 +903,9 @@ namespace BaskerNS
        {
 	 
 	 if(Options.verbose == BASKER_TRUE)
-	   {
+	 {
 //	 printf("kid: %ld col: %ld need to realloc, unnz: %ld ucnt: %ld uunnz: %ld U_col: %ld U_row: %ld \n", kid, k, unnz, ucnt, uunnz, U_col, U_row);
-   std::cout << "kid: "  << kid
+         std::cout << "kid: "  << kid
              << " col: " << k
              << " need to realloc, unnz: " << unnz
              << " ucnt: " << ucnt
@@ -2174,9 +2174,9 @@ namespace BaskerNS
    //if((maxindex == L.max_idx) || (pivot == 0)
    if((maxindex == BASKER_MAX_IDX) || (pivot == (Entry)(0)) )
      {
-       cout << "Error: Matrix is singular, col, lvl: " << l <<endl;
-       cout << "MaxIndex: " << maxindex << " pivot " 
-	    << pivot << endl;
+       std::cout << "Error: Matrix is singular, col, lvl: " << l << std::endl;
+       std::cout << "MaxIndex: " << maxindex << " pivot " 
+	    << pivot << std::endl;
        return 2;
      }          
   
@@ -2194,9 +2194,9 @@ namespace BaskerNS
      
        if(Options.verbose == BASKER_TRUE)
 	 {
-       cout << "Lower Col Reallocing L oldsize: " 
+           std::cout << "Lower Col Reallocing L oldsize: " 
 	    << llnnz 
-	    << " newsize: " << newsize << endl;
+	    << " newsize: " << newsize << std::endl;
 	 }
       
        if(Options.realloc == BASKER_FALSE)
@@ -2222,9 +2222,9 @@ namespace BaskerNS
 
        if(Options.verbose == BASKER_TRUE)
 	 {
-       cout << "Lower Col Reallocing U oldsize: " 
+           std::cout << "Lower Col Reallocing U oldsize: " 
 	    << uunnz 
-	    << " newsize " << newsize << endl;
+	    << " newsize " << newsize << std::endl;
 	 }
 
        if(Options.realloc == BASKER_FALSE)

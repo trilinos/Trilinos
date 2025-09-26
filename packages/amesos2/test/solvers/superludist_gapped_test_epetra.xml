@@ -1,0 +1,16 @@
+<ParameterList name="test_params">
+  <!-- Any of the test driver's command-line parameters may also be specified here -->
+  <ParameterList name="gap-ids-1procA.mm">
+    <Parameter name="complex" type="bool" value="false"/>
+
+    <ParameterList name="all_solver_params">
+      <Parameter name="rowmap" type="string" value="gap-ids-1proc-rowmap-epetra.mm"/>
+    </ParameterList>
+
+    <ParameterList name="SuperLU_DIST">
+        <ParameterList name="epetra">
+            <Parameter name="defaultrun" type="bool" value="true"/>
+        </ParameterList>
+    </ParameterList> <!-- end SuperLU_DIST -->
+  </ParameterList> <!-- end arc130.mtx -->
+</ParameterList>

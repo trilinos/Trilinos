@@ -47,7 +47,7 @@
 #include "stk_io/StkIoUtils.hpp"
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Comm.hpp"
-#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
+#include "stk_transfer_util/TransientFieldTransferById.hpp"
 #include "stk_util/diag/StringUtil.hpp"
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/parallel/OutputStreams.hpp"
@@ -116,19 +116,23 @@ void update_color_fields(stk::mesh::BulkData& bulk,
 {
   stk::mesh::MetaData& meta = bulk.mesh_meta_data();
   stk::mesh::FieldBase* colorField = get_coloring_field(meta, rootTopologyPart);
-  STK_ThrowRequireMsg(colorField != nullptr, "Root topology part not supported, created after I/O for topology " << rootTopologyPart.topology().name());
+  STK_ThrowRequireMsg(colorField != nullptr, "Root topology part not supported, created after I/O for topology " <<
+                      rootTopologyPart.topology().name());
 
   stk::mesh::EntityVector entities;
   stk::mesh::get_entities(bulk, rank, rootTopologyPart, entities);
-  for(stk::mesh::Entity entity : entities)
-  {
-    if(localIds.does_entity_have_local_id(entity))
-    {
-      unsigned localId = localIds.entity_to_local(entity);
-      int* colorData = static_cast<int*>(stk::mesh::field_data(*colorField, entity));
-      *colorData = coloredGraphVertices[localId];
+
+  stk::mesh::field_data_execute<int, stk::mesh::ReadWrite>(*colorField,
+    [&](auto& colorData) {
+      for (stk::mesh::Entity entity : entities) {
+        if (localIds.does_entity_have_local_id(entity)) {
+          unsigned localId = localIds.entity_to_local(entity);
+          auto entityColorData = colorData.entity_values(entity);
+          entityColorData() = coloredGraphVertices[localId];
+        }
+      }
     }
-  }
+  );
 }
 
 void fill_coloring_set(int* coloredGraphVertices, size_t numColoredGraphVertices, std::set<int>& colors)

@@ -26,7 +26,6 @@
 #include <omp.h>
 #endif
 
-using namespace std;
 
 //--------------------This is all depracated at this time---------//
 

@@ -36,29 +36,27 @@
 ///
 /// \note This defers to Tpetra::Utils::readHBMatrix for reading the
 ///   sparse matrix from the Matrix Market file.
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-read_matrix_hb (const std::string& hb_file,
-                const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                const Teuchos::RCP<Node>& node = Teuchos::null)
-{
-  using Teuchos::RCP;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+read_matrix_hb(const std::string& hb_file,
+               const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+               const Teuchos::RCP<Node>& node = Teuchos::null) {
   using std::cout;
   using std::endl;
+  using Teuchos::RCP;
 
-  RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewCounter ("read_matrix");
-  RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A;
+  RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewCounter("read_matrix");
+  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
   {
-    Teuchos::TimeMonitor timeMon (*timer);
-    Tpetra::Utils::readHBMatrix (hb_file, comm, A);
+    Teuchos::TimeMonitor timeMon(*timer);
+    Tpetra::Utils::readHBMatrix(hb_file, comm, A);
   }
-  if (comm->getRank () == 0) {
+  if (comm->getRank() == 0) {
     cout << "Proc 0: Time in seconds to read the Harwell-Boeing - format "
          << "sparse matrix and finish fillComplete(): "
-         << timer->totalElapsedTime () << endl;
+         << timer->totalElapsedTime() << endl;
   }
   return A;
 }
 
-#endif // _read_matrix_hpp_
-
+#endif  // _read_matrix_hpp_

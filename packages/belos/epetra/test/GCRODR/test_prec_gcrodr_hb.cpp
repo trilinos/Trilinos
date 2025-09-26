@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     int maxsubspace = 250;     // maximum number of blocks the solver can use for the subspace
     int recycle = 50;          // maximum size of recycle space
     int maxrestarts = 15;      // maximum number of restarts allowed
-    std::string filename("orsirr1.hb");
+    std::string filename("sherman5.hb");
     std::string ortho("IMGS");
     MT tol = 1.0e-10;          // relative residual tolerance
 

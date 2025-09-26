@@ -14,7 +14,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
@@ -26,7 +26,7 @@
 
 int main(int argc, char *argv[]) {
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   // Initialize MPI
   //
   MPI_Init(&argc,&argv);
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 
   // Create an Epetra communicator
   //
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
     printer.print(Anasazi::Errors,"Anasazi::BasicEigenproblem::setProblem() returned an error.\n");
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   os<<"------------------------------------------------------"<<std::endl;
   printer.print(Anasazi::Errors,os.str());
 
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
   return 0;

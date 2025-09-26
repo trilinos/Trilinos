@@ -73,7 +73,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
 
   /* first check if any sets are specified */
 
-  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != EX_NOERR) {
     if (status == NC_EBADDIM) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss defined for file id %d",
                ex_name_of_object(set_type), exoid);
@@ -97,7 +97,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (ex_get_ids(exoid, set_type, set_specs->sets_ids) != NC_NOERR) {
+  if (ex_get_ids(exoid, set_type, set_specs->sets_ids) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get %s ids for file id %d",
              ex_name_of_object(set_type), exoid);
     /* use error val from inquire */
@@ -125,7 +125,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
 
     if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
       if (ex_get_set_param(exoid, set_type, set_id, &(((int64_t *)num_entries_per_set)[i]),
-                           &(((int64_t *)num_dist_per_set)[i])) != NC_NOERR) {
+                           &(((int64_t *)num_dist_per_set)[i])) != EX_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by sub */
       }
 
@@ -153,7 +153,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
     }
     else {
       if (ex_get_set_param(exoid, set_type, set_id, &(((int *)num_entries_per_set)[i]),
-                           &(((int *)num_dist_per_set)[i])) != NC_NOERR) {
+                           &(((int *)num_dist_per_set)[i])) != EX_NOERR) {
         EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by sub */
       }
 
@@ -179,7 +179,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
       }
     }
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by subroutine */
     }
 
@@ -204,7 +204,7 @@ int ex_get_concat_sets(int exoid, ex_entity_type set_type, struct ex_set_specs *
           double *dbl_dist_fact = sets_dist_fact;
           status = ex_get_set_dist_fact(exoid, set_type, set_id, &(dbl_dist_fact[df_idx]));
         }
-        if (status != NC_NOERR) {
+        if (status != EX_NOERR) {
           EX_FUNC_LEAVE(EX_FATAL); /* error will be reported by subroutine */
         }
       }

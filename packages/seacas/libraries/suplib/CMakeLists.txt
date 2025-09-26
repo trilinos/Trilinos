@@ -105,6 +105,7 @@ SET(SOURCES
   pltone.f
   wheneq.f
   addlog.c
+  format_list.c
   )
 
 TRIBITS_ADD_LIBRARY(

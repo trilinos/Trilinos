@@ -8,14 +8,19 @@ source ${SCRIPTPATH:?}/common.bash
 function configure_ccache() {
     print_banner "Configuring ccache"
 
-    envvar_set_or_create CCACHE_NODISABLE true
-    envvar_set_or_create CCACHE_DIR '/fgs/trilinos/ccache/cache'
-    envvar_set_or_create CCACHE_BASEDIR "${WORKSPACE:?}"
-    envvar_set_or_create CCACHE_NOHARDLINK true
-    envvar_set_or_create CCACHE_UMASK 077
-    envvar_set_or_create CCACHE_MAXSIZE 100G
+    if [[ ${GENCONFIG_BUILD_NAME} == *"coverage"* ]]
+    then
+        message_std "PRDriver> " "Skipping ccache configuration due to being coverage build"
+    else
+        envvar_set_or_create CCACHE_NODISABLE true
+        envvar_set_or_create CCACHE_DIR '/fgs/trilinos/ccache/cache'
+        envvar_set_or_create CCACHE_BASEDIR "${WORKSPACE:?}"
+        envvar_set_or_create CCACHE_NOHARDLINK true
+        envvar_set_or_create CCACHE_UMASK 077
+        envvar_set_or_create CCACHE_MAXSIZE 100G
 
-    message_std "PRDriver> " "$(ccache --show-stats --verbose)"
+        message_std "PRDriver> " "$(ccache --show-stats --verbose)"
+    fi
 }
 
 
@@ -273,7 +278,8 @@ then
     test_cmd_options+=( "--use-explicit-cachefile ")
 fi
 
-if [[ ${GENCONFIG_BUILD_NAME} == *"framework"* ]]
+if [[ ${GENCONFIG_BUILD_NAME} == *"framework"*
+    || ${GENCONFIG_BUILD_NAME} == *"compsim"* ]]
 then
     test_cmd_options+=( "--skip-create-packageenables ")
 fi

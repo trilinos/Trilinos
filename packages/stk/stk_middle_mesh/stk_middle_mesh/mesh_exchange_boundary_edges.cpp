@@ -242,7 +242,7 @@ void MeshExchangeBoundaryEdges::gather_boundary_entity_counts_to_root()
 
   m_entityCountExchanger.start_nonblocking();
 
-  auto f = [&](int /*rank*/, const std::vector<int>& buf) {};
+  auto f = [&](int /*rank*/, const std::vector<int>& /*buf*/) {};
   m_entityCountExchanger.complete_receives(f);
 }
 

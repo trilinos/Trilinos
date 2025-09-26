@@ -38,7 +38,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
       int *devInfo = (int *)W.data();
       work_value_type *workspace = W.data() + 1;
       int lwork = (W.span() - 1);
-      r_val = Lapack<value_type>::sytrf(handle, CUBLAS_FILL_MODE_LOWER, m, A.data(), A.stride_1(), P.data(), workspace,
+      r_val = Lapack<value_type>::sytrf(handle, CUBLAS_FILL_MODE_LOWER, m, A.data(), A.stride(1), P.data(), workspace,
                                         lwork, devInfo);
     }
     return r_val;
@@ -51,7 +51,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
 
     int r_val(0);
     if (m > 0)
-      r_val = Lapack<value_type>::sytrf_buffersize(handle, m, A.data(), A.stride_1(), lwork);
+      r_val = Lapack<value_type>::sytrf_buffersize(handle, m, A.data(), A.stride(1), lwork);
     return r_val;
   }
 #endif
@@ -66,7 +66,7 @@ template <> struct LDL<Uplo::Lower, Algo::OnDevice> {
     int r_val(0);
     if (m > 0) {
       int *devInfo = (int *)W.data();
-      r_val = Lapack<value_type>::sytrf(handle, rocblas_fill_lower, m, A.data(), A.stride_1(), P.data(), devInfo);
+      r_val = Lapack<value_type>::sytrf(handle, rocblas_fill_lower, m, A.data(), A.stride(1), P.data(), devInfo);
     }
     return r_val;
   }

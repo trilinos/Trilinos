@@ -222,19 +222,19 @@ public:
     tensor.m_j_row_map = row_map_array_type( "j_row_map" , k_entry_count+1 );
 
     // Create mirror, is a view if is host memory
-    typename coord_array_type::HostMirror
+    typename coord_array_type::host_mirror_type
       host_k_coord = Kokkos::create_mirror_view( tensor.m_k_coord );
-    typename coord_array_type::HostMirror
+    typename coord_array_type::host_mirror_type
       host_j_coord = Kokkos::create_mirror_view( tensor.m_j_coord );
-    typename value_array_type::HostMirror
+    typename value_array_type::host_mirror_type
       host_value = Kokkos::create_mirror_view( tensor.m_value );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_num_k = Kokkos::create_mirror_view( tensor.m_num_k );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_num_j = Kokkos::create_mirror_view( tensor.m_num_j );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_k_row_map = Kokkos::create_mirror_view( tensor.m_k_row_map );
-    typename entry_array_type::HostMirror
+    typename entry_array_type::host_mirror_type
       host_j_row_map = Kokkos::create_mirror_view( tensor.m_j_row_map );
 
     // Compute k row map

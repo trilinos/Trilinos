@@ -867,7 +867,7 @@ init (const keys_type& keys,
   //
 
   // Will only create the mirror for buildInParallel false - but then use it in two places
-  typename keys_type::HostMirror theKeysHost;
+  typename keys_type::host_mirror_type theKeysHost;
 
   // The Kokkos kernel uses atomic update instructions to count the
   // number of "buckets" per offsets array (ptr) entry.  Atomic
@@ -1123,7 +1123,7 @@ init (const host_input_keys_type& keys,
   //ptr[0] = 0; // We've already done this when initializing ptr above.
 
   // curRowStart[i] is the offset of the next element in row i.
-  typename ptr_type::non_const_type::HostMirror curRowStart ("Tpetra::FixedHashTable::curRowStart", size);
+  typename ptr_type::non_const_type::host_mirror_type curRowStart ("Tpetra::FixedHashTable::curRowStart", size);
 
   // Fill in the hash table.
   FHT::FillPairsResult<KeyType> result (initMinKey, initMaxKey);

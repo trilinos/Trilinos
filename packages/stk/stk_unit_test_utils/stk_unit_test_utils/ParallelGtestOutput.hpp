@@ -46,6 +46,7 @@ namespace unit_test_util
 
 void create_parallel_output(int procId);
 void create_parallel_output_with_comm(int procId, MPI_Comm comm);
+void create_parallel_output_only_on_failure(int procId, MPI_Comm comm);
 
 }
 }

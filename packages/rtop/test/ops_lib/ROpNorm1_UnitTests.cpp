@@ -66,7 +66,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpNorm1, reduct, Scalar )
   using RTOpPack::DefaultReductTarget;
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
-  typedef ScalarTraits<ScalarMag> SMT;
 
   const ScalarMag three = as<ScalarMag>(3.0);
   const ScalarMag four = as<ScalarMag>(4.0);
