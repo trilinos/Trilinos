@@ -117,11 +117,21 @@ class CooMatrix {
     }
   }
 
+  //! The number of rows in the sparse matrix.
+  KOKKOS_INLINE_FUNCTION size_type numRows() const { return m_num_rows; }
+
   //! The number of columns in the sparse matrix.
   KOKKOS_INLINE_FUNCTION size_type numCols() const { return m_num_cols; }
 
-  //! The number of rows in the sparse matrix.
-  KOKKOS_INLINE_FUNCTION size_type numRows() const { return m_num_rows; }
+  /// \brief Modify the number of rows in the sparse matrix.
+  ///
+  /// This invalidates any algorithm handles which previously used this matrix.
+  void setNumRows(size_type r) { m_num_rows = r; }
+
+  /// \brief Modify the number of columns in the sparse matrix.
+  ///
+  /// This invalidates any algorithm handles which previously used this matrix.
+  void setNumCols(size_type c) { m_num_cols = c; }
 
   //! The number of stored entries in the sparse matrix, including zeros.
   KOKKOS_INLINE_FUNCTION size_type nnz() const { return m_data.extent(0); }

@@ -392,7 +392,11 @@ class Vector<SIMD<double>, 4> {
   using mag_type   = double;
 
   enum : int { vector_length = 4 };
+#if CUDA_VERSION >= 13000
+  typedef double4_16a data_type;
+#else
   typedef double4 data_type;
+#endif
 
   KOKKOS_INLINE_FUNCTION
   static const char *label() { return "GpuDouble4"; }
@@ -422,7 +426,7 @@ class Vector<SIMD<double>, 4> {
     _data.z = b._data.z;
     _data.w = b._data.w;
   }
-  KOKKOS_INLINE_FUNCTION Vector(const double4 &val) {
+  KOKKOS_INLINE_FUNCTION Vector(const data_type &val) {
     _data.x = val.x;
     _data.y = val.y;
     _data.z = val.z;
@@ -446,7 +450,7 @@ class Vector<SIMD<double>, 4> {
   }
 
   KOKKOS_INLINE_FUNCTION
-  type &operator=(const double4 &val) {
+  type &operator=(const data_type &val) {
     _data.x = val.x;
     _data.y = val.y;
     _data.z = val.z;
@@ -455,7 +459,7 @@ class Vector<SIMD<double>, 4> {
   }
 
   KOKKOS_INLINE_FUNCTION
-  double4 double4() const { return _data; }
+  data_type double4() const { return _data; }
 
   KOKKOS_INLINE_FUNCTION
   type &loadAligned(const value_type *p) {

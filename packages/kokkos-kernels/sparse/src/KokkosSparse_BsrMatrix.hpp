@@ -816,6 +816,11 @@ class BsrMatrix {
   //! The number of columns in the sparse matrix.
   KOKKOS_INLINE_FUNCTION ordinal_type numCols() const { return numCols_; }
 
+  /// \brief Modify the number of columns in the sparse matrix.
+  ///
+  /// This invalidates any algorithm handles which previously used this matrix.
+  void setNumCols(ordinal_type c) { numCols_ = c; }
+
   //! The block dimension in the sparse block matrix.
   KOKKOS_INLINE_FUNCTION ordinal_type blockDim() const { return blockDim_; }
 

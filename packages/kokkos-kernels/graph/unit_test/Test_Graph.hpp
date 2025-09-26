@@ -24,5 +24,6 @@
 #include "Test_Graph_coarsen.hpp"
 #endif
 #include "Test_Graph_rcm.hpp"
+#include "Test_Graph_rcb.hpp"
 
 #endif  // TEST_GRAPH_HPP
