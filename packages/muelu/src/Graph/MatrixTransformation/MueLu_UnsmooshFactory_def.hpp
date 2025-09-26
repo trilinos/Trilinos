@@ -20,7 +20,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::UnsmooshFactory() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> UnsmooshFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory for unamalgamated matrix. Row map of (unamalgamted) output prolongation operator should match row map of this A.");
   validParamList->set<RCP<const FactoryBase> >("P", Teuchos::null, "Generating factory of the (amalgamated) prolongator P");
