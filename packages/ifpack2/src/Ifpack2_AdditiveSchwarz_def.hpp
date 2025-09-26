@@ -197,6 +197,13 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::
 template <class MatrixType, class LocalInverseType>
 AdditiveSchwarz<MatrixType, LocalInverseType>::
     AdditiveSchwarz(const Teuchos::RCP<const row_matrix_type>& A,
+                    const Teuchos::RCP<const coord_type>& coordinates)
+  : Matrix_(A)
+  , Coordinates_(coordinates) {}
+
+template <class MatrixType, class LocalInverseType>
+AdditiveSchwarz<MatrixType, LocalInverseType>::
+    AdditiveSchwarz(const Teuchos::RCP<const row_matrix_type>& A,
                     const int overlapLevel)
   : Matrix_(A)
   , OverlapLevel_(overlapLevel) {}
@@ -229,6 +236,11 @@ AdditiveSchwarz<MatrixType, LocalInverseType>::getRangeMap() const {
 template <class MatrixType, class LocalInverseType>
 Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>> AdditiveSchwarz<MatrixType, LocalInverseType>::getMatrix() const {
   return Matrix_;
+}
+
+template <class MatrixType, class LocalInverseType>
+Teuchos::RCP<const Tpetra::MultiVector<typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>> AdditiveSchwarz<MatrixType, LocalInverseType>::getCoord() const {
+  return Coordinates_;
 }
 
 namespace {
@@ -981,6 +993,35 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::initialize() {
     setup();  // This does a lot of the initialization work.
 
     if (!Inverse_.is_null()) {
+      const std::string innerName = innerPrecName();
+      if ((innerName.compare("RILUK") == 0) && (Coordinates_ != Teuchos::null)) {
+        auto ifpack2_Inverse = Teuchos::rcp_dynamic_cast<Ifpack2::Details::LinearSolver<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>(Inverse_);
+        if (!IsOverlapping_ && !UseReordering_) {
+          ifpack2_Inverse->setCoord(Coordinates_);
+        } else {
+          RCP<coord_type> tmp_Coordinates_;
+          if (IsOverlapping_) {
+            tmp_Coordinates_ = rcp(new coord_type(OverlappingMatrix_->getRowMap(), Coordinates_->getNumVectors(), false));
+            Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> importer(Coordinates_->getMap(), tmp_Coordinates_->getMap());
+            tmp_Coordinates_->doImport(*Coordinates_, importer, Tpetra::INSERT);
+          } else {
+            tmp_Coordinates_ = rcp(new coord_type(*Coordinates_, Teuchos::Copy));
+          }
+          if (UseReordering_) {
+            auto coorDevice = tmp_Coordinates_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+            auto permDevice = perm_coors.view_device();
+            Kokkos::View<magnitude_type**, Kokkos::LayoutLeft> tmp_coor(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_coor"), coorDevice.extent(0), coorDevice.extent(1));
+            Kokkos::parallel_for(
+                Kokkos::RangePolicy<typename crs_matrix_type::execution_space>(0, static_cast<int>(coorDevice.extent(0))), KOKKOS_LAMBDA(const int& i) {
+                  for (int j = 0; j < static_cast<int>(coorDevice.extent(1)); j++) {
+                    tmp_coor(permDevice(i), j) = coorDevice(i, j);
+                  }
+                });
+            Kokkos::deep_copy(coorDevice, tmp_coor);
+          }
+          ifpack2_Inverse->setCoord(tmp_Coordinates_);
+        }
+      }
       Inverse_->symbolic();  // Initialize subdomain solver.
     }
 
@@ -1369,6 +1410,7 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::setup() {
         revperm[i] = i;
       }
     }
+
     // Now, construct the filter
     {
       Teuchos::TimeMonitor t(*Teuchos::TimeMonitor::getNewTimer("Filter construction"));
@@ -1378,6 +1420,16 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::setup() {
       else
         asf = rcp(new Details::AdditiveSchwarzFilter<MatrixType>(OverlappingMatrix_, perm, revperm, FilterSingletons_));
       innerMatrix_ = asf;
+    }
+
+    if (UseReordering_ && (Coordinates_ != Teuchos::null)) {
+      perm_coors = perm_dualview_type(Kokkos::view_alloc(Kokkos::WithoutInitializing, "perm_coors"), perm.size());
+      perm_coors.modify_host();
+      auto permHost = perm_coors.view_host();
+      for (local_ordinal_type i = 0; i < static_cast<local_ordinal_type>(perm.size()); i++) {
+        permHost(i) = perm[i];
+      }
+      perm_coors.sync_device();
     }
   } else {
     // Localized version of Matrix_ or OverlappingMatrix_.
@@ -1645,6 +1697,15 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
     DistributedImporter_ = Teuchos::null;
 
     Matrix_ = A;
+  }
+}
+
+template <class MatrixType, class LocalInverseType>
+void AdditiveSchwarz<MatrixType, LocalInverseType>::
+    setCoord(const Teuchos::RCP<const coord_type>& Coordinates) {
+  // Don't set unless it is different from the current one.
+  if (Coordinates.getRawPtr() != Coordinates_.getRawPtr()) {
+    Coordinates_ = Coordinates;
   }
 }
 
