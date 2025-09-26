@@ -210,14 +210,8 @@ namespace LOCA {
       //! Global data
       Teuchos::RCP<LOCA::GlobalData> globalData;
 
-      //! Parameter vector
-      LOCA::ParameterVector params;
-
       //! Parameter index in Thyra::ModelEvaluator
       std::vector<int> param_index;
-
-      //! Pointer to Thyra vector storing parameters
-      std::vector<Teuchos::RCP< const ::Thyra::VectorBase<double> > > param_thyra_vec;
 
       //! Pointer to x_dot vector of zeros
       Teuchos::RCP< const ::Thyra::VectorBase<double> > x_dot_vec;
@@ -248,8 +242,15 @@ namespace LOCA {
       bool set_transient_in_args_;
 
     private:
+      
+      //! Parameter vector  
+      // (private to make sure it's only modified in this class so that it can be kept in sync with the thyra vector)
+      LOCA::ParameterVector params;
 
-      void updateThyraParamView();
+      //! Pointer to Thyra vector storing parameters
+      std::vector<Teuchos::RCP< const ::Thyra::VectorBase<double> > > param_thyra_vec;
+
+      void updateThyraParam();
       void updateThyraXDot();
     };
 
