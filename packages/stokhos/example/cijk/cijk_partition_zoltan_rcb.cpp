@@ -334,9 +334,9 @@ int main(int argc, char **argv)
     // Build part list
     Teuchos::Array< Teuchos::Array<CijkData> > part_list(num_parts);
     int idx = 0;
-    Cijk_type::k_iterator k_begin = Cijk->k_begin();
-    Cijk_type::k_iterator k_end = Cijk->k_end();
-    for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+    Cijk_type::k_iterator k_begin2 = Cijk->k_begin();
+    Cijk_type::k_iterator k_end2 = Cijk->k_end();
+    for (Cijk_type::k_iterator k_it=k_begin2; k_it!=k_end2; ++k_it) {
       int k = index(k_it);
       Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
       Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);
@@ -360,13 +360,13 @@ int main(int argc, char **argv)
     for (int part=0; part<num_parts; ++part) {
       int imin = basis_size, jmin = basis_size, kmin = basis_size;
       int imax = -1, jmax = -1, kmax = -1;
-      for (int idx=0; idx<part_list[part].size(); ++idx) {
-        if (part_list[part][idx].i < imin) imin = part_list[part][idx].i;
-        if (part_list[part][idx].j < jmin) jmin = part_list[part][idx].j;
-        if (part_list[part][idx].k < kmin) kmin = part_list[part][idx].k;
-        if (part_list[part][idx].i > imax) imax = part_list[part][idx].i;
-        if (part_list[part][idx].j > jmax) jmax = part_list[part][idx].j;
-        if (part_list[part][idx].k > kmax) kmax = part_list[part][idx].k;
+      for (int idx2=0; idx2<part_list[part].size(); ++idx2) {
+        if (part_list[part][idx2].i < imin) imin = part_list[part][idx2].i;
+        if (part_list[part][idx2].j < jmin) jmin = part_list[part][idx2].j;
+        if (part_list[part][idx2].k < kmin) kmin = part_list[part][idx2].k;
+        if (part_list[part][idx2].i > imax) imax = part_list[part][idx2].i;
+        if (part_list[part][idx2].j > jmax) jmax = part_list[part][idx2].j;
+        if (part_list[part][idx2].k > kmax) kmax = part_list[part][idx2].k;
       }
       int delta_i = imax - imin;
       int delta_j = jmax - jmin;
@@ -382,7 +382,7 @@ int main(int argc, char **argv)
               << " min part dimension = " << dim_min << std::endl;
 
     if (save_3tensor) {
-      int idx = 0;
+      int idx2 = 0;
       Cijk_type::k_iterator k_begin = Cijk->k_begin();
       Cijk_type::k_iterator k_end = Cijk->k_end();
       for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
@@ -396,7 +396,7 @@ int main(int argc, char **argv)
           for (Cijk_type::kji_iterator i_it = i_begin; i_it != i_end; ++i_it) {
             int i = index(i_it);
             cijk_file << i << ", " << j << ", " << k << ", "
-                      << exportToPart[idx++] << std::endl;
+                      << exportToPart[idx2++] << std::endl;
           }
         }
       }

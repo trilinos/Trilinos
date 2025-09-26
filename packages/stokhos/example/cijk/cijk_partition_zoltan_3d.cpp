@@ -383,9 +383,9 @@ int main(int argc, char **argv)
 
     if (save_3tensor) {
       idx = 0;
-      Cijk_type::k_iterator k_begin = Cijk->k_begin();
-      Cijk_type::k_iterator k_end = Cijk->k_end();
-      for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+      Cijk_type::k_iterator k_begin2 = Cijk->k_begin();
+      Cijk_type::k_iterator k_end2 = Cijk->k_end();
+      for (Cijk_type::k_iterator k_it=k_begin2; k_it!=k_end2; ++k_it) {
         int k = index(k_it);
         Cijk_type::kj_iterator j_begin = Cijk->j_begin(k_it);
         Cijk_type::kj_iterator j_end = Cijk->j_end(k_it);

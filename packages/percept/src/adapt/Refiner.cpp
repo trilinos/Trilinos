@@ -2118,13 +2118,13 @@
                       if ( stk::mesh::is_auto_declared_part(*elem_parts[iep]) )
                         continue;
 
-                      const AutoPart *auto_part = elem_parts[iep]->attribute<AutoPart>();
+                      const AutoPart *auto_part2 = elem_parts[iep]->attribute<AutoPart>();
                       if (elem_parts[iep]->name().find(UniformRefinerPatternBase::getOldElementsPartName()) != std::string::npos)
                         {
-                          if (!auto_part) throw std::runtime_error("Refiner::get_side_part_relations: bad old part attribute for auto");
+                          if (!auto_part2) throw std::runtime_error("Refiner::get_side_part_relations: bad old part attribute for auto");
                         }
 
-                      if (auto_part)
+                      if (auto_part2)
                         {
                           continue;
                         }

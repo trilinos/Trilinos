@@ -652,10 +652,10 @@ TEUCHOS_UNIT_TEST(Piro_LOCASolver, SensitivityOpWithSolutionSensitivityMvJac)
 
   // Verify response sensitivity
   {
-    const Array<double> expected = tuple(2.0, -8.0);
-    for (int i = 0; i < expected.size(); ++i) {
+    const Array<double> expected2 = tuple(2.0, -8.0);
+    for (int i = 0; i < expected2.size(); ++i) {
       const Array<double> actual = arrayFromLinOp(*dgdp, i);
-      TEST_COMPARE_FLOATING_ARRAYS(actual, arrayView(&expected[i], 1), tol);
+      TEST_COMPARE_FLOATING_ARRAYS(actual, arrayView(&expected2[i], 1), tol);
     }
   }
 }

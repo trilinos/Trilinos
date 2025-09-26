@@ -643,17 +643,17 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 	      model_outargs.set_DgDp(j,i,dgdp_op);
 	    }
 	    else if (ds_dgdp.supports(DERIV_MV_BY_COL) && !p_dist) {
-	      Teuchos::RCP<Epetra_MultiVector> dgdp =
+	      Teuchos::RCP<Epetra_MultiVector> my_dgdp =
 		Teuchos::rcp(new Epetra_MultiVector(*g_map, num_params));
 	      EpetraExt::ModelEvaluator::DerivativeMultiVector 
-		dmv_dgdp(dgdp, DERIV_MV_BY_COL);
+		dmv_dgdp(my_dgdp, DERIV_MV_BY_COL);
 	      model_outargs.set_DgDp(j,i,dmv_dgdp);
 	    }
 	    else if (ds_dgdp.supports(DERIV_TRANS_MV_BY_ROW) && !g_dist) {
-	      Teuchos::RCP<Epetra_MultiVector> dgdp =
+	      Teuchos::RCP<Epetra_MultiVector> my_dgdp =
 		Teuchos::rcp(new Epetra_MultiVector(*p_map, num_responses));
 	      EpetraExt::ModelEvaluator::DerivativeMultiVector 
-		dmv_dgdp(dgdp, DERIV_TRANS_MV_BY_ROW);
+		dmv_dgdp(my_dgdp, DERIV_TRANS_MV_BY_ROW);
 	      model_outargs.set_DgDp(j,i,dmv_dgdp);
 	    }
 	    else
@@ -768,9 +768,9 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 		      "Can\'t handle special case:  " << 
 		      " dg/dx operator, " <<
 		      " transposed, distributed dg/dp. " << std::endl);
-		    for (int j=0; j<dgdp_out->NumVectors(); j++)
-		      for (int i=0; i<dgdp_out->MyLength(); i++)
-			(*dgdp_out)[j][i] += tmp[i][j];
+		    for (int k=0; k<dgdp_out->NumVectors(); k++)
+		      for (int m=0; m<dgdp_out->MyLength(); m++)
+			(*dgdp_out)[k][m] += tmp[m][k];
 		  }
 		  else
 		    dgdp_out->Update(1.0, tmp, 1.0);
@@ -903,23 +903,23 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
 		      "Can\'t handle special case:  " << 
 		      " df/dp operator, " <<
 		      " transposed, distributed dg/dp. " << std::endl);
-		    for (int j=0; j<dgdp_out->NumVectors(); j++)
-		      for (int i=0; i<dgdp_out->MyLength(); i++)
-			(*dgdp_out)[j][i] += tmp[i][j];
+		    for (int k=0; k<dgdp_out->NumVectors(); k++)
+		      for (int m=0; i<dgdp_out->MyLength(); m++)
+			(*dgdp_out)[k][m] += tmp[m][k];
 		  }
 		  else
 		    dgdp_out->Update(1.0, tmp, 1.0);
 		}
 		else {
 		  Teuchos::RCP<Epetra_MultiVector> arg1, arg2;
-		  EDerivativeMultiVectorOrientation dgdp_orient =
+		  EDerivativeMultiVectorOrientation my_dgdp_orient =
 		    model_outargs.get_DgDp(j,i).getMultiVectorOrientation();
 		  EDerivativeMultiVectorOrientation dfdp_orient =
 		    model_outargs.get_DfDp(i).getMultiVectorOrientation();
 		  EDerivativeMultiVectorOrientation dgdx_orient =
 		    model_outargs.get_DgDx(j).getMultiVectorOrientation();
 		  char flag1, flag2;
-		  if (dgdp_orient == DERIV_TRANS_MV_BY_ROW) {
+		  if (my_dgdp_orient == DERIV_TRANS_MV_BY_ROW) {
 		    arg1 = dfdp;
 		    arg2 = xbar;
 		    if (dfdp_orient == DERIV_TRANS_MV_BY_ROW)
