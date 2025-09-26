@@ -194,9 +194,9 @@ SimpleME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     // where a = p[0].
     Teuchos::RCP<Epetra_Vector> f = outArgs.get_f();
     if (f != Teuchos::null) {
-      double x[2] = { x0, x1 };
+      double x2[2] = { x0, x1 };
       double y[2];
-      func(a, x, y);
+      func(a, x2, y);
 
       if (x_map->MyGID(0)) {
         int row = 0;
@@ -214,10 +214,10 @@ SimpleME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     Teuchos::RCP<Epetra_Operator> W = outArgs.get_W();
     if (W != Teuchos::null) {
       typedef Sacado::Fad::SFad<double,2> fad_type;
-      fad_type x[2], y[2];
-      x[0] = fad_type(2, 0, x0);
-      x[1] = fad_type(2, 1, x1);
-      func(a, x, y);
+      fad_type x2[2], y[2];
+      x2[0] = fad_type(2, 0, x0);
+      x2[1] = fad_type(2, 1, x1);
+      func(a, x2, y);
 
       Teuchos::RCP<Epetra_CrsMatrix> jac =
         Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W, true);
@@ -270,9 +270,9 @@ SimpleME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     //        | <x1*x1 - x0, psi_i>/<psi_i^2> |
     OutArgs::sg_vector_t f_sg = outArgs.get_f_sg();
     if (f_sg != Teuchos::null) {
-      pce_type x[2] = { x0, x1 };
+      pce_type x2[2] = { x0, x1 };
       pce_type y[2];
-      func(a, x, y);
+      func(a, x2, y);
 
       if (x_map->MyGID(0)) {
         int row = 0;
@@ -296,10 +296,10 @@ SimpleME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     OutArgs::sg_operator_t W_sg = outArgs.get_W_sg();
     if (W_sg != Teuchos::null) {
       typedef Sacado::Fad::SFad<pce_type,2> fad_type;
-      fad_type x[2], y[2];
-      x[0] = fad_type(2, 0, x0);
-      x[1] = fad_type(2, 1, x1);
-      func(a, x, y);
+      fad_type x2[2], y[2];
+      x2[0] = fad_type(2, 0, x0);
+      x2[1] = fad_type(2, 1, x1);
+      func(a, x2, y);
 
       for (int i=0; i<basis->size(); i++) {
         Teuchos::RCP<Epetra_CrsMatrix> jac =

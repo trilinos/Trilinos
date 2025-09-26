@@ -91,13 +91,14 @@ TEST(StkInterface, twoToThree_externalFile)
   std::vector<stk::mesh::Entity> entities;
   stk::mesh::get_selected_entities(selPart, buckets, entities);
 
+  auto fPtrData = fPtr->data<stk::mesh::ReadOnly>();
   for (auto& e : entities)
   {
-    double* dataE           = stk::mesh::field_data(*fPtr, e);
-    stk::mesh::Entity elemL = bulkData.get_entity(stk::topology::ELEM_RANK, dataE[0]);
-    stk::mesh::Entity elemR = bulkData.get_entity(stk::topology::ELEM_RANK, dataE[2]);
-    stk::mesh::SideSetEntry entryL(elemL, static_cast<int>(dataE[1] - 1));
-    stk::mesh::SideSetEntry entryR(elemR, static_cast<int>(dataE[3] - 1));
+    auto dataE              = fPtrData.entity_values(e);
+    stk::mesh::Entity elemL = bulkData.get_entity(stk::topology::ELEM_RANK, dataE(0_comp));
+    stk::mesh::Entity elemR = bulkData.get_entity(stk::topology::ELEM_RANK, dataE(2_comp));
+    stk::mesh::SideSetEntry entryL(elemL, static_cast<int>(dataE(1_comp) - 1));
+    stk::mesh::SideSetEntry entryR(elemR, static_cast<int>(dataE(3_comp) - 1));
     gidCountL[entryL] += 1;
     gidCountR[entryR] += 1;
   }

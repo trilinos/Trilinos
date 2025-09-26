@@ -39,11 +39,13 @@
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
 // Forward declaration of Array
-template<class T> class Array;
+template <class T>
+class Array;
 // Forward declaration of ArrayView
-template<class T> class ArrayView;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+template <class T>
+class ArrayView;
+}  // namespace Teuchos
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 
@@ -80,13 +82,12 @@ namespace Details {
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
 /// CrsGraph migrates fully to adopting Kokkos::DualView objects for its storage
 /// of data, this procedure could be bypassed.
-template<typename LO, typename GO, typename NT>
-void
-packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
-               Teuchos::Array<typename CrsGraph<LO,GO,NT>::packet_type>& exports,
-               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-               const Teuchos::ArrayView<const LO>& exportLIDs,
-               size_t& constantNumPackets);
+template <typename LO, typename GO, typename NT>
+void packCrsGraph(const CrsGraph<LO, GO, NT>& sourceGraph,
+                  Teuchos::Array<typename CrsGraph<LO, GO, NT>::packet_type>& exports,
+                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                  const Teuchos::ArrayView<const LO>& exportLIDs,
+                  size_t& constantNumPackets);
 
 /// \brief Pack specified entries of the given local sparse graph for
 ///   communication, for "new" DistObject interface.
@@ -115,27 +116,23 @@ packCrsGraph (const CrsGraph<LO, GO, NT>& sourceGraph,
 /// This method implements CrsGraph::packNew, and thus
 /// CrsGraph::packAndPrepare, for the case where the graph to
 /// pack has a valid KokkosSparse::CrsGraph.
-template<typename LO, typename GO, typename NT>
-void
-packCrsGraphNew (const CrsGraph<LO, GO, NT>& sourceGraph,
-                 const Kokkos::DualView<
-                   const LO*,
-                   typename CrsGraph<LO, GO, NT>::buffer_device_type
-                 >& exportLIDs,
-                 const Kokkos::DualView<
-                   const int*,
-                   typename CrsGraph<LO, GO, NT>::buffer_device_type
-                 >& exportPIDs,
-                 Kokkos::DualView<
-                   typename CrsGraph<LO, GO, NT>::packet_type*,
-                   typename CrsGraph<LO, GO, NT>::buffer_device_type
-                 >& exports,
-                 Kokkos::DualView<
-                   size_t*,
-                   typename CrsGraph<LO, GO, NT>::buffer_device_type
-                 > numPacketsPerLID,
-                 size_t& constantNumPackets,
-                 const bool pack_pids);
+template <typename LO, typename GO, typename NT>
+void packCrsGraphNew(const CrsGraph<LO, GO, NT>& sourceGraph,
+                     const Kokkos::DualView<
+                         const LO*,
+                         typename CrsGraph<LO, GO, NT>::buffer_device_type>& exportLIDs,
+                     const Kokkos::DualView<
+                         const int*,
+                         typename CrsGraph<LO, GO, NT>::buffer_device_type>& exportPIDs,
+                     Kokkos::DualView<
+                         typename CrsGraph<LO, GO, NT>::packet_type*,
+                         typename CrsGraph<LO, GO, NT>::buffer_device_type>& exports,
+                     Kokkos::DualView<
+                         size_t*,
+                         typename CrsGraph<LO, GO, NT>::buffer_device_type>
+                         numPacketsPerLID,
+                     size_t& constantNumPackets,
+                     const bool pack_pids);
 
 /// \brief Pack specified entries of the given local sparse graph for
 ///   communication.
@@ -165,18 +162,17 @@ packCrsGraphNew (const CrsGraph<LO, GO, NT>& sourceGraph,
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
 /// CrsGraph migrates fully to adopting Kokkos::DualView objects for its storage
 /// of data, this procedure could be bypassed.
-template<typename LO, typename GO, typename NT>
-void
-packCrsGraphWithOwningPIDs (const CrsGraph<LO,GO,NT>& sourceGraph,
-                            Kokkos::DualView<typename CrsGraph<LO,GO,NT>::packet_type*,
-                                             typename CrsGraph<LO,GO,NT>::buffer_device_type>&
-                                             exports_dv,
-                            const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                            const Teuchos::ArrayView<const LO>& exportLIDs,
-                            const Teuchos::ArrayView<const int>& sourcePIDs,
-                            size_t& constantNumPackets);
+template <typename LO, typename GO, typename NT>
+void packCrsGraphWithOwningPIDs(const CrsGraph<LO, GO, NT>& sourceGraph,
+                                Kokkos::DualView<typename CrsGraph<LO, GO, NT>::packet_type*,
+                                                 typename CrsGraph<LO, GO, NT>::buffer_device_type>&
+                                    exports_dv,
+                                const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                                const Teuchos::ArrayView<const LO>& exportLIDs,
+                                const Teuchos::ArrayView<const int>& sourcePIDs,
+                                size_t& constantNumPackets);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_PACKCRSGRAPH_DECL_HPP
+#endif  // TPETRA_DETAILS_PACKCRSGRAPH_DECL_HPP

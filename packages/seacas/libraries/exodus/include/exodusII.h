@@ -55,12 +55,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION       "9.05"
+#define EXODUS_VERSION       "9.06"
 #define EXODUS_VERSION_MAJOR 9
-#define EXODUS_VERSION_MINOR 5
-#define EXODUS_RELEASE_DATE  "August 19, 2025"
+#define EXODUS_VERSION_MINOR 6
+#define EXODUS_RELEASE_DATE  "August 25, 2025"
 
-#define EX_API_VERS       9.05f
+#define EX_API_VERS       9.06f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 #define EX_VERS           EX_API_VERS
 
@@ -1964,9 +1964,10 @@ enum ex_error_return_code {
   EX_INTSIZEMISMATCH =
       -1009, /**< integer sizes do not match on input/output databases in ex_copy  */
 
-  EX_FATAL = -1, /**< fatal error flag def                     */
-  EX_NOERR = 0,  /**< no error flag def                        */
-  EX_WARN  = 1   /**< warning flag def                         */
+  EX_RANGE = -1010, /**< numeric conversion warning */
+  EX_FATAL = -1,    /**< fatal error flag def                     */
+  EX_NOERR = 0,     /**< no error flag def                        */
+  EX_WARN  = 1      /**< warning flag def                         */
 };
 typedef enum ex_error_return_code ex_error_return_code;
 

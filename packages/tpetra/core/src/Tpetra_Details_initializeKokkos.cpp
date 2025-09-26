@@ -12,7 +12,7 @@
 #include "Kokkos_Core.hpp"
 #include "Tpetra_Details_checkLaunchBlocking.hpp"
 #include "Tpetra_Details_KokkosTeuchosTimerInjection.hpp"
-#include <cstdlib> // std::atexit
+#include <cstdlib>  // std::atexit
 #include <string>
 #include <vector>
 
@@ -20,17 +20,15 @@ namespace Tpetra {
 namespace Details {
 
 void finalizeKokkosIfNeeded() {
-  if(!Kokkos::is_finalized()) {
+  if (!Kokkos::is_finalized()) {
     Kokkos::finalize();
   }
 }
-  
-void
-initializeKokkos ()
-{
-  if (! Kokkos::is_initialized ()) {
-    std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv ();
-    int narg = static_cast<int> (args.size ()); // must be nonconst
+
+void initializeKokkos() {
+  if (!Kokkos::is_initialized()) {
+    std::vector<std::string> args = Teuchos::GlobalMPISession::getArgv();
+    int narg                      = static_cast<int>(args.size());  // must be nonconst
 
     std::vector<char*> args_c;
     std::vector<std::unique_ptr<char[]>> args_;
@@ -42,11 +40,10 @@ initializeKokkos ()
     }
     args_c.push_back(nullptr);
 
-    Kokkos::initialize (narg, narg == 0 ? nullptr : args_c.data ());
+    Kokkos::initialize(narg, narg == 0 ? nullptr : args_c.data());
     checkOldCudaLaunchBlocking();
 
-    std::atexit (finalizeKokkosIfNeeded);
-
+    std::atexit(finalizeKokkosIfNeeded);
   }
   // Add Kokkos calls to the TimeMonitor if the environment says so
   Tpetra::Details::AddKokkosDeepCopyToTimeMonitor();
@@ -54,6 +51,5 @@ initializeKokkos ()
   Tpetra::Details::AddKokkosFunctionsToTimeMonitor();
 }
 
-} // namespace Details
-} // namespace Tpetra
-
+}  // namespace Details
+}  // namespace Tpetra

@@ -66,11 +66,11 @@ template<class Real>
 void printMatrix( const std::vector<ROL::Ptr<ROL::Vector<Real> > > &A,
                   const std::vector<ROL::Ptr<ROL::Vector<Real> > > &I,
                   std::ostream &outStream ) {
-  typedef typename std::vector<Real>::size_type uint;
-  uint dim = A.size();
+  typedef typename std::vector<Real>::size_type luint;
+  luint dim = A.size();
    
-  for( uint i=0; i<dim; ++i ) {
-    for( uint j=0; j<dim; ++j ) {
+  for( luint i=0; i<dim; ++i ) {
+    for( luint j=0; j<dim; ++j ) {
       outStream << std::setw(6) << A[j]->dot(*(I[i])); 
     }
     outStream << std::endl;

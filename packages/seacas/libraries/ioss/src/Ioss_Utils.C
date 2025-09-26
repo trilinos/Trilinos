@@ -11,7 +11,6 @@
 #include <cstring>
 #include <ctime>
 #include <fmt/chrono.h>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>

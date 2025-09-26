@@ -8,7 +8,7 @@ SET(SOURCES_EXEC "")
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
-if(TPL_ENABLE_MATLAB)
+IF(TPL_ENABLE_MATLAB)
   TRIBITS_INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIRS})
 
   # Must glob the binary dir last to get all of the auto-generated headers
@@ -28,13 +28,13 @@ if(TPL_ENABLE_MATLAB)
 
   # Manually drop in options from the mex script (R2009b) on a linux platform.
   # g++ -O -pthread -shared -Wl,--version-script,/usr/local/matlab/7.9/extern/lib/glnxa64/mexFunction.map -Wl,--no-undefined -o  "mlmex.mexa64"   "mlmex-mlmex.o"  -lm -Wl,-rpath-link,/usr/local/matlab/7.9/bin/glnxa64 -L/usr/local/matlab/7.9/bin/glnxa64 -lmx -lmex -lmat -lm
-  if (NOT APPLE)
+  IF(NOT APPLE)
     SET(MLMEX_OPTS1 "-pthread;-shared;-Wl,--version-script,${MATLAB_ROOT}/extern/lib/${MATLAB_ARCH}/mexFunction.map;-Wl,--no-undefined")
     SET(MLMEX_OPTS2 "-Wl,-rpath-link,${MATLAB_ROOT}/bin/${MATLAB_ARCH}")
-  else()
+  ELSE()
     SET(MLMEX_OPTS1 "-shared")
     SET(MLMEX_OPTS2 "")
-  endif()
+  ENDIF()
 
   # Use TARGET_LINK_LIBRARIES and the C++ compiler to link the mlmex.cpp file to the rest of Trilinos & the mex libs.
   # This code is extremely fragile and probably won't work on any system but GNU/Linux with gcc.
@@ -42,14 +42,23 @@ if(TPL_ENABLE_MATLAB)
   #
 
   LINK_DIRECTORIES(${MATLAB_LIBRARY_DIRS})
-  TRIBITS_ADD_EXECUTABLE(muemex.${MEX_EXTENSION} SOURCES ${SOURCES_EXEC}   NOEXEPREFIX NOEXESUFFIX)
+  TRIBITS_ADD_EXECUTABLE(
+    muemex.${MEX_EXTENSION}
+    SOURCES ${SOURCES_EXEC}
+    NOEXEPREFIX
+    NOEXESUFFIX
+  )
   SET_TARGET_PROPERTIES(muemex.${MEX_EXTENSION} PROPERTIES SUFFIX "") # remove .exe extension
-  TARGET_LINK_LIBRARIES(muemex.${MEX_EXTENSION} PUBLIC ${MLMEX_OPTS1} ${LINK_LIBS} ${MLMEX_OPTS2} ${${PROJECT_NAME}_EXTRA_LINK_FLAGS})
+  TARGET_LINK_LIBRARIES(
+    muemex.${MEX_EXTENSION}
+    PUBLIC ${MLMEX_OPTS1}
+           ${LINK_LIBS}
+           ${MLMEX_OPTS2}
+           ${${PROJECT_NAME}_EXTRA_LINK_FLAGS}
+  )
 
   # Copy these files over from src tree
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Output_cp
-    SOURCE_FILES muelu.m setup.m
-    )
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Output_cp SOURCE_FILES muelu.m setup.m)
 
   CONFIGURE_FILE(matlab ${CMAKE_CURRENT_BINARY_DIR}/matlab @ONLY)
 

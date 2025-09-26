@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::Objective<RealT>            OBJ;
   typedef ROL::Constraint<RealT>           EC;  
 
-  typedef typename vector::size_type       uint;
+  typedef typename vector::size_type       luint;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    uint xdim = 4;
-    uint cdim = 1;
+    luint xdim = 4;
+    luint cdim = 1;
 
     ROL::Ptr<vector> x_exact_ptr = ROL::makePtr<vector>(xdim);
     (*x_exact_ptr)[0] = 1.0;

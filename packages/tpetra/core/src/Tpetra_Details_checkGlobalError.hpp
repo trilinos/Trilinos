@@ -20,23 +20,22 @@
 #include "TpetraCore_config.h"
 
 namespace Teuchos {
-  template<class OrdinalType>
-  class Comm;
-} // namespace Teuchos
+template <class OrdinalType>
+class Comm;
+}  // namespace Teuchos
 
 #include <ostream>
 
 namespace Tpetra {
 namespace Details {
 
-void
-checkGlobalError(std::ostream& globalOutputStream,
-                 const bool localSuccess,
-                 const char localErrorMessage[],
-                 const char globalErrorMessageHeader[],
-                 const Teuchos::Comm<int>& comm);
+void checkGlobalError(std::ostream& globalOutputStream,
+                      const bool localSuccess,
+                      const char localErrorMessage[],
+                      const char globalErrorMessageHeader[],
+                      const Teuchos::Comm<int>& comm);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_GLOBALERROR_HPP
+#endif  // TPETRA_DETAILS_GLOBALERROR_HPP

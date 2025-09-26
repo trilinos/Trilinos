@@ -76,7 +76,7 @@ namespace FROSch {
         if (XTmp_.is_null()) XTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
         *XTmp_ = x; // Need this for the case when x aliases y
 
-        if (YTmp_.is_null()) XMultiVectorPtr YTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),y.getNumVectors());
+        if (YTmp_.is_null()) YTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(y.getMap(),y.getNumVectors());
         *YTmp_ = y; // for the second apply
 
         this->OperatorVector_[0]->apply(*XTmp_,*YTmp_,true);

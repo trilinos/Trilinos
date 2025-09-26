@@ -121,8 +121,10 @@ void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute, double *secs)
   run_secs = (double) tsecs;
 
   *secs = run_secs;
+#ifdef GET_TIMING
   showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
            "Total time in Factor (inl. matrix permutation)", &run_secs );
+#endif
   }
 }
 

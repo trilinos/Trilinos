@@ -10,6 +10,7 @@
 #if DEBUG_SORT
 #include <cassert>
 #include <cstdio>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #endif
 

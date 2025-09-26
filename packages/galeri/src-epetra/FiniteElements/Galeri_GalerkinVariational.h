@@ -44,15 +44,15 @@ public:
 
   //! Constructor.
   GalerkinVariational(const int NumQuadratureNodes,
-                      double (*diff)(const double&, const double&, const double&),
-                      double (*source)(const double&, const double&, const double&),
-                      double (*force)(const double&, const double&, const double&),
+                      double (*_diff)(const double&, const double&, const double&),
+                      double (*_source)(const double&, const double&, const double&),
+                      double (*_force)(const double&, const double&, const double&),
                       double (*bc)(const double&, const double&, const double&, const int&),
                       int (*bc_type)(const int&)):
     T(NumQuadratureNodes),
-    diff_(diff),
-    source_(source),
-    force_(force),
+    diff_(_diff),
+    source_(_source),
+    force_(_force),
     bc_(bc),
     bc_type_(bc_type)
   {}

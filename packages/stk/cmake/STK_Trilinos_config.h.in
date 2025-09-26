@@ -54,6 +54,8 @@
 
 #cmakedefine STK_USE_DEVICE_MESH
 
+#cmakedefine STK_UNIFIED_MEMORY
+
 #cmakedefine STK_VOLATILE_SIMD
 
 #cmakedefine STK_HAS_SEACAS_IOSS

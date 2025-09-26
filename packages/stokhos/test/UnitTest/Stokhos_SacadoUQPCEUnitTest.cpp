@@ -17,8 +17,8 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 // Tests only run on the host, so use host execution space
-typedef Kokkos::DefaultHostExecutionSpace execution_space;
-typedef Stokhos::DynamicStorage<int,double,execution_space> storage_type;
+typedef Kokkos::DefaultHostExecutionSpace def_execution_space;
+typedef Stokhos::DynamicStorage<int,double,def_execution_space> storage_type;
 typedef Sacado::UQ::PCE<storage_type> pce_type;
 
 namespace Stokhos {

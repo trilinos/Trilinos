@@ -244,9 +244,9 @@ int main(int argc, char *argv[])
       pp.set("Output Precision", 3);
       pp.set("Output Stream", outputstream);
       pp.set("Error Stream", outputstream);
-      NOX::Utils utils3(pp);
+      NOX::Utils utils5(pp);
       pp.print(std::cout);
-      std::cout << "\n" << utils3 << std::endl;
+      std::cout << "\n" << utils5 << std::endl;
       if (myPID == printProc)
         std::cout << "Done!" << std::endl;
     }

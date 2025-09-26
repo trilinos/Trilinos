@@ -6,10 +6,9 @@
 
 #include "ED_SystemInterface.h" // for SystemInterface, interFace
 #include "assembly.h"
-#include "exodusII.h" // for ex_block, etc
-#include "fmt/ostream.h"
-#include "smart_assert.h" // for SMART_ASSERT
+#include "exodusII.h"     // for ex_block, etc
 #include <cstdlib>        // for exit, nullptr
+#include <smart_assert.h> // for SMART_ASSERT
 #include <string>         // for string, char_traits
 
 template <typename INT> Assembly<INT>::Assembly() : Exo_Entity() {}

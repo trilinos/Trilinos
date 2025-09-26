@@ -232,7 +232,7 @@ Epetra_Vector& FiniteElementProblem::getSolution()
   return *initialSolution;
 }
   
-Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
+Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA_)
 {
   
   // Declare required variables
@@ -264,15 +264,15 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
         // If this row is owned by current processor, add the index
         if (StandardMap->MyGID(row)) {
           column=OverlapMap->GID(ne+j);
-          AA.InsertGlobalIndices(row, 1, &column);
+          AA_.InsertGlobalIndices(row, 1, &column);
         }
       }         
     }
   }
-  AA.FillComplete();
-  AA.OptimizeStorage();
+  AA_.FillComplete();
+  AA_.OptimizeStorage();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
-  return AA;
+  return AA_;
 }
 #endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO)

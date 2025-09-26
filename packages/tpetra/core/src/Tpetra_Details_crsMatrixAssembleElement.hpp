@@ -54,47 +54,47 @@ namespace Details {
 /// \return If checkInputIndices is true, return the number of input
 ///   indices that are valid column indices in that row of the matrix.
 ///   If checkInputIndices is false, just return numEntInInput.
-template<class SparseMatrixType,
-         class ValsViewType>
+template <class SparseMatrixType,
+          class ValsViewType>
 KOKKOS_FUNCTION
-typename SparseMatrixType::ordinal_type
-crsMatrixSumIntoValues_sortedSortedLinear (const SparseMatrixType& A,
-                                           const typename SparseMatrixType::ordinal_type lclRow,
-                                           const typename SparseMatrixType::ordinal_type lclColInds[],
-                                           const typename SparseMatrixType::ordinal_type sortPerm[],
-                                           const ValsViewType& vals,
-                                           const typename SparseMatrixType::ordinal_type numEntInInput,
-                                           const bool forceAtomic =
+    typename SparseMatrixType::ordinal_type
+    crsMatrixSumIntoValues_sortedSortedLinear(const SparseMatrixType& A,
+                                              const typename SparseMatrixType::ordinal_type lclRow,
+                                              const typename SparseMatrixType::ordinal_type lclColInds[],
+                                              const typename SparseMatrixType::ordinal_type sortPerm[],
+                                              const ValsViewType& vals,
+                                              const typename SparseMatrixType::ordinal_type numEntInInput,
+                                              const bool forceAtomic =
 #ifdef KOKKOS_ENABLE_SERIAL
-                                           ! std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::type,
-#else // NOT KOKKOS_ENABLE_SERIAL
-                                           false,
-#endif // KOKKOS_ENABLE_SERIAL
-                                           const bool checkInputIndices = true)
-{
+                                                  !std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::type,
+#else   // NOT KOKKOS_ENABLE_SERIAL
+                                                  false,
+#endif  // KOKKOS_ENABLE_SERIAL
+                                              const bool checkInputIndices = true) {
   typedef typename std::remove_const<typename SparseMatrixType::value_type>::type
-    matrix_scalar_type;
-  static_assert (std::is_same<matrix_scalar_type,
-                 typename SparseMatrixType::value_type>::value,
-                 "The matrix's entries must have a nonconst type.");
+      matrix_scalar_type;
+  static_assert(std::is_same<matrix_scalar_type,
+                             typename SparseMatrixType::value_type>::value,
+                "The matrix's entries must have a nonconst type.");
   // static_assert (std::is_assignable<matrix_scalar_type,
   //                typename std::decay< decltype (A.values[0] + vals[0]) >::type>::value,
   //                "The result of adding a matrix entry and an entry of vals "
   //                "MUST be assignable to a matrix entry.");
   typedef typename SparseMatrixType::ordinal_type LO;
-  static_assert (std::is_integral<LO>::value, "SparseMatrixType::ordinal_type "
-                 "must be a built-in integer type.");
+  static_assert(std::is_integral<LO>::value,
+                "SparseMatrixType::ordinal_type "
+                "must be a built-in integer type.");
 
   // If lclRow is NOT a valid row index, this will return a view of
   // zero entries.  If checkInputIndices is true, thus, then none of
   // the input indices will be valid in that case.
-  auto row_view = A.row (lclRow);
-  const LO numEntInRow = static_cast<LO> (row_view.length);
+  auto row_view        = A.row(lclRow);
+  const LO numEntInRow = static_cast<LO>(row_view.length);
   // Number of valid local column indices found, that is, the number
   // of input indices that are valid column indices found in row
   // lclRow of the matrix.  If not checking, we just return the number
   // of input indices.
-  LO numValid = checkInputIndices ? static_cast<LO> (0) : numEntInRow;
+  LO numValid = checkInputIndices ? static_cast<LO>(0) : numEntInRow;
 
   // Since both the matrix row and the input (after permutation) are
   // sorted, we only need to pass once over the matrix row.  'offset'
@@ -102,7 +102,7 @@ crsMatrixSumIntoValues_sortedSortedLinear (const SparseMatrixType& A,
   LO offset = 0;
   for (LO j = 0; j < numEntInInput; ++j) {
     const LO perm_index = sortPerm[j];
-    const LO lclColInd = lclColInds[perm_index];
+    const LO lclColInd  = lclColInds[perm_index];
     // Search linearly in the matrix row for the current index.
     // If we ever want binary search, this would be the place.
     while (row_view.colidx(offset) != lclColInd) {
@@ -118,20 +118,17 @@ crsMatrixSumIntoValues_sortedSortedLinear (const SparseMatrixType& A,
         // the compiler might not need to insert a branch here.  This
         // should help vectorization, if vectorization is possible.
         if (forceAtomic) {
-          Kokkos::atomic_add (&(row_view.value(offset)), vals[perm_index]);
-        }
-        else {
+          Kokkos::atomic_add(&(row_view.value(offset)), vals[perm_index]);
+        } else {
           row_view.value(offset) += vals[perm_index];
         }
         ++numValid;
       }
-    }
-    else { // don't check input indices; assume they are in the row
+    } else {  // don't check input indices; assume they are in the row
       // See above note on forceAtomic.
       if (forceAtomic) {
-        Kokkos::atomic_add (&(row_view.value(offset)), vals[perm_index]);
-      }
-      else {
+        Kokkos::atomic_add(&(row_view.value(offset)), vals[perm_index]);
+      } else {
         row_view.value(offset) += vals[perm_index];
       }
     }
@@ -178,47 +175,47 @@ crsMatrixSumIntoValues_sortedSortedLinear (const SparseMatrixType& A,
 /// \return If checkInputIndices is true, return the number of input
 ///   indices that are valid column indices in that row of the matrix.
 ///   If checkInputIndices is false, just return numEntInInput.
-template<class SparseMatrixType,
-         class ValsViewType>
+template <class SparseMatrixType,
+          class ValsViewType>
 KOKKOS_FUNCTION
-typename SparseMatrixType::ordinal_type
-crsMatrixReplaceValues_sortedSortedLinear (const SparseMatrixType& A,
-                                           const typename SparseMatrixType::ordinal_type lclRow,
-                                           const typename SparseMatrixType::ordinal_type lclColInds[],
-                                           const typename SparseMatrixType::ordinal_type sortPerm[],
-                                           const ValsViewType& vals,
-                                           const typename SparseMatrixType::ordinal_type numEntInInput,
-                                           const bool forceAtomic =
+    typename SparseMatrixType::ordinal_type
+    crsMatrixReplaceValues_sortedSortedLinear(const SparseMatrixType& A,
+                                              const typename SparseMatrixType::ordinal_type lclRow,
+                                              const typename SparseMatrixType::ordinal_type lclColInds[],
+                                              const typename SparseMatrixType::ordinal_type sortPerm[],
+                                              const ValsViewType& vals,
+                                              const typename SparseMatrixType::ordinal_type numEntInInput,
+                                              const bool forceAtomic =
 #ifdef KOKKOS_ENABLE_SERIAL
-                                           ! std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::type,
-#else // NOT KOKKOS_ENABLE_SERIAL
-                                           false,
-#endif // KOKKOS_ENABLE_SERIAL
-                                           const bool checkInputIndices = true)
-{
+                                                  !std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::type,
+#else   // NOT KOKKOS_ENABLE_SERIAL
+                                                  false,
+#endif  // KOKKOS_ENABLE_SERIAL
+                                              const bool checkInputIndices = true) {
   typedef typename std::remove_const<typename SparseMatrixType::value_type>::type
-    matrix_scalar_type;
-  static_assert (std::is_same<matrix_scalar_type,
-                 typename SparseMatrixType::value_type>::value,
-                 "The matrix's entries must have a nonconst type.");
-  static_assert (std::is_assignable<matrix_scalar_type,
-                 typename std::decay< decltype (A.values[0] + vals[0]) >::type>::value,
-                 "The result of adding a matrix entry and an entry of vals "
-                 "MUST be assignable to a matrix entry.");
+      matrix_scalar_type;
+  static_assert(std::is_same<matrix_scalar_type,
+                             typename SparseMatrixType::value_type>::value,
+                "The matrix's entries must have a nonconst type.");
+  static_assert(std::is_assignable<matrix_scalar_type,
+                                   typename std::decay<decltype(A.values[0] + vals[0])>::type>::value,
+                "The result of adding a matrix entry and an entry of vals "
+                "MUST be assignable to a matrix entry.");
   typedef typename SparseMatrixType::ordinal_type LO;
-  static_assert (std::is_integral<LO>::value, "SparseMatrixType::ordinal_type "
-                 "must be a built-in integer type.");
+  static_assert(std::is_integral<LO>::value,
+                "SparseMatrixType::ordinal_type "
+                "must be a built-in integer type.");
 
   // If lclRow is NOT a valid row index, this will return a view of
   // zero entries.  If checkInputIndices is true, thus, then none of
   // the input indices will be valid in that case.
-  auto row_view = A.row (lclRow);
-  const LO numEntInRow = static_cast<LO> (row_view.length);
+  auto row_view        = A.row(lclRow);
+  const LO numEntInRow = static_cast<LO>(row_view.length);
   // Number of valid local column indices found, that is, the number
   // of input indices that are valid column indices found in row
   // lclRow of the matrix.  If not checking, we just return the number
   // of input indices.
-  LO numValid = checkInputIndices ? static_cast<LO> (0) : numEntInRow;
+  LO numValid = checkInputIndices ? static_cast<LO>(0) : numEntInRow;
 
   // Since both the matrix row and the input (after permutation) are
   // sorted, we only need to pass once over the matrix row.  'offset'
@@ -226,7 +223,7 @@ crsMatrixReplaceValues_sortedSortedLinear (const SparseMatrixType& A,
   LO offset = 0;
   for (LO j = 0; j < numEntInInput; ++j) {
     const LO perm_index = sortPerm[j];
-    const LO lclColInd = lclColInds[perm_index];
+    const LO lclColInd  = lclColInds[perm_index];
     // Search linearly in the matrix row for the current index.
     // If we ever want binary search, this would be the place.
     while (row_view.colidx(offset) != lclColInd) {
@@ -242,20 +239,17 @@ crsMatrixReplaceValues_sortedSortedLinear (const SparseMatrixType& A,
         // compiler might not need to insert a branch here.  This
         // could help vectorization, if vectorization is possible.
         if (forceAtomic) {
-          Kokkos::atomic_store (&(row_view.value(offset)), vals[perm_index]);
-        }
-        else {
+          Kokkos::atomic_store(&(row_view.value(offset)), vals[perm_index]);
+        } else {
           row_view.value(offset) += vals[perm_index];
         }
         ++numValid;
       }
-    }
-    else { // don't check input indices; assume they are in the row
+    } else {  // don't check input indices; assume they are in the row
       // See above note on forceAtomic.
       if (forceAtomic) {
-        Kokkos::atomic_add (&(row_view.value(offset)), vals[perm_index]);
-      }
-      else {
+        Kokkos::atomic_add(&(row_view.value(offset)), vals[perm_index]);
+      } else {
         row_view.value(offset) += vals[perm_index];
       }
     }
@@ -315,36 +309,35 @@ crsMatrixReplaceValues_sortedSortedLinear (const SparseMatrixType& A,
 /// \return If checkInputIndices is true, return the number of input
 ///   indices that are valid column indices in that row of the matrix.
 ///   If checkInputIndices is false, just return numEntInInput.
-template<class SparseMatrixType,
-         class VectorViewType,
-         class RhsViewType,
-         class LhsViewType>
+template <class SparseMatrixType,
+          class VectorViewType,
+          class RhsViewType,
+          class LhsViewType>
 KOKKOS_FUNCTION
-typename SparseMatrixType::ordinal_type
-crsMatrixAssembleElement_sortedLinear (const SparseMatrixType& A,
-                                       const VectorViewType& x,
-                                       typename SparseMatrixType::ordinal_type lids[],
-                                       typename SparseMatrixType::ordinal_type sortPerm[],
-                                       const RhsViewType& rhs,
-                                       const LhsViewType& lhs,
-                                       const bool forceAtomic =
+    typename SparseMatrixType::ordinal_type
+    crsMatrixAssembleElement_sortedLinear(const SparseMatrixType& A,
+                                          const VectorViewType& x,
+                                          typename SparseMatrixType::ordinal_type lids[],
+                                          typename SparseMatrixType::ordinal_type sortPerm[],
+                                          const RhsViewType& rhs,
+                                          const LhsViewType& lhs,
+                                          const bool forceAtomic =
 #ifdef KOKKOS_ENABLE_SERIAL
-                                       ! std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::type,
-#else // NOT KOKKOS_ENABLE_SERIAL
-                                       false,
-#endif // KOKKOS_ENABLE_SERIAL
-                                       const bool checkInputIndices = true)
-{
+                                              !std::is_same<typename SparseMatrixType::device_type::execution_space, Kokkos::Serial>::type,
+#else   // NOT KOKKOS_ENABLE_SERIAL
+                                              false,
+#endif  // KOKKOS_ENABLE_SERIAL
+                                          const bool checkInputIndices = true) {
   typedef typename std::remove_const<typename SparseMatrixType::value_type>::type
-    matrix_scalar_type;
+      matrix_scalar_type;
   typedef typename std::remove_const<typename VectorViewType::value_type>::type
-    vector_scalar_type;
-  static_assert (std::is_same<matrix_scalar_type,
-                 typename SparseMatrixType::value_type>::value,
-                 "The sparse output matrix A's entries must have a nonconst type.");
-  static_assert (std::is_same<vector_scalar_type,
-                 typename VectorViewType::value_type>::value,
-                 "The dense output vector x's entries must have a nonconst type.");
+      vector_scalar_type;
+  static_assert(std::is_same<matrix_scalar_type,
+                             typename SparseMatrixType::value_type>::value,
+                "The sparse output matrix A's entries must have a nonconst type.");
+  static_assert(std::is_same<vector_scalar_type,
+                             typename VectorViewType::value_type>::value,
+                "The dense output vector x's entries must have a nonconst type.");
   // static_assert (std::is_assignable<matrix_scalar_type,
   //                typename std::decay< decltype (A.values[0] + lhs(0,0)) >::type>::value,
   //                "The result of adding a sparse matrix entry and an entry of "
@@ -356,34 +349,34 @@ crsMatrixAssembleElement_sortedLinear (const SparseMatrixType& A,
   //                "rhs (the dense element vector) "
   //                "MUST be assignable to a vector entry.");
   typedef typename SparseMatrixType::ordinal_type LO;
-  static_assert (std::is_integral<LO>::value, "SparseMatrixType::ordinal_type "
-                 "must be a built-in integer type.");
+  static_assert(std::is_integral<LO>::value,
+                "SparseMatrixType::ordinal_type "
+                "must be a built-in integer type.");
 
-  const LO eltDim = rhs.extent (0);
+  const LO eltDim = rhs.extent(0);
 
   // Generate sort permutation
   for (LO i = 0; i < eltDim; ++i) {
     sortPerm[i] = i;
   }
-  shellSortKeysAndValues (lids, sortPerm, eltDim);
+  shellSortKeysAndValues(lids, sortPerm, eltDim);
 
   LO totalNumValid = 0;
   for (LO r = 0; r < eltDim; ++r) {
     const LO lid = lids[r];
-    //auto lhs_r = Kokkos::subview (lhs, sortPerm[r], Kokkos::ALL ());
-    auto lhs_r = Kokkos::subview (lhs, r, Kokkos::ALL ());
+    // auto lhs_r = Kokkos::subview (lhs, sortPerm[r], Kokkos::ALL ());
+    auto lhs_r = Kokkos::subview(lhs, r, Kokkos::ALL());
 
     // This assumes that lid is always a valid row in the sparse
     // matrix, and that the local indices in each row of the matrix
     // are always sorted.
     const LO curNumValid =
-      crsMatrixSumIntoValues_sortedSortedLinear (A, lid, lids, sortPerm, lhs_r,
-                                                 eltDim, forceAtomic,
-                                                 checkInputIndices);
+        crsMatrixSumIntoValues_sortedSortedLinear(A, lid, lids, sortPerm, lhs_r,
+                                                  eltDim, forceAtomic,
+                                                  checkInputIndices);
     if (forceAtomic) {
-      Kokkos::atomic_add (&x(lid), rhs(sortPerm[r]));
-    }
-    else {
+      Kokkos::atomic_add(&x(lid), rhs(sortPerm[r]));
+    } else {
       x(lid) += rhs(sortPerm[r]);
     }
     totalNumValid += curNumValid;
@@ -391,7 +384,7 @@ crsMatrixAssembleElement_sortedLinear (const SparseMatrixType& A,
   return totalNumValid;
 }
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_CRSMATRIXASSEMBLEELEMENT_HPP
+#endif  // TPETRA_DETAILS_CRSMATRIXASSEMBLEELEMENT_HPP

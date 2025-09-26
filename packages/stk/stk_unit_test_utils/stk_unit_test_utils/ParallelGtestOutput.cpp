@@ -321,7 +321,7 @@ public:
         if(numTotalFailures > 0)
             printf("%s", mOutputCapturer->get_and_reset_captured_output().c_str());
         MinimalistPrinter::OnTestEnd(test_info);
-        mOutputCapturer.release();
+        mOutputCapturer.reset();
     }
 
 protected:

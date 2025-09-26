@@ -194,5 +194,6 @@ template std::string idempotentlyGetEnvironmentVariable<std::string>(std::string
 template int idempotentlyGetEnvironmentVariable<int>(int&, bool&, const std::string_view, const int);
 template unsigned long idempotentlyGetEnvironmentVariable<unsigned long>(unsigned long&, bool&, const std::string_view, const unsigned long);
 template bool idempotentlyGetEnvironmentVariable<bool>(bool&, bool&, const std::string_view, const bool);
+template unsigned long long idempotentlyGetEnvironmentVariable<unsigned long long>(unsigned long long&, bool&, const std::string_view, const unsigned long long);
 
 } // namespace Teuchos

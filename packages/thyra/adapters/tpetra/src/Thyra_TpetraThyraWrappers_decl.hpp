@@ -31,6 +31,16 @@ namespace Thyra {
 RCP<const Teuchos::Comm<Ordinal> >
 convertTpetraToThyraComm( const RCP<const Teuchos::Comm<int> > &tpetraComm );
 
+/** \brief Given an Tpetra <tt>Teuchos::Comm<Ordinal></tt> object, return an
+ * equivalent <tt>Teuchos::Comm<int></tt> object.
+ *
+ * Will throw if conversion is not successful.
+ *
+ * \ingroup Tpetra_Thyra_Op_Vec_adapters_grp
+ */
+RCP<const Teuchos::Comm<int> >
+convertThyraToTpetraComm( const RCP<const Teuchos::Comm<Ordinal> > &thyraComm );
+
 
 /** \brief Create a Thyra::VectorSpaceBase object given a Tpetra::Map.
  *

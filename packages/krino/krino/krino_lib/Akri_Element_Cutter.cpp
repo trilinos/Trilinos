@@ -1019,7 +1019,7 @@ One_LS_Per_Phase_Cutter::have_crossing(const InterfaceID interface, const std::a
 
 int One_LS_Per_Phase_Cutter::get_ls_per_interface_phase_at_location(const stk::math::Vector3d & pCoords) const
 {
-  const std::set<int> optimalPhases = determine_optimal_phases_at_location(pCoords, all_cutting_surfaces);
+  const std::set<int> optimalPhases = determine_optimal_phases_at_location(pCoords, cutting_surfaces);
   STK_ThrowRequireMsg(optimalPhases.size()==1, "Unexpected phase configuration with " << optimalPhases.size() << " optimal phases when evaluated phase at " << pCoords << "\n" << visualize());
   return *optimalPhases.begin();
 }

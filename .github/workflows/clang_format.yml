@@ -17,7 +17,7 @@ jobs:
 
     - uses: DoozyX/clang-format-lint-action@bcb4eb2cb0d707ee4f3e5cc3b456eb075f12cf73 # v0.20
       with:
-        source: './packages/galeri/src-xpetra ./packages/galeri/example-tpetra ./packages/galeri/example-xpetra ./packages/galeri/test ./packages/ifpack2 ./packages/muelu ./packages/tempus ./packages/teko ./packages/xpetra'
+        source: './packages/galeri/src-xpetra ./packages/galeri/example-tpetra ./packages/galeri/example-xpetra ./packages/galeri/test ./packages/ifpack2 ./packages/muelu ./packages/tempus ./packages/teko ./packages/tpetra ./packages/xpetra'
         exclude: './packages/tempus/examples'
         extensions: 'cpp,hpp'
         clangFormatVersion: 14
@@ -54,7 +54,7 @@ jobs:
         refresh-message-position: true
         message-path: format_patch_message.txt
 
-    - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+    - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
       if: ${{ hashFiles('format_patch.txt') != '' }}
       with:
         script: |

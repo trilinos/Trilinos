@@ -298,7 +298,7 @@ typename BasisFamily::BasisPtr getBasisForFormulation(FormulationChoice formulat
     case Hcurl:                 fs = FUNCTION_SPACE_HCURL; break;
     case L2:                    fs = FUNCTION_SPACE_HVOL;  break;
     case VectorWeightedPoisson: fs = FUNCTION_SPACE_HGRAD; break;
-    case UnknownFormulation:    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unknown formulation");
+    default:                    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unknown formulation");
   }
   
   auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);
@@ -1463,13 +1463,13 @@ int main( int argc, char* argv[] )
     }
     else
     {
-     std::vector<AlgorithmChoice> algorithmChoices {Standard,NonAffineTensor,AffineTensor,Uniform};
+     std::vector<AlgorithmChoice> algorithmChoices2 {Standard,NonAffineTensor,AffineTensor,Uniform};
       WorksetForAlgorithmChoice worksetForAlgorithmChoice;
       for (auto formulationChoice : formulationChoices)
       {
         for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
         {
-          for (auto algorithmChoice : algorithmChoices)
+          for (auto algorithmChoice : algorithmChoices2)
           {
             worksetForAlgorithmChoice[algorithmChoice] = worksetSizeMap[{mode,formulationChoice,algorithmChoice}][polyOrder];
           }
@@ -1495,7 +1495,7 @@ int main( int argc, char* argv[] )
           int polyOrder       = std::get<0>(testCase);
           auto formulation    = std::get<1>(testCase);
           auto gridDims       = std::get<2>(testCase);
-          auto worksetSizeMap = std::get<3>(testCase);
+          auto worksetSizeMap2 = std::get<3>(testCase);
           if (formulation != previousFormulation)
           {
             std::cout << "\n\n***** Formulation: " << to_string(formulation) << " *******\n";
@@ -1514,8 +1514,8 @@ int main( int argc, char* argv[] )
           for (auto algorithmChoice : algorithmChoices)
           {
             int worksetSize = 1;
-            if (worksetSizeMap.find(algorithmChoice) != worksetSizeMap.end())
-              worksetSize = worksetSizeMap[algorithmChoice];
+            if (worksetSizeMap2.find(algorithmChoice) != worksetSizeMap2.end())
+              worksetSize = worksetSizeMap2[algorithmChoice];
             if (mode == Calibration)
             {
               // if this workset size is bigger than the optimal for p-1, skip it -- it's highly

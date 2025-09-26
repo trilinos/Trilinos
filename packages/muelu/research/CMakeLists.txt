@@ -1,5 +1,5 @@
 # based on experimental code
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
+IF(${PACKAGE_NAME}_ENABLE_Experimental)
   TRIBITS_ADD_EXAMPLE_DIRECTORIES(q2q1)
   IF(${PACKAGE_NAME}_ENABLE_ADDITIVE_VARIANT)
     MESSAGE(STATUS "MG Additive Variant enabled")

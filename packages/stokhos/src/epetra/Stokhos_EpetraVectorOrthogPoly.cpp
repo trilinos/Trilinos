@@ -31,11 +31,11 @@ Stokhos::EpetraVectorOrthogPoly::
 EpetraVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm) : 
+  const Teuchos::RCP<const Epetra_BlockMap>& _coeff_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& _product_comm) :
   ProductContainer<Epetra_Vector>(block_map),
   VectorOrthogPoly<Epetra_Vector>(basis, block_map),
-  ProductEpetraVector(block_map, coeff_map, product_comm) 
+  ProductEpetraVector(block_map, _coeff_map, _product_comm)
 {
 }
 
@@ -43,12 +43,12 @@ Stokhos::EpetraVectorOrthogPoly::
 EpetraVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm) :
+  const Teuchos::RCP<const Epetra_BlockMap>& _coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& _product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& _product_comm) :
   ProductContainer<Epetra_Vector>(block_map),
   VectorOrthogPoly<Epetra_Vector>(basis, block_map),
-  ProductEpetraVector(block_map, coeff_map, product_map, product_comm) 
+  ProductEpetraVector(block_map, _coeff_map, _product_map, _product_comm)
 {
 }
 
@@ -56,14 +56,14 @@ Stokhos::EpetraVectorOrthogPoly::
 EpetraVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
+  const Teuchos::RCP<const Epetra_BlockMap>& _coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& _product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& _product_comm,
   Epetra_DataAccess CV,
   const Epetra_Vector& block_vector) :
   ProductContainer<Epetra_Vector>(block_map),
   VectorOrthogPoly<Epetra_Vector>(basis, block_map),
-  ProductEpetraVector(block_map, coeff_map, product_map, product_comm, CV,
+  ProductEpetraVector(block_map, _coeff_map, _product_map, _product_comm, CV,
 		      block_vector) 
 {
 }
@@ -92,10 +92,10 @@ Stokhos::EpetraVectorOrthogPoly::
 reset(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& new_basis,
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm) 
+  const Teuchos::RCP<const Epetra_BlockMap>& _coeff_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& _product_comm)
 {
-  ProductEpetraVector::reset(block_map, coeff_map, product_comm);
+  ProductEpetraVector::reset(block_map, _coeff_map, _product_comm);
   this->basis_ = new_basis;
 }
 
@@ -104,11 +104,11 @@ Stokhos::EpetraVectorOrthogPoly::
 reset(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& new_basis,
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm) 
+  const Teuchos::RCP<const Epetra_BlockMap>& _coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& _product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& _product_comm)
 {
-  ProductEpetraVector::reset(block_map, coeff_map, product_map, product_comm);
+  ProductEpetraVector::reset(block_map, _coeff_map, _product_map, _product_comm);
   this->basis_ = new_basis;
 }
 

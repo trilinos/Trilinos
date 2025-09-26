@@ -36,11 +36,10 @@ namespace Tpetra {
 ///
 ///
 /// \return Local number of successfully replaced diagonal entries
-template<class SC, class LO, class GO, class NT>
-LO
-replaceDiagonalCrsMatrix(::Tpetra::CrsMatrix<SC, LO, GO, NT>& matrix,
-    const ::Tpetra::Vector<SC, LO, GO, NT>& newDiag);
+template <class SC, class LO, class GO, class NT>
+LO replaceDiagonalCrsMatrix(::Tpetra::CrsMatrix<SC, LO, GO, NT>& matrix,
+                            const ::Tpetra::Vector<SC, LO, GO, NT>& newDiag);
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // #ifndef TPETRA_REPLACEDIAGONALCRSMATRIX_DECL_HPP
+#endif  // #ifndef TPETRA_REPLACEDIAGONALCRSMATRIX_DECL_HPP

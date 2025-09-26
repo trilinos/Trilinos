@@ -1,4 +1,3 @@
-
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/MueCentral)
@@ -8,9 +7,8 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    simple-factory-request-mechanism
-    SOURCES main.cpp
-    ARGS ""
-    COMM serial mpi
-    )
-
+  simple-factory-request-mechanism
+  SOURCES main.cpp
+  ARGS ""
+  COMM serial mpi
+)

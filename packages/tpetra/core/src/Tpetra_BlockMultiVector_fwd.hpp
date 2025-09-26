@@ -17,12 +17,12 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
-template<class SC = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class NT = ::Tpetra::Details::DefaultTypes::node_type>
+template <class SC = ::Tpetra::Details::DefaultTypes::scalar_type,
+          class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+          class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+          class NT = ::Tpetra::Details::DefaultTypes::node_type>
 class BlockMultiVector;
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+}  // namespace Tpetra
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
-#endif // TPETRA_BLOCKMULTIVECTOR_FWD_HPP
+#endif  // TPETRA_BLOCKMULTIVECTOR_FWD_HPP

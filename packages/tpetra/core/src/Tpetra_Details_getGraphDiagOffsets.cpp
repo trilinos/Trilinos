@@ -24,10 +24,10 @@
 
 namespace Tpetra {
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_LGN( TPETRA_DETAILS_IMPL_GETGRAPHDIAGOFFSETS_INSTANT )
+TPETRA_INSTANTIATE_LGN(TPETRA_DETAILS_IMPL_GETGRAPHDIAGOFFSETS_INSTANT)
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // Whether we should build this specialization
+#endif  // Whether we should build this specialization

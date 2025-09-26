@@ -12,7 +12,7 @@
 #include <cassert>
 #include <ctime>
 #include <exodusII.h>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <map>
 #include <sstream>
@@ -460,7 +460,7 @@ namespace Ioexnl {
             errmsg,
             "ERROR: The variable named '{}' is of the wrong type. A region variable must be of type"
             " TRANSIENT or REDUCTION.\n"
-            "This is probably an internal error; please notify gdsjaar@sandia.gov",
+            "This is probably an internal error; please notify sierra-help@sandia.gov",
             field.get_name());
         IOSS_ERROR(errmsg);
       }

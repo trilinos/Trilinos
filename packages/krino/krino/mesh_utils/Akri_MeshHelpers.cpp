@@ -936,7 +936,6 @@ compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Enti
   {
     const std::array<stk::math::Vector3d,4> nodes = gather_tet_coordinates(mesh, element, coordsField);
     const double vol = compute_tet_volume(nodes);
-    compute_tri_or_tet_volume(mesh, element, *coordsField);
     const double edge_rms = std::sqrt(
         ((nodes[1]-nodes[0]).length_squared() +
          (nodes[2]-nodes[0]).length_squared() +

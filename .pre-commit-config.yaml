@@ -1,0 +1,51 @@
+ repos:
+
+ - repo: https://github.com/pre-commit/mirrors-clang-format
+   rev: v14.0.1
+   hooks:
+   - id: clang-format
+     name: clang-format Galeri
+     types_or: [c++, c, cuda]
+     files: "packages/galeri/(src-xpetra|example-tpetra|example-xpetra|test)/.*pp"
+   - id: clang-format
+     name: clang-format Ifpack2
+     types_or: [c++, c, cuda]
+     files: "packages/ifpack2/.*pp"
+   - id: clang-format
+     name: clang-format MueLu
+     types_or: [c++, c, cuda]
+     files: "packages/muelu/.*pp"
+   - id: clang-format
+     name: clang-format Teko
+     types_or: [c++, c, cuda]
+     files: "packages/teko/.*pp"
+   - id: clang-format
+     name: clang-format Tempus
+     types_or: [c++, c, cuda]
+     files: "packages/tempus/.*pp"
+     exclude: "packages/tempus/examples/.*"
+   - id: clang-format
+     name: clang-format Tpetra
+     types_or: [c++, c, cuda]
+     files: "packages/tpetra/.*pp"
+   - id: clang-format
+     name: clang-format Xpetra
+     types_or: [c++, c, cuda]
+     files: "packages/xpetra/.*pp"
+
+ - repo: https://github.com/pre-commit/pre-commit-hooks
+   rev: v4.5.0
+   hooks:
+   - id: check-xml
+     files: ".*xml"
+     exclude: "(packages/teuchos/parameterlist/.*|packages/ifpack2/test/belos/test_2_RILUK_Experimental_nos1_hb.xml|packages/anasazi/epetra/example/.*)"
+   - id: check-yaml
+     files: "(.*yaml|.*yml)"
+     exclude: "packages/teuchos/.*"
+
+ - repo: https://github.com/cheshirekow/cmake-format-precommit
+   rev: v0.6.13
+   hooks:
+   - id: cmake-format
+     name: cmake-format MueLu
+     files: "packages/muelu/.*CMakeLists.txt"

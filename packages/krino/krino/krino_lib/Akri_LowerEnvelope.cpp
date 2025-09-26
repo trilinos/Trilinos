@@ -8,9 +8,9 @@
 
 #include <math.h>
 
-#include <Akri_LevelSet.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_LowerEnvelope.hpp>
+#include <Akri_Sign.hpp>
 
 #include <limits>
 
@@ -49,23 +49,23 @@ find_crossing_position_and_sign(const InterfaceID key, const std::vector<double>
     key_isovar[node] = phi[node][key.first_ls()]-phi[node][key.second_ls()];
   }
 
-  if ( LevelSet::sign_change(key_isovar[0], key_isovar[num_nodes-1]) )
+  if ( sign_change(key_isovar[0], key_isovar[num_nodes-1]) )
   {
     for ( int s = 0; s < num_nodes-1; ++s )
     {
       const double ls0 = key_isovar[s];
       const double ls1 = key_isovar[s+1];
-      if ( LevelSet::sign_change(ls0, ls1) )
+      if ( sign_change(ls0, ls1) )
       {
         const double interval_position = ls0 / ( ls0 - ls1 );
         const double abs_position = (1.-interval_position)*pos[s] + interval_position*pos[s+1];
-        return std::make_pair(abs_position, LevelSet::sign(ls1));
+        return std::make_pair(abs_position, sign(ls1));
       }
     }
   }
 
-  const int node0_sign = LevelSet::sign(key_isovar[0]);
-  const int node1_sign = LevelSet::sign(key_isovar[num_nodes-1]);
+  const int node0_sign = sign(key_isovar[0]);
+  const int node1_sign = sign(key_isovar[num_nodes-1]);
   STK_ThrowRequire(node0_sign == node1_sign);
   return std::make_pair(-1., node0_sign);
 }

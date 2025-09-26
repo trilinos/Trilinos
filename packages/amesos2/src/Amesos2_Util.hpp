@@ -279,8 +279,14 @@ namespace Amesos2 {
         nnz = Teuchos::as<typename KV_GS::value_type>(nnz_tmp);
 
         typedef typename KV_GS::value_type view_gs_t;
-        for (i = 0; i < pointers.extent(0); ++i){
-          pointers(i) = Teuchos::as<view_gs_t>(pointers_tmp(i));
+        if (pointers.extent(0) == 1) {
+          Kokkos::deep_copy(pointers, 0);
+        } else {
+          auto host_pointers = Kokkos::create_mirror_view(pointers);
+          for (i = 0; i < pointers.extent(0); ++i){
+            host_pointers(i) = Teuchos::as<view_gs_t>(pointers_tmp(i));
+          }
+          Kokkos::deep_copy(pointers, host_pointers);
         }
         nnz = Teuchos::as<view_gs_t>(nnz_tmp);
       }
@@ -339,9 +345,11 @@ namespace Amesos2 {
           diff_gs_helper_kokkos_view<M, KV_S, KV_TMP, KV_GS, Op> >::do_get(mat, nzvals, indices_tmp,
                                                                                  pointers, nnz, map,
                                                                                  distribution, ordering);
+        auto host_indices = Kokkos::create_mirror_view(indices);
         for (i = 0; i < size; ++i){
-          indices(i) = Teuchos::as<view_go_t>(indices_tmp(i));
+          host_indices(i) = Teuchos::as<view_go_t>(indices_tmp(i));
         }
+        Kokkos::deep_copy(indices, host_indices);
       }
     };
 
@@ -399,9 +407,11 @@ namespace Amesos2 {
                                                                                   pointers, nnz, map,
                                                                                   distribution, ordering);
 
+        auto host_nzvals = Kokkos::create_mirror_view(nzvals);
         for (i = 0; i < size; ++i){
-          nzvals(i) = Teuchos::as<view_scalar_t>(nzvals_tmp(i));
+          host_nzvals(i) = Teuchos::as<view_scalar_t>(nzvals_tmp(i));
         }
+        Kokkos::deep_copy(nzvals, host_nzvals);
       }
     };
 

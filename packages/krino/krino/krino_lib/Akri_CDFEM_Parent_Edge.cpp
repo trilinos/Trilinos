@@ -9,8 +9,10 @@
 #include <math.h>
 
 #include <Akri_CDFEM_Parent_Edge.hpp>
-#include <Akri_LevelSet.hpp>
+#include <Akri_DiagWriter.hpp>
 #include <Akri_LowerEnvelope.hpp>
+#include <Akri_Sign.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 
 #include <limits>
 
@@ -69,18 +71,18 @@ CDFEM_Parent_Edge::find_crossings(const bool oneLSPerPhase, const std::vector<st
   for ( int ls_index = 0; ls_index < num_ls; ++ls_index )
   {
     InterfaceID iface(ls_index, ls_index);
-      my_crossing_signs[iface] = LevelSet::sign(nodes_isovar[num_nodes-1][ls_index]);
-    if( !LevelSet::sign_change(nodes_isovar[0][ls_index], nodes_isovar[num_nodes-1][ls_index]) ) continue;
+      my_crossing_signs[iface] = sign(nodes_isovar[num_nodes-1][ls_index]);
+    if( !sign_change(nodes_isovar[0][ls_index], nodes_isovar[num_nodes-1][ls_index]) ) continue;
     for ( int s = 0; s < num_nodes-1; ++s )
     {
       const double ls0 = nodes_isovar[s][ls_index];
       const double ls1 = nodes_isovar[s+1][ls_index];
-      if ( LevelSet::sign_change(ls0, ls1) )
+      if ( sign_change(ls0, ls1) )
       {
         const double interval_position = ls0 / ( ls0 - ls1 );
         const double abs_position = (1.-interval_position)*my_edge_node_positions[s] + interval_position*my_edge_node_positions[s+1];
         my_crossings[iface] = abs_position;
-        my_crossing_signs[iface] = LevelSet::sign(ls1);
+        my_crossing_signs[iface] = sign(ls1);
       }
     }
   }

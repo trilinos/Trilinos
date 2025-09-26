@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,12 +6,12 @@
 
 #include "ED_SystemInterface.h" // for SystemInterface, etc
 #include "exodusII.h"           // for ex_set, etc
-#include "fmt/format.h"
-#include "iqsort.h" // for index_qsort
+#include "iqsort.h"             // for index_qsort
 #include "node_set.h"
-#include "smart_assert.h" // for SMART_ASSERT
-#include <cstdlib>        // for exit
-#include <vector>         // for vector
+#include <cstdlib> // for exit
+#include <fmt/format.h>
+#include <smart_assert.h>
+#include <vector> // for vector
 
 template <typename INT> Node_Set<INT>::Node_Set() : Exo_Entity() {}
 

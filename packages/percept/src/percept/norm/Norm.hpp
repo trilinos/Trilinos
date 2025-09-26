@@ -225,8 +225,8 @@
         for (unsigned ipart=0; ipart < nparts; ipart++)
           {
             stk::mesh::Part& part = *parts[ipart];
-            bool auto_part = 0 != part.attribute<AutoPart>();
-            if (stk::mesh::is_auto_declared_part(part) || auto_part)
+            bool auto_part2 = 0 != part.attribute<AutoPart>();
+            if (stk::mesh::is_auto_declared_part(part) || auto_part2)
               continue;
 
             bool in_selector = (*m_selector)(part);

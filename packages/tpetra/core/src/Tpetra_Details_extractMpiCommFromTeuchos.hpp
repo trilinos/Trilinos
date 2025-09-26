@@ -18,15 +18,16 @@
 
 #include "TpetraCore_config.h"
 #ifdef HAVE_TPETRACORE_MPI
-#  include <mpi.h> // MPI_Comm
-#endif // HAVE_TPETRACORE_MPI
+#include <mpi.h>  // MPI_Comm
+#endif            // HAVE_TPETRACORE_MPI
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
-  // forward declaration of Comm
-  template<class OrdinalType> class Comm;
-} // namespace Teuchos
-#endif // NOT DOXYGEN_SHOULD_SKIP_THIS
+// forward declaration of Comm
+template <class OrdinalType>
+class Comm;
+}  // namespace Teuchos
+#endif  // NOT DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 namespace Details {
@@ -40,13 +41,13 @@ namespace Details {
 /// \return The wrapped MPI_Comm (if comm is a Teuchos::MpiComm), or
 ///   MPI_COMM_SELF (if comm is a Teuchos::SerialComm).
 MPI_Comm
-extractMpiCommFromTeuchos (const Teuchos::Comm<int>& comm);
-#endif // HAVE_TPETRACORE_MPI
+extractMpiCommFromTeuchos(const Teuchos::Comm<int>& comm);
+#endif  // HAVE_TPETRACORE_MPI
 
 //! Is the given Comm a Teuchos::MpiComm<int> instance?
-bool teuchosCommIsAnMpiComm (const Teuchos::Comm<int>& comm);
+bool teuchosCommIsAnMpiComm(const Teuchos::Comm<int>& comm);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_EXTRACTMPICOMMFROMTEUCHOS_HPP
+#endif  // TPETRA_DETAILS_EXTRACTMPICOMMFROMTEUCHOS_HPP

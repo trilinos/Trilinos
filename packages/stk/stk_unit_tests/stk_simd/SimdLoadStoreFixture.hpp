@@ -89,8 +89,8 @@ class SimdLoadStoreFixture : public ::testing::Test
     for(int i = 0; i < n; ++i) {
       int idx = i*N;
       EXPECT_EQ(f(idx), data[idx]) << idx;
-      for(int n = 1; n < N; ++n) {
-        EXPECT_EQ(v, data[idx+n]) << idx;
+      for(int k = 1; k < N; ++k) {
+        EXPECT_EQ(v, data[idx+k]) << idx;
       }
     }
   }

@@ -18,28 +18,26 @@
 namespace Tpetra {
 namespace Details {
 #if defined(HAVE_TPETRACORE_CUDA) && defined(KOKKOS_ENABLE_DEPRECATED_CODE_4)
-  //Verify that for pre-Pascal CUDA architectures, $CUDA_LAUNCH_BLOCKING == 1
-  inline void checkOldCudaLaunchBlocking()
-  {
-    if(!Kokkos::is_initialized())
-      throw std::logic_error("Kokkos must be initialized in order to check CUDA_LAUNCH_BLOCKING setting.");
-    size_t arch = Kokkos::Cuda::device_arch();
-    if(arch < 600)
-    {
-      //Compiling for Kepler/Maxwell: require launch blocking.
-      const char* launchBlockingEnv = std::getenv("CUDA_LAUNCH_BLOCKING");
-      if(!launchBlockingEnv || strcmp(launchBlockingEnv, "1"))
-      {
-        throw std::runtime_error(
-         "Tpetra::initialize(): Kokkos was compiled for an older CUDA architecture than Pascal, but\n"
-         "the environment variable CUDA_LAUNCH_BLOCKING is either unset or is not \"1\".\n"
-         "It must be set to \"1\" at runtime.\n");
-      }
+// Verify that for pre-Pascal CUDA architectures, $CUDA_LAUNCH_BLOCKING == 1
+inline void checkOldCudaLaunchBlocking() {
+  if (!Kokkos::is_initialized())
+    throw std::logic_error("Kokkos must be initialized in order to check CUDA_LAUNCH_BLOCKING setting.");
+  size_t arch = Kokkos::Cuda::device_arch();
+  if (arch < 600) {
+    // Compiling for Kepler/Maxwell: require launch blocking.
+    const char* launchBlockingEnv = std::getenv("CUDA_LAUNCH_BLOCKING");
+    if (!launchBlockingEnv || strcmp(launchBlockingEnv, "1")) {
+      throw std::runtime_error(
+          "Tpetra::initialize(): Kokkos was compiled for an older CUDA architecture than Pascal, but\n"
+          "the environment variable CUDA_LAUNCH_BLOCKING is either unset or is not \"1\".\n"
+          "It must be set to \"1\" at runtime.\n");
     }
   }
+}
 #else
-  inline void checkOldCudaLaunchBlocking() {}
+inline void checkOldCudaLaunchBlocking() {}
 #endif
-}}
+}  // namespace Details
+}  // namespace Tpetra
 
 #endif

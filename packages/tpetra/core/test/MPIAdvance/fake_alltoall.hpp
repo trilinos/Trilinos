@@ -14,10 +14,9 @@
 /*! reference alltoall impl
  */
 inline void Fake_Alltoall(const void *sendbuf, int sendcount,
-                      MPI_Datatype sendtype, void *recvbuf,
-                      int recvcount, MPI_Datatype recvtype, 
-                      MPI_Comm comm) {
-
+                          MPI_Datatype sendtype, void *recvbuf,
+                          int recvcount, MPI_Datatype recvtype,
+                          MPI_Comm comm) {
   constexpr int ARBITRARY_TAG = 0;
 
   // communicator properties
@@ -31,7 +30,7 @@ inline void Fake_Alltoall(const void *sendbuf, int sendcount,
 
   auto rb = reinterpret_cast<char *>(recvbuf);
   auto sb = reinterpret_cast<const char *>(sendbuf);
-  
+
   // get sizes for indexing into sb / rb
   int sendsize, recvsize;
   MPI_Type_size(sendtype, &sendsize);

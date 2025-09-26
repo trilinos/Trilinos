@@ -103,26 +103,14 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLev
     }
 
     bool isEpetra = A->getRowMap()->lib() == Xpetra::UseEpetra;
-    bool isGPU =
-#ifdef KOKKOS_ENABLE_CUDA
-        (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosCudaWrapperNode).name()) ||
-#endif
-#ifdef KOKKOS_ENABLE_HIP
-        (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosHIPWrapperNode).name()) ||
-#endif
-#ifdef KOKKOS_ENABLE_SYCL
-        (typeid(Node).name() == typeid(Tpetra::KokkosCompat::KokkosSYCLWrapperNode).name()) ||
-#endif
-        false;
+    bool isGPU    = Node::is_gpu;
 
     if (pL.get<bool>("rap: triple product") == false || isEpetra || isGPU) {
       if (pL.get<bool>("rap: triple product") && isEpetra)
         GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for Epetra.\n";
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
       if (pL.get<bool>("rap: triple product") && isGPU)
         GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for "
                               << Node::execution_space::name() << std::endl;
-#endif
 
       // Reuse pattern if available (multiple solve)
       RCP<ParameterList> APparams = rcp(new ParameterList);

@@ -19,14 +19,14 @@
 
 namespace Tpetra {
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  // for all nodes, lo, go
-  TPETRA_INSTANTIATE_LGN(TPETRA_MAP_INSTANT)
+// for all nodes, lo, go
+TPETRA_INSTANTIATE_LGN(TPETRA_MAP_INSTANT)
 
-  // for default node, all lo,go
-  TPETRA_INSTANTIATE_LG(TPETRA_MAP_INSTANT_DEFAULTNODE)
+// for default node, all lo,go
+TPETRA_INSTANTIATE_LG(TPETRA_MAP_INSTANT_DEFAULTNODE)
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif  // HAVE_TPETRA_EXPLICIT_INSTANTIATION

@@ -8,6 +8,7 @@
 
 #include "copy_string_cpp.h"
 #include "exodusII.h" // for MAX_LINE_LENGTH, ex_close, etc
+#include "fmt/format.h"
 #include "fmt/ostream.h"
 #include "globals.h"
 #include "nem_spread.h"

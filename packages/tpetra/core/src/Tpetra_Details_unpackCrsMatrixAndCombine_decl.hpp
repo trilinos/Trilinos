@@ -41,11 +41,13 @@
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
 // Forward declaration of Array
-template<class T> class Array;
+template <class T>
+class Array;
 // Forward declaration of ArrayView
-template<class T> class ArrayView;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+template <class T>
+class ArrayView;
+}  // namespace Teuchos
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 
@@ -92,27 +94,27 @@ namespace Details {
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
 /// CrsMatrix migrates fully to adopting Kokkos::DualView objects for its storage
 /// of data, this procedure could be bypassed.
-template<typename ST, typename LO, typename GO, typename NT>
-void
-unpackCrsMatrixAndCombine (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                           const Teuchos::ArrayView<const char>& imports,
-                           const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-                           const Teuchos::ArrayView<const LO>& importLIDs,
-                           size_t constantNumPackets,
-                           CombineMode combineMode);
+template <typename ST, typename LO, typename GO, typename NT>
+void unpackCrsMatrixAndCombine(const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                               const Teuchos::ArrayView<const char>& imports,
+                               const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+                               const Teuchos::ArrayView<const LO>& importLIDs,
+                               size_t constantNumPackets,
+                               CombineMode combineMode);
 
-template<typename ST, typename LO, typename GO, typename NT>
-void
-unpackCrsMatrixAndCombineNew(
-  const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-  Kokkos::DualView<char*,
-    typename DistObject<char, LO, GO, NT>::buffer_device_type> imports,
-  Kokkos::DualView<size_t*,
-    typename DistObject<char, LO, GO, NT>::buffer_device_type> numPacketsPerLID,
-  const Kokkos::DualView<const LO*,
-    typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
-  const size_t constantNumPackets,
-  const CombineMode combineMode);
+template <typename ST, typename LO, typename GO, typename NT>
+void unpackCrsMatrixAndCombineNew(
+    const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+    Kokkos::DualView<char*,
+                     typename DistObject<char, LO, GO, NT>::buffer_device_type>
+        imports,
+    Kokkos::DualView<size_t*,
+                     typename DistObject<char, LO, GO, NT>::buffer_device_type>
+        numPacketsPerLID,
+    const Kokkos::DualView<const LO*,
+                           typename DistObject<char, LO, GO, NT>::buffer_device_type>& importLIDs,
+    const size_t constantNumPackets,
+    const CombineMode combineMode);
 
 /// \brief Special version of Tpetra::Details::unpackCrsMatrixAndCombine
 ///   that also unpacks owning process ranks.
@@ -169,12 +171,12 @@ unpackCrsMatrixAndCombineNew(
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
 /// CrsMatrix migrates fully to adopting Kokkos::DualView objects for its storage
 /// of data, this procedure could be bypassed.
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 size_t
-unpackAndCombineWithOwningPIDsCount (
-    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-    const Teuchos::ArrayView<const char> &imports,
+unpackAndCombineWithOwningPIDsCount(
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& sourceMatrix,
+    const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+    const Teuchos::ArrayView<const char>& imports,
     const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
     size_t constantNumPackets,
     CombineMode combineMode,
@@ -197,46 +199,50 @@ unpackAndCombineWithOwningPIDsCount (
 /// namely, calculating the local number of nonzeros, and allocates CRS
 /// arrays of the correct sizes
 
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void
-unpackAndCombineIntoCrsArrays (
-    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Kokkos::View<LocalOrdinal const *, 
-          Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void unpackAndCombineIntoCrsArrays(
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& sourceMatrix,
+    const Kokkos::View<LocalOrdinal const*,
+                       Kokkos::Device<typename Node::device_type::execution_space,
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-          , void, void
+                       ,
+                       void, void
 #endif
-          >,
-    const Kokkos::View<const char*, 
-          Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+                       >,
+    const Kokkos::View<const char*,
+                       Kokkos::Device<typename Node::device_type::execution_space,
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-          , void, void
+                       ,
+                       void, void
 #endif
-          >,
-    const Kokkos::View<const size_t*, 
-          Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+                       >,
+    const Kokkos::View<const size_t*,
+                       Kokkos::Device<typename Node::device_type::execution_space,
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-          , void, void
+                       ,
+                       void, void
 #endif
-          >,
+                       >,
     const size_t numSameIDs,
-    const Kokkos::View<LocalOrdinal const *, 
-          Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+    const Kokkos::View<LocalOrdinal const*,
+                       Kokkos::Device<typename Node::device_type::execution_space,
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-          , void, void
+                       ,
+                       void, void
 #endif
-          >,
-    const Kokkos::View<LocalOrdinal const *, 
-          Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+                       >,
+    const Kokkos::View<LocalOrdinal const*,
+                       Kokkos::Device<typename Node::device_type::execution_space,
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-          , void, void
+                       ,
+                       void, void
 #endif
-          >,
+                       >,
     size_t TargetNumRows,
     const int MyTargetPID,
     Teuchos::ArrayRCP<size_t>& CRS_rowptr,
@@ -245,55 +251,59 @@ unpackAndCombineIntoCrsArrays (
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids);
 
-template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-void
-unpackAndCombineIntoCrsArrays (
-    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & sourceMatrix,
-    const Kokkos::View<LocalOrdinal const *, 
-          Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void unpackAndCombineIntoCrsArrays(
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& sourceMatrix,
+    const Kokkos::View<LocalOrdinal const*,
+                       Kokkos::Device<typename Node::device_type::execution_space,
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-          , void, void
+                       ,
+                       void, void
 #endif
-          >,
-    const Kokkos::View<const char*, 
-          Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+                       >,
+    const Kokkos::View<const char*,
+                       Kokkos::Device<typename Node::device_type::execution_space,
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-          , void, void
+                       ,
+                       void, void
 #endif
-          >,
-    const Kokkos::View<const size_t*, 
-          Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+                       >,
+    const Kokkos::View<const size_t*,
+                       Kokkos::Device<typename Node::device_type::execution_space,
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-          , void, void
+                       ,
+                       void, void
 #endif
-          >,
+                       >,
     const size_t numSameIDs,
-    const Kokkos::View<LocalOrdinal const *, 
-          Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+    const Kokkos::View<LocalOrdinal const*,
+                       Kokkos::Device<typename Node::device_type::execution_space,
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-          , void, void
+                       ,
+                       void, void
 #endif
-          >,
-    const Kokkos::View<LocalOrdinal const *, 
-          Kokkos::Device<typename Node::device_type::execution_space,
-                         Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
+                       >,
+    const Kokkos::View<LocalOrdinal const*,
+                       Kokkos::Device<typename Node::device_type::execution_space,
+                                      Tpetra::Details::DefaultTypes::comm_buffer_memory_space<typename Node::device_type>>
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-          , void, void
+                       ,
+                       void, void
 #endif
-          >,
+                       >,
     size_t TargetNumRows,
     const int MyTargetPID,
-    Kokkos::View<size_t*,typename Node::device_type>& /*crs_rowptr_d*/,
-    Kokkos::View<GlobalOrdinal*,typename Node::device_type>&     /*crs_colind_d*/,
-    Kokkos::View<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*,typename Node::device_type>& /*crs_vals_d*/,
+    Kokkos::View<size_t*, typename Node::device_type>& /*crs_rowptr_d*/,
+    Kokkos::View<GlobalOrdinal*, typename Node::device_type>& /*crs_colind_d*/,
+    Kokkos::View<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::impl_scalar_type*, typename Node::device_type>& /*crs_vals_d*/,
     const Teuchos::ArrayView<const int>& SourcePids,
-    Kokkos::View<int*,typename Node::device_type>& /*TargetPids*/);
+    Kokkos::View<int*, typename Node::device_type>& /*TargetPids*/);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE_DECL_HPP
+#endif  // TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE_DECL_HPP

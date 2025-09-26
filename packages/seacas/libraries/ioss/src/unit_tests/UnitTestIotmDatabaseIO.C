@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -23,7 +23,6 @@
 #include "Ioss_SideSet.h"
 #include "text_mesh/Iotm_DatabaseIO.h"
 #include "text_mesh/Iotm_TextMeshTopologyMapping.h"
-#include <fmt/core.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string>

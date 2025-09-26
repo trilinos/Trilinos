@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -109,7 +109,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
                "\n\tCan also set options via EXOMATLAB_OPTIONS environment variable.\n"
                "\n\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#exomatlab\n"
-               "\n\t->->-> Send email to gdsjaar@sandia.gov for exomatlab support.<-<-<-\n");
+               "\n\t->->-> Send email to sierra-help@sandia.gov for exomatlab support.<-<-<-\n");
 
     exit(EXIT_SUCCESS);
   }

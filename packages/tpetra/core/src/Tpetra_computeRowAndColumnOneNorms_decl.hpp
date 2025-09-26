@@ -32,10 +32,10 @@ namespace Tpetra {
 /// \return Input to leftAndOrRightScaleCrsMatrix (which see).  The
 ///   result is only safe to use for left scaling, not for right
 ///   scaling.
-template<class SC, class LO, class GO, class NT>
+template <class SC, class LO, class GO, class NT>
 Details::EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type,
                            typename NT::device_type>
-computeRowOneNorms (const Tpetra::RowMatrix<SC, LO, GO, NT>& A);
+computeRowOneNorms(const Tpetra::RowMatrix<SC, LO, GO, NT>& A);
 
 /// \brief Compute global row and column one-norms ("row sums" and
 ///   "column sums") of the input sparse matrix A, in a way suitable
@@ -63,12 +63,12 @@ computeRowOneNorms (const Tpetra::RowMatrix<SC, LO, GO, NT>& A);
 ///   norms separately from row norms.
 ///
 /// \return Input to leftAndOrRightScaleCrsMatrix (which see).
-template<class SC, class LO, class GO, class NT>
+template <class SC, class LO, class GO, class NT>
 Details::EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type,
                            typename NT::device_type>
-computeRowAndColumnOneNorms (const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
-                             const bool assumeSymmetric);
+computeRowAndColumnOneNorms(const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
+                            const bool assumeSymmetric);
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_COMPUTEROWANDCOLUMNONENORMS_DECL_HPP
+#endif  // TPETRA_COMPUTEROWANDCOLUMNONENORMS_DECL_HPP

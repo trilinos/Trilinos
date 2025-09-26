@@ -104,18 +104,6 @@ void check_split_assign(std::vector<Iocgns::StructuredZoneData *> &zones,
       std::vector<size_t> work_vector(proc_count);
       Iocgns::Utils::assign_zones_to_procs(zones, work_vector, verbose);
 
-#if 0
-        fmt::print(stderr, "\nDecomposition for {} processors; Total work = {}, Average = {}\n",
-                   proc_count, fmt::group_digits((size_t)total_work), fmt::group_digits((size_t)avg_work));
-
-          for (const auto zone : zones) {
-            if (zone->is_active()) {
-              fmt::print(stderr, "Zone {}\tProc: {}\tOrdinal: {}x{}x{}\tWork: {}\n",
-                         zone->m_name, zone->m_proc, zone->m_ordinal[0], zone->m_ordinal[1],
-                         zone->m_ordinal[2], fmt::group_digits(zone->work()));
-            }
-          }
-#endif
       // Each active zone must be on a processor
       for (const auto zone : zones) {
         if (zone->is_active()) {

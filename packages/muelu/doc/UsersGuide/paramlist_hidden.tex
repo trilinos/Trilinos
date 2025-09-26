@@ -321,6 +321,8 @@ Only used when tentative: calculate qr is set to false.}
         
 \cbb{combine: numBlks}{int}{1}{ Used with multigrid algorithm 'combine' to combine multiple sub-block prolongators into one  for PDE systems (numBlks x numBlks). }
         
+\cbb{combine: useMaxLevels}{bool}{false}{ Used with multigrid algorithm 'combine'. When 'true', use the maximum number of levels across all sub-block hierarchies. }
+        
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
         
 \cba{transfer: params}{\parameterlist}{Sublist of options for use by transfer.}
@@ -355,6 +357,8 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{filtered matrix: reuse eigenvalue}{bool}{true}{Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.}
         
 \cbb{filtered matrix: reuse graph}{bool}{true}{Set values to zero instead of constructing a new graph.}
+        
+\cbb{filtered matrix: count negative diagonals}{bool}{false}{Counts the number of negative diagonals (involves MPI communication).}
         
 \cbb{matrix: compute analysis}{bool}{false}{Perform matrix analysis. Checks several matrix properties and prints statistics.}
         

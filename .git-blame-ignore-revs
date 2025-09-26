@@ -7,3 +7,9 @@
 f2718045d03fc5622b05e62e3a28be6a89475989
 # Removed CRs in cmake/ctest/drivers/ascicgpu031/drakify-email.pl
 ca64fb4e4a495946d98e6e77060d5c03de6e21d7
+# clang-format for Ifpack2
+8fdbc438d83255b56e11ce2171f301c42536ab51
+# clang-format for Galeri      
+8bd6eb2ac8e1c416016511acb78dd0a3b30a5126
+# clang-format for Tpetra
+12679ec0a9b6c06976825169045d105291f2b049

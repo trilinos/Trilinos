@@ -18,12 +18,12 @@
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
 namespace Details {
-template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class DeviceType = ::Tpetra::Details::DefaultTypes::node_type::device_type>
+template <class LocalOrdinal  = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+          class DeviceType    = ::Tpetra::Details::DefaultTypes::node_type::device_type>
 class LocalMap;
-} // namespace Details
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+}  // namespace Details
+}  // namespace Tpetra
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
-#endif // TPETRA_DETAILS_LOCALMAP_FWD_HPP
+#endif  // TPETRA_DETAILS_LOCALMAP_FWD_HPP

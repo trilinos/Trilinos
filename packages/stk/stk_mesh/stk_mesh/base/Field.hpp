@@ -159,9 +159,6 @@ public:
     : FieldBase(meta, entityRank, fieldOrdinal, name, dataTraits, numberOfStates, thisState, host_layout, device_layout,
                 new FieldData<T, stk::ngp::HostMemSpace, HostLayout>(entityRank, fieldOrdinal, name, dataTraits))
   {
-    if constexpr (HostLayout != Layout::Right) {
-      std::cout << "WARNING: Host Fields with non-standard layout are not yet fully-supported by STK Mesh." << std::endl;
-    }
   }
 
   /** \brief  Query this field for a given field state. */

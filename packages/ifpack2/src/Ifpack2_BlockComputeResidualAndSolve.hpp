@@ -120,7 +120,7 @@ struct ComputeResidualAndSolve_1Pass {
 
     const impl_scalar_type* xx;
     auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(
-        NULL, blocksize, blocksize);
+        tpetra_values.data(), blocksize, blocksize);
 
     // Get shared allocation for a local copy of x, residual, and A
     impl_scalar_type* local_residual = reinterpret_cast<impl_scalar_type*>(
@@ -330,7 +330,7 @@ struct ComputeResidualAndSolve_2Pass {
     const local_ordinal_type num_vectors = b.extent(1);
 
     auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(
-        NULL, blocksize, blocksize);
+        tpetra_values.data(), blocksize, blocksize);
 
     // Get shared allocation for a local copy of x, Ax, and A
     impl_scalar_type* local_residual = reinterpret_cast<impl_scalar_type*>(
@@ -391,7 +391,7 @@ struct ComputeResidualAndSolve_2Pass {
     const local_ordinal_type num_vectors = b.extent(1);
 
     auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(
-        NULL, blocksize, blocksize);
+        tpetra_values.data(), blocksize, blocksize);
 
     // Get shared allocation for a local copy of x, Ax, and A
     impl_scalar_type* local_residual = reinterpret_cast<impl_scalar_type*>(

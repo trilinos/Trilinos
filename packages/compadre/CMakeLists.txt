@@ -181,7 +181,7 @@ else() # Raw CMake Project
   set(KOKKOSKERNELS_IN_TRILINOS OFF)
   set(KOKKOSKERNELS_EXISTING_ELSEWHERE OFF)
   set(KOKKOSKERNELS_BUILT_FOR_USER OFF)
-  set(KOKKOS_MIN "3.3.01")
+  set(KOKKOS_MIN "4.3.01")
 
   if (Trilinos_PREFIX)
     FIND_PACKAGE(Trilinos COMPONENTS Kokkos KokkosKernels OPTIONAL_COMPONENTS Gtest)
@@ -318,11 +318,7 @@ else() # Raw CMake Project
       get_directory_property(Kokkos_VERSION DIRECTORY kokkos DEFINITION Kokkos_VERSION)
       message(STATUS "Kokkos Version: ${Kokkos_VERSION}")
   endif()
-  if(Kokkos_VERSION VERSION_LESS "3.7")
-    set(KOKKOS_THREADS_ARG "--kokkos-threads")
-  else()
-    set(KOKKOS_THREADS_ARG "--kokkos-num-threads")
-  endif()
+  set(KOKKOS_THREADS_ARG "--kokkos-num-threads")
 
   if (KOKKOSKERNELS_IN_TRILINOS)
     if (Compadre_USE_CUDA)
@@ -357,6 +353,8 @@ else() # Raw CMake Project
       SET(KokkosKernels_ENABLE_TPL_CUBLAS OFF)
       OPTION(KokkosKernels_ENABLE_TPL_CUSPARSE "" OFF)
       SET(KokkosKernels_ENABLE_TPL_CUSPARSE OFF)
+      OPTION(KokkosKernels_ENABLE_TPL_CUSOLVER "" OFF)
+      SET(KokkosKernels_ENABLE_TPL_CUSOLVER OFF)
       OPTION(KokkosKernels_INST_MEMSPACE_CUDAUVMSPACE "" OFF)
       SET(KokkosKernels_INST_MEMSPACE_CUDAUVMSPACE OFF)
       OPTION(KokkosKernels_INST_EXECSPACE_THREADS "" ${Kokkos_ENABLE_THREADS})
@@ -497,13 +495,19 @@ else() # Raw CMake Project
 
   if (Compadre_EXAMPLES AND Compadre_TESTS)
     if (NOT Trilinos_PREFIX)
-      if (NOT TARGET gtest)
-        # gtest from kokkos
-        add_library(gtest
-            kokkos/tpls/gtest/gtest/gtest-all.cc
-        )
-        target_include_directories(gtest PUBLIC kokkos/tpls/gtest)
-      endif()
+      # gtest from kokkos
+      # based on kokkos-kernels/CMakeLists.txt
+      SET(GTEST_SOURCE_DIR ${PROJECT_SOURCE_DIR}/kokkos/tpls/gtest)
+      message(STATUS "GTEST:: ${GTEST_SOURCE_DIR}")
+      add_library(compadre_gtest
+          ${GTEST_SOURCE_DIR}/gtest/gtest-all.cc
+      )
+      target_include_directories(compadre_gtest PUBLIC ${GTEST_SOURCE_DIR}/gtest)
+      # Disables pthreads, this is a problem for serial builds in Trilinos & Sierra if it's enabled.
+      TARGET_COMPILE_DEFINITIONS(compadre_gtest PUBLIC "-DGTEST_HAS_PTHREAD=0")
+      TARGET_INCLUDE_DIRECTORIES(compadre_gtest PUBLIC $<BUILD_INTERFACE:${GTEST_SOURCE_DIR}>)
+      #Gtest minimally requires C++11
+      TARGET_COMPILE_FEATURES(compadre_gtest PUBLIC cxx_std_11)
     endif()
   endif()
 
@@ -519,7 +523,11 @@ else() # Raw CMake Project
         Set Compadre_USE_PYTHON:BOOL=OFF or switch compilers.
         ")
     endif()
-    add_subdirectory(pycompadre/pybind11)
+    if (PYTHON_CALLING_BUILD)
+        find_package(pybind11 REQUIRED)
+    else()
+        add_subdirectory(pycompadre/pybind11)
+    endif()
     if (${PYTHON_VERSION} VERSION_LESS "3.6")
         MESSAGE(FATAL_ERROR "
         Compadre_USE_PYTHON:BOOL=ON but Python version <3.6 is not supported.
@@ -528,10 +536,10 @@ else() # Raw CMake Project
     pybind11_add_module(_pycompadre pycompadre/pycompadre.cpp)
     target_link_libraries(_pycompadre PUBLIC compadre)
     if (PYTHON_CALLING_BUILD)
-      configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pycompadre/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" COPYONLY)
+      configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pycompadre/__init__.py" "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" COPYONLY)
     else()
       set_target_properties(_pycompadre PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pycompadre")
-      configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pycompadre/__init__.py.in" "${CMAKE_CURRENT_BINARY_DIR}/pycompadre/__init__.py" COPYONLY)
+      configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pycompadre/__init__.py" "${CMAKE_CURRENT_BINARY_DIR}/pycompadre/__init__.py" COPYONLY)
     endif()
     set(CMAKE_POLICY_DEFAULT_CMP0127 NEW)
   endif()

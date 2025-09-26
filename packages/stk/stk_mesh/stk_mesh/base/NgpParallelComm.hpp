@@ -65,6 +65,7 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   auto& ngpMesh = exchangeHandler.get_ngp_mesh();
   auto ngpFields = exchangeHandler.get_ngp_fields();
   auto& bulkData = ngpMesh.get_bulk_on_host();
+  STK_ThrowRequireMsg((std::is_same_v<T,typename ExchangeHandler::T>), "NGP parallel_data_exchange requires that exchangeHandler is templated on the same data-type.");
 
   const std::vector<stk::mesh::EntityRank>& fieldRanks = exchangeHandler.get_field_ranks();
 
@@ -104,12 +105,16 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
   auto& deviceRecvData = exchangeHandler.get_device_recv_data();
 
   auto& deviceMeshIndicesOffsets = exchangeHandler.get_device_mesh_indices_offsets();
-  if (deviceMeshIndicesOffsets.extent(0) < (totalMeshIndicesOffsets+num_comm_procs)) {
+  auto& hostMeshIndicesOffsets = exchangeHandler.get_host_mesh_indices_offsets();
+  //we don't want to just resize these every time, because it turns out that
+  //Kokkos::resize is expensive even if the size is staying the same or decreasing.
+  if (deviceMeshIndicesOffsets.extent(0) < (totalMeshIndicesOffsets+num_comm_procs) ||
+      deviceMeshIndicesOffsets.extent(0) != hostMeshIndicesOffsets.extent(0)) {
     Kokkos::resize(Kokkos::WithoutInitializing, deviceMeshIndicesOffsets, totalMeshIndicesOffsets+num_comm_procs);
   }
 
-  auto& hostMeshIndicesOffsets = exchangeHandler.get_host_mesh_indices_offsets();
-  if (hostMeshIndicesOffsets.extent(0) < (totalMeshIndicesOffsets+num_comm_procs)) {
+  if (hostMeshIndicesOffsets.extent(0) < (totalMeshIndicesOffsets+num_comm_procs) ||
+      deviceMeshIndicesOffsets.extent(0) != hostMeshIndicesOffsets.extent(0)) {
     Kokkos::resize(Kokkos::WithoutInitializing, hostMeshIndicesOffsets, totalMeshIndicesOffsets+num_comm_procs);
   }
 

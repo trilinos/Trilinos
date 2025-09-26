@@ -6,7 +6,7 @@
  * See packages/seacas/LICENSE for details
  */
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <ostream>
 #include <stdlib.h>
 #include <string>

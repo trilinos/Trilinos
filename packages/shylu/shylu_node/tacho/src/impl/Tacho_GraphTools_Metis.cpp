@@ -141,13 +141,16 @@ void GraphTools_Metis::reorder(const ordinal_type verbose) {
   _is_ordered = true;
 
   if (verbose) {
-    if (_algo == 0)
+    if (_algo == 0) {
       printf("Summary: GraphTools (Natural)\n");
-    else if (_algo == 1)
+      printf("=============================\n");
+    } else if (_algo == 1) {
       printf("Summary: GraphTools (AMD)\n");
-    else
+      printf("=========================\n");
+    } else {
       printf("Summary: GraphTools (Metis)\n");
-    printf("===========================\n");
+      printf("===========================\n");
+    }
 
     switch (verbose) {
     case 1: {

@@ -10,7 +10,7 @@
 #include "Ioss_Sort.h"
 #include "Ioss_StructuredBlock.h"
 #include "Ioss_ZoneConnectivity.h"
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <stdint.h>
 #include <tokenize.h>
@@ -175,7 +175,7 @@ namespace {
     nb->get_field_data("mesh_model_coordinates", coordinates);
 
     const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
-    for (auto &eb : ebs) {
+    for (const auto &eb : ebs) {
       if (eb->topology()->name() == Ioss::Hex8::name) {
         hex_volume(eb, coordinates);
       }

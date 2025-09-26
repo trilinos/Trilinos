@@ -183,7 +183,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     fmt::print("\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n"
                "\n\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#conjoin\n"
-               "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n");
+               "\n\t->->-> Send email to sierra-help@sandia.gov for conjoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 

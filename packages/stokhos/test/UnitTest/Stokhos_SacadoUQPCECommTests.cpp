@@ -126,8 +126,8 @@ bool checkResultOnAllProcs(
 
 typedef int Ordinal;
 typedef Sacado::Fad::DFad<double> FadType;
-typedef Kokkos::DefaultExecutionSpace execution_space;
-typedef Stokhos::DynamicStorage<int,double,execution_space> storage_type;
+typedef Kokkos::DefaultExecutionSpace def_execution_space;
+typedef Stokhos::DynamicStorage<int,double,def_execution_space> storage_type;
 typedef Sacado::UQ::PCE<storage_type> PCEType;
 
 Sacado::Random<double> rnd;

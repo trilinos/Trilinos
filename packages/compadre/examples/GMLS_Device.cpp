@@ -60,6 +60,7 @@ bool all_passed = true;
     auto problem_name = clp.problem_name;
     auto number_of_batches = clp.number_of_batches;
     bool keep_coefficients = number_of_batches==1;
+    Compadre::WeightingFunctionType wt = clp.kernel_type;
     
     // the functions we will be seeking to reconstruct are in the span of the basis
     // of the reconstruction space we choose for GMLS, so the error should be very small
@@ -292,7 +293,7 @@ bool all_passed = true;
     my_GMLS.addTargets(lro);
     
     // sets the weighting kernel function from WeightingFunctionType
-    my_GMLS.setWeightingType(WeightingFunctionType::Power);
+    my_GMLS.setWeightingType(wt);
     
     // power to use in that weighting kernel function
     my_GMLS.setWeightingParameter(2);

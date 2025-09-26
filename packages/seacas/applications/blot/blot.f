@@ -929,7 +929,7 @@ C     Initialize line thicknesses for mesh plots
      *    '"LIST NODEMAP" (node map)',/,
      *    10x,'      To disable the maps and use local ids, restart',
      *    ' blot with "-nomap node|element|all"',//,
-     *    10x,'      Notify gdsjaar@sandia.gov if bugs found')
+     *    10x,'      Notify sierra-help@sandia.gov if bugs found')
 
         if (mapel .and. mapnd) then
           WRITE (*, 10010) 'Nodes and Elements using Global Ids'

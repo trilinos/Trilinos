@@ -14,10 +14,9 @@
 /*! reference alltoallv impl
  */
 inline void Fake_Alltoallv(const void *sendbuf, const int *sendcounts,
-                      const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
-                      const int *recvcounts, const int *rdispls,
-                      MPI_Datatype recvtype, MPI_Comm comm) {
-
+                           const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
+                           const int *recvcounts, const int *rdispls,
+                           MPI_Datatype recvtype, MPI_Comm comm) {
   constexpr int ARBITRARY_TAG = 0;
 
   // communicator properties

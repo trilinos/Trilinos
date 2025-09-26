@@ -251,7 +251,6 @@ evaluateFields(typename TRAITS::EvalData workset)
      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
        std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-       auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
        // loop over basis functions
        for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
 	 int offset = elmtOffset[basis];
