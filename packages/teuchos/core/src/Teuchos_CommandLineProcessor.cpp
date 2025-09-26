@@ -16,6 +16,7 @@
 #include "Teuchos_VerboseObject.hpp"
 //#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_SystemInformation.hpp"
 #include "Teuchos_as.hpp"
 #ifndef _WIN32
 #include "Teuchos_Array.hpp"
@@ -61,6 +62,7 @@ const bool  CommandLineProcessor::output_show_proc_rank_default_(false);
 const int   CommandLineProcessor::output_to_root_rank_only_default_(0);
 const bool  CommandLineProcessor::print_rcpnode_statistics_on_exit_default_(false);
 const bool  CommandLineProcessor::show_timer_summary_on_exit_default_(false);
+const bool  CommandLineProcessor::print_system_info_default_(false);
 
 
 CommandLineProcessor::CommandLineProcessor(
@@ -78,10 +80,13 @@ CommandLineProcessor::CommandLineProcessor(
   ,output_to_root_rank_only_(output_to_root_rank_only_default_)
   ,print_rcpnode_statistics_on_exit_(print_rcpnode_statistics_on_exit_default_)
   ,show_timer_summary_on_exit_(show_timer_summary_on_exit_default_)
+  ,print_system_info_(print_system_info_default_)
   ,printed_timer_summary_(false)
   ,added_extra_output_setup_options_(false)
   ,in_add_extra_output_setup_options_(false)
-{}
+{
+  SystemInformation::initializeCollection();
+}
 
 
 CommandLineProcessor::~CommandLineProcessor()
@@ -252,6 +257,16 @@ CommandLineProcessor::parse(
   ) const
 {
   add_extra_output_setup_options();
+
+  if (options_list_.find("print-system-info") == options_list_.end()) {
+    CommandLineProcessor *clp = const_cast<CommandLineProcessor *>(this);
+    clp->setOption("print-system-info", "no-print-system-info",
+                   &clp->print_system_info_,
+                   "If true, then collect and print information about the system "
+                   "we are running on.");
+
+  }
+
   std::string        opt_name;
   std::string        opt_val_str;
   const std::string  echo_cl_opt = "echo-command-line";
@@ -397,6 +412,19 @@ CommandLineProcessor::parse(
       defaultOut->setOutputToRootOnly(output_to_root_rank_only_);
     RCPNodeTracer::setPrintRCPNodeStatisticsOnExit(print_rcpnode_statistics_on_exit_);
   }
+
+  static bool alreadyPrintedSystemInfo = false;
+  if (print_system_info_ && !alreadyPrintedSystemInfo) {
+    if (procRank == 0) {
+      auto systemInfo = SystemInformation::collectSystemInformation();
+      for (const auto &e : systemInfo) {
+        std::cout << e.first << ": " << e.second << std::endl;
+      }
+    }
+    GlobalMPISession::barrier();
+    alreadyPrintedSystemInfo = true;
+  }
+
   return PARSE_SUCCESSFUL;
 }
 
