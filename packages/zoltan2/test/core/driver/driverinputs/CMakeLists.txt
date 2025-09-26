@@ -38,7 +38,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         pamgenSphericalTest.xml 
         pamgenPoissonTest.xml 
         parmetisSubComm.xml
-        galeriTest.xml 
+        galeriTest.xml
+        galeriTestsPerformance4.xml
         simple.pmgen
         simplePamgen.xml
         simple3d.pmgen
@@ -56,5 +57,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         zoltanGraphAdapterEwgt.xml
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    CATEGORIES BASIC PERFORMANCE
 )
 
