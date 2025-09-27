@@ -45,4 +45,4 @@
 #include "Thyra_VectorStdOpsTester.hpp"
 #include "Thyra_VectorTester.hpp"
 
-#endif	// THYRA_OPERATOR_VECTOR_CLIENT_SUUPPORT_HPP
+#endif  // THYRA_OPERATOR_VECTOR_CLIENT_SUUPPORT_HPP

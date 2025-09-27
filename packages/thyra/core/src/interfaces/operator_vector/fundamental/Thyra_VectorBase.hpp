@@ -10,15 +10,12 @@
 #ifndef THYRA_VECTOR_BASE_DECL_HPP
 #define THYRA_VECTOR_BASE_DECL_HPP
 
-
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_MultiVectorBase_decl.hpp"
 #include "RTOpPack_RTOpT.hpp"
 #include "RTOpPack_SparseSubVectorT.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Abstract interface for finite-dimensional dense vectors.
  *
@@ -110,11 +107,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
-template<class Scalar>
-class VectorBase : virtual public MultiVectorBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class VectorBase : virtual public MultiVectorBase<Scalar> {
+ public:
 #ifdef THYRA_INJECT_USING_DECLARATIONS
   using MultiVectorBase<Scalar>::apply;
 #endif
@@ -131,20 +126,18 @@ public:
    *
    * NVI function.
    */
-  void assign(const VectorBase<Scalar>& x)
-    { assignVecImpl(x); }
+  void assign(const VectorBase<Scalar>& x) { assignVecImpl(x); }
 
   /** \brief Random vector generation:
    *
    * <tt>v(i) = rand(l,u), , i = 1...v->space()->dim()</tt>.
-   * 
+   *
    * The elements <tt>v(i)</tt> are randomly generated between
    * <tt>[l,u]</tt>.
    *
    * NVI function.
    */
-  void randomize(Scalar l, Scalar u)
-    { randomizeImpl(l,u); }
+  void randomize(Scalar l, Scalar u) { randomizeImpl(l, u); }
 
   // Overloading update for VectorBase argument.
   using MultiVectorBase<Scalar>::update;
@@ -156,9 +149,8 @@ public:
    * NVI function.
    */
   void update(
-    Scalar alpha,
-    const VectorBase<Scalar>& x)
-    { updateVecImpl(alpha, x); }
+      Scalar alpha,
+      const VectorBase<Scalar>& x) { updateVecImpl(alpha, x); }
 
   // Overloading linear_combination for VectorBase arguments.
   using MultiVectorBase<Scalar>::linear_combination;
@@ -187,48 +179,41 @@ public:
    * NVI function.
    */
   void linear_combination(
-    const ArrayView<const Scalar>& alpha,
-    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
-    const Scalar& beta
-    )
-    { linearCombinationVecImpl(alpha, x, beta); }
+      const ArrayView<const Scalar>& alpha,
+      const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+      const Scalar& beta) { linearCombinationVecImpl(alpha, x, beta); }
 
   /** \brief  Euclidean dot product: <tt>result = x^H * this</tt>.
    *
    */
-  Scalar dot(const VectorBase<Scalar>& x) const
-    { return dotImpl(x); }
+  Scalar dot(const VectorBase<Scalar>& x) const { return dotImpl(x); }
 
   /** \brief  One (1) norm: <tt>result = ||v||1</tt>.
    *
    */
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  norm_1() const
-    { return norm1Impl(); }
+  norm_1() const { return norm1Impl(); }
 
   /** \brief Euclidean (2) norm: <tt>result = ||v||2</tt>.
    *
    * NVI function.
    */
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  norm_2() const
-    { return norm2Impl(); }
+  norm_2() const { return norm2Impl(); }
 
   /** \brief Weighted Euclidean (2) norm: <tt>result = ||v||2</tt>.
    *
    * NVI function.
    */
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  norm_2(const VectorBase<Scalar>& x) const
-    { return norm2WeightedImpl(x); }
+  norm_2(const VectorBase<Scalar>& x) const { return norm2WeightedImpl(x); }
 
   /** \brief Infinity norm: <tt>result = ||v||inf</tt>.
    *
    * NVI function.
    */
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  norm_inf() const
-    { return normInfImpl(); }
+  norm_inf() const { return normInfImpl(); }
 
   //@}
 
@@ -251,7 +236,7 @@ public:
    * object embedded in <tt>return</tt> must be valid past the lifetime of
    * <tt>*this</tt> vector object.
    */
-  virtual RCP< const VectorSpaceBase<Scalar> > space() const = 0;
+  virtual RCP<const VectorSpaceBase<Scalar> > space() const = 0;
 
   //@}
 
@@ -263,15 +248,13 @@ public:
    * Temporary NVI function.
    */
   void applyOp(
-    const RTOpPack::RTOpT<Scalar> &op,
-    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
-    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
-    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal global_offset
-    ) const
-    {
-      applyOpImpl(op, vecs, targ_vecs, reduct_obj, global_offset);
-    }
+      const RTOpPack::RTOpT<Scalar>& op,
+      const ArrayView<const Ptr<const VectorBase<Scalar> > >& vecs,
+      const ArrayView<const Ptr<VectorBase<Scalar> > >& targ_vecs,
+      const Ptr<RTOpPack::ReductTarget>& reduct_obj,
+      const Ordinal global_offset) const {
+    applyOpImpl(op, vecs, targ_vecs, reduct_obj, global_offset);
+  }
 
   //@}
 
@@ -315,50 +298,39 @@ public:
    * Temporary NVI function.
    */
   void acquireDetachedView(
-    const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
-    ) const
-    { acquireDetachedVectorViewImpl(rng,sub_vec); }
+      const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec) const { acquireDetachedVectorViewImpl(rng, sub_vec); }
 
   /** \brief Calls releaseDetachedVectorViewImpl().
    *
    * Temporary NVI function.
    */
   void releaseDetachedView(
-    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
-    ) const
-    { releaseDetachedVectorViewImpl(sub_vec); }
+      RTOpPack::ConstSubVectorView<Scalar>* sub_vec) const { releaseDetachedVectorViewImpl(sub_vec); }
 
   /** \brief Calls acquireNonconstDetachedVectorViewImpl().
    *
    * Temporary NVI function.
    */
   void acquireDetachedView(
-    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
-    )
-    { acquireNonconstDetachedVectorViewImpl(rng,sub_vec); }
+      const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec) { acquireNonconstDetachedVectorViewImpl(rng, sub_vec); }
 
   /** \brief Calls commitDetachedView().
    *
    * Temporary NVI function.
    */
   void commitDetachedView(
-    RTOpPack::SubVectorView<Scalar>* sub_vec
-    )
-    { commitNonconstDetachedVectorViewImpl(sub_vec); }
+      RTOpPack::SubVectorView<Scalar>* sub_vec) { commitNonconstDetachedVectorViewImpl(sub_vec); }
 
   /** \brief Calls setSubVectorImpl().
    *
    * Temporary NVI function.
    */
   void setSubVector(
-    const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
-    )
-    { setSubVectorImpl(sub_vec); }
+      const RTOpPack::SparseSubVectorT<Scalar>& sub_vec) { setSubVectorImpl(sub_vec); }
 
   //@}
 
-protected:
-
+ protected:
   /** @name Protected virtual functions to be overridden by subclasses */
   //@{
 
@@ -391,17 +363,16 @@ protected:
    *
    */
   virtual void updateVecImpl(
-    Scalar alpha,
-    const VectorBase<Scalar>& x) = 0;
+      Scalar alpha,
+      const VectorBase<Scalar>& x) = 0;
 
   /** \brief Virtual implementation for NVI linear_combination.
    *
    */
   virtual void linearCombinationVecImpl(
-    const ArrayView<const Scalar>& alpha,
-    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
-    const Scalar& beta
-    ) = 0;
+      const ArrayView<const Scalar>& alpha,
+      const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+      const Scalar& beta) = 0;
 
   /** \brief Virtual implementation for NVI dot.
    *
@@ -449,13 +420,12 @@ protected:
    * for a description of what this function does.
    */
   virtual void applyOpImpl(
-    const RTOpPack::RTOpT<Scalar> &op,
-    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
-    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
-    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal global_offset
-    ) const = 0;
-  
+      const RTOpPack::RTOpT<Scalar>& op,
+      const ArrayView<const Ptr<const VectorBase<Scalar> > >& vecs,
+      const ArrayView<const Ptr<VectorBase<Scalar> > >& targ_vecs,
+      const Ptr<RTOpPack::ReductTarget>& reduct_obj,
+      const Ordinal global_offset) const = 0;
+
   /** \brief Get a non-mutable explicit view of a sub-vector.
    *
    * \param rng [in] The range of the elements to extract the sub-vector view.
@@ -498,8 +468,7 @@ protected:
    * the same vector object for this to work correctly.
    */
   virtual void acquireDetachedVectorViewImpl(
-    const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
-    ) const = 0;
+      const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec) const = 0;
 
   /** \brief Free an explicit view of a sub-vector.
    *
@@ -510,10 +479,10 @@ protected:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>sub_vec</tt> must have been passed through a call to 
+   * <li> <tt>sub_vec</tt> must have been passed through a call to
    *      <tt>this->acquireDetachedView(...,sub_vec)</tt>
    * </ul>
-    *
+   *
    * <b>Postconditions:</b><ul>
    * <li> See <tt>RTOpPack::ConstSubVectorView::set_uninitialized()</tt> for <tt>sub_vec</tt>
    * </ul>
@@ -521,8 +490,7 @@ protected:
    * The sub-vector view must have been allocated by <tt>this->acquireDetachedView()</tt> first.
    */
   virtual void releaseDetachedVectorViewImpl(
-    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
-    ) const = 0;
+      RTOpPack::ConstSubVectorView<Scalar>* sub_vec) const = 0;
 
   /** \brief Get a mutable explicit view of a sub-vector.
    *
@@ -540,7 +508,7 @@ protected:
    * <li> [<tt>!rng.full_range()</tt>] <tt>rng.ubound() < this->space()->dim()</tt>
    *      (throw <tt>std::out_of_range</tt>)
    * </ul>
-    *
+   *
    * <b>Postconditions:</b><ul>
    * <li> <tt>*sub_vec</tt> contains an explicit mutable view to the elements
    *      in the range <tt>\ref Thyra::full_range() "full_range"(rng,0,this->space()->dim()-1)</tt>
@@ -573,8 +541,7 @@ protected:
    * or <tt>this->commitDetachedView(sub_vec)</tt> is called.
    */
   virtual void acquireNonconstDetachedVectorViewImpl(
-    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
-    ) = 0;
+      const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec) = 0;
 
   /** \brief Commit changes for a mutable explicit view of a sub-vector.
    *
@@ -586,10 +553,10 @@ protected:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>sub_vec</tt> must have been passed through a call to 
+   * <li> <tt>sub_vec</tt> must have been passed through a call to
    *      <tt>this->acquireDetachedView(...,sub_vec)</tt>
    * </ul>
-    *
+   *
    * <b>Postconditions:</b><ul>
    * <li> See <tt>RTOpPack::SubVectorView::set_uninitialized()</tt> for <tt>sub_vec</tt>
    * <li> <tt>*this</tt> will be updated according the the changes made to <tt>sub_vec</tt>
@@ -599,8 +566,7 @@ protected:
    * <tt>this->acquireDetachedView()</tt> first.
    */
   virtual void commitNonconstDetachedVectorViewImpl(
-    RTOpPack::SubVectorView<Scalar>* sub_vec
-    ) = 0;
+      RTOpPack::SubVectorView<Scalar>* sub_vec) = 0;
 
   /** \brief Set a specific sub-vector.
    *
@@ -626,42 +592,34 @@ protected:
    * <tt>sub_vec</tt>.
    */
   virtual void setSubVectorImpl(
-    const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
-    ) = 0;
+      const RTOpPack::SparseSubVectorT<Scalar>& sub_vec) = 0;
 
   //@}
 
-private:
-  
+ private:
   // Not defined and not to be called
   VectorBase<Scalar>&
   operator=(const VectorBase<Scalar>&);
 
-public:
-
+ public:
   // These are functions that may be removed in the future and should not be
   // called by client code.
 
   // Don't call this directly.  Use non-member Thyra::abs().  This is because
   // this member function may disappear in the future. (see Trilinos GitHub
   // issue #330)
-  void abs(const VectorBase<Scalar>& x)
-    { absImpl(x); }
+  void abs(const VectorBase<Scalar>& x) { absImpl(x); }
 
   // Don't call this directly.  Use non-member Thyra::reciprocal().  This is because
   // this member function may disappear in the future. (see Trilinos GitHub
   // issue #330)
-  void reciprocal(const VectorBase<Scalar>& x)
-    { reciprocalImpl(x); }
+  void reciprocal(const VectorBase<Scalar>& x) { reciprocalImpl(x); }
 
   // Don't call this directly.  Use non-member Thyra::ele_wise_scale().  This
   // is because this member function may disappear in the future. (see
   // Trilinos GitHub issue #330)
-  void ele_wise_scale(const VectorBase<Scalar>& x)
-    { eleWiseScaleImpl(x); }
-
+  void ele_wise_scale(const VectorBase<Scalar>& x) { eleWiseScaleImpl(x); }
 };
-
 
 /** \brief Apply a reduction/transformation operator over a set of vectors:
  * <tt>op(op(v[0]...v[nv-1],z[0]...z[nz-1]),(*reduct_obj)) ->
@@ -733,24 +691,19 @@ public:
  *
  * \relates VectorBase
  */
-template<class Scalar>
-inline
-void applyOp(
-  const RTOpPack::RTOpT<Scalar> &op,
-  const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
-  const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
-  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal global_offset = 0
-  )
-{
+template <class Scalar>
+inline void applyOp(
+    const RTOpPack::RTOpT<Scalar>& op,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& vecs,
+    const ArrayView<const Ptr<VectorBase<Scalar> > >& targ_vecs,
+    const Ptr<RTOpPack::ReductTarget>& reduct_obj,
+    const Ordinal global_offset = 0) {
   if (vecs.size())
     vecs[0]->applyOp(op, vecs, targ_vecs, reduct_obj, global_offset);
   else if (targ_vecs.size())
     targ_vecs[0]->applyOp(op, vecs, targ_vecs, reduct_obj, global_offset);
 }
 
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 #endif  // THYRA_VECTOR_BASE_DECL_HPP

@@ -10,17 +10,13 @@
 #ifndef THYRA_SPMD_VECTOR_DEFAULT_BASE_DECL_HPP
 #define THYRA_SPMD_VECTOR_DEFAULT_BASE_DECL_HPP
 
-
 #include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase_decl.hpp"
 
-
 //#define THYRA_SPMD_VECTOR_BASE_DUMP
 
-
 namespace Thyra {
-
 
 /** \brief Base class for SPMD vectors that can provide views of contiguous
  * elements in a process.
@@ -54,13 +50,11 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
  */
-template<class Scalar>
+template <class Scalar>
 class SpmdVectorDefaultBase
   : virtual public SpmdVectorBase<Scalar>,
-    virtual public VectorDefaultBase<Scalar>
-{
-public:
-
+    virtual public VectorDefaultBase<Scalar> {
+ public:
   /** @name Public interface functions */
   //@{
 
@@ -75,13 +69,12 @@ public:
    * If <tt>comm==NULL</tt>, then the local communicator will be used instead.
    */
   virtual void applyOpImplWithComm(
-    const Ptr<const Teuchos::Comm<Ordinal> > &comm,
-    const RTOpPack::RTOpT<Scalar> &op,
-    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
-    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
-    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal global_offset
-    ) const;
+      const Ptr<const Teuchos::Comm<Ordinal> > &comm,
+      const RTOpPack::RTOpT<Scalar> &op,
+      const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+      const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+      const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+      const Ordinal global_offset) const;
 
   //@}
 
@@ -99,35 +92,29 @@ public:
 
   //@}
 
-protected:
-
+ protected:
   /** \name Overridden protected functions from VectorBase */
   //@{
 
   /** \brief Calls applyOpImplWithComm(null,op,...). */
   void applyOpImpl(
-    const RTOpPack::RTOpT<Scalar> &op,
-    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
-    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
-    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal global_offset
-    ) const;
+      const RTOpPack::RTOpT<Scalar> &op,
+      const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+      const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+      const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+      const Ordinal global_offset) const;
   /** \brief Implemented through <tt>this->getLocalData()</tt> */
   void acquireDetachedVectorViewImpl(
-    const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
-    ) const;
+      const Range1D &rng, RTOpPack::ConstSubVectorView<Scalar> *sub_vec) const;
   /** \brief Implemented through <tt>this->freeLocalData()</tt> */
   void releaseDetachedVectorViewImpl(
-    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
-    ) const;
+      RTOpPack::ConstSubVectorView<Scalar> *sub_vec) const;
   /** \brief Implemented through <tt>this->getLocalData()</tt> */
   void acquireNonconstDetachedVectorViewImpl(
-    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
-    );
+      const Range1D &rng, RTOpPack::SubVectorView<Scalar> *sub_vec);
   /** \brief Implemented through <tt>this->commitLocalData()</tt> */
   void commitNonconstDetachedVectorViewImpl(
-    RTOpPack::SubVectorView<Scalar>* sub_vec
-    );
+      RTOpPack::SubVectorView<Scalar> *sub_vec);
 
   //@}
 
@@ -139,10 +126,10 @@ protected:
   RTOpPack::ConstSubMultiVectorView<Scalar> getLocalSubMultiVectorImpl() const;
   /** \brief . */
   void getNonconstLocalMultiVectorDataImpl(
-    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim);
+      const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim);
   /** \brief . */
   void getLocalMultiVectorDataImpl(
-    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim) const;
+      const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim) const;
   //@}
 
   /** \name Overridden Protected functions from SpmdVectorBase */
@@ -163,30 +150,27 @@ protected:
 
   //@}
 
-private:
-
+ private:
   // ///////////////////////////////////////
   // Private data members
 
   // Cached (only on vector space!)
-  mutable Ordinal  globalDim_;
-  mutable Ordinal  localOffset_;
-  mutable Ordinal  localSubDim_;
+  mutable Ordinal globalDim_;
+  mutable Ordinal localOffset_;
+  mutable Ordinal localSubDim_;
 
   // /////////////////////////////////////
   // Private member functions
 
-  Range1D validateRange( const Range1D& rng_in ) const;
+  Range1D validateRange(const Range1D &rng_in) const;
 
 #ifdef THYRA_SPMD_VECTOR_BASE_DUMP
-public:
+ public:
   static bool show_dump;
-#endif // THYRA_SPMD_VECTOR_BASE_DUMP
+#endif  // THYRA_SPMD_VECTOR_BASE_DUMP
 
-}; // end class SpmdVectorDefaultBase
+};  // end class SpmdVectorDefaultBase
 
+}  // end namespace Thyra
 
-} // end namespace Thyra
-
-
-#endif // THYRA_SPMD_VECTOR_DEFAULT_BASE_DECL_HPP
+#endif  // THYRA_SPMD_VECTOR_DEFAULT_BASE_DECL_HPP

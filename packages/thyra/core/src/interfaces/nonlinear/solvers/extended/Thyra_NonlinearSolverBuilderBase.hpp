@@ -13,20 +13,16 @@
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Abstract interface for an object that can create
  * <tt>NonlinearSolverBase</tt> objects on demand.
  *
  * ToDo: Finish documentation!
  */
-template<class Scalar>
-class NonlinearSolverBuilderBase : virtual public Teuchos::ParameterListAcceptor
-{
-public:
-  
+template <class Scalar>
+class NonlinearSolverBuilderBase : virtual public Teuchos::ParameterListAcceptor {
+ public:
   /** \brief Create a new <tt>NonlinearSolverBase</tt> object purely
    * specified by the parameter list.
    *
@@ -41,31 +37,24 @@ public:
   virtual Teuchos::RCP<NonlinearSolverBase<Scalar> >
   createNonlinearSolver(const std::string &nonlinearSolverTypeName) const = 0;
 
-private:
-  
+ private:
   // Not defined and not to be called
-  NonlinearSolverBuilderBase<Scalar>&
-  operator=(const NonlinearSolverBuilderBase<Scalar>&);
-
+  NonlinearSolverBuilderBase<Scalar> &
+  operator=(const NonlinearSolverBuilderBase<Scalar> &);
 };
-
 
 /** \brief .
  *
  * \relates NonlinearSolverBuilderBase
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<NonlinearSolverBase<Scalar> >
 createNonlinearSolver(
-  const NonlinearSolverBuilderBase<Scalar> &nonlinearSolverBuilder,
-  const std::string &nonlinearSolverTypeName = ""
-  )
-{
+    const NonlinearSolverBuilderBase<Scalar> &nonlinearSolverBuilder,
+    const std::string &nonlinearSolverTypeName = "") {
   return nonlinearSolverBuilder.createNonlinearSolver(nonlinearSolverTypeName);
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_NONLINEAR_SOLVER_BUILDER_BASE
+#endif  // THYRA_NONLINEAR_SOLVER_BUILDER_BASE

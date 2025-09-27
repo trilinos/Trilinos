@@ -10,13 +10,10 @@
 #ifndef THYRA_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_DECL_HPP
 #define THYRA_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_DECL_HPP
 
-
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 #include "Teuchos_Comm.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Simple parallel response-only ModelEvaluator.
  *
@@ -29,7 +26,7 @@ namespace Thyra {
           + g_offset
 
  \endverbatim
- 
+
  * In vector coefficient form it becomes:
 
  \verbatim
@@ -43,7 +40,7 @@ namespace Thyra {
  * This test model implementation also supports the definition of diagonal
  * scalar product implementation.  The impact of this is the definition of new
  * abstract Thyra Euclidean vectors of the form:
- 
+
  \verbatim
 
    p_bar = E_p * p
@@ -56,7 +53,7 @@ namespace Thyra {
  * are vectors in a Euclidean space (from the standpoint of the ANA clients)
  * and that <tt>p</tt> are the coefficient vectors in the new non-Euclidean
  * space <tt>S_p</tt> with scalar product:
- 
+
  \verbatim
 
    y_bar^T * x_bar = y^T * E_p^T * E_p * x
@@ -86,14 +83,12 @@ namespace Thyra {
    scalarProd(y_bar, x_bar) = sum( s_diag[i] * y[i] * x[i], i=0...n-1 )
 
  \endverbatim
- 
- */
-template<class Scalar>
-class DiagonalQuadraticResponseOnlyModelEvaluator
-   : public ResponseOnlyModelEvaluatorBase<Scalar>
-{
-public:
 
+ */
+template <class Scalar>
+class DiagonalQuadraticResponseOnlyModelEvaluator
+  : public ResponseOnlyModelEvaluatorBase<Scalar> {
+ public:
   //@}
 
   /** \name Constructors/Initializers/Accessors. */
@@ -101,9 +96,8 @@ public:
 
   /** \brief . */
   DiagonalQuadraticResponseOnlyModelEvaluator(
-    const int localDim,
-    const RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null
-    );
+      const int localDim,
+      const RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null);
 
   /** \brief Set the solution vector ps . */
   void setSolutionVector(const RCP<const VectorBase<Scalar> > &ps);
@@ -111,10 +105,10 @@ public:
   /** \brief Get the solution vector ps . */
   const RCP<const VectorBase<Scalar> >
   getSolutionVector() const;
-  
+
   /** \brief Set the diagonal vector diag. */
   void setDiagonalVector(const RCP<const VectorBase<Scalar> > &diag);
-  
+
   /** \brief Set the diagonal vector diag_bar.
    *
    * NOTE: You must call setDiagonalVector(diag) first in order to set the
@@ -146,8 +140,7 @@ public:
 
   //@}
 
-private:
-
+ private:
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
 
@@ -155,14 +148,12 @@ private:
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
   void evalModelImpl(
-    const ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar>& outArgs
-    ) const;
+      const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
 
-private:
-
+ private:
   // //////////////////////
   // Private data members
 
@@ -183,24 +174,18 @@ private:
 
   RCP<const VectorBase<Scalar> > diag_bar_;
   RCP<const VectorBase<Scalar> > s_bar_;
-
 };
 
-
 /** \brief Non-member constructor. */
-template<class Scalar>
+template <class Scalar>
 RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> >
 diagonalQuadraticResponseOnlyModelEvaluator(
-  const int localDim,
-  const RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null
-  )
-{
+    const int localDim,
+    const RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null) {
   using Teuchos::rcp;
   return rcp(new DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>(localDim, comm));
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_DECL_HPP
+#endif  // THYRA_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_DECL_HPP

@@ -13,9 +13,7 @@
 #include "Thyra_VectorSpaceBase_decl.hpp"
 #include "Teuchos_Comm.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base abstract <tt>%VectorSpaceBase</tt> class for all SPMD-based
  * vector spaces.
@@ -96,10 +94,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class SpmdVectorSpaceBase : virtual public VectorSpaceBase<Scalar> {
-public:
-  
+ public:
   /** @name Pure virtual methods to be overridden by subclasses */
   //@{
 
@@ -112,7 +109,7 @@ public:
    * If <tt>this</tt> this is uninitialized then <tt>localSubDim()</tt>
    * returns <tt>0</tt>.
    */
-   virtual Ordinal localSubDim() const = 0;
+  virtual Ordinal localSubDim() const = 0;
 
   /** \brief Returns the offset for the local sub-vector stored on this
    * process.
@@ -127,22 +124,18 @@ public:
    * </ul>
    */
   virtual Ordinal mapCode() const = 0;
- 
+
   /** \brief Returns true if vector space is locally replicated space. */
   virtual bool isLocallyReplicated() const = 0;
 
   //@}
 
-private:
-  
+ private:
   // Not defined and not to be called
   SpmdVectorSpaceBase<Scalar>&
   operator=(const SpmdVectorSpaceBase<Scalar>&);
-  
 };
 
+}  // end namespace Thyra
 
-} // end namespace Thyra
-
-
-#endif // THYRA_SPMD_VECTOR_SPACE_BASE_BASE_DECL_HPP
+#endif  // THYRA_SPMD_VECTOR_SPACE_BASE_BASE_DECL_HPP

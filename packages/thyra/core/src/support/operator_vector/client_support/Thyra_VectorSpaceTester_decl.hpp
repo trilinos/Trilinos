@@ -15,7 +15,6 @@
 
 namespace Thyra {
 
-
 /** \brief Testing class for <tt>VectorSpace</tt> and the <tt>VectorBase</tt>
  * and <tt>MultiVectorBase</tt> objects that it creates.
  *
@@ -35,10 +34,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class VectorSpaceTester {
-public:
-
+ public:
   /** \brief Local typedef for scalar magnitude */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
@@ -49,7 +47,7 @@ public:
    * Clients can use this interface to override options directly set on
    * <tt>*this</tt>.
    */
-  VectorTester<Scalar>& vectorTester();
+  VectorTester<Scalar> &vectorTester();
 
   /** \brief Expose a <tt>const</tt> reference to the <tt>VectorTester</tt>
    * object used to test the <tt>MultiVectorBase</tt> interface supported by
@@ -57,14 +55,14 @@ public:
    *
    * Clients can use this interface to query (but not change) options.
    */
-  const VectorTester<Scalar>& vectorTester() const;
+  const VectorTester<Scalar> &vectorTester() const;
 
   /** \brief Set the tolerance above which a relative error will generate a
    * warning message.
    *
    * Also calls <tt>this->vectorTester().set_all_warning_tol(warning_tol).
    */
-  void warning_tol( const ScalarMag &warning_tol );
+  void warning_tol(const ScalarMag &warning_tol);
 
   /** \brief Return the warning tolerance for <tt>*this</tt>. */
   ScalarMag warning_tol() const;
@@ -74,7 +72,7 @@ public:
    *
    * Also calls <tt>this->vectorTester().set_all_error_tol(error_tol).
    */
-  void error_tol( const ScalarMag &error_tol );
+  void error_tol(const ScalarMag &error_tol);
 
   /** \brief Return the error tolerance for <tt>*this</tt>. */
   ScalarMag error_tol() const;
@@ -83,7 +81,7 @@ public:
    *
    * Also calls <tt>this->vectorTester().num_random_vectors(num_random_vectors).
    */
-  void num_random_vectors( const int num_random_vectors );
+  void num_random_vectors(const int num_random_vectors);
 
   /** \brief Return the number of random vectors used for <tt>*this</tt> objects
    * tests.
@@ -92,14 +90,14 @@ public:
 
   /** \brief Set the number of columns to use to create test <tt>MultiVectorBase</tt> objects.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_mv_cols );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(int, num_mv_cols);
 
   /** \brief Set whether all of the tests will be printed independent if they
    * pass or fail.
    *
    * Also calls <tt>this->vectorTester().show_all_tests(show_all_tests).
    */
-  void show_all_tests( const bool show_all_tests );
+  void show_all_tests(const bool show_all_tests);
 
   /** \brief Return the number of random vectors used for <tt>*this</tt> objects
    * tests.
@@ -111,7 +109,7 @@ public:
    *
    * Also calls <tt>this->vectorTester().dump_all(dump_all).
    */
-  void dump_all( const bool dump_all );
+  void dump_all(const bool dump_all);
 
   /** \brief Return the number of random vectors used for <tt>*this</tt> objects
    * tests.
@@ -126,13 +124,7 @@ public:
    * construction.
    */
   VectorSpaceTester(
-    const ScalarMag     warning_tol            = 1e-13
-    ,const ScalarMag    error_tol              = 1e-10
-    ,const int          num_random_vectors     = 1
-    ,const int          num_mv_cols            = 4
-    ,const bool         show_all_tests         = false
-    ,const bool         dump_all               = false
-    );
+      const ScalarMag warning_tol = 1e-13, const ScalarMag error_tol = 1e-10, const int num_random_vectors = 1, const int num_mv_cols = 4, const bool show_all_tests = false, const bool dump_all = false);
 
   /** \brief Check a vector space and the objects it creates through a set of
    * comprehensive tests.
@@ -180,131 +172,92 @@ public:
    * clicking on the following link to the source code:
    */
   bool check(
-    const VectorSpaceBase<Scalar> &vs,
-    Teuchos::FancyOStream *out
-    ) const;
+      const VectorSpaceBase<Scalar> &vs,
+      Teuchos::FancyOStream *out) const;
 
-private:
-
+ private:
   VectorTester<Scalar> vectorTester_;
 
-  ScalarMag    warning_tol_;
-  ScalarMag    error_tol_;
-  int          num_random_vectors_;
-  bool         show_all_tests_;
-  bool         dump_all_;
+  ScalarMag warning_tol_;
+  ScalarMag error_tol_;
+  int num_random_vectors_;
+  bool show_all_tests_;
+  bool dump_all_;
 
-}; // class VectorSpaceTester
-
+};  // class VectorSpaceTester
 
 // ///////////////////////////
 // Inline members
 
-
-template<class Scalar>
-inline
-VectorTester<Scalar>& VectorSpaceTester<Scalar>::vectorTester()
-{
+template <class Scalar>
+inline VectorTester<Scalar> &VectorSpaceTester<Scalar>::vectorTester() {
   return vectorTester_;
 }
 
-
-template<class Scalar>
-inline
-const VectorTester<Scalar>& VectorSpaceTester<Scalar>::vectorTester() const
-{
+template <class Scalar>
+inline const VectorTester<Scalar> &VectorSpaceTester<Scalar>::vectorTester() const {
   return vectorTester_;
 }
 
-
-template<class Scalar>
-inline
-void VectorSpaceTester<Scalar>::warning_tol( const ScalarMag &warning_tol_in )
-{
+template <class Scalar>
+inline void VectorSpaceTester<Scalar>::warning_tol(const ScalarMag &warning_tol_in) {
   warning_tol_ = warning_tol_in;
   vectorTester_.warning_tol(warning_tol_in);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 inline
-typename VectorSpaceTester<Scalar>::ScalarMag
-VectorSpaceTester<Scalar>::warning_tol() const
-{
+    typename VectorSpaceTester<Scalar>::ScalarMag
+    VectorSpaceTester<Scalar>::warning_tol() const {
   return warning_tol_;
 }
 
-
-template<class Scalar>
-inline
-void VectorSpaceTester<Scalar>::error_tol( const ScalarMag &error_tol_in )
-{
+template <class Scalar>
+inline void VectorSpaceTester<Scalar>::error_tol(const ScalarMag &error_tol_in) {
   error_tol_ = error_tol_in;
   vectorTester_.error_tol(error_tol_in);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 inline
-typename VectorSpaceTester<Scalar>::ScalarMag
-VectorSpaceTester<Scalar>::error_tol() const
-{
+    typename VectorSpaceTester<Scalar>::ScalarMag
+    VectorSpaceTester<Scalar>::error_tol() const {
   return error_tol_;
 }
 
-
-template<class Scalar>
-inline
-void VectorSpaceTester<Scalar>::num_random_vectors( const int num_random_vectors_in )
-{
+template <class Scalar>
+inline void VectorSpaceTester<Scalar>::num_random_vectors(const int num_random_vectors_in) {
   num_random_vectors_ = num_random_vectors_in;
   vectorTester_.num_random_vectors(num_random_vectors_in);
 }
 
-
-template<class Scalar>
-inline
-int VectorSpaceTester<Scalar>::num_random_vectors() const
-{
+template <class Scalar>
+inline int VectorSpaceTester<Scalar>::num_random_vectors() const {
   return num_random_vectors_;
 }
 
-
-template<class Scalar>
-inline
-void VectorSpaceTester<Scalar>::show_all_tests( const bool show_all_tests_in )
-{
+template <class Scalar>
+inline void VectorSpaceTester<Scalar>::show_all_tests(const bool show_all_tests_in) {
   show_all_tests_ = show_all_tests_in;
   vectorTester_.show_all_tests(show_all_tests_in);
 }
 
-
-template<class Scalar>
-inline
-bool VectorSpaceTester<Scalar>::show_all_tests() const
-{
+template <class Scalar>
+inline bool VectorSpaceTester<Scalar>::show_all_tests() const {
   return show_all_tests_;
 }
 
-
-template<class Scalar>
-inline
-void VectorSpaceTester<Scalar>::dump_all( const bool dump_all_in )
-{
+template <class Scalar>
+inline void VectorSpaceTester<Scalar>::dump_all(const bool dump_all_in) {
   dump_all_ = dump_all_in;
   vectorTester_.dump_all(dump_all_in);
 }
 
-
-template<class Scalar>
-inline
-bool VectorSpaceTester<Scalar>::dump_all() const
-{
+template <class Scalar>
+inline bool VectorSpaceTester<Scalar>::dump_all() const {
   return dump_all_;
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_VECTOR_SPACE_TESTER_DECL_HPP
+#endif  // THYRA_VECTOR_SPACE_TESTER_DECL_HPP

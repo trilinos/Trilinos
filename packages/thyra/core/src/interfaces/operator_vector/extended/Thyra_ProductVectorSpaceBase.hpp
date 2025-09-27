@@ -10,25 +10,22 @@
 #ifndef THYRA_PRODUCT_VECTOR_SPACE_BASE_HPP
 #define THYRA_PRODUCT_VECTOR_SPACE_BASE_HPP
 
-
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Teuchos_ExpandScalarTypeMacros.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base interface for product vector spaces.
  *
  * This class defines an abstract interface for a vector space that is
  * built out of the one or more other vector spaces to form what
  * mathematicians like to call a "product space".
- * 
+ *
  * For example, one can think of a product space as the concatenation
  * of one or more vector spaces <tt>V[k]</tt> where
  * <tt>k=0,...,numBlocks-1</tt>.  A product space <tt>Z</tt> would
  * then be represented as:
- 
+
  \verbatim
 
      [ V[0]           ]
@@ -59,10 +56,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
+template <class Scalar>
 class ProductVectorSpaceBase : virtual public VectorSpaceBase<Scalar> {
-public:
-
+ public:
   /** \brief Returns the number of blocks that make up this product space.
    *
    * Preconditions:<ul>
@@ -77,89 +73,70 @@ public:
    * <li> <tt>0 <= k <= numBlocks()-1</tt>
    * </ul>
    */
-  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const = 0; 
+  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const = 0;
 
 #ifdef DOXYGEN_COMPILE
-private:
+ private:
   const VectorSpaceBase<Scalar> *spaces;
 #endif
 
-private:
-  
+ private:
   // Not defined and not to be called
-  ProductVectorSpaceBase<Scalar>&
-  operator=(const ProductVectorSpaceBase<Scalar>&);
-
+  ProductVectorSpaceBase<Scalar> &
+  operator=(const ProductVectorSpaceBase<Scalar> &);
 };
-
 
 /** \brief Dynamic cast from a <tt>VectorSpaceBase</tt> to a
  * <tt>ProductVectorSpaceBase</tt> object and thow exception if this fails.
  *
  * \relates ProductVectorSpaceBase
  */
-template<class Scalar>
-inline
-RCP<ProductVectorSpaceBase<Scalar> >
+template <class Scalar>
+inline RCP<ProductVectorSpaceBase<Scalar> >
 nonconstProductVectorSpaceBase(
-  const RCP<VectorSpaceBase<Scalar> > &v,
-  const bool forceSuccess = true
-  )
-{
+    const RCP<VectorSpaceBase<Scalar> > &v,
+    const bool forceSuccess = true) {
   return Teuchos::rcp_dynamic_cast<ProductVectorSpaceBase<Scalar> >(
-    v, forceSuccess);
+      v, forceSuccess);
 }
-
 
 /** \brief Dynamic cast from a <tt>const VectorSpaceBase</tt> to a <tt>const
  * ProductVectorSpaceBase</tt> object and thow exception if this fails.
  *
  * \relates ProductVectorSpaceBase
  */
-template<class Scalar>
-inline
-RCP<const ProductVectorSpaceBase<Scalar> >
+template <class Scalar>
+inline RCP<const ProductVectorSpaceBase<Scalar> >
 productVectorSpaceBase(
-  const RCP<const VectorSpaceBase<Scalar> > &v,
-  const bool forceSuccess = true
-  )
-{
+    const RCP<const VectorSpaceBase<Scalar> > &v,
+    const bool forceSuccess = true) {
   return Teuchos::rcp_dynamic_cast<const ProductVectorSpaceBase<Scalar> >(
-    v, forceSuccess);
+      v, forceSuccess);
 }
-
 
 /** \brief Inline overload of nonconstProductVectorSpaceBase<Scalar>(..) for
  * double.
  *
  * \relates ProductVectorSpaceBase
  */
-inline
-RCP<ProductVectorSpaceBase<double> >
+inline RCP<ProductVectorSpaceBase<double> >
 nonconstProductVectorSpaceBase(
-  const RCP<VectorSpaceBase<double> > &vs,
-  const bool forceSuccess = true
-  )
-{
+    const RCP<VectorSpaceBase<double> > &vs,
+    const bool forceSuccess = true) {
   return nonconstProductVectorSpaceBase<double>(vs, forceSuccess);
 }
-
 
 /** \brief Inline overload of productVectorSpaceBase<Scalar>(..) for double.
  *
  * \relates ProductVectorSpaceBase
  */
-inline
-RCP<const ProductVectorSpaceBase<double> >
+inline RCP<const ProductVectorSpaceBase<double> >
 productVectorSpaceBase(
-  const RCP<const VectorSpaceBase<double> > &vs,
-  const bool forceSuccess = true
-  )
-{
+    const RCP<const VectorSpaceBase<double> > &vs,
+    const bool forceSuccess = true) {
   return productVectorSpaceBase<double>(vs, forceSuccess);
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-#endif // THYRA_PRODUCT_VECTOR_SPACE_BASE_HPP
+#endif  // THYRA_PRODUCT_VECTOR_SPACE_BASE_HPP

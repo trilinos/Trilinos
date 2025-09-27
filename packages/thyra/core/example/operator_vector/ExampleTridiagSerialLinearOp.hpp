@@ -15,7 +15,6 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Teuchos_Assert.hpp"
 
-
 /** \brief Simple example subclass for serial tridiagonal matrices.
  *
  * This subclass form a linear operator for tridiagonal matrices
@@ -42,23 +41,19 @@
  * \ingroup Thyra_Op_Vec_examples_power_method_serial_grp
  * \ingroup Thyra_Op_Vec_examples_cg_serial_grp
  */
-template<class Scalar>
-class ExampleTridiagSerialLinearOp : public Thyra::LinearOpDefaultBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class ExampleTridiagSerialLinearOp : public Thyra::LinearOpDefaultBase<Scalar> {
+ public:
   /** \brief Construct to uninitialized. */
   ExampleTridiagSerialLinearOp() {}
 
   /** \brief <tt>initialize()</tt>. */
   ExampleTridiagSerialLinearOp(
-    const Thyra::Ordinal dim,
-    const Teuchos::ArrayView<const Scalar> &lower,
-    const Teuchos::ArrayView<const Scalar> &diag,
-    const Teuchos::ArrayView<const Scalar> &upper
-    )
-    { this->initialize(dim, lower, diag, upper);	}
-  
+      const Thyra::Ordinal dim,
+      const Teuchos::ArrayView<const Scalar> &lower,
+      const Teuchos::ArrayView<const Scalar> &diag,
+      const Teuchos::ArrayView<const Scalar> &upper) { this->initialize(dim, lower, diag, upper); }
+
   /** Initialize given lower, diagonal and upper arrays of data.
    *
    * \param dim [in] Dimension of this matrix (must be >= 2).
@@ -81,124 +76,102 @@ public:
    * </ul>
    */
   void initialize(
-    const Thyra::Ordinal dim,
-    const Teuchos::ArrayView<const Scalar> &lower,
-    const Teuchos::ArrayView<const Scalar> &diag,
-    const Teuchos::ArrayView<const Scalar> &upper
-    )
-    {
-      TEUCHOS_TEST_FOR_EXCEPT( dim < 2 );
-      space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim);
-      lower_ = lower;
-      diag_ = diag;
-      upper_ = upper;
-    }
+      const Thyra::Ordinal dim,
+      const Teuchos::ArrayView<const Scalar> &lower,
+      const Teuchos::ArrayView<const Scalar> &diag,
+      const Teuchos::ArrayView<const Scalar> &upper) {
+    TEUCHOS_TEST_FOR_EXCEPT(dim < 2);
+    space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim);
+    lower_ = lower;
+    diag_  = diag;
+    upper_ = upper;
+  }
 
-protected:
-
+ protected:
   // Overridden from LinearOpBase
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > range() const
-    { return space_; }
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > range() const { return space_; }
 
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > domain() const
-    { return space_; }
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > domain() const { return space_; }
 
   /** \brief . */
-  bool opSupportedImpl(Thyra::EOpTransp M_trans) const
-    { return true; }  // This class supports everything!
+  bool opSupportedImpl(Thyra::EOpTransp M_trans) const { return true; }  // This class supports everything!
 
   /** \brief . */
   void applyImpl(
+      const Thyra::EOpTransp M_trans,
+      const Thyra::MultiVectorBase<Scalar> &X_in,
+      const Teuchos::Ptr<Thyra::MultiVectorBase<Scalar> > &Y_inout,
+      const Scalar alpha,
+      const Scalar beta) const;
+
+ private:
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > space_;
+  Teuchos::Array<Scalar> lower_;  // size = dim - 1
+  Teuchos::Array<Scalar> diag_;   // size = dim
+  Teuchos::Array<Scalar> upper_;  // size = dim - 1
+
+};  // end class ExampleTridiagSerialLinearOp
+
+template <class Scalar>
+void ExampleTridiagSerialLinearOp<Scalar>::applyImpl(
     const Thyra::EOpTransp M_trans,
     const Thyra::MultiVectorBase<Scalar> &X_in,
     const Teuchos::Ptr<Thyra::MultiVectorBase<Scalar> > &Y_inout,
     const Scalar alpha,
-    const Scalar beta
-    ) const;
-
-private:
-
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > space_;
-  Teuchos::Array<Scalar> lower_;   // size = dim - 1    
-  Teuchos::Array<Scalar> diag_;    // size = dim
-  Teuchos::Array<Scalar> upper_;   // size = dim - 1
-
-};	// end class ExampleTridiagSerialLinearOp
-
-
-template<class Scalar>
-void ExampleTridiagSerialLinearOp<Scalar>::applyImpl(
-  const Thyra::EOpTransp M_trans,
-  const Thyra::MultiVectorBase<Scalar> &X_in,
-  const Teuchos::Ptr<Thyra::MultiVectorBase<Scalar> > &Y_inout,
-  const Scalar alpha,
-  const Scalar beta
-  ) const
-{
-
+    const Scalar beta) const {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::Ordinal Ordinal;
 
   const Ordinal dim = space_->dim();
-      
+
   // Loop over the input columns
 
   const Ordinal m = X_in.domain()->dim();
 
   for (Ordinal col_j = 0; col_j < m; ++col_j) {
-
     // Get access the the elements of column j
     Thyra::ConstDetachedVectorView<Scalar> x_vec(X_in.col(col_j));
     Thyra::DetachedVectorView<Scalar> y_vec(Y_inout->col(col_j));
     const Teuchos::ArrayRCP<const Scalar> x = x_vec.sv().values();
-    const Teuchos::ArrayRCP<Scalar> y = y_vec.sv().values();
-        
+    const Teuchos::ArrayRCP<Scalar> y       = y_vec.sv().values();
+
     // Perform y = beta*y (being careful to set y=0 if beta=0 in case y is
     // uninitialized on input!)
-    if( beta == ST::zero() ) {
-      for( Ordinal k = 0; k < dim; ++k ) y[k] = ST::zero();
-    }
-    else if( beta != ST::one() ) {
-      for( Ordinal k = 0; k < dim; ++k ) y[k] *= beta;
+    if (beta == ST::zero()) {
+      for (Ordinal k = 0; k < dim; ++k) y[k] = ST::zero();
+    } else if (beta != ST::one()) {
+      for (Ordinal k = 0; k < dim; ++k) y[k] *= beta;
     }
 
-    // Perform y = alpha*op(M)*x 
+    // Perform y = alpha*op(M)*x
     Ordinal k = 0;
-    if( M_trans == Thyra::NOTRANS ) {
-      y[k] += alpha * ( diag_[k]*x[k] + upper_[k]*x[k+1] );  // First row
-      for( k = 1; k < dim - 1; ++k )   // Middle rows
-        y[k] += alpha * ( lower_[k-1]*x[k-1] + diag_[k]*x[k] + upper_[k]*x[k+1] );
-      y[k] += alpha * ( lower_[k-1]*x[k-1] + diag_[k]*x[k] ); // Last row
-    }
-    else if( M_trans == Thyra::CONJ ) {
-      y[k] += alpha * ( ST::conjugate(diag_[k])*x[k] + ST::conjugate(upper_[k])*x[k+1] );
-      for( k = 1; k < dim - 1; ++k )
-        y[k] += alpha * ( ST::conjugate(lower_[k-1])*x[k-1]
-          + ST::conjugate(diag_[k])*x[k] + ST::conjugate(upper_[k])*x[k+1] );
-      y[k] += alpha * ( ST::conjugate(lower_[k-1])*x[k-1] + ST::conjugate(diag_[k])*x[k] );
-    }
-    else if( M_trans == Thyra::TRANS ) {
-      y[k] += alpha * ( diag_[k]*x[k] + lower_[k]*x[k+1] );
-      for( k = 1; k < dim - 1; ++k )
-        y[k] += alpha * ( upper_[k-1]*x[k-1] + diag_[k]*x[k] + lower_[k]*x[k+1] );
-      y[k] += alpha * ( upper_[k-1]*x[k-1] + diag_[k]*x[k] );
-    }
-    else if( M_trans == Thyra::CONJTRANS ) {
-      y[k] += alpha * ( ST::conjugate(diag_[k])*x[k] + ST::conjugate(lower_[k])*x[k+1] );
-      for( k = 1; k < dim - 1; ++k )
-        y[k] += alpha * ( ST::conjugate(upper_[k-1])*x[k-1]
-          + ST::conjugate(diag_[k])*x[k] + ST::conjugate(lower_[k])*x[k+1] );
-      y[k] += alpha * ( ST::conjugate(upper_[k-1])*x[k-1] + ST::conjugate(diag_[k])*x[k] );
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPT(true); // Throw exception if we get here!
+    if (M_trans == Thyra::NOTRANS) {
+      y[k] += alpha * (diag_[k] * x[k] + upper_[k] * x[k + 1]);  // First row
+      for (k = 1; k < dim - 1; ++k)                              // Middle rows
+        y[k] += alpha * (lower_[k - 1] * x[k - 1] + diag_[k] * x[k] + upper_[k] * x[k + 1]);
+      y[k] += alpha * (lower_[k - 1] * x[k - 1] + diag_[k] * x[k]);  // Last row
+    } else if (M_trans == Thyra::CONJ) {
+      y[k] += alpha * (ST::conjugate(diag_[k]) * x[k] + ST::conjugate(upper_[k]) * x[k + 1]);
+      for (k = 1; k < dim - 1; ++k)
+        y[k] += alpha * (ST::conjugate(lower_[k - 1]) * x[k - 1] + ST::conjugate(diag_[k]) * x[k] + ST::conjugate(upper_[k]) * x[k + 1]);
+      y[k] += alpha * (ST::conjugate(lower_[k - 1]) * x[k - 1] + ST::conjugate(diag_[k]) * x[k]);
+    } else if (M_trans == Thyra::TRANS) {
+      y[k] += alpha * (diag_[k] * x[k] + lower_[k] * x[k + 1]);
+      for (k = 1; k < dim - 1; ++k)
+        y[k] += alpha * (upper_[k - 1] * x[k - 1] + diag_[k] * x[k] + lower_[k] * x[k + 1]);
+      y[k] += alpha * (upper_[k - 1] * x[k - 1] + diag_[k] * x[k]);
+    } else if (M_trans == Thyra::CONJTRANS) {
+      y[k] += alpha * (ST::conjugate(diag_[k]) * x[k] + ST::conjugate(lower_[k]) * x[k + 1]);
+      for (k = 1; k < dim - 1; ++k)
+        y[k] += alpha * (ST::conjugate(upper_[k - 1]) * x[k - 1] + ST::conjugate(diag_[k]) * x[k] + ST::conjugate(lower_[k]) * x[k + 1]);
+      y[k] += alpha * (ST::conjugate(upper_[k - 1]) * x[k - 1] + ST::conjugate(diag_[k]) * x[k]);
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPT(true);  // Throw exception if we get here!
     }
   }
-
 }
 
-
-#endif	// THYRA_EXAMPLE_TRIDIAG_SERIAL_LINEAR_OP_HPP
+#endif  // THYRA_EXAMPLE_TRIDIAG_SERIAL_LINEAR_OP_HPP

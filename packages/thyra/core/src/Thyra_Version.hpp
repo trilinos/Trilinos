@@ -17,7 +17,6 @@ namespace Thyra {
 /** \brief Print the version of Thyra. */
 std::string Thyra_Version();
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // THYRA_VERSION_HPP
- 
+#endif  // THYRA_VERSION_HPP

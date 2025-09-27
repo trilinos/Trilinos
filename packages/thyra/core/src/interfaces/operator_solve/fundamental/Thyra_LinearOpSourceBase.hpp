@@ -13,19 +13,15 @@
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Teuchos_Describable.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base interface for objects that can return a linear operator.
  *
  * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
-template<class Scalar>
-class LinearOpSourceBase : virtual public Teuchos::Describable
-{
-public:
-
+template <class Scalar>
+class LinearOpSourceBase : virtual public Teuchos::Describable {
+ public:
   /** @name Pure virtual public functions that must be overridden in subclasses */
   //@{
 
@@ -44,12 +40,11 @@ public:
   /** \brief Return a const left preconditioner linear operator if one is
    * designed or targeted to be applied on the left.
    */
-  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getOp()const = 0;
-  
-  //@}
+  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getOp() const = 0;
 
+  //@}
 };
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // THYRA_LINEAR_OP_SOURCE_BASE_HPP
+#endif  // THYRA_LINEAR_OP_SOURCE_BASE_HPP
