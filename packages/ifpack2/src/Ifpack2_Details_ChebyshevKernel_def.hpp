@@ -290,7 +290,7 @@ void ChebyshevKernel<TpetraOperatorType>::
       if (!imp_.is_null()) {
         if (X_colMap_.get() == nullptr ||
             !X_colMap_->getMap()->isSameAs(*(imp_->getTargetMap()))) {
-          X_colMap_ = std::unique_ptr<vector_type>(new vector_type(imp_->getTargetMap()));
+          X_colMap_ = std::unique_ptr<multivector_type>(new multivector_type(imp_->getTargetMap(), 1));
         }
       } else
         X_colMap_ = nullptr;
@@ -319,12 +319,8 @@ void ChebyshevKernel<TpetraOperatorType>::
   using Teuchos::rcp;
 
   if (canFuse(B)) {
-    // "nonconst" here has no effect other than on the return type.
-    W_vec_ = W.getVectorNonConst(0);
-    B_vec_ = B.getVectorNonConst(0);
-    X_vec_ = X.getVectorNonConst(0);
     TEUCHOS_ASSERT(!A_crs_.is_null());
-    fusedCase(*W_vec_, alpha, D_inv, *B_vec_, *A_crs_, *X_vec_, beta);
+    fusedCase(W, alpha, D_inv, B, *A_crs_, X, beta);
   } else {
     TEUCHOS_ASSERT(!A_op_.is_null());
     unfusedCase(W, alpha, D_inv, B, *A_op_, X, beta);
@@ -332,9 +328,9 @@ void ChebyshevKernel<TpetraOperatorType>::
 }
 
 template <class TpetraOperatorType>
-typename ChebyshevKernel<TpetraOperatorType>::vector_type&
+typename ChebyshevKernel<TpetraOperatorType>::multivector_type&
 ChebyshevKernel<TpetraOperatorType>::
-    importVector(vector_type& X_domMap) {
+    importVector(multivector_type& X_domMap) {
   if (imp_.is_null()) {
     return X_domMap;
   } else {
@@ -383,14 +379,14 @@ void ChebyshevKernel<TpetraOperatorType>::
 
 template <class TpetraOperatorType>
 void ChebyshevKernel<TpetraOperatorType>::
-    fusedCase(vector_type& W,
+    fusedCase(multivector_type& W,
               const SC& alpha,
-              vector_type& D_inv,
-              vector_type& B,
+              multivector_type& D_inv,
+              multivector_type& B,
               const crs_matrix_type& A,
-              vector_type& X,
+              multivector_type& X,
               const SC& beta) {
-  vector_type& X_colMap = importVector(X);
+  multivector_type& X_colMap = importVector(X);
 
   using Impl::chebyshev_kernel_vector;
   using STS = Teuchos::ScalarTraits<SC>;
