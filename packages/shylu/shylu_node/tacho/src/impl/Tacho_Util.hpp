@@ -193,7 +193,7 @@ template <size_t BufSize, typename SpaceType = Kokkos::DefaultExecutionSpace> st
   void init(value_type &update) { update = 0; }
 
   KOKKOS_INLINE_FUNCTION
-  void join(volatile value_type &update, const volatile value_type &input) { update += input; }
+  void join(volatile value_type &update, const volatile value_type &input) { update = update + input; }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int i, value_type &update) const { update += _buf[i]; }
