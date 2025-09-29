@@ -98,7 +98,7 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
       Temporary_Replacement_For_Kokkos_abs<mag_view_type, scalar_view_type, LocalOrdinal>(colDiagAbsVals, equibResult_.colDiagonalEntries);
 
       leftAndOrRightScaleCrsMatrix(*A, rowDiagAbsVals, colDiagAbsVals,
-                                   true, true, equibResult_.assumeSymmetric,
+                         true, true, equibResult_.assumeSymmetric,
                                    Tpetra::SCALING_DIVIDE);
     } else if (equilibrate_diag) {
       auto colScalingFactors = equibResult_.assumeSymmetric ? equibResult_.colNorms : equibResult_.rowScaledColNorms;
