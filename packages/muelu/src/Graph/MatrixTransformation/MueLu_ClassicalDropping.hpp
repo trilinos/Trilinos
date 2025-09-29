@@ -73,7 +73,7 @@ class DropFunctor {
     , eps(threshold)
     , results(results_) {
     // Construct ghosted matrix diagonal
-    if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SmoothedAggregationMeasure)) {
+    if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
       diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
       auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
