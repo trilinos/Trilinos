@@ -242,7 +242,13 @@ int main(int argc, char *argv[]) {
     stackedTimer = rcp(new Teuchos::StackedTimer("Amesos2 SimpleSolve-File"));
     Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
   }
-  solver->symbolicFactorization(); comm->barrier();
+  // perform symbolic
+  {
+    Teuchos::RCP< Teuchos::Time > symboTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Symbolic Factorization");
+    Teuchos::TimeMonitor symboFactTimer(*symboTimer_);
+
+    solver->symbolicFactorization(); comm->barrier();
+  }
   for (size_t s = 0; s < numSolves; s++) {
     if (multi_solve && s > 0)
     {
@@ -262,15 +268,25 @@ int main(int argc, char *argv[]) {
       }
       A->fillComplete();
     }
-    // perform numeric
     //A->describe(*fos,Teuchos::VERB_EXTREME);
-    solver->numericFactorization();
+    // perform numeric
     comm->barrier();
+    {
+      Teuchos::RCP< Teuchos::Time > numerTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Numeric Factorization");
+      Teuchos::TimeMonitor numerFactTimer(*numerTimer_);
 
+      solver->numericFactorization();
+      comm->barrier();
+    }
     // perform solve
-    solver->solve();
     comm->barrier();
+    {
+      Teuchos::RCP< Teuchos::Time > solveTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Solve");
+      Teuchos::TimeMonitor solveTimer(*solveTimer_);
 
+      solver->solve();
+      comm->barrier();
+    }
     if(printSolution) {
       // Print the solution
       RCP<Map<LO,GO> > root_map
