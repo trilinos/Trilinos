@@ -79,7 +79,7 @@ class ChebyshevKernel {
   Teuchos::RCP<const crs_matrix_type> A_crs_;
   Teuchos::RCP<const import_type> imp_;
   Teuchos::RCP<const export_type> exp_;
-  std::unique_ptr<vector_type> X_colMap_;
+  std::unique_ptr<multivector_type> X_colMap_;
   std::unique_ptr<multivector_type> V1_;
 
   Teuchos::RCP<vector_type> W_vec_, B_vec_, X_vec_;
@@ -89,8 +89,8 @@ class ChebyshevKernel {
   bool useNativeSpMV_;
 
   // Do the Import, if needed, and return the column Map version of X.
-  vector_type&
-  importVector(vector_type& X_domMap);
+  multivector_type&
+  importVector(multivector_type& X_domMap);
 
   bool canFuse(const multivector_type& B) const;
 
@@ -104,12 +104,12 @@ class ChebyshevKernel {
               const SC& beta);
 
   void
-  fusedCase(vector_type& W,
+  fusedCase(multivector_type& W,
             const SC& alpha,
-            vector_type& D_inv,
-            vector_type& B,
+            multivector_type& D_inv,
+            multivector_type& B,
             const crs_matrix_type& A,
-            vector_type& X,
+            multivector_type& X,
             const SC& beta);
 };
 
