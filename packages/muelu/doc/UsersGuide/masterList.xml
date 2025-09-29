@@ -1588,6 +1588,16 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>filtered matrix: count negative diagonals</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Counts the number of negative diagonals (involves MPI communication).</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+
+    <parameter>
       <name>matrix: compute analysis</name>
       <type>bool</type>
       <default>false</default>

@@ -207,8 +207,8 @@ Teuchos::RCP<Epetra_CrsMatrix>
       coefs[j] = 1.0;
     }
 
-    int err = matrix->InsertGlobalValues(global_row, nnz_per_row,
-                                         &coefs[0], &indices[0]);
+    err = matrix->InsertGlobalValues(global_row, nnz_per_row,
+                                     &coefs[0], &indices[0]);
     if (err < 0) {
       err = matrix->ReplaceGlobalValues(global_row, nnz_per_row,
                                         &coefs[0], &indices[0]);

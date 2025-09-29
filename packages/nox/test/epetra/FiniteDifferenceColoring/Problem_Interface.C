@@ -28,14 +28,14 @@ bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, Fi
   return problem.evaluate(FiniteElementProblem::F_ONLY, &x, &FVec, NULL, flag);
 }
 
-bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
+bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac_)
 {
   NOX::Epetra::FiniteDifferenceColoring* fdcJac = 0;
   NOX::Epetra::FiniteDifferenceColoringWithUpdate* fdcJac2 = 0;
 
-  fdcJac = dynamic_cast<NOX::Epetra::FiniteDifferenceColoring*>(&Jac);
+  fdcJac = dynamic_cast<NOX::Epetra::FiniteDifferenceColoring*>(&Jac_);
   if (fdcJac == 0) {
-    fdcJac2 = dynamic_cast<NOX::Epetra::FiniteDifferenceColoringWithUpdate*>(&Jac);
+    fdcJac2 = dynamic_cast<NOX::Epetra::FiniteDifferenceColoringWithUpdate*>(&Jac_);
     if(fdcJac2==0){
       std::cout << "Error: Problem_Interface::computeJacobian() - "
        << "Jacobian operator is not a NOX::Epetra::FiniteDifferenceColoring "

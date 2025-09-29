@@ -833,6 +833,33 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+GlobalOrdinal
+UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    CountNegativeDiagonalEntries(const Matrix& A) {
+  using local_matrix_type = typename Matrix::local_matrix_type;
+  using execution_space   = typename local_matrix_type::execution_space;
+  using KAT_S             = typename Kokkos::ArithTraits<typename local_matrix_type::value_type>;
+
+  auto local_mat_dev = A.getLocalMatrixDevice();
+  Kokkos::RangePolicy<execution_space, int> my_policy(0, static_cast<int>(local_mat_dev.numRows()));
+  GlobalOrdinal count_l = 0, count_g = 0;
+
+  Kokkos::parallel_reduce(
+      "CountNegativeDiagonalEntries", my_policy,
+      KOKKOS_LAMBDA(const LocalOrdinal rowIdx, GlobalOrdinal& sum) {
+        auto row = local_mat_dev.row(rowIdx);
+        for (LocalOrdinal entryIdx = 0; entryIdx < row.length; ++entryIdx) {
+          if (rowIdx == row.colidx(entryIdx) && KAT_S::real(row.value(entryIdx)) < 0)
+            sum++;
+        }
+      },
+      count_l);
+
+  MueLu_sumAll(A.getRowMap()->getComm(), count_l, count_g);
+  return count_g;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ResidualNorm(const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Op, const MultiVector& X, const MultiVector& RHS) {

@@ -728,21 +728,29 @@ do_solve_routine(const string& solver_name,
 
     if( refactor ){
 
-
       // Keep the symbolic factorization from A1
       solver->setA(A2, Amesos2::SYMBFACT);
 
       switch( style ){
       case SOLVE_VERBOSE:
+        if (verbosity > 2) {
+          *fos << endl << " ++ Re SOLVE_VERBOSE ++" << std::endl << std::flush;
+        }
         solver->numericFactorization();
         solver->setB(b2);
         solver->solve();
         break;
       case SOLVE_XB:
+        if (verbosity > 2) {
+          *fos << endl << " ++ Re SOLVE_XB ++" << std::endl << std::flush;
+        }
         solver->numericFactorization();
         solver->solve(outArg(*Xhat), ptrInArg(*b2));
         break;
       case SOLVE_SHORT:
+        if (verbosity > 2) {
+          *fos << endl << " ++ Re SHORT ++" << std::endl << std::flush;
+        }
         solver->solve(outArg(*Xhat), ptrInArg(*b2));
         break;
       }
@@ -1096,19 +1104,21 @@ bool do_tpetra_test_with_types(const string& mm_file,
     // // CrsMatrix, so we just read the file again.
     // A2 = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path, comm);
 
-    // perturb the values just a bit (element-wise square of first row)
-    size_t l_fst_row_nnz = A2->getNumEntriesInLocalRow(0);
-    //Array<LocalOrdinal> indices(l_fst_row_nnz);
-    //Array<Scalar> values(l_fst_row_nnz);
-    typename MAT::nonconst_local_inds_host_view_type indices ("indices", l_fst_row_nnz);
-    typename MAT::nonconst_values_host_view_type     values  ("values",  l_fst_row_nnz);
-
-    A2->getLocalRowCopy(0, indices, values, l_fst_row_nnz);
-    for( size_t i = 0; i < l_fst_row_nnz; ++i ){
-      values[i] = values[i] * values[i];
-    }
     A2->resumeFill ();
-    A2->replaceLocalValues (0, indices, values);
+    if (A2->getComm()->getRank() == 0) {
+      // perturb the values just a bit (element-wise square of first row)
+      size_t l_fst_row_nnz = A2->getNumEntriesInLocalRow(0);
+      //Array<LocalOrdinal> indices(l_fst_row_nnz);
+      //Array<Scalar> values(l_fst_row_nnz);
+      typename MAT::nonconst_local_inds_host_view_type indices ("indices", l_fst_row_nnz);
+      typename MAT::nonconst_values_host_view_type     values  ("values",  l_fst_row_nnz);
+
+      A2->getLocalRowCopy(0, indices, values, l_fst_row_nnz);
+      for( size_t i = 0; i < l_fst_row_nnz; ++i ){
+        values[i] = values[i] * values[i];
+      }
+      A2->replaceLocalValues (0, indices, values);
+    }
     A2->fillComplete (A->getDomainMap (), A->getRangeMap ());
 
     x2->randomize();
