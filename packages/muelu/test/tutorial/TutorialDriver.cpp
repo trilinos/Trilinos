@@ -466,7 +466,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (printTimings == "yes") {
-          Teuchos::TimeMonitor::summarize(comm, std::cout, false, true, false, Teuchos::Union, "", true);
+          Teuchos::TimeMonitor::summarize(comm.ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
         }
       }
 
