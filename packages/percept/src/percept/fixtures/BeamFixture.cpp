@@ -115,7 +115,7 @@
     }
 
     // Verify mesh for 6 different parts
-    bool verifyMesh( const BeamFixture & mesh )
+    bool verifyMesh( const BeamFixture & /*mesh*/ )
     {
       bool result = true;
 

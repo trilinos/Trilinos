@@ -56,7 +56,9 @@ public:
   MeshBuilder& set_communicator(ParallelMachine comm);
   MeshBuilder& set_aura_option(BulkData::AutomaticAuraOption auraOption);
   virtual MeshBuilder& set_add_fmwk_data(bool addFmwkData);
-  MeshBuilder& set_field_data_manager(std::unique_ptr<FieldDataManager> fieldDataManager);
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2025-08-19
+  STK_DEPRECATED MeshBuilder& set_field_data_manager(std::unique_ptr<FieldDataManager> fieldDataManager);
+#endif
 
   MeshBuilder& set_bucket_capacity(unsigned bucketCapacity);
   MeshBuilder& set_initial_bucket_capacity(unsigned initialCapacity);
@@ -64,6 +66,7 @@ public:
 
   MeshBuilder& set_upward_connectivity(bool onOrOff);
   MeshBuilder& set_symmetric_ghost_info(bool onOrOff);
+  MeshBuilder& set_maintain_local_ids(bool onOrOff);
 
   virtual std::unique_ptr<BulkData> create();
   virtual std::unique_ptr<BulkData> create(std::shared_ptr<MetaData> metaData);
@@ -84,6 +87,7 @@ protected:
   std::vector<std::string> m_entityRankNames;
   bool m_upwardConnectivity;
   bool m_symmetricGhostInfo;
+  bool m_maintainLocalIds;
 };
 
 }

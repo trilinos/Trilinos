@@ -19,6 +19,7 @@
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 
 #include "MueLu_AmalgamationInfo_fwd.hpp"
+#include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_LWGraph_kokkos_decl.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -131,7 +132,7 @@ class CoalesceDropFactory_kokkos
 
   void Build(Level& currentLevel) const;
 
-  std::tuple<RCP<LocalOrdinalVector>, RCP<LocalOrdinalVector> > GetBlockNumberMVs(Level& currentLevel) const;
+  Teuchos::RCP<MultiVector> GetMaterial(Level& currentLevel, size_t spatialDim) const;
 
   std::tuple<GlobalOrdinal, boundary_nodes_type> BuildScalar(Level& currentLevel) const;
 

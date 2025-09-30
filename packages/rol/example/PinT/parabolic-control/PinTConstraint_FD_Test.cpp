@@ -27,14 +27,14 @@
 #define CHECK_ASSERT(expr) \
     {bool test = expr; \
     if(not test) { \
-      std::stringstream ss; \
-      ss << myRank << ". FAILED - Assertion failed on line " << __LINE__ << ": " #expr " " << std::endl; \
-      throw std::logic_error(ss.str()); \
+      std::stringstream mss; \
+      mss << myRank << ". FAILED - Assertion failed on line " << __LINE__ << ": " #expr " " << std::endl; \
+      throw std::logic_error(mss.str()); \
     } \
     else if(myRank==0) { \
-      std::stringstream ss; \
-      ss << myRank << ". Assertion passed on line " << __LINE__ << ": " #expr " " << std::endl; \
-      *outStream << ss.str() << std::endl; \
+      std::stringstream mss; \
+      mss << myRank << ". Assertion passed on line " << __LINE__ << ": " #expr " " << std::endl; \
+      *outStream << mss.str() << std::endl; \
     }}
 
 #define CHECK_EQUALITY(expr1,expr2) \
@@ -93,8 +93,6 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
-  using RealT             = double;
-  using size_type         = std::vector<RealT>::size_type;
 //  using ValidateFunction  = ROL::ValidateFunction<RealT>;
 //  using Bounds            = ROL::Bounds<RealT>;
 //  using PartitionedVector = ROL::PartitionedVector<RealT>;
@@ -243,10 +241,10 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     auto fv  = state->clone();
     auto lfv  = state->clone();   // local fv
     auto afv  = state->clone();
-    auto jv = state->clone();
+    auto ljv = state->clone();
     auto ajv = state->clone();
     PinTVector<RealT> & pint_v = dynamic_cast<PinTVector<RealT>&>(*v);
-    PinTVector<RealT> & pint_jv = dynamic_cast<PinTVector<RealT>&>(*jv);
+    PinTVector<RealT> & pint_jv = dynamic_cast<PinTVector<RealT>&>(*ljv);
     PinTVector<RealT> & pint_ajv = dynamic_cast<PinTVector<RealT>&>(*ajv);
 
     ROL::RandomizeVector<RealT>(*v);
@@ -254,12 +252,12 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     // state->setScalar(1.1);
     // control->setScalar(1.1);
 
-    double tol = 1e-12;
+    tol = 1e-12;
 
     std::stringstream ss;
 
     // compute jacobian action
-    pint_constraint.applyJacobian_1(*jv,
+    pint_constraint.applyJacobian_1(*ljv,
                                     *v,
                                     *state,
                                     *control,tol);
@@ -285,7 +283,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
 
     int level = 0;
     pint_constraint.invertTimeStepJacobian(dynamic_cast<PinTVector<RealT>&>(*fv),
-                                           dynamic_cast<const PinTVector<RealT>&>(*jv),
+                                           dynamic_cast<const PinTVector<RealT>&>(*ljv),
                                            dynamic_cast<const PinTVector<RealT>&>(*state),
                                            dynamic_cast<const PinTVector<RealT>&>(*control),
                                            tol,
@@ -299,7 +297,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
                                                    level);
 
     RealT v_norm   = v->norm();
-    RealT jv_norm  = jv->norm();
+    RealT jv_norm  = ljv->norm();
 
     // check forward time step jacobian
     {
@@ -316,7 +314,7 @@ void run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
         *outStream << "Forward block Jacobi subdomain inversion PASSED with proc " 
                    << " (relative error = " << fv_norm / v_norm  << ")" << std::endl;
 
-      lfv->axpy(-1.0,*jv);
+      lfv->axpy(-1.0,*ljv);
       RealT lfv_norm  = lfv->norm();
       CHECK_ASSERT(lfv_norm/jv_norm <= 1e-13);
     }

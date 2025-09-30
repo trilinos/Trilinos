@@ -31,10 +31,12 @@ class STKConnManager : public panzer::ConnManager {
 public:
    typedef typename panzer::ConnManager::LocalOrdinal LocalOrdinal;
    typedef typename panzer::ConnManager::GlobalOrdinal GlobalOrdinal;
-   typedef typename Kokkos::DynRankView<GlobalOrdinal,PHX::Device>::HostMirror GlobalOrdinalView;
-   typedef typename Kokkos::DynRankView<LocalOrdinal, PHX::Device>::HostMirror LocalOrdinalView;
+   typedef typename Kokkos::DynRankView<GlobalOrdinal,PHX::Device>::host_mirror_type GlobalOrdinalView;
+   typedef typename Kokkos::DynRankView<LocalOrdinal, PHX::Device>::host_mirror_type LocalOrdinalView;
 
    STKConnManager(const Teuchos::RCP<const STK_Interface> & stkMeshDB);
+
+   STKConnManager(const panzer_stk::STKConnManager & cm);
 
    virtual ~STKConnManager() {}
 
@@ -104,12 +106,14 @@ public:
      */
    virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
    { return stkMeshDB_->getElementBlockNames(elementBlockIds); }
+
    /** What are the cellTopologies linked to element blocks in this connection manager?
     */
    virtual void getElementBlockTopologies(std::vector<shards::CellTopology> & elementBlockTopologies) const{
      std::vector<std::string> elementBlockIds;
      getElementBlockIds(elementBlockIds);
      elementBlockTopologies.reserve(elementBlockIds.size());
+
      for (unsigned i=0; i<elementBlockIds.size(); ++i) {
        elementBlockTopologies.push_back(*(stkMeshDB_->getCellTopology(elementBlockIds[i])));
      }
@@ -185,6 +189,18 @@ public:
       */
     virtual bool hasAssociatedNeighbors() const;
 
+  /// Enables the caching of connectivity data. Be sure to call clearCachedConnectivityData() before exiting your program.
+  static void cacheConnectivity()
+  { cache_connectivity_ = true; }
+
+  /// If you enable caching with cacheConnectivity(), this must be called prior to exiting the code.
+  static void clearCachedConnectivityData()
+  { cached_conn_managers_.clear(); }
+
+  /// This is purely for unit testing. Returns the number of times that buildConnectivity() was called, but a cached version was found to use instead.
+  static int getCachedReuseCount()
+  { return cached_reuse_count_; }
+
 protected:
    /** Apply periodic boundary conditions associated with the mesh object.
      *
@@ -205,15 +221,15 @@ protected:
 
    /**
     * @brief Loops over relations of a given rank for a specified element and adds a unique ID to the connectivity vector
-    *    
+    *
     * @param[in] element Mesh element
     * @param[in] subcellRank Rank of the subcell entities to identify
     * @param[in] idCnt Number of IDs on the requested subcell type
     * @param[in] offset Offset for requested subcell type
     * @param[in,optional] maxIds If positive, maximum number of IDs to connect to this element. If 0 (default), add all IDs.
-    * 
+    *
     * @pre Should call buildOffsetsAndIdCounts() to obtain \p idCnt and \p offset.
-    * @note The connectivity manager needs only the lowest order nodal information. 
+    * @note The connectivity manager needs only the lowest order nodal information.
     *       Hence, maxIds should be set appropriately if the STK mesh is second order or higher.
    */
    LocalOrdinal addSubcellConnectivities(stk::mesh::Entity element,unsigned subcellRank,
@@ -240,6 +256,18 @@ protected:
    std::vector<std::string> sidesetsToAssociate_;
    std::vector<bool> sidesetYieldedAssociations_;
    std::vector<std::vector<LocalOrdinal> > elmtToAssociatedElmts_;
+
+  using CachedEntry = std::pair<Teuchos::RCP<const panzer::FieldPattern>,Teuchos::RCP<panzer_stk::STKConnManager>>;
+  struct FieldPatternCompare {
+    Teuchos::RCP<const panzer::FieldPattern> fp_;
+    FieldPatternCompare(const Teuchos::RCP<const panzer::FieldPattern>& fp):fp_(fp){}
+    bool inline operator()(CachedEntry& entry_to_compare) const
+    { return fp_->equals(*entry_to_compare.first); }
+  };
+
+  static bool cache_connectivity_;
+  static std::vector<CachedEntry> cached_conn_managers_;
+  static int cached_reuse_count_;
 };
 
 }

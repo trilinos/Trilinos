@@ -51,10 +51,11 @@ static void register_blocks_for_decomposition_by_levelsets(Phase_Support & phase
 {
   for (unsigned ls = 0; ls < numLevelSets; ++ls)
     phaseSupport.register_blocks_for_level_set(Surface_Identifier(ls), blocks);
-  std::vector<std::tuple<stk::mesh::PartVector, std::shared_ptr<Interface_Name_Generator>, PhaseVec>> ls_sets;
-  auto interface_name_gen = std::shared_ptr<Interface_Name_Generator>(new LS_Name_Generator());
-  ls_sets.push_back(std::make_tuple(blocks, interface_name_gen, namedPhases));
-  phaseSupport.decompose_blocks(ls_sets);
+
+  DecompositionPackage decomps;
+  decomps.add_levelset_decomposition(blocks, namedPhases);
+  phaseSupport.decompose_blocks(decomps);
+  phaseSupport.build_decomposed_block_surface_connectivity();
 }
 
 static PhaseVec create_named_phases_for_levelset_per_phase(const unsigned numLevelSets)

@@ -17,7 +17,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #endif
 
@@ -39,13 +39,13 @@ int main(int argc, char *argv[])
   bool ierr, gerr;
   gerr = true;
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
 #endif
 
   int MyPID;
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
 #else
   MyPID = 0;
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("debug","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 
 #ifndef HAVE_ANASAZI_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef EPETRA_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize() ;
 #endif
   MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     MyOM->stream(Anasazi::Warnings)
       << "Warning reading '" << filename << "'" << endl
       << "End Result: TEST FAILED" << endl;
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     MyOM->print(Anasazi::Warnings,"*** MyBetterOperator<complex> FAILED TestOperatorTraits() ***\n\n");
   }
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize();
 #endif
 

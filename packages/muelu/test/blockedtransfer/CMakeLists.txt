@@ -1,4 +1,3 @@
-
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -8,30 +7,33 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 
 TRIBITS_ADD_EXECUTABLE(
+  BlockedTransfer
+  SOURCES BlockedTransfer.cpp
+  COMM serial mpi
+)
+
+IF(${PACKAGE_NAME}_ENABLE_Epetra
+   AND ${PACKAGE_NAME}_ENABLE_EpetraExt
+   AND ${PACKAGE_NAME}_ENABLE_Ifpack
+)
+
+  TRIBITS_ADD_TEST(
     BlockedTransfer
-    SOURCES BlockedTransfer.cpp
+    NAME "BlockedTransfer_Epetra"
+    ARGS "--linAlgebra=Epetra"
     COMM serial mpi
   )
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack)
-
-    TRIBITS_ADD_TEST(
-        BlockedTransfer
-        NAME "BlockedTransfer_Epetra"
-        ARGS "--linAlgebra=Epetra"
-        COMM serial mpi
-      )
-
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Ifpack2)
+IF(${PACKAGE_NAME}_ENABLE_Ifpack2)
 
-    TRIBITS_ADD_TEST(
-        BlockedTransfer
-        NAME "BlockedTransfer_Tpetra"
-        ARGS "--linAlgebra=Tpetra"
-        COMM serial mpi
-      )
+  TRIBITS_ADD_TEST(
+    BlockedTransfer
+    NAME "BlockedTransfer_Tpetra"
+    ARGS "--linAlgebra=Tpetra"
+    COMM serial mpi
+  )
 
 ENDIF()
 

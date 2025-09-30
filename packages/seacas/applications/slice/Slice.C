@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -397,6 +397,7 @@ int main(int argc, char *argv[])
     dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
   }
 
+  dbi->set_lowercase_database_names(false);
   dbi->set_surface_split_type(Ioss::SPLIT_BY_DONT_SPLIT);
   dbi->set_field_separator(0);
 

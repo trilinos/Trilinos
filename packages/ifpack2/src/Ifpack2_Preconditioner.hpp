@@ -63,22 +63,21 @@ namespace Ifpack2 {
 /// allocated information, and reinitializes the preconditioner. Every
 /// time compute() is called, the object recomputes the actual values of
 /// the preconditioner.
-template<class Scalar =
-           Tpetra::Operator<>::scalar_type,
-         class LocalOrdinal =
-           typename Tpetra::Operator<Scalar>::local_ordinal_type,
-         class GlobalOrdinal =
-           typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-         class Node =
-           typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-class Preconditioner :
-  virtual public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
-public:
+template <class Scalar =
+              Tpetra::Operator<>::scalar_type,
+          class LocalOrdinal =
+              typename Tpetra::Operator<Scalar>::local_ordinal_type,
+          class GlobalOrdinal =
+              typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
+          class Node =
+              typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+class Preconditioner : virtual public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+ public:
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
 
   //! Destructor.
-  virtual ~Preconditioner(){}
+  virtual ~Preconditioner() {}
 
   /// @name Methods implementing Tpetra::Operator.
   //@{
@@ -87,15 +86,15 @@ public:
   ///
   /// The domain Map describes the distribution of valid input vectors
   /// X to the apply() method.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-  getDomainMap () const = 0;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
+  getDomainMap() const = 0;
 
   /// @brief The range Map of this operator.
   ///
   /// The range Map describes the distribution of valid output vectors
   /// Y to the apply() method.
-  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-  getRangeMap () const = 0;
+  virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
+  getRangeMap() const = 0;
 
   /// @brief Apply the preconditioner to X, putting the result in Y.
   ///
@@ -103,20 +102,20 @@ public:
   /// \f$F \cdot X\f$, then this method computes \f$\beta Y + \alpha F \cdot X\f$.
   /// The typical case is \f$\beta = 0\f$ and \f$\alpha = 1\f$.
   virtual void
-  apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-         Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
+  apply(const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &X,
+        Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
+        Scalar beta           = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
   //@}
 
   //! Set this preconditioner's parameters.
-  virtual void setParameters (const Teuchos::ParameterList& List) = 0;
+  virtual void setParameters(const Teuchos::ParameterList &List) = 0;
 
-  virtual bool supportsZeroStartingSolution () { return false; };
+  virtual bool supportsZeroStartingSolution() { return false; };
 
   //! Set this preconditioner's parameters.
-  virtual void setZeroStartingSolution (bool zeroStartingSolution) { TEUCHOS_ASSERT(false); };
+  virtual void setZeroStartingSolution(bool zeroStartingSolution) { TEUCHOS_ASSERT(false); };
 
   /// @brief Set up the graph structure of this preconditioner.
   ///
@@ -147,7 +146,7 @@ public:
   virtual bool isComputed() const = 0;
 
   //! The input matrix given to the constructor.
-  virtual Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const = 0;
+  virtual Teuchos::RCP<const Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getMatrix() const = 0;
 
   //! The number of calls to initialize().
   virtual int getNumInitialize() const = 0;
@@ -168,6 +167,6 @@ public:
   virtual double getApplyTime() const = 0;
 };
 
-}//namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_PRECONDITIONER_HPP
+#endif  // IFPACK2_PRECONDITIONER_HPP

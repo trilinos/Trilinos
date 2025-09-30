@@ -40,11 +40,13 @@
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
 // Forward declaration of Array
-template<class T> class Array;
+template <class T>
+class Array;
 // Forward declaration of ArrayView
-template<class T> class ArrayView;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+template <class T>
+class ArrayView;
+}  // namespace Teuchos
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 
@@ -84,13 +86,12 @@ namespace Details {
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
 /// CrsMatrix migrates fully to adopting Kokkos::DualView objects for its storage
 /// of data, this procedure could be bypassed.
-template<typename ST, typename LO, typename GO, typename NT>
-void
-packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-               Teuchos::Array<char>& exports,
-               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-               const Teuchos::ArrayView<const LO>& exportLIDs,
-               size_t& constantNumPackets);
+template <typename ST, typename LO, typename GO, typename NT>
+void packCrsMatrix(const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                   Teuchos::Array<char>& exports,
+                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                   const Teuchos::ArrayView<const LO>& exportLIDs,
+                   size_t& constantNumPackets);
 
 /// \brief Pack specified entries of the given local sparse matrix for
 ///   communication, for "new" DistObject interface.
@@ -121,16 +122,15 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 /// This method implements CrsMatrix::packNew, and thus
 /// CrsMatrix::packAndPrepare, for the case where the matrix to
 /// pack has a valid KokkosSparse::CrsMatrix.
-template<typename ST, typename LO, typename GO, typename NT>
-void
-packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                  Kokkos::DualView<char*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
-                  const Kokkos::DualView<size_t*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
-                  const Kokkos::DualView<const LO*,
-                    typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
-                  size_t& constantNumPackets);
+template <typename ST, typename LO, typename GO, typename NT>
+void packCrsMatrixNew(const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                      Kokkos::DualView<char*,
+                                       typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports,
+                      const Kokkos::DualView<size_t*,
+                                             typename DistObject<char, LO, GO, NT>::buffer_device_type>& numPacketsPerLID,
+                      const Kokkos::DualView<const LO*,
+                                             typename DistObject<char, LO, GO, NT>::buffer_device_type>& exportLIDs,
+                      size_t& constantNumPackets);
 
 /// \brief Pack specified entries of the given local sparse matrix for
 ///   communication.
@@ -163,16 +163,15 @@ packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
 /// CrsMatrix migrates fully to adopting Kokkos::DualView objects for its storage
 /// of data, this procedure could be bypassed.
-template<typename ST, typename LO, typename GO, typename NT>
-void
-packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
-                             Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports_dv,
-                             const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                             const Teuchos::ArrayView<const LO>& exportLIDs,
-                             const Teuchos::ArrayView<const int>& sourcePIDs,
-                             size_t& constantNumPackets);
+template <typename ST, typename LO, typename GO, typename NT>
+void packCrsMatrixWithOwningPIDs(const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
+                                 Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT>::buffer_device_type>& exports_dv,
+                                 const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                                 const Teuchos::ArrayView<const LO>& exportLIDs,
+                                 const Teuchos::ArrayView<const int>& sourcePIDs,
+                                 size_t& constantNumPackets);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_PACKCRSMATRIX_DECL_HPP
+#endif  // TPETRA_DETAILS_PACKCRSMATRIX_DECL_HPP

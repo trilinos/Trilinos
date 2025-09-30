@@ -65,7 +65,7 @@ typename std::enable_if<
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
   !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
     Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(const Kokkos::View<T,P...> & src);
 
 template< class T , class ... P >
@@ -75,7 +75,7 @@ typename std::enable_if<
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
   std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
     Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(const Kokkos::View<T,P...> & src);
 
 template<class Space, class T, class ... P,
@@ -94,7 +94,7 @@ typename std::enable_if<
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
   !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Kokkos::View<T,P...> & src);
 
@@ -105,7 +105,7 @@ typename std::enable_if<
     Kokkos::Experimental::Impl::ViewPCEContiguous >::value &&
   std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
     Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Kokkos::View<T,P...> & src);
 

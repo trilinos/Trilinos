@@ -21,25 +21,28 @@ class TestFieldPattern : public FieldPattern {
 public:
    TestFieldPattern() {}
 
+  Teuchos::RCP<panzer::FieldPattern> clone() const override
+  {return Teuchos::rcp(new TestFieldPattern(*this));}
+  
    /* This function has no functionality in this case.
     * If called it will throw an assertion failure
     */
-   virtual void getSubcellClosureIndices(int /* dim */, int /* cellIndex */, std::vector<int> & /* indices */) const
+   virtual void getSubcellClosureIndices(int /* dim */, int /* cellIndex */, std::vector<int> & /* indices */) const override
    { TEUCHOS_ASSERT(false); }
 
-   virtual int getSubcellCount(int dim) const
+   virtual int getSubcellCount(int dim) const override
    {  return subcellIndices[dim].size(); }
 
-   virtual const std::vector<int> & getSubcellIndices(int dim,int cellIndex) const
+   virtual const std::vector<int> & getSubcellIndices(int dim,int cellIndex) const override
    {  return subcellIndices[dim][cellIndex]; }
 
-   virtual int getDimension() const
+   virtual int getDimension() const override
    { return subcellIndices.size()-1; }
 
    std::vector<std::vector<int> > & operator[](int v)
    { return subcellIndices[v]; } 
 
-   virtual shards::CellTopology getCellTopology() const
+   virtual shards::CellTopology getCellTopology() const override
    { return cellTopo; }
 
 public:

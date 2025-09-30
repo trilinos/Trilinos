@@ -134,18 +134,18 @@ class BatchedDblBufGemm {
   using AlphaMulTag =
       std::conditional_t<std::is_same<ArgAlphaFmaTag, AlphaTag::Yes>::value, AlphaTag::No, AlphaTag::Yes>;
 
-  HandleType *const __handle;
+  HandleType *const handle_;
   AViewType A_;
   BViewType B_;
   CViewType C_;
-  ScalarType __alpha, __beta;
-  ArgTransA __transA_tag;
-  ArgTransB __transB_tag;
-  ArgBatchSzDim __batch_layout_tag;
-  ArgBoundsCheck __bounds_check_tag;
-  ArgAlphaFmaTag __alpha_fma_tag;
-  AlphaMulTag __alpha_mul_tag;
-  int __c_batch_size, __c_m, __c_n;
+  ScalarType alpha_, beta_;
+  ArgTransA transA_tag_;
+  ArgTransB transB_tag_;
+  ArgBatchSzDim batch_layout_tag_;
+  ArgBoundsCheck bounds_check_tag_;
+  ArgAlphaFmaTag alpha_fma_tag;
+  AlphaMulTag alpha_mul_tag;
+  int c_batch_size_, c_m_, c_n_;
 
   using view_value_type      = typename CViewType::value_type;
   using layout_type          = typename CViewType::array_layout;
@@ -156,15 +156,15 @@ class BatchedDblBufGemm {
 
  public:
   BatchedDblBufGemm(HandleType *const handle, ScalarType alpha, AViewType A, BViewType B, ScalarType beta, CViewType C)
-      : __handle(handle), A_(A), B_(B), C_(C), __alpha(alpha), __beta(beta) {}
+      : handle_(handle), A_(A), B_(B), C_(C), alpha_(alpha), beta_(beta) {}
 
   int invoke() {
-    __run();
+    run();
     return 0;
   }
 
  private:
-  void __run() {
+  void run() {
     using policy_type = Kokkos::TeamPolicy<TagFromLayout<layout_type>, execution_space_type>;
     using member_type = typename policy_type::member_type;
 
@@ -183,10 +183,10 @@ class BatchedDblBufGemm {
 
     functor_type functor(*this, A_, B_, C_);
 
-    if (__handle->enableDebug) {
-      std::cout << "algo_type:" << __handle->get_kernel_algo_type() << std::endl
-                << "__c_m:" << __c_m << std::endl
-                << "__c_n:" << __c_n << std::endl
+    if (handle_->enableDebug) {
+      std::cout << "algo_type:" << handle_->get_kernel_algo_type() << std::endl
+                << "c_m_:" << c_m_ << std::endl
+                << "c_n_:" << c_n_ << std::endl
                 << "reg_m:" << reg_m << std::endl
                 << "reg_n:" << reg_n << std::endl
                 << "stride_m:" << stride_m << std::endl
@@ -195,7 +195,7 @@ class BatchedDblBufGemm {
 
     // Each team solves a single tile. Within each tile, the team solves
     // all __n_tile_k_tiles one at a time.
-    size_t league_size = __c_batch_size * functor.get_n_sub_tiles();
+    size_t league_size = c_batch_size_ * functor.get_n_sub_tiles();
     int team_size      = stride_m;
     int vector_len     = stride_n;
 
@@ -203,7 +203,7 @@ class BatchedDblBufGemm {
         policy_type(league_size, Kokkos::AUTO, vector_len).team_size_max(functor, Kokkos::ParallelForTag());
     if (team_size > max_team_size) {
       std::ostringstream os;
-      os << "KokkosBatched::BatchedGemm with kernelAlgoType = " << std::to_string(__handle->get_kernel_algo_type())
+      os << "KokkosBatched::BatchedGemm with kernelAlgoType = " << std::to_string(handle_->get_kernel_algo_type())
          << " does not support team_size > " << std::to_string(max_team_size) << "." << std::endl
          << " The tile dimensions must be adjusted." << std::endl;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
@@ -212,13 +212,13 @@ class BatchedDblBufGemm {
     const int max_vector_len = policy_type(league_size, team_size, Kokkos::AUTO).vector_length_max();
     if (vector_len > max_vector_len) {
       std::ostringstream os;
-      os << "KokkosBatched::BatchedGemm with kernelAlgoType = " << std::to_string(__handle->get_kernel_algo_type())
+      os << "KokkosBatched::BatchedGemm with kernelAlgoType = " << std::to_string(handle_->get_kernel_algo_type())
          << " does not support vector_len > " << std::to_string(max_vector_len) << "." << std::endl
          << " The tile dimensions must be adjusted." << std::endl;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 
-    if (__handle->enableDebug) {
+    if (handle_->enableDebug) {
       std::cout << "max_team_size:" << max_team_size << " team_size:" << team_size << std::endl
                 << "max_vector_len:" << max_vector_len << " vector_len:" << vector_len << std::endl
                 << "TILE_M:" << TILE_M << std::endl
@@ -243,63 +243,63 @@ class BatchedDblBufGemm {
   template <class MemberType, int REG_M, int REG_N, int STRIDE_M, int STRIDE_N>
   class Functor {
    private:
-    BatchedDblBufGemm &__ei;
+    BatchedDblBufGemm &ei_;
     AViewType A_;
     BViewType B_;
     CViewType C_;
-    ScalarType __alpha, __beta;
-    int __k;
-    size_t __n_sub_tiles, __tiles_per_col, __tiles_per_row;
+    ScalarType alpha_, beta_;
+    int k_;
+    size_t n_sub_tiles_, tiles_per_col_, tiles_per_row_;
 
    public:
-    size_t get_n_sub_tiles() { return __n_sub_tiles; }
+    size_t get_n_sub_tiles() { return n_sub_tiles_; }
 
-    // NOTE: We cannot use __ei.{A_,B_,C_,__beta,__alpha,__k} in the operator
+    // NOTE: We cannot use ei_.{A_,B_,C_,beta_,alpha_,k_} in the operator
     // below. If those are used, we  get an invalid memory error from cuda. I
     // suspect this is due the values not being copied to device and then
-    // runtime resolution of the host address &__ei.
-    Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C) : __ei(ei), A_(A), B_(B), C_(C) {
+    // runtime resolution of the host address &ei_.
+    Functor(BatchedDblBufGemm &ei, AViewType A, BViewType B, CViewType C) : ei_(ei), A_(A), B_(B), C_(C) {
       if (std::is_same<ArgBatchSzDim, BatchLayout::Left>::value) {
-        ei.__c_batch_size = ei.C_.extent_int(0);
-        ei.__c_m          = ei.C_.extent_int(1);
-        ei.__c_n          = ei.C_.extent_int(2);
+        ei.c_batch_size_ = ei.C_.extent_int(0);
+        ei.c_m_          = ei.C_.extent_int(1);
+        ei.c_n_          = ei.C_.extent_int(2);
         if (std::is_same<ArgTransA, Trans::Transpose>::value)
-          __k = ei.A_.extent_int(1);
+          k_ = ei.A_.extent_int(1);
         else
-          __k = ei.A_.extent_int(2);
+          k_ = ei.A_.extent_int(2);
       } else {
-        ei.__c_batch_size = ei.C_.extent_int(2);
-        ei.__c_m          = ei.C_.extent_int(0);
-        ei.__c_n          = ei.C_.extent_int(1);
+        ei.c_batch_size_ = ei.C_.extent_int(2);
+        ei.c_m_          = ei.C_.extent_int(0);
+        ei.c_n_          = ei.C_.extent_int(1);
         if (std::is_same<ArgTransA, Trans::Transpose>::value)
-          __k = ei.A_.extent_int(0);
+          k_ = ei.A_.extent_int(0);
         else
-          __k = ei.A_.extent_int(1);
+          k_ = ei.A_.extent_int(1);
       }
-      __beta  = ei.__beta;   // Copy to device
-      __alpha = ei.__alpha;  // Copy to device
+      beta_  = ei.beta_;   // Copy to device
+      alpha_ = ei.alpha_;  // Copy to device
       // To handle truncation of tiles per row/col, round up to one extra tile
       // with '!!'. This extra tile will hang off the edge of the 2-rank matrix.
       // For cases where tiles hang off the edge, we over-compute 0s within
       // registers via a conditional bounds check selected at compile-time.
-      __tiles_per_row = ei.__c_m / TILE_M + !!((size_t)ei.__c_m % TILE_M);
-      __tiles_per_col = ei.__c_n / TILE_N + !!((size_t)ei.__c_n % TILE_N);
+      tiles_per_row_ = ei.c_m_ / TILE_M + !!((size_t)ei.c_m_ % TILE_M);
+      tiles_per_col_ = ei.c_n_ / TILE_N + !!((size_t)ei.c_n_ % TILE_N);
 
-      __n_sub_tiles = __tiles_per_row * __tiles_per_col;
+      n_sub_tiles_ = tiles_per_row_ * tiles_per_col_;
     }
 
     KOKKOS_INLINE_FUNCTION
-    void __mul(view_value_type a, view_value_type b, view_value_type &c, const AlphaTag::No &) const { c += a * b; }
+    void mul(view_value_type a, view_value_type b, view_value_type &c, const AlphaTag::No &) const { c += a * b; }
 
     KOKKOS_INLINE_FUNCTION
-    void __mul(view_value_type a, view_value_type b, view_value_type &c, const AlphaTag::Yes &) const {
-      c += a * b * __alpha;
+    void mul(view_value_type a, view_value_type b, view_value_type &c, const AlphaTag::Yes &) const {
+      c += a * b * alpha_;
     }
 
     KOKKOS_INLINE_FUNCTION
-    void __rshmem_and_mul(const int &thread_id, const int &vlane_id, const unsigned &nk, view_value_type reg_a[REG_M],
-                          view_value_type reg_b[REG_N], view_value_type reg_c[REG_M][REG_N],
-                          view_type_2d_scratch &svA_scr, view_type_2d_scratch &svB_scr) const {
+    void rshmem_and_mul(const int &thread_id, const int &vlane_id, const unsigned &nk, view_value_type reg_a[REG_M],
+                        view_value_type reg_b[REG_N], view_value_type reg_c[REG_M][REG_N],
+                        view_type_2d_scratch &svA_scr, view_type_2d_scratch &svB_scr) const {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -321,16 +321,15 @@ class BatchedDblBufGemm {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-          for (int n = 0; n < REG_N; ++n) __mul(reg_a[m], reg_b[n], reg_c[m][n], __ei.__alpha_mul_tag);
+          for (int n = 0; n < REG_N; ++n) mul(reg_a[m], reg_b[n], reg_c[m][n], ei_.alpha_mul_tag);
         }
       }
     }
 
     KOKKOS_INLINE_FUNCTION
-    void __rshmem_and_mul_ll(const int &thread_id, const int &vlane_id, const unsigned &nk,
-                             view_value_type reg_a[REG_M], view_value_type reg_b[REG_N],
-                             view_value_type reg_c[REG_M][REG_N], view_type_2d_scratch &svA_scr,
-                             view_type_2d_scratch &svB_scr) const {
+    void rshmem_and_mul_ll(const int &thread_id, const int &vlane_id, const unsigned &nk, view_value_type reg_a[REG_M],
+                           view_value_type reg_b[REG_N], view_value_type reg_c[REG_M][REG_N],
+                           view_type_2d_scratch &svA_scr, view_type_2d_scratch &svB_scr) const {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -352,7 +351,7 @@ class BatchedDblBufGemm {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
-          for (int n = 0; n < REG_N; ++n) __mul(reg_a[m], reg_b[n], reg_c[m][n], __ei.__alpha_mul_tag);
+          for (int n = 0; n < REG_N; ++n) mul(reg_a[m], reg_b[n], reg_c[m][n], ei_.alpha_mul_tag);
         }
       }
     }
@@ -370,21 +369,19 @@ class BatchedDblBufGemm {
       // TODO: look at GPU trace in nvprof to find out how many registers are
       // used.
 
-      unsigned batch_idx = member.league_rank() / __n_sub_tiles;
+      unsigned batch_idx = member.league_rank() / n_sub_tiles_;
 
       // Compute starting tile offsets for each team into svA, svB, svC
-      unsigned local_team_idx = member.league_rank() % __n_sub_tiles;
-      unsigned start_m        = (local_team_idx / __tiles_per_col) * TILE_M;
-      unsigned start_n        = (local_team_idx % __tiles_per_col) * TILE_N;
+      unsigned local_team_idx = member.league_rank() % n_sub_tiles_;
+      unsigned start_m        = (local_team_idx / tiles_per_col_) * TILE_M;
+      unsigned start_n        = (local_team_idx % tiles_per_col_) * TILE_N;
 
       int kk;
 
       // Fetch entire 2-rank sub-matrix
-      auto svA =
-          subview_wrapper(A_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transA_tag);
-      auto svB =
-          subview_wrapper(B_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transB_tag);
-      auto svC = subview_wrapper(C_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag);
+      auto svA = subview_wrapper(A_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), ei_.batch_layout_tag_, ei_.transA_tag_);
+      auto svB = subview_wrapper(B_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), ei_.batch_layout_tag_, ei_.transB_tag_);
+      auto svC = subview_wrapper(C_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), ei_.batch_layout_tag_);
 
       // Allocate scratch memory buffers used for prefetching
       view_type_2d_scratch svA_scr(member.team_scratch(0), TILE_M, TILE_K);
@@ -403,21 +400,21 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
           for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
             svB_scr(thread_id, vlane_id + i) =
-                access_view_bounds_check<view_value_type>(svB, thread_id, n_offset + i, __ei.__bounds_check_tag);
+                access_view_bounds_check<view_value_type>(svB, thread_id, n_offset + i, ei_.bounds_check_tag_);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
           for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M)
             svA_scr(thread_id + i, vlane_id) =
-                access_view_bounds_check<view_value_type>(svA, m_offset + i, vlane_id, __ei.__bounds_check_tag);
+                access_view_bounds_check<view_value_type>(svA, m_offset + i, vlane_id, ei_.bounds_check_tag_);
 
           // Wait for A, B to reside in scratch memory
           member.team_barrier();
 
           // Each thread calculates a single dot product in chunks of
           // size TILE_K
-          for (kk = 0; kk < __k - TILE_K; kk += TILE_K) {
+          for (kk = 0; kk < k_ - TILE_K; kk += TILE_K) {
             int k_tile_offset = kk + TILE_K;
 
             // Get this threads next TILE_K entries from global memory
@@ -427,16 +424,16 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
             for (int i = 0; i < REG_N; ++i)
               prefetch_reg_b[i] = access_view_bounds_check<view_value_type>(
-                  svB, thread_id + k_tile_offset, n_offset + i * STRIDE_N, __ei.__bounds_check_tag);
+                  svB, thread_id + k_tile_offset, n_offset + i * STRIDE_N, ei_.bounds_check_tag_);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
             for (int i = 0; i < REG_M; ++i)
               prefetch_reg_a[i] = access_view_bounds_check<view_value_type>(
-                  svA, m_offset + i * STRIDE_M, vlane_id + k_tile_offset, __ei.__bounds_check_tag);
+                  svA, m_offset + i * STRIDE_M, vlane_id + k_tile_offset, ei_.bounds_check_tag_);
 
-            __rshmem_and_mul(thread_id, vlane_id, TILE_K, reg_a, reg_b, reg_c, svA_scr, svB_scr);
+            rshmem_and_mul(thread_id, vlane_id, TILE_K, reg_a, reg_b, reg_c, svA_scr, svB_scr);
 
             // Wait for:
             //   1. prefetch_regs to be populated
@@ -463,10 +460,10 @@ class BatchedDblBufGemm {
           }  // end n_tile_k_tiles loop
 
           // Multiply last tile, may be a partial tile
-          __rshmem_and_mul(thread_id, vlane_id, __k - kk, reg_a, reg_b, reg_c, svA_scr, svB_scr);
+          rshmem_and_mul(thread_id, vlane_id, k_ - kk, reg_a, reg_b, reg_c, svA_scr, svB_scr);
 
           // store results back to global memory
-          if (__beta == 0.0F) {
+          if (beta_ == 0.0F) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -477,7 +474,7 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
               for (int n = 0; n < REG_N; ++n) {
                 int cn = n_offset + n * STRIDE_N;
-                fma_bounds_check(svC, cm, cn, reg_c[m][n], __alpha, __ei.__alpha_fma_tag, __ei.__bounds_check_tag);
+                fma_bounds_check(svC, cm, cn, reg_c[m][n], alpha_, ei_.alpha_fma_tag, ei_.bounds_check_tag_);
               }
             }
           } else {
@@ -491,8 +488,7 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
               for (int n = 0; n < REG_N; ++n) {
                 int cn = n_offset + n * STRIDE_N;
-                fma_bounds_check(svC, cm, cn, reg_c[m][n], __alpha, __beta, __ei.__alpha_fma_tag,
-                                 __ei.__bounds_check_tag);
+                fma_bounds_check(svC, cm, cn, reg_c[m][n], alpha_, beta_, ei_.alpha_fma_tag, ei_.bounds_check_tag_);
               }
             }
           }
@@ -513,21 +509,19 @@ class BatchedDblBufGemm {
       // TODO: look at GPU trace in nvprof to find out how many registers are
       // used.
 
-      unsigned batch_idx = member.league_rank() / __n_sub_tiles;
+      unsigned batch_idx = member.league_rank() / n_sub_tiles_;
 
       // Compute starting tile offsets for each team into svA, svB, svC
-      unsigned local_team_idx = member.league_rank() % __n_sub_tiles;
-      unsigned start_m        = (local_team_idx % __tiles_per_row) * TILE_M;
-      unsigned start_n        = (local_team_idx / __tiles_per_row) * TILE_N;
+      unsigned local_team_idx = member.league_rank() % n_sub_tiles_;
+      unsigned start_m        = (local_team_idx % tiles_per_row_) * TILE_M;
+      unsigned start_n        = (local_team_idx / tiles_per_row_) * TILE_N;
 
       int kk;
 
       // Fetch entire 2-rank sub-matrix
-      auto svA =
-          subview_wrapper(A_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transA_tag);
-      auto svB =
-          subview_wrapper(B_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag, __ei.__transB_tag);
-      auto svC = subview_wrapper(C_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), __ei.__batch_layout_tag);
+      auto svA = subview_wrapper(A_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), ei_.batch_layout_tag_, ei_.transA_tag_);
+      auto svB = subview_wrapper(B_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), ei_.batch_layout_tag_, ei_.transB_tag_);
+      auto svC = subview_wrapper(C_, batch_idx, Kokkos::ALL(), Kokkos::ALL(), ei_.batch_layout_tag_);
 
       // Allocate scratch memory buffers used for prefetching
       view_type_2d_scratch svA_scr(member.team_scratch(0), TILE_K, TILE_M);
@@ -546,21 +540,21 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
           for (int i = 0; i < REG_N * STRIDE_N; i += STRIDE_N)
             svB_scr(thread_id + i, vlane_id) =
-                access_view_bounds_check<view_value_type>(svB, vlane_id, n_offset + i, __ei.__bounds_check_tag);
+                access_view_bounds_check<view_value_type>(svB, vlane_id, n_offset + i, ei_.bounds_check_tag_);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
           for (int i = 0; i < REG_M * STRIDE_M; i += STRIDE_M)
             svA_scr(thread_id, vlane_id + i) =
-                access_view_bounds_check<view_value_type>(svA, m_offset + i, thread_id, __ei.__bounds_check_tag);
+                access_view_bounds_check<view_value_type>(svA, m_offset + i, thread_id, ei_.bounds_check_tag_);
 
           // Wait for A, B to reside in scratch memory
           member.team_barrier();
 
           // Each thread calculates a single dot product in chunks of
           // size TILE_K
-          for (kk = 0; kk < __k - TILE_K; kk += TILE_K) {
+          for (kk = 0; kk < k_ - TILE_K; kk += TILE_K) {
             int k_tile_offset = kk + TILE_K;
 
             // Get this threads next TILE_K entries from global memory
@@ -570,16 +564,16 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
             for (int i = 0; i < REG_N; ++i)
               prefetch_reg_b[i] = access_view_bounds_check<view_value_type>(
-                  svB, vlane_id + k_tile_offset, n_offset + i * STRIDE_N, __ei.__bounds_check_tag);
+                  svB, vlane_id + k_tile_offset, n_offset + i * STRIDE_N, ei_.bounds_check_tag_);
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
             for (int i = 0; i < REG_M; ++i)
               prefetch_reg_a[i] = access_view_bounds_check<view_value_type>(
-                  svA, m_offset + i * STRIDE_M, thread_id + k_tile_offset, __ei.__bounds_check_tag);
+                  svA, m_offset + i * STRIDE_M, thread_id + k_tile_offset, ei_.bounds_check_tag_);
 
-            __rshmem_and_mul_ll(thread_id, vlane_id, TILE_K, reg_a, reg_b, reg_c, svA_scr, svB_scr);
+            rshmem_and_mul_ll(thread_id, vlane_id, TILE_K, reg_a, reg_b, reg_c, svA_scr, svB_scr);
 
             // Wait for:
             //   1. prefetch_regs to be populated
@@ -606,10 +600,10 @@ class BatchedDblBufGemm {
           }  // end n_tile_k_tiles loop
 
           // Multiply last tile, may be a partial tile
-          __rshmem_and_mul_ll(thread_id, vlane_id, __k - kk, reg_a, reg_b, reg_c, svA_scr, svB_scr);
+          rshmem_and_mul_ll(thread_id, vlane_id, k_ - kk, reg_a, reg_b, reg_c, svA_scr, svB_scr);
 
           // store results back to global memory
-          if (__beta == 0.0F) {
+          if (beta_ == 0.0F) {
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -621,7 +615,7 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
               for (int m = 0; m < REG_M; ++m) {
                 int cm = m_offset + m * STRIDE_M;
-                fma_bounds_check(svC, cm, cn, reg_c[m][n], __alpha, __ei.__alpha_fma_tag, __ei.__bounds_check_tag);
+                fma_bounds_check(svC, cm, cn, reg_c[m][n], alpha_, ei_.alpha_fma_tag, ei_.bounds_check_tag_);
               }
             }
           } else {
@@ -636,8 +630,7 @@ class BatchedDblBufGemm {
 #endif  // KOKKOS_ENABLE_PRAGMA_UNROLL
               for (int m = 0; m < REG_M; ++m) {
                 int cm = m_offset + m * STRIDE_M;
-                fma_bounds_check(svC, cm, cn, reg_c[m][n], __alpha, __beta, __ei.__alpha_fma_tag,
-                                 __ei.__bounds_check_tag);
+                fma_bounds_check(svC, cm, cn, reg_c[m][n], alpha_, beta_, ei_.alpha_fma_tag, ei_.bounds_check_tag_);
               }
             }
           }

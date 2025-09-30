@@ -12,11 +12,11 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Details_ExecutionSpaces.hpp>
 
-/*! \file Spaces.cpp 
+/*! \file Spaces.cpp
     \brief Make sure Tpetra::Details::Spaces interfaces compile and don't crash
 */
 
-namespace { // (anonymous)
+namespace {  // (anonymous)
 
 template <typename ExecutionSpace>
 void test_exec_space_wait(bool &success, Teuchos::FancyOStream &out) {
@@ -29,7 +29,6 @@ void test_exec_space_wait(bool &success, Teuchos::FancyOStream &out) {
 
 template <typename ExecutionSpace>
 void test_make_instance(bool &success, Teuchos::FancyOStream &out) {
-
   using Priority = Tpetra::Details::Spaces::Priority;
   {
     ExecutionSpace e1 =
@@ -133,15 +132,13 @@ void test_is_gpu_exec_space(bool &success, Teuchos::FancyOStream &out) {
       out, success);
 }
 
-
-
-} // namespace
+}  // namespace
 
 int main(int argc, char **argv) {
   Tpetra::ScopeGuard sg(&argc, &argv);
 
   bool success = false;
-  auto out = Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
+  auto out     = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   *out << "Test spaces" << std::endl;
 
 #if defined(KOKKOS_ENABLE_SERIAL)
@@ -187,11 +184,13 @@ int main(int argc, char **argv) {
 #endif
 
   if (success) {
-    std::cout << std::endl << "End Result: TEST PASSED" << std::endl;
+    std::cout << std::endl
+              << "End Result: TEST PASSED" << std::endl;
   } else {
-    std::cout << std::endl << "End Result: TEST FAILED" << std::endl;
+    std::cout << std::endl
+              << "End Result: TEST FAILED" << std::endl;
   }
-  
+
   Teuchos::OSTab tab1(out);
   return 0;
 }

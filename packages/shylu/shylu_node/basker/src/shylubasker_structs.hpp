@@ -487,7 +487,7 @@ namespace BaskerNS
       //printf("zero out col_counts\n");
       BV::init_value(col_counts, col_counts_flg, 0);
     }//end init_col_counts
-	
+
 
     BASKER_INLINE
     void init_WS(Int size)
@@ -751,6 +751,9 @@ namespace BaskerNS
       verbose    = BASKER_FALSE;
       verbose_matrix_out = BASKER_FALSE;
      
+      // Too small for thread-parallel
+      small_matrix = BASKER_FALSE;
+
       //Memory Options
       realloc    = BASKER_FALSE;
 
@@ -762,7 +765,8 @@ namespace BaskerNS
       A_plus_At  = BASKER_FALSE;  //Experimental status
       
       //Transpose Option
-      transpose  = BASKER_FALSE;
+      transpose      = BASKER_FALSE;
+      threaded_solve = BASKER_FALSE;
 
       //Matching Ordering Options
       //Default is on using bottle-neck
@@ -783,13 +787,15 @@ namespace BaskerNS
       use_sequential_diag_facto = BASKER_FALSE;
       // MWM matching before AMD 
       //  0: no matching, 1: ShyLUBasker::mwm, 2: MC63 if enabled
-      blk_matching = 1; // if 0, then ND & AMD are applied in symbolic
+      blk_matching = 0; // if 0, then ND & AMD are applied in symbolic
 
       // ND Ordering Options (Should METIS optional?)
       use_metis = true;
       run_nd_on_leaves = false;
       run_amd_on_leaves = false;
       use_nodeNDP = true;
+      // Worker threads for ND
+      worker_threads = false;
 
       // AMD Option
       amd_dom = true;
@@ -823,10 +829,14 @@ namespace BaskerNS
     //Operation Options
     BASKER_BOOL verbose; 
     BASKER_BOOL verbose_matrix_out;
+    BASKER_BOOL small_matrix;
 
     //Memory Options
     BASKER_BOOL  realloc;
+
+    //Solve Options
     BASKER_BOOL  transpose;
+    BASKER_BOOL  threaded_solve;
     
     //Symmetric Options
     BASKER_BOOL  symmetric;
@@ -866,6 +876,8 @@ namespace BaskerNS
     BASKER_BOOL run_nd_on_leaves;
     BASKER_BOOL run_amd_on_leaves;
     BASKER_BOOL use_nodeNDP;
+    // Worker threads for ND
+    BASKER_BOOL worker_threads;
 
     //Pivot Options
     BASKER_BOOL  no_pivot;

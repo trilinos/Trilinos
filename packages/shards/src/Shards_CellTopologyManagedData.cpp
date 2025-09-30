@@ -147,7 +147,7 @@ CellTopologyManagedData::CellTopologyManagedData(
   const unsigned                                  node_count_,
   const std::vector< const CellTopologyData * > & edges ,
   const std::vector< unsigned >                 & edge_node_map ,
-  const CellTopologyData                        * base )
+  const CellTopologyData                        * pbase )
   : m_name(name_),
     m_subcell(),
     m_node_map()
@@ -164,13 +164,13 @@ CellTopologyManagedData::CellTopologyManagedData(
     if(node_count_edge0 != edges[i]->node_count ) edge_homogeneity = false;
   }
 
-  const bool error_base = base && (
-    base->base         != base ||
-    base->vertex_count != base->node_count ||
-    base->vertex_count != vertex_count_ ||
-    base->edge_count   != edges.size() );
+  const bool error_base = pbase && (
+    pbase->base         != pbase ||
+    pbase->vertex_count != pbase->node_count ||
+    pbase->vertex_count != vertex_count_ ||
+    pbase->edge_count   != edges.size() );
 
-  const bool error_base_self = ! base && ( vertex_count_ != node_count_ );
+  const bool error_base_self = ! pbase && ( vertex_count_ != node_count_ );
 
   const bool error_edge = edge_map_size != edge_node_map.size();
 
@@ -195,7 +195,7 @@ CellTopologyManagedData::CellTopologyManagedData(
     edge_map_size += edges[i]->node_count ;
   }
 
-  base = (base == NULL ? this : base) ;                            // PBB 12-03-08
+  pbase = (pbase == NULL ? this : pbase) ;                            // PBB 12-03-08
   name = m_name.c_str();
   key  = cellTopologyKey( 2, 0, edge_count_, vertex_count_, node_count_ );
   dimension              = 2 ;
@@ -230,7 +230,7 @@ CellTopologyManagedData::CellTopologyManagedData(
   const std::vector< unsigned >                 & edge_node_map ,
   const std::vector< const CellTopologyData * > & faces ,
   const std::vector< unsigned >                 & face_node_map ,
-  const CellTopologyData                        * base ) 
+  const CellTopologyData                        * pbase ) 
   : m_name(name_),
     m_subcell(),
     m_node_map()
@@ -255,13 +255,13 @@ CellTopologyManagedData::CellTopologyManagedData(
   }
   
   // Set error flags for base, edges and faces
-  const bool error_base = base && (base->base         != base             ||
-                                   base->vertex_count != base->node_count ||
-                                   base->vertex_count != vertex_count_    ||
-                                   base->edge_count   != edges.size()     ||
-                                   base->side_count   != faces.size() );
+  const bool error_base = pbase && (pbase->base         != pbase             ||
+                                   pbase->vertex_count != pbase->node_count ||
+                                   pbase->vertex_count != vertex_count_    ||
+                                   pbase->edge_count   != edges.size()     ||
+                                   pbase->side_count   != faces.size() );
   
-  const bool error_base_self = ! base && ( vertex_count_ != node_count_ );
+  const bool error_base_self = ! pbase && ( vertex_count_ != node_count_ );
   
   const bool error_edge = edge_map_size != edge_node_map.size();
   
@@ -306,7 +306,7 @@ CellTopologyManagedData::CellTopologyManagedData(
   }
   
   // Fill CellTopologyData with custom cell data: default base is the custom cell itself
-  base = (base == NULL ? this : base) ;                           
+  pbase = (pbase == NULL ? this : pbase) ;                           
   name = m_name.c_str();
   key  = cellTopologyKey( 3, 
                           face_count_, 

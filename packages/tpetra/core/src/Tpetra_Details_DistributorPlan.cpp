@@ -9,6 +9,7 @@
 
 #include "Tpetra_Details_DistributorPlan.hpp"
 
+#include "Tpetra_Details_Profiling.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Details_Behavior.hpp"
@@ -18,101 +19,135 @@ namespace Tpetra {
 namespace Details {
 
 std::string
-DistributorSendTypeEnumToString (EDistributorSendType sendType)
-{
+DistributorSendTypeEnumToString(EDistributorSendType sendType) {
   if (sendType == DISTRIBUTOR_ISEND) {
     return "Isend";
-  }
-  else if (sendType == DISTRIBUTOR_SEND) {
+  } else if (sendType == DISTRIBUTOR_SEND) {
     return "Send";
-  }
-  else if (sendType == DISTRIBUTOR_ALLTOALL) {
+  } else if (sendType == DISTRIBUTOR_ALLTOALL) {
     return "Alltoall";
   }
+#if defined(HAVE_TPETRA_MPI)
+  else if (sendType == DISTRIBUTOR_IALLTOFEWV) {
+    return "Ialltofewv";
+  }
+#endif
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   else if (sendType == DISTRIBUTOR_MPIADVANCE_ALLTOALL) {
     return "MpiAdvanceAlltoall";
-  }
-  else if (sendType == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
+  } else if (sendType == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
     return "MpiAdvanceNbralltoallv";
   }
 #endif
   else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid "
-      "EDistributorSendType enum value " << sendType << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                               "Invalid "
+                               "EDistributorSendType enum value "
+                                   << sendType << ".");
   }
 }
 
+EDistributorSendType
+DistributorSendTypeStringToEnum(const std::string_view s) {
+  if (s == "Isend") return DISTRIBUTOR_ISEND;
+  if (s == "Send") return DISTRIBUTOR_SEND;
+  if (s == "Alltoall") return DISTRIBUTOR_ALLTOALL;
+#if defined(HAVE_TPETRA_MPI)
+  if (s == "Ialltofewv") return DISTRIBUTOR_IALLTOFEWV;
+#endif
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  if (s == "MpiAdvanceAlltoall") return DISTRIBUTOR_MPIADVANCE_ALLTOALL;
+  if (s == "MpiAdvanceNbralltoallv") return DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV;
+#endif
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string to convert to EDistributorSendType enum value: " << s);
+}
+
+/// \brief Valid enum values of distributor send types.
+const std::string& validSendTypeOrThrow(const std::string& s) {
+  const auto valids = distributorSendTypes();
+  if (std::find(valids.begin(), valids.end(), s) == valids.end()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid string for EDistributorSendType enum value: " << s);
+  }
+  return s;
+}
+
 std::string
-DistributorHowInitializedEnumToString (EDistributorHowInitialized how)
-{
+DistributorHowInitializedEnumToString(EDistributorHowInitialized how) {
   switch (how) {
-  case Details::DISTRIBUTOR_NOT_INITIALIZED:
-    return "Not initialized yet";
-  case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS:
-    return "By createFromSends";
-  case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS:
-    return "By createFromRecvs";
-  case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS:
-    return "By createFromSendsAndRecvs";
-  case Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE:
-    return "By createReverseDistributor";
-  case Details::DISTRIBUTOR_INITIALIZED_BY_COPY:
-    return "By copy constructor";
-  default:
-    return "INVALID";
+    case Details::DISTRIBUTOR_NOT_INITIALIZED:
+      return "Not initialized yet";
+    case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS:
+      return "By createFromSends";
+    case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS:
+      return "By createFromRecvs";
+    case Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS:
+      return "By createFromSendsAndRecvs";
+    case Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE:
+      return "By createReverseDistributor";
+    case Details::DISTRIBUTOR_INITIALIZED_BY_COPY:
+      return "By copy constructor";
+    default:
+      return "INVALID";
   }
 }
 
 DistributorPlan::DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm)
-  : comm_(comm),
+  : comm_(comm)
+  ,
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-    mpixComm_(Teuchos::null),
+  mpixComm_(Teuchos::null)
+  ,
 #endif
-    howInitialized_(DISTRIBUTOR_NOT_INITIALIZED),
-    reversePlan_(Teuchos::null),
-    sendType_(DISTRIBUTOR_SEND),
-    sendMessageToSelf_(false),
-    numSendsToOtherProcs_(0),
-    maxSendLength_(0),
-    numReceives_(0),
-    totalReceiveLength_(0)
-{ }
+  howInitialized_(DISTRIBUTOR_NOT_INITIALIZED)
+  , reversePlan_(Teuchos::null)
+  , sendType_(DistributorSendTypeStringToEnum(Behavior::defaultSendType()))
+  , sendMessageToSelf_(false)
+  , numSendsToOtherProcs_(0)
+  , maxSendLength_(0)
+  , numReceives_(0)
+  , totalReceiveLength_(0) {
+}
 
 DistributorPlan::DistributorPlan(const DistributorPlan& otherPlan)
-  : comm_(otherPlan.comm_),
+  : comm_(otherPlan.comm_)
+  ,
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-    mpixComm_(otherPlan.mpixComm_),
+  mpixComm_(otherPlan.mpixComm_)
+  ,
 #endif
-    howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY),
-    reversePlan_(otherPlan.reversePlan_),
-    sendType_(otherPlan.sendType_),
-    sendMessageToSelf_(otherPlan.sendMessageToSelf_),
-    numSendsToOtherProcs_(otherPlan.numSendsToOtherProcs_),
-    procIdsToSendTo_(otherPlan.procIdsToSendTo_),
-    startsTo_(otherPlan.startsTo_),
-    lengthsTo_(otherPlan.lengthsTo_),
-    maxSendLength_(otherPlan.maxSendLength_),
-    indicesTo_(otherPlan.indicesTo_),
-    numReceives_(otherPlan.numReceives_),
-    totalReceiveLength_(otherPlan.totalReceiveLength_),
-    lengthsFrom_(otherPlan.lengthsFrom_),
-    procsFrom_(otherPlan.procsFrom_),
-    startsFrom_(otherPlan.startsFrom_),
-    indicesFrom_(otherPlan.indicesFrom_)
-{ }
+  howInitialized_(DISTRIBUTOR_INITIALIZED_BY_COPY)
+  , reversePlan_(otherPlan.reversePlan_)
+  , sendType_(otherPlan.sendType_)
+  , sendMessageToSelf_(otherPlan.sendMessageToSelf_)
+  , numSendsToOtherProcs_(otherPlan.numSendsToOtherProcs_)
+  , procIdsToSendTo_(otherPlan.procIdsToSendTo_)
+  , startsTo_(otherPlan.startsTo_)
+  , lengthsTo_(otherPlan.lengthsTo_)
+  , maxSendLength_(otherPlan.maxSendLength_)
+  , indicesTo_(otherPlan.indicesTo_)
+  , numReceives_(otherPlan.numReceives_)
+  , totalReceiveLength_(otherPlan.totalReceiveLength_)
+  , lengthsFrom_(otherPlan.lengthsFrom_)
+  , procsFrom_(otherPlan.procsFrom_)
+  , startsFrom_(otherPlan.startsFrom_)
+  , indicesFrom_(otherPlan.indicesFrom_)
+#if defined(HAVE_TPETRACORE_MPI)
+  , roots_(otherPlan.roots_)
+#endif
+{
+}
 
 size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs) {
+  using std::endl;
   using Teuchos::outArg;
   using Teuchos::REDUCE_MAX;
   using Teuchos::reduceAll;
-  using std::endl;
   const char rawPrefix[] = "Tpetra::DistributorPlan::createFromSends";
 
   const size_t numExports = exportProcIDs.size();
-  const int myProcID = comm_->getRank();
-  const int numProcs = comm_->getSize();
-  const bool debug = Details::Behavior::debug("Distributor");
+  const int myProcID      = comm_->getRank();
+  const int numProcs      = comm_->getSize();
+  const bool debug        = Details::Behavior::debug("Distributor");
 
   // exportProcIDs tells us the communication pattern for this
   // distributor.  It dictates the way that the export data will be
@@ -163,11 +198,9 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
       }
     }
     int gbl_badID;
-    reduceAll<int, int> (*comm_, REDUCE_MAX, badID, outArg (gbl_badID));
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (gbl_badID >= 0, std::runtime_error, rawPrefix << "Proc "
-        << gbl_badID << ", perhaps among other processes, got a bad "
-        "send process ID.");
+    reduceAll<int, int>(*comm_, REDUCE_MAX, badID, outArg(gbl_badID));
+    TEUCHOS_TEST_FOR_EXCEPTION(gbl_badID >= 0, std::runtime_error, rawPrefix << "Proc " << gbl_badID << ", perhaps among other processes, got a bad "
+                                                                                                        "send process ID.");
   }
 
   // Set up data structures for quick traversal of arrays.
@@ -182,11 +215,11 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // large process count, unless the communication pattern is dense.
   // Note that it's important to be able to iterate through keys (i
   // for which starts[i] is nonzero) in increasing order.
-  Teuchos::Array<size_t> starts (numProcs + 1, 0);
+  Teuchos::Array<size_t> starts(numProcs + 1, 0);
 
   // numActive is the number of sends that are not Null
   size_t numActive = 0;
-  int needSendBuff = 0; // Boolean
+  int needSendBuff = 0;  // Boolean
 
   for (size_t i = 0; i < numExports; ++i) {
     const int exportID = exportProcIDs[i];
@@ -205,7 +238,7 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
       // null entries break continuity.
       // e.g.,  [ 0, 0, 0, 1, -99, 1, 2, 2, 2] is not contiguous
       if (needSendBuff == 0 && starts[exportID] > 1 &&
-          exportID != exportProcIDs[i-1]) {
+          exportID != exportProcIDs[i - 1]) {
         needSendBuff = 1;
       }
       ++numActive;
@@ -215,8 +248,8 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
 #if defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
   {
     int global_needSendBuff;
-    reduceAll<int, int> (*comm_, REDUCE_MAX, needSendBuff,
-        outArg (global_needSendBuff));
+    reduceAll<int, int>(*comm_, REDUCE_MAX, needSendBuff,
+                        outArg(global_needSendBuff));
     TPETRA_EFFICIENCY_WARNING(
         global_needSendBuff != 0,
         "::createFromSends: Grouping export IDs together by process rank often "
@@ -228,12 +261,11 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // process should send (a) message(s) to itself.
   if (starts[myProcID] != 0) {
     sendMessageToSelf_ = true;
-  }
-  else {
+  } else {
     sendMessageToSelf_ = false;
   }
 
-  if (! needSendBuff) {
+  if (!needSendBuff) {
     // grouped by proc, no send buffer or indicesTo_ needed
     numSendsToOtherProcs_ = 0;
     // Count total number of sends, i.e., total number of procs to
@@ -249,9 +281,9 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
     indicesTo_.resize(0);
     // Size these to numSendsToOtherProcs_; note, at the moment, numSendsToOtherProcs_
     // includes self sends.  Set their values to zeros.
-    procIdsToSendTo_.assign(numSendsToOtherProcs_,0);
-    startsTo_.assign(numSendsToOtherProcs_,0);
-    lengthsTo_.assign(numSendsToOtherProcs_,0);
+    procIdsToSendTo_.assign(numSendsToOtherProcs_, 0);
+    startsTo_.assign(numSendsToOtherProcs_, 0);
+    lengthsTo_.assign(numSendsToOtherProcs_, 0);
 
     // set startsTo to the offset for each send (i.e., each proc ID)
     // set procsTo to the proc ID for each send
@@ -261,10 +293,10 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
       size_t procIndex = 0;
       for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
         while (exportProcIDs[procIndex] < 0) {
-          ++procIndex; // skip all negative proc IDs
+          ++procIndex;  // skip all negative proc IDs
         }
-        startsTo_[i] = procIndex;
-        int procID = exportProcIDs[procIndex];
+        startsTo_[i]        = procIndex;
+        int procID          = exportProcIDs[procIndex];
         procIdsToSendTo_[i] = procID;
         procIndex += starts[procID];
       }
@@ -277,42 +309,38 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
     // compute the maximum send length
     maxSendLength_ = 0;
     for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
-      int procID = procIdsToSendTo_[i];
+      int procID    = procIdsToSendTo_[i];
       lengthsTo_[i] = starts[procID];
       if ((procID != myProcID) && (lengthsTo_[i] > maxSendLength_)) {
         maxSendLength_ = lengthsTo_[i];
       }
     }
-  }
-  else {
+  } else {
     // not grouped by proc, need send buffer and indicesTo_
 
     // starts[i] is the number of sends to proc i
     // numActive equals number of sends total, \sum_i starts[i]
 
     // this loop starts at starts[1], so explicitly check starts[0]
-    if (starts[0] == 0 ) {
+    if (starts[0] == 0) {
       numSendsToOtherProcs_ = 0;
-    }
-    else {
+    } else {
       numSendsToOtherProcs_ = 1;
     }
-    for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
-        im1=starts.begin();
-        i != starts.end(); ++i)
-    {
+    for (Teuchos::Array<size_t>::iterator i   = starts.begin() + 1,
+                                          im1 = starts.begin();
+         i != starts.end(); ++i) {
       if (*i != 0) ++numSendsToOtherProcs_;
       *i += *im1;
       im1 = i;
     }
     // starts[i] now contains the number of exports to procs 0 through i
 
-    for (Teuchos::Array<size_t>::reverse_iterator ip1=starts.rbegin(),
-        i=starts.rbegin()+1;
-        i != starts.rend(); ++i)
-    {
+    for (Teuchos::Array<size_t>::reverse_iterator ip1 = starts.rbegin(),
+                                                  i   = starts.rbegin() + 1;
+         i != starts.rend(); ++i) {
       *ip1 = *i;
-      ip1 = i;
+      ip1  = i;
     }
     starts[0] = 0;
     // starts[i] now contains the number of exports to procs 0 through
@@ -337,10 +365,10 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
     //
     // starts[i] once again contains the number of exports to
     // procs 0 through i
-    for (int proc = numProcs-1; proc != 0; --proc) {
-      starts[proc] = starts[proc-1];
+    for (int proc = numProcs - 1; proc != 0; --proc) {
+      starts[proc] = starts[proc - 1];
     }
-    starts.front() = 0;
+    starts.front()   = 0;
     starts[numProcs] = numActive;
     //
     // starts[proc] once again contains the number of exports to
@@ -356,11 +384,11 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
     // the length, and the offset for this send into the
     // send buffer (startsTo_)
     maxSendLength_ = 0;
-    size_t snd = 0;
-    for (int proc = 0; proc < numProcs; ++proc ) {
-      if (starts[proc+1] != starts[proc]) {
-        lengthsTo_[snd] = starts[proc+1] - starts[proc];
-        startsTo_[snd] = starts[proc];
+    size_t snd     = 0;
+    for (int proc = 0; proc < numProcs; ++proc) {
+      if (starts[proc + 1] != starts[proc]) {
+        lengthsTo_[snd] = starts[proc + 1] - starts[proc];
+        startsTo_[snd]  = starts[proc];
         // record max length for all off-proc sends
         if ((proc != myProcID) && (lengthsTo_[snd] > maxSendLength_)) {
           maxSendLength_ = lengthsTo_[snd];
@@ -378,8 +406,8 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   // Invert map to see what msgs are received and what length
   computeReceives();
 
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  initializeMpiAdvance();
+#if defined(HAVE_TPETRA_MPI)
+  maybeInitializeRoots();
 #endif
 
   // createFromRecvs() calls createFromSends(), but will set
@@ -389,15 +417,13 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   return totalReceiveLength_;
 }
 
-void DistributorPlan::createFromRecvs(const Teuchos::ArrayView<const int>& remoteProcIDs)
-{
-  *this = *getReversePlan();
+void DistributorPlan::createFromRecvs(const Teuchos::ArrayView<const int>& remoteProcIDs) {
+  *this           = *getReversePlan();
   howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS;
 }
 
 void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
-                                              const Teuchos::ArrayView<const int>& remoteProcIDs)
-{
+                                              const Teuchos::ArrayView<const int>& remoteProcIDs) {
   // note the exportProcIDs and remoteProcIDs _must_ be a list that has
   // an entry for each GID. If the export/remoteProcIDs is taken from
   // the getProcs{From|To} lists that are extracted from a previous distributor,
@@ -407,54 +433,49 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
 
   howInitialized_ = Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS;
 
-  int myProcID = comm_->getRank ();
+  int myProcID = comm_->getRank();
   int numProcs = comm_->getSize();
 
   const size_t numExportIDs = exportProcIDs.size();
-  Teuchos::Array<size_t> starts (numProcs + 1, 0);
+  Teuchos::Array<size_t> starts(numProcs + 1, 0);
 
   size_t numActive = 0;
-  int needSendBuff = 0; // Boolean
+  int needSendBuff = 0;  // Boolean
 
-  for(size_t i = 0; i < numExportIDs; i++ )
-  {
-    if( needSendBuff==0 && i && (exportProcIDs[i] < exportProcIDs[i-1]) )
+  for (size_t i = 0; i < numExportIDs; i++) {
+    if (needSendBuff == 0 && i && (exportProcIDs[i] < exportProcIDs[i - 1]))
       needSendBuff = 1;
-    if( exportProcIDs[i] >= 0 )
-    {
-      ++starts[ exportProcIDs[i] ];
+    if (exportProcIDs[i] >= 0) {
+      ++starts[exportProcIDs[i]];
       ++numActive;
     }
   }
 
-  sendMessageToSelf_ = ( starts[myProcID] != 0 ) ? 1 : 0;
+  sendMessageToSelf_ = (starts[myProcID] != 0) ? 1 : 0;
 
   numSendsToOtherProcs_ = 0;
 
-  if( needSendBuff ) //grouped by processor, no send buffer or indicesTo_ needed
+  if (needSendBuff)  // grouped by processor, no send buffer or indicesTo_ needed
   {
-    if (starts[0] == 0 ) {
+    if (starts[0] == 0) {
       numSendsToOtherProcs_ = 0;
-    }
-    else {
+    } else {
       numSendsToOtherProcs_ = 1;
     }
-    for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
-        im1=starts.begin();
-        i != starts.end(); ++i)
-    {
+    for (Teuchos::Array<size_t>::iterator i   = starts.begin() + 1,
+                                          im1 = starts.begin();
+         i != starts.end(); ++i) {
       if (*i != 0) ++numSendsToOtherProcs_;
       *i += *im1;
       im1 = i;
     }
     // starts[i] now contains the number of exports to procs 0 through i
 
-    for (Teuchos::Array<size_t>::reverse_iterator ip1=starts.rbegin(),
-        i=starts.rbegin()+1;
-        i != starts.rend(); ++i)
-    {
+    for (Teuchos::Array<size_t>::reverse_iterator ip1 = starts.rbegin(),
+                                                  i   = starts.rbegin() + 1;
+         i != starts.rend(); ++i) {
       *ip1 = *i;
-      ip1 = i;
+      ip1  = i;
     }
     starts[0] = 0;
     // starts[i] now contains the number of exports to procs 0 through
@@ -470,20 +491,20 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
         ++starts[exportProcIDs[i]];
       }
     }
-    for (int proc = numProcs-1; proc != 0; --proc) {
-      starts[proc] = starts[proc-1];
+    for (int proc = numProcs - 1; proc != 0; --proc) {
+      starts[proc] = starts[proc - 1];
     }
-    starts.front() = 0;
+    starts.front()   = 0;
     starts[numProcs] = numActive;
     procIdsToSendTo_.resize(numSendsToOtherProcs_);
     startsTo_.resize(numSendsToOtherProcs_);
     lengthsTo_.resize(numSendsToOtherProcs_);
     maxSendLength_ = 0;
-    size_t snd = 0;
-    for (int proc = 0; proc < numProcs; ++proc ) {
-      if (starts[proc+1] != starts[proc]) {
-        lengthsTo_[snd] = starts[proc+1] - starts[proc];
-        startsTo_[snd] = starts[proc];
+    size_t snd     = 0;
+    for (int proc = 0; proc < numProcs; ++proc) {
+      if (starts[proc + 1] != starts[proc]) {
+        lengthsTo_[snd] = starts[proc + 1] - starts[proc];
+        startsTo_[snd]  = starts[proc];
         // record max length for all off-proc sends
         if ((proc != myProcID) && (lengthsTo_[snd] > maxSendLength_)) {
           maxSendLength_ = lengthsTo_[snd];
@@ -492,8 +513,7 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
         ++snd;
       }
     }
-  }
-  else {
+  } else {
     // grouped by proc, no send buffer or indicesTo_ needed
     numSendsToOtherProcs_ = 0;
     // Count total number of sends, i.e., total number of procs to
@@ -509,9 +529,9 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
     indicesTo_.resize(0);
     // Size these to numSendsToOtherProcs_; note, at the moment, numSendsToOtherProcs_
     // includes self sends.  Set their values to zeros.
-    procIdsToSendTo_.assign(numSendsToOtherProcs_,0);
-    startsTo_.assign(numSendsToOtherProcs_,0);
-    lengthsTo_.assign(numSendsToOtherProcs_,0);
+    procIdsToSendTo_.assign(numSendsToOtherProcs_, 0);
+    startsTo_.assign(numSendsToOtherProcs_, 0);
+    lengthsTo_.assign(numSendsToOtherProcs_, 0);
 
     // set startsTo to the offset for each send (i.e., each proc ID)
     // set procsTo to the proc ID for each send
@@ -521,10 +541,10 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
       size_t procIndex = 0;
       for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
         while (exportProcIDs[procIndex] < 0) {
-          ++procIndex; // skip all negative proc IDs
+          ++procIndex;  // skip all negative proc IDs
         }
-        startsTo_[i] = procIndex;
-        int procID = exportProcIDs[procIndex];
+        startsTo_[i]        = procIndex;
+        int procID          = exportProcIDs[procIndex];
         procIdsToSendTo_[i] = procID;
         procIndex += starts[procID];
       }
@@ -537,7 +557,7 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
     // compute the maximum send length
     maxSendLength_ = 0;
     for (size_t i = 0; i < numSendsToOtherProcs_; ++i) {
-      int procID = procIdsToSendTo_[i];
+      int procID    = procIdsToSendTo_[i];
       lengthsTo_[i] = starts[procID];
       if ((procID != myProcID) && (lengthsTo_[i] > maxSendLength_)) {
         maxSendLength_ = lengthsTo_[i];
@@ -545,41 +565,42 @@ void DistributorPlan::createFromSendsAndRecvs(const Teuchos::ArrayView<const int
     }
   }
 
-
   numSendsToOtherProcs_ -= sendMessageToSelf_;
   std::vector<int> recv_list;
-  recv_list.reserve(numSendsToOtherProcs_); //reserve an initial guess for size needed
+  recv_list.reserve(numSendsToOtherProcs_);  // reserve an initial guess for size needed
 
-  int last_pid=-2;
-  for(int i=0; i<remoteProcIDs.size(); i++) {
-    if(remoteProcIDs[i]>last_pid) {
+  int last_pid = -2;
+  for (int i = 0; i < remoteProcIDs.size(); i++) {
+    if (remoteProcIDs[i] > last_pid) {
       recv_list.push_back(remoteProcIDs[i]);
       last_pid = remoteProcIDs[i];
-    }
-    else if (remoteProcIDs[i]<last_pid)
+    } else if (remoteProcIDs[i] < last_pid)
       throw std::runtime_error("Tpetra::Distributor:::createFromSendsAndRecvs expected RemotePIDs to be in sorted order");
   }
   numReceives_ = recv_list.size();
-  if(numReceives_) {
-    procsFrom_.assign(numReceives_,0);
-    lengthsFrom_.assign(numReceives_,0);
-    indicesFrom_.assign(numReceives_,0);
-    startsFrom_.assign(numReceives_,0);
+  if (numReceives_) {
+    procsFrom_.assign(numReceives_, 0);
+    lengthsFrom_.assign(numReceives_, 0);
+    indicesFrom_.assign(numReceives_, 0);
+    startsFrom_.assign(numReceives_, 0);
   }
-  for(size_t i=0,j=0; i<numReceives_; ++i) {
-    int jlast=j;
+  for (size_t i = 0, j = 0; i < numReceives_; ++i) {
+    int jlast      = j;
     procsFrom_[i]  = recv_list[i];
     startsFrom_[i] = j;
-    for( ; j<(size_t)remoteProcIDs.size() &&
-        remoteProcIDs[jlast]==remoteProcIDs[j]  ; j++){;}
-    lengthsFrom_[i] = j-jlast;
+    for (; j < (size_t)remoteProcIDs.size() &&
+           remoteProcIDs[jlast] == remoteProcIDs[j];
+         j++) {
+      ;
+    }
+    lengthsFrom_[i] = j - jlast;
   }
   totalReceiveLength_ = remoteProcIDs.size();
-  indicesFrom_.clear ();
-  numReceives_-=sendMessageToSelf_;
+  indicesFrom_.clear();
+  numReceives_ -= sendMessageToSelf_;
 
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  initializeMpiAdvance();
+#if defined(HAVE_TPETRA_MPI)
+  maybeInitializeRoots();
 #endif
 }
 
@@ -588,24 +609,38 @@ Teuchos::RCP<DistributorPlan> DistributorPlan::getReversePlan() const {
   return reversePlan_;
 }
 
-void DistributorPlan::createReversePlan() const
-{
-  reversePlan_ = Teuchos::rcp(new DistributorPlan(comm_));
+void DistributorPlan::createReversePlan() const {
+  reversePlan_                  = Teuchos::rcp(new DistributorPlan(comm_));
   reversePlan_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
-  reversePlan_->sendType_ = sendType_;
+  reversePlan_->sendType_       = sendType_;
+
+#if defined(HAVE_TPETRACORE_MPI)
+  // If the forward plan matches an all-to-few communication pattern,
+  // the reverse plan is few-to-all, so don't use a special all-to-few
+  // implementation for it
+  if (DISTRIBUTOR_IALLTOFEWV == sendType_) {
+    if (Behavior::verbose()) {
+      std::stringstream ss;
+      ss << __FILE__ << ":" << __LINE__ << " WARNING (Ialltofewv send type): using default for reversed Ialltofewv\n";
+      std::cerr << ss.str();
+    }
+
+    reversePlan_->sendType_ = DistributorSendTypeStringToEnum(Behavior::defaultSendType());
+  }
+#endif
 
   // The total length of all the sends of this DistributorPlan.  We
   // calculate it because it's the total length of all the receives
   // of the reverse DistributorPlan.
   size_t totalSendLength =
-    std::accumulate(lengthsTo_.begin(), lengthsTo_.end(), 0);
+      std::accumulate(lengthsTo_.begin(), lengthsTo_.end(), 0);
 
   // The maximum length of any of the receives of this DistributorPlan.
   // We calculate it because it's the maximum length of any of the
   // sends of the reverse DistributorPlan.
   size_t maxReceiveLength = 0;
-  const int myProcID = comm_->getRank();
-  for (size_t i=0; i < numReceives_; ++i) {
+  const int myProcID      = comm_->getRank();
+  for (size_t i = 0; i < numReceives_; ++i) {
     if (procsFrom_[i] != myProcID) {
       // Don't count receives for messages sent by myself to myself.
       if (lengthsFrom_[i] > maxReceiveLength) {
@@ -614,44 +649,47 @@ void DistributorPlan::createReversePlan() const
     }
   }
 
-  reversePlan_->sendMessageToSelf_ = sendMessageToSelf_;
+  reversePlan_->sendMessageToSelf_    = sendMessageToSelf_;
   reversePlan_->numSendsToOtherProcs_ = numReceives_;
-  reversePlan_->procIdsToSendTo_ = procsFrom_;
-  reversePlan_->startsTo_ = startsFrom_;
-  reversePlan_->lengthsTo_ = lengthsFrom_;
-  reversePlan_->maxSendLength_ = maxReceiveLength;
-  reversePlan_->indicesTo_ = indicesFrom_;
-  reversePlan_->numReceives_ = numSendsToOtherProcs_;
-  reversePlan_->totalReceiveLength_ = totalSendLength;
-  reversePlan_->lengthsFrom_ = lengthsTo_;
-  reversePlan_->procsFrom_ = procIdsToSendTo_;
-  reversePlan_->startsFrom_ = startsTo_;
-  reversePlan_->indicesFrom_ = indicesTo_;
+  reversePlan_->procIdsToSendTo_      = procsFrom_;
+  reversePlan_->startsTo_             = startsFrom_;
+  reversePlan_->lengthsTo_            = lengthsFrom_;
+  reversePlan_->maxSendLength_        = maxReceiveLength;
+  reversePlan_->indicesTo_            = indicesFrom_;
+  reversePlan_->numReceives_          = numSendsToOtherProcs_;
+  reversePlan_->totalReceiveLength_   = totalSendLength;
+  reversePlan_->lengthsFrom_          = lengthsTo_;
+  reversePlan_->procsFrom_            = procIdsToSendTo_;
+  reversePlan_->startsFrom_           = startsTo_;
+  reversePlan_->indicesFrom_          = indicesTo_;
 
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   // is there a smarter way to do this
   reversePlan_->initializeMpiAdvance();
 #endif
+
+#if defined(HAVE_TPETRA_MPI)
+  reversePlan_->maybeInitializeRoots();
+#endif
 }
 
-void DistributorPlan::computeReceives()
-{
+void DistributorPlan::computeReceives() {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::as;
-  using Teuchos::CommStatus;
   using Teuchos::CommRequest;
+  using Teuchos::CommStatus;
   using Teuchos::ireceive;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::REDUCE_SUM;
   using Teuchos::receive;
   using Teuchos::reduce;
+  using Teuchos::REDUCE_SUM;
   using Teuchos::scatter;
   using Teuchos::send;
   using Teuchos::waitAll;
 
-  const int myRank = comm_->getRank();
+  const int myRank   = comm_->getRank();
   const int numProcs = comm_->getSize();
 
   const int mpiTag = DEFAULT_MPI_TAG;
@@ -662,26 +700,26 @@ void DistributorPlan::computeReceives()
   // listed in procIdsToSendTo_ at most once, and so toProcsFromMe[i] will
   // either be 0 or 1.
   {
-    Array<int> toProcsFromMe (numProcs, 0);
+    Array<int> toProcsFromMe(numProcs, 0);
 #ifdef HAVE_TPETRA_DEBUG
     bool counting_error = false;
-#endif // HAVE_TPETRA_DEBUG
+#endif  // HAVE_TPETRA_DEBUG
     for (size_t i = 0; i < (numSendsToOtherProcs_ + (sendMessageToSelf_ ? 1 : 0)); ++i) {
 #ifdef HAVE_TPETRA_DEBUG
       if (toProcsFromMe[procIdsToSendTo_[i]] != 0) {
         counting_error = true;
       }
-#endif // HAVE_TPETRA_DEBUG
+#endif  // HAVE_TPETRA_DEBUG
       toProcsFromMe[procIdsToSendTo_[i]] = 1;
     }
 #ifdef HAVE_TPETRA_DEBUG
     // Note that SHARED_TEST_FOR_EXCEPTION does a global reduction
     SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
-        "Tpetra::Distributor::computeReceives: There was an error on at least "
-        "one process in counting the number of messages send by that process to "
-        "the other processs.  Please report this bug to the Tpetra developers.",
-        *comm_);
-#endif // HAVE_TPETRA_DEBUG
+                              "Tpetra::Distributor::computeReceives: There was an error on at least "
+                              "one process in counting the number of messages send by that process to "
+                              "the other processs.  Please report this bug to the Tpetra developers.",
+                              *comm_);
+#endif  // HAVE_TPETRA_DEBUG
 
     // Compute the number of receives that this process needs to
     // post.  The number of receives includes any self sends (i.e.,
@@ -735,25 +773,25 @@ void DistributorPlan::computeReceives()
     // how we could use this communication to propagate an error
     // flag for "free" in a release build.
 
-    const int root = 0; // rank of root process of the reduction
-    Array<int> numRecvsOnEachProc; // temp; only needed on root
+    const int root = 0;             // rank of root process of the reduction
+    Array<int> numRecvsOnEachProc;  // temp; only needed on root
     if (myRank == root) {
-      numRecvsOnEachProc.resize (numProcs);
+      numRecvsOnEachProc.resize(numProcs);
     }
-    int numReceivesAsInt = 0; // output
-    reduce<int, int> (toProcsFromMe.getRawPtr (),
-        numRecvsOnEachProc.getRawPtr (),
-        numProcs, REDUCE_SUM, root, *comm_);
-    scatter<int, int> (numRecvsOnEachProc.getRawPtr (), 1,
-        &numReceivesAsInt, 1, root, *comm_);
-    numReceives_ = static_cast<size_t> (numReceivesAsInt);
+    int numReceivesAsInt = 0;  // output
+    reduce<int, int>(toProcsFromMe.getRawPtr(),
+                     numRecvsOnEachProc.getRawPtr(),
+                     numProcs, REDUCE_SUM, root, *comm_);
+    scatter<int, int>(numRecvsOnEachProc.getRawPtr(), 1,
+                      &numReceivesAsInt, 1, root, *comm_);
+    numReceives_ = static_cast<size_t>(numReceivesAsInt);
   }
 
   // Now we know numReceives_, which is this process' number of
   // receives.  Allocate the lengthsFrom_ and procsFrom_ arrays
   // with this number of entries.
-  lengthsFrom_.assign (numReceives_, 0);
-  procsFrom_.assign (numReceives_, 0);
+  lengthsFrom_.assign(numReceives_, 0);
+  procsFrom_.assign(numReceives_, 0);
 
   //
   // Ask (via nonblocking receive) each process from which we are
@@ -775,9 +813,9 @@ void DistributorPlan::computeReceives()
   // buffers that it knows won't go away.  This is why we use RCPs,
   // one RCP per nonblocking receive request.  They get allocated in
   // the loop below.
-  Array<RCP<CommRequest<int> > > requests (actualNumReceives);
-  Array<ArrayRCP<size_t> > lengthsFromBuffers (actualNumReceives);
-  Array<RCP<CommStatus<int> > > statuses (actualNumReceives);
+  Array<RCP<CommRequest<int>>> requests(actualNumReceives);
+  Array<ArrayRCP<size_t>> lengthsFromBuffers(actualNumReceives);
+  Array<RCP<CommStatus<int>>> statuses(actualNumReceives);
 
   // Teuchos::Comm treats a negative process ID as MPI_ANY_SOURCE
   // (receive data from any process).
@@ -793,10 +831,10 @@ void DistributorPlan::computeReceives()
     // CommStatus object (output by wait()) for the sending process'
     // ID (which we'll assign to procsFrom_[i] -- don't forget to
     // do that!).
-    lengthsFromBuffers[i].resize (1);
-    lengthsFromBuffers[i][0] = as<size_t> (0);
-    requests[i] = ireceive<int, size_t> (lengthsFromBuffers[i], anySourceProc,
-        mpiTag, *comm_);
+    lengthsFromBuffers[i].resize(1);
+    lengthsFromBuffers[i][0] = as<size_t>(0);
+    requests[i]              = ireceive<int, size_t>(lengthsFromBuffers[i], anySourceProc,
+                                        mpiTag, *comm_);
   }
 
   // Post the sends: Tell each process to which we are sending how
@@ -813,17 +851,16 @@ void DistributorPlan::computeReceives()
       // this communication pattern will send that process
       // lengthsTo_[i] blocks of packets.
       const size_t* const lengthsTo_i = &lengthsTo_[i];
-      send<int, size_t> (lengthsTo_i, 1, as<int> (procIdsToSendTo_[i]), mpiTag, *comm_);
-    }
-    else {
+      send<int, size_t>(lengthsTo_i, 1, as<int>(procIdsToSendTo_[i]), mpiTag, *comm_);
+    } else {
       // We don't need a send in the self-message case.  If this
       // process will send a message to itself in the communication
       // pattern, then the last element of lengthsFrom_ and
       // procsFrom_ corresponds to the self-message.  Of course
       // this process knows how long the message is, and the process
       // ID is its own process ID.
-      lengthsFrom_[numReceives_-1] = lengthsTo_[i];
-      procsFrom_[numReceives_-1] = myRank;
+      lengthsFrom_[numReceives_ - 1] = lengthsTo_[i];
+      procsFrom_[numReceives_ - 1]   = myRank;
     }
   }
 
@@ -833,24 +870,24 @@ void DistributorPlan::computeReceives()
   // request buffers into lengthsFrom_, and set procsFrom_ from the
   // status.
   //
-  waitAll (*comm_, requests (), statuses ());
+  waitAll(*comm_, requests(), statuses());
   for (size_t i = 0; i < actualNumReceives; ++i) {
     lengthsFrom_[i] = *lengthsFromBuffers[i];
-    procsFrom_[i] = statuses[i]->getSourceRank ();
+    procsFrom_[i]   = statuses[i]->getSourceRank();
   }
 
   // Sort the procsFrom_ array, and apply the same permutation to
   // lengthsFrom_.  This ensures that procsFrom_[i] and
   // lengthsFrom_[i] refers to the same thing.
-  sort2 (procsFrom_.begin(), procsFrom_.end(), lengthsFrom_.begin());
+  sort2(procsFrom_.begin(), procsFrom_.end(), lengthsFrom_.begin());
 
   // Compute indicesFrom_
   totalReceiveLength_ =
-    std::accumulate (lengthsFrom_.begin (), lengthsFrom_.end (), 0);
-  indicesFrom_.clear ();
+      std::accumulate(lengthsFrom_.begin(), lengthsFrom_.end(), 0);
+  indicesFrom_.clear();
 
-  startsFrom_.clear ();
-  startsFrom_.reserve (numReceives_);
+  startsFrom_.clear();
+  startsFrom_.reserve(numReceives_);
   for (size_t i = 0, j = 0; i < numReceives_; ++i) {
     startsFrom_.push_back(j);
     j += lengthsFrom_[i];
@@ -861,216 +898,275 @@ void DistributorPlan::computeReceives()
   }
 }
 
-void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& plist)
-{
+void DistributorPlan::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& plist) {
+  using std::endl;
   using Teuchos::FancyOStream;
   using Teuchos::getIntegralValue;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
-  using std::endl;
 
-  if (! plist.is_null()) {
-    RCP<const ParameterList> validParams = getValidParameters ();
-    plist->validateParametersAndSetDefaults (*validParams);
+  if (!plist.is_null()) {
+    RCP<const ParameterList> validParams = getValidParameters();
+    plist->validateParametersAndSetDefaults(*validParams);
 
     const Details::EDistributorSendType sendType =
-      getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
+        getIntegralValue<Details::EDistributorSendType>(*plist, "Send type");
 
     // Now that we've validated the input list, save the results.
     sendType_ = sendType;
 
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+    initializeMpiAdvance();
+#endif
+
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
-    this->setMyParamList (plist);
+    this->setMyParamList(plist);
+
+#if defined(HAVE_TPETRA_MPI)
+    maybeInitializeRoots();
+#endif
   }
 }
 
-Teuchos::Array<std::string> distributorSendTypes()
-{
+Teuchos::Array<std::string> distributorSendTypes() {
   Teuchos::Array<std::string> sendTypes;
-  sendTypes.push_back ("Isend");
-  sendTypes.push_back ("Send");
-  sendTypes.push_back ("Alltoall");
+  sendTypes.push_back("Isend");
+  sendTypes.push_back("Send");
+  sendTypes.push_back("Alltoall");
+#if defined(HAVE_TPETRA_MPI)
+  sendTypes.push_back("Ialltofewv");
+#endif
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  sendTypes.push_back ("MpiAdvanceAlltoall");
-  sendTypes.push_back ("MpiAdvanceNbralltoallv");
+  sendTypes.push_back("MpiAdvanceAlltoall");
+  sendTypes.push_back("MpiAdvanceNbralltoallv");
 #endif
   return sendTypes;
 }
 
+Teuchos::Array<EDistributorSendType> distributorSendTypeEnums() {
+  Teuchos::Array<EDistributorSendType> res;
+  res.push_back(DISTRIBUTOR_ISEND);
+  res.push_back(DISTRIBUTOR_SEND);
+  res.push_back(DISTRIBUTOR_ALLTOALL);
+#if defined(HAVE_TPETRA_MPI)
+  res.push_back(DISTRIBUTOR_IALLTOFEWV);
+#endif
+#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
+  res.push_back(DISTRIBUTOR_MPIADVANCE_ALLTOALL);
+  res.push_back(DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
+#endif
+  return res;
+}
+
 Teuchos::RCP<const Teuchos::ParameterList>
-DistributorPlan::getValidParameters() const
-{
+DistributorPlan::getValidParameters() const {
   using Teuchos::Array;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
   using Teuchos::setStringToIntegralParameter;
 
-  Array<std::string> sendTypes = distributorSendTypes ();
-  const std::string defaultSendType ("Send");
-  Array<Details::EDistributorSendType> sendTypeEnums;
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_ISEND);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_SEND);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_ALLTOALL);
-#if defined(HAVE_TPETRACORE_MPI_ADVANCE)
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_MPIADVANCE_ALLTOALL);
-  sendTypeEnums.push_back (Details::DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV);
-#endif
+  Array<std::string> sendTypes                             = distributorSendTypes();
+  const Array<Details::EDistributorSendType> sendTypeEnums = distributorSendTypeEnums();
 
-  RCP<ParameterList> plist = parameterList ("Tpetra::Distributor");
+  const std::string validatedSendType = validSendTypeOrThrow(Behavior::defaultSendType());
 
-  setStringToIntegralParameter<Details::EDistributorSendType> ("Send type",
-      defaultSendType, "When using MPI, the variant of send to use in "
-      "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
-  plist->set ("Timer Label","","Label for Time Monitor output");
+  RCP<ParameterList> plist = parameterList("Tpetra::Distributor");
 
-  return Teuchos::rcp_const_cast<const ParameterList> (plist);
+  setStringToIntegralParameter<Details::EDistributorSendType>("Send type",
+                                                              validatedSendType,
+                                                              "When using MPI, the variant of send to use in "
+                                                              "do[Reverse]Posts()",
+                                                              sendTypes(), sendTypeEnums(), plist.getRawPtr());
+  plist->set("Timer Label", "", "Label for Time Monitor output");
+
+  return Teuchos::rcp_const_cast<const ParameterList>(plist);
 }
 
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
 
 // Used by Teuchos::RCP to clean up an owned MPIX_Comm*
 struct MpixCommDeallocator {
-  void free(MPIX_Comm **comm) const {
-    MPIX_Comm_free(*comm);
+  void free(MPIX_Comm** comm) const {
+    MPIX_Comm_free(comm);
   }
 };
 
 void DistributorPlan::initializeMpiAdvance() {
-
   // assert the mpix communicator is null. if this is not the case we will figure out why
   TEUCHOS_ASSERT(mpixComm_.is_null());
 
   // use the members to initialize the graph for neightborhood mode, or just the MPIX communicator for non-neighborhood mode
-  Teuchos::RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm_);
-  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawComm = mpiComm->getRawMpiComm();
-  int err = 0;
-  if (sendType_ == DISTRIBUTOR_MPIADVANCE_ALLTOALL) {
-    MPIX_Comm **mpixComm = new(MPIX_Comm*);
-    err = MPIX_Comm_init(mpixComm, (*rawComm)());
-    mpixComm_ = Teuchos::RCP(mpixComm,
-      MpixCommDeallocator(),
-      true /*take ownership*/
-    );
-  }
-  else if (sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
-    int numRecvs = (int)(numReceives_ + (sendMessageToSelf_ ? 1 : 0));
-    int *sourceRanks = procsFrom_.data();
-
-    // int *sourceWeights = static_cast<int*>(lengthsFrom_.data());// lengthsFrom_ may not be int
-    const int *sourceWeights = MPI_UNWEIGHTED;
-    int numSends = (int)(numSendsToOtherProcs_ + (sendMessageToSelf_ ? 1 : 0));
-    int *destRanks = procIdsToSendTo_.data();
-
-    // int *destWeights = static_cast<int*>(lengthsTo_.data()); // lengthsTo_ may not be int
-    const int *destWeights = MPI_UNWEIGHTED; // lengthsTo_ may not be int
-
-    MPIX_Comm **mpixComm = new(MPIX_Comm*);
-    err = MPIX_Dist_graph_create_adjacent((*rawComm)(), numRecvs, sourceRanks, sourceWeights, numSends, destRanks, destWeights, MPI_INFO_NULL, false, mpixComm);
-    mpixComm_ = Teuchos::RCP(mpixComm,
-      MpixCommDeallocator(),
-      true /*take ownership*/
-    );
+  Teuchos::RCP<const Teuchos::MpiComm<int>> mpiComm            = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm_);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> rawComm = mpiComm->getRawMpiComm();
+  int err                                                      = 0;
+  if (sendType_ == DISTRIBUTOR_MPIADVANCE_ALLTOALL ||
+      sendType_ == DISTRIBUTOR_MPIADVANCE_NBRALLTOALLV) {
+    MPIX_Comm** mpixComm = new (MPIX_Comm*);
+    err                  = MPIX_Comm_init(mpixComm, (*rawComm)());
+    mpixComm_            = Teuchos::RCP(mpixComm,
+                                        MpixCommDeallocator(),
+                                        true /*take ownership*/
+               );
   }
 
   TEUCHOS_ASSERT(err == 0);
 }
 #endif
 
-
-  DistributorPlan::SubViewLimits DistributorPlan::getImportViewLimits(size_t numPackets) const {
-    const size_t actualNumReceives = getNumReceives() + (hasSelfMessage() ? 1 : 0);
-
-    IndexView importStarts(actualNumReceives);
-    IndexView importLengths(actualNumReceives);
-
-    size_t offset = 0;
-    for (size_t i = 0; i < actualNumReceives; ++i) {
-      importStarts[i] = offset;
-      offset += getLengthsFrom()[i] * numPackets;
-      importLengths[i] = getLengthsFrom()[i] * numPackets;
-    }
-    return std::make_pair(importStarts, importLengths);
+#if defined(HAVE_TPETRA_MPI)
+// FIXME: probably need to rename this function since it might change the sendType
+void DistributorPlan::maybeInitializeRoots() {
+  // Only IALLTOFEWV needs to know the roots
+  if (DISTRIBUTOR_IALLTOFEWV != sendType_) {
+    roots_.clear();
+    return;
   }
 
-  DistributorPlan::SubViewLimits DistributorPlan::getImportViewLimits(const Teuchos::ArrayView<const size_t> &numImportPacketsPerLID) const {
+  ProfilingRegion region_maybeInitializeRoots("Tpetra::DistributorPlan::maybeInitializeRoots");
 
-    const size_t actualNumReceives = getNumReceives() + (hasSelfMessage() ? 1 : 0);
+  // send my number of recvs to everyone
+  const int numRecvs = (int)(getNumReceives() + (hasSelfMessage() ? 1 : 0));
+  std::vector<int> sendbuf(comm_->getSize(), numRecvs);
+  std::vector<int> recvbuf(comm_->getSize());
 
-    IndexView importStarts(actualNumReceives);
-    IndexView importLengths(actualNumReceives);
+  // FIXME: is there a more natural way to do this?
+  // Maybe MPI_Allreduce is better, we just care if anyone is sending anything to each process
+  // we just need to know all processes that receive anything (including a self message)
+  Teuchos::RCP<const Teuchos::MpiComm<int>> mpiComm            = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm_);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> rawComm = mpiComm->getRawMpiComm();
+  MPI_Comm comm                                                = (*rawComm)();
+  MPI_Alltoall(sendbuf.data(), 1, MPI_INT, recvbuf.data(), 1, MPI_INT, comm);
 
-    size_t offset = 0;
-    size_t curLIDoffset = 0;
-    for (size_t i = 0; i < actualNumReceives; ++i) {
-      size_t totalPacketsFrom_i = 0;
-      for (size_t j = 0; j < getLengthsFrom()[i]; ++j) {
-        totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset + j];
-      }
-      curLIDoffset += getLengthsFrom()[i];
-      importStarts[i] = offset;
-      offset += totalPacketsFrom_i;
-      importLengths[i] = totalPacketsFrom_i;
-    }
-    return std::make_pair(importStarts, importLengths);
-  }
-
-
-  DistributorPlan::SubViewLimits DistributorPlan::getExportViewLimits(size_t numPackets) const {
-    if (getIndicesTo().is_null()) {
-
-      const size_t actualNumSends = getNumSends() + (hasSelfMessage() ? 1 : 0);
-      IndexView exportStarts(actualNumSends);
-      IndexView exportLengths(actualNumSends);
-      for (size_t pp = 0; pp < actualNumSends; ++pp) {
-        exportStarts[pp] = getStartsTo()[pp] * numPackets;
-        exportLengths[pp] = getLengthsTo()[pp] * numPackets;
-      }
-      return std::make_pair(exportStarts, exportLengths);
-    } else {
-      const size_t numIndices = getIndicesTo().size();
-      IndexView exportStarts(numIndices);
-      IndexView exportLengths(numIndices);
-      for (size_t j = 0; j < numIndices; ++j) {
-        exportStarts[j] = getIndicesTo()[j]*numPackets;
-        exportLengths[j] = numPackets;
-      }
-      return std::make_pair(exportStarts, exportLengths);
+  roots_.clear();
+  for (size_t root = 0; root < recvbuf.size(); ++root) {
+    if (recvbuf[root] > 0) {
+      roots_.push_back(root);
     }
   }
 
-  DistributorPlan::SubViewLimits DistributorPlan::getExportViewLimits(const Teuchos::ArrayView<const size_t> &numExportPacketsPerLID) const {
-    if (getIndicesTo().is_null()) {
-      const size_t actualNumSends = getNumSends() + (hasSelfMessage() ? 1 : 0);
-      IndexView exportStarts(actualNumSends);
-      IndexView exportLengths(actualNumSends);
-      size_t offset = 0;
-      for (size_t pp = 0; pp < actualNumSends; ++pp) {
-        size_t numPackets = 0;
-        for (size_t j = getStartsTo()[pp];
-             j < getStartsTo()[pp] + getLengthsTo()[pp]; ++j) {
-          numPackets += numExportPacketsPerLID[j];
-        }
-        exportStarts[pp] = offset;
-        offset += numPackets;
-        exportLengths[pp] = numPackets;
+  // In "slow-path" communication, the data is not blocked according to sending / receiving proc.
+  // The root-detection algorithm expects data to be blocked, so disable.
+  int slow = !getIndicesTo().is_null() ? 1 : 0;
+  MPI_Allreduce(MPI_IN_PLACE, &slow, 1, MPI_INT, MPI_LOR, comm);
+  if (slow) {
+    if (Tpetra::Details::Behavior::verbose()) {
+      {
+        std::stringstream ss;
+        ss << __FILE__ << ":" << __LINE__ << " " << comm_->getRank() << ": WARNING: Ialltoallv send mode set, at least one rank's data is not grouped by rank. Setting to \"Send\"" << std::endl;
+        std::cerr << ss.str();
       }
-      return std::make_pair(exportStarts, exportLengths);
-    } else {
-      const size_t numIndices = getIndicesTo().size();
-      IndexView exportStarts(numIndices);
-      IndexView exportLengths(numIndices);
-      size_t offset = 0;
-      for (size_t j = 0; j < numIndices; ++j) {
-        exportStarts[j] = offset;
-        offset += numExportPacketsPerLID[j];
-        exportLengths[j] = numExportPacketsPerLID[j];
-      }
-      return std::make_pair(exportStarts, exportLengths);
     }
+
+    roots_.clear();
+    sendType_ = DISTRIBUTOR_SEND;
   }
 
+  // if there aren't many roots, probably someone wanted to use a gather somewhere but then just reused the import/export thing for a scatter
+  // which this won't work well for
+  // just fall back to SEND if roots are more than sqrt of comm
+  if (roots_.size() * roots_.size() >= size_t(comm_->getSize())) {
+    if (Tpetra::Details::Behavior::verbose()) {
+      std::stringstream ss;
+      ss << __FILE__ << ":" << __LINE__ << " " << comm_->getRank() << ": WARNING (Ialltoallv send type): too many roots (" << roots_.size() << ") for " << comm_->getSize() << " ranks. Setting send-type to \"Send\"" << std::endl;
+      std::cerr << ss.str();
+    }
+    roots_.clear();
+    sendType_ = DISTRIBUTOR_SEND;
+  }
 }
+#endif  // HAVE_TPETRA_MPI
+
+DistributorPlan::SubViewLimits DistributorPlan::getImportViewLimits(size_t numPackets) const {
+  const size_t actualNumReceives = getNumReceives() + (hasSelfMessage() ? 1 : 0);
+
+  IndexView importStarts(actualNumReceives);
+  IndexView importLengths(actualNumReceives);
+
+  size_t offset = 0;
+  for (size_t i = 0; i < actualNumReceives; ++i) {
+    importStarts[i] = offset;
+    offset += getLengthsFrom()[i] * numPackets;
+    importLengths[i] = getLengthsFrom()[i] * numPackets;
+  }
+  return std::make_pair(importStarts, importLengths);
 }
+
+DistributorPlan::SubViewLimits DistributorPlan::getImportViewLimits(const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID) const {
+  const size_t actualNumReceives = getNumReceives() + (hasSelfMessage() ? 1 : 0);
+
+  IndexView importStarts(actualNumReceives);
+  IndexView importLengths(actualNumReceives);
+
+  size_t offset       = 0;
+  size_t curLIDoffset = 0;
+  for (size_t i = 0; i < actualNumReceives; ++i) {
+    size_t totalPacketsFrom_i = 0;
+    for (size_t j = 0; j < getLengthsFrom()[i]; ++j) {
+      totalPacketsFrom_i += numImportPacketsPerLID[curLIDoffset + j];
+    }
+    curLIDoffset += getLengthsFrom()[i];
+    importStarts[i] = offset;
+    offset += totalPacketsFrom_i;
+    importLengths[i] = totalPacketsFrom_i;
+  }
+  return std::make_pair(importStarts, importLengths);
+}
+
+DistributorPlan::SubViewLimits DistributorPlan::getExportViewLimits(size_t numPackets) const {
+  if (getIndicesTo().is_null()) {
+    const size_t actualNumSends = getNumSends() + (hasSelfMessage() ? 1 : 0);
+    IndexView exportStarts(actualNumSends);
+    IndexView exportLengths(actualNumSends);
+    for (size_t pp = 0; pp < actualNumSends; ++pp) {
+      exportStarts[pp]  = getStartsTo()[pp] * numPackets;
+      exportLengths[pp] = getLengthsTo()[pp] * numPackets;
+    }
+    return std::make_pair(exportStarts, exportLengths);
+  } else {
+    const size_t numIndices = getIndicesTo().size();
+    IndexView exportStarts(numIndices);
+    IndexView exportLengths(numIndices);
+    for (size_t j = 0; j < numIndices; ++j) {
+      exportStarts[j]  = getIndicesTo()[j] * numPackets;
+      exportLengths[j] = numPackets;
+    }
+    return std::make_pair(exportStarts, exportLengths);
+  }
+}
+
+DistributorPlan::SubViewLimits DistributorPlan::getExportViewLimits(const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID) const {
+  if (getIndicesTo().is_null()) {
+    const size_t actualNumSends = getNumSends() + (hasSelfMessage() ? 1 : 0);
+    IndexView exportStarts(actualNumSends);
+    IndexView exportLengths(actualNumSends);
+    size_t offset = 0;
+    for (size_t pp = 0; pp < actualNumSends; ++pp) {
+      size_t numPackets = 0;
+      for (size_t j = getStartsTo()[pp];
+           j < getStartsTo()[pp] + getLengthsTo()[pp]; ++j) {
+        numPackets += numExportPacketsPerLID[j];
+      }
+      exportStarts[pp] = offset;
+      offset += numPackets;
+      exportLengths[pp] = numPackets;
+    }
+    return std::make_pair(exportStarts, exportLengths);
+  } else {
+    const size_t numIndices = getIndicesTo().size();
+    IndexView exportStarts(numIndices);
+    IndexView exportLengths(numIndices);
+    size_t offset = 0;
+    for (size_t j = 0; j < numIndices; ++j) {
+      exportStarts[j] = offset;
+      offset += numExportPacketsPerLID[j];
+      exportLengths[j] = numExportPacketsPerLID[j];
+    }
+    return std::make_pair(exportStarts, exportLengths);
+  }
+}
+
+}  // namespace Details
+}  // namespace Tpetra

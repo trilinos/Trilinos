@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -91,6 +91,15 @@ namespace SEAMS {
 #define max(x, y) (x) > (y) ? (x) : (y)
 #define min(x, y) (x) < (y) ? (x) : (y)
 #endif
+
+  const char *do_use_legacy_output_format()
+  {
+    SEAMS::symrec *ptr = aprepro->getsym("_FORMAT");
+    if (ptr != nullptr) {
+      ptr->value.svar = "%.10g";
+    }
+    return (nullptr);
+  }
 
   double do_time()
   {
@@ -1033,16 +1042,16 @@ namespace SEAMS {
     return array_data;
   }
 
-  array *do_linear_array(double init, double final, double count)
+  array *do_linear_array(double init, double last, double count)
   {
     // Create 1D array with `count` rows and 1 column.
-    // Values are linearly spaced from `init` to `final`
+    // Values are linearly spaced from `init` to `last`
     auto isize      = static_cast<size_t>(count);
     auto array_data = aprepro->make_array(isize, 1);
 
-    double inc = (final - init) / (count - 1);
+    double inc = (last - init) / (count - 1);
     for (size_t i = 0; i < isize; i++) {
-      array_data->data[i] = init + (double)i * inc;
+      array_data->data[i] = init + static_cast<double>(i) * inc;
     }
     return array_data;
   }
@@ -1172,7 +1181,7 @@ namespace SEAMS {
           }
         }
       }
-      assert(rows - rows_to_skip == (size_t)array_data->rows);
+      assert(rows - rows_to_skip == static_cast<size_t>(array_data->rows));
       delete file;
       return array_data;
     }

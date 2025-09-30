@@ -28,7 +28,7 @@ GeometryKernelGregoryPatch::~GeometryKernelGregoryPatch()
   delete m_geometryMesh;
 }
 
-bool GeometryKernelGregoryPatch::debug_dump_file(const std::string& file_name)
+bool GeometryKernelGregoryPatch::debug_dump_file(const std::string& /*file_name*/)
 {
   return true;
 }

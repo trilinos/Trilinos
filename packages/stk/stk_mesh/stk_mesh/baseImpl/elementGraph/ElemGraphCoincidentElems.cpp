@@ -69,7 +69,7 @@ bool is_side_node_permutation_positive(const stk::mesh::BulkData &bulkData, stk:
 // TODO: deprecate this version as it does not work for paved shells
 bool is_nondegenerate_coincident_connection(const stk::mesh::BulkData &bulkData,
                                             stk::mesh::Entity localElem,
-                                            const stk::mesh::EntityVector& localElemSideNodes,
+                                            const stk::mesh::EntityVector& /*localElemSideNodes*/,
                                             unsigned sideIndex,
                                             stk::topology otherElemTopology,
                                             const stk::mesh::EntityVector &otherElemSideNodes)
@@ -101,7 +101,7 @@ bool is_coincident_connection(const stk::mesh::BulkData &bulkData,
 
 bool is_nondegenerate_coincident_connection(const stk::mesh::BulkData &bulkData,
                                             stk::mesh::Entity localElem,
-                                            const stk::mesh::EntityVector& localElemSideNodes,
+                                            const stk::mesh::EntityVector& /*localElemSideNodes*/,
                                             unsigned sideIndex,
                                             stk::topology otherElemTopology,
                                             const stk::mesh::EntityVector &otherElemSideNodes,

@@ -55,14 +55,14 @@ int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
-  if (nc_inq_dimid(exoid, DIM_NUM_PROCS, &dimid) != NC_NOERR) {
+  if (nc_inq_dimid(exoid, DIM_NUM_PROCS, &dimid) != EX_NOERR) {
     /* This isn't a parallel file.  Just return now with no error, but with num_proc and
      * num_proc_in_f set to 1 */
     EX_FUNC_LEAVE(EX_NOERR);
   }
 
   /* Get the value of the number of processors */
-  if ((status = nc_inq_dimlen(exoid, dimid, &ltempsv)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, dimid, &ltempsv)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_PROCS,
              exoid);
@@ -73,7 +73,7 @@ int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
   *num_proc = ltempsv;
 
   /* Get the dimension ID of processors that have info in this file */
-  if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS_F, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, DIM_NUM_PROCS_F, &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
              DIM_NUM_PROCS_F, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -82,7 +82,7 @@ int ex_get_init_info(int exoid, int *num_proc, int *num_proc_in_f, char *ftype)
   }
 
   /* Get the value of the number of processors that have info in this file */
-  if ((status = nc_inq_dimlen(exoid, dimid, &ltempsv)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(exoid, dimid, &ltempsv)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_PROCS_F,
              exoid);

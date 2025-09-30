@@ -19,6 +19,7 @@
 
 // Thyra includes
 #include "Thyra_VectorSpaceBase.hpp"
+#include "Thyra_TpetraThyraWrappers_decl.hpp"
 
 #include "Teko_ConfigDefs.hpp"
 

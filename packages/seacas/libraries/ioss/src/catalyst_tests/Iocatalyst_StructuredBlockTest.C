@@ -6,6 +6,14 @@
 
 #include <catalyst_tests/Iocatalyst_DatabaseIOTest.h>
 
+TEST_F(Iocatalyst_DatabaseIOTest, WriteOneStructuredBlockWith1Cell)
+{
+  Iocatalyst::BlockMesh bm;
+  setBlockMeshSize(1, 1, 1);
+  addBlockMesh(bm);
+  runStructuredTest("test_sb_1_cells_1");
+}
+
 TEST_F(Iocatalyst_DatabaseIOTest, WriteOneStructuredBlockWith8Cells)
 {
   Iocatalyst::BlockMesh bm;

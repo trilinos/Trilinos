@@ -35,1866 +35,2148 @@
 #ifndef STK_MESH_BASE_FIELDBLAS_HPP
 #define STK_MESH_BASE_FIELDBLAS_HPP
 
-#include <stk_util/stk_config.h>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
-
+#include <stk_mesh/base/GetNgpMesh.hpp>
+#include <stk_mesh/base/DeviceField.hpp>
+#include <stk_util/util/Blas.hpp>
 #include <complex>
 #include <string>
 #include <algorithm>
+#include <type_traits>
 
-#if defined(_OPENMP) && !defined(__INTEL_COMPILER)
-#define OPEN_MP_ACTIVE_FIELDBLAS_HPP
-// there seems to be an issue with OpenMP combined with GoogleTest macros with Intel compilers
-// example of error:
-//    openMP.C(206): internal error: assertion failed at: "shared/cfe/edgcpfe/checkdir.c", line 5531
+#if defined(_OPENMP)
 #include <omp.h>
-
+#define STK_USE_OPENMP  // Guard our pragmas to avoid unknown-pragma warnings-as-errors
 #endif
 
 namespace stk {
 namespace mesh {
 
-template<typename Scalar>
-struct BucketSpan {
-  Scalar* ptr     = nullptr;
-  unsigned length = 0;
+template<typename T> struct is_complex_t : public std::false_type {};
+template<typename U> struct is_complex_t<std::complex<U>> : public std::true_type {};
+template<typename T> constexpr bool is_complex_v = is_complex_t<T>::value;
 
-  unsigned size() const { return length; }
+template <typename T1>
+constexpr bool is_layout_right() {
+  return (T1::layout == Layout::Right);
+}
 
-  const Scalar* data() const { return ptr; }
-        Scalar* data()       { return ptr; }
+template <typename T1, typename T2>
+constexpr bool is_layout_right() {
+  return (T1::layout == Layout::Right) && (T2::layout == Layout::Right);
+}
 
-        Scalar& operator[](unsigned i)       noexcept { return ptr[i]; }
-  const Scalar& operator[](unsigned i) const noexcept { return ptr[i]; }
+template <typename T1, typename T2, typename T3>
+constexpr bool is_layout_right() {
+  return (T1::layout == Layout::Right) && (T2::layout == Layout::Right) && (T3::layout == Layout::Right);
+}
 
-  template<typename Field_t>
-  BucketSpan(const Field_t & f, const Bucket& b)
-  {
-    const FieldMetaData& field_meta_data = f.get_meta_data_for_field()[b.bucket_id()];
-    ptr    = reinterpret_cast<Scalar*>(field_meta_data.m_data);
-    length = b.size() * field_meta_data.m_bytesPerEntity/f.data_traits().size_of;
-  }
-
-  BucketSpan& operator=(const BucketSpan& B)
-  {
-    STK_ThrowAssertMsg(length == B.length, "The registered field lengths must match to be copied correctly");
-
-    for(size_t i = 0; i < length; ++i) {
-      ptr[i] = B.ptr[i];
-    }
-    return *this;
-  }
-};
-
-template<typename Field_t>
-inline bool is_compatible(const Field_t& x, const Field_t& y)
+template <typename FieldX, typename FieldY>
+inline bool is_compatible(const FieldX& x, const FieldY& y)
 {
-  if(&x.get_mesh() != &y.get_mesh()) return false;
-  if(x.entity_rank() != y.entity_rank()) return false;
-  if(x.data_traits().type_info != y.data_traits().type_info) return false;
+  if (&x.get_mesh() != &y.get_mesh()) return false;
+  if (x.entity_rank() != y.entity_rank()) return false;
+  if (x.data_traits().type_info != y.data_traits().type_info) return false;
   return true;
 }
 
-template<typename Scalar, typename Field_t>
-inline bool is_compatible(const Field_t& x)
+template <typename T, typename FieldX>
+inline bool is_compatible(const FieldX& x)
 {
-    if( x.data_traits().type_info != typeid(Scalar) ) return false;
-    return true;
+  if (x.data_traits().type_info != typeid(T)) return false;
+  return true;
 }
 
-template<class Scalar>
-struct FortranBLAS
+template <typename XVALS, typename YVALS>
+void check_matching_extents(const std::string& functionName, XVALS xValues, YVALS yValues)
 {
-    inline static void axpy(int kmax, const Scalar alpha, const Scalar x[], Scalar y[])
-    {
-      if ( alpha != Scalar(1) ) {
-        for(int k = 0; k < kmax; ++k) {
-            y[k] += alpha * x[k];
-        }
-      } else {
-        for(int k = 0; k < kmax; ++k) {
-          y[k] += x[k];
-        }
-      }
-    }
+  STK_ThrowAssertMsg(xValues.num_scalars() == yValues.num_scalars(),
+                     "Cannot perform " << functionName << " operation on different-length Fields.  fieldX has " <<
+                     xValues.num_scalars() << " scalars and fieldY has " << yValues.num_scalars() << " scalars.");
+}
 
-    inline static void axpby(int kmax, const Scalar alpha, const Scalar x[], const Scalar beta, Scalar y[])
-    {
-      if ( beta != Scalar(1) ) {
-        for(int k = 0; k < kmax; ++k) {
-          y[k] *= beta;
-        }
-      }
-      if ( alpha != Scalar(1) ) {
-        for(int k = 0; k < kmax; ++k) {
-          y[k] += alpha * x[k];
-        }
-      } else {
-        for(int k = 0; k < kmax; ++k) {
-          y[k] += x[k];
-        }
-      }
-    }
+template <typename XVALS, typename YVALS, typename ZVALS>
+void check_matching_extents(const std::string& functionName, XVALS xValues, YVALS yValues, ZVALS zValues)
+{
+  STK_ThrowAssertMsg((xValues.num_scalars() == yValues.num_scalars()) && (yValues.num_scalars() == zValues.num_scalars()),
+                     "Cannot perform " << functionName << " operation on different-length Fields.  fieldX has " <<
+                     xValues.num_scalars() << " scalars, fieldY has " << yValues.num_scalars() <<
+                     " scalars, and fieldZ has " << zValues.num_scalars() << " scalars.");
+}
 
-    inline static void copy(int kmax, const Scalar x[], Scalar y[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-            y[k] = x[k];
-        }
-    }
-
-    inline static void product(int kmax, const Scalar x[], const Scalar y[], Scalar z[])
-    {
-        for (int k = 0; k < kmax; ++k) {
-            z[k] = x[k]*y[k];
-        }
-    }
-
-    inline static Scalar dot(int kmax, const Scalar x[], const Scalar y[])
-    {
-        Scalar result(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += y[k] * x[k];
-        }
-        return result;
-    }
-
-    inline static Scalar nrm2(int kmax, const Scalar x[])
-    {
-        Scalar result(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += std::pow(std::abs(x[k]),2);
-        }
-        return Scalar(std::sqrt(result));
-    }
-
-    inline static void scal(int kmax, const Scalar alpha, Scalar x[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-            x[k] = alpha * x[k];
-        }
-    }
-
-    inline static void fill(int numVals, Scalar alpha, Scalar x[], int stride = 1)
-    {
-        if (stride == 1) {
-            std::fill(x, x+numVals, alpha);
-        }
-        else {
-            for (Scalar * end = x+(numVals*stride); x < end; x+=stride) {
-                *x = alpha;
-            }
-        }
-    }
-
-    inline static void swap(int kmax, Scalar x[], Scalar y[])
-    {
-        Scalar temp;
-        for(int k = 0; k < kmax; ++k) {
-            temp = y[k];
-            y[k] = x[k];
-            x[k] = temp;
-        }
-    }
-
-    inline static Scalar asum(int kmax, const Scalar x[])
-    {
-        Scalar result(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += std::abs(x[k]);
-        }
-        return Scalar(result);
-    }
-
-    inline static int iamax(int kmax, const Scalar x[])
-    {
-        double amax = 0.0;
-        int result = 0;
-        for(int k = 0; k < kmax; ++k) {
-            if (amax < std::abs(x[k])) {
-                result = k;
-                amax = std::abs(x[k]);
-            }
-        }
-        return result;
-    }
-
-    inline static int iamin(int kmax, const Scalar x[])
-    {
-        int result = 0;
-        double amin = std::abs(x[0]);
-        for(int k = 0; k < kmax; ++k) {
-            if (std::abs(x[k]) < amin) {
-                result = k;
-                amin = std::abs(x[k]);
-            }
-        }
-        return result;
-    }
+struct MinMaxInfo {
+  unsigned bucketId;
+  int entityIndex;
+  int scalarIndex;
 };
 
-template<class Scalar>
-struct FortranBLAS<std::complex<Scalar> >
+template <typename T>
+struct FieldBlasImpl
 {
-    inline static void axpy(int kmax, const std::complex<Scalar> alpha, const std::complex<Scalar> x[], std::complex<Scalar> y[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-            y[k] += alpha * x[k];
-        }
-    }
+  template <typename XDATA, typename YDATA>
+  inline static void axpy(const BucketVector& buckets, T alpha, const XDATA& xData, const YDATA& yData)
+  {
+#ifdef STK_USE_OPENMP
+    #pragma omp parallel for schedule(static)
+#endif
+    for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+      const Bucket& bucket = *buckets[bucketIndex];
+      auto xValues = xData.bucket_values(bucket);
+      auto yValues = yData.bucket_values(bucket);
+      check_matching_extents("field_axpy()", xValues, yValues);
 
-    inline static void axpby(int kmax, const std::complex<Scalar> alpha, const std::complex<Scalar> x[], const std::complex<Scalar>& beta, std::complex<Scalar> y[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-          y[k] *= beta;
-        }
-        for(int k = 0; k < kmax; ++k) {
-            y[k] += alpha * x[k];
-        }
-    }
+      if constexpr (std::is_floating_point_v<T>) {
+        if constexpr (is_layout_right<XDATA, YDATA>()) {
+          const int numValues = yValues.num_entities()*yValues.num_scalars();
+          const int stride = xValues.scalar_stride();
 
-    inline static void product(int kmax, const std::complex<Scalar> x[], const std::complex<Scalar> y[], std::complex<Scalar> z[])
-    {
-        for (int k = 0; k < kmax; ++k)
-        {
-            z[k] = x[k]*y[k];
+          if constexpr (std::is_same_v<T, double>) {
+            SIERRA_FORTRAN(daxpy)(&numValues, &alpha, xValues.pointer(), &stride, yValues.pointer(), &stride);
+          }
+          else if constexpr (std::is_same_v<T, float>) {
+            SIERRA_FORTRAN(saxpy)(&numValues, &alpha, xValues.pointer(), &stride, yValues.pointer(), &stride);
+          }
         }
-    }
+        else {  // Layout::Left or mixed-layout cases
+          // Stride isn't uniform through the whole Bucket for one or the other Field, so we have to chop
+          // it up into uniform segments
+          for (ScalarIdx scalar : yValues.scalars()) {
+            const int numValues = yValues.num_entities();
+            const int xStride = xValues.entity_stride();
+            const int yStride = yValues.entity_stride();
+            const T* xPtr = xValues.pointer() + scalar*xValues.scalar_stride();
+            T* yPtr = yValues.pointer() + scalar*yValues.scalar_stride();
 
-    inline static void copy(int kmax, const std::complex<Scalar> x[], std::complex<Scalar> y[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-            y[k] = x[k];
-        }
-    }
-
-    inline static std::complex<Scalar> dot(int kmax, const std::complex<Scalar> x[], const std::complex<Scalar> y[]) 
-    {
-        std::complex<Scalar> result = std::complex<Scalar>(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += y[k] * x[k];
-        }
-        return result;
-    }
-
-    inline static std::complex<Scalar> nrm2(int kmax, const std::complex<Scalar> x[]) 
-    {
-        Scalar result(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += std::pow(std::abs(x[k]),2);
-        }
-        return std::complex<Scalar>(std::sqrt(result));
-    }
-
-    inline static void scal(int kmax, const std::complex<Scalar> alpha, std::complex<Scalar> x[])
-    {
-        for(int k = 0; k < kmax; ++k) {
-            x[k] = alpha * x[k];
-        }
-    }
-
-    inline static void fill(int numVals, std::complex<Scalar> alpha, std::complex<Scalar> x[], int stride=1)
-    {
-        for (std::complex<Scalar> * end = x+(numVals*stride); x < end; x+=stride) {
-            *x = alpha;
-        }
-    }
-
-    inline static void swap(int kmax, std::complex<Scalar> x[], std::complex<Scalar> y[])
-    {
-        std::complex<Scalar> temp;
-        for(int k = 0; k < kmax; ++k) {
-            temp = y[k];
-            y[k] = x[k];
-            x[k] = temp;
-        }
-    }
-
-    inline static std::complex<Scalar> asum(int kmax, const std::complex<Scalar> x[])
-    {
-        Scalar result(0.0);
-        for(int k = 0; k < kmax; ++k) {
-            result += std::abs(x[k]);
-        }
-        return std::complex<Scalar>(result,0.0);
-    }
-
-    inline static int iamax(int kmax, const std::complex<Scalar> x[]) 
-    {
-        Scalar amax(0.0);
-        int result = 0;
-        for(int k = 0; k < kmax; ++k) {
-            if (amax < std::norm(x[k])) {
-                result = k;
-                amax = std::norm(x[k]);
+            if constexpr (std::is_same_v<T, double>) {
+              SIERRA_FORTRAN(daxpy)(&numValues, &alpha, xPtr, &xStride, yPtr, &yStride);
             }
-        }
-        return result;
-    }
-
-    inline static int iamin(int kmax, const std::complex<Scalar> x[]) 
-    {
-        int result = 0;
-        Scalar amin = std::norm(x[0]);
-        for(int k = 0; k < kmax; ++k) {
-            if (std::norm(x[k]) < amin) {
-                result = k;
-                amin = std::norm(x[k]);
+            else if constexpr (std::is_same_v<T, float>) {
+              SIERRA_FORTRAN(saxpy)(&numValues, &alpha, xPtr, &xStride, yPtr, &yStride);
             }
+          }
         }
-        return result;
-    }
-
-};
-
-template<>
-struct FortranBLAS<double>
-{
-    static void axpy(int kmax, const double alpha, const double x[], double y[]);
-
-    static void axpby(int kmax, const double alpha, const double x[], const double beta, double y[]);
-
-    static void product(int kmax, const double x[], const double y[], double z[]);
-
-    static void copy(int kmax, const double x[], double y[]);
-
-    static double dot(int kmax, const double x[], const double y[]);
-
-    static double nrm2(int kmax, const double x[]);
-
-    static void scal(int kmax, const double alpha, double x[]);
-
-    static void fill(int kmax, double alpha, double x[], int inc=1);
-
-    static void swap(int kmax, double x[], double y[]);
-
-    static double asum(int kmax, const double x[]);
-
-    static int iamax(int kmax, const double x[]);
-
-    static int iamin(int kmax, const double x[]);
-};
-
-template<>
-struct FortranBLAS<float>
-{
-    static void axpy(int kmax, const float alpha, const float x[], float y[]);
-
-    static void axpby(int kmax, const float alpha, const float x[], const float& beta, float y[]);
-
-    static void product(int kmax, const float x[], const float y[], float z[]);
-
-    static void copy(int kmax, const float x[], float y[]);
-
-    static float dot(int kmax, const float x[], const float y[]);
-
-    static float nrm2(int kmax, const float x[]);
-
-    static void scal(int kmax, const float alpha, float x[]);
-
-    static void fill(int kmax, float alpha, float x[], int inc=1);
-
-    static void swap(int kmax, float x[], float y[]);
-
-    static float asum(int kmax, const float x[]);
-
-    static int iamax(int kmax, const float x[]);
-
-    static int iamin(int kmax, const float x[]);
-};
-
-inline int fix_omp_threads()
-{
-  int orig_thread_count = 0;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    orig_thread_count = omp_get_max_threads();
-    if(omp_get_max_threads() >= omp_get_num_procs()) {omp_set_num_threads(omp_get_num_procs());}
-#endif
-    return orig_thread_count;
-}
-
-inline void unfix_omp_threads([[maybe_unused]] int orig_thread_count)
-{
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-    omp_set_num_threads(orig_thread_count);
-#endif
-}
-
-template<class Scalar>
-inline
-void field_axpy(const Scalar alpha, const FieldBase& xField, const FieldBase& yField, const Selector& selector)
-{
-    STK_ThrowRequire(is_compatible(xField, yField));
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        FortranBLAS<Scalar>::axpy(x.size(),alpha,x.data(),y.data());
-    }
-    unfix_omp_threads(orig_thread_count);
-}
-
-template<class Scalar>
-inline
-void field_axpy(const Scalar alpha, const FieldBase& xField, const FieldBase& yField)
-{
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_axpy(alpha,xField,yField,selector);
-}
-
-template<class Scalar>
-inline
-void field_axpby(const Scalar alpha, const FieldBase& xField, const Scalar beta, const FieldBase& yField, const Selector& selector)
-{
-    STK_ThrowRequire(is_compatible(xField, yField));
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
-
-    int orig_thread_count = fix_omp_threads();
-    if ( beta == Scalar(1) ) {
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-      for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        FortranBLAS<Scalar>::axpy(x.size(),alpha,x.data(),y.data());
       }
-    } else {
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-      for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        FortranBLAS<Scalar>::axpby(x.size(),alpha,x.data(),beta,y.data());
+      else {  // All non-floating-point types
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : yValues.scalars()) {
+            yValues(entity, scalar) += alpha * xValues(entity, scalar);
+          }
+        }
       }
     }
-    unfix_omp_threads(orig_thread_count);
-}
+  }
 
-template<class Scalar>
-inline
-void field_axpby(const Scalar alpha, const FieldBase& xField, const Scalar beta, const FieldBase& yField)
-{
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_axpby(alpha,xField,beta,yField,selector);
-}
-
-template<class Scalar>
-inline
-void INTERNAL_field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField, const Selector& selector)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
+  template <typename XDATA, typename YDATA>
+  inline static void axpby(const BucketVector& buckets, T alpha, const XDATA& xData, T beta, const YDATA& yData)
+  {
+    if constexpr (is_layout_right<XDATA, YDATA>()) {
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static)
 #endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        BucketSpan<Scalar> z(zField, b);
-        FortranBLAS<Scalar>::product(x.size(),x.data(),y.data(),z.data());
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        auto yValues = yData.bucket_values(bucket);
+        check_matching_extents("field_axpby()", xValues, yValues);
+
+        const int numValues = xValues.num_entities() * xValues.num_scalars();
+        const T* xPtr = xValues.pointer();
+        T* yPtr = yValues.pointer();
+
+        for (int i = 0; i < numValues; ++i) {
+          yPtr[i] = beta * yPtr[i] + alpha * xPtr[i];
+        }
+      }
     }
-    unfix_omp_threads(orig_thread_count);
+    else {  // Layout::Left or mixed-layout cases
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        auto yValues = yData.bucket_values(bucket);
+        check_matching_extents("field_axpby()", xValues, yValues);
+
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : yValues.scalars()) {
+            yValues(entity, scalar) = beta * yValues(entity, scalar) + alpha * xValues(entity, scalar);
+          }
+        }
+      }
+    }
+  }
+
+  template <typename XDATA, typename YDATA, typename ZDATA>
+  inline static void product(const BucketVector& buckets, const XDATA& xData, const YDATA& yData, const ZDATA& zData)
+  {
+    if constexpr (is_layout_right<XDATA, YDATA, ZDATA>()) {
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        auto yValues = yData.bucket_values(bucket);
+        auto zValues = zData.bucket_values(bucket);
+        check_matching_extents("field_product()", xValues, yValues, zValues);
+
+        const int numValues = xValues.num_entities() * xValues.num_scalars();
+        const T* xPtr = xValues.pointer();
+        const T* yPtr = yValues.pointer();
+        T* zPtr = zValues.pointer();
+
+        for (int i = 0; i < numValues; ++i) {
+          zPtr[i] = xPtr[i] * yPtr[i];
+        }
+      }
+    }
+    else {  // Layout::Left or mixed-layout cases
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        auto yValues = yData.bucket_values(bucket);
+        auto zValues = zData.bucket_values(bucket);
+        check_matching_extents("field_product()", xValues, yValues, zValues);
+
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : yValues.scalars()) {
+            zValues(entity, scalar) = xValues(entity, scalar) * yValues(entity, scalar);
+          }
+        }
+      }
+    }
+  }
+
+  template <typename XDATA, typename YDATA>
+  inline static void copy(const BucketVector& buckets, const XDATA& xData, const YDATA& yData)
+  {
+    if constexpr (is_layout_right<XDATA, YDATA>()) {
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        auto yValues = yData.bucket_values(bucket);
+        check_matching_extents("field_copy()", xValues, yValues);
+
+        const int numValues = xValues.num_entities() * xValues.num_scalars();
+        const T* xPtr = xValues.pointer();
+        T* yPtr = yValues.pointer();
+
+        for (int i = 0; i < numValues; ++i) {
+          yPtr[i] = xPtr[i];
+        }
+      }
+    }
+    else {  // Layout::Left or mixed-layout cases
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        auto yValues = yData.bucket_values(bucket);
+        check_matching_extents("field_copy()", xValues, yValues);
+
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : yValues.scalars()) {
+            yValues(entity, scalar) = xValues(entity, scalar);
+          }
+        }
+      }
+    }
+  }
+
+  template <typename XDATA, typename YDATA>
+  inline static T dot(const BucketVector& buckets, const XDATA& xData, const YDATA& yData)
+  {
+    if constexpr (is_complex_v<T>) {
+      using ComplexType = typename T::value_type;
+      ComplexType localResultReal {};  // OpenMP can't do reductions on std::complex types
+      ComplexType localResultImag {};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static) reduction(+:localResultReal,localResultImag)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        auto yValues = yData.bucket_values(bucket);
+        check_matching_extents("field_dot()", xValues, yValues);
+
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : yValues.scalars()) {
+            T localResult = xValues(entity, scalar) * yValues(entity, scalar);
+            localResultReal += localResult.real();
+            localResultImag += localResult.imag();
+          }
+        }
+      }
+
+      return T(localResultReal, localResultImag);
+    }
+    else {  // All non-complex types
+      T localResult {};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for reduction(+:localResult) schedule(static)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        auto yValues = yData.bucket_values(bucket);
+        check_matching_extents("field_dot()", xValues, yValues);
+
+        if constexpr (std::is_floating_point_v<T>) {
+          if constexpr (is_layout_right<XDATA, YDATA>()) {
+            const int numValues = yValues.num_entities()*yValues.num_scalars();
+            const int stride = xValues.scalar_stride();
+
+            if constexpr (std::is_same_v<T, double>) {
+              localResult += SIERRA_FORTRAN(ddot)(&numValues, xValues.pointer(), &stride, yValues.pointer(), &stride);
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+              localResult += SIERRA_FORTRAN(sdot)(&numValues, xValues.pointer(), &stride, yValues.pointer(), &stride);
+            }
+          }
+          else {  // Layout::Left or mixed-layout cases
+            // Stride isn't uniform through the whole Bucket for one or the other Field, so we have to chop
+            // it up into uniform segments
+            for (ScalarIdx scalar : xValues.scalars()) {
+              const int numValues = xValues.num_entities();
+              const int xStride = xValues.entity_stride();
+              const int yStride = yValues.entity_stride();
+              const T* xPtr = xValues.pointer() + scalar*xValues.scalar_stride();
+              const T* yPtr = yValues.pointer() + scalar*yValues.scalar_stride();
+
+              if constexpr (std::is_same_v<T, double>) {
+                localResult += SIERRA_FORTRAN(ddot)(&numValues, xPtr, &xStride, yPtr, &yStride);
+              }
+              else if constexpr (std::is_same_v<T, float>) {
+                localResult += SIERRA_FORTRAN(sdot)(&numValues, xPtr, &xStride, yPtr, &yStride);
+              }
+            }
+          }
+        }
+        else {  // All non-floating-point types
+          for (stk::mesh::EntityIdx entity : bucket.entities()) {
+            for (stk::mesh::ScalarIdx scalar : yValues.scalars()) {
+              localResult += xValues(entity, scalar) * yValues(entity, scalar);
+            }
+          }
+        }
+      }
+
+      return localResult;
+    }
+  }
+
+  template <typename XDATA>
+  inline static T nrm2(const BucketVector& buckets, const XDATA& xData)
+  {
+    if constexpr (is_complex_v<T>) {
+      using ComplexType = typename T::value_type;
+      ComplexType localResultReal {};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static) reduction(+:localResultReal)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+            T localResult = std::pow(std::abs(xValues(entity, scalar)), 2);
+            localResultReal += localResult.real();
+          }
+        }
+      }
+
+      return T(localResultReal, 0);
+    }
+    else {  // All non-complex types
+      T localResult {};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for reduction(+:localResult) schedule(static)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+
+        if constexpr (std::is_floating_point_v<T>) {
+          if constexpr (is_layout_right<XDATA>()) {
+            const int numValues = xValues.num_entities()*xValues.num_scalars();
+            const int stride = xValues.scalar_stride();
+            if constexpr (std::is_same_v<T, double>) {
+              localResult += SIERRA_FORTRAN(ddot)(&numValues, xValues.pointer(), &stride, xValues.pointer(), &stride);
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+              localResult += SIERRA_FORTRAN(sdot)(&numValues, xValues.pointer(), &stride, xValues.pointer(), &stride);
+            }
+          }
+          else {  // Layout::Left case
+            // Stride isn't uniform through the whole Bucket, so we have to chop it up into uniform segments
+            for (ScalarIdx scalar : xValues.scalars()) {
+              const int numValues = xValues.num_entities();
+              const int xStride = xValues.entity_stride();
+              const T* xPtr = xValues.pointer() + scalar*xValues.scalar_stride();
+              if constexpr (std::is_same_v<T, double>) {
+                localResult += SIERRA_FORTRAN(ddot)(&numValues, xPtr, &xStride, xPtr, &xStride);
+              }
+              else if constexpr (std::is_same_v<T, float>) {
+                localResult += SIERRA_FORTRAN(sdot)(&numValues, xPtr, &xStride, xPtr, &xStride);
+              }
+            }
+          }
+        }
+        else {  // All non-floating-point types
+          for (stk::mesh::EntityIdx entity : bucket.entities()) {
+            for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+              localResult += xValues(entity, scalar) * xValues(entity, scalar);
+            }
+          }
+        }
+      }
+
+      return localResult;
+    }
+  }
+
+  template <typename XDATA>
+  inline static void scale(const BucketVector& buckets, T alpha, const XDATA& xData)
+  {
+#ifdef STK_USE_OPENMP
+    #pragma omp parallel for schedule(static)
+#endif
+    for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+      const Bucket& bucket = *buckets[bucketIndex];
+      auto xValues = xData.bucket_values(bucket);
+
+      if constexpr (std::is_floating_point_v<T>) {
+        if constexpr (is_layout_right<XDATA>()) {
+          const int numValues = xValues.num_entities()*xValues.num_scalars();
+          const int stride = xValues.scalar_stride();
+
+          if constexpr (std::is_same_v<T, double>) {
+            SIERRA_FORTRAN(dscal)(&numValues, &alpha, xValues.pointer(), &stride);
+          }
+          else if constexpr (std::is_same_v<T, float>) {
+            SIERRA_FORTRAN(sscal)(&numValues, &alpha, xValues.pointer(), &stride);
+          }
+        }
+        else {  // Layout::Left case
+          // Stride isn't uniform through the whole Bucket, so we have to chop it up into uniform segments
+          for (ScalarIdx scalar : xValues.scalars()) {
+            const int numValues = xValues.num_entities();
+            const int xStride = xValues.entity_stride();
+            T* xPtr = xValues.pointer() + scalar*xValues.scalar_stride();
+
+            if constexpr (std::is_same_v<T, double>) {
+              SIERRA_FORTRAN(dscal)(&numValues, &alpha, xPtr, &xStride);
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+              SIERRA_FORTRAN(sscal)(&numValues, &alpha, xPtr, &xStride);
+            }
+          }
+        }
+      }
+      else {  // All non-floating-point types
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+            xValues(entity, scalar) = alpha * xValues(entity, scalar);
+          }
+        }
+      }
+    }
+  }
+
+  template <typename XDATA>
+  inline static void fill(const BucketVector& buckets, T alpha, const XDATA& xData)
+  {
+#ifdef STK_USE_OPENMP
+    #pragma omp parallel for schedule(static)
+#endif
+    for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+      const Bucket& bucket = *buckets[bucketIndex];
+      auto xValues = xData.bucket_values(bucket);
+
+      if constexpr (is_layout_right<XDATA>()) {
+        const int numValues = xValues.num_entities() * xValues.num_scalars();
+        T* xPtr = xValues.pointer();
+        std::fill(xPtr, xPtr+numValues, alpha);
+      }
+      else {  // Layout::Left case
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+            xValues(entity, scalar) = alpha;
+          }
+        }
+      }
+    }
+  }
+
+  template <typename XDATA>
+  inline static void fill_component(const BucketVector& buckets, const T* alpha, const XDATA& xData)
+  {
+#ifdef STK_USE_OPENMP
+    #pragma omp parallel for schedule(static)
+#endif
+    for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+      const Bucket& bucket = *buckets[bucketIndex];
+      auto xValues = xData.bucket_values(bucket);
+
+      for (stk::mesh::EntityIdx entity : bucket.entities()) {
+        for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+          xValues(entity, scalar) = alpha[scalar];
+        }
+      }
+    }
+  }
+
+  template <typename XDATA, typename YDATA>
+  inline static void swap(const BucketVector& buckets, const XDATA& xData, const YDATA& yData)
+  {
+#ifdef STK_USE_OPENMP
+    #pragma omp parallel for schedule(static)
+#endif
+    for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+      const Bucket& bucket = *buckets[bucketIndex];
+      auto xValues = xData.bucket_values(bucket);
+      auto yValues = yData.bucket_values(bucket);
+      check_matching_extents("field_swap()", xValues, yValues);
+
+      if constexpr (std::is_floating_point_v<T>) {
+        if constexpr (is_layout_right<XDATA, YDATA>()) {
+          const int numValues = xValues.num_entities()*xValues.num_scalars();
+          const int stride = xValues.scalar_stride();
+
+          if constexpr (std::is_same_v<T, double>) {
+            SIERRA_FORTRAN(dswap)(&numValues, xValues.pointer(), &stride, yValues.pointer(), &stride);
+          }
+          else if constexpr (std::is_same_v<T, float>) {
+            SIERRA_FORTRAN(sswap)(&numValues, xValues.pointer(), &stride, yValues.pointer(), &stride);
+          }
+        }
+        else {  // Layout::Left and mixed-layout cases
+          // Stride isn't uniform through the whole Bucket for one or the other Field, so we have to chop
+          // it up into uniform segments
+          for (ScalarIdx scalar : yValues.scalars()) {
+            const int numValues = yValues.num_entities();
+            const int xStride = xValues.entity_stride();
+            const int yStride = yValues.entity_stride();
+            T* xPtr = xValues.pointer() + scalar*xValues.scalar_stride();
+            T* yPtr = yValues.pointer() + scalar*yValues.scalar_stride();
+
+            if constexpr (std::is_same_v<T, double>) {
+              SIERRA_FORTRAN(dswap)(&numValues, xPtr, &xStride, yPtr, &yStride);
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+              SIERRA_FORTRAN(sswap)(&numValues, xPtr, &xStride, yPtr, &yStride);
+            }
+          }
+        }
+      }
+      else {  // All non-floating-point types
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : yValues.scalars()) {
+            T temp = yValues(entity, scalar);
+            yValues(entity, scalar) = xValues(entity, scalar);
+            xValues(entity, scalar) = temp;
+          }
+        }
+      }
+    }
+  }
+
+  template <typename XDATA>
+  inline static T asum(const BucketVector& buckets, const XDATA& xData)
+  {
+    if constexpr (is_complex_v<T>) {
+      using ComplexType = typename T::value_type;
+      ComplexType localResultReal {};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static) reduction(+:localResultReal)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+            T localResult = std::abs(xValues(entity, scalar));
+            localResultReal += localResult.real();
+          }
+        }
+      }
+
+      return T(localResultReal, 0);
+    }
+    else {  // All non-complex types
+      T localResult {};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static) reduction(+:localResult)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+
+        if constexpr (std::is_floating_point_v<T>) {
+          if constexpr (is_layout_right<XDATA>()) {
+            const int numValues = xValues.num_entities()*xValues.num_scalars();
+            const int stride = xValues.scalar_stride();
+
+            if constexpr (std::is_same_v<T, double>) {
+              localResult += SIERRA_FORTRAN(dasum)(&numValues, xValues.pointer(), &stride);
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+              localResult += SIERRA_FORTRAN(sasum)(&numValues, xValues.pointer(), &stride);
+            }
+          }
+          else {  // Layout::Left and mixed-layout cases
+            // Stride isn't uniform through the whole Bucket, so we have to chop it up into uniform segments
+            for (ScalarIdx scalar : xValues.scalars()) {
+              const int numValues = xValues.num_entities();
+              const int xStride = xValues.entity_stride();
+              const T* xPtr = xValues.pointer() + scalar*xValues.scalar_stride();
+
+              if constexpr (std::is_same_v<T, double>) {
+                localResult += SIERRA_FORTRAN(dasum)(&numValues, xPtr, &xStride);
+              }
+              else if constexpr (std::is_same_v<T, float>) {
+                localResult += SIERRA_FORTRAN(sasum)(&numValues, xPtr, &xStride);
+              }
+            }
+          }
+        }
+        else {  // All non-floating-point types
+          for (stk::mesh::EntityIdx entity : bucket.entities()) {
+            for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+              localResult += std::abs(xValues(entity, scalar));
+            }
+          }
+        }
+      }
+
+      return localResult;
+    }
+  }
+
+  template <typename XDATA>
+  inline static T amax(const BucketVector& buckets, const XDATA& xData)
+  {
+    if constexpr (is_complex_v<T>) {
+      using ComplexType = typename T::value_type;
+      ComplexType localMaxValueReal = {};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static) reduction(max:localMaxValueReal)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+            ComplexType localValueReal = std::abs(xValues(entity, scalar));
+            if (localValueReal > localMaxValueReal) {
+              localMaxValueReal = localValueReal;
+            }
+          }
+        }
+      }
+
+      return T(localMaxValueReal, 0);
+    }
+    else {  // All non-complex types
+      T localMaxValue {};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static) reduction(max:localMaxValue)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+        if (xValues.is_field_defined()) {
+          if constexpr (std::is_floating_point_v<T> && is_layout_right<XDATA>()) {
+            const int numValues = xValues.num_entities()*xValues.num_scalars();
+            const int stride = xValues.scalar_stride();
+            int localIndex {};
+            if constexpr (std::is_same_v<T, double>) {
+              localIndex = SIERRA_FORTRAN(idamax)(&numValues, xValues.pointer(), &stride) - 1;
+            }
+            else if constexpr (std::is_same_v<T, float>) {
+              localIndex = SIERRA_FORTRAN(isamax)(&numValues, xValues.pointer(), &stride) - 1;
+            }
+            EntityIdx localEntityIdx(localIndex / xValues.num_scalars());
+            ScalarIdx localScalarIdx(localIndex % xValues.num_scalars());
+            T localValue = std::abs(xValues(localEntityIdx, localScalarIdx));
+
+            if (localValue > localMaxValue) {
+              localMaxValue = localValue;
+            }
+          }
+          else {  // All non-floating-point types and Layout::Left cases
+            for (stk::mesh::EntityIdx entityIdx : bucket.entities()) {
+              for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+                T localValue = std::abs(xValues(entityIdx, scalar));
+
+                if (localValue > localMaxValue) {
+                  localMaxValue = localValue;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return localMaxValue;
+    }
+  }
+
+
+  // Note: Can't include the maxValue information in the MinMaxInfo struct return type due to
+  // un-suppressable gcc warnings about ABI changes for std::complex<float> in structs.  So,
+  // return it separately as an out-parameter.
+
+  template <typename XDATA>
+  inline static MinMaxInfo iamax(const BucketVector& buckets, const XDATA& xData, T& maxValue)
+  {
+    if constexpr (is_complex_v<T>) {
+      using ComplexType = typename T::value_type;
+      ComplexType globalMaxValueReal {};
+      MinMaxInfo globalMinMaxInfo {InvalidOrdinal, 0, 0};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel
+#endif
+      {
+        ComplexType localMaxValueReal {};
+        MinMaxInfo localMinMaxInfo {InvalidOrdinal, 0, 0};
+
+#ifdef STK_USE_OPENMP
+        #pragma omp for schedule(static)
+#endif
+        for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+          const Bucket& bucket = *buckets[bucketIndex];
+          auto xValues = xData.bucket_values(bucket);
+
+          for (stk::mesh::EntityIdx entityIdx : bucket.entities()) {
+            for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+              ComplexType localValueReal = std::abs(xValues(entityIdx, scalar));
+              if (localValueReal > localMaxValueReal) {
+                localMaxValueReal = localValueReal;
+                localMinMaxInfo.bucketId = bucket.bucket_id();
+                localMinMaxInfo.entityIndex = entityIdx;
+                localMinMaxInfo.scalarIndex = scalar;
+              }
+            }
+          }
+        }
+
+#ifdef STK_USE_OPENMP
+        #pragma omp critical
+#endif
+        if (localMaxValueReal > globalMaxValueReal) {
+          globalMaxValueReal = localMaxValueReal;
+          globalMinMaxInfo = localMinMaxInfo;
+        }
+      }
+
+      maxValue = T(globalMaxValueReal, 0);
+      return globalMinMaxInfo;
+    }
+    else {  // All non-complex types
+      T globalMaxValue {};
+      MinMaxInfo globalMinMaxInfo {InvalidOrdinal, 0, 0};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel
+#endif
+      {
+        T localMaxValue {};
+        MinMaxInfo localMinMaxInfo {InvalidOrdinal, 0, 0};
+
+#ifdef STK_USE_OPENMP
+        #pragma omp for schedule(static)
+#endif
+        for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+          const Bucket& bucket = *buckets[bucketIndex];
+          auto xValues = xData.bucket_values(bucket);
+
+          if (xValues.is_field_defined()) {
+            if constexpr (std::is_floating_point_v<T> && is_layout_right<XDATA>()) {
+              const int numValues = xValues.num_entities()*xValues.num_scalars();
+              const int stride = xValues.scalar_stride();
+              int localIndex {};
+              if constexpr (std::is_same_v<T, double>) {
+                localIndex = SIERRA_FORTRAN(idamax)(&numValues, xValues.pointer(), &stride) - 1;
+              }
+              else if constexpr (std::is_same_v<T, float>) {
+                localIndex = SIERRA_FORTRAN(isamax)(&numValues, xValues.pointer(), &stride) - 1;
+              }
+              EntityIdx localEntityIdx(localIndex / xValues.num_scalars());
+              ScalarIdx localScalarIdx(localIndex % xValues.num_scalars());
+              T localValue = std::abs(xValues(localEntityIdx, localScalarIdx));
+
+              if (localValue > localMaxValue) {
+                localMaxValue = localValue;
+                localMinMaxInfo.bucketId = bucket.bucket_id();
+                localMinMaxInfo.entityIndex = localEntityIdx;
+                localMinMaxInfo.scalarIndex = localScalarIdx;
+              }
+            }
+            else {  // All non-floating-point types and Layout::Left cases
+              for (stk::mesh::EntityIdx entityIdx : bucket.entities()) {
+                for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+                  T localValue = std::abs(xValues(entityIdx, scalar));
+
+                  if (localValue > localMaxValue) {
+                    localMaxValue = localValue;
+                    localMinMaxInfo.bucketId = bucket.bucket_id();
+                    localMinMaxInfo.entityIndex = entityIdx;
+                    localMinMaxInfo.scalarIndex = scalar;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+#ifdef STK_USE_OPENMP
+        #pragma omp critical
+#endif
+        if (localMaxValue > globalMaxValue) {
+          globalMaxValue = localMaxValue;
+          globalMinMaxInfo = localMinMaxInfo;
+        }
+      }
+
+      maxValue = globalMaxValue;
+      return globalMinMaxInfo;
+    }
+  }
+
+  template <typename XDATA>
+  inline static T amin(const BucketVector& buckets, const XDATA& xData)
+  {
+    if constexpr (is_complex_v<T>) {
+      using ComplexType = typename T::value_type;
+      ComplexType localMinValueReal = std::numeric_limits<ComplexType>::max();
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static) reduction(min:localMinValueReal)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+
+        for (stk::mesh::EntityIdx entity : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+            ComplexType localValueReal = std::abs(xValues(entity, scalar));
+            if (localValueReal < localMinValueReal) {
+              localMinValueReal = localValueReal;
+            }
+          }
+        }
+      }
+
+      return T(localMinValueReal, 0);
+    }
+    else {  // All non-complex types
+      T localMinValue = std::numeric_limits<T>::max();
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel for schedule(static) reduction(min:localMinValue)
+#endif
+      for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+        const Bucket& bucket = *buckets[bucketIndex];
+        auto xValues = xData.bucket_values(bucket);
+
+        for (stk::mesh::EntityIdx entityIdx : bucket.entities()) {
+          for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+            T localValue = std::abs(xValues(entityIdx, scalar));
+
+            if (localValue < localMinValue) {
+              localMinValue = localValue;
+            }
+          }
+        }
+      }
+
+      return localMinValue;
+    }
+  }
+
+  template <typename XDATA>
+  inline static MinMaxInfo iamin(const BucketVector& buckets, const XDATA& xData, T& minValue)
+  {
+    if constexpr (is_complex_v<T>) {
+      using ComplexType = typename T::value_type;
+      ComplexType globalMinValueReal = std::numeric_limits<ComplexType>::max();
+      MinMaxInfo globalMinMaxInfo {InvalidOrdinal, 0, 0};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel
+#endif
+      {
+        ComplexType localMinValueReal = std::numeric_limits<ComplexType>::max();
+        MinMaxInfo localMinMaxInfo {InvalidOrdinal, 0, 0};
+
+#ifdef STK_USE_OPENMP
+        #pragma omp for schedule(static)
+#endif
+        for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+          const Bucket& bucket = *buckets[bucketIndex];
+          auto xValues = xData.bucket_values(bucket);
+
+          for (stk::mesh::EntityIdx entityIdx : bucket.entities()) {
+            for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+              ComplexType localValueReal = std::abs(xValues(entityIdx, scalar));
+
+              if (localValueReal < localMinValueReal) {
+                localMinValueReal = localValueReal;
+                localMinMaxInfo.bucketId = bucket.bucket_id();
+                localMinMaxInfo.entityIndex = entityIdx;
+                localMinMaxInfo.scalarIndex = scalar;
+              }
+            }
+          }
+        }
+
+#ifdef STK_USE_OPENMP
+        #pragma omp critical
+#endif
+        if (localMinValueReal < globalMinValueReal) {
+          globalMinValueReal = localMinValueReal;
+          globalMinMaxInfo = localMinMaxInfo;
+        }
+      }
+
+      minValue = T(globalMinValueReal, 0);
+      return globalMinMaxInfo;
+    }
+    else {  // All non-complex types
+      T globalMinValue = std::numeric_limits<T>::max();
+      MinMaxInfo globalMinMaxInfo {InvalidOrdinal, 0, 0};
+
+#ifdef STK_USE_OPENMP
+      #pragma omp parallel
+#endif
+      {
+        T localMinValue = std::numeric_limits<T>::max();
+        MinMaxInfo localMinMaxInfo {InvalidOrdinal, 0, 0};
+
+#ifdef STK_USE_OPENMP
+        #pragma omp for schedule(static)
+#endif
+        for (unsigned bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex) {
+          const Bucket& bucket = *buckets[bucketIndex];
+          auto xValues = xData.bucket_values(bucket);
+
+          for (stk::mesh::EntityIdx entityIdx : bucket.entities()) {
+            for (stk::mesh::ScalarIdx scalar : xValues.scalars()) {
+              T localValue = std::abs(xValues(entityIdx, scalar));
+
+              if (localValue < localMinValue) {
+                localMinValue = localValue;
+                localMinMaxInfo.bucketId = bucket.bucket_id();
+                localMinMaxInfo.entityIndex = entityIdx;
+                localMinMaxInfo.scalarIndex = scalar;
+              }
+            }
+          }
+        }
+
+#ifdef STK_USE_OPENMP
+        #pragma omp critical
+#endif
+        if (localMinValue < globalMinValue) {
+          globalMinValue = localMinValue;
+          globalMinMaxInfo = localMinMaxInfo;
+        }
+      }
+
+      minValue = globalMinValue;
+      return globalMinMaxInfo;
+    }
+  }
+
+};
+
+
+//==============================================================================
+// axpy: y[i] = a*x[i] + y[i]
+//
+template <typename T>
+inline
+void field_axpy(T alpha, const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+{
+  STK_ThrowRequire(is_compatible<T>(xField));
+  STK_ThrowRequire(is_compatible(xField, yField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
+
+  if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Right) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
+  }
+  else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Left) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
+  }
+  else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Right) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
+  }
+  else if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Left) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_axpy().  xField layout: "
+                      << xField.host_data_layout() << " and yField layout: " << yField.host_data_layout());
+  }
+}
+
+template <typename T>
+inline
+void field_axpy(T alpha, const FieldBase& xField, const FieldBase& yField)
+{
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_axpy(alpha, xField, yField, selector);
+}
+
+
+//==============================================================================
+// axpby: y[i] = a*x[i] + b*y[i]
+//
+template <typename T>
+inline
+void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yField, const Selector& selector)
+{
+  STK_ThrowRequire(is_compatible<T>(xField));
+  STK_ThrowRequire(is_compatible(xField, yField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
+
+  if ( beta == T(1) ) {
+    if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Right) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
+    }
+    else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Left) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
+    }
+    else if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Left) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
+    }
+    else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Right) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
+    }
+    else {
+      STK_ThrowErrorMsg("Unsupported Field data layout detected in field_axpby().  xField layout: "
+                        << xField.host_data_layout() << " and yField layout: " << yField.host_data_layout());
+    }
+  }
+  else {
+    if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Right) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
+    }
+    else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Left) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
+    }
+    else if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Left) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
+    }
+    else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Right) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
+    }
+    else {
+      STK_ThrowErrorMsg("Unsupported Field data layout detected in field_axpby().  xField layout: "
+                        << xField.host_data_layout() << " and yField layout: " << yField.host_data_layout());
+    }
+  }
+}
+
+template <typename T>
+inline
+void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yField)
+{
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_axpby(alpha, xField, beta, yField, selector);
+}
+
+
+//==============================================================================
+// product: z[i] = x[i] * y[i]
+//
+template <typename T>
+inline
+void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField, const Selector& selector)
+{
+  STK_ThrowRequire(is_compatible<T>(xField));
+  STK_ThrowRequire(is_compatible(xField, yField));
+  STK_ThrowRequire(is_compatible(yField, zField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
+
+  const stk::mesh::Layout xLayout = xField.host_data_layout();
+  const stk::mesh::Layout yLayout = yField.host_data_layout();
+  const stk::mesh::Layout zLayout = zField.host_data_layout();
+
+  if (xLayout == Layout::Right && yLayout == Layout::Right && zLayout == Layout::Right) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
+  }
+  else if (xLayout == Layout::Right && yLayout == Layout::Right && zLayout == Layout::Left) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
+  }
+  else if (xLayout == Layout::Right && yLayout == Layout::Left && zLayout == Layout::Right) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
+  }
+  else if (xLayout == Layout::Right && yLayout == Layout::Left && zLayout == Layout::Left) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
+  }
+  else if (xLayout == Layout::Left && yLayout == Layout::Right && zLayout == Layout::Right) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
+  }
+  else if (xLayout == Layout::Left && yLayout == Layout::Right && zLayout == Layout::Left) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
+  }
+  else if (xLayout == Layout::Left && yLayout == Layout::Left && zLayout == Layout::Right) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
+  }
+  else if (xLayout == Layout::Left && yLayout == Layout::Left && zLayout == Layout::Left) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::product(buckets, xData, yData, zData);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_product().  xField layout: " << xLayout <<
+                      ", yField layout: " << yLayout << ", zField layout: " << zLayout);
+  }
+}
+
+template <typename T>
+inline
+void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField)
+{
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_product<T>(xField, yField, zField, selector);
 }
 
 inline
 void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField, const Selector& selector)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
-    STK_ThrowRequire(is_compatible(yField, zField));
-
-    if (xField.data_traits().type_info == typeid(double)) {
-        INTERNAL_field_product<double>(xField,yField,zField,selector);
-    } else if (xField.data_traits().type_info == typeid(float)) {
-        INTERNAL_field_product<float>(xField,yField,zField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
-        INTERNAL_field_product<std::complex<double> >(xField,yField,zField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
-        INTERNAL_field_product<std::complex<float> >(xField,yField,zField,selector);
-    } else if (xField.data_traits().type_info == typeid(int)) {
-        INTERNAL_field_product<int>(xField,yField,zField,selector);
-    } else {
-        STK_ThrowAssertMsg(false,"Error in field_product; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
-    }
+  if (xField.data_traits().type_info == typeid(double)) {
+    field_product<double>(xField, yField, zField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(float)) {
+    field_product<float>(xField, yField, zField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
+    field_product<std::complex<double>>(xField, yField, zField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
+    field_product<std::complex<float>>(xField, yField, zField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(int)) {
+    field_product<int>(xField, yField, zField, selector);
+  }
+  else {
+    STK_ThrowErrorMsg("Error in field_product(): Field is of type " << xField.data_traits().type_info.name() <<
+                      ", which is not supported.");
+  }
 }
 
 inline
 void field_product(const FieldBase& xField, const FieldBase& yField, const FieldBase& zField)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_product(xField,yField,zField,selector);
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_product(xField, yField, zField, selector);
 }
 
-template<class Scalar>
-inline
-void INTERNAL_field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
-{
-  BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
-#ifdef STK_USE_DEVICE_MESH
-  const bool alreadySyncd_or_HostNewest = !xField.need_sync_to_host();
+//==============================================================================
+// copy: y[i] = x[i]
+//
+template <typename XDATA, typename YDATA>
+class LegacyDeviceFieldCopy {
+public:
+  LegacyDeviceFieldCopy(const XDATA& xData_, const YDATA& yData_)
+    : xData(xData_),
+      yData(yData_)
+  {}
 
-  yField.clear_sync_state();
+  KOKKOS_FUNCTION
+  void operator()(const stk::mesh::FastMeshIndex& entityIndex) const
+  {
+    auto xValues = xData.entity_values(entityIndex);
+    auto yValues = yData.entity_values(entityIndex);
 
-  if (alreadySyncd_or_HostNewest) {
-#endif
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for (size_t i = 0; i < buckets.size(); ++i) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        y = x;
+    for (stk::mesh::ScalarIdx scalar : yValues.scalars()) {
+      yValues(scalar) = xValues(scalar);
     }
-    unfix_omp_threads(orig_thread_count);
-    yField.clear_sync_state();
-    yField.modify_on_host();
+  }
+
+  XDATA xData;
+  YDATA yData;
+};
+
+template <typename T>
+inline
+void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+{
+  STK_ThrowRequire(is_compatible<T>(xField));
+  STK_ThrowRequire(is_compatible(xField, yField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
+
+  // We need to remove the modify_on_host()/modify_on_device() behavior from this, as well as
+  // the device-side copying.  Folks should use the NGP-flavored version of field_copy() if
+  // they want to copy data in a different memory space, rather than relying on an odd
+  // side-effect of this function.  None of the other functions in this file have this
+  // behavior.
+#ifdef STK_USE_DEVICE_MESH
+  const bool upToDateOnHost = not xField.need_sync_to_host();
+  if (upToDateOnHost) {
+#endif
+    const stk::mesh::Layout xLayout = xField.host_data_layout();
+    const stk::mesh::Layout yLayout = yField.host_data_layout();
+
+    if (xLayout == Layout::Right && yLayout == Layout::Right) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Right>();
+      FieldBlasImpl<T>::copy(buckets, xData, yData);
+    }
+    else if (xLayout == Layout::Left && yLayout == Layout::Left) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Left>();
+      FieldBlasImpl<T>::copy(buckets, xData, yData);
+    }
+    else if (xLayout == Layout::Right && yLayout == Layout::Left) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Left>();
+      FieldBlasImpl<T>::copy(buckets, xData, yData);
+    }
+    else if (xLayout == Layout::Left && yLayout == Layout::Right) {
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Right>();
+      FieldBlasImpl<T>::copy(buckets, xData, yData);
+    }
+
 #ifdef STK_USE_DEVICE_MESH
   }
-  else { // copy on device
-    auto ngpX = stk::mesh::get_updated_ngp_field<Scalar>(xField);
-    auto ngpY = stk::mesh::get_updated_ngp_field<Scalar>(yField);
-    auto ngpXview = impl::get_device_data(ngpX);
-    auto ngpYview = impl::get_device_data(ngpY);
+  else {
+    if constexpr (std::is_floating_point_v<T> || std::is_same_v<T, int>) {
+      auto ngpMesh = stk::mesh::get_updated_ngp_mesh(xField.get_mesh());
 
-    Kokkos::deep_copy(ngpYview, ngpXview);
-    yField.modify_on_device();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::MemSpace>();
+      auto yData = yField.data<T, ReadWrite, stk::ngp::MemSpace>();
+      LegacyDeviceFieldCopy fieldCopy(xData, yData);
+      stk::mesh::for_each_entity_run(ngpMesh, xField.entity_rank(), selector, fieldCopy);
+    }
+    else {
+      STK_ThrowErrorMsg("Device Fields do not support std::complex datatypes!");
+    }
   }
-
 #endif
 }
 
 inline
 void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
-
-    if (xField.data_traits().type_info == typeid(double)) {
-        INTERNAL_field_copy<double>(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(float)) {
-        INTERNAL_field_copy<float>(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
-        INTERNAL_field_copy<std::complex<double> >(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
-        INTERNAL_field_copy<std::complex<float> >(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(int)) {
-        INTERNAL_field_copy<int>(xField,yField,selector);
-    } else {
-        STK_ThrowAssertMsg(false,"Error in field_copy; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
-    }
+  if (xField.data_traits().type_info == typeid(double)) {
+    field_copy<double>(xField, yField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(float)) {
+    field_copy<float>(xField, yField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
+    field_copy<std::complex<double>>(xField, yField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
+    field_copy<std::complex<float>>(xField, yField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(int)) {
+    field_copy<int>(xField, yField, selector);
+  }
+  else {
+    STK_ThrowAssertMsg(false,"Error in field_copy(): Field is of type "<<xField.data_traits().type_info.name() <<
+                       ", which is not supported");
+  }
 }
 
 inline
 void field_copy(const FieldBase& xField, const FieldBase& yField)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_copy(xField,yField,selector);
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_copy(xField, yField, selector);
 }
 
-template<class Scalar>
+
+//==============================================================================
+// dot: global_sum( sum_i( x[i]*y[i] ) )
+//
+template <typename T, Layout xLayout, Layout yLayout>
 inline
-Scalar field_dot(const Field<Scalar> & xField, const Field<Scalar> & yField,
-                 const Selector& selector, const MPI_Comm comm)
+T field_dot(const Field<T, xLayout>& xField, const Field<T, yLayout>& yField, const Selector& selector,
+            const MPI_Comm comm)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
+                                                              selector & xField.mesh_meta_data().locally_owned_part());
 
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
-                                                                selector & xField.mesh_meta_data().locally_owned_part());
+  auto xData = xField.template data<ConstUnsynchronized>();
+  auto yData = yField.template data<Unsynchronized>();
+  T localResult = FieldBlasImpl<T>::dot(buckets, xData, yData);
 
-    Scalar local_result(0.0);
+  T globalResult = localResult;
+  if constexpr (is_complex_v<T>) {
+    using ComplexType = typename T::value_type;
+    const ComplexType* localResultArray = reinterpret_cast<ComplexType*>(&localResult);
+    ComplexType* globalResultArray = reinterpret_cast<ComplexType*>(&globalResult);
+    stk::all_reduce_sum(comm, localResultArray, globalResultArray, 2u);
+  }
+  else {
+    stk::all_reduce_sum(comm, &localResult, &globalResult, 1u);
+  }
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(+:local_result)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        local_result += FortranBLAS<Scalar>::dot(x.size(),x.data(),y.data());
-    }
-
-    Scalar glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
+  return globalResult;
 }
 
-template<class Scalar>
+template <typename T, Layout xLayout, Layout yLayout>
 inline
-std::complex<Scalar> field_dot(const Field<std::complex<Scalar>>& xField,
-                               const Field<std::complex<Scalar>>& yField,
-                               const Selector& selector, const MPI_Comm comm)
+T field_dot(const Field<T, xLayout>& xField, const Field<T, yLayout>& yField, const Selector& selector)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
-                                                                selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result_r (0.0);
-    Scalar local_result_i (0.0);
-    std::complex<Scalar> priv_tmp;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result_r,local_result_i) schedule(static) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<std::complex<Scalar>> x(xField, b);
-        BucketSpan<std::complex<Scalar>> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        priv_tmp = FortranBLAS<std::complex<Scalar> >::dot(x.size(),x.data(),y.data());
-
-        local_result_r += priv_tmp.real();
-        local_result_i += priv_tmp.imag();
-    }
-
-    Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
-    Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
-    stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
-    unfix_omp_threads(orig_thread_count);
-    return std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
+  const MPI_Comm comm = xField.get_mesh().parallel();
+  return field_dot(xField, yField, selector, comm);
 }
 
-template<class Scalar>
+template <typename T, Layout xLayout, Layout yLayout>
 inline
-Scalar field_dot(const Field<Scalar> & xField, const Field<Scalar> & yField, const Selector& selector)
+T field_dot(const Field<T, xLayout>& xField, const Field<T, yLayout>& yField)
 {
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    return field_dot(xField,yField,selector,comm);
+  const Selector selector = selectField(xField) & selectField(yField);
+  return field_dot(xField, yField, selector);
 }
 
-template<class Scalar>
+template <typename T>
 inline
-Scalar field_dot(const Field<Scalar> & xField, const Field<Scalar> & yField)
+void field_dot(T& globalResult, const FieldBase& xFieldBase, const FieldBase& yFieldBase,
+               const Selector& selector, const MPI_Comm comm)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    return field_dot(xField,yField,selector);
+  STK_ThrowRequire(is_compatible<T>(xFieldBase));
+  STK_ThrowRequire(is_compatible(xFieldBase, yFieldBase));
+
+  if (xFieldBase.host_data_layout() == Layout::Right && yFieldBase.host_data_layout() == Layout::Right) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Right>&>(xFieldBase);
+    const auto& yField = dynamic_cast<const stk::mesh::Field<T, Layout::Right>&>(yFieldBase);
+    globalResult = field_dot(xField, yField, selector, comm);
+  }
+  else if (xFieldBase.host_data_layout() == Layout::Left && yFieldBase.host_data_layout() == Layout::Left) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Left>&>(xFieldBase);
+    const auto& yField = dynamic_cast<const stk::mesh::Field<T, Layout::Left>&>(yFieldBase);
+    globalResult = field_dot(xField, yField, selector, comm);
+  }
+  else if (xFieldBase.host_data_layout() == Layout::Left && yFieldBase.host_data_layout() == Layout::Right) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Left>&>(xFieldBase);
+    const auto& yField = dynamic_cast<const stk::mesh::Field<T, Layout::Right>&>(yFieldBase);
+    globalResult = field_dot(xField, yField, selector, comm);
+  }
+  else if (xFieldBase.host_data_layout() == Layout::Right && yFieldBase.host_data_layout() == Layout::Left) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Right>&>(xFieldBase);
+    const auto& yField = dynamic_cast<const stk::mesh::Field<T, Layout::Left>&>(yFieldBase);
+    globalResult = field_dot(xField, yField, selector, comm);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_dot().  xField layout: "
+                      << xFieldBase.host_data_layout() << " and yField layout: " << yFieldBase.host_data_layout());
+  }
 }
 
-template<class Scalar>
+template <typename T>
 inline
-void field_dot(std::complex<Scalar>& global_result, const FieldBase& xField, const FieldBase& yField, const Selector& selector, const MPI_Comm comm)
+void field_dot(T& result, const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result_r (0.0);
-    Scalar local_result_i (0.0);
-    std::complex<Scalar> priv_tmp;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result_r,local_result_i) schedule(static) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<std::complex<Scalar>> x(xField, b);
-        BucketSpan<std::complex<Scalar>> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        priv_tmp = FortranBLAS<std::complex<Scalar> >::dot(x.size(),x.data(),y.data());
-
-        local_result_r += priv_tmp.real();
-        local_result_i += priv_tmp.imag();
-    }
-
-    Scalar local_result_ri [2] = { local_result_r     , local_result_i     };
-    Scalar  glob_result_ri [2] = { local_result_ri[0] , local_result_ri[1] };
-    stk::all_reduce_sum(comm,local_result_ri,glob_result_ri,2u);
-    global_result = std::complex<Scalar> (glob_result_ri[0],glob_result_ri[1]);
-    unfix_omp_threads(orig_thread_count);
+  const MPI_Comm comm = xField.get_mesh().parallel();
+  field_dot(result, xField, yField, selector, comm);
 }
 
-template<class Scalar>
+template <typename T>
 inline
-void field_dot(Scalar& glob_result, const FieldBase& xField, const FieldBase& yField, const Selector& selector, const MPI_Comm comm)
+void field_dot(T& result, const FieldBase& xField, const FieldBase& yField)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        local_result += FortranBLAS<Scalar>::dot(x.size(),x.data(),y.data());
-    }
-
-    glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_dot(result, xField, yField, selector);
 }
 
-template<class Scalar>
+
+//==============================================================================
+// nrm2: sqrt( global_sum( sum_i( x[i]*x[i] )))
+//
+template <typename T, Layout xLayout>
 inline
-void field_dot(Scalar& result, const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+T field_nrm2(const Field<T, xLayout>& xField, const Selector& selector, const MPI_Comm comm)
 {
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    field_dot(result,xField,yField,selector,comm);
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
+                                                              selector & xField.mesh_meta_data().locally_owned_part());
+
+  auto xData = xField.template data<ConstUnsynchronized>();
+  T localResult = FieldBlasImpl<T>::nrm2(buckets, xData);
+
+  T globalResult = localResult;
+  if constexpr (is_complex_v<T>) {
+    using ComplexType = typename T::value_type;
+    const ComplexType* localResultArray = reinterpret_cast<ComplexType*>(&localResult);
+    ComplexType* globalResultArray = reinterpret_cast<ComplexType*>(&globalResult);
+    stk::all_reduce_sum(comm, localResultArray, globalResultArray, 1u);
+    globalResult = {std::sqrt(globalResult.real()), 0.0};  // Imaginary already zero
+  }
+  else {
+    stk::all_reduce_sum(comm, &localResult, &globalResult, 1u);
+    globalResult = std::sqrt(globalResult);
+  }
+
+  return globalResult;
 }
 
-template<class Scalar>
+template <typename T, Layout xLayout>
 inline
-void field_dot(Scalar& result, const FieldBase& xField, const FieldBase& yField)
+T field_nrm2(const Field<T, xLayout>& xField, const Selector& selector)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_dot(result,xField,yField,selector);
+  const MPI_Comm comm = xField.get_mesh().parallel();
+  return field_nrm2(xField, selector, comm);
 }
 
-template<class Scalar>
+template <typename T, Layout xLayout>
 inline
-void field_scale(const Scalar alpha, const FieldBase& xField, const Selector& selector)
+T field_nrm2(const Field<T, xLayout>& xField)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        FortranBLAS<Scalar>::scal(x.size(),alpha,x.data());
-    }
-    unfix_omp_threads(orig_thread_count);
+  const Selector selector = selectField(xField);
+  return field_nrm2(xField, selector);
 }
 
-template<class Scalar>
+template <typename T>
 inline
-void field_scale(const Scalar alpha, const FieldBase& xField)
+void field_nrm2(T& globalResult, const FieldBase& xFieldBase, const Selector& selector, const MPI_Comm comm)
 {
-    const Selector selector = selectField(xField);
-    field_scale(alpha,xField,selector);
+  STK_ThrowRequire(is_compatible<T>(xFieldBase));
+
+  if (xFieldBase.host_data_layout() == Layout::Right) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Right>&>(xFieldBase);
+    globalResult = field_nrm2(xField, selector, comm);
+  }
+  else if (xFieldBase.host_data_layout() == Layout::Left) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Left>&>(xFieldBase);
+    globalResult = field_nrm2(xField, selector, comm);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_nrm2().  xField layout: "
+                      << xFieldBase.host_data_layout());
+  }
 }
 
-template<class Scalar>
+template <typename T>
 inline
-void field_fill_component(const Scalar* alpha, const FieldBase& xField, const Selector& selector)
+void field_nrm2(T& result, const FieldBase& xField, const Selector& selector)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i = 0; i < buckets.size(); i++) {
-        const Bucket & b = *buckets[i];
-        const int length = b.size();
-        const unsigned int fieldSize = field_scalars_per_entity(xField, b);
-        Scalar * x = static_cast<Scalar*>(field_data(xField, b));
-
-        for (unsigned int j = 0; j < fieldSize; j++) {
-            FortranBLAS<Scalar>::fill(length,alpha[j],x+j,fieldSize);
-        }
-    }
-    unfix_omp_threads(orig_thread_count);
+  const MPI_Comm comm = xField.get_mesh().parallel();
+  field_nrm2(result, xField, selector, comm);
 }
 
-template<class Scalar>
+template <typename T>
 inline
-void field_fill_component(const Scalar* alpha, const FieldBase& xField)
+void field_nrm2(T& result, const FieldBase& xField)
 {
-    const Selector selector = selectField(xField);
-    field_fill_component(alpha,xField,selector);
+  const Selector selector = selectField(xField);
+  field_nrm2(result, xField, selector);
 }
 
-template<class Scalar>
+
+//==============================================================================
+// scale: x[i] = a*x[i]
+//
+template <typename T>
 inline
-void field_fill(const Scalar alpha, const FieldBase& xField, const Selector& selector)
+void field_scale(T alpha, const FieldBase& xField, const Selector& selector)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
+  STK_ThrowRequire(is_compatible<T>(xField));
 
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),selector);
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i = 0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        FortranBLAS<Scalar>::fill(x.size(),alpha,x.data());
-    }
-    unfix_omp_threads(orig_thread_count);
+  if (xField.host_data_layout() == Layout::Right) {
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::scale(buckets, alpha, xData);
+  }
+  else if (xField.host_data_layout() == Layout::Left) {
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::scale(buckets, alpha, xData);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_scale().  xField layout: "
+                      << xField.host_data_layout());
+  }
 }
 
-template<class Scalar>
+template <typename T>
 inline
-void field_fill(const Scalar alpha, const std::vector<const FieldBase*>& xFields, const Selector& selector)
+void field_scale(T alpha, const FieldBase& xField)
 {
-    STK_ThrowRequire(xFields.size() >= 1 );
-
-    stk::mesh::EntityRank fieldEntityRank = xFields[0]->entity_rank();
-    BucketVector const& buckets = xFields[0]->get_mesh().get_buckets(fieldEntityRank,selector);
-
-    for (auto&& bucket : buckets){
-        for (unsigned int i=0; i<xFields.size(); ++i){
-            const FieldBase& xField = *xFields[i];
-            STK_ThrowRequire( is_compatible<Scalar>(xField) );
-            STK_ThrowRequire(fieldEntityRank == xField.entity_rank());
-            BucketSpan<Scalar> x(xField, *bucket);
-            FortranBLAS<Scalar>::fill(x.size(),alpha,x.data());
-        }
-    }
+  const Selector selector = selectField(xField);
+  field_scale(alpha, xField, selector);
 }
 
-template<class Scalar>
+
+//==============================================================================
+// fill: x[i] = a
+//
+template <typename T>
 inline
-void field_fill(const Scalar alpha, const FieldBase& xField)
+void field_fill(T alpha, const FieldBase& xField, const Selector& selector)
 {
-    const Selector selector = selectField(xField);
-    field_fill(alpha,xField,selector);
+  STK_ThrowRequire(is_compatible<T>(xField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
+
+  if (xField.host_data_layout() == Layout::Right) {
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::fill(buckets, alpha, xData);
+  }
+  else if (xField.host_data_layout() == Layout::Left) {
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::fill(buckets, alpha, xData);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_fill().  xField layout: "
+                      << xField.host_data_layout());
+  }
 }
 
-template<class Scalar>
+template <typename T>
 inline
-void field_fill(const Scalar alpha, const std::vector<const FieldBase*>& xFields)
+void field_fill(T alpha, const FieldBase& xField)
 {
-    const Selector selector = selectField(*xFields[0]);
-    field_fill(alpha,xFields,selector);
+  const Selector selector = selectField(xField);
+  field_fill(alpha, xField, selector);
 }
 
-template<class Scalar>
-inline
-void INTERNAL_field_swap(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets( xField.entity_rank(), selector );
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        BucketSpan<Scalar> y(yField, b);
-        STK_ThrowAssert(x.size() == y.size());
-        FortranBLAS<Scalar>::swap(x.size(),x.data(),y.data());
-    }
-    unfix_omp_threads(orig_thread_count);
+template <typename T>
+inline
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields, const Selector& selector)
+{
+  for (const FieldBase* field : xFields) {
+    STK_ThrowRequire(is_compatible<T>(*field));
+    field_fill(alpha, *field, selector);
+  }
+}
+
+template <typename T>
+inline
+void field_fill(T alpha, const std::vector<const FieldBase*>& xFields)
+{
+  for (const FieldBase* field : xFields) {
+    const Selector selector = selectField(*field);
+    field_fill(alpha, *field, selector);
+  }
+}
+
+
+//==============================================================================
+// fill_component: x[i, comp] = a[comp]
+//
+template <typename T>
+inline
+void field_fill_component(const T* alpha, const FieldBase& xField, const Selector& selector)
+{
+  STK_ThrowRequire(is_compatible<T>(xField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
+
+  if (xField.host_data_layout() == Layout::Right) {
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::fill_component(buckets, alpha, xData);
+  }
+  else if (xField.host_data_layout() == Layout::Left) {
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::fill_component(buckets, alpha, xData);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_fill_component().  xField layout: "
+                      << xField.host_data_layout());
+  }
+}
+
+template <typename T>
+inline
+void field_fill_component(const T* alpha, const FieldBase& xField)
+{
+  const Selector selector = selectField(xField);
+  field_fill_component(alpha, xField, selector);
+}
+
+
+//==============================================================================
+// swap: x[i] = y[i]
+//       y[i] = x[i]
+//
+template <typename T>
+inline
+void field_swap(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
+{
+  STK_ThrowRequire(is_compatible<T>(xField));
+  STK_ThrowRequire(is_compatible(xField, yField));
+
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
+
+  const stk::mesh::Layout xLayout = xField.host_data_layout();
+  const stk::mesh::Layout yLayout = yField.host_data_layout();
+
+  if (xLayout == Layout::Right && yLayout == Layout::Right) {
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::swap(buckets, xData, yData);
+  }
+  else if (xLayout == Layout::Left && yLayout == Layout::Left) {
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::swap(buckets, xData, yData);
+  }
+  else if (xLayout == Layout::Right && yLayout == Layout::Left) {
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    FieldBlasImpl<T>::swap(buckets, xData, yData);
+  }
+  else if (xLayout == Layout::Left && yLayout == Layout::Right) {
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    FieldBlasImpl<T>::swap(buckets, xData, yData);
+  }
 }
 
 inline
 void field_swap(const FieldBase& xField, const FieldBase& yField, const Selector& selector)
 {
-    STK_ThrowRequire(is_compatible(xField, yField));
-
-    if (xField.data_traits().type_info == typeid(double)) {
-        INTERNAL_field_swap<double>(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(float)) {
-        INTERNAL_field_swap<float>(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
-        INTERNAL_field_swap<std::complex<double> >(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
-        INTERNAL_field_swap<std::complex<float> >(xField,yField,selector);
-    } else if (xField.data_traits().type_info == typeid(int)) {
-        INTERNAL_field_swap<int>(xField,yField,selector);
-    } else {
-        STK_ThrowAssertMsg(false,"Error in field_swap; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
-    }
+  if (xField.data_traits().type_info == typeid(double)) {
+    field_swap<double>(xField, yField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(float)) {
+    field_swap<float>(xField, yField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
+    field_swap<std::complex<double>>(xField, yField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
+    field_swap<std::complex<float>>(xField, yField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(int)) {
+    field_swap<int>(xField, yField, selector);
+  }
+  else {
+    STK_ThrowErrorMsg("Error in field_swap(): Fields are of type " << xField.data_traits().type_info.name() <<
+                       ", which is not supported.");
+  }
 }
 
 inline
 void field_swap(const FieldBase& xField, const FieldBase& yField)
 {
-    const Selector selector = selectField(xField) & selectField(yField);
-    field_swap(xField,yField,selector);
+  const Selector selector = selectField(xField) & selectField(yField);
+  field_swap(xField, yField, selector);
 }
 
-template <class Scalar>
+
+//==============================================================================
+// asum: global_sum( sum_i( abs(x[i]) ))
+//
+template <typename T, Layout xLayout>
 inline
-Scalar field_nrm2(const Field<Scalar> & xField, const Selector& selector, const MPI_Comm comm)
+T field_asum(const Field<T, xLayout>& xField, const Selector& selector, const MPI_Comm comm)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
-                                                                selector & xField.mesh_meta_data().locally_owned_part());
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
+                                                              selector & xField.mesh_meta_data().locally_owned_part());
 
-    Scalar local_result(0.0);
+  auto xData = xField.template data<ConstUnsynchronized>();
+  T localResult = FieldBlasImpl<T>::asum(buckets, xData);
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        local_result += FortranBLAS<Scalar>::dot(x.size(),x.data(),x.data());
-    }
+  T globalResult = localResult;
+  if constexpr (is_complex_v<T>) {
+    using ComplexType = typename T::value_type;
+    const ComplexType* localResultArray = reinterpret_cast<ComplexType*>(&localResult);
+    ComplexType* globalResultArray = reinterpret_cast<ComplexType*>(&globalResult);
+    stk::all_reduce_sum(comm, localResultArray, globalResultArray, 2u);
+  }
+  else {
+    stk::all_reduce_sum(comm, &localResult, &globalResult, 1u);
+  }
 
-    Scalar glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-    return std::sqrt(glob_result);
+  return globalResult;
 }
 
-template <class Scalar>
+template <typename T, Layout xLayout>
 inline
-std::complex<Scalar> field_nrm2(const Field<std::complex<Scalar>> & xField, const Selector& selector,
-                                const MPI_Comm comm)
+T field_asum(const Field<T, xLayout>& xField, const Selector& selector)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result_r(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result_r) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        local_result_r += std::pow(FortranBLAS<std::complex<Scalar> >::nrm2(x.size(),x.data()).real(),2);
-    }
-
-    Scalar glob_result = local_result_r;
-    stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-    return std::complex<Scalar>(std::sqrt(glob_result),0.0);
+  const MPI_Comm comm = xField.get_mesh().parallel();
+  return field_asum(xField, selector, comm);
 }
 
-template <class Scalar>
+template <typename T, Layout xLayout>
 inline
-Scalar field_nrm2(const Field<Scalar> & xField, const Selector& selector)
+T field_asum(const Field<T, xLayout>& xField)
 {
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    return field_nrm2(xField,selector,comm);
+  const Selector selector = selectField(xField);
+  return field_asum(xField,selector);
 }
 
-template<class Scalar>
+
+template <typename T>
 inline
-Scalar field_nrm2(const Field<Scalar> & xField)
+void field_asum(T& globalResult, const FieldBase& xFieldBase, const Selector& selector, const MPI_Comm comm)
 {
-    const Selector selector = selectField(xField);
-    return field_nrm2(xField,selector);
+  STK_ThrowRequire(is_compatible<T>(xFieldBase));
+
+  if (xFieldBase.host_data_layout() == Layout::Right) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Right>&>(xFieldBase);
+    globalResult = field_asum(xField, selector, comm);
+  }
+  else if (xFieldBase.host_data_layout() == Layout::Left) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Left>&>(xFieldBase);
+    globalResult = field_asum(xField, selector, comm);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_asum().  xField layout: "
+                      << xFieldBase.host_data_layout());
+  }
 }
 
-template<class Scalar>
+template <typename T>
 inline
-void field_nrm2(Scalar& glob_result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+void field_asum(T& result, const FieldBase& xFieldBase, const Selector& selector)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        local_result += FortranBLAS<Scalar>::dot(x.size(),x.data(),x.data());
-    }
-
-    glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    glob_result = std::sqrt(glob_result);
-    unfix_omp_threads(orig_thread_count);
+  const MPI_Comm comm = xFieldBase.get_mesh().parallel();
+  field_asum(result, xFieldBase, selector, comm);
 }
 
-template<class Scalar>
+template <typename T>
 inline
-void field_nrm2(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+void field_asum(T& result, const FieldBase& xFieldBase)
 {
-    STK_ThrowRequire( is_compatible<std::complex<Scalar>>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result_r(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result_r) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        local_result_r += std::pow(FortranBLAS<std::complex<Scalar> >::nrm2(x.size(),x.data()).real(),2);
-    }
-
-    Scalar glob_result = local_result_r;
-    stk::all_reduce_sum(comm,&local_result_r,&glob_result,1u);
-    result = std::complex<Scalar>(std::sqrt(glob_result),0.0);
-    unfix_omp_threads(orig_thread_count);
+  const Selector selector = selectField(xFieldBase);
+  field_asum(result, xFieldBase, selector);
 }
 
-template<class Scalar>
+
+//==============================================================================
+// amax: global_max( max_i( abs(x[i]) ))
+//
+template <typename T, Layout xLayout>
 inline
-void field_nrm2(Scalar& result, const FieldBase& xField, const Selector& selector)
+T field_amax(const Field<T, xLayout>& xField, const Selector& selector, const MPI_Comm comm)
 {
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    field_nrm2(result,xField,selector,comm);
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
+                                                              selector & xField.mesh_meta_data().locally_owned_part());
+
+  auto xData = xField.template data<ConstUnsynchronized>();
+  T localMaxValue = FieldBlasImpl<T>::amax(buckets, xData);
+
+  T globalResult = localMaxValue;
+  if constexpr (is_complex_v<T>) {
+    using ComplexType = typename T::value_type;
+    const ComplexType* localResultArray = reinterpret_cast<ComplexType*>(&localMaxValue);
+    ComplexType* globalResultArray = reinterpret_cast<ComplexType*>(&globalResult);
+    stk::all_reduce_max(comm, localResultArray, globalResultArray, 1u);  // Only the real part has a value
+  }
+  else {
+    stk::all_reduce_max(comm, &localMaxValue, &globalResult, 1u);
+  }
+
+  return globalResult;
 }
 
-template<class Scalar>
+template <typename T, Layout xLayout>
 inline
-void field_nrm2(Scalar& result, const FieldBase& xField)
+T field_amax(const Field<T, xLayout>& xField, const Selector& selector)
 {
-    const Selector selector = selectField(xField);
-    field_nrm2(result,xField,selector);
+  const MPI_Comm comm = xField.get_mesh().parallel();
+  return field_amax(xField, selector, comm);
 }
 
-template <class Scalar>
+template <typename T, Layout xLayout>
 inline
-Scalar field_asum(const Field<Scalar> & xField, const Selector& selector, const MPI_Comm comm)
+T field_amax(const Field<T, xLayout>& xField)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
-                                                                selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        local_result += FortranBLAS<Scalar>::asum(x.size(),x.data());
-    }
-
-    Scalar glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
+  const Selector selector = selectField(xField);
+  return field_amax(xField, selector);
 }
 
-template<class Scalar>
+
+template <typename T>
 inline
-std::complex<Scalar> field_asum(const Field<std::complex<Scalar>> & xField, const Selector& selector,
-                                const MPI_Comm comm)
+void field_amax(T& result, const FieldBase& xFieldBase, const Selector& selector, const MPI_Comm comm)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
-                                                                selector & xField.mesh_meta_data().locally_owned_part());
+  STK_ThrowRequire(is_compatible<T>(xFieldBase));
 
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        local_result += FortranBLAS<std::complex<Scalar> >::asum(x.size(),x.data()).real();
-    }
-
-    Scalar glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-    return std::complex<Scalar>(glob_result,0.0);
+  if (xFieldBase.host_data_layout() == Layout::Right) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Right>&>(xFieldBase);
+    result = field_amax(xField, selector, comm);
+  }
+  else if (xFieldBase.host_data_layout() == Layout::Left) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Left>&>(xFieldBase);
+    result = field_amax(xField, selector, comm);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_amax().  xField layout: "
+                      << xFieldBase.host_data_layout());
+  }
 }
 
-template<class Scalar>
+template <typename T>
 inline
-Scalar field_asum(const Field<Scalar> & xField, const Selector& selector)
+void field_amax(T& result, const FieldBase& xFieldBase, const Selector& selector)
 {
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    return field_asum(xField,selector,comm);
+  const MPI_Comm comm = xFieldBase.get_mesh().parallel();
+  field_amax(result, xFieldBase, selector, comm);
 }
 
-template<class Scalar>
+template <typename T>
 inline
-Scalar field_asum(const Field<Scalar> & xField)
+void field_amax(T& result, const FieldBase& xFieldBase)
 {
-    const Selector selector = selectField(xField);
-    return field_asum(xField,selector);
+  const Selector selector = selectField(xFieldBase);
+  field_amax(result, xFieldBase, selector);
 }
 
-template<class Scalar>
+
+//==============================================================================
+// eamax: Entity(loc:global_max( max_i( abs(x[i]) )))
+//
+template <typename T>
 inline
-void field_asum(Scalar& glob_result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+Entity field_eamax(const FieldBase& xField, const Selector& selector)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
+  STK_ThrowRequire(is_compatible<T>(xField));
 
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
+                                                              selector & xField.mesh_meta_data().locally_owned_part());
 
-    Scalar local_result(0.0);
+  const stk::mesh::Layout xLayout = xField.host_data_layout();
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        local_result += FortranBLAS<Scalar>::asum(x.size(),x.data());
-    }
+  MinMaxInfo localMinMaxInfo {};
+  T localMaxValue {};
 
-    glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    unfix_omp_threads(orig_thread_count);
-}
+  if (xLayout == Layout::Right) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    localMinMaxInfo = FieldBlasImpl<T>::iamax(buckets, xData, localMaxValue);
+  }
+  else if (xLayout == Layout::Left) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    localMinMaxInfo = FieldBlasImpl<T>::iamax(buckets, xData, localMaxValue);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_eamax().  xField layout: " << xLayout);
+  }
 
-template<class Scalar>
-inline
-void field_asum(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
-{
-    STK_ThrowRequire( is_compatible<std::complex<Scalar>>(xField) );
+  const stk::mesh::BulkData& bulk = xField.get_mesh();
+  T globalMaxValue;
+  EntityId globalEntityId {};
+  EntityId localEntityId {};
+  STK_ThrowRequireMsg(localMinMaxInfo.bucketId != InvalidOrdinal, "No minimum value location found in field_eamax()");
 
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
+  if constexpr (is_complex_v<T>) {
+    using ComplexType = typename T::value_type;
+    const ComplexType* localValueArray = reinterpret_cast<ComplexType*>(&localMaxValue);
+    ComplexType* globalValueArray = reinterpret_cast<ComplexType*>(&globalMaxValue);
+    const Bucket& localBucket = *bulk.buckets(xField.entity_rank())[localMinMaxInfo.bucketId];
+    localEntityId = bulk.identifier(localBucket[localMinMaxInfo.entityIndex]);
+    stk::all_reduce_maxloc(bulk.parallel(), localValueArray, &localEntityId, globalValueArray, &globalEntityId, 1u);
+  }
+  else {
+    const Bucket& localBucket = *bulk.buckets(xField.entity_rank())[localMinMaxInfo.bucketId];
+    localEntityId = bulk.identifier(localBucket[localMinMaxInfo.entityIndex]);
+    stk::all_reduce_maxloc(bulk.parallel(), &localMaxValue, &localEntityId, &globalMaxValue, &globalEntityId, 1u);
+  }
 
-    Scalar local_result(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for reduction(+:local_result) schedule(static)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        local_result += FortranBLAS<std::complex<Scalar> >::asum(x.size(),x.data()).real();
-    }
-
-    Scalar glob_result = local_result;
-    stk::all_reduce_sum(comm,&local_result,&glob_result,1u);
-    result = std::complex<Scalar>(glob_result,0.0);
-    unfix_omp_threads(orig_thread_count);
-}
-
-template<class Scalar>
-inline
-void field_asum(Scalar& result, const FieldBase& xField, const Selector& selector)
-{
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    field_asum(result,xField,selector,comm);
-}
-
-template<class Scalar>
-inline
-void field_asum(Scalar& result, const FieldBase& xField)
-{
-    const Selector selector = selectField(xField);
-    field_asum(result,xField,selector);
-}
-
-template<class Scalar>
-inline
-Scalar field_amax(const Field<Scalar> & xField, const Selector& selector, const MPI_Comm comm)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amax(-1.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamax(x.size(),x.data())]);
-
-        if (local_amax < priv_tmp) {
-            local_amax = priv_tmp;
-        }
-    }
-
-    Scalar global_amax = local_amax;
-    stk::all_reduce_max(comm,&local_amax,&global_amax,1u);
-    unfix_omp_threads(orig_thread_count);
-    return global_amax;
-}
-
-template<class Scalar>
-inline
-std::complex<Scalar> field_amax(const Field<std::complex<Scalar>> & xField, const Selector& selector,
-                                const MPI_Comm comm)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
-                                                                selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amax(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<std::complex<Scalar> >::iamax(x.size(),x.data())]);
-
-        if (local_amax < priv_tmp) {
-            local_amax = priv_tmp;
-        }
-    }
-
-    Scalar glob_amax = local_amax;
-    stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-    unfix_omp_threads(orig_thread_count);
-    return std::complex<Scalar>(glob_amax,0.0);
-}
-
-template<class Scalar>
-inline
-Scalar field_amax(const Field<Scalar> & xField, const Selector& selector)
-{
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    return field_amax(xField,selector,comm);
-}
-
-template<class Scalar>
-inline
-Scalar field_amax(const Field<Scalar> & xField)
-{
-    const Selector selector = selectField(xField);
-    return field_amax(xField,selector);
-}
-
-template<class Scalar>
-inline
-Entity INTERNAL_field_eamax_complex(const FieldBase& xField, const Selector& selector)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamax;
-    Scalar priv_amax;
-    Entity priv_result;
-    Scalar local_amax(-2.0);
-    Entity local_result = Entity();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamax,priv_amax,priv_result)
-    {
-#endif
-        priv_amax = Scalar(-1.0);
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(max:local_amax)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<std::complex<Scalar> > x(xField, b);
-            priv_iamax = FortranBLAS<std::complex<Scalar> >::iamax(x.size(),x.data());
-
-            if (priv_amax < std::norm(x[priv_iamax])) {
-                priv_result = b[priv_iamax];
-                priv_amax = std::norm(x[priv_iamax]);
-                local_amax = priv_amax;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (local_amax == priv_amax) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId  glob_EntityId = local_EntityId;
-    Scalar glob_amax = local_amax;
-    stk::all_reduce_maxloc(xField.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
-    if (glob_EntityId == local_EntityId) {
-        local_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        local_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return local_result;
-}
-
-template<class Scalar>
-inline
-Entity INTERNAL_field_eamax(const FieldBase& xField, const Selector& selector)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamax;
-    Scalar priv_amax;
-    Entity priv_result;
-    Scalar local_amax(-2.0);
-    Entity local_result = Entity();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamax,priv_amax,priv_result)
-    {
-#endif
-        priv_amax = Scalar(-1.0);
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(max:local_amax)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<Scalar> x(xField, b);
-            priv_iamax = FortranBLAS<Scalar>::iamax(x.size(),x.data());
-
-            if (priv_amax < std::abs(x[priv_iamax])) {
-                priv_result = b[priv_iamax];
-                priv_amax = std::abs(x[priv_iamax]);
-                local_amax = priv_amax;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (local_amax==priv_amax) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId glob_EntityId = local_EntityId;
-    Scalar glob_amax = local_amax;
-    stk::all_reduce_maxloc(xField.get_mesh().parallel(),&local_amax,&local_EntityId,&glob_amax,&glob_EntityId,1u);
-    if (glob_EntityId==local_EntityId) {
-        local_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        local_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return local_result;
+  if (globalEntityId == localEntityId) {
+    return bulk.get_entity(xField.entity_rank(), globalEntityId);
+  } else {
+    return Entity();
+  }
 }
 
 inline
 Entity field_eamax(const FieldBase& xField, const Selector& selector)
 {
-    if (xField.data_traits().type_info == typeid(double)) {
-        return INTERNAL_field_eamax<double>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(float)) {
-        return INTERNAL_field_eamax<float>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
-        return INTERNAL_field_eamax_complex<double>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
-        return INTERNAL_field_eamax_complex<float>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(int)) {
-        return INTERNAL_field_eamax<int>(xField,selector);
-    } else {
-        STK_ThrowAssertMsg(false,"Error in field_eamax; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
-    }
-    return stk::mesh::Entity();
+  if (xField.data_traits().type_info == typeid(double)) {
+    return field_eamax<double>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(float)) {
+    return field_eamax<float>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
+    return field_eamax<std::complex<double>>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
+    return field_eamax<std::complex<float>>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(int)) {
+    return field_eamax<int>(xField, selector);
+  }
+  else {
+    STK_ThrowErrorMsg("Error in field_eamax(): Field is of type " << xField.data_traits().type_info.name() <<
+                      ", which is not supported.");
+  }
+  return stk::mesh::Entity();
 }
 
 inline
 Entity field_eamax(const FieldBase& xField)
 {
-    const Selector selector = selectField(xField);
-    return field_eamax(xField,selector);
+  const Selector selector = selectField(xField);
+  return field_eamax(xField, selector);
 }
 
-template<class Scalar>
+template <typename T>
 inline
-Entity field_eamax(const Field<Scalar> & xField)
+Entity field_eamax(const Field<T>& xField)
 {
-    const Selector selector = selectField(xField);
-    return field_eamax(xField,selector);
+  const Selector selector = selectField(xField);
+  return field_eamax(xField, selector);
 }
 
-template<class Scalar>
+
+//==============================================================================
+// amin: global_min( min_i( abs(x[i]) ))
+//
+template <typename T, Layout xLayout>
 inline
-void field_amax(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+T field_amin(const Field<T, xLayout>& xField, const Selector& selector, const MPI_Comm comm)
 {
-    STK_ThrowRequire( is_compatible<std::complex<Scalar>>(xField) );
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
+                                                              selector & xField.mesh_meta_data().locally_owned_part());
 
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
+  auto xData = xField.template data<ConstUnsynchronized>();
+  T localMinValue = FieldBlasImpl<T>::amin(buckets, xData);
 
-    Scalar priv_tmp;
-    Scalar local_amax(-1.0);
+  T globalResult = localMinValue;
+  if constexpr (is_complex_v<T>) {
+    using ComplexType = typename T::value_type;
+    const ComplexType* localResultArray = reinterpret_cast<ComplexType*>(&localMinValue);
+    ComplexType* globalResultArray = reinterpret_cast<ComplexType*>(&globalResult);
+    stk::all_reduce_min(comm, localResultArray, globalResultArray, 1u);  // Only the real part has a value
+  }
+  else {
+    stk::all_reduce_min(comm, &localMinValue, &globalResult, 1u);
+  }
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<std::complex<Scalar> >::iamax(x.size(),x.data())]);
-
-        if (local_amax < priv_tmp) {
-            local_amax = priv_tmp;
-        }
-    }
-
-    Scalar glob_amax = local_amax;
-    stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-    result = std::complex<Scalar>(glob_amax,0.0);
-    unfix_omp_threads(orig_thread_count);
+  return globalResult;
 }
 
-template<class Scalar>
+template <typename T, Layout xLayout>
 inline
-void field_amax(Scalar& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+T field_amin(const Field<T, xLayout>& xField, const Selector& selector)
 {
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amax(0.0);
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(max:local_amax) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        if (x.length == 0) continue;
-        priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamax(x.size(),x.data())]);
-        if (local_amax < priv_tmp) {
-          local_amax = priv_tmp;
-        }
-    }
-
-    Scalar glob_amax = local_amax;
-    stk::all_reduce_max(comm,&local_amax,&glob_amax,1u);
-    result = glob_amax;
-    unfix_omp_threads(orig_thread_count);
+  const MPI_Comm comm = xField.get_mesh().parallel();
+  return field_amin(xField, selector, comm);
 }
 
-template<class Scalar>
+template <typename T, Layout xLayout>
 inline
-void field_amax(Scalar& result, const FieldBase& xField, const Selector& selector)
+T field_amin(const Field<T, xLayout>& xField)
 {
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    field_amax(result,xField,selector,comm);
+  const Selector selector = selectField(xField);
+  return field_amin(xField, selector);
 }
 
-template<class Scalar>
+
+template <typename T>
 inline
-void field_amax(Scalar& result, const FieldBase& xField)
+void field_amin(T& result, const FieldBase& xFieldBase, const Selector& selector, const MPI_Comm comm)
 {
-    const Selector selector = selectField(xField);
-    field_amax(result,xField,selector);
+  STK_ThrowRequire(is_compatible<T>(xFieldBase));
+
+  if (xFieldBase.host_data_layout() == Layout::Right) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Right>&>(xFieldBase);
+    result = field_amin(xField, selector, comm);
+  }
+  else if (xFieldBase.host_data_layout() == Layout::Left) {
+    const auto& xField = dynamic_cast<const stk::mesh::Field<T, Layout::Left>&>(xFieldBase);
+    result = field_amin(xField, selector, comm);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_amin().  xField layout: "
+                      << xFieldBase.host_data_layout());
+  }
 }
 
-template<class Scalar>
+template <typename T>
 inline
-Entity field_eamin(const Field<std::complex<Scalar>> & xField, const Selector& selector)
+void field_amin(T& result, const FieldBase& xFieldBase, const Selector& selector)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
-                                                                selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamin;
-    Scalar priv_amin;
-    Entity priv_result;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-    Entity local_result;
-    Entity glob_result;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamin,priv_amin,priv_result)
-    {
-#endif
-        priv_amin = std::numeric_limits<Scalar>::max();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:local_amin)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<std::complex<Scalar>> x(xField, b);
-            priv_iamin = FortranBLAS<std::complex<Scalar> >::iamin(x.size(),x.data());
-
-            if (std::abs(x[priv_iamin]) < priv_amin) {
-                priv_result = b[priv_iamin];
-                priv_amin = std::abs(x[priv_iamin]);
-                local_amin = priv_amin;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin==local_amin) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId glob_EntityId = local_EntityId;
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-    if (glob_EntityId == local_EntityId) {
-        glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        glob_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
+  const MPI_Comm comm = xFieldBase.get_mesh().parallel();
+  field_amin(result, xFieldBase, selector, comm);
 }
 
-template<class Scalar>
+template <typename T>
 inline
-Entity field_eamin(const Field<Scalar> & xField, const Selector& selector)
+void field_amin(T& result, const FieldBase& xFieldBase)
 {
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
-                                                                selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamin;
-    Scalar priv_amin;
-    Entity priv_result;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-    Entity local_result;
-    Entity glob_result;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamin,priv_amin,priv_result)
-    {
-#endif
-        priv_amin = std::numeric_limits<Scalar>::max();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:local_amin)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<Scalar> x(xField, b);
-            priv_iamin = FortranBLAS<Scalar>::iamin(x.size(),x.data());
-
-            if (std::abs(x[priv_iamin]) < priv_amin) {
-                priv_result = b[priv_iamin];
-                priv_amin = std::abs(x[priv_iamin]);
-                local_amin = priv_amin;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin == local_amin) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId glob_EntityId = local_EntityId;
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-    if (glob_EntityId == local_EntityId) {
-        glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        glob_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
+  const Selector selector = selectField(xFieldBase);
+  field_amin(result, xFieldBase, selector);
 }
 
-template<class Scalar>
+
+//==============================================================================
+// eamin: Entity(loc:global_min( min_i( abs(x[i]) )))
+//
+template <typename T>
 inline
-Entity field_eamin(const Field<Scalar> & xField)
+Entity field_eamin(const FieldBase& xField, const Selector& selector)
 {
-    const Selector selector = selectField(xField);
-    return field_eamin(xField,selector);
-}
+  STK_ThrowRequire(is_compatible<T>(xField));
 
-template<class Scalar>
-inline
-std::complex<Scalar> field_amin(const Field<std::complex<Scalar>> & xField, const Selector& selector,
-                                const MPI_Comm comm)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
-                                                                selector & xField.mesh_meta_data().locally_owned_part());
+  const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(),
+                                                              selector & xField.mesh_meta_data().locally_owned_part());
 
-    Scalar priv_tmp;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
+  const stk::mesh::Layout xLayout = xField.host_data_layout();
 
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        priv_tmp = std::norm(x[FortranBLAS<std::complex<Scalar> >::iamin(x.size(),x.data())]);
+  MinMaxInfo localMinMaxInfo {};
+  T localMinValue {};
 
-        if (priv_tmp < local_amin) {
-            local_amin = priv_tmp;
-        }
-    }
+  if (xLayout == Layout::Right) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    localMinMaxInfo = FieldBlasImpl<T>::iamin(buckets, xData, localMinValue);
+  }
+  else if (xLayout == Layout::Left) {
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    localMinMaxInfo = FieldBlasImpl<T>::iamin(buckets, xData, localMinValue);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layout detected in field_eamin().  xField layout: " << xLayout);
+  }
 
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-    unfix_omp_threads(orig_thread_count);
-    return std::sqrt(glob_amin);
-}
+  const stk::mesh::BulkData& bulk = xField.get_mesh();
+  T globalMinValue;
+  EntityId globalEntityId {};
+  EntityId localEntityId {};
+  STK_ThrowRequireMsg(localMinMaxInfo.bucketId != InvalidOrdinal, "No minimum value location found in field_eamin()");
 
-template<class Scalar>
-inline
-Scalar field_amin(const Field<Scalar> & xField, const Selector& selector, const MPI_Comm comm)
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
+  if constexpr (is_complex_v<T>) {
+    using ComplexType = typename T::value_type;
+    const ComplexType* localValueArray = reinterpret_cast<ComplexType*>(&localMinValue);
+    ComplexType* globalValueArray = reinterpret_cast<ComplexType*>(&globalMinValue);
+    const Bucket& localBucket = *bulk.buckets(xField.entity_rank())[localMinMaxInfo.bucketId];
+    localEntityId = bulk.identifier(localBucket[localMinMaxInfo.entityIndex]);
+    stk::all_reduce_minloc(bulk.parallel(), localValueArray, &localEntityId, globalValueArray, &globalEntityId, 1u);
+  }
+  else {
+    const Bucket& localBucket = *bulk.buckets(xField.entity_rank())[localMinMaxInfo.bucketId];
+    localEntityId = bulk.identifier(localBucket[localMinMaxInfo.entityIndex]);
+    stk::all_reduce_minloc(bulk.parallel(), &localMinValue, &localEntityId, &globalMinValue, &globalEntityId, 1u);
+  }
 
-    Scalar priv_tmp;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<Scalar> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamin(x.size(),x.data())]);
-
-        if (priv_tmp < local_amin) {
-            local_amin = priv_tmp;
-        }
-    }
-
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-    unfix_omp_threads(orig_thread_count);
-    return glob_amin;
-}
-
-template<class Scalar>
-inline
-Scalar field_amin(const Field<Scalar> & xField, const Selector& selector)
-{
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    return field_amin(xField,selector,comm);
-}
-
-template<class Scalar>
-inline
-Scalar field_amin(const Field<Scalar> & xField)
-{
-    const Selector selector = selectField(xField);
-    return field_amin(xField,selector);
-}
-
-template<class Scalar>
-inline
-Entity INTERNAL_field_eamin_complex(const FieldBase& xField, const Selector& selector) 
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamin;
-    double priv_amin;
-    Entity priv_result;
-    double local_amin = std::numeric_limits<double>::max();
-    Entity local_result;
-    Entity glob_result;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamin,priv_amin,priv_result)
-    {
-#endif
-        priv_amin = std::numeric_limits<double>::max();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:local_amin)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<std::complex<Scalar>> x(xField, b);
-            priv_iamin = FortranBLAS<std::complex<Scalar> >::iamin(x.size(),x.data());
-
-            if (std::norm(x[priv_iamin]) < priv_amin) {
-                priv_result = b[priv_iamin];
-                priv_amin = std::norm(x[priv_iamin]);
-                local_amin = priv_amin;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin == local_amin) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId glob_EntityId = local_EntityId;
-    double glob_amin = local_amin;
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-    if (glob_EntityId == local_EntityId) {
-        glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        glob_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
-}
-
-template<class Scalar>
-inline
-Entity INTERNAL_field_eamin(const FieldBase& xField, const Selector& selector) 
-{
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    int priv_iamin;
-    double priv_amin;
-    Entity priv_result;
-    double local_amin = std::numeric_limits<double>::max();
-    Entity local_result;
-    Entity glob_result;
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel private(priv_iamin,priv_amin,priv_result)
-    {
-#endif
-        priv_amin = std::numeric_limits<double>::max();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp for schedule(static) reduction(min:local_amin)
-#endif
-        for(size_t i=0; i < buckets.size(); i++) {
-            Bucket & b = *buckets[i];
-            BucketSpan<Scalar> x(xField, b);
-            priv_iamin = FortranBLAS<Scalar>::iamin(x.size(),x.data());
-
-            if ( std::abs(x[priv_iamin]) < priv_amin) {
-                priv_result = b[priv_iamin];
-                priv_amin = std::abs(x[priv_iamin]);
-                local_amin = priv_amin;
-            }
-        }
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        if (priv_amin==local_amin) {
-#endif
-            local_result = priv_result;
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-        }
-    }
-#endif
-
-    EntityId local_EntityId = xField.get_mesh().identifier(local_result);
-    EntityId glob_EntityId = local_EntityId;
-    double glob_amin = local_amin;
-    stk::all_reduce_minloc(xField.get_mesh().parallel(),&local_amin,&local_EntityId,&glob_amin,&glob_EntityId,1u);
-   if (glob_EntityId == local_EntityId) {
-        glob_result = xField.get_mesh().get_entity(xField.entity_rank(),glob_EntityId);
-    } else {
-        glob_result = Entity();
-    }
-    unfix_omp_threads(orig_thread_count);
-    return glob_result;
+  if (globalEntityId == localEntityId) {
+    return bulk.get_entity(xField.entity_rank(), globalEntityId);
+  } else {
+    return Entity();
+  }
 }
 
 inline
 Entity field_eamin(const FieldBase& xField, const Selector& selector)
 {
-    if (xField.data_traits().type_info == typeid(double)) {
-        return INTERNAL_field_eamin<double>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(float)) {
-        return INTERNAL_field_eamin<float>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
-        return INTERNAL_field_eamin_complex<double>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
-        return INTERNAL_field_eamin_complex<float>(xField,selector);
-    } else if (xField.data_traits().type_info == typeid(int)) {
-        return INTERNAL_field_eamin<int>(xField,selector);
-    } else {
-        STK_ThrowAssertMsg(false,"Error in field_eamin; field is of type "<<xField.data_traits().type_info.name()<<" which is not supported");
-    }
-    return stk::mesh::Entity();
+  if (xField.data_traits().type_info == typeid(double)) {
+    return field_eamin<double>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(float)) {
+    return field_eamin<float>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<double>)) {
+    return field_eamin<std::complex<double>>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(std::complex<float>)) {
+    return field_eamin<std::complex<float>>(xField, selector);
+  }
+  else if (xField.data_traits().type_info == typeid(int)) {
+    return field_eamin<int>(xField, selector);
+  }
+  else {
+    STK_ThrowErrorMsg("Error in field_eamin(): Field is of type " << xField.data_traits().type_info.name() <<
+                      ", which is not supported.");
+  }
+  return stk::mesh::Entity();
 }
 
 inline
 Entity field_eamin(const FieldBase& xField)
 {
-    const Selector selector = selectField(xField);
-    return field_eamin(xField,selector);
+  const Selector selector = selectField(xField);
+  return field_eamin(xField, selector);
 }
 
-template<class Scalar>
+template <typename T>
 inline
-void field_amin(std::complex<Scalar>& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
+Entity field_eamin(const Field<T>& xField)
 {
-    STK_ThrowRequire( is_compatible<std::complex<Scalar>>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        BucketSpan<std::complex<Scalar>> x(xField, *buckets[i]);
-        priv_tmp = std::abs(x[FortranBLAS<std::complex<Scalar> >::iamin(x.size(),x.data())]);
-
-        if (priv_tmp < local_amin) {
-            local_amin = priv_tmp;
-        }
-    }
-
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-    result = std::complex<Scalar>(glob_amin,0.0);
-    unfix_omp_threads(orig_thread_count);
+  const Selector selector = selectField(xField);
+  return field_eamin(xField, selector);
 }
 
-template<class Scalar>
-inline
-void field_amin(Scalar& result, const FieldBase& xField, const Selector& selector, const MPI_Comm comm)
-{
-    STK_ThrowRequire( is_compatible<Scalar>(xField) );
-
-    BucketVector const& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector & xField.mesh_meta_data().locally_owned_part());
-
-    Scalar priv_tmp;
-    Scalar local_amin = std::numeric_limits<Scalar>::max();
-
-    int orig_thread_count = fix_omp_threads();
-#ifdef OPEN_MP_ACTIVE_FIELDBLAS_HPP
-#pragma omp parallel for schedule(static) reduction(min:local_amin) private(priv_tmp)
-#endif
-    for(size_t i=0; i < buckets.size(); i++) {
-        Bucket & b = *buckets[i];
-        BucketSpan<Scalar> x(xField, b);
-        priv_tmp = std::abs(x[FortranBLAS<Scalar>::iamin(x.size(),x.data())]);
-
-        if (priv_tmp < local_amin) {
-            local_amin = priv_tmp;
-        }
-    }
-    Scalar glob_amin = local_amin;
-    stk::all_reduce_min(comm,&local_amin,&glob_amin,1u);
-    result = glob_amin;
-    unfix_omp_threads(orig_thread_count);
-}
-
-template<class Scalar>
-inline
-void field_amin(Scalar& result, const FieldBase& xField, const Selector& selector)
-{
-    const MPI_Comm comm = xField.get_mesh().parallel();
-    field_amin(result,xField,selector,comm);
-}
-
-template<class Scalar>
-inline
-void field_amin(Scalar& result, const FieldBase& xField)
-{
-    const Selector selector = selectField(xField);
-    field_amin(result,xField,selector);
-}
 
 } // mesh
 } // stk

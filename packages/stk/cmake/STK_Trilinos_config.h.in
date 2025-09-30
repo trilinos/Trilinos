@@ -54,7 +54,7 @@
 
 #cmakedefine STK_USE_DEVICE_MESH
 
-#cmakedefine STK_DEBUG_FIELD_SYNC
+#cmakedefine STK_UNIFIED_MEMORY
 
 #cmakedefine STK_VOLATILE_SIMD
 

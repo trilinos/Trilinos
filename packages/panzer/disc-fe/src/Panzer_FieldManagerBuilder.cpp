@@ -229,6 +229,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
     WorksetDescriptor wd = panzer::bcDescriptor(*bc);
     const Teuchos::RCP<std::map<unsigned,panzer::Workset> >
       currentWkst = getWorksetContainer()->getSideWorksets(wd);
+
     if (currentWkst.is_null()) continue;
 
     BCType bc_type = bc->bcType();

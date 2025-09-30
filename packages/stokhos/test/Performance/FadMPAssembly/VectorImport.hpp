@@ -90,8 +90,8 @@ private:
              std::is_same< typename VectorType::array_layout , Kokkos::LayoutRight >::value,
              "Kokkos::Example::VectorImport Assert Fail: rank != 1 or array_layout != LayoutRight" );
 
-  typedef typename VectorType::HostMirror HostVectorType ;
-  typedef typename CommMessageType::HostMirror HostCommMessageType;
+  typedef typename VectorType::host_mirror_type HostVectorType ;
+  typedef typename CommMessageType::host_mirror_type HostCommMessageType;
 
   enum { ReceiveInPlace =
     std::is_same< typename VectorType::memory_space ,

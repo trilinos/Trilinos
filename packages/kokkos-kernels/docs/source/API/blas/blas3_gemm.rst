@@ -1,7 +1,7 @@
 KokkosBlas::gemm
 ################
 
-Defined in header: :code:`KokkosBlas2_gemm.hpp`
+Defined in header: :code:`KokkosBlas3_gemm.hpp`
 
 .. code:: cppkokkos
 

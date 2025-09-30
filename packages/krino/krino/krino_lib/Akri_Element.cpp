@@ -292,12 +292,12 @@ ElementObj::have_refined_edges() const
   return false;
 }
 
-void ElementObj::cut_interior_intersection_point(CDMesh & mesh, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains)
+void ElementObj::cut_interior_intersection_point(CDMesh & /*mesh*/, const stk::math::Vector3d & /*pCoords*/, const std::vector<int> & /*sortedDomains*/)
 {
   throw std::runtime_error("Incorrect usage of ElementObj.  The type of element cannot cut_interior_intersection_point.");
 }
 
-void ElementObj::cut_face_intersection_point(const int iFace, const stk::math::Vector3d & pCoords, const std::vector<int> & sortedDomains)
+void ElementObj::cut_face_intersection_point(const int /*iFace*/, const stk::math::Vector3d & /*pCoords*/, const std::vector<int> & /*sortedDomains*/)
 {
   throw std::runtime_error("Incorrect usage of ElementObj.  The type of element cannot cut_face_intersection_point.");
 }
@@ -694,7 +694,7 @@ static IntersectionPointFilter
 keep_all_intersecion_points_filter()
 {
   auto filter =
-  [](const std::vector<stk::mesh::Entity> & intersectionPointNodes, const std::vector<int> & intersectionPointSortedDomains)
+  [](const std::vector<stk::mesh::Entity> & /*intersectionPointNodes*/, const std::vector<int> & /*intersectionPointSortedDomains*/)
   {
     return true;
   };

@@ -90,7 +90,7 @@
     <parameter>
       <name>fuse prolongation and update</name>
       <type>bool</type>
-      <default>false</default>
+      <default>true</default>
       <description>Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.</description>
       <visible>false</visible>
     </parameter>
@@ -428,12 +428,43 @@
     -->
 
     <parameter>
+      <name>aggregation: symmetrize graph after dropping</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Symmetrize the graph used for aggregation.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: use blocking</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Drop connections between different blocks. Blocks are given by a vector "BlockNumber" of scalar type LocalOrdinal that is passed via the "user data" list.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: drop scheme</name>
       <type>string</type>
       <default>"classical"</default>
       <description>Connectivity dropping scheme for a graph used in
-      aggregation. Possible values: "classical", "distance laplacian",
-      "unsupported vector smoothing"</description>
+      aggregation. Possible values: "point-wise" and "cut-drop". "signed classical sa", "classical", "distance laplacian", "signed classical", "block diagonal", "block diagonal classical", "block diagonal distance laplacian", "block diagonal signed classical", "block diagonal colored signed classical", "signed classical distance laplacian", "signed classical sa distance laplacian" are also allowed, but discouraged. Instead, the corresponding combination of "aggregation: strength-of-connection: matrix", "aggregation: strength-of-connection: measure" and "aggregation: drop scheme" should be used.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: strength-of-connection: matrix</name>
+      <type>string</type>
+      <default>"A"</default>
+      <description>The matrix that is used for constructing the graph used for aggregation. Possible values: "A" (meaning the level matrix itself) and "distance laplacian".</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: strength-of-connection: measure</name>
+      <type>string</type>
+      <default>"smoothed aggregation"</default>
+      <description>The strength measure used for constructing the graph. Possible values: "smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben", "unscaled".</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -1412,6 +1443,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>combine: useMaxLevels</name>
+      <type>bool</type>
+      <default>false</default>
+      <description> Used with multigrid algorithm 'combine'. When 'true', use the maximum number of levels across all sub-block hierarchies. </description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>interp: build coarse coordinates</name>
       <type>bool</type>
       <default>true</default>
@@ -1472,6 +1512,15 @@ Only used when tentative: calculate qr is set to false.</description>
       <type>bool</type>
       <default>true</default>
       <description>Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>filtered matrix: lumping choice</name>
+      <type>string</type>
+      <default>"diag lumping"</default>
+      <description>Can be no lumping (no modification to kept entries), diag lumping (modify diagonal to maintain row sums), or distributed lumping (modify kept nonzeros in a fashion proportional to their magnitude to preserve row sums). </description>
+      <visible>false</visible>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
@@ -1537,6 +1586,16 @@ Only used when tentative: calculate qr is set to false.</description>
       <visible>false</visible>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
+
+    <parameter>
+      <name>filtered matrix: count negative diagonals</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Counts the number of negative diagonals (involves MPI communication).</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
 
     <parameter>
       <name>matrix: compute analysis</name>
@@ -1827,6 +1886,25 @@ Only used when tentative: calculate qr is set to false.</description>
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>repartition: put on single proc</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Number of rows below which we always repartition to a single rank</description>
+      <name-ML>repartition: put on single proc</name-ML>
+      <default-ML>5000</default-ML>
+      <visible>false</visible>
+      <description-ML>Number of rows below which we always repartition to a single rank</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>repartition: send type</name>
+      <type>string</type>
+      <visible>false</visible>
+      <default>""</default>
+      <description>Tpetra 'Send type' to use in repartitioning</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
 
   </rebalancing>
 

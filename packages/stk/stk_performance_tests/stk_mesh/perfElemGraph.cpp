@@ -13,7 +13,6 @@
 #include <tokenize.h>                   // for tokenize
 #include <cmath>                        // for atan2, cos, sin
 #include <cstdlib>                      // for strtod, nullptr, strtol, exit, etc
-#include <cstring>                      // for memcpy
 #include <iomanip>                      // for operator<<, setw
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <string>                       // for string, operator==, etc
@@ -96,15 +95,18 @@ public:
     m_stkIo.write_output_mesh(m_fileHandler);
   }
 
-  void deactivate_element(stk::mesh::EntityId elemId)
+  template <typename FieldDataType>
+  void deactivate_element(const FieldDataType& statusFieldData, stk::mesh::EntityId elemId)
   {
     stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
-    *stk::mesh::field_data(m_statusField, elem) = 1;
+    auto statusValues = statusFieldData.entity_values(elem);
+    statusValues() = 1;
   }
 
   void animate(const std::vector<stk::mesh::EntityId> elemIds, int numSteps)
   {
     initialize_status_field();
+    auto statusFieldData = m_statusField.data<stk::mesh::ReadWrite>();
 
     int numElem = elemIds.size();
 
@@ -113,7 +115,7 @@ public:
       if((0 != m_time) && (m_time <= numElem))
       {
         stk::mesh::EntityId elemId = elemIds[m_time-1];
-        deactivate_element(elemId);
+        deactivate_element(statusFieldData, elemId);
       }
 
       m_stkIo.begin_output_step(m_fileHandler, m_time);

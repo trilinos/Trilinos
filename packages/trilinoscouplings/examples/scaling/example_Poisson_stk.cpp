@@ -345,8 +345,7 @@ void Apply_Dirichlet_BCs(std::vector<int> &BCNodes, crs_matrix_type & A, multive
 /**********************************************************************************/
 
 
-int main(int argc, char *argv[]) {
-
+int main_(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using entity_type = stk::mesh::Entity;
@@ -363,7 +362,6 @@ int main(int argc, char *argv[]) {
   const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
   const stk::mesh::EntityRank ELEMENT_RANK = stk::topology::ELEMENT_RANK;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
   RCP<const Teuchos::MpiComm<int> > MpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(Comm);
   int numRanks = Comm->getSize();
@@ -1061,6 +1059,9 @@ int main(int argc, char *argv[]) {
     if (rhsFilename != "") {
       writer_type::writeDenseFile (rhsFilename, rhsVector);
     }
+    if (initialGuessFilename != "") {
+      writer_type::writeDenseFile (initialGuessFilename, lhsVector);
+    }
     if (coordsFilename != "") {
       writer_type::writeDenseFile (coordsFilename, nCoord);
     }
@@ -1237,7 +1238,7 @@ void evaluateMaterialTensor(ArrayOut &        matTensorValues,
 
   int numWorksetCells  = evaluationPoints.dimension(0);
   int numPoints        = evaluationPoints.dimension(1);
-  int spaceDim         = evaluationPoints.dimension(2);
+  int spaceDim2         = evaluationPoints.dimension(2);
 
   double material[3][3];
 
@@ -1247,12 +1248,12 @@ void evaluateMaterialTensor(ArrayOut &        matTensorValues,
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
       double z = 0.0;
-      if(spaceDim==3) z = evaluationPoints(cell, pt, 2);
+      if(spaceDim2==3) z = evaluationPoints(cell, pt, 2);
 
       materialTensor<double>(material, x, y, z);
 
-      for(int row = 0; row < spaceDim; row++){
-        for(int col = 0; col < spaceDim; col++){
+      for(int row = 0; row < spaceDim2; row++){
+        for(int col = 0; col < spaceDim2; col++){
           matTensorValues(cell, pt, row, col) = material[row][col];
         }
       }
@@ -1312,7 +1313,7 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 
   int numWorksetCells  = evaluationPoints.dimension(0);
   int numPoints = evaluationPoints.dimension(1);
-  int spaceDim  = evaluationPoints.dimension(2);
+  int spaceDim2  = evaluationPoints.dimension(2);
 
   double gradient[3];
 
@@ -1322,12 +1323,12 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
       double z = 0.0;
-      if(spaceDim==3)
+      if(spaceDim2==3)
 	z = evaluationPoints(cell, pt, 2);
 
       exactSolutionGrad<double>(gradient, x, y, z);
 
-      for(int row = 0; row < spaceDim; row++){
+      for(int row = 0; row < spaceDim2; row++){
         exactSolutionGradValues(cell, pt, row) = gradient[row];
       }
     }
@@ -1354,11 +1355,13 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   using namespace TrilinosCouplings::TpetraIntrepidPoissonExample;
   using MT = Teuchos::ScalarTraits<Tpetra_MultiVector::scalar_type>::magnitudeType;
 
-  // FIXME: This should be CLI controlled
-  double tol = 1e-10;
-  int maxNumIters = 200;
-  int num_steps = 1;
-  std::string solverName = "cg";
+
+  // Solver params
+  std::string solverName = MLList.get("solver","cg");
+  int maxNumIters = MLList.get("Maximum Iterations",200);
+  double tol = MLList.get("Convergence Tolerance",1e-10);
+  int num_steps = MLList.get("Number of Time Steps",1);
+
 
   // Multigrid Hierarchy
   Teuchos::ParameterList mueluParams;
@@ -1453,4 +1456,13 @@ int getDimension( const ShardsCellTopology & cellTopology) {
     TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
 			       "Unknown cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4, Quadrilateral_4 or Triangle_3");
   }
+}
+
+
+int main(int argc, char *argv[]) {
+  Kokkos::initialize(argc,argv);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
+
+  main_(argc,argv);
+  Kokkos::finalize();
 }

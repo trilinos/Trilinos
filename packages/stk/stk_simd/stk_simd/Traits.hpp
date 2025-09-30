@@ -42,6 +42,7 @@ static_assert(false, "Do not include simd impl files directly. Only include stk_
 #define STK_SIMD_TRAITS_H
 
 #include <cmath>
+#include <type_traits>
 
 namespace stk {
 namespace simd {
@@ -65,10 +66,22 @@ struct SimdLength<float> {
 };
 
 template <>
+struct SimdLength<int> {
+  static constexpr int length = 1;
+};
+
+template <>
 struct SimdLength<simd::Float> {
   static constexpr int length = simd::nfloats;
 };
 
+template <class T>
+struct enable_if_supported_real
+    : std::enable_if<std::is_same_v<std::decay_t<T>, double> || std::is_same_v<std::decay_t<T>, float>> {
+};
+
+template <class T>
+using enable_if_supported_real_t = typename enable_if_supported_real<T>::type;
 }
 }
 

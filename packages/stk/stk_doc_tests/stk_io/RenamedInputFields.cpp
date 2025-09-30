@@ -74,10 +74,11 @@ protected:
   void expect_field_data(stk::mesh::FieldBase *field, double expected)
   {
     stk::mesh::Entity node11 = get_bulk().get_entity(stk::topology::NODE_RANK, 11);
-    double *data = static_cast<double *>(stk::mesh::field_data(*field, node11));
-    ASSERT_TRUE(data != nullptr);
+    auto fieldData = field->data<double,stk::mesh::ReadOnly>();
+    ASSERT_TRUE(field->defined_on(node11));
+    auto nodeData = fieldData.entity_values(node11);
     const double epsilon = 1e-6;
-    EXPECT_NEAR(expected, *data, epsilon);
+    EXPECT_NEAR(expected, nodeData(), epsilon);
   }
 
   const std::string inputFileName = "nodesetData.exo";

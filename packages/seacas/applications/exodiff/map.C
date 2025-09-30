@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,16 +7,17 @@
 #include <algorithm>
 #include <cfloat>
 #include <cstdlib>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <iomanip>
 #include <numeric>
+#include <smart_assert.h>
 
 #include "ED_SystemInterface.h"
 #include "Tolerance.h"
 #include "exo_block.h"
 #include "exo_read.h"
-#include "fmt/ostream.h"
 #include "iqsort.h"
-#include "smart_assert.h"
 #include "util.h"
 
 namespace {
@@ -146,7 +147,7 @@ void Compute_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map, Exo_Re
       double mid_z = 0.0;
 
       for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
-        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= (INT)num_nodes);
+        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= static_cast<INT>(num_nodes))(conn1[j])(num_nodes);
         mid_x += x1_f[conn1[j] - 1];
         if (dim > 1) {
           mid_y += y1_f[conn1[j] - 1];
@@ -439,7 +440,7 @@ void Compute_Partial_Maps(std::vector<INT> &node_map, std::vector<INT> &elmt_map
       double mid_z = 0.0;
 
       for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
-        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= (INT)num_nodes1);
+        SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= static_cast<INT>(num_nodes1));
         mid_x += x1_f[conn1[j] - 1];
         if (dim > 1) {
           mid_y += y1_f[conn1[j] - 1];
@@ -625,7 +626,7 @@ namespace {
 
     // See if there is any mapping happening...
     bool mapped = false;
-    for (INT i = 0; i < (INT)count; i++) {
+    for (INT i = 0; i < static_cast<INT>(count); i++) {
       if (i != map[i]) {
         mapped = true;
         break;
@@ -686,7 +687,7 @@ void Dump_Maps(const std::vector<INT> &node_map, const std::vector<INT> &elmt_ma
   bool one_to_one = true;
   if (!node_map.empty()) {
     for (ijk = 0; ijk < file1.Num_Nodes(); ++ijk) {
-      if ((INT)ijk != node_map[ijk]) {
+      if (static_cast<INT>(ijk) != node_map[ijk]) {
         one_to_one = false;
         break;
       }
@@ -705,7 +706,7 @@ void Dump_Maps(const std::vector<INT> &node_map, const std::vector<INT> &elmt_ma
   one_to_one = true;
   if (!elmt_map.empty()) {
     for (ijk = 0; ijk < file1.Num_Elements(); ++ijk) {
-      if ((INT)ijk != elmt_map[ijk]) {
+      if (static_cast<INT>(ijk) != elmt_map[ijk]) {
         one_to_one = false;
         break;
       }
@@ -900,7 +901,7 @@ namespace {
 
         index = i;
       }
-    } while (++i < (int64_t)N && !interFace.coord_tol.Diff(x[id[i]], x0));
+    } while (++i < static_cast<int64_t>(N) && !interFace.coord_tol.Diff(x[id[i]], x0));
 
     interFace.coord_tol.type = save_tolerance_type;
     return index;

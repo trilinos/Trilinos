@@ -502,36 +502,78 @@ void communicateNeighborObjectBBs(
     std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > &boxA_proc_box_array,
     std::vector<stk::search::ObjectBoundingBox_T<RangeBox> > &boxB_proc_box_array)
 {
-  typedef stk::search::ObjectBoundingBox_T<DomainBox> DomObjBBoxT;
+  using DomObjBBoxT = stk::search::ObjectBoundingBox_T<DomainBox>;
+  using RngObjBBoxT = stk::search::ObjectBoundingBox_T<RangeBox>;
 
-  stk::CommNeighbors commneighborsR2D(mpiComm, neighborRangeRanks, neighborDomainRanks);
+  if (stk::util::get_common_coupling_version() < 18) {
 
-  for (int nbrRangeProc : neighborRangeRanks) {
-    stk::CommBufferV& procBuff = commneighborsR2D.send_buffer(nbrRangeProc);
-    procBuff.pack<DomObjBBoxT>(domainObjBBox);
+    stk::CommNeighbors commneighborsR2D(mpiComm, neighborRangeRanks, neighborDomainRanks);
+
+    for (int nbrRangeProc : neighborRangeRanks) {
+      stk::CommBufferV& procBuff = commneighborsR2D.send_buffer(nbrRangeProc);
+      procBuff.pack<DomObjBBoxT>(domainObjBBox);
+    }
+    commneighborsR2D.communicate();
+    for(int nbrDomProc : neighborDomainRanks) {
+      stk::CommBufferV& procBuff = commneighborsR2D.recv_buffer(nbrDomProc  );
+      DomObjBBoxT box;
+      procBuff.unpack(box);
+      boxA_proc_box_array[box.get_object_number()] = box;
+    }
+
+    stk::CommNeighbors commneighborsD2R(mpiComm, neighborDomainRanks, neighborRangeRanks);
+
+    for (int nbrDomainProc : neighborDomainRanks) {
+      stk::CommBufferV& procBuff = commneighborsD2R.send_buffer(nbrDomainProc);
+      procBuff.pack<RngObjBBoxT>(rangeObjBBox);
+    }
+    commneighborsD2R.communicate();
+    for(int nbrRngProc : neighborRangeRanks) {
+      stk::CommBufferV& procBuff = commneighborsD2R.recv_buffer(nbrRngProc);
+      RngObjBBoxT box;
+      procBuff.unpack(box);
+      boxB_proc_box_array[box.get_object_number()] = box;
+    }
+
   }
-  commneighborsR2D.communicate();
-  for(int nbrDomProc : neighborDomainRanks) {
-    stk::CommBufferV& procBuff = commneighborsR2D.recv_buffer(nbrDomProc  );
-    DomObjBBoxT box;
-    procBuff.unpack(box);
-    boxA_proc_box_array[box.get_object_number()] = box;
-  }
+  else {
 
-  typedef stk::search::ObjectBoundingBox_T<RangeBox> RngObjBBoxT;
+    stk::CommSparse commSparseR2D(mpiComm);
 
-  stk::CommNeighbors commneighborsD2R(mpiComm, neighborDomainRanks, neighborRangeRanks);
+    stk::pack_and_communicate(commSparseR2D,
+      [&]() {
+        for (int nbrRangeProc : neighborRangeRanks) {
+          stk::CommBuffer& buffer = commSparseR2D.send_buffer(nbrRangeProc);
+          buffer.pack<DomObjBBoxT>(domainObjBBox);
+        }
+      }
+    );
 
-  for (int nbrDomainProc : neighborDomainRanks) {
-    stk::CommBufferV& procBuff = commneighborsD2R.send_buffer(nbrDomainProc);
-    procBuff.pack<RngObjBBoxT>(rangeObjBBox);
-  }
-  commneighborsD2R.communicate();
-  for(int nbrRngProc : neighborRangeRanks) {
-    stk::CommBufferV& procBuff = commneighborsD2R.recv_buffer(nbrRngProc);
-    RngObjBBoxT box;
-    procBuff.unpack(box);
-    boxB_proc_box_array[box.get_object_number()] = box;
+    for (int nbrDomProc : neighborDomainRanks) {
+      stk::CommBuffer& buffer = commSparseR2D.recv_buffer(nbrDomProc);
+      DomObjBBoxT box;
+      buffer.unpack(box);
+      boxA_proc_box_array[box.get_object_number()] = box;
+    }
+
+    stk::CommSparse commSparseD2R(mpiComm);
+
+    stk::pack_and_communicate(commSparseD2R,
+      [&]() {
+        for (int nbrDomainProc : neighborDomainRanks) {
+          stk::CommBuffer& buffer = commSparseD2R.send_buffer(nbrDomainProc);
+          buffer.pack<RngObjBBoxT>(rangeObjBBox);
+        }
+      }
+    );
+
+    for (int nbrRngProc : neighborRangeRanks) {
+      stk::CommBuffer& buffer = commSparseD2R.recv_buffer(nbrRngProc);
+      RngObjBBoxT box;
+      buffer.unpack(box);
+      boxB_proc_box_array[box.get_object_number()] = box;
+    }
+
   }
 }
 

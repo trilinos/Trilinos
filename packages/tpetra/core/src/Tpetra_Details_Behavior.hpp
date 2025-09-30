@@ -11,6 +11,7 @@
 #define TPETRA_DETAILS_BEHAVIOR_HPP
 
 #include <stddef.h>
+#include <string>
 
 /// \file Tpetra_Details_Behavior.hpp
 /// \brief Declaration of Tpetra::Details::Behavior, a class that
@@ -89,53 +90,53 @@ namespace Details {
 /// second method, the default values of both TPETRA_VERBOSE and TPETRA_DEBUG
 /// is OFF.
 class Behavior {
-public:
+ public:
   /// \brief Whether Tpetra is in debug mode.
   ///
   /// "Debug mode" means that Tpetra does extra error checks that may
   /// require more MPI communication or local computation.  It may
   /// also produce more detailed error messages, and more copious
   /// debug output.
-  static bool debug ();
+  static bool debug();
 
   /// \brief Whether the given Tpetra object is in debug mode.
   ///
   /// \param name [in] Name of the Tpetra object.  Typically, the object would
   ///        be a class name, e.g., "CrsGraph" or method, e.g.,
   ///        "CrsGraph::insertLocalIndices".
-  static bool debug (const char name[]);
+  static bool debug(const char name[]);
 
   /// \brief Whether Tpetra is in verbose mode.
   ///
   /// "Verbose mode" means that Tpetra prints copious debug output to
   /// std::cerr on every MPI process.  This is a LOT of output!  You
   /// really don't want to do this when running on many MPI processes.
-  static bool verbose ();
+  static bool verbose();
 
   /// \brief Whether the given Tpetra object is in verbose mode.
   ///
   /// \param name [in] Name of the Tpetra object.  Typically, the object would
   ///        be a class name, e.g., "CrsGraph" or method, e.g.,
   ///        "CrsGraph::insertLocalIndices".
-  static bool verbose (const char name[]);
+  static bool verbose(const char name[]);
 
   /// \brief Disable verbose mode, programatically
-  static void disable_verbose_behavior ();
+  static void disable_verbose_behavior();
 
   /// \brief Enable verbose mode, programatically
-  static void enable_verbose_behavior ();
+  static void enable_verbose_behavior();
 
   /// \brief Whether Tpetra is in timing mode.
   ///
   /// "Timing mode" means that Tpetra enables code that instruments internal timing.
-  static bool timing ();
+  static bool timing();
 
   /// \brief Whether the given Tpetra object is in timing mode.
   ///
   /// \param name [in] Name of the Tpetra object.  Typically, the object would
   ///        be a class name, e.g., "CrsGraph" or method, e.g.,
   ///        "CrsGraph::insertLocalIndices".
-  static bool timing (const char name[]);
+  static bool timing(const char name[]);
 
   /// \brief Disable timing, programatically
   static void disable_timing();
@@ -151,10 +152,10 @@ public:
   /// <tt>TPETRA_ASSUME_GPU_AWARE_MPI</tt> environment variable.
   ///
   /// For a discussion, see Trilinos GitHub issues #1571 and #1088.
-  static bool assumeMpiIsGPUAware ();
+  static bool assumeMpiIsGPUAware();
 
   /// \brief Whether the CUDA_LAUNCH_BLOCKING environment variable has been set.
-  static bool cudaLaunchBlocking ();
+  static bool cudaLaunchBlocking();
 
   /// \brief MPI process count above which
   ///   Tpetra::CrsMatrix::transferAndFillComplete will attempt to do
@@ -164,7 +165,7 @@ public:
   /// each new platform for the correct value.  You may control this
   /// at run time via the <tt>MM_TAFC_OptimizationCoreCount</tt>
   /// environment variable.
-  static int TAFC_OptimizationCoreCount ();
+  static int TAFC_OptimizationCoreCount();
 
   /// \brief Number of entries below which arrays, lists, etc. will be
   ///   printed in debug mode.
@@ -172,7 +173,7 @@ public:
   /// You may control this at run time via the
   /// <tt>TPETRA_VERBOSE_PRINT_COUNT_THRESHOLD</tt> environment
   /// variable.
-  static size_t verbosePrintCountThreshold ();
+  static size_t verbosePrintCountThreshold();
 
   /// \brief Threshold for deciding if a local matrix is "imbalanced" in
   /// the number of entries per row. The threshold is compared against
@@ -182,11 +183,11 @@ public:
   /// average (it is not a proportion between max and average).
   ///
   /// If the "imbalance" of a local matrix is greater than this threshold,
-  /// a different algorithm may be used for some operations like 
+  /// a different algorithm may be used for some operations like
   /// sparse matrix-vector multiply, packAndPrepare, and
   /// unpackAndCombine.  You may control this at run time via the
   /// <tt>TPETRA_ROW_IMBALANCE_THRESHOLD</tt> environment variable.
-  static size_t rowImbalanceThreshold ();
+  static size_t rowImbalanceThreshold();
 
   /// \brief Whether to use the cuSPARSE merge path algorithm to perform
   ///  sparse matrix-multivector products, one vector at a time. Depending on
@@ -202,22 +203,22 @@ public:
   static bool useMergePathMultiVector();
 
   /// \brief Unpack rows of a matrix using hierarchical unpacking
-  static bool hierarchicalUnpack ();
+  static bool hierarchicalUnpack();
 
   /// \brief Size of batch for hierarchical unpacking
-  static size_t hierarchicalUnpackBatchSize ();
+  static size_t hierarchicalUnpackBatchSize();
 
   /// \brief Size of team for hierarchical unpacking
-  static size_t hierarchicalUnpackTeamSize ();
+  static size_t hierarchicalUnpackTeamSize();
 
   /// \brief the threshold for transitioning from device to host
   ///
-  /// If the number of elements in the multivector does not exceed this 
+  /// If the number of elements in the multivector does not exceed this
   /// threshold and the data is on host, then run the calculation on
   /// host.  Otherwise, run on device.
   /// By default this is 10000, but may be altered by the environment
   /// variable TPETRA_VECTOR_DEVICE_THRESHOLD
-  static size_t multivectorKernelLocationThreshold ();
+  static size_t multivectorKernelLocationThreshold();
 
   /// \brief Use Teuchos::Timer in Tpetra::ProfilingRegion
   ///
@@ -251,13 +252,25 @@ public:
   /// <tt>TPETRA_OVERLAP</tt> environment variable.
   static bool overlapCommunicationAndComputation();
 
+  /// \brief Speed up transfers by overlapping computation and communication.
+  ///
+  /// This is enabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_GRANULAR_TRANSFERS</tt> environment variable.
+  static bool enableGranularTransfers();
+
+  /// \brief Default send type
+  ///
+  /// This is defaults to "Send".  You may control this at run time via the
+  /// <tt>TPETRA_DEFAULT_SEND_TYPE</tt> environment variable.
+  static std::string defaultSendType();
+
   /// \brief Add Teuchos timers for all host calls to Kokkos::deep_copy().
   /// This is especially useful for identifying host/device data transfers
   ///
   /// This is disabled by default.  You may control this at run time via the
   /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY</tt> environment variable.
   static bool timeKokkosDeepCopy();
-  
+
   /// \brief Adds verbose output to Kokkos deep_copy timers
   /// by appending source and destination.
   /// This is especially useful for identifying host/device data transfers
@@ -266,7 +279,6 @@ public:
   /// <tt>TPETRA_TIME_KOKKOS_DEEP_COPY_VERBOSE1</tt> environment variable.
   static bool timeKokkosDeepCopyVerbose1();
 
-  
   /// \brief Adds verbose output to Kokkos deep_copy timers
   /// by appending source, destination, and size.
   /// This is especially useful for identifying host/device data transfers
@@ -279,14 +291,14 @@ public:
   ///
   /// This is disabled by default.  You may control this at run time via the
   /// <tt>TPETRA_TIME_KOKKOS_FENCE</tt> environment variable.
-  static bool timeKokkosFence();  
+  static bool timeKokkosFence();
 
-  /// \brief Add Teuchos timers for all host calls to Kokkos::parallel_for(), 
+  /// \brief Add Teuchos timers for all host calls to Kokkos::parallel_for(),
   /// Kokkos::parallel_reduce() and Kokkos::parallel_scan().
   ///
   /// This is disabled by default.  You may control this at run time via the
   /// <tt>TPETRA_TIME_KOKKOS_FUNCTIONS</tt> environment variable.
-  static bool timeKokkosFunctions();  
+  static bool timeKokkosFunctions();
 
   /// \brief Warn if more than this many Kokkos spaces are accessed.
   ///
@@ -298,9 +310,7 @@ public:
   static void reject_unrecognized_env_vars();
 };
 
+}  // namespace Details
+}  // namespace Tpetra
 
-
-} // namespace Details
-} // namespace Tpetra
-
-#endif // TPETRA_DETAILS_BEHAVIOR_HPP
+#endif  // TPETRA_DETAILS_BEHAVIOR_HPP

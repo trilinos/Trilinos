@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include "stk_util/stk_config.h"            // for STK_HAS_MPI
 #ifdef STK_HAS_MPI
@@ -178,7 +178,7 @@ TEST_F(TagManagerTester, TagReuseMultipleComms)
     EXPECT_EQ(static_cast<int>(tag21), 1);
     EXPECT_EQ(static_cast<int>(tag22), 2);
   }  // tags get freed
-  
+
   {
     stk::MPITag tag11 = tag_manager.get_tag(comm1, 1);
     stk::MPITag tag12 = tag_manager.get_tag(comm1, 2);
@@ -231,9 +231,10 @@ TEST_F(TagManagerTester, CommFree_ResetTagRange)
 
     MPI_Comm_free(&comm3);
     MPI_Comm_dup(comm1, &comm3);
-    
+
     stk::MPITag tag4 = tag_manager.get_tag(comm3, 1);
     EXPECT_EQ(static_cast<int>(tag4), 1);
+    MPI_Comm_free(&comm3);
   }
 }
 
@@ -249,9 +250,10 @@ TEST_F(TagManagerTester, CommFree_ResetTagRangeNewScope)
   }
 
   {
-    MPI_Comm comm3 = copy_comm(comm1);   
+    MPI_Comm comm3 = copy_comm(comm1);
     stk::MPITag tag4 = tag_manager.get_tag(comm3, 1);
     EXPECT_EQ(static_cast<int>(tag4), 1);
+    MPI_Comm_free(&comm3);
   }
 }
 
@@ -293,6 +295,10 @@ TEST_F(TagManagerTester, CommFreeMultiple)
     EXPECT_NE(tag31, tags[i]);
     EXPECT_NE(tag41, tags[i]);
   }
+
+  MPI_Comm_free(&comm3);
+  MPI_Comm_free(&comm4);
+  MPI_Comm_free(&comm5);
 }
 
 
@@ -322,6 +328,8 @@ TEST(TagManager, NonSortedCommOrder_DoesntHang)
 
     tagManager->get_tag(comm4);
   }
+  MPI_Comm_free(&comm3);
+  MPI_Comm_free(&comm4);
 }
 
 namespace {

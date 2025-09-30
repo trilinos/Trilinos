@@ -33,9 +33,12 @@ namespace panzer {
 		       const Teuchos::RCP<panzer::GlobalData>& global_data,
 		       PHX::FieldManager<panzer::Traits>& fm) const;
 
+    std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits>>>&
+    getFactories(){return m_factories;}
+
   private:
 
-    std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > > m_factories;
+    std::vector<Teuchos::RCP<panzer::ClosureModelFactory_TemplateManager<panzer::Traits>>> m_factories;
 
   };
 

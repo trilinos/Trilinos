@@ -1,13 +1,13 @@
-// Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
-#include "fmt/color.h"
-#include "fmt/ostream.h"
 #include "util.h"
 #include <cstring> // for nullptr, memset
+#include <fmt/color.h>
+#include <fmt/ostream.h>
 #include <iostream>
 #include <stringx.h>
 #include <unistd.h>
@@ -37,12 +37,12 @@ int name_length()
   return max_name_length;
 }
 
-char **get_name_array(int size, int length)
+char **get_name_array(size_t size, size_t length)
 {
   char **names = nullptr;
   if (size > 0) {
     names = new char *[size];
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
       names[i] = new char[length + 1];
       std::memset(names[i], '\0', length + 1);
     }
@@ -50,9 +50,9 @@ char **get_name_array(int size, int length)
   return names;
 }
 
-void free_name_array(char **names, int size)
+void free_name_array(char **names, size_t size)
 {
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     delete[] names[i];
   }
   delete[] names;

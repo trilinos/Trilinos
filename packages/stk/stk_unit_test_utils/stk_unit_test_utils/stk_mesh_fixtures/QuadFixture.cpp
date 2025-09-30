@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for sort, unique
@@ -192,12 +192,9 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
   {
     // Declare the elements that belong on this process
 
-    std::vector<EntityId>::const_iterator ib = element_ids_on_this_processor.begin();
-    const std::vector<EntityId>::const_iterator ie = element_ids_on_this_processor.end();
     stk::mesh::EntityIdVector elem_nodes(4) ;
 
-    for (; ib != ie; ++ib) {
-      EntityId entity_id = *ib;
+    for (EntityId entity_id : element_ids_on_this_processor) {
       unsigned ix = 0, iy = 0;
       elem_x_y(entity_id, ix, iy);
 
@@ -221,14 +218,14 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
         unsigned nx = 0, ny = 0;
         node_x_y(elem_nodes[i], nx, ny);
 
-        Scalar * data = stk::mesh::field_data( *m_coord_field , node );
+        auto data = m_coord_field->data().entity_values(node);
 
         // The CoordinateMappings are used for 2D and 3D so make sure we give it enough space to write to.
         std::array<double, 3> temp;
         coordMap.getNodeCoordinates(temp.data(), nx, ny, 0);
 
-        data[0] = temp[0];
-        data[1] = temp[1] ;
+        data(0_comp) = temp[0];
+        data(1_comp) = temp[1] ;
       }
     }
   }
@@ -400,12 +397,9 @@ void Quad9Fixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_pro
 
   // Declare the elements that belong on this process
 
-  std::vector<EntityId>::const_iterator ib = element_ids_on_this_processor.begin();
-  const std::vector<EntityId>::const_iterator ie = element_ids_on_this_processor.end();
   stk::mesh::EntityIdVector elemNodes ;
 
-  for (; ib != ie; ++ib) {
-    EntityId entity_id = *ib;
+  for (EntityId entity_id : element_ids_on_this_processor) {
     elemNodes = node_ids( entity_id );
     std::vector<double> nodeCoords = node_coords(entity_id);
 
@@ -420,10 +414,10 @@ void Quad9Fixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_pro
       STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");
 
-      Scalar * data = stk::mesh::field_data( *m_coord_field , node );
+      auto data = m_coord_field->data().entity_values(node);
 
-      data[0] = nodeCoords[2*i+0];
-      data[1] = nodeCoords[2*i+1] ;
+      data(0_comp) = nodeCoords[2*i+0];
+      data(1_comp) = nodeCoords[2*i+1] ;
     }
   }
 

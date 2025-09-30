@@ -82,9 +82,9 @@ void parallel_sum(const BulkData& mesh, const std::vector<const FieldBase*>& fie
 void parallel_max(const BulkData& mesh, const std::vector<const FieldBase*>& fields);
 void parallel_min(const BulkData& mesh, const std::vector<const FieldBase*>& fields);
 
-void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
-void parallel_max_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
-void parallel_min_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic = true);
+void parallel_max_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic = true);
+void parallel_min_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic = true);
 
 } // namespace mesh
 } // namespace stk

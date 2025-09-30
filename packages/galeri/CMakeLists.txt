@@ -10,7 +10,7 @@ TRIBITS_PACKAGE(Galeri)
 # B) Set up package-specific options
 #
 
-# ...
+TRIBITS_ADD_DEBUG_OPTION()
 
 #
 # C) Add the libraries, tests, and examples
@@ -24,7 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
 ENDIF()
 
 #this dir only had "EXTRA_DIST" files in it
-#ADD_SUBDIRECTORY(src-fem)  
+#ADD_SUBDIRECTORY(src-fem)
 
 IF (${PACKAGE_NAME}_ENABLE_Xpetra)
   ADD_SUBDIRECTORY(src-xpetra)
@@ -40,7 +40,7 @@ TRIBITS_ADD_EXAMPLE_DIRECTORIES(example example-fem example-xpetra example-tpetr
 #
 
 TRIBITS_EXCLUDE_FILES(
-  src-pfem   
+  src-pfem
   example-pfem
   doc/AdvDiffSquare.png
   doc/L.*.png

@@ -53,10 +53,11 @@ int BalanceSettings::getGraphVertexWeight(stk::topology /*type*/) const
 double BalanceSettings::getFieldVertexWeight(const stk::mesh::BulkData &bulkData, stk::mesh::Entity entity, int criteria_index) const
 {
     const stk::mesh::Field<double> &field = *getVertexWeightField(bulkData, criteria_index);
-    const double *weight = stk::mesh::field_data(field, entity);
-    if (weight != nullptr) {
-      STK_ThrowRequireWithSierraHelpMsg(*weight >= 0);
-      return *weight;
+    if (field.defined_on(entity)) {
+      auto fieldData = field.data<stk::mesh::ReadOnly>();
+      auto weight = fieldData.entity_values(entity);
+      STK_ThrowRequireWithSierraHelpMsg(weight() >= 0);
+      return weight();
     }
     else {
       return m_defaultFieldWeight;
@@ -160,6 +161,22 @@ const BlockWeightMultipliers &
 BalanceSettings::getVertexWeightBlockMultipliers() const
 {
   return m_vertexWeightBlockMultipliers;
+}
+
+void BalanceSettings::setCohesiveElements(const std::string & blockName)
+{
+  m_cohesiveElements.push_back(blockName);
+}
+
+const CohesiveElements &
+BalanceSettings::getCohesiveElements() const
+{
+  return m_cohesiveElements;
+}
+
+bool BalanceSettings::hasCohesiveElements() const
+{
+  return !m_cohesiveElements.empty();
 }
 
 bool BalanceSettings::isIncrementalRebalance() const

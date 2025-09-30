@@ -36,6 +36,7 @@
 #include <stk_mesh/base/NgpTypes.hpp>
 #include <stk_mesh/base/NgpField.hpp>
 #include <stk_mesh/base/FieldDataManager.hpp>
+#include <stk_mesh/base/DeviceFieldDataManager.hpp>
 #include <stk_mesh/baseImpl/NgpFieldAux.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/util/FieldDataAllocator.hpp>
@@ -44,21 +45,22 @@
 namespace {
 
 constexpr unsigned bucketCapacity = 4;
-constexpr unsigned numPerEntity = 3;
-constexpr unsigned bytesPerBucket = sizeof(double)*bucketCapacity*numPerEntity;
+constexpr unsigned numScalarsPerEntity = 3;
+constexpr unsigned bytesPerBucket = sizeof(double)*bucketCapacity*numScalarsPerEntity;
+
+template <typename NgpMemSpace>
+using DeviceBucketRawDataType = Kokkos::View<double**, Kokkos::LayoutLeft, NgpMemSpace>;
+template <typename NgpMemSpace>
+using DeviceBucketRawDataCollectionType = Kokkos::View<DeviceBucketRawDataType<NgpMemSpace>*, stk::ngp::HostExecSpace>;
+
+using HostBucketRawDataType = Kokkos::View<double**, Kokkos::LayoutLeft, stk::ngp::HostPinnedSpace>;
+using HostBucketRawDataCollectionType = Kokkos::View<HostBucketRawDataType*, stk::ngp::HostExecSpace>;
 
 class TestTranspose : public ::testing::Test
 {
 public:
-  TestTranspose() {}
-
-  ~TestTranspose()
-  {
-    for(unsigned char* ptr : rawBucketAllocations) {
-      fieldDataAllocator.deallocate(ptr, bytesPerBucket);
-    }
-    rawBucketAllocations.clear();
-  }
+  TestTranspose() = default;
+  ~TestTranspose() = default;
 
   double get_value(unsigned bktIndex, unsigned entityIndex, unsigned component)
   {
@@ -67,85 +69,94 @@ public:
 
   void fill_gold_host_field_data(unsigned numBuckets)
   {
-    for(unsigned bkt=0; bkt<numBuckets; ++bkt) {
-      for(unsigned entityIndex=0; entityIndex<bucketCapacity; ++entityIndex) {
-        for(unsigned comp=0; comp<numPerEntity; ++comp) {
-          goldHostFieldData(bkt,ORDER_INDICES(entityIndex,comp)) = get_value(bkt,entityIndex,comp);
+    for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
+      for (unsigned entityIndex = 0; entityIndex < bucketCapacity; ++entityIndex) {
+        for (unsigned component = 0; component < numScalarsPerEntity; ++component) {
+          goldHostFieldData(bucketId)(entityIndex, component) = get_value(bucketId, entityIndex, component);
         }
       }
     }
   }
 
-  void fill_bucket_pointers(unsigned numBuckets)
+  void fill_host_field_data(unsigned numBuckets)
   {
-    rawBucketAllocations.resize(numBuckets);
-    for(unsigned i=0; i<numBuckets; ++i) {
-      rawBucketAllocations[i] = fieldDataAllocator.allocate(bytesPerBucket);
-      ASAN_UNPOISON_MEMORY_REGION(rawBucketAllocations[i], bytesPerBucket);
-      double* hostBucketPtr = reinterpret_cast<double*>(rawBucketAllocations[i]);
+    rawHostBucketAllocations.resize(numBuckets);
+    for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
+      rawHostBucketAllocations[bucketId] = fieldDataAllocator.host_allocate(bytesPerBucket);
+      ASAN_UNPOISON_MEMORY_REGION(rawHostBucketAllocations[bucketId].data(), bytesPerBucket);
+      double* hostBucketPtr = reinterpret_cast<double*>(rawHostBucketAllocations[bucketId].data());
 
-      for(unsigned entityIndex=0; entityIndex<bucketCapacity; ++entityIndex) {
-        for(unsigned comp=0; comp<numPerEntity; ++comp) {
-          hostBucketPtr[entityIndex*numPerEntity + comp] = get_value(i,entityIndex,comp);
+      for (unsigned entityIndex = 0; entityIndex < bucketCapacity; ++entityIndex) {
+        for (unsigned component = 0; component < numScalarsPerEntity; ++component) {
+          hostBucketPtr[entityIndex*numScalarsPerEntity + component] = get_value(bucketId, entityIndex, component);
         }
       }
-
-      double* deviceBucketPtr = hostBucketPtr;
-
-#ifdef KOKKOS_ENABLE_CUDA
-      cudaError_t status = cudaHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
-      STK_ThrowRequireMsg(status == cudaSuccess, "Something went wrong during cudaHostGetDevicePointer: " + std::string(cudaGetErrorString(status)));
-#elif defined(KOKKOS_ENABLE_HIP)
-      hipError_t status = hipHostGetDevicePointer((void**)&deviceBucketPtr, (void*)hostBucketPtr, 0);
-      STK_ThrowRequireMsg(status == hipSuccess, "Something went wrong during hipHostGetDevicePointer: " + std::string(hipGetErrorString(status)));
-#endif
-
-      hostBucketPtrData(i) = reinterpret_cast<uintptr_t>(deviceBucketPtr);
     }
-
-    Kokkos::deep_copy(deviceBucketPtrData, hostBucketPtrData);
   }
 
-  void setup_views(unsigned numBuckets, double overallocationFactor)
+  std::byte* get_host_bucket_pointer_for_device(unsigned bucketId) {
+    return fieldDataAllocator.get_host_pointer_for_device(rawHostBucketAllocations[bucketId].data());
+  }
+
+  void fill_device_field_meta_data(unsigned numBuckets)
   {
-    deviceFieldData = stk::mesh::FieldDataDeviceViewType<double, stk::mesh::NgpMeshDefaultMemSpace>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceFieldData"), numBuckets, ORDER_INDICES(bucketCapacity, numPerEntity));
-    goldHostFieldData = stk::mesh::FieldDataHostViewType<double>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "goldHostFieldData"), numBuckets, ORDER_INDICES(bucketCapacity,numPerEntity));
+    deviceFieldMetaData = stk::mesh::DeviceFieldMetaDataArrayType<stk::mesh::NgpMeshDefaultMemSpace>("deviceFieldMetaData",
+                                                                                                     numBuckets);
+    hostFieldMetaData = Kokkos::create_mirror_view(deviceFieldMetaData);
+
+    for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
+      auto& hostMetaData = hostFieldMetaData(bucketId);
+      hostMetaData.m_data = reinterpret_cast<std::byte*>(deviceFieldData(bucketId).data());
+      hostMetaData.m_hostData = get_host_bucket_pointer_for_device(bucketId);
+      hostMetaData.m_numComponentsPerEntity = numScalarsPerEntity;
+      hostMetaData.m_numCopiesPerEntity = 1;
+      hostMetaData.m_bucketSize = bucketCapacity;
+      hostMetaData.m_bucketCapacity = bucketCapacity;
+    }
+
+    Kokkos::deep_copy(deviceFieldMetaData, hostFieldMetaData);
+  }
+
+  void setup_views(unsigned numBuckets)
+  {
+    deviceFieldData = DeviceBucketRawDataCollectionType<stk::mesh::NgpMeshDefaultMemSpace>(
+          Kokkos::view_alloc("deviceFieldDataCollection", Kokkos::SequentialHostInit), numBuckets);
+    for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
+      deviceFieldData[bucketId] = DeviceBucketRawDataType<stk::mesh::NgpMeshDefaultMemSpace>(
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceFieldData"), bucketCapacity, numScalarsPerEntity);
+    }
+
+    goldHostFieldData = HostBucketRawDataCollectionType(
+          Kokkos::view_alloc("goldHostFieldDataCollection", Kokkos::SequentialHostInit), numBuckets);
+    for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
+      goldHostFieldData[bucketId] = HostBucketRawDataType(
+            Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceFieldData"), bucketCapacity, numScalarsPerEntity);
+    }
 
     fill_gold_host_field_data(numBuckets);
+    fill_host_field_data(numBuckets);
+    fill_device_field_meta_data(numBuckets);
 
-    const unsigned numAlloc = std::lround(numBuckets*overallocationFactor);
-
-    deviceBucketPtrData = stk::mesh::FieldDataPointerDeviceViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBktPtrData"), numAlloc);
-    hostBucketPtrData = stk::mesh::FieldDataPointerHostViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "HostBktPtrData"), numAlloc);
-
-    fill_bucket_pointers(numBuckets);
-
-    deviceBucketSizes = stk::mesh::UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketSizes"), numAlloc);
-    hostBucketSizes = Kokkos::create_mirror_view(deviceBucketSizes);
-    Kokkos::deep_copy(hostBucketSizes, bucketCapacity);
-    Kokkos::deep_copy(deviceBucketSizes, hostBucketSizes);
-
-    deviceBucketComponentsPerEntity = stk::mesh::UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketComponentsPerEntity"), numAlloc);
-    hostBucketComponentsPerEntity = Kokkos::create_mirror_view(deviceBucketComponentsPerEntity);
-    Kokkos::deep_copy(hostBucketComponentsPerEntity, numPerEntity);
-    Kokkos::deep_copy(deviceBucketComponentsPerEntity, hostBucketComponentsPerEntity);
-
-    deviceBucketsMarkedModified = stk::mesh::UnsignedViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketsMarkedModified"), numAlloc);
+    deviceBucketsMarkedModified = stk::mesh::DeviceBucketsModifiedCollectionType<stk::mesh::NgpMeshDefaultMemSpace>(
+          Kokkos::view_alloc(Kokkos::WithoutInitializing, "DeviceBucketsMarkedModified"), 1, numBuckets);
     hostBucketsMarkedModified = Kokkos::create_mirror_view(deviceBucketsMarkedModified);
     Kokkos::deep_copy(hostBucketsMarkedModified, true);
     Kokkos::deep_copy(deviceBucketsMarkedModified, hostBucketsMarkedModified);
   }
 
-  void check_field_data_values(unsigned numBuckets)
+  void check_device_field_data_values(unsigned numBuckets)
   {
     Kokkos::fence();
-    auto checkFieldData = Kokkos::create_mirror_view(deviceFieldData);
-    Kokkos::deep_copy(checkFieldData, deviceFieldData);
+    auto checkFieldData = Kokkos::create_mirror_view(deviceFieldData(0));
 
-    for(unsigned bkt=0; bkt<numBuckets; ++bkt) {
-      for(unsigned entityIndex=0; entityIndex<bucketCapacity; ++entityIndex) {
-        for(unsigned comp=0; comp<numPerEntity; ++comp) {
-          EXPECT_NEAR(goldHostFieldData(bkt,ORDER_INDICES(entityIndex,comp)), checkFieldData(bkt,ORDER_INDICES(entityIndex,comp)), 1.e-8)<<bkt<<":"<<entityIndex<<":"<<comp<<";";
+    for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
+      Kokkos::deep_copy(checkFieldData, deviceFieldData(bucketId));
+
+      for (unsigned entityIndex = 0; entityIndex < bucketCapacity; ++entityIndex) {
+        for (unsigned component = 0; component < numScalarsPerEntity; ++component) {
+          EXPECT_NEAR(goldHostFieldData(bucketId)(entityIndex, component),
+                      checkFieldData(entityIndex, component), 1.e-8)
+                      << bucketId << ":" << entityIndex << ":" << component << ";";
         }
       }
     }
@@ -154,105 +165,70 @@ public:
   void check_host_field_data_values(unsigned numBuckets)
   {
     Kokkos::fence();
-    for(unsigned bkt=0; bkt<numBuckets; ++bkt) {
-      const double* hostBucketPtr = reinterpret_cast<const double*>(hostBucketPtrData(bkt));
-      for(unsigned entityIndex=0; entityIndex<bucketCapacity; ++entityIndex) {
-        for(unsigned comp=0; comp<numPerEntity; ++comp) {
-          EXPECT_NEAR(goldHostFieldData(bkt,ORDER_INDICES(entityIndex,comp)), hostBucketPtr[entityIndex*numPerEntity+comp], 1.e-8);
+
+    for (unsigned bucketId = 0; bucketId < numBuckets; ++bucketId) {
+      const double* hostBucketPtr = reinterpret_cast<const double*>(rawHostBucketAllocations[bucketId].data());
+      for (unsigned entityIndex = 0; entityIndex < bucketCapacity; ++entityIndex) {
+        for (unsigned component = 0; component < numScalarsPerEntity; ++component) {
+          EXPECT_NEAR(goldHostFieldData(bucketId)(entityIndex, component),
+                      hostBucketPtr[entityIndex*numScalarsPerEntity + component], 1.e-8);
         }
       }
     }
   }
 
 protected:
-  stk::mesh::AllocatorAdaptor<stk::impl::FieldDataAllocator<unsigned char>> fieldDataAllocator;
-  std::vector<unsigned char*> rawBucketAllocations;
+  using AllocationType = stk::FieldDataAllocator<std::byte>::HostAllocationType;
 
-  stk::mesh::FieldDataPointerHostViewType  hostBucketPtrData;
-  stk::mesh::FieldDataPointerDeviceViewType  deviceBucketPtrData;
+  stk::FieldDataAllocator<std::byte> fieldDataAllocator;
+  std::vector<AllocationType> rawHostBucketAllocations;
 
-  stk::mesh::FieldDataDeviceViewType<double, stk::mesh::NgpMeshDefaultMemSpace>  deviceFieldData;
-  stk::mesh::FieldDataHostViewType<double>  goldHostFieldData;
+  DeviceBucketRawDataCollectionType<stk::mesh::NgpMeshDefaultMemSpace> deviceFieldData;
+  HostBucketRawDataCollectionType goldHostFieldData;
 
-  stk::mesh::UnsignedViewType  deviceBucketSizes;
-  stk::mesh::UnsignedViewType::HostMirror  hostBucketSizes;
-  stk::mesh::UnsignedViewType  deviceBucketComponentsPerEntity;
-  stk::mesh::UnsignedViewType::HostMirror  hostBucketComponentsPerEntity;
-  stk::mesh::UnsignedViewType  deviceBucketsMarkedModified;
-  stk::mesh::UnsignedViewType::HostMirror  hostBucketsMarkedModified;
+  stk::mesh::DeviceFieldMetaDataArrayType<stk::mesh::NgpMeshDefaultMemSpace> deviceFieldMetaData;
+  stk::mesh::DeviceFieldMetaDataArrayType<stk::mesh::NgpMeshDefaultMemSpace>::host_mirror_type hostFieldMetaData;
+
+  stk::mesh::DeviceBucketsModifiedCollectionType<stk::mesh::NgpMeshDefaultMemSpace> deviceBucketsMarkedModified;
+  stk::mesh::DeviceBucketsModifiedCollectionType<stk::mesh::NgpMeshDefaultMemSpace>::host_mirror_type hostBucketsMarkedModified;
 };
 
-TEST_F(TestTranspose, no_overallocation_transpose_from)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
-
-  const unsigned numBuckets = 2;
-  const double overAllocFactor = 1.0;
-  setup_views(numBuckets, overAllocFactor);
-  stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_from_pinned_and_mapped_memory(execSpace, deviceBucketPtrData, deviceFieldData, deviceBucketSizes, deviceBucketComponentsPerEntity);
-  check_field_data_values(numBuckets);
-}
-
-TEST_F(TestTranspose, overallocate_2_transpose_from)
+TEST_F(TestTranspose, transpose_from)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
 
   const unsigned numBuckets = 3;
-  const double overAllocFactor = 2.0;
-  setup_views(numBuckets, overAllocFactor);
+  setup_views(numBuckets);
   stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_from_pinned_and_mapped_memory(execSpace, deviceBucketPtrData, deviceFieldData, deviceBucketSizes, deviceBucketComponentsPerEntity);
-  check_field_data_values(numBuckets);
+  stk::mesh::impl::transpose_from_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData,
+                                                                   stk::mesh::Layout::Right);
+  check_device_field_data_values(numBuckets);
 }
 
-TEST_F(TestTranspose, no_overallocation_transpose_new_and_modified)
+TEST_F(TestTranspose, transpose_modified_buckets)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
 
   const unsigned numBuckets = 4;
-  const double overAllocFactor = 1.0;
-  setup_views(numBuckets, overAllocFactor);
+  setup_views(numBuckets);
   stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_new_and_modified_buckets_to_device(execSpace, deviceBucketPtrData, deviceFieldData, deviceBucketSizes, deviceBucketComponentsPerEntity, deviceBucketsMarkedModified);
-  check_field_data_values(numBuckets);
+  stk::mesh::impl::transpose_modified_buckets_to_device<double>(execSpace, deviceFieldMetaData, 0,
+                                                                deviceBucketsMarkedModified,
+                                                                stk::mesh::Layout::Right);
+  check_device_field_data_values(numBuckets);
 }
 
-TEST_F(TestTranspose, overallocate_2_transpose_new_and_modified)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
-
-  const unsigned numBuckets = 200;
-  const double overAllocFactor = 2.0;
-  setup_views(numBuckets, overAllocFactor);
-  stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_new_and_modified_buckets_to_device(execSpace, deviceBucketPtrData, deviceFieldData, deviceBucketSizes, deviceBucketComponentsPerEntity, deviceBucketsMarkedModified);
-  check_field_data_values(numBuckets);
-}
-
-TEST_F(TestTranspose, no_overallocation_transpose_to)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
-
-  const unsigned numBuckets = 100;
-  const double overAllocFactor = 1.0;
-  setup_views(numBuckets, overAllocFactor);
-  stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_from_pinned_and_mapped_memory(execSpace, deviceBucketPtrData, deviceFieldData, deviceBucketSizes, deviceBucketComponentsPerEntity);
-  stk::mesh::impl::transpose_to_pinned_and_mapped_memory(execSpace, deviceBucketPtrData, deviceFieldData, deviceBucketSizes, deviceBucketComponentsPerEntity);
-  check_host_field_data_values(numBuckets);
-}
-
-TEST_F(TestTranspose, overallocate_2_transpose_to)
+TEST_F(TestTranspose, transpose_to)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
 
   const unsigned numBuckets = 5;
-  const double overAllocFactor = 2.0;
-  setup_views(numBuckets, overAllocFactor);
+  setup_views(numBuckets);
   stk::ngp::ExecSpace execSpace = Kokkos::DefaultExecutionSpace();
-  stk::mesh::impl::transpose_from_pinned_and_mapped_memory(execSpace, deviceBucketPtrData, deviceFieldData, deviceBucketSizes, deviceBucketComponentsPerEntity);
-  stk::mesh::impl::transpose_to_pinned_and_mapped_memory(execSpace, deviceBucketPtrData, deviceFieldData, deviceBucketSizes, deviceBucketComponentsPerEntity);
+  stk::mesh::impl::transpose_from_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData,
+                                                                   stk::mesh::Layout::Right);
+  stk::mesh::impl::transpose_to_pinned_and_mapped_memory<double>(execSpace, deviceFieldMetaData,
+                                                                 stk::mesh::Layout::Right);
   check_host_field_data_values(numBuckets);
 }
 

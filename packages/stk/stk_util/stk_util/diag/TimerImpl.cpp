@@ -289,45 +289,4 @@ TimerImpl::deleteRootTimer(
 }
 
 
-void
-TimerImpl::findTimer(
-  TimerImpl *                   timer,
-  std::vector<std::string> &    path_tail_vector,
-  std::vector<Timer> &          found_timers)
-{
-  if (timer->begin() == timer->end()) { // at leaf
-  }
-  else
-    for (TimerList::const_iterator it = timer->begin(); it != timer->end(); ++it)
-      findTimer((*it).m_timerImpl, path_tail_vector, found_timers);
-}
-
-
-Writer &
-TimerImpl::dump(
-  Writer &    dout) const
-{
-  if (dout.shouldPrint()) {
-    dout << "TimerImpl" << push << dendl;
-    dout << "m_name, " << m_name << dendl;
-    dout << "m_timerMask, " << m_timerMask << dendl;
-    dout << "m_subtimerLapCount, " << m_subtimerLapCount << dendl;
-    dout << "m_lapStartCount, " << m_lapStartCount << dendl;
-
-    dout << "m_lapCount, " << m_lapCount << dendl;
-    dout << "m_cpuTime, " << m_cpuTime << dendl;
-    dout << "m_wallTime, " << m_wallTime << dendl;
-    dout << "m_MPICount, " << m_MPICount << dendl;
-    dout << "m_MPIByteCount, " << m_MPIByteCount << dendl;
-    dout << "m_heapAlloc, " << m_heapAlloc << dendl;
-
-    dout << "m_subtimerList, " << m_subtimerList << dendl;
-    dout << pop;
-  }
-
-  return dout;
-}
-
-
-
 }

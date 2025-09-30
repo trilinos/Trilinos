@@ -21,8 +21,8 @@
 #include <iostream>
 #include <string>
 
-#ifndef _GMRESHANDLE_HPP
-#define _GMRESHANDLE_HPP
+#ifndef KOKKOSSPARSE_GMRESHANDLE_HPP
+#define KOKKOSSPARSE_GMRESHANDLE_HPP
 
 namespace KokkosSparse {
 namespace Experimental {

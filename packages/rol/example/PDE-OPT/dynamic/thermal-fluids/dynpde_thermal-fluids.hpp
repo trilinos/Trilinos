@@ -266,25 +266,25 @@ public:
         // APPLY VELOCITY BOUNDARY CONDITIONS
         if (i==0 || i==2 || i==3 || i==4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fvidx_[j].size();
+          for (int s = 0; s < numLocalSideIds; ++s) {
+            int numCellsSide = bdryCellLocIds_[i][s].size();
+            int numBdryDofs = fvidx_[s].size();
             for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
+              int cidx = bdryCellLocIds_[i][s][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 for (int m=0; m < fv; ++m) {
                   for (int n=0; n < d; ++n) {
                     for (int p=0; p < d; ++p) {
-                      (*J[n][p])(cidx,fvidx_[j][l],m) = zero;
+                      (*J[n][p])(cidx,fvidx_[s][l],m) = zero;
                     }
                   }
                 }
                 for (int n=0; n < d; ++n) {
                   for (int m=0; m < fp; ++m) {
-                    (*J[n][d])(cidx,fvidx_[j][l],m) = zero;
+                    (*J[n][d])(cidx,fvidx_[s][l],m) = zero;
                   }
                   for (int m=0; m < fh; ++m) {
-                    (*J[n][d+1])(cidx,fvidx_[j][l],m) = zero;
+                    (*J[n][d+1])(cidx,fvidx_[s][l],m) = zero;
                   }
                 }
               }
@@ -293,22 +293,22 @@ public:
         }
         if (i==3) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numHBdryDofs = fhidx_[j].size();
+          for (int s = 0; s < numLocalSideIds; ++s) {
+            int numCellsSide = bdryCellLocIds_[i][s].size();
+            int numHBdryDofs = fhidx_[s].size();
             for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
+              int cidx = bdryCellLocIds_[i][s][k];
               for (int l = 0; l < numHBdryDofs; ++l) {
                 for (int m = 0; m < fv; ++m) {
                   for (int n = 0; n < d; ++n) {
-                    (*J[d+1][n])(cidx,fhidx_[j][l],m) = zero;
+                    (*J[d+1][n])(cidx,fhidx_[s][l],m) = zero;
                   }
                 }
                 for (int m = 0; m < fp; ++m) {
-                  (*J[d+1][d])(cidx,fhidx_[j][l],m) = zero;
+                  (*J[d+1][d])(cidx,fhidx_[s][l],m) = zero;
                 }
                 for (int m = 0; m < fh; ++m) {
-                  (*J[d+1][d+1])(cidx,fhidx_[j][l],m) = zero;
+                  (*J[d+1][d+1])(cidx,fhidx_[s][l],m) = zero;
                 }
               }
             }
@@ -377,26 +377,26 @@ public:
       for (int i = 0; i < numSideSets; ++i) {
         if (i==0 || i==2 || i==3 || i==4) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numBdryDofs = fvidx_[j].size();
+          for (int s = 0; s < numLocalSideIds; ++s) {
+            int numCellsSide = bdryCellLocIds_[i][s].size();
+            int numBdryDofs = fvidx_[s].size();
             for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
+              int cidx = bdryCellLocIds_[i][s][k];
               for (int l = 0; l < numBdryDofs; ++l) {
                 for (int m=0; m < fv; ++m) {
                   for (int n=0; n < d; ++n) {
                     for (int p=0; p < d; ++p) {
-                      (*J[n][p])(cidx,fvidx_[j][l],m) = zero;
+                      (*J[n][p])(cidx,fvidx_[s][l],m) = zero;
                     }
-                    (*J[n][n])(cidx,fvidx_[j][l],fvidx_[j][l]) = one;
+                    (*J[n][n])(cidx,fvidx_[s][l],fvidx_[s][l]) = one;
                   }
                 }
                 for (int n=0; n < d; ++n) {
                   for (int m=0; m < fp; ++m) {
-                    (*J[n][d])(cidx,fvidx_[j][l],m) = zero;
+                    (*J[n][d])(cidx,fvidx_[s][l],m) = zero;
                   }
                   for (int m=0; m < fh; ++m) {
-                    (*J[n][d+1])(cidx,fvidx_[j][l],m) = zero;
+                    (*J[n][d+1])(cidx,fvidx_[s][l],m) = zero;
                   }
                 }
               }
@@ -405,24 +405,24 @@ public:
         }
         if (i==3) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
-          for (int j = 0; j < numLocalSideIds; ++j) {
-            int numCellsSide = bdryCellLocIds_[i][j].size();
-            int numHBdryDofs = fhidx_[j].size();
+          for (int s = 0; s < numLocalSideIds; ++s) {
+            int numCellsSide = bdryCellLocIds_[i][s].size();
+            int numHBdryDofs = fhidx_[s].size();
             for (int k = 0; k < numCellsSide; ++k) {
-              int cidx = bdryCellLocIds_[i][j][k];
+              int cidx = bdryCellLocIds_[i][s][k];
               for (int l = 0; l < numHBdryDofs; ++l) {
                 for (int m = 0; m < fv; ++m) {
                   for (int n = 0; n < d; ++n) {
-                    (*J[d+1][n])(cidx,fhidx_[j][l],m) = zero;
+                    (*J[d+1][n])(cidx,fhidx_[s][l],m) = zero;
                   }
                 }
                 for (int m = 0; m < fp; ++m) {
-                  (*J[d+1][d])(cidx,fhidx_[j][l],m) = zero;
+                  (*J[d+1][d])(cidx,fhidx_[s][l],m) = zero;
                 }
                 for (int m = 0; m < fh; ++m) {
-                  (*J[d+1][d+1])(cidx,fhidx_[j][l],m) = zero;
+                  (*J[d+1][d+1])(cidx,fhidx_[s][l],m) = zero;
                 }
-                (*J[d+1][d+1])(cidx,fhidx_[j][l],fhidx_[j][l]) = one;
+                (*J[d+1][d+1])(cidx,fhidx_[s][l],fhidx_[s][l]) = one;
               }
             }
           }

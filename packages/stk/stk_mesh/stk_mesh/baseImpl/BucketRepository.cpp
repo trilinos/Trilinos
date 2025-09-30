@@ -97,11 +97,6 @@ BucketRepository::~BucketRepository()
     m_partitions.clear();
     m_buckets.clear();
 
-    const FieldVector& fields = m_mesh.mesh_meta_data().get_fields();
-    for(size_t i=0; i<fields.size(); ++i) {
-      fields[i]->get_meta_data_for_field().clear();
-    }
-
   } catch(...) {}
 }
 
@@ -405,11 +400,8 @@ void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
 
 const std::vector<Partition *>& BucketRepository::get_partitions(EntityRank rank) const
 {
-  if (static_cast<unsigned>(rank) < m_partitions.size()) {
-    return m_partitions[rank];
-  }
   static const std::vector<Partition*> emptyPartitionVector;
-  return emptyPartitionVector;
+  return (static_cast<unsigned>(rank) < m_partitions.size()) ?  m_partitions[rank] : emptyPartitionVector;
 }
 
 void BucketRepository::delete_bucket(Bucket * bucket)

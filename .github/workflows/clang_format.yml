@@ -1,20 +1,23 @@
 name: Check packages with clang-format
 
-on: [pull_request]
+on: [pull_request_target]
 
 permissions:
   contents: read
   pull-requests: write
-  
+
 jobs:
-  build:
+  clang_format:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-    - uses: DoozyX/clang-format-lint-action@c71d0bf4e21876ebec3e5647491186f8797fde31 # v0.18.2
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
-        source: './packages/muelu ./packages/tempus ./packages/teko ./packages/xpetra'
+        ref: "${{ github.event.pull_request.head.sha }}"
+
+    - uses: DoozyX/clang-format-lint-action@bcb4eb2cb0d707ee4f3e5cc3b456eb075f12cf73 # v0.20
+      with:
+        source: './packages/galeri/src-xpetra ./packages/galeri/example-tpetra ./packages/galeri/example-xpetra ./packages/galeri/test ./packages/ifpack2 ./packages/muelu ./packages/tempus ./packages/teko ./packages/tpetra ./packages/xpetra'
         exclude: './packages/tempus/examples'
         extensions: 'cpp,hpp'
         clangFormatVersion: 14
@@ -29,20 +32,29 @@ jobs:
         name: clang format patch
         path: format_patch.txt
 
-    - name: Artifact ID test
+    - if: ${{ hashFiles('format_patch.txt') != '' }}
       run: |
-        echo "Artifact ID is ${{ steps.upload-artf.outputs.artifact-id }}"
-        echo "Link: ${{ steps.upload-artf.outputs.artifact-url }}"
+        echo "Your PR updated files that did not respect package clang formatting settings." >> format_patch_message.txt
+        echo "Please apply the patch given below. Alternatively you can download a patch file [here](${{ steps.upload-artf.outputs.artifact-url }})." >> format_patch_message.txt
+        echo "<details>" >> format_patch_message.txt
+        echo "<summary>Patch</summary>" >> format_patch_message.txt
+        echo "" >> format_patch_message.txt
+        echo "\`\`\`diff" >> format_patch_message.txt
+        cat format_patch.txt >> format_patch_message.txt
+        echo "\`\`\`" >> format_patch_message.txt
+        echo "</details>" >> format_patch_message.txt
+        echo "" >> format_patch_message.txt
+        echo "More details about our use of clang-format can be found in the [wiki](https://github.com/trilinos/Trilinos/wiki/Clang\%E2\%80\%90format)." >> format_patch_message.txt
 
-    # This does not work for PRs from forks.
     - name: Post artifact in issue comment
       uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
-      if: ${{ (hashFiles('format_patch.txt') != '') && (github.event.pull_request.head.repo.full_name == github.repository) }}
+      if: ${{ hashFiles('format_patch.txt') != '' }}
       with:
-        message: |
-          Your PR updated files that did not respect package clang formatting settings.  Please apply the patch found [here](${{ steps.upload-artf.outputs.artifact-url }})
+        message-id: clang-format-patch
+        refresh-message-position: true
+        message-path: format_patch_message.txt
 
-    - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+    - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
       if: ${{ hashFiles('format_patch.txt') != '' }}
       with:
         script: |

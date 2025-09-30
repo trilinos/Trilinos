@@ -1786,7 +1786,7 @@ namespace Teuchos
   // END INT, COMPLEX<DOUBLE> SPECIALIZATION DECLARATION //
 
   // BEGIN INT, KOKKOS::COMPLEX<DOUBLE> SPECIALIZATION DECLARATION //
-
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
   template<>
   class TEUCHOSNUMERICS_LIB_DLL_EXPORT LAPACK<int, Kokkos::complex<double> >
   {
@@ -1893,7 +1893,7 @@ namespace Teuchos
     int ILAENV( const int& ispec, const std::string& NAME, const std::string& OPTS, const int& N1 = -1, const int& N2 = -1, const int& N3 = -1, const int& N4 = -1 ) const;
 
   };
-
+#endif
   // END INT, KOKKOS::COMPLEX<DOUBLE> SPECIALIZATION DECLARATION //
 
 #endif // HAVE_TEUCHOS_COMPLEX

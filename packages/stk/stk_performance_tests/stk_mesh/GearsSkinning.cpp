@@ -137,38 +137,36 @@ void separate_wedge(
       fixture.bulk_data.copy_entity_fields( old_node, new_node);
     }
 
+    auto newCoordsData = fixture.displacement_field->field_of_state(stk::mesh::StateNew).data<stk::mesh::ReadOnly>();
+    auto oldCoordsData = fixture.displacement_field->field_of_state(stk::mesh::StateOld).data<stk::mesh::ReadOnly>();
+
     // Compute the velocities of the nodes by taking the average of the
     // differences in the displacements in the last time step. Note that we need
     // all the nodes to have the same velocity; otherwise, the wedge will stretch
     std::vector<double> avg_velocity_data(spatial_dim, 0);
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
-      stk::mesh::Entity new_node = new_nodes[i];
-      const double * const new_displacement_data =
-        stk::mesh::field_data( fixture.displacement_field->field_of_state(stk::mesh::StateNew), new_node);
+      stk::mesh::Entity newNode = new_nodes[i];
+      auto newCoordValues = newCoordsData.entity_values(newNode);
+      auto oldCoordValues = oldCoordsData.entity_values(newNode);
 
-      const double * const old_displacement_data =
-        stk::mesh::field_data( fixture.displacement_field->field_of_state(stk::mesh::StateOld), new_node);
-
-      for (size_t k=0 ; k < spatial_dim ; ++k) {
-        avg_velocity_data[k] += new_displacement_data[k] - old_displacement_data[k];
+      for (stk::mesh::ComponentIdx component : oldCoordValues.components()) {
+        avg_velocity_data[component] += newCoordValues(component) - oldCoordValues(component);
       }
-
     }
 
     for (size_t k=0 ; k < spatial_dim ; ++k) {
       avg_velocity_data[k] /= 1.0*num_nodes_per_wedge;
     }
 
+    auto velocityData = velocity_field.data<stk::mesh::ReadWrite>();
     const double detached_wedge_speedup_multiplier = 1.1;
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
-      stk::mesh::Entity new_node = new_nodes[i];
-      double * const velocity_data =
-        stk::mesh::field_data( velocity_field , new_node );
+      stk::mesh::Entity newNode = new_nodes[i];
+      auto velocityValues = velocityData.entity_values(newNode);
 
-      for (size_t k=0 ; k < spatial_dim ; ++k) {
-        velocity_data[k] = detached_wedge_speedup_multiplier*avg_velocity_data[k];
+      for (stk::mesh::ComponentIdx component : velocityValues.components()) {
+        velocityValues(component) = detached_wedge_speedup_multiplier * avg_velocity_data[component];
       }
-
     }
   }
 
@@ -228,35 +226,27 @@ void find_and_shuffle_wedges_to_separate(
  * Make all the wedges that have already been detached from the cylinder
  * continue flying through the air.
  */
-void move_detached_wedges(
-    stk::mesh::fixtures::GearsFixture & fixture,
-    CartesianField & velocity_field
-    )
+void move_detached_wedges(stk::mesh::fixtures::GearsFixture & fixture, CartesianField & velocity_field)
 {
-
-  // Select all detached nodes by creating a selector for things not in the
-  // cylinder part.
+  // Select all detached nodes by creating a selector for things not in the cylinder part.
   stk::mesh::Selector select_detached_wedges =  (! fixture.cylindrical_coord_part ) &
     (fixture.meta_data.locally_owned_part() | fixture.meta_data.globally_shared_part());
 
   stk::mesh::BucketVector const& node_buckets = fixture.bulk_data.get_buckets(NODE_RANK, select_detached_wedges);
 
-  // Iterate over selected node_buckets, then iterate over each node in the
-  // bucket, adjusting the node's displacement according to its velocity.
-  for (stk::mesh::BucketVector::const_iterator b_itr = node_buckets.begin();
-      b_itr != node_buckets.end();
-      ++b_itr)
-  {
-    stk::mesh::Bucket & b = **b_itr;
+  auto velocityData = velocity_field.data<stk::mesh::ReadOnly>();
+  auto oldCoordData = fixture.displacement_field->field_of_state(stk::mesh::StateOld).data<stk::mesh::ReadOnly>();
+  auto newCoordData = fixture.displacement_field->field_of_state(stk::mesh::StateNew).data<stk::mesh::ReadWrite>();
 
-    const CartesianField::value_type*  velocity_data = stk::mesh::field_data(velocity_field, b);
-    CartesianField::value_type*  old_displacement_data = stk::mesh::field_data(fixture.displacement_field->field_of_state(stk::mesh::StateOld), b);
-    CartesianField::value_type*  new_displacement_data = stk::mesh::field_data(fixture.displacement_field->field_of_state(stk::mesh::StateNew), b);
-    int ndim = fixture.meta_data.spatial_dimension();
+  for (stk::mesh::Bucket* bucket : node_buckets) {
+    auto velocityValues = velocityData.bucket_values(*bucket);
+    auto oldCoordValues = oldCoordData.bucket_values(*bucket);
+    auto newCoordValues = newCoordData.bucket_values(*bucket);
 
-    for (size_t i = 0; i < b.size(); ++i) {
-      for (size_t j = 0; j < fixture.meta_data.spatial_dimension(); ++j) {
-        new_displacement_data[j+i*ndim] = old_displacement_data[j+i*ndim] + velocity_data[j+i*ndim];
+    for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+      for (stk::mesh::ComponentIdx component : velocityValues.components()) {
+        newCoordValues(entityIdx, component) = oldCoordValues(entityIdx, component) +
+                                               velocityValues(entityIdx, component);
       }
     }
   }
@@ -266,24 +256,21 @@ void move_detached_wedges(
 //-----------------------------------------------------------------------------
 //
 
-void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixture,
-    IntField & processor_field
-    )
+void populate_processor_id_field_data(stk::mesh::fixtures::GearsFixture& fixture, IntField& processor_field)
 {
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
 
   stk::mesh::Selector locally_owned_selector = fixture.meta_data.locally_owned_part();
 
-  stk::mesh::BucketVector const& element_buckets = fixture.bulk_data.get_buckets(stk::topology::ELEMENT_RANK, locally_owned_selector);
+  stk::mesh::BucketVector const& element_buckets = fixture.bulk_data.get_buckets(stk::topology::ELEMENT_RANK,
+                                                                                 locally_owned_selector);
 
-  for (stk::mesh::BucketVector::const_iterator b_itr = element_buckets.begin();
-      b_itr != element_buckets.end();
-      ++b_itr)
-  {
-    stk::mesh::Bucket & b = **b_itr;
-    int* processor_data = stk::mesh::field_data(processor_field, b);
-    for (size_t index = 0; index < b.size(); ++index) {
-      processor_data[index] = p_rank;
+  auto processorData = processor_field.data<stk::mesh::ReadWrite>();
+
+  for (stk::mesh::Bucket* bucket : element_buckets) {
+    auto processorValues = processorData.bucket_values(*bucket);
+    for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+      processorValues(entityIdx) = p_rank;
     }
   }
 }
@@ -441,29 +428,27 @@ TEST( gears_skinning, gears_skinning )
       fixture.communicate_model_fields();
     }
 
+    auto faceDispData = displacement.data<stk::mesh::ReadWrite>();
+    auto nodeDispData = fixture.displacement_field->data<stk::mesh::ReadOnly>();
+
     // update a face field
     stk::mesh::BucketVector const& face_buckets = fixture.bulk_data.get_buckets(stk::topology::FACE_RANK, surface_select);
-    for (stk::mesh::BucketVector::const_iterator b_itr = face_buckets.begin(); b_itr != face_buckets.end(); ++b_itr) {
-      stk::mesh::Bucket & b = **b_itr;
-      for (size_t i = 0; i < b.size(); ++i) {
-        stk::mesh::Entity face = b[i];
-        double *elem_node_disp = stk::mesh::field_data(displacement, face);
-        if (elem_node_disp) {
-          const size_t num_nodes = b.num_nodes(i);
+    for (stk::mesh::Bucket* faceBucket : face_buckets) {
+      for (unsigned faceOffset = 0; faceOffset < faceBucket->size(); ++faceOffset) {
+        stk::mesh::Entity face = (*faceBucket)[faceOffset];
+        auto faceDispValues = faceDispData.entity_values(face);
 
-          stk::mesh::Entity const *node_rels_itr = b.begin_nodes(i);
-          stk::mesh::Entity const *node_rels_end = b.end_nodes(i);
-          for ( ; node_rels_itr != node_rels_end; ++node_rels_itr)
-          {
-            const stk::mesh::Entity node = *node_rels_itr;
-            double* node_disp = stk::mesh::field_data(*fixture.displacement_field, node);
-            elem_node_disp[0] = node_disp[0];
-            elem_node_disp[1] = node_disp[1];
-            elem_node_disp[2] = node_disp[2];
+        if (faceDispValues.is_field_defined()) {
+          for (stk::mesh::Entity node : faceBucket->get_nodes(faceOffset)) {
+            auto nodeDispValues = nodeDispData.entity_values(node);
+            faceDispValues(0_comp) = nodeDispValues(0_comp);
+            faceDispValues(1_comp) = nodeDispValues(1_comp);
+            faceDispValues(2_comp) = nodeDispValues(2_comp);
           }
-          elem_node_disp[0] /= num_nodes;
-          elem_node_disp[1] /= num_nodes;
-          elem_node_disp[2] /= num_nodes;
+          const unsigned numNodes = faceBucket->num_nodes(faceOffset);
+          faceDispValues(0_comp) /= numNodes;
+          faceDispValues(1_comp) /= numNodes;
+          faceDispValues(2_comp) /= numNodes;
         }
       }
     }

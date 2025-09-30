@@ -32,18 +32,21 @@ void fix_node_sharing_via_search(stk::mesh::BulkData& bulkData, double tolerance
     const stk::mesh::BucketVector& buckets = bulkData.buckets(stk::topology::NODE_RANK);
     for(const stk::mesh::Bucket *bucket : buckets)
     {
-      if(bucket->owned())
+      if (bucket->owned())
       {
-        for(size_t k = 0; k < bucket->size(); ++k)
-        {
-          stk::mesh::Entity node = (*bucket)[k];
-          stk::mesh::EntityId id = bulkData.identifier(node);
-          const double* coords = static_cast<double*>(stk::mesh::field_data(*coordsField, node));
-          IdentProc searchId = IdentProc(id, prank);
-          Point point(coords[0], dim >= 2 ? coords[1] : 0.0, dim == 3 ? coords[2] : 0.0);
-          Sphere sphere(point, tolerance);
-          sourceBboxVector.push_back(std::make_pair(sphere, searchId));
-        }
+        stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(*coordsField,
+          [&](auto& coordsData) {
+            for (size_t k = 0; k < bucket->size(); ++k) {
+              stk::mesh::Entity node = (*bucket)[k];
+              stk::mesh::EntityId id = bulkData.identifier(node);
+              auto coords = coordsData.entity_values(node);
+              IdentProc searchId = IdentProc(id, prank);
+              Point point(coords(0_comp), dim >= 2 ? coords(1_comp) : 0.0, dim == 3 ? coords(2_comp) : 0.0);
+              Sphere sphere(point, tolerance);
+              sourceBboxVector.push_back(std::make_pair(sphere, searchId));
+            }
+          }
+        );
       }
     }
 

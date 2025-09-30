@@ -50,7 +50,7 @@ static int ex_write_object_names(int exoid, const char *type, const char *dimens
     int dim[] = {dimension_var, string_dimension};
     int status;
     int varid;
-    if ((status = nc_def_var(exoid, dimension_name, NC_CHAR, 2, dim, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, dimension_name, NC_CHAR, 2, dim, &varid)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s name array in file id %d", type,
                exoid);
@@ -74,7 +74,7 @@ static int ex_write_object_params(int exoid, const char *type, const char *dimen
   /* Can have nonzero model->num_elem_blk even if model->num_elem == 0 */
   if (count > 0) {
     int status;
-    if ((status = nc_def_dim(exoid, dimension_name, count, dimension)) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, dimension_name, count, dimension)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of %ss in file id %d", type,
                exoid);
@@ -86,7 +86,7 @@ static int ex_write_object_params(int exoid, const char *type, const char *dimen
     int dim[2];
     int varid;
     dim[0] = *dimension;
-    if ((status = nc_def_var(exoid, status_dim_name, NC_INT, 1, dim, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, status_dim_name, NC_INT, 1, dim, &varid)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s status array in file id %d",
                type, exoid);
@@ -107,7 +107,7 @@ static int ex_write_object_params(int exoid, const char *type, const char *dimen
       int_size = 8;
     }
 
-    if ((status = nc_def_var(exoid, id_array_dim_name, int_type, 1, dim, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, id_array_dim_name, int_type, 1, dim, &varid)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s id array in file id %d", type,
                exoid);
@@ -119,7 +119,7 @@ static int ex_write_object_params(int exoid, const char *type, const char *dimen
     }
 
     /*   store property name as attribute of property array variable */
-    if ((status = nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID")) != NC_NOERR) {
+    if ((status = nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID")) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s property name %s in file id %d",
                type, "ID", exoid);
@@ -142,7 +142,7 @@ static int ex_write_map_params(int exoid, const char *map_name, const char *map_
   /* Can have nonzero model->num_XXXX_map even if model->num_XXXX == 0 */
   if ((map_count) > 0) {
     int status;
-    if ((status = nc_def_dim(exoid, map_dim_name, map_count, map_dimension)) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, map_dim_name, map_count, map_dimension)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of %ss in file id %d",
                map_name, exoid);
@@ -154,7 +154,7 @@ static int ex_write_map_params(int exoid, const char *map_name, const char *map_
 
     /* map_name id array */
     int varid;
-    if ((status = nc_def_var(exoid, map_id_name, int_type, 1, dim, &varid)) != NC_NOERR) {
+    if ((status = nc_def_var(exoid, map_id_name, int_type, 1, dim, &varid)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define %s id array in file id %d",
                map_name, exoid);
@@ -163,7 +163,7 @@ static int ex_write_map_params(int exoid, const char *map_name, const char *map_
     }
 
     /*   store property name as attribute of property array variable */
-    if ((status = nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID")) != NC_NOERR) {
+    if ((status = nc_put_att_text(exoid, varid, ATT_PROP_NAME, 3, "ID")) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s property name %s in file id %d",
                map_name, "ID", exoid);
@@ -236,7 +236,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   }
   int rootid = exoid & EX_FILE_ID_MASK;
 
-  if (rootid == exoid && nc_inq_dimid(exoid, DIM_NUM_DIM, &temp) == NC_NOERR) {
+  if (rootid == exoid && nc_inq_dimid(exoid, DIM_NUM_DIM, &temp) == EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: initialization already done for file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, EX_MSG);
@@ -244,7 +244,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   }
 
   /* put file into define mode */
-  if ((status = exi_redef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_redef(exoid, __func__)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to put file id %d into define mode", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -254,7 +254,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   /* define some attributes... */
   title_len = strlen(model->title) < MAX_LINE_LENGTH ? strlen(model->title) : MAX_LINE_LENGTH;
   if ((status = nc_put_att_text(rootid, NC_GLOBAL, (const char *)ATT_TITLE, title_len + 1,
-                                model->title)) != NC_NOERR) {
+                                model->title)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define model->title attribute to file id %d",
              rootid);
@@ -265,8 +265,8 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   /* ...and some dimensions... */
 
   /* create name string length dimension */
-  if (nc_inq_dimid(rootid, DIM_STR_NAME, &dim_str_name) != NC_NOERR) {
-    if ((status = nc_def_dim(rootid, DIM_STR_NAME, NC_MAX_NAME, &dim_str_name)) != NC_NOERR) {
+  if (nc_inq_dimid(rootid, DIM_STR_NAME, &dim_str_name) != EX_NOERR) {
+    if ((status = nc_def_dim(rootid, DIM_STR_NAME, EX_MAX_NAME, &dim_str_name)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define name string length in file id %d",
                rootid);
@@ -275,7 +275,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
     }
   }
 
-  if ((status = nc_def_dim(exoid, DIM_TIME, NC_UNLIMITED, &timedim)) != NC_NOERR) {
+  if ((status = nc_def_dim(exoid, DIM_TIME, NC_UNLIMITED, &timedim)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define time dimension in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -283,7 +283,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   }
 
   dim[0] = timedim;
-  if ((status = nc_def_var(exoid, VAR_WHOLE_TIME, nc_flt_code(exoid), 1, dim, &temp)) != NC_NOERR) {
+  if ((status = nc_def_var(exoid, VAR_WHOLE_TIME, nc_flt_code(exoid), 1, dim, &temp)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to define whole time step variable in file id %d", exoid);
@@ -305,7 +305,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   exi_compress_variable(exoid, temp, -2); /* Don't compress, but do set collective io */
 
   if (model->num_dim > 0) {
-    if ((status = nc_def_dim(exoid, DIM_NUM_DIM, model->num_dim, &numdimdim)) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_DIM, model->num_dim, &numdimdim)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of dimensions in file id %d",
                exoid);
@@ -337,7 +337,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
       goto error_ret;
     }
 
-    if ((status = nc_def_dim(exoid, DIM_NUM_NODES, model->num_nodes, &numnoddim)) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_NODES, model->num_nodes, &numnoddim)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of nodes in file id %d",
                exoid);
@@ -367,7 +367,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
       goto error_ret;
     }
 
-    if ((status = nc_def_dim(exoid, DIM_NUM_ELEM, model->num_elem, &temp)) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_ELEM, model->num_elem, &temp)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of elements in file id %d",
                exoid);
@@ -387,7 +387,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
       goto error_ret; /* exit define mode and return */
     }
 
-    if ((status = nc_def_dim(exoid, DIM_NUM_EDGE, model->num_edge, &temp)) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_EDGE, model->num_edge, &temp)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of edges in file id %d",
                exoid);
@@ -407,7 +407,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
       goto error_ret; /* exit define mode and return */
     }
 
-    if ((status = nc_def_dim(exoid, DIM_NUM_FACE, model->num_face, &temp)) != NC_NOERR) {
+    if ((status = nc_def_dim(exoid, DIM_NUM_FACE, model->num_face, &temp)) != EX_NOERR) {
       char errmsg[MAX_ERR_LENGTH];
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of faces in file id %d",
                exoid);
@@ -451,19 +451,19 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   }
 
   if (ex_write_map_params(exoid, "node map", DIM_NUM_NM, VAR_NM_PROP(1), model->num_node_maps,
-                          &nmapdim) != NC_NOERR) {
+                          &nmapdim) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_map_params(exoid, "edge map", DIM_NUM_EDM, VAR_EDM_PROP(1), model->num_edge_maps,
-                          &edmapdim) != NC_NOERR) {
+                          &edmapdim) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_map_params(exoid, "face map", DIM_NUM_FAM, VAR_FAM_PROP(1), model->num_face_maps,
-                          &famapdim) != NC_NOERR) {
+                          &famapdim) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_map_params(exoid, "element map", DIM_NUM_EM, VAR_EM_PROP(1), model->num_elem_maps,
-                          &emapdim) != NC_NOERR) {
+                          &emapdim) != EX_NOERR) {
     goto error_ret;
   }
 
@@ -471,7 +471,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
     dim[0] = numnoddim;
     if (model->num_dim > 0) {
       if ((status = nc_def_var(exoid, VAR_COORD_X, nc_flt_code(exoid), 1, dim, &temp)) !=
-          NC_NOERR) {
+          EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define node x coordinate array in file id %d", exoid);
@@ -483,7 +483,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
 
     if (model->num_dim > 1) {
       if ((status = nc_def_var(exoid, VAR_COORD_Y, nc_flt_code(exoid), 1, dim, &temp)) !=
-          NC_NOERR) {
+          EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define node y coordinate array in file id %d", exoid);
@@ -495,7 +495,7 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
 
     if (model->num_dim > 2) {
       if ((status = nc_def_var(exoid, VAR_COORD_Z, nc_flt_code(exoid), 1, dim, &temp)) !=
-          NC_NOERR) {
+          EX_NOERR) {
         char errmsg[MAX_ERR_LENGTH];
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to define node z coordinate array in file id %d", exoid);
@@ -507,62 +507,62 @@ int ex_put_init_ext(int exoid, const ex_init_params *model)
   }
 
   if (ex_write_object_names(exoid, "element block", VAR_NAME_EL_BLK, elblkdim, dim_str_name,
-                            model->num_elem_blk) != NC_NOERR) {
+                            model->num_elem_blk) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "edge block", VAR_NAME_ED_BLK, edblkdim, dim_str_name,
-                            model->num_edge_blk) != NC_NOERR) {
+                            model->num_edge_blk) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "face block", VAR_NAME_FA_BLK, fablkdim, dim_str_name,
-                            model->num_face_blk) != NC_NOERR) {
+                            model->num_face_blk) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "node set", VAR_NAME_NS, nsetdim, dim_str_name,
-                            model->num_node_sets) != NC_NOERR) {
+                            model->num_node_sets) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "edge set", VAR_NAME_ES, esetdim, dim_str_name,
-                            model->num_edge_sets) != NC_NOERR) {
+                            model->num_edge_sets) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "face set", VAR_NAME_FS, fsetdim, dim_str_name,
-                            model->num_face_sets) != NC_NOERR) {
+                            model->num_face_sets) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "side set", VAR_NAME_SS, ssetdim, dim_str_name,
-                            model->num_side_sets) != NC_NOERR) {
+                            model->num_side_sets) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "element set", VAR_NAME_ELS, elsetdim, dim_str_name,
-                            model->num_elem_sets) != NC_NOERR) {
+                            model->num_elem_sets) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "node map", VAR_NAME_NM, nmapdim, dim_str_name,
-                            model->num_node_maps) != NC_NOERR) {
+                            model->num_node_maps) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "edge map", VAR_NAME_EDM, edmapdim, dim_str_name,
-                            model->num_edge_maps) != NC_NOERR) {
+                            model->num_edge_maps) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "face map", VAR_NAME_FAM, famapdim, dim_str_name,
-                            model->num_face_maps) != NC_NOERR) {
+                            model->num_face_maps) != EX_NOERR) {
     goto error_ret;
   }
   if (ex_write_object_names(exoid, "element map", VAR_NAME_EM, emapdim, dim_str_name,
-                            model->num_elem_maps) != NC_NOERR) {
+                            model->num_elem_maps) != EX_NOERR) {
     goto error_ret;
   }
   if (model->num_dim > 0) {
     if (ex_write_object_names(exoid, "coordinate", VAR_NAME_COOR, numdimdim, dim_str_name,
-                              model->num_dim) != NC_NOERR) {
+                              model->num_dim) != EX_NOERR) {
       goto error_ret;
     }
   }
 
   /* leave define mode */
-  if ((status = exi_leavedef(exoid, __func__)) != NC_NOERR) {
+  if ((status = exi_leavedef(exoid, __func__)) != EX_NOERR) {
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to exit define mode");
     ex_err_fn(exoid, __func__, errmsg, status);

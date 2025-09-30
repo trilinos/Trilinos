@@ -92,7 +92,7 @@ class Diagonal_Operator_2 : public Vector_Operator<MV>
 {
   public:
 
-    Diagonal_Operator_2<ST,MV>(int n_in, ST v_in)
+    Diagonal_Operator_2(int n_in, ST v_in)
     : Vector_Operator<MV>(n_in, n_in), v(v_in) {}
 
     ~Diagonal_Operator_2() { };
@@ -175,7 +175,7 @@ class Trilinos_Interface : public OP
 
     virtual ~Trilinos_Interface() {};
 
-    bool hasTransposeApply() const {return(use_transpose);};      // always set to false (in fact the default)
+    bool hasTransposeApply() const override {return(use_transpose);};      // always set to false (in fact the default)
 
     Teuchos::RCP<const MP> getDomainMap() const override {return pMap; }
     Teuchos::RCP<const MP> getRangeMap() const override {return pMap; }

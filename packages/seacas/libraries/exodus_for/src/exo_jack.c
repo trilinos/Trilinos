@@ -2440,7 +2440,14 @@ void F2C(exgatm, EXGATM)(int *idexo, real *time_values, int *ierr)
 void F2C(exinq, EXINQ)(int *idexo, int *req_info, void_int *ret_int, float *ret_float,
                        char *ret_char, int *ierr, int ret_charlen)
 {
-  *ierr = ex_inquire(*idexo, (ex_inquiry)*req_info, ret_int, ret_float, ret_char);
+  if (ex_int64_status(*idexo) & EX_INQ_INT64_API) {
+    *((int64_t *)ret_int) = 0;
+  }
+  else {
+    *((int *)ret_int) = 0;
+  }
+  *ret_float = 0.0f;
+  *ierr      = ex_inquire(*idexo, (ex_inquiry)*req_info, ret_int, ret_float, ret_char);
   EX_UNUSED(ret_charlen);
 }
 

@@ -244,10 +244,12 @@ IF (${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters
     EXCLUDE_IF_NOT_TRUE ${PROJECT_NAME}_ENABLE_FLOAT
     )
 
+  ASSERT_DEFINED(Belos_SOURCE_DIR)
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraTestMtxFiles
-  SOURCE_DIR ${PACKAGE_SOURCE_DIR}/../belos/kokkos/example
-  SOURCE_FILES bcsstk12.mtx
-  EXEDEPS test_tpetra_belos
+    SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
+    SOURCE_FILES bcsstk12.mtx
+    EXEDEPS test_tpetra_belos
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTpetraTestXMLFiles

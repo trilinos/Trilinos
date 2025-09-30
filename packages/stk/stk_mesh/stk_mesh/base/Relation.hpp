@@ -153,36 +153,7 @@ private:
  public:
   static raw_relation_id_type max_id() { return (1 << id_digits) - 1;}
 
-
-// Issue: Framework supports relation types (parent, child, etc) that STK_Mesh
-// does not support, so these relations will have to be managed by framework
-// until:
-// A) STK_Mesh is rewritten to support these extra relation types
-// B) An extra data-structure is added to manage these relation types and
-// this data structure works together with STK_mesh under the generic API
-// to manage all relation-types.
-// C) We transition to using a mesh that supports everything framework
-// supports and this problem goes away.
-//
-// The problem is that, with framework managing some relations and STK_Mesh
-// managing others, the type of the relation descriptor is different depending
-// on what type of relation you're dealing with. This can be addressed with
-// templates, but this makes the code very ugly. Instead...
-//
-// Solution: Have framework and STK_Mesh use the same type as its relation_descriptor.
-// The code below is designed to make this class compatible with the fmwk
-// Relation class.
  public:
-
-  // Moved this to enum in struct RelationType.
-  //   /**
-  //   * Predefined identifiers for mesh object relationship types.
-  //   */
-  //  enum RelationType {
-  //    USES	= 0 ,
-  //    USED_BY	= 1 ,
-  //    INVALID     = 10
-  //  };
 
   enum {
     POLARITY_MASK       = 0x80,
@@ -341,38 +312,6 @@ back_relation_type(const RelationType relType)
   default:
     return relType;
   }
-}
-
-// Made publicly available so that MeshObj.C can use it
-template <class Iterator>
-bool
-verify_relation_ordering(Iterator begin, Iterator end)
-{
-  for (Iterator itr = begin; itr != end; ) {
-    Iterator prev = itr;
-    ++itr;
-    if (itr != end) {
-
-      if (itr->entity_rank() < prev->entity_rank()) {
-        return false ;
-      }
-
-      if (itr->entity_rank() == prev->entity_rank()) {
-
-        if (itr->getRelationType() < prev->getRelationType()) {
-          return false ;
-        }
-
-        if (itr->getRelationType() == prev->getRelationType()) {
-
-          if (itr->getOrdinal() < prev->getOrdinal()) {
-            return false ;
-          }
-        }
-      }
-    }
-  }
-  return true ;
 }
 
 namespace impl {

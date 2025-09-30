@@ -200,7 +200,7 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
         unsigned count = 0;
         stk::mesh::EntityKey key;
         buf.unpack<stk::mesh::EntityKey>(key);
-        STK_ThrowAssertMsg(key == expected_key, "Program error. Contact sierra-help@sandia.gov for support. Key mismatch!" << key << " not same as " << expected_key);
+        STK_ThrowAssertMsg(key == expected_key, "P"<<comm.parallel_rank()<<" Key mismatch! recvd " << key << " but expected " << expected_key);
         buf.unpack<unsigned>(count);
         for(unsigned j = 0; j < count; ++j)
         {
@@ -228,8 +228,10 @@ bool pack_and_send_modified_shared_entity_states(stk::CommSparse& comm,
                if (state != Unchanged) {
                  bulk.comm_shared_procs(info.entity, sharingProcs);
                  for (int sharingProc : sharingProcs) {
+                   int isSharedWithProc = bulk.in_shared(info.entity, sharingProc) ? 1 : 0;
                    comm.send_buffer(sharingProc).pack<EntityKey>(info.key)
-                                                .pack<EntityState>(state);
+                                                .pack<EntityState>(state)
+                                                .pack<int>(isSharedWithProc);
                    //if I'm the owner, and the shared entity is modified, send the current list of
                    //other sharers also, to make sure all sharers know about each other.
                    int numOtherSharingProcs = bulk.bucket(info.entity).owned() ? sharingProcs.size()-1 : 0;
@@ -247,6 +249,7 @@ bool pack_and_send_modified_shared_entity_states(stk::CommSparse& comm,
                    if (owner != bulk.parallel_rank() && bulk.bucket(info.entity).in_aura()) {
                      comm.send_buffer(owner).pack<EntityKey>(info.key)
                                             .pack<EntityState>(state)
+                                            .pack<int>(0)
                                             .pack<int>(0);
                    }
                  }
@@ -428,73 +431,6 @@ bool is_received_entity_in_local_shared_entity_list(
   }
 
   return entitiesAreTheSame;
-}
-
-bool ghost_id_is_found_in_comm_data(const PairIterEntityComm& comm_data,
-                                    int entity_owner,
-                                    int ghost_id)
-{
-  bool found_ghost_id = false;
-  for (size_t i = 0; i < comm_data.size(); ++i) {
-    if ((comm_data[i].ghost_id == static_cast<unsigned>(ghost_id)) &&
-        (comm_data[i].proc == entity_owner)) {
-          found_ghost_id = true;
-          break;
-    }
-  }   
-  return found_ghost_id;
-}   
-
-bool all_ghost_ids_are_found_in_comm_data(const PairIterEntityComm& comm_data,
-                                          int entity_owner,
-                                          const std::vector<int>& recvd_ghost_ids)
-{
-  bool found_all_ghost_ids = true;
-  for (int ghost_id : recvd_ghost_ids) {
-    if (!ghost_id_is_found_in_comm_data(comm_data, entity_owner, ghost_id)) {
-      found_all_ghost_ids = false;
-      break;
-    }   
-  }   
-  return found_all_ghost_ids;
-}
-
-void comm_shared_procs(PairIterEntityComm commInfo,
-                       std::vector<int>& sharingProcs)
-{
-  sharingProcs.clear();
-  for(; !commInfo.empty(); ++commInfo) {
-    if (commInfo->ghost_id == BulkData::SHARED) {
-      sharingProcs.push_back(commInfo->proc);
-    }
-    else {
-      break;
-    }
-  }
-}
-
-void fill_sorted_procs(PairIterEntityComm ec, std::vector<int>& procs)
-{
-  procs.clear();
-  for(; !ec.empty(); ++ec) {
-    if (ec->ghost_id == 0 || procs.empty()) {
-      procs.push_back( ec->proc );
-    }
-    else {
-      stk::util::insert_keep_sorted_and_unique(ec->proc, procs);
-    }
-  }
-}
-
-void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs)
-{
-  procs.clear();
-  const int n = ec.size(); 
-  for (int i=0; i<n; ++i) {
-    if (ghost_id == ec[i].ghost_id) {
-      procs.push_back( ec[i].proc );
-    }
-  }
 }
 
 } // namespace impl

@@ -105,3 +105,10 @@ KOKKOSKERNELS_ADD_UNIT_TEST(
   COMPONENTS common
 )
 
+# Testing singletons with atexit(Kokkos::finalize)
+# which is also not backend specific
+KOKKOSKERNELS_ADD_UNIT_TEST(
+  common_atexit_finalize
+  SOURCES Test_Common_atexit_finalize.cpp
+  COMPONENTS common
+)

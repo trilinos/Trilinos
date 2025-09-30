@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -122,7 +122,7 @@ namespace Ioss {
     static EPRegistry &registry();
 
   private:
-    bool equal_(const Ioss::ElementPermutation &rhs, bool quiet) const;
+    IOSS_NODISCARD bool equal_(const Ioss::ElementPermutation &rhs, bool quiet) const;
 
     std::string                           m_type{};
     Permutation                           m_numPermutations{0};

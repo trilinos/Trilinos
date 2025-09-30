@@ -20,13 +20,13 @@
 
 namespace Thyra {
 
-  #define LCLINST(S,LO,GO,NO)                                     \
-    IFPACK2_INST(Ifpack2PreconditionerFactory,S,LO,GO,NO)
+#define LCLINST(S, LO, GO, NO) \
+  IFPACK2_INST(Ifpack2PreconditionerFactory, S, LO, GO, NO)
 
-  IFPACK2_ETI_MANGLING_TYPEDEFS()
+IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLGN(LCLINST)
+IFPACK2_INSTANTIATE_SLGN(LCLINST)
 
-} // namespace Thyra
+}  // namespace Thyra
 
 #endif

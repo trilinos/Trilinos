@@ -55,6 +55,7 @@
 #include <Epetra_MultiVector.h>
 #include <Epetra_CrsMatrix.h>
 #include <EpetraExt_CrsMatrixIn.h>
+#include <EpetraExt_BlockMapIn.h>
 #endif  // HAVE_AMESOS2_EPETRAEXT
 //#endif
 
@@ -727,21 +728,29 @@ do_solve_routine(const string& solver_name,
 
     if( refactor ){
 
-
       // Keep the symbolic factorization from A1
       solver->setA(A2, Amesos2::SYMBFACT);
 
       switch( style ){
       case SOLVE_VERBOSE:
+        if (verbosity > 2) {
+          *fos << endl << " ++ Re SOLVE_VERBOSE ++" << std::endl << std::flush;
+        }
         solver->numericFactorization();
         solver->setB(b2);
         solver->solve();
         break;
       case SOLVE_XB:
+        if (verbosity > 2) {
+          *fos << endl << " ++ Re SOLVE_XB ++" << std::endl << std::flush;
+        }
         solver->numericFactorization();
         solver->solve(outArg(*Xhat), ptrInArg(*b2));
         break;
       case SOLVE_SHORT:
+        if (verbosity > 2) {
+          *fos << endl << " ++ Re SHORT ++" << std::endl << std::flush;
+        }
         solver->solve(outArg(*Xhat), ptrInArg(*b2));
         break;
       }
@@ -772,6 +781,7 @@ bool do_epetra_test(const string& mm_file,
 
   typedef Epetra_CrsMatrix MAT;
   typedef Epetra_MultiVector MV;
+  typedef Epetra_Map MAP;
   const size_t numVecs = 5;     // arbitrary number
   const size_t numRHS  = 5;     // also quite arbitrary
 
@@ -783,23 +793,59 @@ bool do_epetra_test(const string& mm_file,
   const Epetra_SerialComm comm;
 #endif
 
-  if( verbosity > 2 ){
-    *fos << std::endl << "      Reading matrix from " << mm_file << " ... " << std::flush;
+  bool isContiguous = true;
+  string rowmap_file = "";
+  if (solve_params.isParameter("rowmap")) {
+    // Test non-contig GIDS with rowmap
+    rowmap_file = solve_params.get<string>("rowmap");
+    isContiguous = solve_params.sublist(solver_name).get("IsContiguous", false);
+    solve_params.remove("rowmap");
   }
+  if (verbosity > 2) {
+    *fos << std::endl << "      Reading matrix from " << mm_file;
+    if (rowmap_file != "") {
+      *fos << " with " << rowmap_file;
+    }
+    if (isContiguous) {
+      *fos << " (contiguous)";
+    }
+    *fos << " ... " << std::flush;
+  }
+
   std::string path = filedir + mm_file;
-  MAT* A;
-  int ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm, A, false, false);
-  if( ret == -1 ){
-    *fos << "error reading file from disk, aborting run." << std::endl;
-    return( false );
+  RCP<MAT> A_rcp;
+
+  if (rowmap_file == "") {
+    MAT* A;
+    int ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm, A, false, false);
+    if( ret == -1 ) {
+      *fos << "error reading matrix file from disk, aborting run." << std::endl;
+      return( false );
+    }
+    A_rcp = Teuchos::rcpFromRef(*A);
+  } else {
+    MAP* map;
+    int ret = 0;
+    std::string rowmap_path = filedir + rowmap_file;
+    ret = EpetraExt::MatrixMarketFileToMap(rowmap_path.c_str(), comm, map);
+    if( ret == -1 ){
+      *fos << "error reading map file from disk, aborting run." << std::endl;
+      return( false );
+    }
+    if( verbosity > 3 ) map->Print(std::cout);
+    int num_header_lines = 2;
+    bool convert_mtx_to_zero_base = true;
+    RCP<const MAP> rowMap = Teuchos::rcpFromRef(*map);
+    RCP<const MAP> domainMap = Teuchos::rcpFromRef(*map);
+    RCP<const MAP> rangeMap = Teuchos::rcpFromRef(*map);
+    A_rcp = Amesos2::Util::readEpetraCrsMatrixFromFile<MAP, MAT> (path, fos, rowMap, domainMap, rangeMap, convert_mtx_to_zero_base, num_header_lines);
   }
   if( verbosity > 2 ) *fos << "done" << std::endl;
-  if( verbosity > 3 ) A->Print(std::cout);
+  if( verbosity > 3 ) A_rcp->Print(std::cout);
 
-  const Epetra_Map dmnmap = A->DomainMap();
-  const Epetra_Map rngmap = A->RangeMap();
+  const Epetra_Map dmnmap = A_rcp->DomainMap();
+  const Epetra_Map rngmap = A_rcp->RangeMap();
 
-  RCP<MAT> A_rcp(A);
   RCP<MAT> A2;
   RCP<MV> x2, b2;
   RCP<MV> Xhat;
@@ -835,14 +881,14 @@ bool do_epetra_test(const string& mm_file,
     b[i]->SetLabel(blabel.str().c_str());
 
     x[i]->Random();
-    A->Multiply(transpose, *x[i], *b[i]);
+    A_rcp->Multiply(transpose, *x[i], *b[i]);
   }
 
   if( refactor ){
     // There isn't a really nice way to get a deep copy of an entire
     // CrsMatrix, so we just read the file again.
     MAT* A2_ptr;
-    ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm,
+    int ret = EpetraExt::MatrixMarketFileToCrsMatrix(path.c_str(), comm,
                                                  A2_ptr,
                                                  false, false);
     if( ret == -1 ){
@@ -951,20 +997,41 @@ bool do_tpetra_test_with_types(const string& mm_file,
 
   typedef CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> MAT;
   typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Map<LocalOrdinal,GlobalOrdinal,Node> MAP;
   const size_t numVecs = 5;     // arbitrary number
   const size_t numRHS  = 5;     // also arbitrary
-
-  bool transpose = solve_params.get<bool>("Transpose", false);
-
   RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
+  bool isContiguous = true;
+  string rowmap_file = "";
+  if (solve_params.isParameter("rowmap")) {
+    // Test non-contig GIDS with rowmap
+    rowmap_file = solve_params.get<string>("rowmap");
+    isContiguous = solve_params.sublist(solver_name).get("IsContiguous", false);
+    solve_params.remove("rowmap");
+  }
   if (verbosity > 2) {
-    *fos << endl << "      Reading matrix from " << mm_file << " ... " << flush;
+    *fos << endl << "      Reading matrix from " << mm_file;
+    if (rowmap_file != "") {
+      *fos << " with " << rowmap_file;
+    }
+    if (isContiguous) {
+      *fos << " (contiguous)";
+    }
+    *fos << " ... " << flush;
   }
   std::string path = filedir + mm_file;
-  RCP<MAT> A =
-    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile (path, comm);
-
+  RCP<MAT> A;
+  if (rowmap_file == "") {
+    A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile (path, comm);
+  } else {
+    int num_header_lines = 2;
+    bool convert_mtx_to_zero_base = true;
+    RCP<const MAP> rowMap = Tpetra::MatrixMarket::Reader<MAT>::readMapFile(filedir + rowmap_file, comm);
+    RCP<const MAP> domainMap = rowMap;
+    RCP<const MAP> rangeMap = rowMap;
+    A = Amesos2::Util::readCrsMatrixFromFile<MAP, MAT> (path, fos, rowMap, domainMap, rangeMap, convert_mtx_to_zero_base, num_header_lines);
+  }
   if (verbosity > 2) {
     *fos << "done" << endl;
     switch (verbosity) {
@@ -977,9 +1044,10 @@ bool do_tpetra_test_with_types(const string& mm_file,
     }
   }
 
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > dmnmap = A->getDomainMap();
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rngmap = A->getRangeMap();
+  RCP<const MAP > dmnmap = A->getDomainMap();
+  RCP<const MAP > rngmap = A->getRangeMap();
 
+  bool transpose = solve_params.get<bool>("Transpose", false);
   ETransp trans = transpose ? CONJ_TRANS : NO_TRANS;
 
   if (verbosity > 2) {
@@ -1036,19 +1104,21 @@ bool do_tpetra_test_with_types(const string& mm_file,
     // // CrsMatrix, so we just read the file again.
     // A2 = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path, comm);
 
-    // perturb the values just a bit (element-wise square of first row)
-    size_t l_fst_row_nnz = A2->getNumEntriesInLocalRow(0);
-    //Array<LocalOrdinal> indices(l_fst_row_nnz);
-    //Array<Scalar> values(l_fst_row_nnz);
-    typename MAT::nonconst_local_inds_host_view_type indices ("indices", l_fst_row_nnz);
-    typename MAT::nonconst_values_host_view_type     values  ("values",  l_fst_row_nnz);
-
-    A2->getLocalRowCopy(0, indices, values, l_fst_row_nnz);
-    for( size_t i = 0; i < l_fst_row_nnz; ++i ){
-      values[i] = values[i] * values[i];
-    }
     A2->resumeFill ();
-    A2->replaceLocalValues (0, indices, values);
+    if (A2->getComm()->getRank() == 0) {
+      // perturb the values just a bit (element-wise square of first row)
+      size_t l_fst_row_nnz = A2->getNumEntriesInLocalRow(0);
+      //Array<LocalOrdinal> indices(l_fst_row_nnz);
+      //Array<Scalar> values(l_fst_row_nnz);
+      typename MAT::nonconst_local_inds_host_view_type indices ("indices", l_fst_row_nnz);
+      typename MAT::nonconst_values_host_view_type     values  ("values",  l_fst_row_nnz);
+
+      A2->getLocalRowCopy(0, indices, values, l_fst_row_nnz);
+      for( size_t i = 0; i < l_fst_row_nnz; ++i ){
+        values[i] = values[i] * values[i];
+      }
+      A2->replaceLocalValues (0, indices, values);
+    }
     A2->fillComplete (A->getDomainMap (), A->getRangeMap ());
 
     x2->randomize();

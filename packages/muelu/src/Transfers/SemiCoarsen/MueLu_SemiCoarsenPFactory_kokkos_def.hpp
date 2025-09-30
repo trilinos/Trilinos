@@ -318,14 +318,14 @@ void SemiCoarsenPFactory_kokkos<
     importer = ImportFactory::Build(Amat->getDomainMap(), Amat->getColMap());
   {
     // Fill local temp with layer ids and fill ghost nodes
-    const auto localTempHost = localTemp->getHostLocalView(Xpetra::Access::ReadWrite);
+    const auto localTempHost = localTemp->getLocalViewHost(Xpetra::Access::ReadWrite);
     for (int row = 0; row < NFRows; row++)
       localTempHost(row, 0) = LayerId[row / DofsPerNode];
-    const auto localTempView = localTemp->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    const auto localTempView = localTemp->getLocalViewDevice(Xpetra::Access::ReadWrite);
     Kokkos::deep_copy(localTempView, localTempHost);
     FCol2LayerVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
   }
-  const auto FCol2LayerView = FCol2LayerVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
+  const auto FCol2LayerView = FCol2LayerVector->getLocalViewDevice(Xpetra::Access::ReadOnly);
   const auto FCol2Layer     = Kokkos::subview(FCol2LayerView, Kokkos::ALL(), 0);
 
   // Construct a map from fine level column to local dof per node id (including
@@ -334,14 +334,14 @@ void SemiCoarsenPFactory_kokkos<
       Xpetra::VectorFactory<LO, LO, GO, NO>::Build(Amat->getColMap());
   {
     // Fill local temp with local dof per node ids and fill ghost nodes
-    const auto localTempHost = localTemp->getHostLocalView(Xpetra::Access::ReadWrite);
+    const auto localTempHost = localTemp->getLocalViewHost(Xpetra::Access::ReadWrite);
     for (int row = 0; row < NFRows; row++)
       localTempHost(row, 0) = row % DofsPerNode;
-    const auto localTempView = localTemp->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    const auto localTempView = localTemp->getLocalViewDevice(Xpetra::Access::ReadWrite);
     Kokkos::deep_copy(localTempView, localTempHost);
     FCol2DofVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
   }
-  const auto FCol2DofView = FCol2DofVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
+  const auto FCol2DofView = FCol2DofVector->getLocalViewDevice(Xpetra::Access::ReadOnly);
   const auto FCol2Dof     = Kokkos::subview(FCol2DofView, Kokkos::ALL(), 0);
 
   // Compute NVertLines
@@ -356,7 +356,7 @@ void SemiCoarsenPFactory_kokkos<
 
   // Construct a map from Line, Layer ids to fine level node
   LOView2D LineLayer2Node("LineLayer2Node", NVertLines, NFLayers);
-  typename LOView2D::HostMirror LineLayer2NodeHost =
+  typename LOView2D::host_mirror_type LineLayer2NodeHost =
       Kokkos::create_mirror_view(LineLayer2Node);
   for (int node = 0; node < NFNodes; ++node)
     LineLayer2NodeHost(VertLineId[node], LayerId[node]) = node;
@@ -364,7 +364,7 @@ void SemiCoarsenPFactory_kokkos<
 
   // Construct a map from coarse layer id to fine layer id
   LOView1D CLayer2FLayer("CLayer2FLayer", NCLayers);
-  typename LOView1D::HostMirror CLayer2FLayerHost =
+  typename LOView1D::host_mirror_type CLayer2FLayerHost =
       Kokkos::create_mirror_view(CLayer2FLayer);
   using coordT = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
   const LO FirstStride =
@@ -387,9 +387,9 @@ void SemiCoarsenPFactory_kokkos<
   int MaxStencilSize = 1;
   LOView1D CLayer2StartLayer("CLayer2StartLayer", NCLayers);
   LOView1D CLayer2StencilSize("CLayer2StencilSize", NCLayers);
-  typename LOView1D::HostMirror CLayer2StartLayerHost =
+  typename LOView1D::host_mirror_type CLayer2StartLayerHost =
       Kokkos::create_mirror_view(CLayer2StartLayer);
-  typename LOView1D::HostMirror CLayer2StencilSizeHost =
+  typename LOView1D::host_mirror_type CLayer2StencilSizeHost =
       Kokkos::create_mirror_view(CLayer2StencilSize);
   for (int clayer = 0; clayer < NCLayers; ++clayer) {
     const int startLayer  = (clayer > 0) ? CLayer2FLayerHost(clayer - 1) + 1 : 0;
@@ -430,7 +430,7 @@ void SemiCoarsenPFactory_kokkos<
   // Note: Each coarse layer stencil dof contributes DofsPerNode to the
   // corresponding row in P
   Kokkos::View<size_t *, DeviceType> Pptr("Pptr", NFRows + 1);
-  typename Kokkos::View<size_t *, DeviceType>::HostMirror PptrHost =
+  typename Kokkos::View<size_t *, DeviceType>::host_mirror_type PptrHost =
       Kokkos::create_mirror_view(Pptr);
   Kokkos::deep_copy(PptrHost, 0);
   for (int line = 0; line < NVertLines; ++line) {
@@ -461,7 +461,7 @@ void SemiCoarsenPFactory_kokkos<
   Kokkos::deep_copy(layerBuckets, 0);
   LOView2D CLayerSNode2PptrOffset("CLayerSNode2PptrOffset", NCLayers,
                                   MaxStencilSize);
-  typename LOView2D::HostMirror CLayerSNode2PptrOffsetHost =
+  typename LOView2D::host_mirror_type CLayerSNode2PptrOffsetHost =
       Kokkos::create_mirror_view(CLayerSNode2PptrOffset);
   for (int clayer = 0; clayer < NCLayers; ++clayer) {
     const int stencilSize = CLayer2StencilSizeHost(clayer);
@@ -627,8 +627,8 @@ void SemiCoarsenPFactory_kokkos<
   coarseNullspace =
       MultiVectorFactory::Build(coarseMap, fineNullspace->getNumVectors());
   const int numVectors           = fineNullspace->getNumVectors();
-  const auto fineNullspaceView   = fineNullspace->getDeviceLocalView(Xpetra::Access::ReadOnly);
-  const auto coarseNullspaceView = coarseNullspace->getDeviceLocalView(Xpetra::Access::ReadWrite);
+  const auto fineNullspaceView   = fineNullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  const auto coarseNullspaceView = coarseNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
   using range_policy             = Kokkos::RangePolicy<execution_space>;
   Kokkos::parallel_for(
       "MueLu::SemiCoarsenPFactory_kokkos::BuildSemiCoarsenP Inject Nullspace",

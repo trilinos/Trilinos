@@ -35,68 +35,66 @@
 #define GETNGPFIELD_HPP
 
 #include "stk_mesh/base/NgpField.hpp"
-#include "stk_mesh/base/NgpFieldSyncDebugger.hpp"
 #include "stk_mesh/base/FieldBase.hpp"
 
 namespace stk {
 namespace mesh {
 
-template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace,
-          template <typename, typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpMemSpace, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, const stk::ngp::ExecSpace& execSpace)
+template <typename T, typename NgpMemSpace>  // Default mem space from FieldBase.hpp declaration
+NgpField<T, NgpMemSpace> & get_updated_ngp_field_async(const FieldBase & stkField, const stk::ngp::ExecSpace& execSpace)
 {
   static_assert(Kokkos::SpaceAccessibility<stk::ngp::ExecSpace, NgpMemSpace>::accessible);
 
   NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 
   if (ngpField == nullptr) {
-    ngpField = new NgpField<T, NgpMemSpace, NgpDebugger>(stkField.get_mesh(), stkField, true);
+    ngpField = new NgpField<T, NgpMemSpace>(stkField, true);
     ngpField->update_field(execSpace);
-    ngpField->debug_initialize_debug_views();
+    if constexpr (std::is_same_v<NgpMemSpace, stk::ngp::HostMemSpace>) {
+      // Add a false host-side sync because updating behavior after construction of HostField has changed
+      stkField.increment_num_syncs_to_device();
+    }
     impl::set_ngp_field(stkField, ngpField);
     ngpField->clear_host_sync_state();
   }
   else {
-    if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {
-      ngpField->update_field(execSpace);
-    }
+    ngpField->update_field(execSpace);
   }
 
-  return dynamic_cast< NgpField<T, NgpMemSpace, NgpDebugger>& >(*ngpField);
+  return dynamic_cast< NgpField<T, NgpMemSpace>& >(*ngpField);
 }
 
-template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace,
-          template <typename, typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpMemSpace, NgpDebugger> & get_updated_ngp_field_async(const FieldBase & stkField, stk::ngp::ExecSpace&& execSpace)
+template <typename T, typename NgpMemSpace>  // Default mem space from FieldBase.hpp declaration
+NgpField<T, NgpMemSpace> & get_updated_ngp_field_async(const FieldBase & stkField, stk::ngp::ExecSpace&& execSpace)
 {
   static_assert(Kokkos::SpaceAccessibility<stk::ngp::ExecSpace, NgpMemSpace>::accessible);
 
   NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 
   if (ngpField == nullptr) {
-    ngpField = new NgpField<T, NgpMemSpace, NgpDebugger>(stkField.get_mesh(), stkField, true);
+    ngpField = new NgpField<T, NgpMemSpace>(stkField, true);
     ngpField->update_field(std::forward<stk::ngp::ExecSpace>(execSpace));
-    ngpField->debug_initialize_debug_views();
+    if constexpr (std::is_same_v<NgpMemSpace, stk::ngp::HostMemSpace>) {
+      // Add a false host-side sync because updating behavior after construction of HostField has changed
+      stkField.increment_num_syncs_to_device();
+    }
     impl::set_ngp_field(stkField, ngpField);
     ngpField->clear_host_sync_state();
   }
   else {
-    if (stkField.get_mesh().synchronized_count() != ngpField->synchronized_count()) {
-      ngpField->update_field(std::forward<stk::ngp::ExecSpace>(execSpace));
-    }
+    ngpField->update_field(std::forward<stk::ngp::ExecSpace>(execSpace));
   }
 
-  return dynamic_cast< NgpField<T, NgpMemSpace, NgpDebugger>& >(*ngpField);
+  return dynamic_cast< NgpField<T, NgpMemSpace>& >(*ngpField);
 }
 
-template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace,
-          template <typename, typename> class NgpDebugger = DefaultNgpFieldSyncDebugger>
-NgpField<T, NgpMemSpace, NgpDebugger> & get_updated_ngp_field(const FieldBase & stkField)
+template <typename T, typename NgpMemSpace = NgpMeshDefaultMemSpace>
+NgpField<T, NgpMemSpace> & get_updated_ngp_field(const FieldBase & stkField)
 {
   using ExecSpace = Kokkos::DefaultExecutionSpace;
   static_assert(Kokkos::SpaceAccessibility<ExecSpace, NgpMemSpace>::accessible);
 
-  auto& ngpFieldRef = get_updated_ngp_field_async<T, NgpMemSpace, NgpDebugger>(stkField, ExecSpace());
+  auto& ngpFieldRef = get_updated_ngp_field_async<T, NgpMemSpace>(stkField, ExecSpace());
   ngpFieldRef.fence();
   return ngpFieldRef;
 }

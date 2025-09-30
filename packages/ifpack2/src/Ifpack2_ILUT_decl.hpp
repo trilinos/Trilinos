@@ -27,7 +27,7 @@
 #include <type_traits>
 
 namespace Teuchos {
-  class ParameterList; // forward declaration
+class ParameterList;  // forward declaration
 }
 
 namespace Ifpack2 {
@@ -56,18 +56,16 @@ namespace Ifpack2 {
 /// @remark There is an important difference between this implementation and the version
 /// described in Saad's paper.  See setParameters() for details.
 ///
-template<class MatrixType>
-class ILUT :
-    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                           typename MatrixType::local_ordinal_type,
-                                           typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>,
-    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                       typename MatrixType::local_ordinal_type,
-                                                                       typename MatrixType::global_ordinal_type,
-                                                                       typename MatrixType::node_type> >
-{
-public:
+template <class MatrixType>
+class ILUT : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                    typename MatrixType::local_ordinal_type,
+                                                    typename MatrixType::global_ordinal_type,
+                                                    typename MatrixType::node_type>,
+             virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                typename MatrixType::local_ordinal_type,
+                                                                                typename MatrixType::global_ordinal_type,
+                                                                                typename MatrixType::node_type> > {
+ public:
   //! \name Typedefs
   //@{
 
@@ -90,7 +88,8 @@ public:
   typedef Tpetra::RowMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
-                            node_type> row_matrix_type;
+                            node_type>
+      row_matrix_type;
 
   typedef typename row_matrix_type::global_inds_host_view_type global_inds_host_view_type;
   typedef typename row_matrix_type::local_inds_host_view_type local_inds_host_view_type;
@@ -106,7 +105,8 @@ public:
   typedef Tpetra::CrsMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
-                            node_type> crs_matrix_type;
+                            node_type>
+      crs_matrix_type;
 
   //! \name For implementation of Kokkos Kernels parallel ILUt (thresholded ILU)
   typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
@@ -114,30 +114,31 @@ public:
   ////////////////////////////////////
   typedef Tpetra::CrsGraph<local_ordinal_type, global_ordinal_type, node_type> crs_graph_type;
   typedef typename crs_graph_type::local_graph_device_type local_graph_device_type;
-  typedef typename local_graph_device_type::array_layout   array_layout;
-  typedef typename local_graph_device_type::device_type    device_type;
-  typedef typename local_graph_device_type::size_type      usize_type;
-  //KokkosKernels requires unsigned
-  //typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
+  typedef typename local_graph_device_type::array_layout array_layout;
+  typedef typename local_graph_device_type::device_type device_type;
+  typedef typename local_graph_device_type::size_type usize_type;
+  // KokkosKernels requires unsigned
+  // typedef typename Kokkos::View<size_type*, array_layout, device_type> lno_row_view_t;
   typedef typename Kokkos::View<usize_type*, array_layout, device_type> lno_urow_view_t;
   ////////////////////////////////////
   typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
-  //typedef typename Kokkos::View<lno_nonzero_view_t*, array_layout, device_type> static_graph_entries_t;
+  // typedef typename Kokkos::View<lno_nonzero_view_t*, array_layout, device_type> static_graph_entries_t;
   typedef typename Kokkos::View<typename local_matrix_device_type::non_const_ordinal_type*, array_layout, device_type> static_graph_entries_t;
   typedef typename local_matrix_device_type::values_type scalar_nonzero_view_t;
-  //typedef typename Kokkos::View<scalar_nonzero_view_t*, array_layout, device_type> local_matrix_values_t;
+  // typedef typename Kokkos::View<scalar_nonzero_view_t*, array_layout, device_type> local_matrix_values_t;
   typedef typename Kokkos::View<typename local_matrix_device_type::non_const_value_type*, array_layout, device_type> local_matrix_values_t;
   typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space TemporaryMemorySpace;
   typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::memory_space PersistentMemorySpace;
   typedef typename local_matrix_device_type::StaticCrsGraphType::device_type::execution_space HandleExecSpace;
-  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
-    <typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
-    HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace > kk_handle_type;
+  typedef typename KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type,
+                                                                    HandleExecSpace, TemporaryMemorySpace, PersistentMemorySpace>
+      kk_handle_type;
 
   //! Type of the Tpetra::Map specialization that this class uses.
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
-                      node_type> map_type;
+                      node_type>
+      map_type;
   //@}
   //! \name Constructors and Destructors
   //@{
@@ -151,10 +152,10 @@ public:
   /// The factorization will <i>not</i> modify the input matrix.  It
   /// stores the L and U factors in the incomplete factorization
   /// separately.
-  explicit ILUT (const Teuchos::RCP<const row_matrix_type>& A);
+  explicit ILUT(const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Destructor
-  virtual ~ILUT () = default;
+  virtual ~ILUT() = default;
 
   //@}
   //! \name Methods for setting up and computing the incomplete factorization
@@ -191,7 +192,7 @@ public:
   /// include them for consistency with other Ifpack2 preconditioners.
   ///
   /// The "fact: relax value" parameter currently has no effect.
-  void setParameters (const Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   /// \brief Clear any previously computed factors, and potentially
   ///        compute sparsity patterns of factors.
@@ -204,7 +205,7 @@ public:
   ///
   /// If your are using Par_ILUT from Kokkos Kernels, initialize()
   /// will also perform a symbolic factorization (i.e., compute sparsity patterns of factors).
-  void initialize ();
+  void initialize();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
   inline bool isInitialized() const {
@@ -253,7 +254,7 @@ public:
   /// The new matrix A need not necessarily have the same Maps or even
   /// the same communicator as the original matrix.
   virtual void
-  setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
 
   //@}
   //! \name Implementation of Tpetra::Operator
@@ -264,11 +265,11 @@ public:
   /// \param X [in] Input multivector; "right-hand side" of the solve.
   /// \param Y [out] Output multivector; result of the solve.
   void
-  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
-         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-         scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-         scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
+        Teuchos::ETransp mode = Teuchos::NO_TRANS,
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! Tpetra::Map representing the domain of this operator.
   Teuchos::RCP<const map_type> getDomainMap() const;
@@ -287,13 +288,13 @@ public:
   Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
   //! Returns a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const row_matrix_type> getMatrix () const;
+  Teuchos::RCP<const row_matrix_type> getMatrix() const;
 
   //! Returns a reference to the L factor.
-  Teuchos::RCP<const crs_matrix_type> getL () const { return L_; }
+  Teuchos::RCP<const crs_matrix_type> getL() const { return L_; }
 
   //! Returns a reference to the U factor.
-  Teuchos::RCP<const crs_matrix_type> getU () const { return U_; }
+  Teuchos::RCP<const crs_matrix_type> getU() const { return U_; }
 
   //! Returns the number of calls to Initialize().
   int getNumInitialize() const;
@@ -316,7 +317,6 @@ public:
   //! Get a rough estimate of cost per iteration
   size_t getNodeSmootherComplexity() const;
 
-
   /// \brief The level of fill.
   ///
   /// For ILUT, this means the maximum number of entries in each row
@@ -330,22 +330,22 @@ public:
 
   //! Get absolute threshold value
   inline magnitude_type getAbsoluteThreshold() const {
-    return(Athresh_);
+    return (Athresh_);
   }
 
   //! Get relative threshold value
   inline magnitude_type getRelativeThreshold() const {
-    return(Rthresh_);
+    return (Rthresh_);
   }
 
   //! Get the relax value
   inline magnitude_type getRelaxValue() const {
-    return(RelaxValue_);
+    return (RelaxValue_);
   }
 
   //! Gets the dropping tolerance
   inline magnitude_type getDropTolerance() const {
-    return(DropTolerance_);
+    return (DropTolerance_);
   }
 
   //! Returns the number of nonzero entries in the global graph.
@@ -362,23 +362,23 @@ public:
   std::string description() const;
 
   /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
   //@}
 
-private:
-  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
+ private:
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
   typedef typename Teuchos::Array<local_ordinal_type>::size_type size_type;
 
   //! Copy constructor (declared private and undefined; may not be used)
-  ILUT (const ILUT<MatrixType>& RHS);
+  ILUT(const ILUT<MatrixType>& RHS);
 
-  void allocateSolvers ();
+  void allocateSolvers();
 
   //! operator= (declared private and undefined; may not be used)
-  ILUT<MatrixType>& operator= (const ILUT<MatrixType>& RHS);
+  ILUT<MatrixType>& operator=(const ILUT<MatrixType>& RHS);
 
   /// \brief Wrap the given matrix in a "local filter," if necessary.
   ///
@@ -391,7 +391,7 @@ private:
   /// matrix is already "local," so this function just returns the
   /// original input.
   static Teuchos::RCP<const row_matrix_type>
-  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
+  makeLocalFilter(const Teuchos::RCP<const row_matrix_type>& A);
 
   // \name The matrix and its incomplete LU factors
   //@{
@@ -405,10 +405,10 @@ private:
   scalar_nonzero_view_t A_local_values_;
   //! L factor of the incomplete LU factorization of A_local_.
   Teuchos::RCP<crs_matrix_type> L_;
-  lno_urow_view_t     L_rowmap_;
-  lno_urow_view_t     U_rowmap_;
-  lno_urow_view_t     L_rowmap_orig_;
-  lno_urow_view_t     U_rowmap_orig_;
+  lno_urow_view_t L_rowmap_;
+  lno_urow_view_t U_rowmap_;
+  lno_urow_view_t L_rowmap_orig_;
+  lno_urow_view_t U_rowmap_orig_;
   //! Sparse triangular solver for L
   Teuchos::RCP<LocalSparseTriangularSolver<row_matrix_type> > L_solver_;
   //! U factor of the incomplete LU factorization of A_local_.
@@ -420,10 +420,10 @@ private:
   // \name Parameters (set by setParameters())
   //@{
 
-  magnitude_type Athresh_; //!< Absolute threshold
-  magnitude_type Rthresh_; //!< Relative threshold
-  magnitude_type RelaxValue_; //!< Relax value
-  double LevelOfFill_; //!< Max fill level
+  magnitude_type Athresh_;     //!< Absolute threshold
+  magnitude_type Rthresh_;     //!< Relative threshold
+  magnitude_type RelaxValue_;  //!< Relax value
+  double LevelOfFill_;         //!< Max fill level
   //! Discard all elements below this tolerance
   magnitude_type DropTolerance_;
   // See https://kokkos-kernels.readthedocs.io/en/latest/developer/apidocs/sparse.html#par-ilut
@@ -433,7 +433,7 @@ private:
     magnitude_type residual_norm_delta_stop;
     int team_size;
     int vector_size;
-    double fill_in_limit; //Note: par_ilut declares this as float
+    double fill_in_limit;  // Note: par_ilut declares this as float
     bool verbose;
   } par_ilut_options_;
 
@@ -463,8 +463,8 @@ private:
   bool useKokkosKernelsParILUT_;
   Teuchos::RCP<kk_handle_type> KernelHandle_;
 
-}; // class ILUT
+};  // class ILUT
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
 #endif /* IFPACK2_ILUT_HPP */

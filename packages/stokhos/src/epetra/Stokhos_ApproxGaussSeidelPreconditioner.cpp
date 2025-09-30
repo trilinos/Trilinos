@@ -123,7 +123,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     {
       // Apply deterministic preconditioner
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-      TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total AGS Deterministic Preconditioner Time");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stokhos: Total AGS Deterministic Preconditioner Time", deterministic);
 #endif
       mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)), *res_i);
     }
@@ -182,7 +182,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       {
         // Apply deterministic preconditioner
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-        TEUCHOS_FUNC_TIME_MONITOR("Stokhos: Total AGS Deterministic Preconditioner Time");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("Stokhos: Total AGS Deterministic Preconditioner Time", deterministic);
 #endif
         mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)), *res_i);
       }

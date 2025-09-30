@@ -51,7 +51,7 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   Basker<Int, Entry, Exe_Space>::Basker()
-  {   
+  {
     //Presetup flags
     matrix_flag       = BASKER_FALSE;
     order_flag        = BASKER_FALSE;
@@ -183,7 +183,7 @@ namespace BaskerNS
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::InitMatrix(string filename)
+  int Basker<Int, Entry, Exe_Space>::InitMatrix(std::string filename)
   { 
     //Note: jdb comeback to add trans option
     readMTX(filename, A);
@@ -1073,10 +1073,10 @@ namespace BaskerNS
       }
       BTF_A.gnorm = A.anorm;
       if(Options.verbose == BASKER_TRUE) {
-         cout<< " Basker Factor: Time to compute " 
-             << " norm(A) = "     << BTF_A.gnorm << " with n = " << A.ncol << ", and "
-             << " norm(BTF_A) = " << BTF_A.anorm << " with n = " << BTF_A.ncol
-             << " : " << normA_timer.seconds() << std::endl;
+        std::cout<< " Basker Factor: Time to compute" 
+                 << " norm(A) = "     << BTF_A.gnorm << " with n = " << A.ncol << ", and "
+                 << " norm(BTF_A) = " << BTF_A.anorm << " with n = " << BTF_A.ncol
+                 << " : " << normA_timer.seconds() << std::endl;
       }
     }
 
@@ -1298,8 +1298,8 @@ namespace BaskerNS
           nd_sizes(0) = 0;
           Kokkos::fence();
           Kokkos::parallel_for(
-            "ndsort_matrix_store_valperms", num_threads,
-            KOKKOS_LAMBDA(const int id) {
+            "ndsort_matrix_store_valperms", RangePolicy(0, num_threads),
+            BASKER_LAMBDA(const int id) {
               for (Int k = id; k < nblks; k += num_threads) {
                 for (Int i = part_tree.row_tabs[k]; i < part_tree.row_tabs[k+1]; i++) {
                   nd_map(i) = k;
@@ -1473,7 +1473,7 @@ namespace BaskerNS
             Int nleaves = num_threads;
             kokkos_amd_order<Int> amd_functor(nleaves, nblks, tree.col_tabs, AAT.col_ptr, AAT.row_idx,
                                               tempp, temp_col, temp_row, order_nd_amd, Options.verbose);
-            Kokkos::parallel_for("BLK_AMD on A", Kokkos::RangePolicy<Exe_Space>(0, nleaves), amd_functor);
+            Kokkos::parallel_for("BLK_AMD on A", RangePolicy(0, nleaves), amd_functor);
             Kokkos::fence();
             #else
             for(Int b = 0; b < tree.nblks; ++b) {
@@ -1562,8 +1562,8 @@ namespace BaskerNS
             }
             #else
             Kokkos::parallel_for(
-              "reset ndbtfa", BTF_A.nrow,
-              KOKKOS_LAMBDA(const int i) {
+              "reset ndbtfa", RangePolicy(0, BTF_A.nrow),
+              BASKER_LAMBDA(const int i) {
                 order_nd_mwm(i) += nfirst;
                 order_nd_amd(i) += nfirst;
               });
@@ -1578,8 +1578,8 @@ namespace BaskerNS
           }
           #else
           Kokkos::parallel_for(
-            "reset ndbtfa", BTF_A.nnz,
-            KOKKOS_LAMBDA(const int i) {
+            "reset ndbtfa", RangePolicy(0, BTF_A.nnz),
+            BASKER_LAMBDA(const int i) {
               vals_order_ndbtfa_array(i) = i;
             });
           Kokkos::fence();
@@ -2048,10 +2048,7 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int, Entry, Exe_Space>::Solve(Entry *b, Entry *x, bool transpose)
   {
-    #ifdef BASKER_TIMER 
     Kokkos::Timer timer;
-    double time = 0.0;
-    #endif
 
     if(Options.verbose == BASKER_TRUE)
     {
@@ -2073,13 +2070,10 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Solve Done \n");
+      double time = timer.seconds();
+      std::cout << "Basker Solve Done (total time: " << time << ")" << std::endl;
     }
 
-    #ifdef BASKER_TIMER
-    time += timer.seconds();
-    std::cout << "Basker Solve total time: " << time << std::endl;
-    #endif
 
     return 0;
   }//Solve(Entry *, Entry *);
@@ -2089,10 +2083,7 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::Solve(Int _nrhs, Entry *b, Entry *x, bool transpose)
   {
-    #ifdef BASKER_TIMER 
     Kokkos::Timer timer;
-    double time = 0.0;
-    #endif
 
     if(Options.verbose == BASKER_TRUE)
     {
@@ -2114,13 +2105,9 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf("Basker Multisolve Done \n");
+      double time = timer.seconds();
+      std::cout << "Basker MV Solve Done (total time: " << time << ")" << std::endl;
     }
-    
-    #ifdef BASKER_TIMER
-    time += timer.seconds();
-    std::cout << "Basker Solve total time: " << time << std::endl;
-    #endif
 
     return 0;
   }
@@ -2163,30 +2150,35 @@ namespace BaskerNS
   {
     //Need to test if power of nparts
     //TODO: hard-coded to be two. It is also hard-coded in shylubasker_structs.hpp
-    double nparts = 2.0;
-    if (pow(nparts, log((double)nthreads)/log(nparts)) != nthreads)
+    Int check_value = pow(2, log2(nthreads));
+    if (check_value != nthreads)
     {
-      BASKER_ASSERT(0==1, "Basker SetThreads Assert: Number of thread error - not a power of 2");
-      //Set default 1
-      num_threads = 1;
-      return BASKER_ERROR;
+      if(Options.verbose == BASKER_TRUE) {
+        printf("Basker SetThreads Assert: Number of thread error - not a power of 2. Re-setting from %d to %d.",
+               int(nthreads), int(check_value));
+      }
+      nthreads = check_value;
     }
 
     //Next test if Kokkos has that many threads!
     //This is a common mistake in mpi-based apps
     #ifdef KOKKOS_ENABLE_OPENMP
-    int check_value = Kokkos::OpenMP::impl_max_hardware_threads();
+    check_value = Kokkos::OpenMP::impl_max_hardware_threads();
+    #else
+    check_value = 1;
+    #endif
     if(nthreads > check_value)
     {
-      BASKER_ASSERT(0==1, "Basker SetThreads Assert: Number of thread not available");
-      num_threads =  1;
-      return BASKER_ERROR;
+      if(Options.verbose == BASKER_TRUE) {
+        printf("Basker SetThreads Assert: Number of thread not available (%d > %d). Resetting to %d.",
+                int(nthreads), int(check_value), int(check_value));
+      }
+      nthreads = check_value;
     }
-    #else
-    nthreads = 1;
-    #endif
 
+    // Finally, set the internal number of threads used by ShyLU-Basker.
     num_threads = nthreads;
+
     return BASKER_SUCCESS;
   }//end SetThreads()
 

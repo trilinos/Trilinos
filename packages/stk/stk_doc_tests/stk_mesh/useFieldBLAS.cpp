@@ -73,7 +73,7 @@ TEST(stkMeshHowTo, useFieldBLAS)
   DoubleField& velocityField = metaData.declare_field<double>(stk::topology::NODE_RANK, "velocity");
 
   double initialPressureValue = 4.4;
-  constexpr unsigned numValuesPerNode = 3;
+  constexpr int numValuesPerNode = 3;
   stk::mesh::put_field_on_entire_mesh_with_initial_value(pressureField, &initialPressureValue);
   stk::mesh::put_field_on_mesh(displacementsField, metaData.universal_part(), numValuesPerNode, nullptr);
   stk::mesh::put_field_on_mesh(velocityField, metaData.universal_part(), numValuesPerNode, nullptr);
@@ -90,10 +90,11 @@ TEST(stkMeshHowTo, useFieldBLAS)
 
   const double expectedVal = 10.0 + alpha*99.0;
 
+  auto velocityFieldData = velocityField.data<stk::mesh::ReadOnly>();
   auto expectEqualVal = [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
-    const double* velocityDataForNode = stk::mesh::field_data(velocityField, node);
-    for(unsigned i=0; i<numValuesPerNode; ++i) {
-      EXPECT_NEAR(expectedVal, velocityDataForNode[i], 1.e-8);
+    auto velocityDataForNode = velocityFieldData.entity_values(node);
+    for(stk::mesh::ComponentIdx i=0_comp; i<numValuesPerNode; ++i) {
+      EXPECT_NEAR(expectedVal, velocityDataForNode(i), 1.e-8);
     }
   };
 

@@ -454,7 +454,7 @@ bool test_crs_matrix_free(const UnitTestSetup<Device>& setup,
     y[block]   = vec_type( "y" , setup.fem_length );
     tmp[block] = vec_type( "tmp" , setup.fem_length );
 
-    typename matrix_values_type::HostMirror hM =
+    typename matrix_values_type::host_mirror_type hM =
       Kokkos::create_mirror( matrix[block].values );
 
     for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
@@ -468,9 +468,9 @@ bool test_crs_matrix_free(const UnitTestSetup<Device>& setup,
 
     Kokkos::deep_copy( matrix[block].values , hM );
 
-    typename vec_type::HostMirror hx =
+    typename vec_type::host_mirror_type hx =
       Kokkos::create_mirror( x[block] );
-    typename vec_type::HostMirror hy =
+    typename vec_type::host_mirror_type hy =
       Kokkos::create_mirror( y[block] );
 
     for ( int i = 0 ; i < setup.fem_length ; ++i ) {
@@ -528,7 +528,7 @@ bool test_crs_matrix_free(const UnitTestSetup<Device>& setup,
     }
   }
 
-  std::vector<typename vec_type::HostMirror> hy(setup.stoch_length);
+  std::vector<typename vec_type::host_mirror_type> hy(setup.stoch_length);
   for (int i=0; i<setup.stoch_length; ++i) {
     hy[i] = Kokkos::create_mirror( y[i] );
     Kokkos::deep_copy( hy[i] , y[i] );
@@ -555,8 +555,8 @@ bool test_crs_matrix_free_view(const UnitTestSetup<Device>& setup,
   multi_vec_type tmp_x( "tmp_x", setup.fem_length, setup.stoch_length ) ;
   multi_vec_type tmp_y( "tmp_y", setup.fem_length, setup.stoch_length ) ;
 
-  typename multi_vec_type::HostMirror hx = Kokkos::create_mirror( x );
-  typename multi_vec_type::HostMirror hy = Kokkos::create_mirror( y );
+  typename multi_vec_type::host_mirror_type hx = Kokkos::create_mirror( x );
+  typename multi_vec_type::host_mirror_type hy = Kokkos::create_mirror( y );
 
   for (int block=0; block<setup.stoch_length; ++block) {
     matrix[block].graph = Kokkos::create_staticcrsgraph<matrix_graph_type>(
@@ -565,7 +565,7 @@ bool test_crs_matrix_free_view(const UnitTestSetup<Device>& setup,
     matrix[block].values =
       matrix_values_type( "matrix" , setup.fem_graph_length );
 
-    typename matrix_values_type::HostMirror hM =
+    typename matrix_values_type::host_mirror_type hM =
       Kokkos::create_mirror( matrix[block].values );
 
     for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
@@ -620,7 +620,7 @@ bool test_crs_matrix_free_view(const UnitTestSetup<Device>& setup,
       Stokhos::multiply( matrix[k] , tmp_x_view , tmp_y_view, smo );
       jdx = 0;
       for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-        vec_type tmp_y_view =
+        vec_type tmp_y_view2 =
           Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
         kji_iterator i_begin = setup.Cijk->i_begin(j_it);
         kji_iterator i_end = setup.Cijk->i_end(j_it);
@@ -628,7 +628,7 @@ bool test_crs_matrix_free_view(const UnitTestSetup<Device>& setup,
           int i = index(i_it);
           value_type c = value(i_it);
           vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
-          Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
+          Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view2 );
         }
       }
     }
@@ -660,8 +660,8 @@ bool test_crs_matrix_free_kokkos(const UnitTestSetup<Device>& setup,
   multi_vec_type tmp_x( "tmp_x", setup.fem_length, setup.stoch_length ) ;
   multi_vec_type tmp_y( "tmp_y", setup.fem_length, setup.stoch_length ) ;
 
-  typename multi_vec_type::HostMirror hx = Kokkos::create_mirror( x );
-  typename multi_vec_type::HostMirror hy = Kokkos::create_mirror( y );
+  typename multi_vec_type::host_mirror_type hx = Kokkos::create_mirror( x );
+  typename multi_vec_type::host_mirror_type hy = Kokkos::create_mirror( y );
 
   for (int block=0; block<setup.stoch_length; ++block) {
     matrix_graph_type matrix_graph =
@@ -669,7 +669,7 @@ bool test_crs_matrix_free_kokkos(const UnitTestSetup<Device>& setup,
         std::string("test crs graph"), setup.fem_graph);
     matrix_values_type matrix_values =
       matrix_values_type( "matrix" , setup.fem_graph_length );
-    typename matrix_values_type::HostMirror hM =
+    typename matrix_values_type::host_mirror_type hM =
       Kokkos::create_mirror( matrix_values );
 
     for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
@@ -724,7 +724,7 @@ bool test_crs_matrix_free_kokkos(const UnitTestSetup<Device>& setup,
       KokkosSparse::spmv(  "N", value_type(1.0), matrix[k] , tmp_x_view , value_type(0.0) , tmp_y_view );
       jdx = 0;
       for (kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
-        vec_type tmp_y_view =
+        vec_type tmp_y_view2 =
           Kokkos::subview( tmp_y, Kokkos::ALL(), jdx++ );
         kji_iterator i_begin = setup.Cijk->i_begin(j_it);
         kji_iterator i_end = setup.Cijk->i_end(j_it);
@@ -732,8 +732,8 @@ bool test_crs_matrix_free_kokkos(const UnitTestSetup<Device>& setup,
           int i = index(i_it);
           value_type c = value(i_it);
           vec_type y_view = Kokkos::subview( y, Kokkos::ALL(), i );
-          //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view );
-          KokkosBlas::update(c, tmp_y_view, value_type(1.0), y_view, value_type(0.0), y_view);
+          //Stokhos::update( value_type(1.0) , y_view , c , tmp_y_view2 );
+          KokkosBlas::update(c, tmp_y_view2, value_type(1.0), y_view, value_type(0.0), y_view);
         }
       }
     }
@@ -789,7 +789,7 @@ test_crs_dense_block(const UnitTestSetup<Device>& setup,
   block_vector_type y =
     block_vector_type( "y" , setup.stoch_length , setup.fem_length );
 
-  typename block_vector_type::HostMirror hx = Kokkos::create_mirror( x );
+  typename block_vector_type::host_mirror_type hx = Kokkos::create_mirror( x );
 
   for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
     for ( int iColStoch = 0 ; iColStoch < setup.stoch_length ; ++iColStoch ) {
@@ -814,7 +814,7 @@ test_crs_dense_block(const UnitTestSetup<Device>& setup,
     "matrix" , matrix.block.matrix_size() , setup.fem_graph_length );
 
   {
-    typename block_vector_type::HostMirror hM =
+    typename block_vector_type::host_mirror_type hM =
       Kokkos::create_mirror( matrix.values );
 
     for ( int iRowStoch = 0 ; iRowStoch < setup.stoch_length ; ++iRowStoch ) {
@@ -850,7 +850,7 @@ test_crs_dense_block(const UnitTestSetup<Device>& setup,
 
   Stokhos::multiply( matrix , x , y );
 
-  typename block_vector_type::HostMirror hy = Kokkos::create_mirror( y );
+  typename block_vector_type::host_mirror_type hy = Kokkos::create_mirror( y );
   Kokkos::deep_copy( hy , y );
 
   bool success = setup.test_commuted(hy, out);
@@ -946,7 +946,7 @@ test_crs_flat_commuted(const UnitTestSetup<Device>& setup,
   vector_type x = vector_type( "x" , flat_length );
   vector_type y = vector_type( "y" , flat_length );
 
-  typename vector_type::HostMirror hx = Kokkos::create_mirror( x );
+  typename vector_type::host_mirror_type hx = Kokkos::create_mirror( x );
 
   for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
     for ( int iColStoch = 0 ; iColStoch < setup.stoch_length ; ++iColStoch ) {
@@ -969,7 +969,7 @@ test_crs_flat_commuted(const UnitTestSetup<Device>& setup,
 
   matrix.values = matrix_values_type( "matrix" , flat_graph_length );
   {
-    typename matrix_values_type::HostMirror hM =
+    typename matrix_values_type::host_mirror_type hM =
       Kokkos::create_mirror( matrix.values );
 
     for ( int iRow = 0 , iEntry = 0 ; iRow < flat_length ; ++iRow ) {
@@ -1000,7 +1000,7 @@ test_crs_flat_commuted(const UnitTestSetup<Device>& setup,
 
   Stokhos::multiply( matrix , x , y );
 
-  typename vector_type::HostMirror hy = Kokkos::create_mirror( y );
+  typename vector_type::host_mirror_type hy = Kokkos::create_mirror( y );
   Kokkos::deep_copy( hy , y );
 
   bool success = setup.test_commuted_flat(hy, out);
@@ -1094,7 +1094,7 @@ test_crs_flat_original(const UnitTestSetup<Device>& setup,
   vector_type x = vector_type( "x" , flat_length );
   vector_type y = vector_type( "y" , flat_length );
 
-  typename vector_type::HostMirror hx = Kokkos::create_mirror( x );
+  typename vector_type::host_mirror_type hx = Kokkos::create_mirror( x );
 
   for ( size_t iCol = 0 ; iCol < flat_length ; ++iCol ) {
     const int iColStoch = iCol / setup.fem_length ;
@@ -1116,7 +1116,7 @@ test_crs_flat_original(const UnitTestSetup<Device>& setup,
 
   matrix.values = matrix_values_type( "matrix" , flat_graph_length );
   {
-    typename matrix_values_type::HostMirror hM =
+    typename matrix_values_type::host_mirror_type hM =
       Kokkos::create_mirror( matrix.values );
 
     for ( size_t iRow = 0 , iEntry = 0 ; iRow < flat_length ; ++iRow ) {
@@ -1147,7 +1147,7 @@ test_crs_flat_original(const UnitTestSetup<Device>& setup,
 
   Stokhos::multiply( matrix , x , y );
 
-  typename vector_type::HostMirror hy = Kokkos::create_mirror( y );
+  typename vector_type::host_mirror_type hy = Kokkos::create_mirror( y );
   Kokkos::deep_copy( hy , y );
 
   bool success = setup.test_original_flat(hy, out);
@@ -1176,7 +1176,7 @@ bool test_crs_product_tensor(
   block_vector_type y =
     block_vector_type( "y" , setup.stoch_length_aligned , setup.fem_length );
 
-  typename block_vector_type::HostMirror hx =
+  typename block_vector_type::host_mirror_type hx =
     Kokkos::create_mirror( x );
 
   for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
@@ -1204,7 +1204,7 @@ bool test_crs_product_tensor(
   matrix.values = block_vector_type(
     "matrix" , setup.stoch_length_aligned , setup.fem_graph_length );
 
-  typename block_vector_type::HostMirror hM =
+  typename block_vector_type::host_mirror_type hM =
     Kokkos::create_mirror( matrix.values );
 
   for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
@@ -1226,7 +1226,7 @@ bool test_crs_product_tensor(
 
   Stokhos::multiply( matrix , x , y );
 
-  typename block_vector_type::HostMirror hy = Kokkos::create_mirror( y );
+  typename block_vector_type::host_mirror_type hy = Kokkos::create_mirror( y );
   Kokkos::deep_copy( hy , y );
 
   bool success = setup.test_commuted_perm(hy, out);
@@ -1266,7 +1266,7 @@ bool test_linear_tensor(const UnitTestSetup<Device>& setup,
   block_vector_type y =
     block_vector_type( "y" , aligned_stoch_length , setup.fem_length );
 
-  typename block_vector_type::HostMirror hx =
+  typename block_vector_type::host_mirror_type hx =
     Kokkos::create_mirror( x );
 
   for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
@@ -1288,7 +1288,7 @@ bool test_linear_tensor(const UnitTestSetup<Device>& setup,
   matrix.values = block_vector_type(
     "matrix" , aligned_stoch_length , setup.fem_graph_length );
 
-  typename block_vector_type::HostMirror hM =
+  typename block_vector_type::host_mirror_type hM =
     Kokkos::create_mirror( matrix.values );
 
   for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
@@ -1310,7 +1310,7 @@ bool test_linear_tensor(const UnitTestSetup<Device>& setup,
 
   Stokhos::multiply( matrix , x , y );
 
-  typename block_vector_type::HostMirror hy = Kokkos::create_mirror( y );
+  typename block_vector_type::host_mirror_type hy = Kokkos::create_mirror( y );
   Kokkos::deep_copy( hy , y );
 
   bool success = setup.test_commuted(hy, out);
@@ -1339,7 +1339,7 @@ bool test_lexo_block_tensor(const UnitTestSetup<Device>& setup,
   block_vector_type y =
     block_vector_type( "y" , setup.stoch_length , setup.fem_length );
 
-  typename block_vector_type::HostMirror hx =
+  typename block_vector_type::host_mirror_type hx =
     Kokkos::create_mirror( x );
 
   for ( int iColFEM = 0 ;   iColFEM < setup.fem_length ;   ++iColFEM ) {
@@ -1380,7 +1380,7 @@ bool test_lexo_block_tensor(const UnitTestSetup<Device>& setup,
   matrix.values = block_vector_type(
     "matrix" , setup.stoch_length , setup.fem_graph_length );
 
-  typename block_vector_type::HostMirror hM =
+  typename block_vector_type::host_mirror_type hM =
     Kokkos::create_mirror( matrix.values );
 
   for ( int iRowFEM = 0 , iEntryFEM = 0 ; iRowFEM < setup.fem_length ; ++iRowFEM ) {
@@ -1401,7 +1401,7 @@ bool test_lexo_block_tensor(const UnitTestSetup<Device>& setup,
 
   Stokhos::multiply( matrix , x , y );
 
-  typename block_vector_type::HostMirror hy = Kokkos::create_mirror( y );
+  typename block_vector_type::host_mirror_type hy = Kokkos::create_mirror( y );
   Kokkos::deep_copy( hy , y );
 
   bool success = setup.test_commuted(hy, out);

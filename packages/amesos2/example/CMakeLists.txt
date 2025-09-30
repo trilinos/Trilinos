@@ -20,7 +20,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 ENDIF ()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(GappedMtxGIDs_File
-  SOURCE_FILES gap-ids-1proc-rowmap.mm gap-ids-1procA.mm gap-ids-1procRhs.mm
+  SOURCE_FILES gap-ids-1proc-rowmap-tpetra.mm gap-ids-1procA.mm gap-ids-1procRhs.mm
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../test/matrices/
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   )

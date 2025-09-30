@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,20 +9,22 @@
 #include "edge_block.h" // for Edge_Block
 #include "exo_block.h"  // for Exo_Block
 #include "exo_read.h"
-#include "exodusII.h"   // for ex_init_params, ex_opts, etc
-#include "face_block.h" // for Face_Block
-#include "fmt/ostream.h"
-#include "fmt/ranges.h"
+#include "exodusII.h"     // for ex_init_params, ex_opts, etc
+#include "face_block.h"   // for Face_Block
 #include "node_set.h"     // for Node_Set
 #include "side_set.h"     // for Side_Set
 #include "smart_assert.h" // for SMART_ASSERT, Assert, etc
 #include "stringx.h"      // for chop_whitespace
 #include "util.h"         // for free_name_array, etc
-#include <algorithm>      // for copy
-#include <cstdint>        // for int64_t
-#include <cstdio>         // for fclose, FILE, fopen
-#include <cstdlib>        // for exit
-#include <cstring>        // for strlen
+
+#include <algorithm> // for copy
+#include <cstdint>   // for int64_t
+#include <cstdio>    // for fclose, FILE, fopen
+#include <cstdlib>   // for exit
+#include <cstring>   // for strlen
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <fmt/ranges.h>
 #include <iostream>
 #include <set>    // for set
 #include <string> // for string, char_traits, etc
@@ -189,59 +191,59 @@ template <typename INT> double Exo_Read<INT>::Time(int time_num) const
   return times[time_num - 1];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::Global_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::Global_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < global_vars.size());
+  SMART_ASSERT(index < global_vars.size());
   return global_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::Nodal_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::Nodal_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < nodal_vars.size());
+  SMART_ASSERT(index < nodal_vars.size());
   return nodal_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::Element_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::Element_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < elmt_vars.size());
+  SMART_ASSERT(index < elmt_vars.size());
   return elmt_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::Element_Att_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::Element_Att_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < elmt_atts.size());
+  SMART_ASSERT(index < elmt_atts.size());
   return elmt_atts[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::NS_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::NS_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < ns_vars.size());
+  SMART_ASSERT(index < ns_vars.size());
   return ns_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::SS_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::SS_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < ss_vars.size());
+  SMART_ASSERT(index < ss_vars.size());
   return ss_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::EB_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::EB_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < eb_vars.size());
+  SMART_ASSERT(index < eb_vars.size());
   return eb_vars[index];
 }
 
-template <typename INT> const std::string &Exo_Read<INT>::FB_Var_Name(int index) const
+template <typename INT> const std::string &Exo_Read<INT>::FB_Var_Name(size_t index) const
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(index >= 0 && (unsigned)index < fb_vars.size());
+  SMART_ASSERT(index < fb_vars.size());
   return fb_vars[index];
 }
 
@@ -702,11 +704,11 @@ template <typename INT> void Exo_Read<INT>::Free_Nodal_Coordinates()
 }
 
 template <typename INT>
-std::string Exo_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
+std::string Exo_Read<INT>::Load_Nodal_Results(int time_step_num, size_t var_index)
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(time_step_num > 0 && time_step_num <= Num_Times());
-  SMART_ASSERT(var_index >= 0 && (unsigned)var_index < nodal_vars.size());
+  SMART_ASSERT(var_index < nodal_vars.size());
 
   if (!Open()) {
     return "WARNING:  File not open!";
@@ -749,7 +751,7 @@ std::string Exo_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
 
 template <typename INT>
 const double *Exo_Read<INT>::Get_Nodal_Results(int t1, int t2, double proportion,
-                                               int var_index) const // Interpolated results.
+                                               size_t var_index) const // Interpolated results.
 {
   static std::vector<double> st_results;
   static std::vector<double> st_results2;
@@ -757,7 +759,7 @@ const double *Exo_Read<INT>::Get_Nodal_Results(int t1, int t2, double proportion
   SMART_ASSERT(Check_State());
   SMART_ASSERT(t1 > 0 && t1 <= Num_Times());
   SMART_ASSERT(t2 > 0 && t2 <= Num_Times());
-  SMART_ASSERT(var_index >= 0 && (unsigned)var_index < nodal_vars.size());
+  SMART_ASSERT(var_index < nodal_vars.size());
 
   if (!Open()) {
     return nullptr;
@@ -799,7 +801,7 @@ template <typename INT> void Exo_Read<INT>::Free_Nodal_Results()
   }
 }
 
-template <typename INT> void Exo_Read<INT>::Free_Nodal_Results(int var_index)
+template <typename INT> void Exo_Read<INT>::Free_Nodal_Results(size_t var_index)
 {
   SMART_ASSERT(Check_State());
   if (results) {
@@ -810,13 +812,13 @@ template <typename INT> void Exo_Read<INT>::Free_Nodal_Results(int var_index)
   }
 }
 
-template <typename INT> const double *Exo_Read<INT>::Get_Nodal_Results(int var_index) const
+template <typename INT> const double *Exo_Read<INT>::Get_Nodal_Results(size_t var_index) const
 {
   SMART_ASSERT(Check_State());
   if (cur_time == 0) {
     return nullptr;
   }
-  SMART_ASSERT(var_index >= 0 && (unsigned)var_index < nodal_vars.size());
+  SMART_ASSERT(var_index < nodal_vars.size());
 
   return results[var_index];
 }

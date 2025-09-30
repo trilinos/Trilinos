@@ -26,9 +26,9 @@ namespace Ifpack2 {
 namespace Details {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-template<class TpetraOperatorType>
-class ChebyshevKernel; // forward declaration
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+template <class TpetraOperatorType>
+class ChebyshevKernel;  // forward declaration
+#endif                  // DOXYGEN_SHOULD_SKIP_THIS
 
 /// \class Chebyshev
 /// \brief Left-scaled Chebyshev iteration.
@@ -71,9 +71,9 @@ class ChebyshevKernel; // forward declaration
 /// implementation (ML_Cheby(), in
 /// packages/ml/src/Smoother/ml_smoother.c).  I couldn't get it to
 /// converge in time to be useful for testing, so it is disabled.
-template<class ScalarType, class MV>
+template <class ScalarType, class MV>
 class Chebyshev : public Teuchos::Describable {
-public:
+ public:
   //! \name Typedefs
   //@{
 
@@ -87,21 +87,25 @@ public:
   typedef Tpetra::Operator<typename MV::scalar_type,
                            typename MV::local_ordinal_type,
                            typename MV::global_ordinal_type,
-                           typename MV::node_type> op_type;
+                           typename MV::node_type>
+      op_type;
   //! Specialization of Tpetra::RowMatrix.
   typedef Tpetra::RowMatrix<typename MV::scalar_type,
-                           typename MV::local_ordinal_type,
-                           typename MV::global_ordinal_type,
-                           typename MV::node_type> row_matrix_type;
+                            typename MV::local_ordinal_type,
+                            typename MV::global_ordinal_type,
+                            typename MV::node_type>
+      row_matrix_type;
   //! Specialization of Tpetra::Vector.
   typedef Tpetra::Vector<typename MV::scalar_type,
                          typename MV::local_ordinal_type,
                          typename MV::global_ordinal_type,
-                         typename MV::node_type> V;
+                         typename MV::node_type>
+      V;
   //! Specialization of Tpetra::Map.
   typedef Tpetra::Map<typename MV::local_ordinal_type,
                       typename MV::global_ordinal_type,
-                      typename MV::node_type> map_type;
+                      typename MV::node_type>
+      map_type;
   //@}
 
   /// Constructor that takes a sparse matrix and sets default parameters.
@@ -111,7 +115,7 @@ public:
   ///   definite.  The input A may be null.  In that case, you must
   ///   call setMatrix() with a nonnull input before you may call
   ///   compute() or apply().
-  Chebyshev (Teuchos::RCP<const row_matrix_type> A);
+  Chebyshev(Teuchos::RCP<const row_matrix_type> A);
 
   /// Constructor that takes a sparse matrix and sets the user's parameters.
   ///
@@ -122,7 +126,7 @@ public:
   ///   compute() or apply().
   /// \param params [in/out] On input: the parameters.  On output:
   ///   filled with the current parameter settings.
-  Chebyshev (Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params);
+  Chebyshev(Teuchos::RCP<const row_matrix_type> A, Teuchos::ParameterList& params);
 
   /// \brief Set (or reset) parameters.
   ///
@@ -232,9 +236,9 @@ public:
   ///
   /// Default settings for parameters relating to spectral bounds come
   /// from Ifpack.
-  void setParameters (Teuchos::ParameterList& plist);
+  void setParameters(Teuchos::ParameterList& plist);
 
-  void setZeroStartingSolution (bool zeroStartingSolution) { zeroStartingSolution_ = zeroStartingSolution; }
+  void setZeroStartingSolution(bool zeroStartingSolution) { zeroStartingSolution_ = zeroStartingSolution; }
 
   /// \brief (Re)compute the left scaling D_inv, and estimate min and
   ///   max eigenvalues of D_inv * A.
@@ -269,7 +273,7 @@ public:
   /// eigenvalue bounds will not affect subsequent apply() operations,
   /// until the "chebyshev: assume matrix does not change" parameter
   /// is set back to \c false (its default value).
-  void compute ();
+  void compute();
 
   /// \brief Solve Ax=b for x with Chebyshev iteration with left diagonal scaling.
   ///
@@ -287,25 +291,25 @@ public:
   ///   initialize X before calling this method, then the resulting
   ///   solution will be undefined, since it will be computed using
   ///   uninitialized data.
-  MT apply (const MV& B, MV& X);
+  MT apply(const MV& B, MV& X);
 
   ST getLambdaMaxForApply() const;
 
   //! Get the matrix given to the constructor.
-  Teuchos::RCP<const row_matrix_type> getMatrix () const;
+  Teuchos::RCP<const row_matrix_type> getMatrix() const;
 
   /// \brief Set the matrix.
   ///
   /// It's legal to call this method with a null input.  In that case,
   /// one must then call this method with a nonnull input before one
   /// may call compute() or apply().
-  void setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+  void setMatrix(const Teuchos::RCP<const row_matrix_type>& A);
 
   //! Whether it's possible to apply the transpose of this operator.
-  bool hasTransposeApply () const;
+  bool hasTransposeApply() const;
 
   //! Print instance data to the given output stream.
-  void print (std::ostream& out);
+  void print(std::ostream& out);
 
   //@}
   //! \name Implementation of Teuchos::Describable
@@ -316,11 +320,11 @@ public:
 
   //! Print a description of the Chebyshev solver to \c out.
   void
-  describe (Teuchos::FancyOStream& out,
-            const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const;
   //@}
-private:
+ private:
   //! \name The sparse matrix, and data related to its diagonal.
   //@{
 
@@ -489,6 +493,11 @@ private:
   /// and insead use native blas/SpMV operators
   bool ckUseNativeSpMV_;
 
+  /// Whether the temporary multivector should be pre-allocated (for a single vector)
+  /// in compute(). Otherwise this will happen the first time apply is called,
+  /// slowing it down.
+  bool preAllocateTempVector_;
+
   /// \brief Output stream for debug output ONLY.
   ///
   /// This is ONLY valid if debug_ is true.
@@ -502,10 +511,10 @@ private:
   //@{
 
   //! Called by constructors to verify their input.
-  void checkConstructorInput () const;
+  void checkConstructorInput() const;
 
   //! Called by constructors and setMatrix() to verify the input matrix.
-  void checkInputMatrix () const;
+  void checkInputMatrix() const;
 
   /// \brief Reset internal state dependent on the matrix.
   ///
@@ -514,14 +523,14 @@ private:
   /// and estimates of the min and eigenvalues.  It must be called in
   /// setMatrix(), unless assumeMatrixChanged_ is false or the input
   /// matrix to setMatrix() is the same object as A_.
-  void reset ();
+  void reset();
 
   /// \brief Set W to temporary MultiVector with the same Map as B.
   ///
   /// This is an optimization for apply().  This method caches the
   /// created MultiVector as W_.  Caching optimizes the common case of
   /// calling apply() many times.
-  Teuchos::RCP<MV> makeTempMultiVector (const MV& B);
+  Teuchos::RCP<MV> makeTempMultiVector(const MV& B);
 
   /// \brief Set W2 to temporary MultiVector with the same Map as B.
   ///
@@ -529,35 +538,34 @@ private:
   /// created MultiVector as W2_. Caching optimizes the common case of
   /// calling apply() many times. This is used by fourth kind
   /// Chebyshev as two temporary multivectors are needed.
-  Teuchos::RCP<MV> makeSecondTempMultiVector (const MV& B);
+  Teuchos::RCP<MV> makeSecondTempMultiVector(const MV& B);
 
   //! W = alpha*D_inv*B and X = 0 + W.
   void
-  firstIterationWithZeroStartingSolution
-  (MV& W,
-   const ScalarType& alpha,
-   const V& D_inv,
-   const MV& B,
-   MV& X);
+  firstIterationWithZeroStartingSolution(MV& W,
+                                         const ScalarType& alpha,
+                                         const V& D_inv,
+                                         const MV& B,
+                                         MV& X);
 
   //! R = B - Op(A) * X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   static void
-  computeResidual (MV& R, const MV& B, const op_type& A, const MV& X,
-                   const Teuchos::ETransp mode = Teuchos::NO_TRANS);
+  computeResidual(MV& R, const MV& B, const op_type& A, const MV& X,
+                  const Teuchos::ETransp mode = Teuchos::NO_TRANS);
 
   /// \brief Z = D_inv * R, = D \ R.
   ///
   /// \param D_inv [in] A vector representing a diagonal matrix.
   /// \param R [in] Input multivector.
   /// \param Z [out] Result of multiplying the diagonal matrix D_inv with R.
-  static void solve (MV& Z, const V& D_inv, const MV& R);
+  static void solve(MV& Z, const V& D_inv, const MV& R);
 
   /// \brief Z = alpha * D_inv * R, = alpha * (D \ R).
   ///
   /// \param D_inv [in] A vector representing a diagonal matrix.
   /// \param R [in] Input multivector.
   /// \param Z [out] Result of multiplying the diagonal matrix D_inv with R.
-  static void solve (MV& Z, const ST alpha, const V& D_inv, const MV& R);
+  static void solve(MV& Z, const ST alpha, const V& D_inv, const MV& R);
 
   /// \brief Compute the inverse diagonal of the matrix, as a range Map vector.
   ///
@@ -567,7 +575,7 @@ private:
   ///   offsets of diagonal entries (diagOffsets_) to speed up
   ///   extracting the diagonal entries of the sparse matrix A.
   Teuchos::RCP<const V>
-  makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets=false) const;
+  makeInverseDiagonal(const row_matrix_type& A, const bool useDiagOffsets = false) const;
 
   /// Return a range Map copy of the vector D.
   ///
@@ -578,11 +586,11 @@ private:
   /// return a shallow copy of D if appropriate.
   ///
   /// \param D [in] Nonnull Vector.
-  Teuchos::RCP<V> makeRangeMapVector (const Teuchos::RCP<V>& D) const;
+  Teuchos::RCP<V> makeRangeMapVector(const Teuchos::RCP<V>& D) const;
 
   //! Version of makeRangeMapVector() that takes const input and returns const output.
   Teuchos::RCP<const V>
-  makeRangeMapVectorConst (const Teuchos::RCP<const V>& D) const;
+  makeRangeMapVectorConst(const Teuchos::RCP<const V>& D) const;
 
   /// \brief Solve AX=B for X with Chebyshev iteration with left
   ///   diagonal scaling, using the textbook version of the algorithm.
@@ -603,14 +611,14 @@ private:
   /// \param D_inv [in] Vector of diagonal entries of A.  It must have
   ///   the same distribution as B.
   void
-  textbookApplyImpl (const op_type& A,
-                     const MV& B,
-                     MV& X,
-                     const int numIters,
-                     const ST lambdaMax,
-                     const ST lambdaMin,
-                     const ST eigRatio,
-                     const V& D_inv) const;
+  textbookApplyImpl(const op_type& A,
+                    const MV& B,
+                    MV& X,
+                    const int numIters,
+                    const ST lambdaMax,
+                    const ST lambdaMin,
+                    const ST eigRatio,
+                    const V& D_inv) const;
 
   /// \brief Solve AX=B for X with Chebyshev iteration with left
   ///   diagonal scaling, using the fourth kind Chebyshev polynomials
@@ -634,12 +642,12 @@ private:
   /// \param D_inv [in] Vector of diagonal entries of A.  It must have
   ///   the same distribution as B.
   void
-  fourthKindApplyImpl (const op_type& A,
-                       const MV& B,
-                       MV& X,
-                       const int numIters,
-                       const ST lambdaMax,
-                       const V& D_inv);
+  fourthKindApplyImpl(const op_type& A,
+                      const MV& B,
+                      MV& X,
+                      const int numIters,
+                      const ST lambdaMax,
+                      const V& D_inv);
 
   /// \brief Solve AX=B for X with Chebyshev iteration with left
   ///   diagonal scaling, imitating Ifpack's implementation.
@@ -664,14 +672,14 @@ private:
   /// \param D_inv [in] Vector of diagonal entries of A.  It must have
   ///   the same distribution as b.
   void
-  ifpackApplyImpl (const op_type& A,
-                   const MV& B,
-                   MV& X,
-                   const int numIters,
-                   const ST lambdaMax,
-                   const ST lambdaMin,
-                   const ST eigRatio,
-                   const V& D_inv);
+  ifpackApplyImpl(const op_type& A,
+                  const MV& B,
+                  MV& X,
+                  const int numIters,
+                  const ST lambdaMax,
+                  const ST lambdaMin,
+                  const ST eigRatio,
+                  const V& D_inv);
 
   /// \brief Use the cg method to estimate the maximum eigenvalue
   ///   of A*D_inv, given an initial guess vector x.
@@ -685,8 +693,7 @@ private:
   ///   A.  This method may use this Vector as scratch space.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
-  ST
-  cgMethodWithInitGuess (const op_type& A, const V& D_inv, const int numIters, V& x);
+  ST cgMethodWithInitGuess(const op_type& A, const V& D_inv, const int numIters, V& x);
 
   /// \brief Use the cg method to estimate the maximum eigenvalue
   ///   of A*D_inv.
@@ -697,11 +704,10 @@ private:
   ///   method.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
-  ST
-  cgMethod (const op_type& A, const V& D_inv, const int numIters);
+  ST cgMethod(const op_type& A, const V& D_inv, const int numIters);
 
   //! The maximum infinity norm of all the columns of X.
-  static MT maxNormInf (const MV& X);
+  static MT maxNormInf(const MV& X);
 
   // mfh 22 Jan 2013: This code builds correctly, but does not
   // converge.  I'm leaving it in place in case someone else wants to
@@ -799,11 +805,11 @@ private:
       X.update (one, dk, one); // X = X + dk
     }
   }
-#endif // 0
+#endif  // 0
   //@}
 };
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_CHEBYSHEV_DECL_HPP
+#endif  // IFPACK2_DETAILS_CHEBYSHEV_DECL_HPP

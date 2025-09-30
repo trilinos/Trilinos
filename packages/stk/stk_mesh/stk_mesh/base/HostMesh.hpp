@@ -70,18 +70,21 @@ public:
   using ConnectedOrdinals = util::StridedArray<const stk::mesh::ConnectivityOrdinal>;
   using Permutations      = util::StridedArray<const stk::mesh::Permutation>;
 
+  KOKKOS_FUNCTION
   HostMeshT()
     : NgpMeshBase(),
       bulk(nullptr)
   {
-
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
   }
 
+  KOKKOS_FUNCTION
   HostMeshT(const stk::mesh::BulkData& b)
     : NgpMeshBase(),
       bulk(&const_cast<stk::mesh::BulkData&>(b)),
       m_syncCountWhenUpdated(bulk->synchronized_count())
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     require_ngp_mesh_rank_limit(bulk->mesh_meta_data());
   }
 
@@ -97,133 +100,189 @@ public:
     m_syncCountWhenUpdated = bulk->synchronized_count();
   }
 
+  KOKKOS_FUNCTION
   unsigned get_spatial_dimension() const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return bulk->mesh_meta_data().spatial_dimension();
   }
 
+  KOKKOS_FUNCTION
   stk::mesh::EntityId identifier(stk::mesh::Entity entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return bulk->identifier(entity);
   }
 
+  KOKKOS_FUNCTION
   stk::mesh::EntityRank entity_rank(stk::mesh::Entity entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return bulk->entity_rank(entity);
   }
 
+  KOKKOS_FUNCTION
   stk::mesh::EntityKey entity_key(stk::mesh::Entity entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return bulk->entity_key(entity);
   }
 
+  KOKKOS_FUNCTION
+  unsigned local_id(stk::mesh::Entity entity) const
+  {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
+    return bulk->local_id(entity);
+  }
+
+  KOKKOS_FUNCTION
   stk::mesh::Entity get_entity(stk::mesh::EntityRank rank,
                                const stk::mesh::FastMeshIndex& meshIndex) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return (*(bulk->buckets(rank)[meshIndex.bucket_id]))[meshIndex.bucket_ord];
   }
 
+  KOKKOS_FUNCTION
   ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     const stk::mesh::Bucket& bucket = get_bucket(rank, entity.bucket_id);
     return bucket.get_connected_entities(entity.bucket_ord, connectedRank);
   }
 
+  KOKKOS_FUNCTION
   ConnectedOrdinals get_connected_ordinals(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     const stk::mesh::Bucket& bucket = get_bucket(rank, entity.bucket_id);
     return ConnectedOrdinals(bucket.begin_ordinals(entity.bucket_ord, connectedRank), bucket.num_connectivity(entity.bucket_ord, connectedRank));
   }
 
+  KOKKOS_FUNCTION
   ConnectedNodes get_nodes(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_connected_entities(rank, entity, stk::topology::NODE_RANK);
   }
 
+  KOKKOS_FUNCTION
   ConnectedEntities get_edges(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_connected_entities(rank, entity, stk::topology::EDGE_RANK);
   }
 
+  KOKKOS_FUNCTION
   ConnectedEntities get_faces(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_connected_entities(rank, entity, stk::topology::FACE_RANK);
   }
 
+  KOKKOS_FUNCTION
   ConnectedEntities get_elements(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_connected_entities(rank, entity, stk::topology::ELEM_RANK);
   }
 
+  KOKKOS_FUNCTION
   ConnectedOrdinals get_node_ordinals(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_connected_ordinals(rank, entity, stk::topology::NODE_RANK);
   }
 
+  KOKKOS_FUNCTION
   ConnectedOrdinals get_edge_ordinals(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_connected_ordinals(rank, entity, stk::topology::EDGE_RANK);
   }
 
+  KOKKOS_FUNCTION
   ConnectedOrdinals get_face_ordinals(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_connected_ordinals(rank, entity, stk::topology::FACE_RANK);
   }
 
+  KOKKOS_FUNCTION
   ConnectedOrdinals get_element_ordinals(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_connected_ordinals(rank, entity, stk::topology::ELEM_RANK);
   }
 
+  KOKKOS_FUNCTION
   Permutations get_permutations(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity, stk::mesh::EntityRank connectedRank) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     const stk::mesh::Bucket& bucket = get_bucket(rank, entity.bucket_id);
     return Permutations(bucket.begin_permutations(entity.bucket_ord, connectedRank), bucket.num_connectivity(entity.bucket_ord, connectedRank));
   }
 
+  KOKKOS_FUNCTION
   Permutations get_node_permutations(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_permutations(rank, entity, stk::topology::NODE_RANK);
   }
 
+  KOKKOS_FUNCTION
   Permutations get_edge_permutations(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_permutations(rank, entity, stk::topology::EDGE_RANK);
   }
 
+  KOKKOS_FUNCTION
   Permutations get_face_permutations(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_permutations(rank, entity, stk::topology::FACE_RANK);
   }
 
+  KOKKOS_FUNCTION
   Permutations get_element_permutations(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return get_permutations(rank, entity, stk::topology::ELEM_RANK);
   }
 
+  KOKKOS_FUNCTION
   stk::mesh::FastMeshIndex fast_mesh_index(stk::mesh::Entity entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     const stk::mesh::MeshIndex &meshIndex = bulk->mesh_index(entity);
     return stk::mesh::FastMeshIndex{meshIndex.bucket->bucket_id(), static_cast<unsigned>(meshIndex.bucket_ordinal)};
   }
 
+  KOKKOS_FUNCTION
   stk::mesh::FastMeshIndex device_mesh_index(stk::mesh::Entity entity) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return fast_mesh_index(entity);
   }
 
   stk::NgpVector<unsigned> get_bucket_ids(stk::mesh::EntityRank rank, const stk::mesh::Selector &selector) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return stk::mesh::get_bucket_ids(*bulk, rank, selector);
   }
 
+  KOKKOS_FUNCTION
   unsigned num_buckets(stk::mesh::EntityRank rank) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
     return bulk->buckets(rank).size();
   }
 
+  KOKKOS_FUNCTION
   const BucketType & get_bucket(stk::mesh::EntityRank rank, unsigned i) const
   {
+    KOKKOS_IF_ON_DEVICE((STK_NGP_ThrowErrorMsg("HostMesh only works on CPU/HOST.")));
 #ifndef NDEBUG
     stk::mesh::EntityRank numRanks = static_cast<stk::mesh::EntityRank>(bulk->mesh_meta_data().entity_rank_count());
     STK_NGP_ThrowAssert(rank < numRanks);
@@ -232,9 +291,10 @@ public:
     return *bulk->buckets(rank)[i];
   }
 
-  NgpCommMapIndicesHostMirrorT<NgpMemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc, bool includeGhosts=false) const
+  NgpCommMapIndicesHostMirror<stk::ngp::MemSpace> volatile_fast_shared_comm_map(stk::topology::rank_t rank, int proc,
+                                                                         bool includeGhosts=false) const
   {
-    return bulk->template volatile_fast_shared_comm_map<NgpMemSpace>(rank, proc, includeGhosts);
+    return bulk->template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(rank, proc, includeGhosts);
   }
 
   stk::mesh::BulkData &get_bulk_on_host()
@@ -310,16 +370,16 @@ public:
     batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals);
   }
 
-  UnsignedViewType::HostMirror get_ngp_parallel_sum_host_buffer_offsets() const {
-    return UnsignedViewType::HostMirror("", 1);
+  auto& get_ngp_parallel_sum_host_buffer_offsets() {
+    return impl::get_ngp_mesh_host_data<stk::ngp::MemSpace>(*bulk)->m_hostBufferOffsets;
   }
 
-  Unsigned2dViewType::HostMirror get_ngp_parallel_sum_host_mesh_indices_offsets() const {
-    return Unsigned2dViewType::HostMirror("", 1);
+  auto& get_ngp_parallel_sum_host_mesh_indices_offsets() {
+    return impl::get_ngp_mesh_host_data<stk::ngp::MemSpace>(*bulk)->m_hostMeshIndicesOffsets;
   }
 
-  Unsigned2dViewType get_ngp_parallel_sum_device_mesh_indices_offsets() const {
-    return Unsigned2dViewType("", 1);
+  auto& get_ngp_parallel_sum_device_mesh_indices_offsets() {
+    return impl::get_ngp_mesh_host_data<stk::ngp::MemSpace>(*bulk)->m_hostMeshIndicesOffsets;
   }
 
 private:

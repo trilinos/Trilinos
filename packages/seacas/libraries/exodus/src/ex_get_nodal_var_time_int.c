@@ -135,7 +135,7 @@ int exi_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, 
      * assume node number is 1-based (first node is numbered 1);  adjust
      * so it is 0-based
      */
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR, &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
                nodal_var_index, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -151,7 +151,7 @@ int exi_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, 
     count[2] = 1;
   }
   else {
-    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, VAR_NOD_VAR_NEW(nodal_var_index), &varid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: could not find nodal variable %d in file id %d",
                nodal_var_index, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
@@ -177,7 +177,7 @@ int exi_get_nodal_var_time(int exoid, int nodal_var_index, int64_t node_number, 
     status = nc_get_vara_double(exoid, varid, start, count, nodal_var_vals);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get nodal variables in file id %d", exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);

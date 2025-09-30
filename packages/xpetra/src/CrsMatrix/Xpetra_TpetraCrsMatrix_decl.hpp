@@ -19,6 +19,7 @@
 #include "Xpetra_TpetraConfigDefs.hpp"
 
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_FECrsMatrix.hpp"
 #include "Tpetra_replaceDiagonalCrsMatrix.hpp"
 
 #include "Xpetra_CrsMatrix.hpp"
@@ -395,7 +396,11 @@ class TpetraCrsMatrix
 
 #ifdef HAVE_XPETRA_TPETRA
   /// \brief Access the local Kokkos::CrsMatrix data
+#if KOKKOS_VERSION >= 40799
+  typename local_matrix_type::host_mirror_type getLocalMatrixHost() const {
+#else
   typename local_matrix_type::HostMirror getLocalMatrixHost() const {
+#endif
     return getTpetra_CrsMatrixNonConst()->getLocalMatrixHost();
   }
   /// \brief Access the local Kokkos::CrsMatrix data
@@ -1194,9 +1199,15 @@ class TpetraCrsMatrix<Scalar, int, long long, EpetraNode>
   }
 
   /// \brief Access the local Kokkos::CrsMatrix data
+#if KOKKOS_VERSION >= 40799
+  typename local_matrix_type::host_mirror_type getLocalMatrixHost() const {
+    TEUCHOS_UNREACHABLE_RETURN(typename local_matrix_type::host_mirror_type());
+  }
+#else
   typename local_matrix_type::HostMirror getLocalMatrixHost() const {
     TEUCHOS_UNREACHABLE_RETURN(typename local_matrix_type::HostMirror());
   }
+#endif
   /// \brief Access the local Kokkos::CrsMatrix data
   local_matrix_type getLocalMatrixDevice() const {
     TEUCHOS_UNREACHABLE_RETURN(local_matrix_type());

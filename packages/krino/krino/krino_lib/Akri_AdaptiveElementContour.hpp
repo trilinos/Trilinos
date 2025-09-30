@@ -10,13 +10,6 @@ namespace krino {
 
 class FacetedSurfaceBase;
 
-void adaptively_append_facets_for_tri_using_interpolated_distance(const std::array<stk::math::Vector3d,6> & tri6Coords,
-  const std::array<double,6> & tri6Dist,
-  const double lengthScale,
-  const int currentDepth,
-  const int maxDepth,
-  FacetedSurfaceBase & facets);
-
 void adaptively_append_facets_for_tri_using_semilagrangian_distance(const std::array<stk::math::Vector3d,3> & coords,
   const std::array<stk::math::Vector3d,3> & departureCoords,
   const std::array<double,3> & distance,

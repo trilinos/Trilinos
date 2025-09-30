@@ -23,7 +23,6 @@
 #include <Ioss_EdgeBlock.h>
 #include <Ioss_FaceBlock.h>
 #include <Ioss_Region.h>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>

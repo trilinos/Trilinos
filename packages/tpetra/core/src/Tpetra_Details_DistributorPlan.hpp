@@ -40,9 +40,13 @@ namespace Details {
 /// This is an implementation detail of Distributor.  Please do
 /// not rely on these values in your code.
 enum EDistributorSendType {
-  DISTRIBUTOR_ISEND, // Use MPI_Isend (Teuchos::isend)
-  DISTRIBUTOR_SEND,  // Use MPI_Send (Teuchos::send)
-  DISTRIBUTOR_ALLTOALL // Use MPI_Alltoall
+  DISTRIBUTOR_ISEND,    // Use MPI_Isend (Teuchos::isend)
+  DISTRIBUTOR_SEND,     // Use MPI_Send (Teuchos::send)
+  DISTRIBUTOR_ALLTOALL  // Use MPI_Alltoall
+#if defined(HAVE_TPETRA_MPI)
+  ,
+  DISTRIBUTOR_IALLTOFEWV
+#endif
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   ,
   DISTRIBUTOR_MPIADVANCE_ALLTOALL,
@@ -55,19 +59,35 @@ enum EDistributorSendType {
 /// This is an implementation detail of Distributor.  Please do
 /// not rely on this function in your code.
 std::string
-DistributorSendTypeEnumToString (EDistributorSendType sendType);
+DistributorSendTypeEnumToString(EDistributorSendType sendType);
+
+/// \brief Convert a string to an EDistributorSendType. Throw on error.
+EDistributorSendType
+DistributorSendTypeStringToEnum(const std::string_view s);
+
+/// \brief Valid string values for Distributor's "Send type" parameter.
+Teuchos::Array<std::string> distributorSendTypes();
+
+/// \brief Valid enum values of distributor send types.
+Teuchos::Array<EDistributorSendType> distributorSendTypeEnums();
+
+/// \brief Valid string values of distributor send types.
+Teuchos::Array<std::string> distributorSendTypes();
+
+/// \brief Return the provided argument. Throw if it's not a valid send type.
+const std::string& validSendTypeOrThrow(const std::string& s);
 
 /// \brief Enum indicating how and whether a Distributor was initialized.
 ///
 /// This is an implementation detail of Distributor.  Please do
 /// not rely on these values in your code.
 enum EDistributorHowInitialized {
-  DISTRIBUTOR_NOT_INITIALIZED, // Not initialized yet
-  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS, // By createFromSends
-  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS, // By createFromRecvs
-  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS, // By createFromSendsAndRecvs
-  DISTRIBUTOR_INITIALIZED_BY_REVERSE, // By createReverseDistributor
-  DISTRIBUTOR_INITIALIZED_BY_COPY, // By copy constructor
+  DISTRIBUTOR_NOT_INITIALIZED,                           // Not initialized yet
+  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS,          // By createFromSends
+  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_RECVS,          // By createFromRecvs
+  DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS,  // By createFromSendsAndRecvs
+  DISTRIBUTOR_INITIALIZED_BY_REVERSE,                    // By createReverseDistributor
+  DISTRIBUTOR_INITIALIZED_BY_COPY,                       // By copy constructor
 };
 
 /// \brief Convert an EDistributorHowInitialized enum value to a string.
@@ -75,7 +95,7 @@ enum EDistributorHowInitialized {
 /// This is an implementation detail of Distributor.  Please do
 /// not rely on this function in your code.
 std::string
-DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
+DistributorHowInitializedEnumToString(EDistributorHowInitialized how);
 
 /// Instances of DistributorPlan take the following parameters that
 /// control communication and debug output:
@@ -90,9 +110,8 @@ DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
 class DistributorPlan : public Teuchos::ParameterListAcceptorDefaultBase {
   static constexpr int DEFAULT_MPI_TAG = 0;
 
-public:
-
-  using IndexView = std::vector<size_t>;
+ public:
+  using IndexView     = std::vector<size_t>;
   using SubViewLimits = std::pair<IndexView, IndexView>;
 
   DistributorPlan(Teuchos::RCP<const Teuchos::Comm<int>> comm);
@@ -126,15 +145,23 @@ public:
   Details::EDistributorHowInitialized howInitialized() const { return howInitialized_; }
 
   SubViewLimits getImportViewLimits(size_t numPackets) const;
-  SubViewLimits getImportViewLimits(const Teuchos::ArrayView<const size_t> &numImportPacketsPerLID) const;
+  SubViewLimits getImportViewLimits(const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID) const;
   SubViewLimits getExportViewLimits(size_t numPackets) const;
-  SubViewLimits getExportViewLimits(const Teuchos::ArrayView<const size_t> &numExportPacketsPerLID) const;
+  SubViewLimits getExportViewLimits(const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID) const;
 
-private:
-
+#if defined(HAVE_TPETRA_MPI)
+  const std::vector<int> getRoots() const {
+    return roots_;
+  }
+#endif
+ private:
   // after the plan has been created we have the info we need to initialize the MPI advance communicator
 #if defined(HAVE_TPETRACORE_MPI_ADVANCE)
   void initializeMpiAdvance();
+#endif
+
+#if defined(HAVE_TPETRA_MPI)
+  void maybeInitializeRoots();
 #endif
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -255,9 +282,18 @@ private:
   /// reverse Distributor, this is assigned to the reverse
   /// Distributor's indicesTo_.
   Teuchos::Array<size_t> indicesFrom_;
+
+#if defined(HAVE_TPETRA_MPI)
+  /// \brief The roots for the Ialltofewv communication mode.
+  ///
+  /// This is the same on all ranks, and this contains any rank that
+  /// is importing data.
+  std::vector<int> roots_;
+
+#endif
 };
 
-}
-}
+}  // namespace Details
+}  // namespace Tpetra
 
 #endif

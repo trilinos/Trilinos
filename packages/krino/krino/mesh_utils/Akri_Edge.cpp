@@ -105,6 +105,16 @@ std::vector<Edge> get_edges_of_selected_elements(const stk::mesh::BulkData & mes
   return edges;
 }
 
+std::vector<Edge> get_edges_of_selected_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector, const std::vector<stk::mesh::Entity> & elementsToConsider)
+{
+  std::vector<stk::mesh::Entity> selectedElements;
+  selectedElements.reserve(elementsToConsider.size());
+  for (auto & elem : elementsToConsider)
+    if (is_entity_selected(mesh, elementSelector, elem))
+      selectedElements.push_back(elem);
+  return get_edges_of_elements(mesh, selectedElements);
+}
+
 std::vector<Edge> get_edges_of_elements(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & elements)
 {
   std::vector<Edge> edges;

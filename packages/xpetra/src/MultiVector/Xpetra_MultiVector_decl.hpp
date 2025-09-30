@@ -237,48 +237,48 @@ class MultiVector
   using host_execution_space = typename dual_view_type::host_mirror_space;
   using dev_execution_space  = typename dual_view_type::t_dev::execution_space;
 
-  virtual typename dual_view_type::t_host_const_um getHostLocalView(Access::ReadOnlyStruct) const {
-    throw std::runtime_error("Dummy function getHostLocalView(Access::ReadOnlyStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_host_const_um getLocalViewHost(Access::ReadOnlyStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewHost(Access::ReadOnlyStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_host_um test;
 #endif
     TEUCHOS_UNREACHABLE_RETURN(test);
   }
 
-  virtual typename dual_view_type::t_dev_const_um getDeviceLocalView(Access::ReadOnlyStruct) const {
-    throw std::runtime_error("Dummy function getDeviceLocalView(Access::ReadOnlyStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_dev_const_um getLocalViewDevice(Access::ReadOnlyStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewDevice(Access::ReadOnlyStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_dev_um test;
 #endif
     TEUCHOS_UNREACHABLE_RETURN(test);
   }
 
-  virtual typename dual_view_type::t_host_um getHostLocalView(Access::OverwriteAllStruct) const {
-    throw std::runtime_error("Dummy function getHostLocalView(Access::OverwriteAllStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_host_um getLocalViewHost(Access::OverwriteAllStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewHost(Access::OverwriteAllStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_host_um test;
 #endif
     TEUCHOS_UNREACHABLE_RETURN(test);
   }
 
-  virtual typename dual_view_type::t_dev_um getDeviceLocalView(Access::OverwriteAllStruct) const {
-    throw std::runtime_error("Dummy function getDeviceLocalView(Access::OverwriteAllStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_dev_um getLocalViewDevice(Access::OverwriteAllStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewDevice(Access::OverwriteAllStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_dev_um test;
 #endif
     TEUCHOS_UNREACHABLE_RETURN(test);
   }
 
-  virtual typename dual_view_type::t_host_um getHostLocalView(Access::ReadWriteStruct) const {
-    throw std::runtime_error("Dummy function getHostLocalView(Access::ReadWriteStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_host_um getLocalViewHost(Access::ReadWriteStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewHost(Access::ReadWriteStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_host_um test;
 #endif
     TEUCHOS_UNREACHABLE_RETURN(test);
   }
 
-  virtual typename dual_view_type::t_dev_um getDeviceLocalView(Access::ReadWriteStruct) const {
-    throw std::runtime_error("Dummy function getDeviceLocalView(Access::ReadWriteStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+  virtual typename dual_view_type::t_dev_um getLocalViewDevice(Access::ReadWriteStruct) const {
+    throw std::runtime_error("Dummy function getLocalViewDevice(Access::ReadWriteStruct), should be overwritten at" + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 #ifndef __NVCC__
     typename dual_view_type::t_dev_um test;
 #endif

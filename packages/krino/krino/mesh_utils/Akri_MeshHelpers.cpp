@@ -19,6 +19,7 @@
 #include <stk_util/parallel/CommSparse.hpp>
 
 #include <Akri_DiagWriter.hpp>
+#include <Akri_Edge.hpp>
 #include <Akri_EntityIdPool.hpp>
 #include <Akri_ParallelErrorMessage.hpp>
 #include <Akri_FieldRef.hpp>
@@ -53,7 +54,7 @@ void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector
     parentNodeIds.push_back(mesh.identifier(parent));
 }
 
-void fill_side_nodes(const stk::mesh::BulkData & mesh, const stk::topology elemTopology, const stk::topology sideTopology, const stk::mesh::Entity * elemNodes, const unsigned sideId, std::vector<stk::mesh::Entity> & sideNodes)
+void fill_side_nodes(const stk::mesh::BulkData & /*mesh*/, const stk::topology elemTopology, const stk::topology sideTopology, const stk::mesh::Entity * elemNodes, const unsigned sideId, std::vector<stk::mesh::Entity> & sideNodes)
 {
   const unsigned numSideNodes = sideTopology.num_nodes();
   sideNodes.resize(numSideNodes);
@@ -90,6 +91,33 @@ size_t get_size_of_vector_indexable_by_entity_offset(const stk::mesh::BulkData &
     for ( auto && entity : *bucket )
       maxEntity = std::max(maxEntity, entity.local_offset());
   return maxEntity + 1;
+}
+
+bool are_entities_selected(const stk::mesh::Selector & selector, const stk::mesh::Bucket & bucket)
+{
+  return selector(bucket);
+}
+
+bool is_entity_selected(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & selector, const stk::mesh::Entity entity)
+{
+  return are_entities_selected(selector, mesh.bucket(entity));
+}
+
+void fill_edge_elements(const stk::mesh::BulkData & mesh, const Edge & edge, std::vector<stk::mesh::Entity> & edgeElements)
+{
+  const std::array<stk::mesh::Entity,2> & edgeNodes = get_edge_nodes(edge);
+  stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edgeNodes[0], edgeNodes[1]}, stk::topology::ELEMENT_RANK, edgeElements);
+}
+
+void fill_selected_edge_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elemSelector, const Edge & edge, std::vector<stk::mesh::Entity> & edgeElements)
+{
+  const std::array<stk::mesh::Entity,2> & edgeNodes = get_edge_nodes(edge);
+  stk::mesh::get_entities_through_relations(mesh, stk::mesh::EntityVector{edgeNodes[0], edgeNodes[1]}, stk::topology::ELEMENT_RANK, edgeElements);
+  size_t numSelected = 0;
+  for (size_t iElem=0; iElem<edgeElements.size(); ++iElem)
+    if (is_entity_selected(mesh, elemSelector, edgeElements[iElem]))
+      edgeElements[numSelected++] = edgeElements[iElem];
+  edgeElements.resize(numSelected);
 }
 
 std::vector<stk::mesh::Entity> get_selected_side_attached_elements(const stk::mesh::BulkData &mesh,
@@ -140,29 +168,18 @@ stk::math::Vector3d get_vector_field(const stk::mesh::BulkData& mesh, const Fiel
   return stk::math::Vector3d(get_field_data(mesh, vecField, entity), vecLen);
 }
 
-static bool float_less(double a, double b)
+void fill_vector_from_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, stk::math::Vector3d & vec)
 {
-  return static_cast<float>(a) < static_cast<float>(b);
+  const double * fieldData = get_field_data(mesh, vecField, entity);
+  for (unsigned i=0; i<3; ++i) vec[i] = fieldData[i];
 }
 
-bool is_less_than_in_x_then_y_then_z(const stk::math::Vector3d& A, const stk::math::Vector3d &B)
+void fill_vector_from_field(const stk::mesh::BulkData& mesh, const FieldRef vecField, const stk::mesh::Entity entity, const unsigned vecLen, stk::math::Vector3d & vec)
 {
-    if (float_less(A[0], B[0]))
-        return true;
-    else if (float_less(B[0], A[0]))
-        return false;
-
-    if (float_less(A[1], B[1]))
-        return true;
-    else if (float_less(B[1], A[1]))
-        return false;
-
-    if (float_less(A[2], B[2]))
-        return true;
-    else if (float_less(B[2], A[2]))
-        return false;
-
-    return false;
+  STK_ThrowAssert(3 >= vecLen);
+  const double * fieldData = get_field_data(mesh, vecField, entity);
+  for (unsigned i=0; i<vecLen; ++i) vec[i] = fieldData[i];
+  for (unsigned i=vecLen; i<3; ++i) vec[i] = 0;
 }
 
 size_t get_global_num_entities(const stk::mesh::BulkData& mesh, stk::mesh::EntityRank entityRank)
@@ -290,18 +307,22 @@ void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::
 
 void fill_element_node_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField, std::vector<stk::math::Vector3d> & elementNodeCoords)
 {
-  const int dim = mesh.mesh_meta_data().spatial_dimension();
   const StkMeshEntities elemNodes{mesh.begin_nodes(element), mesh.end_nodes(element)};
-  elementNodeCoords.clear();
-  elementNodeCoords.reserve(elemNodes.size());
-  for (auto node : elemNodes)
-    elementNodeCoords.emplace_back(field_data<double>(coordsField, node), dim);
+  fill_node_locations(mesh.mesh_meta_data().spatial_dimension(), coordsField, elemNodes, elementNodeCoords);
 }
 
 std::array<stk::math::Vector3d,4> gather_tet_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
 {
   STK_ThrowAssert(mesh.bucket(element).topology() == stk::topology::TETRAHEDRON_4);
   std::array<stk::math::Vector3d,4> elementNodeCoords;
+  fill_element_node_coordinates<3>(mesh, element, coordsField, elementNodeCoords);
+  return elementNodeCoords;
+}
+
+std::array<stk::math::Vector3d,10> gather_tet10_coordinates(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
+{
+  STK_ThrowAssert(mesh.bucket(element).topology() == stk::topology::TETRAHEDRON_10);
+  std::array<stk::math::Vector3d,10> elementNodeCoords;
   fill_element_node_coordinates<3>(mesh, element, coordsField, elementNodeCoords);
   return elementNodeCoords;
 }
@@ -349,6 +370,24 @@ double compute_tri_or_tet_volume(const std::vector<stk::math::Vector3d> & elemen
   return compute_tri_volume({{elementNodeCoords[0],elementNodeCoords[1],elementNodeCoords[2]}});
 }
 
+static double compute_subtet_volume(const std::array<stk::math::Vector3d,10> & elementNodeCoords, const std::array<int,4> & subTetNodes)
+{
+  const stk::math::Vector3d & coord0 = elementNodeCoords[subTetNodes[0]];
+  return Dot(elementNodeCoords[subTetNodes[3]]-coord0,Cross(elementNodeCoords[subTetNodes[1]]-coord0, elementNodeCoords[subTetNodes[2]]-coord0))/6.0;
+}
+
+static double compute_linearized_tet10_volume(const std::array<stk::math::Vector3d,10> & elementNodeCoords)
+{
+  return compute_subtet_volume(elementNodeCoords, {{0,4,6,7}}) +
+         compute_subtet_volume(elementNodeCoords, {{4,1,5,8}}) +
+         compute_subtet_volume(elementNodeCoords, {{6,5,2,9}}) +
+         compute_subtet_volume(elementNodeCoords, {{7,8,9,3}}) +
+         compute_subtet_volume(elementNodeCoords, {{6,7,4,8}}) +
+         compute_subtet_volume(elementNodeCoords, {{6,9,7,8}}) +
+         compute_subtet_volume(elementNodeCoords, {{6,5,9,8}}) +
+         compute_subtet_volume(elementNodeCoords, {{6,4,5,8}});
+}
+
 static double compute_tri_or_tet_volume(const stk::mesh::BulkData & mesh, stk::mesh::Entity element, const FieldRef coordsField)
 {
   stk::topology elemTopology = mesh.bucket(element).topology();
@@ -357,6 +396,11 @@ static double compute_tri_or_tet_volume(const stk::mesh::BulkData & mesh, stk::m
   {
     const auto elementNodeCoords = gather_tet_coordinates(mesh, element, coordsField);
     return compute_tet_volume(elementNodeCoords);
+  }
+  else if (elemTopology == stk::topology::TETRAHEDRON_10)
+  {
+    const auto elementNodeCoords = gather_tet10_coordinates(mesh, element, coordsField);
+    return compute_linearized_tet10_volume(elementNodeCoords);
   }
 
   STK_ThrowRequireMsg(elemTopology == stk::topology::TRIANGLE_3_2D, "Topology " << elemTopology << " not supported in compute_tri_or_tet_volume.");
@@ -440,6 +484,53 @@ compute_maximum_size_of_selected_elements_using_node(const stk::mesh::BulkData& 
 }
 
 //--------------------------------------------------------------------------------
+
+void compute_element_volume_range(const stk::mesh::BulkData & mesh, double & minVolume, double & maxVolume)
+{
+  minVolume = std::numeric_limits<double>::max();
+  maxVolume = std::numeric_limits<double>::lowest();
+
+  const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
+
+  stk::mesh::Selector locally_owned_selector = mesh.mesh_meta_data().locally_owned_part();
+
+  const stk::mesh::BucketVector & buckets = mesh.get_buckets( stk::topology::ELEMENT_RANK, locally_owned_selector );
+
+  for ( auto && bucket : buckets )
+  {
+    stk::topology elem_topology = bucket->topology();
+    const unsigned num_nodes = elem_topology.num_nodes();
+    std::vector<stk::math::Vector3d> elem_node_coords(num_nodes);
+
+    for ( auto && elem : *bucket )
+    {
+      if (elem_topology == stk::topology::TETRAHEDRON_4)
+      {
+        const auto elementNodeCoords = gather_tet_coordinates(mesh, elem, coordsField);
+        update_min_max_values(compute_tet_volume(elementNodeCoords), minVolume, maxVolume);
+      }
+      if (elem_topology == stk::topology::TETRAHEDRON_10)
+      {
+        const auto elementNodeCoords = gather_tet10_coordinates(mesh, elem, coordsField);
+        update_min_max_values(compute_linearized_tet10_volume(elementNodeCoords), minVolume, maxVolume);
+      }
+      else if (elem_topology == stk::topology::TRIANGLE_3_2D)
+      {
+        const auto elementNodeCoords = gather_tri_coordinates(mesh, elem, coordsField);
+        update_min_max_values(compute_tri_volume(elementNodeCoords), minVolume, maxVolume);
+      }
+      else
+      {
+        ThrowRuntimeError("Topology " << elem_topology << " not supported in compute_element_volume_range.");
+      }
+    }
+  }
+
+  const double localMinVolume = minVolume;
+  stk::all_reduce_min(mesh.parallel(), &localMinVolume, &minVolume, 1);
+  const double localMaxVolume = maxVolume;
+  stk::all_reduce_max(mesh.parallel(), &localMaxVolume, &maxVolume, 1);
+}
 
 void compute_element_quality(const stk::mesh::BulkData & mesh, double & minEdgeLength, double & maxEdgeLength, double & minVolume, double & maxVolume)
 {
@@ -535,7 +626,12 @@ double compute_global_average_edge_length_for_selected_elements(const stk::mesh:
   return compute_global_average_edge_length_for_elements(mesh, coordsField, elems);
 }
 
-static std::vector<stk::mesh::Entity> get_owned_nodes_with_nodal_volume_below_threshold(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold)
+bool is_vertex_node_of_element(const stk::topology & elemTopo, const stk::mesh::ConnectivityOrdinal nodeElemOrd)
+{
+  return (elemTopo == elemTopo.base() || nodeElemOrd < elemTopo.base().num_nodes());
+}
+
+static std::vector<stk::mesh::Entity> get_owned_vertex_nodes_with_nodal_volume_below_threshold(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold)
 {
   STK_ThrowRequireMsg(mesh.is_automatic_aura_on() || mesh.parallel_size() == 1, "Method requires automatic aura.");
 
@@ -554,15 +650,23 @@ static std::vector<stk::mesh::Entity> get_owned_nodes_with_nodal_volume_below_th
     for ( auto && node : *bucket )
     {
       double nodalVolume = 0.;
-      for (auto && element : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
+      bool isVertexNodeOfSelectedElem = false;
+      const StkMeshEntities nodeElems{mesh.begin_elements(node), mesh.end_elements(node)};
+      const stk::mesh::ConnectivityOrdinal* nodeElemOrds = mesh.begin_element_ordinals(node);
+      for (size_t iElem=0; iElem<nodeElems.size(); ++iElem)
       {
-        if (blockSelector(mesh.bucket(element)))
+        const stk::mesh::Entity element = nodeElems[iElem];
+        const stk::mesh::Bucket & elemBucket = mesh.bucket(element);
+        if (blockSelector(elemBucket) && is_vertex_node_of_element(elemBucket.topology(), nodeElemOrds[iElem]))
+        {
+          isVertexNodeOfSelectedElem = true;
           nodalVolume += compute_tri_or_tet_volume(mesh, element, coordsField);
+        }
 
         if (nodalVolume >= threshold)
           break;
       }
-      if (nodalVolume < threshold)
+      if (isVertexNodeOfSelectedElem && nodalVolume < threshold)
         ownedNodesWithNodalVolBelowThreshold.push_back(node);
     }
   }
@@ -657,9 +761,9 @@ static void delete_nodes_and_all_entities_using_them(stk::mesh::BulkData & mesh,
   mesh.modification_end();
 }
 
-static size_t delete_nodes_with_nodal_volume_below_threshold_and_all_entities_using_them(stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold)
+static size_t delete_vertex_nodes_with_nodal_volume_below_threshold_and_all_entities_using_them(stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold)
 {
-  std::vector<stk::mesh::Entity> nodesToDelete = get_owned_nodes_with_nodal_volume_below_threshold(mesh, blockSelector, threshold);
+  std::vector<stk::mesh::Entity> nodesToDelete = get_owned_vertex_nodes_with_nodal_volume_below_threshold(mesh, blockSelector, threshold);
   const size_t globalNumNodesToDelete = stk::get_global_sum(mesh.parallel(), nodesToDelete.size());
 
   if (globalNumNodesToDelete > 0)
@@ -681,13 +785,13 @@ static size_t delete_nodes_with_no_attached_elements(stk::mesh::BulkData & mesh)
   return globalNumNodesToDelete;
 }
 
-void delete_all_entities_using_nodes_with_nodal_volume_below_threshold(stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold)
+void delete_all_entities_using_vertex_nodes_with_nodal_volume_below_threshold(stk::mesh::BulkData & mesh, const stk::mesh::Selector & blockSelector, const double threshold)
 {
   const int maxIterations = 10;
   int iteration = 0;
   while (++iteration <= maxIterations)
   {
-    const size_t numNodesDeletedWithSmallVolume = delete_nodes_with_nodal_volume_below_threshold_and_all_entities_using_them(mesh, blockSelector, threshold);
+    const size_t numNodesDeletedWithSmallVolume = delete_vertex_nodes_with_nodal_volume_below_threshold_and_all_entities_using_them(mesh, blockSelector, threshold);
     if (numNodesDeletedWithSmallVolume > 0)
     {
       sierra::Env::outputP0() << "Iteration " << iteration << ":" << std::endl;
@@ -832,7 +936,6 @@ compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Enti
   {
     const std::array<stk::math::Vector3d,4> nodes = gather_tet_coordinates(mesh, element, coordsField);
     const double vol = compute_tet_volume(nodes);
-    compute_tri_or_tet_volume(mesh, element, *coordsField);
     const double edge_rms = std::sqrt(
         ((nodes[1]-nodes[0]).length_squared() +
          (nodes[2]-nodes[0]).length_squared() +
@@ -986,6 +1089,37 @@ debug_mesh(const stk::mesh::BulkData & mesh)
       }
     }
   }
+  return out.str();
+}
+
+std::string debug_part_changes(const stk::mesh::BulkData & mesh, const stk::mesh::Entity entity, const stk::mesh::PartVector & addParts, const stk::mesh::PartVector & removeParts)
+{
+  std::ostringstream out;
+  out << "Part changes for entity  " << debug_entity_1line(mesh, entity) << "\n";
+  const stk::mesh::PartVector & currentParts = mesh.bucket(entity).supersets();
+  std::vector<std::string> partNames;
+  for (auto * part : addParts)
+  {
+    if (std::find(currentParts.begin(), currentParts.end(), part) == currentParts.end())
+      partNames.push_back(part->name());
+  }
+  stk::util::sort_and_unique(partNames);
+
+  out << "Add Parts: ";
+  for(auto & partName : partNames) out << partName << " ";
+
+  partNames.clear();
+  for (auto * part : removeParts)
+  {
+    if (std::find(currentParts.begin(), currentParts.end(), part) != currentParts.end() &&
+        std::find(addParts.begin(), addParts.end(), part) == addParts.end())
+      partNames.push_back(part->name());
+  }
+  stk::util::sort_and_unique(partNames);
+
+  out << "\nRemove Parts: ";
+  for(auto & partName : partNames) out << partName << " ";
+  out << "\n";
   return out.str();
 }
 
@@ -1662,7 +1796,7 @@ bool has_upward_connectivity(const stk::mesh::BulkData &mesh, const stk::mesh::E
 
 //--------------------------------------------------------------------------------
 
-bool bucket_has_entity_rank_part(const stk::mesh::BulkData & mesh, const stk::mesh::Bucket & bucket)
+bool bucket_has_entity_rank_part(const stk::mesh::BulkData & /*mesh*/, const stk::mesh::Bucket & bucket)
 {
   for (auto && bucketPart : bucket.supersets())
     if (bucketPart->primary_entity_rank() == bucket.entity_rank() && !stk::mesh::is_auto_declared_part(*bucketPart))
@@ -1694,29 +1828,35 @@ void delete_faces_and_edges_without_entity_rank_parts(stk::mesh::BulkData & mesh
 
 //--------------------------------------------------------------------------------
 
+double compute_child_position(const unsigned dim, const double * childCoords, const double * parentCoords0, const double * parentCoords1)
+{
+  unsigned bestDim = 0;
+  double bestExtent = parentCoords1[0] - parentCoords0[0];
+  for (unsigned d=1; d<dim; ++d)
+  {
+    const double extent = parentCoords1[d] - parentCoords0[d];
+    if (std::abs(extent) > std::abs(bestExtent))
+    {
+      bestDim = d;
+      bestExtent = extent;
+    }
+  }
+  return (childCoords[bestDim] - parentCoords0[bestDim])/bestExtent;
+}
+
+double compute_child_position(const unsigned dim, const stk::math::Vector3d & childCoords, const stk::math::Vector3d & parentCoords0, const stk::math::Vector3d & parentCoords1)
+{
+  return compute_child_position(dim, childCoords.data(), parentCoords0.data(), parentCoords1.data());
+}
+
 double compute_child_position(const stk::mesh::BulkData & mesh, stk::mesh::Entity child, stk::mesh::Entity parent0, stk::mesh::Entity parent1)
 {
   // if this function is not sufficiently precise or too expensive, then this position should be stored elsewhere
-  const stk::mesh::Field<double> * const coords_field = reinterpret_cast<const stk::mesh::Field<double>*>(mesh.mesh_meta_data().coordinate_field());
-  STK_ThrowRequireMsg(nullptr != coords_field, "Coordinates must be defined.");
-
-  double * child_coords = stk::mesh::field_data(*coords_field, child);
-  double * parent0_coords = stk::mesh::field_data(*coords_field, parent0);
-  double * parent1_coords = stk::mesh::field_data(*coords_field, parent1);
-
-  const unsigned ndim = mesh.mesh_meta_data().spatial_dimension();
-  unsigned best_dim = 0;
-  double best_extent = std::abs(parent1_coords[0] - parent0_coords[0]);
-  for (unsigned dim = 1; dim < ndim; ++dim)
-  {
-    const double extent = std::abs(parent1_coords[dim] - parent0_coords[dim]);
-    if (extent > best_extent)
-    {
-      best_dim = dim;
-      best_extent = extent;
-    }
-  }
-  return std::abs(child_coords[best_dim] - parent0_coords[best_dim])/best_extent;
+  const FieldRef coordsField(mesh.mesh_meta_data().coordinate_field());
+  return compute_child_position(mesh.mesh_meta_data().spatial_dimension(),
+    field_data<double>(coordsField, child),
+    field_data<double>(coordsField, parent0),
+    field_data<double>(coordsField, parent1));
 }
 
 //--------------------------------------------------------------------------------
@@ -1734,7 +1874,7 @@ void store_child_node_parent_ids(const stk::mesh::BulkData & mesh,
     parentIdsData[i] = (i<parentNodes.size()) ? mesh.identifier(parentNodes[i]) : 0;
 }
 
-void store_child_node_parent_weights(const stk::mesh::BulkData & mesh,
+void store_child_node_parent_weights([[maybe_unused]] const stk::mesh::BulkData & mesh,
     const FieldRef & parentWtsField,
     const stk::mesh::Entity childNode,
     const std::vector<double> & parentWts)
@@ -1765,9 +1905,9 @@ void store_child_node_parent_ids_and_weights(const stk::mesh::BulkData & mesh,
 //--------------------------------------------------------------------------------
 
 template<typename PARENTIDTYPE>
-std::vector<stk::mesh::EntityId> get_child_node_parent_ids(const stk::mesh::BulkData & mesh,
-    const FieldRef & parentIdsField,
-    const stk::mesh::Entity childNode)
+std::vector<stk::mesh::EntityId> get_child_node_parent_ids([[maybe_unused]] const stk::mesh::BulkData & mesh,
+                                                           const FieldRef & parentIdsField,
+                                                           const stk::mesh::Entity childNode)
 {
   std::vector<stk::mesh::EntityId> parentIds;
   parentIds.reserve(4);
@@ -2329,7 +2469,7 @@ static bool has_coincident_shell(const stk::mesh::BulkData & mesh, const stk::me
    return false;
 }
 
-static int determine_new_owner_for_owned_face_or_edge(const stk::mesh::BulkData & mesh, const stk::mesh::Entity faceOrEdge)
+static int determine_new_owner_for_owned_face_or_edge_to_assure_selected_owned_element(const stk::mesh::BulkData & mesh, const stk::mesh::Entity faceOrEdge, const stk::mesh::Selector & elementSelector)
 {
   const int currentOwner = mesh.parallel_rank();
   int newOwner = mesh.parallel_size();
@@ -2338,17 +2478,19 @@ static int determine_new_owner_for_owned_face_or_edge(const stk::mesh::BulkData 
   const stk::topology entityTopology = mesh.bucket(faceOrEdge).topology();
   for (auto elem : entityElements)
   {
-    const bool doConsiderElement = !hasCoincidentShell || is_coincident_shell(mesh.bucket(elem).topology(), entityTopology);
+    const bool doConsiderElement = (!hasCoincidentShell || is_coincident_shell(mesh.bucket(elem).topology(), entityTopology)) &&
+        is_entity_selected(mesh, elementSelector, elem);
     const int elemOwner = mesh.parallel_owner_rank(elem);
     if (doConsiderElement)
       if (elemOwner == currentOwner) return currentOwner;
     if (elemOwner < newOwner) newOwner = elemOwner;
   }
+  if (newOwner == mesh.parallel_size()) // No better owner found
+    return currentOwner;
   return newOwner;
 }
 
-bool
-fix_face_and_edge_ownership(stk::mesh::BulkData & mesh)
+bool fix_face_and_edge_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
 {
   // This method exploits aura to choose which processor the faces and edges should be owned by
   if (!mesh.is_automatic_aura_on())
@@ -2358,17 +2500,17 @@ fix_face_and_edge_ownership(stk::mesh::BulkData & mesh)
   }
 
   const int parallelRank = mesh.parallel_rank();
-  stk::mesh::Selector locallyOwnedSelector(mesh.mesh_meta_data().locally_owned_part());
+  stk::mesh::Selector faceEdgeSelector = mesh.mesh_meta_data().locally_owned_part() & elementSelector;
 
   std::vector<stk::mesh::EntityProc> entitiesToMove;
 
   for (auto && edgeOrFaceRank : {stk::topology::EDGE_RANK, stk::topology::FACE_RANK})
   {
-    for (auto && bucket : mesh.get_buckets( edgeOrFaceRank, locallyOwnedSelector ))
+    for (auto && bucket : mesh.get_buckets( edgeOrFaceRank, faceEdgeSelector ))
     {
       for ( auto && faceOrEdge : *bucket )
       {
-        const int newOwner = determine_new_owner_for_owned_face_or_edge(mesh, faceOrEdge);
+        const int newOwner = determine_new_owner_for_owned_face_or_edge_to_assure_selected_owned_element(mesh, faceOrEdge, elementSelector);
         if (newOwner != parallelRank)
           entitiesToMove.push_back(stk::mesh::EntityProc(faceOrEdge, newOwner));
       }
@@ -2384,13 +2526,18 @@ fix_face_and_edge_ownership(stk::mesh::BulkData & mesh)
   return false;
 }
 
-static int determine_new_owner_for_owned_node_to_assure_active_owned_element(const stk::mesh::BulkData & mesh, const stk::mesh::Entity node, const stk::mesh::Part & activePart)
+bool fix_face_and_edge_ownership(stk::mesh::BulkData & mesh)
+{
+  return fix_face_and_edge_ownership_to_assure_selected_owned_element(mesh, mesh.mesh_meta_data().universal_part());
+}
+
+static int determine_new_owner_for_owned_node_to_assure_selected_owned_element(const stk::mesh::BulkData & mesh, const stk::mesh::Entity node, const stk::mesh::Selector & elementSelector)
 {
   const int currentOwner = mesh.parallel_rank();
   int newOwner = mesh.parallel_size();
   for (auto elem : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
   {
-    if (mesh.bucket(elem).member(activePart))
+    if (is_entity_selected(mesh, elementSelector, elem))
     {
       const int elemOwner = mesh.parallel_owner_rank(elem);
       if (elemOwner == currentOwner)
@@ -2399,13 +2546,12 @@ static int determine_new_owner_for_owned_node_to_assure_active_owned_element(con
         newOwner = elemOwner;
     }
   }
-  if (newOwner == mesh.parallel_size())
+  if (newOwner == mesh.parallel_size()) // No better owner found
     return currentOwner;
   return newOwner;
 }
 
-bool
-fix_node_owners_to_assure_active_owned_element_for_node(stk::mesh::BulkData & mesh, const stk::mesh::Part & activePart)
+bool fix_node_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
 {
   // This method exploits aura to choose which processor the faces and edges should be owned by
   if (!mesh.is_automatic_aura_on())
@@ -2415,15 +2561,15 @@ fix_node_owners_to_assure_active_owned_element_for_node(stk::mesh::BulkData & me
   }
 
   const int parallelRank = mesh.parallel_rank();
-  stk::mesh::Selector locallyOwnedSelector(mesh.mesh_meta_data().locally_owned_part());
+  stk::mesh::Selector nodeSelector = mesh.mesh_meta_data().locally_owned_part();
 
   std::vector<stk::mesh::EntityProc> entitiesToMove;
 
-  for (auto && bucket : mesh.get_buckets( stk::topology::NODE_RANK, locallyOwnedSelector ))
+  for (auto && bucket : mesh.get_buckets( stk::topology::NODE_RANK, nodeSelector ))
   {
     for ( auto && node : *bucket )
     {
-      const int newOwner = determine_new_owner_for_owned_node_to_assure_active_owned_element(mesh, node, activePart);
+      const int newOwner = determine_new_owner_for_owned_node_to_assure_selected_owned_element(mesh, node, elementSelector);
       if (newOwner != parallelRank)
         entitiesToMove.push_back(stk::mesh::EntityProc(node, newOwner));
     }
@@ -2615,7 +2761,7 @@ stk::mesh::PartVector get_common_io_parts(const stk::mesh::BulkData & mesh, cons
   return common_io_parts;
 }
 
-stk::mesh::PartVector get_removable_parts(const stk::mesh::BulkData & mesh, const stk::mesh::Bucket & bucket)
+stk::mesh::PartVector get_removable_parts(const stk::mesh::BulkData & /*mesh*/, const stk::mesh::Bucket & bucket)
 {
   stk::mesh::PartVector removable_parts;
   for ( auto&& part : bucket.supersets() )

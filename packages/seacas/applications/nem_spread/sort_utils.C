@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,6 +10,7 @@
 #if DEBUG_SORT
 #include <cassert>
 #include <cstdio>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #endif
 
@@ -107,6 +108,7 @@ namespace {
       INT    tmp = iv[i];
       size_t j;
       for (j = i; v[tmp] < v[iv[j - 1]]; j--) {
+        assert(j >= 1);
         iv[j] = iv[j - 1];
       }
       iv[j] = tmp;
@@ -188,6 +190,7 @@ namespace {
       INT    tmp = v[i];
       size_t j;
       for (j = i; tmp < v[j - 1]; j--) {
+        assert(j >= 1);
         v[j] = v[j - 1];
       }
       v[j] = tmp;

@@ -27,17 +27,14 @@
 #include "fem_assembly_InsertGlobalIndices_FE.hpp"
 #include "fem_assembly_TotalElementLoop.hpp"
 
-
 using namespace TpetraExamples;
 
-
-int main (int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
   using std::endl;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::TimeMonitor;
   using Teuchos::StackedTimer;
+  using Teuchos::TimeMonitor;
 
   int status = EXIT_SUCCESS;
 
@@ -47,29 +44,24 @@ int main (int argc, char *argv[])
 
   // The output stream 'out' will ignore any output not from Process 0.
   RCP<Teuchos::FancyOStream> pOut = getOutputStream(*comm);
-  Teuchos::FancyOStream& out = *pOut;
+  Teuchos::FancyOStream& out      = *pOut;
 
   // Read command-line options into the 'opts' struct.
   struct CmdLineOpts opts;
 
-  try
-  {
+  try {
     status = readCmdLineOpts(out, opts, argc, argv);
-  }
-  catch(...)
-  {
+  } catch (...) {
     status = EXIT_FAILURE;
   }
 
-  if(EXIT_SUCCESS != status)
-  {
+  if (EXIT_SUCCESS != status) {
     Tpetra::finalize();
     return status;
   }
 
   RCP<StackedTimer> timer = Teuchos::null;
-  if(opts.timing)
-  {
+  if (opts.timing) {
     timer = rcp(new StackedTimer("X) Global", false));
     TimeMonitor::setStackedTimer(timer);
   }
@@ -78,29 +70,30 @@ int main (int argc, char *argv[])
   Tpetra::Details::AddKokkosDeepCopyToTimeMonitor(true);
 
   // Entry point
-  if(opts.execInsertGlobalIndicesFE && executeInsertGlobalIndicesFESP(comm, opts))
-     status = EXIT_FAILURE;
-  if(opts.execTotalElementLoop && executeTotalElementLoopSP(comm, opts))
+  if (opts.execInsertGlobalIndicesFE && executeInsertGlobalIndicesFESP(comm, opts))
+    status = EXIT_FAILURE;
+  if (opts.execTotalElementLoop && executeTotalElementLoopSP(comm, opts))
     status = EXIT_FAILURE;
 
-  if(opts.timing)
-  {
-    //note: base timer was already stopped by executeInsertGlobalIndices...()
+  if (opts.timing) {
+    // note: base timer was already stopped by executeInsertGlobalIndices...()
     StackedTimer::OutputOptions timeReportOpts;
-    timeReportOpts.print_warnings = false;
+    timeReportOpts.print_warnings  = false;
+    timeReportOpts.output_fraction = timeReportOpts.output_histogram = timeReportOpts.output_minmax = true;
     timer->report(std::cout, comm, timeReportOpts);
     auto xmlOut = timer->reportWatchrXML("Tpetra FE Assembly " + std::to_string(comm->getSize()) + " ranks", comm);
-    if(xmlOut.length())
+    if (xmlOut.length())
       std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
   }
 
   // This tells the Trilinos test framework that the test passed.
-  if(EXIT_SUCCESS == comm->getRank()) out << "End Result: TEST PASSED" << endl;
-  else                                out << "End Result: TEST FAILED" << endl;
+  if (EXIT_SUCCESS == comm->getRank())
+    out << "End Result: TEST PASSED" << endl;
+  else
+    out << "End Result: TEST FAILED" << endl;
 
   // Finalize
   Tpetra::finalize();
 
   return status;
 }  // END main()
-

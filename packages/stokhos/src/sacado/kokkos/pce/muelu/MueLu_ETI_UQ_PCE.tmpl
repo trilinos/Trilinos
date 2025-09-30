@@ -23,8 +23,15 @@
 
 #include "@CLASS_FILE_NAME@_def.hpp"
 
-#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class @CLASS_NAME@<S, LO, GO, N>;
+#cmakedefine USE_MUELU_INST_S_LO_GO_N_GROUPED_INSTANTIATION
+
+#ifdef USE_MUELU_INST_S_LO_GO_N_GROUPED_INSTANTIATION
+  #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
+    MUELU_ETI_SLGN_SoC(@CLASS_NAME@, S, LO, GO, N);
+#else
+  #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
+    template class @CLASS_NAME@<S, LO, GO, N>;
+#endif
 
 #define MUELU_INST_N(N) \
   INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)

@@ -8,7 +8,6 @@
 
 #include <Akri_ContourSubElement.hpp>
 #include <Akri_DiagWriter.hpp>
-#include <Akri_LevelSet.hpp>
 #include <Akri_MathUtil.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Akri_Utility.hpp>
@@ -18,6 +17,7 @@
 #include <cmath>
 
 #include <Akri_MasterElementDeterminer.hpp>
+#include <Akri_Sign.hpp>
 
 namespace krino{
 
@@ -118,7 +118,7 @@ ContourSubElement::dump_details() const
 }
 
 int
-ContourSubElement::side_facets( FacetedSurfaceBase & facets, int side ) const
+ContourSubElement::side_facets( FacetedSurfaceBase & /*facets*/, int /*side*/ ) const
 {
   const std::string & owner_type = my_owner->dist_topology().name();
   const std::string & sub_type = topology().name();
@@ -129,7 +129,7 @@ ContourSubElement::side_facets( FacetedSurfaceBase & facets, int side ) const
 }
 
 double
-ContourSubElement::side_area( int side ) const
+ContourSubElement::side_area( int /*side*/ ) const
 {
   const std::string & owner_type = my_owner->dist_topology().name();
   const std::string & sub_type = topology().name();
@@ -163,7 +163,7 @@ ContourSubElement::put( std::ostream& os ) const
       << x[1] << ","
       << x[2] << ")"
       << ", dist = " << nodeDist[i]
-      << ", sign = " << -1 + 2*LevelSet::sign_change(nodeDist[i],-1.) << std::endl;
+      << ", sign = " << -1 + 2*sign_change(nodeDist[i],-1.) << std::endl;
     }
   for ( int i = 0; i < get_num_sides(); i++ )
     {
@@ -883,7 +883,7 @@ ContourSubElement_Tri_3::conformal_decomposition()
   edge_node_ids[4] = process_edge( 1, 2, 4, is_on_surf, lcoords, ldist );
   edge_node_ids[5] = process_edge( 2, 0, 5, is_on_surf, lcoords, ldist );
 
-  const int zero_sign = LevelSet::sign(0.0);
+  const int zero_sign = sign(0.0);
   std::array<bool,4> sub_degenerate;
 
   sub_degenerate[0] = is_degenerate(edge_node_ids,0,3,5);
@@ -897,7 +897,7 @@ ContourSubElement_Tri_3::conformal_decomposition()
       sub_coords[0] = lcoords[0];
       sub_coords[1] = lcoords[3];
       sub_coords[2] = lcoords[5];
-      sub_sign = LevelSet::sign(myDist[0]);
+      sub_sign = sign(myDist[0]);
       sub_ids[0] = mySideIds[0];
       sub_ids[1] = ((is_on_surf[3] && is_on_surf[5]) && (zero_sign != sub_sign || sub_degenerate[3])) ? -2 : -1;
       sub_ids[2] = mySideIds[2];
@@ -911,7 +911,7 @@ ContourSubElement_Tri_3::conformal_decomposition()
       sub_coords[0] = lcoords[3];
       sub_coords[1] = lcoords[1];
       sub_coords[2] = lcoords[4];
-      sub_sign = LevelSet::sign(myDist[1]);
+      sub_sign = sign(myDist[1]);
       sub_ids[0] = mySideIds[0];
       sub_ids[1] = mySideIds[1];
       sub_ids[2] = ((is_on_surf[3] && is_on_surf[4]) && (zero_sign != sub_sign || sub_degenerate[3])) ? -2 : -1;
@@ -925,7 +925,7 @@ ContourSubElement_Tri_3::conformal_decomposition()
       sub_coords[0] = lcoords[5];
       sub_coords[1] = lcoords[4];
       sub_coords[2] = lcoords[2];
-      sub_sign = LevelSet::sign(myDist[2]);
+      sub_sign = sign(myDist[2]);
       sub_ids[0] = ((is_on_surf[5] && is_on_surf[4]) && (zero_sign != sub_sign || sub_degenerate[3])) ? -2 : -1;
       sub_ids[1] = mySideIds[1];
       sub_ids[2] = mySideIds[2];
@@ -939,9 +939,9 @@ ContourSubElement_Tri_3::conformal_decomposition()
       sub_coords[0] = lcoords[3];
       sub_coords[1] = lcoords[4];
       sub_coords[2] = lcoords[5];
-      sub_sign = LevelSet::sign( (is_on_surf[3] ? 0.0 : myDist[0]+myDist[1]) +
-				 (is_on_surf[4] ? 0.0 : myDist[1]+myDist[2]) +
-				 (is_on_surf[5] ? 0.0 : myDist[2]+myDist[0]) );
+      sub_sign = sign( (is_on_surf[3] ? 0.0 : myDist[0]+myDist[1]) +
+                       (is_on_surf[4] ? 0.0 : myDist[1]+myDist[2]) +
+                       (is_on_surf[5] ? 0.0 : myDist[2]+myDist[0]) );
       sub_ids[0] = ((is_on_surf[3] && is_on_surf[4]) && (zero_sign != sub_sign || sub_degenerate[1])) ? -2 : -1;
       sub_ids[1] = ((is_on_surf[4] && is_on_surf[5]) && (zero_sign != sub_sign || sub_degenerate[2])) ? -2 : -1;
       sub_ids[2] = ((is_on_surf[5] && is_on_surf[3]) && (zero_sign != sub_sign || sub_degenerate[0])) ? -2 : -1;
@@ -979,7 +979,7 @@ ContourSubElement_Tri_3::process_edge( const int i0,
 				const std::array<double,3> & ldist )
 {
   int edge_node_id = i2;
-  is_on_surf[i2] = LevelSet::sign_change( ldist[i0], ldist[i1] );
+  is_on_surf[i2] = sign_change( ldist[i0], ldist[i1] );
   if ( is_on_surf[i2] )
     {
       // tolerance chosen very small since degeneracies should already be eliminated
@@ -1104,7 +1104,7 @@ ContourSubElement_Tri_3::side_facets( FacetedSurfaceBase & facets,
 
   const unsigned * const lnn = get_side_node_ordinals(topology(), side);
 
-  if ( LevelSet::sign_change(0.0, (double) my_sign) )
+  if ( sign_change(0.0, (double) my_sign) )
     facets.emplace_back_2d( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[1]]) );
   else
     facets.emplace_back_2d( my_owner->coordinates(myCoords[lnn[1]]), my_owner->coordinates(myCoords[lnn[0]]) );
@@ -1730,9 +1730,9 @@ ContourSubElement_Tet_4::conformal_decomposition()
   // Find orientation of tet
   // Specifically, orient such that we don't have nodes 0 and 2 on one side and
   // nodes 1 and 3 on the other
-  if ( LevelSet::sign_change(myDist[0],myDist[1]) &&
-       LevelSet::sign_change(myDist[1],myDist[2]) &&
-       LevelSet::sign_change(myDist[2],myDist[3]) )
+  if ( sign_change(myDist[0],myDist[1]) &&
+       sign_change(myDist[1],myDist[2]) &&
+       sign_change(myDist[2],myDist[3]) )
     {
       lcoords[0] = myCoords[0];
       lcoords[1] = myCoords[3];
@@ -1760,7 +1760,7 @@ ContourSubElement_Tet_4::conformal_decomposition()
   edge_node_ids[8] = process_edge( 1, 3, 8, is_on_surf, lcoords, ldist );
   edge_node_ids[9] = process_edge( 2, 3, 9, is_on_surf, lcoords, ldist );
 
-  const int zero_sign = LevelSet::sign(0.0);
+  const int zero_sign = sign(0.0);
   std::vector<int> sub_degenerate(8); // initializes to zero (false)
 
   sub_degenerate[0] = is_degenerate(edge_node_ids,0,4,6,7);
@@ -1779,7 +1779,7 @@ ContourSubElement_Tet_4::conformal_decomposition()
       sub_coords[1] = lcoords[4];
       sub_coords[2] = lcoords[6];
       sub_coords[3] = lcoords[7];
-      sub_sign = LevelSet::sign(ldist[0]);
+      sub_sign = sign(ldist[0]);
       sub_ids[0] = lsides[0];
       sub_ids[1] = ((is_on_surf[4] && is_on_surf[6] && is_on_surf[7]) && (zero_sign != sub_sign || sub_degenerate[4])) ? -2 : -1;
       sub_ids[2] = lsides[2];
@@ -1795,7 +1795,7 @@ ContourSubElement_Tet_4::conformal_decomposition()
       sub_coords[1] = lcoords[1];
       sub_coords[2] = lcoords[5];
       sub_coords[3] = lcoords[8];
-      sub_sign = LevelSet::sign(ldist[1]);
+      sub_sign = sign(ldist[1]);
       sub_ids[0] = lsides[0];
       sub_ids[1] = lsides[1];
       sub_ids[2] = ((is_on_surf[4] && is_on_surf[5] && is_on_surf[8]) && (zero_sign != sub_sign || sub_degenerate[7])) ? -2 : -1;
@@ -1811,7 +1811,7 @@ ContourSubElement_Tet_4::conformal_decomposition()
       sub_coords[1] = lcoords[5];
       sub_coords[2] = lcoords[2];
       sub_coords[3] = lcoords[9];
-      sub_sign = LevelSet::sign(ldist[2]);
+      sub_sign = sign(ldist[2]);
       sub_ids[0] = ((is_on_surf[5] && is_on_surf[6] && is_on_surf[9]) && (zero_sign != sub_sign || sub_degenerate[5])) ? -2 : -1;
       sub_ids[1] = lsides[1];
       sub_ids[2] = lsides[2];
@@ -1827,7 +1827,7 @@ ContourSubElement_Tet_4::conformal_decomposition()
       sub_coords[1] = lcoords[8];
       sub_coords[2] = lcoords[9];
       sub_coords[3] = lcoords[3];
-      sub_sign = LevelSet::sign(ldist[3]);
+      sub_sign = sign(ldist[3]);
       sub_ids[0] = lsides[0];
       sub_ids[1] = lsides[1];
       sub_ids[2] = lsides[2];
@@ -1843,10 +1843,10 @@ ContourSubElement_Tet_4::conformal_decomposition()
       sub_coords[1] = lcoords[7];
       sub_coords[2] = lcoords[6];
       sub_coords[3] = lcoords[4];
-      sub_sign = LevelSet::sign( (is_on_surf[8] ? 0.0 : ldist[1]+ldist[3]) +
-				 (is_on_surf[7] ? 0.0 : ldist[0]+ldist[3]) +
-				 (is_on_surf[6] ? 0.0 : ldist[0]+ldist[2]) +
-				 (is_on_surf[4] ? 0.0 : ldist[0]+ldist[1]) );
+      sub_sign = sign( (is_on_surf[8] ? 0.0 : ldist[1]+ldist[3]) +
+                       (is_on_surf[7] ? 0.0 : ldist[0]+ldist[3]) +
+                       (is_on_surf[6] ? 0.0 : ldist[0]+ldist[2]) +
+                       (is_on_surf[4] ? 0.0 : ldist[0]+ldist[1]) );
       sub_ids[0] = lsides[0]; // 8-7-4
       sub_ids[1] = ((is_on_surf[7] && is_on_surf[6] && is_on_surf[4]) && (zero_sign != sub_sign || sub_degenerate[0])) ? -2 : -1;
       sub_ids[2] = ((is_on_surf[8] && is_on_surf[6] && is_on_surf[4]) && (zero_sign != sub_sign || sub_degenerate[7])) ? -2 : -1;
@@ -1862,10 +1862,10 @@ ContourSubElement_Tet_4::conformal_decomposition()
       sub_coords[1] = lcoords[9];
       sub_coords[2] = lcoords[8];
       sub_coords[3] = lcoords[5];
-      sub_sign = LevelSet::sign( (is_on_surf[6] ? 0.0 : ldist[0]+ldist[2]) +
-				 (is_on_surf[9] ? 0.0 : ldist[2]+ldist[3]) +
-				 (is_on_surf[8] ? 0.0 : ldist[1]+ldist[3]) +
-				 (is_on_surf[5] ? 0.0 : ldist[1]+ldist[2]) );
+      sub_sign = sign( (is_on_surf[6] ? 0.0 : ldist[0]+ldist[2]) +
+                       (is_on_surf[9] ? 0.0 : ldist[2]+ldist[3]) +
+                       (is_on_surf[8] ? 0.0 : ldist[1]+ldist[3]) +
+                       (is_on_surf[5] ? 0.0 : ldist[1]+ldist[2]) );
       sub_ids[0] = ((is_on_surf[6] && is_on_surf[9] && is_on_surf[5]) && (zero_sign != sub_sign || sub_degenerate[2])) ? -2 : -1;
       sub_ids[1] = lsides[1]; // 8-9-5
       sub_ids[2] = ((is_on_surf[6] && is_on_surf[8] && is_on_surf[5]) && (zero_sign != sub_sign || sub_degenerate[7])) ? -2 : -1;
@@ -1881,10 +1881,10 @@ ContourSubElement_Tet_4::conformal_decomposition()
       sub_coords[1] = lcoords[8];
       sub_coords[2] = lcoords[7];
       sub_coords[3] = lcoords[6];
-      sub_sign = LevelSet::sign( (is_on_surf[9] ? 0.0 : ldist[2]+ldist[3]) +
-				 (is_on_surf[8] ? 0.0 : ldist[1]+ldist[3]) +
-				 (is_on_surf[7] ? 0.0 : ldist[0]+ldist[3]) +
-				 (is_on_surf[6] ? 0.0 : ldist[0]+ldist[2]) );
+      sub_sign = sign( (is_on_surf[9] ? 0.0 : ldist[2]+ldist[3]) +
+                       (is_on_surf[8] ? 0.0 : ldist[1]+ldist[3]) +
+                       (is_on_surf[7] ? 0.0 : ldist[0]+ldist[3]) +
+                       (is_on_surf[6] ? 0.0 : ldist[0]+ldist[2]) );
       sub_ids[0] = ((is_on_surf[9] && is_on_surf[8] && is_on_surf[6]) && (zero_sign != sub_sign || sub_degenerate[5])) ? -2 : -1;
       sub_ids[1] = ((is_on_surf[8] && is_on_surf[7] && is_on_surf[6]) && (zero_sign != sub_sign || sub_degenerate[4])) ? -2 : -1;
       sub_ids[2] = lsides[2]; // 9-7-6
@@ -1900,10 +1900,10 @@ ContourSubElement_Tet_4::conformal_decomposition()
       sub_coords[1] = lcoords[6];
       sub_coords[2] = lcoords[4];
       sub_coords[3] = lcoords[8];
-      sub_sign = LevelSet::sign( (is_on_surf[5] ? 0.0 : ldist[1]+ldist[2]) +
-				 (is_on_surf[6] ? 0.0 : ldist[0]+ldist[2]) +
-				 (is_on_surf[4] ? 0.0 : ldist[0]+ldist[1]) +
-				 (is_on_surf[8] ? 0.0 : ldist[1]+ldist[3]) );
+      sub_sign = sign( (is_on_surf[5] ? 0.0 : ldist[1]+ldist[2]) +
+                       (is_on_surf[6] ? 0.0 : ldist[0]+ldist[2]) +
+                       (is_on_surf[4] ? 0.0 : ldist[0]+ldist[1]) +
+                       (is_on_surf[8] ? 0.0 : ldist[1]+ldist[3]) );
       sub_ids[0] = ((is_on_surf[5] && is_on_surf[6] && is_on_surf[8]) && (zero_sign != sub_sign || sub_degenerate[5])) ? -2 : -1;
       sub_ids[1] = ((is_on_surf[6] && is_on_surf[4] && is_on_surf[8]) && (zero_sign != sub_sign || sub_degenerate[4])) ? -2 : -1;
       sub_ids[2] = ((is_on_surf[5] && is_on_surf[4] && is_on_surf[8]) && (zero_sign != sub_sign || sub_degenerate[1])) ? -2 : -1;
@@ -1942,7 +1942,7 @@ ContourSubElement_Tet_4::process_edge( const int i0,
 				const std::array<double,4> & ldist )
 {
   int edge_node_id = i2;
-  is_on_surf[i2] = LevelSet::sign_change( ldist[i0], ldist[i1] );
+  is_on_surf[i2] = sign_change( ldist[i0], ldist[i1] );
   if ( is_on_surf[i2] )
     {
       // tolerance chosen very small since degeneracies should already be eliminated
@@ -2090,7 +2090,7 @@ ContourSubElement_Tet_4::side_facets( FacetedSurfaceBase & facets,
 
   const unsigned * const lnn = get_side_node_ordinals(topology(), side);
 
-  if ( LevelSet::sign_change(0.0, (double) my_sign) )
+  if ( sign_change(0.0, (double) my_sign) )
     facets.emplace_back_3d( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[1]]), my_owner->coordinates(myCoords[lnn[2]]) );
   else
     facets.emplace_back_3d( my_owner->coordinates(myCoords[lnn[0]]), my_owner->coordinates(myCoords[lnn[2]]), my_owner->coordinates(myCoords[lnn[1]]) );

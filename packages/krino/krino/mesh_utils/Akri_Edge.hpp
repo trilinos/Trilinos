@@ -59,6 +59,7 @@ int get_edge_parallel_owner_rank(const stk::mesh::BulkData & mesh, const Edge ed
 
 std::string debug_edge(const stk::mesh::BulkData & mesh, const Edge edge);
 
+std::vector<Edge> get_edges_of_selected_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector, const std::vector<stk::mesh::Entity> & elementsToConsider);
 std::vector<Edge> get_edges_of_selected_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector);
 std::vector<Edge> get_edges_of_elements(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & elements);
 

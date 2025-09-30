@@ -41,19 +41,19 @@ namespace Ifpack2 {
 /// class must contain no singletons.  Usually, this means that the
 /// graph is the graph of a Tpetra::RowMatrix that has been filtered
 /// using SingletonFilter.
-template<class GraphType>
+template <class GraphType>
 class OverlappingPartitioner : public Partitioner<GraphType> {
-public:
+ public:
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
   typedef typename GraphType::global_ordinal_type global_ordinal_type;
   typedef typename GraphType::node_type node_type;
   typedef typename GraphType::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
   typedef typename GraphType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
- 
+
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
 
   //! Constructor.
-  OverlappingPartitioner (const Teuchos::RCP<const row_graph_type>& graph);
+  OverlappingPartitioner(const Teuchos::RCP<const row_graph_type>& graph);
 
   //! Destructor.
   virtual ~OverlappingPartitioner();
@@ -63,7 +63,7 @@ public:
   /// This is a (signed) \c int because negative values are
   /// significant.  We can't use \c local_ordinal_type here, because
   /// that type may be either signed or unsigned.
-  int numLocalParts () const;
+  int numLocalParts() const;
 
   //! The number of levels of overlap.
   int overlappingLevel() const;
@@ -71,21 +71,21 @@ public:
   /// \brief Local index of the nonoverlapping partition of the given row.
   ///
   /// \param MyRow [in] Local index of the row.
-  local_ordinal_type operator () (const local_ordinal_type MyRow) const;
+  local_ordinal_type operator()(const local_ordinal_type MyRow) const;
 
   //! Local index of the overlapping partition of the j-th vertex in partition i.
   local_ordinal_type
-  operator () (const local_ordinal_type i, const local_ordinal_type j) const;
+  operator()(const local_ordinal_type i, const local_ordinal_type j) const;
 
   //! the number of rows contained in the given partition.
-  size_t numRowsInPart (const local_ordinal_type Part) const;
+  size_t numRowsInPart(const local_ordinal_type Part) const;
 
   //! Fill \c List with the local indices of the rows in the (overlapping) partition \c Part.
-  void rowsInPart (const local_ordinal_type Part, Teuchos::ArrayRCP<local_ordinal_type>& List) const;
+  void rowsInPart(const local_ordinal_type Part, Teuchos::ArrayRCP<local_ordinal_type>& List) const;
 
   //! A view of the local indices of the nonoverlapping partitions of each local row.
-  virtual Teuchos::ArrayView<const local_ordinal_type> 
-  nonOverlappingPartition () const;
+  virtual Teuchos::ArrayView<const local_ordinal_type>
+  nonOverlappingPartition() const;
 
   //! Set all the parameters for the partitioner.
   /*! The supported parameters are:
@@ -93,14 +93,14 @@ public:
    * - \c "partitioner: local parts" (int, default = 1).
    * - \c "partitioner: print level" (bool, default = false).
    */
-  virtual void setParameters (Teuchos::ParameterList& List);
+  virtual void setParameters(Teuchos::ParameterList& List);
 
   //! Set all the parameters for the partitioner.
   /*! This function is used by derived classes to set their own
    * parameters. These classes should not derive SetParameters(),
    * so that common parameters can be set just once.
    */
-  virtual void setPartitionParameters (Teuchos::ParameterList& List) = 0;
+  virtual void setPartitionParameters(Teuchos::ParameterList& List) = 0;
 
   //! Computes the partitions. Returns 0 if successful.
   virtual void compute();
@@ -110,26 +110,25 @@ public:
 
   //! Computes the partitions. Returns 0 if successful.
   virtual void computeOverlappingPartitions();
-  
+
   //! Returns true if partitions have been computed successfully.
   virtual bool isComputed() const;
 
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual std::ostream& print(std::ostream& os) const;
 
-  //! @name Implementation of Teuchos::Describable 
+  //! @name Implementation of Teuchos::Describable
   //@{
 
   /** \brief Return a simple one-line description of this object. */
   std::string description() const;
 
-  //! Print the object with some verbosity level to an FancyOStream object. 
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  //! Print the object with some verbosity level to an FancyOStream object.
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
   //@}
- 
-protected:
 
+ protected:
   /// \brief Number of local subgraphs.
   ///
   /// This is a (signed) \c int because negative values are
@@ -168,8 +167,8 @@ protected:
   /// Default is false.  This option should decrease computational cost of the apply, but convergence
   /// will likely degrade.
   bool maintainSparsity_;
-}; // class Ifpack2::OverlappingPartitioner
+};  // class Ifpack2::OverlappingPartitioner
 
-}// namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_OVERLAPPINGPARTITIONER_DECL_HPP
+#endif  // IFPACK2_OVERLAPPINGPARTITIONER_DECL_HPP

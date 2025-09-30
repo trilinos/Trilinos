@@ -1373,7 +1373,6 @@ TEST(ElementGraph, make_items_inactive)
 
   stk::mesh::MetaData meta(spatialDim);
   stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
-  stk::mesh::PartVector boundary_mesh_parts { &faces_part };
   stk::io::put_io_part_attribute(faces_part);
   ElemGraphTestUtils::ElementDeathBulkDataTester bulkData(meta, comm, stk::mesh::BulkData::AUTO_AURA);
 
@@ -1676,13 +1675,14 @@ public:
     std::vector<stk::mesh::PartVector> addParts;
     std::vector<stk::mesh::PartVector> removeParts;
     const stk::mesh::BucketVector& elements = bulkData->buckets(stk::topology::ELEM_RANK);
+    auto deathStatusData = deathStatusField->data<stk::mesh::ReadOnly>();
     const int deadElementStatus = 1;
     for (size_t bucketI=0 ; bucketI<elements.size() ; ++bucketI) {
       stk::mesh::Bucket& bucket = *(elements[bucketI]);
       for (size_t elementI=0 ; elementI<bucket.size() ; ++elementI) {
         stk::mesh::Entity element = bucket[elementI];
-        double* deathStatus = stk::mesh::field_data(*deathStatusField,element);
-        if (static_cast<int>(deathStatus[0]) == deadElementStatus) {
+        auto deathStatus = deathStatusData.entity_values(element);
+        if (static_cast<int>(deathStatus(0_comp)) == deadElementStatus) {
           entities.push_back(element);
           addParts.push_back({});
           removeParts.push_back({activePart});
@@ -1701,12 +1701,13 @@ public:
   void set_active_field_from_part()
   {
     const stk::mesh::BucketVector& elements = bulkData->buckets(stk::topology::ELEM_RANK);
+    auto deathStatusData = deathStatusField->data<stk::mesh::ReadWrite>();
     for (size_t bucketI=0 ; bucketI<elements.size() ; ++bucketI) {
       stk::mesh::Bucket& bucket = *(elements[bucketI]);
       for (size_t elementI=0 ; elementI<bucket.size() ; ++elementI) {
         stk::mesh::Entity element = bucket[elementI];
-        double* deathStatus = stk::mesh::field_data(*deathStatusField,element);
-        deathStatus[0] = !bulkData->bucket(element).member(*activePart);
+        auto deathStatus = deathStatusData.entity_values(element);
+        deathStatus(0_comp) = !bulkData->bucket(element).member(*activePart);
       }
     }
   }

@@ -101,13 +101,7 @@ void do_assemble(Operation Op, BulkData & bulk, FieldVector const& field_vector)
   }
 }
 
-typedef Field<double> ScalarField;
-typedef Field<double> CartesianField;
-typedef Field<long double> LongDoubleField;
-typedef Field<int> IntField;
-typedef Field<unsigned long> IdField;
-
-template <Operation Op>
+template <Operation Op, stk::mesh::Layout DataLayout>
 void do_parallel_assemble()
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -115,9 +109,7 @@ void do_parallel_assemble()
   int p_rank = stk::parallel_machine_rank(pm);
   int p_size = stk::parallel_machine_size(pm);
 
-  if (p_size == 1) {
-    return;
-  }
+  if (p_size == 1) { GTEST_SKIP(); }
 
   const unsigned NX = 3;
   const unsigned NY = 3;
@@ -128,13 +120,26 @@ void do_parallel_assemble()
   MetaData& meta = fixture.m_meta;
   BulkData& bulk = fixture.m_bulk_data;
 
-  ScalarField& universal_scalar_node_field       = meta.declare_field<double>( stk::topology::NODE_RANK,    "universal_scalar_node_field" );
-  ScalarField& non_universal_scalar_node_field   = meta.declare_field<double>( stk::topology::NODE_RANK,    "non_universal_scalar_node_field" );
-  CartesianField& universal_cartesian_node_field = meta.declare_field<double>( stk::topology::NODE_RANK, "universal_cartesian_node_field" );
-  IntField& universal_scalar_int_node_field      = meta.declare_field<int>( stk::topology::NODE_RANK,       "universal_scalar_int_node_field" );
-  ScalarField& universal_scalar_edge_field       = meta.declare_field<double>( stk::topology::EDGE_RANK,    "universal_scalar_edge_field" );
-  LongDoubleField& universal_scalar_long_double_node_field = meta.declare_field<long double>( stk::topology::NODE_RANK, "universal_scalar_long_double_node_field" );
-  IdField& universal_scalar_id_node_field        = meta.declare_field<unsigned long>( stk::topology::NODE_RANK, "universal_scalar_id_node_field" );
+  using ScalarField = Field<double, DataLayout>;
+  using CartesianField = Field<double, DataLayout>;
+  using LongDoubleField = Field<long double, DataLayout>;
+  using IntField = Field<int, DataLayout>;
+  using IdField = Field<unsigned long, DataLayout>;
+
+  ScalarField& universal_scalar_node_field =
+      meta.declare_field<double, DataLayout>(stk::topology::NODE_RANK, "universal_scalar_node_field");
+  ScalarField& non_universal_scalar_node_field =
+      meta.declare_field<double, DataLayout>(stk::topology::NODE_RANK, "non_universal_scalar_node_field");
+  CartesianField& universal_cartesian_node_field =
+      meta.declare_field<double, DataLayout>(stk::topology::NODE_RANK, "universal_cartesian_node_field");
+  IntField& universal_scalar_int_node_field =
+      meta.declare_field<int, DataLayout>(stk::topology::NODE_RANK, "universal_scalar_int_node_field");
+  ScalarField& universal_scalar_edge_field =
+      meta.declare_field<double, DataLayout>(stk::topology::EDGE_RANK, "universal_scalar_edge_field");
+  LongDoubleField& universal_scalar_long_double_node_field =
+      meta.declare_field<long double, DataLayout>(stk::topology::NODE_RANK, "universal_scalar_long_double_node_field");
+  IdField& universal_scalar_id_node_field =
+      meta.declare_field<unsigned long, DataLayout>(stk::topology::NODE_RANK, "universal_scalar_id_node_field");
 
   Part& center_part = meta.declare_part("center_part", stk::topology::NODE_RANK);
 
@@ -162,8 +167,8 @@ void do_parallel_assemble()
   count_entities( shared_sel, bulk, counts );
 
   int multiplier = (p_rank == 0 || p_rank == p_size - 1) ? 1 : 2;
-  EXPECT_EQ( multiplier * (NX + 1) * (NY + 1), counts[0]); // nodes
-  EXPECT_EQ( multiplier * 2 * NX * (NY + 1),   counts[1]); // edges
+  EXPECT_EQ( multiplier * (NX + 1) * (NY + 1), counts[stk::topology::NODE_RANK]);
+  EXPECT_EQ( multiplier * 2 * NX * (NY + 1),   counts[stk::topology::EDGE_RANK]);
 
   // Move center nodes into center part
   Entity center_element = fixture.elem(NX / 2, NY / 2, p_rank);
@@ -184,47 +189,65 @@ void do_parallel_assemble()
   // Fill field data
 
   BucketVector const& all_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, shared_sel);
-  for (size_t b = 0, be = all_node_buckets.size(); b < be; ++b) {
-    Bucket& bucket = *all_node_buckets[b];
-    for (size_t n = 0, ne = bucket.size(); n < ne; ++n) {
-      Entity node = bucket[n];
-      EntityId node_id = bulk.identifier(node);
-
-      int field_id = universal_scalar_node_field.mesh_meta_data_ordinal();
-      *field_data(universal_scalar_node_field, node) = p_rank + field_id + node_id;
-
-      field_id = universal_cartesian_node_field.mesh_meta_data_ordinal();
-      double* data = stk::mesh::field_data(universal_cartesian_node_field, node);
-      for (int d = 0; d < 3; ++d) {
-        data[d] = p_rank + (field_id*d) + node_id;
-      }
-
-      field_id = universal_scalar_int_node_field.mesh_meta_data_ordinal();
-      *field_data(universal_scalar_int_node_field, node) = p_rank + field_id + node_id;
-
-
-      field_id = non_universal_scalar_node_field.mesh_meta_data_ordinal();
-      if (bucket.member(center_part)) {
-        *field_data(non_universal_scalar_node_field, node) = p_rank + field_id + node_id;
-      }
-
-      field_id = universal_scalar_long_double_node_field.mesh_meta_data_ordinal();
-      *field_data(universal_scalar_long_double_node_field, node) = p_rank + field_id + node_id;
-
-      field_id = universal_scalar_id_node_field.mesh_meta_data_ordinal();
-      *field_data(universal_scalar_id_node_field, node) = p_rank + field_id + node_id;
-    }
-  }
-
   BucketVector const& all_edge_buckets = bulk.get_buckets(stk::topology::EDGE_RANK, shared_sel);
-  for (size_t b = 0, be = all_edge_buckets.size(); b < be; ++b) {
-    Bucket& bucket = *all_edge_buckets[b];
-    for (size_t e = 0, ee = bucket.size(); e < ee; ++e) {
-      Entity edge = bucket[e];
-      EntityId edge_id = bulk.identifier(edge);
 
-      int field_id = universal_scalar_edge_field.mesh_meta_data_ordinal();
-      *field_data(universal_scalar_edge_field, edge) = p_rank + field_id + edge_id;
+  {
+    auto universal_scalar_field_data = universal_scalar_node_field.template data<stk::mesh::ReadWrite>();
+    auto universal_cartesian_field_data = universal_cartesian_node_field.template data<stk::mesh::ReadWrite>();
+    auto universal_scalar_int_field_data = universal_scalar_int_node_field.template data<stk::mesh::ReadWrite>();
+    auto non_universal_scalar_field_data = non_universal_scalar_node_field.template data<stk::mesh::ReadWrite>();
+    auto universal_scalar_long_double_field_data = universal_scalar_long_double_node_field.template data<stk::mesh::ReadWrite>();
+    auto universal_scalar_id_field_data = universal_scalar_id_node_field.template data<stk::mesh::ReadWrite>();
+
+    for (size_t b = 0, be = all_node_buckets.size(); b < be; ++b) {
+      Bucket& bucket = *all_node_buckets[b];
+      auto universal_scalar_bucket_values = universal_scalar_field_data.bucket_values(bucket);
+      auto universal_cartesian_bucket_values = universal_cartesian_field_data.bucket_values(bucket);
+      auto universal_scalar_int_bucket_values = universal_scalar_int_field_data.bucket_values(bucket);
+      auto non_universal_scalar_bucket_values = non_universal_scalar_field_data.bucket_values(bucket);
+      auto universal_scalar_long_double_bucket_values = universal_scalar_long_double_field_data.bucket_values(bucket);
+      auto universal_scalar_id_bucket_values = universal_scalar_id_field_data.bucket_values(bucket);
+
+      for (stk::mesh::EntityIdx nodeIdx : bucket.entities()) {
+        Entity node = bucket[nodeIdx];
+        EntityId node_id = bulk.identifier(node);
+
+        int field_id = universal_scalar_node_field.mesh_meta_data_ordinal();
+        universal_scalar_bucket_values(nodeIdx) = p_rank + field_id + node_id;
+
+        field_id = universal_cartesian_node_field.mesh_meta_data_ordinal();
+        for (stk::mesh::ComponentIdx d(0); d < 3; ++d) {
+          universal_cartesian_bucket_values(nodeIdx, d) = p_rank + (field_id*static_cast<int>(d)) + node_id;
+        }
+
+        field_id = universal_scalar_int_node_field.mesh_meta_data_ordinal();
+        universal_scalar_int_bucket_values(nodeIdx) = p_rank + field_id + node_id;
+
+
+        field_id = non_universal_scalar_node_field.mesh_meta_data_ordinal();
+        if (bucket.member(center_part)) {
+          non_universal_scalar_bucket_values(nodeIdx) = p_rank + field_id + node_id;
+        }
+
+        field_id = universal_scalar_long_double_node_field.mesh_meta_data_ordinal();
+        universal_scalar_long_double_bucket_values(nodeIdx) = p_rank + field_id + node_id;
+
+        field_id = universal_scalar_id_node_field.mesh_meta_data_ordinal();
+        universal_scalar_id_bucket_values(nodeIdx) = p_rank + field_id + node_id;
+      }
+    }
+
+    auto universal_scalar_edge_field_data = universal_scalar_edge_field.template data<stk::mesh::ReadWrite>();
+    for (size_t b = 0, be = all_edge_buckets.size(); b < be; ++b) {
+      Bucket& bucket = *all_edge_buckets[b];
+      auto universal_scalar_edge_bucket_values = universal_scalar_edge_field_data.bucket_values(bucket);
+      for (stk::mesh::EntityIdx entityIdx : bucket.entities()) {
+        Entity edge = bucket[entityIdx];
+        EntityId edge_id = bulk.identifier(edge);
+
+        int field_id = universal_scalar_edge_field.mesh_meta_data_ordinal();
+        universal_scalar_edge_bucket_values(entityIdx) = p_rank + field_id + edge_id;
+      }
     }
   }
 
@@ -250,49 +273,66 @@ void do_parallel_assemble()
 
   // Check field values
 
+  auto universal_scalar_field_data = universal_scalar_node_field.template data<stk::mesh::ReadOnly>();
+  auto universal_cartesian_field_data = universal_cartesian_node_field.template data<stk::mesh::ReadOnly>();
+  auto universal_scalar_int_field_data = universal_scalar_int_node_field.template data<stk::mesh::ReadOnly>();
+  auto non_universal_scalar_field_data = non_universal_scalar_node_field.template data<stk::mesh::ReadOnly>();
+  auto universal_scalar_long_double_field_data = universal_scalar_long_double_node_field.template data<stk::mesh::ReadOnly>();
+  auto universal_scalar_id_field_data = universal_scalar_id_node_field.template data<stk::mesh::ReadOnly>();
+
   for (size_t b = 0, be = all_node_buckets.size(); b < be; ++b) {
     Bucket& bucket = *all_node_buckets[b];
-    for (size_t n = 0, ne = bucket.size(); n < ne; ++n) {
-      Entity node = bucket[n];
+    auto universal_scalar_bucket_values = universal_scalar_field_data.bucket_values(bucket);
+    auto universal_cartesian_bucket_values = universal_cartesian_field_data.bucket_values(bucket);
+    auto universal_scalar_int_bucket_values = universal_scalar_int_field_data.bucket_values(bucket);
+    auto non_universal_scalar_bucket_values = non_universal_scalar_field_data.bucket_values(bucket);
+    auto universal_scalar_long_double_bucket_values = universal_scalar_long_double_field_data.bucket_values(bucket);
+    auto universal_scalar_id_bucket_values = universal_scalar_id_field_data.bucket_values(bucket);
+
+    for (stk::mesh::EntityIdx nodeIdx : bucket.entities()) {
+      Entity node = bucket[nodeIdx];
       EntityId node_id = bulk.identifier(node);
 
       bool is_left_node = bulk.in_shared(bulk.entity_key(node), p_rank - 1);
 
       int sharing_rank = is_left_node ? p_rank - 1 : p_rank + 1;
       int field_id = universal_scalar_node_field.mesh_meta_data_ordinal();
-      EXPECT_EQ( *field_data(universal_scalar_node_field, node),
+      EXPECT_EQ(universal_scalar_bucket_values(nodeIdx),
                  (do_operation<double>(Op, p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
 
       field_id = universal_cartesian_node_field.mesh_meta_data_ordinal();
-      double* data = stk::mesh::field_data(universal_cartesian_node_field, node);
-      for (int d = 0; d < 3; ++d) {
-        EXPECT_EQ( data[d], (do_operation<double>(Op, p_rank + field_id*d + node_id, sharing_rank + field_id*d + node_id)) );
+      for (stk::mesh::ComponentIdx d(0); d < 3; ++d) {
+        EXPECT_EQ(universal_cartesian_bucket_values(nodeIdx, d),
+                  (do_operation<double>(Op, p_rank + field_id*static_cast<int>(d) + node_id,
+                                        sharing_rank + field_id*static_cast<int>(d) + node_id)) );
       }
 
       field_id = universal_scalar_int_node_field.mesh_meta_data_ordinal();
-      EXPECT_EQ( *field_data(universal_scalar_int_node_field, node),
+      EXPECT_EQ(universal_scalar_int_bucket_values(nodeIdx),
                  (do_operation<int>(Op, p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
 
       field_id = non_universal_scalar_node_field.mesh_meta_data_ordinal();
       if (bucket.member(center_part)) {
-        EXPECT_EQ( *field_data(non_universal_scalar_node_field, node),
+        EXPECT_EQ(non_universal_scalar_bucket_values(nodeIdx),
                    (do_operation<double>(Op, p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
       }
 
       field_id = universal_scalar_long_double_node_field.mesh_meta_data_ordinal();
-      EXPECT_EQ( *field_data(universal_scalar_long_double_node_field, node),
+      EXPECT_EQ(universal_scalar_long_double_bucket_values(nodeIdx),
                  (do_operation<long double>(Op, p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
 
       field_id = universal_scalar_id_node_field.mesh_meta_data_ordinal();
-      EXPECT_EQ( *field_data(universal_scalar_id_node_field, node),
+      EXPECT_EQ(universal_scalar_id_bucket_values(nodeIdx),
                  (do_operation<unsigned long>(Op, p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
     }
   }
 
+  auto universal_scalar_edge_field_data = universal_scalar_edge_field.template data<stk::mesh::ReadOnly>();
   for (size_t b = 0, be = all_edge_buckets.size(); b < be; ++b) {
     Bucket& bucket = *all_edge_buckets[b];
-    for (size_t e = 0, ee = bucket.size(); e < ee; ++e) {
-      Entity edge = bucket[e];
+    auto universal_scalar_edge_bucket_values = universal_scalar_edge_field_data.bucket_values(bucket);
+    for (stk::mesh::EntityIdx entityIdx : bucket.entities()) {
+      Entity edge = bucket[entityIdx];
       EntityId edge_id = bulk.identifier(edge);
 
       bool is_left_edge = bulk.in_shared(bulk.entity_key(edge), p_rank - 1);
@@ -300,7 +340,7 @@ void do_parallel_assemble()
       int sharing_rank = is_left_edge ? p_rank - 1 : p_rank + 1;
 
       int field_id = universal_scalar_edge_field.mesh_meta_data_ordinal();
-      EXPECT_EQ( *field_data(universal_scalar_edge_field, edge),
+      EXPECT_EQ(universal_scalar_edge_bucket_values(entityIdx),
                  (do_operation<double>(Op, p_rank + field_id + edge_id, sharing_rank + field_id + edge_id)) );
     }
   }
@@ -308,17 +348,20 @@ void do_parallel_assemble()
 
 TEST(FieldParallel, parallel_sum)
 {
-  do_parallel_assemble<Operation::SUM>();
+  do_parallel_assemble<Operation::SUM, stk::mesh::Layout::Right>();
+  do_parallel_assemble<Operation::SUM, stk::mesh::Layout::Left>();
 }
 
 TEST(FieldParallel, parallel_min)
 {
-  do_parallel_assemble<Operation::MIN>();
+  do_parallel_assemble<Operation::MIN, stk::mesh::Layout::Right>();
+  do_parallel_assemble<Operation::MIN, stk::mesh::Layout::Left>();
 }
 
 TEST(FieldParallel, parallel_max)
 {
-  do_parallel_assemble<Operation::MAX>();
+  do_parallel_assemble<Operation::MAX, stk::mesh::Layout::Right>();
+  do_parallel_assemble<Operation::MAX, stk::mesh::Layout::Left>();
 }
 
 
@@ -340,17 +383,15 @@ void do_assemble_including_ghosts(Operation Op, BulkData & bulk, FieldVector con
   }
 }
 
-template <Operation Op>
+template <Operation Op, stk::mesh::Layout DataLayout>
 void do_parallel_assemble_including_ghosts()
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
-  int p_rank = stk::parallel_machine_rank(pm);
-  int p_size = stk::parallel_machine_size(pm);
+  const int p_rank = stk::parallel_machine_rank(pm);
+  const int p_size = stk::parallel_machine_size(pm);
 
-  if (p_size == 1) {
-    return;
-  }
+  if (p_size == 1) { GTEST_SKIP(); }
 
   const unsigned NX = 3;
   const unsigned NY = 3;
@@ -362,11 +403,21 @@ void do_parallel_assemble_including_ghosts()
   MetaData& meta = fixture.m_meta;
   BulkData& bulk = fixture.m_bulk_data;
 
-  ScalarField& universal_scalar_node_field       = meta.declare_field<double>( stk::topology::NODE_RANK,    "universal_scalar_node_field" );
-  ScalarField& non_universal_scalar_node_field   = meta.declare_field<double>( stk::topology::NODE_RANK,    "non_universal_scalar_node_field" );
-  CartesianField& universal_cartesian_node_field = meta.declare_field<double>( stk::topology::NODE_RANK, "universal_cartesian_node_field" );
-  IntField& universal_scalar_int_node_field      = meta.declare_field<int>( stk::topology::NODE_RANK,       "universal_scalar_int_node_field" );
-  IdField& universal_scalar_id_node_field        = meta.declare_field<unsigned long>( stk::topology::NODE_RANK, "universal_scalar_id_node_field" );
+  using ScalarField = Field<double, DataLayout>;
+  using CartesianField = Field<double, DataLayout>;
+  using IntField = Field<int, DataLayout>;
+  using IdField = Field<unsigned long, DataLayout>;
+
+  ScalarField& universal_scalar_node_field =
+      meta.declare_field<double, DataLayout>(stk::topology::NODE_RANK, "universal_scalar_node_field");
+  ScalarField& non_universal_scalar_node_field =
+      meta.declare_field<double, DataLayout>(stk::topology::NODE_RANK, "non_universal_scalar_node_field");
+  CartesianField& universal_cartesian_node_field =
+      meta.declare_field<double, DataLayout>(stk::topology::NODE_RANK, "universal_cartesian_node_field");
+  IntField& universal_scalar_int_node_field =
+      meta.declare_field<int, DataLayout>(stk::topology::NODE_RANK, "universal_scalar_int_node_field");
+  IdField& universal_scalar_id_node_field =
+      meta.declare_field<unsigned long, DataLayout>(stk::topology::NODE_RANK, "universal_scalar_id_node_field");
 
   Part& center_part = meta.declare_part("center_part", stk::topology::NODE_RANK);
 
@@ -431,32 +482,46 @@ void do_parallel_assemble_including_ghosts()
   // Fill field data
 
   BucketVector const& all_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, meta.universal_part());
-  for (size_t b = 0, be = all_node_buckets.size(); b < be; ++b) {
-    Bucket& bucket = *all_node_buckets[b];
-    for (size_t n = 0, ne = bucket.size(); n < ne; ++n) {
-      Entity node = bucket[n];
-      EntityId node_id = bulk.identifier(node);
 
-      int field_id = universal_scalar_node_field.mesh_meta_data_ordinal();
-      *field_data(universal_scalar_node_field, node) = p_rank + field_id + node_id;
+  {
+    auto universal_scalar_field_data = universal_scalar_node_field.template data<stk::mesh::ReadWrite>();
+    auto universal_cartesian_field_data = universal_cartesian_node_field.template data<stk::mesh::ReadWrite>();
+    auto universal_scalar_int_field_data = universal_scalar_int_node_field.template data<stk::mesh::ReadWrite>();
+    auto non_universal_scalar_field_data = non_universal_scalar_node_field.template data<stk::mesh::ReadWrite>();
+    auto universal_scalar_id_field_data = universal_scalar_id_node_field.template data<stk::mesh::ReadWrite>();
 
-      field_id = universal_cartesian_node_field.mesh_meta_data_ordinal();
-      double* data = stk::mesh::field_data(universal_cartesian_node_field, node);
-      for (int d = 0; d < 3; ++d) {
-        data[d] = p_rank + (field_id*d) + node_id;
+    for (size_t b = 0, be = all_node_buckets.size(); b < be; ++b) {
+      Bucket& bucket = *all_node_buckets[b];
+      auto universal_scalar_bucket_values = universal_scalar_field_data.bucket_values(bucket);
+      auto universal_cartesian_bucket_values = universal_cartesian_field_data.bucket_values(bucket);
+      auto universal_scalar_int_bucket_values = universal_scalar_int_field_data.bucket_values(bucket);
+      auto non_universal_scalar_bucket_values = non_universal_scalar_field_data.bucket_values(bucket);
+      auto universal_scalar_id_bucket_values = universal_scalar_id_field_data.bucket_values(bucket);
+
+      for (stk::mesh::EntityIdx nodeIdx : bucket.entities()) {
+        Entity node = bucket[nodeIdx];
+        EntityId node_id = bulk.identifier(node);
+
+        int field_id = universal_scalar_node_field.mesh_meta_data_ordinal();
+        universal_scalar_bucket_values(nodeIdx) = p_rank + field_id + node_id;
+
+        field_id = universal_cartesian_node_field.mesh_meta_data_ordinal();
+        for (stk::mesh::ComponentIdx d(0); d < 3; ++d) {
+          universal_cartesian_bucket_values(nodeIdx, d) = p_rank + (field_id*static_cast<int>(d)) + node_id;
+        }
+
+        field_id = universal_scalar_int_node_field.mesh_meta_data_ordinal();
+        universal_scalar_int_bucket_values(nodeIdx) = p_rank + field_id + node_id;
+
+
+        field_id = non_universal_scalar_node_field.mesh_meta_data_ordinal();
+        if (bucket.member(center_part)) {
+          non_universal_scalar_bucket_values(nodeIdx) = p_rank + field_id + node_id;
+        }
+
+        field_id = universal_scalar_id_node_field.mesh_meta_data_ordinal();
+        universal_scalar_id_bucket_values(nodeIdx) = p_rank + field_id + node_id;
       }
-
-      field_id = universal_scalar_int_node_field.mesh_meta_data_ordinal();
-      *field_data(universal_scalar_int_node_field, node) = p_rank + field_id + node_id;
-
-
-      field_id = non_universal_scalar_node_field.mesh_meta_data_ordinal();
-      if (bucket.member(center_part)) {
-        *field_data(non_universal_scalar_node_field, node) = p_rank + field_id + node_id;
-      }
-
-      field_id = universal_scalar_id_node_field.mesh_meta_data_ordinal();
-      *field_data(universal_scalar_id_node_field, node) = p_rank + field_id + node_id;
     }
   }
 
@@ -477,10 +542,22 @@ void do_parallel_assemble_including_ghosts()
 
   // Check field values
 
+  auto universal_scalar_field_data = universal_scalar_node_field.template data<stk::mesh::ReadOnly>();
+  auto universal_cartesian_field_data = universal_cartesian_node_field.template data<stk::mesh::ReadOnly>();
+  auto universal_scalar_int_field_data = universal_scalar_int_node_field.template data<stk::mesh::ReadOnly>();
+  auto non_universal_scalar_field_data = non_universal_scalar_node_field.template data<stk::mesh::ReadOnly>();
+  auto universal_scalar_id_field_data = universal_scalar_id_node_field.template data<stk::mesh::ReadOnly>();
+
   for (size_t b = 0, be = all_node_buckets.size(); b < be; ++b) {
     Bucket& bucket = *all_node_buckets[b];
-    for (size_t n = 0, ne = bucket.size(); n < ne; ++n) {
-      Entity node = bucket[n];
+    auto universal_scalar_bucket_values = universal_scalar_field_data.bucket_values(bucket);
+    auto universal_cartesian_bucket_values = universal_cartesian_field_data.bucket_values(bucket);
+    auto universal_scalar_int_bucket_values = universal_scalar_int_field_data.bucket_values(bucket);
+    auto non_universal_scalar_bucket_values = non_universal_scalar_field_data.bucket_values(bucket);
+    auto universal_scalar_id_bucket_values = universal_scalar_id_field_data.bucket_values(bucket);
+
+    for (stk::mesh::EntityIdx nodeIdx : bucket.entities()) {
+      Entity node = bucket[nodeIdx];
       EntityId node_id = bulk.identifier(node);
 
       int other_rank = 0;
@@ -493,45 +570,58 @@ void do_parallel_assemble_including_ghosts()
       }
 
       int field_id = universal_scalar_node_field.mesh_meta_data_ordinal();
-      EXPECT_EQ( do_operation<double>(Op, p_rank + field_id + node_id, other_rank + field_id + node_id),
-                 *field_data(universal_scalar_node_field, node) );
+      EXPECT_EQ(do_operation<double>(Op, p_rank + field_id + node_id, other_rank + field_id + node_id),
+                universal_scalar_bucket_values(nodeIdx)) << "node_id = " << node_id;
 
       field_id = universal_cartesian_node_field.mesh_meta_data_ordinal();
-      double* data = stk::mesh::field_data(universal_cartesian_node_field, node);
-      for (int d = 0; d < 3; ++d) {
-        EXPECT_EQ( do_operation<double>(Op, p_rank + field_id*d + node_id, other_rank + field_id*d + node_id), data[d] );
+      for (stk::mesh::ComponentIdx d(0); d < 3; ++d) {
+        EXPECT_EQ(do_operation<double>(Op, p_rank + field_id*static_cast<int>(d) + node_id,
+                                       other_rank + field_id*static_cast<int>(d) + node_id),
+                  universal_cartesian_bucket_values(nodeIdx, d));
       }
 
       field_id = universal_scalar_int_node_field.mesh_meta_data_ordinal();
-      EXPECT_EQ( do_operation<int>(Op, p_rank + field_id + node_id, other_rank + field_id + node_id),
-                 *field_data(universal_scalar_int_node_field, node) );
+      EXPECT_EQ(do_operation<int>(Op, p_rank + field_id + node_id, other_rank + field_id + node_id),
+                universal_scalar_int_bucket_values(nodeIdx));
 
       field_id = non_universal_scalar_node_field.mesh_meta_data_ordinal();
       if (bucket.member(center_part)) {
-        EXPECT_EQ( do_operation<double>(Op, p_rank + field_id + node_id, other_rank + field_id + node_id),
-                   *field_data(non_universal_scalar_node_field, node) );
+        EXPECT_EQ(do_operation<double>(Op, p_rank + field_id + node_id, other_rank + field_id + node_id),
+                  non_universal_scalar_bucket_values(nodeIdx)) << "non-univ-field, node_id == " << node_id;
       }
 
       field_id = universal_scalar_id_node_field.mesh_meta_data_ordinal();
-      EXPECT_EQ( do_operation<unsigned long>(Op, p_rank + field_id + node_id, other_rank + field_id + node_id),
-                 *field_data(universal_scalar_id_node_field, node) );
+      EXPECT_EQ(do_operation<unsigned long>(Op, p_rank + field_id + node_id, other_rank + field_id + node_id),
+                universal_scalar_id_bucket_values(nodeIdx));
     }
   }
 }
 
 TEST(FieldParallel, parallel_sum_including_ghosts)
 {
-  do_parallel_assemble_including_ghosts<Operation::SUM>();
+#ifndef STK_UNIFIED_MEMORY
+  do_parallel_assemble_including_ghosts<Operation::SUM, stk::mesh::Layout::Right>();
+#else
+  do_parallel_assemble_including_ghosts<Operation::SUM, stk::mesh::Layout::Left>();
+#endif
 }
 
 TEST(FieldParallel, parallel_min_including_ghosts)
 {
-  do_parallel_assemble_including_ghosts<Operation::MIN>();
+#ifndef STK_UNIFIED_MEMORY
+  do_parallel_assemble_including_ghosts<Operation::MIN, stk::mesh::Layout::Right>();
+#else
+  do_parallel_assemble_including_ghosts<Operation::MIN, stk::mesh::Layout::Left>();
+#endif
 }
 
 TEST(FieldParallel, parallel_max_including_ghosts)
 {
-  do_parallel_assemble_including_ghosts<Operation::MAX>();
+#ifndef STK_UNIFIED_MEMORY
+  do_parallel_assemble_including_ghosts<Operation::MAX, stk::mesh::Layout::Right>();
+#else
+  do_parallel_assemble_including_ghosts<Operation::MAX, stk::mesh::Layout::Left>();
+#endif
 }
 
 } //namespace <anonymous>

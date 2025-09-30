@@ -24,7 +24,7 @@ template <typename Storage, typename Ordinal, typename MultiplyOp,
 bool test_host_embedded_vector(Ordinal num_hyper_threads,
                                Ordinal num_cores,
                                Teuchos::FancyOStream& out) {
-  const Ordinal VectorSize = NumPerThread * ThreadsPerVector;
+  const Ordinal lVectorSize = NumPerThread * ThreadsPerVector;
   typedef typename Storage::template apply_N<VectorSize>::type storage_type;
   typedef Sacado::MP::Vector<storage_type> Vector;
 
@@ -36,7 +36,7 @@ bool test_host_embedded_vector(Ordinal num_hyper_threads,
     KokkosSparse::DeviceConfig dev_config(num_cores, ThreadsPerVector, row_threads);
 
     success = test_embedded_vector<Vector>(
-      nGrid, VectorSize, dev_config, MultiplyOp(), out);
+      nGrid, lVectorSize, dev_config, MultiplyOp(), out);
   }
   return success;
 }

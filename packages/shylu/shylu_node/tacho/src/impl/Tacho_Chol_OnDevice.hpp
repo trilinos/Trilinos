@@ -24,7 +24,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
 
     int r_val(0);
     if (m > 0) {
-      Lapack<value_type>::potrf(ArgUplo::param, m, A.data(), A.stride_1(), &r_val);
+      Lapack<value_type>::potrf(ArgUplo::param, m, A.data(), A.stride(1), &r_val);
     }
     return r_val;
   }
@@ -41,7 +41,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
       int *devInfo = (int *)W.data();
       value_type *workspace = W.data() + 1;
       int lwork = W.span() - 1;
-      r_val = Lapack<value_type>::potrf(handle, ArgUplo::cublas_param, m, A.data(), A.stride_1(), workspace, lwork,
+      r_val = Lapack<value_type>::potrf(handle, ArgUplo::cublas_param, m, A.data(), A.stride(1), workspace, lwork,
                                         devInfo);
     }
     return r_val;
@@ -54,7 +54,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
 
     int r_val(0);
     if (m > 0)
-      r_val = Lapack<value_type>::potrf_buffersize(handle, ArgUplo::cublas_param, m, A.data(), A.stride_1(), lwork);
+      r_val = Lapack<value_type>::potrf_buffersize(handle, ArgUplo::cublas_param, m, A.data(), A.stride(1), lwork);
     return r_val;
   }
 #endif
@@ -68,7 +68,7 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
     int r_val(0);
     if (m > 0) {
       int *devInfo = (int *)W.data();
-      r_val = Lapack<value_type>::potrf(handle, ArgUplo::rocblas_param, m, A.data(), A.stride_1(), devInfo);
+      r_val = Lapack<value_type>::potrf(handle, ArgUplo::rocblas_param, m, A.data(), A.stride(1), devInfo);
     }
     return r_val;
   }

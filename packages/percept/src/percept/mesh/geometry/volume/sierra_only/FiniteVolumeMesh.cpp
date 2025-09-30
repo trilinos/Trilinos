@@ -203,9 +203,9 @@ namespace percept {
 
   //------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------
-  FiniteVolumeMesh2D::FiniteVolumeMesh2D(stk::mesh::BulkData& r, stk::mesh::FieldBase *coordinatesField_ ,
-                   stk::mesh::FieldBase *controlVolumeField_ , stk::mesh::FieldBase *scVolumeField_ )
-    : FiniteVolumeMesh(2, r, coordinatesField_, controlVolumeField_, scVolumeField_)
+  FiniteVolumeMesh2D::FiniteVolumeMesh2D(stk::mesh::BulkData& r, stk::mesh::FieldBase *coordinatesField ,
+                   stk::mesh::FieldBase *controlVolumeField , stk::mesh::FieldBase *scVolumeField )
+    : FiniteVolumeMesh(2, r, coordinatesField, controlVolumeField, scVolumeField)
   {
   }
 
@@ -312,9 +312,9 @@ namespace percept {
 
   //------------------------------------------------------------------------------------
   //------------------------------------------------------------------------------------
-  FiniteVolumeMesh3D::FiniteVolumeMesh3D(stk::mesh::BulkData& r, stk::mesh::FieldBase *coordinatesField_ ,
-                   stk::mesh::FieldBase *controlVolumeField_ , stk::mesh::FieldBase *scVolumeField_ )
-    : FiniteVolumeMesh(3, r, coordinatesField_, controlVolumeField_, scVolumeField_)
+  FiniteVolumeMesh3D::FiniteVolumeMesh3D(stk::mesh::BulkData& r, stk::mesh::FieldBase *coordinatesField ,
+                   stk::mesh::FieldBase *controlVolumeField , stk::mesh::FieldBase *scVolumeField )
+    : FiniteVolumeMesh(3, r, coordinatesField, controlVolumeField, scVolumeField)
   {
   }
 
@@ -983,7 +983,7 @@ namespace percept {
   }
 
   double FiniteVolumeMesh3D::polyhedralVolume(
-                                              const int numCoords,
+                                              const int /*numCoords*/,
                                               const double x[][3],
                                               const int numTriangles,
                                               const int triangularFaceTable[][3])

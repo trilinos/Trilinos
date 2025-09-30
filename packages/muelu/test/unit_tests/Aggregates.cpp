@@ -678,7 +678,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, JustStructuredAggregationGlobal, S
                                                                     lNodesPerDir, meshData);
 
   Teuchos::ParameterList matrixList;
-  matrixList.set("nx", gNodesPerDir[0]);
+  matrixList.set("nx", (GlobalOrdinal)Coordinates->getMap()->getGlobalNumElements());
   matrixList.set("matrixType", "Laplace1D");
   RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr = Galeri::Xpetra::
       BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace1D", Coordinates->getMap(),
@@ -728,7 +728,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, JustStructuredAggregationLocal, Sc
                                                                     meshLayout);
 
   Teuchos::ParameterList matrixList;
-  matrixList.set("nx", gNodesPerDir[0]);
+  matrixList.set("nx", (GlobalOrdinal)Coordinates->getMap()->getGlobalNumElements());
   matrixList.set("matrixType", "Laplace1D");
   RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr = Galeri::Xpetra::
       BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Laplace1D", Coordinates->getMap(),
@@ -864,7 +864,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, GreedyDirichlet, Scalar, LocalOrdi
 
   aggregates->ComputeNodesInAggregate(aggPtr, aggNodes, unaggregated);
 
-  typename Aggregates::LO_view::HostMirror unaggregated_h = Kokkos::create_mirror_view(unaggregated);
+  typename Aggregates::LO_view::host_mirror_type unaggregated_h = Kokkos::create_mirror_view(unaggregated);
   Kokkos::deep_copy(unaggregated_h, unaggregated);
 
   //     Test to check that the dirichlet node is aggregated:

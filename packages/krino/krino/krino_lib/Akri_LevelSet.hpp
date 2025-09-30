@@ -58,9 +58,6 @@ enum SemiLagrangianAlgorithm
   MAX_SEMILAGRANGIAN_ALGORITM_TYPE
 };
 
-/// Return true if field-data exists for the specified meshobj and field.
-bool all_nodes_have_field_data(const stk::mesh::BulkData& stk_bulk, stk::mesh::Entity entity, const stk::mesh::FieldBase& field);
-
 class LevelSet {
 friend class LevelSet_Size;
 public:
@@ -89,16 +86,7 @@ public:
   void advance_semilagrangian(const FieldRef coordsField, const double timeN, const double timeNp1, const BoundingBox & paddedNodeBBox, const ExtensionVelocityFunction & extVBuilder);
   void advance_semilagrangian_using_interface_velocity(const FieldRef interfaceCoordsField, const FieldRef evaluationCoordsField, const double timeN, const double timeNp1, const FieldRef interfaceVelocity);
 
-  static void gather_nodal_field(
-    const stk::mesh::BulkData& stk_mesh,
-    stk::mesh::Entity obj,
-    const FieldRef  & field_ref,
-    double * field);
-
-  static void build_facets_for_elements(const stk::mesh::BulkData & mesh, const FieldRef xField, const FieldRef isoField, const std::vector<stk::mesh::Entity> & elementsToIntersect, const double avgEdgeLength, FacetedSurfaceBase & facets);
   double compute_average_edge_length() const;
-
-  void build_facets_locally(const stk::mesh::Selector & selector);
 
   void compute_levelset_sizes( double & area, double & negVol, double & posVol, const FieldRef isovar, const double isoval ) const;
   void compute_sizes( double & area, double & neg_vol, double & pos_vol, const double distance = 0.0 ) const;
@@ -109,18 +97,11 @@ public:
 
   void increment_distance(const double increment, const bool enforce_sign = false, const double & signChangePurtubationTol = 0.5);
 
-  void estimate_error();
-
   void write_facets();
 
-  bool elem_on_interface(stk::mesh::Entity e) const;
-
-  void snap_to_mesh() const;
   bool remove_wall_features() const;
   bool simple_remove_wall_features() const;
   bool elem_has_field_data(const FieldRef &myField, const stk::mesh::Entity &elem) const;
-  double calc_elem_len_normal(const stk::mesh::Entity &elem, const stk::mesh::Entity &side, const FieldRef &coordinates_field) const;
-
 
   //--------------------------------------------------------------------------------
   // queries
@@ -149,7 +130,7 @@ public:
   const double & get_isoval() const { return my_threshold; }
 
   bool get_reinitialize_every_step() const { return my_needs_reinitialize_every_step; }
-  void set_reinitialize_every_step(const bool reinit) { set_keep_IC_surfaces(); my_needs_reinitialize_every_step = true; }
+  void set_reinitialize_every_step(const bool /*reinit*/) { set_keep_IC_surfaces(); my_needs_reinitialize_every_step = true; }
 
   Redistance_Method get_redistance_method() const { return my_redistance_method; }
   void set_redistance_method( const Redistance_Method type ) { my_redistance_method = type; }
@@ -158,6 +139,7 @@ public:
   void set_time_of_arrival_element_speed_field_name( const std::string & time_of_arrival_speed_field_name) { my_time_of_arrival_element_speed_field_name = time_of_arrival_speed_field_name; }
   FieldRef get_time_of_arrival_element_speed_field() const {return myTimeOfArrivalElementSpeedField;}
   void set_time_of_arrival_block_speed(const std::string & blockName, const double blockSpeed);
+
   FacetedSurfaceBase & get_facets() { return *facets; }
   const FacetedSurfaceBase & get_facets() const { return *facets; }
 
@@ -186,26 +168,17 @@ public:
   void set_keep_IC_surfaces() { my_keep_IC_surfaces = true; }
   bool get_keep_IC_surfaces() const { return my_keep_IC_surfaces; }
 
-  static bool sign_change( double f1, double f2 ) {
-    return ( (f1 < 0.) ? (f2 >= 0.) : (f2 < 0.) ); // GOMA sign convention
-    //return ( (f1 > 0.) ? (f2 <= 0.) : (f2 > 0.) ); // Marching cubes sign convention
-  }
-
-  static int sign( double f ) {
-    return ( (f < 0.) ? -1 : 1 ); // GOMA sign convention
-    //return ( (f > 0.) ? 1 : -1 ); // Marching cubes sign convention
-  }
-
   const std::vector<stk::mesh::Part *> & get_compute_surface_distance_parts() const { return my_compute_surface_distance_parts; }
   std::vector<stk::mesh::Part *> & get_compute_surface_distance_parts() { return my_compute_surface_distance_parts; }
-  void set_surface_distance(std::vector<stk::mesh::Part *> surfaces, const double in_distance);
   void compute_surface_distance(const double narrowBandSize=0.0, const double farFieldValue=0.0);
+
   static void initialize(stk::mesh::MetaData & meta);
   void initialize(const double time = 0.0);
   bool can_create_adaptive_initial_facets_from_initial_surfaces_because_initial_distance_is_solely_from_initial_surfaces() const;
   static void build_initial_facets(stk::mesh::MetaData & meta);
   void build_initial_facets(const double time);
   static void clear_initialization_data(stk::mesh::MetaData & meta);
+
   void clear_initialization_data();
   void redistance();
   void redistance(const stk::mesh::Selector & selector);
@@ -239,8 +212,7 @@ public:
 private:
   LevelSet(stk::mesh::MetaData & in_meta, const std::string & in_name, const stk::diag::Timer & parent_timer);
   void sync_all_fields_to_host();
-  void redistance_using_existing_facets(const stk::mesh::Selector & volumeSelector);
-  void redistance_nodes_using_existing_facets(const std::vector<stk::mesh::Entity> & nodesToRedistance);
+  void redistance_using_existing_facets(const stk::mesh::Selector & volumeSelector, const double elementLengthScale);
   void append_facets_from_side(const stk::mesh::Selector & interfaceSelector, const stk::mesh::Selector & negativeSideElementSelector, const stk::mesh::Entity side);
 
   void register_fields();
@@ -290,14 +262,10 @@ private:
 
   std::unique_ptr<IC_Alg> my_IC_alg;
 
-  // vector of previous facets
-  std::unique_ptr<FacetedSurfaceBase> facets_old;
-
     // vector of current facets
   std::unique_ptr<FacetedSurfaceBase> facets;
 
   std::vector<String_Function_Expression> myInterfaceVelocity;
-  const double epsilon;
 
   bool trackIsoSurface;
   bool myIsTransient = false;
@@ -317,14 +285,6 @@ private:
   void set_distance(const double & distance)  const;
   void scale_distance(const double scale)  const;
   void negate_distance()  const;
-
-  void prepare_to_compute_distance_to_stationary_facets( const stk::mesh::Selector & selector );
-
-  void compute_signed_distance_at_selected_nodes( const stk::mesh::Selector & selector );
-
-  double distance( const stk::math::Vector3d & x,
-		 const int previous_sign,
-		 const bool enforce_sign ) const;
 
   bool compute_time_of_arrival() const { return !my_time_of_arrival_element_speed_field_name.empty() || !myTimeOfArrivalBlockSpeeds.empty(); }
 };

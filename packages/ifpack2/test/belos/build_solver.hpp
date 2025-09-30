@@ -14,16 +14,15 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverFactory.hpp"
 
-template<class Scalar,class MV, class OP>
-Teuchos::RCP<Belos::SolverManager<Scalar,MV,OP> >
+template <class Scalar, class MV, class OP>
+Teuchos::RCP<Belos::SolverManager<Scalar, MV, OP> >
 build_solver(Teuchos::ParameterList& test_params,
-             Teuchos::RCP<Belos::LinearProblem<Scalar,MV,OP> > problem)
-{
+             Teuchos::RCP<Belos::LinearProblem<Scalar, MV, OP> > problem) {
   Teuchos::ParameterList bparams;
   if (test_params.isSublist("Belos")) {
     bparams = test_params.sublist("Belos");
   }
-  Teuchos::RCP<Teuchos::ParameterList> rcpparams = Teuchos::rcp(&bparams,false);
+  Teuchos::RCP<Teuchos::ParameterList> rcpparams = Teuchos::rcp(&bparams, false);
 
   std::string solver_type("not specified");
 
@@ -33,19 +32,18 @@ build_solver(Teuchos::ParameterList& test_params,
     throw std::runtime_error("Error in build_solver: solver_type not specified.");
   }
 
-  Teuchos::RCP<Belos::SolverManager<Scalar,MV,OP> > solver;
+  Teuchos::RCP<Belos::SolverManager<Scalar, MV, OP> > solver;
   Belos::SolverFactory<Scalar, MV, OP> factory;
   try {
-    solver = factory.create (solver_type, rcpparams);
+    solver = factory.create(solver_type, rcpparams);
   } catch (std::exception& e) {
     std::cout << "*** FAILED: Belos::SolverFactory::create threw an exception: "
-              << e.what () << std::endl;
+              << e.what() << std::endl;
     return Teuchos::null;
   }
 
-  solver->setProblem( problem );
+  solver->setProblem(problem);
 
   return solver;
 }
 #endif
-

@@ -66,13 +66,15 @@ class AggregationPhase2aAlgorithm : public MueLu::AggregationAlgorithmBase<Local
 
   /*! @brief Local aggregation. */
 
-  void BuildAggregatesNonKokkos(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const;
+  void SetupPhase(const ParameterList& params, Teuchos::RCP<const Teuchos::Comm<int>>& comm, LO& numLocalNodes, LO& numNonAggregatedNodes) override;
+
+  void BuildAggregatesNonKokkos(const ParameterList& params, const LWGraph& graph, Aggregates& aggregates, typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatHostType& aggStat, LO& numNonAggregatedNodes) const override;
 
   void BuildAggregates(const Teuchos::ParameterList& params,
                        const LWGraph_kokkos& graph,
                        Aggregates& aggregates,
                        typename AggregationAlgorithmBase<LocalOrdinal, GlobalOrdinal, Node>::AggStatType& aggStat,
-                       LO& numNonAggregatedNodes) const;
+                       LO& numNonAggregatedNodes) const override;
 
   void BuildAggregatesRandom(const Teuchos::ParameterList& params,
                              const LWGraph_kokkos& graph,
@@ -87,7 +89,10 @@ class AggregationPhase2aAlgorithm : public MueLu::AggregationAlgorithmBase<Local
                                     LO& numNonAggregatedNodes) const;
   //@}
 
-  std::string description() const { return "Phase 2a (secondary)"; }
+  std::string description() const override { return "Phase 2a (secondary)"; }
+
+ private:
+  double factorMLOverride_ = Teuchos::ScalarTraits<double>::nan();
 };
 
 }  // namespace MueLu

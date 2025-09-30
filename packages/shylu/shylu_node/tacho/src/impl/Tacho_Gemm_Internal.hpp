@@ -41,7 +41,7 @@ template <typename ArgTransA, typename ArgTransB> struct Gemm<ArgTransA, ArgTran
 
     if (m > 0 && n > 0 && k > 0)
       BlasTeam<value_type>::gemm(member, ArgTransA::param, ArgTransB::param, m, n, k, value_type(alpha), A.data(),
-                                 A.stride_1(), B.data(), B.stride_1(), value_type(beta), C.data(), C.stride_1());
+                                 A.stride(1), B.data(), B.stride(1), value_type(beta), C.data(), C.stride(1));
     return 0;
   }
 };

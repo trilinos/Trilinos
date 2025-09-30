@@ -17,10 +17,10 @@ namespace Tpetra {
 namespace Details {
 
 Teuchos::RCP<Teuchos::FancyOStream>
-makeValidVerboseStream (const Teuchos::RCP<Teuchos::FancyOStream>& out =
-                        Teuchos::null);
+makeValidVerboseStream(const Teuchos::RCP<Teuchos::FancyOStream>& out =
+                           Teuchos::null);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_MAKEVALIDVERBOSESTREAM_HPP
+#endif  // TPETRA_DETAILS_MAKEVALIDVERBOSESTREAM_HPP

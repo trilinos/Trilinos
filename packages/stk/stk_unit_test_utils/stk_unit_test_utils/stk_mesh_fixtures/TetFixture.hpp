@@ -117,10 +117,9 @@ public:
     return 6*(m_nx)*(m_ny)*(m_nz);
   }
 
-private:
-  std::shared_ptr<BulkData> m_bulk_p;
 
 public:
+  std::shared_ptr<BulkData> m_bulk_p;
   MetaData&         m_meta;
   BulkData&         m_bulk_data;
   PartVector        m_elem_parts;

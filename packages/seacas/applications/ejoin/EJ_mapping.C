@@ -1,22 +1,24 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include "EJ_mapping.h"
-#include "Ioss_ElementBlock.h"   // for ElementBlock
-#include "Ioss_GroupingEntity.h" // for GroupingEntity
-#include "Ioss_NodeBlock.h"      // for NodeBlock
-#include "Ioss_Property.h"       // for Property
-#include "Ioss_Region.h"         // for Region, etc
+#include "Ioss_ElementBlock.h"
+#include "Ioss_GroupingEntity.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_NodeSet.h"
+#include "Ioss_Property.h"
+#include "Ioss_Region.h"
 #include "Ioss_SmartAssert.h"
 #include "Ioss_Sort.h"
-#include <algorithm> // for sort, unique
-#include <cstddef>   // for size_t
+#include <algorithm>
+#include <cstddef>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <numeric>
-#include <utility> // for make_pair, pair
+#include <utility>
 
 namespace {
   bool entity_is_omitted(const Ioss::GroupingEntity *block)
@@ -27,7 +29,55 @@ namespace {
 } // namespace
 
 template <typename INT>
-void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_node_map,
+void select_nodeset_nodes(const RegionVector &part_mesh, std::vector<INT> &local_node_map,
+                          const Omissions &nset_match)
+{
+  for (auto &entry : local_node_map) {
+    if (entry >= 0) {
+      entry = -1;
+    }
+  }
+
+  size_t offset     = 0;
+  size_t part_count = part_mesh.size();
+  for (size_t p = 0; p < part_count; p++) {
+    if (nset_match[p].empty()) {
+      continue;
+    }
+    const Ioss::NodeBlock *nb       = part_mesh[p]->get_node_blocks()[0];
+    size_t                 loc_size = nb->entity_count();
+
+    for (const auto &ns_name : nset_match[p]) {
+      if (ns_name == "ALL") {
+        // Punt for now...
+        continue;
+      }
+
+      const Ioss::NodeSet *ns = part_mesh[p]->get_nodeset(ns_name);
+      if (ns != nullptr) {
+        std::vector<INT> ns_nodes;
+        ns->get_field_data("ids_raw", ns_nodes);
+        for (auto node : ns_nodes) {
+          local_node_map[offset + node - 1] = offset + node - 1;
+        }
+      }
+      else {
+        fmt::print(stderr, "ERROR: Could not find {} on part {}.\n", ns_name, p + 1);
+        exit(EXIT_FAILURE);
+      }
+    }
+    offset += loc_size;
+  }
+}
+
+template void select_nodeset_nodes(const RegionVector &part_mesh, std::vector<int> &local_node_map,
+                                   const Omissions &nset_match);
+template void select_nodeset_nodes(const RegionVector   &part_mesh,
+                                   std::vector<int64_t> &local_node_map,
+                                   const Omissions      &nset_match);
+
+template <typename INT>
+void eliminate_omitted_nodes(const RegionVector &part_mesh, std::vector<INT> &global_node_map,
                              std::vector<INT> &local_node_map, bool fill_global)
 {
   size_t offset     = 0;
@@ -69,14 +119,15 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
   }
 }
 
-template void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<int> &global_node_map,
+template void eliminate_omitted_nodes(const RegionVector &part_mesh,
+                                      std::vector<int>   &global_node_map,
                                       std::vector<int> &local_node_map, bool fill_global);
-template void eliminate_omitted_nodes(RegionVector         &part_mesh,
+template void eliminate_omitted_nodes(const RegionVector   &part_mesh,
                                       std::vector<int64_t> &global_node_map,
                                       std::vector<int64_t> &local_node_map, bool fill_global);
 
 template <typename INT>
-void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
+void build_reverse_node_map(Ioss::Region & /*global*/, const RegionVector &part_mesh,
                             std::vector<INT> &global_node_map, std::vector<INT> &local_node_map)
 {
   // Instead of using <set> and <map>, consider using a sorted vector...
@@ -200,48 +251,67 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
   }
 }
 
-template void build_reverse_node_map(Ioss::Region &global, RegionVector &part_mesh,
+template void build_reverse_node_map(Ioss::Region &global, const RegionVector &part_mesh,
                                      std::vector<int> &global_node_map,
                                      std::vector<int> &local_node_map);
-template void build_reverse_node_map(Ioss::Region &global, RegionVector &part_mesh,
+template void build_reverse_node_map(Ioss::Region &global, const RegionVector &part_mesh,
                                      std::vector<int64_t> &global_node_map,
                                      std::vector<int64_t> &local_node_map);
 
 template <typename INT>
-void build_local_element_map(RegionVector &part_mesh, std::vector<INT> &local_element_map)
+std::vector<INT> build_local_element_map(const RegionVector &part_mesh, Ioss::Region &output_region,
+                                         const IO_map &output_input_map)
 {
+  INT element_offset = 0;
+  for (auto &pm : part_mesh) {
+    pm->property_add(Ioss::Property("element_offset", element_offset));
+    INT local_elem_count = pm->get_property("element_count").get_int();
+    element_offset += local_elem_count;
+  }
+
+  std::vector<INT>                   local_element_map(element_offset, -1);
+  const Ioss::ElementBlockContainer &ebs = output_region.get_element_blocks();
+
   size_t global = 0;
-  size_t offset = 0;
-  for (auto &p : part_mesh) {
+  for (const auto &oeb : ebs) {
+    const auto &itr = output_input_map.find(oeb);
+    assert(itr != output_input_map.end());
+    const auto &[key, oeb_inputs] = *itr;
+    for (const auto &[ieb, offset] : oeb_inputs) {
+      if (ieb != nullptr) {
+        int64_t ieb_count = ieb->entity_count();
 
-    const auto &ebs = p->get_element_blocks();
-    auto        i   = ebs.begin();
+        auto *input_region = dynamic_cast<const Ioss::Region *>(ieb->contained_in());
+        Ioss::Utils::check_dynamic_cast(input_region);
+        size_t ireg_offset = input_region->get_property("element_offset").get_int();
 
-    while (i != ebs.end()) {
-      const auto *eb       = *i++;
-      size_t      num_elem = eb->entity_count();
-      if (entity_is_omitted(eb)) {
-        // Fill local_element_map with -1 for the omitted elements.
-        for (size_t j = 0; j < num_elem; j++) {
-          local_element_map[offset + j] = -1;
+        auto *input_eb = dynamic_cast<const Ioss::EntityBlock *>(ieb);
+        Ioss::Utils::check_dynamic_cast(input_eb);
+        size_t ieb_offset = input_eb->get_offset();
+
+        // Element block `ieb` has `ieb_count` elements that run
+        // from `ieb_offset` to `ieb_offset + ieb_count` in
+        // `input_region` In `local_element_map, they run from
+        // `ireg_offset + ieb_offset` to `ireg_offset +
+        // ieb_offset + ieb_count`.
+        for (int64_t i = 0; i < ieb_count; i++) {
+          local_element_map[ireg_offset + ieb_offset + i] = global++;
         }
       }
-      else {
-        for (size_t j = 0; j < num_elem; j++) {
-          local_element_map[offset + j] = global++;
-        }
-      }
-      offset += num_elem;
     }
   }
+  return local_element_map;
 }
 
-template void build_local_element_map(RegionVector &part_mesh, std::vector<int> &local_element_map);
-template void build_local_element_map(RegionVector         &part_mesh,
-                                      std::vector<int64_t> &local_element_map);
+template std::vector<int>     build_local_element_map(const RegionVector &part_mesh,
+                                                      Ioss::Region       &output_region,
+                                                      const IO_map       &output_input_map);
+template std::vector<int64_t> build_local_element_map(const RegionVector &part_mesh,
+                                                      Ioss::Region       &output_region,
+                                                      const IO_map       &output_input_map);
 
 template <typename INT>
-void generate_element_ids(RegionVector &part_mesh, const std::vector<INT> &local_element_map,
+void generate_element_ids(const RegionVector &part_mesh, const std::vector<INT> &local_element_map,
                           std::vector<INT> &global_element_map)
 {
   // Follow same logic as 'build_local_element_map' to ensure elements
@@ -318,9 +388,9 @@ void generate_element_ids(RegionVector &part_mesh, const std::vector<INT> &local
   }
 }
 
-template void generate_element_ids(RegionVector           &part_mesh,
+template void generate_element_ids(const RegionVector     &part_mesh,
                                    const std::vector<int> &local_element_map,
                                    std::vector<int>       &global_element_map);
-template void generate_element_ids(RegionVector               &part_mesh,
+template void generate_element_ids(const RegionVector         &part_mesh,
                                    const std::vector<int64_t> &local_element_map,
                                    std::vector<int64_t>       &global_element_map);

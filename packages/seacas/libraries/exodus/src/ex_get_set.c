@@ -36,7 +36,7 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
   }
 
   /* first check if any sets are specified */
-  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid(exoid, exi_dim_num_objects(set_type), &dimid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %ss stored in file id %d",
              ex_name_of_object(set_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -87,7 +87,7 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
   }
 
   /* inquire id's of previously defined dimensions and variables */
-  if ((status = nc_inq_varid(exoid, entryptr, &entry_list_id)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, entryptr, &entry_list_id)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate entry list for %s %" PRId64 " in file id %d",
              ex_name_of_object(set_type), set_id, exoid);
@@ -100,7 +100,7 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
 
   /* only do extra list for edge, face and side sets */
   if (set_extra_list) {
-    if ((status = nc_inq_varid(exoid, extraptr, &extra_list_id)) != NC_NOERR) {
+    if ((status = nc_inq_varid(exoid, extraptr, &extra_list_id)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to locate extra list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
@@ -118,7 +118,7 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
       status = nc_get_var_int(exoid, entry_list_id, set_entry_list);
     }
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get entry list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);
@@ -136,7 +136,7 @@ int ex_get_set(int exoid, ex_entity_type set_type, ex_entity_id set_id, void_int
       status = nc_get_var_int(exoid, extra_list_id, set_extra_list);
     }
 
-    if (status != NC_NOERR) {
+    if (status != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to get extra list for %s %" PRId64 " in file id %d",
                ex_name_of_object(set_type), set_id, exoid);

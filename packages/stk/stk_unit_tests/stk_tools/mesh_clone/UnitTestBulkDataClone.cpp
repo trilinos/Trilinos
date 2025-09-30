@@ -183,13 +183,17 @@ void expect_equal_field_data(const stk::mesh::BulkData &oldBulk, stk::mesh::Enti
 
   for(unsigned i=0; i<oldFields.size(); ++i)
   {
-    unsigned oldBytesPerEntity = stk::mesh::field_bytes_per_entity(*oldFields[i], oldEntity);
-    unsigned newBytesPerEntity = stk::mesh::field_bytes_per_entity(*newFields[i], newEntity);
-    EXPECT_EQ(oldBytesPerEntity, newBytesPerEntity);
-    unsigned char* oldData = static_cast<unsigned char*>(stk::mesh::field_data(*oldFields[i], oldEntity));
-    unsigned char* newData = static_cast<unsigned char*>(stk::mesh::field_data(*newFields[i], newEntity));
-    for(unsigned j=0; j<oldBytesPerEntity; ++j)
-      EXPECT_EQ(oldData[j], newData[j]);
+    auto oldFieldBytes = oldFields[i]->data_bytes<const std::byte>();
+    auto newFieldBytes = newFields[i]->data_bytes<const std::byte>();
+
+    auto oldEntityBytes = oldFieldBytes.entity_bytes(oldEntity);
+    auto newEntityBytes = newFieldBytes.entity_bytes(newEntity);
+
+    EXPECT_EQ(oldEntityBytes.num_bytes(), newEntityBytes.num_bytes());
+
+    for (stk::mesh::ByteIdx idx : oldEntityBytes.bytes()) {
+      EXPECT_EQ(newEntityBytes(idx), oldEntityBytes(idx));
+    }
   }
 }
 

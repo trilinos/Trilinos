@@ -66,10 +66,10 @@ namespace FROSch {
 
         // BasisMapUnique - First, we check if any of the unassembled unique maps is null. In case, we re-build a unique map
         bool buildUniqueMap = false;
-        UN i=0;
-        while (!buildUniqueMap && i<UnassembledBasesMapsUnique_.size()) {
-            buildUniqueMap = UnassembledBasesMapsUnique_[i].is_null();
-            i++;
+        UN ii=0;
+        while (!buildUniqueMap && ii<UnassembledBasesMapsUnique_.size()) {
+            buildUniqueMap = UnassembledBasesMapsUnique_[ii].is_null();
+            ii++;
         }
         int buildUniqueMapMax = 0;
         reduceAll(*this->MpiComm_,REDUCE_MAX,int(buildUniqueMap),ptr(&buildUniqueMapMax));
@@ -105,14 +105,14 @@ namespace FROSch {
                     auto assembledView = assembledTpetraMVector->getLocalViewDevice(Tpetra::Access::ReadWrite);
                     auto assembledCols = Tpetra::getMultiVectorWhichVectors(*  assembledTpetraMVector);
 
-                    UN itmp = 0;
+                    UN itmp2 = 0;
                     for (UN i=0; i<UnassembledSubspaceBases_.size(); i++) {
                         if (!UnassembledSubspaceBases_[i].is_null()) {
                             const UN Offset_i = Offsets_[i];
                             const UN NumVectors_i = UnassembledSubspaceBases_[i]->getNumVectors();
                             const UN LocalLength_i = UnassembledSubspaceBases_[i]->getLocalLength();
 
-                            FROSCH_ASSERT(NumVectors_i+itmp <= AssembledBasis_->getNumVectors(),"FROSch::CoarseSpace: NumVectors_i+itmp <= AssembledBasis_->getNumVectors()");
+                            FROSCH_ASSERT(NumVectors_i+itmp2 <= AssembledBasis_->getNumVectors(),"FROSch::CoarseSpace: NumVectors_i+itmp <= AssembledBasis_->getNumVectors()");
                             FROSCH_ASSERT(LocalLength_i+Offsets_[i] <= AssembledBasis_->getLocalLength(),"FROSch::CoarseSpace: LocalLength_i+Offsets_[i] <= AssembledBasis_");
 
                             Kokkos::RangePolicy<execution_space> policy (0, LocalLength_i);
@@ -125,14 +125,14 @@ namespace FROSch {
                             auto unassembledCols = Tpetra::getMultiVectorWhichVectors(*unassembledTpetraMVector);
                             for (UN j=0; j < NumVectors_i; j++) {
                                 int col_in  = unassembledTpetraMVector->isConstantStride() ? j      : unassembledCols[j];
-                                int col_out =   assembledTpetraMVector->isConstantStride() ? j+itmp :   assembledCols[j+itmp];
+                                int col_out =   assembledTpetraMVector->isConstantStride() ? j+itmp2 :   assembledCols[j+itmp2];
                                 Kokkos::parallel_for(
                                     "FROSch_CoarseSpace::assembleCoarseSpace", policy,
                                     KOKKOS_LAMBDA(const UN k) {
                                         assembledView(k+Offset_i, col_out) = unassembledView(k, col_in);
                                     });
                             }
-                            itmp += NumVectors_i;
+                            itmp2 += NumVectors_i;
                         }
                     }
                     Kokkos::fence();
@@ -202,7 +202,7 @@ namespace FROSch {
 
             auto repeatedLocalMap = repeatedMap->getLocalMap();
             auto rowLocalMap = rowMap->getLocalMap();
-            auto AssembledBasisView = AssembledBasis_->getDeviceLocalView(Access::ReadOnly);
+            auto AssembledBasisView = AssembledBasis_->getLocalViewDevice(Access::ReadOnly);
 
             // count number of nonzeros per row
             UN numLocalRows = rowMap->getLocalNumElements();

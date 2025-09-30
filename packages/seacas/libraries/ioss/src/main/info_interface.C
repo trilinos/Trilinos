@@ -7,7 +7,7 @@
  */
 #include <cstdlib> // for exit, EXIT_SUCCESS, getenv
 #include <cstring>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <stdio.h>
 #include <string> // for char_traits, string
@@ -148,10 +148,10 @@ void Info::Interface::enroll_options()
 
 #endif
 
-  options_.enroll(
-      "list_change_sets", Ioss::GetLongOption::OptType::NoValue,
-      "Print a list of the names of all change_sets (previosly groups) in this file and then exit.",
-      nullptr);
+  options_.enroll("list_change_sets", Ioss::GetLongOption::OptType::NoValue,
+                  "Print a list of the names of all change_sets (previuosly groups) in this file "
+                  "and then exit.",
+                  nullptr);
   options_.enroll("list_groups", Ioss::GetLongOption::OptType::NoValue,
                   "[deprecated] Use --list_change_sets", nullptr);
 
@@ -164,6 +164,9 @@ void Info::Interface::enroll_options()
 
   options_.enroll("query_timesteps_only", Ioss::GetLongOption::OptType::NoValue,
                   "Only read and output the timestep data on the file", nullptr);
+  options_.enroll(
+      "show_timestep_times", Ioss::GetLongOption::OptType::NoValue,
+      "Show the times for all timesteps. By default only shows minimum and maximum time.", nullptr);
   options_.enroll("64-bit", Ioss::GetLongOption::OptType::NoValue, "Use 64-bit integers", nullptr);
   options_.enroll("version", Ioss::GetLongOption::OptType::NoValue, "Print version and exit",
                   nullptr);
@@ -196,7 +199,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
                "\n\tCan also set options via IO_INFO_OPTIONS environment variable.\n\n"
                "\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-info\n\n"
-               "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
+               "\t->->-> Send email to sierra-help@sandia.gov for {} support.<-<-<-\n",
                options_.program_name());
     exit(EXIT_SUCCESS);
   }
@@ -217,6 +220,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
   summary_         = options_.retrieve("summary") != nullptr;
   showConfig_      = options_.retrieve("configuration") != nullptr;
   queryTimeOnly_   = options_.retrieve("query_timesteps_only") != nullptr;
+  showTimes_       = options_.retrieve("show_timestep_times") != nullptr;
   fieldDetails_    = options_.retrieve("detailed_field_info") != nullptr;
 
   filetype_      = options_.get_option_value("db_type", filetype_);

@@ -27,13 +27,12 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // Declare a colon- and comma-free typedef, to avoid macro issues.
 typedef Tpetra::KokkosCompat::KokkosThreadsWrapperNode threads_node_type;
 
-#define UNIT_TEST_GROUP_THREADS( SCALAR, LO, GO ) \
-  UNIT_TEST_GROUP( SCALAR, LO, GO, threads_node_type )
+#define UNIT_TEST_GROUP_THREADS(SCALAR, LO, GO) \
+  UNIT_TEST_GROUP(SCALAR, LO, GO, threads_node_type)
 
-TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP_THREADS )
+TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP_THREADS)
 
-} // namespace Test
-} // namespace Tpetra
+}  // namespace Test
+}  // namespace Tpetra
 
-#endif // defined(HAVE_TPETRA_PTHREAD)
-
+#endif  // defined(HAVE_TPETRA_PTHREAD)

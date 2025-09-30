@@ -15,7 +15,7 @@
 #include <stk_mesh/base/Bucket.hpp>            // for Bucket
 #include <stk_mesh/base/BulkData.hpp>          // for BulkData, BulkData::NO...
 #include <stk_mesh/base/MeshBuilder.hpp>
-#include <stk_mesh/base/FieldBase.hpp>         // for field_data, FieldBase
+#include <stk_mesh/base/FieldBase.hpp>         // for FieldBase
 #include <stk_mesh/base/FieldParallel.hpp>     // for parallel_sum, parallel...
 #include <stk_mesh/base/NgpFieldParallel.hpp>
 #include <stk_mesh/base/GetNgpMesh.hpp>
@@ -31,6 +31,7 @@
 #include "stk_mesh/base/MetaData.hpp"          // for MetaData, put_field_on...
 #include "stk_util/environment/Env.hpp"        // for parallel_rank, paralle...
 #include "stk_util/environment/perf_util.hpp"  // for get_max_hwm_across_procs
+#include "stk_unit_test_utils/timer.hpp"
 #include <cstddef>                             // for size_t
 #include <algorithm>                           // for fill
 #include <iostream>                            // for operator<<, basic_ostr...
@@ -42,10 +43,10 @@ namespace stk { namespace mesh { class Ghosting; } }
 
 namespace STKperf {
 
-static const int X_DIM = 800; //num_elems_x
-static const int Y_DIM = 800; //num_elems_y
+static const int X_DIM = 200; //num_elems_x
+static const int Y_DIM = 200; //num_elems_y
 
-static const int NUM_FIELDS = 120;
+static const int NUM_FIELDS = 20;
 
 static const int NUM_ITERS = 40;
 
@@ -60,7 +61,7 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
 
   typedef Field<double> ScalarField;
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk::ParallelMachine pm = stk::parallel_machine_world();
   const int parallel_size = stk::parallel_machine_size(pm);
   const int parallel_rank = stk::parallel_machine_rank(pm);
   if (parallel_size < 3)
@@ -167,20 +168,20 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
 
   // populate field data
   stk::mesh::BucketVector const& node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, communicated_nodes);
-  for (int b = 0, be = node_buckets.size(); b < be; ++b) {
-    stk::mesh::Bucket const& bucket = *node_buckets[b];
-    for (int i = 0; i < numFields; ++i) {
-      const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[i]);
-      double* data = stk::mesh::field_data(field, bucket);
-      for (int n = 0, ne = bucket.size(); n < ne; ++n) {
-        data[n] = static_cast<double>(i+1);
+
+  for (int i = 0; i < numFields; ++i) {
+    const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[i]);
+    auto fieldData = field.data<stk::mesh::ReadWrite>();
+    for (stk::mesh::Bucket* bucket : node_buckets) {
+      auto bucketValues = fieldData.bucket_values(*bucket);
+      for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        bucketValues(entityIdx) = (i+1);
       }
     }
   }
 
   MPI_Barrier(pm);
 
-  double start_time = stk::cpu_time();
   NgpMesh* ngpMesh = nullptr;
   if (device_mpi) {
     ngpMesh = & stk::mesh::get_updated_ngp_mesh(bulk);
@@ -193,36 +194,41 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
     }
   }
 
-  for (int t = 0; t < numIters; ++t) {
-    if (with_ghosts) {
-      if (device_mpi) {
-        stk::mesh::parallel_sum_including_ghosts(*ngpMesh, ngpFields);
-      }
-      else {
-        stk::mesh::parallel_sum_including_ghosts(bulk, fields);
-      }
-    }
-    else {
-      if (device_mpi) {
-        stk::mesh::parallel_sum(*ngpMesh, ngpFields);
-      }
-      else {
-        stk::mesh::parallel_sum(bulk, fields);
+  stk::unit_test_util::BatchTimer batchTimer(pm);
+  batchTimer.initialize_batch_timer();
 
-        for (int i = 0; i < numFields; ++i) {
-          ngpFields[i] = &stk::mesh::get_updated_ngp_field<double>(*fields[i]);
+  const int NUM_RUNS = 5;
+  for(int r=0; r<NUM_RUNS; ++r) {
+    batchTimer.start_batch_timer();
+
+    for (int t = 0; t < numIters; ++t) {
+      if (with_ghosts) {
+        if (device_mpi) {
+          stk::mesh::parallel_sum_including_ghosts(*ngpMesh, ngpFields);
+        }
+        else {
+          stk::mesh::parallel_sum_including_ghosts(bulk, fields);
+        }
+      }
+      else {
+        if (device_mpi) {
+          stk::mesh::parallel_sum(*ngpMesh, ngpFields);
+        }
+        else {
+          stk::mesh::parallel_sum(bulk, fields);
+
+          for (int i = 0; i < numFields; ++i) {
+            ngpFields[i] = &stk::mesh::get_updated_ngp_field<double>(*fields[i]);
+          }
         }
       }
     }
+
+    batchTimer.stop_batch_timer();
   }
 
-  double stk_sum_time = stk::cpu_time() - start_time;
-
-  double max_time;
-  MPI_Reduce(static_cast<void*>(&stk_sum_time), static_cast<void*>(&max_time), 1, MPI_DOUBLE, MPI_MAX, 0 /*root*/, MPI_COMM_WORLD);
-
-  double power2 = std::pow(2,numIters);
-  double power3 = std::pow(3,numIters);
+  double power2 = std::pow(2,numIters*NUM_RUNS);
+  double power3 = std::pow(3,numIters*NUM_RUNS);
   const double tolerance = 1.e-8;
 
   if (device_mpi) {
@@ -232,22 +238,27 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
   }
 
   // Sanity check
-  size_t num_comm_nodes = 0;
-  for (int b = 0, be = node_buckets.size(); b < be; ++b) {
-    stk::mesh::Bucket const& bucket = *node_buckets[b];
-    const bool isShared = bucket.shared();
-    num_comm_nodes += bucket.size();
-    for (int f = 0; f < numFields; ++f) {
-      const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[f]);
-      const double* stk_data = stk::mesh::field_data(field, bucket);
-      const double expected_shared_value = static_cast<double>(f+1) * power2;
-      const double expected_ghosted_value = static_cast<double>(f+1) * power3;
+  for (int i = 0; i < numFields; ++i) {
+    const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[i]);
+    auto fieldData = field.data<stk::mesh::ReadOnly>();
+    for (stk::mesh::Bucket* bucket : node_buckets) {
+      const bool isShared = bucket->shared();
+      auto bucketValues = fieldData.bucket_values(*bucket);
+      const double expected_shared_value = static_cast<double>(i+1) * power2;
+      const double expected_ghosted_value = static_cast<double>(i+1) * power3;
       const double expected = isShared ? expected_shared_value : expected_ghosted_value;
-      for (int n = 0, ne = bucket.size(); n < ne; ++n) {
-        const double relativeError = std::abs(stk_data[n] - expected) / expected;
-        EXPECT_NEAR(0.0, relativeError, tolerance)<<"node "<<bulk.identifier(bucket[n])<<", expected="<<expected<<", stk_data="<<stk_data[n];
+      for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        const double relativeError = std::abs(bucketValues(entityIdx) - expected) / expected;
+        EXPECT_NEAR(0.0, relativeError, tolerance) << "node " << bulk.identifier((*bucket)[entityIdx]) <<
+                                                      ", expected=" << expected << ", stk_data= "<<
+                                                      bucketValues(entityIdx);
       }
     }
+  }
+
+  size_t num_comm_nodes = 0;
+  for (stk::mesh::Bucket* bucket : node_buckets) {
+    num_comm_nodes += bucket->size();
   }
 
   size_t expected_num_shared_nodes = (xdim+1) * (ydim+1);
@@ -261,9 +272,7 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
   }
   EXPECT_EQ(expected_num_shared_nodes, num_comm_nodes);
 
-  size_t hwm_max = stk::get_max_hwm_across_procs(pm);
-
-  stk::print_stats_for_performance_compare(std::cout, max_time, hwm_max, numIters, pm);
+  batchTimer.print_batch_timing(numIters);
 }
 
 TEST(ParallelDataExchange, test_nonsym_known_sizes_from_proc0_to_all_other_procs)

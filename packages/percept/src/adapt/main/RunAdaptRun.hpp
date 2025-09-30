@@ -66,7 +66,7 @@ namespace percept {
         m_sf(function_string, Name("sf"), Dimensions(3), Dimensions(1))
       {}
 
-      virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const stk::mesh::BulkData& bulkData)
+      virtual bool operator()(const stk::mesh::Entity element, stk::mesh::FieldBase *field,  const stk::mesh::BulkData& /*bulkData*/) override
       {
         double *f_data = stk::mesh::field_data(*dynamic_cast<ErrorFieldType *>(field), element);
 
@@ -82,12 +82,12 @@ namespace percept {
 
         return false;  // don't terminate the loop
       }
-      virtual void init_elementOp()
+      virtual void init_elementOp() override
       {
         std::vector< const stk::mesh::FieldBase *> fields(1,m_field);
         stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->aura_ghosting(), fields);
       }
-      virtual void fini_elementOp() {
+      virtual void fini_elementOp() override {
         std::vector< const stk::mesh::FieldBase *> fields(1,m_field);
         stk::mesh::communicate_field_data(m_eMesh.get_bulk_data()->aura_ghosting(), fields);
       }

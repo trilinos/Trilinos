@@ -68,7 +68,7 @@ int ex_put_reduction_variable_name(int exoid, ex_entity_type obj_type, int var_n
     EX_FUNC_LEAVE(EX_WARN);
   }
 
-  if ((status = nc_inq_varid(exoid, vname, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, vname, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s variables names stored in file id %d",
              ex_name_of_object(obj_type), exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

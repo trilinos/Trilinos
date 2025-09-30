@@ -40,12 +40,14 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
                 const std::string& domainMapFile,
                 const std::string& rangeMapFile,
                 const std::string& coordFile,
-                const std::string& coordMapFile, const std::string& nullFile, const std::string& materialFile,
+                const std::string& coordMapFile, const std::string& nullFile,
+                const std::string& materialFile, const std::string& blockNumberFile,
                 Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                 Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                 Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> >& coordinates,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& nullspace,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& material,
+                Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> >& blocknumber,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& B,
                 const int numVectors,
@@ -85,7 +87,7 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type, LO, GO, Map, RealValuedMultiVector>("1D", map, galeriList);
 
     } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
-               matrixType == "BigStar2D" || matrixType == "AnisotropicDiffusion" || matrixType == "Elasticity2D") {
+               matrixType == "BigStar2D" || matrixType == "AnisotropicDiffusion" || matrixType == "Elasticity2D" || matrixType == "Recirc2D") {
       map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
       coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type, LO, GO, Map, RealValuedMultiVector>("2D", map, galeriList);
 
@@ -205,8 +207,14 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
     comm->barrier();
   }
 
-  X = MultiVectorFactory::Build(map, numVectors);
-  B = MultiVectorFactory::Build(map, numVectors);
+  if (!blockNumberFile.empty()) {
+    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1f - Read block number")));
+    blocknumber         = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVectorLO(blockNumberFile, map)->getVectorNonConst(0);
+    comm->barrier();
+  }
+
+  X = MultiVectorFactory::Build(map, numVectors, /*zeroOut=*/false);
+  B = MultiVectorFactory::Build(map, numVectors, /*zeroOut=*/false);
 
   if (rhsFile.empty()) {
     // we set seed for reproducibility

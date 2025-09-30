@@ -55,6 +55,7 @@
 #include <cmath>
 #include <ctime>
 #include <iostream>
+#include <limits>
 
 namespace stk {
 namespace expreval {
@@ -104,6 +105,7 @@ enum class FunctionType {
   HAVERSINE_PULSE,
   POINT2D,
   POINT3D,
+  RELATIVE_ERROR,
 
   EXPONENTIAL_PDF,
   LOG_UNIFORM_PDF,
@@ -281,7 +283,7 @@ double time_space_normal(double t, double x, double y, double z, double mu, doub
   int low = 0;
   int high = 0;
 
-  static const double epsilon = DBL_MIN;
+  static const double epsilon = std::numeric_limits<double>::min();
 
   // Box-Muller transformation from two uniform random numbers
   // to a gaussian distribution
@@ -410,6 +412,23 @@ double point_3(double x, double y, double z, double r, double w)
 {
   const double ri = std::sqrt(x*x + y*y + z*z);
   return 1.0 - cosine_ramp3(ri, r-0.5*w, r+0.5*w);
+}
+
+KOKKOS_INLINE_FUNCTION
+double relative_error3(double a, double b, double floor)
+{
+  double denom = std::fmax(std::fabs(a), std::fabs(b));
+  if (denom < floor) {
+    return 0.0;
+  } else {
+    return (b - a) / denom;
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
+double relative_error2(double a, double b)
+{
+  return relative_error3(a, b, 1.0e-16);
 }
 
 KOKKOS_INLINE_FUNCTION

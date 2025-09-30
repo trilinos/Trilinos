@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
@@ -631,6 +632,11 @@ TEST_F(SpiderElement, cubeMeshWithSpider_ParticleBodyInsensitivity)
   balancerParticle.balance(meshParticle);
 
   compare_identical_volume_decompositions(meshNode, meshParticle);
+
+  if (get_parallel_rank() == 0) {
+    unlink(fileNameNode.c_str());
+    unlink(fileNameParticle.c_str());
+  }
 }
 
 }

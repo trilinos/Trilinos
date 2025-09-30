@@ -291,14 +291,14 @@ public:
                    stk::mesh::FieldBase *controlVolumeField_ = 0, stk::mesh::FieldBase *scVolumeField_ = 0);
   virtual ~FiniteVolumeMesh2D() {}
 
-  virtual void computeAreaAndVolume();
+  virtual void computeAreaAndVolume() override;
 
   //virtual void computeBoundaryArea();
 
 private:
   void getCentroidAndEdgeMidpoints(int numNodes,
                                    const stk::mesh::Entity * nodes,
-                                   double centroid[3],
+                                   double centroid[2],
                                    double edge_midpoints[4][2]);
 
 };
@@ -309,7 +309,7 @@ public:
                    stk::mesh::FieldBase *controlVolumeField_ = 0, stk::mesh::FieldBase *scVolumeField_ = 0);
   virtual ~FiniteVolumeMesh3D() {}
 
-  virtual void computeAreaAndVolume();
+  virtual void computeAreaAndVolume() override;
 
   //virtual EdgeListType & buildEdgeList();
 

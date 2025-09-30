@@ -24,6 +24,7 @@ else()
   target_include_directories(stk_simd_unit PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
+  )
 
   FOREACH(NUMPROCS 1)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/np${NUMPROCS})
@@ -32,8 +33,6 @@ else()
              COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NUMPROCS} ${CMAKE_CURRENT_BINARY_DIR}/stk_simd_unit)
     set_property(TEST "stk_simd_unit_np${NUMPROCS}" PROPERTY PROCESSORS ${NUMPROCS})
   ENDFOREACH()
-
-  )
 
   target_link_libraries(stk_simd_unit stk_simd)
   target_link_libraries(stk_simd_unit stk_unit_test_utils)

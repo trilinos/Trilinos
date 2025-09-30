@@ -1,5 +1,7 @@
 /* src/Galeri_config.h.in.  Generated from configure.ac by autoheader.  */
 
+#cmakedefine HAVE_GALERI_DEBUG
+
 /* Define to 1 if you have the <assert.h> header file. */
 #cmakedefine HAVE_ASSERT_H
 
@@ -39,6 +41,8 @@
 /* Optional Deps */
 #cmakedefine HAVE_GALERI_XPETRA
 #cmakedefine HAVE_GALERI_TPETRA
+#cmakedefine HAVE_GALERI_KOKKOS
+#cmakedefine HAVE_GALERI_KOKKOSKERNELS
 
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler

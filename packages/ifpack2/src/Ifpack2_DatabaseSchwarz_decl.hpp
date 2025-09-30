@@ -59,18 +59,16 @@ namespace Ifpack2 {
 /// compared to a typical method. This speedup may be further improved
 /// by using more advanced linear algebra interfaces such as batched
 /// Kokkos solves instead of the current LAPACK approach.
-template<class MatrixType>
-class DatabaseSchwarz :
-    virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
-                                           typename MatrixType::local_ordinal_type,
-                                           typename MatrixType::global_ordinal_type,
-                                           typename MatrixType::node_type>,
-    virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
-                                                                       typename MatrixType::local_ordinal_type,
-                                                                       typename MatrixType::global_ordinal_type,
-                                                                       typename MatrixType::node_type> >
-{
-public:
+template <class MatrixType>
+class DatabaseSchwarz : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
+                                                               typename MatrixType::local_ordinal_type,
+                                                               typename MatrixType::global_ordinal_type,
+                                                               typename MatrixType::node_type>,
+                        virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                                                           typename MatrixType::local_ordinal_type,
+                                                                                           typename MatrixType::global_ordinal_type,
+                                                                                           typename MatrixType::node_type> > {
+ public:
   //! \name Typedefs
   //@{
 
@@ -100,11 +98,12 @@ public:
   /// MatrixType must be a Tpetra::RowMatrix specialization.  This
   /// typedef will always be a Tpetra::RowMatrix specialization.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
-                            global_ordinal_type, node_type> row_matrix_type;
+                            global_ordinal_type, node_type>
+      row_matrix_type;
 
-  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
-                 "Ifpack2::DatabaseSchwarz: MatrixType must be a Tpetra::RowMatrix "
-                 "specialization.  Don't use Tpetra::CrsMatrix here.");
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
+                "Ifpack2::DatabaseSchwarz: MatrixType must be a Tpetra::RowMatrix "
+                "specialization.  Don't use Tpetra::CrsMatrix here.");
 
   //! The Tpetra::Map specialization matching MatrixType.
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
@@ -115,7 +114,8 @@ public:
   /// diagonal entries of the matrix, use a pointer to an object of
   /// this type.
   typedef Tpetra::Vector<scalar_type, local_ordinal_type,
-                         global_ordinal_type, node_type> vector_type;
+                         global_ordinal_type, node_type>
+      vector_type;
 
   //@}
   // \name Constructors and destructors
@@ -141,8 +141,8 @@ public:
   /// \param[in] params The parameterlist containing settings for the
   ///   object, such as the patch size to search for.
   ///
-  DatabaseSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
-                   Teuchos::ParameterList& params);
+  DatabaseSchwarz(const Teuchos::RCP<const row_matrix_type>& A,
+                  Teuchos::ParameterList& params);
 
   //! Destructor.
   virtual ~DatabaseSchwarz();
@@ -196,11 +196,11 @@ public:
   /// \brief Apply the preconditioner to X, returning the result in Y.
   /// Y = alpha*Op(A)*X + beta*Y
   void
-  apply(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-        Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+  apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+        Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
         Teuchos::ETransp mode = Teuchos::NO_TRANS,
-        scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
-        scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const;
+        scalar_type alpha     = Teuchos::ScalarTraits<scalar_type>::one(),
+        scalar_type beta      = Teuchos::ScalarTraits<scalar_type>::zero()) const;
 
   //! The Tpetra::Map representing the domain of this operator.
   Teuchos::RCP<const map_type> getDomainMap() const;
@@ -213,8 +213,8 @@ public:
 
   /// \brief Compute Y = Op(A)*X, where Op(A) is either A, \f$A^T\f$, or \f$A^H\f$.
   void
-  applyMat(const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-           Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+  applyMat(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
+           Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& Y,
            Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
@@ -262,7 +262,7 @@ public:
   double getApplyTime() const;
 
   //! Get a rough estimate of cost per iteration
-  size_t getNodeSmootherComplexity() const;  
+  size_t getNodeSmootherComplexity() const;
 
   //@}
   //! @name Implementation of Teuchos::Describable
@@ -272,12 +272,11 @@ public:
   std::string description() const;
 
   //! Print the object with some verbosity level to a Teuchos::FancyOStream.
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  void describe(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
 
   //@}
 
-private:
-
+ private:
   //! Implementation of parameter setting
   void setParametersImpl(Teuchos::ParameterList& params);
 
@@ -291,7 +290,7 @@ private:
   DatabaseSchwarz(const DatabaseSchwarz<MatrixType>&);
 
   //! Assignment operator (use is syntactically forbidded)
-  DatabaseSchwarz<MatrixType>& operator= (const DatabaseSchwarz<MatrixType>&);
+  DatabaseSchwarz<MatrixType>& operator=(const DatabaseSchwarz<MatrixType>&);
 
   //! \name Internal state
   //@{
@@ -348,7 +347,7 @@ private:
   mutable size_t DatabaseSize_;
 
   /// Database patches
-  mutable std::vector<Teuchos::RCP<typename Teuchos::SerialDenseMatrix<typename row_matrix_type::local_ordinal_type,typename row_matrix_type::scalar_type> > > DatabaseMatrices_;
+  mutable std::vector<Teuchos::RCP<typename Teuchos::SerialDenseMatrix<typename row_matrix_type::local_ordinal_type, typename row_matrix_type::scalar_type> > > DatabaseMatrices_;
 
   /// Database indices
   std::vector<int> DatabaseIndices_;
@@ -360,9 +359,8 @@ private:
   mutable Teuchos::Array<int> ipiv_;
 
   //@}
-}; // class DatabaseSchwarz
+};  // class DatabaseSchwarz
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DATABASESCHWARZ_DECL_HPP
-
+#endif  // IFPACK2_DATABASESCHWARZ_DECL_HPP

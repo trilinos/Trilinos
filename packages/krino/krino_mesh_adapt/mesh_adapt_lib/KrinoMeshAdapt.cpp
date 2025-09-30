@@ -19,7 +19,7 @@
 
 namespace krino {
 
-void refine_mesh_with_params(stk::mesh::BulkData & mesh, const MeshAdaptAlgorithmParameters &algParams, const stk::ParallelMachine comm)
+void refine_mesh_with_params(stk::mesh::BulkData & mesh, const MeshAdaptAlgorithmParameters &algParams, const stk::ParallelMachine /*comm*/)
 {
   stk::diag::Timer refinementTimer("Refinement", sierra::Diag::sierraTimer());
   stk::mesh::Part * activePart = nullptr;

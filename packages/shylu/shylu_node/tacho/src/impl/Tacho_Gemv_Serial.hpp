@@ -43,12 +43,12 @@ template <typename ArgTrans> struct Gemv<ArgTrans, Algo::Serial> {
       if (m > 0 && n > 0) {
         if (n == 1) {
           const int mm = A.extent(0), nn = A.extent(1);
-          BlasSerial<value_type>::gemv(ArgTrans::param, mm, nn, value_type(alpha), A.data(), A.stride_1(), B.data(),
-                                       B.stride_0(), value_type(beta), C.data(), C.stride_0());
+          BlasSerial<value_type>::gemv(ArgTrans::param, mm, nn, value_type(alpha), A.data(), A.stride(1), B.data(),
+                                       B.stride(0), value_type(beta), C.data(), C.stride(0));
         } else {
           const int mm = C.extent(0), nn = C.extent(1), kk = B.extent(0);
           BlasSerial<value_type>::gemm(ArgTrans::param, Trans::NoTranspose::param, mm, nn, kk, value_type(alpha), A.data(),
-                                       A.stride_1(), B.data(), B.stride_1(), value_type(beta), C.data(), C.stride_1());
+                                       A.stride(1), B.data(), B.stride(1), value_type(beta), C.data(), C.stride(1));
         }
       }
     } else {

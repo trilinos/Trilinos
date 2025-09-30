@@ -38,7 +38,7 @@ int ex_get_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts
   }
 
   /* Find the variable ID for the element block IDs */
-  if ((status = nc_inq_varid(exoid, VAR_ELBLK_IDS_GLOBAL, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_ELBLK_IDS_GLOBAL, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_ELBLK_IDS_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -53,7 +53,7 @@ int ex_get_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts
   else {
     status = nc_get_var_int(exoid, varid, el_blk_ids);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_ELBLK_IDS_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -62,7 +62,7 @@ int ex_get_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts
   }
 
   /* Find the variable ID for the element block counts */
-  if ((status = nc_inq_varid(exoid, VAR_ELBLK_CNT_GLOBAL, &varid)) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_ELBLK_CNT_GLOBAL, &varid)) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_ELBLK_CNT_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -77,7 +77,7 @@ int ex_get_eb_info_global(int exoid, void_int *el_blk_ids, void_int *el_blk_cnts
   else {
     status = nc_get_var_int(exoid, varid, el_blk_cnts);
   }
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_ELBLK_CNT_GLOBAL, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

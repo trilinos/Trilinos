@@ -1,0 +1,40 @@
+#{ctype = "tri3"}
+#{scheme = "triadvance"}
+
+create surface rectangle width 2 height 1 zplane
+split surface 1 across location position -0.05 -2 0 location position -0.05 2 0
+merge surface 3 2
+
+set duplicate block elements off
+block 1 add surface 3
+block 1 name "left"
+block 1 element type {ctype}
+
+set duplicate block elements off
+block 2 add surface 2
+block 2 name "right"
+block 2 element type {ctype}
+
+sideset 1 add curve 2 wrt surface 3
+sideset 1 name "xmin"
+sideset 2 add curve 4 wrt surface 2
+sideset 2 name "xmax"
+sideset 3 add curve 9 wrt surface 3
+sideset 3 add curve 6 wrt surface 2
+sideset 3 name "ymin"
+sideset 4 add curve 8 wrt surface 3
+sideset 4 add curve 7 wrt surface 2
+sideset 4 name "ymax"
+sideset 5 add curve 5 wrt surface all
+sideset 5 name "center"
+
+surface all interval 7
+surface all scheme {scheme}
+mesh surface all
+
+#{tolower(ctype)}
+
+set exodus netcdf4 on
+
+#export mesh "{ctype}-combined-centers.exo" dimension 2 overwrite
+export mesh "energy-ss-tp-multiblock-ic-bc-issue.gen" dimension 2 overwrite

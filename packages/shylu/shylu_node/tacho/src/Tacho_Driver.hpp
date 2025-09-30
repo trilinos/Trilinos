@@ -85,7 +85,8 @@ private:
   ordinal_type _method;
 
   // ** ordering options
-  ordinal_type _order_connected_graph_separately;
+  bool _order_connected_graph_separately;
+  int _graph_algo_type;
 
   // ** problem
   ordinal_type _m;
@@ -149,14 +150,18 @@ private:
   ordinal_type _verbose;             // print
   ordinal_type _small_problem_thres; // smaller than this, use lapack
 
+#ifdef TACHO_DEPRECATED_PARAMETERS
   // // ** tasking options
   ordinal_type _serial_thres_size; // serialization threshold size
   ordinal_type _mb;                // block size for byblocks algorithms
   ordinal_type _nb;                // panel size for panel algorithms
   ordinal_type _front_update_mode; // front update mode 0 - lock, 1 - atomic
+#endif
 
   // ** levelset options
+#ifdef TACHO_DEPRECATED_PARAMETERS
   bool _levelset;                    // use level set code instead of tasking
+#endif
   ordinal_type _device_level_cut;    // above this level, matrices are computed on device
   ordinal_type _device_factor_thres; // bigger than this threshold, device function is used
   ordinal_type _device_solve_thres;  // bigger than this threshold, device function is used
@@ -166,8 +171,10 @@ private:
   mag_type _pivot_tol;               // tolerance for tiny pivot perturbation
   bool _store_transpose;             // store transpose explicitly
 
+#ifdef TACHO_DEPRECATED_PARAMETERS
   // parallelism and memory constraint is made via this parameter
   ordinal_type _max_num_superblocks; // # of superblocks in the memoyrpool
+#endif
 
 public:
   Driver();
@@ -191,7 +198,8 @@ public:
   ///
   /// Graph options
   ///
-  void setOrderConnectedGraphSeparately(const ordinal_type order_connected_graph_separately = 1);
+  void setOrderConnectedGraphSeparately(const bool order_connected_graph_separately = true);
+  void setGraphAlgorithmType(const int graph_algo_type);
 
   ///
   /// tasking options
@@ -442,6 +450,8 @@ public:
 
   int exportFactorsToCrsMatrix(crs_matrix_type &A);
   int release();
+
+  void printParameters();
 };
 
 } // namespace Tacho

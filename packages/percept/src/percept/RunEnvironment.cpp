@@ -106,7 +106,7 @@ namespace {
                std::ostream &	os,
                message_type           type)
     {
-      switch (type & stk::MSG_TYPE_MASK) {
+      switch (static_cast<int>(type) & static_cast<int>(stk::MSG_TYPE_MASK)) {
       case MSG_WARNING:
         os << "Warning";
         break;
@@ -168,8 +168,8 @@ namespace {
     }
 
     RunEnvironment::RunEnvironment(
-                                   int   *      argc,
-                                   char ***      argv,
+                                   int   *      /*argc*/,
+                                   char ***      /*argv*/,
                                    stk::ParallelMachine comm, bool debug)
       : ParallelMachineFinalize(false),
         m_comm(comm),
@@ -322,14 +322,14 @@ namespace {
     }
 
     void RunEnvironment::
-    setSierraOpts(int procRank, int argc, char* argv[])
+    setSierraOpts(int procRank, int /*argc*/, char* /*argv*/[])
     {
-      const bool m_debug = false;
+      const bool m_debug2 = false;
 
       Teuchos::oblackholestream blackhole;
       std::ostream &out = ( procRank == 0 ? std::cout : blackhole );
 
-      if (m_debug)
+      if (m_debug2)
         out << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
       //clp.setDocString("Run environment options" );

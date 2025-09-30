@@ -32,6 +32,7 @@ MeshFromFile::MeshFromFile(const std::string & fileName, stk::ParallelMachine co
   }
 
   myIOBroker->create_input_mesh();
+  myIOBroker->add_all_mesh_fields_as_input_fields();
   myMeta = &myIOBroker->meta_data();
 
   AuxMetaData::create(*myMeta);
@@ -43,12 +44,16 @@ MeshFromFile::~MeshFromFile()
 
 void MeshFromFile::populate_mesh(const stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
-  std::shared_ptr<stk::mesh::MetaData> sharedMetaWeWontDelete(myMeta,[](auto ptrWeWontDelete){});
+  std::shared_ptr<stk::mesh::MetaData> sharedMetaWeWontDelete(myMeta,[](auto /*ptrWeWontDelete*/){});
   std::shared_ptr<stk::mesh::BulkData> sharedBulkThatWeGiveToIoBroker = stk::mesh::MeshBuilder(myComm).set_aura_option(autoAuraOption).create(sharedMetaWeWontDelete);
   myIOBroker->set_bulk_data( sharedBulkThatWeGiveToIoBroker );
 
   myIOBroker->populate_bulk_data();
   myMesh = & myIOBroker->bulk_data();
+
+  int numSteps = myIOBroker->get_num_time_steps();
+  if(numSteps>0)
+    myIOBroker->read_defined_input_fields(numSteps);
 
   stk::mesh::create_exposed_block_boundary_sides(*myMesh, myMeta->universal_part(), {&AuxMetaData::get(*myMeta).exposed_boundary_part()});
   stk::mesh::create_interior_block_boundary_sides(*myMesh, myMeta->universal_part(), {&AuxMetaData::get(*myMeta).block_boundary_part()});

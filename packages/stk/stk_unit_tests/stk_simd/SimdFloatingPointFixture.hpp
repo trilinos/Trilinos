@@ -31,49 +31,70 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef SIMD_FLOATING_POINT_FIXTURE_HPP 
-#define SIMD_FLOATING_POINT_FIXTURE_HPP 
-
 #include <functional>
+#include <type_traits>
+#include <gtest/gtest.h>
 
 #include "stk_simd/Simd.hpp"
 
-template<typename InputType, typename ResultType>
+#include <cstdlib>
+
+template<typename InputType, typename ResultType, typename InputTypeB = InputType>
 class SimdFloatingPointFixture : public ::testing::Test
 {
 public:
-  using InputScalar = typename stk::Traits<InputType>::base_type;
+  using InputScalarA = typename stk::Traits<InputType>::base_type;
+  using InputScalarB = typename stk::Traits<InputTypeB>::base_type;
   using ResultScalar = typename stk::Traits<ResultType>::base_type;
 
-  bool is_scalar()
+  static constexpr int SIZE_A = stk::Traits<InputType>::length;
+  static constexpr int SIZE_B = stk::Traits<InputTypeB>::length;
+  static constexpr int SIZE_R = stk::Traits<ResultType>::length;
+
+  static_assert(SIZE_B == 1 || SIZE_B == SIZE_A,
+    "InputTypeB must be scalar (length 1) or same SIMD width as InputType.");
+
+  bool is_scalar() const { return SIZE_A == 1; }
+  bool is_scalar_a() const { return SIZE_A == 1; }
+  bool is_scalar_b() const { return SIZE_B == 1; }
+
+  // Fill A with a constant (existing behavior preserved).
+  void fill_constant(InputScalarA a)
   {
-    return SIZE == 1;
+    for (int i = 0; i < SIZE_A; ++i) m_valuesA[i] = a;
+    load_simd_values();
   }
 
-  void fill_constant(InputScalar a)
+  void fill_constant(InputScalarA a, InputScalarB b)
   {
-    for (int i=0; i<SIZE; i++) {
-      m_valuesA[i] = a;
+    for (int i = 0; i < SIZE_A; ++i) m_valuesA[i] = a;
+    if constexpr (SIZE_B == 1) {
+      m_valuesB[0] = b;
+    } else {
+      for (int i = 0; i < SIZE_B; ++i) m_valuesB[i] = b;
     }
 
     load_simd_values();
   }
 
-  void fill_constant(InputScalar a, InputScalar b)
+  void fill_constant_b(InputScalarB b)
   {
-    for (int i=0; i<SIZE; i++) {
-      m_valuesA[i] = a;
-      m_valuesB[i] = b;
+    if constexpr (SIZE_B == 1) {
+      m_valuesB[0] = b;
+    } else {
+      for (int i = 0; i < SIZE_B; ++i) m_valuesB[i] = b;
     }
-
     load_simd_values();
   }
 
   void fill_varying_linear_plus_minus()
   {
-    for (int i=0; i<SIZE; i++) {
-      m_valuesA[i] = i;
-      m_valuesB[i] = (i%2 == 0 ? 1.0 : -1.0);
+    for (int i = 0; i < SIZE_A; ++i) m_valuesA[i] = static_cast<InputScalarA>(i);
+    if constexpr (SIZE_B == 1) {
+      m_valuesB[0] = static_cast<InputScalarB>(1.0);
+    } else {
+      for (int i = 0; i < SIZE_B; ++i)
+        m_valuesB[i] = static_cast<InputScalarB>((i % 2 == 0) ? 1.0 : -1.0);
     }
 
     load_simd_values();
@@ -81,9 +102,31 @@ public:
 
   void fill_varying_opposite_linear()
   {
-    for (int i=0; i<SIZE; i++) {
-      m_valuesA[i] = i;
-      m_valuesB[i] = SIZE - i;
+    for (int i = 0; i < SIZE_A; ++i) m_valuesA[i] = static_cast<InputScalarA>(i);
+    if constexpr (SIZE_B == 1) {
+      m_valuesB[0] = static_cast<InputScalarB>(SIZE_A);
+    } else {
+      for (int i = 0; i < SIZE_B; ++i) m_valuesB[i] = static_cast<InputScalarB>(SIZE_A - i);
+    }
+
+    load_simd_values();
+  }
+
+  void fill_linear()
+  {
+    // so that we don't just test 0,1 for SSE.
+    const int initial_a = 2;
+    const int initial_b = 3;
+
+    for (int i = 0; i < SIZE_A; ++i) {
+      m_valuesA[i] = static_cast<InputScalarA>(initial_a + i);
+    }
+    if constexpr (SIZE_B == 1) {
+      m_valuesB[0] = InputScalarB(42);
+    } else {
+      for (int i = 0; i < SIZE_B; ++i) {
+        m_valuesA[i] = static_cast<InputScalarB>(initial_b + i);
+      }
     }
 
     load_simd_values();
@@ -94,50 +137,65 @@ public:
     m_result = func(m_valueA);
   }
 
-  void compute_function(const std::function<ResultType(const InputType&, const InputType&)>& func)
+  void compute_function(const std::function<ResultType(const InputType&, const InputTypeB&)>& func)
   {
     m_result = func(m_valueA, m_valueB);
   }
 
-  void compute_expected_result(const std::function<ResultScalar(InputScalar)>& func)
+  void compute_expected_result(const std::function<ResultScalar(InputScalarA)>& func)
   {
-    for (int i=0; i<SIZE; i++) {
+    for (int i = 0; i < SIZE_A; ++i) {
       m_expectedResult[i] = func(m_valuesA[i]);
     }
   }
 
-  void compute_expected_result(const std::function<ResultScalar(InputScalar, InputScalar)>& func)
+  void compute_expected_result(const std::function<ResultScalar(InputScalarA, InputScalarB)>& func)
   {
-    for (int i=0; i<SIZE; i++) {
-      m_expectedResult[i] = func(m_valuesA[i], m_valuesB[i]);
+    for (int i = 0; i < SIZE_A; ++i) {
+      const InputScalarA a = m_valuesA[i];
+      const InputScalarB b = (SIZE_B == 1) ? m_valuesB[0] : m_valuesB[i];
+      m_expectedResult[i] = func(a, b);
     }
   }
 
   void verify()
   {
-    for (int i=0; i<SIZE; i++) {
+    for (int i = 0; i < SIZE_A; ++i) {
+      // lane-wise compare: ResultType is expected to be SIMD with SIZE_A lanes
       EXPECT_EQ(static_cast<ResultScalar>(m_result[i]), m_expectedResult[i]);
     }
   }
 
+  void verify_with_tolerance(const double tolerance = 1e-12)
+  {
+    for (int i = 0; i < SIZE_A; ++i) {
+      // lane-wise compare: ResultType is expected to be SIMD with SIZE_A lanes
+      ASSERT_NEAR(static_cast<ResultScalar>(m_result[i]), m_expectedResult[i], tolerance);
+    }
+  }
+
 private:
+  // load A and B with proper handling for scalar-vs-SIMD B
   void load_simd_values()
   {
     m_valueA = stk::simd::load(m_valuesA);
-    m_valueB = stk::simd::load(m_valuesB);
+
+    if constexpr (SIZE_B == 1) {
+      // For scalar B (e.g., int/double), just store the single value; no SIMD load.
+      m_valueB = m_valuesB[0];
+    } else {
+      m_valueB = stk::simd::load(m_valuesB);
+    }
   }
 
-  static constexpr int SIZE = stk::Traits<InputType>::length;
+  // Storage (A and B can have different scalar types/widths)
+  InputScalarA m_valuesA[SIZE_A] = {};
+  InputScalarB m_valuesB[(SIZE_B == 0 ? 1 : SIZE_B)] = {}; // guard for weird traits
 
-  InputScalar m_valuesA[SIZE];
-  InputScalar m_valuesB[SIZE];
+  InputType   m_valueA{};
+  InputTypeB  m_valueB{};
 
-  InputType m_valueA;
-  InputType m_valueB;
-
-  ResultScalar m_expectedResult[SIZE];
-
-  ResultType m_result;
+  ResultScalar m_expectedResult[SIZE_A] = {};
+  ResultType   m_result{};
 };
 
-#endif

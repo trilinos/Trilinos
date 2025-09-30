@@ -37,8 +37,8 @@ template <typename ArgUplo, typename ArgTrans> struct Herk<ArgUplo, ArgTrans, Al
       const ordinal_type n = C.extent(0),
                          k = (std::is_same<ArgTrans, Trans::NoTranspose>::value ? A.extent(1) : A.extent(0));
       if (n > 0 && k > 0) {
-        BlasSerial<value_type>::herk(ArgUplo::param, ArgTrans::param, n, k, value_type(alpha), A.data(), A.stride_1(),
-                                     value_type(beta), C.data(), C.stride_1());
+        BlasSerial<value_type>::herk(ArgUplo::param, ArgTrans::param, n, k, value_type(alpha), A.data(), A.stride(1),
+                                     value_type(beta), C.data(), C.stride(1));
       }
     } else {
       TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");

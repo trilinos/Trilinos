@@ -9,7 +9,6 @@
 #include <cmath>
 #include <cstdlib>
 #include <exception>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <iostream>
@@ -48,7 +47,7 @@
 namespace {
   template <typename INT> void skinner(Skinner::Interface &interFace, INT /*dummy*/);
   std::string                  codename;
-  std::string                  version = "1.02";
+  std::string                  version = "1.03 (2025-04-18)";
 
   void transfer_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
                            Ioss::Field::RoleType role, const Ioss::IntVector &ref_nodes);
@@ -206,6 +205,8 @@ namespace {
     if (interFace.ints_64_bit()) {
       dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
     }
+
+    dbi->set_lowercase_database_names(false);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");

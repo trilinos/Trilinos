@@ -65,7 +65,7 @@ namespace Iovs_cgns {
 
     vtkNew<vtkDataAssembly> assembly;
     assembly->SetRootNodeName(ASSEMBLY_ROOT_NAME.c_str());
-    auto id = assembly->AddNode(ASSEMBLY_STRUCTURED_BLOCKS.c_str());
+    assembly->AddNode(ASSEMBLY_STRUCTURED_BLOCKS.c_str());
     this->vpdc->SetDataAssembly(assembly);
 
     this->catManager           = cm;

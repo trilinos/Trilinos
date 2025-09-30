@@ -16,17 +16,18 @@
 
 namespace Kokkos {
 class ScopeGuard;
-} // namespace Kokkos
+}  // namespace Kokkos
 
 namespace Teuchos {
-template<class OrdinalType> class Comm;
-} // namespace Teuchos
+template <class OrdinalType>
+class Comm;
+}  // namespace Teuchos
 
 namespace TSQR {
 namespace Test {
 
 class MpiScope {
-public:
+ public:
   MpiScope(int* argc, char*** argv);
   ~MpiScope();
 };
@@ -34,14 +35,14 @@ public:
 // Scope guard for TSQR's tests, that automatically initializes and
 // finalizes both MPI (if building with MPI enabled) and Kokkos.
 class MpiAndKokkosScope {
-public:
+ public:
   MpiAndKokkosScope(int* argc, char*** argv);
 
   Teuchos::RCP<const Teuchos::Comm<int>> getComm() const;
   std::ostream& outStream() const;
   std::ostream& errStream() const;
 
-private:
+ private:
   static Teuchos::RCP<const Teuchos::Comm<int>> getDefaultComm();
 
   MpiScope mpiScope_;
@@ -53,7 +54,7 @@ private:
   std::unique_ptr<Kokkos::ScopeGuard> kokkosScope_;
 };
 
-} // namespace Test
-} // namespace TSQR
+}  // namespace Test
+}  // namespace TSQR
 
-#endif // TSQR_TEST_MPIANDKOKKOSSCOPE_HPP
+#endif  // TSQR_TEST_MPIANDKOKKOSSCOPE_HPP

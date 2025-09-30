@@ -11,6 +11,8 @@
 #include <stk_util/stk_config.h>
 #include <stk_util/util/ReportHandler.hpp>
 
+#include <bitset>
+
 namespace stk {
 namespace util {
 
@@ -32,7 +34,12 @@ inline bool have_errexcept()
 #endif
 }
 
-constexpr int FE_EXCEPT_CHECKS = FE_ALL_EXCEPT & ~FE_INEXACT;
+// some platforms/compilers include additional, non-standard floating point
+// exceptions in FE_ALL_EXCEPT.  Because they are non-standard, we can't
+// provide string names for them portably.  Instead, only check
+// for the standard ones (except FE_INEXACT, which isn't something we want
+// to warn about)
+constexpr int FE_EXCEPT_CHECKS = FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW;
 
 std::string get_fe_except_string(int fe_except_bitmask);
 
@@ -52,7 +59,7 @@ inline void clear_fp_errors()
   }
 }
 
-inline void throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=false, std::ostream& os = std::cerr)
+inline bool throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=false, std::ostream& os = std::cerr)
 {
   if (have_errexcept())
   {
@@ -67,12 +74,14 @@ inline void throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=fal
       } else {
         STK_ThrowRequireMsg(fe_except_bitmask == 0, msg);
       }
+
+      return true;
     }
   } else if (have_errno())
   {
     if (errno != 0)
     {
-      std::string msg = std::string(fname ? fname : "") + " raised floating point error(s) " + std::strerror(errno);
+      std::string msg = std::string(fname ? fname : "") + " raised errno floating point error(s): " + std::strerror(errno);
       clear_fp_errors();
       if (warn)
       {
@@ -81,14 +90,18 @@ inline void throw_or_warn_on_fp_error(const char* fname = nullptr, bool warn=fal
       {
         STK_ThrowRequireMsg(errno == 0, msg);
       }
+
+      return true;
     }
   }
 
+  return false;
+
 }
 
-inline void warn_on_fp_error(const char* fname = nullptr, std::ostream& os = std::cerr)
+inline bool warn_on_fp_error(const char* fname = nullptr, std::ostream& os = std::cerr)
 {
-  throw_or_warn_on_fp_error(fname, true, os);
+  return throw_or_warn_on_fp_error(fname, true, os);
 }
 
 inline void throw_on_fp_error(const char* fname = nullptr)

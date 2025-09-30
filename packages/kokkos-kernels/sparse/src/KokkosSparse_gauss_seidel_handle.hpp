@@ -21,8 +21,8 @@
 // needed for the set of available coloring algorithms
 #include <KokkosGraph_Distance1ColorHandle.hpp>
 
-#ifndef _GAUSSSEIDELHANDLE_HPP
-#define _GAUSSSEIDELHANDLE_HPP
+#ifndef KOKKOSSPARSE_GAUSSSEIDELHANDLE_HPP
+#define KOKKOSSPARSE_GAUSSSEIDELHANDLE_HPP
 // #define VERBOSE
 
 namespace KokkosSparse {

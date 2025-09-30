@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -89,7 +89,7 @@ namespace Ioss {
    * GroupingEntities is through the Region class; clients of the IO subsystem have no direct
    * access to the underlying GroupingEntities (other than the Region).
    */
-  class IOSS_EXPORT Region : public GroupingEntity
+  class IOSS_EXPORT Region final : public GroupingEntity
   {
   public:
     explicit Region(DatabaseIO *iodatabase = nullptr, const std::string &my_name = "");
@@ -435,7 +435,7 @@ inline const Ioss::NameList &Ioss::Region::get_information_records() const
 inline void Ioss::Region::add_information_records(const Ioss::NameList &info)
 {
   IOSS_FUNC_ENTER(m_);
-  return get_database()->add_information_records(info);
+  get_database()->add_information_records(info);
 }
 
 /** \brief Add an information record (an informative string) to the region's database.
@@ -445,7 +445,7 @@ inline void Ioss::Region::add_information_records(const Ioss::NameList &info)
 inline void Ioss::Region::add_information_record(const std::string &info)
 {
   IOSS_FUNC_ENTER(m_);
-  return get_database()->add_information_record(info);
+  get_database()->add_information_record(info);
 }
 
 /** \brief Add a QA record, which consists of 4 strings, to the region's database
@@ -462,7 +462,7 @@ inline void Ioss::Region::add_qa_record(const std::string &code, const std::stri
                                         const std::string &date, const std::string &time)
 {
   IOSS_FUNC_ENTER(m_);
-  return get_database()->add_qa_record(code, code_qa, date, time);
+  get_database()->add_qa_record(code, code_qa, date, time);
 }
 
 /** \brief Get all QA records, each of which consists of 4 strings, from the region's database.

@@ -277,9 +277,9 @@ bool check_residuals(const ScalarViewType& scalar_residual,
   std::stringstream buf;
   Teuchos::FancyOStream fbuf(Teuchos::rcp(&buf,false));
 
-  typename ScalarViewType::HostMirror host_scalar_residual =
+  typename ScalarViewType::host_mirror_type host_scalar_residual =
     Kokkos::create_mirror_view(scalar_residual);
-  typename EnsembleViewType::HostMirror host_ensemble_residual =
+  typename EnsembleViewType::host_mirror_type host_ensemble_residual =
     Kokkos::create_mirror_view(ensemble_residual);
   Kokkos::deep_copy( host_scalar_residual, scalar_residual );
   Kokkos::deep_copy( host_ensemble_residual, ensemble_residual );

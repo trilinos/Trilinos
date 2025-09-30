@@ -76,10 +76,11 @@
       // far away from the "action", this can return false - be aware
       // that even though an element may not be refined, if it's possible
       // that its neighbor is refined, this must return true
-      virtual bool operator()(stk::mesh::Entity element) { throw std::runtime_error("not impl"); }
+      virtual bool operator()(stk::mesh::Entity /*element*/) { throw std::runtime_error("not impl"); }
       virtual bool use_batch_filter() { return false; }
-      virtual void batch_filter(stk::mesh::EntityRank rank, std::vector<stk::mesh::Entity>& elements) { throw std::runtime_error("not impl"); }
-      virtual void batch_filter(stk::mesh::EntityRank rank, SetOfEntities& elements) { throw std::runtime_error("not impl"); }
+      virtual void batch_filter(stk::mesh::EntityRank /*rank*/, std::vector<stk::mesh::Entity>& /*elements*/) { throw std::runtime_error("not impl"); }
+      virtual void batch_filter(stk::mesh::EntityRank /*rank*/, SetOfEntities& /*elements*/) { throw std::runtime_error("not impl"); }
+      virtual ~RefinerSelector() = default;
     };
 
     //========================================================================================================================
@@ -415,7 +416,7 @@
       ///    and special refine_field setting for wedges in boundary layers - see TEA_SpecialWedgeRefinement class
       /// @param step is some arbitrary step info that can be used in a switch statement;
       /// @param data is arbitrary data needed by specializations of this method
-      virtual void special_processing(const std::string& step, void *data = 0)
+      virtual void special_processing(const std::string& /*step*/, void */*data*/ = 0)
       {
       }
 

@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("K-filename",&k_filename,"Filename and path of the stiffness matrix.");
   cmdp.setOption("M-filename",&m_filename,"Filename and path of the mass matrix.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     if (verbose && MyPID == 0) {
       std::cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << std::endl;
     }
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
     return -1;

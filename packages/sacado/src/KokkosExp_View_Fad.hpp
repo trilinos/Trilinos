@@ -92,9 +92,9 @@ template <typename T, typename ... P>
 struct is_view_fad< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFad >::value ||
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
@@ -102,7 +102,7 @@ template <typename T, typename ... P>
 struct is_view_fad_contiguous< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
@@ -425,11 +425,11 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
@@ -446,12 +446,12 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
   typedef typename src_type::array_type  src_array_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   Kokkos::LayoutStride layout ;
 
@@ -502,12 +502,12 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     !std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   typename src_type::array_layout layout = src.layout();
   layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
@@ -525,13 +525,13 @@ typename std::enable_if<
       Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value ) &&
     std::is_same< typename Kokkos::ViewTraits<T,P...>::array_layout,
       Kokkos::LayoutStride >::value,
-  typename Kokkos::View<T,P...>::HostMirror>::type
+  typename Kokkos::View<T,P...>::host_mirror_type>::type
 create_mirror(Kokkos::Impl::WithoutInitializing_t wi,
               const Kokkos::View<T,P...> & src)
 {
   typedef View<T,P...>                   src_type ;
   typedef typename src_type::array_type  src_array_type ;
-  typedef typename src_type::HostMirror  dst_type ;
+  typedef typename src_type::host_mirror_type  dst_type ;
 
   Kokkos::LayoutStride layout ;
 
@@ -2349,7 +2349,7 @@ reduceAll
 
   // Copy send buffer into local array
   Teuchos::Array<send_value_type> localSendBuffer(count);
-  typename SendViewType::HostMirror hostSendBuffer =
+  typename SendViewType::host_mirror_type hostSendBuffer =
     Kokkos::create_mirror_view(sendBuffer);
   Kokkos::deep_copy(hostSendBuffer, sendBuffer);
   for (Ordinal i=0; i<count; ++i)
@@ -2358,7 +2358,7 @@ reduceAll
   // Copy receive buffer into local array (necessary to initialize Fad types
   // properly)
   Teuchos::Array<recv_value_type> localRecvBuffer(count);
-  typename RecvViewType::HostMirror hostRecvBuffer =
+  typename RecvViewType::host_mirror_type hostRecvBuffer =
     Kokkos::create_mirror_view(recvBuffer);
   Kokkos::deep_copy(hostRecvBuffer, recvBuffer);
   for (Ordinal i=0; i<count; ++i)
@@ -2406,7 +2406,7 @@ reduceAll
 
   // Copy send buffer into local array
   Teuchos::Array<send_value_type> localSendBuffer(count);
-  typename SendViewType::HostMirror hostSendBuffer =
+  typename SendViewType::host_mirror_type hostSendBuffer =
     Kokkos::create_mirror_view(sendBuffer);
   Kokkos::deep_copy(hostSendBuffer, sendBuffer);
   for (Ordinal i=0; i<count; ++i)
@@ -2415,7 +2415,7 @@ reduceAll
   // Copy receive buffer into local array (necessary to initialize Fad types
   // properly)
   Teuchos::Array<recv_value_type> localRecvBuffer(count);
-  typename RecvViewType::HostMirror hostRecvBuffer =
+  typename RecvViewType::host_mirror_type hostRecvBuffer =
     Kokkos::create_mirror_view(recvBuffer);
   Kokkos::deep_copy(hostRecvBuffer, recvBuffer);
   for (Ordinal i=0; i<count; ++i)

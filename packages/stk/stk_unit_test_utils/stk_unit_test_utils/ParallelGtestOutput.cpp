@@ -5,10 +5,13 @@
 #include <gtest/gtest-message.h>
 #include <stdarg.h>                 // for va_end, va_list, va_start
 #include <stdio.h>                  // for printf, vprintf, fflush, NULL, etc
+#include <unistd.h>
+#include <stk_util/environment/EnvData.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
+#include <stk_util/util/string_case_compare.hpp>
 #include <string>                   // for string
 #include "gtest/gtest-test-part.h"  // for TestPartResult
 
@@ -41,7 +44,7 @@ public:
     {
     }
 
-private:
+protected:
 
     int mProcId;
     int mNumFails;
@@ -112,8 +115,7 @@ private:
         return true;
     }
 
-    // Called after a test ends.
-    virtual void OnTestEnd(const ::testing::TestInfo& test_info)
+    int get_num_failures_across_procs(const ::testing::TestInfo& test_info)
     {
         int numFailuresThisProc = 0;
         if(test_has_failed(test_info))
@@ -123,16 +125,18 @@ private:
         int numTotalFailures = -1;
         int root = 0;
         MPI_Reduce(&numFailuresThisProc, &numTotalFailures, 1, MPI_INT, MPI_SUM, root, m_comm);
+        return numTotalFailures;
+    }
+
+    // Called after a test ends.
+    virtual void OnTestEnd(const ::testing::TestInfo& test_info)
+    {
+        const int numTotalFailures = get_num_failures_across_procs(test_info);
         if(mProcId == 0)
         {
             if(numTotalFailures == 0)
             {
-#ifdef STK_BUILT_FOR_SIERRA
-              ::testing::internal::ColoredPrintf(::testing::internal::COLOR_GREEN, "[       OK ] ");
-#else
-//newer versions of gtest don't allow external access to ColoredPrintf
-              printf("[       OK ] ");
-#endif
+                print_in_color_for_terminal("[       OK ] ", colorGreen);
             }
             else
             {
@@ -215,32 +219,131 @@ private:
 
     void print_failed(const std::string &message)
     {
-#ifdef STK_BUILT_FOR_SIERRA
-      ::testing::internal::ColoredPrintf(::testing::internal::COLOR_RED, "[  FAILED  ] ");
-#else
-//newer versions of gtest don't allow external access to ColoredPrintf
-      printf("[  FAILED  ] ");
-#endif
-      printf("%s\n", message.c_str());
+        print_in_color_for_terminal("[  FAILED  ] ", colorRed);
+        printf("%s\n", message.c_str());
     }
 
     void print_passed(const std::string &message)
     {
-#ifdef STK_BUILT_FOR_SIERRA
-      ::testing::internal::ColoredPrintf(::testing::internal::COLOR_GREEN, "[  PASSED  ] ");
-#else
-//newer versions of gtest don't allow external access to ColoredPrintf
-      printf("[  PASSED  ] ");
-#endif
-      printf("%s\n", message.c_str());
+        print_in_color_for_terminal("[  PASSED  ] ", colorGreen);
+        printf("%s\n", message.c_str());
     }
+
+    bool user_requests_color()
+    {
+      std::string c = GTEST_FLAG(color);
+      // follows the convention from gtest itself
+      return stk::equal_case(c, "yes") || stk::equal_case(c, "true") || stk::equal_case(c, "t") ||
+             stk::equal_case(c, "1");
+    }
+
+    bool is_auto_color()
+    {
+      std::string c = GTEST_FLAG(color);
+      // follows the convention from gtest itself
+      return stk::equal_case(c, "auto");
+    }
+
+    bool is_terminal_output()
+    {
+      return isatty(fileno(stdout));
+    }
+
+    void print_in_color_for_terminal(const std::string &message, const char *colorString)
+    {
+      if (user_requests_color() || (is_auto_color() && is_terminal_output())) {
+        printf("%s%s%s", colorString, message.c_str(), colorDefault);
+      } else {
+        printf("%s", message.c_str());
+      }
+    }
+
+    static constexpr const char *colorDefault = "\033[0m";
+    static constexpr const char *colorRed = "\033[31m";
+    static constexpr const char *colorGreen = "\033[32m";
 };
+
+class OutputCapturer
+{
+public:
+    OutputCapturer(stk::ParallelMachine comm)
+    {
+        originalCout = std::cout.rdbuf();
+        std::cout.rdbuf(capturedOutput.rdbuf());
+
+        originalOutputP0 = stk::EnvData::instance().m_outputP0;
+        if (stk::parallel_machine_rank(comm) == 0)
+            stk::EnvData::instance().m_outputP0 = &capturedOutput;
+        else
+            stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+
+        stk::parallel_machine_barrier(comm);
+    }
+    ~OutputCapturer()
+    {
+        std::cout.rdbuf(originalCout);
+        stk::EnvData::instance().m_outputP0 = originalOutputP0;
+    }
+
+    std::string get_and_reset_captured_output() const
+    {
+        const std::string s = capturedOutput.str();
+        capturedOutput.rdbuf()->str("");
+        return s;
+    }
+
+private:
+    std::ostream *originalOutputP0;
+    std::streambuf *originalCout;
+    std::ostringstream capturedOutput;
+};
+
+class MinimalistPrinterOnlyOutputOnFailure : public MinimalistPrinter
+{
+public:
+    using MinimalistPrinter::MinimalistPrinter;
+
+    virtual void OnTestStart(const ::testing::TestInfo& test_info) override
+    {
+        mOutputCapturer.reset(new OutputCapturer(m_comm));
+        MinimalistPrinter::OnTestStart(test_info);
+    }
+
+    virtual void OnTestPartResult(const ::testing::TestPartResult& test_part_result) override
+    {
+        printf("%s", mOutputCapturer->get_and_reset_captured_output().c_str());
+        MinimalistPrinter::OnTestPartResult(test_part_result);
+    }
+
+    virtual void OnTestEnd(const ::testing::TestInfo& test_info) override
+    {
+        const int numTotalFailures = get_num_failures_across_procs(test_info);
+        if(numTotalFailures > 0)
+            printf("%s", mOutputCapturer->get_and_reset_captured_output().c_str());
+        MinimalistPrinter::OnTestEnd(test_info);
+        mOutputCapturer.reset();
+    }
+
+protected:
+    std::unique_ptr<OutputCapturer> mOutputCapturer;
+};
+
+template <typename PrinterType>
+void create_parallel_output_using_printer(int procId, MPI_Comm comm)
+{
+    ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
+    listeners.Append(new PrinterType(procId, comm));
+    delete listeners.Release(listeners.default_result_printer());
+}
+
+void create_parallel_output_only_on_failure(int procId, MPI_Comm comm)
+{
+    create_parallel_output_using_printer<MinimalistPrinterOnlyOutputOnFailure>(procId, comm);
+}
 
 void create_parallel_output_with_comm(int procId, MPI_Comm comm)
 {
-    ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
-    listeners.Append(new MinimalistPrinter(procId, comm));
-    delete listeners.Release(listeners.default_result_printer());
+    create_parallel_output_using_printer<MinimalistPrinter>(procId, comm);
 }
 
 void create_parallel_output(int procId)

@@ -34,10 +34,13 @@
 #ifndef STK_ALIGNED_ALLOCATOR_HPP
 #define STK_ALIGNED_ALLOCATOR_HPP
 
+#include "stk_util/util/AdjustForAlignment.hpp"
+
 #if !defined(__APPLE__)
 #include <malloc.h>
 #endif
 
+#include <cstdlib>
 #include <stdlib.h>
 #include <memory>
 
@@ -81,7 +84,10 @@ struct HostAlignedAllocator
   template <class U>
   struct rebind { typedef HostAlignedAllocator<U, Alignment> other; };
 
-  HostAlignedAllocator() noexcept { }
+  HostAlignedAllocator() noexcept
+  {
+    static_assert((Alignment & (Alignment - 1UL)) == 0, "Alignment must be power of 2");
+  }
 
   HostAlignedAllocator(const HostAlignedAllocator& other) noexcept
       : std::allocator<T>(other), BaseAlignedAllocator<T, Alignment>(other)
@@ -98,8 +104,12 @@ struct HostAlignedAllocator
   }
     
   inline Pointer allocate(SizeType n, ConstPointer) {
-    void *p;
-    if ( posix_memalign(&p, Alignment, n*sizeof(T)) != 0 ) { p = nullptr; throw std::bad_alloc(); }
+    size_t requested = n * sizeof(T);
+    void* p = std::aligned_alloc(Alignment, stk::adjust_up_to_alignment_boundary(requested, Alignment));
+    if (!p) {
+      p = nullptr;
+      throw std::bad_alloc();
+    }
     return static_cast<Pointer>(p);
   }
 
@@ -214,4 +224,3 @@ using AlignedAllocator = HostAlignedAllocator<ValueType, Alignment>;
 } // namespace non_std
 
 #endif
-

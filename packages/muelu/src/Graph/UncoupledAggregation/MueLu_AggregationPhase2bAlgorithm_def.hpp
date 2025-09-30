@@ -126,6 +126,28 @@ void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
 
 }  // BuildAggregates
 
+template <class AggStatType, class ColorsType, class LO>
+class CountUnggregatedByColor {
+ private:
+  AggStatType aggStat;
+  ColorsType colors;
+
+ public:
+  using value_type = LO[];
+  LO value_count;
+
+  CountUnggregatedByColor(AggStatType& aggStat_, ColorsType& colors_, LO numColors_)
+    : aggStat(aggStat_)
+    , colors(colors_)
+    , value_count(numColors_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const LO i, LO counts[]) const {
+    if (aggStat(i) == READY)
+      counts[colors(i) - 1] += 1;
+  }
+};
+
 template <class AggStatType, class ProcWinnerType, class Vertex2AggType, class ColorsType, class LocalGraphType, class AggPenaltyType, class LO, bool deterministic, bool matchMLbehavior>
 class ExpansionFunctor {
  private:
@@ -241,8 +263,8 @@ void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   const LO numRows = graph.GetNodeNumVertices();
   const int myRank = graph.GetComm()->getRank();
 
-  auto vertex2AggId           = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
-  auto procWinner             = aggregates.GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+  auto vertex2AggId           = aggregates.GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadWrite);
+  auto procWinner             = aggregates.GetProcWinner()->getLocalViewDevice(Xpetra::Access::ReadWrite);
   auto colors                 = aggregates.GetGraphColors();
   const LO numColors          = aggregates.GetGraphNumColors();
   const LO numLocalAggregates = aggregates.GetNumAggregates();
@@ -270,8 +292,21 @@ void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   if (maxNodesPerAggregate == std::numeric_limits<int>::max()) {
     maxIters = 1;
   }
+
+  Kokkos::View<LO*, Kokkos::HostSpace> numUnaggregatedNodesPerColor("numUnaggregatedNodesPerColor", numColors);
   for (int iter = 0; iter < maxIters; ++iter) {
+    {
+      auto functor = CountUnggregatedByColor<decltype(aggStat), decltype(colors), LO>(aggStat, colors, numColors);
+      Kokkos::parallel_reduce(
+          "Aggregation Phase 2b: count unaggregated nodes per color",
+          Kokkos::RangePolicy<execution_space>(0, numRows),
+          functor,
+          numUnaggregatedNodesPerColor);
+    }
     for (LO color = 1; color <= numColors; ++color) {
+      if (numUnaggregatedNodesPerColor(color - 1) == 0)
+        continue;
+
       // the reduce counts how many nodes are aggregated by this phase,
       // which will then be subtracted from numNonAggregatedNodes
       LO numAggregated = 0;
@@ -310,6 +345,11 @@ void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
         }
       }
 
+      numNonAggregatedNodes -= numAggregated;
+
+      if (numNonAggregatedNodes == 0)
+        break;
+
       if constexpr (deterministic) {
         Kokkos::parallel_for(
             "Aggregation Phase 2b: updating agg penalties",
@@ -319,8 +359,6 @@ void AggregationPhase2bAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
               aggPenaltyUpdates(agg) = 0;
             });
       }
-
-      numNonAggregatedNodes -= numAggregated;
     }
   }  // loop over maxIters
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,10 +7,13 @@
 #pragma once
 
 #include "Ioss_CodeTypes.h"
-#include <cstddef> // for size_t
+#include "Ioss_Transform.h"
+
+#include <cstddef>
+#include <memory>
 #include <stdint.h>
-#include <string> // for string
-#include <vector> // for vector
+#include <string>
+#include <vector>
 
 #include "ioss_export.h"
 
@@ -27,15 +30,15 @@ namespace Ioss {
     /** \brief The basic data type held in the field.
      */
     enum BasicType {
-      INVALID = -1,
-      REAL    = 1,
-      DOUBLE  = 1,
-      INTEGER = 4,
-      INT32   = 4,
-      INT64   = 8,
-      COMPLEX,
-      STRING,
-      CHARACTER
+      INVALID   = -1,
+      REAL      = 1,
+      DOUBLE    = 1,
+      INTEGER   = 4,
+      INT32     = 4,
+      INT64     = 8,
+      COMPLEX   = 9,
+      STRING    = 10,
+      CHARACTER = 11
     };
 
     enum class InOut { INPUT, OUTPUT };
@@ -234,9 +237,9 @@ namespace Ioss {
     const VariableType *rawStorage_{nullptr};   // Storage type of raw field
     const VariableType *transStorage_{nullptr}; // Storage type after transformation
 
-    std::vector<Transform *> transforms_{};
-    char                     suffixSeparator1_{1}; // Value = 1 means unset; use database default.
-    char                     suffixSeparator2_{1}; // Value = 1 means unset; use database default.
+    std::vector<std::shared_ptr<Transform>> transforms_{};
+    char         suffixSeparator1_{1};      // Value = 1 means unset; use database default.
+    char         suffixSeparator2_{1};      // Value = 1 means unset; use database default.
     bool         sufficesUppercase_{false}; // True if the suffices are uppercase on database...
     mutable bool zeroCopyable_{false};      // True if the field is zero-copyable.
 

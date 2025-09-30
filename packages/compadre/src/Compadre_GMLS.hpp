@@ -79,10 +79,10 @@ private:
     Kokkos::View<double*> _ref_N;
 
     //! tangent vectors information (host)
-    Kokkos::View<double*>::HostMirror _host_T;
+    Kokkos::View<double*>::host_mirror_type _host_T;
 
     //! reference outward normal vectors information (host)
-    Kokkos::View<double*>::HostMirror _host_ref_N;
+    Kokkos::View<double*>::host_mirror_type _host_ref_N;
 
     //! metric tensor inverse for all problems
     Kokkos::View<double*> _manifold_metric_tensor_inverse;
@@ -111,7 +111,7 @@ private:
 
     //! generated weights for nontraditional samples required to transform data into expected sampling 
     //! functional form (host)
-    Kokkos::View<const double*****, layout_right>::HostMirror _host_prestencil_weights;
+    Kokkos::View<const double*****, layout_right>::host_mirror_type _host_prestencil_weights;
 
     //! (OPTIONAL) connections between additional points and neighbors
     point_connections_type _additional_pc;
@@ -172,7 +172,7 @@ private:
     Kokkos::View<TargetOperation*> _operations;
 
     //! vector containing target functionals to be applied for reconstruction problem (host)
-    Kokkos::View<TargetOperation*>::HostMirror _host_operations;
+    Kokkos::View<TargetOperation*>::host_mirror_type _host_operations;
 
     //! weighting kernel type for GMLS
     WeightingFunctionType _weighting_type;
@@ -595,6 +595,28 @@ public:
         }
     }
 
+    //! Type for weighting kernel for GMLS problem
+    static WeightingFunctionType translateWeightingType( const std::string &wt) {
+        std::string wt_to_lower = wt;
+        transform(wt_to_lower.begin(), wt_to_lower.end(), wt_to_lower.begin(), ::tolower);
+        if (wt_to_lower == "power") {
+            return WeightingFunctionType::Power;
+        } else if (wt_to_lower == "gaussian") {
+            return WeightingFunctionType::Gaussian;
+        } else if (wt_to_lower == "cubicspline") {
+            return WeightingFunctionType::CubicSpline;
+        } else if (wt_to_lower == "cardinalcubicbspline") {
+            return WeightingFunctionType::CardinalCubicBSpline;
+        } else if (wt_to_lower == "cosine") {
+            return WeightingFunctionType::Cosine;
+        } else if (wt_to_lower == "sigmoid") {
+            return WeightingFunctionType::Sigmoid;
+        } else {
+            // Power is default
+            return WeightingFunctionType::Power;
+        }
+    }
+
 
 ///@}
 
@@ -723,7 +745,7 @@ public:
     double getTangentBundle(const int target_index, const int direction, const int component) const {
         // Component index 0.._dimensions-2 will return tangent direction
         // Component index _dimensions-1 will return the normal direction
-        scratch_matrix_right_type::HostMirror 
+        scratch_matrix_right_type::host_mirror_type 
                 T(_host_T.data() + target_index*_dimensions*_dimensions, _dimensions, _dimensions);
         return T(direction, component);
     }
@@ -732,7 +754,7 @@ public:
     double getReferenceNormalDirection(const int target_index, const int component) const {
         compadre_assert_debug(_reference_outward_normal_direction_provided && 
                 "getRefenceNormalDirection called, but reference outwrad normal directions were never provided.");
-        scratch_vector_type::HostMirror 
+        scratch_vector_type::host_mirror_type 
                 ref_N(_host_ref_N.data() + target_index*_dimensions, _dimensions);
         return ref_N(component);
     }
@@ -1169,24 +1191,7 @@ public:
 
     //! Type for weighting kernel for GMLS problem
     void setWeightingType( const std::string &wt) {
-        std::string wt_to_lower = wt;
-        transform(wt_to_lower.begin(), wt_to_lower.end(), wt_to_lower.begin(), ::tolower);
-        if (wt_to_lower == "power") {
-            _weighting_type = WeightingFunctionType::Power;
-        } else if (wt_to_lower == "gaussian") {
-            _weighting_type = WeightingFunctionType::Gaussian;
-        } else if (wt_to_lower == "cubicspline") {
-            _weighting_type = WeightingFunctionType::CubicSpline;
-        } else if (wt_to_lower == "cardinalcubicbspline") {
-            _weighting_type = WeightingFunctionType::CardinalCubicBSpline;
-        } else if (wt_to_lower == "cosine") {
-            _weighting_type = WeightingFunctionType::Cosine;
-        } else if (wt_to_lower == "sigmoid") {
-            _weighting_type = WeightingFunctionType::Sigmoid;
-        } else {
-            // Power is default
-            _weighting_type = WeightingFunctionType::Power;
-        }
+        _weighting_type = translateWeightingType(wt);
         this->resetCoefficientData();
     }
 
@@ -1198,24 +1203,7 @@ public:
 
     //! Type for weighting kernel for curvature 
     void setCurvatureWeightingType( const std::string &wt) {
-        std::string wt_to_lower = wt;
-        transform(wt_to_lower.begin(), wt_to_lower.end(), wt_to_lower.begin(), ::tolower);
-        if (wt_to_lower == "power") {
-            _curvature_weighting_type = WeightingFunctionType::Power;
-        } else if (wt_to_lower == "gaussian") {
-            _curvature_weighting_type = WeightingFunctionType::Gaussian;
-        } else if (wt_to_lower == "cubicspline") {
-            _curvature_weighting_type = WeightingFunctionType::CubicSpline;
-        } else if (wt_to_lower == "cardinalcubicbspline") {
-            _curvature_weighting_type = WeightingFunctionType::CardinalCubicBSpline;
-        } else if (wt_to_lower == "cosine") {
-            _curvature_weighting_type = WeightingFunctionType::Cosine;
-        } else if (wt_to_lower == "sigmoid") {
-            _curvature_weighting_type = WeightingFunctionType::Sigmoid;
-        } else {
-            // Power is default
-            _curvature_weighting_type = WeightingFunctionType::Power;
-        }
+        _curvature_weighting_type = translateWeightingType(wt);
         this->resetCoefficientData();
     }
 

@@ -14,8 +14,8 @@
 //
 //@HEADER
 
-#ifndef _KOKKOSSPARSE_COO2CRS_HPP
-#define _KOKKOSSPARSE_COO2CRS_HPP
+#ifndef KOKKOSSPARSE_COO2CRS_HPP
+#define KOKKOSSPARSE_COO2CRS_HPP
 
 #include "KokkosSparse_CooMatrix.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -82,4 +82,4 @@ auto coo2crs(KokkosSparse::CooMatrix<ScalarType, OrdinalType, DeviceType, Memory
   return coo2crs(cooMatrix.numRows(), cooMatrix.numCols(), cooMatrix.row(), cooMatrix.col(), cooMatrix.data());
 }
 }  // namespace KokkosSparse
-#endif  //  _KOKKOSSPARSE_COO2CRS_HPP
+#endif  //  KOKKOSSPARSE_COO2CRS_HPP

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -12,13 +12,16 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
-#include <cassert>
-#include <fmt/ostream.h>
-#include <iosfwd>
-#include <numeric>
-#include <stdint.h>
-
 #include "Ioss_Utils.h"
+
+#include <array>
+#include <cassert>
+#include <cstdint>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <numeric>
+#include <vector>
+
 #include "robin_set.h"
 
 // Options for generating hash function key...
@@ -107,10 +110,6 @@ namespace {
                               IOSS_MAYBE_UNUSED Ioss::FaceUnorderedSet &faces,
                               IOSS_MAYBE_UNUSED const std::vector<size_t> &hash_ids, INT /*dummy*/)
   {
-    IOSS_PAR_UNUSED(region);
-    IOSS_PAR_UNUSED(faces);
-    IOSS_PAR_UNUSED(hash_ids);
-
 #ifdef SEACAS_HAVE_MPI
     size_t proc_count = region.get_database()->util().parallel_size();
 

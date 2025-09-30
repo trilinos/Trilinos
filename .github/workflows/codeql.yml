@@ -19,7 +19,7 @@ permissions:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: [self-hosted, gcc-10.3.0_openmpi-4.1.6]
+    runs-on: [self-hosted, gcc-10.4.0_openmpi-4.1.6]
     if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' }}
 
     permissions:
@@ -40,10 +40,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
+      uses: github/codeql-action/init@192325c86100d080feab897ff886c34abd4c83a3 # v3.29.5
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
@@ -106,6 +106,6 @@ jobs:
           ninja -j 16
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@45775bd8235c68ba998cffa5171334d58593da47 # v3.28.15
+      uses: github/codeql-action/analyze@192325c86100d080feab897ff886c34abd4c83a3 # v3.29.5
       with:
         category: "/language:${{matrix.language}}"

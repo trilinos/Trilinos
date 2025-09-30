@@ -15,7 +15,7 @@
         
 \cbb{coarse grid correction scaling factor}{double}{1.0}{Scaling factor to be applied to the coarse grid correction. This only affects the solve phase.}
         
-\cbb{fuse prolongation and update}{bool}{false}{Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.}
+\cbb{fuse prolongation and update}{bool}{true}{Fuse prolongation and update into one kernel call. Due to round-off error accumulation, this can in some cases result in slightly higher iteration counts. This only affects the solve phase.}
         
 \cbb{number of vectors}{int}{1}{Number of columns in multivectors that are cached for Hierarchy apply phase.}
         
@@ -72,9 +72,16 @@
         
 \cbb{aggregation: phase 1 algorithm}{string}{"Distance2"}{Look at distance2 hops when aggregating.}
         
+\cbb{aggregation: symmetrize graph after dropping}{bool}{false}{Symmetrize the graph used for aggregation.}
+        
+\cbb{aggregation: use blocking}{bool}{false}{Drop connections between different blocks. Blocks are given by a vector "BlockNumber" of scalar type LocalOrdinal that is passed via the "user data" list.}
+        
 \cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in
-      aggregation. Possible values: "classical", "distance laplacian",
-      "unsupported vector smoothing"}
+      aggregation. Possible values: "point-wise" and "cut-drop". "signed classical sa", "classical", "distance laplacian", "signed classical", "block diagonal", "block diagonal classical", "block diagonal distance laplacian", "block diagonal signed classical", "block diagonal colored signed classical", "signed classical distance laplacian", "signed classical sa distance laplacian" are also allowed, but discouraged. Instead, the corresponding combination of "aggregation: strength-of-connection: matrix", "aggregation: strength-of-connection: measure" and "aggregation: drop scheme" should be used.}
+        
+\cbb{aggregation: strength-of-connection: matrix}{string}{"A"}{The matrix that is used for constructing the graph used for aggregation. Possible values: "A" (meaning the level matrix itself) and "distance laplacian".}
+        
+\cbb{aggregation: strength-of-connection: measure}{string}{"smoothed aggregation"}{The strength measure used for constructing the graph. Possible values: "smoothed aggregation", "signed smoothed aggregation", "signed ruge-stueben", "unscaled".}
         
 \cbb{aggregation: classical scheme}{string}{"direct"}{Prolongator formation option for classical coarsening.}
         
@@ -314,6 +321,8 @@ Only used when tentative: calculate qr is set to false.}
         
 \cbb{combine: numBlks}{int}{1}{ Used with multigrid algorithm 'combine' to combine multiple sub-block prolongators into one  for PDE systems (numBlks x numBlks). }
         
+\cbb{combine: useMaxLevels}{bool}{false}{ Used with multigrid algorithm 'combine'. When 'true', use the maximum number of levels across all sub-block hierarchies. }
+        
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
         
 \cba{transfer: params}{\parameterlist}{Sublist of options for use by transfer.}
@@ -329,6 +338,8 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{smoother: neighborhood type}{string}{""}{Valid options: node, edge, face, cell}
         
 \cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
+        
+\cbb{filtered matrix: lumping choice}{string}{"diag lumping"}{Can be no lumping (no modification to kept entries), diag lumping (modify diagonal to maintain row sums), or distributed lumping (modify kept nonzeros in a fashion proportional to their magnitude to preserve row sums). }
         
 \cbb{filtered matrix: use spread lumping}{bool}{false}{Lump (but not necessarily to the diagonal, trying not to lose diagonal dominance more than the original matrix) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace. Only used when filtered matrix: use lumping is set to true. }
         
@@ -346,6 +357,8 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{filtered matrix: reuse eigenvalue}{bool}{true}{Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.}
         
 \cbb{filtered matrix: reuse graph}{bool}{true}{Set values to zero instead of constructing a new graph.}
+        
+\cbb{filtered matrix: count negative diagonals}{bool}{false}{Counts the number of negative diagonals (involves MPI communication).}
         
 \cbb{matrix: compute analysis}{bool}{false}{Perform matrix analysis. Checks several matrix properties and prints statistics.}
         
@@ -410,6 +423,10 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
         
 \cbb{repartition: save importer}{bool}{false}{Mark Importer as 'Final' to keep it on the hierarchy after setup is complete.}
+        
+\cbb{repartition: put on single proc}{int}{0}{Number of rows below which we always repartition to a single rank}
+        
+\cbb{repartition: send type}{string}{""}{Tpetra 'Send type' to use in repartitioning}
         
 \cbb{rap: relative diagonal floor}{Array(double)}{{}}{Will boost diagonals on A matrices to the given floor.}
         

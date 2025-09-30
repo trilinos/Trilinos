@@ -66,6 +66,7 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
   std::vector<double> elem_centroid(spatial_dim, 0);
 
   const VectorField * coord_field = meta.get_field<double>(stk::topology::NODE_RANK, "coordinates");
+  auto coordFieldData = coord_field->data<stk::mesh::ReadOnly>();
   STK_ThrowAssert(coord_field != nullptr);
 
   Selector local = meta.locally_owned_part();
@@ -87,12 +88,11 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
       //here's the gather:
 
       unsigned offset = 0;
-      for(size_t n=0; n<num_nodes; ++n) {
-        Entity node = node_rels[n];
-        double* node_coords = stk::mesh::field_data(*coord_field, node);
-        elem_node_coords[offset++] = node_coords[0];
-        elem_node_coords[offset++] = node_coords[1];
-        elem_node_coords[offset++] = node_coords[2];
+      for (unsigned n = 0; n < num_nodes; ++n) {
+        auto entityCoordValues = coordFieldData.entity_values(node_rels[n]);
+        elem_node_coords[offset++] = entityCoordValues(0_comp);
+        elem_node_coords[offset++] = entityCoordValues(1_comp);
+        elem_node_coords[offset++] = entityCoordValues(2_comp);
       }
 
       stk::performance_tests::calculate_centroid_3d(num_nodes, &elem_node_coords[0], &elem_centroid[0]);

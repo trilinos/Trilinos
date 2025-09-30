@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "Shards_CellTopology.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace panzer {
 
@@ -22,6 +23,9 @@ class FieldPattern {
 public:
    //! Do nothing destructor
    virtual ~FieldPattern() = 0;
+
+   /** Allocates and returns a copy of the field pattern. */
+   virtual Teuchos::RCP<panzer::FieldPattern> clone() const = 0;
 
    /** How many sub cells of a particular dimension are there?
      * For instance a "quad" element as four sub cells of dimension
@@ -33,11 +37,11 @@ public:
      * \returns Number of sub cells of dimension <code>dim</code>
      */
    virtual int getSubcellCount(int dim) const = 0;
- 
+
    /** Get the local indices associated with a particular sub cell.
      * The sub cell is specified through its dimension and cell index.
      * A vector is returned that gives the indices.
-     * 
+     *
      * \param[in] dim Dimension of the sub cell of interest
      * \param[in] cellIndex Index of the sub cell (must be lest than
      *                      <code>getSubcellCount(dim)</code> and greater
@@ -68,7 +72,7 @@ public:
    /** Get the cell topology associated with this field pattern.
      */
    virtual shards::CellTopology getCellTopology() const = 0;
-   
+
    /** How many degrees of freedom are associated with
      * this pattern. In this terminology an ID is a single
      * degree of freedom defined at the element level. By default
@@ -79,7 +83,7 @@ public:
      */
    virtual int numberIds() const;
 
-   /** Do these patterns share the same geometry? Meaning 
+   /** Do these patterns share the same geometry? Meaning
      * are these two element shapes (on the canonical domain)
      * the same?
      *
@@ -109,6 +113,9 @@ public:
     */
    virtual bool equals(const FieldPattern & fp) const;
 };
+
+bool operator==(const panzer::FieldPattern& left,const panzer::FieldPattern& right);
+bool operator!=(const panzer::FieldPattern& left,const panzer::FieldPattern& right);
 
 //! Stream IO
 std::ostream & operator<<(std::ostream & os,const FieldPattern & fp);

@@ -18,11 +18,11 @@
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
 namespace Details {
-template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type>
+template <class LocalOrdinal  = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type>
 class TieBreak;
-} // namespace Details
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+}  // namespace Details
+}  // namespace Tpetra
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
-#endif // TPETRA_DETAILS_TIEBREAK_FWD_HPP
+#endif  // TPETRA_DETAILS_TIEBREAK_FWD_HPP

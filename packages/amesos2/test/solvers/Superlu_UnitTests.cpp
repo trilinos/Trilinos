@@ -753,6 +753,10 @@ namespace {
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongInt)
   #endif
+  #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
+  typedef long long int LongLongInt;
+  UNIT_TEST_GROUP_ORDINAL_ORDINAL(int,LongLongInt)
+  #endif
 #endif  // EXPL-INST
 
 #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD

@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <exception>
+#include <fmt/format.h>
 #include <fmt/chrono.h>
 #include <fmt/ostream.h>
 #include <limits>
@@ -117,7 +118,7 @@ namespace {
   [[noreturn]] void exodus_error(int lineno)
   {
     auto errmsg = fmt::format(
-        "Exodus error ({}) {} at line {} in file epu.C. Please report to gdsjaar@sandia.gov "
+        "Exodus error ({}) {} at line {} in file epu.C. Please report to sierra-help@sandia.gov "
         "if you need help.",
         exerrval, ex_strerror(exerrval), lineno);
 
@@ -146,12 +147,12 @@ namespace {
     }
   }
 
-  char **get_name_array(int size, int length)
+  char **get_name_array(size_t size, int length)
   {
     char **names = nullptr;
     if (size > 0) {
       names = new char *[size];
-      for (int i = 0; i < size; i++) {
+      for (size_t i = 0; i < size; i++) {
         names[i] = new char[length + 1];
         std::memset(names[i], '\0', length + 1);
       }
@@ -159,9 +160,9 @@ namespace {
     return names;
   }
 
-  void free_name_array(char **names, int size)
+  void free_name_array(char **names, size_t size)
   {
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
       delete[] names[i];
     }
     delete[] names;
@@ -208,7 +209,7 @@ namespace {
   template <typename INT> bool is_sequential(std::vector<INT> &map)
   {
     for (size_t i = 0; i < map.size(); i++) {
-      if (map[i] != (INT)i + 1) {
+      if (map[i] != static_cast<INT>(i) + 1) {
         return false;
       }
     }
@@ -536,9 +537,9 @@ int main(int argc, char *argv[])
         // if that value > max_open_file, then use square root.
         // if that is still too large, just do no subcycles... and implement
         // a recursive subcycling capability at some point...
-        int sub_cycle_count = (int)(std::pow(processor_count, 1.0 / 3) + 0.9);
+        int sub_cycle_count = static_cast<int>((std::pow(processor_count, 1.0 / 3) + 0.9));
         if (((processor_count + sub_cycle_count - 1) / sub_cycle_count) > max_open_file) {
-          sub_cycle_count = (int)std::sqrt(processor_count);
+          sub_cycle_count = static_cast<int>(std::sqrt(processor_count));
         }
 
         if (((processor_count + sub_cycle_count - 1) / sub_cycle_count) < max_open_file) {
@@ -1116,6 +1117,9 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle)
     Variables edgeblock_vars(Excn::ObjectType::EDBLK);
     Variables faceblock_vars(Excn::ObjectType::FABLK);
 
+    if (glob_blocks.empty()) {
+      interFace.set_processor_id_field(false);
+    }
     element_vars.addProcessorId = interFace.add_processor_id_field();
 
     {
@@ -1429,7 +1433,7 @@ int epu(SystemInterface &interFace, int start_part, int part_count, int cycle)
           // Map ...
           for (int ig = 0; ig < global_vars.count(InOut::IN); ig++) {
             if (global_vars.index_[ig] > 0) {
-              SMART_ASSERT(ig < (int)global_values.size());
+              SMART_ASSERT(ig < static_cast<int>(global_values.size()));
               output_global_values[global_vars.index_[ig] - 1] = global_values[ig];
             }
           }
@@ -1781,21 +1785,13 @@ namespace {
     copy_string(qaRecord[num_qa_records].qa_record[0][0], qainfo[0], MAX_STR_LENGTH + 1); // Code
     copy_string(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH + 1); // Version
 
-    time_t date_time = std::time(nullptr);
-#if defined __NVCC__
-    auto *lt = std::localtime(&date_time);
-    buffer   = fmt::format("{:%Y/%m/%d}", *lt);
-#else
-    auto const lt = fmt::localtime(date_time);
-    buffer        = fmt::format("{:%Y/%m/%d}", lt);
-#endif
+    time_t      date_time = std::time(nullptr);
+    auto const *lt        = std::localtime(&date_time);
+
+    buffer = fmt::format("{:%Y/%m/%d}", *lt);
     copy_string(qaRecord[num_qa_records].qa_record[0][2], buffer, MAX_STR_LENGTH + 1);
 
-#if defined __NVCC__
     buffer = fmt::format("{:%H:%M:%S}", *lt);
-#else
-    buffer = fmt::format("{:%H:%M:%S}", lt);
-#endif
     copy_string(qaRecord[num_qa_records].qa_record[0][3], buffer, MAX_STR_LENGTH + 1);
 
     error = ex_put_qa(id_out, num_qa_records + 1, qaRecord[0].qa_record);
@@ -1927,7 +1923,7 @@ namespace {
     }
 
     std::array<INT, 1> ids{1};
-    std::array<INT, 1> cnts{(INT)gnodes.size()};
+    std::array<INT, 1> cnts{static_cast<INT>(gnodes.size())};
     error = ex_put_cmap_params(ExodusFile::output(), Data(ids), Data(cnts), nullptr, nullptr,
                                output_processor);
     if (error < 0) {
@@ -2124,7 +2120,7 @@ namespace {
           glob_blocks[b].elementCount += temp_block.num_entry;
           glob_blocks[b].nodesPerElement = temp_block.num_nodes_per_entry;
           glob_blocks[b].attributeCount  = temp_block.num_attribute;
-          glob_blocks[b].position_       = (int)b;
+          glob_blocks[b].position_       = static_cast<int>(b);
           copy_string(glob_blocks[b].elType, temp_block.topology);
         }
 
@@ -2443,8 +2439,9 @@ namespace {
     // the elements back to their original location. Since the elements are
     // sorted and there are no duplicates, we just need to see if the id
     // at global_element_map.size() == global_element_map.size();
-    bool is_contiguous = global_element_map.empty() ||
-                         ((size_t)global_element_map.back() == global_element_map.size());
+    bool is_contiguous =
+        global_element_map.empty() ||
+        (static_cast<size_t>(global_element_map.back()) == global_element_map.size());
     if (rank == 0) {
       fmt::print("Element id map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
     }
@@ -2620,8 +2617,8 @@ namespace {
     // the edges back to their original location. Since the edges are
     // sorted and there are no duplicates, we just need to see if the id
     // at global_edge_map.size() == global_edge_map.size();
-    bool is_contiguous =
-        global_edge_map.empty() || ((size_t)global_edge_map.back() == global_edge_map.size());
+    bool is_contiguous = global_edge_map.empty() ||
+                         (static_cast<size_t>(global_edge_map.back()) == global_edge_map.size());
     if (rank == 0) {
       fmt::print("Edge id map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
     }
@@ -2797,8 +2794,8 @@ namespace {
     // the faces back to their original location. Since the faces are
     // sorted and there are no duplicates, we just need to see if the id
     // at global_face_map.size() == global_face_map.size();
-    bool is_contiguous =
-        global_face_map.empty() || ((size_t)global_face_map.back() == global_face_map.size());
+    bool is_contiguous = global_face_map.empty() ||
+                         (static_cast<size_t>(global_face_map.back()) == global_face_map.size());
     if (rank == 0) {
       fmt::print("Face id map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
     }
@@ -2968,8 +2965,8 @@ namespace {
     // the nodes back to their original location. Since the nodes are
     // sorted and there are no duplicates, we just need to see if the id
     // at global_node_map.size() == global_node_map.size();
-    bool is_contiguous =
-        global_node_map.empty() || ((size_t)global_node_map.back() == global_node_map.size());
+    bool is_contiguous = global_node_map.empty() ||
+                         (static_cast<size_t>(global_node_map.back()) == global_node_map.size());
     if (rank == 0) {
       fmt::print("Node map {} contiguous.\n", (is_contiguous ? "is" : "is not"));
     }
@@ -3393,14 +3390,14 @@ namespace {
         // output nodeset
         // NOTE: global_node above is 1-based.
         glob_sets[ns].nodeCount =
-            std::accumulate(glob_ns_nodes.begin(), glob_ns_nodes.end(), (INT)0);
+            std::accumulate(glob_ns_nodes.begin(), glob_ns_nodes.end(), static_cast<INT>(0));
         glob_sets[ns].nodeSetNodes.resize(glob_sets[ns].entity_count());
         glob_sets[ns].dfCount = glob_sets[ns].nodeCount;
 
         // distFactors is a vector of 'char' to allow storage of either float or double.
         glob_sets[ns].distFactors.resize(glob_sets[ns].dfCount * ExodusFile::io_word_size());
 
-        T     *glob_df = (T *)(Data(glob_sets[ns].distFactors));
+        T     *glob_df = (T *)Data(glob_sets[ns].distFactors);
         size_t j       = 0;
         for (size_t i = 1; i <= total_node_count; i++) {
           if (glob_ns_nodes[i] == 1) {
@@ -3804,7 +3801,7 @@ namespace {
           glob_edgeblocks[b].edgeCount += temp_block.num_entry;
           glob_edgeblocks[b].nodesPerEdge   = temp_block.num_nodes_per_entry;
           glob_edgeblocks[b].attributeCount = temp_block.num_attribute;
-          glob_edgeblocks[b].position_      = (int)b;
+          glob_edgeblocks[b].position_      = static_cast<int>(b);
           copy_string(glob_edgeblocks[b].elType, temp_block.topology);
         }
 
@@ -3853,6 +3850,10 @@ namespace {
 
     auto linkage    = new INT *[global_num_edgeblocks];
     auto attributes = new T *[global_num_edgeblocks];
+    for (int i = 0; i < global_num_edgeblocks; i++) {
+      linkage[i]    = nullptr;
+      attributes[i] = nullptr;
+    }
 
     LOG("\nReading and Writing edge connectivity & attributes\n");
 
@@ -4179,7 +4180,7 @@ namespace {
           glob_faceblocks[b].faceCount += temp_block.num_entry;
           glob_faceblocks[b].nodesPerFace   = temp_block.num_nodes_per_entry;
           glob_faceblocks[b].attributeCount = temp_block.num_attribute;
-          glob_faceblocks[b].position_      = (int)b;
+          glob_faceblocks[b].position_      = static_cast<int>(b);
           copy_string(glob_faceblocks[b].elType, temp_block.topology);
         }
 

@@ -17,7 +17,7 @@
 
 namespace Ifpack2 {
 
-//! Ifpack2::Partitioner: 
+//! Ifpack2::Partitioner:
 
 /** \class Partitioner
     \brief A class to decompose local graphs.
@@ -32,7 +32,7 @@ namespace Ifpack2 {
   Partitioner defines the diagonal blocks of the matrix that
   BlockRelaxation uses.  BlockRelaxation creates a Partitioner
   subclass instance internally.
- 
+
   \section Ifpack2_Partitioner_Partitions Partitions
 
   A Partitioner instance can partition a local graph by rows.  A
@@ -41,13 +41,13 @@ namespace Ifpack2 {
   may use LocalFilter on the graph of a matrix to make a local graph;
   it excludes entries in the column Map not in the domain Map.  This
   class assumes that the graph is local.
-  
+
   The partitions created by Partitioner implementations are
   <i>nonoverlapping</i> in the graph sense. This means that each row
   (or, more appropriately, vertex) of the graph belongs to at most one
   partition.  Furthermore, these nonoverlapping partitions are
   <i>local</i>: partitions do not cross process boundaries.
-  
+
   <tt>operator () (LocalOrdinal i)</tt> returns the local partition
   index corresponding to local row i of the graph.  The above implies
   that the local partition index is unique.
@@ -99,14 +99,14 @@ void example (Tpetra::CrsMatrix<double, int>& A) {
   partitioner_type partitioner (A.getGraph ());
 
   // Set up the partitioner's parameters.
-  // We want 16 local partitions, 
+  // We want 16 local partitions,
   // and an overlap of 0 among the local partitions.
   Teuchos::ParameterList params;
   params.set ("partitioner: local parts", 16);
   params.set ("partitioner: overlap", 0);
   partitioner.setParameters (params);
 
-  // Partition the graph.  If the structure of the 
+  // Partition the graph.  If the structure of the
   // graph changes, you must call compute() again,
   // but you need not call setParameters() again.
   partitioner.compute ();
@@ -116,9 +116,9 @@ void example (Tpetra::CrsMatrix<double, int>& A) {
 
   // Get the number of rows in each partition.
   for (int i = 0; i < numParts; ++i) {
-    cout << "Number of rows in partition " << i << ": " 
+    cout << "Number of rows in partition " << i << ": "
          << partitioner.numRowsInPart (i) << endl;
-  }  
+  }
 
   // For nonoverlapping partitions only, operator()(i)
   // returns the partition index for each local row.
@@ -128,7 +128,7 @@ void example (Tpetra::CrsMatrix<double, int>& A) {
   }
 }
 \endcode
-  
+
 When overlapping partitions are created, users can get the local
 indices of the rows in each partition:
 \code
@@ -139,24 +139,24 @@ for (int i = 0; i < numLocalParts; ++i) {
     cout << partitioner(i,j) << " ";
   }
   cout << "]";
-}  
+}
 \endcode
-*/  
+*/
 template <class GraphType>
 class Partitioner : public Teuchos::Describable {
-public:
+ public:
   typedef typename GraphType::local_ordinal_type LocalOrdinal;
   typedef typename GraphType::global_ordinal_type GlobalOrdinal;
   typedef typename GraphType::node_type Node;
 
   //! Destructor.
-  virtual ~Partitioner() {};
+  virtual ~Partitioner(){};
 
   /// \brief Number of computed local partitions.
   ///
   /// See Ifpack2_OverlappingPartitioner_decl.hpp for explanation
   /// of why this is an \c int instead of \c LocalOrdinal.
-  virtual int numLocalParts () const = 0;
+  virtual int numLocalParts() const = 0;
 
   //! The level of overlap.
   virtual int overlappingLevel() const = 0;
@@ -165,46 +165,44 @@ public:
   ///   specified local row.
   ///
   /// \param MyRow [in] Local index of the row.
-  virtual LocalOrdinal operator() (LocalOrdinal MyRow) const = 0;
+  virtual LocalOrdinal operator()(LocalOrdinal MyRow) const = 0;
 
   //! The local overlapping partition index of the j-th node in partition i.
-  virtual LocalOrdinal operator() (LocalOrdinal i, LocalOrdinal j) const = 0;
+  virtual LocalOrdinal operator()(LocalOrdinal i, LocalOrdinal j) const = 0;
 
   //! The number of rows contained in the specified partition.
-  virtual size_t numRowsInPart (const LocalOrdinal Part) const = 0;
-    
+  virtual size_t numRowsInPart(const LocalOrdinal Part) const = 0;
+
   //! Copy into List the rows in the (overlapping) partition Part.
-  virtual void 
-  rowsInPart (const LocalOrdinal Part, 
-              Teuchos::ArrayRCP<LocalOrdinal>& List) const = 0;
-  
+  virtual void
+  rowsInPart(const LocalOrdinal Part,
+             Teuchos::ArrayRCP<LocalOrdinal>& List) const = 0;
+
   //! The nonoverlapping partition indices of each local row.
   virtual Teuchos::ArrayView<const LocalOrdinal>
-  nonOverlappingPartition () const = 0;
+  nonOverlappingPartition() const = 0;
 
   //! Set all the parameters for the partitioner.
-  virtual void setParameters (Teuchos::ParameterList& List) = 0;
+  virtual void setParameters(Teuchos::ParameterList& List) = 0;
 
   //! Compute the partitions.
-  virtual void compute () = 0;
+  virtual void compute() = 0;
 
   //! Return true if partitions have been computed successfully.
-  virtual bool isComputed () const = 0;
+  virtual bool isComputed() const = 0;
 
   //! Print basic information about the partitioning object.
-  virtual std::ostream& print (std::ostream& os) const = 0;
-
+  virtual std::ostream& print(std::ostream& os) const = 0;
 };
 
 // Overloaded output stream operator for Partitioner
 template <class GraphType>
-inline std::ostream& 
-operator<< (std::ostream& os, 
-            const Ifpack2::Partitioner<GraphType>& obj)
-{
-  return obj.print (os);
+inline std::ostream&
+operator<<(std::ostream& os,
+           const Ifpack2::Partitioner<GraphType>& obj) {
+  return obj.print(os);
 }
 
-} // namespace Ifpack2
+}  // namespace Ifpack2
 
-#endif // IFPACK2_PARTITIONER_HPP
+#endif  // IFPACK2_PARTITIONER_HPP

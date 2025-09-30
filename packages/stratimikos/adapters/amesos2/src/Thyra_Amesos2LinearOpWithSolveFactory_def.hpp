@@ -10,6 +10,7 @@
 #ifndef THYRA_AMESOS2_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 #define THYRA_AMESOS2_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Thyra_Amesos2LinearOpWithSolveFactory_decl.hpp"
 
 #include "Thyra_Amesos2LinearOpWithSolve.hpp"
@@ -17,6 +18,7 @@
 #include "Amesos2_Details_LinearSolverFactory.hpp"
 #include "Amesos2_Version.hpp"
 #include "Amesos2_Factory.hpp"
+#include "Thyra_Amesos2Types.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
@@ -24,6 +26,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 namespace Thyra {
 
@@ -172,6 +175,11 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
 #ifdef HAVE_AMESOS2_PARDISO_MKL
         case Thyra::Amesos2::PARDISO_MKL:
           amesos2Solver = ::Amesos2::create<MAT,MV>("pardiso_mkl", tpetraCrsMat);
+          break;
+#endif
+#ifdef HAVE_AMESOS2_CSS_MKL
+        case Thyra::Amesos2::CSS_MKL:
+          amesos2Solver = ::Amesos2::create<MAT,MV>("css_mkl", tpetraCrsMat);
           break;
 #endif
 #ifdef HAVE_AMESOS2_CHOLMOD
@@ -392,7 +400,15 @@ Amesos2LinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
   static RCP<Teuchos::ParameterList> validParamList;
   if (validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("Amesos2"));
-    validParamList->set(SolverType_name, Thyra::Amesos2::solverTypeNames[0]);
+    Teuchos::Array<std::string> solverTypeNames(Amesos2::numSolverTypes);
+    for (int k = 0; k<Amesos2::numSolverTypes; ++k)
+      solverTypeNames[k] = Thyra::Amesos2::solverTypeNames[k];
+    auto validator = Teuchos::rcp(new Teuchos::StringValidator(solverTypeNames));
+    validParamList->set(SolverType_name,
+                        Thyra::Amesos2::solverTypeNames[0],
+                        "Type of Amesos2 solver",
+                        validator
+                        );
     validParamList->set(RefactorizationPolicy_name,
       Amesos2::toString(Amesos2::REPIVOT_ON_REFACTORIZATION));
     validParamList->set(ThrowOnPreconditionerInput_name,bool(true));

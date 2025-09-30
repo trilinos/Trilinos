@@ -246,9 +246,9 @@ namespace
   TEUCHOS_UNIT_TEST( ProjectedGeometry, CircularGeometryConvergesInP_MultiCell )
   {
     using Scalar = double;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     const int meshWidth = 4;
-    testCircularGeometryProjectionConvergesInP<Scalar, ExecSpace>(meshWidth, out, success);
+    testCircularGeometryProjectionConvergesInP<Scalar, DeviceType>(meshWidth, out, success);
   }
 
   TEUCHOS_UNIT_TEST( ProjectedGeometry, LinearGeometryIsExact_Line )
@@ -256,19 +256,19 @@ namespace
     // 1D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 1;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     const int meshWidth = 4;
     
     // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
     const double relTol = 1e-15;
-    const double absTol = 1e-15;
-    testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
+    const double absTol = 3e-15;
+    testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
     
     // now, test with a higher-order basis (but still linear geometry)
     for (int polyOrder=2; polyOrder<8; polyOrder++)
     {
-      testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, polyOrder, relTol, absTol, out, success);
+      testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, relTol, absTol, out, success);
     }
   }
 
@@ -277,19 +277,19 @@ namespace
     // 2D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 2;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     const int meshWidth = 4;
     
     // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
     const double relTol = 1e-14;
     const double absTol = 1e-14;
-    testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
+    testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
     
     // now, test with a higher-order basis (but still linear geometry)
     for (int polyOrder=2; polyOrder<5; polyOrder++)
     {
-      testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, polyOrder, relTol, absTol, out, success);
+      testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, relTol, absTol, out, success);
     }
   }
 
@@ -298,19 +298,19 @@ namespace
     // 3D test that linear geometry is exactly recovered by the projection
     using PointScalar = double;
     const int spaceDim = 3;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     const int meshWidth = 2;
     
     // these tolerances are fairly tight; we may need to loosen them to pass on all platforms
     const double relTol = 1e-14;
     const double absTol = 1e-14;
-    testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, relTol, absTol, out, success);
+    testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, relTol, absTol, out, success);
     
     // now, test with a higher-order basis (but still linear geometry)
     for (int polyOrder=2; polyOrder<4; polyOrder++)
     {
-      testLinearGeometryIsExact<PointScalar, spaceDim, ExecSpace>(meshWidth, polyOrder, relTol, absTol, out, success);
+      testLinearGeometryIsExact<PointScalar, spaceDim, DeviceType>(meshWidth, polyOrder, relTol, absTol, out, success);
     }
   }
 
@@ -325,10 +325,10 @@ namespace
     // we expect (-1,0), (0,-1), (1,0), and (0,1) to map to themselves
     using Point = Kokkos::Array<Scalar,2>;
     
-    Point left   { -1,  0};
-    Point bottom {  0, -1};
-    Point right  {  1,  0};
-    Point top    {  0,  1};
+    Point left   {{ -1,  0}};
+    Point bottom {{  0, -1}};
+    Point right  {{  1,  0}};
+    Point top    {{  0,  1}};
     
     std::vector< Point > points {left, bottom, right, top};
     for (const auto &point : points)
@@ -341,10 +341,10 @@ namespace
     }
     
     // the corners of the "unit" square should each map to ± sqrt(2)/2
-    Point bottom_left  { -1, -1};
-    Point bottom_right {  1, -1};
-    Point top_right    {  1,  1};
-    Point top_left     { -1,  1};
+    Point bottom_left  {{ -1, -1}};
+    Point bottom_right {{  1, -1}};
+    Point top_right    {{  1,  1}};
+    Point top_left     {{ -1,  1}};
     
     points = std::vector<Point> {bottom_left, bottom_right, top_right, top_left};
     

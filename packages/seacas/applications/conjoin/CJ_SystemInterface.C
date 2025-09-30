@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,7 +11,7 @@
 #include <cctype>        // for tolower
 #include <copyright.h>
 #include <cstddef> // for size_t
-#include <cstdlib> // for exit, strtol, EXIT_SUCCESS, etc
+#include <cstdlib> // for exit, EXIT_SUCCESS, etc
 #include <fmt/format.h>
 #include <term_width.h>
 #include <utility> // for pair, make_pair
@@ -83,8 +83,8 @@ void Excn::SystemInterface::enroll_options()
                   nullptr);
 
   options_.enroll("quantize_nsd", GetLongOption::MandatoryValue,
-                  "Use the lossy quantize compression method.  Value specifies number of digits to "
-                  "retain (1..15) [exodus only]",
+                  "Use the lossy quantize compression method.\n"
+                  "\t\tValue specifies number of digits to retain (1..15) [exodus only]",
                   nullptr, nullptr, true);
 
   options_.enroll("sort_times", GetLongOption::NoValue,
@@ -107,23 +107,36 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("gvar", GetLongOption::MandatoryValue,
                   "Comma-separated list of global variables to be joined or ALL or NONE.", nullptr);
 
-  options_.enroll("evar", GetLongOption::MandatoryValue,
-                  "Comma-separated list of element variables to be joined or ALL or NONE.\n"
-                  "\t\tVariables can be limited to certain blocks by appending a\n"
-                  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
-                  nullptr);
+  options_.enroll(
+      "evar", GetLongOption::MandatoryValue,
+      "Comma-separated list of element variables to be joined or ALL or NONE.\n"
+      "\t\tVariables can be limited to certain blocks by appending a\n"
+      "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20\n"
+      "\t\tIf the first word is `OMIT`, then the list specifies variables to omit, not include.",
+      nullptr);
 
-  options_.enroll("nvar", GetLongOption::MandatoryValue,
-                  "Comma-separated list of nodal variables to be joined or ALL or NONE.", nullptr);
+  options_.enroll(
+      "nvar", GetLongOption::MandatoryValue,
+      "Comma-separated list of nodal variables to be joined or ALL, NONE, OMIT.\n"
+      "\t\tIf the first word is `OMIT`, then the list specifies variables to omit, not include.",
+      nullptr);
 
-  options_.enroll("nsetvar", GetLongOption::MandatoryValue,
-                  "Comma-separated list of nodeset variables to be joined or ALL or NONE.",
-                  nullptr);
+  options_.enroll(
+      "nsetvar", GetLongOption::MandatoryValue,
+      "Comma-separated list of nodeset variables to be joined or ALL, NONE, OMIT.\n"
+      "\t\tIf the first word is `OMIT`, then the list specifies variables to omit, not include.",
+      nullptr);
 
-  options_.enroll("ssetvar", GetLongOption::MandatoryValue,
-                  "Comma-separated list of sideset variables to be joined or ALL or NONE.", nullptr,
-                  nullptr, true);
+  options_.enroll(
+      "ssetvar", GetLongOption::MandatoryValue,
+      "Comma-separated list of sideset variables to be joined or ALL, NONE, OMIT.\n"
+      "\t\tIf the first word is `OMIT`, then the list specifies variables to omit, not include.",
+      nullptr);
 
+  options_.enroll("use_all_times", GetLongOption::NoValue,
+                  "All times on all databases will be used.\n"
+                  "\t\tThe output database may have non-monotonically increasing times.",
+                  nullptr, nullptr, true);
   options_.enroll(
       "interpart_minimum_time_delta", GetLongOption::MandatoryValue,
       "If the time delta between the maximum time on one\n\t\tdatabase and the minimum time on "
@@ -170,7 +183,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     fmt::print("\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n"
                "\n\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#conjoin\n"
-               "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n");
+               "\n\t->->-> Send email to sierra-help@sandia.gov for conjoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -184,7 +197,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("alive_value");
     if (temp != nullptr) {
-      int value = strtol(temp, nullptr, 10);
+      int value = std::stoi(temp);
       if (value == 1 || value == 0) {
         aliveValue_ = value;
       }
@@ -250,6 +263,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   ignoreCoordinates_ = options_.retrieve("ignore_coordinate_check") != nullptr;
   omitNodesets_      = options_.retrieve("omit_nodesets") != nullptr;
   omitSidesets_      = options_.retrieve("omit_sidesets") != nullptr;
+  useAllTimes_       = options_.retrieve("use_all_times") != nullptr;
 
   zlib_ = (options_.retrieve("zlib") != nullptr);
   szip_ = (options_.retrieve("szip") != nullptr);
@@ -264,7 +278,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("compress");
     if (temp != nullptr) {
-      compressionLevel_ = std::strtol(temp, nullptr, 10);
+      compressionLevel_ = std::stoi(temp);
       if (!szip_ && !zlib_ && !zstd_ && !bz2_) {
         zlib_ = true;
       }
@@ -300,7 +314,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   {
     const char *temp = options_.retrieve("quantize_nsd");
     if (temp != nullptr) {
-      quantizeNSD_ = std::strtol(temp, nullptr, 10);
+      quantizeNSD_ = std::stoi(temp);
       if (!szip_ && !zlib_ && !zstd_ && !bz2_) {
         zlib_ = true;
       }
@@ -365,10 +379,12 @@ namespace {
       // "sigxx" should be written only for blocks with id 1, 10, and
       // 100.  "sigxx" would indicate that the variable should be
       // written for all blocks.
-      auto I = var_list.begin();
-      while (I != var_list.end()) {
-        StringVector name_id  = SLIB::tokenize(*I, ":");
+      for (const auto &var : var_list) {
+        StringVector name_id  = SLIB::tokenize(var, ":");
         std::string  var_name = LowerCase(name_id[0]);
+        if (var_name == "omit") {
+          var_name = "!omit"; // So sorts at front of list...
+        }
         if (name_id.size() == 1) {
           (*variable_list).emplace_back(var_name, 0);
         }
@@ -379,7 +395,6 @@ namespace {
             (*variable_list).emplace_back(var_name, id);
           }
         }
-        ++I;
       }
       // Sort the list...
       std::sort(variable_list->begin(), variable_list->end(), string_id_sort);

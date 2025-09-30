@@ -41,13 +41,13 @@ void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(cons
   // TODO: probably smarter to sqrt the whole aggSizes once, but may be slower if it's done in a separate kernel launch?
   typename Aggregates::aggregates_sizes_type::const_type aggSizes = aggregates_->ComputeAggregateSizes();
 
-  auto kokkos_view_X = X.getDeviceLocalView(Xpetra::Access::ReadOnly);
-  auto kokkos_view_Y = Y.getDeviceLocalView(Xpetra::Access::ReadWrite);
+  auto kokkos_view_X = X.getLocalViewDevice(Xpetra::Access::ReadOnly);
+  auto kokkos_view_Y = Y.getLocalViewDevice(Xpetra::Access::ReadWrite);
   LO numCols         = kokkos_view_X.extent(1);
 
   if (mode == Teuchos::TRANS) {  // if we're in restrictor mode
     auto vertex2AggId     = aggregates_->GetVertex2AggId();
-    auto vertex2AggIdView = vertex2AggId->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto vertex2AggIdView = vertex2AggId->getLocalViewDevice(Xpetra::Access::ReadOnly);
     LO numNodes           = kokkos_view_X.extent(0);
 
     // Step 2: Compute Y=Y+alpha*R*X
@@ -62,7 +62,7 @@ void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(cons
         });
   } else {  // if we're in prolongator mode
     const auto vertex2Agg = aggregates_->GetVertex2AggId();
-    auto vertex2AggView   = vertex2Agg->getDeviceLocalView(Xpetra::Access::ReadOnly);
+    auto vertex2AggView   = vertex2Agg->getLocalViewDevice(Xpetra::Access::ReadOnly);
     LO numNodes           = kokkos_view_Y.extent(0);
 
     // Step 2: Compute Y=Y+alpha*P*X

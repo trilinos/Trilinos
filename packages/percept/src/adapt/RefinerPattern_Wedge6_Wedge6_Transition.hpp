@@ -68,7 +68,7 @@
         if (m_uniform_refiner) delete m_uniform_refiner;
       }
 
-      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatterns( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ ) override
       {
         //m_transition_breaker->setSubPatterns(bp, eMesh);
         bp.resize(0);
@@ -81,7 +81,7 @@
         bp.push_back(m_face_breaker_tri);
       }
 
-      void setSubPatternsForSetNeededParts( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& eMesh )
+      void setSubPatternsForSetNeededParts( std::vector<UniformRefinerPatternBase *>& bp, percept::PerceptMesh& /*eMesh*/ ) override
       {
         //m_transition_breaker->setSubPatterns(bp, eMesh);
         bp.resize(0);
@@ -91,8 +91,8 @@
         bp.push_back(m_face_breaker_tri);
       }
 
-      virtual void doBreak() {}
-      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities)
+      virtual void doBreak() override {}
+      void fillNeededEntities(std::vector<NeededEntityType>& needed_entities) override
       {
         needed_entities.resize(3);
         needed_entities[0].first = m_eMesh.edge_rank();
@@ -106,13 +106,13 @@
       }
 
       // FIXME - too many here...
-      virtual unsigned getNumNewElemPerElem() { return 32; }
+      virtual unsigned getNumNewElemPerElem() override { return 32; }
 
       void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                         stk::mesh::Entity element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity>::iterator& element_pool,
                         vector<stk::mesh::Entity>::iterator& ft_element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk::mesh::FieldBase *proc_rank_field=0) override
       {
         unsigned num_edges_marked=0;
         for (int iedge = 0; iedge < 9; iedge++)

@@ -451,7 +451,7 @@ void StkMeshBuilder<TOPO>::build_mesh_with_all_needed_block_ids
     const std::vector<stk::math::Vec<double,DIM>> &nodeLocs,
     const std::vector<std::array<unsigned, NPE>> &elementConn,
     const std::vector<unsigned> &elementBlockIDs,
-    const std::vector<unsigned> &allBlocksIncludingThoseThatDontHaveElements,
+    const std::vector<unsigned> &/*allBlocksIncludingThoseThatDontHaveElements*/,
     const std::vector<int> &specifiedElementProcOwners
 )
 {

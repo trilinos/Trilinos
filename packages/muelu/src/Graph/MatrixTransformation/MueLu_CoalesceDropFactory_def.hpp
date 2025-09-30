@@ -561,7 +561,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           using implATS          = Kokkos::ArithTraits<impl_scalar_type>;
 
           // move from host to device
-          auto ghostedDiagValsView = Kokkos::subview(ghostedDiag->getDeviceLocalView(Xpetra::Access::ReadOnly), Kokkos::ALL(), 0);
+          auto ghostedDiagValsView = Kokkos::subview(ghostedDiag->getLocalViewDevice(Xpetra::Access::ReadOnly), Kokkos::ALL(), 0);
           auto thresholdKokkos     = static_cast<impl_scalar_type>(threshold);
           auto realThresholdKokkos = implATS::magnitude(thresholdKokkos);
           auto columnsDevice       = Kokkos::create_mirror_view(ExecSpace(), columns);
@@ -580,7 +580,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           } else {
             boundaryColumnVector = boundaryNodesVector;
           }
-          auto boundaryColumn = boundaryColumnVector->getDeviceLocalView(Xpetra::Access::ReadOnly);
+          auto boundaryColumn = boundaryColumnVector->getLocalViewDevice(Xpetra::Access::ReadOnly);
           auto boundary       = Kokkos::subview(boundaryColumn, Kokkos::ALL(), 0);
 
           Kokkos::View<LO*, ExecSpace> rownnzView("rownnzView", A_device.numRows());
@@ -1809,20 +1809,20 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Coalesce
   Teuchos::ArrayRCP<const LO> col_block_number = ghostedBlockNumber->getData(0);
 
   // allocate space for the local graph
-  typename CrsMatrix::local_matrix_type::row_map_type::HostMirror::non_const_type rows_mat;
+  typename CrsMatrix::local_matrix_type::row_map_type::host_mirror_type::non_const_type rows_mat;
   typename LWGraph::row_type::non_const_type rows_graph;
   typename LWGraph::entries_type::non_const_type columns;
-  typename CrsMatrix::local_matrix_type::values_type::HostMirror::non_const_type values;
+  typename CrsMatrix::local_matrix_type::values_type::host_mirror_type::non_const_type values;
   RCP<CrsMatrixWrap> crs_matrix_wrap;
 
   if (generate_matrix) {
     crs_matrix_wrap = rcp(new CrsMatrixWrap(A->getRowMap(), A->getColMap(), 0));
-    rows_mat        = typename CrsMatrix::local_matrix_type::row_map_type::HostMirror::non_const_type("rows_mat", A->getLocalNumRows() + 1);
+    rows_mat        = typename CrsMatrix::local_matrix_type::row_map_type::host_mirror_type::non_const_type("rows_mat", A->getLocalNumRows() + 1);
   } else {
     rows_graph = typename LWGraph::row_type::non_const_type("rows_graph", A->getLocalNumRows() + 1);
   }
   columns = typename LWGraph::entries_type::non_const_type("columns", A->getLocalNumEntries());
-  values  = typename CrsMatrix::local_matrix_type::values_type::HostMirror::non_const_type("values", A->getLocalNumEntries());
+  values  = typename CrsMatrix::local_matrix_type::values_type::host_mirror_type::non_const_type("values", A->getLocalNumEntries());
 
   LO realnnz    = 0;
   GO numDropped = 0, numTotal = 0;

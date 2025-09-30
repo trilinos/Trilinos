@@ -91,7 +91,7 @@ namespace AlgebraicExpansionUnitTest {
 
     template <class Func>
     void computePCE1(Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& c,
-		     const Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& a) 
+		     const Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& aa) 
     {
       // Quadrature data
       const Teuchos::Array<ValueType>& weights = quad->getQuadWeights();
@@ -108,7 +108,7 @@ namespace AlgebraicExpansionUnitTest {
       // Compute PCE via quadrature
       Func func;
       for (OrdinalType k=0; k<nqp; k++) {
-	ValueType val = a.evaluate(points[k], values[k]);
+	ValueType val = aa.evaluate(points[k], values[k]);
 	val = func(val);
 	for (int i=0; i<c.size(); i++)
 	  c[i] += weights[k]*val*values[k][i] / basis->norm_squared(i);
@@ -117,7 +117,7 @@ namespace AlgebraicExpansionUnitTest {
 
     template <class Func>
     void computePCE2(Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& c,
-		     const Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& a,
+		     const Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& aa,
 		     const Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& b) 
     {
       // Quadrature data
@@ -135,7 +135,7 @@ namespace AlgebraicExpansionUnitTest {
       // Compute PCE via quadrature
       Func func;
       for (OrdinalType k=0; k<nqp; k++) {
-	ValueType val1 = a.evaluate(points[k], values[k]);
+	ValueType val1 = aa.evaluate(points[k], values[k]);
 	ValueType val2 = b.evaluate(points[k], values[k]);
 	ValueType val = func(val1, val2);
 	for (int i=0; i<c.size(); i++)
@@ -146,7 +146,7 @@ namespace AlgebraicExpansionUnitTest {
     template <class Func>
     void computePCE2LC(
 		  Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& c,
-		  ValueType a,
+		  ValueType aa,
 		  const Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& b) 
     {
       // Quadrature data
@@ -165,7 +165,7 @@ namespace AlgebraicExpansionUnitTest {
       Func func;
       for (OrdinalType k=0; k<nqp; k++) {
 	ValueType val2 = b.evaluate(points[k], values[k]);
-	ValueType val = func(a, val2);
+	ValueType val = func(aa, val2);
 	for (int i=0; i<c.size(); i++)
 	  c[i] += weights[k]*val*values[k][i] / basis->norm_squared(i);
       }
@@ -174,7 +174,7 @@ namespace AlgebraicExpansionUnitTest {
     template <class Func>
     void computePCE2RC(
 		    Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& c,
-		    const Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& a,
+		    const Stokhos::OrthogPolyApprox<OrdinalType,ValueType>& aa,
 		    ValueType b) 
     {
       // Quadrature data
@@ -192,7 +192,7 @@ namespace AlgebraicExpansionUnitTest {
       // Compute PCE via quadrature
       Func func;
       for (OrdinalType k=0; k<nqp; k++) {
-	ValueType val1 = a.evaluate(points[k], values[k]);
+	ValueType val1 = aa.evaluate(points[k], values[k]);
 	ValueType val = func(val1, b);
 	for (int i=0; i<c.size(); i++)
 	  c[i] += weights[k]*val*values[k][i] / basis->norm_squared(i);

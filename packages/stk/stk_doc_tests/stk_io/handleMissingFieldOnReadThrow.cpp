@@ -86,14 +86,16 @@ TEST(StkMeshIoBrokerHowTo, handleMissingFieldOnReadThrow)
     stk::mesh::get_entities(stkIo.bulk_data(),
                             stk::topology::NODE_RANK, nodes);
 
+    auto temperatureData = temperature.data<stk::mesh::ReadWrite>();
+
     // Add three steps to the database
     // For each step, the value of the field is the value 'time'
     for (size_t i=0; i < 3; i++) {
       double time = i;
 
       for(size_t inode=0; inode<nodes.size(); inode++) {
-        double *fieldDataForNode = stk::mesh::field_data(temperature, nodes[inode]);
-        *fieldDataForNode = time;
+        auto fieldDataForNode = temperatureData.entity_values(nodes[inode]);
+        fieldDataForNode() = time;
       }
 
       stkIo.begin_output_step(fh, time);

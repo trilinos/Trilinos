@@ -373,18 +373,24 @@ std::vector<stk::math::Vector3d> nodeCoordinates(const stk::mesh::EntityVector& 
                                                  int spatialDim)
 {
   std::vector<stk::math::Vector3d> nodeCoordinates;
-  for (const stk::mesh::Entity & node : sideNodes) {
-    if (spatialDim == 3) {
-      nodeCoordinates.emplace_back(reinterpret_cast<double*>(stk::mesh::field_data(coords, node)));
+
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(coords,
+    [&](auto& coordsData) {
+      for (const stk::mesh::Entity & node : sideNodes) {
+        auto nodeFieldData = coordsData.entity_values(node);
+        if (spatialDim == 3) {
+          nodeCoordinates.emplace_back(nodeFieldData(0_comp), nodeFieldData(1_comp), nodeFieldData(2_comp));
+        }
+        else if (spatialDim == 2) {
+          nodeCoordinates.emplace_back(nodeFieldData(0_comp), nodeFieldData(1_comp), 0.0);
+        }
+        else {
+          STK_ThrowErrorMsg("Problem dimensionality " << spatialDim << " not supported");
+        }
+      }
     }
-    else if (spatialDim == 2) {
-      double* nodeFieldData = reinterpret_cast<double*>(stk::mesh::field_data(coords, node));
-      nodeCoordinates.emplace_back(nodeFieldData[0], nodeFieldData[1], 0.0);
-    }
-    else {
-      STK_ThrowErrorMsg("Problem dimensionality " << spatialDim << " not supported");
-    }
-  }
+  );
+
   return nodeCoordinates;
 }
 
@@ -593,34 +599,36 @@ void addGraphEdgesUsingBBSearch(stk::mesh::BulkData & stkMeshBulkData,
   printGraphEdgeCounts(stkMeshBulkData, graphEdges.size(), "After search");
 }
 
-void fillEntityCentroid(const stk::mesh::BulkData &stkMeshBulkData, const stk::mesh::FieldBase* coord, stk::mesh::Entity entityOfConcern, double *entityCentroid)
+void fillEntityCentroid(const stk::mesh::BulkData& stkMeshBulkData, const stk::mesh::FieldBase* coord,
+                        stk::mesh::Entity entityOfConcern, double *entityCentroid)
 {
-  unsigned spatialDimension = stkMeshBulkData.mesh_meta_data().spatial_dimension();
-  if(stkMeshBulkData.entity_rank(entityOfConcern)==stk::topology::NODE_RANK)
-  {
-    double *nodeCoord = static_cast<double *>(stk::mesh::field_data(*coord, entityOfConcern));
-    for(unsigned k=0; k < spatialDimension; k++)
-    {
-      entityCentroid[k] = nodeCoord[k];
-    }
-  }
-  else
-  {
-    stk::mesh::Entity const * nodes = stkMeshBulkData.begin_nodes(entityOfConcern);
-    unsigned numNodes = stkMeshBulkData.num_nodes(entityOfConcern);
-    for(unsigned nodeIndex=0; nodeIndex < numNodes; nodeIndex++)
-    {
-      double *nodeCoord = static_cast<double *>(stk::mesh::field_data(*coord, nodes[nodeIndex]));
-      for(unsigned k=0; k < spatialDimension; k++)
-      {
-        entityCentroid[k] += nodeCoord[k];
+  int spatialDimension = stkMeshBulkData.mesh_meta_data().spatial_dimension();
+
+  stk::mesh::field_data_execute<double, stk::mesh::ReadOnly>(*coord,
+    [&](auto& coordData) {
+      if (stkMeshBulkData.entity_rank(entityOfConcern)==stk::topology::NODE_RANK) {
+        auto nodeCoord = coordData.entity_values(entityOfConcern);
+        for (stk::mesh::ComponentIdx k(0); k < spatialDimension; ++k) {
+          entityCentroid[k] += nodeCoord(k);
+        }
+      }
+      else {
+        stk::mesh::Entity const* nodes = stkMeshBulkData.begin_nodes(entityOfConcern);
+        unsigned numNodes = stkMeshBulkData.num_nodes(entityOfConcern);
+        for (unsigned nodeIndex = 0; nodeIndex < numNodes; ++nodeIndex) {
+          auto nodeCoord = coordData.entity_values(nodes[nodeIndex]);
+
+          for (stk::mesh::ComponentIdx k(0); k < spatialDimension; ++k) {
+            entityCentroid[k] += nodeCoord(k);
+          }
+        }
+
+        for (int k = 0; k < spatialDimension; ++k) {
+          entityCentroid[k] /= numNodes;
+        }
       }
     }
-    for(unsigned k=0; k < spatialDimension; k++)
-    {
-      entityCentroid[k] /= numNodes;
-    }
-  }
+  );
 }
 
 bool is_not_part_of_spider(const stk::mesh::BulkData & bulk, const stk::mesh::Part & spiderPart,
@@ -761,13 +769,14 @@ void fill_spider_connectivity_count_fields_and_parts(stk::mesh::BulkData & bulk,
 
 
   const stk::mesh::Field<int> * volumeConnectivityCountField = balanceSettings.getSpiderVolumeConnectivityCountField(bulk);
+  auto volumeConnectivityCountFieldData = volumeConnectivityCountField->data();
   stk::mesh::Selector selectBeamElements(meta.locally_owned_part() &
                                          meta.get_topology_root_part(stk::topology::BEAM_2));
   stk::mesh::EntityVector beams;
   mesh::get_entities(bulk, stk::topology::ELEM_RANK, selectBeamElements, beams);
   for(stk::mesh::Entity beam : beams) {
-    int * volumeConnectivityCount = stk::mesh::field_data(*volumeConnectivityCountField, beam);
-    *volumeConnectivityCount = num_volume_elements_connected_to_beam(bulk, beam);
+    auto volumeConnectivityCount = volumeConnectivityCountFieldData.entity_values(beam);
+    volumeConnectivityCount() = num_volume_elements_connected_to_beam(bulk, beam);
   }
 
   stk::mesh::communicate_field_data(bulk, {volumeConnectivityCountField});
@@ -778,13 +787,14 @@ void fill_output_subdomain_field(const stk::mesh::BulkData & bulk, const Balance
 {
   if (balanceSettings.shouldFixSpiders()) {
     const stk::mesh::Field<int> * outputSubdomainField = balanceSettings.getOutputSubdomainField(bulk);
+    auto outputSubdomainFieldData = outputSubdomainField->data();
 
     for (const stk::mesh::EntityProc & entityProc : decomp) {
       const stk::mesh::Entity elem = entityProc.first;
       const int proc = entityProc.second;
       if (bulk.is_valid(elem)) {
-        int * outputSubdomain = stk::mesh::field_data(*outputSubdomainField, elem);
-        *outputSubdomain = proc;
+        auto outputSubdomain = outputSubdomainFieldData.entity_values(elem);
+        outputSubdomain() = proc;
       }
     }
 
@@ -849,6 +859,7 @@ void store_diagnostic_element_weights(const stk::mesh::BulkData & bulk,
 {
   if (stk::balance::get_diagnostic<TotalElementWeightDiagnostic>()) {
     const stk::mesh::Field<double> & weightField = *balanceSettings.getDiagnosticElementWeightField(bulk);
+    auto weightFieldData = weightField.data();
     const std::vector<double> & vertexWeights = vertices.get_vertex_weights();
     const int numSelectors = 1;
     const int selectorIndex = 0;
@@ -860,11 +871,11 @@ void store_diagnostic_element_weights(const stk::mesh::BulkData & bulk,
                             bulk.mesh_meta_data().locally_owned_part(), entitiesToBalance, sortById);
 
     for (unsigned entityIndex = 0; entityIndex < entitiesToBalance.size(); ++entityIndex) {
-      double * weight = stk::mesh::field_data(weightField, entitiesToBalance[entityIndex]);
-      for (int criterion = 0; criterion < numCriteria; ++criterion) {
+      auto weight = weightFieldData.entity_values(entitiesToBalance[entityIndex]);
+      for (stk::mesh::ComponentIdx criterion = 0_comp; criterion < numCriteria; ++criterion) {
         unsigned index = stk::balance::internal::get_index(numSelectors, numCriteria, entityIndex,
                                                            selectorIndex, criterion);
-        weight[criterion] = vertexWeights[index];
+        weight(criterion) = vertexWeights[index];
       }
     }
   }
@@ -1032,11 +1043,12 @@ std::pair<stk::mesh::Entity, stk::mesh::Entity> get_spider_beam_body_and_node_fo
   const stk::mesh::Entity * elems = bulk.begin_elements(bodyNode);
   const unsigned numElements = bulk.num_elements(bodyNode);
   const stk::mesh::Field<int> & volumeElemConnectivityCountField = *balanceSettings.getSpiderVolumeConnectivityCountField(bulk);
+  auto volumeElemConnectivityCountFieldData = volumeElemConnectivityCountField.data<stk::mesh::ReadOnly>();
 
   for (unsigned i = 0; i < numElements; ++i) {
     if (bulk.bucket(elems[i]).topology() == stk::topology::BEAM_2) {
-      const int volumeElemConnectivityCount = *stk::mesh::field_data(volumeElemConnectivityCountField, elems[i]);
-      if (volumeElemConnectivityCount == 0) {
+      auto volumeElemConnectivityCount = volumeElemConnectivityCountFieldData.entity_values(elems[i]);
+      if (volumeElemConnectivityCount() == 0) {
         const stk::mesh::Entity * beamNodes = bulk.begin_nodes(elems[i]);
         const stk::mesh::Entity nonBodyNode = (beamNodes[0] == bodyNode) ? beamNodes[1] : beamNodes[0];
         return std::make_pair(elems[i], nonBodyNode);
@@ -1137,14 +1149,15 @@ stk::mesh::EntityVector get_local_spider_legs(const stk::mesh::BulkData & bulk,
 int get_new_spider_leg_owner(const stk::mesh::BulkData & bulk, const stk::mesh::Entity & footNode,
                              const stk::mesh::Part & spiderPart, const stk::mesh::Field<int> & outputSubdomainField)
 {
+  auto outputSubdomainFieldData = outputSubdomainField.data<stk::mesh::ReadOnly>();
   const stk::mesh::Entity* footElements = bulk.begin_elements(footNode);
   const unsigned numElements = bulk.num_elements(footNode);
   int newLegOwner = std::numeric_limits<int>::max();
 
   for (unsigned i = 0; i < numElements; ++i) {
     if (is_not_part_of_spider(bulk, spiderPart, footElements[i])) {
-      const int & outputSubdomain = *stk::mesh::field_data(outputSubdomainField, footElements[i]);
-      newLegOwner = std::min(newLegOwner, outputSubdomain);
+      auto outputSubdomain = outputSubdomainFieldData.entity_values(footElements[i]);
+      newLegOwner = std::min(newLegOwner, outputSubdomain());
     }
   }
 
@@ -1183,9 +1196,10 @@ void update_output_subdomain_field(const stk::mesh::BulkData & bulk,
                                    stk::mesh::Entity spiderEntity,
                                    int newLegOwner)
 {
+  auto outputSubdomainFieldData = outputSubdomainField.data();
   if (bulk.entity_rank(spiderEntity) == stk::topology::ELEM_RANK) {
-    int * outputSubdomain = stk::mesh::field_data(outputSubdomainField, spiderEntity);
-    *outputSubdomain = newLegOwner;
+    auto outputSubdomain = outputSubdomainFieldData.entity_values(spiderEntity);
+    outputSubdomain() = newLegOwner;
   }
 }
 
@@ -1479,6 +1493,7 @@ void compute_total_element_weight_diagnostic(TotalElementWeightDiagnostic & diag
                                              const stk::balance::BalanceSettings & balanceSettings,
                                              const stk::mesh::Field<double> & weightField, int rank)
 {
+  auto weightFieldData = weightField.data<stk::mesh::ReadOnly>();
   const stk::mesh::BucketVector & buckets = bulk.get_buckets(stk::topology::ELEM_RANK,
                                                              bulk.mesh_meta_data().locally_owned_part());
   const int numCriteria = balanceSettings.getNumCriteria();
@@ -1486,9 +1501,9 @@ void compute_total_element_weight_diagnostic(TotalElementWeightDiagnostic & diag
 
   for (const stk::mesh::Bucket * bucket : buckets) {
     for (const stk::mesh::Entity & element : *bucket) {
-      const double * weight = stk::mesh::field_data(weightField, element);
-      for (int criterion = 0; criterion < numCriteria; ++criterion) {
-        weightSum[criterion] += weight[criterion];
+      auto weight = weightFieldData.entity_values(element);
+      for (stk::mesh::ComponentIdx criterion : weight.components()) {
+        weightSum[criterion] += weight(criterion);
       }
     }
   }
@@ -1620,16 +1635,17 @@ double get_connected_node_weight(const stk::mesh::BulkData & bulk, std::vector<s
 void spread_weight_across_connected_elements(const stk::mesh::BulkData & bulk, const stk::mesh::Entity & node,
                                              double nodeWeight, const stk::mesh::Field<double> & elementWeights)
 {
+  auto elementWeightsData = elementWeights.data();
   const unsigned numElements = bulk.num_elements(node);
   const stk::mesh::Entity * elements = bulk.begin_elements(node);
 
   for (unsigned elemIndex = 0; elemIndex < numElements; ++elemIndex) {
     const stk::mesh::Entity element = elements[elemIndex];
     if (bulk.bucket(element).owned()) {
-      double * elemWeight = stk::mesh::field_data(elementWeights, element);
+      auto elemWeight = elementWeightsData.entity_values(element);
       const unsigned numNodes = bulk.num_nodes(element);
       const double typicalElemsPerNode = getTypicalElemsPerNode(bulk.bucket(element).topology());
-      *elemWeight += nodeWeight / (numNodes * typicalElemsPerNode);
+      elemWeight() += nodeWeight / (numNodes * typicalElemsPerNode);
     }
   }
 }
@@ -1661,13 +1677,14 @@ void compute_connectivity_weight_diagnostic(ConnectivityWeightDiagnostic & diag,
 {
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   const stk::mesh::Field<double> & elementWeights = *balanceSettings.getVertexConnectivityWeightField(bulk);
+  auto elementWeightsData = elementWeights.data<stk::mesh::ReadOnly>();
 
   double totalWeight = 0.0;
   const stk::mesh::BucketVector & buckets = bulk.get_buckets(stk::topology::ELEM_RANK, meta.locally_owned_part());
   for (const stk::mesh::Bucket * bucket : buckets) {
     for (const stk::mesh::Entity & element : *bucket) {
-      const double * elemWeight = stk::mesh::field_data(elementWeights, element);
-      totalWeight += *elemWeight;
+      auto elemWeight = elementWeightsData.entity_values(element);
+      totalWeight += elemWeight();
     }
   }
 

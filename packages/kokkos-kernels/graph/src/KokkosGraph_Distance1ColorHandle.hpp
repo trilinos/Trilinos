@@ -19,8 +19,8 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosKernels_Utils.hpp>
 
-#ifndef _GRAPHCOLORHANDLE_HPP
-#define _GRAPHCOLORHANDLE_HPP
+#ifndef KOKKOSGRAPH_DISTANCE1COLORHANDLE_HPP
+#define KOKKOSGRAPH_DISTANCE1COLORHANDLE_HPP
 
 // #define VERBOSE
 namespace KokkosGraph {
@@ -615,4 +615,4 @@ class GraphColoringHandle {
 
 }  // namespace KokkosGraph
 
-#endif  // _GRAPHCOLORHANDLE_HPP
+#endif  // KOKKOSGRAPH_DISTANCE1COLORHANDLE_HPP

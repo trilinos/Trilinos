@@ -26,6 +26,7 @@
 // User application evaluators for this factory
 #include "user_app_ConstantModel.hpp"
 #include "user_app_TSquaredModel.hpp"
+#include "user_app_InitialConditionEvaluator.hpp"
 
 #include "Panzer_Parameter.hpp"
 #include "Panzer_GlobalStatistics.hpp"
@@ -190,6 +191,18 @@ buildClosureModels(const std::string& model_id,
           }
           found = true;
         }
+        else if (plist.get<std::string>("Type") == "Initial Condition Evaluator") {
+          // Required parameters
+          for (std::vector<Teuchos::RCP<const panzer::PureBasis> >::const_iterator basis_itr = bases.begin();
+               basis_itr != bases.end(); ++basis_itr) {
+            Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
+            RCP< user_app::InitialConditionEvaluator<EvalT,panzer::Traits> > e = 
+              rcp(new user_app::InitialConditionEvaluator<EvalT,panzer::Traits>(plist.get<std::string>("DOF Name"),
+                                                                                basis->functional));
+            evaluators->push_back(e);
+          }
+          found = true;
+        }
       }
       else if (plist.isType<double>("Value")) {
         { // at IP
@@ -307,7 +320,7 @@ buildClosureModels(const std::string& model_id,
     }
 
 
-    if (!found) {
+    if (!found && this->m_throw_if_model_not_found) {
       std::stringstream msg;
       msg << "ClosureModelFactory failed to build evaluator for key \"" << key 
           << "\"\nin model \"" << model_id

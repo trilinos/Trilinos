@@ -24,6 +24,7 @@
 #include "exodusII_int.h"
 #include "netcdf.h"
 #include <ctype.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1918,7 +1919,14 @@ void F2C(EXGATM)(int *idexo, real *time_values, int *ierr)
 void F2C(EXINQ)(int *idexo, int *req_info, void_int *ret_int, float *ret_float, char *ret_char,
                 int *ierr, int ret_charlen)
 {
-  *ierr = ex_inquire(*idexo, (ex_inquiry)*req_info, ret_int, ret_float, ret_char);
+  if (ex_int64_status(*idexo) & EX_INQ_INT64_API) {
+    *((int64_t *)ret_int) = 0;
+  }
+  else {
+    *((int *)ret_int) = 0;
+  }
+  *ret_float = 0.0f;
+  *ierr      = ex_inquire(*idexo, (ex_inquiry)*req_info, ret_int, ret_float, ret_char);
 }
 
 /*

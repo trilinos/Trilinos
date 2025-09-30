@@ -120,33 +120,43 @@ void pack_distribution_factor(const stk::mesh::BulkData& bulk,
                               const stk::mesh::FieldBase* distFact,
                               stk::mesh::Entity side)
 {
-    stk::mesh::EntityKey key = bulk.entity_key(side);
-    buf.pack<stk::mesh::EntityKey>(key);
+  stk::mesh::EntityKey key = bulk.entity_key(side);
+  buf.pack<stk::mesh::EntityKey>(key);
 
-    const stk::mesh::Bucket & bucket = bulk.bucket(side);
-    const unsigned size = field_bytes_per_entity(*distFact, bucket);
-    if (size) {
-        unsigned char * const ptr = reinterpret_cast<unsigned char *>(stk::mesh::field_data(*distFact , side));
-        buf.pack<unsigned char>(ptr , size);
+  stk::mesh::entity_bytes_execute<const std::byte>(*distFact, side,
+    [&](auto& entityBytes) {
+      const unsigned size = entityBytes.num_bytes();
+      if (size) {
+        for (stk::mesh::ByteIdx idx : entityBytes.bytes()) {
+          buf.pack<std::byte>(entityBytes(idx));
+        }
+      }
     }
+  );
 }
 
 void unpack_distribution_factor(const stk::mesh::BulkData& bulk,
                                 CommBuffer& buf,
                                 const stk::mesh::FieldBase* distFact)
 {
-    stk::mesh::EntityKey key;
-    buf.unpack<stk::mesh::EntityKey>(key);
+  stk::mesh::EntityKey key;
+  buf.unpack<stk::mesh::EntityKey>(key);
 
-    stk::mesh::Entity side = bulk.get_entity(key);
-    STK_ThrowRequire(bulk.is_valid(side));
-    const stk::mesh::Bucket & bucket = bulk.bucket(side);
-    const unsigned size = field_bytes_per_entity( *distFact, bucket );
-    if (size)
-    {
-        unsigned char * ptr = reinterpret_cast<unsigned char *>( stk::mesh::field_data(*distFact , side));
-        buf.unpack<unsigned char>(ptr , size);
+  stk::mesh::Entity side = bulk.get_entity(key);
+  STK_ThrowRequire(bulk.is_valid(side));
+
+  stk::mesh::entity_bytes_execute<std::byte>(*distFact, side,
+    [&](auto& entityBytes) {
+      const unsigned size = entityBytes.num_bytes();
+      if (size) {
+        for(stk::mesh::ByteIdx idx : entityBytes.bytes()) {
+          std::byte thisByte;
+          buf.unpack<std::byte>(thisByte);
+          entityBytes(idx) = thisByte;
+        }
+      }
     }
+  );
 }
 
 void communicate_shared_side_entity_fields(const stk::mesh::BulkData& bulk,
@@ -675,6 +685,7 @@ void write_global(std::shared_ptr<Ioss::Region> output_region, const std::string
                      "The field named '" << globalVarName << "' does not exist "
                      "on output region "  << output_region->name());
     size_t comp_count = output_region->get_fieldref(globalVarName).raw_storage()->component_count();
+    (void)comp_count;
     STK_ThrowErrorMsgIf (comp_count != globalVarData.size(),
                      "On output region "  << output_region->name() <<
                      ", the field named '" << globalVarName << "' was registered with size "

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -227,7 +227,7 @@ bool Cpup::SystemInterface::parse_options(int argc, char **argv)
                  "\tWrites: current_directory/basename.output_extension\n"
                  "\tReads:  root/sub/basename.extension.#p.0 to\n"
                  "\t\troot/sub/basename.extension.#p.#p-1\n"
-                 "\n\t->->-> Send email to gdsjaar@sandia.gov for cpup support.<-<-<-\n");
+                 "\n\t->->-> Send email to sierra-help@sandia.gov for cpup support.<-<-<-\n");
     }
     return false;
   }
@@ -474,7 +474,7 @@ void Cpup::SystemInterface::parse_step_option(const char *tokens)
 
         tmp_str[k] = '\0';
         if (strlen(tmp_str) > 0) {
-          val = strtol(tmp_str, nullptr, 0);
+          val = std::stoi(tmp_str);
         }
 
         if (tokens[j++] == '\0') {
@@ -490,7 +490,7 @@ void Cpup::SystemInterface::parse_step_option(const char *tokens)
     }
     else {
       // Does not contain a separator, min == max
-      stepMin_ = stepMax_ = strtol(tokens, nullptr, 0);
+      stepMin_ = stepMax_ = std::stoi(tokens);
     }
   }
 }

@@ -205,35 +205,6 @@ Timer::checkpoint() const {
   m_timerImpl->checkpoint();
 }
 
-Writer &
-Timer::dump(Writer& dout) const {
-  return m_timerImpl->dump(dout);
-}
-
-template <class T>
-Writer &
-Timer::Metric<T>::dump(
-  Writer &    dout) const
-{
-  if (dout.shouldPrint()) {
-    dout << "Timer::Metric<T>" << push << dendl;
-    dout << "m_lapStart, " << m_lapStart << dendl;
-    dout << "m_lapStop, " << m_lapStop << dendl;
-    dout << "m_accumulatedLap, " << m_accumulatedLap << dendl;
-    dout << "m_checkpoint, " << m_checkpoint << dendl;
-    dout << pop;
-  }
-  return dout;
-}
-
-template Writer &Timer::Metric<LapCount>::dump(Writer &) const;
-template Writer &Timer::Metric<CPUTime>::dump(Writer &) const;
-template Writer &Timer::Metric<WallTime>::dump(Writer &) const;
-template Writer &Timer::Metric<MPICount>::dump(Writer &) const;
-template Writer &Timer::Metric<MPIByteCount>::dump(Writer &) const;
-template Writer &Timer::Metric<HeapAlloc>::dump(Writer &) const;
-
-
 TimeBlockSynchronized::TimeBlockSynchronized(
   Timer &    timer,
   MPI_Comm    mpi_comm,

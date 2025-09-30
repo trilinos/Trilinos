@@ -36,15 +36,15 @@ public:
   // given a value between thresholdMin,Max, return an estimate of
   //   how many new elements the mesh will have after refining based
   //   on the value of @param errIndRefineThreshold
-  virtual size_t estimateNewElements(double errIndRefineThreshold, std::vector<ErrIndInfoTuple>& errIndRefFieldVec);
-  virtual void getThresholdMinMax(double& min, double& max);
+  virtual size_t estimateNewElements(double errIndRefineThreshold, std::vector<ErrIndInfoTuple>& errIndRefFieldVec) override;
+  virtual void getThresholdMinMax(double& min, double& max) override;
 
-  virtual bool refine_element(const double error)   {return (error > markerInfo_.physicalErrIndCriterion_);}
-  virtual bool unrefine_element(const double error) {return (error < m_unrefinement_multiplier*(markerInfo_.physicalErrIndCriterion_));}
+  virtual bool refine_element(const double error) override {return (error > markerInfo_.physicalErrIndCriterion_);}
+  virtual bool unrefine_element(const double error) override {return (error < m_unrefinement_multiplier*(markerInfo_.physicalErrIndCriterion_));}
 
   // given the errIndRefFieldVec data, set its values based on the given
   //   errIndRefineThreshold
-  virtual void markUsing(double errIndRefineThreshold, std::vector<ErrIndInfoTuple>& errIndRefFieldVec, bool do_refine);
+  virtual void markUsing(double errIndRefineThreshold, std::vector<ErrIndInfoTuple>& errIndRefFieldVec, bool do_refine) override;
 
   // multiplier for unrefinement 
   double m_unrefinement_multiplier;

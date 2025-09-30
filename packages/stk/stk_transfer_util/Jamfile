@@ -119,7 +119,7 @@ install install-user-include
 
 explicit install-user-lib ;
 install install-user-lib
-  : stk_transfer_util_base
+  : stk_transfer_util
   : <location>$(install-root)/stk/stk_transfer_util/lib
   ;
 
@@ -133,23 +133,27 @@ alias install-exe-targets : ;
 local xml-files =
   ;
 
-lib stk_transfer_util_base
+lib stk_transfer_util
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         [ glob $(stk_transfer_util-root)/stk_transfer_util/*.cpp ]
+        [ glob $(stk_transfer_util-root)/stk_transfer_util/spmd/*.cpp ]
     ]
-    /sierra/stk_transfer//stk_transfer
+    /sierra/stk_transfer//stk_transfer_lib
+    /sierra/stk_io//stk_io
     /sierra/stk_mesh//stk_mesh_base
     /sierra/stk_util//stk_util_diag
+    /sierra/stk_util//stk_util_registry
+    /sierra/stk_util//stk_util_command_line
     /sierra/stk_search_util//stk_search_util_base
     /tpl/lapack//lapack_interface
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
-        <file>$(stk_transfer_util-root)/lib/libstk_transfer_util_base.a
+        <file>$(stk_transfer_util-root)/lib/libstk_transfer_util.a
     ]
    [ ifdevbuild
         # Any parameters within this 'ifdevbuild' block apply to development
@@ -162,7 +166,7 @@ exe stk_transfer_util_utest
   :
     [ glob $(stk_transfer_util-root)/../stk_unit_tests/stk_transfer_util/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    stk_transfer_util_base
+    stk_transfer_util
     /sierra/stk_io//stk_io_util
     /sierra/stk_unit_test_utils//stk_mesh_fixtures
   : <tag>@sierra-exec-tag

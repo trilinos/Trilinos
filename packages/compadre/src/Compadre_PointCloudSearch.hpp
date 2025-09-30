@@ -513,12 +513,13 @@ class PointCloudSearch {
             \param neighbors_needed         [in] - k neighbors needed as a minimum
             \param epsilon_multiplier       [in] - distance to kth neighbor multiplied by epsilon_multiplier for follow-on radius search
             \param max_search_radius        [in] - largest valid search (useful only for MPI jobs if halo size exists)
+            \param verify_unisolvency       [in] - verify at least neighbors_needed for unisolvency are found 
         */
         template <typename trg_view_type, typename neighbor_lists_view_type, typename epsilons_view_type>
         size_t generate2DNeighborListsFromKNNSearch(bool is_dry_run, trg_view_type trg_pts_view, 
                 neighbor_lists_view_type neighbor_lists, epsilons_view_type epsilons, 
                 const int neighbors_needed, const double epsilon_multiplier = 1.6, 
-                double max_search_radius = 0.0) {
+                double max_search_radius = 0.0, const bool verify_unisolvency = true) {
 
             // First, do a knn search (removes need for guessing initial search radius)
 
@@ -634,9 +635,11 @@ class PointCloudSearch {
             // which also avoids min_num_neighbors being improperly set by min reduction
             if (num_target_sites==0) min_num_neighbors = neighbors_needed;
 
-            // Next, check that we found the neighbors_needed number that we require for unisolvency
-            compadre_assert_release((num_target_sites==0 || (min_num_neighbors>=(size_t)neighbors_needed))
-                    && "Neighbor search failed to find number of neighbors needed for unisolvency.");
+            if (verify_unisolvency) {
+                // Next, check that we found the neighbors_needed number that we require for unisolvency
+                compadre_assert_release((num_target_sites==0 || (min_num_neighbors>=(size_t)neighbors_needed))
+                        && "Neighbor search failed to find number of neighbors needed for unisolvency.");
+            }
             
             // call a radius search using values now stored in epsilons
             size_t max_num_neighbors = generate2DNeighborListsFromRadiusSearch(is_dry_run, trg_pts_view, neighbor_lists, 
@@ -655,12 +658,13 @@ class PointCloudSearch {
             \param neighbors_needed         [in] - k neighbors needed as a minimum
             \param epsilon_multiplier       [in] - distance to kth neighbor multiplied by epsilon_multiplier for follow-on radius search
             \param max_search_radius        [in] - largest valid search (useful only for MPI jobs if halo size exists)
+            \param verify_unisolvency       [in] - verify at least neighbors_needed for unisolvency are found 
         */
         template <typename trg_view_type, typename neighbor_lists_view_type, typename epsilons_view_type>
         size_t generateCRNeighborListsFromKNNSearch(bool is_dry_run, trg_view_type trg_pts_view, 
                 neighbor_lists_view_type neighbor_lists, neighbor_lists_view_type number_of_neighbors_list,
                 epsilons_view_type epsilons, const int neighbors_needed, const double epsilon_multiplier = 1.6, 
-                double max_search_radius = 0.0) {
+                double max_search_radius = 0.0, const bool verify_unisolvency = true) {
 
             // First, do a knn search (removes need for guessing initial search radius)
 
@@ -778,9 +782,11 @@ class PointCloudSearch {
             // which also avoids min_num_neighbors being improperly set by min reduction
             if (num_target_sites==0) min_num_neighbors = neighbors_needed;
 
-            // Next, check that we found the neighbors_needed number that we require for unisolvency
-            compadre_assert_release((num_target_sites==0 || (min_num_neighbors>=(size_t)neighbors_needed))
-                    && "Neighbor search failed to find number of neighbors needed for unisolvency.");
+            if (verify_unisolvency) {
+                // Next, check that we found the neighbors_needed number that we require for unisolvency
+                compadre_assert_release((num_target_sites==0 || (min_num_neighbors>=(size_t)neighbors_needed))
+                        && "Neighbor search failed to find number of neighbors needed for unisolvency.");
+            }
             
             // call a radius search using values now stored in epsilons
             generateCRNeighborListsFromRadiusSearch(is_dry_run, trg_pts_view, neighbor_lists, 

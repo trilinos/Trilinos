@@ -114,6 +114,8 @@ public:
 
     m_fieldOld = &m_fieldNew->field_of_state(stk::mesh::StateOld);
     EXPECT_EQ(stk::mesh::StateOld, m_fieldOld->state());
+
+    get_meta().declare_part("test_part");
   }
 
   stk::mesh::Field<double>& get_field_new() { return *m_fieldNew; }
@@ -148,6 +150,22 @@ public:
     stk::mesh::Selector owned = ngpMesh.get_bulk_on_host().mesh_meta_data().locally_owned_part();
     CheckValueUsingNgpField<T> checkValueUsingNgpField(ngpField, expectedValue);
     stk::mesh::for_each_entity_run(ngpMesh, ngpField.get_rank(), owned, checkValueUsingNgpField);
+  }
+
+  template<typename T>
+  void check_field_data_value_on_host(const stk::mesh::BulkData& bulk,
+                                      const stk::mesh::Field<T>& hostField,
+                                      T expectedValue)
+  {
+    const stk::mesh::BucketVector& buckets = bulk.get_buckets(hostField.entity_rank(), hostField);
+
+    auto hostFieldData = hostField.template data<stk::mesh::ReadOnly>();
+    for (const stk::mesh::Bucket* bucket : buckets) {
+      for (const stk::mesh::Entity& entity : *bucket) {
+        auto value = hostFieldData.entity_values(entity);
+        EXPECT_EQ(value(0_comp), expectedValue);
+      }
+    }
   }
 
   template <typename ValueType>
@@ -186,6 +204,14 @@ public:
   {
     stk::mesh::sync_to_host_and_mark_modified(get_meta());
     get_bulk().update_field_data_states();
+  }
+
+  void put_all_nodes_in_part(stk::mesh::BulkData& bulk, stk::mesh::Part& part)
+  {
+    stk::mesh::EntityVector allNodes;
+    bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), allNodes);
+
+    bulk.batch_change_entity_parts(allNodes, {&part}, {});
   }
 
   stk::mesh::Field<double>* m_fieldNew;
@@ -413,3 +439,177 @@ NGP_TEST_F(NgpMultiStateFieldTest, persistentModifyOnHostAfterStateRotation)
   EXPECT_FALSE(ngpFieldNew.need_sync_to_device());
   EXPECT_TRUE(ngpFieldOld.need_sync_to_device());
 }
+
+NGP_TEST_F(NgpMultiStateFieldTest, createStateOldNgpFieldAfterRotation)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  const double valueOld = 2.0;
+  const double valueNew = 4.0;
+  stk::mesh::field_fill(valueNew, get_field_new());
+  stk::mesh::field_fill(valueOld, get_field_old());
+
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  stk::mesh::NgpField<double>& ngpFieldNew = stk::mesh::get_updated_ngp_field<double>(get_field_new());
+  check_field_data_value_on_device(ngpMesh, ngpFieldNew, valueNew);
+
+  get_bulk().update_field_data_states();
+  ngpFieldNew.modify_on_host();
+  ngpFieldNew.sync_to_device();
+
+  stk::mesh::NgpField<double>& ngpFieldOld = stk::mesh::get_updated_ngp_field<double>(get_field_old());
+
+  check_field_data_value_on_device(ngpMesh, ngpFieldOld, valueNew);
+  check_field_data_value_on_device(ngpMesh, ngpFieldNew, valueOld);
+}
+
+NGP_TEST_F(NgpMultiStateFieldTest, multistateField_rotateAllStates_withMeshModification)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  const double valueOld = 2.0;
+  const double valueNew = 4.0;
+  stk::mesh::field_fill(valueOld, get_field_old());
+  stk::mesh::field_fill(valueNew, get_field_new());
+
+  stk::mesh::Part& testPart = *get_meta().get_part("test_part");
+  stk::mesh::Field<double>& fieldNew = *static_cast<stk::mesh::Field<double>*>(get_meta().get_field(stk::topology::NODE_RANK,
+                                                                                                    "myField"));
+  stk::mesh::Field<double>& fieldOld = fieldNew.field_of_state(stk::mesh::StateOld);
+
+  stk::mesh::NgpMesh* ngpMesh = &stk::mesh::get_updated_ngp_mesh(get_bulk());
+  stk::mesh::NgpField<double>* ngpFieldOld = &stk::mesh::get_updated_ngp_field<double>(get_field_old());
+  stk::mesh::NgpField<double>* ngpFieldNew = &stk::mesh::get_updated_ngp_field<double>(get_field_new());
+
+  check_field_data_value_on_host(get_bulk(), fieldOld, valueOld);
+  check_field_data_value_on_host(get_bulk(), fieldNew, valueNew);
+  check_field_data_value_on_device(*ngpMesh, *ngpFieldOld, valueOld);
+  check_field_data_value_on_device(*ngpMesh, *ngpFieldNew, valueNew);
+
+  put_all_nodes_in_part(get_bulk(), testPart);
+  ngpFieldOld = &stk::mesh::get_updated_ngp_field<double>(get_field_old());
+  ngpFieldNew = &stk::mesh::get_updated_ngp_field<double>(get_field_new());
+
+  const bool rotateDeviceNgpFieldStates = true;
+  get_bulk().update_field_data_states(rotateDeviceNgpFieldStates);
+
+  ngpMesh = &stk::mesh::get_updated_ngp_mesh(get_bulk());
+  check_field_data_value_on_host(get_bulk(), fieldOld, valueNew);
+  check_field_data_value_on_host(get_bulk(), fieldNew, valueOld);
+  check_field_data_value_on_device(*ngpMesh, *ngpFieldOld, valueNew);
+  check_field_data_value_on_device(*ngpMesh, *ngpFieldNew, valueOld);
+}
+
+// This is a meaningless test without separate device storage, because it explicitly exercises a fundamentally-broken
+// swap function that only partially rotates the data.  The HostMesh version of this function does nothing.
+// If in a unified-memory build, then leaving the other memory space unrotated and relying on syncs to fill in
+// the correct value will not work as expected.  It's not that the other memory space has an unrotated copy of
+// the data, but that the other memory space has a pointer back into the wrong state in the opposite memory
+// space.
+#if defined(STK_USE_DEVICE_MESH) && !defined(STK_UNIFIED_MEMORY)
+NGP_TEST_F(NgpMultiStateFieldTest, multistateField_useAwfulSwapFunction_withSyncsBackToHost)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  const double valueOld = 2.0;
+  const double valueNew = 4.0;
+  stk::mesh::field_fill(valueOld, get_field_old());
+  stk::mesh::field_fill(valueNew, get_field_new());
+
+  stk::mesh::Field<double>& fieldNew = *static_cast<stk::mesh::Field<double>*>(get_meta().get_field(stk::topology::NODE_RANK,
+                                                                                                    "myField"));
+  stk::mesh::Field<double>& fieldOld = fieldNew.field_of_state(stk::mesh::StateOld);
+
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  stk::mesh::NgpField<double>* ngpFieldOld = &stk::mesh::get_updated_ngp_field<double>(get_field_old());
+  stk::mesh::NgpField<double>* ngpFieldNew = &stk::mesh::get_updated_ngp_field<double>(get_field_new());
+
+  check_field_data_value_on_host(get_bulk(), fieldOld, valueOld);
+  check_field_data_value_on_host(get_bulk(), fieldNew, valueNew);
+  check_field_data_value_on_device(ngpMesh, *ngpFieldOld, valueOld);
+  check_field_data_value_on_device(ngpMesh, *ngpFieldNew, valueNew);
+
+  ngpFieldNew->swap(*ngpFieldOld);  /// This only swaps device data and not pointers back to host data
+
+  check_field_data_value_on_host(get_bulk(), fieldOld, valueOld);  // Unrotated values
+  check_field_data_value_on_host(get_bulk(), fieldNew, valueNew);
+  check_field_data_value_on_device(ngpMesh, *ngpFieldOld, valueNew);  // Rotated values
+  check_field_data_value_on_device(ngpMesh, *ngpFieldNew, valueOld);
+
+  ngpFieldOld->modify_on_device();
+  ngpFieldNew->modify_on_device();
+  ngpFieldOld->sync_to_host();  // Uses unrotated pointers to unrotated host data
+  ngpFieldNew->sync_to_host();
+
+  check_field_data_value_on_host(get_bulk(), fieldOld, valueNew);  // Overwritten values with correct rotated state
+  check_field_data_value_on_host(get_bulk(), fieldNew, valueOld);
+  check_field_data_value_on_device(ngpMesh, *ngpFieldOld, valueNew);  // Rotated values
+  check_field_data_value_on_device(ngpMesh, *ngpFieldNew, valueOld);
+}
+#endif
+
+NGP_TEST_F(NgpMultiStateFieldTest, multistateField_updateUnmodifiedBucket_afterMeshModification)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+  setup_multistate_field();
+  setup_mesh(2, 2, 2);
+
+  const double valueOld = 2.0;
+  const double valueNew = 4.0;
+  stk::mesh::field_fill(valueOld, get_field_old());
+  stk::mesh::field_fill(valueNew, get_field_new());
+
+  stk::mesh::Part& testPart = *get_meta().get_part("test_part");
+  stk::mesh::Field<double>& fieldNew = *static_cast<stk::mesh::Field<double>*>(get_meta().get_field(stk::topology::NODE_RANK,
+                                                                                                    "myField"));
+  stk::mesh::Field<double>& fieldOld = fieldNew.field_of_state(stk::mesh::StateOld);
+
+  stk::mesh::NgpMesh* ngpMesh = &stk::mesh::get_updated_ngp_mesh(get_bulk());
+  stk::mesh::NgpField<double>* ngpFieldOld = &stk::mesh::get_updated_ngp_field<double>(get_field_old());
+  stk::mesh::NgpField<double>* ngpFieldNew = &stk::mesh::get_updated_ngp_field<double>(get_field_new());
+
+  check_field_data_value_on_host(get_bulk(), fieldOld, valueOld);
+  check_field_data_value_on_host(get_bulk(), fieldNew, valueNew);
+  check_field_data_value_on_device(*ngpMesh, *ngpFieldOld, valueOld);
+  check_field_data_value_on_device(*ngpMesh, *ngpFieldNew, valueNew);
+
+  // New node goes in new Bucket, leaving others alone
+  get_bulk().modification_begin();
+  {
+    const stk::mesh::Entity newNode = get_bulk().declare_node(1000, stk::mesh::PartVector{&testPart});
+    auto fieldOldData = fieldOld.data<stk::mesh::ReadWrite>();
+    auto fieldNewData = fieldNew.data<stk::mesh::ReadWrite>();
+    auto fieldOldValue = fieldOldData.entity_values(newNode);
+    auto fieldNewValue = fieldNewData.entity_values(newNode);
+    fieldOldValue(0_comp) = valueOld;
+    fieldNewValue(0_comp) = valueNew;
+  }
+  get_bulk().modification_end();
+
+  fieldNew.rotate_multistate_data();  // Don't rotate device data; DeviceFields are updated as part of rotating host pointers
+
+  fieldOld.modify_on_host();
+  fieldNew.modify_on_host();
+  fieldOld.sync_to_device();
+  fieldNew.sync_to_device();
+
+  ngpMesh = &stk::mesh::get_updated_ngp_mesh(get_bulk());
+  check_field_data_value_on_host(get_bulk(), fieldOld, valueNew);  // Rotated properly on host
+  check_field_data_value_on_host(get_bulk(), fieldNew, valueOld);
+  check_field_data_value_on_device(*ngpMesh, *ngpFieldOld, valueNew);  // Rotated data synced properly to device
+  check_field_data_value_on_device(*ngpMesh, *ngpFieldNew, valueOld);
+}
+
+
+
+
+
+
+
+

@@ -34,9 +34,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       COMM serial
       )
 
-    ASSERT_DEFINED(Anasazi_SOURCE_DIR)
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestTFQMRComplexFiles
-      SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+      SOURCE_DIR ${Belos_SOURCE_DIR}/testmatrices
       SOURCE_FILES mhd1280b.cua 
       EXEDEPS tfqmr_complex_hb
     )

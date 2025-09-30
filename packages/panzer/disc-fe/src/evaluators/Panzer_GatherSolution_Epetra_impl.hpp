@@ -477,13 +477,13 @@ evaluateFields(
 	// Loop over the cells in the workset.
 	for (int cell(0); cell < numCells; ++cell) {
 	  // Loop over the fields to be gathered.
-	  int fieldNum(fieldIds_[fieldInd]);
-	  const vector<int>& elmtOffset =
-	    globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-	  int numBases(elmtOffset.size());
+	  int fieldNum2(fieldIds_[fieldInd]);
+	  const vector<int>& elmtOffset2 =
+	    globalIndexer_->getGIDFieldOffsets(blockId, fieldNum2);
+	  int numBases2(elmtOffset2.size());
 	  
 	  // Loop over the basis functions.
-	  for (int basis(0); basis < numBases; ++basis){
+	  for (int basis(0); basis < numBases2; ++basis){
             field_h(cell, basis).fastAccessDx(i) =
               tf(cell, basis).val();
 	  } // end loop over the basis functions
@@ -727,19 +727,19 @@ evaluateFields(
 
   // Deal with the sensitivities.
     if (applySensitivities_)  {
-      int fieldNum(fieldIds_[fieldInd]);
-      const vector<int>& elmtOffset =
-        globalIndexer_->getGIDFieldOffsets(blockId, fieldNum);
-      int numBases(elmtOffset.size());
+      int fieldNum2(fieldIds_[fieldInd]);
+      const vector<int>& elmtOffset2 =
+        globalIndexer_->getGIDFieldOffsets(blockId, fieldNum2);
+      int numBases2(elmtOffset2.size());
 
       // Gather operation for each cell in the workset.
       for (int cell(0); cell < numCells; ++cell)
       {
         // Loop over the basis functions.
-        for (int basis(0); basis < numBases; ++basis)
+        for (int basis(0); basis < numBases2; ++basis)
         {
           // Seed the FAD object.
-          int offset(elmtOffset[basis]);
+          int offset(elmtOffset2[basis]);
 
           field_h(cell, basis).fastAccessDx(dos + offset) = seedValue;
         } // end loop over the basis functions

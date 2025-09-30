@@ -24,7 +24,6 @@
 #include <functional>
 #include <stdexcept>
 #include <numeric>
-#include <strings.h>
 
 #include "Iotm_TextMeshFuncs.h"
 #include "Iotm_TextMeshEntityGroup.h"
@@ -203,7 +202,7 @@ namespace Iotm {
     private:
       void parse_option(std::string optionName, const std::string &optionValue)
       {
-        convert_to_lower_case(optionName);
+        convert_to_lowercase(optionName);
 
         if (optionName == "name") {
           parse_name(optionValue);
@@ -240,7 +239,7 @@ namespace Iotm {
 
       void parse_assembly_type(std::string type)
       {
-        convert_to_lower_case(type);
+        convert_to_lowercase(type);
 
         if (type == "assembly") {
           m_assemblyType = ASSEMBLY;
@@ -265,7 +264,7 @@ namespace Iotm {
       {
         std::vector<std::string> assemblyData = get_tokens(data, ",");
         for (std::string &member : assemblyData) {
-          convert_to_upper_case(member);
+          convert_to_uppercase(member);
         }
 
         m_members = assemblyData;

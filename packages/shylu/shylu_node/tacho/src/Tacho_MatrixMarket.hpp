@@ -74,16 +74,20 @@ impl_is_zero(T &val, bool &is_zero) {
 
 template <typename T>
 inline typename std::enable_if<std::is_same<T, double>::value || std::is_same<T, float>::value>::type
-impl_read_value_from_file(std::ifstream &file, ordinal_type &row, ordinal_type &col, T &val) {
+impl_read_value_from_file(std::ifstream &file, bool /*cmplx*/, ordinal_type &row, ordinal_type &col, T &val) {
   file >> row >> col >> val;
 }
 
 template <typename T>
 inline typename std::enable_if<std::is_same<T, Kokkos::complex<double>>::value ||
                                std::is_same<T, Kokkos::complex<float>>::value>::type
-impl_read_value_from_file(std::ifstream &file, ordinal_type &row, ordinal_type &col, T &val) {
-  typename T::value_type r, i;
-  file >> row >> col >> r >> i;
+impl_read_value_from_file(std::ifstream &file, bool cmplx, ordinal_type &row, ordinal_type &col, T &val) {
+  typename T::value_type r, i (0.0);
+  if (cmplx) {
+    file >> row >> col >> r >> i;
+  } else {
+    file >> row >> col >> r;
+  }
   val = T(r, i);
 }
 
@@ -107,8 +111,8 @@ template <typename ValueType> struct MatrixMarket {
 
   /// \brief matrix market reader
   template <typename DeviceType>
-  static void read(const std::string &filename, CrsMatrixBase<ValueType, DeviceType> &A,
-                   const ordinal_type sanitize = 0, const ordinal_type verbose = 0) {
+  static int read(const std::string &filename, CrsMatrixBase<ValueType, DeviceType> &A,
+                  const ordinal_type sanitize = 0, const ordinal_type verbose = 0) {
     static_assert(Kokkos::Impl::MemorySpaceAccess<Kokkos::HostSpace, typename DeviceType::memory_space>::assignable,
                   "DeviceType is not assignable from HostSpace");
 
@@ -118,11 +122,19 @@ template <typename ValueType> struct MatrixMarket {
 
     std::ifstream file;
     file.open(filename);
+    if (file.good()) {
+      std::cout << "Read matrix from  " << filename << std::endl;
+    } else {
+      std::cout << std::endl
+                << "Failed to open the matrix file: " << filename 
+                << std::endl << std::endl;
+      return -1;
+    }
 
     // reading mm header
     ordinal_type m, n;
     size_type nnz, nnz_input;
-    bool symmetry = false, hermitian = false; //, cmplx = false;
+    bool symmetry = false, hermitian = false, cmplx = false;
     {
       std::string header;
       std::getline(file, header);
@@ -138,6 +150,8 @@ template <typename ValueType> struct MatrixMarket {
       symmetry = (header.find("symmetric") != std::string::npos || header.find("hermitian") != std::string::npos);
 
       hermitian = (header.find("hermitian") != std::string::npos);
+
+      cmplx = (header.find("complex") != std::string::npos);
 
       file >> m >> n >> nnz;
     }
@@ -155,12 +169,16 @@ template <typename ValueType> struct MatrixMarket {
         ordinal_type row, col;
         value_type val;
 
-        impl_read_value_from_file(file, row, col, val);
+        if (file.eof()) {
+          std::cout << " ERROR: Reached the end of file before nnz (invalid nnz?)" << std::endl << std::endl;
+          return -1;
+        }
+        impl_read_value_from_file(file, cmplx, row, col, val);
 
         row -= mm_base;
         col -= mm_base;
-
         mm_org.push_back(ijv_type(row, col, val));
+
         if (symmetry && row != col) {
           value_type conj_val;
           impl_conj_val(val, conj_val);
@@ -228,7 +246,6 @@ template <typename ValueType> struct MatrixMarket {
 
     const double t = timer.seconds();
     if (verbose) {
-
       printf("Summary: MatrixMarket\n");
       printf("=====================\n");
       printf("  File:      %s\n", filename.c_str());
@@ -242,6 +259,8 @@ template <typename ValueType> struct MatrixMarket {
       printf("             number of nonzeros after sanitized:              %10d\n", ordinal_type(nnz));
       printf("\n");
     }
+
+    return 0;
   }
 
   /// \brief matrix marker writer
@@ -305,6 +324,63 @@ template <typename ValueType> struct MatrixMarket {
 
     file.unsetf(std::ios::scientific);
     file.precision(prec);
+  }
+
+  /// \brief dense vector read
+  template <typename DenseMultiVectorType>
+  static int readDenseVectors(const std::string &filename, DenseMultiVectorType &B, const ordinal_type verbose = 0) {
+
+    std::ifstream file;
+    file.open(filename);
+    if (file.good()) {
+      std::cout << "Read RHS from  " << filename << std::endl;
+    } else {
+      std::cout << "Failed to open the RHS file: " << filename << std::endl;
+      return -1;
+    }
+
+    // reading mm header
+    ordinal_type m = B.extent(0), n = B.extent(1);
+    {
+      std::string header;
+      std::getline(file, header);
+      while (file.good()) {
+        char c = file.peek();
+        if (c == '%' || c == '\n') {
+          file.ignore(256, '\n');
+          continue;
+        }
+        break;
+      }
+      file >> m >> n;
+      if ( m != ordinal_type(B.extent(0))) {
+        std::cout << std::endl
+                  << "ERROR: expected the RHS of length(m = " << B.extent(0) << ")" 
+                  << std::endl << std::endl;
+        return -1;
+      }
+      Kokkos::resize(B, m, n);
+    }
+
+    // reading numerical values
+    ValueType val;
+    auto hB = Kokkos::create_mirror_view(B);
+    for (ordinal_type j = 0; j < n; j++) {
+        for (ordinal_type i = 0; i < m; i++) {
+            file >> val;
+            hB(i,j) = val;
+        }
+    }
+    Kokkos::deep_copy(B, hB);
+    if (verbose) {
+      printf("Summary: MatrixMarket\n");
+      printf("=====================\n");
+      printf("  File:      %s\n", filename.c_str());
+      printf("             number of rows:                                  %10d\n", m);
+      printf("             number of cols:                                  %10d\n", n);
+      printf("\n");
+    }
+    return 0;
   }
 };
 

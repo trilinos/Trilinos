@@ -34,9 +34,6 @@
 #if HAVE_OPENNURBS
 #include <percept/mesh/geometry/kernel/GeometryKernelOpenNURBS.hpp>
 #endif
-#if HAVE_CUBIT
-#include <percept/mesh/geometry/kernel/GeometryKernelPGEOM.hpp>
-#endif
 #include <percept/mesh/geometry/kernel/MeshGeometry.hpp>
 #include <percept/mesh/geometry/kernel/GeometryFactory.hpp>
 
@@ -386,10 +383,10 @@
 
     // called by doMark
     void Refiner::
-    preMark(int iter, int num_registration_loops) {}
+    preMark(int /*iter*/, int /*num_registration_loops*/) {}
 
     bool Refiner::
-    postMark(int iter, int num_registration_loops) { return false; }
+    postMark(int /*iter*/, int /*num_registration_loops*/) { return false; }
 
     void Refiner::
     doBreak(int num_registration_loops)
@@ -1428,16 +1425,10 @@
             std::string m2gFile = geomFile.substr(0,geomFile.length()-3) + "m2g";
 
             struct stat s;
-            if (0 == stat(m2gFile.c_str(), &s))
-              {
-#if HAVE_CUBIT
-                geomKernel = new GeometryKernelPGEOM();
-#else
-                throw std::runtime_error("CUBIT not supported on this platform");
-#endif
+            if (0 == stat(m2gFile.c_str(), &s)) {
+                throw std::runtime_error("Cubit not supported");
               }
-            else
-              {
+            else {
 #if HAVE_OPENNURBS
                 geomKernel = new GeometryKernelOpenNURBS();
 #else
@@ -1455,19 +1446,11 @@
               geomKernel->set_property("exo_large", "true");
             }
           }
-        else if(geomFile.find(".sat") != std::string::npos)
-          {
-#ifdef HAVE_ACIS
-    	    geomKernel = new GeometryKernelPGEOM();
-#else
-    	    throw std::runtime_error("ACIS not supported on this platform");
-#endif
-          }
         else
           {
             VERIFY_MSG("invalid file extension on --input_geometry file \n   "
                        "-- valid extensions are .3dm (OpenNURBS) or .e,.g,.exo \n"
-                       "for GregoryPatch Exodus files or .sat for ACIS (assumes \n"
+                       "for GregoryPatch Exodus files (assumes \n"
                        "there is also a file with the same name ending in  .m2g) - file= " + geomFile);
           }
         }
@@ -1900,7 +1883,7 @@
     bool Refiner::
     createNewNeededNodeIds(const CellTopologyData * const cell_topo_data,
                            const stk::mesh::Entity element, std::vector<NeededEntityType>& needed_entity_ranks,
-                           NewSubEntityNodesType& new_sub_entity_nodes, UniformRefinerPatternBase *breakPattern)
+                           NewSubEntityNodesType& new_sub_entity_nodes, UniformRefinerPatternBase */*breakPattern*/)
     {
       EXCEPTWATCH;
 
@@ -2015,7 +1998,7 @@
 #define EXTRA_PRINT_UR_BESDB 0
 
     void Refiner::
-    buildElementSideDB(SubDimCellToDataMap& cell_2_data_map)
+    buildElementSideDB(SubDimCellToDataMap& /*cell_2_data_map*/)
     {
 
     }
@@ -2063,7 +2046,7 @@
     // determine side part to elem part relations
     //static
     void Refiner::
-    get_side_part_relations(PerceptMesh& eMesh, bool checkParentChild, SidePartMap& side_part_map, bool debug)
+    get_side_part_relations(PerceptMesh& eMesh, bool /*checkParentChild*/, SidePartMap& side_part_map, bool debug)
     {
       EXCEPTWATCH;
 
@@ -2135,13 +2118,13 @@
                       if ( stk::mesh::is_auto_declared_part(*elem_parts[iep]) )
                         continue;
 
-                      const AutoPart *auto_part = elem_parts[iep]->attribute<AutoPart>();
+                      const AutoPart *auto_part2 = elem_parts[iep]->attribute<AutoPart>();
                       if (elem_parts[iep]->name().find(UniformRefinerPatternBase::getOldElementsPartName()) != std::string::npos)
                         {
-                          if (!auto_part) throw std::runtime_error("Refiner::get_side_part_relations: bad old part attribute for auto");
+                          if (!auto_part2) throw std::runtime_error("Refiner::get_side_part_relations: bad old part attribute for auto");
                         }
 
-                      if (auto_part)
+                      if (auto_part2)
                         {
                           continue;
                         }
@@ -2405,7 +2388,7 @@
 
     /// fix names of surfaces (changing for example surface_hex8_quad4 to surface_tet4_tri3)
     void Refiner::
-    fixSurfaceAndEdgeSetNames(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern)
+    fixSurfaceAndEdgeSetNames(stk::mesh::EntityRank /*rank*/, UniformRefinerPatternBase* breakPattern)
     {
       EXCEPTWATCH;
       stk::mesh::PartVector toParts = breakPattern->getToParts();

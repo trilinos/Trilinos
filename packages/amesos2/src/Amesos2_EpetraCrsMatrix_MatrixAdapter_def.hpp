@@ -103,7 +103,12 @@ namespace Amesos2 {
       if(!ContigMat_) {
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Amesos2_EpetraCrsMatrix_MatrixAdapter reindexing failed.");
       }
-      return rcp(new ConcreteMatrixAdapter<Epetra_CrsMatrix>(ContigMat_));
+
+      auto reindexMat = rcp( new ConcreteMatrixAdapter<Epetra_CrsMatrix>(ContigMat_));
+      contigRowMap = reindexMat->getRowMap();
+      contigColMap = reindexMat->getColMap();
+
+      return reindexMat;
       #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "ConcreteMatrixAdapter<Epetra_CrsMatrix> requires EpetraExt to reindex matrices.");
       #endif

@@ -12,6 +12,7 @@
 #include "Verifier.hpp"
 #include <percept/PerceptMesh.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <Kokkos_Core.hpp>
 
 #include <percept/RunEnvironment.hpp>
 
@@ -29,11 +30,13 @@ int main(int argc,  char **argv)
     std::abort(); 
   } 
 #endif
+  Kokkos::initialize(argc, argv);
 
   Verifier vf;
   vf.verify(argc, argv);
 
 
+  Kokkos::finalize();
 #if doMPI
 #endif
   //  MPI_Finalize(); 

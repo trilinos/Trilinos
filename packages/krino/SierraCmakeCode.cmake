@@ -7,8 +7,8 @@ add_parser_commands(TARGET krino_commands
 install(FILES ${CMAKE_BINARY_DIR}/krino_commands.xmldb DESTINATION xml)
 
 add_library(krino_diagwriter)
-FILE(GLOB krino_diagwriter_headers krino/diagwriter/*.hpp)
-FILE(GLOB krino_diagwriter_sources krino/diagwriter/*.cpp)
+FILE(GLOB krino_diagwriter_headers CONFIGURE_DEPENDS krino/diagwriter/*.hpp)
+FILE(GLOB krino_diagwriter_sources CONFIGURE_DEPENDS krino/diagwriter/*.cpp)
 target_sources(krino_diagwriter PRIVATE ${krino_diagwriter_sources})
 find_package(stk REQUIRED)
 target_link_libraries(krino_diagwriter PUBLIC stk::stk_util_diag)
@@ -41,11 +41,13 @@ install(
 )
 
 add_library(krino_geometry)
-FILE(GLOB krino_geometry_headers krino/geometry/*.hpp)
-FILE(GLOB krino_geometry_sources krino/geometry/*.cpp)
+FILE(GLOB krino_geometry_headers CONFIGURE_DEPENDS krino/geometry/*.hpp)
+FILE(GLOB krino_geometry_sources CONFIGURE_DEPENDS krino/geometry/*.cpp)
 target_sources(krino_geometry PRIVATE ${krino_geometry_sources})
 find_package(stk REQUIRED)
+find_package(Sacado REQUIRED)
 target_link_libraries(krino_geometry PUBLIC stk::stk_math)
+target_link_libraries(krino_geometry PUBLIC Sacado::all_libs)
 target_link_libraries(krino_geometry PUBLIC stk::stk_util_parallel)
 target_include_directories(krino_geometry PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -75,13 +77,87 @@ install(
         INCLUDES DESTINATION include/krino
 )
 
+add_library(krino_quality_metric)
+FILE(GLOB krino_quality_metric_headers CONFIGURE_DEPENDS krino/quality_metric/*.hpp)
+FILE(GLOB krino_quality_metric_sources CONFIGURE_DEPENDS krino/quality_metric/*.cpp)
+target_sources(krino_quality_metric PRIVATE ${krino_quality_metric_sources})
+find_package(stk REQUIRED)
+target_link_libraries(krino_quality_metric PUBLIC stk::stk_math)
+target_link_libraries(krino_quality_metric PUBLIC stk::stk_topology)
+target_include_directories(krino_quality_metric PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/krino/quality_metric>
+    $<INSTALL_INTERFACE:include/krino>
+    $<INSTALL_INTERFACE:include/krino/krino/quality_metric>)
+target_sources(krino_quality_metric PUBLIC
+    FILE_SET krino_quality_metric_headers
+    TYPE HEADERS
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES ${krino_quality_metric_headers})
+target_compile_definitions(krino_quality_metric PUBLIC KRINO_BUILT_IN_SIERRA)
+if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+    target_compile_definitions(krino_quality_metric PUBLIC Build64)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    target_compile_options(krino_quality_metric PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow -Winconsistent-missing-override>)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    target_compile_options(krino_quality_metric PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow>)
+endif ()
+install(
+    TARGETS krino_quality_metric
+    EXPORT krinoTargets
+    FILE_SET krino_quality_metric_headers
+        DESTINATION include/krino
+        INCLUDES DESTINATION include/krino
+)
+
+add_library(krino_quality_metric_sens)
+FILE(GLOB krino_quality_metric_sens_headers CONFIGURE_DEPENDS krino/quality_metric_sens/*.hpp)
+FILE(GLOB krino_quality_metric_sens_sources CONFIGURE_DEPENDS krino/quality_metric_sens/*.cpp)
+target_sources(krino_quality_metric_sens PRIVATE ${krino_quality_metric_sens_sources})
+find_package(stk REQUIRED)
+find_package(Sacado REQUIRED)
+target_link_libraries(krino_quality_metric_sens PUBLIC MPI::MPI_C)
+target_link_libraries(krino_quality_metric_sens PUBLIC stk::stk_math)
+target_link_libraries(krino_quality_metric_sens PUBLIC Sacado::all_libs)
+target_link_libraries(krino_quality_metric_sens PUBLIC krino_quality_metric)
+target_include_directories(krino_quality_metric_sens PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/krino/quality_metric_sens>
+    $<INSTALL_INTERFACE:include/krino>
+    $<INSTALL_INTERFACE:include/krino/krino/quality_metric_sens>)
+target_sources(krino_quality_metric_sens PUBLIC
+    FILE_SET krino_quality_metric_sens_headers
+    TYPE HEADERS
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES ${krino_quality_metric_sens_headers})
+target_compile_definitions(krino_quality_metric_sens PUBLIC KRINO_BUILT_IN_SIERRA)
+if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+    target_compile_definitions(krino_quality_metric_sens PUBLIC Build64)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    target_compile_options(krino_quality_metric_sens PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow -Winconsistent-missing-override>)
+endif ()
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    target_compile_options(krino_quality_metric_sens PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow>)
+endif ()
+install(
+    TARGETS krino_quality_metric_sens
+    EXPORT krinoTargets
+    FILE_SET krino_quality_metric_sens_headers
+        DESTINATION include/krino
+        INCLUDES DESTINATION include/krino
+)
+
 add_library(krino_surface)
-FILE(GLOB krino_surface_headers krino/surface/*.hpp)
-FILE(GLOB krino_surface_sources krino/surface/*.cpp)
+FILE(GLOB krino_surface_headers CONFIGURE_DEPENDS krino/surface/*.hpp)
+FILE(GLOB krino_surface_sources CONFIGURE_DEPENDS krino/surface/*.cpp)
 target_sources(krino_surface PRIVATE ${krino_surface_sources})
 target_link_libraries(krino_surface PUBLIC krino_diagwriter)
 target_link_libraries(krino_surface PUBLIC krino_geometry)
 target_link_libraries(krino_surface PUBLIC krino_math_utils)
+target_link_libraries(krino_surface PUBLIC krino_quality_metric)
 find_package(stk REQUIRED)
 target_link_libraries(krino_surface PUBLIC stk::stk_expreval)
 target_include_directories(krino_surface PUBLIC
@@ -113,8 +189,8 @@ install(
 )
 
 add_library(krino_mesh_surface)
-FILE(GLOB krino_mesh_surface_headers krino/mesh_surface/*.hpp)
-FILE(GLOB krino_mesh_surface_sources krino/mesh_surface/*.cpp)
+FILE(GLOB krino_mesh_surface_headers CONFIGURE_DEPENDS krino/mesh_surface/*.hpp)
+FILE(GLOB krino_mesh_surface_sources CONFIGURE_DEPENDS krino/mesh_surface/*.cpp)
 target_sources(krino_mesh_surface PRIVATE ${krino_mesh_surface_sources})
 target_link_libraries(krino_mesh_surface PUBLIC krino_surface)
 find_package(stk REQUIRED)
@@ -150,8 +226,8 @@ install(
 )
 
 add_library(krino_master_element)
-FILE(GLOB krino_master_element_headers krino/master_element/*.hpp)
-FILE(GLOB krino_master_element_sources krino/master_element/*.cpp)
+FILE(GLOB krino_master_element_headers CONFIGURE_DEPENDS krino/master_element/*.hpp)
+FILE(GLOB krino_master_element_sources CONFIGURE_DEPENDS krino/master_element/*.cpp)
 target_sources(krino_master_element PRIVATE ${krino_master_element_sources})
 find_package(Intrepid2 REQUIRED)
 target_link_libraries(krino_master_element PUBLIC Intrepid2::all_libs)
@@ -187,8 +263,8 @@ install(
 )
 
 add_library(krino_math_utils)
-FILE(GLOB krino_math_utils_headers krino/math_utils/*.hpp)
-FILE(GLOB krino_math_utils_sources krino/math_utils/*.cpp)
+FILE(GLOB krino_math_utils_headers CONFIGURE_DEPENDS krino/math_utils/*.hpp)
+FILE(GLOB krino_math_utils_sources CONFIGURE_DEPENDS krino/math_utils/*.cpp)
 target_sources(krino_math_utils PRIVATE ${krino_math_utils_sources})
 target_link_libraries(krino_math_utils PUBLIC krino_diagwriter)
 find_package(stk REQUIRED)
@@ -222,8 +298,8 @@ install(
 )
 
 add_library(krino_mesh_utils)
-FILE(GLOB krino_mesh_utils_headers krino/mesh_utils/*.hpp)
-FILE(GLOB krino_mesh_utils_sources krino/mesh_utils/*.cpp)
+FILE(GLOB krino_mesh_utils_headers CONFIGURE_DEPENDS krino/mesh_utils/*.hpp)
+FILE(GLOB krino_mesh_utils_sources CONFIGURE_DEPENDS krino/mesh_utils/*.cpp)
 target_sources(krino_mesh_utils PRIVATE ${krino_mesh_utils_sources})
 target_link_libraries(krino_mesh_utils PUBLIC krino_diagwriter)
 find_package(stk REQUIRED)
@@ -259,81 +335,9 @@ install(
         INCLUDES DESTINATION include/krino
 )
 
-add_library(krino_quality_metric)
-FILE(GLOB krino_quality_metric_headers krino/quality_metric/*.hpp)
-FILE(GLOB krino_quality_metric_sources krino/quality_metric/*.cpp)
-target_sources(krino_quality_metric PRIVATE ${krino_quality_metric_sources})
-find_package(stk REQUIRED)
-target_link_libraries(krino_quality_metric PUBLIC stk::stk_math)
-target_link_libraries(krino_quality_metric PUBLIC stk::stk_topology)
-target_include_directories(krino_quality_metric PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/krino/quality_metric>
-    $<INSTALL_INTERFACE:include/krino>
-    $<INSTALL_INTERFACE:include/krino/krino/quality_metric>)
-target_sources(krino_quality_metric PUBLIC
-    FILE_SET krino_quality_metric_headers
-    TYPE HEADERS
-    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-    FILES ${krino_quality_metric_headers})
-target_compile_definitions(krino_quality_metric PUBLIC KRINO_BUILT_IN_SIERRA)
-if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
-    target_compile_definitions(krino_quality_metric PUBLIC Build64)
-endif ()
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    target_compile_options(krino_quality_metric PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow -Winconsistent-missing-override>)
-endif ()
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    target_compile_options(krino_quality_metric PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow>)
-endif ()
-install(
-    TARGETS krino_quality_metric
-    EXPORT krinoTargets
-    FILE_SET krino_quality_metric_headers
-        DESTINATION include/krino
-        INCLUDES DESTINATION include/krino
-)
-
-add_library(krino_quality_metric_sens)
-FILE(GLOB krino_quality_metric_sens_headers krino/quality_metric_sens/*.hpp)
-FILE(GLOB krino_quality_metric_sens_sources krino/quality_metric_sens/*.cpp)
-target_sources(krino_quality_metric_sens PRIVATE ${krino_quality_metric_sens_sources})
-find_package(stk REQUIRED)
-find_package(Sacado REQUIRED)
-target_link_libraries(krino_quality_metric_sens PUBLIC stk::stk_math)
-target_link_libraries(krino_quality_metric_sens PUBLIC Sacado::all_libs)
-target_link_libraries(krino_quality_metric_sens PUBLIC krino_quality_metric)
-target_include_directories(krino_quality_metric_sens PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/krino/quality_metric_sens>
-    $<INSTALL_INTERFACE:include/krino>
-    $<INSTALL_INTERFACE:include/krino/krino/quality_metric_sens>)
-target_sources(krino_quality_metric_sens PUBLIC
-    FILE_SET krino_quality_metric_sens_headers
-    TYPE HEADERS
-    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-    FILES ${krino_quality_metric_sens_headers})
-target_compile_definitions(krino_quality_metric_sens PUBLIC KRINO_BUILT_IN_SIERRA)
-if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
-    target_compile_definitions(krino_quality_metric_sens PUBLIC Build64)
-endif ()
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    target_compile_options(krino_quality_metric_sens PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow -Winconsistent-missing-override>)
-endif ()
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    target_compile_options(krino_quality_metric_sens PUBLIC $<$<COMPILE_LANGUAGE:C>:-Wshadow>)
-endif ()
-install(
-    TARGETS krino_quality_metric_sens
-    EXPORT krinoTargets
-    FILE_SET krino_quality_metric_sens_headers
-        DESTINATION include/krino
-        INCLUDES DESTINATION include/krino
-)
-
 add_library(krino_refinement)
-FILE(GLOB krino_refinement_headers krino/refinement/*.hpp)
-FILE(GLOB krino_refinement_sources krino/refinement/*.cpp)
+FILE(GLOB krino_refinement_headers CONFIGURE_DEPENDS krino/refinement/*.hpp)
+FILE(GLOB krino_refinement_sources CONFIGURE_DEPENDS krino/refinement/*.cpp)
 target_sources(krino_refinement PRIVATE ${krino_refinement_sources})
 target_link_libraries(krino_refinement PUBLIC krino_mesh_utils)
 target_link_libraries(krino_refinement PUBLIC krino_quality_metric)
@@ -370,8 +374,8 @@ install(
 )
 
 add_library(krino_refinement_rebalance)
-FILE(GLOB krino_refinement_rebalance_headers krino/refinement_rebalance/*.hpp)
-FILE(GLOB krino_refinement_rebalance_sources krino/refinement_rebalance/*.cpp)
+FILE(GLOB krino_refinement_rebalance_headers CONFIGURE_DEPENDS krino/refinement_rebalance/*.hpp)
+FILE(GLOB krino_refinement_rebalance_sources CONFIGURE_DEPENDS krino/refinement_rebalance/*.cpp)
 target_sources(krino_refinement_rebalance PRIVATE ${krino_refinement_rebalance_sources})
 target_link_libraries(krino_refinement_rebalance PUBLIC krino_refinement)
 find_package(stk REQUIRED)
@@ -405,12 +409,11 @@ install(
 )
 
 add_library(krino_lib)
-FILE(GLOB krino_lib_headers krino/krino_lib/*.hpp)
-FILE(GLOB krino_lib_sources krino/krino_lib/*.cpp)
+FILE(GLOB krino_lib_headers CONFIGURE_DEPENDS krino/krino_lib/*.hpp)
+FILE(GLOB krino_lib_sources CONFIGURE_DEPENDS krino/krino_lib/*.cpp)
 target_sources(krino_lib PRIVATE ${krino_lib_sources})
-find_package(MPI REQUIRED COMPONENTS C Fortran)
+find_package(MPI REQUIRED COMPONENTS C)
 target_link_libraries(krino_lib PUBLIC MPI::MPI_C)
-target_link_libraries(krino_lib PUBLIC MPI::MPI_Fortran)
 find_package(SEACAS REQUIRED COMPONENTS SEACASIoss)
 target_link_libraries(krino_lib PUBLIC SEACASIoss::Ioss)
 target_link_libraries(krino_lib PUBLIC krino_geometry)
@@ -459,8 +462,8 @@ install(
 )
 
 add_library(krino_rebalance_utils)
-FILE(GLOB krino_rebalance_utils_headers krino/rebalance_utils/*.hpp)
-FILE(GLOB krino_rebalance_utils_sources krino/rebalance_utils/*.cpp)
+FILE(GLOB krino_rebalance_utils_headers CONFIGURE_DEPENDS krino/rebalance_utils/*.hpp)
+FILE(GLOB krino_rebalance_utils_sources CONFIGURE_DEPENDS krino/rebalance_utils/*.cpp)
 target_sources(krino_rebalance_utils PRIVATE ${krino_rebalance_utils_sources})
 target_link_libraries(krino_rebalance_utils PUBLIC krino_lib)
 find_package(stk REQUIRED)
@@ -495,8 +498,8 @@ install(
 )
 
 add_library(krino_region)
-FILE(GLOB krino_region_headers krino/region/*.hpp)
-FILE(GLOB krino_region_sources krino/region/*.cpp)
+FILE(GLOB krino_region_headers CONFIGURE_DEPENDS krino/region/*.hpp)
+FILE(GLOB krino_region_sources CONFIGURE_DEPENDS krino/region/*.cpp)
 target_sources(krino_region PRIVATE ${krino_region_sources})
 target_link_libraries(krino_region PUBLIC krino_lib)
 target_include_directories(krino_region PUBLIC
@@ -528,8 +531,8 @@ install(
 )
 
 add_library(krino_sierra)
-FILE(GLOB krino_sierra_headers krino_sierra/*.hpp)
-FILE(GLOB krino_sierra_sources krino_sierra/*.cpp)
+FILE(GLOB krino_sierra_headers CONFIGURE_DEPENDS krino_sierra/*.hpp)
+FILE(GLOB krino_sierra_sources CONFIGURE_DEPENDS krino_sierra/*.cpp)
 target_sources(krino_sierra PRIVATE ${krino_sierra_sources})
 target_link_libraries(krino_sierra PUBLIC krino_lib)
 find_package(sierra_common REQUIRED)
@@ -566,8 +569,8 @@ install(
 )
 
 add_library(krino_parser)
-FILE(GLOB krino_parser_headers krino/parser/*.hpp)
-FILE(GLOB krino_parser_sources krino/parser/*.cpp)
+FILE(GLOB krino_parser_headers CONFIGURE_DEPENDS krino/parser/*.hpp)
+FILE(GLOB krino_parser_sources CONFIGURE_DEPENDS krino/parser/*.cpp)
 target_sources(krino_parser PRIVATE ${krino_parser_sources})
 target_link_libraries(krino_parser PUBLIC krino_lib)
 target_link_libraries(krino_parser PUBLIC krino_region)
@@ -602,8 +605,8 @@ install(
 )
 
 add_library(mesh_adapt_lib)
-FILE(GLOB mesh_adapt_lib_headers krino_mesh_adapt/mesh_adapt_lib/*.hpp)
-FILE(GLOB mesh_adapt_lib_sources krino_mesh_adapt/mesh_adapt_lib/*.cpp)
+FILE(GLOB mesh_adapt_lib_headers CONFIGURE_DEPENDS krino_mesh_adapt/mesh_adapt_lib/*.hpp)
+FILE(GLOB mesh_adapt_lib_sources CONFIGURE_DEPENDS krino_mesh_adapt/mesh_adapt_lib/*.cpp)
 target_sources(mesh_adapt_lib PRIVATE ${mesh_adapt_lib_sources})
 target_link_libraries(mesh_adapt_lib PUBLIC krino_refinement)
 find_package(stk REQUIRED)
@@ -655,8 +658,8 @@ endif ()
 install(TARGETS krino)
 
 if (BUILD_TESTS)
-        FILE(GLOB krino_unit_headers krino/unit_tests/*.hpp)
-        FILE(GLOB krino_unit_sources krino/unit_tests/*.cpp)
+        FILE(GLOB krino_unit_headers CONFIGURE_DEPENDS krino/unit_tests/*.hpp)
+        FILE(GLOB krino_unit_sources CONFIGURE_DEPENDS krino/unit_tests/*.cpp)
 	add_executable(krino_unit)
 	target_sources(krino_unit PRIVATE ${krino_unit_sources})
 	target_link_libraries(krino_unit PUBLIC krino_math_utils)
@@ -703,9 +706,8 @@ install(TARGETS delete_small_elements)
 
 add_executable(krino_mesh_adapt)
 target_sources(krino_mesh_adapt PRIVATE krino_mesh_adapt/KrinoMeshAdaptMain.cpp)
-find_package(MPI REQUIRED COMPONENTS C Fortran)
+find_package(MPI REQUIRED COMPONENTS C)
 target_link_libraries(krino_mesh_adapt PUBLIC MPI::MPI_C)
-target_link_libraries(krino_mesh_adapt PUBLIC MPI::MPI_Fortran)
 target_link_libraries(krino_mesh_adapt PUBLIC mesh_adapt_lib)
 find_package(stk REQUIRED)
 target_link_libraries(krino_mesh_adapt PUBLIC stk::stk_util_command_line)

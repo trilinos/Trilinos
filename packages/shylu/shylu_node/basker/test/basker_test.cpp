@@ -31,13 +31,13 @@ int main(int argc, char* argv[])
   */
 
   //typedef long long Int;
-  typedef long Int;
   //typedef int Int;
-  typedef double Entry;
+  using Int = long;
+  using Entry = double;
   #ifdef BASKER_KOKKOS
-  typedef Kokkos::OpenMP Exe_Space;
+  using Exe_Space = Kokkos::DefaultHostExecutionSpace;
   #else
-  typedef void*          Exe_Space;
+  using Exe_Space = void*;
   #endif
     
   cout << "basker_test: filename, nthreads should be passed as command line args" << endl; 

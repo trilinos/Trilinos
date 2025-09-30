@@ -19,7 +19,7 @@
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziFactory.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
 #include <mpi.h>
 #endif
 
@@ -32,7 +32,7 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
 #endif
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("nev",&nev,"Number of Ritz values requested.");
   cmdp.setOption("tol",&tol,"Convergence tolerance.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     MyOM->stream(Anasazi::Warnings)
       << "Invalid driver name. Try something like ""ndrv3"" or ""sdrv2""." << std::endl
       << "End Result: TEST FAILED" << std::endl;	
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize();
 #endif
     return -1;
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
     MyOM->stream(Anasazi::Warnings)
       << "Anasazi::BasicEigenproblem::setProblem() had an error." << std::endl
       << "End Result: TEST FAILED" << std::endl;	
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
   */
 
   // Exit
-#ifdef HAVE_MPI
+#ifdef HAVE_ANASAZI_MPI
   MPI_Finalize() ;
 #endif
 

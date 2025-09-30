@@ -26,6 +26,7 @@
 
 #include "MueLu_RebalanceTransferFactory_decl.hpp"
 
+#include "MueLu_AmalgamationFactory.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -49,6 +50,7 @@ RCP<const ParameterList> RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOr
   SET_VALID_ENTRY("repartition: rebalance Nullspace");
   SET_VALID_ENTRY("transpose: use implicit");
   SET_VALID_ENTRY("repartition: use subcommunicators");
+  SET_VALID_ENTRY("repartition: send type");
 #undef SET_VALID_ENTRY
 
   {
@@ -191,7 +193,16 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
 
           {
             RCP<Import> trivialImporter = ImportFactory::Build(originalP->getRowMap(), originalP->getRowMap());
-            SubFactoryMonitor m2(*this, "Rebalancing prolongator -- import only", coarseLevel);
+
+            std::string monitorLabel{"Rebalancing prolongator -- import only"};
+            if (auto sendType = pL.get<std::string>("repartition: send type"); sendType != "") {
+              auto sendTypeList = Teuchos::rcp(new Teuchos::ParameterList());
+              sendTypeList->set("Send type", sendType);
+              trivialImporter->setDistributorParameters(sendTypeList);
+              monitorLabel += " [" + sendType + "]";
+            }
+
+            SubFactoryMonitor m2(*this, monitorLabel.c_str(), coarseLevel);
             rebalancedP->doImport(*originalP, *trivialImporter, Xpetra::INSERT);
           }
           rebalancedP->fillComplete(importer->getTargetMap(), originalP->getRangeMap());
@@ -260,33 +271,26 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       // This line must be after the Get call
       SubFactoryMonitor subM(*this, "Rebalancing coordinates", coarseLevel);
 
-      LO nodeNumElts = coords->getMap()->getLocalNumElements();
-
       // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
+      LO nodeNumElts = coords->getMap()->getLocalNumElements();
       LO myBlkSize = 0, blkSize = 0;
       if (nodeNumElts > 0)
         myBlkSize = importer->getSourceMap()->getLocalNumElements() / nodeNumElts;
       MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
       RCP<const Import> coordImporter;
+
       if (blkSize == 1) {
         coordImporter = importer;
-
       } else {
-        // NOTE: there is an implicit assumption here: we assume that dof any node are enumerated consequently
-        // Proper fix would require using decomposition similar to how we construct importer in the
-        // RepartitionFactory
         RCP<const Map> origMap = coords->getMap();
-        GO indexBase           = origMap->getIndexBase();
+        std::vector<size_t> stridingInfo{Teuchos::as<size_t>(blkSize)};
+        RCP<const Map> targetMap = StridedMapFactory::Build(origMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                            importer->getTargetMap()->getLocalElementList(), origMap->getIndexBase(), stridingInfo, origMap->getComm());
+        RCP<const Map> targetVectorMap;
 
-        ArrayView<const GO> OEntries = importer->getTargetMap()->getLocalElementList();
-        LO numEntries                = OEntries.size() / blkSize;
-        ArrayRCP<GO> Entries(numEntries);
-        for (LO i = 0; i < numEntries; i++)
-          Entries[i] = (OEntries[i * blkSize] - indexBase) / blkSize + indexBase;
-
-        RCP<const Map> targetMap = MapFactory::Build(origMap->lib(), origMap->getGlobalNumElements(), Entries(), indexBase, origMap->getComm());
-        coordImporter            = ImportFactory::Build(origMap, targetMap);
+        AmalgamationFactory<SC, LO, GO, NO>::AmalgamateMap(rcp_dynamic_cast<const StridedMap>(targetMap), targetVectorMap);
+        coordImporter = ImportFactory::Build(origMap, targetVectorMap);
       }
 
       RCP<xdMV> permutedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
@@ -311,8 +315,30 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       // This line must be after the Get call
       SubFactoryMonitor subM(*this, "Rebalancing material", coarseLevel);
 
-      RCP<MultiVector> permutedMaterial = MultiVectorFactory::Build(importer->getTargetMap(), material->getNumVectors());
-      permutedMaterial->doImport(*material, *importer, Xpetra::INSERT);
+      // If a process has no matrix rows, then we can't calculate blocksize using the formula below.
+      LO nodeNumElts = material->getMap()->getLocalNumElements();
+      LO myBlkSize = 0, blkSize = 0;
+      if (nodeNumElts > 0)
+        myBlkSize = importer->getSourceMap()->getLocalNumElements() / nodeNumElts;
+      MueLu_maxAll(material->getMap()->getComm(), myBlkSize, blkSize);
+
+      RCP<const Import> materialImporter;
+
+      if (blkSize == 1) {
+        materialImporter = importer;
+      } else {
+        RCP<const Map> origMap = material->getMap();
+        std::vector<size_t> stridingInfo{Teuchos::as<size_t>(blkSize)};
+        RCP<const Map> targetMap = StridedMapFactory::Build(origMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                            importer->getTargetMap()->getLocalElementList(), origMap->getIndexBase(), stridingInfo, origMap->getComm());
+        RCP<const Map> targetVectorMap;
+
+        AmalgamationFactory<SC, LO, GO, NO>::AmalgamateMap(rcp_dynamic_cast<const StridedMap>(targetMap), targetVectorMap);
+        materialImporter = ImportFactory::Build(origMap, targetVectorMap);
+      }
+
+      RCP<MultiVector> permutedMaterial = MultiVectorFactory::Build(materialImporter->getTargetMap(), material->getNumVectors());
+      permutedMaterial->doImport(*material, *materialImporter, Xpetra::INSERT);
 
       if (pL.get<bool>("repartition: use subcommunicators") == true)
         permutedMaterial->replaceMap(permutedMaterial->getMap()->removeEmptyProcesses());

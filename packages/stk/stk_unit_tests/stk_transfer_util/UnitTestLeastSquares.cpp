@@ -207,7 +207,7 @@ class LeastSquaresTester : public stk::unit_test_util::MeshFixtureNoTest, public
   void finish_extrapolation_setup(stk::unit_test_util::FieldEvaluator& eval,
       stk::transfer::RecoverField::RecoveryType recoveryType)
   {
-    stk::unit_test_util::set_element_field(get_bulk(), *m_field, eval);
+    stk::unit_test_util::set_entity_field(get_bulk(), *m_field, eval);
 
     double delta = 0.05;
     m_evalPoint = get_default_evaluation_point();

@@ -43,7 +43,7 @@ void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& 
   RCP<MultiVector> coarseNullspace = Get<RCP<MultiVector> >(coarseLevel, "Nullspace", "CoarseNullspace");
 
   RCP<Constraint> constraint(new Constraint);
-  constraint->Setup(*fineNullspace, *coarseNullspace,
+  constraint->Setup(fineNullspace, coarseNullspace,
                     Get<RCP<const CrsGraph> >(coarseLevel, "Ppattern"));
 
   Set(coarseLevel, "Constraint", constraint);

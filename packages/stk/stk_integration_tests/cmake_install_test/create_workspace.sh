@@ -29,4 +29,4 @@ if [ ! -L ${trilinos_dir}/packages/stk ] ; then
 fi
 
 # we do not want to pay attention to the Trilinos configuration
-rm -rf ${trilinos_dir}/CTestConfig.cmake
+#rm -rf ${trilinos_dir}/CTestConfig.cmake

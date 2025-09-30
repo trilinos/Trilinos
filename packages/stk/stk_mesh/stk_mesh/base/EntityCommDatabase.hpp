@@ -81,6 +81,7 @@ public:
   bool erase( const EntityKey & key, const EntityCommInfo & val );
   bool erase( const EntityKey & key, const Ghosting & ghost );
   bool erase( const EntityKey & key, unsigned ghostID );
+  bool erase(unsigned entityCommIndex, const EntityKey& key, unsigned ghostID);
   bool comm_clear_ghosting(const EntityKey & key );
   bool comm_clear(const EntityKey & key );
 

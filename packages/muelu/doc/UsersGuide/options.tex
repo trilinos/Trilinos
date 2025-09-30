@@ -232,6 +232,74 @@ Table \ref{t:coloring_algs} lists the available values for \verb!aggregation: co
 
 \input{options_aggregation}
 
+The option \texttt{aggregation: strength-of-connection matrix} allows to select the matrix which is used in the construction of the strength-of-connection.
+Two options are available:
+\begin{itemize}
+\item \texttt{A}: use the system matrix,
+\item \texttt{distance laplacian}: use a distance Laplacian matrix that has been constructed using the graph of the system matrix \(A\), nodal coordinates \(X\) and a metric \(d\) determined by the option \texttt{aggregation: distance laplacian metric}, i.e.
+  \begin{equation}
+    L_{d}(A, X)_{ij} :=
+    \begin{cases}
+      -\frac{1}{d(X_{i,:},X_{j,:})^{2}} & \text{if } i\neq j \text{ and } A_{ij}\neq 0,\\
+      0 & \text{if } i\neq j \text{ and } A_{ij}= 0,\\
+      -\sum_{j\neq i}L_{d}(A, X)_{ij} & \text{if } i=j.
+    \end{cases}
+  \end{equation}
+\end{itemize}
+
+The available options for \texttt{aggregation: strength-of-connection measure} are listed in Table \ref{t:aggregation_soc_measures}.
+
+\begin{table}[H]
+  \begin{center}
+    \begin{tabular}{ll}
+      \verb!aggregation: strength-of-connection measure! & \\
+      \toprule
+      \verb!smoothed aggregation! & \(\frac{\left|M_{ij}\right|}{\sqrt{\left|M_{ii}\right|\left|M_{jj}\right|}} \) \\
+      \verb!signed smoothed aggregation! & \(\frac{-\operatorname{sign} \left(M_{ij}\right) \left|M_{ij}\right|}{\sqrt{\left|M_{ii}\right|\left|M_{jj}\right|}} \) \\
+      \verb!signed ruge-stueben! & \(\frac{-\operatorname{Re} \left(M_{ij}\right)}{\max_{j\neq i} -\operatorname{Re}M_{ij}} \) \\
+      \verb!unscaled! & \(\left|M_{ij}\right|\) \\
+      \bottomrule
+    \end{tabular}
+    \caption{Available choices for \texttt{aggregation: strength-of-connection measure}. Depending on the choice of \texttt{aggregation: strength-of-connection matrix} the matrix \(M\) is either the system matrix (\texttt{A}) or the distance Laplacian matrix (\texttt{distance laplacian}).}
+\label{t:aggregation_soc_measures}
+  \end{center}
+\end{table}
+
+
+Once a strength-of-connection matrix \(S\) has been computed a dropping scheme is applied to determine which entries of the graph should be kept or dropped.
+All schemes use the dropping tolerance \(\theta\) set by \texttt{aggregation: drop tol}.
+Two options are available for \texttt{aggregation: drop scheme}:
+\begin{itemize}
+\item \texttt{point-wise}: Drop entries in point-wise fashion, i.e. drop \((i,j)\) if \(\left|S_{ij}\right|\leq\theta\).
+\item \texttt{cut-drop}: Drop entries in row-wise fashion. In the \(i\)-th row \(S_{i,:}\), sorts entries by absolute value and finds the first relative gap between entries of size bigger than \(\theta\). Drop all smaller entries.
+\end{itemize}
+
+A classical choice is to use \texttt{aggregation: strength-of-connection matrix} = \texttt{A}, \texttt{aggregation: strength-of-connection measure} = \texttt{smoothed aggregation} and \texttt{aggregation: drop scheme} = \texttt{point-wise}, resulting in the dropping criterion
+\begin{equation}
+  \frac{\left|A_{ij}\right|}{\sqrt{\left|A_{ii}\right|\left|A_{jj}\right|}} \leq \theta.
+\end{equation}
+
+To guarantee backward compatibility, \texttt{aggregation: drop scheme} also allows several legacy values.
+These values trigger particular combinations of other parameter settings as shown in Table~\ref{t:old_aggregation_schemes}.
+
+\begin{table}[H]
+  \begin{center}
+    \begin{tabular}{p{7.0cm} | p{10cm}}
+      \texttt{aggregation: drop scheme} & \texttt{aggregation: strength-of-connection matrix}, \texttt{aggregation: strength-of-connection measure}\\
+      \toprule
+      \texttt{classical} & \texttt{A}, \texttt{smoothed aggregation} \\
+      \texttt{signed classical sa} & \texttt{A}, \texttt{signed smoothed aggregation} \\
+      \texttt{signed classical} & \texttt{A}, \texttt{signed ruge-stueben} \\
+      \texttt{distance laplacian} &  \texttt{distance laplacian}, \texttt{smoothed aggregation} \\
+      \texttt{signed classical sa distance laplacian} &  \texttt{distance laplacian}, \texttt{signed smoothed aggregation} \\
+      \texttt{signed classical distance laplacian} &  \texttt{distance laplacian}, \texttt{signed ruge-stueben} \\
+      \bottomrule
+    \end{tabular}
+    \caption{Legacy choices for \texttt{aggregation: drop scheme}.}
+\label{t:old_aggregation_schemes}
+  \end{center}
+\end{table}
+
 % ==================== REBALANCING ====================
 \section{Rebalancing options}
 \label{sec:options_rebalancing}

@@ -85,7 +85,7 @@ KOKKOS_INLINE_FUNCTION static int checkGemmInput([[maybe_unused]] const AViewTyp
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::CompactMKL>::invoke(
@@ -102,13 +102,13 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Al
 
   // no error check
   int r_val = 0;
-  if (A.stride_0() == 1 && B.stride_0() == 1 && C.stride_0() == 1) {
-    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_NOTRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride_1(),
-                      (const double *)B.data(), B.stride_1(), beta, (double *)C.data(), C.stride_1(), format,
+  if (A.stride(0) == 1 && B.stride(0) == 1 && C.stride(0) == 1) {
+    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_NOTRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride(1),
+                      (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1), format,
                       (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
-    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride_0(),
-                      (const double *)B.data(), B.stride_0(), beta, (double *)C.data(), C.stride_0(), format,
+  } else if (A.stride(1) == 1 && B.stride(1) == 1 && C.stride(1) == 1) {
+    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride(0),
+                      (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0), format,
                       (MKL_INT)vector_type::vector_length);
   } else {
     r_val = -1;
@@ -158,7 +158,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Al
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::NoTranspose, Algo::Gemm::CompactMKL>::invoke(
@@ -175,13 +175,13 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::NoTranspose, Algo
 
   // no error check
   int r_val = 0;
-  if (A.stride_0() == 1 && B.stride_0() == 1 && C.stride_0() == 1) {
-    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_TRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride_1(),
-                      (const double *)B.data(), B.stride_1(), beta, (double *)C.data(), C.stride_1(), format,
+  if (A.stride(0) == 1 && B.stride(0) == 1 && C.stride(0) == 1) {
+    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_TRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride(1),
+                      (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1), format,
                       (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
-    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride_0(),
-                      (const double *)B.data(), B.stride_0(), beta, (double *)C.data(), C.stride_0(), format,
+  } else if (A.stride(1) == 1 && B.stride(1) == 1 && C.stride(1) == 1) {
+    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride(0),
+                      (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0), format,
                       (MKL_INT)vector_type::vector_length);
   } else {
     r_val = -1;
@@ -248,13 +248,13 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::NoTranspose, 
 
   // no error check
   int r_val = 0;
-  if (A.stride_0() == 1 && B.stride_0() == 1 && C.stride_0() == 1) {
-    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_CONJTRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride_1(),
-                      (const double *)B.data(), B.stride_1(), beta, (double *)C.data(), C.stride_1(), format,
+  if (A.stride(0) == 1 && B.stride(0) == 1 && C.stride(0) == 1) {
+    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_CONJTRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride(1),
+                      (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1), format,
                       (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
-    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_CONJTRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride_0(),
-                      (const double *)B.data(), B.stride_0(), beta, (double *)C.data(), C.stride_0(), format,
+  } else if (A.stride(1) == 1 && B.stride(1) == 1 && C.stride(1) == 1) {
+    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_CONJTRANS, MKL_NOTRANS, m, n, k, alpha, (const double *)A.data(), A.stride(0),
+                      (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0), format,
                       (MKL_INT)vector_type::vector_length);
   } else {
     r_val = -1;
@@ -304,7 +304,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::NoTranspose, 
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::Transpose, Algo::Gemm::CompactMKL>::invoke(
@@ -321,13 +321,13 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::Transpose, Algo
 
   // no error check
   int r_val = 0;
-  if (A.stride_0() == 1 && B.stride_0() == 1 && C.stride_0() == 1) {
-    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_NOTRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride_1(),
-                      (const double *)B.data(), B.stride_1(), beta, (double *)C.data(), C.stride_1(), format,
+  if (A.stride(0) == 1 && B.stride(0) == 1 && C.stride(0) == 1) {
+    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_NOTRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride(1),
+                      (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1), format,
                       (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
-    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride_0(),
-                      (const double *)B.data(), B.stride_0(), beta, (double *)C.data(), C.stride_0(), format,
+  } else if (A.stride(1) == 1 && B.stride(1) == 1 && C.stride(1) == 1) {
+    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride(0),
+                      (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0), format,
                       (MKL_INT)vector_type::vector_length);
   } else {
     r_val = -1;
@@ -377,7 +377,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::Transpose, Algo
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::Transpose, Algo::Gemm::CompactMKL>::invoke(
@@ -394,13 +394,13 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::Transpose, Algo::
 
   // no error check
   int r_val = 0;
-  if (A.stride_0() == 1 && B.stride_0() == 1 && C.stride_0() == 1) {
-    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_TRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride_1(),
-                      (const double *)B.data(), B.stride_1(), beta, (double *)C.data(), C.stride_1(), format,
+  if (A.stride(0) == 1 && B.stride(0) == 1 && C.stride(0) == 1) {
+    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_TRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride(1),
+                      (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1), format,
                       (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
-    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride_0(),
-                      (const double *)B.data(), B.stride_0(), beta, (double *)C.data(), C.stride_0(), format,
+  } else if (A.stride(1) == 1 && B.stride(1) == 1 && C.stride(1) == 1) {
+    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride(0),
+                      (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0), format,
                       (MKL_INT)vector_type::vector_length);
   } else {
     r_val = -1;
@@ -467,13 +467,13 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::Transpose, Al
 
   // no error check
   int r_val = 0;
-  if (A.stride_0() == 1 && B.stride_0() == 1 && C.stride_0() == 1) {
-    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_CONJTRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride_1(),
-                      (const double *)B.data(), B.stride_1(), beta, (double *)C.data(), C.stride_1(), format,
+  if (A.stride(0) == 1 && B.stride(0) == 1 && C.stride(0) == 1) {
+    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_CONJTRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride(1),
+                      (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1), format,
                       (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
-    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_CONJTRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride_0(),
-                      (const double *)B.data(), B.stride_0(), beta, (double *)C.data(), C.stride_0(), format,
+  } else if (A.stride(1) == 1 && B.stride(1) == 1 && C.stride(1) == 1) {
+    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_CONJTRANS, MKL_TRANS, m, n, k, alpha, (const double *)A.data(), A.stride(0),
+                      (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0), format,
                       (MKL_INT)vector_type::vector_length);
   } else {
     r_val = -1;
@@ -540,13 +540,13 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::ConjTranspose, 
 
   // no error check
   int r_val = 0;
-  if (A.stride_0() == 1 && B.stride_0() == 1 && C.stride_0() == 1) {
-    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_NOTRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(), A.stride_1(),
-                      (const double *)B.data(), B.stride_1(), beta, (double *)C.data(), C.stride_1(), format,
+  if (A.stride(0) == 1 && B.stride(0) == 1 && C.stride(0) == 1) {
+    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_NOTRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(), A.stride(1),
+                      (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1), format,
                       (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
-    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(), A.stride_0(),
-                      (const double *)B.data(), B.stride_0(), beta, (double *)C.data(), C.stride_0(), format,
+  } else if (A.stride(1) == 1 && B.stride(1) == 1 && C.stride(1) == 1) {
+    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_NOTRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(), A.stride(0),
+                      (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0), format,
                       (MKL_INT)vector_type::vector_length);
   } else {
     r_val = -1;
@@ -613,13 +613,13 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::ConjTranspose, Al
 
   // no error check
   int r_val = 0;
-  if (A.stride_0() == 1 && B.stride_0() == 1 && C.stride_0() == 1) {
-    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_TRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(), A.stride_1(),
-                      (const double *)B.data(), B.stride_1(), beta, (double *)C.data(), C.stride_1(), format,
+  if (A.stride(0) == 1 && B.stride(0) == 1 && C.stride(0) == 1) {
+    mkl_dgemm_compact(MKL_COL_MAJOR, MKL_TRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(), A.stride(1),
+                      (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1), format,
                       (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
-    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(), A.stride_0(),
-                      (const double *)B.data(), B.stride_0(), beta, (double *)C.data(), C.stride_0(), format,
+  } else if (A.stride(1) == 1 && B.stride(1) == 1 && C.stride(1) == 1) {
+    mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_TRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(), A.stride(0),
+                      (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0), format,
                       (MKL_INT)vector_type::vector_length);
   } else {
     r_val = -1;
@@ -686,14 +686,14 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::ConjTranspose
 
   // no error check
   int r_val = 0;
-  if (A.stride_0() == 1 && B.stride_0() == 1 && C.stride_0() == 1) {
+  if (A.stride(0) == 1 && B.stride(0) == 1 && C.stride(0) == 1) {
     mkl_dgemm_compact(MKL_COL_MAJOR, MKL_CONJTRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(),
-                      A.stride_1(), (const double *)B.data(), B.stride_1(), beta, (double *)C.data(), C.stride_1(),
-                      format, (MKL_INT)vector_type::vector_length);
-  } else if (A.stride_1() == 1 && B.stride_1() == 1 && C.stride_1() == 1) {
+                      A.stride(1), (const double *)B.data(), B.stride(1), beta, (double *)C.data(), C.stride(1), format,
+                      (MKL_INT)vector_type::vector_length);
+  } else if (A.stride(1) == 1 && B.stride(1) == 1 && C.stride(1) == 1) {
     mkl_dgemm_compact(MKL_ROW_MAJOR, MKL_CONJTRANS, MKL_CONJTRANS, m, n, k, alpha, (const double *)A.data(),
-                      A.stride_0(), (const double *)B.data(), B.stride_0(), beta, (double *)C.data(), C.stride_0(),
-                      format, (MKL_INT)vector_type::vector_length);
+                      A.stride(0), (const double *)B.data(), B.stride(0), beta, (double *)C.data(), C.stride(0), format,
+                      (MKL_INT)vector_type::vector_length);
   } else {
     r_val = -1;
   }

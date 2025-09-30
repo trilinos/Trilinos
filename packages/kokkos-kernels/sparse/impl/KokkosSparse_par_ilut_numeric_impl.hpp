@@ -620,6 +620,9 @@ struct IlutWrap {
     // TODO: let compute_residual_norm also take an execution space argument and
     // use that for exec!
     typename KHandle::HandleExecSpace exec{};
+    if (R_row_map.size() == 0) {
+      Kokkos::resize(exec, R_row_map, A_row_map.size());
+    }
     KokkosSparse::spadd_symbolic(exec, &kh, m, n, A_row_map, A_entries, LU_row_map, LU_entries, R_row_map);
 
     const size_type r_nnz = addHandle->get_c_nnz();
@@ -753,16 +756,17 @@ struct IlutWrap {
     HandleDeviceRowMapType LU_row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "LU_row_map"), nrows + 1),
         L_new_row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "L_new_row_map"), nrows + 1),
         U_new_row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "U_new_row_map"), nrows + 1),
-        R_row_map(Kokkos::view_alloc(Kokkos::WithoutInitializing, "R_row_map"), nrows + 1),
         Ut_new_row_map("Ut_new_row_map", nrows + 1);
 
+    HandleDeviceRowMapType R_row_map;
     HandleDeviceEntriesType LU_entries, L_new_entries, U_new_entries, Ut_new_entries, R_entries;
     HandleDeviceValueType LU_values, L_new_values, U_new_values, Ut_new_values, V_copy_d, R_values;
     auto V_copy = Kokkos::create_mirror_view(V_copy_d);
 
-    size_type itr          = 0;
-    scalar_t curr_residual = std::numeric_limits<scalar_t>::max();
-    scalar_t prev_residual = std::numeric_limits<scalar_t>::max();
+    size_type itr                  = 0;
+    scalar_t curr_residual         = std::numeric_limits<scalar_t>::max();
+    scalar_t prev_residual         = std::numeric_limits<scalar_t>::max();
+    const bool do_compute_residual = residual_norm_delta_stop > 0;
 
     // Set the initial L/U values for the initial approximation
     initialize_LU(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
@@ -774,7 +778,10 @@ struct IlutWrap {
     bool stop = nrows == 0;  // Don't iterate at all if nrows=0
     while (!stop && itr < max_iter) {
       // LU = L*U
-      if (prev_residual == std::numeric_limits<scalar_t>::max()) {
+      //
+      // computing residual does this operation, so we don't need to repeat it if we
+      // are computing residuals.
+      if (itr == 0 || !do_compute_residual) {
         multiply_matrices(kh, thandle, L_row_map, L_entries, L_values, U_row_map, U_entries, U_values, LU_row_map,
                           LU_entries, LU_values);
       }
@@ -820,8 +827,14 @@ struct IlutWrap {
       compute_l_u_factors(thandle, A_row_map, A_entries, A_values, L_row_map, L_entries, L_values, U_row_map, U_entries,
                           U_values, Ut_new_row_map, Ut_new_entries, Ut_new_values, async_update);
 
+      //
       // Compute residual and check stop conditions
-      {
+      //
+      // compute_residual_norm can use a lot of memory, especially if fill_in_limit is
+      // large. If user selects residual_norm_delta_stop <= 0, just skip this step and
+      // always run max_iters times.
+      //
+      if (do_compute_residual) {
         curr_residual = compute_residual_norm(kh, thandle, A_row_map, A_entries, A_values, L_row_map, L_entries,
                                               L_values, U_row_map, U_entries, U_values, R_row_map, R_entries, R_values,
                                               LU_row_map, LU_entries, LU_values);
@@ -841,6 +854,9 @@ struct IlutWrap {
         } else {
           prev_residual = curr_residual;
         }
+      } else {
+        curr_residual = 0;
+        prev_residual = 0;
       }
 
       ++itr;
@@ -848,7 +864,11 @@ struct IlutWrap {
 
     curr_residual = nrows == 0 ? scalar_t(0.) : curr_residual;
     if (verbose) {
-      std::cout << "PAR_ILUT stopped in " << itr << " iterations with residual " << curr_residual << std::endl;
+      if (do_compute_residual) {
+        std::cout << "PAR_ILUT stopped in " << itr << " iterations with residual " << curr_residual << std::endl;
+      } else {
+        std::cout << "PAR_ILUT stopped in " << itr << " iterations with unknown residual" << std::endl;
+      }
     }
     thandle.set_stats(itr, curr_residual);
 

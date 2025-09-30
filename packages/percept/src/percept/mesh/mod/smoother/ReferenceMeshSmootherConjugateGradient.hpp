@@ -97,11 +97,11 @@ namespace percept {
 
       void debug_print(double alpha);
 
-      virtual double run_one_iteration();
+      virtual double run_one_iteration() override;
 
       virtual Double total_metric( Double alpha, double multiplicative_edge_scaling, bool& valid, size_t *num_invalid=0);
       virtual void update_node_positions( Double alpha);
-      virtual bool check_convergence();
+      virtual bool check_convergence() override;
 
       Double line_search(bool& restarted, double mfac_mult=1.0);
 

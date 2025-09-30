@@ -14,7 +14,6 @@ import numpy as np
 from PyTrilinos2.PyTrilinos2 import Teuchos
 from PyTrilinos2.PyTrilinos2 import Tpetra
 from PyTrilinos2.PyTrilinos2 import MueLu
-from PyTrilinos2.getTpetraTypeName import getTypeName
 from math import sqrt
 
 
@@ -62,11 +61,11 @@ class TestCG(unittest.TestCase):
     def test_all(self):
         comm = Teuchos.getTeuchosComm(MPI.COMM_WORLD)
 
-        mapType = getTypeName('Map')
-        graphType = getTypeName('CrsGraph')
-        matrixType = getTypeName('CrsMatrix')
-        vectorType = getTypeName('Vector')
-        multivectorType = getTypeName('MultiVector')
+        mapType = Tpetra.Map()
+        graphType = Tpetra.CrsGraph()
+        matrixType = Tpetra.CrsMatrix()
+        vectorType = Tpetra.Vector()
+        multivectorType = Tpetra.MultiVector()
 
         n = 3000
 

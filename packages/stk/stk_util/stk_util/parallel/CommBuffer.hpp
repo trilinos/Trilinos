@@ -2,6 +2,7 @@
 #define stk_util_parallel_CommBuffer_hpp
 
 #include <stddef.h>
+#include <cstddef>
 #include <string>
 #include <map>
 #include <vector>
@@ -19,7 +20,6 @@ namespace stk {
  *  with parallel domain decomposition.
  */
 class CommSparse;
-class CommNeighbors;
 class CommBroadcast;
 
 template<typename T>
@@ -63,8 +63,10 @@ private:
 
 public:
 
-  /** Pack an array of values to be sent:  buf.pack<type>( ptr , num ) */
-  template<typename T> CommBuffer &pack( const T * value , size_t number );
+  /** Pack an array of values to be sent:  buf.pack<type>(ptr, num, stride) */
+  template<typename T> CommBuffer &pack(const T* value, unsigned number, unsigned stride = 1);
+
+  CommBuffer& pack_bytes(const std::byte* bytes, unsigned numBytes, unsigned bytesPerScalar, unsigned scalarByteStride);
 
   /** Unpack a received value:  buf.unpack<type>( value ) */
   template<typename T,
@@ -84,13 +86,17 @@ public:
   CommBuffer &unpack( std::vector<K> & value );
 
   /** Unpack an array of received values:  buf.unpack<type>( ptr , num ) */
-  template<typename T> CommBuffer &unpack( T * value , size_t number );
+  template<typename T> CommBuffer &unpack(T* value, unsigned number, unsigned stride = 1);
+
+  CommBuffer& unpack_bytes(std::byte* bytes, unsigned numBytes, unsigned bytesPerScalar, unsigned scalarByteStride);
 
   /** Peek at a received value (don't advance buffer): buf.peek<type>(value) */
   template<typename T> CommBuffer &peek( T & value );
 
   /** Peek at an array of received values: buf.peek<type>( ptr , num ) */
-  template<typename T> CommBuffer &peek( T * value , size_t number );
+  template<typename T> CommBuffer &peek(T* value, unsigned number, unsigned stride = 1);
+
+  CommBuffer& peek_bytes(std::byte* bytes, unsigned numBytes, unsigned bytesPerScalar, unsigned scalarByteStride);
 
   CommBuffer &peek( std::string& value );
 
@@ -140,7 +146,6 @@ public:
 
 private:
   friend class CommSparse ;
-  friend class CommNeighbors ;
   friend class CommBroadcast ;
 
   void pack_overflow() const ;
@@ -231,27 +236,55 @@ CommBuffer &CommBuffer::pack( const std::vector<K> & value )
 {
   pack<unsigned>(value.size());
   for (size_t i=0; i<value.size(); ++i) {
-    pack(value[i]);
+    pack<K>(value[i]);
   }
   return *this;
 }
 
-template<typename T>
+template <typename T>
 inline
-CommBuffer &CommBuffer::pack( const T * value , size_t number )
+CommBuffer& CommBuffer::pack(const T* value, unsigned number, unsigned stride)
 {
   static constexpr auto Size = sizeof(T);
-  if ( m_beg ) {
-    size_t nalign = CommBufferAlign<Size>::align( m_ptr - m_beg );
+  if (m_beg) {
+    size_t nalign = CommBufferAlign<Size>::align(m_ptr - m_beg);
     if ( m_end < m_ptr + nalign + number * Size ) { pack_overflow(); }
     while ( nalign ) { --nalign ; *m_ptr = 0 ; ++m_ptr ; }
     T * tmp = reinterpret_cast<T*>(m_ptr);
-    while ( number ) { --number ; *tmp = *value ; ++tmp ; ++value ; }
-    m_ptr = reinterpret_cast<ucharp>( tmp );
+    while (number) {
+      --number;
+      *tmp = *value;
+      ++tmp;
+      value += stride;
+    }
+    m_ptr = reinterpret_cast<ucharp>(tmp);
   }
   else {
-    size_t nalign = CommBufferAlign<Size>::align( m_offset );
+    size_t nalign = CommBufferAlign<Size>::align(m_offset);
     m_offset += nalign + number * Size ;
+  }
+  return *this;
+}
+
+inline
+CommBuffer& CommBuffer::pack_bytes(const std::byte* bytes, unsigned numBytes, unsigned bytesPerScalar,
+                                   unsigned scalarByteStride)
+{
+  if (m_beg) {
+    if (m_ptr + numBytes > m_end) { pack_overflow(); }
+    std::byte* buffer = reinterpret_cast<std::byte*>(m_ptr);
+    const std::byte* bufferEnd = buffer + numBytes;
+    while (buffer < bufferEnd) {
+      for (unsigned scalarIdx = 0; scalarIdx < bytesPerScalar; ++scalarIdx) {
+        buffer[scalarIdx] = bytes[scalarIdx];
+      }
+      buffer += bytesPerScalar;
+      bytes += scalarByteStride;
+    }
+    m_ptr = reinterpret_cast<ucharp>(buffer);
+  }
+  else {
+    m_offset += numBytes;
   }
   return *this;
 }
@@ -353,18 +386,42 @@ CommBuffer &CommBuffer::unpack( std::vector<K> & value )
   return *this;
 }
 
-template<typename T>
+template <typename T>
 inline
-CommBuffer &CommBuffer::unpack( T * value , size_t number )
+CommBuffer& CommBuffer::unpack(T* value, unsigned number, unsigned stride)
 {
   static constexpr auto Size = sizeof(T);
-  const size_t nalign = CommBufferAlign<Size>::align( m_ptr - m_beg );
-  T * tmp = reinterpret_cast<T*>( m_ptr + nalign );
-  while ( number ) { --number ; *value = *tmp ; ++tmp ; ++value ; }
-  m_ptr = reinterpret_cast<ucharp>( tmp );
+  const size_t nalign = CommBufferAlign<Size>::align(m_ptr - m_beg);
+  T* tmp = reinterpret_cast<T*>(m_ptr + nalign);
+  while (number) {
+    --number;
+    *value = *tmp;
+    ++tmp;
+    value += stride;
+  }
+  m_ptr = reinterpret_cast<ucharp>(tmp);
   if ( m_end < m_ptr ) { unpack_overflow(); }
   return *this;
 }
+
+inline
+CommBuffer& CommBuffer::unpack_bytes(std::byte* bytes, unsigned numBytes, unsigned bytesPerScalar,
+                                     unsigned scalarByteStride)
+{
+  std::byte* buffer = reinterpret_cast<std::byte*>(m_ptr);
+  const std::byte* bufferEnd = buffer + numBytes;
+  while (buffer < bufferEnd) {
+    for (unsigned scalarIdx = 0; scalarIdx < bytesPerScalar; ++scalarIdx) {
+      bytes[scalarIdx] = buffer[scalarIdx];
+    }
+    buffer += bytesPerScalar;
+    bytes += scalarByteStride;
+  }
+  m_ptr = reinterpret_cast<ucharp>(buffer);
+  if (m_ptr > m_end) { unpack_overflow(); }
+  return *this;
+}
+
 template<typename item>
 inline
 item unpack(stk::CommBuffer& buf)
@@ -406,15 +463,37 @@ CommBuffer &CommBuffer::peek( std::map<K,V> & /*value*/ )
   throw std::runtime_error("Peek not implemented for std::map");
 }
 
-template<typename T>
+template <typename T>
 inline
-CommBuffer &CommBuffer::peek( T * value , size_t number )
+CommBuffer& CommBuffer::peek(T* value, unsigned number, unsigned stride)
 {
   static constexpr auto Size = sizeof(T);
-  const size_t nalign = CommBufferAlign<Size>::align( m_ptr - m_beg );
-  T * tmp = reinterpret_cast<T*>( m_ptr + nalign );
-  while ( number ) { --number ; *value = *tmp ; ++tmp ; ++value ; }
-  if ( m_end < reinterpret_cast<ucharp>(tmp) ) { unpack_overflow(); }
+  const size_t nalign = CommBufferAlign<Size>::align(m_ptr - m_beg);
+  T* tmp = reinterpret_cast<T*>(m_ptr + nalign);
+  while (number) {
+    --number;
+    *value = *tmp;
+    ++tmp;
+    value += stride;
+  }
+  if (m_end < reinterpret_cast<ucharp>(tmp)) { unpack_overflow(); }
+  return *this;
+}
+
+inline
+CommBuffer& CommBuffer::peek_bytes(std::byte* bytes, unsigned numBytes, unsigned bytesPerScalar,
+                                   unsigned scalarByteStride)
+{
+  std::byte* buffer = reinterpret_cast<std::byte*>(m_ptr);
+  const std::byte* bufferEnd = buffer + numBytes;
+  while (buffer < bufferEnd) {
+    for (unsigned scalarIdx = 0; scalarIdx < bytesPerScalar; ++scalarIdx) {
+      bytes[scalarIdx] = buffer[scalarIdx];
+    }
+    buffer += bytesPerScalar;
+    bytes += scalarByteStride;
+  }
+  if (reinterpret_cast<ucharp>(buffer) > m_end) { unpack_overflow(); }
   return *this;
 }
 

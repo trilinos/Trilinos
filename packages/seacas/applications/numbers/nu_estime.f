@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2020, 2025 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -9,7 +9,7 @@ C    See packages/seacas/LICENSE for details
 
 C     ... ESTIMATE TIMESTEP FOR MESH --- BRICKS ONLY
 
-      DIMENSION CRD(NUMNP, *), IX(NNODE,*), MAT(6,*),
+      DIMENSION CRD(NUMNP, *), IX(NNODE,*), MAT(7,*),
      *     WAVE(*), SSQ(3,NELBLK), CCC(NDIM,NNODE)
       DIMENSION GRADOP(8,3)
 

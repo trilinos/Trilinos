@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -55,12 +55,12 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION       "9.04"
+#define EXODUS_VERSION       "9.06"
 #define EXODUS_VERSION_MAJOR 9
-#define EXODUS_VERSION_MINOR 4
-#define EXODUS_RELEASE_DATE  "November 5, 2024"
+#define EXODUS_VERSION_MINOR 6
+#define EXODUS_RELEASE_DATE  "August 25, 2025"
 
-#define EX_API_VERS       9.04f
+#define EX_API_VERS       9.06f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
 #define EX_VERS           EX_API_VERS
 
@@ -972,7 +972,7 @@ EXODUS_EXPORT int ex_get_block(int exoid, ex_entity_type blk_type, ex_entity_id 
 /*  Read Edge Face or Element Block Parameters */
 EXODUS_EXPORT int ex_get_block_param(int exoid, ex_block *block);
 
-EXODUS_EXPORT int ex_put_block_param(int exoid, const ex_block block);
+EXODUS_EXPORT int ex_put_block_param(int exoid, ex_block block);
 
 EXODUS_EXPORT int ex_get_block_params(int exoid, size_t block_count, struct ex_block **blocks);
 
@@ -1038,36 +1038,35 @@ EXODUS_EXPORT int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entit
 EXODUS_EXPORT int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
                                     char **names);
 
-EXODUS_EXPORT int ex_put_assembly(int exoid, const struct ex_assembly assembly);
+EXODUS_EXPORT int ex_put_assembly(int exoid, struct ex_assembly assembly);
 EXODUS_EXPORT int ex_get_assembly(int exoid, struct ex_assembly *assembly);
 
 EXODUS_EXPORT int ex_put_assemblies(int exoid, size_t count, const struct ex_assembly *assemblies);
 EXODUS_EXPORT int ex_get_assemblies(int exoid, struct ex_assembly *assemblies);
 
-EXODUS_EXPORT int ex_put_blob(int exoid, const struct ex_blob blob);
+EXODUS_EXPORT int ex_put_blob(int exoid, struct ex_blob blob);
 EXODUS_EXPORT int ex_get_blob(int exoid, struct ex_blob *blob);
 
 EXODUS_EXPORT int ex_put_blobs(int exoid, size_t count, const struct ex_blob *blobs);
 EXODUS_EXPORT int ex_get_blobs(int exoid, struct ex_blob *blobs);
 
-EXODUS_EXPORT int ex_put_multi_field_metadata(int exoid, const ex_field *field,
-                                              const int field_count);
-EXODUS_EXPORT int ex_put_field_metadata(int exoid, const ex_field field);
-EXODUS_EXPORT int ex_put_field_suffices(int exoid, const ex_field field, const char *suffices);
+EXODUS_EXPORT int ex_put_multi_field_metadata(int exoid, const ex_field *field, int field_count);
+EXODUS_EXPORT int ex_put_field_metadata(int exoid, ex_field field);
+EXODUS_EXPORT int ex_put_field_suffices(int exoid, ex_field field, const char *suffices);
 EXODUS_EXPORT int ex_get_field_metadata(int exoid, ex_field *field);
 EXODUS_EXPORT int ex_get_field_metadata_count(int exoid, ex_entity_type obj_type, ex_entity_id id);
-EXODUS_EXPORT int ex_get_field_suffices(int exoid, const ex_field field, char *suffices);
+EXODUS_EXPORT int ex_get_field_suffices(int exoid, ex_field field, char *suffices);
 
 EXODUS_EXPORT int ex_get_basis_count(int exoid);
 EXODUS_EXPORT int ex_get_basis(int exoid, ex_basis **pbasis, int *num_basis);
-EXODUS_EXPORT int ex_put_basis(int exoid, const ex_basis basis);
+EXODUS_EXPORT int ex_put_basis(int exoid, ex_basis basis);
 
 EXODUS_EXPORT int ex_get_quadrature_count(int exoid);
 EXODUS_EXPORT int ex_get_quadrature(int exoid, ex_quadrature **pquad, int *num_quad);
-EXODUS_EXPORT int ex_put_quadrature(int exoid, const ex_quadrature quad);
+EXODUS_EXPORT int ex_put_quadrature(int exoid, ex_quadrature quad);
 
 /*  Write arbitrary integer, double, or text attributes on an entity */
-EXODUS_EXPORT int ex_put_attribute(int exoid, const ex_attribute attributes);
+EXODUS_EXPORT int ex_put_attribute(int exoid, ex_attribute attributes);
 EXODUS_EXPORT int ex_put_attributes(int exoid, size_t attr_count, const ex_attribute *attributes);
 
 EXODUS_EXPORT int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
@@ -1321,10 +1320,10 @@ EXODUS_EXPORT int ex_initialize_quadrature_struct(ex_quadrature *quad, size_t nu
 EXODUS_EXPORT const char *ex_component_field_name(ex_field *field,
                                                   int       component[EX_MAX_FIELD_NESTING]);
 EXODUS_EXPORT const char *ex_field_component_suffix(ex_field *field, int nest_level, int component);
-EXODUS_EXPORT int         ex_field_cardinality(const ex_field_type field_type);
-EXODUS_EXPORT const char *ex_field_type_name(const ex_field_type field_type);
+EXODUS_EXPORT int         ex_field_cardinality(ex_field_type field_type);
+EXODUS_EXPORT const char *ex_field_type_name(ex_field_type field_type);
 EXODUS_EXPORT ex_field_type ex_string_to_field_type_enum(const char *field_name);
-EXODUS_EXPORT const char   *ex_field_type_enum_to_string(const ex_field_type field_type);
+EXODUS_EXPORT const char   *ex_field_type_enum_to_string(ex_field_type field_type);
 
 /*! @} */
 
@@ -1954,6 +1953,7 @@ enum ex_error_return_code {
   EX_DUPLICATEID   = 1007,  /**< duplicate id found                       */
   EX_DUPLICATEOPEN = 1008,  /**< duplicate open                           */
   EX_BADFILENAME   = 1009,  /**< empty or null filename specified         */
+  EX_LONGFIELDNAME = 1010,  /**< field name is too long to generate attribute */
   EX_MSG           = -1000, /**< message print code - no error implied    */
   EX_PRTLASTMSG    = -1001, /**< print last error message msg code        */
   EX_NOTROOTID     = -1002, /**< file id is not the root id; it is a subgroup id */
@@ -1964,9 +1964,10 @@ enum ex_error_return_code {
   EX_INTSIZEMISMATCH =
       -1009, /**< integer sizes do not match on input/output databases in ex_copy  */
 
-  EX_FATAL = -1, /**< fatal error flag def                     */
-  EX_NOERR = 0,  /**< no error flag def                        */
-  EX_WARN  = 1   /**< warning flag def                         */
+  EX_RANGE = -1010, /**< numeric conversion warning */
+  EX_FATAL = -1,    /**< fatal error flag def                     */
+  EX_NOERR = 0,     /**< no error flag def                        */
+  EX_WARN  = 1      /**< warning flag def                         */
 };
 typedef enum ex_error_return_code ex_error_return_code;
 

@@ -195,7 +195,7 @@ int cmd_line_arg_parse(int argc, char *argv[],              /* Args as passed by
       break;
 
     case 'C':
-      /* Specifiy (1-based) index of change set in mesh file */
+      /* Specify (1-based) index of change set in mesh file */
       if (optarg == nullptr) {
         prob->selected_change_set = 0;
       }
@@ -1620,7 +1620,7 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /*                 Check the weighting specifications                        */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-  if (weight->exo_filename.length() > 0) {
+  if (!weight->exo_filename.empty()) {
     /* Check that a variable name and/or index was specified. */
     if (weight->exo_varname.empty() && weight->exo_vindx <= 0) {
       Gen_Error(0, "FATAL: must specify an index and/or a name for weighting"

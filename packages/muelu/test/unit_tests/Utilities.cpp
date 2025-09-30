@@ -70,8 +70,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, MatMatMult_EpetraVsTpetra, Scalar, 
   result                    = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
   RCP<MultiVector> X_tpetra = MultiVectorFactory::Build(OpOp->getDomainMap(), 1);
   {
-    auto lcl_X_epetra = X_epetra->getHostLocalView(Xpetra::Access::ReadOnly);
-    auto lcl_X_tpetra = X_tpetra->getHostLocalView(Xpetra::Access::OverwriteAll);
+    auto lcl_X_epetra = X_epetra->getLocalViewHost(Xpetra::Access::ReadOnly);
+    auto lcl_X_tpetra = X_tpetra->getLocalViewHost(Xpetra::Access::OverwriteAll);
     Kokkos::deep_copy(lcl_X_tpetra, lcl_X_epetra);
   }
   X_tpetra->norm2(xnorm);
@@ -172,8 +172,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, EnforceInitialCondition, Scalar, Lo
   X->putScalar(666. * TST::one());
   Utilities::EnforceInitialCondition(*A, *RHS, *X, TST::magnitude(0.26));
 
-  auto lclRHS = RHS->getHostLocalView(Xpetra::Access::ReadOnly);
-  auto lclX   = X->getHostLocalView(Xpetra::Access::ReadOnly);
+  auto lclRHS = RHS->getLocalViewHost(Xpetra::Access::ReadOnly);
+  auto lclX   = X->getLocalViewHost(Xpetra::Access::ReadOnly);
 
   // row 5 is Dirichlet
   for (size_t row = 0; row < A->getLocalNumRows(); ++row) {

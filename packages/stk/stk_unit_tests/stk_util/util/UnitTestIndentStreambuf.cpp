@@ -94,7 +94,7 @@ TEST(UnitTestIndentStreambuf, UnitTest)
     log_stream << "indented 1" << std::endl;
     log_stream << stk::PUSH << "indented 2" << std::endl;
     log_stream << "indented 2" << std::endl;
-    log_stream << stk::LEFT << "no indentation" << std::endl;
+    log_stream << stk::FORCE_LEFT << "no indentation" << std::endl;
     log_stream << "\017indented 1" << std::endl;
 
     plain(log_stream);

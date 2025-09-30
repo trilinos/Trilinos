@@ -13,7 +13,7 @@
   namespace geom {
 
     void LocalQuadraticRationalSplineFit::
-    fit_internal(int n, Vectors2D& Q, Vectors2D& T)
+    fit_internal(int /*n*/, Vectors2D& /*Q*/, Vectors2D& /*T*/)
     {
       throw std::runtime_error("not yet implemented");
     }

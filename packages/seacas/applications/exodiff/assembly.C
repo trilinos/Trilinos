@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,10 +6,9 @@
 
 #include "ED_SystemInterface.h" // for SystemInterface, interFace
 #include "assembly.h"
-#include "exodusII.h" // for ex_block, etc
-#include "fmt/ostream.h"
-#include "smart_assert.h" // for SMART_ASSERT
+#include "exodusII.h"     // for ex_block, etc
 #include <cstdlib>        // for exit, nullptr
+#include <smart_assert.h> // for SMART_ASSERT
 #include <string>         // for string, char_traits
 
 template <typename INT> Assembly<INT>::Assembly() : Exo_Entity() {}
@@ -18,7 +17,7 @@ template <typename INT>
 Assembly<INT>::Assembly(int file_id, size_t assembly_id) : Exo_Entity(file_id, assembly_id)
 {
   SMART_ASSERT(file_id >= 0);
-  SMART_ASSERT((int)assembly_id > EX_INVALID_ID);
+  SMART_ASSERT(static_cast<int>(assembly_id) > EX_INVALID_ID);
 
   initialize(file_id, assembly_id);
 }

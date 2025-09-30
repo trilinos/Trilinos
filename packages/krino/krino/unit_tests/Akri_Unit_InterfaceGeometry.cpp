@@ -12,9 +12,9 @@
 
 #include <Akri_Edge.hpp>
 #include <Akri_Intersection_Points.hpp>
-#include <Akri_LevelSet.hpp>
 #include <Akri_MeshSpecs.hpp>
 #include <Akri_Phase_Support.hpp>
+#include <Akri_Sign.hpp>
 #include <Akri_StkMeshFixture.hpp>
 #include <gtest/gtest.h>
 
@@ -34,7 +34,7 @@ static std::vector<Edge> get_element_edges(const stk::mesh::BulkData & mesh, con
 }
 
 void IntersectionPointFromNodalLevelsetInterfaceGeometry::append_element_intersection_points(const stk::mesh::BulkData & mesh,
-    const NodeToCapturedDomainsMap & nodesToCapturedDomains,
+    const NodeToCapturedDomainsMap & /*nodesToCapturedDomains*/,
     const std::vector<stk::mesh::Entity> & elementsToIntersect,
     const IntersectionPointFilter & intersectionPointFilter,
     std::vector<IntersectionPoint> & intersectionPoints) const
@@ -47,7 +47,7 @@ void IntersectionPointFromNodalLevelsetInterfaceGeometry::append_element_interse
 
     const double ls0 = nodeLSValues.at(edgeNodes[0]);
     const double ls1 = nodeLSValues.at(edgeNodes[1]);
-    if (LevelSet::sign_change(ls0, ls1))
+    if (sign_change(ls0, ls1))
     {
       const std::vector<stk::mesh::Entity> intersectionPointNodes{edgeNodes[0], edgeNodes[1]};
       const std::vector<int> intersectionPointSortedDomains{0};
@@ -89,11 +89,11 @@ public:
   std::vector<IntersectionPoint> find_intersections_with_cuboid(const stk::math::Vector3d & center, const stk::math::Vector3d & dimensions)
   {
     Cuboid cuboid{center, dimensions};
-    AnalyticSurfaceInterfaceGeometry geom(get_aux_meta().active_part(), get_cdfem_support(), get_phase_support());
-    geom.add_surface(Surface_Identifier(0),  cuboid,  get_aux_meta().active_part());
+    AnalyticSurfaceInterfaceGeometry geomIn(get_aux_meta().active_part(), get_cdfem_support(), get_phase_support());
+    geomIn.add_surface(Surface_Identifier(0),  cuboid,  get_aux_meta().active_part());
 
     const NodeToCapturedDomainsMap nodesToCapturedDomains;
-    return build_all_intersection_points(mMesh, mMesh.mesh_meta_data().universal_part(), geom, nodesToCapturedDomains);
+    return build_all_intersection_points(mMesh, mMesh.mesh_meta_data().universal_part(), geomIn, nodesToCapturedDomains);
   }
 
   void expect_num_intersections(const std::vector<IntersectionPoint> & intPts, const size_t goldNumEdgeIntPts, const size_t goldNumFaceIntPts, const size_t goldNumTetIntPts )

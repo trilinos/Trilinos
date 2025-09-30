@@ -14,9 +14,9 @@
 #include <Akri_Quality.hpp>
 #include <Akri_QualityMetric.hpp>
 #include <Akri_Refinement.hpp>
-#include <Akri_RefinementInterface.hpp>
 #include <Akri_TransitionElementEdgeMarker.hpp>
 #include <Akri_AuxMetaData.hpp>
+#include "../krino_lib/Akri_RefinementManager.hpp"
 
 namespace krino {
 
@@ -198,7 +198,7 @@ public:
     return entity_crosses_x_value(get_edge_nodes(edge), x0);
   }
 
-  std::pair<bool, double> tag_element_spans_z_equal_0_and_compute_element_field(const stk::mesh::Entity elem, bool flip)
+  std::pair<bool, double> tag_element_spans_z_equal_0_and_compute_element_field(const stk::mesh::Entity elem, bool /*flip*/)
   {
     static constexpr double tol{1.e-9};
     bool hasNeg = false;
@@ -504,7 +504,7 @@ public:
       }
     }
     mMesh.change_entity_owner(entitiesToMove);
-    fix_node_owners_to_assure_active_owned_element_for_node(mMesh, this->get_aux_meta().active_part());
+    fix_node_ownership_to_assure_selected_owned_element(mMesh, this->get_aux_meta().active_part());
   }
 
 

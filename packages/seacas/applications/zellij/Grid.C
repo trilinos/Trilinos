@@ -1,4 +1,4 @@
-// Copyright(C) 2021, 2022, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 2021, 2022, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -25,6 +25,7 @@
 #include <exodusII.h>
 #include <fmt/chrono.h>
 #include <fmt/color.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <open_file_limit.h>
@@ -998,7 +999,7 @@ namespace {
     for (int rank = start_rank; rank < start_rank + rank_count; rank++) {
       for (auto &blk : output_element_blocks) {
         auto *block = new Ioss::ElementBlock(*blk.second);
-        block->property_update("entity_count", element_block_elem_count[rank][block->name()]);
+        block->reset_entity_count(element_block_elem_count[rank][block->name()]);
         block->property_update("global_entity_count", global_block_element_count[block->name()]);
         grid.output_region(rank)->property_add(
             Ioss::Property("global_element_count", (int64_t)global_element_count));

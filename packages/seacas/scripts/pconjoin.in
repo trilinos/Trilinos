@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright(C) 1999-2024 National Technology & Engineering Solutions
+o#!/bin/bash
+# Copyright(C) 1999-2025 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -23,7 +23,8 @@ Usage:  pconjoin --proc_count <proc_count> --basename <file.ext> -- ...normal co
          or they will be treated as options to pconjoin and probably
 	 ignored.
 
-   ->->-> Send email to gdsjaar@sandia.gov for pconjoin support.<-<-<-
+    ->->-> Send email to sierra-help@sandia.gov for pconjoin support.<-<-<-
+         or enter issue at https://github.com/sandialabs/seacas/issues
 
    Uses: GNU Parallel,
    	 O. Tange (2018): GNU Parallel 2018, Mar 2018, ISBN 9781387509881,

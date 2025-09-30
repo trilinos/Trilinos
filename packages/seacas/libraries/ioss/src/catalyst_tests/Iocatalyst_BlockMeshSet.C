@@ -12,6 +12,7 @@
 #include <Ioss_NodeBlock.h>
 #include <Ioss_StructuredBlock.h>
 #include <Ioss_Utils.h>
+#include <algorithm>
 #include <catalyst/Iocatalyst_CatalystManager.h>
 #include <catalyst/Iocatalyst_DatabaseIO.h>
 #include <catalyst_tests/Iocatalyst_BlockMeshSet.h>
@@ -67,6 +68,8 @@ namespace Iocatalyst {
     Ioss::Region          cir(cdbi);
     Ioss::MeshCopyOptions options;
     options.data_storage_type = 1;
+    options.verbose           = 1;
+    options.debug             = 1;
     Ioss::copy_database(cir, cor, options);
   }
 
@@ -205,8 +208,12 @@ namespace Iocatalyst {
       Ioss::StructuredBlock *iossBlock =
           new Ioss::StructuredBlock(iop.databaseIO, getStructuredBlockName(bm.getID()), spatialDims,
                                     localSizes, parentOffsets, globalSizes);
-      int node_count = (bm.getPartitionExtents().i + 1) * (bm.getPartitionExtents().j + 1) *
-                       (bm.getPartitionExtents().k + 1);
+      int node_count = 0;
+      if (!bm.isPartitionEmpty()) {
+        node_count = (bm.getPartitionExtents().i + 1) * (bm.getPartitionExtents().j + 1) *
+                     (bm.getPartitionExtents().k + 1);
+      }
+
       Ioss::NodeBlock *nodeBlock = new Ioss::NodeBlock(
           iop.databaseIO, getStructuredNodeBlockName(bm.getID()), node_count, spatialDims);
       iop.region->add(iossBlock);
@@ -224,10 +231,17 @@ namespace Iocatalyst {
     origin.y = 0.0;
     origin.z = 0.0;
     for (auto bm : bms) {
-      const int numI      = bm.getPartitionExtents().i + 1;
-      const int numJ      = bm.getPartitionExtents().j + 1;
-      const int numK      = bm.getPartitionExtents().k + 1;
-      const int numPoints = numI * numJ * numK;
+      int numI      = 0;
+      int numJ      = 0;
+      int numK      = 0;
+      int numPoints = 0;
+
+      if (!bm.isPartitionEmpty()) {
+        numI      = bm.getPartitionExtents().i + 1;
+        numJ      = bm.getPartitionExtents().j + 1;
+        numK      = bm.getPartitionExtents().k + 1;
+        numPoints = numI * numJ * numK;
+      }
 
       coordx.resize(numPoints);
       coordy.resize(numPoints);
@@ -292,8 +306,8 @@ namespace Iocatalyst {
   void BlockMeshSet::writeUnstructuredBlockDefinitions(IOSSparams &iop)
   {
     int              spatialDims = 3;
-    Ioss::NodeBlock *nodeBlock =
-        new Ioss::NodeBlock(iop.databaseIO, "nodeblock", getNumLocalPointsInMeshSet(), spatialDims);
+    Ioss::NodeBlock *nodeBlock   = new Ioss::NodeBlock(iop.databaseIO, iop.nodeBlockName,
+                                                       getNumLocalPointsInMeshSet(), spatialDims);
     iop.region->add(nodeBlock);
     for (auto bm : bms) {
       Ioss::ElementBlock *elemBlock = new Ioss::ElementBlock(
@@ -304,7 +318,7 @@ namespace Iocatalyst {
 
   void BlockMeshSet::writeUnstructuredBlockBulkData(IOSSparams &iop)
   {
-    Ioss::NodeBlock                  *nodeBlock = iop.region->get_node_block("nodeblock");
+    Ioss::NodeBlock                  *nodeBlock = iop.region->get_node_block(iop.nodeBlockName);
     std::vector<double>               coordx;
     std::vector<double>               coordy;
     std::vector<double>               coordz;
@@ -344,7 +358,19 @@ namespace Iocatalyst {
           connectivity[(i * 8) + j] = bm.getGlobalIDForPointID(conn[j]);
         }
       }
-      elemBlock->put_field_data("connectivity", connectivity);
+
+      std::string conn_name = "connectivity";
+      if (iop.writeConnectivityRaw) {
+        conn_name = "connectivity_raw";
+        for (int i = 0; i < connectivity.size(); i++) {
+          auto it = std::find(globalPointIds.begin(), globalPointIds.end(), connectivity[i]);
+          if (it != globalPointIds.end()) {
+            int index       = std::distance(globalPointIds.begin(), it);
+            connectivity[i] = index + 1;
+          }
+        }
+      }
+      elemBlock->put_field_data(conn_name, connectivity);
       elemBlock->put_field_data("ids", globalElemIds);
     }
   }
@@ -357,7 +383,7 @@ namespace Iocatalyst {
       auto elemBlock = iop.region->get_element_block(getUnstructuredBlockName(bm.getID()));
       elemBlock->field_add(Ioss::Field(IOSS_CELL_FIELD, Ioss::Field::REAL, IOSS_SCALAR_STORAGE,
                                        Ioss::Field::TRANSIENT));
-      auto nodeBlock = iop.region->get_node_block("nodeblock");
+      auto nodeBlock = iop.region->get_node_block(iop.nodeBlockName);
       nodeBlock->field_add(Ioss::Field(IOSS_POINT_FIELD, Ioss::Field::REAL, IOSS_SCALAR_STORAGE,
                                        Ioss::Field::TRANSIENT));
 
@@ -384,7 +410,7 @@ namespace Iocatalyst {
   void BlockMeshSet::writeUnstructuredAddedPointTransientFields(BlockMesh bm, IOSSparams &iop)
   {
     auto point_fields = bm.getTransientPointFieldMap();
-    auto nodeBlock    = iop.region->get_node_block("nodeblock");
+    auto nodeBlock    = iop.region->get_node_block(iop.nodeBlockName);
     for (auto itr = point_fields->begin(); itr != point_fields->end(); ++itr) {
       nodeBlock->field_add(
           Ioss::Field(itr->first, Ioss::Field::REAL, IOSS_SCALAR_STORAGE, Ioss::Field::TRANSIENT));
@@ -404,7 +430,7 @@ namespace Iocatalyst {
       }
       elemBlock->put_field_data(IOSS_CELL_FIELD, values);
 
-      auto nodeBlock = iop.region->get_node_block("nodeblock");
+      auto nodeBlock = iop.region->get_node_block(iop.nodeBlockName);
       values.clear();
       for (int j = 0; j < nodeBlock->get_field(IOSS_POINT_FIELD).raw_count(); j++) {
         values.push_back(bm.getPartition().id);
@@ -441,7 +467,7 @@ namespace Iocatalyst {
                                                                         IOSSparams &iop)
   {
     auto                point_fields = bm.getTransientPointFieldMap();
-    auto                nodeBlock    = iop.region->get_node_block("nodeblock");
+    auto                nodeBlock    = iop.region->get_node_block(iop.nodeBlockName);
     std::vector<double> values;
     for (auto itr = point_fields->begin(); itr != point_fields->end(); ++itr) {
       int num_nodes = nodeBlock->get_field(itr->first).raw_count();

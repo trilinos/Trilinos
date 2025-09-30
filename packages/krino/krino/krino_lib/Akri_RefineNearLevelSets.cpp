@@ -9,7 +9,7 @@
 #include <Akri_Faceted_Surface.hpp>
 #include <Akri_LevelSetSurfaceInterfaceGeometry.hpp>
 #include <Akri_Phase_Support.hpp>
-#include <Akri_RefinementInterface.hpp>
+#include <Akri_RefinementManager.hpp>
 #include <Akri_RefinementSupport.hpp>
 #include <stk_util/diag/Timer.hpp>
 
@@ -30,7 +30,7 @@ void refine_elements_that_intersect_distance_interval_from_levelset(stk::mesh::B
     const std::array<double,2> & refinementDistanceInterval,
     const unsigned numRefinementLevels)
 {
-  RefinementInterface & refinement = krino::KrinoRefinement::get_or_create(mesh.mesh_meta_data());
+  RefinementManager & refinement = krino::RefinementManager::get_or_create(mesh.mesh_meta_data());
 
   const CDFEM_Support & cdfemSupport = CDFEM_Support::get(mesh.mesh_meta_data());
   const Phase_Support & phaseSupport = Phase_Support::get(mesh.mesh_meta_data());

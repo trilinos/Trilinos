@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -218,12 +218,6 @@ namespace Iocgns {
     else if (mesh_type == Ioss::MeshType::STRUCTURED) {
       decompose_structured(filePtr);
     }
-#if IOSS_ENABLE_HYBRID
-    else if (mesh_type == Ioss::MeshType::HYBRID) {
-      IOSS_ERROR("ERROR: CGNS: The mesh type is HYBRID which is not supported for parallel "
-                 "decomposition yet.");
-    }
-#endif
     else {
       IOSS_ERROR("ERROR: CGNS: The mesh type is not Unstructured or Structured "
                  "which are the only types currently supported");
@@ -725,7 +719,7 @@ namespace Iocgns {
           "ERROR: The decomposition of this mesh requires 64-bit integers, but is being\n"
           "       run with 32-bit integer code. Please rerun with the property INTEGER_SIZE_API\n"
           "       set to 8. The details of how to do this vary with the code that is being run.\n"
-          "       Contact gdsjaar@sandia.gov for more details.\n");
+          "       Contact sierra-help@sandia.gov for more details.\n");
     }
 
     // Now, populate the vectors...

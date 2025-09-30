@@ -62,7 +62,7 @@ StackedTimer::LevelTimer::findBaseTimer(const std::string &name) const {
   }
   return t;
 }
-  
+
 BaseTimer::TimeInfo
 StackedTimer::LevelTimer::findTimer(const std::string &name, bool& found) {
   BaseTimer::TimeInfo t;
@@ -134,6 +134,11 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
       hist_[i].resize(num_names);
   }
 
+  if (options.output_per_proc_stddev) {
+    per_proc_stddev_min_.resize(num_names);
+    per_proc_stddev_max_.resize(num_names);
+  }
+
   // Temp data
   Array<double> time(num_names);
   Array<unsigned long> count(num_names);
@@ -142,6 +147,9 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
     updates.resize(num_names);
   Array<int> used(num_names);
   Array<int> bins;
+  Array<double> per_proc_stddev;
+  if (options.output_per_proc_stddev)
+    per_proc_stddev.resize(num_names);
 
   if (options.output_histogram)
     bins.resize(num_names);
@@ -155,6 +163,8 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
     used[i] = t.count==0? 0:1;
     if (options.output_total_updates)
       updates[i] = t.updates;
+    if (options.output_per_proc_stddev)
+      per_proc_stddev[i] = t.stdDev;
   }
 
   // Now reduce the data
@@ -218,6 +228,11 @@ StackedTimer::collectRemoteData(Teuchos::RCP<const Teuchos::Comm<int> > comm, co
     for (int i=0;i<num_names; ++i)
       time[i] *= time[i];
     reduce(time.getRawPtr(), sum_sq_.getRawPtr(), num_names, REDUCE_SUM, 0, *comm);
+  }
+
+  if (options.output_per_proc_stddev) {
+    reduceAll(*comm, REDUCE_MIN, num_names, per_proc_stddev.getRawPtr(), per_proc_stddev_min_.getRawPtr());
+    reduceAll(*comm, REDUCE_MAX, num_names, per_proc_stddev.getRawPtr(), per_proc_stddev_max_.getRawPtr());
   }
 
 }
@@ -512,6 +527,15 @@ StackedTimer::printLevel (std::string prefix, int print_level, std::ostream &os,
       // this block keeps alignment for single rank timers
       for (size_t j=0; j < alignments_.histogram_; ++j)
         os << " ";
+    }
+
+    if (options.output_per_proc_stddev) {
+      std::ostringstream tmp;
+      tmp << ", std dev per proc min/max=";
+      tmp << per_proc_stddev_min_[i];
+      tmp << "/";
+      tmp << per_proc_stddev_max_[i];
+      os << tmp.str();
     }
 
     if (! options.print_names_before_values) {

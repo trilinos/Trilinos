@@ -13,7 +13,7 @@
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include <type_traits> // std::is_same
+#include <type_traits>  // std::is_same
 
 namespace Ifpack2 {
 namespace Details {
@@ -88,9 +88,9 @@ values:
 </ul>
 
 */
-template<class MatrixType>
+template <class MatrixType>
 class OneLevelFactory {
-public:
+ public:
   typedef typename MatrixType::scalar_type scalar_type;
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
@@ -98,15 +98,17 @@ public:
   typedef ::Ifpack2::Preconditioner<scalar_type,
                                     local_ordinal_type,
                                     global_ordinal_type,
-                                    node_type> prec_type;
+                                    node_type>
+      prec_type;
   typedef ::Tpetra::RowMatrix<scalar_type,
                               local_ordinal_type,
                               global_ordinal_type,
-                              node_type> row_matrix_type;
+                              node_type>
+      row_matrix_type;
 
-  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
-                 "Ifpack2::Details::OneLevelFactory: MatrixType must be a "
-                 "Tpetra::RowMatrix specialization.");
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
+                "Ifpack2::Details::OneLevelFactory: MatrixType must be a "
+                "Tpetra::RowMatrix specialization.");
 
   /** \brief Create an instance of Preconditioner given the string
    * name of the preconditioner type.
@@ -119,14 +121,17 @@ public:
    * object.
    */
   Teuchos::RCP<prec_type>
-  create (const std::string& precType,
-          const Teuchos::RCP<const row_matrix_type>& matrix) const;
+  create(const std::string& precType,
+         const Teuchos::RCP<const row_matrix_type>& matrix) const;
+
+  std::vector<std::string>
+  getSupportedNames() const;
 
   bool
-  isSupported (const std::string& precType) const;
+  isSupported(const std::string& precType) const;
 };
 
-} // namespace Details
-} // namespace Ifpack2
+}  // namespace Details
+}  // namespace Ifpack2
 
-#endif // IFPACK2_DETAILS_ONELEVELFACTORY_DECL_HPP
+#endif  // IFPACK2_DETAILS_ONELEVELFACTORY_DECL_HPP

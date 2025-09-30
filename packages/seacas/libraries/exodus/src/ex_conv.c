@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2021, 2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021, 2024, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -60,7 +60,7 @@ int exi_check_multiple_open(const char *path, int mode, const char *func)
                  " File corruption or incorrect behavior can occur.\n",
                  path);
         ex_err(func, errmsg, EX_BADFILEID);
-#if defined BUILT_IN_SIERRA
+#if defined(EXODUS_RELAXED_MULTIPLE_OPEN_CHECK)
         EX_FUNC_LEAVE(EX_NOERR);
 #else
         EX_FUNC_LEAVE(EX_FATAL);
@@ -78,7 +78,6 @@ int exi_check_valid_file_id(int exoid, const char *func)
   if (exoid <= 0) {
     error = true;
   }
-#if !defined BUILT_IN_SIERRA
   else {
     int                   rootid = exoid & EX_FILE_ID_MASK;
     struct exi_file_item *file   = exi_find_file_item(rootid);
@@ -87,7 +86,6 @@ int exi_check_valid_file_id(int exoid, const char *func)
       error = true;
     }
   }
-#endif
 
   if (error) {
     int old_opt = ex_opts(EX_VERBOSE);
@@ -162,7 +160,7 @@ int exi_conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_word
 /* If the following line causes a compile-time error, then there is a problem
  * which will cause exodus to not work correctly on this platform.
  *
- * Contact Greg Sjaardema, gdsjaar@sandia.gov for assistance.
+ * Contact Greg Sjaardema, sierra-help@sandia.gov for assistance.
  */
 #define CT_ASSERT(e) extern char(*ct_assert(void))[sizeof(char[1 - 2 * !(e)])]
   CT_ASSERT((sizeof(float) == 4 || sizeof(float) == 8) &&

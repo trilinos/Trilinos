@@ -615,10 +615,22 @@ StringValidator::StringValidator()
 {}
 
 
-StringValidator::StringValidator(const Array<std::string>& validStrings):
+StringValidator::StringValidator(const Array<std::string>& validStrings, bool caseSensitive):
   ParameterEntryValidator(),
-  validStrings_(rcp(new Array<std::string>(validStrings)))
-{}
+  caseSensitive_(caseSensitive)
+{
+  if (!caseSensitive_) {
+    Array<std::string> upperCaseValidStrings(validStrings.size());
+    size_t k = 0;
+    for (auto it = validStrings.begin(); it != validStrings.end(); ++it) {
+      upperCaseValidStrings[k] = upperCase(*it);
+      ++k;
+    }
+    validStrings_ = rcp(new Array<std::string>(upperCaseValidStrings));
+  }
+  else
+    validStrings_ = rcp(new Array<std::string>(validStrings));
+}
 
 
 ParameterEntryValidator::ValidStringsList
@@ -653,9 +665,12 @@ void StringValidator::validate(
     "Type accepted: " << Teuchos::TypeNameTraits<std::string>::name() <<
     std::endl);
   if(!validStrings_.is_null()){
+    auto value = getValue<std::string>(entry);
+    if (!caseSensitive_)
+      value = upperCase(value);
     Array<std::string>::const_iterator
       it = std::find(validStrings_->begin(),
-      validStrings_->end(), getValue<std::string>(entry));
+      validStrings_->end(), value);
     TEUCHOS_TEST_FOR_EXCEPTION(it == validStrings_->end(),
       Exceptions::InvalidParameterValue,
       "The \"" << paramName << "\"" <<

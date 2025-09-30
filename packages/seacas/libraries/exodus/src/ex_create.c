@@ -172,7 +172,7 @@ int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws, int run
   nc_mode |= NC_NODIMSCALE_ATTACH;
 #endif
 
-  if ((status = nc_create(path, nc_mode, &exoid)) != NC_NOERR) {
+  if ((status = nc_create(path, nc_mode, &exoid)) != EX_NOERR) {
 #if NC_HAS_HDF5
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: file create failed for %s", canon_path);
 #else

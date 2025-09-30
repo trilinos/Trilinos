@@ -220,7 +220,7 @@ static ElementIntersectionPointFilter
 keep_all_intersecion_points_filter()
 {
   auto filter =
-  [](const std::vector<int> & intersectionPointSortedDomains)
+  [](const std::vector<int> & /*intersectionPointSortedDomains*/)
   {
     return true;
   };
@@ -676,15 +676,15 @@ LS_Per_Interface_Cutter::have_crossing(const InterfaceID interface, const std::a
   return interface_surface.sign_at_position(edgeNodeCoords[0]) == -interface_surface.sign_at_position(edgeNodeCoords[1]);
 }
 
-int LS_Per_Interface_Cutter::get_ls_per_interface_phase_at_location(const stk::math::Vector3d & pCoords) const
+int LS_Per_Interface_Cutter::get_ls_per_interface_phase_at_location(const stk::math::Vector3d & /*pCoords*/) const
 {
   STK_ThrowRequireMsg(false, "Improper usage of LS_Per_Interface_Cutter.");
   return -1;
 }
 
-void LS_Per_Interface_Cutter::add_interfaces_with_uncaptured_intersection_within_element(const std::vector<stk::math::Vector3d> & elemNodesCoords,
-    const std::vector<const std::vector<int> *> & elemNodesSnappedDomains,
-    std::set<InterfaceID> & interfacesWithUncapturedCrossings) const
+void LS_Per_Interface_Cutter::add_interfaces_with_uncaptured_intersection_within_element(const std::vector<stk::math::Vector3d> & /*elemNodesCoords*/,
+    const std::vector<const std::vector<int> *> & /*elemNodesSnappedDomains*/,
+    std::set<InterfaceID> & /*interfacesWithUncapturedCrossings*/) const
 {
   // For LS_Per_Interface_Cutter, internal intersections only happen if there are edge intersections so nothing to do here.
 }
@@ -1019,7 +1019,7 @@ One_LS_Per_Phase_Cutter::have_crossing(const InterfaceID interface, const std::a
 
 int One_LS_Per_Phase_Cutter::get_ls_per_interface_phase_at_location(const stk::math::Vector3d & pCoords) const
 {
-  const std::set<int> optimalPhases = determine_optimal_phases_at_location(pCoords, all_cutting_surfaces);
+  const std::set<int> optimalPhases = determine_optimal_phases_at_location(pCoords, cutting_surfaces);
   STK_ThrowRequireMsg(optimalPhases.size()==1, "Unexpected phase configuration with " << optimalPhases.size() << " optimal phases when evaluated phase at " << pCoords << "\n" << visualize());
   return *optimalPhases.begin();
 }

@@ -50,7 +50,8 @@ MeshBuilder::MeshBuilder()
    m_spatialDimension(0),
    m_entityRankNames(),
    m_upwardConnectivity(true),
-   m_symmetricGhostInfo(true)
+   m_symmetricGhostInfo(true),
+   m_maintainLocalIds(false)
 {
 }
 
@@ -64,7 +65,8 @@ MeshBuilder::MeshBuilder(ParallelMachine comm)
    m_spatialDimension(0),
    m_entityRankNames(),
    m_upwardConnectivity(true),
-   m_symmetricGhostInfo(true)
+   m_symmetricGhostInfo(true),
+   m_maintainLocalIds(false)
 {
 }
 
@@ -99,11 +101,13 @@ MeshBuilder& MeshBuilder::set_add_fmwk_data(bool addFmwkData)
   return *this;
 }
 
-MeshBuilder& MeshBuilder::set_field_data_manager(std::unique_ptr<FieldDataManager> fieldDataManager)
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after 2025-08-19
+STK_DEPRECATED MeshBuilder& MeshBuilder::set_field_data_manager(std::unique_ptr<FieldDataManager> fieldDataManager)
 {
   m_fieldDataManager = std::move(fieldDataManager);
   return *this;
 }
+#endif
 
 MeshBuilder& MeshBuilder::set_bucket_capacity(unsigned bucketCapacity)
 {
@@ -133,6 +137,12 @@ MeshBuilder& MeshBuilder::set_upward_connectivity(bool onOrOff)
 MeshBuilder& MeshBuilder::set_symmetric_ghost_info(bool onOrOff)
 {
   m_symmetricGhostInfo = onOrOff;
+  return *this;
+}
+
+MeshBuilder& MeshBuilder::set_maintain_local_ids(bool onOrOff)
+{
+  m_maintainLocalIds = onOrOff;
   return *this;
 }
 
@@ -169,6 +179,7 @@ std::unique_ptr<BulkData> MeshBuilder::create(std::shared_ptr<MetaData> metaData
                                                 create_aura_ghosting(),
                                                 m_upwardConnectivity));
   bulkPtr->set_symmetric_ghost_info(m_symmetricGhostInfo);
+  bulkPtr->set_maintain_local_ids(m_maintainLocalIds);
   return bulkPtr;
 }
 

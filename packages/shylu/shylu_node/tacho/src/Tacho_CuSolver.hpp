@@ -142,7 +142,7 @@ public:
     if (_verbose) {
       printf("  Linear system A\n");
       printf("             number of equations:                             %10d\n", _m);
-      printf("             number of nonzeros:                              %10d\n", _nnz);
+      printf("             number of nonzeros:                              %10ld\n",(long unsigned int) _nnz);
       printf("\n");
       printf("  Time\n");
       printf("             time for copying A into U:                       %10.6f s\n", t_copy);

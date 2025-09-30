@@ -61,15 +61,16 @@ TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
         {0, 0, 0}, {0, 0, 1}, {1, 0, 0}, {1, 0, 1},
         {1, 1, 0}, {1, 1, 1}, {0, 1, 0}, {0, 1, 1}};
 
+      auto coordData = node_coord.data<stk::mesh::ReadWrite>();
       for(unsigned i = 0; i < node_count; ++i)
       {
         stk::mesh::Entity const node = bulk_data.get_entity(stk::topology::NODE_RANK, i + 1);
 
-        double * const coord = stk::mesh::field_data(node_coord, node);
+        auto coord = coordData.entity_values(node);
 
-        coord[0] = node_coord_data[i][0];
-        coord[1] = node_coord_data[i][1];
-        coord[2] = node_coord_data[i][2];
+        coord(0_comp) = node_coord_data[i][0];
+        coord(1_comp) = node_coord_data[i][1];
+        coord(2_comp) = node_coord_data[i][2];
       }
 
       bulk_data.modification_end();

@@ -14,6 +14,7 @@ IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
     SOURCES Tempus_Test_BDF2_CDR.cpp ${TEMPUS_UNIT_TEST_MAIN}
     TESTONLYLIBS tempus_test_models
     NUM_MPI_PROCS 1
+    RUN_SERIAL
     )
 ENDIF()
 
@@ -87,6 +88,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_SinCos_SA_CopyFiles
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_SteadyQuadratic_CopyFiles
-  DEST_FILES Tempus_BDF2_SteadyQuadratic.xml  
+  DEST_FILES Tempus_BDF2_SteadyQuadratic.xml
   EXEDEPS BDF2_PseudoTransient_SA
   )

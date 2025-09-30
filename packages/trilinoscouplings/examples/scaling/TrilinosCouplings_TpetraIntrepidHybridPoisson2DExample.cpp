@@ -276,8 +276,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
   long long local_num_ijk[3];
   im_ne_get_local_num_ijk_l (id, local_num_ijk);
-  for(int dim = 0; dim < 3; ++dim) {
-    lNodesPerDim[dim] = local_num_ijk[dim];
+  for(int ldim = 0; ldim < 3; ++ldim) {
+    lNodesPerDim[ldim] = local_num_ijk[ldim];
   }
   // Ensure we have the correct nodes per dim for a 2D problem
   lNodesPerDim[2] = 1;
@@ -285,8 +285,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   Teuchos::Array<LO> nodesPerDim(3);
   long long num_ijk[3];
   im_ne_get_num_ijk_l (id, num_ijk);
-  for(int dim = 0; dim < 3; ++dim) {
-    nodesPerDim[dim] = num_ijk[dim];
+  for(int ldim = 0; ldim < 3; ++ldim) {
+    nodesPerDim[ldim] = num_ijk[ldim];
   }
 
   // Print mesh information

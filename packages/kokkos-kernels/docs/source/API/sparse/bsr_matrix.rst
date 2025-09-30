@@ -279,31 +279,7 @@ Return a const view of the i-th block in the matrix.
 Example
 =======
 
-.. code:: cppkokkos
-
-  // Namespaces / typedefs
-  using namespace KokkosSparse;
-  using namespace KokkosSparse::Experimental;
-  
-  using Crs = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
-  using Bsr = BsrMatrix<scalar_t, lno_t, device, void, size_type>;
-
-  //
-  // Convert a Crs to a Bsr
-  //
-
-  // Make a random Crs
-  constexpr auto nrows         = 5000;
-  constexpr auto diagDominance = 2;
-  const size_type nnz = 10 * nrows;
-  auto A = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
-
-  // Convert it to Bsr with block_dim= 4
-  const size_type block_dim = 4;
-  Bsr bsr(A, block_size);
-
-
-
-
-
+.. literalinclude:: ../../../../example/wiki/sparse/KokkosSparse_wiki_bsrmatrix_2.cpp
+  :language: c++
+  :lines: 16-
 

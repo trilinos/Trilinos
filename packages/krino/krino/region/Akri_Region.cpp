@@ -39,8 +39,8 @@
 #include <Akri_MeshFromFile.hpp>
 #include <Akri_OutputUtils.hpp>
 #include <Akri_PostProcess.hpp>
+#include <Akri_RefinementManager.hpp>
 #include <Akri_Surface_Manager.hpp>
-#include <Akri_RefinementInterface.hpp>
 #include <Akri_RefinementSupport.hpp>
 #include <Ioss_GroupingEntity.h>
 
@@ -102,6 +102,7 @@ void Region::commit()
   LevelSet::setup(meta);
   CDFEM_Support & cdfem_support = CDFEM_Support::get(meta);
   RefinementSupport & refinementSupport = RefinementSupport::get(meta);
+  AuxMetaData & auxMeta = AuxMetaData::get(meta);
 
   myPostProcessors.commit(meta);
 
@@ -113,23 +114,22 @@ void Region::commit()
     if (cdfem_support.get_num_initial_decomposition_cycles() > 1 || my_simulation.is_transient())
       cdfem_support.register_parent_node_ids_field(); // For non-transient simulations, still needed for piecewise linear location on previously cut edges
 
-    cdfem_support.setup_fields();
+    cdfem_support.set_coords_field(auxMeta.get_current_coordinates());
   }
 
-  auto & active_part = AuxMetaData::get(meta).active_part();
+  auto & active_part = auxMeta.active_part();
   stk::mesh::BulkData::AutomaticAuraOption auto_aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
 
   if (cdfem_support.get_cdfem_edge_degeneracy_handling() == SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE)
   {
     auto_aura_option = stk::mesh::BulkData::AUTO_AURA;
     cdfem_support.register_cdfem_snap_displacements_field();
-    cdfem_support.add_edge_interpolation_field(cdfem_support.get_cdfem_snap_displacements_field());
   }
 
   if (refinementSupport.get_initial_refinement_levels() > 0 || refinementSupport.get_interface_maximum_refinement_level() > 0 ||
       (krino::CDFEM_Support::is_active(meta) && cdfem_support.get_post_cdfem_refinement_levels() > 0))
   {
-    RefinementInterface & refinement = KrinoRefinement::create(meta);
+    RefinementManager & refinement = RefinementManager::create(meta);
     refinementSupport.set_non_interface_conforming_refinement(refinement);
   }
 
@@ -154,7 +154,7 @@ void Region::commit()
   myMesh->populate_mesh(auto_aura_option);
   stkOutput().set_bulk_data( mesh_bulk_data() );
 
-  if (AuxMetaData::get(mesh_meta_data()).get_assert_32bit_flag())
+  if (auxMeta.get_assert_32bit_flag())
   {
     const bool has_64bit_ids_in_use = stk::is_true_on_any_proc(mesh_bulk_data().parallel(), locally_has_64bit_ids_in_use_for_nodes_or_elements(mesh_bulk_data()));
     STK_ThrowErrorMsgIf(has_64bit_ids_in_use, "Option use_32_bit ids is active, but input file uses 64 bit ids.");
@@ -190,7 +190,7 @@ void zero_error_indicator(stk::mesh::BulkData & mesh)
   }
 }
 
-static void refine_elements_near_interface(RefinementInterface & refinement,
+static void refine_elements_near_interface(RefinementManager & refinement,
     const RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
     const int numRefinementSteps,
@@ -216,7 +216,7 @@ static void refine_elements_near_interface(RefinementInterface & refinement,
   perform_multilevel_adaptivity(refinement, mesh, mark_elements_near_interface, refinementSupport.get_do_not_refine_or_unrefine_selector());
 }
 
-static void refine_interface_elements(RefinementInterface & refinement,
+static void refine_interface_elements(RefinementManager & refinement,
     const RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
     const int numRefinementSteps,
@@ -239,7 +239,7 @@ static void refine_interface_elements(RefinementInterface & refinement,
   perform_multilevel_adaptivity(refinement, mesh, marker_function, refinementSupport.get_do_not_refine_or_unrefine_selector());
 }
 
-static void refine_elements_that_intersect_interval(RefinementInterface & refinement,
+static void refine_elements_that_intersect_interval(RefinementManager & refinement,
     const RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh)
 {
@@ -265,7 +265,7 @@ static void refine_elements_that_intersect_interval(RefinementInterface & refine
   perform_multilevel_adaptivity(refinement, mesh, mark_elements_that_intersect_interval, refinementSupport.get_do_not_refine_or_unrefine_selector());
 }
 
-static void refine_based_on_indicator_field(RefinementInterface & refinement,
+static void refine_based_on_indicator_field(RefinementManager & refinement,
     const krino::RefinementSupport & refinementSupport,
     stk::mesh::BulkData & mesh,
     const int targetCount,
@@ -319,7 +319,7 @@ void do_adaptive_refinement(const krino::RefinementSupport & refinementSupport, 
   }
 }
 
-void do_post_adapt_uniform_refinement(const Simulation & simulation, const RefinementSupport & refinementSupport, const AuxMetaData  & auxMeta, stk::mesh::BulkData & mesh)
+void do_post_adapt_uniform_refinement(const Simulation & simulation, const RefinementSupport & refinementSupport, const AuxMetaData  & /*auxMeta*/, stk::mesh::BulkData & mesh)
 {
   if ( refinementSupport.get_post_adapt_refinement_levels() > 0 )
   {
@@ -353,7 +353,7 @@ void do_post_adapt_uniform_refinement(const Simulation & simulation, const Refin
   }
 }
 
-void do_post_cdfem_uniform_refinement(const Simulation & simulation, const CDFEM_Support & cdfemSupport, const RefinementSupport & refinementSupport, const AuxMetaData  & auxMeta, stk::mesh::BulkData & mesh)
+void do_post_cdfem_uniform_refinement(const Simulation & simulation, const CDFEM_Support & cdfemSupport, const RefinementSupport & refinementSupport, const AuxMetaData  & /*auxMeta*/, stk::mesh::BulkData & mesh)
 {
   if ( cdfemSupport.get_post_cdfem_refinement_levels() > 0 )
   {

@@ -57,7 +57,7 @@ ReferenceMeshSmootherConjugateGradientImpl(PerceptMesh *eMesh,
 
   template<typename MeshType>
   void ReferenceMeshSmootherConjugateGradientImpl< MeshType >::
-  debug_print(double alpha)
+  debug_print(double /*alpha*/)
   {
   }
 
@@ -228,7 +228,7 @@ ReferenceMeshSmootherConjugateGradientImpl(PerceptMesh *eMesh,
 
 template<typename MeshType>
 Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
-        Double alpha, double multiplicative_edge_scaling, bool& valid,
+        Double alpha, double /*multiplicative_edge_scaling*/, bool& valid,
         size_t* num_invalid) {
     Double mtot = Double(0.0);
     size_t n_invalid = 0;
@@ -822,26 +822,26 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
 	stk::diag::Timer runOneIter("RMSCGI::run_one_iteration()",cumulative_timer);
 	stk::diag::TimeBlock my_time_block(runOneIter);
 
-    PerceptMesh *m_eMesh = Base::m_eMesh;
+    PerceptMesh *m_eMesh2 = Base::m_eMesh;
 
     bool total_valid=false;
 
     if (Base::m_iter == 0)
       {
-        get_edge_lengths(m_eMesh);
-        m_eMesh->nodal_field_set_value("cg_r", 0.0);
-        m_eMesh->nodal_field_set_value("cg_d", 0.0);
-        m_eMesh->nodal_field_set_value("cg_s", 0.0);
+        get_edge_lengths(m_eMesh2);
+        m_eMesh2->nodal_field_set_value("cg_r", 0.0);
+        m_eMesh2->nodal_field_set_value("cg_d", 0.0);
+        m_eMesh2->nodal_field_set_value("cg_s", 0.0);
       }
 
     /// f'(x)
     get_gradient();
 
     /// r = -g
-    m_eMesh->nodal_field_axpby(-1.0, "cg_g", 0.0, "cg_r");
-    Base::m_dold = m_eMesh->nodal_field_dot("cg_d", "cg_d");
-    Base::m_dmid = m_eMesh->nodal_field_dot("cg_r", "cg_d");
-    Base::m_dnew = m_eMesh->nodal_field_dot("cg_r", "cg_r");
+    m_eMesh2->nodal_field_axpby(-1.0, "cg_g", 0.0, "cg_r");
+    Base::m_dold = m_eMesh2->nodal_field_dot("cg_d", "cg_d");
+    Base::m_dmid = m_eMesh2->nodal_field_dot("cg_r", "cg_d");
+    Base::m_dnew = m_eMesh2->nodal_field_dot("cg_r", "cg_r");
     if (Base::m_iter == 0)
       {
         Base::m_d0 = Base::m_dnew;
@@ -865,25 +865,25 @@ Double ReferenceMeshSmootherConjugateGradientImpl<MeshType>::total_metric(
     if (Base::m_iter % N == 0 || cg_beta <= 0.0)
       {
         /// s = r
-        m_eMesh->copy_field("cg_s", "cg_r");
+        m_eMesh2->copy_field("cg_s", "cg_r");
       }
     else
       {
         /// s = r + beta * s
-        m_eMesh->nodal_field_axpby(1.0, "cg_r", cg_beta, "cg_s");
+        m_eMesh2->nodal_field_axpby(1.0, "cg_r", cg_beta, "cg_s");
       }
 
-    m_eMesh->copy_field("cg_d", "cg_r");
+    m_eMesh2->copy_field("cg_d", "cg_r");
     bool restarted = false;
     Double alpha = line_search(restarted);
-    Double snorm = m_eMesh->nodal_field_dot("cg_s", "cg_s");
+    Double snorm = m_eMesh2->nodal_field_dot("cg_s", "cg_s");
     Base::m_grad_norm_scaled = Base::m_alpha_0*std::sqrt(snorm)/Double(Base::m_num_nodes);
 
     /// x = x + alpha*s
     Base::m_alpha = alpha;
     update_node_positions(alpha);
     // check if re-snapped geometry is acceptable
-    if (m_eMesh->get_smooth_surfaces())
+    if (m_eMesh2->get_smooth_surfaces())
       {
         snap_nodes();
         if (Base::m_stage != 0)

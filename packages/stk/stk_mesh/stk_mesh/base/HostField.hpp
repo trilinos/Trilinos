@@ -40,49 +40,46 @@
 #include "stk_mesh/base/NgpFieldBase.hpp"
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/Field.hpp"
+#include "stk_mesh/base/FieldData.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/base/NgpForEachEntity.hpp"
 #include "stk_mesh/base/NgpMesh.hpp"
 #include "stk_mesh/base/NgpProfilingBlock.hpp"
-#include "stk_mesh/base/FieldSyncDebugging.hpp"
 #include "stk_mesh/base/NgpUtils.hpp"
 #include "stk_mesh/base/EntityFieldData.hpp"
 #include "stk_mesh/baseImpl/NgpFieldAux.hpp"
-#include "stk_mesh/base/NgpFieldSyncDebugger.hpp"
 
 namespace stk {
 namespace mesh {
 
-template<typename T, typename NgpMemSpace, template <typename, typename> class NgpDebugger>
+template<typename T, typename NgpMemSpace>
 class HostField : public NgpFieldBase
 {
  public:
   using ExecSpace = stk::ngp::ExecSpace;
   using MemSpace = NgpMemSpace;
   using value_type = T;
-  using StkDebugger = typename NgpDebugger<T, NgpMemSpace>::StkFieldSyncDebuggerType;
 
   HostField()
     : NgpFieldBase(),
-      hostBulk(nullptr),
-      field(nullptr),
-      synchronizedCount(0)
-  {
-  }
+      m_hostField(nullptr)
+  {}
 
-  HostField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f, [[maybe_unused]] bool isFromGetUpdatedNgpField = false)
+  HostField(const stk::mesh::BulkData& /*bulk*/, const stk::mesh::FieldBase& f,
+            [[maybe_unused]] bool isFromGetUpdatedNgpField = false)
     : NgpFieldBase(),
-      hostBulk(&b),
-      field(&f),
-      synchronizedCount(0)
-  {
-    field->template make_field_sync_debugger<StkDebugger>();
-  }
+      m_hostField(&f)
+  {}
 
-  HostField(const HostField<T, NgpMemSpace, NgpDebugger>&) = default;
-  HostField(HostField<T, NgpMemSpace, NgpDebugger>&&) = default;
-  HostField<T, NgpMemSpace, NgpDebugger>& operator=(const HostField<T, NgpMemSpace, NgpDebugger>&) = default;
-  HostField<T, NgpMemSpace, NgpDebugger>& operator=(HostField<T, NgpMemSpace, NgpDebugger>&&) = default;
+  HostField(const stk::mesh::FieldBase& f, [[maybe_unused]] bool isFromGetUpdatedNgpField = false)
+    : NgpFieldBase(),
+      m_hostField(&f)
+  {}
+
+  HostField(const HostField&) = default;
+  HostField(HostField&&) = default;
+  HostField& operator=(const HostField&) = default;
+  HostField& operator=(HostField&&) = default;
 
   void update_field(const ExecSpace& newExecSpace) override
   {
@@ -96,221 +93,201 @@ class HostField : public NgpFieldBase
     update_field();
   }
 
-  void set_field_states(HostField<T, NgpMemSpace, NgpDebugger>* fields[]) {}
-
-  size_t num_syncs_to_host() const override { return field->num_syncs_to_host(); }
-  size_t num_syncs_to_device() const override { return field->num_syncs_to_device(); }
+  size_t num_syncs_to_host() const override { return m_hostField->num_syncs_to_host(); }
+  size_t num_syncs_to_device() const override { return m_hostField->num_syncs_to_device(); }
   void fence() override {}
 
-  unsigned get_component_stride() const { return 1; }
+  unsigned get_component_stride(const FastMeshIndex& /*entityIndex*/) const { return 1; }
+
+  unsigned get_component_stride(unsigned /*bucketId*/) const { return 1; }
 
   unsigned get_num_components_per_entity(const stk::mesh::FastMeshIndex& entity) const {
-    return stk::mesh::field_scalars_per_entity(*field, entity.bucket_id);
+    return stk::mesh::field_scalars_per_entity(*m_hostField, entity.bucket_id);
   }
 
   unsigned get_extent0_per_entity(const stk::mesh::FastMeshIndex& entity) const {
-    return stk::mesh::field_extent0_per_entity(*field, entity.bucket_id);
+    return stk::mesh::field_extent0_per_entity(*m_hostField, entity.bucket_id);
   }
 
   unsigned get_extent1_per_entity(const stk::mesh::FastMeshIndex& entity) const {
-    return stk::mesh::field_extent1_per_entity(*field, entity.bucket_id);
+    return stk::mesh::field_extent1_per_entity(*m_hostField, entity.bucket_id);
   }
 
   unsigned get_extent_per_entity(const stk::mesh::FastMeshIndex& entity, unsigned dimension) const {
-    return stk::mesh::field_extent_per_entity(*field, dimension, entity.bucket_id);
+    return stk::mesh::field_extent_per_entity(*m_hostField, dimension, entity.bucket_id);
   }
 
-  unsigned debug_get_bucket_offset(unsigned bucketOrdinal) const override {
-    return bucketOrdinal;
-  }
-
-  T& get(const HostMesh& /*ngpMesh*/, stk::mesh::Entity entity, int component,
-         [[maybe_unused]] const char * fileName = HOST_DEBUG_FILE_NAME,
-         [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER) const
+  T& get(const HostMesh& /*ngpMesh*/, stk::mesh::Entity entity, int component) const
   {
-    T *data = static_cast<T *>(stk::mesh::field_data(*field, entity));
-    STK_ThrowAssert(data);
-    return data[component];
+    const MeshIndex& mi = m_hostField->get_mesh().mesh_index(entity);
+    const FieldMetaData& fieldMetaData = m_hostField->get_meta_data_for_field()[mi.bucket->bucket_id()];
+#ifdef STK_UNIFIED_MEMORY  // Layout::Left
+    return *(reinterpret_cast<T*>(fieldMetaData.m_data) + component*fieldMetaData.m_bucketCapacity + mi.bucket_ordinal);
+#else  // Layout::Right
+    return *(reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal) +
+             component);
+#endif
   }
 
-  T& get(stk::mesh::FastMeshIndex entity, int component,
-         [[maybe_unused]] const char * fileName = HOST_DEBUG_FILE_NAME,
-         [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER) const
+  T& get(stk::mesh::FastMeshIndex fmi, int component) const
   {
-    T *data = static_cast<T *>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
-    STK_ThrowAssert(data);
-    return data[component];
+    const FieldMetaData& fieldMetaData = m_hostField->get_meta_data_for_field()[fmi.bucket_id];
+#ifdef STK_UNIFIED_MEMORY  // Layout::Left
+    return *(reinterpret_cast<T*>(fieldMetaData.m_data) + component*fieldMetaData.m_bucketCapacity + fmi.bucket_ord);
+#else  // Layout::Right
+    return *(reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * fmi.bucket_ord) + component);
+#endif
   }
 
-  T& operator()(const stk::mesh::FastMeshIndex& index, int component,
-                [[maybe_unused]] const char * fileName = HOST_DEBUG_FILE_NAME,
-                [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER) const
+  T& operator()(const stk::mesh::FastMeshIndex& fmi, int component) const
   {
-    T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
-    STK_ThrowAssert(data);
-    return data[component];
+    const FieldMetaData& fieldMetaData = m_hostField->get_meta_data_for_field()[fmi.bucket_id];
+#ifdef STK_UNIFIED_MEMORY  // Layout::Left
+    return *(reinterpret_cast<T*>(fieldMetaData.m_data) + component*fieldMetaData.m_bucketCapacity + fmi.bucket_ord);
+#else  // Layout::Right
+    return *(reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * fmi.bucket_ord) + component);
+#endif
   }
 
-  EntityFieldData<T> operator()(const stk::mesh::FastMeshIndex& index,
-                                [[maybe_unused]] const char * fileName = HOST_DEBUG_FILE_NAME,
-                                [[maybe_unused]] int lineNumber = HOST_DEBUG_LINE_NUMBER) const
+  EntityFieldData<T> operator()(const stk::mesh::FastMeshIndex& fmi) const
   {
-    T *data = static_cast<T *>(stk::mesh::field_data(*field, index.bucket_id, index.bucket_ord));
-    unsigned numScalars = stk::mesh::field_scalars_per_entity(*field, index.bucket_id);
-    STK_ThrowAssert(data);
-    return EntityFieldData<T>(data, numScalars);
+    const FieldMetaData& fieldMetaData = m_hostField->get_meta_data_for_field()[fmi.bucket_id];
+    const int numScalars = fieldMetaData.m_numComponentsPerEntity * fieldMetaData.m_numCopiesPerEntity;
+#ifdef STK_UNIFIED_MEMORY  // Layout::Left
+    return EntityFieldData<T>(reinterpret_cast<T*>(fieldMetaData.m_data) + fmi.bucket_ord,
+                              numScalars, fieldMetaData.m_bucketCapacity);
+#else  // Layout::Right
+    return EntityFieldData<T>(reinterpret_cast<T*>(fieldMetaData.m_data +
+                                                   fieldMetaData.m_bytesPerEntity * fmi.bucket_ord),
+                              numScalars, 1);
+#endif
   }
 
   void set_all(const HostMesh& ngpMesh, const T& value)
   {
-    stk::mesh::for_each_entity_run(ngpMesh, field->entity_rank(), *field, [&](const FastMeshIndex& entity) {
-      T* fieldPtr = static_cast<T*>(stk::mesh::field_data(*field, entity.bucket_id, entity.bucket_ord));
-      int numScalars = stk::mesh::field_scalars_per_entity(*field, entity.bucket_id);
-      for (int i = 0; i < numScalars; i++) {
-        fieldPtr[i] = value;
+#ifdef STK_UNIFIED_MEMORY  // Layout::Left
+    auto fieldData = m_hostField->data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    stk::mesh::for_each_entity_run(ngpMesh, m_hostField->entity_rank(), *m_hostField,
+      [&](const FastMeshIndex& entity) {
+        auto entityValues = fieldData.entity_values(entity);
+        for (ScalarIdx scalar : entityValues.scalars()) {
+          entityValues(scalar) = value;
+        }
       }
-    });
+    );
+#else  // Layout::Right
+    auto fieldData = m_hostField->data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    stk::mesh::for_each_entity_run(ngpMesh, m_hostField->entity_rank(), *m_hostField,
+      [&](const FastMeshIndex& entity) {
+        auto entityValues = fieldData.entity_values(entity);
+        for (ScalarIdx scalar : entityValues.scalars()) {
+          entityValues(scalar) = value;
+        }
+      }
+    );
+#endif
   }
 
-  void modify_on_host() override { field->modify_on_host(); }
+  void modify_on_host() override { m_hostField->modify_on_host(); }
 
-  void modify_on_device() override { field->modify_on_device(); }
+  void modify_on_device() override { m_hostField->modify_on_device(); }
 
   void clear_sync_state() override
   {
-    field->clear_sync_state();
+    m_hostField->clear_sync_state();
   }
 
-  void modify_on_host(const Selector& selector) override { field->modify_on_host(selector); }
+  void modify_on_host(const Selector& selector) override { m_hostField->modify_on_host(selector); }
 
-  void modify_on_device(const Selector& selector) override { field->modify_on_device(selector); }
+  void modify_on_device(const Selector& selector) override { m_hostField->modify_on_device(selector); }
 
   void clear_host_sync_state() override
   {
-    field->clear_host_sync_state();
+    m_hostField->clear_host_sync_state();
   }
 
   void clear_device_sync_state() override
   {
-    field->clear_device_sync_state();
+    m_hostField->clear_device_sync_state();
   }
 
   void sync_to_host() override
   {
-    sync_to_host(Kokkos::DefaultExecutionSpace());
+    m_hostField->sync_to_host();
     if constexpr (!std::is_same_v<Kokkos::DefaultExecutionSpace,Kokkos::Serial>) {
       Kokkos::fence();
     }
   }
 
-  void sync_to_host(const ExecSpace& /*execSpace*/) override
+  void sync_to_host(const ExecSpace& execSpace) override
   {
-    if (need_sync_to_host()) {
-      copy_device_to_host();
-      clear_device_sync_state();
-    }
+    m_hostField->sync_to_host(execSpace);
   }
 
-  void sync_to_host(ExecSpace&& /*execSpace*/) override
+  void sync_to_host(ExecSpace&& execSpace) override
   {
-    if (need_sync_to_host()) {
-      copy_device_to_host();
-      clear_device_sync_state();
-    }
+    m_hostField->sync_to_host(execSpace);
   }
 
   void sync_to_device() override 
   {
-    sync_to_device(Kokkos::DefaultExecutionSpace());
+    m_hostField->sync_to_device();
     Kokkos::fence();
   }
 
-  void sync_to_device(const ExecSpace& /*execSpace*/) override
+  void sync_to_device(const ExecSpace& execSpace) override
   {
-    if (need_sync_to_device()) {
-      if (hostBulk->synchronized_count() != synchronizedCount) {
-        update_field();
-      }
-      copy_host_to_device();
-      clear_host_sync_state();
-    }
+    m_hostField->sync_to_device(execSpace);
   }
 
-  void sync_to_device(ExecSpace&& /*execSpace*/) override
+  void sync_to_device(ExecSpace&& execSpace) override
   {
-    if (need_sync_to_device()) {
-      if (hostBulk->synchronized_count() != synchronizedCount) {
-        update_field();
-      }
-      copy_host_to_device();
-      clear_host_sync_state();
-    }
+    sync_to_device(execSpace);
   }
 
-  size_t synchronized_count() const override { return synchronizedCount; }
+  size_t synchronized_count() const override { return m_hostField->synchronized_count(); }
 
-  FieldState state() const { return field->state(); }
+  FieldState state() const { return m_hostField->state(); }
 
-  void update_bucket_pointer_view() override { }
+  stk::mesh::EntityRank get_rank() const { return m_hostField ? m_hostField->entity_rank()
+                                                              : stk::topology::INVALID_RANK; }
 
-  void swap_field_views(NgpFieldBase * /*other*/) override { }
-  void swap(HostField<T> &other) { }
+  unsigned get_ordinal() const { return m_hostField->m_ordinal; }
 
-  stk::mesh::EntityRank get_rank() const { return field ? field->entity_rank() : stk::topology::INVALID_RANK; }
+  const std::string& name() const { return m_hostField->name(); }
 
-  unsigned get_ordinal() const { return field->mesh_meta_data_ordinal(); }
+  const BulkData& get_bulk() const { return m_hostField->get_mesh(); }
 
-  const FieldBase* get_field_base() const { return field; }
+  const FieldBase* get_field_base() const { return m_hostField; }
 
-  void debug_initialize_debug_views() override {}
-  void debug_modification_begin() override {}
-  void debug_modification_end(size_t) override {}
-  void debug_detect_device_field_modification() override {}
+  bool need_sync_to_host() const override { return m_hostField->need_sync_to_host(); }
 
-  bool need_sync_to_host() const override { return field->need_sync_to_host(); }
-
-  bool need_sync_to_device() const override { return field->need_sync_to_device(); }
-
-  void notify_sync_debugger_clear_sync_state() override {}
-  void notify_sync_debugger_clear_host_sync_state() override {}
-  void notify_sync_debugger_clear_device_sync_state() override {}
+  bool need_sync_to_device() const override { return m_hostField->need_sync_to_device(); }
 
  private:
-  ExecSpace& get_execution_space() const { return field->get_execution_space(); }
+  ExecSpace& get_execution_space() const { return m_hostField->get_execution_space(); }
 
-  void set_execution_space(const ExecSpace& executionSpace) { field->set_execution_space(executionSpace); }
+  void set_execution_space(const ExecSpace& executionSpace) { m_hostField->set_execution_space(executionSpace); }
 
   void set_execution_space(ExecSpace&& executionSpace)
   {
-    field->set_execution_space(std::forward<ExecSpace>(executionSpace));
+    m_hostField->set_execution_space(std::forward<ExecSpace>(executionSpace));
   }
 
-  void reset_execution_space() { field->reset_execution_space(); }
+  void reset_execution_space() { m_hostField->reset_execution_space(); }
 
-  void update_field()
-  {
-    field->increment_num_syncs_to_device();
-    synchronizedCount = hostBulk->synchronized_count();
-  }
+  void update_field() { }
 
   void set_modify_on_device() {
-    field->modify_on_device();
-  }
-
-  void copy_host_to_device()
-  {
-    field->increment_num_syncs_to_device();
+    m_hostField->modify_on_device();
   }
 
   void copy_device_to_host()
   {
-    field->increment_num_syncs_to_host();
+    m_hostField->increment_num_syncs_to_host();
   }
 
-  const BulkData* hostBulk;
-  const stk::mesh::FieldBase * field;
-
-  size_t synchronizedCount;
+  const stk::mesh::FieldBase* m_hostField;
 };
 
 }

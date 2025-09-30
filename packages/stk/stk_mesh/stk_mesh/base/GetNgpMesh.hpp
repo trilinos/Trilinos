@@ -44,6 +44,12 @@ namespace mesh {
 template<typename NgpMemSpace = NgpMeshDefaultMemSpace>
 inline NgpMeshT<NgpMemSpace> & get_updated_ngp_mesh(const BulkData & bulk)
 {
+  static_assert(std::is_same_v<NgpMeshT<NgpMemSpace>,HostMeshT<NgpMemSpace>> ||
+                Kokkos::SpaceAccessibility<NgpMemSpace,NgpMeshDefaultMemSpace>::accessible,
+                "In a GPU-enabled build, get_updated_ngp_mesh requires a device-accessible memory-space.");
+
+  STK_ThrowRequireMsg(!bulk.in_modifiable_state(), "NgpMesh cannot be updated during a mesh modification.");
+
   NgpMeshBase * ngpMeshBase = impl::get_ngp_mesh(bulk);
 
   if (ngpMeshBase == nullptr) {
@@ -58,6 +64,8 @@ inline NgpMeshT<NgpMemSpace> & get_updated_ngp_mesh(const BulkData & bulk)
 
 inline NgpMesh & get_updated_ngp_mesh(const BulkData & bulk)
 {
+  STK_ThrowRequireMsg(!bulk.in_modifiable_state(), "NgpMesh cannot be updated during a mesh modification.");
+
   return get_updated_ngp_mesh<NgpMeshDefaultMemSpace>(bulk);
 }
 

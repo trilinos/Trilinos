@@ -45,7 +45,8 @@ void getValidParameters(Teuchos::ParameterList &params) {
   // params.set("chebyshev: operator inv diagonal",Teuchos::null);
   params.set("chebyshev: min diagonal value", STS::eps());
   params.set("chebyshev: zero starting solution", true);
-  params.set("chebyshev: use native spmv", false);
+  params.set("chebyshev: use native spmv", true);
+  params.set("chebyshev: pre-allocate temp vector", true);
   params.set("chebyshev: algorithm", "first");
 
   // Ifpack2_Amesos.cpp
@@ -76,7 +77,7 @@ void getValidParameters(Teuchos::ParameterList &params) {
   params.set("fact: relative threshold", 1.0);
   params.set("fact: relax value", 0.0);
   params.set("fact: type", "serial");
-  params.sublist("parallel ILUT options"); // FIXME this should be validated
+  params.sublist("parallel ILUT options");  // FIXME this should be validated
 
   // Ifpack2_LocalSparseTriangularSolver.cpp
   params.set("trisolver: type", "Internal");
@@ -117,8 +118,8 @@ void getValidParameters(Teuchos::ParameterList &params) {
 
   // Additive Schwarz preconditioner
   params.set("schwarz: compute condest",
-             false); // mfh 24 Mar 2015: for backwards compatibility ONLY
-  params.set("schwarz: combine mode", "ZERO"); // use string mode for this
+             false);                            // mfh 24 Mar 2015: for backwards compatibility ONLY
+  params.set("schwarz: combine mode", "ZERO");  // use string mode for this
   params.set("schwarz: use reordering", true);
   params.set("schwarz: filter singletons", false);
   params.set("schwarz: overlap level", 0);
@@ -194,4 +195,4 @@ void getValidParameters(Teuchos::ParameterList &params) {
   params.set("hypre: NumFunctions", 0);
 }
 
-} // namespace Ifpack2
+}  // namespace Ifpack2

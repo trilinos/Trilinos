@@ -45,6 +45,7 @@
 #include "stk_util/parallel/DistributedIndex.hpp"  // for DistributedIndex, etc
 
 #include <vector>
+#include <algorithm>
 
 //----------------------------------------------------------------------
 
@@ -111,28 +112,15 @@ bool is_shell_configuration_valid_for_side_connection(stk::topology creationElem
 
 bool is_shell_configuration_valid_for_side_connection(const SideCreationElementPair& shellPair);
 
-inline
-bool is_in_list(Entity entity, const Entity* begin, const Entity* end) 
-{
-  return std::find(begin, end, entity) != end; 
-}
-
 template<typename VecType>
 void
 remove_entities_not_in_list(const Entity* beginList,
                             const Entity* endList,
                             VecType& entities)
 {
-  int numFound=0;
-  for(int j=0, initialSize=entities.size(); j<initialSize; ++j) {
-    if (is_in_list(entities[j], beginList, endList)) {
-      if (j > numFound) {
-        entities[numFound] = entities[j];
-      }
-      ++numFound;
-    }
-  }    
-  entities.resize(numFound);
+  auto it = std::remove_if(entities.begin(), entities.end(),
+                    [&](Entity x) { return std::find(beginList,endList,x) == endList; });
+  entities.resize(it - entities.begin());
 }
 
 template<typename VecType>
@@ -213,7 +201,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               std::vector<EntityProc> & shared_change ,
                                               std::vector<EntityProc> & ghosted_change );
 
-stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys);
+stk::mesh::EntityVector convert_keys_to_entities(const stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys);
 
 bool internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,
@@ -455,6 +443,12 @@ void check_declare_element_side_inputs(const BulkData & mesh,
 bool connect_edge_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity edge);
 void connect_face_to_elements(stk::mesh::BulkData& bulk, stk::mesh::Entity face);
 
+bool part_is_on_upward_entity_except(const stk::mesh::BulkData& bulk,
+                                     stk::mesh::Entity entity,
+                                     stk::mesh::EntityRank entityRank,
+                                     const stk::mesh::Part& part,
+                                     stk::mesh::Entity entityToSkip);
+
 bool has_upward_recv_ghost_connectivity(const stk::mesh::BulkData &bulk,
                                         const stk::mesh::Ghosting& ghosting,
                                         stk::mesh::Entity entity);
@@ -476,6 +470,8 @@ void print_upward_connected_entities(stk::mesh::BulkData& bulk,
 
 std::vector<ConnectivityOrdinal> get_ordinals_without_connected_sides(BulkData & mesh, const Entity elem);
 void connect_element_to_existing_sides(BulkData & mesh, const Entity elem);
+
+void set_local_ids(BulkData& mesh);
 
 } // namespace impl
 } // namespace mesh

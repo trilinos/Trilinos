@@ -76,14 +76,14 @@ int ex_get_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
 
   if (varidx[1] == -1) {
     /* Get the dimension of this nodal communication map */
-    if ((status = nc_inq_dimid(exoid, DIM_NCNT_CMAP, &dimid)) != NC_NOERR) {
+    if ((status = nc_inq_dimid(exoid, DIM_NCNT_CMAP, &dimid)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find dimension ID for \"%s\" in file ID %d", DIM_NCNT_CMAP, exoid);
       ex_err_fn(exoid, __func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
-    if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
+    if ((status = nc_inq_dimlen(exoid, dimid, count)) != EX_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NCNT_CMAP,
                exoid);
@@ -94,7 +94,7 @@ int ex_get_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   }
 
   /* Get the variable ID for the nodal comm map node IDs */
-  if ((status = nc_inq_varid(exoid, VAR_N_COMM_NIDS, &varid[0])) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_N_COMM_NIDS, &varid[0])) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_N_COMM_NIDS, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -102,7 +102,7 @@ int ex_get_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
   }
 
   /* Get the variable ID for the nodal comm map processor IDs */
-  if ((status = nc_inq_varid(exoid, VAR_N_COMM_PROC, &varid[1])) != NC_NOERR) {
+  if ((status = nc_inq_varid(exoid, VAR_N_COMM_PROC, &varid[1])) != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find variable ID for \"%s\" in file ID %d",
              VAR_N_COMM_PROC, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -119,7 +119,7 @@ int ex_get_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
     status = nc_get_vara_int(exoid, varid[0], start, count, node_ids);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_N_COMM_NIDS, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
@@ -134,7 +134,7 @@ int ex_get_node_cmap(int exoid, ex_entity_id map_id, void_int *node_ids, void_in
     status = nc_get_vara_int(exoid, varid[1], start, count, proc_ids);
   }
 
-  if (status != NC_NOERR) {
+  if (status != EX_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
              VAR_N_COMM_PROC, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);

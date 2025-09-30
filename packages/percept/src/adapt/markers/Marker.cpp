@@ -18,7 +18,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
@@ -314,9 +313,9 @@ struct IterationInfo
   size_t numCurrentElements;
   size_t numElementLimit;
   int convCase;
-  IterationInfo(int iter, double c0, double c1, double c2, size_t n0, size_t n1, int convCase) :
-    iter(iter), currentErrorThreshold(c0), currentErrorThresholdMin(c1), currentErrorThresholdMax(c2),
-    numCurrentElements(n0), numElementLimit(n1), convCase(convCase)
+  IterationInfo(int iter_, double c0, double c1, double c2, size_t n0, size_t n1, int convCase_) :
+    iter(iter_), currentErrorThreshold(c0), currentErrorThresholdMin(c1), currentErrorThresholdMax(c2),
+    numCurrentElements(n0), numElementLimit(n1), convCase(convCase_)
   {
   }
 

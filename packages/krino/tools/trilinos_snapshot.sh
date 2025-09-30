@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# This is intended to work with a fork of trilinos, ie. https://github.com/drnobleabq/Trilinos
+
 exe() {
   stdbuf -o0 -e0 echo "% $@" ;
   eval "$@" ;
@@ -29,9 +31,9 @@ update_package() {
   exe git add --all packages/$1
 }
 
-export SIERRA=${SIERRA:-/fgs/$USER/trilinos-snapshot/code}
+export SIERRA=${SIERRA:-/fgs/$USER/projects/code}
 export SIERRA_BRANCH=master
-export TRILINOS=${TRILINOS:-/fgs/$USER/trilinos-snapshot/Trilinos}
+export TRILINOS=${TRILINOS:-/fgs/$USER/projects/Trilinos}
 export TRILINOS_BRANCH=develop
 
 export SNAPSHOT_BRANCH=krino-snapshot
@@ -50,20 +52,14 @@ STK_VERSION_STRING=$(./stk/stk_util/stk_util/registry/stk_version_gen.sh)
 
 exe cd $TRILINOS
 verify_clean_repo $TRILINOS
-verify_no_local_commits $TRILINOS_BRANCH
 
 #Pull request workflow
 exe git fetch --all
 exe git checkout master
 exe git merge upstream/master
 exe git push origin master
-exe git checkout develop
-exe git merge upstream/develop
-exe git push origin develop
 
-exe git checkout $TRILINOS_BRANCH
-exe git pull
-
+exe git branch -f $SNAPSHOT_BRANCH
 exe git checkout $SNAPSHOT_BRANCH
 exe git reset --hard upstream/$TRILINOS_BRANCH
 
@@ -71,5 +67,5 @@ update_package krino
 exe git rm -rf packages/krino/krino_sierra packages/krino/Jamfile packages/krino/.clang-format
 
 export COMMIT_MESSAGE="Krino: Snapshot $(date +'%m-%d-%y %H:%M') from Sierra $STK_VERSION_STRING"
-exe git commit -am '"'$COMMIT_MESSAGE'"'
+exe git commit -a -s -m '"'$COMMIT_MESSAGE'"'
 exe git push origin $SNAPSHOT_BRANCH

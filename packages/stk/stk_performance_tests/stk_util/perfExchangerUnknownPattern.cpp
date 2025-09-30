@@ -102,7 +102,7 @@ TYPED_TEST(ExchangerUnknownPatternTester, Perf)
       exchanger.start_nonblocking(this->sendBufs, this->recvBufs);
       std::this_thread::sleep_for(sleep_time);
       exchanger.post_nonblocking_receives(this->recvBufs);
-      exchanger.complete_receives(this->recvBufs, [](int rank, const std::vector<int>& buf) {});
+      exchanger.complete_receives(this->recvBufs, [](int /*rank*/, const std::vector<int>& /*buf*/) {});
       exchanger.complete_sends();
     }
 

@@ -103,7 +103,7 @@ void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute, double *secs)
     TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: matrix permutation"));
 #endif
 #ifdef ADELUS_PERM_MAT_FORWARD_COPY_TO_HOST
-    typename ZViewType::HostMirror h_Z = Kokkos::create_mirror_view( Z );
+    typename ZViewType::host_mirror_type h_Z = Kokkos::create_mirror_view( Z );
     Kokkos::deep_copy (h_Z, Z);
 
     permute_mat(ahandle, h_Z, lpiv_view, permute);
@@ -121,8 +121,10 @@ void lu_(HandleType& ahandle, ZViewType& Z, PViewType& permute, double *secs)
   run_secs = (double) tsecs;
 
   *secs = run_secs;
+#ifdef GET_TIMING
   showtime(ahandle.get_comm_id(), ahandle.get_comm(), ahandle.get_myrank(), ahandle.get_nprocs_cube(),
            "Total time in Factor (inl. matrix permutation)", &run_secs );
+#endif
   }
 }
 

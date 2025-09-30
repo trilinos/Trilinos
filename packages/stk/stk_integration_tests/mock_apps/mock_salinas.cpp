@@ -40,14 +40,11 @@ public:
       m_recvFieldName()
   { }
 
-  ~MockSalinas()
-  {
-    stk::parallel_machine_finalize();
-  }
+  ~MockSalinas() = default;
 
   void read_input_and_setup_split_comms(int argc, char** argv)
   {
-    MPI_Comm commWorld = stk::parallel_machine_init(&argc, &argv);
+    MPI_Comm commWorld = stk::initialize(&argc, &argv);
     int myWorldRank = stk::parallel_machine_rank(commWorld);
     int numWorldRanks = stk::parallel_machine_size(commWorld);
 
@@ -262,25 +259,27 @@ private:
 
 int main(int argc, char** argv)
 {
-  MockSalinas app;
+  {
+    MockSalinas app;
+    app.read_input_and_setup_split_comms(argc, argv);
 
-  app.read_input_and_setup_split_comms(argc, argv);
-  if (app.get_number_of_other_coupled_apps() != 1) {
-    return 0;
+    if (app.get_number_of_other_coupled_apps() == 1) {
+      app.communicate_initial_setup();
+      app.setup_fields_and_transfers();
+
+      while (!app.time_to_stop()) {
+        app.communicate_time_step_info();
+
+        if (app.other_app_is_done()) break;
+
+        app.get_time_from_other_app();
+        app.do_physics_solve();
+        app.perform_transfers();
+      }
+    }
   }
 
-  app.communicate_initial_setup();
-  app.setup_fields_and_transfers();
-
-  while (!app.time_to_stop()) {
-    app.communicate_time_step_info();
-
-    if (app.other_app_is_done()) break;
-
-    app.get_time_from_other_app();
-    app.do_physics_solve();
-    app.perform_transfers();
-  }
+  stk::finalize();
 
   return 0;
 }

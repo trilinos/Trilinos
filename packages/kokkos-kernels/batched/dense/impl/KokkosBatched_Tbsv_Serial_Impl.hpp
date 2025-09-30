@@ -75,7 +75,7 @@ struct SerialTbsv<Uplo::Lower, Trans::NoTranspose, ArgDiag, Algo::Tbsv::Unblocke
     if (info) return info;
 
     return Impl::SerialTbsvInternalLower<Algo::Tbsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), k);
+        ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride(0), A.stride(1), x.data(), x.stride(0), k);
   }
 };
 
@@ -88,8 +88,8 @@ struct SerialTbsv<Uplo::Lower, Trans::Transpose, ArgDiag, Algo::Tbsv::Unblocked>
     if (info) return info;
 
     return Impl::SerialTbsvInternalLowerTranspose<Algo::Tbsv::Unblocked>::invoke(
-        KokkosBlas::Impl::OpID(), ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(),
-        x.stride_0(), k);
+        KokkosBlas::Impl::OpID(), ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride(0), A.stride(1), x.data(),
+        x.stride(0), k);
   }
 };
 
@@ -102,8 +102,8 @@ struct SerialTbsv<Uplo::Lower, Trans::ConjTranspose, ArgDiag, Algo::Tbsv::Unbloc
     if (info) return info;
 
     return Impl::SerialTbsvInternalLowerTranspose<Algo::Tbsv::Unblocked>::invoke(
-        KokkosBlas::Impl::OpConj(), ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(),
-        x.stride_0(), k);
+        KokkosBlas::Impl::OpConj(), ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride(0), A.stride(1), x.data(),
+        x.stride(0), k);
   }
 };
 
@@ -116,7 +116,7 @@ struct SerialTbsv<Uplo::Upper, Trans::NoTranspose, ArgDiag, Algo::Tbsv::Unblocke
     if (info) return info;
 
     return Impl::SerialTbsvInternalUpper<Algo::Tbsv::Unblocked>::invoke(
-        ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(), x.stride_0(), k);
+        ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride(0), A.stride(1), x.data(), x.stride(0), k);
   }
 };
 
@@ -129,8 +129,8 @@ struct SerialTbsv<Uplo::Upper, Trans::Transpose, ArgDiag, Algo::Tbsv::Unblocked>
     if (info) return info;
 
     return Impl::SerialTbsvInternalUpperTranspose<Algo::Tbsv::Unblocked>::invoke(
-        KokkosBlas::Impl::OpID(), ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(),
-        x.stride_0(), k);
+        KokkosBlas::Impl::OpID(), ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride(0), A.stride(1), x.data(),
+        x.stride(0), k);
   }
 };
 
@@ -143,8 +143,8 @@ struct SerialTbsv<Uplo::Upper, Trans::ConjTranspose, ArgDiag, Algo::Tbsv::Unbloc
     if (info) return info;
 
     return Impl::SerialTbsvInternalUpperTranspose<Algo::Tbsv::Unblocked>::invoke(
-        KokkosBlas::Impl::OpConj(), ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride_0(), A.stride_1(), x.data(),
-        x.stride_0(), k);
+        KokkosBlas::Impl::OpConj(), ArgDiag::use_unit_diag, A.extent(1), A.data(), A.stride(0), A.stride(1), x.data(),
+        x.stride(0), k);
   }
 };
 

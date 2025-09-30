@@ -22,11 +22,13 @@ namespace Tacho {
 
 template <typename VT, typename DT>
 Driver<VT, DT>::Driver()
-    : _method(1), _order_connected_graph_separately(1), _m(0), _nnz(0), _ap(), _h_ap(), _aj(), _h_aj(), _perm(),
+    : _method(1), _order_connected_graph_separately(true), _graph_algo_type(-1), _m(0), _nnz(0), _ap(), _h_ap(), _aj(), _h_aj(), _perm(),
       _h_perm(), _peri(), _h_peri(), _m_graph(0), _nnz_graph(0), _h_ap_graph(), _h_aj_graph(), _h_perm_graph(),
-      _h_peri_graph(), _nnz_u(0), _nsupernodes(0), _N(nullptr), _verbose(0), _small_problem_thres(1024), _serial_thres_size(-1),
-      _mb(-1), _nb(-1), _front_update_mode(-1), _levelset(0), _device_level_cut(0), _device_factor_thres(128),
-      _device_solve_thres(128),
+      _h_peri_graph(), _nnz_u(0), _nsupernodes(0), _N(nullptr), _verbose(0), _small_problem_thres(1024),
+#ifdef TACHO_DEPRECATED_PARAMETERS
+      _serial_thres_size(-1), _mb(-1), _nb(-1), _front_update_mode(-1), _levelset(0),
+#endif
+      _device_level_cut(0), _device_factor_thres(128), _device_solve_thres(128),
       #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
       _variant(2),
       #else
@@ -34,11 +36,14 @@ Driver<VT, DT>::Driver()
       #endif
       _nstreams(16), _pivot_tol(0.0),
 #if defined(KOKKOS_ENABLE_HIP)
-      _store_transpose(true),
+      _store_transpose(true)
 #else
-      _store_transpose(false),
+      _store_transpose(false)
 #endif
-      _max_num_superblocks(-1) {}
+#ifdef TACHO_DEPRECATED_PARAMETERS
+      , _max_num_superblocks(-1)
+#endif
+     {}
 
 ///
 /// duplicate the object
@@ -110,10 +115,16 @@ void Driver<VT, DT>::setSolutionMethod(const int method) { // 1 - Chol, 2 - LDL,
 }
 
 template <typename VT, typename DT>
-void Driver<VT, DT>::setOrderConnectedGraphSeparately(const ordinal_type order_connected_graph_separately) {
+void Driver<VT, DT>::setOrderConnectedGraphSeparately(const bool order_connected_graph_separately) {
   _order_connected_graph_separately = order_connected_graph_separately;
 }
 
+template <typename VT, typename DT>
+void Driver<VT, DT>::setGraphAlgorithmType(const int graph_algo_type) {
+  _graph_algo_type = graph_algo_type;
+}
+
+#ifdef TACHO_DEPRECATED_PARAMETERS
 ///
 /// tasking options
 ///
@@ -133,13 +144,16 @@ template <typename VT, typename DT>
 void Driver<VT, DT>::setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks) {
   _max_num_superblocks = max_num_superblocks;
 }
+#endif
 
 ///
 /// Level set tools options
 ///
+#ifdef TACHO_DEPRECATED_PARAMETERS
 template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetScheduling(const bool levelset) {
   _levelset = levelset;
 }
+#endif
 
 template <typename VT, typename DT>
 void Driver<VT, DT>::setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut) {
@@ -232,6 +246,9 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze() {
         G.setOption(METIS_OPTION_CCORDER, one_i);
       }
 #endif
+      if (_graph_algo_type >= 0) {
+        G.setAlgorithm(_graph_algo_type);
+      }
       G.reorder(_verbose);
 
       _h_perm_graph = G.PermVector();
@@ -249,6 +266,9 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze() {
           G.setOption(METIS_OPTION_CCORDER, one_i);
         }
 #endif
+        if (_graph_algo_type >= 0) {
+          G.setAlgorithm(_graph_algo_type);
+        }
         G.reorder(_verbose);
 
         _h_perm = G.PermVector();
@@ -462,8 +482,23 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
   }
 
   if (_verbose) {
-    printf("Summary: NumericTools (SmallDenseFactorization)\n");
-    printf("===============================================\n");
+    switch (_method) {
+    case Cholesky: {
+      printf("TachoSolver: Factorize Cholesky (SmallDenseFactorization)\n");
+      printf("=========================================================\n");
+      break;
+    }
+    case LDL: {
+      printf("TachoSolver: Factorize LDL (SmallDenseFactorization)\n");
+      printf("====================================================\n");
+      break;
+    }
+    case SymLU: {
+      printf("TachoSolver: Factorize SymLU (SmallDenseFactorization)\n");
+      printf("======================================================\n");
+      break;
+    }
+    }
     printf("  Time\n");
     printf("             time for copying A into supernodes:              %10.6f s\n", t_copy);
     printf("             time for numeric factorization:                  %10.6f s\n", t_factor);
@@ -688,6 +723,52 @@ template <typename VT, typename DT> int Driver<VT, DT>::release() {
     _small_problem_thres = 1024;
   }
   return 0;
+}
+
+template <typename VT, typename DT> void Driver<VT, DT>::printParameters() {
+    printf("\n");
+    printf("TachoSolver: Parameters\n");
+    printf("=======================\n");
+    switch (_method) {
+    case Cholesky: {
+      printf("Factorize Cholesky (variant = %d)\n",_variant);
+      break;
+    }
+    case LDL: {
+      printf("Factorize LDL (variant = %d)\n",_variant);
+      break;
+    }
+    case SymLU: {
+      printf("Factorize SymLU (variant = %d)\n",_variant);
+      break;
+    }
+  }
+  // ** options
+  printf( " verbose             = %d\n", _verbose );             // print
+  printf( " store_transpose     = %s\t (store transpose explicitly)\n", (_store_transpose ? "true" : "false"));
+  printf( " small_problem_thres = %d\t (smaller than this, use lapack)\n\n", _small_problem_thres);
+
+#ifdef TACHO_DEPRECATED_PARAMETERS
+  // // ** tasking options
+  printf( " **DEPRECATED** serial_thres_size = %d (serialization threshold size)\n", _serial_thres_size);
+  printf( " **DEPRECATED** mb = %d (block size for byblocks algorithms)\n", _mb);
+  printf( " **DEPRECATED** nb = %d (panel size for panel algorithms)\n", _nb);
+  printf( " **DEPRECATED** max_num_superblocks = %d (superblocks in the memoyrpool)\n\n", _max_num_superblocks);
+  printf( " **DEPRECATED** front_update_mode = %d (front update mode 0 - lock, 1 - atomic)\n", _front_update_mode);
+#endif
+
+  // ** levelset options
+#ifdef TACHO_DEPRECATED_PARAMETERS
+  printf( " **DEPRECATED** levelset = %s (use level set code instead of tasking)\n", (_levelset ? "true" : "false"));
+#endif
+  printf( " device_level_cut    = %d\t (above this level, matrices are computed on device)\n", _device_level_cut);
+  printf( " device_factor_thres = %d\t (bigger than this threshold, device function is used)\n",  _device_factor_thres);
+  printf( " device_solve_thres  = %d\t (bigger than this threshold, device function is used)\n", _device_solve_thres);
+  printf( " nstreams            = %d\t (on device, multi streams are used)\n\n", _nstreams);
+
+  printf( " pivot_tol           = %e\t (tolerance for tiny pivot perturbation)\n", _pivot_tol);
+
+
 }
 
 } // namespace Tacho

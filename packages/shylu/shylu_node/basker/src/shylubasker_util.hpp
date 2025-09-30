@@ -34,7 +34,6 @@
 
 #include <assert.h>
 
-using namespace std;
 //#define BASKER_TIMER
 
 namespace BaskerNS
@@ -251,7 +250,7 @@ namespace BaskerNS
     #ifdef BASKER_KOKKOS
     Kokkos::parallel_for(
                          TeamPolicy(Exe_Space::thread_pool_size(),1),
-                         KOKKOS_LAMBDA(const TeamMember& thread)
+                         BASKER_LAMBDA(const TeamMember& thread)
     #else
     #pragma omp parallel
     #endif
@@ -288,7 +287,7 @@ namespace BaskerNS
 
     #ifdef BASKER_KOKKOS
     Kokkos::parallel_for(TeamPolicy(Exe_Space::thread_pool_size(),1),
-                         KOKKOS_LAMBDA(const TeamMember& thread)
+                         BASKER_LAMBDA(const TeamMember& thread)
     #else
     #pragma omp parallel
     #endif
@@ -862,7 +861,6 @@ namespace BaskerNS
               if (ews_size*ews_mult > 0) {
                 BASKER_ASSERT((ews_size*ews_mult)>0, "util ews");
                 MALLOC_ENTRY_1DARRAY(LL(b)(l).ews, ews_size*ews_mult);
-
                 for(Int i=0; i<ews_mult*ews_size; i++)
                 {
                   LL(b)(l).ews(i) = 0;
@@ -988,7 +986,7 @@ namespace BaskerNS
     {
       printf("Ui[%d]=%d ", k, U.row_idx[k]);
     }
-    cout << endl << endl;
+    std::cout << std::endl << std::endl;
     for(k =0; k < U.ncol; k++)
     {
       printf("Up[%d] = %d ", k, U.col_ptr[k]);
@@ -1381,9 +1379,9 @@ namespace BaskerNS
   {
     //Note: Adapted from Siva's original bsk_util
 
-    cout << "ReadingMTX " << fname << endl;
-    ifstream inp_str;
-    inp_str.open(fname, ios::in);
+    std::cout << "ReadingMTX " << fname << std::endl;
+    std::ifstream inp_str;
+    inp_str.open(fname, std::ios::in);
     Int i, j;
     Int nrows, ncols, nnz, true_nnz;
     Entry val;
@@ -1398,7 +1396,7 @@ namespace BaskerNS
 
       // Check if matrix is pattern-only or symmetric
       p1 = s.find("pattern");
-      if (p1 != string::npos)
+      if (p1 != std::string::npos)
       { ptype = 2; }
       else
       { ptype = 3; }
@@ -1407,7 +1405,7 @@ namespace BaskerNS
       p2 = s.find("hermitian");
       p3 = s.find("skew-symmetric");
 
-      if ((p1 != string::npos) || (p2 != string::npos) || (p3 != string::npos))
+      if ((p1 != std::string::npos) || (p2 != std::string::npos) || (p3 != std::string::npos))
       { sym_type = 1; }
       else
       { sym_type = 0; }
@@ -1423,7 +1421,7 @@ namespace BaskerNS
       inp_str >> ncols;
       inp_str >> nnz;
 
-      cout << nrows << " " << ncols  << " " << nnz << endl;
+      std::cout << nrows << " " << ncols  << " " << nnz << std::endl;
       M.ncol = ncols;
       M.nrow = nrows;
       M.nnz = nnz;

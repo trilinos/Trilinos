@@ -65,7 +65,7 @@
                     const Filter& predicate,
                     std::vector<stk::mesh::Entity>& element_patch,
                     std::vector<stk::mesh::Entity>& nodes_in_patch,
-                    const stk::mesh::EntityRank patch_obj_type)
+                    const stk::mesh::EntityRank /*patch_obj_type*/)
     {
       element_patch.resize(0);
       nodes_in_patch.resize(0);
@@ -264,7 +264,7 @@
                                             const P_uint nSamplePts,
                                             std::vector<double> & function_sample,
                                             const P_uint nEvalPts,
-                                            const std::vector<double> & eval_coords,
+                                            const std::vector<double> & /*eval_coords*/,
                                             std::vector<double> & eval_values)
     {
       const double wt = 1.0 / (double) nSamplePts;
