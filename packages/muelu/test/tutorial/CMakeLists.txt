@@ -162,35 +162,3 @@ IF(${PACKAGE_NAME}_ENABLE_Galeri)
   ENDFOREACH()
 
 ENDIF()
-
-# IF (${PACKAGE_NAME}_ENABLE_Epetra)
-
-#   TRIBITS_ADD_EXECUTABLE(
-#     Tutorial_recirc2d
-#     SOURCES recirc2d.cpp
-#     COMM serial mpi
-#     )
-
-#     TRIBITS_ADD_TEST(
-#     Tutorial_recirc2d
-#     NAME "Test_Tutorial_recirc2d"
-#     ARGS "--xml=n1_easy.xml --xml=n1_easy_pg.xml --xml=n2_easy_agg.xml --xml=n2_easy_agg2.xml --xml=n2_easy_agg3.xml --xml=n2_easy_export.xml"
-#     COMM serial mpi
-#     NUM_MPI_PROCS 4
-#     )
-
-#   #TRIBITS_ADD_EXECUTABLE(
-#   #  Tutorial_ScalingTestParamList
-#   #  SOURCES ScalingTestParamList.cpp
-#   #  COMM serial mpi
-#   #  )
-
-#   #TRIBITS_ADD_TEST(
-#   #  Tutorial_ScalingTestParamList
-#   #  NAME "Test_Tutorial_ScalingTestParamList"
-#   #  ARGS ""
-#   #  COMM serial mpi
-#   #  NUM_MPI_PROCS 4
-#   #  )
-
-# ENDIF()
