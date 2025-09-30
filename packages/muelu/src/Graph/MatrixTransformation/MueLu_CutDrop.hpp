@@ -187,13 +187,18 @@ class ScaledComparison {
         auto val         = A.values(offset + x);
         auto neg_aij     = -ATS::real(val);
         auto max_neg_aik = ATS::real(diag(rlid));
-        return ATS::magnitude(neg_aij / max_neg_aik);
+        auto v           = neg_aij / max_neg_aik;
+        if (ATS::real(v) <= mATS::zero()) {
+          return -ATS::magnitude(v * v);
+        } else {
+          return ATS::magnitude(v * v);
+        }
       } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
         auto val                  = A.values(offset + x);
         auto x_aiiajj             = ATS::magnitude(diag(rlid) * diag(A.graph.entries(offset + x)));
         const bool is_nonpositive = ATS::real(val) <= mATS::zero();
         magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);
-        if (is_nonpositive)
+        if (!is_nonpositive)
           aij2 = -aij2;
         return (aij2 / x_aiiajj);
       }
@@ -441,16 +446,17 @@ class ScaledDistanceLaplacianComparison {
       } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
         auto neg_aij     = -ATS::real(val);
         auto max_neg_aik = ATS::real(diag(rlid));
+        auto v           = ATS::magnitude(neg_aij / max_neg_aik);
         if (ATS::real(neg_aij) >= mzero)
-          return ATS::magnitude(neg_aij / max_neg_aik);
+          return v * v;
         else
-          return -ATS::magnitude(neg_aij / max_neg_aik);
+          return -v * v;
       } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
         auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
         const bool is_nonpositive = ATS::real(val) <= mATS::zero();
         magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
         // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
-        if (is_nonpositive)
+        if (!is_nonpositive)
           aij2 = -aij2;
         return aij2 / aiiajj;
       }
