@@ -309,11 +309,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, false, 1> {
                   "AXPY: x and y must have the same rank.");
 
     const IndexType numRows = static_cast<IndexType>(y.extent(0));
-#if KOKKOS_VERSION >= 40799
-    if (alpha !Kernels = ArithTraits<CoefficientType>::zero()) {
-#else
     if (alpha != ArithTraits<CoefficientType>::zero()) {
-#endif
       /// general case
       for (IndexType i = 0; i < numRows; ++i)
         y(i) += alpha * x(i);
@@ -343,11 +339,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, false, 2> {
     const IndexType numRows = static_cast<IndexType>(Y.extent(0));
     const IndexType numCols = static_cast<IndexType>(Y.extent(1));
 
-#if KOKKOS_VERSION >= 40799
-    if (alpha !Kernels = ArithTraits<CoefficientType>::zero()) {
-#else
     if (alpha != ArithTraits<CoefficientType>::zero()) {
-#endif
       for (IndexType j = 0; j < numCols; ++j)
         for (IndexType i = 0; i < numRows; ++i)
           Y(i, j) += alpha * X(i, j);
@@ -374,11 +366,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, true, rank> {
     static_assert(static_cast<int>(ViewType1::rank) == static_cast<int>(ViewType2::rank),
                   "AXPY: x and y must have the same rank.");
 
-#if KOKKOS_VERSION >= 40799
-    if (alpha !Kernels = ArithTraits<CoefficientType>::zero()) {
-#else
     if (alpha != ArithTraits<CoefficientType>::zero()) {
-#endif
       using x_value_type   = typename std::decay<decltype(*x.data())>::type;
       using y_value_type   = typename std::decay<decltype(*y.data())>::type;
       const IndexType span = static_cast<IndexType>(y.span());
