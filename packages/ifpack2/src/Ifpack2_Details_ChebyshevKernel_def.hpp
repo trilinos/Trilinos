@@ -16,7 +16,11 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Export_decl.hpp"
 #include "Tpetra_Import_decl.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Teuchos_Assert.hpp"
 #include <type_traits>
 #include "KokkosSparse_spmv_impl.hpp"
@@ -55,7 +59,11 @@ struct ChebyshevKernelVectorFunctor {
   using value_type      = typename AMatrix::non_const_value_type;
   using team_policy     = typename Kokkos::TeamPolicy<execution_space>;
   using team_member     = typename team_policy::member_type;
+#if KOKKOS_VERSION > 40799
+  using ATV             = KokkosKernels::ArithTraits<value_type>;
+#else
   using ATV             = Kokkos::ArithTraits<value_type>;
+#endif
 
   const Scalar alpha;
   WVector m_w;
@@ -99,7 +107,11 @@ struct ChebyshevKernelVectorFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member& dev) const {
     using residual_value_type = typename BVector::non_const_value_type;
+#if KOKKOS_VERSION > 40799
+    using KAT                 = KokkosKernels::ArithTraits<residual_value_type>;
+#else
     using KAT                 = Kokkos::ArithTraits<residual_value_type>;
+#endif
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(dev, 0, rows_per_team),
                          [&](const LO& loop) {
@@ -191,9 +203,17 @@ chebyshev_kernel_vector(const Scalar& alpha,
   using matrix_type       = AMatrix;
   using x_colMap_vec_type = typename XVector_colMap::const_type;
   using x_domMap_vec_type = typename XVector_domMap::non_const_type;
+#if KOKKOS_VERSION > 40799
+  using scalar_type       = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using scalar_type       = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
 
+#if KOKKOS_VERSION > 40799
+  if (beta == KokkosKernels::ArithTraits<Scalar>::zero()) {
+#else
   if (beta == Kokkos::ArithTraits<Scalar>::zero()) {
+#endif
     constexpr bool use_beta = false;
     if (do_X_update) {
       using functor_type =

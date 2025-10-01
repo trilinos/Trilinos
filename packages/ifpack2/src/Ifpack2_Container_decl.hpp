@@ -98,7 +98,11 @@ class Container : public Teuchos::Describable {
                 "Ifpack2::Container: Please use MatrixType = Tpetra::RowMatrix.");
 
   //! Internal representation of Scalar in Kokkos::View
+#if KOKKOS_VERSION > 40799
+  using ISC = typename KokkosKernels::ArithTraits<SC>::val_type;
+#else
   using ISC = typename Kokkos::ArithTraits<SC>::val_type;
+#endif
 
   //! HostView (the host-space internal representation for Tpetra::Multivector) is the
   //! type of the vector arguments of DoJacobi, DoGaussSeidel, and DoSGS.
@@ -324,7 +328,11 @@ class ContainerImpl : public Container<MatrixType> {
   using typename Container<MatrixType>::ISC;
   //! The internal representation of LocalScalarType in Kokkos::View
   using LSC  = LocalScalarType;
+#if KOKKOS_VERSION > 40799
+  using LISC = typename KokkosKernels::ArithTraits<LSC>::val_type;
+#else
   using LISC = typename Kokkos::ArithTraits<LSC>::val_type;
+#endif
 
   using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;
 

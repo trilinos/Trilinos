@@ -127,7 +127,11 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   //! The type of entries in the input (global) matrix.
   typedef typename MatrixType::scalar_type scalar_type;
   //! The magnitude of entries in the input (global) matrix.
+#if KOKKOS_VERSION > 40799
+  typedef typename KokkosKernels::ArithTraits<scalar_type>::magnitudeType magnitude_type;
+#else
   typedef typename Kokkos::ArithTraits<scalar_type>::magnitudeType magnitude_type;
+#endif
   //! The type of local indices in the input (global) matrix.
   typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
   //! The type of global indices in the input (global) matrix.
@@ -219,7 +223,11 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
     //! factorization, such that the entry is moved radially outward in the
     //! complex plane. N.B. that this constant modifies the matrix in the linear
     //! equation, not simply the diagonal preconditioner.
+#if KOKKOS_VERSION > 40799
+    magnitude_type addRadiallyToDiagonal = KokkosKernels::ArithTraits<magnitude_type>::zero();
+#else
     magnitude_type addRadiallyToDiagonal = Kokkos::ArithTraits<magnitude_type>::zero();
+#endif
   };
 
   //! Input arguments to <tt>applyInverseJacobi</tt>
@@ -228,7 +236,11 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
     //! entry. Defaults to false.
     bool zeroStartingSolution = false;
     //! Damping factor. Defaults to 1.
+#if KOKKOS_VERSION > 40799
+    scalar_type dampingFactor = KokkosKernels::ArithTraits<scalar_type>::one();
+#else
     scalar_type dampingFactor = Kokkos::ArithTraits<scalar_type>::one();
+#endif
     //! The maximum number of sweeps. If the norm-based criterion is not used,
     //! it's exactly the number of sweeps. Defaults to 1.
     int maxNumSweeps = 1;
@@ -241,7 +253,11 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
     //! the input <tt>y</tt>, often 0, and <tt>f</tt> is the maximum of the
     //! 2-norms of each degree of freedom, i.e., index of a block. Defaults to
     //! 0.
+#if KOKKOS_VERSION > 40799
+    magnitude_type tolerance = KokkosKernels::ArithTraits<magnitude_type>::zero();
+#else
     magnitude_type tolerance = Kokkos::ArithTraits<magnitude_type>::zero();
+#endif
     //! Check the norm-based termination criterion every
     //! <tt>checkToleranceEvery</tt> iterations. Defaults to 1. A norm
     //! computation requires a global reduction, which is expensive. Hence it
@@ -400,7 +416,11 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplNotAvailTa
   : public Container<MatrixType> {
  private:
   typedef typename MatrixType::scalar_type scalar_type;
+#if KOKKOS_VERSION > 40799
+  typedef typename KokkosKernels::ArithTraits<scalar_type>::magnitudeType magnitude_type;
+#else
   typedef typename Kokkos::ArithTraits<scalar_type>::magnitudeType magnitude_type;
+#endif
   typedef typename Container<MatrixType>::local_ordinal_type local_ordinal_type;
   typedef typename Container<MatrixType>::global_ordinal_type global_ordinal_type;
 

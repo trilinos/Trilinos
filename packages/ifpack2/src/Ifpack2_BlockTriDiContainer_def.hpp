@@ -16,7 +16,11 @@
 #include <Tpetra_BlockMultiVector.hpp>
 #include <Tpetra_BlockCrsMatrix_Helpers.hpp>
 
+#if KOKKOS_VERSION > 40799
+#include <KokkosKernels_ArithTraits.hpp>
+#else
 #include <Kokkos_ArithTraits.hpp>
+#endif
 #include <KokkosBatched_Util.hpp>
 #include <KokkosBatched_Vector.hpp>
 #include <KokkosBatched_AddRadial_Decl.hpp>
@@ -268,7 +272,11 @@ void BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::c
     BlockTriDiContainerDetails::performNumericPhase<MatrixType>(impl_->A,
                                                                 impl_->blockGraph,
                                                                 impl_->part_interface, impl_->block_tridiags,
+#if KOKKOS_VERSION > 40799
+                                                                KokkosKernels::ArithTraits<magnitude_type>::zero(),
+#else
                                                                 Kokkos::ArithTraits<magnitude_type>::zero(),
+#endif
                                                                 impl_->use_fused_jacobi);
   }
   this->IsComputed_ = true;
@@ -289,7 +297,11 @@ template <typename MatrixType>
 void BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::applyInverseJacobi(const mv_type& X, mv_type& Y, scalar_type dampingFactor,
                                                                                                   bool zeroStartingSolution, int numSweeps) const {
   IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::applyInverseJacobi", applyInverseJacobi);
+#if KOKKOS_VERSION > 40799
+  const magnitude_type tol  = KokkosKernels::ArithTraits<magnitude_type>::zero();
+#else
   const magnitude_type tol  = Kokkos::ArithTraits<magnitude_type>::zero();
+#endif
   const int check_tol_every = 1;
 
   if (!impl_->use_fused_jacobi) {
