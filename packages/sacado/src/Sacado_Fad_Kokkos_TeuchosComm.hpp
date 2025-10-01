@@ -49,7 +49,7 @@ reduceAll(const Comm<Ordinal> &comm, const EReductionType reductType,
 
   // Copy send buffer into local array
   Teuchos::Array<send_value_type> localSendBuffer(count);
-  typename SendViewType::HostMirror hostSendBuffer =
+  typename SendViewType::host_mirror_type hostSendBuffer =
       Kokkos::create_mirror_view(sendBuffer);
   Kokkos::deep_copy(hostSendBuffer, sendBuffer);
   for (Ordinal i = 0; i < count; ++i)
@@ -58,7 +58,7 @@ reduceAll(const Comm<Ordinal> &comm, const EReductionType reductType,
   // Copy receive buffer into local array (necessary to initialize Fad types
   // properly)
   Teuchos::Array<recv_value_type> localRecvBuffer(count);
-  typename RecvViewType::HostMirror hostRecvBuffer =
+  typename RecvViewType::host_mirror_type hostRecvBuffer =
       Kokkos::create_mirror_view(recvBuffer);
   Kokkos::deep_copy(hostRecvBuffer, recvBuffer);
   for (Ordinal i = 0; i < count; ++i)
@@ -104,7 +104,7 @@ reduceAll(const Comm<Ordinal> &comm, const Serializer &serializer,
 
   // Copy send buffer into local array
   Teuchos::Array<send_value_type> localSendBuffer(count);
-  typename SendViewType::HostMirror hostSendBuffer =
+  typename SendViewType::host_mirror_type hostSendBuffer =
       Kokkos::create_mirror_view(sendBuffer);
   Kokkos::deep_copy(hostSendBuffer, sendBuffer);
   for (Ordinal i = 0; i < count; ++i)
@@ -113,7 +113,7 @@ reduceAll(const Comm<Ordinal> &comm, const Serializer &serializer,
   // Copy receive buffer into local array (necessary to initialize Fad types
   // properly)
   Teuchos::Array<recv_value_type> localRecvBuffer(count);
-  typename RecvViewType::HostMirror hostRecvBuffer =
+  typename RecvViewType::host_mirror_type hostRecvBuffer =
       Kokkos::create_mirror_view(recvBuffer);
   Kokkos::deep_copy(hostRecvBuffer, recvBuffer);
   for (Ordinal i = 0; i < count; ++i)
