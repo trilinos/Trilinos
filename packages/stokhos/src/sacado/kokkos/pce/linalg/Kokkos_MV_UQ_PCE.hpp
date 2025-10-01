@@ -447,7 +447,11 @@ struct V_ReciprocalThresholdSelfFunctor<
   typedef typename array_type::execution_space           execution_space;
   typedef typename array_type::size_type               size_type;
   typedef typename array_type::non_const_value_type   value_type;
+#if KOKKOS_VERSION > 40799
+  typedef KokkosKernels::ArithTraits<value_type>                    KAT;
+#else
   typedef Kokkos::ArithTraits<value_type>                    KAT;
+#endif
   typedef typename KAT::mag_type                        mag_type;
 
   const array_type m_x;
@@ -489,7 +493,11 @@ struct MV_ReciprocalThresholdSelfFunctor<
   typedef typename array_type::execution_space           execution_space;
   typedef typename array_type::size_type               size_type;
   typedef typename array_type::non_const_value_type   value_type;
+#if KOKKOS_VERSION > 40799
+  typedef KokkosKernels::ArithTraits<value_type>                    KAT;
+#else
   typedef Kokkos::ArithTraits<value_type>                    KAT;
+#endif
   typedef typename KAT::mag_type                        mag_type;
 
   const array_type m_x;
