@@ -61,7 +61,7 @@ template <typename T> struct BlasSerial {
     }
   }
 
-  // TRMV
+  // TRMV (TODO: not the same interface as BLAS interface, A is m-by-n)
   inline static void trmv(const char uplo, const char trans, const char diag,
                           int m, int n,
                           const T alpha, const T *A, int lda,
@@ -161,6 +161,23 @@ template <typename T> struct BlasSerial {
           y[j*incy] += alpha * val;
         }
       }
+    }
+  }
+
+  // TRMM (NOTE: calling TRMV on each B & C column)
+  inline static void trmm(const char uplo, const char trans, const char diag,
+                          int m, int n, int k,
+                          const T alpha, const T *A, int lda,
+                                         const T *B, int ldb,
+                          const T beta,  /* */ T *C, int ldc) {
+
+    // C is m-by-n
+    // if trans, A is k-by-m
+    // else,     A is m-by-k
+    int mA = (trans == 'N' || trans == 'n' ? m : k);
+    int nA = (trans == 'N' || trans == 'n' ? k : m);
+    for (int j = 0; j < n; j++) {
+      trmv(uplo, trans, diag, mA, nA, alpha, A, lda, &B[j*ldb], 1, beta, &C[j*ldc], 1);
     }
   }
 

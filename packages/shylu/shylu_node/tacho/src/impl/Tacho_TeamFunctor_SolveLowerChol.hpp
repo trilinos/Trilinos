@@ -166,6 +166,7 @@ public:
 
         // solve with diag L
         if (_ldl) {
+          // ATL is square
           Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, ATL, tT, zero, bT);
         } else {
           Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
@@ -256,11 +257,12 @@ public:
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
         if (_ldl) {
+          // AT is not square
           Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, AT, tT, zero, b);
 
-          // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
+          // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D, also n>=m, so diag is stored first in aptr)
           UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
-          UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs);
+          auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
           Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
                                  ::invoke(member, ATL, bT);
         } else {
@@ -300,8 +302,9 @@ public:
                   const ordinal_type is = ip + ii;
                   // for (ordinal_type it=tbeg;it<tend;++it,++is) {
                   const ordinal_type row = _gid_colidx(s.gid_col_begin + it);
-                  for (ordinal_type j = 0; j < _nrhs; ++j)
+                  for (ordinal_type j = 0; j < _nrhs; ++j) {
                     Kokkos::atomic_add(&_t(row, j), b(is + m, j));
+                  }
                 });
             ip += tcnt;
           }

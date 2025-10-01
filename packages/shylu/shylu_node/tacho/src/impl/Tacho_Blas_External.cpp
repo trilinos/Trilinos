@@ -119,6 +119,23 @@ void F77_BLAS_MANGLE(ctrsm, CTRSM)(const char *, const char *, const char *, con
 void F77_BLAS_MANGLE(ztrsm, ZTRSM)(const char *, const char *, const char *, const char *, int *, int *,
                                    const Kokkos::complex<double> *, const Kokkos::complex<double> *, int *,
                                    /* */ Kokkos::complex<double> *, int *);
+
+///
+/// Trmm
+///
+
+void F77_BLAS_MANGLE(strmm, STRMM)(const char *, const char *, const char *, const char *, int *, int *, const float *,
+                                   const float *, int *,
+                                   /* */ float *, int *);
+void F77_BLAS_MANGLE(dtrmm, DTRMM)(const char *, const char *, const char *, const char *, int *, int *, const double *,
+                                   const double *, int *,
+                                   /* */ double *, int *);
+void F77_BLAS_MANGLE(ctrmm, CTRMM)(const char *, const char *, const char *, const char *, int *, int *,
+                                   const Kokkos::complex<float> *, const Kokkos::complex<float> *, int *,
+                                   /* */ Kokkos::complex<float> *, int *);
+void F77_BLAS_MANGLE(ztrmm, ZTRMM)(const char *, const char *, const char *, const char *, int *, int *,
+                                   const Kokkos::complex<double> *, const Kokkos::complex<double> *, int *,
+                                   /* */ Kokkos::complex<double> *, int *);
 }
 
 #define F77_FUNC_SGEMV F77_BLAS_MANGLE(sgemv, SGEMV)
@@ -141,6 +158,11 @@ void F77_BLAS_MANGLE(ztrsm, ZTRSM)(const char *, const char *, const char *, con
 #define F77_FUNC_CGEMM F77_BLAS_MANGLE(cgemm, CGEMM)
 #define F77_FUNC_ZGEMM F77_BLAS_MANGLE(zgemm, ZGEMM)
 
+#define F77_FUNC_STRMM F77_BLAS_MANGLE(strmm, STRMM)
+#define F77_FUNC_DTRMM F77_BLAS_MANGLE(dtrmm, DTRMM)
+#define F77_FUNC_CTRMM F77_BLAS_MANGLE(ctrmm, CTRMM)
+#define F77_FUNC_ZTRMM F77_BLAS_MANGLE(ztrmm, ZTRMM)
+
 #define F77_FUNC_SSYRK F77_BLAS_MANGLE(ssyrk, SSYRK)
 #define F77_FUNC_DSYRK F77_BLAS_MANGLE(dsyrk, DSYRK)
 #define F77_FUNC_CHERK F77_BLAS_MANGLE(cherk, CHERK)
@@ -150,6 +172,7 @@ void F77_BLAS_MANGLE(ztrsm, ZTRSM)(const char *, const char *, const char *, con
 #define F77_FUNC_DTRSM F77_BLAS_MANGLE(dtrsm, DTRSM)
 #define F77_FUNC_CTRSM F77_BLAS_MANGLE(ctrsm, CTRSM)
 #define F77_FUNC_ZTRSM F77_BLAS_MANGLE(ztrsm, ZTRSM)
+
 
 namespace Tacho {
 
@@ -257,6 +280,25 @@ int Blas<float>::gemm(rocblas_handle handle, const rocblas_operation transa, con
                       const float beta,
                       /* */ float *c, int ldc) {
   const int r_val = rocblas_sgemm(handle, transa, transb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc);
+  return r_val;
+}
+#endif
+
+template <>
+int Blas<float>::trmm(const char side, const char uplo, const char transa, const char diag, int m, int n,
+                      const float alpha, const float *a, int lda,
+                                               float *b, int ldb) {
+  F77_FUNC_STRMM(&side, &uplo, &transa, &diag, &m, &n, &alpha, a, &lda, b, &ldb);
+  return 0;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<float>::trmm(cublasHandle_t handle, const cublasSideMode_t side, const cublasFillMode_t uplo,
+                      const cublasOperation_t transa, const cublasDiagType_t diag, int m, int n,
+                      const float alpha, const float *a, int lda,
+                                         const float *b, int ldb,
+                                               float *c, int ldc) {
+  const int r_val = cublasStrmm(handle, side, uplo, transa, diag, m, n, &alpha, a, lda, b, ldb, c, ldc);
   return r_val;
 }
 #endif
@@ -419,6 +461,25 @@ int Blas<double>::gemm(rocblas_handle handle, const rocblas_operation transa, co
                        const double beta,
                        /* */ double *c, int ldc) {
   const int r_val = rocblas_dgemm(handle, transa, transb, m, n, k, &alpha, a, lda, b, ldb, &beta, c, ldc);
+  return r_val;
+}
+#endif
+
+template <>
+int Blas<double>::trmm(const char side, const char uplo, const char transa, const char diag, int m, int n,
+                       const double alpha, const double *a, int lda,
+                                                 double *b, int ldb) {
+  F77_FUNC_DTRMM(&side, &uplo, &transa, &diag, &m, &n, &alpha, a, &lda, b, &ldb);
+  return 0;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<double>::trmm(cublasHandle_t handle, const cublasSideMode_t side, const cublasFillMode_t uplo,
+                       const cublasOperation_t transa, const cublasDiagType_t diag, int m, int n,
+                       const double alpha, const double *a, int lda,
+                                           const double *b, int ldb,
+                                                 double *c, int ldc) {
+  const int r_val = cublasDtrmm(handle, side, uplo, transa, diag, m, n, &alpha, a, lda, b, ldb, c, ldc);
   return r_val;
 }
 #endif
@@ -601,6 +662,26 @@ int Blas<Kokkos::complex<float>>::gemm(rocblas_handle handle, const rocblas_oper
   const int r_val = rocblas_cgemm(handle, transa, transb, m, n, k, (const rocblas_float_complex *)&alpha,
                                   (const rocblas_float_complex *)a, lda, (const rocblas_float_complex *)b, ldb,
                                   (const rocblas_float_complex *)&beta, (rocblas_float_complex *)c, ldc);
+  return r_val;
+}
+#endif
+
+template <>
+int Blas<Kokkos::complex<float>>::trmm(const char side, const char uplo, const char transa, const char diag, int m, int n,
+                                       const Kokkos::complex<float> alpha, const Kokkos::complex<float> *a, int lda,
+                                                                                 Kokkos::complex<float> *b, int ldb) {
+  F77_FUNC_CTRMM(&side, &uplo, &transa, &diag, &m, &n, &alpha, a, &lda, b, &ldb);
+  return 0;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<Kokkos::complex<float>>::trmm(cublasHandle_t handle, const cublasSideMode_t side, const cublasFillMode_t uplo,
+                                       const cublasOperation_t transa, const cublasDiagType_t diag, int m, int n,
+                                       const Kokkos::complex<float> alpha, const Kokkos::complex<float> *a, int lda,
+                                                                           const Kokkos::complex<float> *b, int ldb,
+                                                                                 Kokkos::complex<float> *c, int ldc) {
+  const int r_val = cublasCtrmm(handle, side, uplo, transa, diag, m, n, (const cuComplex *)&alpha, (const cuComplex *)a, lda,
+                                                                        (const cuComplex *)b, ldb, (      cuComplex *)c, ldc);
   return r_val;
 }
 #endif
@@ -799,6 +880,26 @@ int Blas<Kokkos::complex<double>>::gemm(rocblas_handle handle, const rocblas_ope
   const int r_val = rocblas_zgemm(handle, transa, transb, m, n, k, (const rocblas_double_complex *)&alpha,
                                   (const rocblas_double_complex *)a, lda, (const rocblas_double_complex *)b, ldb,
                                   (const rocblas_double_complex *)&beta, (rocblas_double_complex *)c, ldc);
+  return r_val;
+}
+#endif
+
+template <>
+int Blas<Kokkos::complex<double>>::trmm(const char side, const char uplo, const char transa, const char diag, int m, int n,
+                                        const Kokkos::complex<double> alpha, const Kokkos::complex<double> *a, int lda,
+                                                                                   Kokkos::complex<double> *b, int ldb) {
+  F77_FUNC_ZTRMM(&side, &uplo, &transa, &diag, &m, &n, &alpha, a, &lda, b, &ldb);
+  return 0;
+}
+#if defined(TACHO_ENABLE_CUBLAS)
+template <>
+int Blas<Kokkos::complex<double>>::trmm(cublasHandle_t handle, const cublasSideMode_t side, const cublasFillMode_t uplo,
+                                        const cublasOperation_t transa, const cublasDiagType_t diag, int m, int n,
+                                        const Kokkos::complex<double> alpha, const Kokkos::complex<double> *a, int lda,
+                                                                             const Kokkos::complex<double> *b, int ldb,
+                                                                                   Kokkos::complex<double> *c, int ldc) {
+  const int r_val = cublasZtrmm(handle, side, uplo, transa, diag, m, n, (const cuDoubleComplex *)&alpha, (const cuDoubleComplex *)a, lda,
+                                                                        (const cuDoubleComplex *)b, ldb, (      cuDoubleComplex *)c, ldc);
   return r_val;
 }
 #endif

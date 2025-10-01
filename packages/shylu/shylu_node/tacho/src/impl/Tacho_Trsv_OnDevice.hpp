@@ -29,9 +29,8 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
         Blas<value_type>::trsv(ArgUplo::param, ArgTransA::param, diagA.param, m, A.data(), A.stride(1), B.data(),
                                B.stride(0));
       } else {
-        // TODO: enable for multiple RHSs
-        //Blas<value_type>::trsm(Side::Left::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n, value_type(1),
-        //                       A.data(), A.stride(1), B.data(), B.stride(1));
+        Blas<value_type>::trsm(Side::Left::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n, value_type(1),
+                               A.data(), A.stride(1), B.data(), B.stride(1));
       }
     }
     return 0;
@@ -49,10 +48,9 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
         r_val = Blas<value_type>::trsv(handle, ArgUplo::cublas_param, ArgTransA::cublas_param, diagA.cublas_param, m,
                                        A.data(), A.stride(1), B.data(), B.stride(0));
       } else {
-        // TODO: enable for multiple RHSs
-        //r_val = Blas<value_type>::trsm(handle, Side::Left::cublas_param, ArgUplo::cublas_param, ArgTransA::cublas_param,
-        //                               diagA.cublas_param, m, n, value_type(1), A.data(), A.stride(1), B.data(),
-        //                               B.stride(1));
+        r_val = Blas<value_type>::trsm(handle, Side::Left::cublas_param, ArgUplo::cublas_param, ArgTransA::cublas_param,
+                                       diagA.cublas_param, m, n, value_type(1), A.data(), A.stride(1), B.data(),
+                                       B.stride(1));
       }
     }
     return r_val;
@@ -116,18 +114,91 @@ template <typename ArgUplo, typename ArgTransA> struct Trmv<ArgUplo, ArgTransA, 
 
   template <typename DiagType, typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
   inline static int blas_invoke(const DiagType diagA, const ViewTypeA &A, const ViewTypeB &B, const ViewTypeC &C) {
-    typedef typename ViewTypeA::non_const_value_type value_type;
+    using value_type =  typename ViewTypeA::non_const_value_type;
+    using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
 
-    const ordinal_type m = B.extent(0), n = B.extent(1);
-    if (m > 0 && n > 0) {
-      if (n == 1) {
-        //std::cout << " TRMV(" << ArgUplo::param << ", " << ArgTransA::param << "," << diagA.param << ")" << std::endl;
-        Kokkos::deep_copy(C, B); // TODO: Can we skip this?
-        Blas<value_type>::trmv(ArgUplo::param, ArgTransA::param, diagA.param, m, A.data(), A.stride(1), C.data(),
-                               C.stride(0));
+    static_assert(ArgUplo::param == 'U' || ArgUplo::param == 'u', "A is not upper-triangular.");
+
+    const ordinal_type mC = C.extent(0), nC = C.extent(1);
+    const ordinal_type mA = A.extent(0), nA = A.extent(1);
+
+    if (mC > 0 && nC > 0) {
+      const value_type one(1);
+      const value_type zero(0);
+      const bool transA = (ArgTransA::param != 'N' && ArgTransA::param != 'n');
+      const ordinal_type mn = (mA < nA ? mA : nA);
+
+      const auto dB = Kokkos::subview(B, range_type(0, mn), Kokkos::ALL());
+      const auto dC = Kokkos::subview(C, range_type(0, mn), Kokkos::ALL());
+
+      if (nC == 1) {
+        Blas<value_type>::trmv(ArgUplo::param, ArgTransA::param, diagA.param,
+                               mA, A.data(), A.stride(1),
+                                   C.data(), C.stride(0));
+        if (!transA) {
+          if (mA > nA) {
+            Blas<value_type>::gemv(ArgTransA::param, mA-nA, nA,
+                                   one,  &A(nA,0), A.stride(1),
+                                         B.data(), B.stride(0), 
+                                   zero, &C(nA,0), C.stride(0));
+          } else if (nA > mA) {
+            Blas<value_type>::gemv(ArgTransA::param, mA, nA-mA,
+                                   one, &A(0,mA), A.stride(1),
+                                        &B(mA,0), B.stride(0), 
+                                   one, C.data(), C.stride(0));
+          }
+        } else {
+          if (mA > nA) {
+            Blas<value_type>::gemv(ArgTransA::param, mA-nA, nA,
+                                   one, &A(nA,0), A.stride(1),
+                                        &B(nA,0), B.stride(0), 
+                                   one, C.data(), C.stride(0));
+          } else if (nA > mA) {
+            Blas<value_type>::gemv(ArgTransA::param, mA, nA-mA,
+                                   one,  &A(0,mA), A.stride(1),
+                                         B.data(), B.stride(0), 
+                                   zero, &C(mA,0), C.stride(0));
+          }
+        }
       } else {
-        //Blas<value_type>::trmm(Side::Left::param, ArgUplo::param, ArgTransA::param, diagA.param, m, n, value_type(1),
-        //                       A.data(), A.stride(1), B.data(), B.stride(1));
+        for (ordinal_type j = 0; j < nC; j++) {
+          Blas<value_type>::trmv(ArgUplo::param, ArgTransA::param, diagA.param,
+                                 mA, A.data(), A.stride(1),
+                                     &C(0,j),  C.stride(0));
+        }
+        //Blas<value_type>::trmm(Side::Left::param, ArgUplo::param, ArgTransA::param, diagA.param,
+        //                       mA, nC,
+        //                       one, A.data(), A.stride(1),
+        //                            C.data(), C.stride(1));
+        if (ArgTransA::param == 'N' || ArgTransA::param == 'n') {
+          if (mA > nA) {
+            Blas<value_type>::gemm(ArgTransA::param, 'N',
+                                   mA-nA, nC, nA,
+                                   one,  &A(nA,0), A.stride(1),
+                                         B.data(), B.stride(1),
+                                   zero, &C(nA,0), C.stride(1));
+          } else if (nA > mA) {
+            Blas<value_type>::gemm(ArgTransA::param, 'N',
+                                   mA, nC, nA-mA,
+                                   one, &A(0,mA), A.stride(1),
+                                        &B(mA,0), B.stride(1),
+                                   one, C.data(), C.stride(1));
+          }
+        } else {
+          if (mA > nA) {
+            Blas<value_type>::gemm(ArgTransA::param, 'N',
+                                   mA, nC, mA-nA,
+                                   one, &A(nA,0), A.stride(1),
+                                        &B(nA,0), B.stride(1), 
+                                   one, C.data(), C.stride(1));
+          } else if (nA > mA) {
+            Blas<value_type>::gemm(ArgTransA::param, 'N',
+                                   nA-mA, nC, mA, 
+                                   one,  &A(0,mA), A.stride(1),
+                                         B.data(), B.stride(1),  
+                                   zero, &C(mA,0), C.stride(1));
+          }
+        }
       }
     }
     return 0;
@@ -137,20 +208,77 @@ template <typename ArgUplo, typename ArgTransA> struct Trmv<ArgUplo, ArgTransA, 
   template <typename DiagType, typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
   inline static int cublas_invoke(cublasHandle_t &handle, const DiagType diagA, const ViewTypeA &A,
                                   const ViewTypeB &B, const ViewTypeC &C) {
-    typedef typename ViewTypeA::non_const_value_type value_type;
-    const ordinal_type m = B.extent(0), n = B.extent(1);
+    using value_type = typename ViewTypeA::non_const_value_type;
+    using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
+
+    const value_type one(1);
+    const value_type zero(0);
+
+    const ordinal_type mB = B.extent(0), nB = B.extent(1);
+    const ordinal_type mA = A.extent(0), nA = A.extent(1);
+    const ordinal_type mC = C.extent(0), nC = C.extent(1);
+    const bool transA = (ArgTransA::param != 'N' && ArgTransA::param != 'n');
 
     int r_val(0);
-    if (m > 0 && n > 0) {
-      if (n == 1) {
-        Kokkos::deep_copy(C, B); // TODO: Can we skip this?
-        r_val = Blas<value_type>::trmv(handle, ArgUplo::cublas_param, ArgTransA::cublas_param, diagA.cublas_param, m,
+    if (mB > 0 && nB > 0) {
+      const ordinal_type mn = (mA < nA ? mA : nA);
+      const auto dB = Kokkos::subview(B, range_type(0, mn), Kokkos::ALL());
+      const auto dC = Kokkos::subview(C, range_type(0, mn), Kokkos::ALL());
+      Kokkos::deep_copy(dC, dB); // TODO: Can we skip this?
+      if (nB == 1) {
+        r_val = Blas<value_type>::trmv(handle, ArgUplo::cublas_param, ArgTransA::cublas_param, diagA.cublas_param, mA,
                                        A.data(), A.stride(1), C.data(), C.stride(0));
+        if (nA > mA) {
+          if (!transA) {
+            const auto A12 = Kokkos::subview(A, Kokkos::ALL(), range_type(mA, nA));
+            const auto B21 = Kokkos::subview(B, range_type(mA, nA), Kokkos::ALL());
+            Blas<value_type>::gemv(handle, ArgTransA::cublas_param, mA, nA-mA,
+                                   one, A12.data(), A12.stride(1),
+                                        B21.data(), B21.stride(0), 
+                                   one, C.data(),   C.stride(0));
+          } else {
+            const auto A12 = Kokkos::subview(A, Kokkos::ALL(), range_type(mA, nA));
+            const auto C21 = Kokkos::subview(C, range_type(mA, mC), Kokkos::ALL());
+            Blas<value_type>::gemv(handle, ArgTransA::cublas_param, mA, nA-mA,
+                                   one,  A12.data(), A12.stride(1),
+                                         B.data(),   B.stride(0), 
+                                   zero, C21.data(), C21.stride(0));
+          }
+        } else if (nA != mA) {
+          TACHO_TEST_FOR_ABORT(true, "Tall-skinny TRMV not implemented");
+        }
       } else {
-        // TODO: enable for multiple RHSs
+        for (ordinal_type j = 0; j < nB; j++) {
+          const auto Cj = Kokkos::subview(C, Kokkos::ALL(), range_type(j, j + 1));
+          r_val = Blas<value_type>::trmv(handle, ArgUplo::cublas_param, ArgTransA::cublas_param, diagA.cublas_param, mA,
+                                         A.data(), A.stride(1), Cj.data(), Cj.stride(0));
+        }
+        if (nA > mA) {
+          if (!transA) {
+            const auto A12 = Kokkos::subview(A, Kokkos::ALL(), range_type(mA, nA));
+            const auto B21 = Kokkos::subview(B, range_type(mA, nA), Kokkos::ALL());
+            Blas<value_type>::gemm(handle, ArgTransA::cublas_param, Trans::NoTranspose::cublas_param,
+                                   mC, nC, nA-mA,
+                                   one, A12.data(), A12.stride(1),
+                                        B21.data(), B21.stride(1), 
+                                   one, C.data(),   C.stride(1));
+          } else {
+            const auto A12 = Kokkos::subview(A, Kokkos::ALL(), range_type(mA, nA));
+            const auto C21 = Kokkos::subview(C, range_type(mA, mC), Kokkos::ALL());
+            Blas<value_type>::gemm(handle, ArgTransA::cublas_param, Trans::NoTranspose::cublas_param,
+                                   nA-mA, nC, mA,
+                                   one,  A12.data(), A12.stride(1),
+                                         B.data(),   B.stride(1), 
+                                   zero, C21.data(), C21.stride(1));
+          }
+        } else if (nA != mA) {
+          TACHO_TEST_FOR_ABORT(true, "Tall-skinny TRMV not implemented");
+        }
         //r_val = Blas<value_type>::trmm(handle, Side::Left::cublas_param, ArgUplo::cublas_param, ArgTransA::cublas_param,
-        //                               diagA.cublas_param, m, n, value_type(1), A.data(), A.stride(1), B.data(),
-        //                               B.stride(1), C.data(), C.stride(1));
+        //                               diagA.cublas_param, m, n,
+        //                               value_type(1), A.data(), A.stride(1),
+        //                                              B.data(), B.stride(1),
+        //                                              C.data(), C.stride(1));
       }
     }
     return r_val;

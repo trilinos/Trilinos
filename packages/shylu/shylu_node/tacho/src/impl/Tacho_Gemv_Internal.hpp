@@ -82,7 +82,13 @@ template <typename ArgUplo, typename ArgTrans> struct Trmv<ArgUplo, ArgTrans, Al
                                                               B.data(), B.stride_0(),
                                            value_type(beta),  C.data(), C.stride_0());
       } else {
-        TACHO_TEST_FOR_ABORT(true, ">> :Internal::TRMM.");
+        // TODO: need trmm team
+        for (ordinal_type j = 0; j < n; j++ ) {
+          BlasTeam<value_type>::trmv(member, ArgUplo::param, ArgTrans::param, diag.param,
+                                     mA, nA, value_type(alpha), A.data(), A.stride_1(),
+                                                                &B(0, j), B.stride_0(),
+                                             value_type(beta),  &C(0, j), C.stride_0());
+        }
       }
     }
     return 0;

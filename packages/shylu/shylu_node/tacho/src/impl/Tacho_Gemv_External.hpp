@@ -95,16 +95,20 @@ template <typename ArgUplo, typename ArgTrans> struct Trmv<ArgUplo, ArgTrans, Al
       static_assert(std::is_same<value_type, value_type_b>::value && std::is_same<value_type_b, value_type_c>::value,
                     "A, B and C do not have the same value type.");
 
-      const int m = C.extent(0), n = C.extent(1);
-      if (m > 0 && n > 0) {
+      const int mC = C.extent(0), nC = C.extent(1);
+      if (mC > 0 && nC > 0) {
         const int mA = A.extent(0), nA = A.extent(1);
-        if (n == 1) {
+        if (nC == 1) {
           BlasSerial<value_type>::trmv(ArgUplo::param, ArgTrans::param, diag.param, mA, nA,
                                        value_type(alpha), A.data(), A.stride_1(),
                                                           B.data(), B.stride_0(), 
                                        value_type(beta),  C.data(), C.stride_0());
         } else {
-          TACHO_TEST_FOR_ABORT(true, ">> :External::TRMM.");
+          int k = (ArgTrans::param == 'N' || ArgTrans::param == 'n' ? nA : mA);
+          BlasSerial<value_type>::trmm(ArgUplo::param, ArgTrans::param, diag.param, mC, nC, k,
+                                       value_type(alpha), A.data(), A.stride_1(),
+                                                          B.data(), B.stride_1(), 
+                                       value_type(beta),  C.data(), C.stride_1());
         }
       }
     } else {

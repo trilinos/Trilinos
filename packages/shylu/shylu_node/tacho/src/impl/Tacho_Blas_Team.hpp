@@ -163,6 +163,7 @@ template <typename T> struct BlasTeam {
         if (m <= 0 || n <= 0)
           return;
         
+        // TODO: need team-thread implementation
         member.team_barrier();
         if (trans) {
           // Trans

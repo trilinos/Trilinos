@@ -270,9 +270,10 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     double facto_time = timer.seconds();
 #endif
 
-    DenseMultiVectorType b("b", A.NumRows(), nrhs), // rhs multivector
-        x("x", A.NumRows(), nrhs),                  // solution multivector
-        t("t", A.NumRows(), nrhs);                  // temp workspace (store permuted rhs)
+    DenseMultiVectorType
+        b("b", A.NumRows(), nrhs),  // rhs multivector
+        x("x", A.NumRows(), nrhs),  // solution multivector
+        t("t", A.NumRows(), nrhs);  // temp workspace (store permuted rhs)
 
     {
       if (rhs_file.length() > 0) {

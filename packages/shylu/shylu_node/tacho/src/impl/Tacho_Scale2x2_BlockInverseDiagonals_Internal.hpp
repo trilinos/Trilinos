@@ -189,6 +189,7 @@ template <> struct Scale_BlockInverseDiagonals<Side::Right, Algo::Internal> {
     KOKKOS_IF_ON_DEVICE((
       ordinal_type m = A.extent(0);
       ordinal_type n = A.extent(1);
+      // apply from right
       Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const ordinal_type &i) {
         for (ordinal_type j=0; j<n; j++) {
           A(i, j) /= D(j, j);
