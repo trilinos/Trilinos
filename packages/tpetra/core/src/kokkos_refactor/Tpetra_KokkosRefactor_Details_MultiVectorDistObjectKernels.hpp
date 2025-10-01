@@ -23,7 +23,11 @@
 #define TPETRA_KOKKOS_REFACTOR_DETAILS_MULTI_VECTOR_DIST_OBJECT_KERNELS_HPP
 
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include <sstream>
 #include <stdexcept>
 
@@ -825,8 +829,16 @@ struct AbsMaxOp {
     Scalar value;
 
     KOKKOS_FUNCTION AbsMaxHelper& operator+=(AbsMaxHelper const& rhs) {
+#if KOKKOS_VERSION > 40799
+      auto lhs_abs_value = KokkosKernels::ArithTraits<Scalar>::abs(value);
+#else
       auto lhs_abs_value = Kokkos::ArithTraits<Scalar>::abs(value);
+#endif
+#if KOKKOS_VERSION > 40799
+      auto rhs_abs_value = KokkosKernels::ArithTraits<Scalar>::abs(rhs.value);
+#else
       auto rhs_abs_value = Kokkos::ArithTraits<Scalar>::abs(rhs.value);
+#endif
       value              = lhs_abs_value > rhs_abs_value ? lhs_abs_value : rhs_abs_value;
       return *this;
     }
@@ -845,8 +857,16 @@ struct AbsMaxOp {
 
   template <typename SC>
   KOKKOS_INLINE_FUNCTION void operator()(nonatomic_tag, SC& dst, const SC& src) const {
+#if KOKKOS_VERSION > 40799
+    auto dst_abs_value = KokkosKernels::ArithTraits<SC>::abs(dst);
+#else
     auto dst_abs_value = Kokkos::ArithTraits<SC>::abs(dst);
+#endif
+#if KOKKOS_VERSION > 40799
+    auto src_abs_value = KokkosKernels::ArithTraits<SC>::abs(src);
+#else
     auto src_abs_value = Kokkos::ArithTraits<SC>::abs(src);
+#endif
     dst                = dst_abs_value > src_abs_value ? dst_abs_value : src_abs_value;
   }
 };

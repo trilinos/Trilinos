@@ -18,7 +18,11 @@
 ///   of Tpetra, and may change or disappear at any time.
 
 #include "Kokkos_DualView.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "KokkosBlas1_dot.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -106,7 +110,11 @@ void lclDot(const RV& dotsOut,
 #endif  // HAVE_TPETRA_DEBUG
 
   if (lclNumRows == 0) {
+#if KOKKOS_VERSION > 40799
+    const dot_type zero = KokkosKernels::ArithTraits<dot_type>::zero();
+#else
     const dot_type zero = Kokkos::ArithTraits<dot_type>::zero();
+#endif
     // DEEP_COPY REVIEW - NOT TESTED
     Kokkos::deep_copy(theDots, zero);
   } else {  // lclNumRows != 0

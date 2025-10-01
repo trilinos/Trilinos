@@ -10,7 +10,11 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include <iterator>

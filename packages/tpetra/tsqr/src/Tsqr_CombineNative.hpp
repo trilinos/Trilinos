@@ -18,7 +18,11 @@
 #include "Tsqr_CombineDefault.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosBlas2_gemv.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Tsqr_Impl_Lapack.hpp"
 #include "Tsqr_MatView.hpp"
 

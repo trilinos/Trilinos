@@ -11,7 +11,11 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Tpetra_Details_Profiling.hpp"
 #include "KokkosBlas.hpp"
 

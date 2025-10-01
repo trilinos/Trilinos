@@ -138,13 +138,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug9856, KokkosDeviceNorm180, Scalar, LO, GO, 
   const size_t nGlobalEntries = 100;
   const size_t nVecs          = 180;
 
+#if KOKKOS_VERSION > 40799
+  using IST = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
 
   Kokkos::View<IST **, Kokkos::LayoutLeft, typename Node::device_type>
       mv("mv", nGlobalEntries, nVecs);
   Kokkos::deep_copy(mv, 3.14);
 
+#if KOKKOS_VERSION > 40799
+  using MST = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
+#else
   using MST = typename Kokkos::ArithTraits<Scalar>::mag_type;
+#endif
   std::vector<MST> norm(nVecs);
   Kokkos::View<MST *, Kokkos::HostSpace> normView(&norm[0], nVecs);
 
@@ -160,13 +168,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug9856, KokkosDeviceNorm181, Scalar, LO, GO, 
   const size_t nGlobalEntries = 100;
   const size_t nVecs          = 181;
 
+#if KOKKOS_VERSION > 40799
+  using IST = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
 
   Kokkos::View<IST **, Kokkos::LayoutLeft, typename Node::device_type>
       mv("mv", nGlobalEntries, nVecs);
   Kokkos::deep_copy(mv, 3.14);
 
+#if KOKKOS_VERSION > 40799
+  using MST = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
+#else
   using MST = typename Kokkos::ArithTraits<Scalar>::mag_type;
+#endif
   std::vector<MST> norm(nVecs);
   Kokkos::View<MST *, Kokkos::HostSpace> normView(&norm[0], nVecs);
 

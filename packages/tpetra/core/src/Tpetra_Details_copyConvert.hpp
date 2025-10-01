@@ -17,7 +17,11 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include <sstream>
 #include <stdexcept>
 #include <type_traits>
@@ -37,9 +41,17 @@ namespace {  // (anonymous)
 template <class OutputValueType,
           class InputValueType,
           const bool outputIsComplex =
+#if KOKKOS_VERSION > 40799
+              KokkosKernels::ArithTraits<OutputValueType>::is_complex,
+#else
               Kokkos::ArithTraits<OutputValueType>::is_complex,
+#endif
           const bool inputIsComplex =
+#if KOKKOS_VERSION > 40799
+              KokkosKernels::ArithTraits<InputValueType>::is_complex>
+#else
               Kokkos::ArithTraits<InputValueType>::is_complex>
+#endif
 struct ConvertValue {
   static KOKKOS_INLINE_FUNCTION void
   convert(OutputValueType& dst, const InputValueType& src) {
@@ -58,7 +70,11 @@ struct ConvertValue<OutputRealType, InputComplexType, false, true> {
           const InputComplexType& src) {
     // OutputRealType's constructor needs to be marked with either
     // KOKKOS_FUNCTION or KOKKOS_INLINE_FUNCTION.
+#if KOKKOS_VERSION > 40799
+    using KAI = KokkosKernels::ArithTraits<InputComplexType>;
+#else
     using KAI = Kokkos::ArithTraits<InputComplexType>;
+#endif
     dst       = OutputRealType(KAI::real(src));
   }
 };
@@ -71,8 +87,16 @@ struct ConvertValue<OutputComplexType, InputRealType, true, false> {
     // OutputComplexType's constructor needs to be marked with
     // either KOKKOS_FUNCTION or KOKKOS_INLINE_FUNCTION.
     using output_mag_type =
+#if KOKKOS_VERSION > 40799
+        typename KokkosKernels::ArithTraits<OutputComplexType>::mag_type;
+#else
         typename Kokkos::ArithTraits<OutputComplexType>::mag_type;
+#endif
+#if KOKKOS_VERSION > 40799
+    using KAM = KokkosKernels::ArithTraits<output_mag_type>;
+#else
     using KAM = Kokkos::ArithTraits<output_mag_type>;
+#endif
     dst       = OutputComplexType(src, KAM::zero());
   }
 };

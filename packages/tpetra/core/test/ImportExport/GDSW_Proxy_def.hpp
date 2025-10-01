@@ -10,7 +10,11 @@
 #ifndef GDSW_DEF_HPP
 #define GDSW_DEF_HPP
 #include "GDSW_Proxy_decl.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Tpetra_Details_PackTraits.hpp"
 
 using Teuchos::RCP;
@@ -681,7 +685,11 @@ void TpetraFunctions<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                Kokkos::View<LO*, Kokkos::HostSpace>(columnsRecv.data(), columnsRecv.size()),
                                Teuchos::ArrayView<const size_t>(targetSize));
 
+#if KOKKOS_VERSION > 40799
+  using KSX                 = typename KokkosKernels::ArithTraits<SC>::val_type;
+#else
   using KSX                 = typename Kokkos::ArithTraits<SC>::val_type;
+#endif
   const KSX* matrixValues_K = reinterpret_cast<const KSX*>(matrixValues.data());
   KSX* valuesRecv_K         = reinterpret_cast<KSX*>(valuesRecv.data());
   const size_t sizeSend     = matrixValues.size();
@@ -970,7 +978,11 @@ void TpetraFunctions<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                Kokkos::View<LO*, Kokkos::HostSpace>(columnsRecv.data(), columnsRecv.size()),
                                Teuchos::ArrayView<const size_t>(targetSize));
 
+#if KOKKOS_VERSION > 40799
+  using KSX                 = typename KokkosKernels::ArithTraits<SC>::val_type;
+#else
   using KSX                 = typename Kokkos::ArithTraits<SC>::val_type;
+#endif
   const KSX* matrixValues_K = reinterpret_cast<const KSX*>(matrixValues.data());
   KSX* valuesRecv_K         = reinterpret_cast<KSX*>(valuesRecv.data());
   const size_t sizeSend     = matrixValues.size();
@@ -1257,7 +1269,11 @@ void TpetraFunctions<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                Kokkos::View<LO*, Kokkos::HostSpace>(columnsRecv.data(), columnsRecv.size()),
                                Teuchos::ArrayView<const size_t>(targetSize));
 
+#if KOKKOS_VERSION > 40799
+  using KSX                 = typename KokkosKernels::ArithTraits<SC>::val_type;
+#else
   using KSX                 = typename Kokkos::ArithTraits<SC>::val_type;
+#endif
   const KSX* matrixValues_K = reinterpret_cast<const KSX*>(matrixValues.data());
   KSX* valuesRecv_K         = reinterpret_cast<KSX*>(valuesRecv.data());
   const size_t sizeSend     = matrixValues.size();
