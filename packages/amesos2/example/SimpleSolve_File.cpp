@@ -243,11 +243,13 @@ int main(int argc, char *argv[]) {
     Teuchos::TimeMonitor::setStackedTimer(stackedTimer);
   }
   // perform symbolic
+  comm->barrier();
   {
     Teuchos::RCP< Teuchos::Time > symboTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Symbolic Factorization");
     Teuchos::TimeMonitor symboFactTimer(*symboTimer_);
 
-    solver->symbolicFactorization(); comm->barrier();
+    solver->symbolicFactorization();
+    comm->barrier();
   }
   for (size_t s = 0; s < numSolves; s++) {
     if (multi_solve && s > 0)
@@ -279,7 +281,6 @@ int main(int argc, char *argv[]) {
       comm->barrier();
     }
     // perform solve
-    comm->barrier();
     {
       Teuchos::RCP< Teuchos::Time > solveTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Solve");
       Teuchos::TimeMonitor solveTimer(*solveTimer_);
