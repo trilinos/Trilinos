@@ -85,6 +85,14 @@ struct CommonSubview<
 } // namespace Impl
 } // namespace Kokkos
 
+namespace {
+template <class T, size_t N> struct data_type_construct {
+  using type = typename data_type_construct<T *, N - 1>::type;
+};
+template <class T> struct data_type_construct<T, 0> {
+  using type = T;
+};
+} // namespace
 namespace Kokkos {
 // This is needed to deal with the return Layout Deduction for LayoutContiguous
 // ...
@@ -93,27 +101,20 @@ template <class D, class LayoutSrc, unsigned StrideSrc, class... P,
 KOKKOS_INLINE_FUNCTION auto subview(
     const View<D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...> &src,
     Args... args) {
-  static_assert(View<D, P...>::rank == sizeof...(Args),
-                "subview requires one argument for each source View rank");
-
-  using sub_mdspan_t = decltype(submdspan(
-      src.to_mdspan(), Impl::transform_kokkos_slice_to_mdspan_slice(args)...));
-  if constexpr (std::is_same_v<typename sub_mdspan_t::layout_type,
-                               layout_stride>) {
-    return typename Kokkos::Impl::ViewMapping<
-        void /* deduce subview type from source view traits */
-        ,
-        typename Impl::RemoveAlignedMemoryTrait<
-            D, Kokkos::LayoutContiguous<LayoutStride, StrideSrc>, P...>::type,
-        Args...>::type(src, args...);
-  } else {
-    return typename Kokkos::Impl::ViewMapping<
-        void /* deduce subview type from source view traits */
-        ,
-        typename Impl::RemoveAlignedMemoryTrait<
-            D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...>::type,
-        Args...>::type(src, args...);
-  }
+  using view_t = View<D, Kokkos::LayoutContiguous<LayoutSrc, StrideSrc>, P...>;
+  auto submapping_result = submdspan_mapping(
+      src.mapping(), Impl::transform_kokkos_slice_to_mdspan_slice(args)...);
+  using sub_data_type = typename data_type_construct<
+      typename view_t::value_type,
+      decltype(submapping_result.mapping)::extents_type::rank()>::type;
+  using layout_t = std::conditional_t<
+      std::is_same_v<typename decltype(submapping_result.mapping)::layout_type,
+                     layout_stride>,
+      LayoutStride, LayoutSrc>;
+  return View<sub_data_type, LayoutContiguous<layout_t, StrideSrc>,
+              typename view_t::device_type, typename view_t::memory_traits>(
+      src.accessor().offset(src.data_handle(), submapping_result.offset),
+      submapping_result.mapping, src.accessor());
 }
 
 // This is needed to deal with the return Layout Deduction for LayoutContiguous
