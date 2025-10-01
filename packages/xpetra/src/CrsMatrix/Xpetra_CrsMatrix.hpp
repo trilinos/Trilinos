@@ -273,7 +273,11 @@ class CrsMatrix
   //! @name Xpetra-specific routines
   //@{
 #ifdef HAVE_XPETRA_TPETRA
+#if KOKKOS_VERSION > 40799
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
   using execution_space  = typename node_type::device_type;
 
   // that is the local_graph_type in Tpetra::CrsGraph...
