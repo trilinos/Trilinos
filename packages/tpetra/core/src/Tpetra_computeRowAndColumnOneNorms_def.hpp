@@ -104,15 +104,15 @@ void computeLocalRowScaledColumnNorms_RowMatrix(EquilibrationInfo<typename Kokko
                                                                   typename NT::device_type>& result,
                                                 const Tpetra::RowMatrix<SC, LO, GO, NT>& A) {
 #if KOKKOS_VERSION > 40799
-  using KAT      = KokkosKernels::ArithTraits<SC>;
+  using KAT = KokkosKernels::ArithTraits<SC>;
 #else
-  using KAT      = Kokkos::ArithTraits<SC>;
+  using KAT = Kokkos::ArithTraits<SC>;
 #endif
   using mag_type = typename KAT::mag_type;
 #if KOKKOS_VERSION > 40799
-  using KAV      = KokkosKernels::ArithTraits<typename KAT::val_type>;
+  using KAV = KokkosKernels::ArithTraits<typename KAT::val_type>;
 #else
-  using KAV      = Kokkos::ArithTraits<typename KAT::val_type>;
+  using KAV = Kokkos::ArithTraits<typename KAT::val_type>;
 #endif
 
   auto rowNorms_h = Kokkos::create_mirror_view(result.rowNorms);
@@ -149,21 +149,21 @@ EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type, typename NT::devic
 #endif
 computeLocalRowOneNorms_RowMatrix(const Tpetra::RowMatrix<SC, LO, GO, NT>& A) {
 #if KOKKOS_VERSION > 40799
-  using KAT             = KokkosKernels::ArithTraits<SC>;
+  using KAT = KokkosKernels::ArithTraits<SC>;
 #else
-  using KAT             = Kokkos::ArithTraits<SC>;
+  using KAT = Kokkos::ArithTraits<SC>;
 #endif
-  using val_type        = typename KAT::val_type;
+  using val_type = typename KAT::val_type;
 #if KOKKOS_VERSION > 40799
-  using KAV             = KokkosKernels::ArithTraits<val_type>;
+  using KAV = KokkosKernels::ArithTraits<val_type>;
 #else
-  using KAV             = Kokkos::ArithTraits<val_type>;
+  using KAV = Kokkos::ArithTraits<val_type>;
 #endif
-  using mag_type        = typename KAT::mag_type;
+  using mag_type = typename KAT::mag_type;
 #if KOKKOS_VERSION > 40799
-  using KAM             = KokkosKernels::ArithTraits<mag_type>;
+  using KAM = KokkosKernels::ArithTraits<mag_type>;
 #else
-  using KAM             = Kokkos::ArithTraits<mag_type>;
+  using KAM = Kokkos::ArithTraits<mag_type>;
 #endif
   using device_type     = typename NT::device_type;
   using equib_info_type = EquilibrationInfo<val_type, device_type>;
@@ -237,21 +237,21 @@ EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type, typename NT::devic
 computeLocalRowAndColumnOneNorms_RowMatrix(const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
                                            const bool assumeSymmetric) {
 #if KOKKOS_VERSION > 40799
-  using KAT         = KokkosKernels::ArithTraits<SC>;
+  using KAT = KokkosKernels::ArithTraits<SC>;
 #else
-  using KAT         = Kokkos::ArithTraits<SC>;
+  using KAT      = Kokkos::ArithTraits<SC>;
 #endif
-  using val_type    = typename KAT::val_type;
+  using val_type = typename KAT::val_type;
 #if KOKKOS_VERSION > 40799
-  using KAV         = KokkosKernels::ArithTraits<val_type>;
+  using KAV = KokkosKernels::ArithTraits<val_type>;
 #else
-  using KAV         = Kokkos::ArithTraits<val_type>;
+  using KAV      = Kokkos::ArithTraits<val_type>;
 #endif
-  using mag_type    = typename KAT::mag_type;
+  using mag_type = typename KAT::mag_type;
 #if KOKKOS_VERSION > 40799
-  using KAM         = KokkosKernels::ArithTraits<mag_type>;
+  using KAM = KokkosKernels::ArithTraits<mag_type>;
 #else
-  using KAM         = Kokkos::ArithTraits<mag_type>;
+  using KAM      = Kokkos::ArithTraits<mag_type>;
 #endif
   using device_type = typename NT::device_type;
 
@@ -325,17 +325,17 @@ class ComputeLocalRowScaledColumnNorms {
  public:
   using crs_matrix_type = ::Tpetra::CrsMatrix<SC, LO, GO, NT>;
 #if KOKKOS_VERSION > 40799
-  using val_type        = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using val_type = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using val_type        = typename Kokkos::ArithTraits<SC>::val_type;
+  using val_type = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
 #if KOKKOS_VERSION > 40799
-  using mag_type        = typename KokkosKernels::ArithTraits<val_type>::mag_type;
+  using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
 #else
-  using mag_type        = typename Kokkos::ArithTraits<val_type>::mag_type;
+  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
 #endif
-  using device_type     = typename crs_matrix_type::device_type;
-  using policy_type     = Kokkos::TeamPolicy<typename device_type::execution_space, LO>;
+  using device_type = typename crs_matrix_type::device_type;
+  using policy_type = Kokkos::TeamPolicy<typename device_type::execution_space, LO>;
 
   ComputeLocalRowScaledColumnNorms(const Kokkos::View<mag_type*, device_type>& rowScaledColNorms,
                                    const Kokkos::View<const mag_type*, device_type>& rowNorms,
@@ -406,16 +406,16 @@ void computeLocalRowScaledColumnNorms(EquilibrationInfo<typename Kokkos::ArithTr
                                       const Tpetra::RowMatrix<SC, LO, GO, NT>& A) {
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
 #if KOKKOS_VERSION > 40799
-  using val_type        = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using val_type = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using val_type        = typename Kokkos::ArithTraits<SC>::val_type;
+  using val_type = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
 #if KOKKOS_VERSION > 40799
-  using mag_type        = typename KokkosKernels::ArithTraits<val_type>::mag_type;
+  using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
 #else
-  using mag_type        = typename Kokkos::ArithTraits<val_type>::mag_type;
+  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
 #endif
-  using device_type     = typename NT::device_type;
+  using device_type = typename NT::device_type;
 
   auto colMapPtr = A.getColMap();
   TEUCHOS_TEST_FOR_EXCEPTION(colMapPtr.get() == nullptr, std::invalid_argument,
@@ -442,9 +442,9 @@ template <class SC, class LO, class GO, class NT>
 class ComputeLocalRowOneNorms {
  public:
 #if KOKKOS_VERSION > 40799
-  using val_type        = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using val_type = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using val_type        = typename Kokkos::ArithTraits<SC>::val_type;
+  using val_type = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
   using equib_info_type = EquilibrationInfo<val_type, typename NT::device_type>;
   using local_matrix_device_type =
@@ -483,15 +483,15 @@ class ComputeLocalRowOneNorms {
   KOKKOS_INLINE_FUNCTION void
   operator()(const typename policy_type::member_type& team, value_type& dst) const {
 #if KOKKOS_VERSION > 40799
-    using KAT      = KokkosKernels::ArithTraits<val_type>;
+    using KAT = KokkosKernels::ArithTraits<val_type>;
 #else
-    using KAT      = Kokkos::ArithTraits<val_type>;
+    using KAT = Kokkos::ArithTraits<val_type>;
 #endif
     using mag_type = typename KAT::mag_type;
 #if KOKKOS_VERSION > 40799
-    using KAM      = KokkosKernels::ArithTraits<mag_type>;
+    using KAM = KokkosKernels::ArithTraits<mag_type>;
 #else
-    using KAM      = Kokkos::ArithTraits<mag_type>;
+    using KAM = Kokkos::ArithTraits<mag_type>;
 #endif
 
     const LO lclRow = team.league_rank();
@@ -555,9 +555,9 @@ template <class SC, class LO, class GO, class NT>
 class ComputeLocalRowAndColumnOneNorms {
  public:
 #if KOKKOS_VERSION > 40799
-  using val_type                 = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using val_type = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using val_type                 = typename Kokkos::ArithTraits<SC>::val_type;
+  using val_type = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
   using equib_info_type          = EquilibrationInfo<val_type, typename NT::device_type>;
   using local_matrix_device_type = typename ::Tpetra::CrsMatrix<SC, LO, GO, NT>::local_matrix_device_type;
@@ -596,15 +596,15 @@ class ComputeLocalRowAndColumnOneNorms {
   KOKKOS_INLINE_FUNCTION void
   operator()(const typename policy_type::member_type& team, value_type& dst) const {
 #if KOKKOS_VERSION > 40799
-    using KAT      = KokkosKernels::ArithTraits<val_type>;
+    using KAT = KokkosKernels::ArithTraits<val_type>;
 #else
-    using KAT      = Kokkos::ArithTraits<val_type>;
+    using KAT = Kokkos::ArithTraits<val_type>;
 #endif
     using mag_type = typename KAT::mag_type;
 #if KOKKOS_VERSION > 40799
-    using KAM      = KokkosKernels::ArithTraits<mag_type>;
+    using KAM = KokkosKernels::ArithTraits<mag_type>;
 #else
-    using KAM      = Kokkos::ArithTraits<mag_type>;
+    using KAM = Kokkos::ArithTraits<mag_type>;
 #endif
 
     const LO lclRow = team.league_rank();
@@ -688,9 +688,9 @@ computeLocalRowOneNorms_CrsMatrix(const Tpetra::CrsMatrix<SC, LO, GO, NT>& A) {
   using policy_type     = Kokkos::TeamPolicy<execution_space, LO>;
   using functor_type    = ComputeLocalRowOneNorms<SC, LO, GO, NT>;
 #if KOKKOS_VERSION > 40799
-  using val_type        = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using val_type = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using val_type        = typename Kokkos::ArithTraits<SC>::val_type;
+  using val_type = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
   using device_type     = typename NT::device_type;
   using equib_info_type = EquilibrationInfo<val_type, device_type>;
@@ -728,9 +728,9 @@ computeLocalRowAndColumnOneNorms_CrsMatrix(const Tpetra::CrsMatrix<SC, LO, GO, N
   using policy_type     = Kokkos::TeamPolicy<execution_space, LO>;
   using functor_type    = ComputeLocalRowAndColumnOneNorms<SC, LO, GO, NT>;
 #if KOKKOS_VERSION > 40799
-  using val_type        = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using val_type = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using val_type        = typename Kokkos::ArithTraits<SC>::val_type;
+  using val_type = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
   using device_type     = typename NT::device_type;
   using equib_info_type = EquilibrationInfo<val_type, device_type>;
@@ -861,9 +861,9 @@ void copy1DViewIntoMultiVectorColumn_mag(
     const LO whichColumn,
     const Kokkos::View<ViewValueType*, typename NT::device_type>& view) {
 #if KOKKOS_VERSION > 40799
-  using KAT             = KokkosKernels::ArithTraits<ViewValueType>;
+  using KAT = KokkosKernels::ArithTraits<ViewValueType>;
 #else
-  using KAT             = Kokkos::ArithTraits<ViewValueType>;
+  using KAT        = Kokkos::ArithTraits<ViewValueType>;
 #endif
   using execution_space = typename NT::execution_space;
   using range_type      = Kokkos::RangePolicy<execution_space, LO>;
@@ -896,7 +896,7 @@ void copyMultiVectorColumnInto1DView_mag(
   using implScalar = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
 #if KOKKOS_VERSION > 40799
-  using KAT        = KokkosKernels::ArithTraits<implScalar>;
+  using KAT = KokkosKernels::ArithTraits<implScalar>;
 #else
   using KAT        = Kokkos::ArithTraits<implScalar>;
 #endif
@@ -925,9 +925,9 @@ class FindZero {
   operator()(const IndexType i, int& result) const {
     using val_type = typename OneDViewType::non_const_value_type;
 #if KOKKOS_VERSION > 40799
-    result         = (x_(i) == KokkosKernels::ArithTraits<val_type>::zero()) ? 1 : result;
+    result = (x_(i) == KokkosKernels::ArithTraits<val_type>::zero()) ? 1 : result;
 #else
-    result         = (x_(i) == Kokkos::ArithTraits<val_type>::zero()) ? 1 : result;
+    result = (x_(i) == Kokkos::ArithTraits<val_type>::zero()) ? 1 : result;
 #endif
   }
 
@@ -1029,14 +1029,14 @@ void globalizeColumnOneNorms(EquilibrationInfo<typename Kokkos::ArithTraits<SC>:
                              const bool assumeSymmetric)  // if so, use row norms
 {
 #if KOKKOS_VERSION > 40799
-  using val_type    = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using val_type = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using val_type    = typename Kokkos::ArithTraits<SC>::val_type;
+  using val_type = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
 #if KOKKOS_VERSION > 40799
-  using mag_type    = typename KokkosKernels::ArithTraits<val_type>::mag_type;
+  using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
 #else
-  using mag_type    = typename Kokkos::ArithTraits<val_type>::mag_type;
+  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
 #endif
   using mv_type     = Tpetra::MultiVector<mag_type, LO, GO, NT>;
   using device_type = typename NT::device_type;

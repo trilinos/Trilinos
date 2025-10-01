@@ -113,7 +113,7 @@ Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Amesos2Smoother(cons
 #if defined(HAVE_AMESOS2_KLU2)
     type_ = "Klu";
 #elif defined(HAVE_AMESOS2_SUPERLU)
-    type_ = "Superlu";
+    type_          = "Superlu";
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
     type_ = "Superludist";
 #elif defined(HAVE_AMESOS2_BASKER)
@@ -204,17 +204,17 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     }
 
 #if KOKKOS_VERSION > 40799
-    using ATS         = KokkosKernels::ArithTraits<SC>;
+    using ATS = KokkosKernels::ArithTraits<SC>;
 #else
-    using ATS         = Kokkos::ArithTraits<SC>;
+    using ATS      = Kokkos::ArithTraits<SC>;
 #endif
     using impl_Scalar = typename ATS::val_type;
 #if KOKKOS_VERSION > 40799
-    using impl_ATS    = KokkosKernels::ArithTraits<impl_Scalar>;
+    using impl_ATS = KokkosKernels::ArithTraits<impl_Scalar>;
 #else
-    using impl_ATS    = Kokkos::ArithTraits<impl_Scalar>;
+    using impl_ATS = Kokkos::ArithTraits<impl_Scalar>;
 #endif
-    using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+    using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     typedef typename Matrix::local_matrix_type KCRS;
     typedef typename KCRS::StaticCrsGraphType graph_t;

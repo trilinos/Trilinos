@@ -33,9 +33,9 @@ template <class Scalar, class Device>
 class LocalOperator {
  public:
 #if KOKKOS_VERSION > 40799
-  using scalar_type  = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+  using scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
-  using scalar_type  = typename Kokkos::ArithTraits<Scalar>::val_type;
+  using scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
 #endif
   using array_layout = Kokkos::LayoutLeft;
   using device_type =

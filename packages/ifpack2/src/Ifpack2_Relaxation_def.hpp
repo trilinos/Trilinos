@@ -978,9 +978,9 @@ void Relaxation<MatrixType>::compute() {
                                      global_ordinal_type, node_type>;
   using IST         = typename vector_type::impl_scalar_type;
 #if KOKKOS_VERSION > 40799
-  using KAT         = KokkosKernels::ArithTraits<IST>;
+  using KAT = KokkosKernels::ArithTraits<IST>;
 #else
-  using KAT         = Kokkos::ArithTraits<IST>;
+  using KAT = Kokkos::ArithTraits<IST>;
 #endif
 
   const char methodName[] = "Ifpack2::Relaxation::compute";

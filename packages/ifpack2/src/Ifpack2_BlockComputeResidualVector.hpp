@@ -779,7 +779,7 @@ struct ComputeResidualVector {
 #if KOKKOS_VERSION > 40799
                              if (A_offset != KokkosKernels::ArithTraits<int64_t>::min()) {
 #else
-                             if (A_offset != Kokkos::ArithTraits<int64_t>::min()) {
+            if (A_offset != Kokkos::ArithTraits<int64_t>::min()) {
 #endif
                                A_block_cst.assign_data(tpetra_values.data() + A_offset);
                                // Pull x into local memory

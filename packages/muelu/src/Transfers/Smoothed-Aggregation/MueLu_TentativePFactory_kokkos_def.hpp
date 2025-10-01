@@ -555,11 +555,11 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #else
   typedef Kokkos::ArithTraits<SC> ATS;
 #endif
-  using impl_SC      = typename ATS::val_type;
+  using impl_SC = typename ATS::val_type;
 #if KOKKOS_VERSION > 40799
-  using impl_ATS     = KokkosKernels::ArithTraits<impl_SC>;
+  using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
 #else
-  using impl_ATS     = Kokkos::ArithTraits<impl_SC>;
+  using impl_ATS = Kokkos::ArithTraits<impl_SC>;
 #endif
   const impl_SC zero = impl_ATS::zero(), one = impl_ATS::one();
 
@@ -988,11 +988,11 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #else
   typedef Kokkos::ArithTraits<SC> ATS;
 #endif
-  using impl_SC     = typename ATS::val_type;
+  using impl_SC = typename ATS::val_type;
 #if KOKKOS_VERSION > 40799
-  using impl_ATS    = KokkosKernels::ArithTraits<impl_SC>;
+  using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
 #else
-  using impl_ATS    = Kokkos::ArithTraits<impl_SC>;
+  using impl_ATS = Kokkos::ArithTraits<impl_SC>;
 #endif
   const impl_SC one = impl_ATS::one();
 

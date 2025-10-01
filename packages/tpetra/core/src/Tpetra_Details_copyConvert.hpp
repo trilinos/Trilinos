@@ -75,7 +75,7 @@ struct ConvertValue<OutputRealType, InputComplexType, false, true> {
 #else
     using KAI = Kokkos::ArithTraits<InputComplexType>;
 #endif
-    dst       = OutputRealType(KAI::real(src));
+    dst = OutputRealType(KAI::real(src));
   }
 };
 
@@ -97,7 +97,7 @@ struct ConvertValue<OutputComplexType, InputRealType, true, false> {
 #else
     using KAM = Kokkos::ArithTraits<output_mag_type>;
 #endif
-    dst       = OutputComplexType(src, KAM::zero());
+    dst = OutputComplexType(src, KAM::zero());
   }
 };
 

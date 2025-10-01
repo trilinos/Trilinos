@@ -87,11 +87,11 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
   if (Axpetra->getRowMap()->lib() == Xpetra::UseTpetra) {
     equil_type equibResult_ = computeRowAndColumnOneNorms(*A, assumeSymmetric);
     if (equilibrate_1norm) {
-      using device_type      = typename Node::device_type;
+      using device_type = typename Node::device_type;
 #if KOKKOS_VERSION > 40799
-      using mag_type         = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
+      using mag_type = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
 #else
-      using mag_type         = typename Kokkos::ArithTraits<Scalar>::mag_type;
+      using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
 #endif
       using mag_view_type    = Kokkos::View<mag_type*, device_type>;
       using scalar_view_type = Kokkos::View<typename equil_type::val_type*, device_type>;

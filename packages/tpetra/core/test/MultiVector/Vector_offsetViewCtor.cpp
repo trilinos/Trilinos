@@ -16,9 +16,9 @@ namespace {  // (anonymous)
 template <class ScalarType, class IntegerType>
 KOKKOS_INLINE_FUNCTION ScalarType toScalar(const IntegerType x) {
 #if KOKKOS_VERSION > 40799
-  using KAT      = KokkosKernels::ArithTraits<ScalarType>;
+  using KAT = KokkosKernels::ArithTraits<ScalarType>;
 #else
-  using KAT      = Kokkos::ArithTraits<ScalarType>;
+  using KAT = Kokkos::ArithTraits<ScalarType>;
 #endif
   using mag_type = typename KAT::mag_type;
   // The double cast handles conversions like integer to

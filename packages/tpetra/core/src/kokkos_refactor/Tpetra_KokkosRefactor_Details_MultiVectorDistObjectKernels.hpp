@@ -839,7 +839,7 @@ struct AbsMaxOp {
 #else
       auto rhs_abs_value = Kokkos::ArithTraits<Scalar>::abs(rhs.value);
 #endif
-      value              = lhs_abs_value > rhs_abs_value ? lhs_abs_value : rhs_abs_value;
+      value = lhs_abs_value > rhs_abs_value ? lhs_abs_value : rhs_abs_value;
       return *this;
     }
 
@@ -867,7 +867,7 @@ struct AbsMaxOp {
 #else
     auto src_abs_value = Kokkos::ArithTraits<SC>::abs(src);
 #endif
-    dst                = dst_abs_value > src_abs_value ? dst_abs_value : src_abs_value;
+    dst = dst_abs_value > src_abs_value ? dst_abs_value : src_abs_value;
   }
 };
 

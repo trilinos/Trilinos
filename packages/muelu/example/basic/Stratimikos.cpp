@@ -307,11 +307,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         // This step can obviously be skipped if the user has pre-assembled arrays.
 
 #if KOKKOS_VERSION > 40799
-        using ATS      = KokkosKernels::ArithTraits<Scalar>;
+        using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
         using ATS      = Kokkos::ArithTraits<Scalar>;
 #endif
-        using impl_SC  = typename ATS::val_type;
+        using impl_SC = typename ATS::val_type;
 #if KOKKOS_VERSION > 40799
         using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
 #else

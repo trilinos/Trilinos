@@ -686,9 +686,9 @@ void TpetraFunctions<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                Teuchos::ArrayView<const size_t>(targetSize));
 
 #if KOKKOS_VERSION > 40799
-  using KSX                 = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using KSX = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using KSX                 = typename Kokkos::ArithTraits<SC>::val_type;
+  using KSX = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
   const KSX* matrixValues_K = reinterpret_cast<const KSX*>(matrixValues.data());
   KSX* valuesRecv_K         = reinterpret_cast<KSX*>(valuesRecv.data());
@@ -979,9 +979,9 @@ void TpetraFunctions<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                Teuchos::ArrayView<const size_t>(targetSize));
 
 #if KOKKOS_VERSION > 40799
-  using KSX                 = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using KSX = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using KSX                 = typename Kokkos::ArithTraits<SC>::val_type;
+  using KSX = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
   const KSX* matrixValues_K = reinterpret_cast<const KSX*>(matrixValues.data());
   KSX* valuesRecv_K         = reinterpret_cast<KSX*>(valuesRecv.data());
@@ -1270,9 +1270,9 @@ void TpetraFunctions<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                Teuchos::ArrayView<const size_t>(targetSize));
 
 #if KOKKOS_VERSION > 40799
-  using KSX                 = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using KSX = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using KSX                 = typename Kokkos::ArithTraits<SC>::val_type;
+  using KSX = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
   const KSX* matrixValues_K = reinterpret_cast<const KSX*>(matrixValues.data());
   KSX* valuesRecv_K         = reinterpret_cast<KSX*>(valuesRecv.data());

@@ -82,7 +82,7 @@ void AdditiveSchwarzFilter<MatrixType>::
     Kokkos::parallel_scan(
         policy_type(0, totalLocalRows),
         KOKKOS_LAMBDA(local_ordinal_type i, local_ordinal_type & lnumSingletons, bool finalPass) {
-          bool isSingleton                = true;
+          bool isSingleton = true;
 #if KOKKOS_VERSION > 40799
           impl_scalar_type singletonValue = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
 #else

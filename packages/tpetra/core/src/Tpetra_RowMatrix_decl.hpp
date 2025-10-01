@@ -92,7 +92,7 @@ class RowMatrix : virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, N
 #if KOKKOS_VERSION > 40799
   using mag_type = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
 #else
-  using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
+  using mag_type         = typename Kokkos::ArithTraits<Scalar>::mag_type;
 #endif
 
   typedef typename Kokkos::View<impl_scalar_type*, typename Node::device_type>::const_type

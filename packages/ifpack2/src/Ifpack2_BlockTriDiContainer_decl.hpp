@@ -239,7 +239,7 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
 #if KOKKOS_VERSION > 40799
     scalar_type dampingFactor = KokkosKernels::ArithTraits<scalar_type>::one();
 #else
-    scalar_type dampingFactor = Kokkos::ArithTraits<scalar_type>::one();
+    scalar_type dampingFactor            = Kokkos::ArithTraits<scalar_type>::one();
 #endif
     //! The maximum number of sweeps. If the norm-based criterion is not used,
     //! it's exactly the number of sweeps. Defaults to 1.
@@ -256,7 +256,7 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
 #if KOKKOS_VERSION > 40799
     magnitude_type tolerance = KokkosKernels::ArithTraits<magnitude_type>::zero();
 #else
-    magnitude_type tolerance = Kokkos::ArithTraits<magnitude_type>::zero();
+    magnitude_type tolerance             = Kokkos::ArithTraits<magnitude_type>::zero();
 #endif
     //! Check the norm-based termination criterion every
     //! <tt>checkToleranceEvery</tt> iterations. Defaults to 1. A norm

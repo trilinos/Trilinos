@@ -43,11 +43,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockMultiVector, BlockWiseMultiply, Scalar, L
   using map_type         = Tpetra::Map<LO, GO, Node>;
   using GST              = Tpetra::global_size_t;
 #if KOKKOS_VERSION > 40799
-  using KAT              = KokkosKernels::ArithTraits<IST>;
+  using KAT = KokkosKernels::ArithTraits<IST>;
 #else
-  using KAT              = Kokkos::ArithTraits<IST>;
+  using KAT = Kokkos::ArithTraits<IST>;
 #endif
-  using MT               = typename KAT::mag_type;
+  using MT = typename KAT::mag_type;
   // Set debug = true if you want immediate debug output to stderr.
   const bool debug = false;
   int lclSuccess   = 1;
@@ -364,11 +364,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockMultiVector, BlockJacobiUpdate, Scalar, L
   using map_type         = Tpetra::Map<LO, GO, Node>;
   using GST              = Tpetra::global_size_t;
 #if KOKKOS_VERSION > 40799
-  using KAT              = KokkosKernels::ArithTraits<IST>;
+  using KAT = KokkosKernels::ArithTraits<IST>;
 #else
-  using KAT              = Kokkos::ArithTraits<IST>;
+  using KAT = Kokkos::ArithTraits<IST>;
 #endif
-  using MT               = typename KAT::mag_type;
+  using MT = typename KAT::mag_type;
   // Set debug = true if you want immediate debug output to stderr.
   const bool debug = false;
   int lclSuccess   = 1;

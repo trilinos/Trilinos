@@ -236,9 +236,9 @@ class MultiVector
   virtual void Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal);
 
 #if KOKKOS_VERSION > 40799
-  using impl_scalar_type     = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
-  using impl_scalar_type     = typename Kokkos::ArithTraits<Scalar>::val_type;
+  using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
 #endif
   using dual_view_type       = Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutStride, typename node_type::device_type, Kokkos::MemoryUnmanaged>;
   using dual_view_type_const = Kokkos::DualView<const impl_scalar_type**, Kokkos::LayoutStride, typename node_type::device_type, Kokkos::MemoryUnmanaged>;

@@ -250,9 +250,9 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
   // Add a little "fudge factor."  2 is enough for real, and 4 is
   // enough for complex.
 #if KOKKOS_VERSION > 40799
-  const mag_type fudgeFactor    = KokkosKernels::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(4) : static_cast<mag_type>(2);
+  const mag_type fudgeFactor = KokkosKernels::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(4) : static_cast<mag_type>(2);
 #else
-  const mag_type fudgeFactor    = Kokkos::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(4) : static_cast<mag_type>(2);
+  const mag_type fudgeFactor = Kokkos::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(4) : static_cast<mag_type>(2);
 #endif
   const mag_type nonTransFactor = A_norm * x_norm > fudgeFactor ? A_norm * x_norm : fudgeFactor;
   const mag_type nonTransBound  = nonTransFactor *

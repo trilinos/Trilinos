@@ -298,9 +298,9 @@ void BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::a
                                                                                                   bool zeroStartingSolution, int numSweeps) const {
   IFPACK2_BLOCKHELPER_TIMER("BlockTriDiContainer::applyInverseJacobi", applyInverseJacobi);
 #if KOKKOS_VERSION > 40799
-  const magnitude_type tol  = KokkosKernels::ArithTraits<magnitude_type>::zero();
+  const magnitude_type tol = KokkosKernels::ArithTraits<magnitude_type>::zero();
 #else
-  const magnitude_type tol  = Kokkos::ArithTraits<magnitude_type>::zero();
+  const magnitude_type tol = Kokkos::ArithTraits<magnitude_type>::zero();
 #endif
   const int check_tol_every = 1;
 

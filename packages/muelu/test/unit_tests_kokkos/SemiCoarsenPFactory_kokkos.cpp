@@ -107,14 +107,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SemiCoarsenPFactory_kokkos, TestSemiCoarsenP, 
   // check prolongation of coarse coordinates
   // in this special case, the third layer will have the correct coordinates
 #if KOKKOS_VERSION > 40799
-  using impl_SC                 = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using impl_SC = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using impl_SC                 = typename Kokkos::ArithTraits<SC>::val_type;
+  using impl_SC  = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
 #if KOKKOS_VERSION > 40799
-  using impl_ATS                = KokkosKernels::ArithTraits<impl_SC>;
+  using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
 #else
-  using impl_ATS                = Kokkos::ArithTraits<impl_SC>;
+  using impl_ATS = Kokkos::ArithTraits<impl_SC>;
 #endif
   const auto fineCoordsDiffView = fineCoordsDiff->getLocalViewDevice(Xpetra::Access::ReadOnly);
   const int numNodes            = fineCoordsDiff->getLocalLength();

@@ -174,18 +174,18 @@ struct FillPairsResult {
     : minKey_(::Kokkos::ArithTraits<KeyType>::max())
 #endif
     ,
-    // min() for a floating-point type returns the minimum _positive_
-    // normalized value.  This is different than for integer types.
-    // lowest() is new in C++11 and returns the least value, always
-    // negative for signed finite types.
-    //
-    // mfh 23 May 2015: I have heard reports that
-    // std::numeric_limits<int>::lowest() does not exist with the
-    // Intel compiler.  I'm not sure if the users in question actually
-    // enabled C++11.  However, it's easy enough to work around this
-    // issue.  The standard floating-point types are signed and have a
-    // sign bit, so lowest() is just -max().  For integer types, we
-    // can use min() instead.
+  // min() for a floating-point type returns the minimum _positive_
+  // normalized value.  This is different than for integer types.
+  // lowest() is new in C++11 and returns the least value, always
+  // negative for signed finite types.
+  //
+  // mfh 23 May 2015: I have heard reports that
+  // std::numeric_limits<int>::lowest() does not exist with the
+  // Intel compiler.  I'm not sure if the users in question actually
+  // enabled C++11.  However, it's easy enough to work around this
+  // issue.  The standard floating-point types are signed and have a
+  // sign bit, so lowest() is just -max().  For integer types, we
+  // can use min() instead.
 #if KOKKOS_VERSION > 40799
     maxKey_(::KokkosKernels::ArithTraits<KeyType>::is_integer ? ::KokkosKernels::ArithTraits<KeyType>::min() : -::KokkosKernels::ArithTraits<KeyType>::max())
 #else
@@ -294,37 +294,38 @@ class FillPairs {
     , startingValue_(startingValue)
 #if KOKKOS_VERSION > 40799
     , initMinKey_(::KokkosKernels::ArithTraits<key_type>::max())
-    , initMaxKey_(::KokkosKernels::ArithTraits<key_type>::is_integer ? ::KokkosKernels::ArithTraits<key_type>::min() : -::KokkosKernels::ArithTraits<key_type>::max()) {}
+    , initMaxKey_(::KokkosKernels::ArithTraits<key_type>::is_integer ? ::KokkosKernels::ArithTraits<key_type>::min() : -::KokkosKernels::ArithTraits<key_type>::max()){}
 #else
     , initMinKey_(::Kokkos::ArithTraits<key_type>::max())
-    , initMaxKey_(::Kokkos::ArithTraits<key_type>::is_integer ? ::Kokkos::ArithTraits<key_type>::min() : -::Kokkos::ArithTraits<key_type>::max()) {}
+    , initMaxKey_(::Kokkos::ArithTraits<key_type>::is_integer ? ::Kokkos::ArithTraits<key_type>::min() : -::Kokkos::ArithTraits<key_type>::max()) {
+  }
 #endif
 
-  /// \brief Constructor that takes initial min and max key values.
-  ///
-  /// This constructor is useful for Tpetra::Map's noncontiguous
-  /// constructor.  That constructor first harvests an initial
-  /// sequence of contiguous global indices, then puts any remaining
-  /// global indices that follow into the hash table.  That initial
-  /// sequence defines initial min and max keys.
-  ///
-  /// \param pairs [out] (Preallocated) View of (key,value) pairs
-  /// \param counts [in/out] View of bucket counts; overwritten as
-  ///   scratch space
-  /// \param ptr [in] View of offsets
-  /// \param keys [in] View of the keys
-  /// \param startingValue [in] Starting value.  For each key keys[i],
-  ///   the corresponding value (in the (key,value) pair) is
-  ///   startingValue + i.
-  /// \param initMinKey [in] Initial min key value
-  /// \param initMaxKey [in] Initial max key value
-  FillPairs(const pairs_view_type& pairs,
-            const counts_view_type& counts,
-            const offsets_view_type& ptr,
-            const keys_view_type& keys,
-            const typename pair_type::second_type startingValue,
-            const key_type initMinKey,
-            const key_type initMaxKey)
+    /// \brief Constructor that takes initial min and max key values.
+    ///
+    /// This constructor is useful for Tpetra::Map's noncontiguous
+    /// constructor.  That constructor first harvests an initial
+    /// sequence of contiguous global indices, then puts any remaining
+    /// global indices that follow into the hash table.  That initial
+    /// sequence defines initial min and max keys.
+    ///
+    /// \param pairs [out] (Preallocated) View of (key,value) pairs
+    /// \param counts [in/out] View of bucket counts; overwritten as
+    ///   scratch space
+    /// \param ptr [in] View of offsets
+    /// \param keys [in] View of the keys
+    /// \param startingValue [in] Starting value.  For each key keys[i],
+    ///   the corresponding value (in the (key,value) pair) is
+    ///   startingValue + i.
+    /// \param initMinKey [in] Initial min key value
+    /// \param initMaxKey [in] Initial max key value
+    FillPairs(const pairs_view_type& pairs,
+              const counts_view_type& counts,
+              const offsets_view_type& ptr,
+              const keys_view_type& keys,
+              const typename pair_type::second_type startingValue,
+              const key_type initMinKey,
+              const key_type initMaxKey)
     : pairs_(pairs)
     , counts_(counts)
     , ptr_(ptr)
@@ -332,7 +333,8 @@ class FillPairs {
     , size_(counts.extent(0))
     , startingValue_(startingValue)
     , initMinKey_(initMinKey)
-    , initMaxKey_(initMaxKey) {}
+    , initMaxKey_(initMaxKey) {
+  }
 
   //! Set the initial value of the reduction result.
   KOKKOS_INLINE_FUNCTION void init(value_type& dst) const {
@@ -765,7 +767,7 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
 #else
     const offset_type theMaxVal = ::Kokkos::ArithTraits<offset_type>::max();
 #endif
-    const size_type maxValST    = static_cast<size_type>(theMaxVal);
+    const size_type maxValST = static_cast<size_type>(theMaxVal);
     TEUCHOS_TEST_FOR_EXCEPTION(keys.extent(0) > maxValST, std::invalid_argument, prefix << "The "
                                                                                            "number of keys "
                                                                                         << keys.extent(0) << " does not fit in "
@@ -791,7 +793,7 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
 #else
                                  << ::Kokkos::ArithTraits<ValueType>::max() << ".  "
 #endif
-                                                                               "This means that it is not possible to use this constructor.");
+                                                                                      "This means that it is not possible to use this constructor.");
   TEUCHOS_TEST_FOR_EXCEPTION(numKeys > static_cast<offset_type>(INT_MAX), std::logic_error, prefix << "This class currently only works when the number of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you, please talk to the Tpetra "
                                                                                                                                                                                                "developers.");
 

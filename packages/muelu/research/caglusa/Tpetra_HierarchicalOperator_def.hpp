@@ -29,11 +29,11 @@ removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
   using vals_type    = typename crs_matrix::local_matrix_device_type::values_type;
 
 #if KOKKOS_VERSION > 40799
-  using ATS      = KokkosKernels::ArithTraits<Scalar>;
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS      = Kokkos::ArithTraits<Scalar>;
 #endif
-  using impl_SC  = typename ATS::val_type;
+  using impl_SC = typename ATS::val_type;
 #if KOKKOS_VERSION > 40799
   using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
 #else

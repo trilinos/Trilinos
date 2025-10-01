@@ -172,9 +172,9 @@ class ScaledIdentityStencil {
   // a
 
 #if KOKKOS_VERSION > 40799
-  using ATS               = KokkosKernels::ArithTraits<Scalar>;
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
-  using ATS               = Kokkos::ArithTraits<Scalar>;
+  using ATS                   = Kokkos::ArithTraits<Scalar>;
 #endif
   using impl_scalar_type  = typename ATS::val_type;
   using LocalOrdinal      = typename Map::local_ordinal_type;
@@ -194,7 +194,7 @@ class ScaledIdentityStencil {
   local_map_type lclMap;
 
 #if KOKKOS_VERSION > 40799
-  const impl_scalar_type one  = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+  const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
 #else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
 #endif
@@ -237,9 +237,9 @@ class TriDiagStencil {
   //  b a c
 
 #if KOKKOS_VERSION > 40799
-  using ATS               = KokkosKernels::ArithTraits<Scalar>;
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
-  using ATS               = Kokkos::ArithTraits<Scalar>;
+  using ATS                   = Kokkos::ArithTraits<Scalar>;
 #endif
   using impl_scalar_type  = typename ATS::val_type;
   using LocalOrdinal      = typename Map::local_ordinal_type;
@@ -260,7 +260,7 @@ class TriDiagStencil {
   local_map_type lclMap;
 
 #if KOKKOS_VERSION > 40799
-  const impl_scalar_type one  = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+  const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
 #else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
 #endif
@@ -346,9 +346,9 @@ class Cross2DStencil {
   //    d
 
 #if KOKKOS_VERSION > 40799
-  using ATS               = KokkosKernels::ArithTraits<Scalar>;
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
-  using ATS               = Kokkos::ArithTraits<Scalar>;
+  using ATS                   = Kokkos::ArithTraits<Scalar>;
 #endif
   using impl_scalar_type  = typename ATS::val_type;
   using LocalOrdinal      = typename Map::local_ordinal_type;
@@ -369,7 +369,7 @@ class Cross2DStencil {
   local_map_type lclMap;
 
 #if KOKKOS_VERSION > 40799
-  const impl_scalar_type one  = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+  const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
 #else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
 #endif
@@ -467,9 +467,9 @@ class Cross3DStencil {
   // + f bottom and g top
 
 #if KOKKOS_VERSION > 40799
-  using ATS               = KokkosKernels::ArithTraits<Scalar>;
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
-  using ATS               = Kokkos::ArithTraits<Scalar>;
+  using ATS                   = Kokkos::ArithTraits<Scalar>;
 #endif
   using impl_scalar_type  = typename ATS::val_type;
   using LocalOrdinal      = typename Map::local_ordinal_type;
@@ -490,7 +490,7 @@ class Cross3DStencil {
   local_map_type lclMap;
 
 #if KOKKOS_VERSION > 40799
-  const impl_scalar_type one  = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+  const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
 #else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
 #endif
@@ -610,9 +610,9 @@ class Brick3DStencil {
   //   e  d  e
 
 #if KOKKOS_VERSION > 40799
-  using ATS               = KokkosKernels::ArithTraits<Scalar>;
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
-  using ATS               = Kokkos::ArithTraits<Scalar>;
+  using ATS                   = Kokkos::ArithTraits<Scalar>;
 #endif
   using impl_scalar_type  = typename ATS::val_type;
   using LocalOrdinal      = typename Map::local_ordinal_type;
@@ -634,7 +634,7 @@ class Brick3DStencil {
   local_map_type lclMap;
 
 #if KOKKOS_VERSION > 40799
-  const impl_scalar_type one  = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+  const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
 #else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
 #endif

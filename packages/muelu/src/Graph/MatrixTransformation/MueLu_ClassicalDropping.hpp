@@ -60,15 +60,15 @@ class DropFunctor {
   using results_view = Kokkos::View<DecisionType*, memory_space>;
 
 #if KOKKOS_VERSION > 40799
-  using ATS                 = KokkosKernels::ArithTraits<scalar_type>;
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
 #else
-  using ATS                 = Kokkos::ArithTraits<scalar_type>;
+  using ATS  = Kokkos::ArithTraits<scalar_type>;
 #endif
-  using magnitudeType       = typename ATS::magnitudeType;
+  using magnitudeType = typename ATS::magnitudeType;
 #if KOKKOS_VERSION > 40799
-  using mATS                = KokkosKernels::ArithTraits<magnitudeType>;
+  using mATS = KokkosKernels::ArithTraits<magnitudeType>;
 #else
-  using mATS                = Kokkos::ArithTraits<magnitudeType>;
+  using mATS = Kokkos::ArithTraits<magnitudeType>;
 #endif
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
 

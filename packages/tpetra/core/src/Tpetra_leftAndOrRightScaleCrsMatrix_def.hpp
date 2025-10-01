@@ -114,12 +114,12 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   using device_type      = typename NT::device_type;
   using dev_memory_space = typename device_type::memory_space;
 #if KOKKOS_VERSION > 40799
-  using mag_type         = typename KokkosKernels::ArithTraits<SC>::mag_type;
+  using mag_type = typename KokkosKernels::ArithTraits<SC>::mag_type;
 #else
-  using mag_type         = typename Kokkos::ArithTraits<SC>::mag_type;
+  using mag_type = typename Kokkos::ArithTraits<SC>::mag_type;
 #endif
-  const char prefix[]    = "leftAndOrRightScaleCrsMatrix: ";
-  const bool debug       = ::Tpetra::Details::Behavior::debug();
+  const char prefix[] = "leftAndOrRightScaleCrsMatrix: ";
+  const bool debug    = ::Tpetra::Details::Behavior::debug();
 
   Kokkos::View<const mag_type*, device_type> row_lcl;
   Kokkos::View<const mag_type*, device_type> col_lcl;

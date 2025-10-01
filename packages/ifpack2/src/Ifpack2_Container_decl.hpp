@@ -101,7 +101,7 @@ class Container : public Teuchos::Describable {
 #if KOKKOS_VERSION > 40799
   using ISC = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
-  using ISC = typename Kokkos::ArithTraits<SC>::val_type;
+  using ISC  = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
 
   //! HostView (the host-space internal representation for Tpetra::Multivector) is the
@@ -327,7 +327,7 @@ class ContainerImpl : public Container<MatrixType> {
   using typename Container<MatrixType>::map_type;
   using typename Container<MatrixType>::ISC;
   //! The internal representation of LocalScalarType in Kokkos::View
-  using LSC  = LocalScalarType;
+  using LSC = LocalScalarType;
 #if KOKKOS_VERSION > 40799
   using LISC = typename KokkosKernels::ArithTraits<LSC>::val_type;
 #else

@@ -167,9 +167,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, deep_copy_from_SDM, ST, LO, GO, N
   Teuchos::OSTab tab1(out);
 
 #if KOKKOS_VERSION > 40799
-  const IST ONE        = KokkosKernels::ArithTraits<IST>::one();
+  const IST ONE = KokkosKernels::ArithTraits<IST>::one();
 #else
-  const IST ONE        = Kokkos::ArithTraits<IST>::one();
+  const IST ONE  = Kokkos::ArithTraits<IST>::one();
 #endif
   const IST flagValue  = ONE;
   const IST startValue = ONE + ONE;

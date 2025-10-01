@@ -113,8 +113,8 @@ class GetLocalDiagCopyWithoutOffsetsNotFillCompleteFunctor {
 #else
     D_lcl_1d_(lclRowInd) = Kokkos::ArithTraits<IST>::zero();
 #endif
-    const GO gblInd      = lclRowMap_.getGlobalElement(lclRowInd);
-    const LO lclColInd   = lclColMap_.getLocalElement(gblInd);
+    const GO gblInd    = lclRowMap_.getGlobalElement(lclRowInd);
+    const LO lclColInd = lclColMap_.getLocalElement(gblInd);
 
     if (lclColInd == Tpetra::Details::OrdinalTraits<LO>::invalid()) {
       errCount++;

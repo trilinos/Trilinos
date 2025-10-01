@@ -696,14 +696,14 @@ bool SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::constrainRow(Scalar*
 
 template <typename local_matrix_type>
 struct constraintKernel {
-  using Scalar      = typename local_matrix_type::non_const_value_type;
-  using SC          = Scalar;
-  using LO          = typename local_matrix_type::non_const_ordinal_type;
-  using Device      = typename local_matrix_type::device_type;
+  using Scalar = typename local_matrix_type::non_const_value_type;
+  using SC     = Scalar;
+  using LO     = typename local_matrix_type::non_const_ordinal_type;
+  using Device = typename local_matrix_type::device_type;
 #if KOKKOS_VERSION > 40799
-  using KAT         = KokkosKernels::ArithTraits<SC>;
+  using KAT = KokkosKernels::ArithTraits<SC>;
 #else
-  using KAT         = Kokkos::ArithTraits<SC>;
+  using KAT = Kokkos::ArithTraits<SC>;
 #endif
   const Scalar zero = KAT::zero();
   const Scalar one  = KAT::one();
@@ -784,14 +784,14 @@ struct constraintKernel {
 
 template <typename local_matrix_type>
 struct optimalSatisfyConstraintsForScalarPDEsKernel {
-  using Scalar      = typename local_matrix_type::non_const_value_type;
-  using SC          = Scalar;
-  using LO          = typename local_matrix_type::non_const_ordinal_type;
-  using Device      = typename local_matrix_type::device_type;
+  using Scalar = typename local_matrix_type::non_const_value_type;
+  using SC     = Scalar;
+  using LO     = typename local_matrix_type::non_const_ordinal_type;
+  using Device = typename local_matrix_type::device_type;
 #if KOKKOS_VERSION > 40799
-  using KAT         = KokkosKernels::ArithTraits<SC>;
+  using KAT = KokkosKernels::ArithTraits<SC>;
 #else
-  using KAT         = Kokkos::ArithTraits<SC>;
+  using KAT = Kokkos::ArithTraits<SC>;
 #endif
   const Scalar zero = KAT::zero();
   const Scalar one  = KAT::one();

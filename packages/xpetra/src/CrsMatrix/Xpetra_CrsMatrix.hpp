@@ -276,9 +276,9 @@ class CrsMatrix
 #if KOKKOS_VERSION > 40799
   using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
-  using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
+  using impl_scalar_type                                                    = typename Kokkos::ArithTraits<Scalar>::val_type;
 #endif
-  using execution_space  = typename node_type::device_type;
+  using execution_space = typename node_type::device_type;
 
   // that is the local_graph_type in Tpetra::CrsGraph...
   using local_graph_type = KokkosSparse::StaticCrsGraph<LocalOrdinal,

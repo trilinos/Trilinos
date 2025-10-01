@@ -177,9 +177,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(MultiVector, DualViewNoncontig, Node) {
       for (LO i = 0; i < lclNumRows; ++i) {
         X_lcl(i, j) = curVal;
 #if KOKKOS_VERSION > 40799
-        curVal      = curVal + KokkosKernels::ArithTraits<IST>::one();
+        curVal = curVal + KokkosKernels::ArithTraits<IST>::one();
 #else
-        curVal      = curVal + Kokkos::ArithTraits<IST>::one();
+        curVal = curVal + Kokkos::ArithTraits<IST>::one();
 #endif
       }
     }
@@ -430,9 +430,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(MultiVector, DualViewTwoDisjoint, Node) {
         for (LO i = 0; i < lclNumRows; ++i) {
           X_lcl(i, j) = curVal;
 #if KOKKOS_VERSION > 40799
-          curVal      = curVal + KokkosKernels::ArithTraits<IST>::one();
+          curVal = curVal + KokkosKernels::ArithTraits<IST>::one();
 #else
-          curVal      = curVal + Kokkos::ArithTraits<IST>::one();
+          curVal = curVal + Kokkos::ArithTraits<IST>::one();
 #endif
         }
       }

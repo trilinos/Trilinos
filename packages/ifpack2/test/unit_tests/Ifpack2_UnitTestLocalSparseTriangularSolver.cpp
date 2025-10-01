@@ -575,13 +575,13 @@ void testArrowMatrixWithDense(bool& success, Teuchos::FancyOStream& out, const L
   const val_type ZERO = Kokkos::ArithTraits<val_type>::zero();
 #endif
 #if KOKKOS_VERSION > 40799
-  const val_type ONE  = KokkosKernels::ArithTraits<val_type>::one();
+  const val_type ONE = KokkosKernels::ArithTraits<val_type>::one();
 #else
-  const val_type ONE  = Kokkos::ArithTraits<val_type>::one();
+  const val_type ONE = Kokkos::ArithTraits<val_type>::one();
 #endif
-  const val_type TWO  = ONE + ONE;
-  const val_type N    = static_cast<val_type>(static_cast<mag_type>(lclNumRows));
-  const val_type d    = TWO * N;
+  const val_type TWO = ONE + ONE;
+  const val_type N   = static_cast<val_type>(static_cast<mag_type>(lclNumRows));
+  const val_type d   = TWO * N;
 
   out << "Construct test problem (d = " << d << ")" << endl;
 

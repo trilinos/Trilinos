@@ -104,11 +104,11 @@ void localReducedMatvec(const MatrixClass& A_lcl,
 
   using residual_value_type = typename MultiVectorClass::non_const_value_type;
 #if KOKKOS_VERSION > 40799
-  using KAT                 = KokkosKernels::ArithTraits<residual_value_type>;
+  using KAT = KokkosKernels::ArithTraits<residual_value_type>;
 #else
-  using KAT                 = Kokkos::ArithTraits<residual_value_type>;
+  using KAT = Kokkos::ArithTraits<residual_value_type>;
 #endif
-  using LO                  = int64_t;
+  using LO = int64_t;
 
   policy_type policy(1, 1);
   if (team_size < 0) {

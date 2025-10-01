@@ -38,14 +38,14 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType& diagonal) 
   using local_mv_type  = typename MultiVectorType::dual_view_type::t_dev;
   using range_type     = Kokkos::RangePolicy<typename SparseMatrixType::node_type::execution_space, LO>;
 #if KOKKOS_VERSION > 40799
-  using ATS            = KokkosKernels::ArithTraits<SC>;
+  using ATS = KokkosKernels::ArithTraits<SC>;
 #else
-  using ATS            = Kokkos::ArithTraits<SC>;
+  using ATS      = Kokkos::ArithTraits<SC>;
 #endif
 #if KOKKOS_VERSION > 40799
-  using impl_ATS       = KokkosKernels::ArithTraits<typename ATS::val_type>;
+  using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
 #else
-  using impl_ATS       = Kokkos::ArithTraits<typename ATS::val_type>;
+  using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
 #endif
 
   // Sanity checking: Map Compatibility (A's rowmap matches diagonal's map)

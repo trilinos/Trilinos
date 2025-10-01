@@ -395,7 +395,7 @@ class FixedHashTable {
 #if KOKKOS_VERSION > 40799
   KeyType minKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
-  KeyType minKey_ = ::Kokkos::ArithTraits<KeyType>::max();
+  KeyType minKey_         = ::Kokkos::ArithTraits<KeyType>::max();
 #endif
 
   /// \brief Maximum key (computed in init()).
@@ -406,7 +406,7 @@ class FixedHashTable {
 #if KOKKOS_VERSION > 40799
   KeyType maxKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
-  KeyType maxKey_ = ::Kokkos::ArithTraits<KeyType>::max();
+  KeyType maxKey_         = ::Kokkos::ArithTraits<KeyType>::max();
 #endif
 
   /// \brief Minimum value.
@@ -416,7 +416,7 @@ class FixedHashTable {
 #if KOKKOS_VERSION > 40799
   ValueType minVal_ = ::KokkosKernels::ArithTraits<ValueType>::max();
 #else
-  ValueType minVal_ = ::Kokkos::ArithTraits<ValueType>::max();
+  ValueType minVal_       = ::Kokkos::ArithTraits<ValueType>::max();
 #endif
 
   /// \brief Maximum value.
@@ -426,7 +426,7 @@ class FixedHashTable {
 #if KOKKOS_VERSION > 40799
   ValueType maxVal_ = ::KokkosKernels::ArithTraits<ValueType>::is_integer ? ::KokkosKernels::ArithTraits<ValueType>::min() : -::KokkosKernels::ArithTraits<ValueType>::max();
 #else
-  ValueType maxVal_ = ::Kokkos::ArithTraits<ValueType>::is_integer ? ::Kokkos::ArithTraits<ValueType>::min() : -::Kokkos::ArithTraits<ValueType>::max();
+  ValueType maxVal_       = ::Kokkos::ArithTraits<ValueType>::is_integer ? ::Kokkos::ArithTraits<ValueType>::min() : -::Kokkos::ArithTraits<ValueType>::max();
 #endif
 
   /// \brief First key in any initial contiguous sequence.
@@ -450,7 +450,7 @@ class FixedHashTable {
 #if KOKKOS_VERSION > 40799
   KeyType lastContigKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
-  KeyType lastContigKey_ = ::Kokkos::ArithTraits<KeyType>::max();
+  KeyType lastContigKey_  = ::Kokkos::ArithTraits<KeyType>::max();
 #endif
 
   /// \brief Whether the table was created using one of the

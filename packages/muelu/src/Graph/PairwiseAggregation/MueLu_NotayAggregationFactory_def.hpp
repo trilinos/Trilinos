@@ -502,11 +502,11 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     out = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));
   }
 
-  using value_type             = typename local_matrix_type::value_type;
+  using value_type = typename local_matrix_type::value_type;
 #if KOKKOS_VERSION > 40799
-  const value_type KAT_zero    = KokkosKernels::ArithTraits<value_type>::zero();
+  const value_type KAT_zero = KokkosKernels::ArithTraits<value_type>::zero();
 #else
-  const value_type KAT_zero    = Kokkos::ArithTraits<value_type>::zero();
+  const value_type KAT_zero = Kokkos::ArithTraits<value_type>::zero();
 #endif
   const magnitude_type MT_zero = Teuchos::ScalarTraits<magnitude_type>::zero();
   const magnitude_type MT_one  = Teuchos::ScalarTraits<magnitude_type>::one();

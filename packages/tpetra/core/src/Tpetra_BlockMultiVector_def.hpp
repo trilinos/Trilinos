@@ -529,9 +529,9 @@ struct BlockWiseMultiply {
   KOKKOS_INLINE_FUNCTION
   void operator()(const Size k) const {
 #if KOKKOS_VERSION > 40799
-    const auto zero     = KokkosKernels::ArithTraits<Scalar>::zero();
+    const auto zero = KokkosKernels::ArithTraits<Scalar>::zero();
 #else
-    const auto zero     = Kokkos::ArithTraits<Scalar>::zero();
+    const auto zero = Kokkos::ArithTraits<Scalar>::zero();
 #endif
     auto D_curBlk       = Kokkos::subview(D_, k, Kokkos::ALL(), Kokkos::ALL());
     const auto num_vecs = X_.extent(1);

@@ -3827,9 +3827,9 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using Teuchos::TRANS;
   using ::Tpetra::Details::ProfilingRegion;
 #if KOKKOS_VERSION > 40799
-  using ATS                  = KokkosKernels::ArithTraits<impl_scalar_type>;
+  using ATS = KokkosKernels::ArithTraits<impl_scalar_type>;
 #else
-  using ATS                  = Kokkos::ArithTraits<impl_scalar_type>;
+  using ATS = Kokkos::ArithTraits<impl_scalar_type>;
 #endif
   using LO                   = local_ordinal_type;
   using STS                  = Teuchos::ScalarTraits<Scalar>;

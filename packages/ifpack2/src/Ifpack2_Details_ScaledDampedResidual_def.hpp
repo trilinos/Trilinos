@@ -56,9 +56,9 @@ struct ScaledDampedResidualVectorFunctor {
   using team_policy     = typename Kokkos::TeamPolicy<execution_space>;
   using team_member     = typename team_policy::member_type;
 #if KOKKOS_VERSION > 40799
-  using ATV             = KokkosKernels::ArithTraits<value_type>;
+  using ATV = KokkosKernels::ArithTraits<value_type>;
 #else
-  using ATV             = Kokkos::ArithTraits<value_type>;
+  using ATV = Kokkos::ArithTraits<value_type>;
 #endif
 
   const Scalar alpha;
@@ -100,9 +100,9 @@ struct ScaledDampedResidualVectorFunctor {
   void operator()(const team_member& dev) const {
     using residual_value_type = typename BVector::non_const_value_type;
 #if KOKKOS_VERSION > 40799
-    using KAT                 = KokkosKernels::ArithTraits<residual_value_type>;
+    using KAT = KokkosKernels::ArithTraits<residual_value_type>;
 #else
-    using KAT                 = Kokkos::ArithTraits<residual_value_type>;
+    using KAT = Kokkos::ArithTraits<residual_value_type>;
 #endif
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(dev, 0, rows_per_team),

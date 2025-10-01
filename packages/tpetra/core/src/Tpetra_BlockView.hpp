@@ -310,7 +310,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, false, 1> {
 
     const IndexType numRows = static_cast<IndexType>(y.extent(0));
 #if KOKKOS_VERSION > 40799
-    if (alpha !Kernels= ArithTraits<CoefficientType>::zero()) {
+    if (alpha !Kernels = ArithTraits<CoefficientType>::zero()) {
 #else
     if (alpha != ArithTraits<CoefficientType>::zero()) {
 #endif
@@ -344,7 +344,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, false, 2> {
     const IndexType numCols = static_cast<IndexType>(Y.extent(1));
 
 #if KOKKOS_VERSION > 40799
-    if (alpha !Kernels= ArithTraits<CoefficientType>::zero()) {
+    if (alpha !Kernels = ArithTraits<CoefficientType>::zero()) {
 #else
     if (alpha != ArithTraits<CoefficientType>::zero()) {
 #endif
@@ -375,7 +375,7 @@ struct AXPY<CoefficientType, ViewType1, ViewType2, IndexType, true, rank> {
                   "AXPY: x and y must have the same rank.");
 
 #if KOKKOS_VERSION > 40799
-    if (alpha !Kernels= ArithTraits<CoefficientType>::zero()) {
+    if (alpha !Kernels = ArithTraits<CoefficientType>::zero()) {
 #else
     if (alpha != ArithTraits<CoefficientType>::zero()) {
 #endif

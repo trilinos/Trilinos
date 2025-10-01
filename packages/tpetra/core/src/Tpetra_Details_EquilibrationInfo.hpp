@@ -50,14 +50,14 @@ namespace Details {
 template <class ScalarType, class DeviceType>
 struct EquilibrationInfo {
 #if KOKKOS_VERSION > 40799
-  using val_type         = typename KokkosKernels::ArithTraits<ScalarType>::val_type;
+  using val_type = typename KokkosKernels::ArithTraits<ScalarType>::val_type;
 #else
-  using val_type         = typename Kokkos::ArithTraits<ScalarType>::val_type;
+  using val_type = typename Kokkos::ArithTraits<ScalarType>::val_type;
 #endif
 #if KOKKOS_VERSION > 40799
-  using mag_type         = typename KokkosKernels::ArithTraits<val_type>::mag_type;
+  using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
 #else
-  using mag_type         = typename Kokkos::ArithTraits<val_type>::mag_type;
+  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
 #endif
   using device_type      = typename DeviceType::device_type;
   using host_device_type = typename Kokkos::View<mag_type*, device_type>::host_mirror_type::device_type;

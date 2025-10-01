@@ -2460,7 +2460,7 @@ solveMultiVector(const typename Kokkos::TeamPolicy<typename impl_type::execution
 
   // constant
 #if KOKKOS_VERSION > 40799
-  const auto one  = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
+  const auto one = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
 #else
   const auto one  = Kokkos::ArithTraits<btdm_magnitude_type>::one();
 #endif
@@ -2568,7 +2568,7 @@ solveSingleVectorNew(const typename Kokkos::TeamPolicy<typename impl_type::execu
 
   // constant
 #if KOKKOS_VERSION > 40799
-  const auto one  = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
+  const auto one = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
 #else
   const auto one  = Kokkos::ArithTraits<btdm_magnitude_type>::one();
 #endif
@@ -3342,9 +3342,9 @@ struct ExtractAndFactorizeTridiags {
     btdm_scalar_scratch_type_3d_view WW1(member.team_scratch(ScratchLevel), half_vector_length, blocksize, blocksize);
     btdm_scalar_scratch_type_3d_view WW2(member.team_scratch(ScratchLevel), half_vector_length, blocksize, blocksize);
 #if KOKKOS_VERSION > 40799
-    const auto one                 = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
+    const auto one = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
 #else
-    const auto one                 = Kokkos::ArithTraits<btdm_magnitude_type>::one();
+    const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
 #endif
     const local_ordinal_type nrows = lclrow.extent(0);
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, half_vector_length),
@@ -4266,7 +4266,7 @@ struct SolveTridiags {
 #if KOKKOS_VERSION > 40799
                                          const auto yd_abs = KokkosKernels::ArithTraits<impl_scalar_type>::abs(yd);
 #else
-                                         const auto yd_abs = Kokkos::ArithTraits<impl_scalar_type>::abs(yd);
+                        const auto yd_abs = Kokkos::ArithTraits<impl_scalar_type>::abs(yd);
 #endif
                                          z_partial_sum += yd_abs * yd_abs;
                                        }
@@ -4294,7 +4294,7 @@ struct SolveTridiags {
 #if KOKKOS_VERSION > 40799
                                          const auto yd_abs = KokkosKernels::ArithTraits<impl_scalar_type>::abs(yd);
 #else
-                                         const auto yd_abs = Kokkos::ArithTraits<impl_scalar_type>::abs(yd);
+                        const auto yd_abs = Kokkos::ArithTraits<impl_scalar_type>::abs(yd);
 #endif
                                          z_partial_sum += yd_abs * yd_abs;
                                        }
@@ -4332,7 +4332,7 @@ struct SolveTridiags {
 
     // constant
 #if KOKKOS_VERSION > 40799
-    const auto one  = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
+    const auto one = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
 #else
     const auto one  = Kokkos::ArithTraits<btdm_magnitude_type>::one();
 #endif
@@ -4451,7 +4451,7 @@ struct SolveTridiags {
 
     // constant
 #if KOKKOS_VERSION > 40799
-    const auto one  = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
+    const auto one = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
 #else
     const auto one  = Kokkos::ArithTraits<btdm_magnitude_type>::one();
 #endif
@@ -4652,7 +4652,7 @@ struct SolveTridiags {
 #if KOKKOS_VERSION > 40799
     const auto one = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
 #else
-    const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
+    const auto one  = Kokkos::ArithTraits<btdm_magnitude_type>::one();
 #endif
 
     const size_type c_kps2 = local_subpartidx > 0 ? pack_td_ptr(partidx, local_subpartidx) - 2 : 0;
@@ -4789,7 +4789,7 @@ struct SolveTridiags {
 #if KOKKOS_VERSION > 40799
     const auto one = KokkosKernels::ArithTraits<btdm_magnitude_type>::one();
 #else
-    const auto one = Kokkos::ArithTraits<btdm_magnitude_type>::one();
+    const auto one  = Kokkos::ArithTraits<btdm_magnitude_type>::one();
 #endif
 
     typedef SolveTridiagsDefaultModeAndAlgo<typename execution_space::memory_space> default_mode_and_algo_type;
@@ -5075,12 +5075,12 @@ int applyInverseJacobi(  // importer
                               "Maximum number of sweeps must be >= 1.");
 
   // const parameters
-  const bool is_seq_method_requested     = !tpetra_importer.is_null();
-  const bool is_async_importer_active    = !async_importer.is_null();
+  const bool is_seq_method_requested  = !tpetra_importer.is_null();
+  const bool is_async_importer_active = !async_importer.is_null();
 #if KOKKOS_VERSION > 40799
-  const bool is_norm_manager_active      = tol > KokkosKernels::ArithTraits<magnitude_type>::zero();
+  const bool is_norm_manager_active = tol > KokkosKernels::ArithTraits<magnitude_type>::zero();
 #else
-  const bool is_norm_manager_active      = tol > Kokkos::ArithTraits<magnitude_type>::zero();
+  const bool is_norm_manager_active = tol > Kokkos::ArithTraits<magnitude_type>::zero();
 #endif
   const magnitude_type tolerance         = tol * tol;
   const local_ordinal_type blocksize     = btdm.values.extent(1);
@@ -5262,11 +5262,11 @@ int applyFusedBlockJacobi_Impl(
                               "Maximum number of sweeps must be >= 1.");
 
   // const parameters
-  const bool is_async_importer_active    = !async_importer.is_null();
+  const bool is_async_importer_active = !async_importer.is_null();
 #if KOKKOS_VERSION > 40799
-  const bool is_norm_manager_active      = tol > KokkosKernels::ArithTraits<magnitude_type>::zero();
+  const bool is_norm_manager_active = tol > KokkosKernels::ArithTraits<magnitude_type>::zero();
 #else
-  const bool is_norm_manager_active      = tol > Kokkos::ArithTraits<magnitude_type>::zero();
+  const bool is_norm_manager_active = tol > Kokkos::ArithTraits<magnitude_type>::zero();
 #endif
   const magnitude_type tolerance         = tol * tol;
   const local_ordinal_type blocksize     = btdm.d_inv.extent(1);
