@@ -21,7 +21,11 @@
 #include "Panzer_Traits.hpp"
 #include "Kokkos_Random.hpp"
 #include "MiniEM_Sacado_Kokkos_Random.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 
 
 namespace mini_em {
@@ -74,7 +78,11 @@ void RandomForcing<EvalT,Traits>::evaluateFields(typename Traits::EvalData works
 
   // double time = workset.time;
 
+#if KOKKOS_VERSION > 40799
+  using IST = typename KokkosKernels::ArithTraits<ScalarT>::val_type;
+#else
   using IST = typename Kokkos::ArithTraits<ScalarT>::val_type;
+#endif
 
   const IST max = static_cast<IST>(rangeMin_);
   const IST min = static_cast<IST>(rangeMax_);

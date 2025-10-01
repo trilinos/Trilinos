@@ -17,7 +17,11 @@
 #include "Panzer_GatherBasisCoordinates.hpp"
 
 #include "Panzer_Traits.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Kokkos_MathematicalConstants.hpp"
 #include "Kokkos_MathematicalFunctions.hpp"
 
