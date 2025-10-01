@@ -302,12 +302,12 @@ void SemiCoarsenPFactory_kokkos<
                       const RCP<MultiVector> fineNullspace, RCP<Matrix> &P,
                       RCP<MultiVector> &coarseNullspace) const {
   SubFactoryMonitor m2(*this, "BuildSemiCoarsenP", coarseLevel);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_SC = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
   using impl_SC  = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
 #else
   using impl_ATS = Kokkos::ArithTraits<impl_SC>;

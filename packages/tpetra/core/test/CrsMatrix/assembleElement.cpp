@@ -12,7 +12,7 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Kokkos_Core.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -169,7 +169,7 @@ testCrsMatrixAssembleElementSortedLinear(const SparseMatrixType& A,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(CrsMatrix, assembleElement, ScalarType) {
   using std::endl;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<ScalarType>::val_type SC;
 #else
   typedef typename Kokkos::ArithTraits<ScalarType>::val_type SC;
@@ -209,7 +209,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(CrsMatrix, assembleElement, ScalarType) {
 
     // Values for the element to scatter into the matrix.  Choose
     // unique values, to make sure we get the indices right.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     const SC ONE = KokkosKernels::ArithTraits<SC>::one();
 #else
     const SC ONE = Kokkos::ArithTraits<SC>::one();
@@ -231,7 +231,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(CrsMatrix, assembleElement, ScalarType) {
       out << "Element matrix (lhs): [";
       for (LO i = 0; i < static_cast<LO>(lhs_h.extent(0)); ++i) {
         for (LO j = 0; j < static_cast<LO>(lhs_h.extent(1)); ++j) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
           constexpr int width = KokkosKernels::ArithTraits<SC>::is_complex ? 7 : 3;
 #else
           constexpr int width = Kokkos::ArithTraits<SC>::is_complex ? 7 : 3;
@@ -337,7 +337,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(CrsMatrix, assembleElement, ScalarType) {
       out << "Allocated device view" << endl;
       auto expectedMatrixValues_h = Kokkos::create_mirror_view(expectedMatrixValues);
       out << "Created mirror view" << endl;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       Kokkos::deep_copy(expectedMatrixValues_h, KokkosKernels::ArithTraits<SC>::zero());
 #else
       Kokkos::deep_copy(expectedMatrixValues_h, Kokkos::ArithTraits<SC>::zero());
@@ -387,7 +387,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(CrsMatrix, assembleElement, ScalarType) {
     Kokkos::View<SC*, DT> expectedVectorValues("expectedVectorValues", numRows);
     {
       auto expectedVectorValues_h = Kokkos::create_mirror_view(expectedVectorValues);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       Kokkos::deep_copy(expectedVectorValues_h, KokkosKernels::ArithTraits<SC>::zero());
 #else
       Kokkos::deep_copy(expectedVectorValues_h, Kokkos::ArithTraits<SC>::zero());
@@ -434,7 +434,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(CrsMatrix, assembleElement, ScalarType) {
     }
     sparse_graph_type A_graph(A_ind, A_ptr);
     sparse_matrix_type A("A", A_graph, numCols);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     Kokkos::deep_copy(A.values, KokkosKernels::ArithTraits<SC>::zero());
 #else
     Kokkos::deep_copy(A.values, Kokkos::ArithTraits<SC>::zero());
@@ -478,7 +478,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(CrsMatrix, assembleElement, ScalarType) {
 
     out << "Create the \"right-hand side\" vector b, and fill it with zeros" << endl;
     Kokkos::View<SC*, DT> b("b", numRows);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     Kokkos::deep_copy(b, KokkosKernels::ArithTraits<SC>::zero());
 #else
     Kokkos::deep_copy(b, Kokkos::ArithTraits<SC>::zero());
@@ -528,7 +528,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(CrsMatrix, assembleElement, ScalarType) {
       }
       out << "A.values            : [";
       for (offset_type k = 0; k < numEnt; ++k) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         constexpr int width = KokkosKernels::ArithTraits<SC>::is_complex ? 7 : 3;
 #else
         constexpr int width = Kokkos::ArithTraits<SC>::is_complex ? 7 : 3;
@@ -541,7 +541,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(CrsMatrix, assembleElement, ScalarType) {
       out << "]" << endl;
       out << "expectedMatrixValues: [";
       for (offset_type k = 0; k < numEnt; ++k) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         constexpr int width = KokkosKernels::ArithTraits<SC>::is_complex ? 7 : 3;
 #else
         constexpr int width = Kokkos::ArithTraits<SC>::is_complex ? 7 : 3;

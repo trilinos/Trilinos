@@ -394,7 +394,7 @@ namespace Amesos2 {
                          EStorage_Ordering ordering)
       {
         typedef typename M::global_ordinal_t mat_go_t;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         typedef typename KokkosKernels::ArithTraits<typename M::scalar_t>::val_type mat_scalar_t;
 #else
         typedef typename Kokkos::ArithTraits<typename M::scalar_t>::val_type mat_scalar_t;

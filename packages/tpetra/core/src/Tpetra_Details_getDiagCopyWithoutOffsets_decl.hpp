@@ -21,7 +21,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -82,7 +82,7 @@ struct CrsMatrixGetDiagCopyFunctor {
   operator()(const LO& lclRowInd, value_type& errCount) const {
     const LO INV = Tpetra::Details::OrdinalTraits<LO>::invalid();
     const scalar_type ZERO =
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         KokkosKernels::ArithTraits<scalar_type>::zero();
 #else
         Kokkos::ArithTraits<scalar_type>::zero();

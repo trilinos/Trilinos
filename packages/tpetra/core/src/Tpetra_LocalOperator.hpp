@@ -12,7 +12,7 @@
 
 #include "Tpetra_LocalOperator_fwd.hpp"
 #include "Teuchos_BLAS_types.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -32,7 +32,7 @@ namespace Tpetra {
 template <class Scalar, class Device>
 class LocalOperator {
  public:
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;

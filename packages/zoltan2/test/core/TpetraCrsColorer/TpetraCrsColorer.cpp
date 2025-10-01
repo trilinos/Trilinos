@@ -82,7 +82,7 @@ public:
     // Fill JBlock with random numbers for a better test.
     JBlock->resumeFill();
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     using IST = typename KokkosKernels::ArithTraits<zscalar_t>::val_type;
 #else
     using IST = typename Kokkos::ArithTraits<zscalar_t>::val_type;

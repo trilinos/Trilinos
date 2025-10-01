@@ -191,12 +191,12 @@ void precompute_A_x_offsets(
               A_x_offsets(i, 0, entry)               = int64_t(j) * blocksize_square;
               A_x_offsets(i, 1, entry)               = int64_t(loc) * blocksize;
             } else {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
               A_x_offsets(i, 0, entry) = KokkosKernels::ArithTraits<int64_t>::min();
 #else
               A_x_offsets(i, 0, entry) = Kokkos::ArithTraits<int64_t>::min();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
               A_x_offsets(i, 1, entry) = KokkosKernels::ArithTraits<int64_t>::min();
 #else
               A_x_offsets(i, 1, entry) = Kokkos::ArithTraits<int64_t>::min();
@@ -215,12 +215,12 @@ void precompute_A_x_offsets(
                 A_x_offsets_remote(i, 0, entry)        = int64_t(j) * blocksize_square;
                 A_x_offsets_remote(i, 1, entry)        = int64_t(loc) * blocksize;
               } else {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                 A_x_offsets_remote(i, 0, entry) = KokkosKernels::ArithTraits<int64_t>::min();
 #else
                 A_x_offsets_remote(i, 0, entry) = Kokkos::ArithTraits<int64_t>::min();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                 A_x_offsets_remote(i, 1, entry) = KokkosKernels::ArithTraits<int64_t>::min();
 #else
                 A_x_offsets_remote(i, 1, entry) = Kokkos::ArithTraits<int64_t>::min();
@@ -265,12 +265,12 @@ void precompute_A_x_offsets(
                 A_x_offsets(i, 1, entry) = int64_t(A_colind_at_j) * blocksize;
               }
             } else {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
               A_x_offsets(i, 0, entry) = KokkosKernels::ArithTraits<int64_t>::min();
 #else
               A_x_offsets(i, 0, entry) = Kokkos::ArithTraits<int64_t>::min();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
               A_x_offsets(i, 1, entry) = KokkosKernels::ArithTraits<int64_t>::min();
 #else
               A_x_offsets(i, 1, entry) = Kokkos::ArithTraits<int64_t>::min();
@@ -776,7 +776,7 @@ struct ComputeResidualVector {
                            [&](const int k) {
                              int64_t A_offset = overlap ? A_x_offsets_remote(rowidx, 0, k) : A_x_offsets(rowidx, 0, k);
                              int64_t x_offset = overlap ? A_x_offsets_remote(rowidx, 1, k) : A_x_offsets(rowidx, 1, k);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                              if (A_offset != KokkosKernels::ArithTraits<int64_t>::min()) {
 #else
             if (A_offset != Kokkos::ArithTraits<int64_t>::min()) {

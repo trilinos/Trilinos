@@ -242,7 +242,7 @@ struct MV_Reciprocal_Functor<
   typedef Kokkos::View<const Sacado::UQ::PCE<XS>**,XP...> XMV;
   typedef typename RMV::execution_space execution_space;
   typedef SizeType                            size_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<typename Kokkos::IntrinsicScalarType<XMV>::type> ATS;
 #else
   typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<XMV>::type> ATS;
@@ -278,7 +278,7 @@ struct MV_ReciprocalSelf_Functor<
   typedef Kokkos::View<Sacado::UQ::PCE<RS>**,RP...> RMV;
   typedef typename RMV::execution_space execution_space;
   typedef SizeType                            size_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<typename Kokkos::IntrinsicScalarType<RMV>::type> ATS;
 #else
   typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<RMV>::type> ATS;
@@ -316,7 +316,7 @@ struct V_Reciprocal_Functor<
   typedef Kokkos::View<const Sacado::UQ::PCE<XS>*,XP...> XV;
   typedef typename RV::execution_space execution_space;
   typedef SizeType                            size_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<typename Kokkos::IntrinsicScalarType<XV>::type> ATS;
 #else
   typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<XV>::type> ATS;
@@ -345,7 +345,7 @@ struct V_ReciprocalSelf_Functor<
   typedef Kokkos::View<Sacado::UQ::PCE<RS>*,RP...> RV;
   typedef typename RV::execution_space execution_space;
   typedef SizeType                            size_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<typename Kokkos::IntrinsicScalarType<RV>::type> ATS;
 #else
   typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<RV>::type> ATS;
@@ -423,7 +423,7 @@ struct MV_MultFunctor<
   typedef Kokkos::View<const Sacado::UQ::PCE<BS>**,BP...> BMV;
   typedef typename CMV::execution_space execution_space;
   typedef SizeType size_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<typename Kokkos::IntrinsicScalarType<CMV>::type> ATS;
 #else
   typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<CMV>::type> ATS;
@@ -515,7 +515,7 @@ struct V_MultFunctor<
   typedef Kokkos::View<const Sacado::UQ::PCE<BS>*,BP...> BV;
   typedef typename CV::execution_space execution_space;
   typedef SizeType size_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<typename Kokkos::IntrinsicScalarType<CV>::type> ATS;
 #else
   typedef Kokkos::ArithTraits<typename Kokkos::IntrinsicScalarType<CV>::type> ATS;

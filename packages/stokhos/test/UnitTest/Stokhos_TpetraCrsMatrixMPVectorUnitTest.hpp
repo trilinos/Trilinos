@@ -1120,7 +1120,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<BaseScalar> BST;
 #else
   typedef Kokkos::ArithTraits<BaseScalar> BST;
@@ -1277,7 +1277,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<BaseScalar> BST;
 #else
   typedef Kokkos::ArithTraits<BaseScalar> BST;

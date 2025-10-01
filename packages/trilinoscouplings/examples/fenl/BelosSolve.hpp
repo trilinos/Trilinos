@@ -18,7 +18,7 @@
 #define KOKKOS_EXAMPLE_BELOS_SOLVE
 
 // Tpetra
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -101,12 +101,12 @@ belos_solve(
   const int use_mean_based,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const unsigned max_iter = 200,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const typename KokkosKernels::ArithTraits<SV>::mag_type tolerance =
 #else
   const typename Kokkos::ArithTraits<SV>::mag_type tolerance =
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     KokkosKernels::ArithTraits<SV>::epsilon())
 #else
     Kokkos::ArithTraits<SV>::epsilon())
@@ -252,12 +252,12 @@ belos_solve(
   const int use_mean_based,
   const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const unsigned max_iter = 200,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const typename KokkosKernels::ArithTraits<SV>::mag_type tolerance =
 #else
   const typename Kokkos::ArithTraits<SV>::mag_type tolerance =
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     KokkosKernels::ArithTraits<SV>::epsilon())
 #else
     Kokkos::ArithTraits<SV>::epsilon())

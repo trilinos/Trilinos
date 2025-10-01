@@ -42,7 +42,7 @@ struct LocalResidualFunctor {
   using value_type      = typename AMatrix::non_const_value_type;
   using team_policy     = typename Kokkos::TeamPolicy<execution_space>;
   using team_member     = typename team_policy::member_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATV = KokkosKernels::ArithTraits<value_type>;
 #else
   using ATV = Kokkos::ArithTraits<value_type>;
@@ -167,7 +167,7 @@ struct OffRankUpdateFunctor {
   using value_type      = typename AMatrix::non_const_value_type;
   using team_policy     = typename Kokkos::TeamPolicy<execution_space>;
   using team_member     = typename team_policy::member_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATV = KokkosKernels::ArithTraits<value_type>;
 #else
   using ATV = Kokkos::ArithTraits<value_type>;

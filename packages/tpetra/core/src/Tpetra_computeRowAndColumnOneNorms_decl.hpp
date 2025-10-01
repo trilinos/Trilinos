@@ -14,7 +14,7 @@
 /// \brief Declaration of Tpetra::computeRowAndColumnOneNorms
 
 #include "TpetraCore_config.h"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -37,7 +37,7 @@ namespace Tpetra {
 ///   result is only safe to use for left scaling, not for right
 ///   scaling.
 template <class SC, class LO, class GO, class NT>
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 Details::EquilibrationInfo<typename KokkosKernels::ArithTraits<SC>::val_type,
 #else
 Details::EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type,
@@ -72,7 +72,7 @@ computeRowOneNorms(const Tpetra::RowMatrix<SC, LO, GO, NT>& A);
 ///
 /// \return Input to leftAndOrRightScaleCrsMatrix (which see).
 template <class SC, class LO, class GO, class NT>
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 Details::EquilibrationInfo<typename KokkosKernels::ArithTraits<SC>::val_type,
 #else
 Details::EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type,

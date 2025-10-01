@@ -62,13 +62,13 @@ removeSmallEntries(Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
   using vals_type       = typename crs_matrix::local_matrix_type::values_type;
   using execution_space = typename crs_matrix::local_matrix_type::execution_space;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS      = Kokkos::ArithTraits<Scalar>;
 #endif
   using impl_SC = typename ATS::val_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
 #else
   using impl_ATS = Kokkos::ArithTraits<impl_SC>;
@@ -345,7 +345,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // a good way to work around that is to use the following:
   // using KAT = KokkosKernels::ArithTraits<KokkosKernels::ArithTraits<Scalar>::val_type> >
   // here we have: value_type = KokkosKernels::ArithTraits<Scalar>::val_type
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KAT = KokkosKernels::ArithTraits<value_type>;
 #else
   using KAT      = Kokkos::ArithTraits<value_type>;
@@ -441,17 +441,17 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // using entries_type      = typename local_matrix_type::index_type;
       using values_type = typename local_matrix_type::values_type;
       using scalar_type = typename values_type::non_const_value_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       using mag_type = typename KokkosKernels::ArithTraits<scalar_type>::mag_type;
 #else
       using mag_type = typename Kokkos::ArithTraits<scalar_type>::mag_type;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       using KAT_S = typename KokkosKernels::ArithTraits<scalar_type>;
 #else
       using KAT_S    = typename Kokkos::ArithTraits<scalar_type>;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       using KAT_M = typename KokkosKernels::ArithTraits<mag_type>;
 #else
       using KAT_M    = typename Kokkos::ArithTraits<mag_type>;
@@ -621,7 +621,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using execution_space   = typename local_vector_type::execution_space;
   using values_type       = typename local_matrix_type::values_type;
   using scalar_type       = typename values_type::non_const_value_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KAT_S = typename KokkosKernels::ArithTraits<scalar_type>;
 #else
   using KAT_S = typename Kokkos::ArithTraits<scalar_type>;
@@ -664,7 +664,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using execution_space   = typename local_vector_type::execution_space;
   using values_type       = typename local_matrix_type::values_type;
   using scalar_type       = typename values_type::non_const_value_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KAT_S = typename KokkosKernels::ArithTraits<scalar_type>;
 #else
   using KAT_S = typename Kokkos::ArithTraits<scalar_type>;
@@ -870,7 +870,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     CountNegativeDiagonalEntries(const Matrix& A) {
   using local_matrix_type = typename Matrix::local_matrix_type;
   using execution_space   = typename local_matrix_type::execution_space;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KAT_S = typename KokkosKernels::ArithTraits<typename local_matrix_type::value_type>;
 #else
   using KAT_S = typename Kokkos::ArithTraits<typename local_matrix_type::value_type>;
@@ -1088,13 +1088,13 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class CrsMatrix>
 KOKKOS_FORCEINLINE_FUNCTION bool isDirichletRow(typename CrsMatrix::ordinal_type rowId,
                                                 KokkosSparse::SparseRowViewConst<CrsMatrix>& row,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                                 const typename KokkosKernels::ArithTraits<typename CrsMatrix::value_type>::magnitudeType& tol,
 #else
                                                 const typename Kokkos::ArithTraits<typename CrsMatrix::value_type>::magnitudeType& tol,
 #endif
                                                 const bool count_twos_as_dirichlet) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<typename CrsMatrix::value_type>;
 #else
   using ATS = Kokkos::ArithTraits<typename CrsMatrix::value_type>;
@@ -1132,12 +1132,12 @@ Kokkos::View<bool*, memory_space>
 DetectDirichletRows_kokkos(const Xpetra::Matrix<SC, LO, GO, NO>& A,
                            const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol,
                            const bool count_twos_as_dirichlet) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_scalar_type = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
   using impl_scalar_type = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<impl_scalar_type>;
 #else
   using ATS = Kokkos::ArithTraits<impl_scalar_type>;
@@ -1309,12 +1309,12 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     FindNonZeros(const typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev_const_um vals,
                  Kokkos::View<bool*, typename Node::device_type> nonzeros) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS = Kokkos::ArithTraits<Scalar>;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
 #else
   using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
@@ -1376,12 +1376,12 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                   const Kokkos::View<bool*, typename Node::device_type>& dirichletRows,
                                   Kokkos::View<bool*, typename Node::device_type> dirichletCols,
                                   Kokkos::View<bool*, typename Node::device_type> dirichletDomain) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS = Kokkos::ArithTraits<Scalar>;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
 #else
   using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
@@ -1634,12 +1634,12 @@ Kokkos::View<bool*, typename NO::device_type>
 UtilitiesBase<SC, LO, GO, NO>::
     DetectDirichletCols(const Xpetra::Matrix<SC, LO, GO, NO>& A,
                         const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<SC>;
 #else
   using ATS = Kokkos::ArithTraits<SC>;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
 #else
   using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
@@ -1862,12 +1862,12 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                          const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
   TEUCHOS_ASSERT(A->isFillComplete());
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS = Kokkos::ArithTraits<Scalar>;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
 #else
   using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
@@ -1957,7 +1957,7 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ZeroDirichletRows(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                       Scalar replaceWith) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS = Kokkos::ArithTraits<Scalar>;
@@ -1986,7 +1986,7 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ZeroDirichletRows(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& X,
                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                       Scalar replaceWith) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS = Kokkos::ArithTraits<Scalar>;
@@ -2030,7 +2030,7 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ZeroDirichletCols(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols,
                       Scalar replaceWith) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS = Kokkos::ArithTraits<Scalar>;
@@ -2100,7 +2100,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ReplaceNonZerosWithOnes(const RCP<Matrix>& original) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ISC = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using ISC = typename Kokkos::ArithTraits<Scalar>::val_type;
@@ -2109,12 +2109,12 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using local_matrix_type = typename CrsMatrix::local_matrix_type;
   using values_type       = typename local_matrix_type::values_type;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const ISC ONE = KokkosKernels::ArithTraits<ISC>::one();
 #else
   const ISC ONE = Kokkos::ArithTraits<ISC>::one();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const ISC ZERO = KokkosKernels::ArithTraits<ISC>::zero();
 #else
   const ISC ZERO = Kokkos::ArithTraits<ISC>::zero();

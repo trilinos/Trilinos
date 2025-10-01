@@ -332,7 +332,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, ImbalancedRowMatrix, LO, GO, Scalar
   // Output vector: if Scalar is real or complex, fill with NaN to test that NaNs are correctly overwritten with beta=0.
   // If Scalar is an integer, fill with ones instead to at least test that the output vector is zeroed.
   MV v(rowMap, numVecs, false);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   if constexpr (KokkosKernels::ArithTraits<Scalar>::is_integer)
     v.putScalar(KokkosKernels::ArithTraits<Scalar>::one());
   else
@@ -360,7 +360,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, ImbalancedRowMatrix, LO, GO, Scalar
     // Now run again, but on single vectors only (rank-1)
     auto wcol = w.getVector(0);
     auto vcol = v.getVectorNonConst(0);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     if constexpr (KokkosKernels::ArithTraits<Scalar>::is_integer)
       vcol->putScalar(KokkosKernels::ArithTraits<Scalar>::one());
     else
@@ -420,7 +420,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, ApplyOverwriteNan, LO, GO, Scalar, 
     MV mvrand(map, numVecs, false), mvres(map, numVecs, false);
     mvrand.randomize();
     // because beta=0 (default argument), the NaN values in mvres should be overwritten
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     mvres.putScalar(KokkosKernels::ArithTraits<Scalar>::nan());
 #else
     mvres.putScalar(Kokkos::ArithTraits<Scalar>::nan());
@@ -434,7 +434,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, ApplyOverwriteNan, LO, GO, Scalar, 
     auto mvrand_col0 = mvrand.getVectorNonConst(0);
     auto mvres_col0  = mvres.getVectorNonConst(0);
     mvrand_col0->randomize();
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     mvres_col0->putScalar(KokkosKernels::ArithTraits<Scalar>::nan());
 #else
     mvres_col0->putScalar(Kokkos::ArithTraits<Scalar>::nan());

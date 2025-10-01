@@ -22,7 +22,7 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <Kokkos_Timer.hpp>
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include <KokkosKernels_ArithTraits.hpp>
 #else
 #include <Kokkos_ArithTraits.hpp>
@@ -92,12 +92,12 @@ template<class CrsMatrix, class Vector>
 result_struct cg_solve(
   Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x,
   int max_iter = 200,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typename KokkosKernels::ArithTraits<typename CrsMatrix::scalar_type>::mag_type tolerance =
 #else
   typename Kokkos::ArithTraits<typename CrsMatrix::scalar_type>::mag_type tolerance =
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     KokkosKernels::ArithTraits<typename CrsMatrix::scalar_type>::epsilon(),
 #else
     Kokkos::ArithTraits<typename CrsMatrix::scalar_type>::epsilon(),
@@ -107,7 +107,7 @@ result_struct cg_solve(
   Kokkos::Timer total_timer;
 
   typedef typename CrsMatrix::scalar_type ScalarType;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<ScalarType> KAT;
 #else
   typedef Kokkos::ArithTraits<ScalarType> KAT;

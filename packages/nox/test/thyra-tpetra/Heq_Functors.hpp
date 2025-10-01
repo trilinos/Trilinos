@@ -10,7 +10,7 @@
 #define NOX_TPETRA_1DFEM_FUNCTORS_HPP
 
 #include "Kokkos_Core.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -116,7 +116,7 @@ struct ResidualEvaluatorFunctor
   KOKKOS_INLINE_FUNCTION
   void operator() (const std::size_t row) const
   {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
 #else
     Scalar one = Kokkos::ArithTraits<Scalar>::one();
@@ -165,12 +165,12 @@ struct JacobianEvaluatorFunctor
   KOKKOS_INLINE_FUNCTION
   void operator() (const std::size_t row) const
   {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
 #else
     Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
 #else
     Scalar one = Kokkos::ArithTraits<Scalar>::one();
@@ -215,7 +215,7 @@ struct PreconditionerEvaluatorFunctor
   KOKKOS_INLINE_FUNCTION
   void operator() (const LO localRow) const
   {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
 #else
     Scalar one = Kokkos::ArithTraits<Scalar>::one();

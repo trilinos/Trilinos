@@ -21,7 +21,7 @@
 
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_PackTriples.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -137,7 +137,7 @@ bool readComplexData(std::istream& istr,
 /// \tparam isComplex Whether SC is a complex-valued type.
 template <class SC,
           class GO,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
           const bool isComplex = ::KokkosKernels::ArithTraits<SC>::is_complex>
 #else
           const bool isComplex = ::Kokkos::ArithTraits<SC>::is_complex>
@@ -209,7 +209,7 @@ struct ReadLine<SC, GO, true> {
            std::ostream* errStrm = NULL,
            const bool debug      = false) {
     using ::Teuchos::MatrixMarket::checkCommentLine;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     typedef typename ::KokkosKernels::ArithTraits<SC>::mag_type real_type;
 #else
     typedef typename ::Kokkos::ArithTraits<SC>::mag_type real_type;
@@ -542,7 +542,7 @@ int readAndSendOneBatchOfTriples(std::istream& inputStream,
   using ::Tpetra::Details::packTriples;
   using ::Tpetra::Details::packTriplesCount;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ::KokkosKernels::ArithTraits;
 #else
   using ::Kokkos::ArithTraits;
@@ -780,7 +780,7 @@ int recvOneBatchOfTriples(std::vector<GO>& rowInds,
                           const bool tolerant   = false,
                           std::ostream* errStrm = NULL,
                           const bool debug      = false) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ::KokkosKernels::ArithTraits;
 #else
   using ::Kokkos::ArithTraits;
@@ -906,7 +906,7 @@ int readAndDealOutTriples(std::istream& inputStream,     // only valid on Proc 0
                           const bool tolerant   = false,
                           std::ostream* errStrm = NULL,
                           const bool debug      = false) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KokkosKernels::ArithTraits;
 #else
   using Kokkos::ArithTraits;

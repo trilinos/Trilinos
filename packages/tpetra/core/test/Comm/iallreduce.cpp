@@ -15,7 +15,7 @@
 #endif  // HAVE_TPETRACORE_MPI
 #include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_Map.hpp"  // creating a Map ensures Kokkos initialization
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -50,12 +50,12 @@ void testIallreduce(bool& success,
                     const Teuchos::Comm<int>& comm) {
   using Teuchos::reduceAll;
   using Tpetra::Details::iallreduce;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<Packet>::val_type val_type;
 #else
   typedef typename Kokkos::ArithTraits<Packet>::val_type val_type;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<val_type> STS;
 #else
   typedef Kokkos::ArithTraits<val_type> STS;

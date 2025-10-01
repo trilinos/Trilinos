@@ -23,7 +23,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include <KokkosKernels_ArithTraits.hpp>
 #else
 #include <Kokkos_ArithTraits.hpp>
@@ -235,7 +235,7 @@ class MultiVector
   //! Set multi-vector values to random numbers. XPetra implementation
   virtual void Xpetra_randomize(const Scalar& minVal, const Scalar& maxVal);
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;

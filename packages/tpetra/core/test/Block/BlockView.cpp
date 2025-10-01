@@ -77,7 +77,7 @@ struct GetLapackType<__float128> {
 // that does not require partial pivoting
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, Factor, ST, LO) {
   using Teuchos::Array;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<ST>::val_type IST;
 #else
   typedef typename Kokkos::ArithTraits<ST>::val_type IST;
@@ -87,7 +87,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, Factor, ST, LO) {
   typedef Kokkos::View<LO*, Kokkos::HostSpace> int_vec_type;
   typedef Kokkos::View<IST*, Kokkos::HostSpace> scalar_vec_type;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const auto tol = 10.0 * KokkosKernels::ArithTraits<IST>::eps();
 #else
   const auto tol = 10.0 * Kokkos::ArithTraits<IST>::eps();
@@ -180,7 +180,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, Factor, ST, LO) {
 // that requires partial pivoting
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, FactorPivot, ST, LO) {
   using Teuchos::Array;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<ST>::val_type IST;
 #else
   typedef typename Kokkos::ArithTraits<ST>::val_type IST;
@@ -190,7 +190,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, FactorPivot, ST, LO) {
   typedef Kokkos::View<LO*, Kokkos::HostSpace> int_vec_type;
   typedef Kokkos::View<IST*, Kokkos::HostSpace> scalar_vec_type;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const auto tol = 10.0 * KokkosKernels::ArithTraits<IST>::eps();
 #else
   const auto tol = 10.0 * Kokkos::ArithTraits<IST>::eps();
@@ -283,7 +283,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, FactorPivot, ST, LO) {
 // Test small dense block LU factorization and solve, with an easy
 // problem (the identity matrix).
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, SolveIdentity, ST, LO) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<ST>::val_type IST;
 #else
   typedef typename Kokkos::ArithTraits<ST>::val_type IST;
@@ -344,7 +344,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, SolveIdentity, ST, LO) {
 // FIXME (mfh 17 Sep 2015) Right now, this only tests whether
 // calling GEQRF compiles.
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, GEQRF, ST, LO) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<ST>::val_type IST;
 #else
   typedef typename Kokkos::ArithTraits<ST>::val_type IST;
@@ -393,7 +393,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, GEQRF, ST, LO) {
     if (info != 0) {
       continue;  // workspace query failed; skip the rest
     }
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     lwork = static_cast<int>(KokkosKernels::ArithTraits<IST>::real(workView[0]));
 #else
     lwork = static_cast<int>(Kokkos::ArithTraits<IST>::real(workView[0]));
@@ -526,7 +526,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(ExpBlockView, LARFGP, ST) {
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, SCAL, ST, LO) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<ST>::val_type IST;  // "impl_scalar_type"
 #else
   typedef typename Kokkos::ArithTraits<ST>::val_type IST;  // "impl_scalar_type"
@@ -607,7 +607,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, SCAL, ST, LO) {
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, COPY, ST, LO) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<ST>::val_type IST;  // "impl_scalar_type"
 #else
   typedef typename Kokkos::ArithTraits<ST>::val_type IST;  // "impl_scalar_type"
@@ -681,7 +681,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, COPY, ST, LO) {
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(ExpBlockView, AXPY, ST, LO) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<ST>::val_type IST;  // "impl_scalar_type"
 #else
   typedef typename Kokkos::ArithTraits<ST>::val_type IST;  // "impl_scalar_type"

@@ -42,7 +42,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockMultiVector, BlockWiseMultiply, Scalar, L
   using host_layout_type = typename Kokkos::View<IST**, device_type>::array_layout;
   using map_type         = Tpetra::Map<LO, GO, Node>;
   using GST              = Tpetra::global_size_t;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KAT = KokkosKernels::ArithTraits<IST>;
 #else
   using KAT = Kokkos::ArithTraits<IST>;
@@ -363,7 +363,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockMultiVector, BlockJacobiUpdate, Scalar, L
   using host_layout_type = typename Kokkos::View<IST**, device_type>::array_layout;
   using map_type         = Tpetra::Map<LO, GO, Node>;
   using GST              = Tpetra::global_size_t;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KAT = KokkosKernels::ArithTraits<IST>;
 #else
   using KAT = Kokkos::ArithTraits<IST>;

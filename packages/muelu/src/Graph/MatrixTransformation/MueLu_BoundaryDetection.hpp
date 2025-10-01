@@ -13,7 +13,7 @@
 #include <cstddef>
 #include <type_traits>
 #include "Kokkos_Core.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -41,7 +41,7 @@ class PointDirichletFunctor {
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<scalar_type>;
 #else
   using ATS    = Kokkos::ArithTraits<scalar_type>;
@@ -95,7 +95,7 @@ class VectorDirichletFunctor {
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<scalar_type>;
 #else
   using ATS    = Kokkos::ArithTraits<scalar_type>;
@@ -164,13 +164,13 @@ class RowSumFunctor {
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<scalar_type>;
 #else
   using ATS    = Kokkos::ArithTraits<scalar_type>;
 #endif
   using magnitudeType = typename ATS::magnitudeType;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using magATS = KokkosKernels::ArithTraits<magnitudeType>;
 #else
   using magATS = Kokkos::ArithTraits<magnitudeType>;

@@ -16,7 +16,7 @@
 #include "Tpetra_Details_packCrsMatrix.hpp"
 #include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
 #include "Teuchos_CommHelpers.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -46,7 +46,7 @@ using Tpetra::TestingUtilities::getDefaultComm;
 
 template <class T>
 bool essentially_equal(T a, T b) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<T> KAT;
 #else
   typedef Kokkos::ArithTraits<T> KAT;

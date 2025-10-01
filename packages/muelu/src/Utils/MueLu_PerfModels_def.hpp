@@ -16,7 +16,7 @@
 #include <chrono>
 #include <iomanip>
 #include <Teuchos_ScalarTraits.hpp>
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include <KokkosKernels_ArithTraits.hpp>
 #else
 #include <Kokkos_ArithTraits.hpp>
@@ -39,7 +39,7 @@ namespace PerfDetails {
 template <class Scalar, class Node>
 double stream_vector_add(int KERNEL_REPEATS, int VECTOR_SIZE) {
   // PerfDetails' STREAM routines need to be instantiatiated on impl_scalar_type, not Scalar
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
@@ -86,7 +86,7 @@ double stream_vector_add(int KERNEL_REPEATS, int VECTOR_SIZE) {
 template <class Scalar, class Node>
 double stream_vector_copy(int KERNEL_REPEATS, int VECTOR_SIZE) {
   // PerfDetails' STREAM routines need to be instantiatiated on impl_scalar_type, not Scalar
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;

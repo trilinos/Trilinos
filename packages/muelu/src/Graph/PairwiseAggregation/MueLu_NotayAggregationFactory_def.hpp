@@ -480,7 +480,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                            const Teuchos::ArrayView<const LO>& orderingVector,
                            const typename Matrix::local_matrix_type& coarseA,
                            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType kappa,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                            const Kokkos::View<typename KokkosKernels::ArithTraits<Scalar>::val_type*,
 #else
                            const Kokkos::View<typename Kokkos::ArithTraits<Scalar>::val_type*,
@@ -503,7 +503,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   using value_type = typename local_matrix_type::value_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const value_type KAT_zero = KokkosKernels::ArithTraits<value_type>::zero();
 #else
   const value_type KAT_zero = Kokkos::ArithTraits<value_type>::zero();
@@ -742,7 +742,7 @@ void NotayAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   Kokkos::deep_copy(rowPtr, rowPtr_h);
   Kokkos::deep_copy(colInd, colInd_h);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   Kokkos::deep_copy(values, KokkosKernels::ArithTraits<typename values_type::value_type>::one());
 #else
   Kokkos::deep_copy(values, Kokkos::ArithTraits<typename values_type::value_type>::one());

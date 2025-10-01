@@ -18,7 +18,7 @@
 #include "Tpetra_Packable.hpp"
 #include "Tpetra_SrcDistObject.hpp"
 #include "Teuchos_Describable.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -79,7 +79,7 @@ class RowMatrix : virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, N
   /// internally with the (usually) bitwise identical type
   /// Kokkos::complex<T>.  The latter is the \c impl_scalar_type
   /// corresponding to \c Scalar = std::complex.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
@@ -89,7 +89,7 @@ class RowMatrix : virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, N
   /// This is usually the same as the type of the magnitude
   /// (absolute value) of <tt>Scalar</tt>, but may differ for
   /// certain <tt>Scalar</tt> types.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using mag_type = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
 #else
   using mag_type         = typename Kokkos::ArithTraits<Scalar>::mag_type;

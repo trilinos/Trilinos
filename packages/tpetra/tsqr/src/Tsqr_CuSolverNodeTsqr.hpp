@@ -19,7 +19,7 @@
 #include "Tsqr_NodeTsqr.hpp"
 #include "Tsqr_Impl_CuBlas.hpp"
 #include "Tsqr_Impl_CuSolver.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -62,7 +62,7 @@ using host_device_type         = Kokkos::Device<
 // e.g., Scalar=std::complex<double> -> Kokkos::complex<double>.
 
 template <class Scalar>
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 using non_const_kokkos_value_type = typename KokkosKernels::ArithTraits<
 #else
 using non_const_kokkos_value_type = typename Kokkos::ArithTraits<

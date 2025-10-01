@@ -128,7 +128,7 @@ struct RealTraits<Scalar, true> {
   using val_type = Scalar;
   using mag_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   static KOKKOS_INLINE_FUNCTION mag_type real(const val_type& z) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     return KokkosKernels::ArithTraits<val_type>::real(z);
 #else
     return Kokkos::ArithTraits<val_type>::real(z);
@@ -977,7 +977,7 @@ void Relaxation<MatrixType>::compute() {
   using vector_type = Tpetra::Vector<scalar_type, local_ordinal_type,
                                      global_ordinal_type, node_type>;
   using IST         = typename vector_type::impl_scalar_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KAT = KokkosKernels::ArithTraits<IST>;
 #else
   using KAT = Kokkos::ArithTraits<IST>;

@@ -235,7 +235,7 @@ void Ifpack2RILUKSingleProcess_test0(bool& success, Teuchos::FancyOStream& out, 
 
 template <typename Scalar, typename LO, typename GO>
 void Ifpack2RILUKSingleProcess_test1(bool& success, Teuchos::FancyOStream& out, const IlukImplTypeDetails::Enum ilukimplType) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KokkosKernels::ArithTraits;
 #else
   using Kokkos::ArithTraits;
@@ -248,7 +248,7 @@ void Ifpack2RILUKSingleProcess_test1(bool& success, Teuchos::FancyOStream& out, 
   typedef Tpetra::RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename MV::impl_scalar_type val_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
 #else
   typedef typename Kokkos::ArithTraits<val_type>::mag_type mag_type;

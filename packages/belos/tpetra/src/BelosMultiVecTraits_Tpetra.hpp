@@ -21,7 +21,7 @@
 #include "Tpetra_Details_StaticView.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -88,7 +88,7 @@ makeStaticLocalMultiVector (const MultiVectorType& gblMv,
     // them having been initialized.  ArithTraits lets us call nan()
     // even if the scalar type doesn't define it; it just returns some
     // undefined value in the latter case.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     const IST nan = KokkosKernels::ArithTraits<IST>::nan ();
 #else
     const IST nan = Kokkos::ArithTraits<IST>::nan ();

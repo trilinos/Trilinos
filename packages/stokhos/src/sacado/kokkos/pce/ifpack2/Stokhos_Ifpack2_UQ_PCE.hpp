@@ -36,7 +36,7 @@ struct V_ReciprocalThresholdSelfFunctor<
   typedef typename array_type::execution_space   execution_space;
   typedef SizeType                                     size_type;
   typedef typename array_type::non_const_value_type   value_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<value_type>                    KAT;
 #else
   typedef Kokkos::ArithTraits<value_type>                    KAT;

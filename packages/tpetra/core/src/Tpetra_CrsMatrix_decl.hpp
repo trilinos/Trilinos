@@ -453,7 +453,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   /// This is usually the same as the type of the magnitude
   /// (absolute value) of <tt>Scalar</tt>, but may differ for
   /// certain <tt>Scalar</tt> types.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using mag_type = typename KokkosKernels::ArithTraits<impl_scalar_type>::mag_type;
 #else
   using mag_type = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
@@ -3699,12 +3699,12 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
  protected:
   // useful typedefs
   typedef Teuchos::OrdinalTraits<LocalOrdinal> OTL;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<impl_scalar_type> STS;
 #else
   typedef Kokkos::ArithTraits<impl_scalar_type> STS;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<mag_type> STM;
 #else
   typedef Kokkos::ArithTraits<mag_type> STM;

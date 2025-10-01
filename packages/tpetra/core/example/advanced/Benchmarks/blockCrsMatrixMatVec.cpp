@@ -44,7 +44,7 @@ void localApplyBlockNoTrans(Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   typedef Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>
       block_crs_matrix_type;
   typedef typename block_crs_matrix_type::impl_scalar_type IST;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<IST> KAT;
 #else
   typedef Kokkos::ArithTraits<IST> KAT;
@@ -453,7 +453,7 @@ getTpetraBlockCrsMatrix(Teuchos::FancyOStream& out,
   using Teuchos::rcp;
   typedef Tpetra::BlockCrsMatrix<> matrix_type;
   typedef matrix_type::impl_scalar_type SC;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<SC> KAT;
 #else
   typedef Kokkos::ArithTraits<SC> KAT;

@@ -76,7 +76,7 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
   if (equilibrate_no)
     return;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename Tpetra::Details::EquilibrationInfo<typename KokkosKernels::ArithTraits<Scalar>::val_type, typename Node::device_type> equil_type;
 #else
   typedef typename Tpetra::Details::EquilibrationInfo<typename Kokkos::ArithTraits<Scalar>::val_type, typename Node::device_type> equil_type;
@@ -88,7 +88,7 @@ void equilibrateMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalO
     equil_type equibResult_ = computeRowAndColumnOneNorms(*A, assumeSymmetric);
     if (equilibrate_1norm) {
       using device_type = typename Node::device_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       using mag_type = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
 #else
       using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;

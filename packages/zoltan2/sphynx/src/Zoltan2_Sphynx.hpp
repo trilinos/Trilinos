@@ -425,7 +425,7 @@ namespace Zoltan2 {
         using offset_view_t = Kokkos::View<size_t*, typename node_t::device_type>;
         using vector_t = Tpetra::Vector<scalar_t, lno_t, gno_t, node_t>;
         using dual_view_t = typename vector_t::dual_view_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         using KAT = KokkosKernels::ArithTraits<scalar_t>;
 #else
         using KAT = Kokkos::ArithTraits<scalar_t>;

@@ -11,7 +11,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_KokkosCounter.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -991,7 +991,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiply, LO, GO, ST, 
   typedef Tpetra::Map<LO, GO, Node> map_type;
   typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
   typedef Tpetra::Vector<ST, LO, GO, Node> V;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<ST>::val_type IST;
 #else
   typedef typename Kokkos::ArithTraits<ST>::val_type IST;
@@ -1045,7 +1045,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiply, LO, GO, ST, 
       B.putScalar(S1);
 
       // Prefill C with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1069,7 +1069,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiply, LO, GO, ST, 
       const ST S3 = S1 + S1 + S1;
 
       // Prefill A and B with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1093,7 +1093,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiply, LO, GO, ST, 
     // update rules.
     {
       // Prefill A and B with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1119,7 +1119,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiply, LO, GO, ST, 
       const ST S2 = S1 + S1;
 
       // Prefill A and B with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1147,7 +1147,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiply, LO, GO, ST, 
       B.putScalar(S1);
 
       // Prefill C with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1173,7 +1173,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiply, LO, GO, ST, 
       B.putScalar(S1);
 
       // Prefill C with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1282,7 +1282,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiply, LO, GO, ST, 
       B.putScalar(S4);
 
       // Prefill C with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1347,7 +1347,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiplyLg, LO, GO, ST
   typedef Tpetra::Map<LO, GO, Node> map_type;
   typedef Tpetra::MultiVector<ST, LO, GO, Node> MV;
   typedef Tpetra::Vector<ST, LO, GO, Node> V;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<ST>::val_type IST;
 #else
   typedef typename Kokkos::ArithTraits<ST>::val_type IST;
@@ -1401,7 +1401,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiplyLg, LO, GO, ST
       B.putScalar(S1);
 
       // Prefill C with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1425,7 +1425,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiplyLg, LO, GO, ST
       const ST S3 = S1 + S1 + S1;
 
       // Prefill A and B with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1449,7 +1449,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiplyLg, LO, GO, ST
     // update rules.
     {
       // Prefill A and B with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1475,7 +1475,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiplyLg, LO, GO, ST
       const ST S2 = S1 + S1;
 
       // Prefill A and B with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1503,7 +1503,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiplyLg, LO, GO, ST
       B.putScalar(S1);
 
       // Prefill C with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1529,7 +1529,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiplyLg, LO, GO, ST
       B.putScalar(S1);
 
       // Prefill C with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());
@@ -1638,7 +1638,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, ElementWiseMultiplyLg, LO, GO, ST
       B.putScalar(S4);
 
       // Prefill C with NaN, if NaN exists for ST.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = static_cast<ST>(KokkosKernels::ArithTraits<IST>::nan());
 #else
       const ST nan = static_cast<ST>(Kokkos::ArithTraits<IST>::nan());

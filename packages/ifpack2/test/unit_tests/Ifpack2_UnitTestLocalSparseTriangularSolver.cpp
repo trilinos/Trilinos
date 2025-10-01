@@ -542,12 +542,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareHTSToLocal
 
 template <class SC, class LO, class DT>
 void testArrowMatrixWithDense(bool& success, Teuchos::FancyOStream& out, const LO lclNumRows) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using val_type = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
   using val_type = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
 #else
   using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
@@ -569,12 +569,12 @@ void testArrowMatrixWithDense(bool& success, Teuchos::FancyOStream& out, const L
   Kokkos::View<val_type**, HDT> L("L", lclNumRows, lclNumCols);
   Kokkos::View<val_type**, HDT> U("U", lclNumRows, lclNumCols);
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const val_type ZERO = KokkosKernels::ArithTraits<val_type>::zero();
 #else
   const val_type ZERO = Kokkos::ArithTraits<val_type>::zero();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const val_type ONE = KokkosKernels::ArithTraits<val_type>::one();
 #else
   const val_type ONE = Kokkos::ArithTraits<val_type>::one();
@@ -720,7 +720,7 @@ bool testArrowMatrixAssembly(const int lclNumRows,
   using LO     = typename crs_matrix_type::local_ordinal_type;
   using SC     = typename crs_matrix_type::scalar_type;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<SC> KAT;
 #else
   typedef Kokkos::ArithTraits<SC> KAT;
@@ -890,7 +890,7 @@ void testArrowMatrix(bool& success, Teuchos::FancyOStream& out) {
   typedef Tpetra::RowMatrix<SC, LO, GO> row_matrix_type;
   typedef Tpetra::Vector<SC, LO, GO> vec_type;
   typedef Ifpack2::LocalSparseTriangularSolver<row_matrix_type> solver_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<SC> KAT;
 #else
   typedef Kokkos::ArithTraits<SC> KAT;

@@ -27,7 +27,7 @@ void testGEMV(Teuchos::FancyOStream& out,
   typedef Kokkos::View<IST*, LayoutType, Kokkos::HostSpace,
                        Kokkos::MemoryUnmanaged>
       vec_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<IST> KAT;
 #else
   typedef Kokkos::ArithTraits<IST> KAT;
@@ -88,7 +88,7 @@ void testGEMV(Teuchos::FancyOStream& out,
 //
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(LittleBlockOps, GEMV, ST) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<ST> KAT;
 #else
   typedef Kokkos::ArithTraits<ST> KAT;

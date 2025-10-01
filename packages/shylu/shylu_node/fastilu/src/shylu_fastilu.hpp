@@ -64,7 +64,7 @@ void unfill_crs(View1& row_ptrs, View2& cols, View3& values)
 {
   using Scalar = typename View3::non_const_value_type;
   using Ordinal = typename View1::non_const_value_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using STS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using STS = Kokkos::ArithTraits<Scalar>;
@@ -266,12 +266,12 @@ class FastILUPrec
         typedef typename OrdinalArray::host_mirror_type OrdinalArrayMirror;
         typedef typename ScalarArray::host_mirror_type  ScalarArrayMirror;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         using STS = KokkosKernels::ArithTraits<Scalar>;
 #else
         using STS = Kokkos::ArithTraits<Scalar>;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         using RTS = KokkosKernels::ArithTraits<Real>;
 #else
         using RTS = Kokkos::ArithTraits<Real>;
@@ -2268,7 +2268,7 @@ class FastICFunctor
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         using STS = KokkosKernels::ArithTraits<Scalar>;
 #else
         using STS = Kokkos::ArithTraits<Scalar>;
@@ -2452,7 +2452,7 @@ class FastILUFunctor
         typedef Kokkos::View<Ordinal *, ExecSpace> ordinal_array_type;
         typedef Kokkos::View<Scalar *, ExecSpace> scalar_array_type;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         using STS = KokkosKernels::ArithTraits<Scalar>;
 #else
         using STS = Kokkos::ArithTraits<Scalar>;

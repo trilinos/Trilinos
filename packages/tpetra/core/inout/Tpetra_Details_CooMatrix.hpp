@@ -621,7 +621,7 @@ class CooMatrix : public ::Tpetra::DistObject<char, LO, GO, NT> {
   void
   buildCrs(::Kokkos::View<OffsetType*, device_type>& rowOffsets,
            ::Kokkos::View<GO*, device_type>& gblColInds,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
            ::Kokkos::View<typename ::KokkosKernels::ArithTraits<SC>::val_type*, device_type>& vals) {
 #else
            ::Kokkos::View<typename ::Kokkos::ArithTraits<SC>::val_type*, device_type>& vals) {
@@ -631,7 +631,7 @@ class CooMatrix : public ::Tpetra::DistObject<char, LO, GO, NT> {
     using ::Kokkos::create_mirror_view;
     using ::Kokkos::deep_copy;
     using ::Kokkos::View;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     typedef typename ::KokkosKernels::ArithTraits<SC>::val_type ISC;
 #else
     typedef typename ::Kokkos::ArithTraits<SC>::val_type ISC;

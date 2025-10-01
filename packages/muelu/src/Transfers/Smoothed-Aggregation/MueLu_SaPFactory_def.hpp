@@ -10,7 +10,7 @@
 #ifndef MUELU_SAPFACTORY_DEF_HPP
 #define MUELU_SAPFACTORY_DEF_HPP
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -700,7 +700,7 @@ struct constraintKernel {
   using SC     = Scalar;
   using LO     = typename local_matrix_type::non_const_ordinal_type;
   using Device = typename local_matrix_type::device_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KAT = KokkosKernels::ArithTraits<SC>;
 #else
   using KAT = Kokkos::ArithTraits<SC>;
@@ -788,7 +788,7 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
   using SC     = Scalar;
   using LO     = typename local_matrix_type::non_const_ordinal_type;
   using Device = typename local_matrix_type::device_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KAT = KokkosKernels::ArithTraits<SC>;
 #else
   using KAT = Kokkos::ArithTraits<SC>;

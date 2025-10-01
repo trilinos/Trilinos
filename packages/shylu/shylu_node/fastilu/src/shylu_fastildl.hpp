@@ -57,12 +57,12 @@ class FastILDLPrec
 
         typedef Kokkos::RangePolicy<ExecSpace> RangePolicy;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         using STS = KokkosKernels::ArithTraits<Scalar>;
 #else
         using STS = Kokkos::ArithTraits<Scalar>;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         using RTS = KokkosKernels::ArithTraits<Real>;
 #else
         using RTS = Kokkos::ArithTraits<Real>;
@@ -164,7 +164,7 @@ class FastILDLPrec
             blkSzILDL = blkSzILDL_;
             blkSz = blkSz_;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
             const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
 #else
             const Scalar one = Kokkos::ArithTraits<Scalar>::one();
@@ -630,7 +630,7 @@ class FastILDLPrec
         void applyDiagonalScaling()
         {
             int anext = 0;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
             const Real one = KokkosKernels::ArithTraits<Real>::one();
 #else
             const Real one = Kokkos::ArithTraits<Real>::one();
@@ -675,7 +675,7 @@ class FastILDLPrec
 
         void applyManteuffelShift()
         {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
             const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
 #else
             const Scalar one = Kokkos::ArithTraits<Scalar>::one();
@@ -779,7 +779,7 @@ class FastILDLPrec
 
         void compute()
         {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
             const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
 #else
             const Scalar one = Kokkos::ArithTraits<Scalar>::one();
@@ -977,12 +977,12 @@ class FastILDLFunctor
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal blk_index) const
             {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                 const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
 #else
                 const Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                 const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
 #else
                 const Scalar one = Kokkos::ArithTraits<Scalar>::one();

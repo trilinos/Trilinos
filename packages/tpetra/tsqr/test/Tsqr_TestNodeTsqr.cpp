@@ -239,13 +239,13 @@ parseOptions(int argc,
 template <class Scalar>
 using kokkos_value_type = typename std::conditional<
     std::is_const<Scalar>::value,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     const typename KokkosKernels::ArithTraits<
 #else
     const typename Kokkos::ArithTraits<
 #endif
         typename std::remove_const<Scalar>::type>::val_type,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     typename KokkosKernels::ArithTraits<Scalar>::val_type>::type;
 #else
     typename Kokkos::ArithTraits<Scalar>::val_type>::type;
@@ -273,7 +273,7 @@ getHostMatrixView(const MatView<LO, Scalar>& A) {
 }
 
 template <class LO, class Scalar>
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 Kokkos::View<typename KokkosKernels::ArithTraits<Scalar>::val_type**,
 #else
 Kokkos::View<typename Kokkos::ArithTraits<Scalar>::val_type**,
@@ -283,7 +283,7 @@ getDeviceMatrixCopy(const MatView<LO, Scalar>& A,
                     const std::string& label) {
   using Kokkos::view_alloc;
   using Kokkos::WithoutInitializing;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using IST = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
@@ -438,7 +438,7 @@ verifyNodeTsqrTmpl(std::ostream& out,
     cerr << "-- NodeTsqr claims to want device memory" << endl;
   }
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using IST = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
@@ -816,7 +816,7 @@ verifyLapackTmpl(std::ostream& out,
     fileOut.close();
   }
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using IST = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
@@ -1087,7 +1087,7 @@ void benchmarkLapackTmpl(std::ostream& out,
     gen.getSeed(iseed);
   }
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using IST = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
@@ -1267,7 +1267,7 @@ void benchmarkNodeTsqrTmpl(std::ostream& out,
   }
   deep_copy(A_copy, A);  // need copy since TSQR overwrites
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using IST = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
   using IST = typename Kokkos::ArithTraits<Scalar>::val_type;

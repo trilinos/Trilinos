@@ -41,7 +41,7 @@
 #include "KokkosBlas.hpp"
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_Random.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -170,7 +170,7 @@ allocDualView(const size_t lclNumRows,
       // won't hurt anything because by setting zeroOut=false, users
       // already agreed that they don't care about the contents of
       // the MultiVector.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       const ST nan = KokkosKernels::ArithTraits<ST>::nan();
 #else
       const ST nan = Kokkos::ArithTraits<ST>::nan();
@@ -2243,7 +2243,7 @@ multiVectorSingleColumnDot(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
       map.is_null() ? Teuchos::null : map->getComm();
   if (comm.is_null()) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     return KokkosKernels::ArithTraits<dot_type>::zero();
 #else
     return Kokkos::ArithTraits<dot_type>::zero();
@@ -2256,12 +2256,12 @@ multiVectorSingleColumnDot(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal
     const LO lclNumRows = static_cast<LO>(std::min(x.getLocalLength(),
                                                    y.getLocalLength()));
     const Kokkos::pair<LO, LO> rowRng(0, lclNumRows);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     dot_type lclDot = KokkosKernels::ArithTraits<dot_type>::zero();
 #else
     dot_type lclDot = Kokkos::ArithTraits<dot_type>::zero();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     dot_type gblDot = KokkosKernels::ArithTraits<dot_type>::zero();
 #else
     dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero();
@@ -2404,7 +2404,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using Teuchos::RCP;
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<impl_scalar_type> ATS;
 #else
   typedef Kokkos::ArithTraits<impl_scalar_type> ATS;
@@ -2513,7 +2513,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     randomize() {
   typedef impl_scalar_type IST;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<IST> ATS;
 #else
   typedef Kokkos::ArithTraits<IST> ATS;
@@ -2681,7 +2681,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using IST = impl_scalar_type;
 
   const IST theAlpha = static_cast<IST>(alpha);
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   if (theAlpha == KokkosKernels::ArithTraits<IST>::one()) {
 #else
   if (theAlpha == Kokkos::ArithTraits<IST>::one()) {
@@ -3826,7 +3826,7 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using Teuchos::rcpFromRef;
   using Teuchos::TRANS;
   using ::Tpetra::Details::ProfilingRegion;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<impl_scalar_type>;
 #else
   using ATS = Kokkos::ArithTraits<impl_scalar_type>;

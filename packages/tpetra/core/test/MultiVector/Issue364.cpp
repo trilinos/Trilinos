@@ -10,7 +10,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -136,7 +136,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(MultiVector, DualViewNoncontig, Node) {
   using MV       = Tpetra::MultiVector<Scalar, LO, GO, Node>;
   using IST      = typename MV::impl_scalar_type;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const IST ONE = KokkosKernels::ArithTraits<IST>::one();
 #else
   const IST ONE = Kokkos::ArithTraits<IST>::one();
@@ -176,7 +176,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(MultiVector, DualViewNoncontig, Node) {
     for (LO j = 0; j < numVecs; ++j) {
       for (LO i = 0; i < lclNumRows; ++i) {
         X_lcl(i, j) = curVal;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         curVal = curVal + KokkosKernels::ArithTraits<IST>::one();
 #else
         curVal = curVal + Kokkos::ArithTraits<IST>::one();
@@ -367,7 +367,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(MultiVector, DualViewTwoDisjoint, Node) {
   typedef typename Kokkos::View<IST**, DT>::host_mirror_type::memory_space
       host_memory_space;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const IST ONE = KokkosKernels::ArithTraits<IST>::one();
 #else
   const IST ONE = Kokkos::ArithTraits<IST>::one();
@@ -429,7 +429,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(MultiVector, DualViewTwoDisjoint, Node) {
       for (LO j = 0; j < numVecs; ++j) {
         for (LO i = 0; i < lclNumRows; ++i) {
           X_lcl(i, j) = curVal;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
           curVal = curVal + KokkosKernels::ArithTraits<IST>::one();
 #else
           curVal = curVal + Kokkos::ArithTraits<IST>::one();

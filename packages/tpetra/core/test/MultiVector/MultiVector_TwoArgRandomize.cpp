@@ -11,7 +11,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -32,7 +32,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, TwoArgRandomize, SC, LO, GO, NT) 
   typedef Tpetra::Map<LO, GO, NT> map_type;
   typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
   typedef Teuchos::ScalarTraits<SC> STS;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<SC> KAT;
 #else
   typedef Kokkos::ArithTraits<SC> KAT;

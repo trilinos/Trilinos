@@ -78,7 +78,7 @@ struct SortedNumericIndicesOnlyFunctor {
     , Ccolinds(Ccolinds_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     const ordinal_type ORDINAL_MAX = KokkosKernels::ArithTraits<ordinal_type>::max();
 #else
     const ordinal_type ORDINAL_MAX = Kokkos::ArithTraits<ordinal_type>::max();

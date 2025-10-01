@@ -14,7 +14,7 @@
 /// \brief Declaration of Tpetra::Details::EquilibrationInfo
 
 #include "TpetraCore_config.h"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -49,12 +49,12 @@ namespace Details {
 /// over an MPI communicator.
 template <class ScalarType, class DeviceType>
 struct EquilibrationInfo {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using val_type = typename KokkosKernels::ArithTraits<ScalarType>::val_type;
 #else
   using val_type = typename Kokkos::ArithTraits<ScalarType>::val_type;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
 #else
   using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;

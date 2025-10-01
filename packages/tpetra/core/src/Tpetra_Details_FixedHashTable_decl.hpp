@@ -20,7 +20,7 @@
 #include "Teuchos_VerbosityLevel.hpp"
 
 #include "Kokkos_Core.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -392,7 +392,7 @@ class FixedHashTable {
   /// In Tpetra::Map, this corresponds to the minimum global index
   /// (local to the MPI process).
   /// @remark It will be set in @ref init.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   KeyType minKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   KeyType minKey_         = ::Kokkos::ArithTraits<KeyType>::max();
@@ -403,7 +403,7 @@ class FixedHashTable {
   /// In Tpetra::Map, this corresponds to the maximum global index
   /// (local to the MPI process).
   /// @remark It will be set in @ref init.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   KeyType maxKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   KeyType maxKey_         = ::Kokkos::ArithTraits<KeyType>::max();
@@ -413,7 +413,7 @@ class FixedHashTable {
   ///
   /// In Tpetra::Map, this corresponds to the minimum local index
   /// (local to the MPI process).
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   ValueType minVal_ = ::KokkosKernels::ArithTraits<ValueType>::max();
 #else
   ValueType minVal_       = ::Kokkos::ArithTraits<ValueType>::max();
@@ -423,7 +423,7 @@ class FixedHashTable {
   ///
   /// In Tpetra::Map, this corresponds to the maximum local index
   /// (local to the MPI process).
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   ValueType maxVal_ = ::KokkosKernels::ArithTraits<ValueType>::is_integer ? ::KokkosKernels::ArithTraits<ValueType>::min() : -::KokkosKernels::ArithTraits<ValueType>::max();
 #else
   ValueType maxVal_       = ::Kokkos::ArithTraits<ValueType>::is_integer ? ::Kokkos::ArithTraits<ValueType>::min() : -::Kokkos::ArithTraits<ValueType>::max();
@@ -435,7 +435,7 @@ class FixedHashTable {
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   KeyType firstContigKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   KeyType firstContigKey_ = ::Kokkos::ArithTraits<KeyType>::max();
@@ -447,7 +447,7 @@ class FixedHashTable {
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   KeyType lastContigKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   KeyType lastContigKey_  = ::Kokkos::ArithTraits<KeyType>::max();

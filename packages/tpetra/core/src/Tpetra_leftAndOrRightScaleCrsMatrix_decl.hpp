@@ -14,7 +14,7 @@
 /// \brief Declaration of Tpetra::leftAndOrRightScaleCrsMatrix
 
 #include "TpetraCore_config.h"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -63,14 +63,14 @@ enum EScaling {
 template <class SC, class LO, class GO, class NT>
 void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
                                   const Kokkos::View<
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                       const typename KokkosKernels::ArithTraits<SC>::mag_type*,
 #else
                                       const typename Kokkos::ArithTraits<SC>::mag_type*,
 #endif
                                       typename NT::device_type>& rowScalingFactors,
                                   const Kokkos::View<
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                       const typename KokkosKernels::ArithTraits<SC>::mag_type*,
 #else
                                       const typename Kokkos::ArithTraits<SC>::mag_type*,
@@ -110,13 +110,13 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
 ///   if SCALING_MULTIPLY, it means "multiply by."
 template <class SC, class LO, class GO, class NT>
 void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                   const Tpetra::Vector<typename KokkosKernels::ArithTraits<SC>::mag_type,
 #else
                                   const Tpetra::Vector<typename Kokkos::ArithTraits<SC>::mag_type,
 #endif
                                                        LO, GO, NT>& rowScalingFactors,
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                   const Tpetra::Vector<typename KokkosKernels::ArithTraits<SC>::mag_type,
 #else
                                   const Tpetra::Vector<typename Kokkos::ArithTraits<SC>::mag_type,

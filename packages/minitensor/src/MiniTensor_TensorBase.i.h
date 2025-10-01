@@ -346,12 +346,12 @@ TensorBase<T, ST>::fill(Filler const value)
   case Filler::ZEROS:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       fill_AD<T>(entry, KokkosKernels::ArithTraits<S>::zero());
 #else
       fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       entry = KokkosKernels::ArithTraits<S>::zero();
 #else
       entry = Kokkos::ArithTraits<S>::zero();
@@ -362,12 +362,12 @@ TensorBase<T, ST>::fill(Filler const value)
   case Filler::ONES:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       fill_AD<T>(entry, KokkosKernels::ArithTraits<S>::zero());
 #else
       fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       entry = KokkosKernels::ArithTraits<S>::one();
 #else
       entry = Kokkos::ArithTraits<S>::one();
@@ -378,7 +378,7 @@ TensorBase<T, ST>::fill(Filler const value)
   case Filler::SEQUENCE:
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       fill_AD<T>(entry, KokkosKernels::ArithTraits<S>::zero());
 #else
       fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
@@ -399,7 +399,7 @@ TensorBase<T, ST>::fill(Filler const value)
     KOKKOS_IF_ON_HOST((
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       fill_AD<T>(entry, KokkosKernels::ArithTraits<S>::zero());
 #else
       fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
@@ -416,7 +416,7 @@ TensorBase<T, ST>::fill(Filler const value)
     KOKKOS_IF_ON_HOST((
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       fill_AD<T>(entry, KokkosKernels::ArithTraits<S>::zero());
 #else
       fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
@@ -433,7 +433,7 @@ TensorBase<T, ST>::fill(Filler const value)
     KOKKOS_IF_ON_HOST((
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       fill_AD<T>(entry, KokkosKernels::ArithTraits<S>::zero());
 #else
       fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
@@ -470,7 +470,7 @@ TensorBase<T, ST>::fill(T const & s)
 
   for (Index i = 0; i < number_components; ++i) {
     auto & entry = (*this)[i];
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     fill_AD<T>(entry, KokkosKernels::ArithTraits<S>::zero());
 #else
     fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());

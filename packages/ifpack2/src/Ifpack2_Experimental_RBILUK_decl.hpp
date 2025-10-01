@@ -101,7 +101,7 @@ class RBILUK : virtual public Ifpack2::RILUK<Tpetra::RowMatrix<typename MatrixTy
   typedef typename MatrixType::scalar_type scalar_type;
 
   // typedef typename MatrixType::impl_scalar_type impl_scalar_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<typename MatrixType::scalar_type>::val_type impl_scalar_type;
 #else
   typedef typename Kokkos::ArithTraits<typename MatrixType::scalar_type>::val_type impl_scalar_type;

@@ -30,7 +30,7 @@ class OperatorWithDiagonal : public Tpetra::RowMatrix<Scalar, LocalOrdinal, Glob
   using row_matrix_type = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
   using impl_scalar_type = typename row_matrix_type::impl_scalar_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using mag_type = typename KokkosKernels::ArithTraits<impl_scalar_type>::mag_type;
 #else
   using mag_type = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;

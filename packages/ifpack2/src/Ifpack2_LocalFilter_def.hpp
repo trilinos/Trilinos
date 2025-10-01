@@ -744,12 +744,12 @@ bool LocalFilter<MatrixType>::supportsRowViews() const {
 template <class MatrixType>
 typename LocalFilter<MatrixType>::mag_type
 LocalFilter<MatrixType>::getFrobeniusNorm() const {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<scalar_type> STS;
 #else
   typedef Kokkos::ArithTraits<scalar_type> STS;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<mag_type> STM;
 #else
   typedef Kokkos::ArithTraits<mag_type> STM;

@@ -17,7 +17,7 @@
 /// This file describes power methods for use
 /// throughout Ifpack2
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -54,12 +54,12 @@ class PositivizeVector {
   KOKKOS_INLINE_FUNCTION void
   operator()(const LocalOrdinal& i) const {
     typedef typename OneDViewType::non_const_value_type IST;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     typedef KokkosKernels::ArithTraits<IST> STS;
 #else
     typedef Kokkos::ArithTraits<IST> STS;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     typedef KokkosKernels::ArithTraits<typename STS::mag_type> STM;
 #else
     typedef Kokkos::ArithTraits<typename STS::mag_type> STM;

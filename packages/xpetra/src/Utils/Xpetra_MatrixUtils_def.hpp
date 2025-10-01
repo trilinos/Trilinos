@@ -421,12 +421,12 @@ void MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckRepairMainDiag
 
         auto lclA = tpCrsAc->getTpetra_CrsMatrix()->getLocalMatrixDevice();
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
         using ATS      = Kokkos::ArithTraits<Scalar>;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
         using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
 #else
         using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
@@ -459,12 +459,12 @@ void MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckRepairMainDiag
 
       auto lclA = tpCrsAc->getTpetra_CrsMatrix()->getLocalMatrixDevice();
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
       using ATS = Kokkos::ArithTraits<Scalar>;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
       using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
 #else
       using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;

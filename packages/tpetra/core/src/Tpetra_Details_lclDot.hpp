@@ -18,7 +18,7 @@
 ///   of Tpetra, and may change or disappear at any time.
 
 #include "Kokkos_DualView.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -110,7 +110,7 @@ void lclDot(const RV& dotsOut,
 #endif  // HAVE_TPETRA_DEBUG
 
   if (lclNumRows == 0) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     const dot_type zero = KokkosKernels::ArithTraits<dot_type>::zero();
 #else
     const dot_type zero = Kokkos::ArithTraits<dot_type>::zero();

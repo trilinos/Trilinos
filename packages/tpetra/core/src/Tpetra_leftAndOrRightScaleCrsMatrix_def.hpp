@@ -29,14 +29,14 @@ namespace Tpetra {
 template <class SC, class LO, class GO, class NT>
 void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
                                   const Kokkos::View<
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                       const typename KokkosKernels::ArithTraits<SC>::mag_type*,
 #else
                                       const typename Kokkos::ArithTraits<SC>::mag_type*,
 #endif
                                       typename NT::device_type>& rowScalingFactors,
                                   const Kokkos::View<
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                       const typename KokkosKernels::ArithTraits<SC>::mag_type*,
 #else
                                       const typename Kokkos::ArithTraits<SC>::mag_type*,
@@ -94,14 +94,14 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
 template <class SC, class LO, class GO, class NT>
 void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
                                   const Tpetra::Vector<
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                       typename KokkosKernels::ArithTraits<SC>::mag_type,
 #else
                                       typename Kokkos::ArithTraits<SC>::mag_type,
 #endif
                                       LO, GO, NT>& rowScalingFactors,
                                   const Tpetra::Vector<
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                       typename KokkosKernels::ArithTraits<SC>::mag_type,
 #else
                                       typename Kokkos::ArithTraits<SC>::mag_type,
@@ -113,7 +113,7 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
                                   const EScaling scaling) {
   using device_type      = typename NT::device_type;
   using dev_memory_space = typename device_type::memory_space;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using mag_type = typename KokkosKernels::ArithTraits<SC>::mag_type;
 #else
   using mag_type = typename Kokkos::ArithTraits<SC>::mag_type;
@@ -163,7 +163,7 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
 // Must be expanded from within the Tpetra namespace!
 //
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #define TPETRA_LEFTANDORRIGHTSCALECRSMATRIX_INSTANT(SC, LO, GO, NT)                                  \
   template void                                                                                      \
   leftAndOrRightScaleCrsMatrix(                                                                      \

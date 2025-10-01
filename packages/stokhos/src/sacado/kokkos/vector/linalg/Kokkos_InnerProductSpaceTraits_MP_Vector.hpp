@@ -35,7 +35,7 @@ public:
   typedef InnerProductSpaceTraits<base_value_type> BIT;
   typedef typename BIT::dot_type base_dot_type;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
 #else
   typedef typename Kokkos::ArithTraits<val_type>::mag_type mag_type;
@@ -83,7 +83,7 @@ public:
   typedef InnerProductSpaceTraits<base_value_type> BIT;
   typedef typename BIT::dot_type base_dot_type;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
 #else
   typedef typename Kokkos::ArithTraits<val_type>::mag_type mag_type;

@@ -11,7 +11,7 @@
 #define KOKKOS_ARITHTRAITS_UQ_PCE_HPP
 
 #include "Sacado_UQ_PCE.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -22,7 +22,7 @@
 // Specializations of Kokkos{Kernels}::ArithTraits for Sacado::UQ::PCE scalar type
 //----------------------------------------------------------------------------
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 namespace KokkosKernels {
 #else
 namespace Kokkos {
@@ -185,7 +185,7 @@ namespace KokkosBatched {
   template <typename S>
   struct MagnitudeScalarType< Sacado::UQ::PCE<S> > {
     typedef Sacado::UQ::PCE<S> val_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     typedef typename KokkosKernels::ArithTraits<val_type>::mag_type type;
 #else
     typedef typename Kokkos::ArithTraits<val_type>::mag_type type;

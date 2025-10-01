@@ -528,7 +528,7 @@ struct BlockWiseMultiply {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const Size k) const {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     const auto zero = KokkosKernels::ArithTraits<Scalar>::zero();
 #else
     const auto zero = Kokkos::ArithTraits<Scalar>::zero();
@@ -610,7 +610,7 @@ class BlockJacobiUpdate {
     using Kokkos::ALL;
     using Kokkos::subview;
     typedef Kokkos::pair<LO, LO> range_type;
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     typedef KokkosKernels::ArithTraits<Scalar> KAT;
 #else
     typedef Kokkos::ArithTraits<Scalar> KAT;

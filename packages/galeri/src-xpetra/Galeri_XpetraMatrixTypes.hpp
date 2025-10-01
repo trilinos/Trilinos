@@ -171,7 +171,7 @@ template <class Scalar, class Map>
 class ScaledIdentityStencil {
   // a
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS                   = Kokkos::ArithTraits<Scalar>;
@@ -193,12 +193,12 @@ class ScaledIdentityStencil {
   impl_scalar_type a;
   local_map_type lclMap;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
 #else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
 #else
   const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
@@ -236,7 +236,7 @@ template <class Scalar, class Map, bool keepBCs>
 class TriDiagStencil {
   //  b a c
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS                   = Kokkos::ArithTraits<Scalar>;
@@ -259,12 +259,12 @@ class TriDiagStencil {
   DirBC DirichletBC;
   local_map_type lclMap;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
 #else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
 #else
   const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
@@ -345,7 +345,7 @@ class Cross2DStencil {
   //  b a c
   //    d
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS                   = Kokkos::ArithTraits<Scalar>;
@@ -368,12 +368,12 @@ class Cross2DStencil {
   DirBC DirichletBC;
   local_map_type lclMap;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
 #else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
 #else
   const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
@@ -466,7 +466,7 @@ class Cross3DStencil {
   //    d
   // + f bottom and g top
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS                   = Kokkos::ArithTraits<Scalar>;
@@ -489,12 +489,12 @@ class Cross3DStencil {
   DirBC DirichletBC;
   local_map_type lclMap;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
 #else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
 #else
   const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
@@ -609,7 +609,7 @@ class Brick3DStencil {
   //   d  b  d
   //   e  d  e
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<Scalar>;
 #else
   using ATS                   = Kokkos::ArithTraits<Scalar>;
@@ -633,12 +633,12 @@ class Brick3DStencil {
   DirBC DirichletBC;
   local_map_type lclMap;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
 #else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
 #else
   const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();

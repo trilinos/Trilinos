@@ -15,7 +15,7 @@
 #ifdef TPETRA_USE_MURMUR_HASH
 #include "Kokkos_Functional.hpp"  // hash function used by Kokkos::UnorderedMap
 #endif                            // TPETRA_USE_MURMUR_HASH
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -168,7 +168,7 @@ template <class KeyType>
 struct FillPairsResult {
   KOKKOS_INLINE_FUNCTION
   FillPairsResult()
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     : minKey_(::KokkosKernels::ArithTraits<KeyType>::max())
 #else
     : minKey_(::Kokkos::ArithTraits<KeyType>::max())
@@ -186,7 +186,7 @@ struct FillPairsResult {
   // issue.  The standard floating-point types are signed and have a
   // sign bit, so lowest() is just -max().  For integer types, we
   // can use min() instead.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     maxKey_(::KokkosKernels::ArithTraits<KeyType>::is_integer ? ::KokkosKernels::ArithTraits<KeyType>::min() : -::KokkosKernels::ArithTraits<KeyType>::max())
 #else
     maxKey_(::Kokkos::ArithTraits<KeyType>::is_integer ? ::Kokkos::ArithTraits<KeyType>::min() : -::Kokkos::ArithTraits<KeyType>::max())
@@ -292,7 +292,7 @@ class FillPairs {
     , keys_(keys)
     , size_(counts.extent(0))
     , startingValue_(startingValue)
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     , initMinKey_(::KokkosKernels::ArithTraits<key_type>::max())
     , initMaxKey_(::KokkosKernels::ArithTraits<key_type>::is_integer ? ::KokkosKernels::ArithTraits<key_type>::min() : -::KokkosKernels::ArithTraits<key_type>::max()){}
 #else
@@ -560,7 +560,7 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
   // DEEP_COPY REVIEW - HOST-TO_DEVICE
   Kokkos::deep_copy(execution_space(), keys_d, keys_k);
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const KeyType initMinKey = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   const KeyType initMinKey = ::Kokkos::ArithTraits<KeyType>::max();
@@ -577,7 +577,7 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
   // standard floating-point types are signed and have a sign bit, so
   // lowest() is just -max().  For integer types, we can use min()
   // instead.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const KeyType initMaxKey = ::KokkosKernels::ArithTraits<KeyType>::is_integer ? ::KokkosKernels::ArithTraits<KeyType>::min() : -::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   const KeyType initMaxKey = ::Kokkos::ArithTraits<KeyType>::is_integer ? ::Kokkos::ArithTraits<KeyType>::min() : -::Kokkos::ArithTraits<KeyType>::max();
@@ -597,7 +597,7 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
   , firstContigKey_(firstContigKey)
   , lastContigKey_(lastContigKey)
   , checkedForDuplicateKeys_(false) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const KeyType initMinKey = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   const KeyType initMinKey = ::Kokkos::ArithTraits<KeyType>::max();
@@ -614,7 +614,7 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
   // standard floating-point types are signed and have a sign bit, so
   // lowest() is just -max().  For integer types, we can use min()
   // instead.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const KeyType initMaxKey = ::KokkosKernels::ArithTraits<KeyType>::is_integer ? ::KokkosKernels::ArithTraits<KeyType>::min() : -::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   const KeyType initMaxKey = ::Kokkos::ArithTraits<KeyType>::is_integer ? ::Kokkos::ArithTraits<KeyType>::min() : -::Kokkos::ArithTraits<KeyType>::max();
@@ -647,7 +647,7 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
   // DEEP_COPY REVIEW - NOT TESTED
   Kokkos::deep_copy(keys_d, keys_k);
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const KeyType initMinKey = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   const KeyType initMinKey = ::Kokkos::ArithTraits<KeyType>::max();
@@ -664,7 +664,7 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
   // standard floating-point types are signed and have a sign bit, so
   // lowest() is just -max().  For integer types, we can use min()
   // instead.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const KeyType initMaxKey = ::KokkosKernels::ArithTraits<KeyType>::is_integer ? ::KokkosKernels::ArithTraits<KeyType>::min() : -::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   const KeyType initMaxKey = ::Kokkos::ArithTraits<KeyType>::is_integer ? ::Kokkos::ArithTraits<KeyType>::min() : -::Kokkos::ArithTraits<KeyType>::max();
@@ -680,7 +680,7 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
   : minVal_(startingValue)
   , maxVal_(keys.size() == 0 ? startingValue : static_cast<ValueType>(startingValue + keys.size() - 1))
   , checkedForDuplicateKeys_(false) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const KeyType initMinKey = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   const KeyType initMinKey = ::Kokkos::ArithTraits<KeyType>::max();
@@ -697,7 +697,7 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
   // standard floating-point types are signed and have a sign bit, so
   // lowest() is just -max().  For integer types, we can use min()
   // instead.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const KeyType initMaxKey = ::KokkosKernels::ArithTraits<KeyType>::is_integer ? ::KokkosKernels::ArithTraits<KeyType>::min() : -::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   const KeyType initMaxKey = ::Kokkos::ArithTraits<KeyType>::is_integer ? ::Kokkos::ArithTraits<KeyType>::min() : -::Kokkos::ArithTraits<KeyType>::max();
@@ -719,7 +719,7 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
                               keys.size());
   host_input_vals_type vals_k(vals.size() == 0 ? NULL : vals.getRawPtr(),
                               vals.size());
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const KeyType initMinKey = ::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   const KeyType initMinKey = ::Kokkos::ArithTraits<KeyType>::max();
@@ -736,7 +736,7 @@ FixedHashTable<KeyType, ValueType, DeviceType>::
   // standard floating-point types are signed and have a sign bit, so
   // lowest() is just -max().  For integer types, we can use min()
   // instead.
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const KeyType initMaxKey = ::KokkosKernels::ArithTraits<KeyType>::is_integer ? ::KokkosKernels::ArithTraits<KeyType>::min() : -::KokkosKernels::ArithTraits<KeyType>::max();
 #else
   const KeyType initMaxKey = ::Kokkos::ArithTraits<KeyType>::is_integer ? ::Kokkos::ArithTraits<KeyType>::min() : -::Kokkos::ArithTraits<KeyType>::max();
@@ -762,7 +762,7 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
 
   const offset_type numKeys = static_cast<offset_type>(keys.extent(0));
   {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
     const offset_type theMaxVal = ::KokkosKernels::ArithTraits<offset_type>::max();
 #else
     const offset_type theMaxVal = ::Kokkos::ArithTraits<offset_type>::max();
@@ -778,7 +778,7 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
                                                                                                         "use this constructor.");
   }
   TEUCHOS_TEST_FOR_EXCEPTION(static_cast<unsigned long long>(numKeys) >
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                  static_cast<unsigned long long>(::KokkosKernels::ArithTraits<ValueType>::max()),
 #else
                                  static_cast<unsigned long long>(::Kokkos::ArithTraits<ValueType>::max()),
@@ -788,7 +788,7 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
                              "keys "
                                  << numKeys << " is greater than the maximum representable "
                                                "ValueType value "
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                  << ::KokkosKernels::ArithTraits<ValueType>::max() << ".  "
 #else
                                  << ::Kokkos::ArithTraits<ValueType>::max() << ".  "
@@ -1072,7 +1072,7 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
          KeyType initMaxKey) {
   Tpetra::Details::ProfilingRegion pr("Tpetra::Details::FixedHashTable::init(4-arg)");
   const offset_type numKeys = static_cast<offset_type>(keys.extent(0));
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   TEUCHOS_TEST_FOR_EXCEPTION(static_cast<unsigned long long>(numKeys) > static_cast<unsigned long long>(::KokkosKernels::ArithTraits<ValueType>::max()),
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(static_cast<unsigned long long>(numKeys) > static_cast<unsigned long long>(::Kokkos::ArithTraits<ValueType>::max()),
@@ -1082,7 +1082,7 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
                              "keys "
                                  << numKeys << " is greater than the maximum representable "
                                                "ValueType value "
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
                                  << ::KokkosKernels::ArithTraits<ValueType>::max() << ".");
 #else
                                  << ::Kokkos::ArithTraits<ValueType>::max() << ".");

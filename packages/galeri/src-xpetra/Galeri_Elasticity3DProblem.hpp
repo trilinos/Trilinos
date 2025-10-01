@@ -101,12 +101,12 @@ class Elasticity3DProblem : public Problem<Map, Matrix, MultiVector> {
   std::vector<Scalar> stretch;
   std::string mode_;
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using impl_scalar_type = typename KokkosKernels::ArithTraits<SC>::val_type;
 #else
   using impl_scalar_type = typename Kokkos::ArithTraits<SC>::val_type;
 #endif
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using KAT = KokkosKernels::ArithTraits<impl_scalar_type>;
 #else
   using KAT              = Kokkos::ArithTraits<impl_scalar_type>;

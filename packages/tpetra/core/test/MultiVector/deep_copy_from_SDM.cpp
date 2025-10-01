@@ -11,7 +11,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
@@ -131,7 +131,7 @@ bool serialDenseMatrix_multiVector_same(const Tpetra::MultiVector<ST, LO, GO, NT
 // Avoid CUDA warnings if ValueType is host only.
 template <class ValueType>
 ValueType toValueHost(const size_t k) {
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   using mag_type = typename KokkosKernels::ArithTraits<ValueType>::mag_type;
 #else
   using mag_type = typename Kokkos::ArithTraits<ValueType>::mag_type;
@@ -166,7 +166,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, deep_copy_from_SDM, ST, LO, GO, N
       << std::endl;
   Teuchos::OSTab tab1(out);
 
-#if KOKKOS_VERSION > 40799
+#if KOKKOS_VERSION >= 40799
   const IST ONE = KokkosKernels::ArithTraits<IST>::one();
 #else
   const IST ONE  = Kokkos::ArithTraits<IST>::one();
