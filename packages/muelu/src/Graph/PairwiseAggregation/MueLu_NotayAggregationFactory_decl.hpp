@@ -45,7 +45,11 @@ class NotayAggregationFactory : public SingleLevelFactoryBase {
   using device_type       = typename local_matrix_type::device_type;
   using execution_space   = typename device_type::execution_space;
   using magnitude_type    = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+#if KOKKOS_VERSION > 40799
+  using impl_scalar_type  = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using impl_scalar_type  = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
   using row_sum_type      = typename Kokkos::View<impl_scalar_type*, Kokkos::LayoutLeft, device_type>;
   //@}
 

@@ -166,7 +166,11 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using row_map_type      = typename local_matrix_type::row_map_type::non_const_type;
   using entries_type      = typename local_matrix_type::index_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
+#if KOKKOS_VERSION > 40799
+  using impl_scalar_type  = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using impl_scalar_type  = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
 
   // Set debug outputs based on environment variable
   RCP<Teuchos::FancyOStream> out;

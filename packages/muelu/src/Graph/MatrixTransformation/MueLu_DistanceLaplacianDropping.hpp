@@ -17,7 +17,11 @@
 #include "KokkosBatched_Trsv_Serial_Impl.hpp"
 #include "MueLu_DroppingCommon.hpp"
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Teuchos_RCP.hpp"
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MultiVector.hpp"
@@ -36,11 +40,23 @@ class UnweightedDistanceFunctor {
   using local_matrix_type  = typename matrix_type::local_matrix_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
+#if KOKKOS_VERSION > 40799
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+#else
   using ATS                = Kokkos::ArithTraits<scalar_type>;
+#endif
   using impl_scalar_type   = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
   using implATS            = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
   using magnitudeType      = typename implATS::magnitudeType;
+#if KOKKOS_VERSION > 40799
+  using magATS             = KokkosKernels::ArithTraits<magnitudeType>;
+#else
   using magATS             = Kokkos::ArithTraits<magnitudeType>;
+#endif
   using coords_type        = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
   using local_coords_type  = typename coords_type::dual_view_type_const::t_dev;
 
@@ -88,11 +104,23 @@ class WeightedDistanceFunctor {
   using local_matrix_type  = typename matrix_type::local_matrix_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
+#if KOKKOS_VERSION > 40799
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+#else
   using ATS                = Kokkos::ArithTraits<scalar_type>;
+#endif
   using impl_scalar_type   = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
   using implATS            = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
   using magnitudeType      = typename implATS::magnitudeType;
+#if KOKKOS_VERSION > 40799
+  using magATS             = KokkosKernels::ArithTraits<magnitudeType>;
+#else
   using magATS             = Kokkos::ArithTraits<magnitudeType>;
+#endif
   using coords_type        = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
   using local_coords_type  = typename coords_type::dual_view_type_const::t_dev;
 
@@ -146,11 +174,23 @@ class BlockWeightedDistanceFunctor {
   using local_matrix_type  = typename matrix_type::local_matrix_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
+#if KOKKOS_VERSION > 40799
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+#else
   using ATS                = Kokkos::ArithTraits<scalar_type>;
+#endif
   using impl_scalar_type   = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
   using implATS            = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
   using magnitudeType      = typename implATS::magnitudeType;
+#if KOKKOS_VERSION > 40799
+  using magATS             = KokkosKernels::ArithTraits<magnitudeType>;
+#else
   using magATS             = Kokkos::ArithTraits<magnitudeType>;
+#endif
   using coords_type        = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
   using local_coords_type  = typename coords_type::dual_view_type_const::t_dev;
 
@@ -204,11 +244,23 @@ class ScalarMaterialDistanceFunctor {
   using local_matrix_type   = typename matrix_type::local_matrix_type;
   using scalar_type         = typename local_matrix_type::value_type;
   using local_ordinal_type  = LocalOrdinal;
+#if KOKKOS_VERSION > 40799
+  using ATS                 = KokkosKernels::ArithTraits<scalar_type>;
+#else
   using ATS                 = Kokkos::ArithTraits<scalar_type>;
+#endif
   using impl_scalar_type    = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+  using implATS             = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
   using implATS             = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
   using magnitudeType       = typename implATS::magnitudeType;
+#if KOKKOS_VERSION > 40799
+  using magATS              = KokkosKernels::ArithTraits<magnitudeType>;
+#else
   using magATS              = Kokkos::ArithTraits<magnitudeType>;
+#endif
   using coords_type         = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
   using local_coords_type   = typename coords_type::dual_view_type_const::t_dev;
   using material_type       = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -302,11 +354,23 @@ class TensorMaterialDistanceFunctor {
   using local_matrix_type  = typename matrix_type::local_matrix_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
+#if KOKKOS_VERSION > 40799
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+#else
   using ATS                = Kokkos::ArithTraits<scalar_type>;
+#endif
   using impl_scalar_type   = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
   using implATS            = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
   using magnitudeType      = typename implATS::magnitudeType;
+#if KOKKOS_VERSION > 40799
+  using magATS             = KokkosKernels::ArithTraits<magnitudeType>;
+#else
   using magATS             = Kokkos::ArithTraits<magnitudeType>;
+#endif
   using coords_type        = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
   using local_coords_type  = typename coords_type::dual_view_type_const::t_dev;
   using material_type      = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -418,9 +482,17 @@ getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             DistanceFunctorType& distFunctor) {
   using scalar_type        = Scalar;
   using local_ordinal_type = LocalOrdinal;
+#if KOKKOS_VERSION > 40799
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+#else
   using ATS                = Kokkos::ArithTraits<scalar_type>;
+#endif
   using impl_scalar_type   = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
   using implATS            = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
   using magnitudeType      = typename implATS::magnitudeType;
   using execution_space    = typename Node::execution_space;
   using range_type         = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
@@ -470,9 +542,17 @@ getMaxMinusOffDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
                        DistanceFunctorType& distFunctor) {
   using scalar_type        = Scalar;
   using local_ordinal_type = LocalOrdinal;
+#if KOKKOS_VERSION > 40799
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+#else
   using ATS                = Kokkos::ArithTraits<scalar_type>;
+#endif
   using impl_scalar_type   = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
   using implATS            = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
   using magnitudeType      = typename implATS::magnitudeType;
   using execution_space    = typename Node::execution_space;
   using range_type         = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
@@ -537,10 +617,18 @@ class DropFunctor {
 
   using results_view = Kokkos::View<DecisionType*, memory_space>;
 
+#if KOKKOS_VERSION > 40799
+  using ATS                 = KokkosKernels::ArithTraits<scalar_type>;
+#else
   using ATS                 = Kokkos::ArithTraits<scalar_type>;
+#endif
   using magnitudeType       = typename ATS::magnitudeType;
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
+#if KOKKOS_VERSION > 40799
+  using mATS                = KokkosKernels::ArithTraits<magnitudeType>;
+#else
   using mATS                = Kokkos::ArithTraits<magnitudeType>;
+#endif
 
  private:
   local_matrix_type A;
@@ -658,10 +746,18 @@ class VectorDropFunctor {
 
   using results_view = Kokkos::View<DecisionType*, memory_space>;
 
+#if KOKKOS_VERSION > 40799
+  using ATS                 = KokkosKernels::ArithTraits<scalar_type>;
+#else
   using ATS                 = Kokkos::ArithTraits<scalar_type>;
+#endif
   using magnitudeType       = typename ATS::magnitudeType;
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
+#if KOKKOS_VERSION > 40799
+  using mATS                = KokkosKernels::ArithTraits<magnitudeType>;
+#else
   using mATS                = Kokkos::ArithTraits<magnitudeType>;
+#endif
 
  private:
   local_matrix_type A;

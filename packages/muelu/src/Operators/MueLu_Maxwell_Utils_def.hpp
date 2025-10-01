@@ -216,9 +216,17 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Maxwell_Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     thresholdedAbs(const RCP<Matrix>& A,
                    const magnitudeType threshold) {
+#if KOKKOS_VERSION > 40799
+  using ATS         = KokkosKernels::ArithTraits<Scalar>;
+#else
   using ATS         = Kokkos::ArithTraits<Scalar>;
+#endif
   using impl_Scalar = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+  using impl_ATS    = KokkosKernels::ArithTraits<impl_Scalar>;
+#else
   using impl_ATS    = Kokkos::ArithTraits<impl_Scalar>;
+#endif
   using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
   const impl_Scalar impl_SC_ONE  = impl_ATS::one();

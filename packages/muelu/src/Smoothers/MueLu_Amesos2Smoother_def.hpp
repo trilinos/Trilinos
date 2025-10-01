@@ -203,9 +203,17 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
       colMap           = rowMap;
     }
 
+#if KOKKOS_VERSION > 40799
+    using ATS         = KokkosKernels::ArithTraits<SC>;
+#else
     using ATS         = Kokkos::ArithTraits<SC>;
+#endif
     using impl_Scalar = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+    using impl_ATS    = KokkosKernels::ArithTraits<impl_Scalar>;
+#else
     using impl_ATS    = Kokkos::ArithTraits<impl_Scalar>;
+#endif
     using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     typedef typename Matrix::local_matrix_type KCRS;

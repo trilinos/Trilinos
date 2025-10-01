@@ -487,9 +487,17 @@ using materialTestCase = std::tuple<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 materialTestCase<Scalar, LocalOrdinal, GlobalOrdinal, Node> constructVariableMaterialMatrix(RCP<const Teuchos::Comm<int>> &comm) {
 #include <MueLu_UseShortNames.hpp>
+#if KOKKOS_VERSION > 40799
+  using ATS              = KokkosKernels::ArithTraits<Scalar>;
+#else
   using ATS              = Kokkos::ArithTraits<Scalar>;
+#endif
   using impl_scalar_type = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+  using implATS          = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
   using implATS          = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
   using magnitudeType    = typename implATS::magnitudeType;
 
   RCP<const Map> map = MapFactory::Build(Xpetra::UseTpetra, 27 * comm->getSize(), 0, comm);

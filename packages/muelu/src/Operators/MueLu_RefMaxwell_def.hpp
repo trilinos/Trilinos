@@ -1483,9 +1483,17 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<S
     return Nullspace;
 
   } else if (spaceNumber == 2) {
+#if KOKKOS_VERSION > 40799
+    using ATS         = KokkosKernels::ArithTraits<Scalar>;
+#else
     using ATS         = Kokkos::ArithTraits<Scalar>;
+#endif
     using impl_Scalar = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+    using impl_ATS    = KokkosKernels::ArithTraits<impl_Scalar>;
+#else
     using impl_ATS    = Kokkos::ArithTraits<impl_Scalar>;
+#endif
     using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     RCP<Matrix> facesToNodes;
@@ -1561,9 +1569,17 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<S
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildProjection(const int spaceNumber, const RCP<MultiVector> &Nullspace) const {
+#if KOKKOS_VERSION > 40799
+  using ATS         = KokkosKernels::ArithTraits<Scalar>;
+#else
   using ATS         = Kokkos::ArithTraits<Scalar>;
+#endif
   using impl_Scalar = typename ATS::val_type;
+#if KOKKOS_VERSION > 40799
+  using impl_ATS    = KokkosKernels::ArithTraits<impl_Scalar>;
+#else
   using impl_ATS    = Kokkos::ArithTraits<impl_Scalar>;
+#endif
   using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
   typedef typename Matrix::local_matrix_type KCRS;
@@ -1872,7 +1888,11 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                      Teuchos::RCP<Matrix> &Prolongator,
                      Teuchos::RCP<MultiVector> &coarseNullspace,
                      Teuchos::RCP<RealValuedMultiVector> &coarseNodalCoords) const {
+#if KOKKOS_VERSION > 40799
+  using ATS         = KokkosKernels::ArithTraits<Scalar>;
+#else
   using ATS         = Kokkos::ArithTraits<Scalar>;
+#endif
   using impl_Scalar = typename ATS::val_type;
   using range_type  = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 

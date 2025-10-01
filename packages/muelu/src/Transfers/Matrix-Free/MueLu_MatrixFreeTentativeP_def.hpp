@@ -32,7 +32,11 @@ void MatrixFreeTentativeP<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(cons
                                                                             Teuchos::ETransp mode,
                                                                             Scalar alpha,
                                                                             Scalar beta) const {
+#if KOKKOS_VERSION > 40799
+  using impl_scalar_type     = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using impl_scalar_type     = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
   impl_scalar_type implAlpha = alpha;
 
   // Step 1: Y*=beta*Y, setup necessary structures
