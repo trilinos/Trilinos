@@ -53,7 +53,11 @@ inline int omp_get_thread_num () { return 0; }
 #endif
 
 #ifdef HAVE_SHYLU_NODEHTS_KOKKOSKERNELS
+#if KOKKOS_VERSION > 40799
+# include <KokkosKernels_ArithTraits.hpp>
+#else
 # include <Kokkos_ArithTraits.hpp>
+#endif
 #endif
 
 #include "shylu_hts_impl.hpp"
@@ -1177,7 +1181,11 @@ Int partition_ir (const Int n, const Size* const ir, const Int nparts,
 
 template <typename T> inline T& conjugate (T& v) {
 #ifdef HAVE_SHYLU_NODEHTS_KOKKOSKERNELS
+#if KOKKOS_VERSION > 40799
+  v = KokkosKernels::ArithTraits<T>::conj(v);
+#else
   v = Kokkos::ArithTraits<T>::conj(v);
+#endif
 #else
   v = T(v.real(), -v.imag());
 #endif
