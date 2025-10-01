@@ -16,7 +16,11 @@
 #include "Teuchos_Comm.hpp"
 #include "BoxElemFixture.hpp"
 #include "HexElement.hpp"
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 
 namespace Kokkos {
 namespace Example {
@@ -133,10 +137,18 @@ public:
       Kokkos::deep_copy( rv, hrv );
 
       Ordinal num_elem = m_max_min_functor.m_elem_node_ids.extent(0);
+#if KOKKOS_VERSION > 40799
+      Scalar local_coeff[2] = { 0.0,  KokkosKernels::ArithTraits<Scalar>::max() };
+#else
       Scalar local_coeff[2] = { 0.0,  Kokkos::ArithTraits<Scalar>::max() };
+#endif
       parallel_reduce( num_elem, m_max_min_functor, local_coeff );
 
+#if KOKKOS_VERSION > 40799
+      Scalar coeff[2] = { 0.0,  KokkosKernels::ArithTraits<Scalar>::max() };
+#else
       Scalar coeff[2] = { 0.0,  Kokkos::ArithTraits<Scalar>::max() };
+#endif
       Teuchos::reduceAll( *m_comm, Teuchos::REDUCE_MAX, 1, &local_coeff[0], &coeff[0] );
       Teuchos::reduceAll( *m_comm, Teuchos::REDUCE_MIN, 1, &local_coeff[1], &coeff[1] );
 
@@ -272,7 +284,11 @@ public:
       // The diffusion coefficient must be positive, so initializing the
       // result to zero is safe
       dst[0] = 0.0;
+#if KOKKOS_VERSION > 40799
+      dst[1] = KokkosKernels::ArithTraits<Scalar>::max();
+#else
       dst[1] = Kokkos::ArithTraits<Scalar>::max();
+#endif
     }
 
   };
