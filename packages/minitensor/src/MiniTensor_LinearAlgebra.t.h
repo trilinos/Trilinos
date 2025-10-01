@@ -7,7 +7,11 @@
 // *****************************************************************************
 // @HEADER
 
+#if KOKKOS_VERSION > 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #if !defined(MiniTensor_LinearAlgebra_t_h)
 #define MiniTensor_LinearAlgebra_t_h
 
@@ -4216,7 +4220,11 @@ polar_rotation(Tensor<T, N> const & A)
   tol_scale = 0.01;
 
   T const tol_conv =
+#if KOKKOS_VERSION > 40799
+      KokkosKernels::ArithTraits<Index>::sqrt(dimension) * machine_epsilon<T>();
+#else
       Kokkos::ArithTraits<Index>::sqrt(dimension) * machine_epsilon<T>();
+#endif
 
   Tensor<T, N>
   X = A;
