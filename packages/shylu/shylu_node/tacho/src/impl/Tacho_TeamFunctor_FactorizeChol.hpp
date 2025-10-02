@@ -73,11 +73,11 @@ public:
   inline void setIndefiniteFactorization(const bool ldl) { _ldl = ldl; }
 
   ///
-  /// Main functions
+  /// Main Non-pivot LDL functions
   ///
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void factorize_var0(MemberType &member, const supernode_type &s,
-                                             const value_type_matrix &ABR, const value_type_matrix &W) const {
+  KOKKOS_INLINE_FUNCTION void factorize_ldl_var0(MemberType &member, const supernode_type &s,
+                                                 const value_type_matrix &ABR, const value_type_matrix &W) const {
     using CholAlgoType = typename CholAlgorithm_Team::type; // Internal (on device), External (on host with CUDA/HIP enabled, TODO: Serial?), Serial (on host without CUDA/HIP)
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using HerkAlgoType = typename HerkAlgorithm_Team::type;
@@ -89,58 +89,36 @@ public:
       value_type *aptr = s.u_buf;
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
-      if (_ldl) {
-        err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
-        member.team_barrier();
-      } else {
-        if (_tol > 0.0)
-          err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL);
-        else
-          err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
-
-        member.team_barrier();
-        if (err != 0) {
-          Kokkos::atomic_add(_rval, 1);
-          return;
-        }
-      }
+      err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      member.team_barrier();
 
       if (n_m > 0) {
         const value_type one(1), minus_one(-1), zero(0);
+        // Apply L^{-1} on off-diagonal
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        if (_ldl) {
-          // Apply L^{-1} on off-diagonal
-          Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
-                                                                                    ATR);
-          member.team_barrier();
+        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                                  ATR);
+        member.team_barrier();
 
-          // Save in workspace
-          Copy<Algo::Internal>::invoke(member, W, ATR);
-          member.team_barrier();
+        // Save in workspace
+        Copy<Algo::Internal>::invoke(member, W, ATR);
+        member.team_barrier();
 
-          // Apply D^{-1} on off-diagonal
-          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
-            ::invoke(member, ATL, ATR);
-          member.team_barrier();
+        // Apply D^{-1} on off-diagonal
+        Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+          ::invoke(member, ATL, ATR);
+        member.team_barrier();
 
-          // ABR = -ATR*W
-          GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
-                                                                                                  W, zero, ABR);
-        } else {
-          // chol
-          Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
-                                                                                    ATR);
-
-          member.team_barrier();
-          Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
-        }
+        // ABR = -ATR*W
+        GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
+                                                                                                W, zero, ABR);
       }
     }
   }
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void factorize_var1(MemberType &member, const supernode_type &s, const value_type_matrix &T,
-                                             const value_type_matrix &ABR, const value_type_matrix &W) const {
+  KOKKOS_INLINE_FUNCTION void factorize_ldl_var1(MemberType &member, const supernode_type &s, const value_type_matrix &T,
+                                                 const value_type_matrix &ABR, const value_type_matrix &W) const {
     using CholAlgoType = typename CholAlgorithm_Team::type;
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using HerkAlgoType = typename HerkAlgorithm_Team::type;
@@ -155,77 +133,45 @@ public:
       aptr += m * m;
 
       // Factor diagonal block
-      if (_ldl) {
-        err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
-        member.team_barrier();
-      } else {
-        if (_tol > 0.0)
-          err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL);
-        else
-          err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
-
-        member.team_barrier();
-        if (err != 0) {
-          Kokkos::atomic_add(_rval, 1);
-          return;
-        }
-      }
+      err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      member.team_barrier();
 
       if (n_m > 0) {
+        // * Update off-diagonal block
+        // Apply L^{-T} on off-diagonal (TODO: should we gemm after inversion?)
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        if (_ldl) {
-          // * Update off-diagonal block
-          // Apply L^{-T} on off-diagonal (TODO: should we gemm after inversion?)
-          Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
-                                                                                    ATR);
-          member.team_barrier();
+        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                                  ATR);
+        member.team_barrier();
 
-          // compute Inverse of diagobal block (NOTE: T and ABR point to the same address = need to compute inverse before gemm)
-          Copy<Algo::Internal>::invoke(member, T, ATL);
-          member.team_barrier();
-          SetIdentity<Algo::Internal>::invoke(member, ATL, one);
-          member.team_barrier();
-          Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL);
-          member.team_barrier();
+        // compute Inverse of diagobal block (NOTE: T and ABR point to the same address = need to compute inverse before gemm)
+        Copy<Algo::Internal>::invoke(member, T, ATL);
+        member.team_barrier();
+        SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+        member.team_barrier();
+        Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL);
+        member.team_barrier();
 
-          // TODO: copy diagonal back
-          //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
-            ATL(i,i) = T(i,i);
-          });
-          member.team_barrier();
+        // TODO: copy diagonal back
+        //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
+          ATL(i,i) = T(i,i);
+        });
+        member.team_barrier();
 
-          // Save ATR in workspace
-          Copy<Algo::Internal>::invoke(member, W, ATR);
-          member.team_barrier();
+        // Save ATR in workspace
+        Copy<Algo::Internal>::invoke(member, W, ATR);
+        member.team_barrier();
 
-          // Apply D^{-1} on off-diagonal
-          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
-            ::invoke(member, ATL, ATR);
-          member.team_barrier();
+        // Apply D^{-1} on off-diagonal
+        Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+          ::invoke(member, ATL, ATR);
+        member.team_barrier();
 
-          // * Update remaining block
-          // ABR = -ATR*W
-          GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
-                                                                                                  W, zero, ABR);
-        } else {
-          // * Update off-diagonal block
-          // Apply L^{-T} on off-diagonal (TODO: should we gemm after inversion?)
-          Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
-                                                                                    ATR);
-
-          // compute Inverse of diagobal block (NOTE: T and ABR point to the same address = need to compute inverse before gemm)
-          Copy<Algo::Internal>::invoke(member, T, ATL);
-          member.team_barrier();
-          SetIdentity<Algo::Internal>::invoke(member, ATL, one);
-          member.team_barrier();
-          Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
-          member.team_barrier();
-
-          // * Update remaining block
-          // ABR = -ATR'*ATR
-          Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
-        }
+        // * Update remaining block
+        // ABR = -ATR*W
+        GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, GemmAlgoType>::invoke(member, minus_one, ATR,
+                                                                                                W, zero, ABR);
       } else {
         // compute Inverse of diagobal block
         Copy<Algo::Internal>::invoke(member, T, ATL);
@@ -234,24 +180,20 @@ public:
         SetIdentity<Algo::Internal>::invoke(member, ATL, one);
         member.team_barrier();
 
-        if (_ldl) {
-          Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL);
-          member.team_barrier();
-          // TODO: copy diagonal back
-          //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
-            ATL(i,i) = T(i,i);
-          });
-        } else {
-          Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
-        }
+        Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, T, ATL);
+        member.team_barrier();
+        // TODO: copy diagonal back
+        //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
+          ATL(i,i) = T(i,i);
+        });
       }
     }
   }
 
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void factorize_var2(MemberType &member, const supernode_type &s, const value_type_matrix &T,
-                                             const value_type_matrix &ABR, const value_type_matrix &W) const {
+  KOKKOS_INLINE_FUNCTION void factorize_ldl_var2(MemberType &member, const supernode_type &s, const value_type_matrix &T,
+                                                 const value_type_matrix &ABR, const value_type_matrix &W) const {
     using CholAlgoType = typename CholAlgorithm_Team::type;
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using HerkAlgoType = typename HerkAlgorithm_Team::type;
@@ -264,50 +206,30 @@ public:
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
       // Factor diagonal block
-      if (_ldl) {
-        err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
-        member.team_barrier();
-      } else {
-        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
-        member.team_barrier();
-        if (err != 0) {
-          Kokkos::atomic_add(_rval, 1);
-          return;
-        }
-      }
+      err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      member.team_barrier();
 
       if (n_m > 0) {
+        // * Update off-diagonal block
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
-        if (_ldl) {
-          // * Update off-diagonal block
-          Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
-                                                                                    ATR);
-          member.team_barrier();
+        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
+                                                                                  ATR);
+        member.team_barrier();
 
-          // Save ATR in workspace
-          Copy<Algo::Internal>::invoke(member, W, ATR);
-          member.team_barrier();
+        // Save ATR in workspace
+        Copy<Algo::Internal>::invoke(member, W, ATR);
+        member.team_barrier();
 
-          // Apply D^{-1} on off-diagonal
-          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
-            ::invoke(member, ATL, ATR);
-          member.team_barrier();
+        // Apply D^{-1} on off-diagonal
+        Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+          ::invoke(member, ATL, ATR);
+        member.team_barrier();
 
-          // * Update remaining block
-          // ABR = -ATR*W
-          GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, HerkAlgoType>::invoke(member, minus_one, ATR,
-                                                                                                  W, zero, ABR);
-          member.team_barrier();
-        } else {
-          // * Update off-diagonal block
-          Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
-                                                                                    ATR);
-          member.team_barrier();
-
-          // * Update remaining
-          Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
-          member.team_barrier();
-        }
+        // * Update remaining block
+        // ABR = -ATR*W
+        GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, HerkAlgoType>::invoke(member, minus_one, ATR,
+                                                                                                W, zero, ABR);
+        member.team_barrier();
       }
       // * Invert the whole block row
       Copy<Algo::Internal>::invoke(member, T, ATL);
@@ -318,22 +240,169 @@ public:
 
       // Apply -L^{-1} to the whole block row
       UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
-      if (_ldl) {
-        Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), minus_one, T,
-                                                                                AT);
-        // TODO: copy diagonal back
-        //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+      Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), minus_one, T,
+                                                                              AT);
+      // TODO: copy diagonal back
+      //for (int i=0; i<m; i++) ATL(i,i) = T(i,i);
+      member.team_barrier();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
+        ATL(i,i) = T(i,i);
+      });
+    }
+  }
+
+
+  ///
+  /// Main Cholesky functions
+  ///
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void factorize_chol_var0(MemberType &member, const supernode_type &s,
+                                                  const value_type_matrix &ABR) const {
+    using CholAlgoType = typename CholAlgorithm_Team::type; // Internal (on device), External (on host with CUDA/HIP enabled, TODO: Serial?), Serial (on host without CUDA/HIP)
+    using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
+    using HerkAlgoType = typename HerkAlgorithm_Team::type;
+    using GemmAlgoType = typename GemmAlgorithm_Team::type;
+
+    int err = 0;
+    const ordinal_type m = s.m, n = s.n, n_m = n - m;
+    if (m > 0) {
+      value_type *aptr = s.u_buf;
+      UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+      aptr += m * m;
+      if (_tol > 0.0)
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL);
+      else
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+
+      member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
+
+      if (n_m > 0) {
+        const value_type one(1), minus_one(-1), zero(0);
+        UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
+        // chol
+        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
+                                                                                  ATR);
+
         member.team_barrier();
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const ordinal_type &i) {
-          ATL(i,i) = T(i,i);
-        });
-      } else {
-        Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), minus_one, T,
-                                                                                AT);
+        Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
       }
     }
   }
 
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void factorize_chol_var1(MemberType &member, const supernode_type &s, const value_type_matrix &T,
+                                                  const value_type_matrix &ABR) const {
+    using CholAlgoType = typename CholAlgorithm_Team::type;
+    using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
+    using HerkAlgoType = typename HerkAlgorithm_Team::type;
+    using GemmAlgoType = typename GemmAlgorithm_Team::type;
+
+    int err = 0;
+    const value_type one(1), minus_one(-1), zero(0);
+    const ordinal_type m = s.m, n = s.n, n_m = n - m;
+    if (m > 0) {
+      value_type *aptr = s.u_buf;
+      UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+      aptr += m * m;
+
+      // Factor diagonal block
+      if (_tol > 0.0)
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, _tol, ATL);
+      else
+        err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+
+      member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
+
+      if (n_m > 0) {
+        UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
+        // * Update off-diagonal block
+        // Apply L^{-T} on off-diagonal (TODO: should we gemm after inversion?)
+        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
+                                                                                  ATR);
+
+        // compute Inverse of diagobal block (NOTE: T and ABR point to the same address = need to compute inverse before gemm)
+        Copy<Algo::Internal>::invoke(member, T, ATL);
+        member.team_barrier();
+        SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+        member.team_barrier();
+        Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
+        member.team_barrier();
+
+        // * Update remaining block
+        // ABR = -ATR'*ATR
+        Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
+      } else {
+        // compute Inverse of diagobal block
+        Copy<Algo::Internal>::invoke(member, T, ATL);
+        member.team_barrier();
+
+        SetIdentity<Algo::Internal>::invoke(member, ATL, one);
+        member.team_barrier();
+
+        Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, T, ATL);
+      }
+    }
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void factorize_chol_var2(MemberType &member, const supernode_type &s, const value_type_matrix &T,
+                                                  const value_type_matrix &ABR) const {
+    using CholAlgoType = typename CholAlgorithm_Team::type;
+    using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
+    using HerkAlgoType = typename HerkAlgorithm_Team::type;
+
+    int err = 0;
+    const value_type one(1), minus_one(-1), zero(0);
+    const ordinal_type m = s.m, n = s.n, n_m = n - m;
+    if (m > 0) {
+      value_type *aptr = s.u_buf;
+      UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+      aptr += m * m;
+      // Factor diagonal block
+      err = Chol<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      member.team_barrier();
+      if (err != 0) {
+        Kokkos::atomic_add(_rval, 1);
+        return;
+      }
+
+      if (n_m > 0) {
+        UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
+
+        // * Update off-diagonal block
+        Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), one, ATL,
+                                                                                  ATR);
+        member.team_barrier();
+
+        // * Update remaining
+        Herk<Uplo::Upper, Trans::ConjTranspose, HerkAlgoType>::invoke(member, minus_one, ATR, zero, ABR);
+        member.team_barrier();
+      }
+      // * Invert the whole block row
+      Copy<Algo::Internal>::invoke(member, T, ATL);
+      member.team_barrier();
+      // Set diagonal block to -I
+      SetIdentity<Algo::Internal>::invoke(member, ATL, minus_one);
+      member.team_barrier();
+
+      // Apply -L^{-1} to the whole block row
+      UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
+      Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, TrsmAlgoType>::invoke(member, Diag::NonUnit(), minus_one, T,
+                                                                              AT);
+    }
+  }
+
+  ///
+  /// Update functions
+  ///
   template <typename MemberType>
   KOKKOS_INLINE_FUNCTION void update(MemberType &member, const supernode_type &cur,
                                      const value_type_matrix &ABR) const {
@@ -486,18 +555,33 @@ public:
       const auto &s = _info.supernodes(sid);
       const ordinal_type m = s.m, n = s.n, n_m = n - m;
       const auto bufptr = _buf.data() + _buf_ptr(lid);
-      UnmanagedViewType<value_type_matrix> W(bufptr + (n_m*n_m), (_ldl ? m : 0), (_ldl ? n_m : 0));
-      if (factorize_tag_type::variant == 0) {
-        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
-        factorize_var0(member, s, ABR, W);
-      } else if (factorize_tag_type::variant == 1) {
-        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
-        UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
-        factorize_var1(member, s, T, ABR, W);
-      } else if (factorize_tag_type::variant == 2 || factorize_tag_type::variant == 3) {
-        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
-        UnmanagedViewType<value_type_matrix> T(bufptr + ABR.span() + W.span(), m, m);
-        factorize_var2(member, s, T, ABR, W);
+      if (_ldl) {
+        UnmanagedViewType<value_type_matrix> W(bufptr + (n_m*n_m), m, n_m);
+        if (factorize_tag_type::variant == 0) {
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          factorize_ldl_var0(member, s, ABR, W);
+        } else if (factorize_tag_type::variant == 1) {
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
+          factorize_ldl_var1(member, s, T, ABR, W);
+        } else if (factorize_tag_type::variant == 2 || factorize_tag_type::variant == 3) {
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          UnmanagedViewType<value_type_matrix> T(bufptr + ABR.span() + W.span(), m, m);
+          factorize_ldl_var2(member, s, T, ABR, W);
+       }
+      } else {
+        if (factorize_tag_type::variant == 0) {
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          factorize_chol_var0(member, s, ABR);
+        } else if (factorize_tag_type::variant == 1) {
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          UnmanagedViewType<value_type_matrix> T(bufptr, m, m);
+          factorize_chol_var1(member, s, T, ABR);
+        } else if (factorize_tag_type::variant == 2 || factorize_tag_type::variant == 3) {
+          UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
+          UnmanagedViewType<value_type_matrix> T(bufptr + ABR.span(), m, m);
+          factorize_chol_var2(member, s, T, ABR);
+       }
       }
     } else if (mode == -1) {
       Kokkos::printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");

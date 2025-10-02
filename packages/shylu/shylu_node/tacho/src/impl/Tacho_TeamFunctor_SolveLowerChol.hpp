@@ -75,7 +75,7 @@ public:
   /// Algorithm Variant 0: trsv - gemv
   ///
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void solve_var0(MemberType &member, const supernode_type &s, value_type *bptr) const {
+  KOKKOS_INLINE_FUNCTION void solve_chol_var0(MemberType &member, const supernode_type &s, value_type *bptr) const {
     using GemvAlgoType = typename GemvAlgorithm_Team::type;
     using TrsvAlgoType = typename TrsvAlgorithm_Team::type;
 
@@ -90,11 +90,36 @@ public:
 
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
-        if (_ldl) {
-          Trsv<Uplo::Upper, Trans::ConjTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
-        } else {
-          Trsv<Uplo::Upper, Trans::ConjTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
+        Trsv<Uplo::Upper, Trans::ConjTranspose, TrsvAlgoType>::invoke(member, Diag::NonUnit(), ATL, tT);
+
+        if (n_m > 0) {
+          // update remaining
+          member.team_barrier();
+          UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n;
+          UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
+          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, tT, zero, bB);
         }
+      }
+    }
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void solve_ldl_var0(MemberType &member, const supernode_type &s, value_type *bptr) const {
+    using GemvAlgoType = typename GemvAlgorithm_Team::type;
+    using TrsvAlgoType = typename TrsvAlgorithm_Team::type;
+
+    const value_type minus_one(-1), zero(0);
+    {
+      const ordinal_type m = s.m, n = s.n, n_m = n - m;
+      if (m > 0) {
+        value_type *aptr = s.u_buf;
+        // solve with current block
+        UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+        aptr += m * m;
+
+        const ordinal_type offm = s.row_begin;
+        auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
+        Trsv<Uplo::Upper, Trans::ConjTranspose, TrsvAlgoType>::invoke(member, Diag::Unit(), ATL, tT);
 
         if (n_m > 0) {
           // update remaining
@@ -104,12 +129,10 @@ public:
           Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, tT, zero, bB);
         }
 
-        if (_ldl) {
-          // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
-          member.team_barrier();
-          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
-                                 ::invoke(member, ATL, tT);
-        }
+        // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
+        member.team_barrier();
+        Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+                               ::invoke(member, ATL, tT);
       }
     }
   }
@@ -147,7 +170,7 @@ public:
   /// Algorithm Variant 1: gemv - gemv
   ///
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void solve_var1(MemberType &member, const supernode_type &s, value_type *bptr) const {
+  KOKKOS_INLINE_FUNCTION void solve_chol_var1(MemberType &member, const supernode_type &s, value_type *bptr) const {
     using GemvAlgoType = typename GemvAlgorithm::type;
 
     const value_type minus_one(-1), one(1), zero(0);
@@ -165,12 +188,40 @@ public:
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
         // solve with diag L
-        if (_ldl) {
-          // ATL is square
-          Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, ATL, tT, zero, bT);
-        } else {
-          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
+        Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, ATL, tT, zero, bT);
+
+        if (n_m > 0) {
+          // update offdiag
+          UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
+          UnmanagedViewType<value_type_matrix> bB(bptr, n_m, _nrhs);
+
+          member.team_barrier();
+          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bT, zero, bB);
         }
+      }
+    }
+  }
+
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void solve_ldl_var1(MemberType &member, const supernode_type &s, value_type *bptr) const {
+    using GemvAlgoType = typename GemvAlgorithm::type;
+
+    const value_type minus_one(-1), one(1), zero(0);
+    {
+      const ordinal_type m = s.m, n = s.n, n_m = n - m;
+      if (m > 0) {
+        value_type *aptr = s.u_buf;
+
+        UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+        aptr += m * m;
+        UnmanagedViewType<value_type_matrix> bT(bptr, m, _nrhs);
+        bptr += m * _nrhs;
+
+        const ordinal_type offm = s.row_begin;
+        auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
+
+        // solve with diag L (ATL is square)
+        Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, ATL, tT, zero, bT);
 
         if (n_m > 0) {
           // update offdiag
@@ -181,12 +232,10 @@ public:
           Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, minus_one, ATR, bT, zero, bB);
         }
 
-        if (_ldl) {
-          // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
-          member.team_barrier();
-          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
-                                 ::invoke(member, ATL, bT);
-        }
+        // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D)
+        member.team_barrier();
+        Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+                               ::invoke(member, ATL, bT);
       }
     }
   }
@@ -241,7 +290,7 @@ public:
   /// Algorithm Variant 2: gemv
   ///
   template <typename MemberType>
-  KOKKOS_INLINE_FUNCTION void solve_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
+  KOKKOS_INLINE_FUNCTION void solve_chol_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
     using GemvAlgoType = typename GemvAlgorithm::type;
 
     const value_type one(1), zero(0);
@@ -256,18 +305,35 @@ public:
         const ordinal_type offm = s.row_begin;
         auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
 
-        if (_ldl) {
-          // AT is not square
-          Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, AT, tT, zero, b);
+        Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, AT, tT, zero, b);
+      }
+    }
+  }
 
-          // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D, also n>=m, so diag is stored first in aptr)
-          UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
-          auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
-          Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
-                                 ::invoke(member, ATL, bT);
-        } else {
-          Gemv<Trans::ConjTranspose, GemvAlgoType>::invoke(member, one, AT, tT, zero, b);
-        }
+  template <typename MemberType>
+  KOKKOS_INLINE_FUNCTION void solve_ldl_var2(MemberType &member, const supernode_type &s, value_type *bptr) const {
+    using GemvAlgoType = typename GemvAlgorithm::type;
+
+    const value_type one(1), zero(0);
+    {
+      const ordinal_type m = s.m, n = s.n;
+      if (m > 0 && n > 0) {
+        value_type *aptr = s.u_buf;
+
+        UnmanagedViewType<value_type_matrix> AT(aptr, m, n);
+        UnmanagedViewType<value_type_matrix> b(bptr, n, _nrhs);
+
+        const ordinal_type offm = s.row_begin;
+        auto tT = Kokkos::subview(_t, range_type(offm, offm + m), Kokkos::ALL());
+
+        // AT is not square
+        Trmv<Uplo::Upper, Trans::ConjTranspose, GemvAlgoType>::invoke(member, Diag::Unit(), one, AT, tT, zero, b);
+
+        // Apply D^{-1} to current block of vectors, tT (note: solving with L, and then D, also n>=m, so diag is stored first in aptr)
+        UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+        auto bT = Kokkos::subview(b, range_type(0, m), Kokkos::ALL());
+        Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> /// row scaling
+                               ::invoke(member, ATL, bT);
       }
     }
   }
@@ -330,14 +396,25 @@ public:
       typedef SolveTag<Var> solve_tag_type;
       const supernode_type &s = _supernodes(sid);
       value_type *bptr = _buf.data() + _buf_ptr(member.league_rank());
-      if (solve_tag_type::variant == 0)
-        solve_var0(member, s, bptr);
-      else if (solve_tag_type::variant == 1)
-        solve_var1(member, s, bptr);
-      else if (solve_tag_type::variant == 2 || solve_tag_type::variant == 3)
-        solve_var2(member, s, bptr);
-      else
-        Kokkos::printf("Error: TeamFunctorSolveLowerChol::SolveTag, algorithm variant is not supported\n");
+      if (_ldl) {
+        if (solve_tag_type::variant == 0)
+          solve_ldl_var0(member, s, bptr);
+        else if (solve_tag_type::variant == 1)
+          solve_ldl_var1(member, s, bptr);
+        else if (solve_tag_type::variant == 2 || solve_tag_type::variant == 3)
+          solve_ldl_var2(member, s, bptr);
+        else
+          Kokkos::printf("Error: TeamFunctorSolveLowerChol::SolveTag, algorithm variant is not supported\n");
+      } else {
+        if (solve_tag_type::variant == 0)
+          solve_chol_var0(member, s, bptr);
+        else if (solve_tag_type::variant == 1)
+          solve_chol_var1(member, s, bptr);
+        else if (solve_tag_type::variant == 2 || solve_tag_type::variant == 3)
+          solve_chol_var2(member, s, bptr);
+        else
+          Kokkos::printf("Error: TeamFunctorSolveLowerChol::SolveTag, algorithm variant is not supported\n");
+      }
     }
     if (mode == -1) {
       Kokkos::printf("Error: TeamFunctorSolveLowerChol::SolveTag, computing mode is not determined\n");

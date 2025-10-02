@@ -38,12 +38,14 @@
 #include "Tacho_Scale2x2_BlockInverseDiagonals_OnDevice.hpp"
 
 #include "Tacho_Chol_OnDevice.hpp"
+#include "Tacho_NonPivLDL_OnDevice.hpp"
+#include "Tacho_LDL_OnDevice.hpp"
+#include "Tacho_LU_OnDevice.hpp"
+
 #include "Tacho_GemmTriangular_OnDevice.hpp"
 #include "Tacho_Gemm_OnDevice.hpp"
 #include "Tacho_Gemv_OnDevice.hpp"
 #include "Tacho_Herk_OnDevice.hpp"
-#include "Tacho_LDL_OnDevice.hpp"
-#include "Tacho_LU_OnDevice.hpp"
 #include "Tacho_Trsm_OnDevice.hpp"
 #include "Tacho_Trsv_OnDevice.hpp"
 
