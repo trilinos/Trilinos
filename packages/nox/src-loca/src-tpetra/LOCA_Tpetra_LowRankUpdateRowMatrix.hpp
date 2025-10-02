@@ -13,7 +13,11 @@
 #include "Tpetra_RowMatrix.hpp" // base class
 #include "Tpetra_Operator.hpp" // base class
 #include "NOX_TpetraTypedefs.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 
 namespace LOCA {
   class GlobalData;
@@ -51,7 +55,11 @@ namespace LOCA {
       using local_ordinal_type = NOX::LocalOrdinal;
       using global_ordinal_type = NOX::GlobalOrdinal;
       using node_type = NOX::NodeType;
+#if KOKKOS_VERSION >= 40799
+      using mag_type = typename KokkosKernels::ArithTraits<NOX::Scalar>::mag_type;
+#else
       using mag_type = typename Kokkos::ArithTraits<NOX::Scalar>::mag_type;
+#endif
 
       //! Constructor
       /*!

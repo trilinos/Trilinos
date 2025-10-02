@@ -29,10 +29,18 @@ namespace Tpetra {
 template <class SC, class LO, class GO, class NT>
 void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
                                   const Kokkos::View<
+#if KOKKOS_VERSION >= 40799
+                                      const typename KokkosKernels::ArithTraits<SC>::mag_type*,
+#else
                                       const typename Kokkos::ArithTraits<SC>::mag_type*,
+#endif
                                       typename NT::device_type>& rowScalingFactors,
                                   const Kokkos::View<
+#if KOKKOS_VERSION >= 40799
+                                      const typename KokkosKernels::ArithTraits<SC>::mag_type*,
+#else
                                       const typename Kokkos::ArithTraits<SC>::mag_type*,
+#endif
                                       typename NT::device_type>& colScalingFactors,
                                   const bool leftScale,
                                   const bool rightScale,
@@ -86,10 +94,18 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
 template <class SC, class LO, class GO, class NT>
 void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
                                   const Tpetra::Vector<
+#if KOKKOS_VERSION >= 40799
+                                      typename KokkosKernels::ArithTraits<SC>::mag_type,
+#else
                                       typename Kokkos::ArithTraits<SC>::mag_type,
+#endif
                                       LO, GO, NT>& rowScalingFactors,
                                   const Tpetra::Vector<
+#if KOKKOS_VERSION >= 40799
+                                      typename KokkosKernels::ArithTraits<SC>::mag_type,
+#else
                                       typename Kokkos::ArithTraits<SC>::mag_type,
+#endif
                                       LO, GO, NT>& colScalingFactors,
                                   const bool leftScale,
                                   const bool rightScale,
@@ -97,9 +113,13 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
                                   const EScaling scaling) {
   using device_type      = typename NT::device_type;
   using dev_memory_space = typename device_type::memory_space;
-  using mag_type         = typename Kokkos::ArithTraits<SC>::mag_type;
-  const char prefix[]    = "leftAndOrRightScaleCrsMatrix: ";
-  const bool debug       = ::Tpetra::Details::Behavior::debug();
+#if KOKKOS_VERSION >= 40799
+  using mag_type = typename KokkosKernels::ArithTraits<SC>::mag_type;
+#else
+  using mag_type = typename Kokkos::ArithTraits<SC>::mag_type;
+#endif
+  const char prefix[] = "leftAndOrRightScaleCrsMatrix: ";
+  const bool debug    = ::Tpetra::Details::Behavior::debug();
 
   Kokkos::View<const mag_type*, device_type> row_lcl;
   Kokkos::View<const mag_type*, device_type> col_lcl;
@@ -143,6 +163,33 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
 // Must be expanded from within the Tpetra namespace!
 //
 
+#if KOKKOS_VERSION >= 40799
+#define TPETRA_LEFTANDORRIGHTSCALECRSMATRIX_INSTANT(SC, LO, GO, NT)                                  \
+  template void                                                                                      \
+  leftAndOrRightScaleCrsMatrix(                                                                      \
+      Tpetra::CrsMatrix<SC, LO, GO, NT>& A,                                                          \
+      const Kokkos::View<                                                                            \
+          const KokkosKernels::ArithTraits<SC>::mag_type*,                                           \
+          NT::device_type>& rowScalingFactors,                                                       \
+      const Kokkos::View<                                                                            \
+          const KokkosKernels::ArithTraits<SC>::mag_type*,                                           \
+          NT::device_type>& colScalingFactors,                                                       \
+      const bool leftScale,                                                                          \
+      const bool rightScale,                                                                         \
+      const bool assumeSymmetric,                                                                    \
+      const EScaling scaling);                                                                       \
+                                                                                                     \
+  template void                                                                                      \
+  leftAndOrRightScaleCrsMatrix(                                                                      \
+      Tpetra::CrsMatrix<SC, LO, GO, NT>& A,                                                          \
+      const Tpetra::Vector<KokkosKernels::ArithTraits<SC>::mag_type, LO, GO, NT>& rowScalingFactors, \
+      const Tpetra::Vector<KokkosKernels::ArithTraits<SC>::mag_type, LO, GO, NT>& colScalingFactors, \
+      const bool leftScale,                                                                          \
+      const bool rightScale,                                                                         \
+      const bool assumeSymmetric,                                                                    \
+      const EScaling scaling);
+
+#else
 #define TPETRA_LEFTANDORRIGHTSCALECRSMATRIX_INSTANT(SC, LO, GO, NT)                           \
   template void                                                                               \
   leftAndOrRightScaleCrsMatrix(                                                               \
@@ -167,5 +214,7 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
       const bool rightScale,                                                                  \
       const bool assumeSymmetric,                                                             \
       const EScaling scaling);
+
+#endif
 
 #endif  // TPETRA_LEFTANDORRIGHTSCALECRSMATRIX_DEF_HPP

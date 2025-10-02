@@ -12,7 +12,11 @@
 
 #include "MueLu_DroppingCommon.hpp"
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Xpetra_Matrix.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -55,9 +59,17 @@ class DropFunctor {
 
   using results_view = Kokkos::View<DecisionType*, memory_space>;
 
-  using ATS                 = Kokkos::ArithTraits<scalar_type>;
-  using magnitudeType       = typename ATS::magnitudeType;
-  using mATS                = Kokkos::ArithTraits<magnitudeType>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using ATS  = Kokkos::ArithTraits<scalar_type>;
+#endif
+  using magnitudeType = typename ATS::magnitudeType;
+#if KOKKOS_VERSION >= 40799
+  using mATS = KokkosKernels::ArithTraits<magnitudeType>;
+#else
+  using mATS = Kokkos::ArithTraits<magnitudeType>;
+#endif
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
 
  private:

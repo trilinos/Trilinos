@@ -34,8 +34,12 @@ class GeometricInterpolationPFactory_kokkos : public PFactory {
   using realvaluedmultivector_type = Xpetra::MultiVector<real_type, LO, GO, Node>;
   using device_type                = typename Node::device_type;
   using execution_space            = typename Node::execution_space;
-  using impl_scalar_type           = typename Kokkos::ArithTraits<real_type>::val_type;
-  using coord_view_type            = typename Kokkos::View<impl_scalar_type**,
+#if KOKKOS_VERSION >= 40799
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<real_type>::val_type;
+#else
+  using impl_scalar_type = typename Kokkos::ArithTraits<real_type>::val_type;
+#endif
+  using coord_view_type = typename Kokkos::View<impl_scalar_type**,
                                                 Kokkos::LayoutLeft,
                                                 device_type>;
 

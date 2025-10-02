@@ -19,7 +19,11 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include <type_traits>
 
 namespace Tpetra {
@@ -66,7 +70,11 @@ class RightScaleLocalCrsMatrix {
 
   KOKKOS_INLINE_FUNCTION void
   operator()(const typename policy_type::member_type& team) const {
+#if KOKKOS_VERSION >= 40799
+    using KAM = KokkosKernels::ArithTraits<mag_type>;
+#else
     using KAM = Kokkos::ArithTraits<mag_type>;
+#endif
 
     const LO lclRow = team.league_rank();
     auto curRow     = A_lcl_.row(lclRow);

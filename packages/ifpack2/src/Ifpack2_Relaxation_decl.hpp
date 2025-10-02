@@ -566,7 +566,11 @@ class Relaxation : virtual public Ifpack2::Preconditioner<
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<scalar_type>::val_type impl_scalar_type;
+#else
   typedef typename Kokkos::ArithTraits<scalar_type>::val_type impl_scalar_type;
+#endif
 
   /// \brief Tpetra::CrsMatrix specialization used by this class.
   ///

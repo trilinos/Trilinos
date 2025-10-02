@@ -21,7 +21,11 @@
 
 #include "TpetraCore_config.h"
 #include "Tpetra_Details_PackTriples.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Teuchos_MatrixMarket_generic.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include <iostream>
@@ -133,7 +137,11 @@ bool readComplexData(std::istream& istr,
 /// \tparam isComplex Whether SC is a complex-valued type.
 template <class SC,
           class GO,
+#if KOKKOS_VERSION >= 40799
+          const bool isComplex = ::KokkosKernels::ArithTraits<SC>::is_complex>
+#else
           const bool isComplex = ::Kokkos::ArithTraits<SC>::is_complex>
+#endif
 struct ReadLine {
   /// \brief Take a line from the Matrix Market file or input stream,
   ///   and process the sparse matrix entry in that line.
@@ -201,7 +209,11 @@ struct ReadLine<SC, GO, true> {
            std::ostream* errStrm = NULL,
            const bool debug      = false) {
     using ::Teuchos::MatrixMarket::checkCommentLine;
+#if KOKKOS_VERSION >= 40799
+    typedef typename ::KokkosKernels::ArithTraits<SC>::mag_type real_type;
+#else
     typedef typename ::Kokkos::ArithTraits<SC>::mag_type real_type;
+#endif
     using std::endl;
 
     GO rowInd, colInd;
@@ -530,7 +542,11 @@ int readAndSendOneBatchOfTriples(std::istream& inputStream,
   using ::Tpetra::Details::packTriples;
   using ::Tpetra::Details::packTriplesCount;
 
+#if KOKKOS_VERSION >= 40799
+  using ::KokkosKernels::ArithTraits;
+#else
   using ::Kokkos::ArithTraits;
+#endif
   // constexpr int sizeTag = 42 + (ArithTraits<SC>::is_complex ? 100 : 0);
   // constexpr int msgTag = 43 + (ArithTraits<SC>::is_complex ? 100 : 0);
   constexpr int sizeTag = 42;
@@ -764,7 +780,11 @@ int recvOneBatchOfTriples(std::vector<GO>& rowInds,
                           const bool tolerant   = false,
                           std::ostream* errStrm = NULL,
                           const bool debug      = false) {
+#if KOKKOS_VERSION >= 40799
+  using ::KokkosKernels::ArithTraits;
+#else
   using ::Kokkos::ArithTraits;
+#endif
   using ::Tpetra::Details::unpackTriples;
   using ::Tpetra::Details::unpackTriplesCount;
 
@@ -886,7 +906,11 @@ int readAndDealOutTriples(std::istream& inputStream,     // only valid on Proc 0
                           const bool tolerant   = false,
                           std::ostream* errStrm = NULL,
                           const bool debug      = false) {
+#if KOKKOS_VERSION >= 40799
+  using KokkosKernels::ArithTraits;
+#else
   using Kokkos::ArithTraits;
+#endif
   using std::endl;
   using std::size_t;
 
