@@ -59,6 +59,7 @@ namespace Amesos2 {
     {
       cusolverStatus_t status = cusolverSpDcsrcholFactor(
         handle, size, nnz, desc, values, rowPtr, colIdx, chol_info, buffer);
+      cudaDeviceSynchronize();
       return status;
     }
 
@@ -72,6 +73,7 @@ namespace Amesos2 {
     {
       cusolverStatus_t status = cusolverSpDcsrcholSolve(
         handle, size, b, x, chol_info, buffer);
+      cudaDeviceSynchronize();
       return status;
     }
   };
@@ -110,6 +112,7 @@ namespace Amesos2 {
     {
       cusolverStatus_t status = cusolverSpScsrcholFactor(
         handle, size, nnz, desc, values, rowPtr, colIdx, chol_info, buffer);
+      cudaDeviceSynchronize();
       return status;
     }
 
@@ -123,6 +126,7 @@ namespace Amesos2 {
     {
       cusolverStatus_t status = cusolverSpScsrcholSolve(
         handle, size, b, x, chol_info, buffer);
+      cudaDeviceSynchronize();
       return status;
     }
   };
@@ -168,6 +172,7 @@ namespace Amesos2 {
         reinterpret_cast<const scalar_t *>(values);
       cusolverStatus_t status = cusolverSpZcsrcholFactor(
         handle, size, nnz, desc, cu_values, rowPtr, colIdx, chol_info, buffer);
+      cudaDeviceSynchronize();
       return status;
     }
 
@@ -184,6 +189,7 @@ namespace Amesos2 {
       scalar_t * cu_x = reinterpret_cast<scalar_t *>(x);
       cusolverStatus_t status = cusolverSpZcsrcholSolve(
         handle, size, cu_b, cu_x, chol_info, buffer);
+      cudaDeviceSynchronize();
       return status;
     }
   };
@@ -227,6 +233,7 @@ namespace Amesos2 {
       const scalar_t * cu_values = reinterpret_cast<const scalar_t *>(values);
       cusolverStatus_t status = cusolverSpCcsrcholFactor(
         handle, size, nnz, desc, cu_values, rowPtr, colIdx, chol_info, buffer);
+      cudaDeviceSynchronize();
       return status;
     }
 
@@ -243,6 +250,7 @@ namespace Amesos2 {
       scalar_t * cu_x = reinterpret_cast<scalar_t *>(x);
       cusolverStatus_t status = cusolverSpCcsrcholSolve(
         handle, size, cu_b, cu_x, chol_info, buffer);
+      cudaDeviceSynchronize();
       return status;
     }
   };
