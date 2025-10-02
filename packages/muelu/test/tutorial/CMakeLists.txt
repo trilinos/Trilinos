@@ -24,7 +24,7 @@ SET(XML_FILES_ALL
     s1_easy_3levels_unsmoothed.xml
     s1_easy_exercise.xml
     s1_easy_jacobi.xml
-    s1_easy_jacobi2.xml
+    s1_easy_gaussseidel.xml
     s2a.xml
     s2_adv_a.xml
     s2_adv_b.xml
