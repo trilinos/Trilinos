@@ -77,6 +77,8 @@ class LinearSolver : public Trilinos::Details::LinearSolver<Tpetra::MultiVector<
   typedef Ifpack2::Preconditioner<SC, LO, GO, NT> prec_type;
   typedef Tpetra::Operator<SC, LO, GO, NT> OP;
   typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
+  typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
+  typedef Tpetra::MultiVector<magnitude_type, LO, GO, NT> coord_type;
 
   /// \brief Constructor
   ///
@@ -100,8 +102,16 @@ class LinearSolver : public Trilinos::Details::LinearSolver<Tpetra::MultiVector<
   ///   AX=B to solve.
   void setMatrix(const Teuchos::RCP<const OP>& A);
 
+  /// \brief Set the matrix rows' coordinates.
+  ///
+  /// \param C [in] Pointer to the coordinates multivector.
+  void setCoord(const Teuchos::RCP<const coord_type>& C);
+
   //! Get the solver's matrix.
   Teuchos::RCP<const OP> getMatrix() const;
+
+  //! Get the coordinates associated with the solver's matrix rows.
+  Teuchos::RCP<const coord_type> getCoord() const;
 
   //! Solve the linear system AX=B for X.
   void solve(MV& X, const MV& B);
@@ -131,6 +141,9 @@ class LinearSolver : public Trilinos::Details::LinearSolver<Tpetra::MultiVector<
   std::string solverName_;
   //! Matrix A in the linear system to solve.
   Teuchos::RCP<const OP> A_;
+  //! Coordinates C associated with rows of A
+  //! (only used for RCB distribution into streams in RILUK)
+  Teuchos::RCP<const coord_type> C_;
 };
 
 }  // namespace Details
