@@ -49,11 +49,9 @@ MockModelEval_C_Tpetra::MockModelEval_C_Tpetra(const Teuchos::RCP<const Teuchos:
     Teuchos::RCP<Tpetra_Vector> p_init = rcp(new Tpetra_Vector(p_map));
     Teuchos::RCP<Tpetra_Vector> p_lo = rcp(new Tpetra_Vector(p_map));
     Teuchos::RCP<Tpetra_Vector> p_up = rcp(new Tpetra_Vector(p_map));
-    for (int i=0; i<numParameters; i++) {
-      p_init->getDataNonConst()[i]= 1.0;
-      p_lo->getDataNonConst()[i]= 0.1;
-      p_up->getDataNonConst()[i]= 10.0;
-    }
+    p_init->putScalar(1.0);
+    p_lo->putScalar(0.1);
+    p_up->putScalar(10.0);
 
     p_vec = rcp(new Tpetra_Vector(p_map));
     p_vec->assign(*p_init);
@@ -404,24 +402,26 @@ void MockModelEval_C_Tpetra::evalModelImpl(
   const double damping = 0;
   if (Teuchos::nonnull(f_out)) {
     f_out->putScalar(0.0);
-    auto p = p_vec->getData();
-    auto f_out_data = f_out->getDataNonConst();
+    auto p = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto f_out_view = f_out->getLocalViewHost(Tpetra::Access::OverwriteAll);
     for (int i=0; i<myVecLength; i++)
-      f_out_data[i] = -p[0];
+      f_out_view(i,0) = -p(0,0);
 
     if (Teuchos::nonnull(x_dotdot_in)) {
       // f(x, x_dot) = x_dotdot - f(x)
-      auto f_out_data = f_out->getDataNonConst();
+      auto f_out_view = f_out->getLocalViewHost(Tpetra::Access::ReadWrite);
+      auto x_dotdot_in_view = x_dotdot_in->getLocalViewHost(Tpetra::Access::ReadOnly);
       for (int i=0; i<myVecLength; i++) {
-        f_out_data[i] = x_dotdot_in->getData()[i] - f_out->getData()[i];
+        f_out_view(i,0) = x_dotdot_in_view(i,0) - f_out_view(i,0);
       }
     }
 
     if (Teuchos::nonnull(f_out) && Teuchos::nonnull(x_dot_in)) {
       // f(x, x_dot) = f(x) -  damping * x_dot
-      auto f_out_data = f_out->getDataNonConst();
+      auto f_out_view = f_out->getLocalViewHost(Tpetra::Access::ReadWrite);
+      auto x_dot_in_view = x_dot_in->getLocalViewHost(Tpetra::Access::ReadOnly);
       for (int i=0; i<myVecLength; i++) {
-        f_out_data[i] += damping * x_dot_in->getData()[i];
+        f_out_view(i,0) += damping * x_dot_in_view(i,0);
       }
     }
   }
@@ -469,7 +469,7 @@ void MockModelEval_C_Tpetra::evalModelImpl(
 
   if (Teuchos::nonnull(g_out)) {
     double mean = x_in->meanValue();
-    g_out->getDataNonConst()[0] = mean;
+    g_out->putScalar(mean);
   }
 
   if (dgdx_out != Teuchos::null) {
@@ -477,37 +477,35 @@ void MockModelEval_C_Tpetra::evalModelImpl(
   }
 
   if (Teuchos::nonnull(f_hess_xx_v_out)) {
-    f_hess_xx_v_out->getVectorNonConst(0)->putScalar(0);
+    f_hess_xx_v_out->putScalar(0);
   }
 
   if (Teuchos::nonnull(f_hess_xp_v_out)) {
-    f_hess_xp_v_out->getVectorNonConst(0)->putScalar(0);
+    f_hess_xp_v_out->putScalar(0);
   }
 
   if (Teuchos::nonnull(f_hess_px_v_out)) {
-    f_hess_px_v_out->getVectorNonConst(0)->putScalar(0);
+    f_hess_px_v_out->putScalar(0);
   }
 
   if (Teuchos::nonnull(f_hess_pp_v_out)) {
-    f_hess_pp_v_out->getVectorNonConst(0)->putScalar(0);
+    f_hess_pp_v_out->putScalar(0);
   }
 
   if (Teuchos::nonnull(g_hess_xx_v_out)) {
-    g_hess_xx_v_out->getVectorNonConst(0)->putScalar(0);
+    g_hess_xx_v_out->putScalar(0);
   }
 
   if (Teuchos::nonnull(g_hess_xp_v_out)) {
-    g_hess_xp_v_out->getVectorNonConst(0)->putScalar(0);
+    g_hess_xp_v_out->putScalar(0);
   }
 
   if (Teuchos::nonnull(g_hess_px_v_out)) {
-    g_hess_px_v_out->getVectorNonConst(0)->putScalar(0);
+    g_hess_px_v_out->putScalar(0);
   }
 
   if (Teuchos::nonnull(g_hess_pp_v_out)) {
-    TEUCHOS_ASSERT(Teuchos::nonnull(p_direction));
-    const auto direction_p = p_direction->getVector(0)->getData();
-    g_hess_pp_v_out->getVectorNonConst(0)->putScalar(0);
+    g_hess_pp_v_out->putScalar(0);
   }
 
   // Modify for time dependent (implicit time integration or eigensolves)

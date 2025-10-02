@@ -397,24 +397,23 @@ void MockModelEval_A_Tpetra::evalModelImpl(
     double x0;
     for (int i=0; i<myVecLength; i++) {
       if( x_in->getMap()->getGlobalElement(i) == 0) {
-        x0 = x[i];
+        x0 = x(i);
         TEUCHOS_ASSERT(comm->getRank() == 0);
       }
     }
     comm->broadcast(0, sizeof(double), (char*)(&x0));
     
     if (f_out != Teuchos::null) {
-      f_out->putScalar(0.0);
-      auto f_out_data = f_out->getDataNonConst();
+      auto f_out_view = f_out->getLocalViewHost(Tpetra::Access::OverwriteAll);
       for (int i=0; i<myVecLength; i++) {
         int gid = x_in->getMap()->getGlobalElement(i);
         
         if (gid==0) { // f_0 = (x_0)^3 - p_0
-          f_out_data[i] = x[i] * x[i] * x[i] -  p[0];
+          f_out_view(i,0) = x(i) * x(i) * x(i) -  p(0);
         }
         else{ // f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_j) - 0.5*(x_0 - p_0),  (for i != 0);   j=1 if num_p>1, j=0 otherwise
           int j = (num_p > 1) ? 1 : 0;
-          f_out_data[i] = x[i] - (gid + p[j]) - 0.5*(x0 - p[0]) + x[i] * (x0 - std::cbrt(p[0]));
+          f_out_view(i,0) = x(i) - (gid + p(j)) - 0.5*(x0 - p(0)) + x(i) * (x0 - std::cbrt(p(0)));
         }
       }
     }
@@ -433,10 +432,10 @@ void MockModelEval_A_Tpetra::evalModelImpl(
           W_out_crs->replaceLocalValues(i, 1, &diag, &i);
         } 
         else {
-          diag = 1.0 + x0 - std::cbrt(p[0]);
+          diag = 1.0 + x0 - std::cbrt(p(0));
           W_out_crs->replaceLocalValues(i, 1, &diag, &i);
           decltype(gid) col = 0;
-          extra_diag = -0.5 + x[i];
+          extra_diag = -0.5 + x(i);
           W_out_crs->replaceGlobalValues(gid, 1, &extra_diag, &col);
         }
       }
@@ -479,18 +478,18 @@ void MockModelEval_A_Tpetra::evalModelImpl(
     
     if (Teuchos::nonnull(dfdp_out)) {
       dfdp_out->putScalar(0.0);
-      auto dfdp_out_data_0 = dfdp_out->getVectorNonConst(0)->getDataNonConst();
+      auto dfdp_out_view = dfdp_out->getLocalViewHost(Tpetra::Access::ReadWrite);
       for (int i=0; i<myVecLength; i++) {
         const int gid = x_in->getMap()->getGlobalElement(i);
         if  (gid==0) {
-          dfdp_out_data_0[i] = -1.0;
+          dfdp_out_view(i,0) = -1.0;
         }
         else {
           if(num_p > 1) {
-            dfdp_out_data_0[i] = 0.5 - x[i] / (3.0 * std::cbrt(p[0]*p[0]));
-            dfdp_out->getVectorNonConst(1)->getDataNonConst()[i] = -1.0;
+            dfdp_out_view(i,0) = 0.5 - x(i) / (3.0 * std::cbrt(p(0)*p(0)));
+            dfdp_out_view(i,1) = -1.0;
           } else {
-            dfdp_out_data_0[i] = -0.5 - x[i] / (3.0 * std::cbrt(p[0]*p[0]));
+            dfdp_out_view(i,0) = -0.5 - x(i) / (3.0 * std::cbrt(p(0)*p(0)));
           }
         }
       }
@@ -505,22 +504,21 @@ void MockModelEval_A_Tpetra::evalModelImpl(
   {
     auto p_host = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
     auto p = Kokkos::subview(p_host,Kokkos::ALL(),0);
-    term2 = p[0] - 1.0;
+    term2 = p(0) - 1.0;
   }
 
   if (Teuchos::nonnull(g_out)) {
-    g_out->getDataNonConst()[0] = 0.5*term1*term1 + 0.5*term2*term2;
+    g_out->putScalar(0.5*term1*term1 + 0.5*term2*term2);
   }
 
   if (dgdx_out != Teuchos::null) {
     dgdx_out->putScalar(term1);
-    auto dgdx = dgdx_out->getVector(0)->getData();
   }
   if (dgdp_out != Teuchos::null) {
-    dgdp_out->putScalar(0.0);
-    dgdp_out->getVectorNonConst(0)->getDataNonConst()[0] = -term1 + term2;
+    auto dgdp_out_view = dgdp_out->getLocalViewHost(Tpetra::Access::OverwriteAll);
+    dgdp_out_view(0,0) = -term1 + term2;
     if(num_p  > 1)
-      dgdp_out->getVectorNonConst(0)->getDataNonConst()[1] = -term1;
+      dgdp_out_view(1,0) = -term1;
   }
 
   if (Teuchos::nonnull(f_hess_xx_v_out)) {
@@ -532,7 +530,8 @@ void MockModelEval_A_Tpetra::evalModelImpl(
     double x_direction_0;
     for (int i=0; i<myVecLength; i++) {
       if( x_in->getMap()->getGlobalElement(i) == 0) {
-        x_direction_0 = x_direction->getVector(0)->getData()[i];
+        auto x_direction_0_view = x_direction->getLocalViewHost(Tpetra::Access::ReadOnly);
+        x_direction_0 = x_direction_0_view(i,0);
         TEUCHOS_ASSERT(comm->getRank() == 0);
       }
     }
@@ -542,14 +541,15 @@ void MockModelEval_A_Tpetra::evalModelImpl(
 
     auto x_host = x_in->getLocalViewHost(Tpetra::Access::ReadOnly);
     auto x = Kokkos::subview(x_host,Kokkos::ALL(),0);
-    f_hess_xx_v_out->getVectorNonConst(0)->putScalar(0);
+    auto f_hess_xx_v_out_view = f_hess_xx_v_out->getLocalViewHost(Tpetra::Access::OverwriteAll);
+    auto lag_multiplier_f_in_view = lag_multiplier_f_in->getLocalViewHost(Tpetra::Access::ReadOnly);
     for (int i=0; i<myVecLength; i++) {
       if (x_in->getMap()->getGlobalElement(i)==0){
-        f_hess_xx_v_out->getVectorNonConst(0)->getDataNonConst()[i] =
-            (6.0* x[i] - 1.0) *lag_multiplier_f_in->getData()[i] * x_direction->getVector(0)->getData()[i]  + temp;
+        f_hess_xx_v_out_view(i,0) =
+            (6.0* x(i) - 1.0) * lag_multiplier_f_in_view(i,0) * x_direction->getLocalViewHost(Tpetra::Access::ReadOnly)(i,0)  + temp;
       }
       else {
-        f_hess_xx_v_out->getVectorNonConst(0)->getDataNonConst()[i] = x_direction_0 * lag_multiplier_f_in->getData()[i];
+        f_hess_xx_v_out_view(i,0) = x_direction_0 * lag_multiplier_f_in_view(i,0);
       }
     }
   }
@@ -561,11 +561,13 @@ void MockModelEval_A_Tpetra::evalModelImpl(
     auto p_host = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
     auto p = Kokkos::subview(p_host,Kokkos::ALL(),0);
     TEUCHOS_ASSERT(Teuchos::nonnull(p_direction));
-    f_hess_xp_v_out->getVectorNonConst(0)->putScalar(0);
+    auto p_direction_view = p_direction->getLocalViewHost(Tpetra::Access::ReadOnly);
+    f_hess_xp_v_out->putScalar(0);
+    auto f_hess_xp_v_out_view = f_hess_xp_v_out->getLocalViewHost(Tpetra::Access::ReadWrite);
+    auto lag_multiplier_f_in_view = lag_multiplier_f_in->getLocalViewHost(Tpetra::Access::ReadOnly);
     for (int i=0; i<myVecLength; i++) {
       if (x_in->getMap()->getGlobalElement(i)!=0){
-        f_hess_xp_v_out->getVectorNonConst(0)->getDataNonConst()[i] =
-            - p_direction->getVector(0)->getData()[0]*lag_multiplier_f_in->getData()[i]/(3.0* std::cbrt(p[0]*p[0]));
+        f_hess_xp_v_out_view(i,0) = - p_direction_view(0,0)*lag_multiplier_f_in_view(i,0)/(3.0* std::cbrt(p(0)*p(0)));
       }
     }
   }
@@ -575,70 +577,82 @@ void MockModelEval_A_Tpetra::evalModelImpl(
                   std::endl << "Error!  MockModelEval_A_Tpetra::evalModelImpl " <<
                   " adjoint Hessian not implemented." << std::endl);
     TEUCHOS_ASSERT(Teuchos::nonnull(x_direction));
-    f_hess_px_v_out->getVectorNonConst(0)->putScalar(0);
+    f_hess_px_v_out->putScalar(0);
     Tpetra_Vector temp_vec(lag_multiplier_f_in->getMap());
     auto p_host = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
     auto p = Kokkos::subview(p_host,Kokkos::ALL(),0);
-    for (int i=0; i<myVecLength; i++) {
-      if (x_in->getMap()->getGlobalElement(i)==0)
-        temp_vec.getDataNonConst()[i] = 0;
-      else
-        temp_vec.getDataNonConst()[i] = lag_multiplier_f_in->getData()[i];
+    {
+      auto temp_vec_view = temp_vec.getLocalViewHost(Tpetra::Access::OverwriteAll);
+      for (int i=0; i<myVecLength; i++) {
+        if (x_in->getMap()->getGlobalElement(i)==0)
+          temp_vec_view(i,0) = 0;
+        else
+          temp_vec_view(i,0) = lag_multiplier_f_in->getLocalViewHost(Tpetra::Access::ReadOnly)(i,0);
+      }
     }
     double temp= temp_vec.dot(*x_direction->getVector(0));
-    f_hess_px_v_out->getVectorNonConst(0)->getDataNonConst()[0] = -temp/(3.0* std::cbrt(p[0]*p[0]));
+    auto f_hess_px_v_out_view = f_hess_px_v_out->getLocalViewHost(Tpetra::Access::ReadWrite);
+    f_hess_px_v_out_view(0,0) = -temp/(3.0* std::cbrt(p(0)*p(0)));
   }
 
   if (Teuchos::nonnull(f_hess_pp_v_out)) {
     TEUCHOS_ASSERT(Teuchos::nonnull(p_direction));
-    f_hess_pp_v_out->getVectorNonConst(0)->putScalar(0);
+    auto p_direction_view = p_direction->getLocalViewHost(Tpetra::Access::ReadOnly);
+    f_hess_pp_v_out->putScalar(0);
     Tpetra_Vector temp_vec(lag_multiplier_f_in->getMap());
     auto p_host = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
     auto p = Kokkos::subview(p_host,Kokkos::ALL(),0);
-    for (int i=0; i<myVecLength; i++) {
-      if (x_in->getMap()->getGlobalElement(i)==0)
-        temp_vec.getDataNonConst()[i] = 0;
-      else
-        temp_vec.getDataNonConst()[i] = lag_multiplier_f_in->getData()[i];
+    {
+      auto temp_vec_view = temp_vec.getLocalViewHost(Tpetra::Access::OverwriteAll);
+      for (int i=0; i<myVecLength; i++) {
+        if (x_in->getMap()->getGlobalElement(i)==0)
+          temp_vec_view(i,0) = 0;
+        else
+          temp_vec_view(i,0) = lag_multiplier_f_in->getLocalViewHost(Tpetra::Access::ReadOnly)(i,0);
+      }
     }
     double temp = temp_vec.dot(*x_in);
-    f_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[0] = 2.0*p_direction->getVector(0)->getData()[0]*temp/(9.0* std::cbrt(std::pow(p[0],5)));
+    auto f_hess_pp_v_out_view = f_hess_pp_v_out->getLocalViewHost(Tpetra::Access::ReadWrite);
+    f_hess_pp_v_out_view(0,0) = 2.0*p_direction_view(0,0)*temp/(9.0* std::cbrt(std::pow(p(0),5)));
   }
 
-  double mult = Teuchos::nonnull(lag_multiplier_g_in) ? lag_multiplier_g_in->getData()[0] : 1.0;
+  double mult = Teuchos::nonnull(lag_multiplier_g_in) ? 
+                lag_multiplier_g_in->getLocalViewHost(Tpetra::Access::ReadOnly)(0,0) : 1.0;
   if (Teuchos::nonnull(g_hess_xx_v_out)) {
     TEUCHOS_ASSERT(Teuchos::nonnull(x_direction));
     term1 = x_direction->getVector(0)->meanValue() * vecLength;
-    for (int j=0; j<myVecLength; j++)
-      g_hess_xx_v_out->getVectorNonConst(0)->getDataNonConst()[j] = mult*term1;
+    g_hess_xx_v_out->putScalar(mult*term1);
   }
 
   if (Teuchos::nonnull(g_hess_xp_v_out)) {
     TEUCHOS_ASSERT(Teuchos::nonnull(p_direction));
-    const auto direction_p = p_direction->getVector(0)->getData();
+    auto p_direction_view = p_direction->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto g_hess_xp_v_out_view = g_hess_xp_v_out->getLocalViewHost(Tpetra::Access::OverwriteAll);
     for (int j=0; j<myVecLength; j++){
-      g_hess_xp_v_out->getVectorNonConst(0)->getDataNonConst()[j] = - mult*direction_p[0];
+      g_hess_xp_v_out_view(j,0) = - mult*p_direction_view(0,0);
       if(num_p > 1)
-        g_hess_xp_v_out->getVectorNonConst(0)->getDataNonConst()[j] -= mult*direction_p[1];
+        g_hess_xp_v_out_view(j,0) -= mult*p_direction_view(1,0);
     }
   }
 
   if (Teuchos::nonnull(g_hess_px_v_out)) {
     TEUCHOS_ASSERT(Teuchos::nonnull(x_direction));
     term1 = x_direction->getVector(0)->meanValue() * vecLength;
-    g_hess_px_v_out->getVectorNonConst(0)->getDataNonConst()[0] = - mult*term1;
+    auto g_hess_px_v_out_view = g_hess_px_v_out->getLocalViewHost(Tpetra::Access::OverwriteAll);
+    g_hess_px_v_out_view(0,0) = - mult*term1;
     if(num_p > 1)
-      g_hess_px_v_out->getVectorNonConst(0)->getDataNonConst()[1] = - mult*term1;
+      g_hess_px_v_out_view(1,0) = - mult*term1;
   }
 
   if (Teuchos::nonnull(g_hess_pp_v_out)) {
     TEUCHOS_ASSERT(Teuchos::nonnull(p_direction));
-    const auto direction_p = p_direction->getVector(0)->getData();
+    auto p_direction_view = p_direction->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto g_hess_pp_v_out_view = g_hess_pp_v_out->getLocalViewHost(Tpetra::Access::OverwriteAll);
     if (num_p ==1) {
-      g_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[0] = mult*2.0*direction_p[0];
+      g_hess_pp_v_out_view(0,0) = mult*2.0*p_direction_view(0,0);
     } else {
-      g_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[0] = mult*(2.0*direction_p[0]+direction_p[1]);
-      g_hess_pp_v_out->getVectorNonConst(0)->getDataNonConst()[1] = mult*(direction_p[0]+direction_p[1]);
+      g_hess_pp_v_out_view(0,0) = mult*(2.0*p_direction_view(0,0)+p_direction_view(1,0));
+      g_hess_pp_v_out_view(1,0) = mult*(p_direction_view(0,0)+p_direction_view(1,0));
     }
   }
 
@@ -654,9 +668,10 @@ void MockModelEval_A_Tpetra::evalModelImpl(
 
     if (f_out != Teuchos::null) {
       // f(x, x_dot) = f(x) - x_dot
-      auto f_out_data = f_out->getDataNonConst();
+      auto f_out_view = f_out->getLocalViewHost(Tpetra::Access::ReadWrite);
+      auto x_dot_in_view = x_dot_in->getLocalViewHost(Tpetra::Access::ReadOnly);
       for (int i=0; i<myVecLength; i++) {
-        f_out_data[i] = -x_dot_in->getData()[i] + f_out->getData()[i];
+        f_out_view(i,0) = -x_dot_in_view(i,0) + f_out_view(i,0);
       }
     }
 

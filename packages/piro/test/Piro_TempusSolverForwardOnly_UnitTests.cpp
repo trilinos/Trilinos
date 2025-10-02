@@ -131,7 +131,7 @@ const RCP<TempusSolverForwardOnly<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Line Search").set("Method", "Backtrack");
+  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Line Search").set("Method", "Polynomial");
   auto integrator = Tempus::createIntegratorBasic<double>(tempusPL, thyraModel, Piro::NONE);
 
   // Add Observer
@@ -172,7 +172,7 @@ const RCP<TempusSolverForwardOnly<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Zero Initial Guess", false);
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Line Search").set("Method", "Backtrack");
+  tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Line Search").set("Method", "Polynomial");
 
   auto integrator = Tempus::createIntegratorBasic<double>(tempusPL, thyraModel);
 
