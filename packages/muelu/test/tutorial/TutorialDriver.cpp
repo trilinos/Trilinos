@@ -86,8 +86,8 @@ int main(int argc, char* argv[]) {
 
       //! [CommunicatorObject begin]
       RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
-      [[maybe_unused]] int MyPID                          = comm->getRank();
-      [[maybe_unused]] int NumProc                        = comm->getSize();
+      [[maybe_unused]] int MyPID         = comm->getRank();
+      [[maybe_unused]] int NumProc       = comm->getSize();
       //! [CommunicatorObject end]
 
       // Instead of checking each time for rank, create a rank 0 stream
