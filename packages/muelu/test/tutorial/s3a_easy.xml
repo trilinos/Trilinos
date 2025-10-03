@@ -1,6 +1,6 @@
 <ParameterList name="MueLu">
 
-  <Parameter        name="use kokkos refactor"                  type="bool"     value="false"/>
+  <Parameter        name="use kokkos refactor"                  type="bool"     value="true"/>
   <Parameter        name="verbosity"                            type="string"   value="high"/>
 
   <Parameter        name="max levels"                           type="int"      value="10"/>

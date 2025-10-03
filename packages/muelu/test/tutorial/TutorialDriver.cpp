@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
       clp.setOption("tol", &tol, "solver convergence tolerance");
 
       double diffusion = 1e-5;
-      clp.setOption("diffusion", &diffusion, "diffusion coefficient, also called epsilon");
+      clp.setOption("diffusion", &diffusion, "diffusion coefficient, also denoted epsilon");
 
       switch (clp.parse(argc, argv)) {
         case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS; break;
