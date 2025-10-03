@@ -7,12 +7,12 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef MOCKMODELEVAL_A_TPETRA_H
-#define MOCKMODELEVAL_A_TPETRA_H
+#ifndef MOCKMODELEVAL_C_TPETRA_H
+#define MOCKMODELEVAL_C_TPETRA_H
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Thyra_ModelEvaluatorDefaultBase.hpp"
+#include "Piro_TransientDecorator.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
@@ -34,17 +34,17 @@ typedef Thyra::TpetraOperatorVectorExtraction<
  *
  * Concrete model evaluator for the solution of the following PDE-Constrained problem:
  *
- * find (p_0,p_1) that minimizes
- * g = 0.5*(Sum(x)-Sum(p)-12)^2 + 0.5*(p0-1)^2
- * subject to:
- * f_0 = (x_0)^3 - p_0 = 0
- * f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_j) - 0.5*(x_0 - p_0),  (for i != 0).  j=1 if paramVecDim==2, j=0 if paramVecDim==1.
+ * solve
+ * u_tt + p = 0
+ * p = 1
+ * 
+ * g=u
  *
- * solution is p = (1,3).
+ * solution is u(t) = 0.5*t*(2-t).
  */
 
-class MockModelEval_A_Tpetra
-    : public Thyra::ModelEvaluatorDefaultBase<double>
+class MockModelEval_C_Tpetra
+    : public Piro::TransientDecorator<double>
 {
   public:
 
@@ -52,11 +52,11 @@ class MockModelEval_A_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, int paramVecDim = 2, bool adjoint=false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null, bool hessianSupport = false);
+  MockModelEval_C_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint = false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null, bool hessianSupport = false);
 
   //@}
 
-  ~MockModelEval_A_Tpetra();
+  ~MockModelEval_C_Tpetra();
 
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
@@ -107,7 +107,7 @@ class MockModelEval_A_Tpetra
   Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief . */
   Teuchos::ArrayView<const std::string> get_g_names(int j) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "not impl'ed");
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "not implemented");
   }
   //@}
 
@@ -144,14 +144,12 @@ class MockModelEval_A_Tpetra
   Teuchos::RCP<Tpetra_Vector> p_vec;
   Teuchos::RCP<Tpetra_Vector> x_vec;
   Teuchos::RCP<Tpetra_Vector> x_dot_vec;
+  Teuchos::RCP<Tpetra_Vector> x_dotdot_vec;
 
    //! Cached nominal values and lower/upper bounds
    Thyra::ModelEvaluatorBase::InArgs<double> nominalValues;
    Thyra::ModelEvaluatorBase::InArgs<double> lowerBounds;
    Thyra::ModelEvaluatorBase::InArgs<double> upperBounds;
-
-   //whether to compute the adjoint model
-   bool adjointModel;
 
    //whether hessian is supported 
    bool hessSupport;
