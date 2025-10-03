@@ -57,8 +57,16 @@ class FastILDLPrec
 
         typedef Kokkos::RangePolicy<ExecSpace> RangePolicy;
 
+#if KOKKOS_VERSION >= 40799
+        using STS = KokkosKernels::ArithTraits<Scalar>;
+#else
         using STS = Kokkos::ArithTraits<Scalar>;
+#endif
+#if KOKKOS_VERSION >= 40799
+        using RTS = KokkosKernels::ArithTraits<Real>;
+#else
         using RTS = Kokkos::ArithTraits<Real>;
+#endif
 
     private:
         double computeTime;
@@ -156,7 +164,11 @@ class FastILDLPrec
             blkSzILDL = blkSzILDL_;
             blkSz = blkSz_;
 
+#if KOKKOS_VERSION >= 40799
+            const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
+#else
             const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+#endif
             onesVector = ScalarArray("onesVector", nRow_);
             Kokkos::deep_copy(onesVector, one);
 
@@ -618,7 +630,11 @@ class FastILDLPrec
         void applyDiagonalScaling()
         {
             int anext = 0;
+#if KOKKOS_VERSION >= 40799
+            const Real one = KokkosKernels::ArithTraits<Real>::one();
+#else
             const Real one = Kokkos::ArithTraits<Real>::one();
+#endif
             //First fill Aj and extract the diagonal scaling factors
             //Use diag array to store scaling factors since
             //it gets set to the correct value by findFactorPattern anyway.
@@ -659,7 +675,11 @@ class FastILDLPrec
 
         void applyManteuffelShift()
         {
+#if KOKKOS_VERSION >= 40799
+            const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
+#else
             const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+#endif
             //Scalar shift = 0.05;
             for (Ordinal i = 0; i < nRows; i++)
             {
@@ -759,7 +779,11 @@ class FastILDLPrec
 
         void compute()
         {
+#if KOKKOS_VERSION >= 40799
+            const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
+#else
             const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+#endif
             if((level > 0) && (guessFlag != 0))
             {
                 initGuessPrec->compute();
@@ -953,8 +977,16 @@ class FastILDLFunctor
         KOKKOS_INLINE_FUNCTION
             void operator()(const Ordinal blk_index) const
             {
+#if KOKKOS_VERSION >= 40799
+                const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
+#else
                 const Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
+#endif
+#if KOKKOS_VERSION >= 40799
+                const Scalar one = KokkosKernels::ArithTraits<Scalar>::one();
+#else
                 const Scalar one = Kokkos::ArithTraits<Scalar>::one();
+#endif
 
                 Ordinal start = blk_index * blk_size;
                 Ordinal end = start + blk_size;

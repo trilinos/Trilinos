@@ -51,11 +51,16 @@ template <class ViewType1,
           const bool takeSquareRootsOfScalingFactors,
           const bool takeAbsoluteValueOfScalingFactors =
               !std::is_same<
+#if KOKKOS_VERSION >= 40799
+                  typename KokkosKernels::ArithTraits<
+#else
                   typename Kokkos::ArithTraits<
+#endif
                       typename ViewType1::non_const_value_type>::mag_type,
                   typename ViewType2::non_const_value_type>::value,
           const int rank = ViewType1::rank>
-class ElementWiseMultiply {};
+class ElementWiseMultiply {
+};
 
 template <class ViewType1,
           class ViewType2,
@@ -80,9 +85,17 @@ class ElementWiseMultiply<ViewType1,
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType i) const {
     using val_type = typename ViewType2::non_const_value_type;
-    using KAT      = Kokkos::ArithTraits<val_type>;
+#if KOKKOS_VERSION >= 40799
+    using KAT = KokkosKernels::ArithTraits<val_type>;
+#else
+    using KAT = Kokkos::ArithTraits<val_type>;
+#endif
     using mag_type = typename KAT::mag_type;
-    using KAM      = Kokkos::ArithTraits<mag_type>;
+#if KOKKOS_VERSION >= 40799
+    using KAM = KokkosKernels::ArithTraits<mag_type>;
+#else
+    using KAM = Kokkos::ArithTraits<mag_type>;
+#endif
 
     if (takeAbsoluteValueOfScalingFactors) {
       const mag_type scalFactAbs  = KAT::abs(scalingFactors_(i));
@@ -123,9 +136,17 @@ class ElementWiseMultiply<ViewType1,
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType i) const {
     using val_type = typename ViewType2::non_const_value_type;
-    using KAT      = Kokkos::ArithTraits<val_type>;
+#if KOKKOS_VERSION >= 40799
+    using KAT = KokkosKernels::ArithTraits<val_type>;
+#else
+    using KAT = Kokkos::ArithTraits<val_type>;
+#endif
     using mag_type = typename KAT::mag_type;
-    using KAM      = Kokkos::ArithTraits<mag_type>;
+#if KOKKOS_VERSION >= 40799
+    using KAM = KokkosKernels::ArithTraits<mag_type>;
+#else
+    using KAM = Kokkos::ArithTraits<mag_type>;
+#endif
 
     for (IndexType j = 0; j < static_cast<IndexType>(X_.extent(1)); ++j) {
       if (takeAbsoluteValueOfScalingFactors) {
@@ -154,7 +175,11 @@ void elementWiseMultiply(const MultiVectorViewType& X,
                          const bool takeSquareRootsOfScalingFactors,
                          const bool takeAbsoluteValueOfScalingFactors =
                              !std::is_same<
+#if KOKKOS_VERSION >= 40799
+                                 typename KokkosKernels::ArithTraits<
+#else
                                  typename Kokkos::ArithTraits<
+#endif
                                      typename MultiVectorViewType::non_const_value_type>::mag_type,
                                  typename ScalingFactorsViewType::non_const_value_type>::value) {
   using execution_space = typename MultiVectorViewType::device_type::execution_space;
@@ -203,7 +228,11 @@ void elementWiseMultiplyMultiVector(MultiVectorType& X,
                                     const bool takeSquareRootsOfScalingFactors,
                                     const bool takeAbsoluteValueOfScalingFactors =
                                         !std::is_same<
+#if KOKKOS_VERSION >= 40799
+                                            typename KokkosKernels::ArithTraits<
+#else
                                             typename Kokkos::ArithTraits<
+#endif
                                                 typename MultiVectorType::scalar_type>::mag_type,
                                             typename ScalingFactorsViewType::non_const_value_type>::value) {
   using device_type      = typename MultiVectorType::device_type;
@@ -232,11 +261,16 @@ template <class ViewType1,
           const bool takeSquareRootsOfScalingFactors,
           const bool takeAbsoluteValueOfScalingFactors =
               !std::is_same<
+#if KOKKOS_VERSION >= 40799
+                  typename KokkosKernels::ArithTraits<
+#else
                   typename Kokkos::ArithTraits<
+#endif
                       typename ViewType1::non_const_value_type>::mag_type,
                   typename ViewType2::non_const_value_type>::value,
           const int rank = ViewType1::rank>
-class ElementWiseDivide {};
+class ElementWiseDivide {
+};
 
 template <class ViewType1,
           class ViewType2,
@@ -261,9 +295,17 @@ class ElementWiseDivide<ViewType1,
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType i) const {
     using val_type = typename ViewType2::non_const_value_type;
-    using KAT      = Kokkos::ArithTraits<val_type>;
+#if KOKKOS_VERSION >= 40799
+    using KAT = KokkosKernels::ArithTraits<val_type>;
+#else
+    using KAT = Kokkos::ArithTraits<val_type>;
+#endif
     using mag_type = typename KAT::mag_type;
-    using KAM      = Kokkos::ArithTraits<mag_type>;
+#if KOKKOS_VERSION >= 40799
+    using KAM = KokkosKernels::ArithTraits<mag_type>;
+#else
+    using KAM = Kokkos::ArithTraits<mag_type>;
+#endif
 
     if (takeAbsoluteValueOfScalingFactors) {
       const mag_type scalFactAbs  = KAT::abs(scalingFactors_(i));
@@ -304,9 +346,17 @@ class ElementWiseDivide<ViewType1,
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType i) const {
     using val_type = typename ViewType2::non_const_value_type;
-    using KAT      = Kokkos::ArithTraits<val_type>;
+#if KOKKOS_VERSION >= 40799
+    using KAT = KokkosKernels::ArithTraits<val_type>;
+#else
+    using KAT = Kokkos::ArithTraits<val_type>;
+#endif
     using mag_type = typename KAT::mag_type;
-    using KAM      = Kokkos::ArithTraits<mag_type>;
+#if KOKKOS_VERSION >= 40799
+    using KAM = KokkosKernels::ArithTraits<mag_type>;
+#else
+    using KAM = Kokkos::ArithTraits<mag_type>;
+#endif
 
     for (IndexType j = 0; j < static_cast<IndexType>(X_.extent(1)); ++j) {
       if (takeAbsoluteValueOfScalingFactors) {
@@ -335,7 +385,11 @@ void elementWiseDivide(const MultiVectorViewType& X,
                        const bool takeSquareRootsOfScalingFactors,
                        const bool takeAbsoluteValueOfScalingFactors =
                            !std::is_same<
+#if KOKKOS_VERSION >= 40799
+                               typename KokkosKernels::ArithTraits<
+#else
                                typename Kokkos::ArithTraits<
+#endif
                                    typename MultiVectorViewType::non_const_value_type>::mag_type,
                                typename ScalingFactorsViewType::non_const_value_type>::value) {
   using execution_space = typename MultiVectorViewType::device_type::execution_space;
@@ -384,7 +438,11 @@ void elementWiseDivideMultiVector(MultiVectorType& X,
                                   const bool takeSquareRootsOfScalingFactors,
                                   const bool takeAbsoluteValueOfScalingFactors =
                                       !std::is_same<
+#if KOKKOS_VERSION >= 40799
+                                          typename KokkosKernels::ArithTraits<
+#else
                                           typename Kokkos::ArithTraits<
+#endif
                                               typename MultiVectorType::scalar_type>::mag_type,
                                           typename ScalingFactorsViewType::non_const_value_type>::value) {
   using device_type      = typename MultiVectorType::device_type;
@@ -621,8 +679,12 @@ class BelosIfpack2Solver {
       equibResult_ = computeRowAndColumnOneNorms(*A_, assumeSymmetric_);
       if (useDiagonalToEquilibrate_) {
         using device_type = typename node_type::device_type;
-        using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
-        using view_type   = Kokkos::View<mag_type*, device_type>;
+#if KOKKOS_VERSION >= 40799
+        using mag_type = typename KokkosKernels::ArithTraits<scalar_type>::mag_type;
+#else
+        using mag_type = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+#endif
+        using view_type = Kokkos::View<mag_type*, device_type>;
 
         view_type rowDiagAbsVals("rowDiagAbsVals",
                                  equibResult_.rowDiagonalEntries.extent(0));
@@ -909,7 +971,11 @@ bool solveAndReport(BelosIfpack2Solver<CrsMatrixType>& solver,
   using mag_type = typename MultiVectorType::mag_type;
   Teuchos::Array<mag_type> norms(R.getNumVectors());
   R.norm2(norms());
+#if KOKKOS_VERSION >= 40799
+  mag_type B_norm2_max = KokkosKernels::ArithTraits<mag_type>::zero();
+#else
   mag_type B_norm2_max = Kokkos::ArithTraits<mag_type>::zero();
+#endif
   for (std::size_t j = 0; j < B.getNumVectors(); ++j) {
     // Any NaN will persist (since the first test will fail);
     // this is what we want
@@ -925,7 +991,11 @@ bool solveAndReport(BelosIfpack2Solver<CrsMatrixType>& solver,
   A_original.apply(X, R, Teuchos::NO_TRANS, -ONE, ONE);  // R := -A*X + B
   R.norm2(norms());
 
+#if KOKKOS_VERSION >= 40799
+  mag_type R_norm2_max = KokkosKernels::ArithTraits<mag_type>::zero();
+#else
   mag_type R_norm2_max = Kokkos::ArithTraits<mag_type>::zero();
+#endif
   for (std::size_t j = 0; j < R.getNumVectors(); ++j) {
     // Any NaN will persist (since the first test will fail);
     // this is what we want
@@ -933,7 +1003,11 @@ bool solveAndReport(BelosIfpack2Solver<CrsMatrixType>& solver,
   }
 
   X.norm2(norms());
+#if KOKKOS_VERSION >= 40799
+  mag_type X_norm2_max = KokkosKernels::ArithTraits<mag_type>::zero();
+#else
   mag_type X_norm2_max = Kokkos::ArithTraits<mag_type>::zero();
+#endif
   for (std::size_t j = 0; j < R.getNumVectors(); ++j) {
     // Any NaN will persist (since the first test will fail);
     // this is what we want
@@ -961,7 +1035,11 @@ bool solveAndReport(BelosIfpack2Solver<CrsMatrixType>& solver,
          << "  ||B-A*X||_2: " << R_norm2_max << endl
          << "  ||B||_2: " << B_norm2_max << endl
          << "  ||X||_2: " << X_norm2_max << endl;
+#if KOKKOS_VERSION >= 40799
+    if (B_norm2_max != KokkosKernels::ArithTraits<mag_type>::zero()) {
+#else
     if (B_norm2_max != Kokkos::ArithTraits<mag_type>::zero()) {
+#endif
       cout << "  ||B-A*X||_2 / ||B||_2: " << (R_norm2_max / B_norm2_max)
            << endl;
     }

@@ -194,20 +194,19 @@ namespace Amesos2
     const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
     const size_t nrhs = X->getGlobalNumVectors();
     const size_t val_store_size = Teuchos::as<size_t>(ld_rhs * nrhs);
+    {
+      #ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
+      #endif
 
-    xvals_.resize(val_store_size);
-    bvals_.resize(val_store_size);
+      xvals_.resize(val_store_size);
+      bvals_.resize(val_store_size);
 
-    #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
-    #endif
-
-    Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-      mumps_type>::do_get(B, bvals_(), Teuchos::as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-        this->rowIndexBase_);
- 
+      Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
+        mumps_type>::do_get(B, bvals_(), Teuchos::as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+          this->rowIndexBase_);
+    }
     int ierr = 0; // returned error code
     if ( this->globalNumRows_ > 0 ) {
       mumps_par.nrhs = nrhs;
@@ -226,15 +225,15 @@ namespace Amesos2
       function_map::mumps_c(&(mumps_par));
       MUMPS_ERROR();
     }
+    {
+      #ifdef HAVE_AMESOS2_TIMERS
+      Teuchos::TimeMonitor redistTimer2(this->timers_.vecRedistTime_);
+      #endif
 
-    #ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::TimeMonitor redistTimer2(this->timers_.vecRedistTime_);
-    #endif
-
-    Util::put_1d_data_helper<
-      MultiVecAdapter<Vector>,mumps_type>::do_put(X, bvals_(), Teuchos::as<size_t>(ld_rhs),
-        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
-
+      Util::put_1d_data_helper<
+        MultiVecAdapter<Vector>,mumps_type>::do_put(X, bvals_(), Teuchos::as<size_t>(ld_rhs),
+          (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
+    }
     // ch: see function loadA_impl()
     MUMPS_MATRIX_LOAD_PREORDERING = false;
     return(ierr);

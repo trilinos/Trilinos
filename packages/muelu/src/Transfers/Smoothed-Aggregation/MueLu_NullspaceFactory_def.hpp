@@ -91,7 +91,11 @@ class NullspaceFunctor {
   LO numPDEs;
   LO nullspaceDim;
   typedef typename NullspaceType::value_type SC;
+#if KOKKOS_VERSION >= 40799
+  typedef KokkosKernels::ArithTraits<SC> ATS;
+#else
   typedef Kokkos::ArithTraits<SC> ATS;
+#endif
 
  public:
   NullspaceFunctor(NullspaceType nullspace_, CoordsType coords_, MeanCoordsType mean_, LO numPDEs_, LO nullspaceDim_)

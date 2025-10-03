@@ -38,7 +38,7 @@ typedef Thyra::TpetraOperatorVectorExtraction<
  * g = 0.5*(Sum(x)-Sum(p)-12)^2 + 0.5*(p0-1)^2
  * subject to:
  * f_0 = (x_0)^3 - p_0 = 0
- * f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_1) - 0.5*(x_0 - p_0),  (for i != 0)
+ * f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_j) - 0.5*(x_0 - p_0),  (for i != 0).  j=1 if paramVecDim==2, j=0 if paramVecDim==1.
  *
  * solution is p = (1,3).
  */
@@ -52,7 +52,7 @@ class MockModelEval_A_Tpetra
   //@{
 
   /** \brief Takes the number of elements in the discretization . */
-  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, bool adjoint=false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null, bool hessianSupport = false);
+  MockModelEval_A_Tpetra(const Teuchos::RCP<const Teuchos::Comm<int> >  appComm, int paramVecDim = 2, bool adjoint=false, const Teuchos::RCP<Teuchos::ParameterList>& problemList = Teuchos::null, bool hessianSupport = false);
 
   //@}
 

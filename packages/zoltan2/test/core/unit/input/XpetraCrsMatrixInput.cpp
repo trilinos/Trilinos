@@ -8,7 +8,7 @@
 // @HEADER
 
 //
-// Basic testing of Zoltan2::XpetraCrsMatrixAdapter 
+// Basic testing of Zoltan2::XpetraCrsMatrixAdapter
 
 /*! \file XpetraCrsMatrixInput.cpp
  *  \brief Test of Zoltan2::XpetraCrsMatrixAdapter class.
@@ -34,20 +34,28 @@ using Teuchos::Comm;
 typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tmatrix_t;
 typedef Xpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> xmatrix_t;
 
+enum class Type {
+  CRS,
+  CCS
+};
+
 template<typename offset_t>
-void printMatrix(RCP<const Comm<int> > &comm, zlno_t nrows,
-    const zgno_t *rowIds, const offset_t *offsets, const zgno_t *colIds)
+void printMatrix(RCP<const Comm<int> > &comm, zlno_t nPrimaryIds,
+    const zgno_t *primaryIds, const offset_t *offsets, const zgno_t *secondaryIds, Type type)
 {
-  int rank = comm->getRank();
-  int nprocs = comm->getSize();
+  const auto rank = comm->getRank();
+  const auto nprocs = comm->getSize();
+  const std::string primaryIdName = type == Type::CRS ? "row" : "col";
+
   comm->barrier();
+
   for (int p=0; p < nprocs; p++){
     if (p == rank){
       std::cout << rank << ":" << std::endl;
-      for (zlno_t i=0; i < nrows; i++){
-        std::cout << " row " << rowIds[i] << ": ";
+      for (zlno_t i=0; i < nPrimaryIds; i++){
+        std::cout << " " << primaryIdName << " " << primaryIds[i] << ": ";
         for (offset_t j=offsets[i]; j < offsets[i+1]; j++){
-          std::cout << colIds[j] << " ";
+          std::cout << secondaryIds[j] << " ";
         }
         std::cout << std::endl;
       }
@@ -94,11 +102,23 @@ int verifyInputAdapter(
     gfail = globalFail(*comm, fail);
 
     if (gfail == 0){
-      printMatrix<offset_t>(comm, nrows, rowIds, offsets.getRawPtr(), colIds.getRawPtr());
+      printMatrix<offset_t>(comm, nrows, rowIds, offsets.getRawPtr(),
+                            colIds.getRawPtr(), Type::CRS);
     }
     else{
       if (!fail) fail = 10;
     }
+
+    const auto nCols = ia.getLocalNumColumns();
+    const zgno_t *colIds=nullptr;
+    ia.getColumnIDsView(colIds);
+
+    ArrayRCP<const zgno_t> ccsRowIds;
+    ArrayRCP<const offset_t> ccsOffsets;
+    ia.getCCSView(ccsOffsets, ccsRowIds);
+
+    printMatrix<offset_t>(comm, nCols, colIds, ccsOffsets.getRawPtr(),
+                          ccsRowIds.getRawPtr(), Type::CCS);
   }
   return fail;
 }
@@ -135,7 +155,7 @@ int main(int narg, char *arg[])
   tM = uinput->getUITpetraCrsMatrix();
   size_t nrows = tM->getLocalNumRows();
 
-  // To test migration in the input adapter we need a Solution object. 
+  // To test migration in the input adapter we need a Solution object.
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment(comm));
 
@@ -154,15 +174,15 @@ int main(int narg, char *arg[])
 
   /////////////////////////////////////////////////////////////
   // User object is Tpetra::CrsMatrix
-  if (!gfail){ 
+  if (!gfail){
     if (rank==0)
       std::cout << "Input adapter for Tpetra::CrsMatrix" << std::endl;
-    
+
     RCP<const tmatrix_t> ctM = rcp_const_cast<const tmatrix_t>(tM);
     RCP<Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t> > tMInput;
-  
+
     try {
-      tMInput = 
+      tMInput =
         rcp(new Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t>(ctM));
     }
     catch (std::exception &e){
@@ -170,11 +190,11 @@ int main(int narg, char *arg[])
       std::cout << e.what() << std::endl;
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter ", 1);
-  
+
     fail = verifyInputAdapter<tmatrix_t>(*tMInput, *tM);
-  
+
     gfail = globalFail(*comm, fail);
-  
+
     if (!gfail){
       tmatrix_t *mMigrate = NULL;
       try{
@@ -187,7 +207,7 @@ int main(int narg, char *arg[])
       }
 
       gfail = globalFail(*comm, fail);
-  
+
       if (!gfail){
         RCP<const tmatrix_t> cnewM = rcp_const_cast<const tmatrix_t>(newM);
         RCP<Zoltan2::XpetraCrsMatrixAdapter<tmatrix_t> > newInput;
@@ -199,15 +219,16 @@ int main(int narg, char *arg[])
           std::cout << e.what() << std::endl;
         }
         TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 2 ", 1);
-  
+
         if (rank==0){
-          std::cout << 
-           "Input adapter for Tpetra::CrsMatrix migrated to proc 0" << 
+          std::cout <<
+           "Input adapter for Tpetra::CrsMatrix migrated to proc 0" <<
            std::endl;
         }
-        fail = verifyInputAdapter<tmatrix_t>(*newInput, *newM);
-        if (fail) fail += 100;
-        gfail = globalFail(*comm, fail);
+            fail = verifyInputAdapter<tmatrix_t>(*newInput, *newM);
+            if (fail)
+          fail += 100;
+            gfail = globalFail(*comm, fail);
       }
     }
     if (gfail){
@@ -217,16 +238,16 @@ int main(int narg, char *arg[])
 
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::CrsMatrix
-  if (!gfail){ 
+  if (!gfail){
     if (rank==0)
       std::cout << "Input adapter for Xpetra::CrsMatrix" << std::endl;
 
     RCP<xmatrix_t> xM = uinput->getUIXpetraCrsMatrix();
     RCP<const xmatrix_t> cxM = rcp_const_cast<const xmatrix_t>(xM);
     RCP<Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t> > xMInput;
-  
+
     try {
-      xMInput = 
+      xMInput =
         rcp(new Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t>(cxM));
     }
     catch (std::exception &e){
@@ -234,11 +255,11 @@ int main(int narg, char *arg[])
       std::cout << e.what() << std::endl;
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 3 ", 1);
-  
+
     fail = verifyInputAdapter<xmatrix_t>(*xMInput, *tM);
-  
+
     gfail = globalFail(*comm, fail);
-  
+
     if (!gfail){
       xmatrix_t *mMigrate =NULL;
       try{
@@ -248,14 +269,14 @@ int main(int narg, char *arg[])
         std::cout << "Error caught:  " << e.what() << std::endl;
         fail = 11;
       }
-  
+
       gfail = globalFail(*comm, fail);
-  
+
       if (!gfail){
         RCP<const xmatrix_t> cnewM(mMigrate);
         RCP<Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t> > newInput;
         try{
-          newInput = 
+          newInput =
             rcp(new Zoltan2::XpetraCrsMatrixAdapter<xmatrix_t>(cnewM));
         }
         catch (std::exception &e){
@@ -263,10 +284,10 @@ int main(int narg, char *arg[])
           std::cout << e.what() << std::endl;
         }
         TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 4 ", 1);
-  
+
         if (rank==0){
-          std::cout << 
-           "Input adapter for Xpetra::CrsMatrix migrated to proc 0" << 
+          std::cout <<
+           "Input adapter for Xpetra::CrsMatrix migrated to proc 0" <<
            std::endl;
         }
         fail = verifyInputAdapter<xmatrix_t>(*newInput, *newM);
@@ -283,17 +304,17 @@ int main(int narg, char *arg[])
   /////////////////////////////////////////////////////////////
   // User object is Epetra_CrsMatrix
   typedef Epetra_CrsMatrix ematrix_t;
-  if (!gfail){ 
+  if (!gfail){
     if (rank==0)
       std::cout << "Input adapter for Epetra_CrsMatrix" << std::endl;
 
     RCP<ematrix_t> eM = uinput->getUIEpetraCrsMatrix();
     RCP<const ematrix_t> ceM = rcp_const_cast<const ematrix_t>(eM);
     RCP<Zoltan2::XpetraCrsMatrixAdapter<ematrix_t> > eMInput;
-  
+
     bool goodAdapter = true;
     try {
-      eMInput = 
+      eMInput =
         rcp(new Zoltan2::XpetraCrsMatrixAdapter<ematrix_t>(ceM));
     }
     catch (std::exception &e){
@@ -313,12 +334,12 @@ int main(int narg, char *arg[])
       }
     }
     TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 5 ", 1);
-  
+
     if (goodAdapter) {
       fail = verifyInputAdapter<ematrix_t>(*eMInput, *tM);
-  
+
       gfail = globalFail(*comm, fail);
-  
+
       if (!gfail){
         ematrix_t *mMigrate =NULL;
         try{
@@ -328,14 +349,14 @@ int main(int narg, char *arg[])
           std::cout << "Error caught:  " << e.what() << std::endl;
           fail = 11;
         }
-  
+
         gfail = globalFail(*comm, fail);
-  
+
         if (!gfail){
           RCP<const ematrix_t> cnewM(mMigrate, true);
           RCP<Zoltan2::XpetraCrsMatrixAdapter<ematrix_t> > newInput;
           try{
-            newInput = 
+            newInput =
               rcp(new Zoltan2::XpetraCrsMatrixAdapter<ematrix_t>(cnewM));
           }
           catch (std::exception &e){
@@ -343,10 +364,10 @@ int main(int narg, char *arg[])
             std::cout << e.what() << std::endl;
           }
           TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 6 ", 1);
-  
+
           if (rank==0){
-            std::cout << 
-             "Input adapter for Epetra_CrsMatrix migrated to proc 0" << 
+            std::cout <<
+             "Input adapter for Epetra_CrsMatrix migrated to proc 0" <<
              std::endl;
           }
           fail = verifyInputAdapter<ematrix_t>(*newInput, *newM);

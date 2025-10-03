@@ -500,7 +500,11 @@ namespace Belos {
         KokkosBlas::gemm (
           &ctransA, &ctransB,
           alpha, flat_A_view, flat_B_view,
+#if KOKKOS_VERSION >= 40799
+          KokkosKernels::ArithTraits<dot_type>::zero(),
+#else
           Kokkos::ArithTraits<dot_type>::zero(),
+#endif
           C_view_dev);
       }
 

@@ -16,7 +16,7 @@
 
 namespace Amesos2 {
 
-/** \brief Amesos2 interface to cuSOLVER.
+/** \brief Amesos2 interface to Cholesky from cuSOLVER.
  *
  * \ingroup amesos2_solver_interfaces
  */

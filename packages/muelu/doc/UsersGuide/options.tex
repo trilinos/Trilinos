@@ -256,7 +256,7 @@ The available options for \texttt{aggregation: strength-of-connection measure} a
       \toprule
       \verb!smoothed aggregation! & \(\frac{\left|M_{ij}\right|}{\sqrt{\left|M_{ii}\right|\left|M_{jj}\right|}} \) \\
       \verb!signed smoothed aggregation! & \(\frac{-\operatorname{sign} \left(M_{ij}\right) \left|M_{ij}\right|}{\sqrt{\left|M_{ii}\right|\left|M_{jj}\right|}} \) \\
-      \verb!signed ruge-stueben! & \(\frac{-\operatorname{Re} \left(M_{ij}\right)}{\sqrt{\left|M_{ii}\right|\left|M_{jj}\right|}} \) \\
+      \verb!signed ruge-stueben! & \(\frac{-\operatorname{Re} \left(M_{ij}\right)}{\max_{j\neq i} -\operatorname{Re}M_{ij}} \) \\
       \verb!unscaled! & \(\left|M_{ij}\right|\) \\
       \bottomrule
     \end{tabular}

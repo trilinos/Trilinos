@@ -18,7 +18,11 @@
 #include "Tpetra_KokkosCompat_DefaultNode.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Import_Util2.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 
 namespace {
 
@@ -57,7 +61,11 @@ void generate_crs_entries(std::vector<index_type>& rowptr,
   // Fill the CRS arrays, use random values
   std::random_device rd;
   std::mt19937 gen(rd());
+#if KOKKOS_VERSION >= 40799
+  std::uniform_real_distribution<typename KokkosKernels::ArithTraits<scalar_type>::mag_type> dist(1.0, 2.0);
+#else
   std::uniform_real_distribution<typename Kokkos::ArithTraits<scalar_type>::mag_type> dist(1.0, 2.0);
+#endif
   int row = 0;
   while (true) {
     int m                 = (max_num_entries_per_row - 1) / 2;
@@ -354,7 +362,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Import_Util, SortCrsEntriesKokkos, Scalar, LO,
           const auto diff = vals[k] - vals_rand_views.h[k];
 
           // FIXME (mfh 20 Mar 2018) Use a more appropriate tolerance for scalar_type.
+#if KOKKOS_VERSION >= 40799
+          TEST_ASSERT(KokkosKernels::ArithTraits<scalar_type>::abs(diff) <= 1.e-12);
+#else
           TEST_ASSERT(Kokkos::ArithTraits<scalar_type>::abs(diff) <= 1.e-12);
+#endif
         }
       }
     }

@@ -26,24 +26,40 @@ typedef int LO;
 template <class ValueType,
           const bool isInteger = std::is_integral<ValueType>::value>
 struct MachinePrecision {
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<ValueType>::mag_type mag_type;
+#else
   typedef typename Kokkos::ArithTraits<ValueType>::mag_type mag_type;
+#endif
 
   static mag_type machinePrecision();
 };
 
 template <class ValueType>
 struct MachinePrecision<ValueType, true> {
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<ValueType>::mag_type mag_type;
+#else
   typedef typename Kokkos::ArithTraits<ValueType>::mag_type mag_type;
+#endif
 
   static mag_type machinePrecision() { return 0; }
 };
 
 template <class ValueType>
 struct MachinePrecision<ValueType, false> {
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<ValueType>::mag_type mag_type;
+#else
   typedef typename Kokkos::ArithTraits<ValueType>::mag_type mag_type;
+#endif
 
   static mag_type machinePrecision() {
+#if KOKKOS_VERSION >= 40799
+    return KokkosKernels::ArithTraits<ValueType>::eps();
+#else
     return Kokkos::ArithTraits<ValueType>::eps();
+#endif
   }
 };
 
@@ -75,8 +91,16 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
                            const LO numCols) {
   // Convert types like std::complex into their equivalent
   // Kokkos-friendly types.
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<EntryType>::val_type entry_type;
+#else
   typedef typename Kokkos::ArithTraits<EntryType>::val_type entry_type;
+#endif
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<CoeffType>::val_type coeff_type;
+#else
   typedef typename Kokkos::ArithTraits<CoeffType>::val_type coeff_type;
+#endif
   // Teuchos::BLAS only works with LayoutLeft matrices.
   typedef Kokkos::LayoutLeft layout_type;
   typedef Kokkos::View<entry_type**, layout_type, DeviceType> mat_type;
@@ -87,7 +111,11 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
   typedef Kokkos::View<entry_type*, layout_type, host_dev_type> host_vec_type;
   typedef PseudorandomPoolType<DeviceType> pool_type;
   typedef typename pool_type::generator_type generator_type;
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<entry_type>::mag_type mag_type;
+#else
   typedef typename Kokkos::ArithTraits<entry_type>::mag_type mag_type;
+#endif
 
   Teuchos::OSTab tab0(out);
   out << "Test instance:" << endl;
@@ -108,7 +136,11 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
   vec_type y_orig("y_orig", numRows);
 
   {
+#if KOKKOS_VERSION >= 40799
+    typedef KokkosKernels::ArithTraits<entry_type> KATE;
+#else
     typedef Kokkos::ArithTraits<entry_type> KATE;
+#endif
     const entry_type maxVal =
         Kokkos::rand<generator_type, entry_type>::max();
     const entry_type minVal =
@@ -133,28 +165,52 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
 
   // Use the host versions of A, x, and y to compute max norms.
   // We'll need these for relative error bounds.
+#if KOKKOS_VERSION >= 40799
+  mag_type A_norm = KokkosKernels::ArithTraits<mag_type>::zero();
+#else
   mag_type A_norm = Kokkos::ArithTraits<mag_type>::zero();
+#endif
+#if KOKKOS_VERSION >= 40799
+  mag_type x_norm = KokkosKernels::ArithTraits<mag_type>::zero();
+#else
   mag_type x_norm = Kokkos::ArithTraits<mag_type>::zero();
+#endif
+#if KOKKOS_VERSION >= 40799
+  mag_type y_norm = KokkosKernels::ArithTraits<mag_type>::zero();
+#else
   mag_type y_norm = Kokkos::ArithTraits<mag_type>::zero();
+#endif
   {
     Kokkos::deep_copy(A2, A_orig);
     for (int i = 0; i < numRows; ++i) {
       for (int j = 0; j < numCols; ++j) {
         const mag_type curAbs =
+#if KOKKOS_VERSION >= 40799
+            KokkosKernels::ArithTraits<entry_type>::abs(A2(i, j));
+#else
             Kokkos::ArithTraits<entry_type>::abs(A2(i, j));
+#endif
         A_norm = (curAbs > A_norm) ? curAbs : A_norm;
       }
     }
     Kokkos::deep_copy(x2, x_orig);
     for (int i = 0; i < static_cast<int>(x2.extent(0)); ++i) {
       const mag_type curAbs =
+#if KOKKOS_VERSION >= 40799
+          KokkosKernels::ArithTraits<entry_type>::abs(x2(i));
+#else
           Kokkos::ArithTraits<entry_type>::abs(x2(i));
+#endif
       x_norm = (curAbs > x_norm) ? curAbs : x_norm;
     }
     Kokkos::deep_copy(y2, y_orig);
     for (int i = 0; i < static_cast<int>(y2.extent(0)); ++i) {
       const mag_type curAbs =
+#if KOKKOS_VERSION >= 40799
+          KokkosKernels::ArithTraits<entry_type>::abs(y2(i));
+#else
           Kokkos::ArithTraits<entry_type>::abs(y2(i));
+#endif
       y_norm = (curAbs > y_norm) ? curAbs : y_norm;
     }
   }
@@ -171,7 +227,11 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
   constexpr bool transOptIsConj[numTransOpts] =
       {false, false, false, false, true, true};
 
+#if KOKKOS_VERSION >= 40799
+  typedef KokkosKernels::ArithTraits<coeff_type> KAT;
+#else
   typedef Kokkos::ArithTraits<coeff_type> KAT;
+#endif
   const coeff_type zero      = KAT::zero();
   const coeff_type one       = KAT::one();
   const coeff_type two       = one + one;
@@ -189,7 +249,11 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
       << "y_norm: " << y_norm << endl;
   // Add a little "fudge factor."  2 is enough for real, and 4 is
   // enough for complex.
-  const mag_type fudgeFactor    = Kokkos::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(4) : static_cast<mag_type>(2);
+#if KOKKOS_VERSION >= 40799
+  const mag_type fudgeFactor = KokkosKernels::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(4) : static_cast<mag_type>(2);
+#else
+  const mag_type fudgeFactor = Kokkos::ArithTraits<entry_type>::is_complex ? static_cast<mag_type>(4) : static_cast<mag_type>(2);
+#endif
   const mag_type nonTransFactor = A_norm * x_norm > fudgeFactor ? A_norm * x_norm : fudgeFactor;
   const mag_type nonTransBound  = nonTransFactor *
                                  static_cast<mag_type>(numCols) * eps;
@@ -235,10 +299,18 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
                            x2_inc);
           Kokkos::deep_copy(x_host, x);
 
+#if KOKKOS_VERSION >= 40799
+          mag_type maxErr = KokkosKernels::ArithTraits<mag_type>::zero();
+#else
           mag_type maxErr = Kokkos::ArithTraits<mag_type>::zero();
+#endif
           for (LO i = 0; i < static_cast<LO>(x.extent(0)); ++i) {
             const mag_type curErr =
+#if KOKKOS_VERSION >= 40799
+                KokkosKernels::ArithTraits<entry_type>::abs(x_host(i) - x2(i));
+#else
                 Kokkos::ArithTraits<entry_type>::abs(x_host(i) - x2(i));
+#endif
             maxErr = (curErr > maxErr) ? curErr : maxErr;
           }
           const bool wrong = (maxErr > transBound);
@@ -258,10 +330,18 @@ void testGemvVsTeuchosBlas(Teuchos::FancyOStream& out,
                            y2_inc);
           Kokkos::deep_copy(y_host, y);
 
+#if KOKKOS_VERSION >= 40799
+          mag_type maxErr = KokkosKernels::ArithTraits<mag_type>::zero();
+#else
           mag_type maxErr = Kokkos::ArithTraits<mag_type>::zero();
+#endif
           for (LO i = 0; i < static_cast<LO>(y.extent(0)); ++i) {
             const mag_type curErr =
+#if KOKKOS_VERSION >= 40799
+                KokkosKernels::ArithTraits<entry_type>::abs(y_host(i) - y2(i));
+#else
                 Kokkos::ArithTraits<entry_type>::abs(y_host(i) - y2(i));
+#endif
             maxErr = (curErr > maxErr) ? curErr : maxErr;
           }
           const bool wrong = (maxErr > nonTransBound);

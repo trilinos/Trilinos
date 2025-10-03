@@ -43,6 +43,7 @@
 #include "Test_Sparse_crs2ccs.hpp"
 #include "Test_Sparse_removeCrsMatrixZeros.hpp"
 #include "Test_Sparse_extractCrsDiagonalBlocks.hpp"
+#include "Test_Sparse_extractCrsDiagonalBlocksRCB.hpp"
 #include "Test_Sparse_StaticCrsGraph.hpp"
 
 // TPL specific tests, these require

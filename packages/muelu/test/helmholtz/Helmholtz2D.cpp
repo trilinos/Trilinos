@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
 
-  bool success = false;
+  bool success = true;
   bool verbose = true;
   try {
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -199,6 +199,8 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_MUELU_DEBUG
       SLSolver->Manager_->ResetDebugData();
 #endif
+
+      success &= (ret == Belos::Converged);
     }
 
     // Get the number of iterations for all solves.

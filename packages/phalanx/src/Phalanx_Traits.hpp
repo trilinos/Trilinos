@@ -11,8 +11,13 @@
 #ifndef PHX_TRAITS_HPP
 #define PHX_TRAITS_HPP
 
+#include <Kokkos_Core_fwd.hpp>
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+#include "Sacado.hpp"
+#else
 #include "Kokkos_View_Fad.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
+#endif
 #include "Phalanx_config.hpp"
 
 namespace PHX {

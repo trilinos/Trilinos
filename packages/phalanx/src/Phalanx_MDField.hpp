@@ -17,8 +17,14 @@
 #include <type_traits>
 #include "Phalanx_config.hpp"
 #include "Teuchos_RCP.hpp"
+#include <Kokkos_Core_fwd.hpp>
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+#include "Sacado.hpp"
+#include "Kokkos_DynRankView.hpp"
+#else
 #include "Kokkos_DynRankView_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
+#endif
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_ExtentTraits.hpp"
 #include "Sacado.hpp"
@@ -476,7 +482,13 @@ namespace PHX {
     KOKKOS_FORCEINLINE_FUNCTION
     typename PHX::MDFieldReturnType<array_type>::return_type
     operator[](iType0 index0) const
-    {return m_view[index0];}
+    {
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+      return m_view[index0];
+#else
+      return m_view(index0);
+#endif
+    }
 
     template< typename iType >
     KOKKOS_INLINE_FUNCTION constexpr

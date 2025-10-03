@@ -38,14 +38,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Amesos2Wrapper, Test0, Scalar, LO, GO) 
   // that method has these input arguments:
   // Teuchos::FancyOStream& out, bool& success
 
+#if KOKKOS_VERSION >= 40799
+  using KokkosKernels::ArithTraits;
+#else
   using Kokkos::ArithTraits;
+#endif
   typedef Tpetra::Map<LO, GO, Node> map_type;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
 #ifdef HAVE_AMESOS2_SUPERLU
   typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
   typedef typename mv_type::impl_scalar_type val_type;
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
+#else
   typedef typename Kokkos::ArithTraits<val_type>::mag_type mag_type;
+#endif
   typedef typename map_type::device_type device_type;
 // const mag_type oneMag = ArithTraits<mag_type>::one ();
 #endif

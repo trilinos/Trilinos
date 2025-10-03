@@ -63,7 +63,7 @@ postRegistrationSetup(typename Traits::SetupData /* d */,
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     std::string fieldName = gatherFields_[fd].fieldTag().name();
 
-    stkFields_[fd] = mesh_->getMetaData()->get_field<double>(stk::topology::ELEMENT_RANK, exodusNames_[fd]);
+    stkFields_[fd] = mesh_->getMetaData()->template get_field<double>(stk::topology::ELEMENT_RANK, exodusNames_[fd]);
 
     if(stkFields_[fd]==0) {
       std::stringstream ss;

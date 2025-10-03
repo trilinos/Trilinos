@@ -12,7 +12,11 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Teuchos_TypeNameTraits.hpp"
 #include <algorithm>
 #include <sstream>
@@ -78,7 +82,11 @@ bool view2dSame(ViewType1 x, ViewType2 y) {
 
 template <class ValueType>
 KOKKOS_INLINE_FUNCTION ValueType toValue(const size_t k) {
+#if KOKKOS_VERSION >= 40799
+  using mag_type = typename KokkosKernels::ArithTraits<ValueType>::mag_type;
+#else
   using mag_type = typename Kokkos::ArithTraits<ValueType>::mag_type;
+#endif
   return static_cast<ValueType>(static_cast<mag_type>(k));
 }
 

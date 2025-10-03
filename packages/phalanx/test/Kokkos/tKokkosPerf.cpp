@@ -17,9 +17,11 @@
 #include <map>
 
 #include "Sacado.hpp"
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
 #include "Kokkos_View_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
+#endif
 #include "KokkosSparse_CrsMatrix.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT

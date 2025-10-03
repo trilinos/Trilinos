@@ -171,7 +171,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities_kokkos, GetMatrixDiagonalInverse, Sc
   TEST_EQUALITY(diagView.extent(0), A->getLocalNumRows());
 
   for (size_t idx = 0; idx < diagView.extent(0); ++idx) {
+#if KOKKOS_VERSION >= 40799
+    TEST_EQUALITY(diagView(idx, 0), KokkosKernels::ArithTraits<Scalar>::one() / Scalar(2));
+#else
     TEST_EQUALITY(diagView(idx, 0), Kokkos::ArithTraits<Scalar>::one() / Scalar(2));
+#endif
   }
 }  // GetMatrixDiagonalInverse
 

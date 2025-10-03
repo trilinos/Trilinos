@@ -100,18 +100,19 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
 TRIBITS_COPY_FILES_TO_BINARY_DIR(
   UnitTestsTestMatrices_cp
   SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/TestMatrices
-  SOURCE_FILES cd2dx.mat
-  SOURCE_FILES cd2dy.mat
-  SOURCE_FILES aniso2dx.mat
-  SOURCE_FILES aniso2dy.mat
-  SOURCE_FILES iso2d.mat
-  SOURCE_FILES beam.mm
-  SOURCE_FILES filter.mm
-  SOURCE_FILES fuego0.mm
-  SOURCE_FILES fuego1.mm
-  SOURCE_FILES nonsym.mm
-  SOURCE_FILES SaP_constrainTest_P.mat
-  SOURCE_FILES semiRblkTestver.mm
+  SOURCE_FILES
+    aniso2dx.mat
+    aniso2dy.mat
+    beam.mm
+    cd2dx.mat
+    cd2dy.mat
+    filter.mm
+    fuego0.mm
+    fuego1.mm
+    iso2d.mat
+    nonsym.mm
+    SaP_constrainTest_P.mat
+    semiRblkTestver.mm
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/TestMatrices
 )
 

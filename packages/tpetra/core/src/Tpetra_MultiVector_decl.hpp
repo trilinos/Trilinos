@@ -23,7 +23,11 @@
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_Range1D.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
 #include "Tpetra_Access.hpp"
@@ -366,7 +370,11 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// MultiVector's data, its entries have type \c impl_scalar_type,
   /// not \c scalar_type.
   using impl_scalar_type =
+#if KOKKOS_VERSION >= 40799
+      typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
       typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
 
   //! The type of the Map specialization used by this class.
   using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -393,7 +401,11 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// (absolute value) of <tt>impl_scalar_type</tt>, but may differ if
   /// <tt>impl_scalar_type</tt> is e.g., an uncertainty quantification
   /// type from the Stokhos package.
+#if KOKKOS_VERSION >= 40799
+  using mag_type = typename KokkosKernels::ArithTraits<impl_scalar_type>::mag_type;
+#else
   using mag_type = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
+#endif
 
   /// \brief Type of the (new) Kokkos execution space.
   ///

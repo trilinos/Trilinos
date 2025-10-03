@@ -19,7 +19,11 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_SrcDistObject.hpp"
 #include "Tpetra_DistObject_fwd.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include <memory>
 #include <type_traits>
 
@@ -288,7 +292,11 @@ class DistObject : virtual public SrcDistObject,
   ///
   /// Note that this type does not always correspond to the
   /// <tt>Scalar</tt> template parameter of subclasses.
+#if KOKKOS_VERSION >= 40799
+  using packet_type = typename ::KokkosKernels::ArithTraits<Packet>::val_type;
+#else
   using packet_type = typename ::Kokkos::ArithTraits<Packet>::val_type;
+#endif
   //! The type of local indices.
   using local_ordinal_type = LocalOrdinal;
   //! The type of global indices.

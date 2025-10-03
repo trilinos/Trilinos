@@ -18,7 +18,11 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Map.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 
 namespace Tpetra {
 
@@ -135,7 +139,11 @@ struct ApplyDirichletBoundaryConditionToLocalMatrixRows {
     // option and then the code below could be collapsed out removing one of the parallel_for's
 
     using IST = typename crs_matrix_type::impl_scalar_type;
+#if KOKKOS_VERSION >= 40799
+    using KAT = KokkosKernels::ArithTraits<IST>;
+#else
     using KAT = Kokkos::ArithTraits<IST>;
+#endif
 
     const auto rowMap = A.getRowMap();
     TEUCHOS_TEST_FOR_EXCEPTION(rowMap.get() == nullptr, std::invalid_argument,
@@ -217,7 +225,11 @@ struct ApplyDirichletBoundaryConditionToLocalMatrixColumns {
     // option and then the code below could be collapsed out removing one of the parallel_for's
 
     using IST = typename crs_matrix_type::impl_scalar_type;
+#if KOKKOS_VERSION >= 40799
+    using KAT = KokkosKernels::ArithTraits<IST>;
+#else
     using KAT = Kokkos::ArithTraits<IST>;
+#endif
 
     const auto rowMap = A.getRowMap();
     TEUCHOS_TEST_FOR_EXCEPTION(rowMap.get() == nullptr, std::invalid_argument,

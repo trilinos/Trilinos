@@ -487,10 +487,18 @@ using materialTestCase = std::tuple<RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Glo
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 materialTestCase<Scalar, LocalOrdinal, GlobalOrdinal, Node> constructVariableMaterialMatrix(RCP<const Teuchos::Comm<int>> &comm) {
 #include <MueLu_UseShortNames.hpp>
-  using ATS              = Kokkos::ArithTraits<Scalar>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS               = Kokkos::ArithTraits<Scalar>;
+#endif
   using impl_scalar_type = typename ATS::val_type;
-  using implATS          = Kokkos::ArithTraits<impl_scalar_type>;
-  using magnitudeType    = typename implATS::magnitudeType;
+#if KOKKOS_VERSION >= 40799
+  using implATS = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
+  using implATS           = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
+  using magnitudeType = typename implATS::magnitudeType;
 
   RCP<const Map> map = MapFactory::Build(Xpetra::UseTpetra, 27 * comm->getSize(), 0, comm);
 
@@ -1818,27 +1826,85 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, SignedClassicalSA,
   GO nx = 10 * comm->getSize();
   Teuchos::ParameterList matrixList;
   matrixList.set("nx", nx);
-  matrixList.set("ny", (GO)10);
-  matrixList.set("nz", (GO)10);
-  matrixList.set("matrixType", "Laplace3D");
+  matrixList.set("matrixType", "Laplace1D");
   RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixList, lib);
 
-  Level fineLevel;
-  fineLevel.Set("A", A);
+  // modifty some entries
+  auto crsA = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A, true)->getCrsMatrix();
+  crsA->resumeFill();
+  if (comm->getRank() == 0) {
+    Teuchos::Array<GlobalOrdinal> cols(3);
+    Teuchos::Array<Scalar> vals(3);
+    size_t numEntries;
 
-  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-  CoalesceDropFactory_kokkos coalesceDropFact;
-  coalesceDropFact.SetFactory("UnAmalgamationInfo", amalgFact);
-  coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.0));
-  coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("signed classical sa")));
-  fineLevel.Request("Graph", &coalesceDropFact);
-  fineLevel.Request("DofsPerNode", &coalesceDropFact);
+    LocalOrdinal row = 5;
 
-  coalesceDropFact.Build(fineLevel);
+    crsA->getGlobalRowCopy(row, cols, vals, numEntries);
 
-  RCP<LWGraph_kokkos> graph = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &coalesceDropFact);
-  LO myDofsPerNode          = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
-  TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
+    int signsSwitched = 0;
+    for (LocalOrdinal k = 0; k < (LocalOrdinal)numEntries; ++k) {
+      if (crsA->getColMap()->getGlobalElement(cols[k]) == crsA->getRowMap()->getGlobalElement(row - 1)) {
+        // flip the sign to make the entry positive
+        vals[k] = -vals[k];
+        ++signsSwitched;
+      }
+    }
+    TEUCHOS_ASSERT(signsSwitched == 1);
+    crsA->replaceGlobalValues(numEntries, cols, vals);
+  }
+  crsA->fillComplete();
+
+  // We are dropping if
+  //   -sign(a_ij) |a_ij| / sqrt{|a_ii| |a_jj|} < dropTol
+
+  // In row 5 the positive off-diagonal entry should always be dropped.
+  // All other negative off-diagonal entries should be dropped for dropTol > 0.5
+
+  // dropTol = 0.49
+  {
+    Level fineLevel;
+    fineLevel.Set("A", A);
+
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    CoalesceDropFactory_kokkos coalesceDropFact;
+    coalesceDropFact.SetFactory("UnAmalgamationInfo", amalgFact);
+    coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.49));
+    coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("signed classical sa")));
+    fineLevel.Request("Graph", &coalesceDropFact);
+    fineLevel.Request("DofsPerNode", &coalesceDropFact);
+
+    coalesceDropFact.Build(fineLevel);
+
+    RCP<LWGraph_kokkos> graph_d = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &coalesceDropFact);
+    auto graph                  = graph_d->copyToHost();
+    LO myDofsPerNode            = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
+
+    TEST_EQUALITY(graph->GetGlobalNumEdges(), crsA->getGlobalNumEntries() - 1);
+  }
+
+  // dropTol = 0.51
+  {
+    Level fineLevel;
+    fineLevel.Set("A", A);
+
+    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    CoalesceDropFactory_kokkos coalesceDropFact;
+    coalesceDropFact.SetFactory("UnAmalgamationInfo", amalgFact);
+    coalesceDropFact.SetParameter("aggregation: drop tol", Teuchos::ParameterEntry(0.51));
+    coalesceDropFact.SetParameter("aggregation: drop scheme", Teuchos::ParameterEntry(std::string("signed classical sa")));
+    fineLevel.Request("Graph", &coalesceDropFact);
+    fineLevel.Request("DofsPerNode", &coalesceDropFact);
+
+    coalesceDropFact.Build(fineLevel);
+
+    RCP<LWGraph_kokkos> graph_d = fineLevel.Get<RCP<LWGraph_kokkos>>("Graph", &coalesceDropFact);
+    auto graph                  = graph_d->copyToHost();
+    LO myDofsPerNode            = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
+
+    TEST_EQUALITY(graph->GetGlobalNumEdges(), (Xpetra::global_size_t)nx);
+  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, ClassicScalarWithoutFiltering, Scalar, LocalOrdinal, GlobalOrdinal, Node) {

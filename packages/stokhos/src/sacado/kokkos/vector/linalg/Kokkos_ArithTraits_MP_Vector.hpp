@@ -11,14 +11,22 @@
 #define KOKKOS_ARITHTRAITS_MP_VECTOR_HPP
 
 #include "Sacado_MP_Vector.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "KokkosBatched_Vector.hpp"
 
 //----------------------------------------------------------------------------
-// Specializations of Kokkos::ArithTraits for Sacado::MP::Vector scalar type
+// Specializations of Kokkos{Kernels}::ArithTraits for Sacado::MP::Vector scalar type
 //----------------------------------------------------------------------------
 
+#if KOKKOS_VERSION >= 40799
+namespace KokkosKernels {
+#else
 namespace Kokkos {
+#endif
 
 template <typename S>
 class ArithTraits< Sacado::MP::Vector<S> > {
@@ -185,7 +193,11 @@ namespace KokkosBatched {
   template <typename S>
   struct MagnitudeScalarType< Sacado::MP::Vector<S> > {
     typedef Sacado::MP::Vector<S> val_type;
+#if KOKKOS_VERSION >= 40799
+    typedef typename KokkosKernels::ArithTraits<val_type>::mag_type type;
+#else
     typedef typename Kokkos::ArithTraits<val_type>::mag_type type;
+#endif
   };
 
 }

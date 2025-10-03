@@ -46,9 +46,17 @@ protected:
     using std::endl;
     using dev_type = typename MV::device_type;
     using val_type = typename MV::dot_type;
+#if KOKKOS_VERSION >= 40799
+    using ATS = KokkosKernels::ArithTraits<val_type>;
+#else
     using ATS = Kokkos::ArithTraits<val_type>;
+#endif
     using magnitude_type = typename ATS::mag_type;
+#if KOKKOS_VERSION >= 40799
+    using ATM = KokkosKernels::ArithTraits<magnitude_type>;
+#else
     using ATM = Kokkos::ArithTraits<magnitude_type>;
+#endif
 
     const auto ONE  = ATS::one ();
 

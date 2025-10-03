@@ -21,7 +21,11 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_RowMatrix_decl.hpp"
 #include "Tpetra_Vector_decl.hpp"
@@ -78,7 +82,11 @@ struct CrsMatrixGetDiagCopyFunctor {
   operator()(const LO& lclRowInd, value_type& errCount) const {
     const LO INV = Tpetra::Details::OrdinalTraits<LO>::invalid();
     const scalar_type ZERO =
+#if KOKKOS_VERSION >= 40799
+        KokkosKernels::ArithTraits<scalar_type>::zero();
+#else
         Kokkos::ArithTraits<scalar_type>::zero();
+#endif
 
     // If the row lacks a stored diagonal entry, then its value is zero.
     D_(lclRowInd)      = ZERO;
