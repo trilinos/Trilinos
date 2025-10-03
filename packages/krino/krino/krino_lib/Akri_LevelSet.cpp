@@ -8,7 +8,6 @@
 
 #include <Akri_LevelSet.hpp>
 
-#include <Akri_AdaptiveElementContour.hpp>
 #include <Akri_AllReduce.hpp>
 #include <Akri_AuxMetaData.hpp>
 #include <Akri_CDFEM_Support.hpp>

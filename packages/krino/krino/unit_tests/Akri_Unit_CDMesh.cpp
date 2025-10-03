@@ -40,6 +40,7 @@
 #include <Akri_RefinementSupport.hpp>
 #include <Akri_Unit_DecompositionFixture.hpp>
 #include <Akri_MeshSpecs.hpp>
+#include <Akri_OutputUtils.hpp>
 #include <Akri_RefinementManager.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 
@@ -929,8 +930,6 @@ TEST_F(TwoRegularTetsSharingNodeAtOriginOn1or2ProcsDecompositionFixture, onlyCut
 class TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture : public DecompositionFixture<TwoRightTets, LSPerInterfacePolicy, 1>
 {
 public:
-TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture() {}
-
 void build_mesh_with_optional_sideset(const bool addSideset)
 {
   const std::array<unsigned, 3> side1Nodes{{0,2,4}};
@@ -957,7 +956,8 @@ TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Write_Results_No_
 
   build_mesh_with_optional_sideset(false);
 
-  write_mesh("Write_Results_No_Side.e");
+  if (krino::is_parallel_io_enabled() || stk::parallel_machine_size(mComm) == 1)
+    write_mesh("Write_Results_No_Side.e");
 }
 
 TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Write_Results_With_Side)
@@ -966,7 +966,8 @@ TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Write_Results_Wit
 
   build_mesh_with_optional_sideset(true);
 
-  write_mesh("Write_Results_With_Side.e");
+  if (krino::is_parallel_io_enabled() || stk::parallel_machine_size(mComm) == 1)
+    write_mesh("Write_Results_With_Side.e");
 }
 
 namespace
@@ -1021,15 +1022,8 @@ void set_ls_field_on_part(const stk::mesh::BulkData & mesh,
 class UMRRegularTriOn1Or2Procs3LSPerPhase : public DecompositionFixture<UMRRegularTri, LSPerPhasePolicy, 3>
 {
 public:
-UMRRegularTriOn1Or2Procs3LSPerPhase()
-{
-  build_mesh_and_setup_ls_fields();
-}
-
 void build_mesh_and_setup_ls_fields()
 {
-  if(stk::parallel_machine_size(mComm) > 2) return;
-
   const SideIdAndTriSideNodes sideset1{1, { {{0,3}}, {{3,1}} }};
   const SideIdAndTriSideNodes sideset2{2, { {{1,4}}, {{4,2}} }};
   const SideIdAndTriSideNodes sideset3{3, { {{2,5}}, {{5,0}} }};
@@ -1045,12 +1039,13 @@ void build_mesh_and_setup_ls_fields()
 
   setup_ls_fields();
 }
-
 };
 
 TEST_F(UMRRegularTriOn1Or2Procs3LSPerPhase, Random_Decompositions)
 {
   if(stk::parallel_machine_size(mComm) > 2) return;
+
+  build_mesh_and_setup_ls_fields();
 
   cdfem_support().set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   cdfem_support().register_cdfem_snap_displacements_field();
@@ -1079,15 +1074,8 @@ TEST_F(UMRRegularTriOn1Or2Procs3LSPerPhase, Random_Decompositions)
 class UMRRegularTetOn1Or2Procs3LSPerPhase : public DecompositionFixture<UMRRegularTet, LSPerPhasePolicy, 3>
 {
 public:
-UMRRegularTetOn1Or2Procs3LSPerPhase()
-{
-  build_mesh_and_setup_ls_fields();
-}
-
 void build_mesh_and_setup_ls_fields()
 {
-  if(stk::parallel_machine_size(mComm) > 4) return;
-
   const SideIdAndTetSideNodes sideset1{1, { {{0,4,7}}, {{1,8,4}}, {{3,7,8}}, {{4,8,7}} }};
   const SideIdAndTetSideNodes sideset2{2, { {{1,5,8}}, {{2,9,5}}, {{3,8,9}}, {{5,9,8}} }};
   const SideIdAndTetSideNodes sideset3{3, { {{2,6,9}}, {{0,7,6}}, {{3,9,7}}, {{6,7,9}} }};
@@ -1111,6 +1099,8 @@ void build_mesh_and_setup_ls_fields()
 TEST_F(UMRRegularTetOn1Or2Procs3LSPerPhase, Random_Decompositions)
 {
   if(stk::parallel_machine_size(mComm) > 4) return;
+
+  build_mesh_and_setup_ls_fields();
 
   cdfem_support().set_cdfem_edge_degeneracy_handling(SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   cdfem_support().register_cdfem_snap_displacements_field();
