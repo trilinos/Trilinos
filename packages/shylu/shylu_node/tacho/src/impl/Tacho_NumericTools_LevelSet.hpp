@@ -46,6 +46,7 @@
 #include "Tacho_Gemm_OnDevice.hpp"
 #include "Tacho_Gemv_OnDevice.hpp"
 #include "Tacho_Herk_OnDevice.hpp"
+#include "Tacho_Trmv_OnDevice.hpp"
 #include "Tacho_Trsm_OnDevice.hpp"
 #include "Tacho_Trsv_OnDevice.hpp"
 

@@ -8,10 +8,10 @@
 // *****************************************************************************
 // @HEADER
 // clang-format on
-#ifndef __TACHO_GEMV_HPP__
-#define __TACHO_GEMV_HPP__
+#ifndef __TACHO_TRMV_HPP__
+#define __TACHO_TRMV_HPP__
 
-/// \file Tacho_Gemv.hpp
+/// \file Tacho_Trmv.hpp
 /// \brief Front interface for Herk operators
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -24,13 +24,13 @@ namespace Tacho {
 ///
 
 /// various implementation for different uplo and algo parameters
-template <typename ArgTrans, typename ArgAlgo> struct Gemv;
+template <typename ArgUplo, typename ArgTrans, typename ArgAlgo> struct Trmv;
 
-struct GemvAlgorithm {
+struct TrmvAlgorithm {
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
-struct GemvAlgorithm_Team {
+struct TrmvAlgorithm_Team {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 #else

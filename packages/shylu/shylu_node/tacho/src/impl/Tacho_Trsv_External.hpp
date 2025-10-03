@@ -31,8 +31,8 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
 
       static_assert(ViewTypeA::rank == 2, "A is not rank 2 view.");
       static_assert(ViewTypeB::rank == 2, "B is not rank 2 view.");
+
       static_assert(std::is_same<value_type, value_type_b>::value, "A and B do not have the same value type.");
-      TACHO_TEST_FOR_ABORT(A.extent(0) != A.extent(1), "TRSV(External): A is not square.");
 
       const ordinal_type m = B.extent(0), n = B.extent(1);
 
