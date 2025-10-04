@@ -26,6 +26,10 @@ build_precond(Teuchos::ParameterList& test_params,
   using Teuchos::RCP;
   using Teuchos::rcpFromRef;
   typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+  typedef Tpetra::MultiVector<magnitude_type, LocalOrdinal, GlobalOrdinal, Node> coord_type;
+  typedef Tpetra::MatrixMarket::Reader<MatrixType> reader_type;
   Teuchos::Time timer_init("Init preconditioner");
   Teuchos::Time timer("Compute preconditioner");
   Teuchos::Time timer2("Compute preconditioner (reuse)");
@@ -40,7 +44,20 @@ build_precond(Teuchos::ParameterList& test_params,
 
   std::string prec_name("not specified");
   Ifpack2::getParameter(test_params, "Ifpack2::Preconditioner", prec_name);
-  prec = factory.create<row_matrix_type>(prec_name, A);
+  std::string coord_mm_file("not specified");
+  Ifpack2::getParameter(test_params, "coord_mm_file", coord_mm_file);
+
+  if (coord_mm_file != "not specified") {
+    if (myRank == 0) {
+      std::cout << "Matrix Market file for coordinates C: " << coord_mm_file << std::endl;
+    }
+    RCP<coord_type> coordinates = Teuchos::null;
+    RCP<const map_type> rowMap  = A->getRowMap();
+    coordinates                 = reader_type::readDenseFile(coord_mm_file, comm, rowMap);
+    prec                        = factory.create<row_matrix_type>(prec_name, A, coordinates);
+  } else {
+    prec = factory.create<row_matrix_type>(prec_name, A);
+  }
 
   Teuchos::ParameterList tif_params;
   if (test_params.isSublist("Ifpack2")) {

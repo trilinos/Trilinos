@@ -302,6 +302,11 @@ class AdditiveSchwarz : virtual public Preconditioner<typename MatrixType::scala
       Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
                         global_ordinal_type, node_type>;
 
+  //! The Tpetra::MultiVector specialization used for containing coordinates
+  using coord_type =
+      Tpetra::MultiVector<magnitude_type, local_ordinal_type,
+                          global_ordinal_type, node_type>;
+
   //@}
   // \name Constructors and destructor
   //@{
@@ -310,6 +315,13 @@ class AdditiveSchwarz : virtual public Preconditioner<typename MatrixType::scala
   ///
   /// \param A [in] The matrix to be preconditioned.
   AdditiveSchwarz(const Teuchos::RCP<const row_matrix_type>& A);
+
+  /// \brief Constructor that takes a matrix and its rows' coordinates.
+  ///
+  /// \param A [in] The matrix to be preconditioned.
+  /// \param coordinates [in] Coordinates associated with matrix rows
+  AdditiveSchwarz(const Teuchos::RCP<const row_matrix_type>& A,
+                  const Teuchos::RCP<const coord_type>& coordinates);
 
   /// \brief Constructor that takes a matrix and the level of overlap.
   ///
@@ -420,6 +432,15 @@ class AdditiveSchwarz : virtual public Preconditioner<typename MatrixType::scala
 
   //! The input matrix.
   virtual Teuchos::RCP<const row_matrix_type> getMatrix() const;
+
+  /// \brief Set the matrix rows' coordinates.
+  ///
+  /// \param Coordinates [in] Pointer to the coordinates multivector.
+  void
+  setCoord(const Teuchos::RCP<const coord_type>& Coordinates);
+
+  //! Get the coordinates associated with the input matrix's rows.
+  Teuchos::RCP<const coord_type> getCoord() const;
 
   /// \brief Set the preconditioner's parameters.
   ///
@@ -708,6 +729,9 @@ class AdditiveSchwarz : virtual public Preconditioner<typename MatrixType::scala
   //! Type of the inner (subdomain) solver.
   typedef Trilinos::Details::LinearSolver<MV, OP, typename MV::mag_type> inner_solver_type;
 
+  //! The type of permutation view used with coordinates
+  typedef Kokkos::DualView<local_ordinal_type*, typename crs_matrix_type::device_type> perm_dualview_type;
+
   //! Copy constructor (unimplemented; do not use)
   AdditiveSchwarz(const AdditiveSchwarz& RHS);
 
@@ -757,6 +781,10 @@ class AdditiveSchwarz : virtual public Preconditioner<typename MatrixType::scala
 
   //! The "inner matrix" given to the inner (subdomain) solver.
   Teuchos::RCP<row_matrix_type> innerMatrix_;
+
+  /// \brief The coordinates associated with the input matrix rows.
+  ///   (only used for RCB distribution into streams in RILUK)
+  Teuchos::RCP<const coord_type> Coordinates_ = Teuchos::null;
 
   //! If true, the preconditioner has been successfully initialized.
   bool IsInitialized_ = false;
@@ -843,6 +871,8 @@ class AdditiveSchwarz : virtual public Preconditioner<typename MatrixType::scala
   mutable std::unique_ptr<MV> R_;
   //! Cached intermediate result (multi)vector.
   mutable std::unique_ptr<MV> C_;
+  //! The permutation view used for coordinates.
+  perm_dualview_type perm_coors;
 
   /// \brief Import object used in apply().
   ///
