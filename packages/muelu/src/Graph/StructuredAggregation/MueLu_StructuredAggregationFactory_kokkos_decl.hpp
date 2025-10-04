@@ -84,7 +84,9 @@ class StructuredAggregationFactory_kokkos : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~StructuredAggregationFactory_kokkos() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

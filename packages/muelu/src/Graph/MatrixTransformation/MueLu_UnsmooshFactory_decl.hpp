@@ -71,7 +71,9 @@ class UnsmooshFactory : public PFactory {
   //! Destructor
   virtual ~UnsmooshFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

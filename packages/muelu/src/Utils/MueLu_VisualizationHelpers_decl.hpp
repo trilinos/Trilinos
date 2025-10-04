@@ -99,7 +99,12 @@ class VisualizationHelpers {
   virtual ~VisualizationHelpers() {}
   //@}
 
-  RCP<ParameterList> GetValidParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> GetValidParameterList() const {
+    static auto valid_pl = GetValidParameterListImpl();
+    return valid_pl;
+  }
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
  protected:
   void writeFileVTKOpening(std::ofstream& fout, std::vector<int>& uniqueFine, std::vector<int>& geomSizesFine) const;
