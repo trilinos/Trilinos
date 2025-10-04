@@ -43,6 +43,11 @@ class BlockInvDiagonalStrategy {
  public:
   virtual ~BlockInvDiagonalStrategy() {}
 
+  virtual void initialize(const std::vector<Teuchos::RCP<InverseFactory> > &inverseFactories,
+                          const std::vector<Teuchos::RCP<InverseFactory> > &preconditionerFactories,
+                          const Teuchos::RCP<InverseFactory> &defaultInverseFact,
+                          const Teuchos::RCP<InverseFactory> &defaultPreconditionerFact) = 0;
+
   //! returns an (approximate) inverse of the diagonal blocks of A
   virtual void getInvD(const BlockedLinearOp &A, BlockPreconditionerState &state,
                        std::vector<LinearOp> &invDiag) const = 0;
@@ -65,6 +70,12 @@ class StaticInvDiagStrategy : public BlockInvDiagonalStrategy {
 
   virtual ~StaticInvDiagStrategy() {}
 
+  virtual void initialize(
+      const std::vector<Teuchos::RCP<InverseFactory> > & /* inverseFactories */,
+      const std::vector<Teuchos::RCP<InverseFactory> > & /* preconditionerFactories */,
+      const Teuchos::RCP<InverseFactory> & /* defaultInverseFact */,
+      const Teuchos::RCP<InverseFactory> & /* defaultPreconditionerFact */) {}
+
   /** returns an (approximate) inverse of the diagonal blocks of A
    * where A is closely related to the original source for invD0 and invD1
    */
@@ -85,6 +96,8 @@ class StaticInvDiagStrategy : public BlockInvDiagonalStrategy {
  */
 class InvFactoryDiagStrategy : public BlockInvDiagonalStrategy {
  public:
+  InvFactoryDiagStrategy() = default;
+
   /** Constructor accepting a single inverse factory that will be used
    * to invert all diagonal blocks.
    *
@@ -109,6 +122,20 @@ class InvFactoryDiagStrategy : public BlockInvDiagonalStrategy {
       const Teuchos::RCP<InverseFactory> &defaultPreconditionerFact = Teuchos::null);
 
   virtual ~InvFactoryDiagStrategy() {}
+
+  virtual void initialize(const std::vector<Teuchos::RCP<InverseFactory> > &inverseFactories,
+                          const std::vector<Teuchos::RCP<InverseFactory> > &preconditionerFactories,
+                          const Teuchos::RCP<InverseFactory> &defaultInverseFact,
+                          const Teuchos::RCP<InverseFactory> &defaultPreconditionerFact) {
+    invDiagFact_  = inverseFactories;
+    precDiagFact_ = preconditionerFactories;
+
+    if (defaultInverseFact == Teuchos::null)
+      defaultInvFact_ = invDiagFact_[0];
+    else
+      defaultInvFact_ = defaultInverseFact;
+    defaultPrecFact_ = defaultPreconditionerFact;
+  }
 
   /** returns an (approximate) inverse of the diagonal blocks of A
    * where A is closely related to the original source for invD0 and invD1
@@ -136,7 +163,6 @@ class InvFactoryDiagStrategy : public BlockInvDiagonalStrategy {
                         const std::string &opPrefix, int i) const;
 
  private:
-  InvFactoryDiagStrategy();
   InvFactoryDiagStrategy(const InvFactoryDiagStrategy &);
 };
 
