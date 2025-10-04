@@ -18,11 +18,12 @@
 
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 #include "BelosLSQRIteration.hpp"
 #include "BelosLSQRIter.hpp"
-#include "BelosStatusTestMaxIters.hpp"
 #include "BelosLSQRStatusTest.hpp"
+#include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
@@ -182,14 +183,14 @@ public:
 // Partial specialization for complex ScalarType.
 // This contains a trivial implementation.
 // See discussion in the class documentation above.
-template<class ScalarType, class MV, class OP,
+template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>,
          const bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
 class LSQRSolMgr :
-    public Details::RealSolverManager<ScalarType, MV, OP,
+    public Details::RealSolverManager<ScalarType, MV, OP, DM,
                                       Teuchos::ScalarTraits<ScalarType>::isComplex>
 {
   static const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
-  typedef Details::RealSolverManager<ScalarType, MV, OP, isComplex> base_type;
+  typedef Details::RealSolverManager<ScalarType, MV, OP, DM, isComplex> base_type;
 
 public:
   LSQRSolMgr () :
@@ -202,8 +203,8 @@ public:
   virtual ~LSQRSolMgr () {}
 
   //! clone for Inverted Injection (DII)
-  Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-    return Teuchos::rcp(new LSQRSolMgr<ScalarType,MV,OP,scalarTypeIsComplex>);
+  Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+    return Teuchos::rcp(new LSQRSolMgr<ScalarType,MV,OP,DM,scalarTypeIsComplex>);
   }
 };
 
@@ -211,11 +212,11 @@ public:
 // Partial specialization for real ScalarType.
 // This contains the actual working implementation of LSQR.
 // See discussion in the class documentation above.
-template<class ScalarType, class MV, class OP>
-class LSQRSolMgr<ScalarType, MV, OP, false> :
-    public Details::RealSolverManager<ScalarType, MV, OP, false> {
+template<class ScalarType, class MV, class OP, class DM>
+class LSQRSolMgr<ScalarType, MV, OP, DM, false> :
+    public Details::RealSolverManager<ScalarType, MV, OP, DM, false> {
 private:
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV,DM> MVT;
   typedef OperatorTraits<ScalarType,MV,OP> OPT;
   typedef Teuchos::ScalarTraits<ScalarType> STS;
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -268,8 +269,8 @@ public:
   virtual ~LSQRSolMgr () {}
 
   //! clone for Inverted Injection (DII)
-  Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-    return Teuchos::rcp(new LSQRSolMgr<ScalarType,MV,OP>);
+  Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+    return Teuchos::rcp(new LSQRSolMgr<ScalarType,MV,OP,DM>);
   }
   //@}
   //! \name Accessor methods
@@ -418,10 +419,10 @@ private:
   Teuchos::RCP<std::ostream> outputStream_;
 
   //! The "master" status test (that includes all status tests).
-  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
-  Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-  Teuchos::RCP<LSQRStatusTest<ScalarType,MV,OP> > convTest_;
-  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
+  Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
+  Teuchos::RCP<LSQRStatusTest<ScalarType,MV,OP,DM> > convTest_;
+  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
 
   //! Current parameter list.
   Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -457,8 +458,8 @@ private:
   bool loaDetected_;
 };
 
-template<class ScalarType, class MV, class OP>
-LSQRSolMgr<ScalarType,MV,OP,false>::LSQRSolMgr () :
+template<class ScalarType, class MV, class OP, class DM>
+LSQRSolMgr<ScalarType,MV,OP,DM,false>::LSQRSolMgr () :
   lambda_ (STM::zero ()),
   relRhsErr_ (Teuchos::as<MagnitudeType> (10) * STM::squareroot (STM::eps ())),
   relMatErr_ (Teuchos::as<MagnitudeType> (10) * STM::squareroot (STM::eps ())),
@@ -477,8 +478,8 @@ LSQRSolMgr<ScalarType,MV,OP,false>::LSQRSolMgr () :
   loaDetected_ (false)
 {}
 
-template<class ScalarType, class MV, class OP>
-LSQRSolMgr<ScalarType,MV,OP,false>::
+template<class ScalarType, class MV, class OP, class DM>
+LSQRSolMgr<ScalarType,MV,OP,DM,false>::
 LSQRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
             const Teuchos::RCP<Teuchos::ParameterList>& pl) :
   problem_ (problem),
@@ -512,9 +513,9 @@ LSQRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-LSQRSolMgr<ScalarType,MV,OP,false>::getValidParameters() const
+LSQRSolMgr<ScalarType,MV,OP,DM,false>::getValidParameters() const
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -572,9 +573,9 @@ LSQRSolMgr<ScalarType,MV,OP,false>::getValidParameters() const
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 void
-LSQRSolMgr<ScalarType,MV,OP,false>::
+LSQRSolMgr<ScalarType,MV,OP,DM,false>::
 setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::isParameterType;
@@ -751,7 +752,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     // Otherwise, update its parameters.
     if (convTest_.is_null ()) {
       convTest_ =
-        rcp (new LSQRStatusTest<ScalarType,MV,OP> (condMax_, termIterMax_,
+        rcp (new LSQRStatusTest<ScalarType,MV,OP,DM> (condMax_, termIterMax_,
                                                    relRhsErr_, relMatErr_));
     } else {
       convTest_->setCondLim (condMax_);
@@ -765,7 +766,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // necessary.  Otherwise, update it with the new maximum iteration
   // count.
   if (maxIterTest_.is_null()) {
-    maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP> (maxIters_));
+    maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP,DM> (maxIters_));
   } else {
     maxIterTest_->setMaxIters (maxIters_);
   }
@@ -774,7 +775,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   // maximum number of iterations, and the LSQR convergence test.
   // ("OR combination" means that both tests will always be evaluated,
   // as opposed to a SEQ combination.)
-  typedef StatusTestCombo<ScalarType,MV,OP> combo_type;
+  typedef StatusTestCombo<ScalarType,MV,OP,DM> combo_type;
   // If sTest_ is not null, then maxIterTest_ and convTest_ were
   // already constructed on entry to this routine, and sTest_ has
   // their pointers.  Thus, maxIterTest_ and convTest_ have gotten any
@@ -786,7 +787,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
   if (outputTest_.is_null ()) {
     // Create the status test output class.
     // This class manages and formats the output from the status test.
-    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
+    StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory (outputStyle_);
     outputTest_ = stoFactory.create (printer_, sTest_, outputFreq_,
                                      Passed + Failed + Undefined);
     // Set the solver string for the output test.
@@ -813,9 +814,9 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Belos::ReturnType
-LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
+LSQRSolMgr<ScalarType,MV,OP,DM,false>::solve ()
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -891,7 +892,7 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
   // setParameters() has been called.
   plist.set ("Lambda", lambda_);
 
-  typedef LSQRIter<ScalarType,MV,OP> iter_type;
+  typedef LSQRIter<ScalarType,MV,OP,DM> iter_type;
   RCP<iter_type> lsqr_iter =
     rcp (new iter_type (problem_, printer_, outputTest_, plist));
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -960,8 +961,8 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
 }
 
 // LSQRSolMgr requires the solver manager to return an eponymous std::string.
-template<class ScalarType, class MV, class OP>
-std::string LSQRSolMgr<ScalarType,MV,OP,false>::description () const
+template<class ScalarType, class MV, class OP, class DM>
+std::string LSQRSolMgr<ScalarType,MV,OP,DM,false>::description () const
 {
   std::ostringstream oss;
   oss << "LSQRSolMgr<...," << STS::name () << ">";

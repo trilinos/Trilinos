@@ -22,7 +22,6 @@
 #include "BelosStatusTestUserOutput.hpp"
 #include "BelosStatusTestGeneralOutput.hpp"
 
-
 namespace Belos {
 
   /*!
@@ -34,7 +33,7 @@ namespace Belos {
     class needs to be used from the solver managers. It also hides the generation of new StatusTestOutput
     classes from the solver managers.
   */
-template <class ScalarType, class MV, class OP>
+template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
 class StatusTestOutputFactory {
 
  public:
@@ -49,7 +48,7 @@ class StatusTestOutputFactory {
    * @param[in] outputStyle A ::OutputType value which defines the style of output requested by the user.
    * @param[in] taggedTests: map tag names of status tests to status tests (optional, default = Teuchos::null)
    */
-  StatusTestOutputFactory( int outputStyle, Teuchos::RCP<std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > > taggedTests = Teuchos::null )
+  StatusTestOutputFactory( int outputStyle, Teuchos::RCP<std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > > > taggedTests = Teuchos::null )
     : outputStyle_(outputStyle),
       taggedTests_(taggedTests)
   {}
@@ -76,45 +75,45 @@ class StatusTestOutputFactory {
    * @param[in] printStates A combination of ::StatusType values for which the output may be printed. Default: ::Passed (attempt to print whenever checkStatus() will return ::Passed)
    *
    */
-   Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > create(const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                                                            Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test,
+   Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > create(const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+                                                            Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > test,
                                                             int mod,
                                                             int printStates)
     {
-      Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest;
+      Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest;
 
       switch( outputStyle_ ) {
 
       case General:
         if (mod > 0) {
-          outputTest = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer, test, mod, printStates ) );
+          outputTest = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP,DM>( printer, test, mod, printStates ) );
         }
         else {
-          outputTest = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer, test, 1 ) );
+          outputTest = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP,DM>( printer, test, 1 ) );
         }
         break;
       case Brief:
         if (mod > 0) {
-          outputTest = Teuchos::rcp( new StatusTestResNormOutput<ScalarType,MV,OP>( printer, test, mod, printStates ) );
+          outputTest = Teuchos::rcp( new StatusTestResNormOutput<ScalarType,MV,OP,DM>( printer, test, mod, printStates ) );
         }
         else {
-          outputTest = Teuchos::rcp( new StatusTestResNormOutput<ScalarType,MV,OP>( printer, test, 1 ) );
+          outputTest = Teuchos::rcp( new StatusTestResNormOutput<ScalarType,MV,OP,DM>( printer, test, 1 ) );
         }
         break;
       case User:
         if (mod > 0) {
-          outputTest = Teuchos::rcp( new StatusTestUserOutput<ScalarType,MV,OP>( printer, test, taggedTests_, mod, printStates ) );
+          outputTest = Teuchos::rcp( new StatusTestUserOutput<ScalarType,MV,OP,DM>( printer, test, taggedTests_, mod, printStates ) );
         }
         else {
-          outputTest = Teuchos::rcp( new StatusTestUserOutput<ScalarType,MV,OP>( printer, test, taggedTests_, 1 ) );
+          outputTest = Teuchos::rcp( new StatusTestUserOutput<ScalarType,MV,OP,DM>( printer, test, taggedTests_, 1 ) );
         }
         break;
       default: //Default to General if invalid outputStyle_ given.
         if (mod > 0) {
-          outputTest = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer, test, mod, printStates ) );
+          outputTest = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP,DM>( printer, test, mod, printStates ) );
         }
         else {
-          outputTest = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP>( printer, test, 1 ) );
+          outputTest = Teuchos::rcp( new StatusTestGeneralOutput<ScalarType,MV,OP,DM>( printer, test, 1 ) );
         }
         break;
       }
@@ -130,11 +129,11 @@ class StatusTestOutputFactory {
   // Which type of StatusTestOutput class
   int outputStyle_;
 
-  Teuchos::RCP<std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > > taggedTests_;
+  Teuchos::RCP<std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > > > taggedTests_;
 
   // Hide the default constructor and copy constructor
   StatusTestOutputFactory( void ) {}
-  StatusTestOutputFactory( const StatusTestOutputFactory<ScalarType,MV,OP>& ) {}
+  StatusTestOutputFactory( const StatusTestOutputFactory<ScalarType,MV,OP,DM>& ) {}
 
 };
 

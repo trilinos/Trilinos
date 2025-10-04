@@ -2261,8 +2261,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   // of iterations across the ensemble when not doing ensemble reductions
   belosParams->set("Implicit Residual Scaling", "None");
 
-  RCP<Belos::PseudoBlockCGSolMgr<BelosScalar,MV,OP,true> > solver =
-    rcp(new Belos::PseudoBlockCGSolMgr<BelosScalar,MV,OP,true>(problem, belosParams));
+  RCP<Belos::PseudoBlockCGSolMgr<BelosScalar,MV,OP> > solver =
+    rcp(new Belos::PseudoBlockCGSolMgr<BelosScalar,MV,OP>(problem, belosParams));
   Belos::ReturnType ret = solver->solve();
   TEST_EQUALITY_CONST( ret, Belos::Converged );
 
