@@ -233,17 +233,19 @@ int main(int argc, char *argv[]) {
             p_exact[0] = 1;
             p_exact[1] = 3;
           }
-          if (mockModel=="MockModelEval_B_Tpetra") {
+          else if (mockModel=="MockModelEval_B_Tpetra") {
             p_exact[0] = 6;
             p_exact[1] = 4;
           }
-          if (mockModel=="MockModelEval_B_Tpetra_2_parameters") {
+          else if (mockModel=="MockModelEval_B_Tpetra_2_parameters") {
             p_exact[0] = 4;
             p_exact[1] = 6;
           }
-          if (mockModel=="MassSpringDamperModel") {
+          else if (mockModel=="MassSpringDamperModel") {
             p_exact[0] = 1.;
             p_exact[1] = 0.5;
+          } else {
+           TEUCHOS_ASSERT(false);
           }
 
           double l2_diff = std::sqrt(std::pow(p_view(0)-p_exact[0],2) + std::pow(p_view(1)-p_exact[1],2));
