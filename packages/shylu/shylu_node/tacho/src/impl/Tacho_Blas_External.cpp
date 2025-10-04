@@ -302,6 +302,17 @@ int Blas<float>::trmm(cublasHandle_t handle, const cublasSideMode_t side, const 
   return r_val;
 }
 #endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<float>::trmm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                      const rocblas_operation transa, const rocblas_diagonal diag, int m, int n,
+                      const float alpha, const float *a, int lda,
+                                         const float *b, int ldb,
+                                               float *c, int ldc) {
+  const int r_val = rocblas_strmm(handle, side, uplo, transa, diag, m, n, &alpha, a, lda, b, ldb, c, ldc);
+  return r_val;
+}
+#endif
 
 template <>
 int Blas<float>::herk(const char uplo, const char trans, int n, int k, const float alpha, const float *a, int lda,
@@ -483,6 +494,17 @@ int Blas<double>::trmm(cublasHandle_t handle, const cublasSideMode_t side, const
   return r_val;
 }
 #endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<double>::trmm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                       const rocblas_operation transa, const rocblas_diagonal diag, int m, int n,
+                       const double alpha, const double *a, int lda,
+                                           const double *b, int ldb,
+                                                 double *c, int ldc) {
+  const int r_val = rocblas_dtrmm(handle, side, uplo, transa, diag, m, n, &alpha, a, lda, b, ldb, c, ldc);
+  return r_val;
+}
+#endif
 
 template <>
 int Blas<double>::herk(const char uplo, const char trans, int n, int k, const double alpha, const double *a, int lda,
@@ -626,7 +648,7 @@ int Blas<Kokkos::complex<float>>::trmv(rocblas_handle handle, const rocblas_fill
                                        const rocblas_diagonal diag, int m, const Kokkos::complex<float> *a, int lda,
                                        /* */ Kokkos::complex<float> *b, int incb) {
   const int r_val = rocblas_ctrmv(handle, uplo, transa, diag, m, (const rocblas_float_complex *)a, lda,
-                                  (rocblas_float_complex *)b, incb);
+                                                                 (      rocblas_float_complex *)b, incb);
   return r_val;
 }
 #endif
@@ -682,6 +704,20 @@ int Blas<Kokkos::complex<float>>::trmm(cublasHandle_t handle, const cublasSideMo
                                                                                  Kokkos::complex<float> *c, int ldc) {
   const int r_val = cublasCtrmm(handle, side, uplo, transa, diag, m, n, (const cuComplex *)&alpha, (const cuComplex *)a, lda,
                                                                         (const cuComplex *)b, ldb, (      cuComplex *)c, ldc);
+  return r_val;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<Kokkos::complex<float>>::trmm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                                       const rocblas_operation transa, const rocblas_diagonal diag, int m, int n,
+                                       const Kokkos::complex<float> alpha, const Kokkos::complex<float> *a, int lda,
+                                                                           const Kokkos::complex<float> *b, int ldb,
+                                                                                 Kokkos::complex<float> *c, int ldc) {
+  const int r_val = rocblas_ctrmm(handle, side, uplo, transa, diag, m, n, (const rocblas_float_complex *)&alpha,
+                                                                          (const rocblas_float_complex *)a, lda,
+                                                                          (const rocblas_float_complex *)b, ldb,
+                                                                          (      rocblas_float_complex *)c, ldc);
   return r_val;
 }
 #endif
@@ -843,7 +879,7 @@ int Blas<Kokkos::complex<double>>::trmv(rocblas_handle handle, const rocblas_fil
                                         const rocblas_diagonal diag, int m, const Kokkos::complex<double> *a, int lda,
                                         /* */ Kokkos::complex<double> *b, int incb) {
   const int r_val = rocblas_ztrmv(handle, uplo, transa, diag, m, (const rocblas_double_complex *)a, lda,
-                                  (rocblas_double_complex *)b, incb);
+                                                                 (      rocblas_double_complex *)b, incb);
   return r_val;
 }
 #endif
@@ -898,8 +934,24 @@ int Blas<Kokkos::complex<double>>::trmm(cublasHandle_t handle, const cublasSideM
                                         const Kokkos::complex<double> alpha, const Kokkos::complex<double> *a, int lda,
                                                                              const Kokkos::complex<double> *b, int ldb,
                                                                                    Kokkos::complex<double> *c, int ldc) {
-  const int r_val = cublasZtrmm(handle, side, uplo, transa, diag, m, n, (const cuDoubleComplex *)&alpha, (const cuDoubleComplex *)a, lda,
-                                                                        (const cuDoubleComplex *)b, ldb, (      cuDoubleComplex *)c, ldc);
+  const int r_val = cublasZtrmm(handle, side, uplo, transa, diag, m, n, (const cuDoubleComplex *)&alpha,
+                                                                        (const cuDoubleComplex *)a, lda,
+                                                                        (const cuDoubleComplex *)b, ldb,
+                                                                        (      cuDoubleComplex *)c, ldc);
+  return r_val;
+}
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+template <>
+int Blas<Kokkos::complex<double>>::trmm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                                        const rocblas_operation transa, const rocblas_diagonal diag, int m, int n,
+                                        const Kokkos::complex<double> alpha, const Kokkos::complex<double> *a, int lda,
+                                                                             const Kokkos::complex<double> *b, int ldb,
+                                                                                   Kokkos::complex<double> *c, int ldc) {
+  const int r_val = rocblas_ztrmm(handle, side, uplo, transa, diag, m, n, (const rocblas_double_complex *)&alpha,
+                                                                          (const rocblas_double_complex *)a, lda,
+                                                                          (const rocblas_double_complex *)b, ldb,
+                                                                          (      rocblas_double_complex *)c, ldc);
   return r_val;
 }
 #endif

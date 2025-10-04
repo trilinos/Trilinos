@@ -69,6 +69,11 @@ template <typename T> struct Blas {
                   const cublasDiagType_t diag, int m, const T *a, int lda,
                   /* */ T *b, int incb);
 #endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+  static int trmv(rocblas_handle handle, const rocblas_fill uplo, const rocblas_operation transa,
+                  const rocblas_diagonal diag, int m, const T *a, int lda,
+                  /* */ T *b, int incb);
+#endif
 
   static int gemm(const char transa, const char transb, int m, int n, int k, const T alpha, const T *a, int lda,
                   const T *b, int ldb, const T beta,
@@ -90,6 +95,13 @@ template <typename T> struct Blas {
 #if defined(TACHO_ENABLE_CUBLAS)
   static int trmm(cublasHandle_t handle, const cublasSideMode_t side, const cublasFillMode_t uplo,
                   const cublasOperation_t transa, const cublasDiagType_t diag, int m, int n,
+                  const T alpha, const T *a, int lda,
+                                 const T *b, int ldb,
+                                       T *c, int ldc);
+#endif
+#if defined(TACHO_ENABLE_ROCBLAS)
+  static int trmm(rocblas_handle handle, const rocblas_side side, const rocblas_fill uplo,
+                  const rocblas_operation transa, const rocblas_diagonal diag, int m, int n,
                   const T alpha, const T *a, int lda,
                                  const T *b, int ldb,
                                        T *c, int ldc);

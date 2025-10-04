@@ -169,12 +169,91 @@ template <typename ArgUplo, typename ArgTransA> struct Trmv<ArgUplo, ArgTransA, 
             Blas<value_type>::gemm(handle, ArgTransA::cublas_param, Trans::NoTranspose::cublas_param,
                                    mC, nC, nA-mA,
                                    one, A12.data(), A12.stride(1),
-                                        B21.data(), B21.stride(1), 
+                                        B21.data(), B21.stride(1),
                                    one, C.data(),   C.stride(1));
           } else {
             const auto A12 = Kokkos::subview(A, Kokkos::ALL(), range_type(mA, nA));
             const auto C21 = Kokkos::subview(C, range_type(mA, mC), Kokkos::ALL());
             Blas<value_type>::gemm(handle, ArgTransA::cublas_param, Trans::NoTranspose::cublas_param,
+                                   nA-mA, nC, mA,
+                                   one,  A12.data(), A12.stride(1),
+                                         B.data(),   B.stride(1),
+                                   zero, C21.data(), C21.stride(1));
+          }
+        } else if (nA != mA) {
+          TACHO_TEST_FOR_ABORT(true, "Tall-skinny TRMV not implemented");
+        }
+      }
+    }
+    return r_val;
+  }
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+  template <typename DiagType, typename ViewTypeA, typename ViewTypeB, typename ViewTypeC>
+  inline static int rocblas_invoke(rocblas_handle &handle, const DiagType diagA, const ViewTypeA &A,
+                                   const ViewTypeB &B, const ViewTypeC &C) {
+    using value_type = typename ViewTypeA::non_const_value_type;
+    using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
+
+    const value_type one(1);
+    const value_type zero(0);
+
+    const ordinal_type mB = B.extent(0), nB = B.extent(1);
+    const ordinal_type mA = A.extent(0), nA = A.extent(1);
+    const ordinal_type mC = C.extent(0), nC = C.extent(1);
+    const bool transA = (ArgTransA::param != 'N' && ArgTransA::param != 'n');
+
+    int r_val(0);
+    if (mB > 0 && nB > 0) {
+      const ordinal_type mn = (mA < nA ? mA : nA);
+      const auto dB = Kokkos::subview(B, range_type(0, mn), Kokkos::ALL());
+      const auto dC = Kokkos::subview(C, range_type(0, mn), Kokkos::ALL());
+      Kokkos::deep_copy(dC, dB); // TODO: Can we skip this?
+      if (nB == 1) {
+        r_val = Blas<value_type>::trmv(handle, ArgUplo::rocblas_param,
+                                       ArgTransA::rocblas_param, diagA.rocblas_param, mA,
+                                       A.data(), A.stride(1), C.data(), C.stride(0));
+        if (nA > mA) {
+          if (!transA) {
+            const auto A12 = Kokkos::subview(A, Kokkos::ALL(), range_type(mA, nA));
+            const auto B21 = Kokkos::subview(B, range_type(mA, nA), Kokkos::ALL());
+            Blas<value_type>::gemv(handle, ArgTransA::rocblas_param, mA, nA-mA,
+                                   one, A12.data(), A12.stride(1),
+                                        B21.data(), B21.stride(0), 
+                                   one, C.data(),   C.stride(0));
+          } else {
+            const auto A12 = Kokkos::subview(A, Kokkos::ALL(), range_type(mA, nA));
+            const auto C21 = Kokkos::subview(C, range_type(mA, mC), Kokkos::ALL());
+            Blas<value_type>::gemv(handle, ArgTransA::rocblas_param, mA, nA-mA,
+                                   one,  A12.data(), A12.stride(1),
+                                         B.data(),   B.stride(0), 
+                                   zero, C21.data(), C21.stride(0));
+          }
+        } else if (nA != mA) {
+          TACHO_TEST_FOR_ABORT(true, "Tall-skinny TRMV not implemented");
+        }
+      } else {
+        for (ordinal_type j = 0; j < nB; j++) {
+          const auto Cj = Kokkos::subview(C, Kokkos::ALL(), range_type(j, j + 1));
+          r_val = Blas<value_type>::trmv(handle, ArgUplo::rocblas_param,
+                                         ArgTransA::rocblas_param, diagA.rocblas_param, mA,
+                                         A.data(), A.stride(1), Cj.data(), Cj.stride(0));
+        }
+        if (nA > mA) {
+          if (!transA) {
+            const auto A12 = Kokkos::subview(A, Kokkos::ALL(), range_type(mA, nA));
+            const auto B21 = Kokkos::subview(B, range_type(mA, nA), Kokkos::ALL());
+            Blas<value_type>::gemm(handle, ArgTransA::rocblas_param,
+                                   Trans::NoTranspose::rocblas_param,
+                                   mC, nC, nA-mA,
+                                   one, A12.data(), A12.stride(1),
+                                        B21.data(), B21.stride(1), 
+                                   one, C.data(),   C.stride(1));
+          } else {
+            const auto A12 = Kokkos::subview(A, Kokkos::ALL(), range_type(mA, nA));
+            const auto C21 = Kokkos::subview(C, range_type(mA, mC), Kokkos::ALL());
+            Blas<value_type>::gemm(handle, ArgTransA::rocblas_param,
+                                   Trans::NoTranspose::rocblas_param,
                                    nA-mA, nC, mA,
                                    one,  A12.data(), A12.stride(1),
                                          B.data(),   B.stride(1), 
@@ -183,11 +262,6 @@ template <typename ArgUplo, typename ArgTransA> struct Trmv<ArgUplo, ArgTransA, 
         } else if (nA != mA) {
           TACHO_TEST_FOR_ABORT(true, "Tall-skinny TRMV not implemented");
         }
-        //r_val = Blas<value_type>::trmm(handle, Side::Left::cublas_param, ArgUplo::cublas_param, ArgTransA::cublas_param,
-        //                               diagA.cublas_param, m, n,
-        //                               value_type(1), A.data(), A.stride(1),
-        //                                              B.data(), B.stride(1),
-        //                                              C.data(), C.stride(1));
       }
     }
     return r_val;
