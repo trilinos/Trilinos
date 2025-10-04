@@ -49,11 +49,126 @@
 #include "Epetra_Vector.h"
 #include "Epetra_GIDTypeVector.h"
 #include "Epetra_Comm.h"
+#include "Epetra_MpiComm.h"                                //  REMOVE TEMP!!
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MapColoring.h"
 #include "EpetraExt_CrsSingletonFilter_LinearProblem.h"
 
+
+void printEpetraMultiVector(
+    const std::string& label,
+    const Epetra_MultiVector* multiVector)
+{
+    // Print the label
+    std::cout << "petra : " << label << std::endl;
+
+    // Loop over columns (vectors) in the MultiVector
+    for (int col = 0; col < multiVector->NumVectors(); ++col) {
+        double* data;
+        int stride;
+
+        // Extract the view of the data for the current column
+        multiVector->ExtractView(&data, &stride);
+
+        std::cout << "Column " << col << ": ";
+
+        // Loop over rows (entries) in the column
+        for (int row = 0; row < multiVector->MyLength(); ++row) {
+            std::cout << "(" << row << ", " << data[row + col * stride] << ") ";
+        }
+        std::cout << std::endl;
+    }
+}
+
+
+void PrintEpetraRowMatrix(const Epetra_RowMatrix& matrix) {
+    int numRows = matrix.NumMyRows();
+    int maxNumEntries = matrix.MaxNumEntries();
+    
+    std::vector<int> indices(maxNumEntries);
+    std::vector<double> values(maxNumEntries);
+
+    for (int i = 0; i < numRows; ++i) {
+        int numEntries;
+        matrix.ExtractMyRowCopy(i, maxNumEntries, numEntries, values.data(), indices.data());
+
+        std::cout << "Row " << i << ": ";
+        for (int j = 0; j < numEntries; ++j) {
+            std::cout << "(" << indices[j] << ", " << values[j] << ") ";
+        }
+        std::cout << std::endl;
+    }
+}
+
+void PrintEpetraCrsMatrix(const Epetra_CrsMatrix& matrix) {
+    int numRows = matrix.NumMyRows();
+    int maxNumEntries = matrix.MaxNumEntries(); // Maximum number of entries across all rows
+
+    std::vector<int> indices(maxNumEntries);
+    std::vector<double> values(maxNumEntries);
+
+    for (int i = 0; i < numRows; ++i) {
+        int numEntries;
+        matrix.ExtractMyRowCopy(i, maxNumEntries, numEntries, values.data(), indices.data());
+
+        std::cout << "Row " << i << ": ";
+        for (int j = 0; j < numEntries; ++j) {
+            std::cout << "(" << indices[j] << ", " << values[j] << ") ";
+        }
+        std::cout << std::endl;
+    }
+}
+
+void PrintEpetraCrsMatrixGlobal(const Epetra_CrsMatrix& matrix) {
+    int numRows = matrix.NumGlobalRows(); // Get the total number of global rows
+
+    for (int i = 0; i < numRows; ++i) {
+
+        int maxNumEntries = matrix.NumMyEntries(i);
+        //std::cout << "maxNumEntries = " << maxNumEntries << std::endl;
+
+        std::vector<int> indices(maxNumEntries);
+        std::vector<double> values(maxNumEntries);
+
+        int numEntries = 0;
+        int LenofIndices = matrix.NumMyEntries(i);
+        //std::cout << "LenofIndices = " << LenofIndices << std::endl;
+        
+        std::cout << "Row " << i << ": ";
+        if (LenofIndices != 0) {
+
+          matrix.ExtractGlobalRowCopy(i, LenofIndices, numEntries, values.data(), indices.data());
+          //int ierr = matrix.ExtractGlobalRowCopy(i, LenofIndices, numEntries, values.data(), indices.data());
+          //if (ierr != 0) {
+          //    std::cerr << "Error extracting row " << i << ": Epetra error code " << ierr << std::endl;
+          //    continue;
+          //}
+
+          for (int j = 0; j < numEntries; ++j) {
+              std::cout << "(" << indices[j] << ", " << values[j] << ") ";
+          }
+        }
+        std::cout << std::endl;
+    }
+}
+
+
 namespace EpetraExt {
+
+  #define PRINT(outputRank_, message) \
+    do { \
+        if (outputRank_) { \
+            std::cout << "petra : " << message << std::endl; \
+        } \
+        MPI_Barrier(MPI_COMM_WORLD); \
+    } while (0)
+
+  #define PRINT_NB(outputRank_, message) \
+    do { \
+        if (outputRank_) { \
+            std::cout << "petra : " << message << std::endl; \
+        } \
+    } while (0)
 
 //==============================================================================
 LinearProblem_CrsSingletonFilter::
@@ -99,6 +214,11 @@ LinearProblem_CrsSingletonFilter::NewTypeRef
 LinearProblem_CrsSingletonFilter::
 operator()( LinearProblem_CrsSingletonFilter::OriginalTypeRef orig )
 {
+  int outRank = 0;
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  int myRank = Comm.MyPID();
+  outputRank_ = outRank == myRank;
+
   analyze( orig );
   return construct();
 }
@@ -111,6 +231,7 @@ analyze( LinearProblem_CrsSingletonFilter::OriginalTypeRef orig )
   origObj_ = &orig;
 
   FullMatrix_ = orig.GetMatrix();
+
 
 #ifdef NDEBUG
   (void) Analyze( FullMatrix_ );
@@ -257,6 +378,7 @@ void LinearProblem_CrsSingletonFilter::InitializeDefaults() {
 }
 //==============================================================================
 int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
+  PRINT(outputRank_, "Analyze() A");
   FullMatrix_ = fullMatrix;
 
   if (AnalysisDone_) EPETRA_CHK_ERR(-1); // Analysis already done once.  Cannot do it again
@@ -264,6 +386,8 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
   if (fullMatrix->NumGlobalRows64()==0) EPETRA_CHK_ERR(-3); // Full matrix has zero dimension.
   if (fullMatrix->NumGlobalNonzeros64()==0) EPETRA_CHK_ERR(-4); // Full matrix has no nonzero terms.
 
+  PRINT(outputRank_, "Analyze() B");
+  MPI_Barrier(MPI_COMM_WORLD);
   // First check for columns with single entries and find columns with singleton rows
   Epetra_IntVector ColProfiles(FullMatrixColMap()); ColProfiles.PutValue(0);
   Epetra_IntVector ColHasRowWithSingleton(FullMatrixColMap()); ColHasRowWithSingleton.PutValue(0);
@@ -272,6 +396,8 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
   // if the jth col has a single entry
   Epetra_IntVector RowIDs(FullMatrixColMap()); RowIDs.PutValue(-1);
 
+  PRINT(outputRank_, "Analyze() C");
+  MPI_Barrier(MPI_COMM_WORLD);
   // Define MapColoring objects
   RowMapColors_ = new Epetra_MapColoring(FullMatrixRowMap());  // Initial colors are all 0
   ColMapColors_ = new Epetra_MapColoring(FullMatrixColMap());
@@ -285,19 +411,37 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
   EPETRA_CHK_ERR(InitFullMatrixAccess());
 
   // Scan matrix for singleton rows, build up column profiles
-  int NumIndices;
+  int NumIndices = 1;
+  PRINT(outputRank_, "Analyze() Initialize NumIndices = " << NumIndices);
   int * Indices;
   NumMyRowSingletons_ = 0;
+  PRINT(outputRank_, "Analyze() D");
+  PRINT(outputRank_, "Analyze() E");
   for (int i=0; i<NumMyRows; i++) {
+    PRINT(outputRank_, "Analyze() E  i = " << i);
+    PRINT(outputRank_, "Analyze() E  NumIndices = " << NumIndices);
     // Get ith row
     EPETRA_CHK_ERR(GetRow(i, NumIndices, Indices));
+    PRINT(outputRank_, "Analyze() E  NumIndices = " << NumIndices);
+    if (outputRank_) std::cout << "petra : Analyze() E      localIndices = ";
+  MPI_Barrier(MPI_COMM_WORLD);
+    for (int ii = 0; ii  < NumIndices; ++ii) {
+        std::cout << Indices[ii] << " ";
+    } std::cout << std::endl;
+    PRINT(outputRank_, "Analyze() F");
     for (int j=0; j<NumIndices; j++) {
+      PRINT(outputRank_, "Analyze() F    j = " << j);
       int ColumnIndex = Indices[j];
+      PRINT(outputRank_, "Analyze() F    ColumnIndex = " << ColumnIndex);
+      PRINT(outputRank_, "Analyze() F    ColProfiles[ColumnIndex] = " << ColProfiles[ColumnIndex]);
       ColProfiles[ColumnIndex]++; // Increment column count
+      PRINT(outputRank_, "Analyze() F    ColProfiles[ColumnIndex] = " << ColProfiles[ColumnIndex]);
       // Record local row ID for current column
       // will use to identify row to eliminate if column is a singleton
       RowIDs[ColumnIndex] = i;
+      PRINT(outputRank_, "Analyze() F    RowIDs[ColumnIndex] = " << RowIDs[ColumnIndex]);
     }
+    PRINT(outputRank_, "Analyze() G");
     // If row has single entry, color it and associated column with color=1
     if (NumIndices==1) {
       int j2 = Indices[0];
@@ -306,7 +450,9 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
       colMapColors[j2] = 1;
       NumMyRowSingletons_++;
     }
+    PRINT(outputRank_, "Analyze() H");
   }
+
 
   // 1) The vector ColProfiles has column nonzero counts for each processor's contribution
   // Combine these to get total column profile information and then redistribute to processors
@@ -331,6 +477,25 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
     EPETRA_CHK_ERR(tmpVec.Export(ColHasRowWithSingleton, *fullMatrix->RowMatrixImporter(), Add));
     EPETRA_CHK_ERR(ColHasRowWithSingleton.Import(tmpVec, *fullMatrix->RowMatrixImporter(), Insert));
   }
+
+  PRINT(outputRank_, "Analyze() I    ColProfiles");
+  PRINT(outputRank_, "Analyze() I    NumIndices = " << NumIndices);
+  MPI_Barrier(MPI_COMM_WORLD);
+  for (int j=0; j<NumIndices; j++) {
+    PRINT(outputRank_, "Analyze() I    j = " << j);
+    int ColumnIndex = Indices[j];
+    PRINT(outputRank_, "Analyze() I    ColumnIndex = " << ColumnIndex);
+    PRINT(outputRank_, "Analyze() I    ColProfiles[ColumnIndex] = " << ColProfiles[ColumnIndex]);
+  }
+  PRINT(outputRank_, "Analyze() I    ColHasRowWithSingleton");
+  PRINT(outputRank_, "Analyze() I    NumIndices = " << NumIndices);
+  for (int j=0; j<NumIndices; j++) {
+    PRINT(outputRank_, "Analyze() I    j = " << j);
+    int ColumnIndex = Indices[j];
+    PRINT(outputRank_, "Analyze() I    ColumnIndex = " << ColumnIndex);
+    PRINT(outputRank_, "Analyze() I    ColHasRowWithSingleton[ColumnIndex] = " << ColProfiles[ColumnIndex]);
+  }
+
   // ColProfiles now contains the nonzero column entry count for all columns that have
   // an entry on this processor.
   // ColHasRowWithSingleton now contains a count of singleton rows associated with the corresponding
@@ -339,6 +504,7 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
   if (ColHasRowWithSingleton.MaxValue()>1) {
     EPETRA_CHK_ERR(-2); // At least one col is associated with two singleton rows, can't handle it.
   }
+  PRINT(outputRank_, "Analyze() J    ColHasRowWithSingleton MaxValue = " << ColHasRowWithSingleton.MaxValue());
 
   Epetra_IntVector RowHasColWithSingleton(fullMatrix->RowMatrixRowMap()); // Use to check for errors
   RowHasColWithSingleton.PutValue(0);
@@ -347,6 +513,7 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
   // Count singleton columns (that were not already counted as singleton rows)
   for (int j=0; j<NumMyCols; j++) {
     int i2 = RowIDs[j];
+    PRINT(outputRank_, "Analyze() K    i2 = " << i2);
     // Check if column is a singleton
     if (ColProfiles[j]==1 ) {
       // Check to make sure RowID is not invalid
@@ -371,6 +538,35 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
         colMapColors[j] = 1;
     }
   }
+  for (int j=0; j<NumMyCols; j++) {
+    PRINT(outputRank_, "Analyze() DEBUG    ColProfiles["<<j<<"] = " << ColProfiles[j]);
+  }
+
+
+  PRINT(outputRank_, "Analyze() K    NumMyColSingletons_ = " << NumMyColSingletons_);
+  auto size1 = RowHasColWithSingleton.MyLength();
+  for (int j=0; j<size1; j++) {
+    if (RowHasColWithSingleton[j] == 0) continue;
+    PRINT(outputRank_, "Analyze() K    RowHasColWithSingleton["<<j<<"] = " << RowHasColWithSingleton[j]);
+  }
+  size1 = NumMyRows;
+  for (int j=0; j<size1; j++) {
+    if (rowMapColors[j] != 0) {
+      PRINT_NB(outputRank_, "Analyze() K    rowMapColors["<<j<<"] = " << rowMapColors[j]);
+    }
+    if (colMapColors[j] != 0) {
+      PRINT_NB(outputRank_, "Analyze() K    colMapColors["<<j<<"] = " << colMapColors[j]);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+
+  size1 = NewColProfiles.MyLength();
+  for (int j=0; j<size1; j++) {
+    PRINT(outputRank_, "Analyze() K    NewColProfiles["<<j<<"] = " << NewColProfiles[j]);
+  }
+
+
+
   if (RowHasColWithSingleton.MaxValue()>1) {
     EPETRA_CHK_ERR(-3); // At lease one row is associated with two singleton cols, can't handle it.
   }
@@ -379,18 +575,43 @@ int LinearProblem_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
   EPETRA_CHK_ERR(CreatePostSolveArrays(RowIDs, rowMapColors, ColProfiles, NewColProfiles,
                                        ColHasRowWithSingleton));
 
+  for (int j=0; j<NumMyCols; j++) {
+    PRINT(outputRank_, "Analyze() L    RowIDs["<<j<<"] = " << RowIDs[j]);
+    PRINT(outputRank_, "Analyze() L    ColProfiles["<<j<<"] = " << ColProfiles[j]);
+  }
+  size1 = NewColProfiles.MyLength();
+  for (int j=0; j<size1; j++) {
+    PRINT(outputRank_, "Analyze() L    NewColProfiles["<<j<<"] = " << NewColProfiles[j]);
+  }
+  size1 = ColHasRowWithSingleton.MyLength();
+  for (int j=0; j<size1; j++) {
+    PRINT(outputRank_, "Analyze() L    ColHasRowWithSingleton["<<j<<"] = " << ColHasRowWithSingleton[j]);
+  }
+
+
   for (int i=0; i<NumMyRows; i++) {
     if (rowMapColors[i]==2) rowMapColors[i] = 1; // Convert all eliminated rows to same color
+  }
+  size1 = NumMyRows;
+  for (int j=0; j<size1; j++) {
+    if (rowMapColors[j] != 0) {
+      PRINT_NB(outputRank_, "Analyze() L    rowMapColors["<<j<<"] = " << rowMapColors[j]);
+    }
   }
 
   fullMatrix->RowMatrixRowMap().Comm().SumAll(&NumMyRowSingletons_, &NumGlobalRowSingletons_, 1);
   fullMatrix->RowMatrixRowMap().Comm().SumAll(&NumMyColSingletons_, &NumGlobalColSingletons_, 1);
+  PRINT(outputRank_, "Analyze() M    NumGlobalRowSingletons_ = " << NumGlobalRowSingletons_);
+  PRINT(outputRank_, "Analyze() M    NumGlobalColSingletons_ = " << NumGlobalColSingletons_);
   AnalysisDone_ = true;
   return(0);
 }
 //==============================================================================
 template<typename int_type>
 int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProblem * Problem) {
+
+  PRINT(outputRank_, "ConstructReducedProblem() A");
+  
   int i, j;
   if (HaveReducedProblem_) EPETRA_CHK_ERR(-1); // Setup already done once.  Cannot do it again
   if (Problem==0) EPETRA_CHK_ERR(-2); // Null problem pointer
@@ -402,13 +623,28 @@ int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProb
   if (Problem->GetLHS()==0) EPETRA_CHK_ERR(-5); // Need a LHS
   // Generate reduced row and column maps
 
+  PRINT(outputRank_, "ConstructReducedProblem() A    SingletonsDetected() = " << SingletonsDetected());
   if ( SingletonsDetected() ) {
 
     Epetra_MapColoring & rowMapColors = *RowMapColors_;
     Epetra_MapColoring & colMapColors = *ColMapColors_;
 
+    auto size1 = FullMatrix()->NumMyRows();
+    for (int jj=0; jj<size1; jj++) {
+      if (rowMapColors[jj] != 0) {
+        PRINT_NB(outputRank_, "ConstructReducedProblem() A    rowMapColors["<<jj<<"] = " << rowMapColors[jj]);
+      }
+      if (colMapColors[jj] != 0) {
+        PRINT_NB(outputRank_, "ConstructReducedProblem() A    colMapColors["<<jj<<"] = " << colMapColors[jj]);
+      }
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+
     ReducedMatrixRowMap_ = rowMapColors.GenerateMap(0);
     ReducedMatrixColMap_ = colMapColors.GenerateMap(0);
+
+    ReducedMatrixRowMap_->Print(std::cout);
+    ReducedMatrixColMap_->Print(std::cout);
 
     // Create domain and range map colorings by exporting map coloring of column and row maps
 
@@ -419,6 +655,7 @@ int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProb
     }
     else
       OrigReducedMatrixDomainMap_ = ReducedMatrixColMap_;
+    OrigReducedMatrixDomainMap_->Print(std::cout);
 
     if (FullMatrixIsCrsMatrix_) {
       if (FullCrsMatrix()->Exporter()!=0) { // Non-trivial exporter
@@ -432,6 +669,10 @@ int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProb
     }
     else
       ReducedMatrixRangeMap_ = ReducedMatrixRowMap_;
+    ReducedMatrixRangeMap_->Print(std::cout);
+
+
+    PRINT(outputRank_, "ConstructReducedProblem() C    SymmetricElimination_ = " << SymmetricElimination_);
 
     // Check to see if the reduced system domain and range maps are the same.
     // If not, we need to remap entries of the LHS multivector so that they are distributed
@@ -451,12 +692,30 @@ int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProb
     Epetra_MultiVector * FullLHS = FullProblem()->GetLHS();
     int NumVectors = FullLHS->NumVectors();
 
+    PRINT(outputRank_, "ConstructReducedProblem() D    NumVectors = " << NumVectors);
+
+    PRINT(outputRank_, "ConstructReducedProblem() E    ReducedMatrixDomainMap() = " << ReducedMatrixDomainMap());
+    //PRINT(outputRank_, "ConstructReducedProblem() E    FullMatrixDomainMap() = " << FullMatrixDomainMap());
+    PRINT(outputRank_, "ConstructReducedProblem() E    ReducedMatrixRowMap() = " << ReducedMatrixRowMap());
+    //PRINT(outputRank_, "ConstructReducedProblem() E    FullRHS->Map() = " << FullRHS->Map());
+  
     // Create importers
     Full2ReducedLHSImporter_ = new Epetra_Import(*ReducedMatrixDomainMap(), FullMatrixDomainMap());
+    ReducedMatrixRowMap_->Print(std::cout);
+    FullRHS->Map().Print(std::cout);
     Full2ReducedRHSImporter_ = new Epetra_Import(*ReducedMatrixRowMap(), FullRHS->Map());
+    if (Full2ReducedRHSImporter_ != nullptr) {
+        // Print detailed information about the importer
+        Full2ReducedRHSImporter_->Print(std::cout);
+    } else {
+        std::cout << "Full2ReducedRHSImporter_ is null." << std::endl;
+    }
+
 
     // Construct Reduced Matrix
     ReducedMatrix_ = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *ReducedMatrixRowMap(), *ReducedMatrixColMap(), 0) );
+
+    if (outputRank_) PrintEpetraCrsMatrix(*ReducedMatrix_);
 
     // Create storage for temporary X values due to explicit elimination of rows
     tempExportX_ = new Epetra_MultiVector(FullMatrixColMap(), NumVectors);
@@ -471,6 +730,29 @@ int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProb
         int_type * Indices;
         EPETRA_CHK_ERR(GetRowGCIDs(i, NumEntries, Values, Indices)); // Get current row (Indices are global)
 
+
+        //// Debug: Print row and column indices being inserted
+        //std::cout << "Inserting into row " << curGRID << " with column indices: ";
+        //for (int j = 0; j < NumEntries; ++j) {
+        //    std::cout << Indices[j] << " ";
+        //}
+        //std::cout << std::endl;
+        //
+        //// Debug: Print the column map on this process
+        //std::cout << "Column map on this process: ";
+        //for (int j = 0; j < ReducedMatrixColMap()->NumMyElements(); ++j) {
+        //    std::cout << ReducedMatrixColMap()->GID64(j) << " "; // Get global column indices
+        //}
+        //std::cout << std::endl;
+        //
+        //// Debug: Check for invalid column indices
+        //for (int j = 0; j < NumEntries; ++j) {
+        //    if (!ReducedMatrixColMap()->MyGID(Indices[j])) { // Check if column index is in the column map
+        //        std::cout << "Error: Column index " << Indices[j] << " is not in the column map on this process!" << std::endl;
+        //    }
+        //}
+
+
         int ierr = ReducedMatrix()->InsertGlobalValues(curGRID, NumEntries,
                                                      Values, Indices); // Insert into reduce matrix
         // Positive errors will occur because we are submitting col entries that are not part of
@@ -481,6 +763,7 @@ int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProb
       }
       else {
         int * Indices;
+        PRINT(outputRank_, "ConstructReducedProblem() F    i, NumEntries = " << i << ", " << NumEntries);
         EPETRA_CHK_ERR(GetRow(i, NumEntries, Values, Indices)); // Get current row
         if (NumEntries==1) {
           double pivot = Values[0];
@@ -507,6 +790,8 @@ int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProb
       }
     }
 
+    PRINT(outputRank_, "ConstructReducedProblem() G");
+
     // Now convert to local indexing.  We have constructed things so that the domain and range of the
     // matrix will have the same map.  If the reduced matrix domain and range maps were not the same, the
     // differences were addressed in the ConstructRedistributeExporter() method
@@ -517,6 +802,7 @@ int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProb
 
     ReducedLHS_ = new Epetra_MultiVector(*ReducedMatrixDomainMap(), NumVectors);
     EPETRA_CHK_ERR(ReducedLHS_->Import(*FullLHS, *Full2ReducedLHSImporter_, Insert));
+    if (outputRank_) printEpetraMultiVector("ConstructReducedProblem() G    ReducedLHS_ = ", ReducedLHS_);
     FullLHS->PutScalar(0.0); // zero out Full LHS since we will inject values as we get them
 
     // Construct Reduced RHS
@@ -535,14 +821,34 @@ int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProb
     else {
       tempX_->Update(1.0, *tempExportX_, 0.0);
       FullLHS->Update(1.0, *tempExportX_, 0.0);
+
+      PRINT(outputRank_, "ConstructReducedProblem() L");
+      if (outputRank_) printEpetraMultiVector("ConstructReducedProblem() L    tempX_ = ", tempX_);
+      if (outputRank_) printEpetraMultiVector("ConstructReducedProblem() L    FullLHS = ", FullLHS);
+
     }
 
     EPETRA_CHK_ERR(FullMatrix()->Multiply(false, *tempX_, *tempB_));
 
     EPETRA_CHK_ERR(tempB_->Update(1.0, *FullRHS, -1.0)); // tempB now has influence of already-known X values
 
+    PRINT(outputRank_, "ConstructReducedProblem() M");
+    if (outputRank_) printEpetraMultiVector("ConstructReducedProblem() M    tempB_ = ", tempB_);
+
     ReducedRHS_ = new Epetra_MultiVector(*ReducedMatrixRowMap(), FullRHS->NumVectors());
+    if (outputRank_) printEpetraMultiVector("ConstructReducedProblem() S    ReducedRHS_ = ", ReducedRHS_);
     EPETRA_CHK_ERR(ReducedRHS_->Import(*tempB_, *Full2ReducedRHSImporter_, Insert));
+
+    if (Full2ReducedRHSImporter_ != nullptr) {
+        // Print detailed information about the importer
+        Full2ReducedRHSImporter_->Print(std::cout);
+    } else {
+        std::cout << "Full2ReducedRHSImporter_ is null." << std::endl;
+    }
+
+    PRINT(outputRank_, "ConstructReducedProblem() S");
+    if (outputRank_) printEpetraMultiVector("ConstructReducedProblem() S    ReducedLHS_ = ", ReducedLHS_);
+    if (outputRank_) printEpetraMultiVector("ConstructReducedProblem() S    ReducedRHS_ = ", ReducedRHS_);
 
     // Finally construct Reduced Linear Problem
     ReducedProblem_ = Teuchos::rcp( new Epetra_LinearProblem(ReducedMatrix_.get(), ReducedLHS_, ReducedRHS_) );
@@ -554,10 +860,20 @@ int LinearProblem_CrsSingletonFilter::TConstructReducedProblem(Epetra_LinearProb
     ReducedMatrix_ = Teuchos::rcp( dynamic_cast<Epetra_CrsMatrix *>(Problem->GetMatrix()), false );
   }
 
+
+  PRINT(outputRank_, "ConstructReducedProblem() Z");
+  if (outputRank_) PrintEpetraCrsMatrix(*ReducedMatrix_);
+
+
   double fn = (double) FullMatrix()->NumGlobalRows64();
   double fnnz = (double) FullMatrix()->NumGlobalNonzeros64();
+  PRINT(outputRank_, "ConstructReducedProblem() Z    fn = " << fn);
+  PRINT(outputRank_, "ConstructReducedProblem() Z    fnnz = " << fnnz);
+
   double rn = (double) ReducedMatrix()->NumGlobalRows64();
   double rnnz = (double) ReducedMatrix()->NumGlobalNonzeros64();
+  PRINT(outputRank_, "ConstructReducedProblem() Z    rn = " << rn);
+  PRINT(outputRank_, "ConstructReducedProblem() Z    rnnz = " << rnnz);
 
   RatioOfDimensions_ = rn/fn;
   RatioOfNonzeros_ = rnnz/fnnz;
@@ -586,6 +902,8 @@ int LinearProblem_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProbl
 template<typename int_type>
 int LinearProblem_CrsSingletonFilter::TUpdateReducedProblem(Epetra_LinearProblem * Problem) {
 
+  PRINT(outputRank_, "UpdateReducedProblem() A");
+
   int i, j;
 
   if (Problem==0) EPETRA_CHK_ERR(-1); // Null problem pointer
@@ -597,6 +915,7 @@ int LinearProblem_CrsSingletonFilter::TUpdateReducedProblem(Epetra_LinearProblem
   if (Problem->GetLHS()==0) EPETRA_CHK_ERR(-4); // Need a LHS
   if (!HaveReducedProblem_) EPETRA_CHK_ERR(-5); // Must have set up reduced problem
 
+  PRINT(outputRank_, "UpdateReducedProblem() A    SingletonsDetected() = " << SingletonsDetected());
   if ( SingletonsDetected() ) {
 
     // Create pointer to Full RHS, LHS
@@ -604,6 +923,7 @@ int LinearProblem_CrsSingletonFilter::TUpdateReducedProblem(Epetra_LinearProblem
     Epetra_MultiVector * FullLHS = FullProblem()->GetLHS();
 
     int NumVectors = FullLHS->NumVectors();
+    PRINT(outputRank_, "UpdateReducedProblem() B    NumVectors = " << NumVectors);
     tempExportX_->PutScalar(0.0);
 
     int NumEntries;
@@ -678,6 +998,9 @@ int LinearProblem_CrsSingletonFilter::TUpdateReducedProblem(Epetra_LinearProblem
 
     ReducedRHS_->PutScalar(0.0);
     EPETRA_CHK_ERR(ReducedRHS_->Import(*tempB_, *Full2ReducedRHSImporter_, Insert));
+
+    if (outputRank_) printEpetraMultiVector("UpdateReducedProblem() Z    FullLHS = ", FullLHS);
+    if (outputRank_) printEpetraMultiVector("UpdateReducedProblem() Z    FullRHS = ", FullRHS);
   }
   else {
 
@@ -685,6 +1008,14 @@ int LinearProblem_CrsSingletonFilter::TUpdateReducedProblem(Epetra_LinearProblem
     ReducedProblem_ = Teuchos::rcp( Problem, false );
     ReducedMatrix_ = Teuchos::rcp( dynamic_cast<Epetra_CrsMatrix *>(Problem->GetMatrix()), false );
   }
+
+  if (outputRank_) PrintEpetraRowMatrix(*FullMatrix());
+  if (outputRank_) printEpetraMultiVector("UpdateReducedProblem() Z    tempX_ = ", tempX_);
+  if (outputRank_) printEpetraMultiVector("UpdateReducedProblem() Z    tempB_ = ", tempB_);
+  if (outputRank_) printEpetraMultiVector("UpdateReducedProblem() Z    tempExportX_ = ", tempExportX_);
+  if (outputRank_) PrintEpetraRowMatrix(*ReducedMatrix());
+  if (outputRank_) printEpetraMultiVector("UpdateReducedProblem() Z    ReducedLHS_ = ", ReducedLHS_);
+  if (outputRank_) printEpetraMultiVector("UpdateReducedProblem() Z    ReducedRHS_ = ", ReducedRHS_);
 
   return(0);
 }
@@ -814,45 +1145,119 @@ int LinearProblem_CrsSingletonFilter::ComputeFullSolution() {
 //==============================================================================
 int LinearProblem_CrsSingletonFilter::InitFullMatrixAccess() {
 
+  PRINT(outputRank_, "InitFullMatrixAccess() A");
+  PRINT(outputRank_, "InitFullMatrixAccess() A    FullMatrix() = " << FullMatrix());
+  if (outputRank_) PrintEpetraRowMatrix(*FullMatrix());
+  MPI_Barrier(MPI_COMM_WORLD);
+
   MaxNumMyEntries_ = FullMatrix()->MaxNumEntries();
+  PRINT(outputRank_, "InitFullMatrixAccess() B    localMaxNumRowEntries_ = " << MaxNumMyEntries_);
 
   // Cast to CrsMatrix, if possible.  Can save some work.
   FullCrsMatrix_ = dynamic_cast<Epetra_CrsMatrix *>(FullMatrix());
+  PRINT(outputRank_, "InitFullMatrixAccess() C    FullCrsMatrix_ = " << FullCrsMatrix_);
+  if (outputRank_) PrintEpetraCrsMatrix(*FullCrsMatrix_);
+  MPI_Barrier(MPI_COMM_WORLD);
   FullMatrixIsCrsMatrix_ = (FullCrsMatrix_!=0); // Pointer is non-zero if cast worked
+  PRINT(outputRank_, "InitFullMatrixAccess() D    FullMatrixIsCrsMatrix_ = " << FullMatrixIsCrsMatrix_);
   Indices_int_ = new int[MaxNumMyEntries_];
+  PRINT(outputRank_, "InitFullMatrixAccess() E    Indices_ = " << Indices_int_);
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   if(FullMatrix()->RowMatrixRowMap().GlobalIndicesLongLong())
     Indices_LL_ = new long long[MaxNumMyEntries_];
 #endif
   Values_.Size(MaxNumMyEntries_);
+  PRINT(outputRank_, "InitFullMatrixAccess() F    Values_ = " << Values_);
 
   return(0);
 }
 //==============================================================================
 int LinearProblem_CrsSingletonFilter::GetRow(int Row, int & NumIndices, int * & Indices) {
 
+  PRINT(outputRank_, "GetRow() A      NumIndices = " << NumIndices);
+  PRINT(outputRank_, "GetRow() B      NumIndices = " << NumIndices);
+  PRINT(outputRank_, "GetRow() B      FullMatrixIsCrsMatrix_ = " << FullMatrixIsCrsMatrix_);
+
   if (FullMatrixIsCrsMatrix_) { // View of current row
+    PRINT(outputRank_, "GetRow() C      NumIndices = " << NumIndices);
+    PRINT(outputRank_, "GetRow() C      localRow = " << Row);
     EPETRA_CHK_ERR(FullCrsMatrix()->Graph().ExtractMyRowView(Row, NumIndices, Indices));
   }
   else { // Copy of current row (we must get the values, but we ignore them)
+    PRINT(outputRank_, "GetRow() D      NumIndices = " << NumIndices);
+    PRINT(outputRank_, "GetRow() D      localRow = " << Row);
     EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices,
                                                   Values_.Values(), Indices_int_));
     Indices = Indices_int_;
   }
+  PRINT(outputRank_, "GetRow() E      NumIndices = " << NumIndices);
+  MPI_Barrier(MPI_COMM_WORLD);
   return(0);
 }
 //==============================================================================
 int LinearProblem_CrsSingletonFilter::GetRow(int Row, int & NumIndices,
                                       double * & Values, int * & Indices) {
 
+  PRINT(outputRank_, "GetRow(,,,) A   Row, NumIndices = " << Row << ", " << NumIndices);
+
   if (FullMatrixIsCrsMatrix_) { // View of current row
     EPETRA_CHK_ERR(FullCrsMatrix_->ExtractMyRowView(Row, NumIndices, Values, Indices));
+
+        // Format Values and Indices for output
+        std::ostringstream valuesStream;
+        valuesStream << "{";
+        for (int i = 0; i < NumIndices; ++i) {
+            valuesStream << std::scientific << std::setprecision(17) << Values[i];
+            if (i < NumIndices - 1) {
+                valuesStream << ", ";
+            }
+        }
+        valuesStream << "}";
+
+        std::ostringstream indicesStream;
+        indicesStream << "{";
+        for (int i = 0; i < NumIndices; ++i) {
+            indicesStream << Indices[i];
+            if (i < NumIndices - 1) {
+                indicesStream << ", ";
+            }
+        }
+        indicesStream << "}";
+
+        PRINT(outputRank_, "GetRow(,,,) B   Row, NumIndices = " << Row << ", " << NumIndices);
+        PRINT(outputRank_, "GetRow(,,,) B   Values = " << valuesStream.str());
+        PRINT(outputRank_, "GetRow(,,,) B   Indices = " << indicesStream.str());
   }
   else { // Copy of current row (we must get the values, but we ignore them)
     EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices,
                                                   Values_.Values(), Indices_int_));
     Values = Values_.Values();
     Indices = Indices_int_;
+
+        // Format Values and Indices for output
+        std::ostringstream valuesStream;
+        valuesStream << "{";
+        for (int i = 0; i < NumIndices; ++i) {
+            valuesStream << std::scientific << std::setprecision(17) << Values[i];
+            if (i < NumIndices - 1) {
+                valuesStream << ", ";
+            }
+        }
+        valuesStream << "}";
+
+        std::ostringstream indicesStream;
+        indicesStream << "{";
+        for (int i = 0; i < NumIndices; ++i) {
+            indicesStream << Indices[i];
+            if (i < NumIndices - 1) {
+                indicesStream << ", ";
+            }
+        }
+        indicesStream << "}";
+
+        PRINT(outputRank_, "GetRow(,,,) B   Row, NumIndices = " << Row << ", " << NumIndices);
+        PRINT(outputRank_, "GetRow(,,,) B   Values = " << valuesStream.str());
+        PRINT(outputRank_, "GetRow(,,,) B   Indices = " << indicesStream.str());
   }
   return(0);
 }
@@ -861,11 +1266,29 @@ int LinearProblem_CrsSingletonFilter::GetRow(int Row, int & NumIndices,
 int LinearProblem_CrsSingletonFilter::GetRowGCIDs(int Row, int & NumIndices,
                                            double * & Values, int * & GlobalIndices) {
 
+  PRINT(outputRank_, "GetRowGCIDs() A      Row = " << Row);
+
     EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices,
                                                   Values_.Values(), Indices_int_));
+  PRINT(outputRank_, "GetRowGCIDs() A      NumIndices = " << NumIndices);
     for (int j=0; j<NumIndices; j++) Indices_int_[j] = FullMatrixColMap().GID(Indices_int_[j]);
     Values = Values_.Values();
     GlobalIndices = Indices_int_;
+
+    // Print the Indices array
+    std::cout << "petra : GetRowGCIDs() A      Row " << Row << " Indices: ";
+    for (int j = 0; j < NumIndices; ++j) {
+        std::cout << GlobalIndices[j] << " ";
+    }
+    std::cout << std::endl;
+
+    // Print the Values array
+    std::cout << "petra : GetRowGCIDs() A      Row " << Row << " Values: ";
+    for (int j = 0; j < NumIndices; ++j) {
+        std::cout << Values[j] << " ";
+    }
+    std::cout << std::endl;
+
   return(0);
 }
 #endif
@@ -895,6 +1318,7 @@ int LinearProblem_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVect
   Epetra_MapColoring & colMapColors = *ColMapColors_;
 
   int NumMyCols = FullMatrix()->NumMyCols();
+  PRINT(outputRank_, "CreatePostSolveArrays() A    NumMyCols = " << NumMyCols);
 
   // We will need these arrays for the post-solve phase
   ColSingletonRowLIDs_ = new int[NumMyColSingletons_];
@@ -907,6 +1331,10 @@ int LinearProblem_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVect
   int NumMyColSingletonstmp = 0;
   for (j=0; j<NumMyCols; j++) {
     int i = RowIDs[j];
+    PRINT(outputRank_, "CreatePostSolveArrays() B    j, i = " <<j<< ", " <<i);
+    PRINT(outputRank_, "CreatePostSolveArrays() B    ColProfiles["<<j<<"] = " << ColProfiles[j]);
+    PRINT(outputRank_, "CreatePostSolveArrays() B    rowMapColors["<<i<<"] = " << rowMapColors[i]);
+
     if ( ColProfiles[j]==1 && rowMapColors[i]!=1 ) {
       ColSingletonRowLIDs_[NumMyColSingletonstmp] = i;
       ColSingletonColLIDs_[NumMyColSingletonstmp] = j;
@@ -919,9 +1347,28 @@ int LinearProblem_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVect
     }
   }
 
+  for (j=0; j<NumMyColSingletons_; j++) {
+    PRINT(outputRank_, "CreatePostSolveArrays() C    ColSingletonRowLIDs_["<<j<<"] = " << ColSingletonRowLIDs_[j]);
+    PRINT(outputRank_, "CreatePostSolveArrays() C    ColSingletonColLIDs_["<<j<<"] = " << ColSingletonColLIDs_[j]);
+  }
+  auto size1 = FullMatrix()->NumMyRows();
+  for (j=0; j<size1; j++) {
+    if (colMapColors[j] != 0) {
+      PRINT_NB(outputRank_, "CreatePostSolveArrays() C    colMapColors["<<j<<"] = " << colMapColors[j]);
+    }
+  }
+
+  PRINT(outputRank_, "CreatePostSolveArrays() C    NumMyColSingletonstmp = " << NumMyColSingletonstmp);
+  PRINT(outputRank_, "CreatePostSolveArrays() C    NumMyColSingletons_ = " << NumMyColSingletons_);
+
   assert(NumMyColSingletonstmp==NumMyColSingletons_); //Sanity check
   Epetra_Util sorter;
   sorter.Sort(true, NumMyColSingletons_, ColSingletonRowLIDs_, 0, 0, 1, &ColSingletonColLIDs_);
+
+  for (j=0; j<NumMyColSingletons_; j++) {
+    PRINT(outputRank_, "CreatePostSolveArrays() D    ColSingletonRowLIDs_["<<j<<"] = " << ColSingletonRowLIDs_[j]);
+    PRINT(outputRank_, "CreatePostSolveArrays() D    ColSingletonColLIDs_["<<j<<"] = " << ColSingletonColLIDs_[j]);
+  }
 
   return(0);
 }
