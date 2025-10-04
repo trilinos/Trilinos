@@ -31,11 +31,9 @@ namespace Thyra {
 
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
-class DefaultIdentityLinearOp : virtual public IdentityLinearOpBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class DefaultIdentityLinearOp : virtual public IdentityLinearOpBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
@@ -81,21 +79,21 @@ public:
 
   /** @name Overridden from LinearOpBase */
   //@{
-  
+
   /** \brief Returns <tt>Teuchos::null</tt> if uninitialized. */
-  RCP< const VectorSpaceBase<Scalar> > range() const;
-  
+  RCP<const VectorSpaceBase<Scalar> > range() const;
+
   /** \brief Returns <tt>Teuchos::null</tt> if uninitialized. */
-  RCP< const VectorSpaceBase<Scalar> > domain() const;
-  
+  RCP<const VectorSpaceBase<Scalar> > domain() const;
+
   /** \brief . */
   RCP<const LinearOpBase<Scalar> > clone() const;
-  
+
   //@}
-  
+
   /** @name Overridden from Teuchos::Describable */
   //@{
-                                                
+
   /** \brief Prints just the name <tt>DefaultIdentityLinearOp</tt> along with the
    * overall dimensions.
    */
@@ -103,8 +101,7 @@ public:
 
   //@}
 
-protected:
-
+ protected:
   /** @name Overridden from LinearOpBase */
   //@{
 
@@ -113,39 +110,32 @@ protected:
 
   /** \brief . */
   void applyImpl(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const;
 
   //@}
 
-private:
-
-  RCP<const VectorSpaceBase<Scalar> >  space_;
+ private:
+  RCP<const VectorSpaceBase<Scalar> > space_;
 
   // Not defined and not to be called
-  DefaultIdentityLinearOp(const DefaultIdentityLinearOp&);
-  DefaultIdentityLinearOp& operator=(const DefaultIdentityLinearOp&);
-
+  DefaultIdentityLinearOp(const DefaultIdentityLinearOp &);
+  DefaultIdentityLinearOp &operator=(const DefaultIdentityLinearOp &);
 };
-
 
 /** \brief Create an identity linear operator with given a vector space.
  *
  * \relates DefaultIdentityLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<const LinearOpBase<Scalar> >
 identity(
-  const RCP<const VectorSpaceBase<Scalar> > &space,
-  const std::string &label = ""
-  );
+    const RCP<const VectorSpaceBase<Scalar> > &space,
+    const std::string &label = "");
 
+}  // end namespace Thyra
 
-}	// end namespace Thyra
-
-
-#endif	// THYRA_DEFAULT_IDENTITY_LINEAR_OP_DECL_HPP
+#endif  // THYRA_DEFAULT_IDENTITY_LINEAR_OP_DECL_HPP

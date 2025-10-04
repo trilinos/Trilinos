@@ -20,7 +20,7 @@
 #include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 #if defined(HAVE_THYRA_DEBUG) && !defined(THYRA_DEBUG)
-#  define THYRA_DEBUG
+#define THYRA_DEBUG
 #endif
 
 #endif /*_THYRA_CONFIGDEFS_H_*/

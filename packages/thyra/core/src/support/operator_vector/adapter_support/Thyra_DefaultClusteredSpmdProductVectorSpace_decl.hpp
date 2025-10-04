@@ -15,9 +15,7 @@
 #include "Thyra_VectorSpaceDefaultBase.hpp"
 #include "Teuchos_Comm.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Concrete subclass of <tt>VectorSpaceBase</tt> that takes a
  * collection of individual <tt>VectorSpaceBase</tt> objects distributed over
@@ -49,13 +47,11 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultClusteredSpmdProductVectorSpace
-  : public ProductVectorSpaceBase<Scalar>
-  , protected VectorSpaceDefaultBase<Scalar>
-{
-public:
-
+  : public ProductVectorSpaceBase<Scalar>,
+    protected VectorSpaceDefaultBase<Scalar> {
+ public:
   /** \name Constructors/Intializers/Accessors */
   //@{
 
@@ -64,12 +60,7 @@ public:
 
   /** \brief . */
   DefaultClusteredSpmdProductVectorSpace(
-    const RCP<const Teuchos::Comm<Ordinal> >          &intraClusterComm
-    ,const int                                        clusterRootRank
-    ,const RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm
-    ,const int                                        numBlocks
-    ,const RCP<const VectorSpaceBase<Scalar> >        vecSpaces[]
-    );
+      const RCP<const Teuchos::Comm<Ordinal> >& intraClusterComm, const int clusterRootRank, const RCP<const Teuchos::Comm<Ordinal> >& interClusterComm, const int numBlocks, const RCP<const VectorSpaceBase<Scalar> > vecSpaces[]);
 
   /** \brief Initalize.
    *
@@ -78,12 +69,12 @@ public:
    * \param  clusterRootRank
    *            [in] The rank of the root process in <tt>*interClusterComm</tt> for this
    *            cluster of processes.  This is also the process that in included in
-   *            <tt>*interClusterComm</tt> (which has a different rank ther obviously). 
+   *            <tt>*interClusterComm</tt> (which has a different rank ther obviously).
    * \param  interClusterComm
    *            [in] Defines the communicator between the root processes of all of the
    *            clusters.  For the root process of each cluster
    *            <tt>*interClusterComm!=Spmd_COMM_NULL</tt>,
-   *            otherwise <tt>interClusterComm==Teuchos::null</tt> or 
+   *            otherwise <tt>interClusterComm==Teuchos::null</tt> or
    *            <tt>*interClusterComm==Spmd_COMM_NULL</tt>.
    * \param  numBlocks
    *            [in] Number of vector space blocks for this cluster of processes.
@@ -92,12 +83,7 @@ public:
    *            for this cluster of processes.
    */
   void initialize(
-    const RCP<const Teuchos::Comm<Ordinal> >          &intraClusterComm
-    ,const int                                        clusterRootRank
-    ,const RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm
-    ,const int                                        numBlocks
-    ,const RCP<const VectorSpaceBase<Scalar> >        vecSpaces[]
-    );
+      const RCP<const Teuchos::Comm<Ordinal> >& intraClusterComm, const int clusterRootRank, const RCP<const Teuchos::Comm<Ordinal> >& interClusterComm, const int numBlocks, const RCP<const VectorSpaceBase<Scalar> > vecSpaces[]);
 
   /** \brief . */
   RCP<const Teuchos::Comm<Ordinal> > intraClusterComm() const;
@@ -117,9 +103,9 @@ public:
    * this cluster in the w.r.t. the global vector.
    */
   int clusterOffset() const;
-  
+
   //@}
-  
+
   /** @name Overridden form Teuchos::Describable */
   //@{
   /** \brief . */
@@ -133,21 +119,20 @@ public:
   /** \brief . */
   bool isCompatible(const VectorSpaceBase<Scalar>& vecSpc) const;
   /** \brief . */
-  RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
+  RCP<const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
   /** \brief . */
-  Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
+  Scalar scalarProd(const VectorBase<Scalar>& x, const VectorBase<Scalar>& y) const;
   /** \brief . */
   void scalarProdsImpl(
-    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-    const ArrayView<Scalar> &scalarProds ) const;
+      const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+      const ArrayView<Scalar>& scalarProds) const;
   /** \brief . */
   bool isEuclidean() const;
   /** \brief . */
   bool hasInCoreView(
-    const Range1D& rng, const EViewType viewType, const EStrideType strideType
-    ) const;
+      const Range1D& rng, const EViewType viewType, const EStrideType strideType) const;
   /** \brief . */
-  RCP< const VectorSpaceBase<Scalar> > clone() const;
+  RCP<const VectorSpaceBase<Scalar> > clone() const;
   //@}
 
   /** @name Protected overridden from ProductVectorSpaceBase */
@@ -156,12 +141,11 @@ public:
   /** \brief . */
   int numBlocks() const;
   /** \brief . */
-  RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const; 
+  RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const;
 
   //@}
 
-protected:
-
+ protected:
   /** @name Protected overridden from VectorSpaceBase */
   //@{
 
@@ -172,74 +156,59 @@ protected:
 
   //@}
 
-private:
-
+ private:
   // //////////////////////////////////////
   // Private types
 
-  typedef std::vector<RCP<const VectorSpaceBase<Scalar> > >  vecSpaces_t;
+  typedef std::vector<RCP<const VectorSpaceBase<Scalar> > > vecSpaces_t;
 
   // //////////////////////////////////////
   // Private data members
 
-  RCP<const Teuchos::Comm<Ordinal> >  intraClusterComm_;
+  RCP<const Teuchos::Comm<Ordinal> > intraClusterComm_;
   int clusterRootRank_;
-  RCP<const Teuchos::Comm<Ordinal> >  interClusterComm_;
-  vecSpaces_t vecSpaces_; // size == numBlocks
+  RCP<const Teuchos::Comm<Ordinal> > interClusterComm_;
+  vecSpaces_t vecSpaces_;  // size == numBlocks
   bool isEuclidean_;
-  Ordinal globalDim_;     // The global dimension of all of the block vectors in
-                        // all of the clusters.
-  Ordinal clusterSubDim_; // The some of the dimensions of the block vector
-                        // spaces in this cluster
-  Ordinal clusterOffset_; // The offset of the first element in the first
-                        // constituent vector in this cluster in the
-                        // w.r.t. the global vector.
-  
+  Ordinal globalDim_;      // The global dimension of all of the block vectors in
+                           // all of the clusters.
+  Ordinal clusterSubDim_;  // The some of the dimensions of the block vector
+                           // spaces in this cluster
+  Ordinal clusterOffset_;  // The offset of the first element in the first
+                           // constituent vector in this cluster in the
+                           // w.r.t. the global vector.
 };
-
 
 // ///////////////////////////
 // Inline defintions
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const Teuchos::Comm<Ordinal> >
-DefaultClusteredSpmdProductVectorSpace<Scalar>::intraClusterComm() const
-{
+DefaultClusteredSpmdProductVectorSpace<Scalar>::intraClusterComm() const {
   return intraClusterComm_;
 }
 
-
-template<class Scalar>
-int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterRootRank() const
-{
+template <class Scalar>
+int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterRootRank() const {
   return clusterRootRank_;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const Teuchos::Comm<Ordinal> >
-DefaultClusteredSpmdProductVectorSpace<Scalar>::interClusterComm() const
-{
+DefaultClusteredSpmdProductVectorSpace<Scalar>::interClusterComm() const {
   return interClusterComm_;
 }
 
-
-template<class Scalar>
-int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterSubDim() const
-{
+template <class Scalar>
+int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterSubDim() const {
   return clusterSubDim_;
 }
 
-
-template<class Scalar>
-int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterOffset() const
-{
+template <class Scalar>
+int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterOffset() const {
   return clusterOffset_;
 }
 
+}  // end namespace Thyra
 
-} // end namespace Thyra
-
-
-#endif // THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_DECL_HPP
+#endif  // THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_DECL_HPP

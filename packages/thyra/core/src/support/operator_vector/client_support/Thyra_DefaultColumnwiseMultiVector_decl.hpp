@@ -14,9 +14,7 @@
 #include "Thyra_VectorSpaceBase_decl.hpp"
 #include "Thyra_VectorBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Default subclass for <tt>MultiVectorBase</tt> implemented using columns
  * of separate abstract vectors.
@@ -30,11 +28,9 @@ namespace Thyra {
  * vector can be passed to a method that expects a <tt>%MultiVectorBase</tt>
  * object.
  */
-template<class Scalar>
-class DefaultColumnwiseMultiVector : virtual public MultiVectorDefaultBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class DefaultColumnwiseMultiVector : virtual public MultiVectorDefaultBase<Scalar> {
+ public:
   /** @name Constructors/Initializers */
   //@{
 
@@ -49,16 +45,14 @@ public:
 
   /** \brief Calls <tt>initialize()</tt>. */
   DefaultColumnwiseMultiVector(
-    const RCP<VectorBase<Scalar> > &col_vec
-    );
+      const RCP<VectorBase<Scalar> >& col_vec);
 
   /** \brief Calls <tt>initialize()</tt>. */
   DefaultColumnwiseMultiVector(
-    const RCP<const VectorSpaceBase<Scalar> > &range,
-    const RCP<const VectorSpaceBase<Scalar> > &domain,
-    const ArrayView<const RCP<VectorBase<Scalar> > > &col_vecs = Teuchos::null
-    );
-  
+      const RCP<const VectorSpaceBase<Scalar> >& range,
+      const RCP<const VectorSpaceBase<Scalar> >& domain,
+      const ArrayView<const RCP<VectorBase<Scalar> > >& col_vecs = Teuchos::null);
+
   /** \brief Initialize given a single vector object.
    *
    * \param col_vec [in] A single column vector.  It is not allowed for
@@ -76,8 +70,7 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<VectorBase<Scalar> > &col_vec
-    );
+      const RCP<VectorBase<Scalar> >& col_vec);
 
   /** \brief Initialize given the spaces for the columns and rows and possibly
    * the column vectors.
@@ -110,16 +103,15 @@ public:
    * Postconditions:<ul>
    * <tt> <tt>this->range().get() == range.get()</tt>
    * <tt> <tt>this->domain().get() == domain.get()</tt>
-   * <li> [<tt>col_vecs != NULL</tt>] 
+   * <li> [<tt>col_vecs != NULL</tt>]
    *        <tt>this->col(j).get() == col_vecs[j].get()</tt>,
    *        for <tt>j=0..domain->dim()-1</tt>
    * </ul>
    */
   void initialize(
-    const RCP<const VectorSpaceBase<Scalar> > &range,
-    const RCP<const VectorSpaceBase<Scalar> > &domain,
-    const ArrayView<const RCP<VectorBase<Scalar> > > &col_vecs = Teuchos::null
-    );
+      const RCP<const VectorSpaceBase<Scalar> >& range,
+      const RCP<const VectorSpaceBase<Scalar> >& domain,
+      const ArrayView<const RCP<VectorBase<Scalar> > >& col_vecs = Teuchos::null);
 
   /** \brief Set uninitialized. */
   void uninitialize();
@@ -140,11 +132,10 @@ public:
   RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);
   /** \brief . */
   RCP<MultiVectorBase<Scalar> >
-  nonconstContigSubViewImpl( const Range1D& col_rng );
+  nonconstContigSubViewImpl(const Range1D& col_rng);
   //@}
 
-protected:
-
+ protected:
   /** @name Overridden protected functions from MultiVectorBase */
   //@{
 
@@ -159,37 +150,31 @@ protected:
 
   /** \brief . */
   virtual void updateImpl(
-    Scalar alpha,
-    const MultiVectorBase<Scalar>& mv
-    );
+      Scalar alpha,
+      const MultiVectorBase<Scalar>& mv);
 
   /** \brief . */
   virtual void linearCombinationImpl(
-    const ArrayView<const Scalar>& alpha,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
-    const Scalar& beta
-    );
+      const ArrayView<const Scalar>& alpha,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
+      const Scalar& beta);
 
   /** \brief . */
   virtual void dotsImpl(
-    const MultiVectorBase<Scalar>& mv,
-    const ArrayView<Scalar>& prods
-    ) const;
+      const MultiVectorBase<Scalar>& mv,
+      const ArrayView<Scalar>& prods) const;
 
   /** \brief . */
   virtual void norms1Impl(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const;
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms) const;
 
   /** \brief . */
   virtual void norms2Impl(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const;
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms) const;
 
   /** \brief . */
   virtual void normsInfImpl(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const;
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms) const;
 
   //@}
 
@@ -219,25 +204,20 @@ protected:
    * to be with a little work.
    */
   void applyImpl(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar>& X,
+      const Ptr<MultiVectorBase<Scalar> >& Y,
+      const Scalar alpha,
+      const Scalar beta) const;
 
   //@}
 
-private:
-  
+ private:
   RCP<const VectorSpaceBase<Scalar> > range_;
   RCP<const VectorSpaceBase<Scalar> > domain_;
   Array<RCP<VectorBase<Scalar> > > col_vecs_;
-  
 };
 
+}  // end namespace Thyra
 
-} // end namespace Thyra
-
-
-#endif // THYRA_DEFAULT_COLUMNWISE_MULTI_VECTOR_DECL_HPP
+#endif  // THYRA_DEFAULT_COLUMNWISE_MULTI_VECTOR_DECL_HPP

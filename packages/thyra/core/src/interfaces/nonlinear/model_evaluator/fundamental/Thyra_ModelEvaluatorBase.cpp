@@ -9,34 +9,28 @@
 
 #include "Thyra_ModelEvaluatorBase_decl.hpp"
 
-
 namespace Thyra {
 
-
-ModelEvaluatorBase::ModelEvaluatorBase()
-{}
-
+ModelEvaluatorBase::ModelEvaluatorBase() {}
 
 std::string
-ModelEvaluatorBase::DerivativeSupport::description() const
-{
+ModelEvaluatorBase::DerivativeSupport::description() const {
   std::ostringstream oss;
   oss << "DerivativeSupport{";
   if (none()) {
     oss << "none";
-  }
-  else {
+  } else {
     bool wroteOutput = false;
     if (supportsLinearOp_) {
       oss << "DERIV_LINEAR_OP";
       wroteOutput = true;
     }
     if (supportsMVByCol_) {
-      oss << (wroteOutput?",":"") << toString(DERIV_MV_BY_COL);
+      oss << (wroteOutput ? "," : "") << toString(DERIV_MV_BY_COL);
       wroteOutput = true;
     }
     if (supportsTransMVByRow_) {
-      oss << (wroteOutput?",":"") << toString(DERIV_TRANS_MV_BY_ROW);
+      oss << (wroteOutput ? "," : "") << toString(DERIV_TRANS_MV_BY_ROW);
       wroteOutput = true;
     }
   }
@@ -44,12 +38,9 @@ ModelEvaluatorBase::DerivativeSupport::description() const
   return oss.str();
 }
 
-
-} // namespace Thyra
-
+}  // namespace Thyra
 
 #ifdef HAVE_THYRA_EXPLICIT_INSTANTIATION
-
 
 #include "Thyra_ModelEvaluatorBase_def.hpp"
 #include "Teuchos_ExplicitInstantiationHelpers.hpp"
@@ -58,6 +49,6 @@ namespace Thyra {
 
 TEUCHOS_MACRO_TEMPLATE_INSTANT_SCALAR_TYPES(THYRA_MODEL_EVALUATOR_BASE_INSTANT)
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // HAVE_THYRA_EXPLICIT_INSTANTIATION
+#endif  // HAVE_THYRA_EXPLICIT_INSTANTIATION

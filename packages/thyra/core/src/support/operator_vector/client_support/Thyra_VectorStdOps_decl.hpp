@@ -10,21 +10,17 @@
 #ifndef THYRA_VECTOR_STD_OPS_DECL_HPP
 #define THYRA_VECTOR_STD_OPS_DECL_HPP
 
-
 #include "Thyra_OperatorVectorTypes.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Sum of vector elements:
  * <tt>result = sum( v(i), i = 0...v.space()->dim()-1 )</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-Scalar sum( const VectorBase<Scalar>& v );
-
+template <class Scalar>
+Scalar sum(const VectorBase<Scalar>& v);
 
 /** \brief Scalar product <tt>result = <x,y></tt>.
  *
@@ -32,9 +28,8 @@ Scalar sum( const VectorBase<Scalar>& v );
  *
  * \relates VectorBase
  */
-template<class Scalar>
-Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
-
+template <class Scalar>
+Scalar scalarProd(const VectorBase<Scalar>& x, const VectorBase<Scalar>& y);
 
 /** \brief Inner/Scalar product <tt>result = <x,y></tt>.
  *
@@ -42,9 +37,8 @@ Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
  *
  * \relates VectorBase
  */
-template<class Scalar>
-Scalar inner( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
-
+template <class Scalar>
+Scalar inner(const VectorBase<Scalar>& x, const VectorBase<Scalar>& y);
 
 /** \brief Natural norm: <tt>result = sqrt(<v,v>)</tt>.
  *
@@ -53,98 +47,87 @@ Scalar inner( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
  *
  * \relates VectorBase
  */
-template<class Scalar>
+template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-norm( const VectorBase<Scalar>& v );
-
+norm(const VectorBase<Scalar>& v);
 
 /** \brief One (1) norm: <tt>result = ||v||1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
+template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-norm_1( const VectorBase<Scalar>& v );
-
+norm_1(const VectorBase<Scalar>& v);
 
 /** \brief Euclidean (2) norm: <tt>result = ||v||2</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
+template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-norm_2( const VectorBase<Scalar>& v );
-
+norm_2(const VectorBase<Scalar>& v);
 
 /** \brief Weighted Euclidean (2) norm:
  * <tt>result = sqrt( sum( w(i)*conj(v(i))*v(i)) )</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
+template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-norm_2( const VectorBase<Scalar> &w, const VectorBase<Scalar>& v );
-
+norm_2(const VectorBase<Scalar>& w, const VectorBase<Scalar>& v);
 
 /** \brief Infinity norm: <tt>result = ||v||inf</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
+template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-norm_inf( const VectorBase<Scalar>& v_rhs );
-
+norm_inf(const VectorBase<Scalar>& v_rhs);
 
 /** \brief Dot product: <tt>result = conj(x)'*y</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-Scalar dot( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
-
+template <class Scalar>
+Scalar dot(const VectorBase<Scalar>& x, const VectorBase<Scalar>& y);
 
 /** \brief Get single element: <tt>result = v(i)</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-Scalar get_ele( const VectorBase<Scalar>& v, Ordinal i );
-
+template <class Scalar>
+Scalar get_ele(const VectorBase<Scalar>& v, Ordinal i);
 
 /** \brief Set single element: <tt>v(i) = alpha</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void set_ele( Ordinal i, Scalar alpha, const Ptr<VectorBase<Scalar> > &v );
-
+template <class Scalar>
+void set_ele(Ordinal i, Scalar alpha, const Ptr<VectorBase<Scalar> >& v);
 
 /** \brief Assign all elements to a scalar:
  * <tt>y(i) = alpha, i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void put_scalar( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void put_scalar(const Scalar& alpha, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Vector assignment:
  * <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void copy( const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void copy(const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Add a scalar to all elements:
  * <tt>y(i) += alpha, i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void add_scalar( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void add_scalar(const Scalar& alpha, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Scale all elements by a scalar:
  * <tt>y(i) *= alpha, i = 0...y->space()->dim()-1</tt>.
@@ -155,114 +138,104 @@ void add_scalar( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &y );
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void scale( const Scalar& alpha, const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void scale(const Scalar& alpha, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Element-wise absolute value:
  * <tt>y(i) = abs(x(i)), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void abs( const VectorBase<Scalar> &x, const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void abs(const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Element-wise reciprocal:
  * <tt>y(i) = 1/x(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void reciprocal( const VectorBase<Scalar> &x, const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void reciprocal(const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Element-wise product update:
  * <tt>y(i) += alpha * x(i) * v(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void ele_wise_prod( const Scalar& alpha, const VectorBase<Scalar>& x,
-  const VectorBase<Scalar>& v, const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void ele_wise_prod(const Scalar& alpha, const VectorBase<Scalar>& x,
+                   const VectorBase<Scalar>& v, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Element-wise maximum:
  * <tt>y(i) = alpha * max(x(i), v(i)), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
+template <class Scalar>
 void pair_wise_max(const Scalar& alpha, const VectorBase<Scalar>& x,
-  const VectorBase<Scalar>& v, const Ptr<VectorBase<Scalar> > &y );
+                   const VectorBase<Scalar>& v, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Element-wise conjugate product update:
  * <tt>y(i) += alpha * conj(x(i)) * v(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void ele_wise_conj_prod( const Scalar& alpha, const VectorBase<Scalar>& x,
-  const VectorBase<Scalar>& v, const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void ele_wise_conj_prod(const Scalar& alpha, const VectorBase<Scalar>& x,
+                        const VectorBase<Scalar>& v, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Element-wise scaling:
  * <tt>y(i) *= x(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void ele_wise_scale( const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void ele_wise_scale(const VectorBase<Scalar>& x, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Element-wise product update:
  * <tt>y(i) += alpha * x(i) * v(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void Vp_StVtV( const Ptr<VectorBase<Scalar> > &y, const Scalar& alpha,
-  const VectorBase<Scalar>& x, const VectorBase<Scalar>& v);
-
+template <class Scalar>
+void Vp_StVtV(const Ptr<VectorBase<Scalar> >& y, const Scalar& alpha,
+              const VectorBase<Scalar>& x, const VectorBase<Scalar>& v);
 
 /** \brief Element-wise product update:
  * <tt>y(i) *= alpha * x(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void ele_wise_prod_update( const Scalar& alpha, const VectorBase<Scalar>& x,
-  const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void ele_wise_prod_update(const Scalar& alpha, const VectorBase<Scalar>& x,
+                          const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Element-wise maximum update:
  * <tt>y(i) = alpha * max(x(i), y(i)), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void pair_wise_max_update( const Scalar& alpha, const VectorBase<Scalar>& x,
-  const Ptr<VectorBase<Scalar> > &y );
+template <class Scalar>
+void pair_wise_max_update(const Scalar& alpha, const VectorBase<Scalar>& x,
+                          const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Element-wise product update:
  * <tt>y(i) *= alpha * x(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void Vt_StV( const Ptr<VectorBase<Scalar> > &y, const Scalar& alpha,
-  const VectorBase<Scalar> &x );
-
+template <class Scalar>
+void Vt_StV(const Ptr<VectorBase<Scalar> >& y, const Scalar& alpha,
+            const VectorBase<Scalar>& x);
 
 /** \brief Element-wise division update:
  * <tt>y(i) += alpha * x(i) / v(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void ele_wise_divide( const Scalar& alpha, const VectorBase<Scalar>& x,
-  const VectorBase<Scalar>& v, const Ptr<VectorBase<Scalar> > &y );
-
+template <class Scalar>
+void ele_wise_divide(const Scalar& alpha, const VectorBase<Scalar>& x,
+                     const VectorBase<Scalar>& v, const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Linear combination:
  * <tt>y(i) = beta*y(i) + sum( alpha[k]*x[k](i), k=0...m-1 ), i = 0...y->space()->dim()-1</tt>.
@@ -286,14 +259,12 @@ void ele_wise_divide( const Scalar& alpha, const VectorBase<Scalar>& x,
  *
  * \relates VectorBase
  */
-template<class Scalar>
+template <class Scalar>
 void linear_combination(
-  const ArrayView<const Scalar> &alpha,
-  const ArrayView<const Ptr<const VectorBase<Scalar> > > &x,
-  const Scalar &beta,
-  const Ptr<VectorBase<Scalar> > &y
-  );
-
+    const ArrayView<const Scalar>& alpha,
+    const ArrayView<const Ptr<const VectorBase<Scalar> > >& x,
+    const Scalar& beta,
+    const Ptr<VectorBase<Scalar> >& y);
 
 /** \brief Seed the random number generator used in <tt>randomize()</tt>.
  *
@@ -304,13 +275,12 @@ void linear_combination(
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void seed_randomize( unsigned int s );
-
+template <class Scalar>
+void seed_randomize(unsigned int s);
 
 /** \brief Random vector generation:
  * <tt>v(i) = rand(l,u), , i = 1...v->space()->dim()</tt>.
- * 
+ *
  * The elements <tt>v->getEle(i)</tt> are randomly generated between
  * <tt>[l,u]</tt>.
  *
@@ -318,36 +288,32 @@ void seed_randomize( unsigned int s );
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void randomize( Scalar l, Scalar u, const Ptr<VectorBase<Scalar> > &v );
-
+template <class Scalar>
+void randomize(Scalar l, Scalar u, const Ptr<VectorBase<Scalar> >& v);
 
 /** \brief Assign all elements to a scalar:
  * <tt>y(i) = alpha, i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void assign( const Ptr<VectorBase<Scalar> > &y, const Scalar& alpha );
-
+template <class Scalar>
+void assign(const Ptr<VectorBase<Scalar> >& y, const Scalar& alpha);
 
 /** \brief Vector assignment:
  * <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void assign( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x );
-
+template <class Scalar>
+void assign(const Ptr<VectorBase<Scalar> >& y, const VectorBase<Scalar>& x);
 
 /** \brief Add a scalar to all elements:
  * <tt>y(i) += alpha, i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void Vp_S( const Ptr<VectorBase<Scalar> > &y, const Scalar& alpha );
-
+template <class Scalar>
+void Vp_S(const Ptr<VectorBase<Scalar> >& y, const Scalar& alpha);
 
 /** \brief Scale all elements by a scalar:
  * <tt>y(i) *= alpha, i = 0...y->space()->dim()-1</tt>.
@@ -358,110 +324,97 @@ void Vp_S( const Ptr<VectorBase<Scalar> > &y, const Scalar& alpha );
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void Vt_S( const Ptr<VectorBase<Scalar> > &y, const Scalar& alpha );
-
+template <class Scalar>
+void Vt_S(const Ptr<VectorBase<Scalar> >& y, const Scalar& alpha);
 
 /** \brief Assign scaled vector:
  * <tt>y(i) = alpha * x(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void V_StV( const Ptr<VectorBase<Scalar> > &y, const Scalar& alpha,
-  const VectorBase<Scalar> &x );
-
+template <class Scalar>
+void V_StV(const Ptr<VectorBase<Scalar> >& y, const Scalar& alpha,
+           const VectorBase<Scalar>& x);
 
 /** \brief AXPY:
  * <tt>y(i) = alpha * x(i) + y(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void Vp_StV( const Ptr<VectorBase<Scalar> > &y, const Scalar& alpha,
-  const VectorBase<Scalar>& x );
-
+template <class Scalar>
+void Vp_StV(const Ptr<VectorBase<Scalar> >& y, const Scalar& alpha,
+            const VectorBase<Scalar>& x);
 
 /** \brief <tt>y(i) = x(i) + beta*y(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
+template <class Scalar>
 void Vp_V(
-  const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x,
-  const Scalar& beta = static_cast<Scalar>(1.0)
-  );
-
+    const Ptr<VectorBase<Scalar> >& y, const VectorBase<Scalar>& x,
+    const Scalar& beta = static_cast<Scalar>(1.0));
 
 /** \brief <tt>y(i) = x(i), i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void V_V( const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x );
-
+template <class Scalar>
+void V_V(const Ptr<VectorBase<Scalar> >& y, const VectorBase<Scalar>& x);
 
 /** \brief <tt>y(i) = alpha, i = 0...y->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void V_S( const Ptr<VectorBase<Scalar> > &y, const Scalar& alpha );
-
+template <class Scalar>
+void V_S(const Ptr<VectorBase<Scalar> >& y, const Scalar& alpha);
 
 /** \brief <tt>z(i) = x(i) + y(i), i = 0...z->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void V_VpV( const Ptr<VectorBase<Scalar> > &z, const VectorBase<Scalar>& x,
-  const VectorBase<Scalar>& y );
-
+template <class Scalar>
+void V_VpV(const Ptr<VectorBase<Scalar> >& z, const VectorBase<Scalar>& x,
+           const VectorBase<Scalar>& y);
 
 /** \brief <tt>z(i) = x(i) - y(i), i = 0...z->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void V_VmV( const Ptr<VectorBase<Scalar> > &z, const VectorBase<Scalar>& x,
-  const VectorBase<Scalar>& y );
-
+template <class Scalar>
+void V_VmV(const Ptr<VectorBase<Scalar> >& z, const VectorBase<Scalar>& x,
+           const VectorBase<Scalar>& y);
 
 /** \brief <tt>z(i) = alpha*x(i) + y(i), i = 0...z->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void V_StVpV( const Ptr<VectorBase<Scalar> > &z, const Scalar &alpha,
-  const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
-
+template <class Scalar>
+void V_StVpV(const Ptr<VectorBase<Scalar> >& z, const Scalar& alpha,
+             const VectorBase<Scalar>& x, const VectorBase<Scalar>& y);
 
 /** \brief <tt>z(i) = x(i) + alpha*y(i), i = 0...z->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void V_VpStV( const Ptr<VectorBase<Scalar> > &z,
-  const VectorBase<Scalar>& x,
-  const Scalar &alpha, const VectorBase<Scalar>& y );
-
+template <class Scalar>
+void V_VpStV(const Ptr<VectorBase<Scalar> >& z,
+             const VectorBase<Scalar>& x,
+             const Scalar& alpha, const VectorBase<Scalar>& y);
 
 /** \brief <tt>z(i) = alpha*x(i) + beta*y(i), i = 0...z->space()->dim()-1</tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void V_StVpStV( const Ptr<VectorBase<Scalar> > &z, const Scalar &alpha,
-  const VectorBase<Scalar>& x, const Scalar &beta, const VectorBase<Scalar>& y );
-
+template <class Scalar>
+void V_StVpStV(const Ptr<VectorBase<Scalar> >& z, const Scalar& alpha,
+               const VectorBase<Scalar>& x, const Scalar& beta, const VectorBase<Scalar>& y);
 
 /** \brief Min element: <tt>result = min{ x(i), i = 0...x.space()->dim()-1 } </tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-Scalar min( const VectorBase<Scalar>& x );
-
+template <class Scalar>
+Scalar min(const VectorBase<Scalar>& x);
 
 /** \brief Min element and its index: Returns <tt>maxEle = x(k)</tt>
  * and <tt>maxIndex = k</tt> such that <tt>x(k) <= x(i)</tt> for all
@@ -482,10 +435,9 @@ Scalar min( const VectorBase<Scalar>& x );
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void min( const VectorBase<Scalar>& x,
-  const Ptr<Scalar> &maxEle, const Ptr<Ordinal> &maxIndex );
-
+template <class Scalar>
+void min(const VectorBase<Scalar>& x,
+         const Ptr<Scalar>& maxEle, const Ptr<Ordinal>& maxIndex);
 
 /** \brief Minimum element greater than some bound and its index:
  * Returns <tt>minEle = x(k)</tt> and <tt>minIndex = k</tt> such that
@@ -516,18 +468,16 @@ void min( const VectorBase<Scalar>& x,
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void minGreaterThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
-  const Ptr<Scalar> &minEle, const Ptr<Ordinal> &minIndex );
-
+template <class Scalar>
+void minGreaterThanBound(const VectorBase<Scalar>& x, const Scalar& bound,
+                         const Ptr<Scalar>& minEle, const Ptr<Ordinal>& minIndex);
 
 /** \brief Max element: <tt>result = max{ x(i), i = 1...n } </tt>.
  *
  * \relates VectorBase
  */
-template<class Scalar>
-Scalar max( const VectorBase<Scalar>& x );
-
+template <class Scalar>
+Scalar max(const VectorBase<Scalar>& x);
 
 /** \brief Max element and its index: Returns <tt>maxEle = x(k)</tt>
  * and <tt>maxIndex = k</tt> such that <tt>x(k) >= x(i)</tt> for
@@ -548,10 +498,9 @@ Scalar max( const VectorBase<Scalar>& x );
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void max( const VectorBase<Scalar>& x,
-  const Ptr<Scalar> &maxEle, const Ptr<Ordinal> &maxIndex );
-
+template <class Scalar>
+void max(const VectorBase<Scalar>& x,
+         const Ptr<Scalar>& maxEle, const Ptr<Ordinal>& maxIndex);
 
 /** \brief Max element less than bound and its index: Returns <tt>maxEle =
  * x(k)</tt> and <tt>maxIndex = k</tt> such that <tt>x(k) >= x(i)</tt> for all
@@ -581,44 +530,31 @@ void max( const VectorBase<Scalar>& x,
  *
  * \relates VectorBase
  */
-template<class Scalar>
-void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
-  const Ptr<Scalar> &maxEle, const Ptr<Ordinal> &maxIndex );
+template <class Scalar>
+void maxLessThanBound(const VectorBase<Scalar>& x, const Scalar& bound,
+                      const Ptr<Scalar>& maxEle, const Ptr<Ordinal>& maxIndex);
 
-
-
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 // /////////////////////////
 // Inline functions
 
-
-template<class Scalar>
-inline
-Scalar Thyra::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
-{
+template <class Scalar>
+inline Scalar Thyra::scalarProd(const VectorBase<Scalar>& x, const VectorBase<Scalar>& y) {
   return x.space()->scalarProd(x, y);
 }
 
-
-template<class Scalar>
-inline
-Scalar Thyra::inner( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
-{
+template <class Scalar>
+inline Scalar Thyra::inner(const VectorBase<Scalar>& x, const VectorBase<Scalar>& y) {
   return x.space()->scalarProd(x, y);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 inline
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-Thyra::norm( const VectorBase<Scalar>& v )
-{
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+    Thyra::norm(const VectorBase<Scalar>& v) {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return ST::magnitude(ST::squareroot(v.space()->scalarProd(v, v)));
 }
 
-
-#endif // THYRA_VECTOR_STD_OPS_DECL_HPP
+#endif  // THYRA_VECTOR_STD_OPS_DECL_HPP

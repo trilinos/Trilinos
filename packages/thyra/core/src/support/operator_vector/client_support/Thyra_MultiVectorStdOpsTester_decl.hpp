@@ -23,27 +23,23 @@ namespace Thyra {
  */
 template <class Scalar>
 class MultiVectorStdOpsTester {
-public:
-
+ public:
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /** \brief Set the maximum relative error before a warning is generated. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, warning_tol );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(ScalarMag, warning_tol);
 
   /** \brief Set the maximum relative error before an error is generated. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, error_tol );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(ScalarMag, error_tol);
 
   /** \brief Set the number of columns to use to create test <tt>MultiVectorBase</tt> objects.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_mv_cols );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(int, num_mv_cols);
 
   /** \brief . */
   MultiVectorStdOpsTester(
-    const ScalarMag    &warning_tol = 0
-    ,const ScalarMag   &error_tol   = 0
-    ,const int         num_mv_cols  = 4
-    );
+      const ScalarMag &warning_tol = 0, const ScalarMag &error_tol = 0, const int num_mv_cols = 4);
 
   /** \brief Run the tests using a vector space.
    *
@@ -57,13 +53,9 @@ public:
    * <tt>false</tt> otherwise.
    */
   bool checkStdOps(
-    const VectorSpaceBase<Scalar>    &vecSpc
-    ,std::ostream                    *out      = 0
-    ,const bool                      &dumpAll  = false
-    );
-
+      const VectorSpaceBase<Scalar> &vecSpc, std::ostream *out = 0, const bool &dumpAll = false);
 };
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // THYRA_MULTI_VECTOR_STD_OPS_TESTER_DECL_HPP
+#endif  // THYRA_MULTI_VECTOR_STD_OPS_TESTER_DECL_HPP
