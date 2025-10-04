@@ -87,6 +87,7 @@ void test_sincos_fsa(const bool use_combined_method,
   if (sens_method_string == "None") sens_method = Piro::NONE;
   else if (sens_method_string == "Forward") sens_method = Piro::FORWARD;
   else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
+  else TEUCHOS_ASSERT(false);
 
   for (int n=0; n<nTimeStepSizes; n++) {
 

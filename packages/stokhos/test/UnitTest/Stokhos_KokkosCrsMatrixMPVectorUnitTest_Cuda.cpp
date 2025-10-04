@@ -25,15 +25,15 @@ bool test_cuda_embedded_vector(Ordinal num_blocks,
                                Teuchos::FancyOStream& out) {
   typedef Kokkos::Cuda Device;
 
-  const Ordinal VectorSize = NumPerThread * ThreadsPerVector;
-  typedef typename Storage::template apply_N<VectorSize>::type storage_type;
+  const Ordinal MyVectorSize = NumPerThread * ThreadsPerVector;
+  typedef typename Storage::template apply_N<MyVectorSize>::type storage_type;
   typedef Sacado::MP::Vector<storage_type> Vector;
 
   const Ordinal nGrid = 5;
   KokkosSparse::DeviceConfig dev_config(num_blocks, num_vec_threads, num_row_threads);
 
   bool success = test_embedded_vector<Vector>(
-    nGrid, VectorSize, dev_config, MultiplyOp(), out);
+    nGrid, MyVectorSize, dev_config, MultiplyOp(), out);
 
   return success;
 }

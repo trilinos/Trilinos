@@ -119,7 +119,8 @@ const RCP<TempusSolver<double> > solverNew(
   SENS_METHOD sens_method; 
   if (sens_method_string == "None") sens_method = Piro::NONE; 
   else if (sens_method_string == "Forward") sens_method = Piro::FORWARD; 
-  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT; 
+  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
+  else TEUCHOS_ASSERT(false);
   Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
       = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel, sens_method));
   const RCP<Thyra::NonlinearSolverBase<double> > stepSolver = Teuchos::null;
@@ -153,7 +154,8 @@ const RCP<TempusSolver<double> > solverNew(
   SENS_METHOD sens_method; 
   if (sens_method_string == "None") sens_method = Piro::NONE; 
   else if (sens_method_string == "Forward") sens_method = Piro::FORWARD; 
-  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT; 
+  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
+  else TEUCHOS_ASSERT(false);
   Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
       = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel, sens_method));
   const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
@@ -201,7 +203,8 @@ const RCP<TempusSolver<double> > solverNew(
   SENS_METHOD sens_method; 
   if (sens_method_string == "None") sens_method = Piro::NONE; 
   else if (sens_method_string == "Forward") sens_method = Piro::FORWARD; 
-  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT; 
+  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
+  else TEUCHOS_ASSERT(false);
   const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver 
       = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, 
 			      timeStepControl, observer, false, false, sens_method));

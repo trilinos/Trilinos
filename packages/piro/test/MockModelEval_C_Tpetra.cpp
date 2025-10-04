@@ -385,27 +385,29 @@ void MockModelEval_C_Tpetra::evalModelImpl(
         Teuchos::null;
 
   Teuchos::RCP<const Tpetra_Vector> x_dotdot_in;
-  double omega(0.0);
+  double omega2(0.0);
   // This assumes we are using Piro second order integrator 
   if (Teuchos::nonnull(this->get_x_dotdot())) {
     const Teuchos::RCP<const Thyra::VectorBase<double>> x_dotdot = this->get_x_dotdot();
     x_dotdot_in = ConverterT::getConstTpetraVector(x_dotdot);
-    omega    = this->get_omega();
+    omega2    = this->get_omega();
   }
 
   // If using Tempus, we should have 
   //  x_dotdot_in = Tuchos::nonnull(inArgs.get_x_dot_dot()) ?
   //        ConverterT::getConstTpetraVector(inArgs.get_x_dot_dot()) :
   //        Teuchos::null;
-  //omega = inArgs.get_W_x_dot_dot_coeff();
+  //omega2 = inArgs.get_W_x_dot_dot_coeff();
 
   const double damping = 0;
   if (Teuchos::nonnull(f_out)) {
     f_out->putScalar(0.0);
     auto p = p_vec->getLocalViewHost(Tpetra::Access::ReadOnly);
-    auto f_out_view = f_out->getLocalViewHost(Tpetra::Access::OverwriteAll);
-    for (int i=0; i<myVecLength; i++)
-      f_out_view(i,0) = -p(0,0);
+    {
+      auto f_out_view = f_out->getLocalViewHost(Tpetra::Access::OverwriteAll);
+      for (int i=0; i<myVecLength; i++)
+        f_out_view(i,0) = -p(0,0);
+    }
 
     if (Teuchos::nonnull(x_dotdot_in)) {
       // f(x, x_dot) = x_dotdot - f(x)
@@ -439,11 +441,11 @@ void MockModelEval_C_Tpetra::evalModelImpl(
     double alpha = inArgs.get_alpha();
     double beta = inArgs.get_beta();
 
-    // W(x, x_dot, x_dotdot) = omega * Id + alpha * damping * Id - beta * W(x)
+    // W(x, x_dot, x_dotdot) = omega2 * Id + alpha * damping * Id - beta * W(x)
     if (Teuchos::nonnull(x_dotdot_in)) {
       W_out_crs->resumeFill();
       W_out_crs->scale(-beta);
-      diag = omega;
+      diag = omega2;
       for (int i=0; i<myVecLength; i++) {
         W_out_crs->sumIntoLocalValues(i, 1, &diag, &i);
       }
