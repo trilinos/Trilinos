@@ -322,7 +322,7 @@ getCoeffMatrix_HCURL(OutputViewType &output,
     {
       //After solving the system w/ LAPACK, Phi contains A^T (or A^-T)
       // transpose and clean up numerical noise (for permutation matrices)
-      const double eps = tolerence();
+      const double eps = std::sqrt(tolerence()); // NVR: loosened this to allow better noise-cleaning for high-order polynomials
       for (ordinal_type i=0;i<ndofSubcell;++i) {
         auto intmatii = std::round(OrtMat(i,i));
         OrtMat(i,i) = (std::abs(OrtMat(i,i) - intmatii) < eps) ? intmatii : OrtMat(i,i);
