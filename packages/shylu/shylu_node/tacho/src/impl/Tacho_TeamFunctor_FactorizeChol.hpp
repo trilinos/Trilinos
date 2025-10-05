@@ -98,7 +98,7 @@ public:
         UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
         Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, TrsmAlgoType>::invoke(member, Diag::Unit(), one, ATL,
                                                                                   ATR);
-        member.team_barrier();
+        member.team_barrier(); // TODO: check when we need barrier
 
         // Save in workspace
         Copy<Algo::Internal>::invoke(member, W, ATR);

@@ -130,14 +130,14 @@ template <typename T> struct BlasTeam {
               T t(0);
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n),
                                    [&](const int &j) { t += cj(A[i * as0 + j * as1]) * x[j * xs0]; });
-              Kokkos::atomic_add(&y[i * ys0], alpha * t); // TODO: can different blocks write to same y?
+              Kokkos::atomic_add(&y[i * ys0], alpha * t); // TODO: do we need atomic? can different blocks write to same y?
             });
           } else {
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
               T t(0);
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n),
                                    [&](const int &j) { t += cj(A[i * as0 + j * as1]) * x[j * xs0]; });
-              Kokkos::atomic_add(&y[i * ys0], alpha * t); // TODO: can different blocks write to same y?
+              Kokkos::atomic_add(&y[i * ys0], alpha * t); // TODO: do we need atomic? can different blocks write to same y?
             });
           }
         }

@@ -607,6 +607,11 @@ public:
       break;
     }
     }
+    if (this->getSolutionMethod() == 0) {
+      // worksize for on-device non-pivot LDL
+      // the blocksize 128 is used in Tacho_NonPivLDL_OnDevice
+      _worksize += (128*_info.max_supernode_size);
+    }
     size_type worksize = _worksize * (nstreams + 1);
     Kokkos::resize(_work, worksize);
     track_alloc(_work.span() * sizeof(value_type));
@@ -901,7 +906,7 @@ public:
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
+        blas_handle_type handle_blas = getBlasHandle(qid);
 
         setStreamOnHandle(qid);
         exec_instance = _exec_instances[qid];
@@ -910,7 +915,7 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        blas_handle_type   handle_blas   = getBlasHandle();
+        blas_handle_type handle_blas = getBlasHandle();
         value_type_array W = work;
 #endif
 
@@ -922,7 +927,7 @@ public:
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL, W);
+            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, ATL, W);
             checkDeviceLapackStatus("chol");
 
             if (n_m > 0) {
@@ -988,7 +993,7 @@ public:
             aptr += m * m;
 
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL, W);
+            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, ATL, W);
             checkDeviceLapackStatus("chol");
 
             // Compute inverse of diagonal block (in T)
@@ -1075,7 +1080,7 @@ public:
             aptr += m * m;
 
             // Calling fall-back default LDL_nopiv<Algo::OnDevice>::invoke with memeber = exec_instance
-            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(exec_instance, ATL, W);
+            _status = LDL_nopiv<Uplo::Upper, Algo::OnDevice>::invoke(handle_blas, exec_instance, ATL, W);
             checkDeviceLapackStatus("chol");
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
