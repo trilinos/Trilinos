@@ -78,7 +78,7 @@ void localApplyBlockNoTrans(Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   auto ptrHost  = lclGraph.row_map;
   auto indHost  = lclGraph.entries;
   Teuchos::Array<IST> localMem(blockSize);
-  little_vec_type Y_lcl(localMem.getRawPtr(), blockSize, 1);
+  little_vec_type Y_lcl(localMem.getRawPtr(), blockSize);
 
   for (LO j = 0; j < numVecs; ++j) {
     for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
