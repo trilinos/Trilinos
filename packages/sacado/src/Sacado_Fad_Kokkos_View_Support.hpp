@@ -198,12 +198,21 @@ public:
       data_handle_type p,
 #endif
       size_t i) const {
-    if constexpr (PartitionedFadStride != 0)
-      return data_handle_type(p, get_ptr(p) + i * (m_fad_size.value + 1));
-    else
-      return data_handle_type(
+    if constexpr (std::is_pointer_v<data_handle_type>) {
+      if constexpr (PartitionedFadStride != 0) {
+        return data_handle_type{get_ptr(p) + i * (m_fad_size.value + 1)};
+      } else {
+        return data_handle_type{
+          get_ptr(p) + i * (m_fad_stride.value <= 1 ? m_fad_size.value + 1 : 1)};
+      }
+    } else {
+      if constexpr (PartitionedFadStride != 0)
+        return data_handle_type{p, get_ptr(p) + i * (m_fad_size.value + 1)};
+      else
+        return data_handle_type{
           p,
-          get_ptr(p) + i * (m_fad_stride.value <= 1 ? m_fad_size.value + 1 : 1));
+          get_ptr(p) + i * (m_fad_stride.value <= 1 ? m_fad_size.value + 1 : 1)};
+    }
   }
 };
 
