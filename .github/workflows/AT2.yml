@@ -34,7 +34,7 @@ jobs:
 
   gcc10-openmpi4:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6]
+    runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6, 20250723]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -149,7 +149,7 @@ jobs:
 
   clang19-openmpi4:
     needs: pre-checks
-    runs-on: [self-hosted, clang-19.1.6-openmpi-4.1.6]
+    runs-on: [self-hosted, clang-19.1.6-openmpi-4.1.6, 20250723]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -380,7 +380,7 @@ jobs:
 
   cuda12:
     needs: pre-checks
-    runs-on: [self-hosted, cuda-12.4.1-gcc-10.4.0-openmpi-4.1.6]
+    runs-on: [self-hosted, cuda-12.4.1-gcc-10.4.0-openmpi-4.1.6, 20250723]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -495,7 +495,7 @@ jobs:
 
   gcc14:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-14]
+    runs-on: [self-hosted, gcc-14, 20250724]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -840,7 +840,7 @@ jobs:
 
   oneapi2024:
     needs: pre-checks
-    runs-on: [self-hosted, oneapi-2024.1.0]
+    runs-on: [self-hosted, oneapi-2024.1.0, 20250723]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -950,7 +950,7 @@ jobs:
 
   openmp:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6]
+    runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6, 20250723]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
