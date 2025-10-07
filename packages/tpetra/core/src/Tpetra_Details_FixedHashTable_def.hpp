@@ -796,7 +796,7 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
                                  << numKeys << " is greater than the maximum representable "
                                                "ValueType value "
                                  << ::Kokkos::ArithTraits<ValueType>::max() << ".  "
-                                                                                      "This means that it is not possible to use this constructor.");
+                                                                               "This means that it is not possible to use this constructor.");
 #endif
   TEUCHOS_TEST_FOR_EXCEPTION(numKeys > static_cast<offset_type>(INT_MAX), std::logic_error, prefix << "This class currently only works when the number of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you, please talk to the Tpetra "
                                                                                                                                                                                                "developers.");
