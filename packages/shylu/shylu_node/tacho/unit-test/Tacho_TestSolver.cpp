@@ -133,6 +133,12 @@ int driver(const std::string file, const std::string method_name, const int vari
       solver.storeExplicitTranspose(true);
     }
 
+    /// levelset options
+    ///  forcing to have a few device factor/solve tasks
+    int device_factor_thres = 10;
+    int device_solve_thres = 10;
+    solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
+
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
     Kokkos::deep_copy(values_on_device, A.Values());
 
