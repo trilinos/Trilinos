@@ -777,23 +777,27 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
                                                                                         << theMaxVal << ".  This means that it is not possible to "
                                                                                                         "use this constructor.");
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<unsigned long long>(numKeys) >
 #if KOKKOS_VERSION >= 40799
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<unsigned long long>(numKeys) >
                                  static_cast<unsigned long long>(::KokkosKernels::ArithTraits<ValueType>::max()),
-#else
-                                 static_cast<unsigned long long>(::Kokkos::ArithTraits<ValueType>::max()),
-#endif
                              std::invalid_argument,
                              "Tpetra::Details::FixedHashTable: The number of "
                              "keys "
                                  << numKeys << " is greater than the maximum representable "
                                                "ValueType value "
-#if KOKKOS_VERSION >= 40799
                                  << ::KokkosKernels::ArithTraits<ValueType>::max() << ".  "
-#else
-                                 << ::Kokkos::ArithTraits<ValueType>::max() << ".  "
-#endif
                                                                                       "This means that it is not possible to use this constructor.");
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<unsigned long long>(numKeys) >
+                                 static_cast<unsigned long long>(::Kokkos::ArithTraits<ValueType>::max()),
+                             std::invalid_argument,
+                             "Tpetra::Details::FixedHashTable: The number of "
+                             "keys "
+                                 << numKeys << " is greater than the maximum representable "
+                                               "ValueType value "
+                                 << ::Kokkos::ArithTraits<ValueType>::max() << ".  "
+                                                                                      "This means that it is not possible to use this constructor.");
+#endif
   TEUCHOS_TEST_FOR_EXCEPTION(numKeys > static_cast<offset_type>(INT_MAX), std::logic_error, prefix << "This class currently only works when the number of keys is <= INT_MAX = " << INT_MAX << ".  If this is a problem for you, please talk to the Tpetra "
                                                                                                                                                                                                "developers.");
 
@@ -1074,17 +1078,19 @@ void FixedHashTable<KeyType, ValueType, DeviceType>::
   const offset_type numKeys = static_cast<offset_type>(keys.extent(0));
 #if KOKKOS_VERSION >= 40799
   TEUCHOS_TEST_FOR_EXCEPTION(static_cast<unsigned long long>(numKeys) > static_cast<unsigned long long>(::KokkosKernels::ArithTraits<ValueType>::max()),
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<unsigned long long>(numKeys) > static_cast<unsigned long long>(::Kokkos::ArithTraits<ValueType>::max()),
-#endif
                              std::invalid_argument,
                              "Tpetra::Details::FixedHashTable: The number of "
                              "keys "
                                  << numKeys << " is greater than the maximum representable "
                                                "ValueType value "
-#if KOKKOS_VERSION >= 40799
                                  << ::KokkosKernels::ArithTraits<ValueType>::max() << ".");
 #else
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<unsigned long long>(numKeys) > static_cast<unsigned long long>(::Kokkos::ArithTraits<ValueType>::max()),
+                             std::invalid_argument,
+                             "Tpetra::Details::FixedHashTable: The number of "
+                             "keys "
+                                 << numKeys << " is greater than the maximum representable "
+                                               "ValueType value "
                                  << ::Kokkos::ArithTraits<ValueType>::max() << ".");
 #endif
   TEUCHOS_TEST_FOR_EXCEPTION(numKeys > static_cast<offset_type>(INT_MAX), std::logic_error,
