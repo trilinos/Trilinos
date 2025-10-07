@@ -51,7 +51,6 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::Serial> {
     if constexpr(runOnHost) {
       int r_val = 0;
       r_val = invoke(A);
-      //TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LapackSerial (potrf) returns non-zero error code.");
       return r_val;
     } else {
       TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");
@@ -68,7 +67,6 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::Serial> {
     if constexpr(runOnHost) {
       int r_val = 0;
       r_val = invoke(A);
-      TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LapackSerial (potrf) returns non-zero error code.");
       return r_val;
     } else {
       TACHO_TEST_FOR_ABORT(true, ">> This function is only allowed in host space.");

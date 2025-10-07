@@ -30,6 +30,8 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
 
     using exec_space = MemberType;
     using policy_type = Kokkos::RangePolicy<exec_space>;
+    using value_type = typename ViewTypeA::non_const_value_type;
+    using arith_traits = ArithTraits<value_type>;
     const ordinal_type m = A.extent(0);
 
     int r_val(0);
@@ -49,12 +51,12 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
        Kokkos::parallel_for(policy_update, KOKKOS_LAMBDA(const ordinal_type &id) {
          ordinal_type k = (i+1) + id / mn;
          ordinal_type j = (i+1) + id % mn;
-         A(k, j) -= A(i, k) * A(i, i) * A(i, j);
+         A(k, j) -= arith_traits::conj(A(i, k)) * A(i, i) * A(i, j);
        });
       #else
        policy_type policy_update(exec_instance, i+1, m);
        Kokkos::parallel_for(policy_update, KOKKOS_LAMBDA(const ordinal_type &k) {
-         for (ordinal_type j = k; j < m; j++) A(k, j) -= A(i, k) * A(i, i) * A(i, j);
+         for (ordinal_type j = k; j < m; j++) A(k, j) -= arith_traits::conj(A(i, k)) * A(i, i) * A(i, j);
        });
       #endif
     }
