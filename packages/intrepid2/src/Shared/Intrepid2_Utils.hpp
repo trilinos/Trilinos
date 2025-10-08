@@ -25,6 +25,7 @@
 #include "Kokkos_Random.hpp"
 
 #ifdef HAVE_INTREPID2_SACADO
+#include "Kokkos_View_Fad_Fwd.hpp"
 #include "Kokkos_LayoutNatural.hpp"
 #endif
 
@@ -762,7 +763,7 @@ namespace Intrepid2 {
   /**
    \brief Define layout that will allow us to wrap Sacado Scalar objects in Views without copying
    */
-#ifdef HAVE_INTREPID2_SACADO
+#if defined(HAVE_INTREPID2_SACADO) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
   template <typename ValueType>
   struct NaturalLayoutForType {
     using layout  =

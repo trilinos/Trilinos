@@ -108,9 +108,13 @@ class GetLocalDiagCopyWithoutOffsetsNotFillCompleteFunctor {
   void operator()(const LO& lclRowInd, LO& errCount) const {
     using KokkosSparse::findRelOffset;
 
+#if KOKKOS_VERSION >= 40799
+    D_lcl_1d_(lclRowInd) = KokkosKernels::ArithTraits<IST>::zero();
+#else
     D_lcl_1d_(lclRowInd) = Kokkos::ArithTraits<IST>::zero();
-    const GO gblInd      = lclRowMap_.getGlobalElement(lclRowInd);
-    const LO lclColInd   = lclColMap_.getLocalElement(gblInd);
+#endif
+    const GO gblInd    = lclRowMap_.getGlobalElement(lclRowInd);
+    const LO lclColInd = lclColMap_.getLocalElement(gblInd);
 
     if (lclColInd == Tpetra::Details::OrdinalTraits<LO>::invalid()) {
       errCount++;

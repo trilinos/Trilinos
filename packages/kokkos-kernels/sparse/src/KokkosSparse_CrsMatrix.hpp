@@ -665,6 +665,11 @@ class CrsMatrix {
   //! The number of columns in the sparse matrix.
   KOKKOS_INLINE_FUNCTION ordinal_type numCols() const { return numCols_; }
 
+  /// \brief Modify the number of columns in the sparse matrix.
+  ///
+  /// This invalidates any algorithm handles which previously used this matrix.
+  void setNumCols(ordinal_type c) { numCols_ = c; }
+
   //! The number of "point" (non-block) rows in the matrix. Since Crs is not
   //! blocked, this is just the number of regular rows.
   KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const { return numRows(); }

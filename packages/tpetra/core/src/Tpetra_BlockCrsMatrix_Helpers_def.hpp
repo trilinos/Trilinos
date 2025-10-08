@@ -810,12 +810,20 @@ fillLogicalBlocks(const Tpetra::CrsMatrix<Scalar, LO, GO, Node> &pointMatrix, co
 template <class Scalar, class LO, class GO, class Node>
 Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LO, GO, Node>>
 unfillFormerBlockCrs(const Tpetra::CrsMatrix<Scalar, LO, GO, Node> &pointMatrix) {
-  using crs_t           = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
-  using dev_row_view_t  = typename crs_t::local_graph_device_type::row_map_type::non_const_type;
-  using dev_col_view_t  = typename crs_t::local_graph_device_type::entries_type::non_const_type;
-  using dev_val_view_t  = typename crs_t::local_matrix_device_type::values_type::non_const_type;
-  using impl_scalar_t   = typename Kokkos::ArithTraits<Scalar>::val_type;
-  using STS             = Kokkos::ArithTraits<impl_scalar_t>;
+  using crs_t          = Tpetra::CrsMatrix<Scalar, LO, GO, Node>;
+  using dev_row_view_t = typename crs_t::local_graph_device_type::row_map_type::non_const_type;
+  using dev_col_view_t = typename crs_t::local_graph_device_type::entries_type::non_const_type;
+  using dev_val_view_t = typename crs_t::local_matrix_device_type::values_type::non_const_type;
+#if KOKKOS_VERSION >= 40799
+  using impl_scalar_t = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
+  using impl_scalar_t = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
+#if KOKKOS_VERSION >= 40799
+  using STS = KokkosKernels::ArithTraits<impl_scalar_t>;
+#else
+  using STS           = Kokkos::ArithTraits<impl_scalar_t>;
+#endif
   using Ordinal         = typename dev_row_view_t::non_const_value_type;
   using execution_space = typename Node::execution_space;
   using range_type      = Kokkos::RangePolicy<execution_space, size_t>;

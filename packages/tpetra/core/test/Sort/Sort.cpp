@@ -10,7 +10,11 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Tpetra_Details_shortSort.hpp"
 #include "Tpetra_Details_radixSort.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include <iterator>
 #include <utility>  // std::swap
 // numeric_limits<unsigned short> - not provided by Teuchos OrdinalTraits):
@@ -220,7 +224,11 @@ void test_fixedTypes_fixedArrayLength(bool& success,
 template <class ValueType>
 void fillValues(ValueType values[],
                 const int arrayLength) {
+#if KOKKOS_VERSION >= 40799
+  typedef KokkosKernels::ArithTraits<ValueType> KAT;
+#else
   typedef Kokkos::ArithTraits<ValueType> KAT;
+#endif
   const ValueType ONE = KAT::one();
 
   if (arrayLength >= 1) {

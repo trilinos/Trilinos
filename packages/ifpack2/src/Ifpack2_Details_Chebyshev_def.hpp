@@ -22,7 +22,11 @@
 #include "Ifpack2_Details_Chebyshev_Weights.hpp"
 // #include "Ifpack2_Details_ScaledDampedResidual.hpp"
 #include "Ifpack2_Details_ChebyshevKernel.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Tpetra_Details_residual.hpp"
@@ -56,7 +60,11 @@ struct V_ReciprocalThresholdSelfFunctor {
   typedef typename XV::execution_space execution_space;
   typedef typename XV::non_const_value_type value_type;
   typedef SizeType size_type;
+#if KOKKOS_VERSION >= 40799
+  typedef KokkosKernels::ArithTraits<value_type> KAT;
+#else
   typedef Kokkos::ArithTraits<value_type> KAT;
+#endif
   typedef typename KAT::mag_type mag_type;
 
   XV X_;
@@ -104,7 +112,11 @@ struct GlobalReciprocalThreshold<TpetraVectorType, true> {
           const typename TpetraVectorType::scalar_type& min_val) {
     typedef typename TpetraVectorType::scalar_type scalar_type;
     typedef typename TpetraVectorType::mag_type mag_type;
+#if KOKKOS_VERSION >= 40799
+    typedef KokkosKernels::ArithTraits<scalar_type> STS;
+#else
     typedef Kokkos::ArithTraits<scalar_type> STS;
+#endif
 
     const scalar_type ONE      = STS::one();
     const mag_type min_val_abs = STS::abs(min_val);
@@ -1128,8 +1140,16 @@ Chebyshev<ScalarType, MV>::
 
       typedef typename MV::impl_scalar_type IST;
       typedef typename MV::local_ordinal_type LO;
+#if KOKKOS_VERSION >= 40799
+      typedef KokkosKernels::ArithTraits<IST> ATS;
+#else
       typedef Kokkos::ArithTraits<IST> ATS;
+#endif
+#if KOKKOS_VERSION >= 40799
+      typedef KokkosKernels::ArithTraits<typename ATS::mag_type> STM;
+#else
       typedef Kokkos::ArithTraits<typename ATS::mag_type> STM;
+#endif
 
       const LO lclNumRows = static_cast<LO>(D_rangeMap->getLocalLength());
       for (LO i = 0; i < lclNumRows; ++i) {

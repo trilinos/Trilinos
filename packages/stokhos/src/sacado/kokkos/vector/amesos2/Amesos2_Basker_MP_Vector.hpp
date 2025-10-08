@@ -22,7 +22,11 @@ template <class T> struct BASKER_ScalarTraits;
 template <class S>
 struct BASKER_ScalarTraits< Sacado::MP::Vector<S> > {
   typedef Sacado::MP::Vector<S> val_type;
+#if KOKKOS_VERSION >= 40799
+  typedef KokkosKernels::ArithTraits<val_type> KAT;
+#else
   typedef Kokkos::ArithTraits<val_type> KAT;
+#endif
   typedef typename KAT::mag_type magnitudeType;
   static inline val_type reciprocal(val_type c){ return 1.0/c; }
   static inline val_type divide(val_type a, val_type b){ return a/b; }
@@ -38,7 +42,11 @@ namespace Amesos2 {
   struct TypeMap< Basker,Sacado::MP::Vector<ST> > {
     typedef Sacado::MP::Vector<ST> dtype;
     typedef Sacado::MP::Vector<ST> type;
+#if KOKKOS_VERSION >= 40799
+    typedef typename KokkosKernels::ArithTraits< Sacado::MP::Vector<ST> >::mag_type magnitude_type;
+#else
     typedef typename Kokkos::ArithTraits< Sacado::MP::Vector<ST> >::mag_type magnitude_type;
+#endif
   };
 
   // Specialize our specialization for create_solver_with_supported_type

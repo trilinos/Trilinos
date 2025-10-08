@@ -34,9 +34,17 @@ namespace Test {
 template <class Scalar>
 using kokkos_value_type = typename std::conditional<
     std::is_const<Scalar>::value,
+#if KOKKOS_VERSION >= 40799
+    const typename KokkosKernels::ArithTraits<
+#else
     const typename Kokkos::ArithTraits<
+#endif
         typename std::remove_const<Scalar>::type>::val_type,
+#if KOKKOS_VERSION >= 40799
+    typename KokkosKernels::ArithTraits<Scalar>::val_type>::type;
+#else
     typename Kokkos::ArithTraits<Scalar>::val_type>::type;
+#endif
 
 template <class LO, class Scalar>
 Kokkos::View<kokkos_value_type<Scalar>**,
@@ -60,13 +68,21 @@ getHostMatrixView(const MatView<LO, Scalar>& A) {
 }
 
 template <class LO, class Scalar>
+#if KOKKOS_VERSION >= 40799
+Kokkos::View<typename KokkosKernels::ArithTraits<Scalar>::val_type**,
+#else
 Kokkos::View<typename Kokkos::ArithTraits<Scalar>::val_type**,
+#endif
              Kokkos::LayoutLeft>
 getDeviceMatrixCopy(const MatView<LO, Scalar>& A,
                     const std::string& label) {
   using Kokkos::view_alloc;
   using Kokkos::WithoutInitializing;
+#if KOKKOS_VERSION >= 40799
+  using IST = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using IST = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
   using device_matrix_type =
       Kokkos::View<IST**, Kokkos::LayoutLeft>;
 
@@ -340,7 +356,11 @@ class FullTsqrVerifier {
     }
 
     using IST =
+#if KOKKOS_VERSION >= 40799
+        typename KokkosKernels::ArithTraits<scalar_type>::val_type;
+#else
         typename Kokkos::ArithTraits<scalar_type>::val_type;
+#endif
     using device_matrix_type =
         Kokkos::View<IST**, Kokkos::LayoutLeft>;
 
@@ -858,7 +878,11 @@ class FullTsqrVerifier {
     }
 
     using IST =
+#if KOKKOS_VERSION >= 40799
+        typename KokkosKernels::ArithTraits<scalar_type>::val_type;
+#else
         typename Kokkos::ArithTraits<scalar_type>::val_type;
+#endif
     using device_matrix_type =
         Kokkos::View<IST**, Kokkos::LayoutLeft>;
 

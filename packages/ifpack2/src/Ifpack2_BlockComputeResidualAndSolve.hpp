@@ -149,7 +149,11 @@ struct ComputeResidualAndSolve_1Pass {
           Kokkos::TeamThreadRange(member, 0, numEntries), [&](const int k) {
             int64_t A_offset = A_x_offsets(rowidx, 0, k);
             int64_t x_offset = A_x_offsets(rowidx, 1, k);
+#if KOKKOS_VERSION >= 40799
+            if (A_offset != KokkosKernels::ArithTraits<int64_t>::min()) {
+#else
             if (A_offset != Kokkos::ArithTraits<int64_t>::min()) {
+#endif
               A_block_cst.assign_data(tpetra_values.data() + A_offset);
               // Pull x into local memory
               int64_t remote_cutoff = blocksize * num_local_rows;
@@ -195,9 +199,17 @@ struct ComputeResidualAndSolve_1Pass {
             // entry.
             impl_scalar_type old_y    = x(row + k, col);
             impl_scalar_type y_update = local_Dinv_residual[k] - old_y;
+#if KOKKOS_VERSION >= 40799
+            if constexpr (KokkosKernels::ArithTraits<impl_scalar_type>::is_complex) {
+#else
             if constexpr (Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
+#endif
               magnitude_type ydiff =
+#if KOKKOS_VERSION >= 40799
+                  KokkosKernels::ArithTraits<impl_scalar_type>::abs(y_update);
+#else
                   Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
+#endif
               update += ydiff * ydiff;
             } else {
               update += y_update * y_update;
@@ -354,7 +366,11 @@ struct ComputeResidualAndSolve_2Pass {
           Kokkos::TeamThreadRange(member, 0, numEntries), [&](const int k) {
             int64_t A_offset = A_x_offsets(rowidx, 0, k);
             int64_t x_offset = A_x_offsets(rowidx, 1, k);
+#if KOKKOS_VERSION >= 40799
+            if (A_offset != KokkosKernels::ArithTraits<int64_t>::min()) {
+#else
             if (A_offset != Kokkos::ArithTraits<int64_t>::min()) {
+#endif
               A_block_cst.assign_data(tpetra_values.data() + A_offset);
               // Pull x into local memory
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, blocksize),
@@ -420,7 +436,11 @@ struct ComputeResidualAndSolve_2Pass {
           Kokkos::TeamThreadRange(member, 0, numEntries), [&](const int k) {
             int64_t A_offset = A_x_offsets_remote(rowidx, 0, k);
             int64_t x_offset = A_x_offsets_remote(rowidx, 1, k);
+#if KOKKOS_VERSION >= 40799
+            if (A_offset != KokkosKernels::ArithTraits<int64_t>::min()) {
+#else
             if (A_offset != Kokkos::ArithTraits<int64_t>::min()) {
+#endif
               A_block_cst.assign_data(tpetra_values.data() + A_offset);
               // Pull x into local memory
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, blocksize),
@@ -461,9 +481,17 @@ struct ComputeResidualAndSolve_2Pass {
             // entry.
             impl_scalar_type old_y    = x(row + k, col);
             impl_scalar_type y_update = local_Dinv_residual[k] - old_y;
+#if KOKKOS_VERSION >= 40799
+            if constexpr (KokkosKernels::ArithTraits<impl_scalar_type>::is_complex) {
+#else
             if constexpr (Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
+#endif
               magnitude_type ydiff =
+#if KOKKOS_VERSION >= 40799
+                  KokkosKernels::ArithTraits<impl_scalar_type>::abs(y_update);
+#else
                   Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
+#endif
               update += ydiff * ydiff;
             } else {
               update += y_update * y_update;
@@ -646,9 +674,17 @@ struct ComputeResidualAndSolve_SolveOnly {
             // Compute the change in y (assuming damping_factor == 1) for this
             // entry.
             impl_scalar_type y_update = local_Dinv_residual[k];
+#if KOKKOS_VERSION >= 40799
+            if constexpr (KokkosKernels::ArithTraits<impl_scalar_type>::is_complex) {
+#else
             if constexpr (Kokkos::ArithTraits<impl_scalar_type>::is_complex) {
+#endif
               magnitude_type ydiff =
+#if KOKKOS_VERSION >= 40799
+                  KokkosKernels::ArithTraits<impl_scalar_type>::abs(y_update);
+#else
                   Kokkos::ArithTraits<impl_scalar_type>::abs(y_update);
+#endif
               update += ydiff * ydiff;
             } else {
               update += y_update * y_update;
