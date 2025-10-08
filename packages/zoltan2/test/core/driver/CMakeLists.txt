@@ -20,6 +20,7 @@ TRIBITS_ADD_EXECUTABLE(
    test_driver
    SOURCES ${HEADERS} test_driver.cpp
    COMM serial mpi
+  CATEGORIES BASIC PERFORMANCE
 )
 
 
