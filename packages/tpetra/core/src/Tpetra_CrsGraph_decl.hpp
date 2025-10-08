@@ -1186,6 +1186,23 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
                                         buffer_device_type>& permuteFromLIDs,
                  const CombineMode CM) override;
 
+  void copyAndPermuteNew(
+    const row_graph_type& source,
+    row_graph_type& target,
+    const size_t numSameIDs,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+    const CombineMode CM
+  );
+
+  void insertGlobalIndicesDevice(
+    const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& srcCrsGraph,
+    CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& tgtCrsGraph,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
+    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+    LocalOrdinal loopEnd
+  );
+
   using padding_type = Details::CrsPadding<
       local_ordinal_type, global_ordinal_type>;
 

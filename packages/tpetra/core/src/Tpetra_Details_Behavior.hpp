@@ -300,6 +300,12 @@ class Behavior {
   /// <tt>TPETRA_TIME_KOKKOS_FUNCTIONS</tt> environment variable.
   static bool timeKokkosFunctions();
 
+  /// \brief Use new implementation of copyAndPermute
+  ///
+  /// This is disabled by default.  You may control this at run time via the
+  /// <tt>TPETRA_USE_NEW_COPY_AND_PERMUTE</tt> environment variable.
+  static bool useNewCopyAndPermute();
+
   /// \brief Warn if more than this many Kokkos spaces are accessed.
   ///
   /// This is disabled by default.  You may control this at run time via the
