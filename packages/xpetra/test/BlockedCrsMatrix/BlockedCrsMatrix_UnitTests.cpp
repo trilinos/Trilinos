@@ -2791,7 +2791,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(BlockedCrsMatrix, ConstructFromBlockedVector, 
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  using BlockedCrsMatrix = Xpetra::BlockedCrsMatrix<Scalar, LO, GO, Node>;
   using BlockedMap       = Xpetra::BlockedMap<LO, GO, Node>;
   using Map              = Xpetra::Map<LO, GO, Node>;
   using MapFactory       = Xpetra::MapFactory<LO, GO, Node>;
