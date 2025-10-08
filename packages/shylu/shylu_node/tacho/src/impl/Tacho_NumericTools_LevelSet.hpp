@@ -2926,7 +2926,7 @@ public:
   inline void solveNoPivotLDLLowerOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
                                                const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
-    const value_type one(1), minus_one(-1), zero(0);
+    const value_type minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
@@ -2987,7 +2987,6 @@ public:
 
   inline void solveNoPivotLDLLowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
                                                const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
-    const value_type one(1), zero(0);
     const ordinal_type nrhs = t.extent(1);
 
     exec_space exec_instance;
@@ -3108,7 +3107,7 @@ public:
   inline void solveNoPivotLDLUpperOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
                                                const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
-    const value_type minus_one(-1), one(1), zero(0);
+    const value_type minus_one(-1), one(1);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
@@ -3166,9 +3165,7 @@ public:
 
   inline void solveNoPivotLDLUpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
                                                const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
-    const value_type one(1), zero(0);
     const ordinal_type nrhs = t.extent(1);
-
     exec_space exec_instance;
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
@@ -4365,15 +4362,18 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              // get max teamm size
-              policy_factor = team_policy_factor(pcnt, 1, std::min(vector_size_factor[idx],vmax));
-              policy_update = team_policy_update(pcnt, 1, std::min(vector_size_update[idx],vmax));
+              // pick vector sizes
+              ordinal_type vsize_factor = std::min(vector_size_factor[idx],vmax);
+              ordinal_type vsize_update = std::min(vector_size_update[idx],vmax);
+              // pick teamm sizes
+              policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
+              policy_update = team_policy_update(pcnt, 1, vsize_update);
               const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
               const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());;
 
               // create policies
-              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), std::min(vector_size_factor[idx],vmax));
-              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), std::min(vector_size_update[idx],vmax));
+              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
+              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
             }
             if (lvl < _device_level_cut) {
               // do nothing
@@ -4539,9 +4539,9 @@ public:
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             if (this->getSolutionMethod() == 0) {
               solveNoPivotLDLLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
-	    } else {
+            } else {
               solveCholeskyLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
-	    }
+            }
             if (variant != 3) {
               // copy from buffer to t
               Kokkos::fence();
@@ -4616,9 +4616,9 @@ public:
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             if (this->getSolutionMethod() == 0) {
               solveNoPivotLDLUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
-	    } else {
+            } else {
               solveCholeskyUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
-	    }
+            }
             if (variant != 3) {
               Kokkos::fence();
             }
@@ -4738,14 +4738,17 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              // get max teamm sizes
-              policy_factor = team_policy_factor(pcnt, 1, std::min(vector_size_factor[idx],vmax));
-              policy_update = team_policy_update(pcnt, 1, std::min(vector_size_update[idx],vmax));
+              // pick vector sizes
+              ordinal_type vsize_factor = std::min(vector_size_factor[idx],vmax);
+              ordinal_type vsize_update = std::min(vector_size_update[idx],vmax);
+              // pick teamm sizes
+              policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
+              policy_update = team_policy_update(pcnt, 1, vsize_update);
               const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
               const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
 
-              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), std::min(vector_size_factor[idx],vmax));
-              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), std::min(vector_size_update[idx],vmax));
+              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
+              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
             }
             if (lvl < _device_level_cut) {
               // do nothing
@@ -5092,15 +5095,18 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              // get max teamm sizes
-              policy_factor = team_policy_factor(pcnt, 1, std::min(vector_size_factor[idx],vmax));
-              policy_update = team_policy_update(pcnt, 1, std::min(vector_size_update[idx],vmax));
+              // pick vector sizes
+              ordinal_type vsize_factor = std::min(vector_size_factor[idx],vmax);
+              ordinal_type vsize_update = std::min(vector_size_update[idx],vmax);
+              // pick teamm sizes
+              policy_factor = team_policy_factor(pcnt, 1, vsize_factor);
+              policy_update = team_policy_update(pcnt, 1, vsize_update);
               const ordinal_type factor_tmax = policy_factor.team_size_max(functor, Kokkos::ParallelForTag());
               const ordinal_type update_tmax = policy_update.team_size_max(functor, Kokkos::ParallelForTag());
 
               // create policies
-              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), std::min(vector_size_factor[idx],vmax));
-              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), std::min(vector_size_update[idx],vmax));
+              policy_factor = team_policy_factor(pcnt, std::min(team_size_factor[idx],factor_tmax), vsize_factor);
+              policy_update = team_policy_update(pcnt, std::min(team_size_update[idx],update_tmax), vsize_update);
             }
             if (lvl < _device_level_cut) {
               // do nothing

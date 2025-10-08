@@ -71,13 +71,10 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
     using value_type = typename ViewTypeA::non_const_value_type;
     using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
     using policy_type = Kokkos::RangePolicy<exec_space>;
-    const auto &exec_instance = member;
-    const auto &handle_instance = handle;
 
     const value_type  one ( 1.0);
     const value_type mone (-1.0);
     const ordinal_type m   = A.extent(0);
-    const ordinal_type lda = A.stride(1);
     const ordinal_type nb  = 128; //m;
 
     int r_val(0);
