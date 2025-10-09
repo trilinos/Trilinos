@@ -27,11 +27,10 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-class SolverMap_LinearProblem : public StructuralSameTypeTransform< LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-{
-public:
-using NewType      = typename StructuralSameTypeTransform< LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::NewType;
-using OriginalType = typename StructuralSameTypeTransform< LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalType;
+class SolverMap_LinearProblem : public StructuralSameTypeTransform<LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> > {
+ public:
+  using NewType      = typename StructuralSameTypeTransform<LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::NewType;
+  using OriginalType = typename StructuralSameTypeTransform<LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalType;
 
   ///
   /** Constructor
@@ -46,12 +45,12 @@ using OriginalType = typename StructuralSameTypeTransform< LinearProblem<Scalar,
   ///
   /** Constructs "fixed" Tpetra::LinearProblem
    */
-  NewType operator()( OriginalType const & origProblem );
+  NewType operator()(OriginalType const& origProblem);
 
-private:
+ private:
   SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> solverMapCrsMatrixTrans_;
 };
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_SOLVERMAP_LINEARPROBLEM_DECL_HPP
+#endif  // TPETRA_SOLVERMAP_LINEARPROBLEM_DECL_HPP

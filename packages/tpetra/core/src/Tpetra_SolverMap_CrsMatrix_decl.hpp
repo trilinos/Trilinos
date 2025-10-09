@@ -27,11 +27,10 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-class SolverMap_CrsMatrix : public StructuralSameTypeTransform< CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-{
-public:
-using NewType      = typename StructuralSameTypeTransform< CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::NewType;
-using OriginalType = typename StructuralSameTypeTransform< CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalType;
+class SolverMap_CrsMatrix : public StructuralSameTypeTransform<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > {
+ public:
+  using NewType      = typename StructuralSameTypeTransform<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::NewType;
+  using OriginalType = typename StructuralSameTypeTransform<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalType;
 
   ///
   /** Constructor
@@ -46,13 +45,13 @@ using OriginalType = typename StructuralSameTypeTransform< CrsMatrix<Scalar, Loc
   ///
   /** Constructs fixed view of CrsMatrix as necessary.
    */
-  NewType operator()( OriginalType const & origMatrix );
+  NewType operator()(OriginalType const& origMatrix);
 
-private:
-  Teuchos::RCP< Map     <LocalOrdinal, GlobalOrdinal, Node> > newColMap_;
-  Teuchos::RCP< CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > newGraph_;
+ private:
+  Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > newColMap_;
+  Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > newGraph_;
 };
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_SOLVERMAP_CRSMATRIX_DECL_HPP
+#endif  // TPETRA_SOLVERMAP_CRSMATRIX_DECL_HPP
