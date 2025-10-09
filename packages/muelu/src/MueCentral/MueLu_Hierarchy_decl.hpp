@@ -255,11 +255,11 @@ class Hierarchy : public BaseClass {
   */
   void Write(const LO& start = -1, const LO& end = -1, const std::string& suffix = "");
 
-  void SetLabel(const std::string &hierarchyLabel) {
+  void SetLabel(const std::string& hierarchyLabel) {
     hierarchyLabel_ = hierarchyLabel;
   }
 
-  std::string GetLabel () const {
+  std::string GetLabel() const {
     return hierarchyLabel_;
   }
 
