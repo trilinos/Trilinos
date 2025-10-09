@@ -41,6 +41,8 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   std::string graph_file = "";
   std::string weight_file = "";
   int dofs_per_node = 1;
+  int graph_algo_type = -1;
+  bool order_connected_graph_separately = true;
 #if defined(KOKKOS_ENABLE_HIP)
   bool storeTranspose = true;
 #else
@@ -72,6 +74,8 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<std::string>("graph", "Input condensed graph", &graph_file);
   opts.set_option<std::string>("weight", "Input condensed graph weight", &weight_file);
   opts.set_option<int>("dofs-per-node", "# DoFs per node", &dofs_per_node);
+  opts.set_option<bool>("order-connected-graph", "Flag to order connected graph separately (METIS)", &order_connected_graph_separately);
+  opts.set_option<int>("graph-algo", "Type of graph algorithm (0: Natural, 1: AMD, 2: METIS)", &graph_algo_type);
   opts.set_option<bool>("store-trans", "Flag to store transpose", &storeTranspose);
   opts.set_option<bool>("perturb", "Flag to perturb tiny pivots", &perturbPivot);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
@@ -196,8 +200,12 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     solver.setLevelSetOptionNumStreams(nstreams);
 
     /// graph options
-    solver.setOrderConnectedGraphSeparately();
-
+    if (order_connected_graph_separately) {
+      solver.setOrderConnectedGraphSeparately();
+    }
+    if (graph_algo_type >= 0) {
+      solver.setGraphAlgorithmType(graph_algo_type);
+    }
     /// levelset options
     solver.setSmallProblemThresholdsize(small_problem_thres);
     solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
@@ -333,7 +341,6 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     } else {
       std::cout << "\nFailed to create Watchr performance report (" << testName << ") in " << xmlOut << '\n';
     }
-    std::cout << std::endl;
     {
       Teuchos::StackedTimer::OutputOptions options;
       options.num_histogram=3;
@@ -345,10 +352,13 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     }
 #else
     std::cout << " Initi Time " << initi_time << std::endl;
-    std::cout << " > nnz = " << solver.getNumNonZerosU() << std::endl;
     std::cout << " Facto Time " << facto_time / (double)nfacts << std::endl;
     std::cout << " Solve Time " << solve_time / (double)nsolves << std::endl;
 #endif
+    if (verbose) {
+      std::cout << std::endl;
+      std::cout << " > nnz = " << solver.getNumNonZerosU() << std::endl << std::endl;
+    }
     std::cout << std::endl;
     solver.release();
   } catch (const std::exception &e) {

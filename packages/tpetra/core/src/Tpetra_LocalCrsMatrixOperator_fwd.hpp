@@ -17,11 +17,11 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
-template<class MultiVectorScalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class MatrixScalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class Device = ::Tpetra::Details::DefaultTypes::node_type::device_type>
+template <class MultiVectorScalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+          class MatrixScalar      = ::Tpetra::Details::DefaultTypes::scalar_type,
+          class Device            = ::Tpetra::Details::DefaultTypes::node_type::device_type>
 class LocalCrsMatrixOperator;
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+}  // namespace Tpetra
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
-#endif // TPETRA_LOCALCRSMATRIXOPERATOR_FWD_HPP
+#endif  // TPETRA_LOCALCRSMATRIXOPERATOR_FWD_HPP

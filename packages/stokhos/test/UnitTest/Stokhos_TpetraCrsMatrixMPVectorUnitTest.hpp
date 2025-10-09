@@ -935,7 +935,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       for (LocalOrdinal j=0; j<VectorSize; ++j)
         val.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(
           nrow, VectorSize, row, j);
-        x_view(i,0) = val;
+      x_view(i,0) = val;
     }
   }
 
@@ -1120,7 +1120,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
+#if KOKKOS_VERSION >= 40799
+  typedef KokkosKernels::ArithTraits<BaseScalar> BST;
+#else
   typedef Kokkos::ArithTraits<BaseScalar> BST;
+#endif
   typedef typename BST::mag_type base_mag_type;
   typedef typename Tpetra_Vector::mag_type mag_type;
   base_mag_type btol = 1e-9;
@@ -1273,7 +1277,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
+#if KOKKOS_VERSION >= 40799
+  typedef KokkosKernels::ArithTraits<BaseScalar> BST;
+#else
   typedef Kokkos::ArithTraits<BaseScalar> BST;
+#endif
   typedef typename BST::mag_type base_mag_type;
   typedef typename Tpetra_Vector::mag_type mag_type;
   base_mag_type btol = 1e-9;

@@ -16,26 +16,25 @@
 // Create and return a simple example CrsMatrix, with row distribution
 // over the given Map.
 int main(int argc, char *argv[]) {
-
   using Teuchos::rcp;
   using Teuchos::RCP;
-  using map_type = Tpetra::Map<>;
-  using LO = typename map_type::local_ordinal_type;
-  using GO = typename map_type::global_ordinal_type;
+  using map_type        = Tpetra::Map<>;
+  using LO              = typename map_type::local_ordinal_type;
+  using GO              = typename map_type::global_ordinal_type;
   using crs_matrix_type = Tpetra::CrsMatrix<>;
 
   Teuchos::oblackholestream blackHole;
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   {
     Teuchos::RCP<const Teuchos::Comm<int>> comm = Tpetra::getDefaultComm();
-    const int myRank = comm->getRank();
+    const int myRank                            = comm->getRank();
 
     TEUCHOS_TEST_FOR_EXCEPTION(comm->getSize() != 2, std::logic_error,
                                "Example requires 2 process ranks");
 
     const Tpetra::global_size_t numGblRows = 9;
     const Tpetra::global_size_t numGblCols = 14;
-    const GO indexBase = 0;
+    const GO indexBase                     = 0;
 
     // Create the row and column index lists on each processor
     const LO numRow = (myRank == 0 ? 5 : 4);

@@ -1,0 +1,86 @@
+<ParameterList name="testDriverExample">
+  
+  <!-- 1. INPUT BLOCK DEFINITION -->
+  
+  <ParameterList name="InputParameters">
+    <Parameter name="debug" type="bool" value="false" />
+    <Parameter name="x" type="int" value="240"/>
+    <Parameter name="y" type="int" value="240"/>
+    <Parameter name="z" type="int" value="120"/>
+    <Parameter name="equation type" type="string" value="Laplace3D"/>
+  </ParameterList>
+  
+  <!-- 2. PROBLEM BLOCK DEFINITIONS -->
+  
+  <ParameterList name="RCB">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+      <Parameter name="algorithm" type="string" value="rcb" />
+      <Parameter name="compute_metrics" type="bool" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="RIB">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+      <Parameter name="algorithm" type="string" value="rib" />
+      <Parameter name="compute_metrics" type="bool" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Multijagged">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+      <Parameter name="rectilinear" type="bool" value="true"/>
+      <Parameter name="compute_metrics" type="bool" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+</ParameterList>
+
+

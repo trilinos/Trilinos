@@ -62,9 +62,17 @@ removeSmallEntries(Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
   using vals_type       = typename crs_matrix::local_matrix_type::values_type;
   using execution_space = typename crs_matrix::local_matrix_type::execution_space;
 
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
   using ATS      = Kokkos::ArithTraits<Scalar>;
-  using impl_SC  = typename ATS::val_type;
+#endif
+  using impl_SC = typename ATS::val_type;
+#if KOKKOS_VERSION >= 40799
+  using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
+#else
   using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+#endif
 
   auto lclA = A->getLocalMatrixDevice();
 
@@ -332,12 +340,16 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using ordinal_type    = typename local_matrix_type::ordinal_type;
   using execution_space = typename local_matrix_type::execution_space;
   // using memory_space      = typename local_matrix_type::memory_space;
-  // Be careful with this one, if using Kokkos::ArithTraits<Scalar>
+  // Be careful with this one, if using KokkosKernels::ArithTraits<Scalar>
   // you are likely to run into errors when handling std::complex<>
   // a good way to work around that is to use the following:
-  // using KAT = Kokkos::ArithTraits<Kokkos::ArithTraits<Scalar>::val_type> >
-  // here we have: value_type = Kokkos::ArithTraits<Scalar>::val_type
-  using KAT = Kokkos::ArithTraits<value_type>;
+  // using KAT = KokkosKernels::ArithTraits<KokkosKernels::ArithTraits<Scalar>::val_type> >
+  // here we have: value_type = KokkosKernels::ArithTraits<Scalar>::val_type
+#if KOKKOS_VERSION >= 40799
+  using KAT = KokkosKernels::ArithTraits<value_type>;
+#else
+  using KAT      = Kokkos::ArithTraits<value_type>;
+#endif
 
   // Get/Create distributed objects
   RCP<const Map> rowMap = A.getRowMap();
@@ -429,10 +441,22 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // using entries_type      = typename local_matrix_type::index_type;
       using values_type = typename local_matrix_type::values_type;
       using scalar_type = typename values_type::non_const_value_type;
-      using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
-      using KAT_S       = typename Kokkos::ArithTraits<scalar_type>;
-      using KAT_M       = typename Kokkos::ArithTraits<mag_type>;
-      using size_type   = typename local_matrix_type::non_const_size_type;
+#if KOKKOS_VERSION >= 40799
+      using mag_type = typename KokkosKernels::ArithTraits<scalar_type>::mag_type;
+#else
+      using mag_type = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+#endif
+#if KOKKOS_VERSION >= 40799
+      using KAT_S = typename KokkosKernels::ArithTraits<scalar_type>;
+#else
+      using KAT_S    = typename Kokkos::ArithTraits<scalar_type>;
+#endif
+#if KOKKOS_VERSION >= 40799
+      using KAT_M = typename KokkosKernels::ArithTraits<mag_type>;
+#else
+      using KAT_M    = typename Kokkos::ArithTraits<mag_type>;
+#endif
+      using size_type = typename local_matrix_type::non_const_size_type;
 
       local_vector_type diag_dev      = diag->getLocalViewDevice(Xpetra::Access::OverwriteAll);
       local_matrix_type local_mat_dev = rcpA->getLocalMatrixDevice();
@@ -597,7 +621,11 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using execution_space   = typename local_vector_type::execution_space;
   using values_type       = typename local_matrix_type::values_type;
   using scalar_type       = typename values_type::non_const_value_type;
-  using KAT_S             = typename Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+  using KAT_S = typename KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using KAT_S = typename Kokkos::ArithTraits<scalar_type>;
+#endif
 
   auto diag_dev      = diag->getLocalViewDevice(Xpetra::Access::OverwriteAll);
   auto local_mat_dev = A.getLocalMatrixDevice();
@@ -636,7 +664,11 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using execution_space   = typename local_vector_type::execution_space;
   using values_type       = typename local_matrix_type::values_type;
   using scalar_type       = typename values_type::non_const_value_type;
-  using KAT_S             = typename Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+  using KAT_S = typename KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using KAT_S = typename Kokkos::ArithTraits<scalar_type>;
+#endif
 
   auto diag_dev        = diag->getLocalViewDevice(Xpetra::Access::OverwriteAll);
   auto local_mat_dev   = A.getLocalMatrixDevice();
@@ -833,6 +865,37 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+GlobalOrdinal
+UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    CountNegativeDiagonalEntries(const Matrix& A) {
+  using local_matrix_type = typename Matrix::local_matrix_type;
+  using execution_space   = typename local_matrix_type::execution_space;
+#if KOKKOS_VERSION >= 40799
+  using KAT_S = typename KokkosKernels::ArithTraits<typename local_matrix_type::value_type>;
+#else
+  using KAT_S = typename Kokkos::ArithTraits<typename local_matrix_type::value_type>;
+#endif
+
+  auto local_mat_dev = A.getLocalMatrixDevice();
+  Kokkos::RangePolicy<execution_space, int> my_policy(0, static_cast<int>(local_mat_dev.numRows()));
+  GlobalOrdinal count_l = 0, count_g = 0;
+
+  Kokkos::parallel_reduce(
+      "CountNegativeDiagonalEntries", my_policy,
+      KOKKOS_LAMBDA(const LocalOrdinal rowIdx, GlobalOrdinal& sum) {
+        auto row = local_mat_dev.row(rowIdx);
+        for (LocalOrdinal entryIdx = 0; entryIdx < row.length; ++entryIdx) {
+          if (rowIdx == row.colidx(entryIdx) && KAT_S::real(row.value(entryIdx)) < 0)
+            sum++;
+        }
+      },
+      count_l);
+
+  MueLu_sumAll(A.getRowMap()->getComm(), count_l, count_g);
+  return count_g;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ResidualNorm(const Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Op, const MultiVector& X, const MultiVector& RHS) {
@@ -1022,15 +1085,65 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   return boundaryNodes;
 }
 
+template <class CrsMatrix>
+KOKKOS_FORCEINLINE_FUNCTION bool isDirichletRow(typename CrsMatrix::ordinal_type rowId,
+                                                KokkosSparse::SparseRowViewConst<CrsMatrix>& row,
+#if KOKKOS_VERSION >= 40799
+                                                const typename KokkosKernels::ArithTraits<typename CrsMatrix::value_type>::magnitudeType& tol,
+#else
+                                                const typename Kokkos::ArithTraits<typename CrsMatrix::value_type>::magnitudeType& tol,
+#endif
+                                                const bool count_twos_as_dirichlet) {
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<typename CrsMatrix::value_type>;
+#else
+  using ATS = Kokkos::ArithTraits<typename CrsMatrix::value_type>;
+#endif
+
+  auto length       = row.length;
+  bool boundaryNode = true;
+
+  if (count_twos_as_dirichlet) {
+    if (length > 2) {
+      decltype(length) colID = 0;
+      for (; colID < length; colID++)
+        if ((row.colidx(colID) != rowId) &&
+            (ATS::magnitude(row.value(colID)) > tol)) {
+          if (!boundaryNode)
+            break;
+          boundaryNode = false;
+        }
+      if (colID == length)
+        boundaryNode = true;
+    }
+  } else {
+    for (decltype(length) colID = 0; colID < length; colID++)
+      if ((row.colidx(colID) != rowId) &&
+          (ATS::magnitude(row.value(colID)) > tol)) {
+        boundaryNode = false;
+        break;
+      }
+  }
+  return boundaryNode;
+}
+
 template <class SC, class LO, class GO, class NO, class memory_space>
 Kokkos::View<bool*, memory_space>
 DetectDirichletRows_kokkos(const Xpetra::Matrix<SC, LO, GO, NO>& A,
                            const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol,
                            const bool count_twos_as_dirichlet) {
+#if KOKKOS_VERSION >= 40799
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<SC>::val_type;
+#else
   using impl_scalar_type = typename Kokkos::ArithTraits<SC>::val_type;
-  using ATS              = Kokkos::ArithTraits<impl_scalar_type>;
-  using range_type       = Kokkos::RangePolicy<LO, typename NO::execution_space>;
-  using helpers          = Xpetra::Helpers<SC, LO, GO, NO>;
+#endif
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
+  using ATS = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
+  using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+  using helpers    = Xpetra::Helpers<SC, LO, GO, NO>;
 
   Kokkos::View<bool*, typename NO::device_type::memory_space> boundaryNodes;
 
@@ -1075,42 +1188,12 @@ DetectDirichletRows_kokkos(const Xpetra::Matrix<SC, LO, GO, NO>& A,
     LO numRows       = A.getLocalNumRows();
     boundaryNodes    = Kokkos::View<bool*, typename NO::device_type::memory_space>(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);
 
-    if (count_twos_as_dirichlet)
-      Kokkos::parallel_for(
-          "MueLu:Utils::DetectDirichletRows_Twos_As_Dirichlet", range_type(0, numRows),
-          KOKKOS_LAMBDA(const LO row) {
-            auto rowView = localMatrix.row(row);
-            auto length  = rowView.length;
-
-            boundaryNodes(row) = true;
-            if (length > 2) {
-              decltype(length) colID = 0;
-              for (; colID < length; colID++)
-                if ((rowView.colidx(colID) != row) &&
-                    (ATS::magnitude(rowView.value(colID)) > tol)) {
-                  if (!boundaryNodes(row))
-                    break;
-                  boundaryNodes(row) = false;
-                }
-              if (colID == length)
-                boundaryNodes(row) = true;
-            }
-          });
-    else
-      Kokkos::parallel_for(
-          "MueLu:Utils::DetectDirichletRows", range_type(0, numRows),
-          KOKKOS_LAMBDA(const LO row) {
-            auto rowView = localMatrix.row(row);
-            auto length  = rowView.length;
-
-            boundaryNodes(row) = true;
-            for (decltype(length) colID = 0; colID < length; colID++)
-              if ((rowView.colidx(colID) != row) &&
-                  (ATS::magnitude(rowView.value(colID)) > tol)) {
-                boundaryNodes(row) = false;
-                break;
-              }
-          });
+    Kokkos::parallel_for(
+        "MueLu:Utils::DetectDirichletRows", range_type(0, numRows),
+        KOKKOS_LAMBDA(const LO row) {
+          auto rowView       = localMatrix.rowConst(row);
+          boundaryNodes(row) = isDirichletRow(row, rowView, tol, count_twos_as_dirichlet);
+        });
   }
   if constexpr (std::is_same<memory_space, typename NO::device_type::memory_space>::value)
     return boundaryNodes;
@@ -1187,8 +1270,6 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                             const bool count_twos_as_dirichlet) {
   using range_type = Kokkos::RangePolicy<LO, typename Node::execution_space>;
 
-  auto dirichletRows = DetectDirichletRows_kokkos(A, tol, count_twos_as_dirichlet);
-
   LocalOrdinal numRows    = A.getLocalNumRows();
   LocalOrdinal numVectors = RHS.getNumVectors();
   TEUCHOS_ASSERT_EQUALITY(numVectors, Teuchos::as<LocalOrdinal>(InitialGuess.getNumVectors()));
@@ -1198,13 +1279,15 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   auto lclRHS          = RHS.getLocalViewDevice(Xpetra::Access::ReadOnly);
   auto lclInitialGuess = InitialGuess.getLocalViewDevice(Xpetra::Access::ReadWrite);
+  auto lclA            = A.getLocalMatrixDevice();
 
   Kokkos::parallel_for(
       "MueLu:Utils::EnforceInitialCondition", range_type(0, numRows),
-      KOKKOS_LAMBDA(const LO row) {
-        if (dirichletRows(row)) {
+      KOKKOS_LAMBDA(const LO i) {
+        auto row = lclA.rowConst(i);
+        if (isDirichletRow(i, row, tol, count_twos_as_dirichlet)) {
           for (LocalOrdinal j = 0; j < numVectors; ++j)
-            lclInitialGuess(row, j) = lclRHS(row, j);
+            lclInitialGuess(i, j) = lclRHS(i, j);
         }
       });
 }
@@ -1226,8 +1309,16 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     FindNonZeros(const typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev_const_um vals,
                  Kokkos::View<bool*, typename Node::device_type> nonzeros) {
-  using ATS        = Kokkos::ArithTraits<Scalar>;
-  using impl_ATS   = Kokkos::ArithTraits<typename ATS::val_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS = Kokkos::ArithTraits<Scalar>;
+#endif
+#if KOKKOS_VERSION >= 40799
+  using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
+#else
+  using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
+#endif
   using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
   TEUCHOS_ASSERT(vals.extent(0) == nonzeros.extent(0));
   const typename ATS::magnitudeType eps = 2.0 * impl_ATS::eps();
@@ -1285,8 +1376,16 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                   const Kokkos::View<bool*, typename Node::device_type>& dirichletRows,
                                   Kokkos::View<bool*, typename Node::device_type> dirichletCols,
                                   Kokkos::View<bool*, typename Node::device_type> dirichletDomain) {
-  using ATS                                                        = Kokkos::ArithTraits<Scalar>;
-  using impl_ATS                                                   = Kokkos::ArithTraits<typename ATS::val_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS = Kokkos::ArithTraits<Scalar>;
+#endif
+#if KOKKOS_VERSION >= 40799
+  using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
+#else
+  using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
+#endif
   using range_type                                                 = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
   RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> domMap = A.getDomainMap();
   RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> rowMap = A.getRowMap();
@@ -1535,8 +1634,16 @@ Kokkos::View<bool*, typename NO::device_type>
 UtilitiesBase<SC, LO, GO, NO>::
     DetectDirichletCols(const Xpetra::Matrix<SC, LO, GO, NO>& A,
                         const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows) {
-  using ATS        = Kokkos::ArithTraits<SC>;
-  using impl_ATS   = Kokkos::ArithTraits<typename ATS::val_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<SC>;
+#else
+  using ATS = Kokkos::ArithTraits<SC>;
+#endif
+#if KOKKOS_VERSION >= 40799
+  using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
+#else
+  using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
+#endif
   using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
   SC zero = ATS::zero();
@@ -1755,8 +1862,16 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ApplyOAZToMatrixRows(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                          const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows) {
   TEUCHOS_ASSERT(A->isFillComplete());
-  using ATS        = Kokkos::ArithTraits<Scalar>;
-  using impl_ATS   = Kokkos::ArithTraits<typename ATS::val_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS = Kokkos::ArithTraits<Scalar>;
+#endif
+#if KOKKOS_VERSION >= 40799
+  using impl_ATS = KokkosKernels::ArithTraits<typename ATS::val_type>;
+#else
+  using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
+#endif
   using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
   RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> domMap = A->getDomainMap();
@@ -1842,7 +1957,11 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ZeroDirichletRows(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                       Scalar replaceWith) {
-  using ATS        = Kokkos::ArithTraits<Scalar>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS = Kokkos::ArithTraits<Scalar>;
+#endif
   using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
   typename ATS::val_type impl_replaceWith = replaceWith;
@@ -1867,7 +1986,11 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ZeroDirichletRows(RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& X,
                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows,
                       Scalar replaceWith) {
-  using ATS        = Kokkos::ArithTraits<Scalar>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS = Kokkos::ArithTraits<Scalar>;
+#endif
   using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
   typename ATS::val_type impl_replaceWith = replaceWith;
@@ -1907,7 +2030,11 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ZeroDirichletCols(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                       const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols,
                       Scalar replaceWith) {
-  using ATS        = Kokkos::ArithTraits<Scalar>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS = Kokkos::ArithTraits<Scalar>;
+#endif
   using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
 
   typename ATS::val_type impl_replaceWith = replaceWith;
@@ -1973,13 +2100,25 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ReplaceNonZerosWithOnes(const RCP<Matrix>& original) {
-  using ISC               = typename Kokkos::ArithTraits<Scalar>::val_type;
+#if KOKKOS_VERSION >= 40799
+  using ISC = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
+  using ISC = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
   using range_type        = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
   using local_matrix_type = typename CrsMatrix::local_matrix_type;
   using values_type       = typename local_matrix_type::values_type;
 
-  const ISC ONE  = Kokkos::ArithTraits<ISC>::one();
+#if KOKKOS_VERSION >= 40799
+  const ISC ONE = KokkosKernels::ArithTraits<ISC>::one();
+#else
+  const ISC ONE = Kokkos::ArithTraits<ISC>::one();
+#endif
+#if KOKKOS_VERSION >= 40799
+  const ISC ZERO = KokkosKernels::ArithTraits<ISC>::zero();
+#else
   const ISC ZERO = Kokkos::ArithTraits<ISC>::zero();
+#endif
 
   // Copy the values array of the old matrix to a new array, replacing all the non-zeros with one
   auto localMatrix = original->getLocalMatrixDevice();

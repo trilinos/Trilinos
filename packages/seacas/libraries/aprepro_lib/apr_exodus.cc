@@ -50,7 +50,7 @@ namespace {
       str_name = name.data();
     }
 
-    if (names.length() > 0) {
+    if (!names.empty()) {
       names += ",";
     }
     names += str_name;

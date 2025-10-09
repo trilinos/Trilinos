@@ -8,7 +8,7 @@ SET(SOURCES_LIB "")
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
 
-if(TPL_ENABLE_MATLAB)
+IF(TPL_ENABLE_MATLAB)
   TRIBITS_INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIRS})
 
   # Must glob the binary dir last to get all of the auto-generated headers
@@ -19,7 +19,13 @@ if(TPL_ENABLE_MATLAB)
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMX_COMPAT_64 -DMATLAB_MEXCMD_RELEASE=R2017b")
 
   APPEND_GLOB(HEADERS_LIB *.hpp)
-  APPEND_SET(SOURCES_LIB MueLu_SingleLevelMatlabFactory.cpp MueLu_TwoLevelMatlabFactory.cpp MueLu_MatlabSmoother.cpp MueLu_MatlabUtils.cpp)
+  APPEND_SET(
+    SOURCES_LIB
+    MueLu_SingleLevelMatlabFactory.cpp
+    MueLu_TwoLevelMatlabFactory.cpp
+    MueLu_MatlabSmoother.cpp
+    MueLu_MatlabUtils.cpp
+  )
 
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR} NOSIERRABJAM)
   TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()

@@ -251,7 +251,7 @@ struct SumReducer {
   KOKKOS_INLINE_FUNCTION
   void init(value_type &val) const {
     for (int i = 0; i < N; ++i)
-      val.v[i] = Kokkos::reduction_identity<T>::sum();
+      val.v[i] = 0;
   }
   KOKKOS_INLINE_FUNCTION
   value_type &reference() {
@@ -280,11 +280,23 @@ struct ImplType {
   ///
   /// kokkos arithmetic traits of scalar_type
   ///
-  typedef typename Kokkos::Details::ArithTraits<scalar_type>::val_type impl_scalar_type;
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<scalar_type>::val_type impl_scalar_type;
+#else
+  typedef typename Kokkos::ArithTraits<scalar_type>::val_type impl_scalar_type;
+#endif
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<impl_scalar_type>::mag_type magnitude_type;
+#else
   typedef typename Kokkos::ArithTraits<impl_scalar_type>::mag_type magnitude_type;
+#endif
 
   typedef typename BlockTridiagScalarType<impl_scalar_type>::type btdm_scalar_type;
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<btdm_scalar_type>::mag_type btdm_magnitude_type;
+#else
   typedef typename Kokkos::ArithTraits<btdm_scalar_type>::mag_type btdm_magnitude_type;
+#endif
 
   ///
   /// default host execution space
@@ -517,7 +529,11 @@ void reduceVector(const ConstUnmanaged<typename BlockHelperDetails::ImplType<Mat
       },
       norm2);
 #endif
+#if KOKKOS_VERSION >= 40799
+  vals[0] = KokkosKernels::ArithTraits<impl_scalar_type>::abs(norm2);
+#else
   vals[0] = Kokkos::ArithTraits<impl_scalar_type>::abs(norm2);
+#endif
 
   IFPACK2_BLOCKHELPER_PROFILER_REGION_END;
   IFPACK2_BLOCKHELPER_TIMER_FENCE(typename ImplType<MatrixType>::execution_space)

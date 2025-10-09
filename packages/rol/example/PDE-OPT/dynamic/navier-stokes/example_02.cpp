@@ -285,9 +285,9 @@ int main(int argc, char *argv[]) {
         //     Active Control and Drag Optimization for Flow Past a
         //     Circular Cylinder
         //     Journal of Computation Physics, 163, pg. 83-117, 2000.
-        RealT Re   = parlist->sublist("Problem").get("Reynolds Number",200.0);
-        RealT amp0 = 6.0 - (Re - 200.0)/1600.0;
-        RealT Se0  = 0.74 - (Re - 200.0) * (0.115/800.0);
+        RealT Re2  = parlist->sublist("Problem").get("Reynolds Number",200.0);
+        RealT amp0 = 6.0 - (Re2 - 200.0)/1600.0;
+        RealT Se0  = 0.74 - (Re2 - 200.0) * (0.115/800.0);
         RealT amp  = parlist->sublist("Problem").sublist("Initial Guess").get("Amplitude", amp0);
         RealT Se   = parlist->sublist("Problem").sublist("Initial Guess").get("Strouhal Number", Se0);
         RealT ph   = parlist->sublist("Problem").sublist("Initial Guess").get("Phase Shift", 0.0);

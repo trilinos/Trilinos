@@ -68,13 +68,13 @@ void test_nothing(MPI_Comm comm, bool nullBufs, bool sameBufs,
       nullptr, /*sources*/
       nullptr, /*sourceweights*/
       0,       /*outdegree*/
-      nullptr /*destinations*/, nullptr /*destweights*/, 
+      nullptr /*destinations*/, nullptr /*destweights*/,
       mpixInfo /*info*/,
       0 /*reorder*/, &mpixComm);
 
   // reference implementation should be okay
   Fake_Alltoallv(sbuf, sendcounts.data(), senddispls.data(), MPI_BYTE, rbuf,
-                   recvcounts.data(), recvdispls.data(), MPI_BYTE, comm);
+                 recvcounts.data(), recvdispls.data(), MPI_BYTE, comm);
 
   // MPI advance implementation
   mpix_neighbor_alltoallv_implementation = NEIGHBOR_ALLTOALLV_STANDARD;
@@ -109,15 +109,15 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   }
 
   // read my part of the plan
-  std::vector<int> sendcounts, recvcounts, senddispls, recvdispls; // alltoallv
-  std::vector<int> nbrsendcounts, nbrrecvcounts, nbrsenddispls, nbrrecvdispls; // neighbor alltoallv
-  std::vector<int> sources, sourceweights, destinations, destweights; // communicator
+  std::vector<int> sendcounts, recvcounts, senddispls, recvdispls;              // alltoallv
+  std::vector<int> nbrsendcounts, nbrrecvcounts, nbrsenddispls, nbrrecvdispls;  // neighbor alltoallv
+  std::vector<int> sources, sourceweights, destinations, destweights;           // communicator
 
   std::uniform_int_distribution<int> soffsetdist(0, 150);
-  rng.seed(seed + rank); // different seed -> different displs per rank
+  rng.seed(seed + rank);  // different seed -> different displs per rank
   int initsdispl = soffsetdist(rng);
-  int sdispl = initsdispl;
-  int nbrsdispl = initsdispl;
+  int sdispl     = initsdispl;
+  int nbrsdispl  = initsdispl;
   for (int dest = 0; dest < size; ++dest) {
     senddispls.push_back(sdispl);
     int count = plan[rank * size + dest];
@@ -135,10 +135,10 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
   }
 
   std::uniform_int_distribution<int> roffsetdist(0, 150);
-  rng.seed(seed + size + rank); // different seed -> different displs (also per rank)
+  rng.seed(seed + size + rank);  // different seed -> different displs (also per rank)
   int initrdispl = roffsetdist(rng);
-  int rdispl = initrdispl;
-  int nbrrdispl = initrdispl;
+  int rdispl     = initrdispl;
+  int nbrrdispl  = initrdispl;
   for (int source = 0; source < size; ++source) {
     recvdispls.push_back(rdispl);
     int count = plan[source * size + rank];
@@ -154,7 +154,6 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
       nbrrdispl += count + offset;
     }
   }
-
 
   print_vec(rank, "sources", sources);
   print_vec(rank, "sourceweights", sourceweights);
@@ -174,18 +173,19 @@ void test_random(MPI_Comm comm, int seed, Teuchos::FancyOStream &out,
       mpixInfo /*info*/, 0 /*reorder*/, &mpixComm);
 
   // allocate send/recv bufs
-  // displs are in elements, so the displs are correct since MPI_BYTE 
+  // displs are in elements, so the displs are correct since MPI_BYTE
   // matches type in bufs, alltoallv calls as calculated above
   Kokkos::View<char *, typename Device::memory_space>
-    sbuf("sbuf", sdispl), exp("exp", rdispl), act("act", nbrrdispl);
+      sbuf("sbuf", sdispl), exp("exp", rdispl), act("act", nbrrdispl);
 
   // fill send buf
-  Kokkos::parallel_for(sbuf.size(), KOKKOS_LAMBDA (size_t i) {sbuf(i) = i;});
+  Kokkos::parallel_for(
+      sbuf.size(), KOKKOS_LAMBDA(size_t i) { sbuf(i) = i; });
 
   // Use reference and MPI_Advance implementation to fill buffers
   Fake_Alltoallv(sbuf.data(), sendcounts.data(), senddispls.data(), MPI_BYTE,
-                   exp.data(), recvcounts.data(), recvdispls.data(), MPI_BYTE,
-                   comm);
+                 exp.data(), recvcounts.data(), recvdispls.data(), MPI_BYTE,
+                 comm);
 
   print_vec(rank, "nbrsendcounts", nbrsendcounts);
   print_vec(rank, "nbrsenddispls", nbrsenddispls);
@@ -225,51 +225,50 @@ static MPI_Comm tpetra_default_comm_as_mpi_comm() {
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllV_nothing) {
   using execution_space = Kokkos::DefaultExecutionSpace;
-  using memory_space = execution_space::memory_space;
-  using device_type = Kokkos::Device<execution_space, memory_space>;
-  MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
+  using memory_space    = execution_space::memory_space;
+  using device_type     = Kokkos::Device<execution_space, memory_space>;
+  MPI_Comm comm         = tpetra_default_comm_as_mpi_comm();
   test_nothing<device_type>(comm, false, false, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllV_nothing_null) {
   using execution_space = Kokkos::DefaultExecutionSpace;
-  using memory_space = execution_space::memory_space;
-  using device_type = Kokkos::Device<execution_space, memory_space>;
-  MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
+  using memory_space    = execution_space::memory_space;
+  using device_type     = Kokkos::Device<execution_space, memory_space>;
+  MPI_Comm comm         = tpetra_default_comm_as_mpi_comm();
   test_nothing<device_type>(comm, true, false, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllV_nothing_same) {
   using execution_space = Kokkos::DefaultExecutionSpace;
-  using memory_space = execution_space::memory_space;
-  using device_type = Kokkos::Device<execution_space, memory_space>;
-  MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
+  using memory_space    = execution_space::memory_space;
+  using device_type     = Kokkos::Device<execution_space, memory_space>;
+  MPI_Comm comm         = tpetra_default_comm_as_mpi_comm();
   test_nothing<device_type>(comm, false, true, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllV_nothing_nullsame) {
   using execution_space = Kokkos::DefaultExecutionSpace;
-  using memory_space = execution_space::memory_space;
-  using device_type = Kokkos::Device<execution_space, memory_space>;
-  MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
+  using memory_space    = execution_space::memory_space;
+  using device_type     = Kokkos::Device<execution_space, memory_space>;
+  MPI_Comm comm         = tpetra_default_comm_as_mpi_comm();
   test_nothing<device_type>(comm, true, true, out, success);
 }
 
 TEUCHOS_UNIT_TEST(MpiAdvance, NeighborAllToAllV_random) {
   using execution_space = Kokkos::DefaultExecutionSpace;
-  using memory_space = execution_space::memory_space;
-  using device_type = Kokkos::Device<execution_space, memory_space>;
-  MPI_Comm comm = tpetra_default_comm_as_mpi_comm();
+  using memory_space    = execution_space::memory_space;
+  using device_type     = Kokkos::Device<execution_space, memory_space>;
+  MPI_Comm comm         = tpetra_default_comm_as_mpi_comm();
   test_random<device_type>(comm, 42, out, success);
 }
 
 // Let Tpetra initialize Kokkos
 // We define this because we don't also include ${TEUCHOS_STD_UNIT_TEST_MAIN}
 // in the CMakeLists.txt
-int main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   const int errCode =
-    Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
+      Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
   return errCode;
 }

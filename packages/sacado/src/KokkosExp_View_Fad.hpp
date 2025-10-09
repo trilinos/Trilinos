@@ -11,6 +11,17 @@
 #define KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 
 #include "Sacado_ConfigDefs.h"
+
+#include "Kokkos_Core_fwd.hpp"
+
+#if (KOKKOS_VERSION > 40700) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY) \
+    && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#define SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
+#endif
+
+#ifdef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
+#include "Sacado_Fad_Kokkos_View_Support.hpp"
+#else
 #if defined(HAVE_SACADO_KOKKOS)
 
 // Only include forward declarations so any overloads appear before they
@@ -92,9 +103,9 @@ template <typename T, typename ... P>
 struct is_view_fad< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFad >::value ||
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
@@ -102,7 +113,7 @@ template <typename T, typename ... P>
 struct is_view_fad_contiguous< View<T,P...> > {
   typedef View<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
@@ -2477,4 +2488,5 @@ broadcast
 
 #include "KokkosExp_View_Fad_Contiguous.hpp"
 
+#endif // defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
 #endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP */

@@ -12,14 +12,14 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Details_ExecutionSpacesUser.hpp>
 
-/*! \file SpaceUser.cpp 
+/*! \file SpaceUser.cpp
     \brief Make sure SpaceUser compiles and doesn't crash
 */
 
-namespace { // (anonymous)
+namespace {  // (anonymous)
 
-template <typename ExecSpace> struct S : public Tpetra::Details::Spaces::User {
-
+template <typename ExecSpace>
+struct S : public Tpetra::Details::Spaces::User {
   static constexpr size_t B = size_t(1024) * size_t(1024) * size_t(1024);
 
   void priority() const {
@@ -44,7 +44,7 @@ template <typename ExecSpace> struct S : public Tpetra::Details::Spaces::User {
     }
   }
 
-}; // S
+};  // S
 
 template <typename ExecutionSpace>
 void test_priority(bool &success, Teuchos::FancyOStream &out) {
@@ -58,13 +58,13 @@ void test_reuse(bool &success, Teuchos::FancyOStream &out) {
   success = true;
 }
 
-} // namespace
+}  // namespace
 
 int main(int argc, char **argv) {
   Tpetra::ScopeGuard sg(&argc, &argv);
 
   bool success = false;
-  auto out = Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
+  auto out     = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   *out << "Test SpaceUser" << std::endl;
 
 #if defined(KOKKOS_ENABLE_SERIAL)
@@ -98,11 +98,13 @@ int main(int argc, char **argv) {
 #endif
 
   if (success) {
-    std::cout << std::endl << "End Result: TEST PASSED" << std::endl;
+    std::cout << std::endl
+              << "End Result: TEST PASSED" << std::endl;
   } else {
-    std::cout << std::endl << "End Result: TEST FAILED" << std::endl;
+    std::cout << std::endl
+              << "End Result: TEST FAILED" << std::endl;
   }
-  
+
   Teuchos::OSTab tab1(out);
   return 0;
 }

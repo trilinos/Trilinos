@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,7 +7,10 @@
 #include "Ioss_SmartAssert.h"
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 namespace {
   // in case we're logging using the default logger...
@@ -118,54 +121,8 @@ namespace Ioss {
     // debug: ask user what to do
     void default_debug_handler(const assert_context &context)
     {
-#if 1
       dump_context_detail(context, std::cerr);
-      abort();
-#else
-      static bool ignore_all = false;
-      if (ignore_all)
-        // ignore All asserts
-        return;
-      typedef std::pair<std::string, int> file_and_line;
-      static std::set<file_and_line>      ignorer;
-      if (ignorer.find(file_and_line(context.get_context_file(), context.get_context_line())) !=
-          ignorer.end())
-        // this is Ignored Forever
-        return;
-
-      dump_context_summary(context, std::cerr);
-      std::cerr << "\nPress (I)gnore/ Ignore (F)orever/ Ignore (A)ll/ (D)ebug/ A(b)ort: ";
-      std::cerr.flush();
-      char ch = 0;
-
-      bool bContinue = true;
-      while (bContinue && std::cin.get(ch)) {
-        bContinue = false;
-        switch (ch) {
-        case 'i':
-        case 'I':
-          // ignore
-          break;
-
-        case 'f':
-        case 'F':
-          // ignore forever
-          ignorer.insert(file_and_line(context.get_context_file(), context.get_context_line()));
-          break;
-
-        case 'a':
-        case 'A':
-          // ignore all
-          ignore_all = true;
-          break;
-
-        case 'b':
-        case 'B': abort(); break;
-
-        default: bContinue = true; break;
-        }
-      }
-#endif
+      std::abort();
     }
 
     // error : throw a runtime exception
@@ -180,7 +137,7 @@ namespace Ioss {
     void default_fatal_handler(const assert_context &context)
     {
       dump_context_detail(context, std::cerr);
-      abort();
+      std::abort();
     }
 
   } // namespace SmartAssert

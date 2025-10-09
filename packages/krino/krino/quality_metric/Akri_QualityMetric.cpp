@@ -160,4 +160,48 @@ bool is_less_than_in_x_then_y_then_z(const stk::math::Vector3d& A, const stk::ma
     return false;
 }
 
+int determine_diagonal_of_quad_that_cuts_largest_angle(const stk::math::Vector3d & x0, const stk::math::Vector3d & x1, const stk::math::Vector3d & x2, const stk::math::Vector3d & x3)
+{
+  // given 4 angles
+  // angle0 - angle subtended by (x3-x0) and (x1-x0)
+  // angle1 - angle subtended by (x0-x1) and (x2-x1)
+  // angle2 - angle subtended by (x1-x2) and (x3-x2)
+  // angle3 - angle subtended by (x2-x3) and (x0-x3)
+  // returns -1 if the max of angle 0 and angle 2 is significant larger than the max of angle 1 and angle 3
+  // returns +1 if the opposite is true
+  // returns 0 if neither is true (the max angles are basically the same) OR one of the sides is degenerate
+
+  const stk::math::Vector3d side0 = x1 - x0;
+  const stk::math::Vector3d side1 = x2 - x1;
+  const stk::math::Vector3d side2 = x3 - x2;
+  const stk::math::Vector3d side3 = x0 - x3;
+
+  const double side_len0 = side0.length();
+  const double side_len1 = side1.length();
+  const double side_len2 = side2.length();
+  const double side_len3 = side3.length();
+
+  // here, meas0 = -cos(angle0) * side_len0*side_len1*side_len2*side_len3
+  const double meas0 = Dot(side3,side0) * side_len1*side_len2;
+  const double meas1 = Dot(side0,side1) * side_len2*side_len3;
+  const double meas2 = Dot(side1,side2) * side_len3*side_len0;
+  const double meas3 = Dot(side2,side3) * side_len0*side_len1;
+
+  const double meas02 = std::max(meas0,meas2);
+  const double meas13 = std::max(meas1,meas3);
+
+  const double tol = std::numeric_limits<float>::epsilon()*(side_len0*side_len1*side_len2*side_len3);
+
+  if (meas02 > (meas13 + tol))
+    return -1;
+  else if (meas13 > (meas02 + tol))
+    return +1;
+  return 0;
+}
+
+bool will_cutting_quad_from_0to2_cut_largest_angle(const stk::math::Vector3d & x0, const stk::math::Vector3d & x1, const stk::math::Vector3d & x2, const stk::math::Vector3d & x3)
+{
+  return determine_diagonal_of_quad_that_cuts_largest_angle(x0,x1,x2,x3) == -1;
+}
+
 }

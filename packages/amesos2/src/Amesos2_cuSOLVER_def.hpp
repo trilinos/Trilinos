@@ -100,6 +100,10 @@ template <class Matrix, class Vector>
 int
 cuSOLVER<Matrix,Vector>::numericFactorization_impl()
 {
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+#endif
+
   int err = 0;
   if(do_optimization()) { // just supporting one rank right now
     this->matrixA_->returnValues_kokkos_view(device_nzvals_view_);
@@ -160,7 +164,6 @@ cuSOLVER<Matrix,Vector>::solve_impl(
   {                             // Get values from RHS B
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mvConvTimer(this->timers_.vecConvTime_);
-    Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
 #endif
 
     const bool initialize_data = true;
@@ -179,7 +182,7 @@ cuSOLVER<Matrix,Vector>::solve_impl(
   int err = 0;
 
   if ( this->root_ ) {  // Do solve!
-#ifdef HAVE_AMESOS2_TIMER
+#ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
@@ -252,7 +255,6 @@ cuSOLVER<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Paramete
     RCP<const ParameterEntryValidator> reorder_validator = valid_params->getEntry("Reorder").validator();
     parameterList->getEntry("Reorder").setValidator(reorder_validator);
   }
-
   data_.bReorder = parameterList->get<bool>("Reorder", true);
 }
 

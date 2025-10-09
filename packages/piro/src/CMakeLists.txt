@@ -74,11 +74,7 @@ IF (Piro_ENABLE_NOX)
     Piro_NOXSolver_Def.hpp
     Piro_LOCASolver.hpp
     Piro_LOCASolver_Def.hpp
-    Piro_LOCAAdaptiveSolver.hpp
-    Piro_LOCAAdaptiveSolver_Def.hpp
     Piro_ObserverToLOCASaveDataStrategyAdapter.hpp
-    Piro_VelocityVerletSolver.hpp
-    Piro_VelocityVerletSolver_Def.hpp
     Piro_TrapezoidRuleSolver.hpp
     Piro_TrapezoidRuleSolver_Def.hpp
     Piro_TransientDecorator.hpp
@@ -98,7 +94,6 @@ ENDIF()
   APPEND_SET(SOURCES
     Piro_NOXSolver.cpp
     Piro_LOCASolver.cpp
-    Piro_LOCAAdaptiveSolver.cpp
     Piro_ObserverToLOCASaveDataStrategyAdapter.cpp
     )
 IF(PIRO_HAVE_EPETRA_STACK)

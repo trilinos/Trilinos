@@ -16,7 +16,11 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Export_decl.hpp"
 #include "Tpetra_Import_decl.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Teuchos_Assert.hpp"
 #include <type_traits>
 #include "KokkosSparse_spmv_impl.hpp"
@@ -55,7 +59,11 @@ struct ChebyshevKernelVectorFunctor {
   using value_type      = typename AMatrix::non_const_value_type;
   using team_policy     = typename Kokkos::TeamPolicy<execution_space>;
   using team_member     = typename team_policy::member_type;
-  using ATV             = Kokkos::ArithTraits<value_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATV = KokkosKernels::ArithTraits<value_type>;
+#else
+  using ATV = Kokkos::ArithTraits<value_type>;
+#endif
 
   const Scalar alpha;
   WVector m_w;
@@ -99,7 +107,11 @@ struct ChebyshevKernelVectorFunctor {
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member& dev) const {
     using residual_value_type = typename BVector::non_const_value_type;
-    using KAT                 = Kokkos::ArithTraits<residual_value_type>;
+#if KOKKOS_VERSION >= 40799
+    using KAT = KokkosKernels::ArithTraits<residual_value_type>;
+#else
+    using KAT = Kokkos::ArithTraits<residual_value_type>;
+#endif
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(dev, 0, rows_per_team),
                          [&](const LO& loop) {
@@ -191,9 +203,17 @@ chebyshev_kernel_vector(const Scalar& alpha,
   using matrix_type       = AMatrix;
   using x_colMap_vec_type = typename XVector_colMap::const_type;
   using x_domMap_vec_type = typename XVector_domMap::non_const_type;
-  using scalar_type       = typename Kokkos::ArithTraits<Scalar>::val_type;
+#if KOKKOS_VERSION >= 40799
+  using scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
+  using scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
 
+#if KOKKOS_VERSION >= 40799
+  if (beta == KokkosKernels::ArithTraits<Scalar>::zero()) {
+#else
   if (beta == Kokkos::ArithTraits<Scalar>::zero()) {
+#endif
     constexpr bool use_beta = false;
     if (do_X_update) {
       using functor_type =
@@ -290,11 +310,20 @@ void ChebyshevKernel<TpetraOperatorType>::
       if (!imp_.is_null()) {
         if (X_colMap_.get() == nullptr ||
             !X_colMap_->getMap()->isSameAs(*(imp_->getTargetMap()))) {
-          X_colMap_ = std::unique_ptr<vector_type>(new vector_type(imp_->getTargetMap()));
+          X_colMap_ = std::unique_ptr<multivector_type>(new multivector_type(imp_->getTargetMap(), 1));
         }
       } else
         X_colMap_ = nullptr;
     }
+  }
+}
+
+template <class TpetraOperatorType>
+void ChebyshevKernel<TpetraOperatorType>::
+    setAuxiliaryVectors(size_t numVectors) {
+  if ((V1_.get() == nullptr) || V1_->getNumVectors() != numVectors) {
+    using MV = multivector_type;
+    V1_      = std::unique_ptr<MV>(new MV(A_op_->getRangeMap(), numVectors));
   }
 }
 
@@ -310,12 +339,8 @@ void ChebyshevKernel<TpetraOperatorType>::
   using Teuchos::rcp;
 
   if (canFuse(B)) {
-    // "nonconst" here has no effect other than on the return type.
-    W_vec_ = W.getVectorNonConst(0);
-    B_vec_ = B.getVectorNonConst(0);
-    X_vec_ = X.getVectorNonConst(0);
     TEUCHOS_ASSERT(!A_crs_.is_null());
-    fusedCase(*W_vec_, alpha, D_inv, *B_vec_, *A_crs_, *X_vec_, beta);
+    fusedCase(W, alpha, D_inv, B, *A_crs_, X, beta);
   } else {
     TEUCHOS_ASSERT(!A_op_.is_null());
     unfusedCase(W, alpha, D_inv, B, *A_op_, X, beta);
@@ -323,9 +348,9 @@ void ChebyshevKernel<TpetraOperatorType>::
 }
 
 template <class TpetraOperatorType>
-typename ChebyshevKernel<TpetraOperatorType>::vector_type&
+typename ChebyshevKernel<TpetraOperatorType>::multivector_type&
 ChebyshevKernel<TpetraOperatorType>::
-    importVector(vector_type& X_domMap) {
+    importVector(multivector_type& X_domMap) {
   if (imp_.is_null()) {
     return X_domMap;
   } else {
@@ -357,11 +382,8 @@ void ChebyshevKernel<TpetraOperatorType>::
                 multivector_type& X,
                 const SC& beta) {
   using STS = Teuchos::ScalarTraits<SC>;
-  if (V1_.get() == nullptr) {
-    using MV             = multivector_type;
-    const size_t numVecs = B.getNumVectors();
-    V1_                  = std::unique_ptr<MV>(new MV(B.getMap(), numVecs));
-  }
+  setAuxiliaryVectors(B.getNumVectors());
+
   const SC one = Teuchos::ScalarTraits<SC>::one();
 
   // V1 = B - A*X
@@ -377,14 +399,14 @@ void ChebyshevKernel<TpetraOperatorType>::
 
 template <class TpetraOperatorType>
 void ChebyshevKernel<TpetraOperatorType>::
-    fusedCase(vector_type& W,
+    fusedCase(multivector_type& W,
               const SC& alpha,
-              vector_type& D_inv,
-              vector_type& B,
+              multivector_type& D_inv,
+              multivector_type& B,
               const crs_matrix_type& A,
-              vector_type& X,
+              multivector_type& X,
               const SC& beta) {
-  vector_type& X_colMap = importVector(X);
+  multivector_type& X_colMap = importVector(X);
 
   using Impl::chebyshev_kernel_vector;
   using STS = Teuchos::ScalarTraits<SC>;

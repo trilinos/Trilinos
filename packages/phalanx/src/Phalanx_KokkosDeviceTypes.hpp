@@ -12,8 +12,13 @@
 #define PHALANX_KOKKOS_DEVICE_TYPES_HPP
 
 //Kokkos includes
+#include <Kokkos_Core_fwd.hpp>
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+#include "Sacado.hpp"
+#else
 #include "Kokkos_View_Fad.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
+#endif
 #include "Kokkos_Core.hpp"
 #include "Phalanx_config.hpp"
 #include "Sacado_Fad_ExpressionTraits.hpp"

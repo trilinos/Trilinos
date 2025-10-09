@@ -40,13 +40,59 @@ static_assert(false, "Do not include simd impl files directly. Only include stk_
 #ifndef STK_SIMD_DOUBLEMATH_HPP
 #define STK_SIMD_DOUBLEMATH_HPP
 
+#if (defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)) && !defined(USE_STK_SIMD_NONE)
+  #define STK_SIMD_INTEL_ENABLED 1
+#else
+  #define STK_SIMD_INTEL_ENABLED 0
+#endif
+
 namespace stk {
 namespace math {
 
 namespace hidden {
-STK_MATH_FORCE_INLINE static double CBRT(const double x) { return cbrt(x); }
-static const simd::Double SIGN_MASK(-0.0);
-}
+  template <typename Func>
+  STK_MATH_FORCE_INLINE simd::Double apply_per_lane(const simd::Double& x, Func&& func) {
+#if defined(STK_SIMD_USE_NON_UB_METHOD)
+    alignas(alignof(simd::Double)) double  in[simd::ndoubles];
+    alignas(alignof(simd::Double)) double out[simd::ndoubles];
+    simd::store(in, x);
+    for (int i = 0; i < simd::ndoubles; ++i) {
+      out[i] = func(in[i]);
+    }
+    return simd::load(out);
+#else
+    simd::Double tmp;
+    for (int i = 0; i < simd::ndoubles; ++i) {
+      tmp[i] = func(x[i]);
+    }
+    return tmp;
+#endif
+  }
+
+  template <typename Func>
+  STK_MATH_FORCE_INLINE simd::Double apply_per_lane(const simd::Double& x, const simd::Double& y, Func&& func) {
+#if defined(STK_SIMD_USE_NON_UB_METHOD)
+    alignas(alignof(simd::Double)) double in1[simd::ndoubles];
+    alignas(alignof(simd::Double)) double in2[simd::ndoubles];
+    alignas(alignof(simd::Double)) double out[simd::ndoubles];
+
+    simd::store(in1, x);
+    simd::store(in2, y);
+
+    for (int i = 0; i < simd::ndoubles; ++i) {
+      out[i] = func(in1[i], in2[i]);
+    }
+    return simd::load(out);
+#else
+    simd::Double tmp;
+    for (int i = 0; i < simd::ndoubles; ++i) {
+      tmp[i] = func(x[i], y[i]);
+    }
+    return tmp;
+#endif
+  }
+
+} // end hidden namespace
 
 STK_MATH_FORCE_INLINE simd::Double fmadd(const simd::Double& a, const simd::Double& b, const simd::Double& c) {
   return simd::Double(fma(a._data, b._data, c._data));
@@ -55,192 +101,125 @@ STK_MATH_FORCE_INLINE simd::Double fmadd(const simd::Double& a, const simd::Doub
 STK_MATH_FORCE_INLINE simd::Double sqrt(const simd::Double& x) {
   return simd::Double(SIMD_NAMESPACE::sqrt(x._data));
 }
-  
+
 STK_MATH_FORCE_INLINE simd::Double cbrt(const simd::Double& x) {
-#if (defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)) && !defined(USE_STK_SIMD_NONE)
+#if STK_SIMD_INTEL_ENABLED
   return simd::Double(SIMD_NAMESPACE::cbrt(x._data));
 #else
-  simd::Double tmp;
-  for (int n=0; n < simd::ndoubles; ++n) {
-    tmp[n] = hidden::CBRT(x[n]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(x, [](double val) { return std::cbrt(val); });
 #endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double log(const simd::Double& x) {
-#if (defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)) && !defined(USE_STK_SIMD_NONE)
+#if STK_SIMD_INTEL_ENABLED
   return simd::Double(SIMD_NAMESPACE::log(x._data));
 #else
-  simd::Double tmp;
-  for (int n=0; n < simd::ndoubles; ++n) {
-    tmp[n] = std::log(x[n]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(x, [](double val) { return std::log(val); });
 #endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double log10(const simd::Double& x) {
-  simd::Double tmp;
-  for (int n=0; n < simd::ndoubles; ++n) {
-    tmp[n] = std::log10(x[n]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(x, [](double val) { return std::log10(val); });
 }
 
 STK_MATH_FORCE_INLINE simd::Double exp(const simd::Double& x) {
-#if (defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)) && !defined(USE_STK_SIMD_NONE)
+#if STK_SIMD_INTEL_ENABLED
   return simd::Double(SIMD_NAMESPACE::exp(x._data));
 #else
-  simd::Double tmp;
-  for (int n=0; n < simd::ndoubles; ++n) {
-    tmp[n] = std::exp(x[n]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(x, [](double val) { return std::exp(val); });
 #endif
 }
 
 STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const simd::Double& y) {
-  simd::Double tmp;
-  for (int n=0; n < simd::ndoubles; ++n) {
-    tmp[n] = std::pow(x[n],y[n]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(x, y, [](double X, double Y) { return std::pow(X, Y); });
 }
 
 STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const double y) {
-  simd::Double tmp;
-  for (int n=0; n < simd::ndoubles; ++n) {
-    tmp[n] = std::pow(x[n],y);
-  }
-  return tmp;
+  return hidden::apply_per_lane(x, [y](double base) { return std::pow(base, y); });
 }
 
+/**
+ * @brief Computes the power of a SIMD double raised to an integer exponent.
+ *
+ * Uses exponentiation by squaring to efficiently compute x^y. If the 
+ * exponent y is negative, the result is computed as the reciprocal of x^|y|.
+ */
 STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const int y) {
-  simd::Double tmp;
-  for (int n=0; n < simd::ndoubles; ++n) {
-    tmp[n] = std::pow(x[n],y);
+  simd::Double base = x;
+  simd::Double result = simd::Double(1.0);
+  int n = y;
+  const bool negativeExponent = (n < 0);
+  if (negativeExponent) n = -n;
+  while (n) {
+    if (n & 1) result *= base;
+    base *= base;
+    n >>= 1;
   }
-  return tmp;
+  return negativeExponent ? simd::Double(1.0) / result : result;
 }
 
 STK_MATH_FORCE_INLINE simd::Double sin(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::sin(a[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, [](double val) { return std::sin(val); });
 }
- 
+
 STK_MATH_FORCE_INLINE simd::Double cos(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::cos(a[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, [](double val) { return std::cos(val); });
 }
 
 STK_MATH_FORCE_INLINE simd::Double tan(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::tan(a[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, [](double val) { return std::tan(val); });
 }
 
 STK_MATH_FORCE_INLINE simd::Double sinh(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::sinh(a[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, [](double val) { return std::sinh(val); });
 }
 
 STK_MATH_FORCE_INLINE simd::Double cosh(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::cosh(a[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, [](double val) { return std::cosh(val); });
 }
 
 STK_MATH_FORCE_INLINE simd::Double tanh(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::tanh(a[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, [](double val) { return std::tanh(val); });
 }
 
+// Inverse trigonometric functions
 STK_MATH_FORCE_INLINE simd::Double asin(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::asin(a[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, [](double val) { return std::asin(val); });
 }
 
 STK_MATH_FORCE_INLINE simd::Double acos(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::acos(a[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, [](double val) { return std::acos(val); });
 }
 
 STK_MATH_FORCE_INLINE simd::Double atan(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::atan(a[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, [](double val) { return std::atan(val); });
 }
 
 STK_MATH_FORCE_INLINE simd::Double atan2(const simd::Double& a, const simd::Double& b) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::atan2(a[i],b[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, b, [](double A, double B) { return std::atan2(A, B); });
 }
 
-STK_MATH_FORCE_INLINE simd::Double asinh(const simd::Double &a) {
-  simd::Double tmp;
-  for (int i = 0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::asinh(a[i]);
-  }
-  return tmp;
+STK_MATH_FORCE_INLINE simd::Double asinh(const simd::Double& a) {
+  return hidden::apply_per_lane(a, [](double val) { return std::asinh(val); });
 }
 
-STK_MATH_FORCE_INLINE simd::Double acosh(const simd::Double &a) {
-  simd::Double tmp;
-  for (int i = 0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::acosh(a[i]);
-  }
-  return tmp;
+STK_MATH_FORCE_INLINE simd::Double acosh(const simd::Double& a) {
+  return hidden::apply_per_lane(a, [](double val) { return std::acosh(val); });
 }
 
-STK_MATH_FORCE_INLINE simd::Double atanh(const simd::Double &a) {
-  simd::Double tmp;
-  for (int i = 0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::atanh(a[i]);
-  }
-  return tmp;
+STK_MATH_FORCE_INLINE simd::Double atanh(const simd::Double& a) {
+  return hidden::apply_per_lane(a, [](double val) { return std::atanh(val); });
 }
 
 STK_MATH_FORCE_INLINE simd::Double erf(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    tmp[i] = std::erf(a[i]);
-  }
-  return tmp;
+  return hidden::apply_per_lane(a, [](double val) { return std::erf(val); });
 }
 
-STK_MATH_FORCE_INLINE simd::Double multiplysign(const simd::Double& x, const simd::Double& y) { // return x times sign of y
+STK_MATH_FORCE_INLINE simd::Double multiplysign(const simd::Double& x, const simd::Double& y) {
   return simd::Double(SIMD_NAMESPACE::multiplysign(x._data, y._data));
 }
 
-STK_MATH_FORCE_INLINE simd::Double copysign(const simd::Double& x, const simd::Double& y) { // return abs(x) times sign of y
+STK_MATH_FORCE_INLINE simd::Double copysign(const simd::Double& x, const simd::Double& y) {
   return simd::Double(SIMD_NAMESPACE::copysign(x._data, y._data));
 }
 
@@ -257,15 +236,8 @@ STK_MATH_FORCE_INLINE simd::Double max(const simd::Double& x, const simd::Double
 }
 
 STK_MATH_FORCE_INLINE simd::Bool isnan(const simd::Double& a) {
-  simd::Double tmp;
-  for (int i=0; i < simd::ndoubles; ++i) {
-    if ( a[i] != a[i] ) {
-      tmp[i] = 1.0;
-    } else {
-      tmp[i] = 0.0;
-    }
-  }
-  return tmp > simd::Double(0.5);
+  // Relies on IEEE property: NaN != NaN
+  return a != a;
 }
 
 STK_MATH_FORCE_INLINE simd::Double if_then_else(const simd::Bool& b, const simd::Double& v1, const simd::Double& v2) {

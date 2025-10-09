@@ -11,63 +11,59 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include <vector>
 
-namespace { // (anonymous)
+namespace {  // (anonymous)
 
-  TEUCHOS_UNIT_TEST( Utils, VerbosePrintArray_threshold )
-  {
-    using Tpetra::Details::verbosePrintArray;
+TEUCHOS_UNIT_TEST(Utils, VerbosePrintArray_threshold) {
+  using Tpetra::Details::verbosePrintArray;
 
-    std::vector<int> x {{3, 5, 7, 9, 11}};
-    std::ostringstream os;
+  std::vector<int> x{{3, 5, 7, 9, 11}};
+  std::ostringstream os;
 
-    verbosePrintArray(os, x, "x", 10);
-    os << ", ";
-    verbosePrintArray(os, x, "x2", 3);
-    os << ", ";
-    verbosePrintArray(os, x, "x3", 5);
+  verbosePrintArray(os, x, "x", 10);
+  os << ", ";
+  verbosePrintArray(os, x, "x2", 3);
+  os << ", ";
+  verbosePrintArray(os, x, "x3", 5);
 
-    const std::string expected
-      ("x: [3, 5, 7, 9, 11], x2: [3, 5, 7, ...], x3: [3, 5, 7, 9, 11]");
-    TEST_EQUALITY( os.str(), expected );
-  }
+  const std::string expected("x: [3, 5, 7, 9, 11], x2: [3, 5, 7, ...], x3: [3, 5, 7, 9, 11]");
+  TEST_EQUALITY(os.str(), expected);
+}
 
-  TEUCHOS_UNIT_TEST( Utils, VerbosePrintArray_empty )
-  {
-    using Tpetra::Details::verbosePrintArray;
+TEUCHOS_UNIT_TEST(Utils, VerbosePrintArray_empty) {
+  using Tpetra::Details::verbosePrintArray;
 
-    std::vector<int> x;
-    std::ostringstream os;
+  std::vector<int> x;
+  std::ostringstream os;
 
-    verbosePrintArray(os, x, "x", 10);
-    os << ", ";
-    verbosePrintArray(os, x, "x2", 3);
-    os << ", ";
-    verbosePrintArray(os, x, "x3", 5);
+  verbosePrintArray(os, x, "x", 10);
+  os << ", ";
+  verbosePrintArray(os, x, "x2", 3);
+  os << ", ";
+  verbosePrintArray(os, x, "x3", 5);
 
-    const std::string expected("x: [], x2: [], x3: []");
-    TEST_EQUALITY( os.str(), expected );
-  }
+  const std::string expected("x: [], x2: [], x3: []");
+  TEST_EQUALITY(os.str(), expected);
+}
 
-  TEUCHOS_UNIT_TEST( Utils, VerbosePrintArray_zero_threshold )
-  {
-    using Tpetra::Details::verbosePrintArray;
+TEUCHOS_UNIT_TEST(Utils, VerbosePrintArray_zero_threshold) {
+  using Tpetra::Details::verbosePrintArray;
 
-    std::vector<int> x {{3, 5, 7, 9, 11}};
-    std::vector<double> y;
-    std::ostringstream os;
+  std::vector<int> x{{3, 5, 7, 9, 11}};
+  std::vector<double> y;
+  std::ostringstream os;
 
-    verbosePrintArray(os, x, "x", 0);
-    os << ", ";
-    verbosePrintArray(os, x, "x2", 0);
-    os << ", ";
-    verbosePrintArray(os, x, "x3", 0);
-    os << ", ";
-    verbosePrintArray(os, y, "y", 0);
+  verbosePrintArray(os, x, "x", 0);
+  os << ", ";
+  verbosePrintArray(os, x, "x2", 0);
+  os << ", ";
+  verbosePrintArray(os, x, "x3", 0);
+  os << ", ";
+  verbosePrintArray(os, y, "y", 0);
 
-    const std::string expected
-      ("x: [...], x2: [...], "
-       "x3: [...], y: []");
-    TEST_EQUALITY( os.str(), expected );
-  }
+  const std::string expected(
+      "x: [...], x2: [...], "
+      "x3: [...], y: []");
+  TEST_EQUALITY(os.str(), expected);
+}
 
-} // namespace (anonymous)
+}  // namespace

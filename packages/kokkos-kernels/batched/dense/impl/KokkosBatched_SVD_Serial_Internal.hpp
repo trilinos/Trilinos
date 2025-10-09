@@ -212,14 +212,14 @@ struct SerialSVDInternal {
   // U and Vt to maintain the product U*B*Vt. At the end, the singular values
   // are copied to sigma.
   template <typename value_type>
-  KOKKOS_INLINE_FUNCTION static void bidiSVD(int m, int n, value_type* B, int Bs0, int Bs1, value_type* U, int Us0,
-                                             int Us1, value_type* Vt, int Vts0, int Vts1, value_type* sigma, int ss,
-                                             const value_type& tol) {
+  KOKKOS_INLINE_FUNCTION static int bidiSVD(int m, int n, value_type* B, int Bs0, int Bs1, value_type* U, int Us0,
+                                            int Us1, value_type* Vt, int Vts0, int Vts1, value_type* sigma, int ss,
+                                            const value_type& tol, int max_iters) {
     using KAT            = Kokkos::ArithTraits<value_type>;
     const value_type eps = Kokkos::ArithTraits<value_type>::epsilon();
     int p                = 0;
     int q                = 0;
-    while (true) {
+    for (int iters = 0; iters < max_iters; ++iters) {
       // Zero out tiny superdiagonal entries
       for (int i = 0; i < n - 1; i++) {
         if (Kokkos::abs(SVDIND(B, i, i + 1)) <
@@ -271,10 +271,16 @@ struct SerialSVDInternal {
       }
       // B22 is nsub * nsub, Usub is m * nsub, and Vtsub is nsub * n
       svdStep(Bsub, Usub, Vtsub, m, n, nsub, Bs0, Bs1, Us0, Us1, Vts0, Vts1);
+
+      if (iters + 1 == max_iters) {
+        return -1;
+      }
     }
     for (int i = 0; i < n; i++) {
       sigma[i * ss] = SVDIND(B, i, i);
     }
+
+    return 0;
   }
 
   // Convert SVD into conventional form: singular values positive and in
@@ -322,7 +328,8 @@ struct SerialSVDInternal {
   template <typename value_type>
   KOKKOS_INLINE_FUNCTION static int invoke(int m, int n, value_type* A, int As0, int As1, value_type* U, int Us0,
                                            int Us1, value_type* Vt, int Vts0, int Vts1, value_type* sigma, int ss,
-                                           value_type* work, value_type tol = Kokkos::ArithTraits<value_type>::zero()) {
+                                           value_type* work, value_type tol = Kokkos::ArithTraits<value_type>::zero(),
+                                           int max_iters = 1000000000) {
     // First, if m < n, need to instead compute (V, s, U^T) = A^T.
     // This just means swapping U & Vt, and implicitly transposing A, U and Vt.
     if (m < n) {
@@ -345,9 +352,9 @@ struct SerialSVDInternal {
       return 0;
     }
     bidiagonalize(m, n, A, As0, As1, U, Us0, Us1, Vt, Vts0, Vts1, work);
-    bidiSVD(m, n, A, As0, As1, U, Us0, Us1, Vt, Vts0, Vts1, sigma, ss, tol);
+    int iter_err = bidiSVD(m, n, A, As0, As1, U, Us0, Us1, Vt, Vts0, Vts1, sigma, ss, tol, max_iters);
     postprocessSVD(m, n, U, Us0, Us1, Vt, Vts0, Vts1, sigma, ss);
-    return 0;
+    return iter_err;
   }
 };
 

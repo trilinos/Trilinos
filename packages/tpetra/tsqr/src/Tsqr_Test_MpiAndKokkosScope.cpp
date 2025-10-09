@@ -12,11 +12,11 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #ifdef HAVE_MPI
-#  include "Teuchos_DefaultMpiComm.hpp"
-#  include "Teuchos_Assert.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_Assert.hpp"
 #else
-#  include "Teuchos_DefaultSerialComm.hpp"
-#endif // HAVE_MPI
+#include "Teuchos_DefaultSerialComm.hpp"
+#endif  // HAVE_MPI
 #include <iostream>
 #include <sstream>
 
@@ -25,41 +25,39 @@ namespace Test {
 
 #ifdef HAVE_MPI
 MpiScope::MpiScope(int* argc, char*** argv) {
-  (void) MPI_Init(argc, argv);
+  (void)MPI_Init(argc, argv);
 }
 MpiScope::~MpiScope() {
-  (void) MPI_Finalize();
+  (void)MPI_Finalize();
 }
 #else
 MpiScope::MpiScope(int*, char***) {}
 MpiScope::~MpiScope() {}
-#endif // HAVE_MPI
+#endif  // HAVE_MPI
 
 Teuchos::RCP<const Teuchos::Comm<int>>
-MpiAndKokkosScope::getDefaultComm()
-{
+MpiAndKokkosScope::getDefaultComm() {
 #ifdef HAVE_MPI
   int initialized = 0;
-  (void) MPI_Initialized(&initialized);
-  TEUCHOS_ASSERT( initialized == 1 );
+  (void)MPI_Initialized(&initialized);
+  TEUCHOS_ASSERT(initialized == 1);
 
   using comm_type = Teuchos::MpiComm<int>;
   const auto comm = Teuchos::rcp(new comm_type(MPI_COMM_WORLD));
 #else
   using comm_type = Teuchos::SerialComm<int>;
   const auto comm = Teuchos::rcp(new comm_type);
-#endif // HAVE_MPI
+#endif  // HAVE_MPI
 
   return comm;
 }
 
 MpiAndKokkosScope::
-MpiAndKokkosScope(int* argc, char*** argv) :
-  mpiScope_(argc, argv),
-  blackHole_(new Teuchos::oblackholestream),
-  comm_(getDefaultComm()),
-  kokkosScope_(new Kokkos::ScopeGuard(*argc, *argv))
-{}
+    MpiAndKokkosScope(int* argc, char*** argv)
+  : mpiScope_(argc, argv)
+  , blackHole_(new Teuchos::oblackholestream)
+  , comm_(getDefaultComm())
+  , kokkosScope_(new Kokkos::ScopeGuard(*argc, *argv)) {}
 
 Teuchos::RCP<const Teuchos::Comm<int>>
 MpiAndKokkosScope::getComm() const {
@@ -70,14 +68,12 @@ std::ostream& MpiAndKokkosScope::outStream() const {
   // Only Process 0 gets to write to cout and cerr.  The other MPI
   // processes send their output to a "black hole" (something that
   // acts like /dev/null).
-  return comm_->getRank() == 0 ? std::cout :
-    static_cast<std::ostream&>(*blackHole_);
+  return comm_->getRank() == 0 ? std::cout : static_cast<std::ostream&>(*blackHole_);
 }
 
 std::ostream& MpiAndKokkosScope::errStream() const {
-  return comm_->getRank() == 0 ? std::cerr :
-    static_cast<std::ostream&>(*blackHole_);
+  return comm_->getRank() == 0 ? std::cerr : static_cast<std::ostream&>(*blackHole_);
 }
 
-} // namespace Test
-} // namespace TSQR
+}  // namespace Test
+}  // namespace TSQR

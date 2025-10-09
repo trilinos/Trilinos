@@ -104,8 +104,8 @@ namespace FROSch {
                 auto yLocalMap = yMap->getLocalMap();
                 auto yLocalOverlapMap = yOverlapMap->getLocalMap();
                 // run local restriction on execution space defined by local-map
-                using XMap            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
-                using execution_space = typename XMap::local_map_type::execution_space;
+                using XMap2            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
+                using execution_space = typename XMap2::local_map_type::execution_space;
                 Kokkos::RangePolicy<execution_space> policy (0, yMap->getLocalNumElements());
 
                 using xTMVector    = Xpetra::TpetraMultiVector<SC,LO,GO,NO>;

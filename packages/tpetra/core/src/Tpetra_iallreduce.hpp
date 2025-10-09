@@ -23,6 +23,6 @@ namespace Tpetra {
 
 using ::Tpetra::Details::iallreduce;
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_IALLREDUCE_HPP
+#endif  // TPETRA_IALLREDUCE_HPP

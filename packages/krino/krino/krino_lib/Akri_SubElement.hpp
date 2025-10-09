@@ -165,7 +165,6 @@ public:
 protected:
   void perform_decomposition(CDMesh & mesh, const InterfaceID interface_key, const std::array<int,4> & node_signs);
   void determine_node_scores_on_face( const CDMesh & mesh, const InterfaceID interface, const int i0, const int i1, const int i2 );
-  static const unsigned ** get_permutation_side_ordinals();
   static double tet_volume(const std::array<stk::math::Vector3d,4> & nodes);
 
   bool is_degenerate( NodeVec & lnodes,

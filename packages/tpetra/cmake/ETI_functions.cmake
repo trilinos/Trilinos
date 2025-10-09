@@ -626,3 +626,81 @@ FUNCTION(TPETRA_PROCESS_ALL_SN_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
   # that the caller can see the result.
   SET(${OUTPUT_FILES} ${OUT_FILES} PARENT_SCOPE)
 ENDFUNCTION(TPETRA_PROCESS_ALL_SN_TEMPLATES)
+
+
+# Function to generate one .cpp file for the given (Scalar, Node)
+# template parameter combination, for run-time registration of a
+# Tpetra class or function over those template parameters.  This is
+# meant to be called by TPETRA_PROCESS_ALL_SN_TEMPLATES.  This
+# function takes the names already mangled, to avoid unnecessary
+# string processing overhead.
+#
+# OUTPUT_FILE [out] Name of the generated .cpp file.
+#
+# TEMPLATE_FILE [in] Name of the input .tmpl "template" file.  This
+#   function does string substitution in that file, using the input
+#   arguments of this function.  For example, @SC_MACRO_EXPR@ (Scalar
+#   macro expression) gets substituted for the value of this
+#   function's SC_MACRO_EXPR input argument.
+#
+# CLASS_NAME [in] Name of the Tpetra class (without namespace
+#   qualifiers; must live in the Tpetra namespace)
+#
+# CLASS_MACRO_NAME [in] Name of the Tpetra class, suitably mangled for
+#   use in a macro name.
+#
+# NT_MACRO_NAME [in] Name of the Node (NT) type,
+#   mangled for use as a macro argument.
+#
+FUNCTION(TPETRA_PROCESS_ONE_N_TEMPLATE OUTPUT_FILE TEMPLATE_FILE
+    CLASS_NAME CLASS_MACRO_NAME NT_MANGLED_NAME NT_MACRO_NAME)
+
+  STRING(REPLACE "ETI_NT.tmpl"
+    "${CLASS_NAME}_${NT_MACRO_NAME}.cpp"
+    OUT_FILE "${TEMPLATE_FILE}")
+  CONFIGURE_FILE("${TEMPLATE_FILE}" "${OUT_FILE}")
+
+  SET(${OUTPUT_FILE} ${OUT_FILE} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ONE_N_TEMPLATE)
+
+
+# Function to generate .cpp files for ETI of a Tpetra class, over all
+# enabled Node template parameters.  We generate one .cpp
+# file for each (Node) type combination over which Tpetra does
+# ETI.
+#
+# OUTPUT_FILES [out] List of the generated .cpp files.
+#
+# TEMPLATE_FILE [in] Name of the input .tmpl "template" file.  This
+#   function does string substitution in that file, using the input
+#   arguments of this function.  For example, @SC_MACRO_EXPR@ (Scalar
+#   macro expression) gets substituted for the value of this
+#   function's SC_MACRO_EXPR input argument.
+#
+# CLASS_NAME [in] Name of the Tpetra class (without namespace
+#   qualifiers; must live in the Tpetra namespace)
+#
+# CLASS_MACRO_NAME [in] Name of the Tpetra class, suitably mangled for
+#   use in a macro name.
+#
+# NODE_TYPES [in] All Node types over which to do ETI for the given
+#   class.
+#
+
+FUNCTION(TPETRA_PROCESS_ALL_N_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
+  CLASS_NAME CLASS_MACRO_NAME NODE_TYPES)
+
+  SET(OUT_FILES "")
+  FOREACH(NT ${NODE_TYPES})
+    TPETRA_MANGLE_TEMPLATE_PARAMETER(NT_MANGLED "${NT}")
+    TPETRA_NODE_MACRO_NAME(NT_MACRO_NAME "${NT}")
+    TPETRA_PROCESS_ONE_N_TEMPLATE(OUT_FILE "${TEMPLATE_FILE}"
+      "${CLASS_NAME}" "${CLASS_MACRO_NAME}"
+      "${NT_MANGLED}" "${NT_MACRO_NAME}")
+    LIST(APPEND OUT_FILES ${OUT_FILE})
+  ENDFOREACH() # NT
+
+  # This is the standard CMake idiom for setting an output variable so
+  # that the caller can see the result.
+  SET(${OUTPUT_FILES} ${OUT_FILES} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ALL_N_TEMPLATES)

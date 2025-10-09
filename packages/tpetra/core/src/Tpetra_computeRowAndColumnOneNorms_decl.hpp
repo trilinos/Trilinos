@@ -14,7 +14,11 @@
 /// \brief Declaration of Tpetra::computeRowAndColumnOneNorms
 
 #include "TpetraCore_config.h"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Tpetra_Details_EquilibrationInfo.hpp"
 #include "Tpetra_RowMatrix_fwd.hpp"
 
@@ -32,10 +36,14 @@ namespace Tpetra {
 /// \return Input to leftAndOrRightScaleCrsMatrix (which see).  The
 ///   result is only safe to use for left scaling, not for right
 ///   scaling.
-template<class SC, class LO, class GO, class NT>
+template <class SC, class LO, class GO, class NT>
+#if KOKKOS_VERSION >= 40799
+Details::EquilibrationInfo<typename KokkosKernels::ArithTraits<SC>::val_type,
+#else
 Details::EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type,
+#endif
                            typename NT::device_type>
-computeRowOneNorms (const Tpetra::RowMatrix<SC, LO, GO, NT>& A);
+computeRowOneNorms(const Tpetra::RowMatrix<SC, LO, GO, NT>& A);
 
 /// \brief Compute global row and column one-norms ("row sums" and
 ///   "column sums") of the input sparse matrix A, in a way suitable
@@ -63,12 +71,16 @@ computeRowOneNorms (const Tpetra::RowMatrix<SC, LO, GO, NT>& A);
 ///   norms separately from row norms.
 ///
 /// \return Input to leftAndOrRightScaleCrsMatrix (which see).
-template<class SC, class LO, class GO, class NT>
+template <class SC, class LO, class GO, class NT>
+#if KOKKOS_VERSION >= 40799
+Details::EquilibrationInfo<typename KokkosKernels::ArithTraits<SC>::val_type,
+#else
 Details::EquilibrationInfo<typename Kokkos::ArithTraits<SC>::val_type,
+#endif
                            typename NT::device_type>
-computeRowAndColumnOneNorms (const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
-                             const bool assumeSymmetric);
+computeRowAndColumnOneNorms(const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
+                            const bool assumeSymmetric);
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_COMPUTEROWANDCOLUMNONENORMS_DECL_HPP
+#endif  // TPETRA_COMPUTEROWANDCOLUMNONENORMS_DECL_HPP

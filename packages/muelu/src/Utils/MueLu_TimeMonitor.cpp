@@ -86,7 +86,7 @@ TimeMonitor::~TimeMonitor() {
   // Stop the timer if present
 
 #ifdef HAVE_TEUCHOS_ADD_TIME_MONITOR_TO_STACKED_TIMER
-  if (useStackedTimer_) {
+  if (useStackedTimer_ && (!label_.empty())) {
     try {
       const auto stackedTimer = Teuchos::TimeMonitor::getStackedTimer();
       stackedTimer->stop(label_);

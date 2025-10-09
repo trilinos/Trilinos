@@ -106,8 +106,12 @@ void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
       Set<RCP<MultiVector>>(coarseLevel, vectorName, coarseVector);
     }
   } else {
-    using execution_space  = typename Node::execution_space;
-    using ATS              = Kokkos::ArithTraits<Scalar>;
+    using execution_space = typename Node::execution_space;
+#if KOKKOS_VERSION >= 40799
+    using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+    using ATS = Kokkos::ArithTraits<Scalar>;
+#endif
     using impl_scalar_type = typename ATS::val_type;
 
     auto aggregates = fineLevel.Get<RCP<Aggregates>>(transferName, GetFactory("Transfer factory").get());

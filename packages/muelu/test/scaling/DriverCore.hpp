@@ -126,9 +126,11 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
                          bool setNullSpace,
                          int numRebuilds,
                          Teuchos::RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& H,
-                         Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Prec) {
+                         Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Prec,
+                         bool sacrifice = false) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
+  using Teuchos::TimeMonitor;
   Xpetra::UnderlyingLib lib = A->getRowMap()->lib();
   typedef typename Teuchos::ScalarTraits<SC>::coordinateType coordinate_type;
   typedef Xpetra::MultiVector<coordinate_type, LO, GO, NO> CoordinateMultiVector;
@@ -140,9 +142,13 @@ void PreconditionerSetup(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, Globa
   if (profileSetup) cudaProfilerStart();
 #endif
 
+  if (sacrifice)
+    ++numRebuilds;
+
   if (useML && lib != Xpetra::UseEpetra) throw std::runtime_error("Error: Cannot use ML on non-epetra matrices");
 
   for (int i = 0; i <= numRebuilds; i++) {
+    auto tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer((!sacrifice || (i > 0)) ? "Driver: 2 - MueLu Setup" : "Driver: 2 - MueLu Setup (sacrifice)")));
     A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
     if (useAMGX) {
 #if defined(HAVE_MUELU_AMGX)
@@ -495,7 +501,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
         belosPrec = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(Prec));  // Turns an Xpetra::Operator object into a Belos operator
 #endif
-      } else {
+      } else if (!H.is_null()) {
         H->IsPreconditioner(true);
         belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
       }

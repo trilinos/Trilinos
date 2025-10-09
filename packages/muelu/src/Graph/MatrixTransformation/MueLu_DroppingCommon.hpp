@@ -10,8 +10,14 @@
 #ifndef MUELU_DROPPINGCOMMON_HPP
 #define MUELU_DROPPINGCOMMON_HPP
 
+// #define MUELU_COALESCE_DROP_DEBUG 1
+
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "Xpetra_Access.hpp"
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_VectorFactory.hpp"

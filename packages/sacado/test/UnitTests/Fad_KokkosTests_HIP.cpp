@@ -38,10 +38,12 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipAligned)
   typedef Kokkos::HIP Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
+  #ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
   typedef typename ViewType::traits TraitsType;
   typedef Kokkos::Impl::ViewMapping< TraitsType , typename TraitsType::specialize > MappingType;
   const int view_static_dim = MappingType::FadStaticDimension;
   TEUCHOS_TEST_EQUALITY(view_static_dim, StaticDim, out, success);
+  #endif
 
   typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_fad_type;
   const bool issfd = is_sfad<local_fad_type>::value;
@@ -54,7 +56,12 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipAligned)
 
   ViewType v("v", num_rows, fad_size+1);
   const size_t span = v.span();
+  // This doesn't make sense really - span is number of elements not subelements
+  #ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
   TEUCHOS_TEST_EQUALITY(span, num_rows*(StaticDim+1), out, success);
+  #else
+  TEUCHOS_TEST_EQUALITY(span, num_rows, out, success);
+  #endif
 }
 
 TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipNotAligned)
@@ -67,10 +74,12 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipNotAligned)
   typedef Kokkos::HIP Device;
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
 
+  #ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
   typedef typename ViewType::traits TraitsType;
   typedef Kokkos::Impl::ViewMapping< TraitsType , typename TraitsType::specialize > MappingType;
   const int view_static_dim = MappingType::FadStaticDimension;
   TEUCHOS_TEST_EQUALITY(view_static_dim, StaticDim, out, success);
+  #endif
 
   typedef typename Kokkos::ThreadLocalScalarType<ViewType>::type local_fad_type;
   const bool issfd = is_sfad<local_fad_type>::value;
@@ -83,7 +92,12 @@ TEUCHOS_UNIT_TEST(Kokkos_View_Fad, SFadHipNotAligned)
 
   ViewType v("v", num_rows, fad_size+1);
   const size_t span = v.span();
+  // This doesn't make sense really - span is number of elements not subelements
+  #ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
   TEUCHOS_TEST_EQUALITY(span, num_rows*(StaticDim+1), out, success);
+  #else
+  TEUCHOS_TEST_EQUALITY(span, num_rows, out, success);
+  #endif
 }
 
 int main( int argc, char* argv[] ) {

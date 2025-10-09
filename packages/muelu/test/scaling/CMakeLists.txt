@@ -4,12 +4,11 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Belos
   ${PACKAGE_NAME}_ENABLE_Epetra
-  )
+)
 
 #
 # Executable
 #
-
 
 #TODO: how to remove that?
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -20,23 +19,26 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
-IF (${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   SET(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK YES)
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
+IF(${PACKAGE_NAME}_ENABLE_Epetra
+   AND ${PACKAGE_NAME}_ENABLE_EpetraExt
+   AND ${PACKAGE_NAME}_ENABLE_Ifpack
+   AND ${PACKAGE_NAME}_ENABLE_Amesos
+)
   SET(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK YES)
 ENDIF()
 
-
-IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
+IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
 
   TRIBITS_ADD_EXECUTABLE(
     Driver
     SOURCES Driver.cpp
     COMM serial mpi
     CATEGORIES BASIC PERFORMANCE
-    )
+  )
 
   INSTALL(TARGETS "${PACKAGE_NAME}_Driver")
 
@@ -50,11 +52,11 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
   )
 
   # Do a simple weak scaling experiment in 3D
-  set(COUNTER 1)
-  set(MAX_COUNT 7)
+  SET(COUNTER 1)
+  SET(MAX_COUNT 7)
   WHILE(COUNTER LESS MAX_COUNT)
-    math(EXPR NP "${COUNTER} * ${COUNTER} * ${COUNTER}")
-    math(EXPR NX "${COUNTER} * 120")
+    MATH(EXPR NP "${COUNTER} * ${COUNTER} * ${COUNTER}")
+    MATH(EXPR NX "${COUNTER} * 120")
     TRIBITS_ADD_TEST(
       Driver
       NAME SetupSolve_Performance
@@ -65,23 +67,24 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
       RUN_SERIAL
       CATEGORIES PERFORMANCE
     )
-    math(EXPR COUNTER "${COUNTER} + 1")
+    MATH(EXPR COUNTER "${COUNTER} + 1")
   ENDWHILE()
 
   # This an artifact to reproduce the old 4-rank test that is weak scaled by only adding guys in (x,y)
   TRIBITS_ADD_TEST(
-      Driver
-      NAME SetupSolve_Performance
-      COMM mpi
-      ARGS "--stacked-timer --nx=240 --ny=240 --nz=120 --matrixType=Laplace3D"
-      NUM_MPI_PROCS 4
-      PASS_REGULAR_EXPRESSION "Belos converged"
-      RUN_SERIAL
-      CATEGORIES PERFORMANCE
-    )
+    Driver
+    NAME SetupSolve_Performance
+    COMM mpi
+    ARGS "--stacked-timer --nx=240 --ny=240 --nz=120 --matrixType=Laplace3D"
+    NUM_MPI_PROCS 4
+    PASS_REGULAR_EXPRESSION "Belos converged"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES 
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    Driver_cp
+    SOURCE_FILES
       amgx.json
       amgx.xml
       anisotropic.xml
@@ -94,9 +97,9 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
       circ_nsp_dependency.xml
       comboP.xml
       comp_rotations.xml
-      conchas_milestone_zoltan2_complex.xml
-      conchas_milestone_zoltan2.xml
       conchas_milestone_zoltan.xml
+      conchas_milestone_zoltan2.xml
+      conchas_milestone_zoltan2_complex.xml
       coords1.mat
       coords2.mat
       coords2.mm
@@ -124,31 +127,31 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
       sa_enforce_constraints.xml
       sa_with_Ifpack2_line_detection.xml
       sa_with_ilu.xml
-      scaling_apex.xml
       scaling-complex-withglobalconstants.xml
       scaling-complex.xml
-      scaling_distance2_agg.xml
       scaling-gpu.xml
       scaling-ml.xml
-      scaling_sendtype.xml
-      scaling-withglobalconstants.xml
       scaling-with-rerun.xml
+      scaling-withglobalconstants.xml
       scaling.xml
       scaling.yaml
-      smoother_complex.xml
+      scaling_apex.xml
+      scaling_distance2_agg.xml
+      scaling_sendtype.xml
       smoother.xml
-      smooVecCoalesce.xml
+      smoother_complex.xml
       smooVec.mm
+      smooVecCoalesce.xml
       tripleMatrixProduct.xml
       zeroAggTest.xml
     CATEGORIES BASIC PERFORMANCE
-   )
+  )
 
- TRIBITS_ADD_EXECUTABLE(
-   ImportPerformance
-   SOURCES ImportPerformance.cpp
-   COMM mpi
-   )
+  TRIBITS_ADD_EXECUTABLE(
+    ImportPerformance
+    SOURCES ImportPerformance.cpp
+    COMM mpi
+  )
 
   TRIBITS_ADD_EXECUTABLE(
     ComboPDriver
@@ -156,124 +159,130 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
     COMM mpi
   )
 
- TRIBITS_ADD_EXECUTABLE(
-   TAFCPerformance
-   SOURCES TAFCPerformance.cpp
-   COMM mpi
-   )
-
-TRIBITS_ADD_EXECUTABLE(
-  ReadMatrix
-  SOURCES ReadMatrix.cpp
-  COMM serial mpi
-  )
-
-TRIBITS_ADD_EXECUTABLE(
-  MatrixMatrixMultiply
-  SOURCES MatrixMatrixMultiply.cpp
-  COMM mpi
-  CATEGORIES BASIC PERFORMANCE
-  )
-
-TRIBITS_ADD_TEST(
-  MatrixMatrixMultiply
-  NAME MatrixMultiply_Performance_1
-  COMM mpi
-  ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-  RUN_SERIAL
-  CATEGORIES PERFORMANCE
-)
-
-TRIBITS_ADD_TEST(
-  MatrixMatrixMultiply
-  NAME MatrixMultiply_Performance_4
-  COMM mpi
-  ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
-  NUM_MPI_PROCS 4
-  STANDARD_PASS_OUTPUT
-  RUN_SERIAL
-  CATEGORIES PERFORMANCE
-)
-
-
-TRIBITS_ADD_TEST(
-  Driver
-  NAME Driver_anisotropic
-  #ARGS "--xml=anisotropic.xml --tol=1e-6 --its=66"
-  #FIXME JHU: 2023-Nov-20 In OpenMP build, this test converges in 190 iterations
-  #FIXME                  For other builds, test converges in less than 66 iterations
-  ARGS "--xml=anisotropic.xml --tol=1e-6"
-  NUM_MPI_PROCS 4
-  COMM mpi # HAVE_MPI required
-  PASS_REGULAR_EXPRESSION "Belos converged"
-  )
-
-TRIBITS_ADD_TEST(
-  Driver
-  NAME Driver_sendtype
-  ARGS "--xml=scaling_sendtype.xml"
-  NUM_MPI_PROCS 4
-  COMM mpi # HAVE_MPI required
-  PASS_REGULAR_EXPRESSION "Belos converged"
-  )
-
-# not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
-IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
   TRIBITS_ADD_EXECUTABLE(
-    Reuse
-    SOURCES Reuse.cpp
+    TAFCPerformance
+    SOURCES TAFCPerformance.cpp
+    COMM mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    ReadMatrix
+    SOURCES ReadMatrix.cpp
     COMM serial mpi
   )
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(Reuse_cp
-    SOURCE_FILES reuse_emin_emin.xml reuse_sa_RP.xml
+
+  TRIBITS_ADD_EXECUTABLE(
+    MatrixMatrixMultiply
+    SOURCES MatrixMatrixMultiply.cpp
+    COMM mpi
+    CATEGORIES BASIC PERFORMANCE
   )
+
+  TRIBITS_ADD_TEST(
+    MatrixMatrixMultiply
+    NAME MatrixMultiply_Performance_1
+    COMM mpi
+    ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    MatrixMatrixMultiply
+    NAME MatrixMultiply_Performance_4
+    COMM mpi
+    ARGS "--timings --seed=12345 --minrows=8000 --maxrows=10000 --nmults=5"
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME Driver_anisotropic
+    #ARGS "--xml=anisotropic.xml --tol=1e-6 --its=66"
+    #FIXME JHU: 2023-Nov-20 In OpenMP build, this test converges in 190 iterations
+    #FIXME                  For other builds, test converges in less than 66 iterations
+    ARGS "--xml=anisotropic.xml --tol=1e-6"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME Driver_sendtype
+    ARGS "--xml=scaling_sendtype.xml"
+    NUM_MPI_PROCS 4
+    COMM mpi # HAVE_MPI required
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+
+  # not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
+  IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
+    TRIBITS_ADD_EXECUTABLE(
+      Reuse
+      SOURCES Reuse.cpp
+      COMM serial mpi
+    )
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(Reuse_cp SOURCE_FILES reuse_emin_emin.xml reuse_sa_RP.xml)
+  ENDIF()
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    ReadMatrix_cp
+    SOURCE_FILES
+      A.mm
+      B.mm
+      coords.mm
+      simple.xml
+  )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(ImportPerformance_cp SOURCE_FILES import.xml)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+    ComboP_cp
+    SOURCE_FILES
+      aux1.mat
+      aux2.mat
+      comboP.xml
+      coords1.mat
+      coords2.mat
+      multiPhys4x4.mat
+      multiPhys4x4.mat
+      null1.mat
+      null2.mat
+  )
+
 ENDIF()
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
-  SOURCE_FILES A.mm B.mm coords.mm simple.xml
-)
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(ImportPerformance_cp
-    SOURCE_FILES import.xml
-    )
-
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(ComboP_cp
-    SOURCE_FILES aux1.mat aux2.mat  coords1.mat  coords2.mat  multiPhys4x4.mat multiPhys4x4.mat  null1.mat null2.mat comboP.xml
-    )
-
-ENDIF()
-
-IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
+IF(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
 
   TRIBITS_ADD_EXECUTABLE(
     ImportPerformanceEpetra
     SOURCES ImportPerformance
     COMM mpi
     TARGET_DEFINES ${PACKAGE_NAME}_UNDEFINE_Tpetra=1
-    )
+  )
 
 ENDIF()
-
-
 
 #
 # Tests
 #
 
+IF(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
 
-
-IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
-
-  IF (${PACKAGE_NAME}_ENABLE_Zoltan)
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan)
     TRIBITS_ADD_TEST(
       Driver
       NAME "DriverEpetra_Defaults"
       ARGS "--linAlgebra=Epetra"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
-      )
+    )
 
     TRIBITS_ADD_TEST(
       Driver
@@ -281,7 +290,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       ARGS "--linAlgebra=Epetra --xml=scaling-with-rerun.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
-      )
+    )
 
     TRIBITS_ADD_TEST(
       Driver
@@ -289,8 +298,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       ARGS "--linAlgebra=Epetra --xml=iso_poisson.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
-      )
-
+    )
 
     TRIBITS_ADD_TEST(
       Driver
@@ -298,9 +306,9 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       ARGS "--linAlgebra=Epetra --xml=conchas_milestone_zoltan.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
-      )
+    )
 
-    IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
+    IF(${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
       TRIBITS_ADD_TEST(
         Driver
         NAME "DriverEpetra_IsorropiaPoisson"
@@ -310,7 +318,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
       )
     ENDIF()
 
-    IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
+    IF(${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_Isorropia)
       TRIBITS_ADD_TEST(
         Driver
         NAME "DriverEpetra_CircNspDependency"
@@ -328,7 +336,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
     ARGS "--linAlgebra=Epetra --xml=rap.xml --solver=none --nx=50 --ny=50 --rebuild=1"
     NUM_MPI_PROCS 4
     COMM serial mpi
-    )
+  )
 
   MUELU_ADD_SERIAL_AND_MPI_TEST(
     Driver
@@ -336,7 +344,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
     ARGS "--linAlgebra=Epetra --xml=smoother.xml --nx=10 --ny=10 --solver=none"
     NUM_MPI_PROCS 4
     COMM serial mpi
-    )
+  )
 
   MUELU_ADD_SERIAL_AND_MPI_TEST(
     ReadMatrix
@@ -344,11 +352,11 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
     ARGS "--linAlgebra=Epetra --xml=simple.xml"
     NUM_MPI_PROCS 4
     COMM serial mpi
-    )
+  )
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
+IF(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
 
   TRIBITS_ADD_TEST(
     ImportPerformanceEpetra
@@ -360,7 +368,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
+IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
   TRIBITS_ADD_TEST(
     ImportPerformance
@@ -375,14 +383,14 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     ComboPDriver
     NAME "ComboPTest"
     ARGS "--linAlgebra=Tpetra --its=9"
-    NUM_MPI_PROCS  4
+    NUM_MPI_PROCS 4
     COMM mpi
     PASS_REGULAR_EXPRESSION "Belos converged"
   )
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
+IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
   TRIBITS_ADD_TEST(
     Driver
@@ -400,20 +408,20 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     COMM mpi # HAVE_MPI required
     RUN_SERIAL
     PASS_REGULAR_EXPRESSION "Belos converged"
-   )
+  )
 
-   TRIBITS_ADD_TEST(
-     Driver
-     NAME "ZeroAggTest"
-     ARGS "--linAlgebra=Tpetra --xml=zeroAggTest.xml --belosType=\"Block GMRES\" --matrix=blkDiag3x3And6x6.mat --its=11 --notimings --coords=coords2.mm"
-     NUM_MPI_PROCS 2
-     COMM mpi # HAVE_MPI required
-     PASS_REGULAR_EXPRESSION "Belos converged"
-   )
-   TRIBITS_ADD_TEST(
-     Driver
-     NAME "SerialZeroAggTest"
-     ARGS "--linAlgebra=Tpetra --xml=zeroAggTest.xml --belosType=\"Block GMRES\" --matrix=blkDiag3x3And6x6.mat --its=11 --notimings --coords=coords2.mm"
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "ZeroAggTest"
+    ARGS "--linAlgebra=Tpetra --xml=zeroAggTest.xml --belosType=\"Block GMRES\" --matrix=blkDiag3x3And6x6.mat --its=11 --notimings --coords=coords2.mm"
+    NUM_MPI_PROCS 2
+    COMM mpi # HAVE_MPI required
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME "SerialZeroAggTest"
+    ARGS "--linAlgebra=Tpetra --xml=zeroAggTest.xml --belosType=\"Block GMRES\" --matrix=blkDiag3x3And6x6.mat --its=11 --notimings --coords=coords2.mm"
     NUM_MPI_PROCS 1
     COMM mpi # HAVE_MPI required
     RUN_SERIAL
@@ -443,7 +451,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     NAME "MaterialDistanceLaplacian"
     POSTFIX_AND_ARGS_0 "ConstantScalar" --linAlgebra=Tpetra --xml=material.xml --matrixType=Laplace2D --nx=1000 --ny=1000 --its=20 --scalarCoefficient
     POSTFIX_AND_ARGS_1 "ConstantTensor" --linAlgebra=Tpetra --xml=material.xml --matrixType=Laplace2D --nx=1000 --ny=1000 --its=20 --tensorCoefficient
-    POSTFIX_AND_ARGS_2 "TensorFromFile" --linAlgebra=Tpetra --xml=material.xml --matrixType=Laplace2D --nx=100  --ny=100  --its=20 --material=material.mm
+    POSTFIX_AND_ARGS_2 "TensorFromFile" --linAlgebra=Tpetra --xml=material.xml --matrixType=Laplace2D --nx=100 --ny=100 --its=20 --material=material.mm
     NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
     PASS_REGULAR_EXPRESSION "Belos converged"
@@ -462,24 +470,24 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     Driver
     NAME "DriverTpetra_Rerun"
     POSTFIX_AND_ARGS_0 "InputDeck" --linAlgebra=Tpetra --xml=scaling-with-rerun.xml
-    POSTFIX_AND_ARGS_1 "Repeat"    --linAlgebra=Tpetra --reruns=3 --stacked-timer
+    POSTFIX_AND_ARGS_1 "Repeat" --linAlgebra=Tpetra --reruns=3 --stacked-timer
     NUM_MPI_PROCS 4
     COMM mpi # HAVE_MPI required
   )
 
 ENDIF()
 
-IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
+IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
-  IF (${PACKAGE_NAME}_ENABLE_Zoltan)
-    IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan)
+    IF(${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
       TRIBITS_ADD_TEST(
         Driver
         NAME "DriverTpetra"
         ARGS "--linAlgebra=Tpetra --xml=scaling-complex.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
-        )
+      )
 
       TRIBITS_ADD_TEST(
         Driver
@@ -487,7 +495,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         ARGS "--linAlgebra=Tpetra --xml=scaling-complex-withglobalconstants.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
-        )
+      )
     ELSE()
       TRIBITS_ADD_TEST(
         Driver
@@ -496,7 +504,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         PASS_REGULAR_EXPRESSION "Belos converged"
-        )
+      )
 
       TRIBITS_ADD_TEST(
         Driver
@@ -505,7 +513,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         PASS_REGULAR_EXPRESSION "Belos converged"
-        )
+      )
 
       TRIBITS_ADD_TEST(
         Driver
@@ -514,7 +522,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         PASS_REGULAR_EXPRESSION "Belos converged"
-        )
+      )
 
       TRIBITS_ADD_TEST(
         Driver
@@ -523,7 +531,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         PASS_REGULAR_EXPRESSION "Belos converged"
-        )
+      )
 
       TRIBITS_ADD_TEST(
         Driver
@@ -533,7 +541,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         COMM mpi # HAVE_MPI required
         RUN_SERIAL
         PASS_REGULAR_EXPRESSION "Belos converged"
-        )
+      )
 
       TRIBITS_ADD_TEST(
         Driver
@@ -543,11 +551,9 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         COMM mpi # HAVE_MPI required
         RUN_SERIAL
         PASS_REGULAR_EXPRESSION "Belos converged"
-        )
+      )
 
-      TRIBITS_COPY_FILES_TO_BINARY_DIR(DriverDiagonalModifications_cp
-        SOURCE_FILES spe10.xml A5submatrix.mm rhs5sub.mm
-        )
+      TRIBITS_COPY_FILES_TO_BINARY_DIR(DriverDiagonalModifications_cp SOURCE_FILES A5submatrix.mm rhs5sub.mm spe10.xml)
 
       TRIBITS_ADD_TEST(
         Driver
@@ -567,7 +573,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       PASS_REGULAR_EXPRESSION "Belos converged"
-      )
+    )
 
     TRIBITS_ADD_TEST(
       Driver
@@ -576,7 +582,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       PASS_REGULAR_EXPRESSION "Belos converged"
-      )
+    )
 
     TRIBITS_ADD_TEST(
       Driver
@@ -585,21 +591,19 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       PASS_REGULAR_EXPRESSION "Belos converged"
-      )
+    )
 
   ENDIF() # ENABLE_ZOLTAN
 
-
-
-  IF (${PACKAGE_NAME}_ENABLE_Zoltan2Core)
-    IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
+  IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core)
+    IF(${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
       TRIBITS_ADD_TEST(
         Driver
         NAME "DriverTpetra_Milestone"
         ARGS "--linAlgebra=Tpetra --xml=conchas_milestone_zoltan2_complex.xml"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
-        )
+      )
     ELSE()
       TRIBITS_ADD_TEST(
         Driver
@@ -608,7 +612,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         PASS_REGULAR_EXPRESSION "Belos converged"
-        )
+      )
     ENDIF()
   ENDIF()
 
@@ -619,34 +623,36 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     NUM_MPI_PROCS 4
     COMM serial mpi
     #do not check for convergence
-    )
+  )
   MUELU_ADD_SERIAL_AND_MPI_TEST(
-      Driver
-      NAME "CalcRotations"
-      ARGS "--linAlgebra=Tpetra --xml=comp_rotations.xml  --matrixType=Elasticity3D --nx=40 --ny=40 --nz=4 --its=26 --belosType=gmres --tol=1.0e-8  --muelu-computed-nullspace"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      PASS_REGULAR_EXPRESSION "Belos converged"
-      )
+    Driver
+    NAME "CalcRotations"
+    ARGS "--linAlgebra=Tpetra --xml=comp_rotations.xml  --matrixType=Elasticity3D --nx=40 --ny=40 --nz=4 --its=26 --belosType=gmres --tol=1.0e-8  --muelu-computed-nullspace"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
   MUELU_ADD_SERIAL_AND_MPI_TEST(
-      Driver
-      NAME "AnisotropicElasticityEmin"
-      ARGS "--linAlgebra=Tpetra --xml=emin_with_dl_elasticity3D.xml  --matrixType=Elasticity3D --nx=20 --ny=20 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      PASS_REGULAR_EXPRESSION "Belos converged"
-      )
+    Driver
+    NAME "AnisotropicElasticityEmin"
+    ARGS "--linAlgebra=Tpetra --xml=emin_with_dl_elasticity3D.xml  --matrixType=Elasticity3D --nx=20 --ny=20 --nz=20 --stretchx=3. --its=30 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
   MUELU_ADD_SERIAL_AND_MPI_TEST(
-      Driver
-      NAME "MaterialAnisotropicElasticityEmin"
-      POSTFIX_AND_ARGS_0 "ConstantScalar" --linAlgebra=Tpetra --xml=emin_with_dl_material_elasticity3D.xml --matrixType=Elasticity3D --nx=20 --ny=20 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace --scalarCoefficient
-      POSTFIX_AND_ARGS_1 "ConstantTensor" --linAlgebra=Tpetra --xml=emin_with_dl_material_elasticity3D.xml --matrixType=Elasticity3D --nx=20 --ny=20 --stretchx=3. --its=25 --belosType=cg --tol=1.0e-8  --muelu-computed-nullspace --tensorCoefficient
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      PASS_REGULAR_EXPRESSION "Belos converged"
-      )
+    Driver
+    NAME "MaterialAnisotropicElasticityEmin"
+    POSTFIX_AND_ARGS_0 "ConstantScalar" --linAlgebra=Tpetra --xml=emin_with_dl_material_elasticity3D.xml --matrixType=Elasticity3D --nx=20 --ny=20 --nz=20 --stretchx=3. --its=30 --belosType=cg
+                       --tol=1.0e-8 --muelu-computed-nullspace --scalarCoefficient
+    POSTFIX_AND_ARGS_1 "ConstantTensor" --linAlgebra=Tpetra --xml=emin_with_dl_material_elasticity3D.xml --matrixType=Elasticity3D --nx=20 --ny=20 --nz=20 --stretchx=3. --its=30 --belosType=cg
+                       --tol=1.0e-8 --muelu-computed-nullspace --tensorCoefficient
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
 
-  IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
+  IF(${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       Driver
       NAME "SmootherScalingTestTpetra"
@@ -654,7 +660,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       NUM_MPI_PROCS 4
       COMM serial mpi
       #do not check for convergence
-      )
+    )
   ELSE()
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       Driver
@@ -663,11 +669,11 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       NUM_MPI_PROCS 4
       COMM serial mpi
       #do not check for convergence
-      )
+    )
   ENDIF()
 
   # Reading a matrix saved in real format as complex does not work.
-  IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
+  IF(NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       ReadMatrix
       NAME "ReadMatrixTpetra"
@@ -675,7 +681,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       NUM_MPI_PROCS 4
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "Belos converged"
-      )
+    )
     TRIBITS_ADD_TEST(
       ReadMatrix
       NAME "SmooVecCoalesce"
@@ -683,17 +689,16 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       NUM_MPI_PROCS 3
       COMM mpi
       PASS_REGULAR_EXPRESSION "Belos converged"
-      )
-    IF ( MUELU_RECURMG )
+    )
+    IF(MUELU_RECURMG)
       MUELU_ADD_SERIAL_AND_MPI_TEST(
         Driver
         NAME "RecursiveMGWithSemiCoarsening"
         ARGS "--linAlgebra=Tpetra --xml=recurMG.xml --matrixType=Elasticity3D --nx=12  --ny=12 --nz=99 --belosType=\"Pseudoblock GMRES\" --noscale --its=50 --tol=1e-5"
         NUM_MPI_PROCS 4
         COMM serial mpi
-        )
+      )
     ENDIF()
-
 
   ENDIF()
 
@@ -730,7 +735,7 @@ IF(Tpetra_INST_SERIAL)
   )
 ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
+IF(${PACKAGE_NAME}_ENABLE_Epetra)
   TRIBITS_ADD_TEST(
     SpMVPerformance
     NAME_POSTFIX "Epetra"
@@ -758,16 +763,15 @@ ENDIF()
 # This differs from the existing Matrix Matrix driver that forms parallel random matrices for testing
 # This particular driver does not require MPI and is focused on evaluations using smaller
 # MatrixMarket matrices.
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
+IF(${PACKAGE_NAME}_ENABLE_Experimental)
 
   # Reading a matrix saved in real format as complex does not work.
-  IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
+  IF(NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
     TRIBITS_ADD_EXECUTABLE(
       MMKernelDriver
       SOURCES MMKernelDriver.cpp
       COMM serial mpi
-      )
-
+    )
 
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       MMKernelDriver
@@ -775,14 +779,13 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
       ARGS "--linAlgebra=Tpetra"
       NUM_MPI_PROCS 1
       COMM serial mpi
-      )
+    )
 
     TRIBITS_ADD_EXECUTABLE(
       JacobiKernelDriver
       SOURCES JacobiKernelDriver.cpp
       COMM serial mpi
-      )
-
+    )
 
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       JacobiKernelDriver
@@ -790,14 +793,13 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
       ARGS "--linAlgebra=Tpetra"
       NUM_MPI_PROCS 1
       COMM serial mpi
-      )
+    )
 
     TRIBITS_ADD_EXECUTABLE(
       TwoMatrixMMKernelDriver
       SOURCES TwoMatrixMMKernelDriver.cpp
       COMM serial mpi
-      )
-
+    )
 
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       TwoMatrixMMKernelDriver
@@ -805,11 +807,10 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
       ARGS "--linAlgebra=Tpetra"
       NUM_MPI_PROCS 1
       COMM serial mpi
-      )
+    )
 
   ENDIF()
 ENDIF()
-
 
 ASSERT_DEFINED(
   ${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT
@@ -818,7 +819,7 @@ ASSERT_DEFINED(
   Tpetra_INST_HIP
 )
 
-IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
+IF(${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
 
   TRIBITS_ADD_EXECUTABLE(
     MatvecKernelDriver
@@ -827,14 +828,14 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
     CATEGORIES BASIC PERFORMANCE
   )
 
-  IF (Tpetra_INST_SERIAL)
+  IF(Tpetra_INST_SERIAL)
 
-    set(COUNTER 1)
-    set(MAX_COUNT 11)
+    SET(COUNTER 1)
+    SET(MAX_COUNT 11)
 
     WHILE(COUNTER LESS MAX_COUNT)
-      math(EXPR n "150 * ${COUNTER}")
-      math(EXPR NP "${COUNTER} * ${COUNTER}")
+      MATH(EXPR n "150 * ${COUNTER}")
+      MATH(EXPR NP "${COUNTER} * ${COUNTER}")
 
       TRIBITS_ADD_TEST(
         MatvecKernelDriver
@@ -846,19 +847,19 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         CATEGORIES PERFORMANCE
       )
 
-      math(EXPR COUNTER "${COUNTER} + 1")
+      MATH(EXPR COUNTER "${COUNTER} + 1")
     ENDWHILE()
 
   ENDIF()
 
-  IF (Tpetra_INST_CUDA)
+  IF(Tpetra_INST_CUDA)
 
-    set(COUNTER 1)
-    set(MAX_COUNT 11)
+    SET(COUNTER 1)
+    SET(MAX_COUNT 11)
 
     WHILE(COUNTER LESS MAX_COUNT)
-      math(EXPR n "600 * ${COUNTER}")
-      math(EXPR NP "${COUNTER} * ${COUNTER}")
+      MATH(EXPR n "600 * ${COUNTER}")
+      MATH(EXPR NP "${COUNTER} * ${COUNTER}")
 
       TRIBITS_ADD_TEST(
         MatvecKernelDriver
@@ -870,19 +871,19 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         CATEGORIES PERFORMANCE
       )
 
-      math(EXPR COUNTER "${COUNTER} + 1")
+      MATH(EXPR COUNTER "${COUNTER} + 1")
     ENDWHILE()
 
   ENDIF()
 
-  IF (Tpetra_INST_HIP)
+  IF(Tpetra_INST_HIP)
 
-    set(COUNTER 1)
-    set(MAX_COUNT 11)
+    SET(COUNTER 1)
+    SET(MAX_COUNT 11)
 
     WHILE(COUNTER LESS MAX_COUNT)
-      math(EXPR n "600 * ${COUNTER}")
-      math(EXPR NP "${COUNTER} * ${COUNTER}")
+      MATH(EXPR n "600 * ${COUNTER}")
+      MATH(EXPR NP "${COUNTER} * ${COUNTER}")
 
       TRIBITS_ADD_TEST(
         MatvecKernelDriver
@@ -894,19 +895,19 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         CATEGORIES PERFORMANCE
       )
 
-      math(EXPR COUNTER "${COUNTER} + 1")
+      MATH(EXPR COUNTER "${COUNTER} + 1")
     ENDWHILE()
 
   ENDIF()
 
-  IF (Tpetra_INST_SYCL)
+  IF(Tpetra_INST_SYCL)
 
-    set(COUNTER 1)
-    set(MAX_COUNT 11)
+    SET(COUNTER 1)
+    SET(MAX_COUNT 11)
 
     WHILE(COUNTER LESS MAX_COUNT)
-      math(EXPR n "600 * ${COUNTER}")
-      math(EXPR NP "${COUNTER} * ${COUNTER}")
+      MATH(EXPR n "600 * ${COUNTER}")
+      MATH(EXPR NP "${COUNTER} * ${COUNTER}")
 
       TRIBITS_ADD_TEST(
         MatvecKernelDriver
@@ -918,7 +919,7 @@ IF (${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT)
         CATEGORIES PERFORMANCE
       )
 
-      math(EXPR COUNTER "${COUNTER} + 1")
+      MATH(EXPR COUNTER "${COUNTER} + 1")
     ENDWHILE()
 
   ENDIF()

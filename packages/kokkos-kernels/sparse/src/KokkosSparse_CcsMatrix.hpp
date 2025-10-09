@@ -138,6 +138,11 @@ class CcsMatrix {
   //! The number of columns in the sparse matrix.
   KOKKOS_INLINE_FUNCTION ordinal_type numRows() const { return numRows_; }
 
+  /// \brief Modify the number of rows in the sparse matrix.
+  ///
+  /// This invalidates any algorithm handles which previously used this matrix.
+  void setNumRows(ordinal_type r) { numRows_ = r; }
+
   //! The number of "point" (non-block) rows in the matrix. Since Ccs is not
   //! blocked, this is just the number of regular rows.
   KOKKOS_INLINE_FUNCTION ordinal_type numPointRows() const { return numRows(); }

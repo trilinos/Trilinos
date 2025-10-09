@@ -140,10 +140,10 @@ int main(int argc, char *argv[]) {
 
         if (mockModel=="MockModelEval_A_Tpetra") {
           if(boundConstrained) {
-            RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_A_Tpetra(appComm,false,probParams,true));
+            RCP<Thyra::ModelEvaluator<double>> model_tmp = rcp(new MockModelEval_A_Tpetra(appComm,2,false,probParams,true));
             model = rcp(new Piro::ProductModelEvaluator<double>(model_tmp,p_indices));
             if(explicitAdjointME) {
-              RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_A_Tpetra(appComm,true));
+              RCP<Thyra::ModelEvaluator<double>> adjointModel_tmp = rcp(new MockModelEval_A_Tpetra(appComm,2,true));
               adjointModel = rcp(new Piro::ProductModelEvaluator<double>(adjointModel_tmp,p_indices));
             }
             modelName = "A";

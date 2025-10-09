@@ -20,14 +20,6 @@
 #include "Kokkos_Sort.hpp"
 #include "KokkosKernels_Sorting.hpp"
 
-// Workaround for issue with Kokkos::Experimental::sort_by_key, with nvcc and OpenMP enabled
-// (Kokkos issue #7036, fixed in 4.4 release)
-// Once support for Kokkos < 4.4 is dropped,
-// all code inside "ifdef KK_DISABLE_BULK_SORT_BY_KEY" can be deleted.
-#if (KOKKOS_VERSION < 40400) && defined(KOKKOS_ENABLE_CUDA)
-#define KK_DISABLE_BULK_SORT_BY_KEY
-#endif
-
 namespace KokkosSparse {
 namespace Impl {
 
@@ -314,7 +306,6 @@ Kokkos::View<uint64_t*, ExecSpace> generateBulkCrsKeys(const ExecSpace& exec, co
   return keys;
 }
 
-#ifndef KK_DISABLE_BULK_SORT_BY_KEY
 template <typename ExecSpace, typename Rowmap, typename Entries>
 Kokkos::View<typename Rowmap::non_const_value_type*, ExecSpace> computeEntryPermutation(
     const ExecSpace& exec, const Rowmap& rowmap, const Entries& entries, typename Entries::non_const_value_type ncols) {
@@ -356,7 +347,6 @@ bool useBulkSortHeuristic(Ordinal avgDeg, Ordinal maxDeg) {
     return (maxDeg / 10 > avgDeg) || (maxDeg > 1024);
   }
 }
-#endif
 
 template <typename ExecSpace, typename Permutation, typename InView, typename OutView>
 void applyPermutation(const ExecSpace& exec, const Permutation& permutation, const InView& in, const OutView& out) {

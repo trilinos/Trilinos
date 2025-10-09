@@ -16,7 +16,11 @@
 #include <chrono>
 #include <iomanip>
 #include <Teuchos_ScalarTraits.hpp>
+#if KOKKOS_VERSION >= 40799
+#include <KokkosKernels_ArithTraits.hpp>
+#else
 #include <Kokkos_ArithTraits.hpp>
+#endif
 #include <Xpetra_Import.hpp>
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MPI)
 #include <Xpetra_TpetraImport.hpp>
@@ -35,7 +39,11 @@ namespace PerfDetails {
 template <class Scalar, class Node>
 double stream_vector_add(int KERNEL_REPEATS, int VECTOR_SIZE) {
   // PerfDetails' STREAM routines need to be instantiatiated on impl_scalar_type, not Scalar
+#if KOKKOS_VERSION >= 40799
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
 
   using exec_space   = typename Node::execution_space;
   using memory_space = typename Node::memory_space;
@@ -78,7 +86,11 @@ double stream_vector_add(int KERNEL_REPEATS, int VECTOR_SIZE) {
 template <class Scalar, class Node>
 double stream_vector_copy(int KERNEL_REPEATS, int VECTOR_SIZE) {
   // PerfDetails' STREAM routines need to be instantiatiated on impl_scalar_type, not Scalar
+#if KOKKOS_VERSION >= 40799
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
 
   using exec_space   = typename Node::execution_space;
   using memory_space = typename Node::memory_space;

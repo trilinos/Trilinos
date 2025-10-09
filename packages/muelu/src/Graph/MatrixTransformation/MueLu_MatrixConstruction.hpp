@@ -11,7 +11,11 @@
 #define MUELU_MATRIXCONSTRUCTION_HPP
 
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 
 #include "MueLu_DroppingCommon.hpp"
 
@@ -210,7 +214,7 @@ class PointwiseCountingFunctor<local_matrix_type, functor_type> {
     functor(rlid);
 
 #ifdef MUELU_COALESCE_DROP_DEBUG
-    Kokkos::printf("%s\n", functorName);
+    Kokkos::printf("%s\n", functorName.c_str());
 
     auto row            = A.rowConst(rlid);
     const size_t offset = A.graph.row_map(rlid);
@@ -251,8 +255,12 @@ class PointwiseFillReuseFunctor {
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
   using results_view       = Kokkos::View<DecisionType*, memory_space>;
-  using ATS                = Kokkos::ArithTraits<scalar_type>;
-  using magnitudeType      = typename ATS::magnitudeType;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
+  using magnitudeType = typename ATS::magnitudeType;
 
   local_matrix_type A;
   results_view results;
@@ -311,9 +319,9 @@ class PointwiseFillReuseFunctor {
     }
   }
 };
-enum lumpingType { no_lumping,
-                   diag_lumping,
-                   distributed_lumping };
+enum lumpingType : int { no_lumping,
+                         diag_lumping,
+                         distributed_lumping };
 
 /*!
   @class PointwiseFillNoReuseFunctor
@@ -330,8 +338,12 @@ class PointwiseFillNoReuseFunctor {
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
   using results_view       = Kokkos::View<DecisionType*, memory_space>;
-  using ATS                = Kokkos::ArithTraits<scalar_type>;
-  using magnitudeType      = typename ATS::magnitudeType;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
+  using magnitudeType = typename ATS::magnitudeType;
 
   local_matrix_type A;
   results_view results;
@@ -463,7 +475,11 @@ class VectorCountingFunctor {
   using permutation_type        = Kokkos::View<local_ordinal_type*, memory_space>;
 
   using rowptr_type = typename local_matrix_type::row_map_type::non_const_type;
-  using ATS         = Kokkos::ArithTraits<local_ordinal_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<local_ordinal_type>;
+#else
+  using ATS = Kokkos::ArithTraits<local_ordinal_type>;
+#endif
 
   local_matrix_type A;
   local_ordinal_type blockSize;
@@ -640,7 +656,11 @@ class VectorCountingFunctor<local_matrix_type, functor_type> {
   using permutation_type        = Kokkos::View<local_ordinal_type*, memory_space>;
 
   using rowptr_type = typename local_matrix_type::row_map_type::non_const_type;
-  using ATS         = Kokkos::ArithTraits<local_ordinal_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<local_ordinal_type>;
+#else
+  using ATS = Kokkos::ArithTraits<local_ordinal_type>;
+#endif
 
   local_matrix_type A;
   local_ordinal_type blockSize;
@@ -811,13 +831,21 @@ class VectorCountingFunctor<local_matrix_type, functor_type> {
 template <class local_matrix_type, bool lumping, bool reuse>
 class VectorFillFunctor {
  private:
-  using scalar_type             = typename local_matrix_type::value_type;
-  using local_ordinal_type      = typename local_matrix_type::ordinal_type;
-  using local_graph_type        = typename local_matrix_type::staticcrsgraph_type;
-  using memory_space            = typename local_matrix_type::memory_space;
-  using results_view            = Kokkos::View<DecisionType*, memory_space>;
-  using ATS                     = Kokkos::ArithTraits<scalar_type>;
-  using OTS                     = Kokkos::ArithTraits<local_ordinal_type>;
+  using scalar_type        = typename local_matrix_type::value_type;
+  using local_ordinal_type = typename local_matrix_type::ordinal_type;
+  using local_graph_type   = typename local_matrix_type::staticcrsgraph_type;
+  using memory_space       = typename local_matrix_type::memory_space;
+  using results_view       = Kokkos::View<DecisionType*, memory_space>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
+#if KOKKOS_VERSION >= 40799
+  using OTS = KokkosKernels::ArithTraits<local_ordinal_type>;
+#else
+  using OTS = Kokkos::ArithTraits<local_ordinal_type>;
+#endif
   using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
   using permutation_type        = Kokkos::View<local_ordinal_type*, memory_space>;
   using magnitudeType           = typename ATS::magnitudeType;
@@ -937,7 +965,11 @@ class MergeCountFunctor {
   using permutation_type        = Kokkos::View<local_ordinal_type*, memory_space>;
 
   using rowptr_type = typename local_matrix_type::row_map_type::non_const_type;
-  using ATS         = Kokkos::ArithTraits<local_ordinal_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<local_ordinal_type>;
+#else
+  using ATS = Kokkos::ArithTraits<local_ordinal_type>;
+#endif
 
   local_matrix_type A;
   local_ordinal_type blockSize;
@@ -1006,13 +1038,21 @@ class MergeCountFunctor {
 template <class local_matrix_type>
 class MergeFillFunctor {
  private:
-  using scalar_type             = typename local_matrix_type::value_type;
-  using local_ordinal_type      = typename local_matrix_type::ordinal_type;
-  using local_graph_type        = typename local_matrix_type::staticcrsgraph_type;
-  using memory_space            = typename local_matrix_type::memory_space;
-  using results_view            = Kokkos::View<DecisionType*, memory_space>;
-  using ATS                     = Kokkos::ArithTraits<scalar_type>;
-  using OTS                     = Kokkos::ArithTraits<local_ordinal_type>;
+  using scalar_type        = typename local_matrix_type::value_type;
+  using local_ordinal_type = typename local_matrix_type::ordinal_type;
+  using local_graph_type   = typename local_matrix_type::staticcrsgraph_type;
+  using memory_space       = typename local_matrix_type::memory_space;
+  using results_view       = Kokkos::View<DecisionType*, memory_space>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
+#if KOKKOS_VERSION >= 40799
+  using OTS = KokkosKernels::ArithTraits<local_ordinal_type>;
+#else
+  using OTS = Kokkos::ArithTraits<local_ordinal_type>;
+#endif
   using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
   using permutation_type        = Kokkos::View<local_ordinal_type*, memory_space>;
   using magnitudeType           = typename ATS::magnitudeType;

@@ -26,7 +26,7 @@ bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec,
 }
 
 bool Problem_Interface::computeJacobian(const Epetra_Vector& x,
-                    Epetra_Operator& Jac)
+                    Epetra_Operator& Jac_)
 {
   return problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, NULL);
 }

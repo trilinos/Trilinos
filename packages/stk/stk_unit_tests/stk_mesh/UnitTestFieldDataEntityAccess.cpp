@@ -3663,7 +3663,6 @@ TEST(TestFieldData, syncCount_emptyModCycle)
   unsigned tmpSyncCount = mesh->synchronized_count();
   EXPECT_EQ((syncCount+1), tmpSyncCount);
 
-  mesh->declare_node(9, stk::mesh::PartVector{});
   mesh->modification_end();
 
   EXPECT_EQ(mesh->synchronized_count(), syncCount);

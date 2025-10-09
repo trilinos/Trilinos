@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <vector>
 
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 

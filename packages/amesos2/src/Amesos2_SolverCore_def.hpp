@@ -19,7 +19,11 @@
 #ifndef AMESOS2_SOLVERCORE_DEF_HPP
 #define AMESOS2_SOLVERCORE_DEF_HPP
 
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 
 #include "Amesos2_MatrixAdapter_def.hpp"
 #include "Amesos2_MultiVecAdapter_def.hpp"
@@ -238,7 +242,11 @@ SolverCore<ConcreteSolver,Matrix,Vector>::solve_ir(const Teuchos::Ptr<      Vect
                                                    const int maxNumIters,
                                                    const bool verbose) const
 {
+#if KOKKOS_VERSION >= 40799
+  using KAT              = KokkosKernels::ArithTraits<scalar_type>;
+#else
   using KAT              = Kokkos::ArithTraits<scalar_type>;
+#endif
   using impl_scalar_type = typename KAT::val_type;
   using magni_type       = typename KAT::mag_type;
   using host_execution_space = Kokkos::DefaultHostExecutionSpace;

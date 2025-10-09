@@ -183,6 +183,28 @@ namespace
 /** \brief Data has facilities for in-place combinations of logical data.  Suppose you have two containers of logical shape (C,P), one of which is constant across cells, the other of which is constant across points.  To combine these (e.g., sum them together entrywise), you want a container that varies in both cells and points.  The test below exercises the facility for allocation of the combined container.
 */
 
+  TEUCHOS_UNIT_TEST( Data, IdentityIsDiagonal )
+  {
+    using DeviceType = DefaultTestDeviceType;
+    using Scalar = double;
+
+    const int numCells = 8;
+    const int numPoints = 3;
+    const int spaceDim = 7;
+
+    Kokkos::Array<int,4> transformationExtents {numCells, numPoints, spaceDim, spaceDim};
+    Kokkos::Array<DataVariationType,4> transformationVariationType {CONSTANT, CONSTANT, BLOCK_PLUS_DIAGONAL, BLOCK_PLUS_DIAGONAL};
+
+    auto identityMatrixView = getFixedRankView<Scalar>("identity matrix", spaceDim);
+    Kokkos::deep_copy(identityMatrixView, 1.0);
+   
+    const int blockPlusDiagonalLastNonDiagonal = -1; // no non-diagonals; -1 is the default value, but I prefer to be explicit
+    Data<Scalar,DeviceType> explicitIdentityMatrix(identityMatrixView, transformationExtents, transformationVariationType, blockPlusDiagonalLastNonDiagonal);
+  
+    // confirm that the matrix is diagonal (this is required to follow the axis-aligned path):
+    TEST_EQUALITY(true, explicitIdentityMatrix.isDiagonal());
+  }
+
   TEUCHOS_UNIT_TEST( Data, InPlaceSum )
   {
     double relTol = 1e-13;

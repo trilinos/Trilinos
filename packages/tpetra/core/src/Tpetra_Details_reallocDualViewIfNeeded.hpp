@@ -46,43 +46,39 @@ namespace Details {
 /// \return Whether we actually reallocated.  If we did reallocate,
 ///   the function promises to fence before returning.  "Fence" means
 ///   <tt>DeviceType::execution_space().fence()</tt>.
-template<class ValueType, class DeviceType>
-bool
-reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
-                         const size_t newSize,
-                         const char newLabel[],
-                         const size_t tooBigFactor = 2,
-                         const bool needFenceBeforeRealloc = true)
-{
+template <class ValueType, class DeviceType>
+bool reallocDualViewIfNeeded(Kokkos::DualView<ValueType*, DeviceType>& dv,
+                             const size_t newSize,
+                             const char newLabel[],
+                             const size_t tooBigFactor         = 2,
+                             const bool needFenceBeforeRealloc = true) {
   typedef typename DeviceType::execution_space execution_space;
   typedef Kokkos::DualView<ValueType*, DeviceType> dual_view_type;
   typedef Kokkos::pair<size_t, size_t> range_type;
 
   // Profiling this matters, because GPU allocations can be expensive.
   using Tpetra::Details::ProfilingRegion;
-  ProfilingRegion region ("Tpetra::Details::reallocDualViewIfNeeded");
+  ProfilingRegion region("Tpetra::Details::reallocDualViewIfNeeded");
 
-  const size_t curSize = static_cast<size_t> (dv.extent (0));
+  const size_t curSize = static_cast<size_t>(dv.extent(0));
   if (curSize == newSize) {
-    return false; // did not reallocate
-  }
-  else if (curSize < newSize) { // too small; need to reallocate
+    return false;                  // did not reallocate
+  } else if (curSize < newSize) {  // too small; need to reallocate
     if (needFenceBeforeRealloc) {
-      execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
+      execution_space().fence();  // keep this fence to respect needFenceBeforeRealloc
     }
-    dv = dual_view_type (); // free first, in order to save memory
+    dv = dual_view_type();  // free first, in order to save memory
     // If current size is 0, the DualView's Views likely lack a label.
-    dv = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), newSize);
-    return true; // we did reallocate
-  }
-  else {
-    if (newSize == 0) { // special case: realloc to 0 means always do it
+    dv = dual_view_type(curSize == 0 ? newLabel : dv.view_device().label(), newSize);
+    return true;  // we did reallocate
+  } else {
+    if (newSize == 0) {  // special case: realloc to 0 means always do it
       if (needFenceBeforeRealloc) {
-        execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
+        execution_space().fence();  // keep this fence to respect needFenceBeforeRealloc
       }
       // If current size is 0, the DualView's Views likely lack a label.
-      dv = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), 0);
-      return true; // we did reallocate
+      dv = dual_view_type(curSize == 0 ? newLabel : dv.view_device().label(), 0);
+      return true;  // we did reallocate
     }
     // Instead of writing curSize >= tooBigFactor * newSize, express
     // via division to avoid overflow (for very large right-hand side).
@@ -91,38 +87,35 @@ reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& dv,
       // The allocation is much too big, so free it and reallocate
       // to the new, smaller size.
       if (needFenceBeforeRealloc) {
-        execution_space().fence (); // keep this fence to respect needFenceBeforeRealloc
+        execution_space().fence();  // keep this fence to respect needFenceBeforeRealloc
       }
-      dv = dual_view_type (); // free first, in order to save memory
+      dv = dual_view_type();  // free first, in order to save memory
       // If current size is 0, the DualView's Views likely lack a label.
-      dv = dual_view_type (curSize == 0 ? newLabel : dv.view_device().label (), newSize);
-      return true; // we did reallocate
-    }
-    else {
-      auto d_view = Kokkos::subview (dv.view_device(), range_type (0, newSize));
-      auto h_view = Kokkos::subview (dv.view_host(), range_type (0, newSize));
-      dv = Kokkos::DualView<ValueType*, DeviceType>(d_view, h_view);
-      return false; // we did not reallocate
+      dv = dual_view_type(curSize == 0 ? newLabel : dv.view_device().label(), newSize);
+      return true;  // we did reallocate
+    } else {
+      auto d_view = Kokkos::subview(dv.view_device(), range_type(0, newSize));
+      auto h_view = Kokkos::subview(dv.view_host(), range_type(0, newSize));
+      dv          = Kokkos::DualView<ValueType*, DeviceType>(d_view, h_view);
+      return false;  // we did not reallocate
     }
   }
 }
 
 /// \brief Like above, but with <tt>std::string</tt> label argument.
-template<class ValueType, class DeviceType>
-bool
-reallocDualViewIfNeeded (Kokkos::DualView<ValueType*, DeviceType>& exports,
-                         const size_t newSize,
-                         const std::string& newLabel,
-                         const size_t tooBigFactor = 2,
-                         const bool needFenceBeforeRealloc = true)
-{
-  return reallocDualViewIfNeeded<ValueType, DeviceType> (exports, newSize,
-                                                         newLabel.c_str (),
-                                                         tooBigFactor,
-                                                         needFenceBeforeRealloc);
+template <class ValueType, class DeviceType>
+bool reallocDualViewIfNeeded(Kokkos::DualView<ValueType*, DeviceType>& exports,
+                             const size_t newSize,
+                             const std::string& newLabel,
+                             const size_t tooBigFactor         = 2,
+                             const bool needFenceBeforeRealloc = true) {
+  return reallocDualViewIfNeeded<ValueType, DeviceType>(exports, newSize,
+                                                        newLabel.c_str(),
+                                                        tooBigFactor,
+                                                        needFenceBeforeRealloc);
 }
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_REALLOCDUALVIEWIFNEEDED_HPP
+#endif  // TPETRA_DETAILS_REALLOCDUALVIEWIFNEEDED_HPP

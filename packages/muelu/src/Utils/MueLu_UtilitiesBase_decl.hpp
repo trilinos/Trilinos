@@ -18,7 +18,11 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
 #include <Xpetra_BlockedMap_fwd.hpp>
@@ -161,6 +165,15 @@ class UtilitiesBase {
 
   static RCP<Xpetra::Vector<Magnitude, LocalOrdinal, GlobalOrdinal, Node>>
   GetMatrixOverlappedAbsDeletedRowsum(const Matrix& A);
+
+  /*! @brief Counts the number of negative diagonal entries
+
+    Returns a GlobalOrdinal with the number of negative diagonal entries
+    This generally will involve MPI communication and this must be called
+    on all ranks in A's communicator.
+    NOTE: This only works on matrices locally fitted column maps.
+   */
+  static GlobalOrdinal CountNegativeDiagonalEntries(const Matrix& A);
 
   // TODO: should NOT return an Array. Definition must be changed to:
   // - ArrayRCP<> ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)

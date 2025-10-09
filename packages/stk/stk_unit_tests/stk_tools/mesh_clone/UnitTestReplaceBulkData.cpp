@@ -50,13 +50,17 @@ TEST(ReplaceBulkData, generated)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
 
-  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
+  std::shared_ptr<stk::mesh::BulkData> bulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                              .set_initial_bucket_capacity(1)
+                                              .set_maximum_bucket_capacity(1).create();
 
   stk::io::fill_mesh("generated:1x1x2", *bulk);
 
   verify_num_elements(*bulk, 2);
 
-  std::shared_ptr<stk::mesh::BulkData> replacementBulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD).create();
+  std::shared_ptr<stk::mesh::BulkData> replacementBulk = stk::mesh::MeshBuilder(MPI_COMM_WORLD)
+                                                         .set_initial_bucket_capacity(1)
+                                                         .set_maximum_bucket_capacity(1).create();
 
   stk::io::fill_mesh("generated:1x1x1", *replacementBulk);
 

@@ -110,8 +110,8 @@ int main(int argc, char *argv[]) {
     int num_KL = 2;
     CLP.setOption("num_kl", &num_KL, "Number of KL terms");
 
-    int p = 3;
-    CLP.setOption("order", &p, "Polynomial order");
+    int polynomialOrder = 3;
+    CLP.setOption("order", &polynomialOrder, "Polynomial order");
 
     bool normalize_basis = true;
     CLP.setOption("normalize", "unnormalize", &normalize_basis,
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
                 << "\tmean            = " << mean << std::endl
                 << "\tstd_dev         = " << sigma << std::endl
                 << "\tnum_kl          = " << num_KL << std::endl
-                << "\torder           = " << p << std::endl
+                << "\torder           = " << polynomialOrder << std::endl
                 << "\tnormalize_basis = " << normalize_basis << std::endl
                 << "\tkrylov_method   = " << krylov_method_names[krylov_method]
                 << std::endl
@@ -171,20 +171,20 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<num_KL; i++) {
       RCP<Stokhos::OneDOrthogPolyBasis<int,double> > b;
       if (randField == UNIFORM) {
-        b = rcp(new Stokhos::LegendreBasis<int,double>(p, normalize_basis));
+        b = rcp(new Stokhos::LegendreBasis<int,double>(polynomialOrder, normalize_basis));
       }
       else if (randField == CC_UNIFORM) {
         b =
           rcp(new Stokhos::ClenshawCurtisLegendreBasis<int,double>(
-                p, normalize_basis, true));
+                polynomialOrder, normalize_basis, true));
       }
       else if (randField == RYS) {
         b = rcp(new Stokhos::RysBasis<int,double>(
-                  p, weightCut, normalize_basis));
+                  polynomialOrder, weightCut, normalize_basis));
       }
       else if (randField == LOGNORMAL) {
         b = rcp(new Stokhos::HermiteBasis<int,double>(
-                  p, normalize_basis));
+                  polynomialOrder, normalize_basis));
       }
       bases[i] = b;
     }
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
       else if (sg_growth == UNRESTRICTED)
         sparse_grid_growth = Pecos::UNRESTRICTED_GROWTH;
       quad = rcp(new Stokhos::SparseGridQuadrature<int,double>(
-                   basis,p,1e-12,sparse_grid_growth));
+                   basis,polynomialOrder,1e-12,sparse_grid_growth));
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error,
@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
     int *indices;
     int num_entries;
     for (int qp=0; qp<nqp; qp++) {
-      TEUCHOS_FUNC_TIME_MONITOR("Compute MP Matrix, RHS");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Compute MP Matrix, RHS", matrix_rhs);
 
       // Set parameters
       for (int i=0; i<num_KL; i++)
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
 #endif
     RCP<ML_Epetra::MultiLevelPreconditioner> M_mp;
     {
-      TEUCHOS_FUNC_TIME_MONITOR("Preconditioner Setup");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Preconditioner Setup", prec);
       M_mp = rcp(new ML_Epetra::MultiLevelPreconditioner(A_mp, precParams));
     }
 
@@ -336,7 +336,7 @@ int main(int argc, char *argv[]) {
 
     // Solve linear system
     {
-      TEUCHOS_FUNC_TIME_MONITOR("System Solve");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("System Solve", solve);
       aztec.Iterate(1000, tol);
     }
 
@@ -346,7 +346,7 @@ int main(int argc, char *argv[]) {
     Epetra_Vector g_mean(*(model.get_g_map(0)));
     Epetra_Vector g_var(*(model.get_g_map(0)));
     for (int qp=0; qp<nqp; qp++) {
-      TEUCHOS_FUNC_TIME_MONITOR("Compute Responses");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("Compute Responses", reponses);
 
       // Set parameters
       for (int i=0; i<num_KL; i++)

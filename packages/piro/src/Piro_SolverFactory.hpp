@@ -34,7 +34,6 @@ public:
    *  Currently, the following solver types are available (each accompanied by the corresponding token value):
    *  - Piro::NOXSolver (<tt>"NOX"</tt>)
    *  - Piro::LOCASolver (<tt>"LOCA"</tt>)
-   *  - Piro::VelocityVerletSolver (<tt>"Velocity Verlet"</tt>)
    *  - Piro::TrapezoidRuleSolver (<tt>"Trapezoid Rule"</tt>)
    *  - Piro::TempusSolver (<tt>"Tempus"</tt>)
    *

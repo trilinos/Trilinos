@@ -1075,6 +1075,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: lumping choice", std::string, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: count negative diagonals", bool, dropParams);
     }
 
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
@@ -2073,6 +2074,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: lumping choice", std::string, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, fParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: count negative diagonals", bool, fParams);
       filterFactory->SetParameterList(fParams);
       filterFactory->SetFactory("Graph", manager.GetFactory("Graph"));
       filterFactory->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
@@ -2216,6 +2218,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   ParameterList Pparams;
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "combine: numBlks", int, Pparams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "combine: useMaxLevels", bool, Pparams);
 
   P->SetParameterList(Pparams);
   manager.SetFactory("P", P);

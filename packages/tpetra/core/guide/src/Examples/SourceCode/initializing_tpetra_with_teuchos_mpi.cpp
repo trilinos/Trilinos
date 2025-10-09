@@ -10,10 +10,7 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Version.hpp>
 
-  int
-main (int argc, char *argv[])
-{
-
+int main(int argc, char *argv[]) {
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
   {
     // Get a communicator corresponding to MPI_COMM_WORLD
@@ -21,7 +18,7 @@ main (int argc, char *argv[])
 
     // Get my process' rank, and the total number of processes.
     // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.
-    const int myRank = comm->getRank();
+    const int myRank   = comm->getRank();
     const int numProcs = comm->getSize();
 
     if (myRank == 0) {
@@ -30,7 +27,8 @@ main (int argc, char *argv[])
 
     if (myRank == 0) {
       // On (MPI) Process 0, print out the Tpetra software version.
-      std::cout << Tpetra::version() << std::endl << std::endl;
+      std::cout << Tpetra::version() << std::endl
+                << std::endl;
     }
 
     // This tells the Trilinos test framework that the test passed.

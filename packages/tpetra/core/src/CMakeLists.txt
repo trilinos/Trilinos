@@ -129,6 +129,10 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   "BlockCrsMatrix_Helpers" "BLOCKCRSMATRIX_HELPERS" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${BLOCKCRSMATRIX_HELPER_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::Details::Random
+  TPETRA_PROCESS_ALL_N_TEMPLATES(RANDOM_OUTPUT_FILES "Tpetra_ETI_NT.tmpl" "Details_Random" "DETAILS_RANDOM" "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${RANDOM_OUTPUT_FILES})
+
   # Generate ETI .cpp files for Tpetra::Details::getDiagCopyWithoutOffsets.
   # Do so for the same set of Scalar types as CrsMatrix (see above),
   # because this function is an implementation detail of CrsMatrix.
@@ -313,6 +317,16 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     "${TpetraCore_ETI_NODES}")
   LIST(APPEND SOURCES ${UNPACKCRSGRAPHANDCOMBINE_OUTPUT_FILES})
 
+  # Tpetra::Details::FixedHashTable ETI Support
+  # This needs GO=int always.
+  SET (FixedHashTable_ETI_GORDS ${TpetraCore_ETI_GORDS})
+  IF (NOT Tpetra_INST_INT_INT)
+    LIST(APPEND FixedHashTable_ETI_GORDS "int")
+  ENDIF()
+
+  TPETRA_PROCESS_ALL_LGN_TEMPLATES(FIXEDHASHTABLE_OUTPUT_FILES "Tpetra_ETI_LO_GO_NT.tmpl" "Details_FixedHashTable" "DETAILS_FIXEDHASHTABLE" "${TpetraCore_ETI_LORDS}" "${FixedHashTable_ETI_GORDS}" "${TpetraCore_ETI_NODES}")
+  LIST(APPEND SOURCES ${FIXEDHASHTABLE_OUTPUT_FILES})
+
   #MESSAGE(STATUS "SOURCES = ${SOURCES}")
 ENDIF()
 
@@ -338,4 +352,4 @@ SET_PROPERTY(
 # / from this directory, or to / from the 'impl' subdirectory.  That ensures
 # that running "make" will also rerun CMake in order to regenerate Makefiles.
 #
-# Here's another change.  Again.
+# Her eis another change.

@@ -789,7 +789,6 @@ namespace percept {
 
         const MyPairIterRelation face_nodes(*m_eMesh.get_bulk_data(), face, stk::topology::NODE_RANK );
 
-        typedef std::set<stk::mesh::Entity> EntitySet;
         EntitySet neighbors, shell_neighbors;
         m_eMesh.get_node_neighbors(face, neighbors, sel, m_eMesh.side_rank());
         m_eMesh.get_node_neighbors(face, shell_neighbors, sel, m_eMesh.element_rank());
@@ -1675,7 +1674,6 @@ namespace percept {
 
         const MyPairIterRelation face_nodes(*m_eMesh.get_bulk_data(), face, stk::topology::NODE_RANK );
         bool isTri = (face_nodes.size() == 3);
-        typedef std::set<stk::mesh::Entity> EntitySet;
         EntitySet neighbors, shell_neighbors;
         std::vector<int> edge_visited(face_nodes.size(), 0);
         std::vector<int> edge_is_seam(face_nodes.size(), 0);
