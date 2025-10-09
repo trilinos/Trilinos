@@ -1224,13 +1224,12 @@ Map<LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool Map<LocalOrdinal,GlobalOrdinal,Node>::getGlobalElements(
-  const local_ordinal_type localIndices[], size_t numEntries, global_ordinal_type globalIndices[]
-) const {
+bool Map<LocalOrdinal, GlobalOrdinal, Node>::getGlobalElements(
+    const local_ordinal_type localIndices[], size_t numEntries, global_ordinal_type globalIndices[]) const {
   auto const minGI = getMinGlobalIndex();
   auto const minLI = getMinLocalIndex();
   auto const maxLI = getMaxLocalIndex();
-  if (isContiguous ()) {
+  if (isContiguous()) {
     for (size_t i = 0; i < numEntries; i++) {
       auto lclInd = localIndices[i];
       if (lclInd < minLI || lclInd > maxLI) {
@@ -1238,8 +1237,7 @@ bool Map<LocalOrdinal,GlobalOrdinal,Node>::getGlobalElements(
       }
       globalIndices[i] = minGI + lclInd;
     }
-  }
-  else {
+  } else {
     // This is a host Kokkos::View access, with no RCP or ArrayRCP
     // involvement.  As a result, it is thread safe.
     //
