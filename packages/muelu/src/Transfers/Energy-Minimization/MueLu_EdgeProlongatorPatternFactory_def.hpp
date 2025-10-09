@@ -12,6 +12,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
+//#include <Xpetra_IO.hpp>
 
 #include "MueLu_EdgeProlongatorPatternFactory_decl.hpp"
 
@@ -62,9 +63,49 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
   absDc->setAllToScalar(one);
 
   RCP<Matrix> temp1 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*absD, false, *absPn, false, GetOStream(Statistics2), true, true);
+  temp1->setAllToScalar(one);
   RCP<Matrix> temp2 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*temp1, false, *absDc, true, GetOStream(Statistics2), true, true);
 
-  Set(coarseLevel, "Ppattern", temp2->getCrsGraph());
+  RCP<Matrix> filtered;
+  filtered = MatrixFactory::Build(temp2->getRowMap(), temp2->getColMap(), temp2->getLocalMaxNumRowEntries());
+  ArrayView<const LO> inds2;
+  ArrayView<const SC> vals2;
+  Array<LO> inds;
+  Array<SC> vals;
+
+  size_t numRows  = temp2->getRowMap()->getLocalNumElements();
+
+  for (LO row = 0; row < (LO) numRows; row++) {
+     temp2->getLocalRowView(row, inds2, vals2);
+      size_t nnz = inds2.size();
+      if (nnz == 0)
+        continue;
+
+      inds.resize(inds2.size());
+      vals.resize(vals2.size());
+
+      size_t numInds = 0;
+      for (size_t j = 0; j < nnz; j++) {
+        if (vals2[j] == 2.0) {
+          inds[numInds] = inds2[j];
+          vals[numInds] = vals2[j];
+          numInds++;
+        }
+      }
+      if (numInds == 0) continue;
+      inds.resize(numInds);
+      vals.resize(numInds);
+
+      // Because we used a column map in the construction of the matrix
+      // we can just use insertLocalValues here instead of insertGlobalValues
+      filtered->insertLocalValues(row, inds, vals);
+  }
+  RCP<ParameterList> fillCompleteParams(new ParameterList);
+  fillCompleteParams->set("No Nonlocal Changes", true);
+  filtered->fillComplete(temp2->getDomainMap(), temp2->getRangeMap(), fillCompleteParams);
+//  Xpetra::IO<SC, LO, GO, NO>::Write("pattern.code", *filtered);
+
+  Set(coarseLevel, "Ppattern", filtered->getCrsGraph());
 }
 
 }  // namespace MueLu

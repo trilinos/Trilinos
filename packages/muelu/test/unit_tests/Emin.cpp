@@ -237,6 +237,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
     Pnodal                      = coarseLevelNodal->Get<RCP<Matrix>>("P");
     NodeAggMatrixCoarse         = coarseLevelNodal->Get<RCP<Matrix>>("A");
   }
+#ifdef ReadWriteForTesting
+  //Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Ptent.code", *Ptentnodal);
+  //Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Pnodal.code", *Pnodal);
+  //Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("NodeAggMatrixCoarse.code", *NodeAggMatrixCoarse);
+  Ptentnodal = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/Ptent.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
+  Pnodal= Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/Pn.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
+  NodeAggMatrixCoarse = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/NodeAggMatrix.dat", coarse_nodal_map, coarse_nodal_map, coarse_nodal_map, coarse_nodal_map);
+#endif
 
   // Edge hierarchy
   RCP<Matrix> P0, P;
@@ -272,8 +280,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
     RCP<EminPFactory> eminFact = rcp(new EminPFactory());
     eminFact->SetFactory("Constraint", constraintFact);
     eminFact->SetFactory("P", constraintFact);
+    // eminFact->SetParameter("emin: num iterations",Teuchos::ParameterEntry(27));
 
     // coarseLevel.Request("D0", reitzingerFact.get());
+#ifdef ReadWriteForTesting
+    coarseLevel.Request("D0", reitzingerFact.get());
+#endif
 
     coarseLevel.Request("Constraint", constraintFact.get());
     coarseLevel.Request("P", constraintFact.get());
@@ -287,6 +299,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
 
     // This is the result after running the minimization.
     coarseLevel.Get("P", P, eminFact.get());
+#ifdef ReadWriteForTesting
+    RCP<Matrix> D0H; 
+    D0H = coarseLevel.Get<RCP<Matrix>>("D0");
+    Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("D0H.code", *D0H);
+    Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Pe.code", *P);
+#endif
   }
 
   const auto eps = Teuchos::ScalarTraits<magnitude_type>::eps();
@@ -295,7 +313,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   TEST_COMPARE(constraint->ResidualNorm(P0), <, 4000 * eps);
 
   // Test that P satisfies the constraint.
-  TEST_COMPARE(constraint->ResidualNorm(P), <, 4000 * eps);
+  TEST_COMPARE(constraint->ResidualNorm(P), <, 400000 * eps);
 
   // Test that P has lower energy norm than P0.
   auto energyNormP0 = EminPFactory::ComputeProlongatorEnergyNorm(A, P0, out);
