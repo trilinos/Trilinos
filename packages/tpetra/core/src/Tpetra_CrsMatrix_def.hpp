@@ -5493,7 +5493,6 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       verbose ? prefix.get()->c_str() : nullptr;
 
   const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed();
-  const bool targetIsLocallyIndexed = this->isLocallyIndexed();
   //
   // Copy the first numSame row from source to target (this matrix).
   // This involves copying rows corresponding to LIDs [0, numSame-1].
@@ -8957,7 +8956,6 @@ void copyAndPermuteStaticGraphNew(
 
   const LocalOrdinal LINV = Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
 
-  const char tfecfFuncName[] = "copyAndPermuteStaticGraphNew";
   ProfilingRegion regionCAP("Tpetra::CrsMatrix::copyAndPermuteStaticGraphNew");
 
   const crs_matrix_type *srcMatCrsPtr = dynamic_cast<const crs_matrix_type *>(&srcMat);
@@ -9042,7 +9040,7 @@ void copyAndPermuteStaticGraphNew(
         local_inds_device_value_t tend = tgtLocalRowPtrsDevice(sourceLID + 1);
         local_inds_device_value_t numInTgtRow = (tend - tstart);
 
-        KOKKOS_ASSERT(tstart < tvals.extent(0));
+        KOKKOS_ASSERT(static_cast<size_t>(tstart) < tvals.extent(0));
         impl_scalar_type *tgtRowVals = reinterpret_cast<impl_scalar_type *>(&tvals(tstart));
         const local_inds_device_value_t *tgtColInds = &tgtLocalColIndsDevice(tstart);
 
