@@ -20,7 +20,9 @@
 // in Zoltan2.
 //--------------------------------------------------------------------
 
-#include <Tpetra_Rebalance_LinearProblem_def.hpp>
+#include <Tpetra_Core.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <TrilinosCouplings_Rebalance_LinearProblem.hpp>
 
 bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   int numProcs( comm->getSize() );
@@ -117,7 +119,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   paramListForZoltan2PartitioningProblem->set("partitioning_approach", "partition");
   paramListForZoltan2PartitioningProblem->set("algorithm", partitioningMethod);
 
-  Tpetra::Rebalance_LinearProblem<Scalar_t, LocalId_t, GlobalId_t, Node_t> rebalanceTransform( paramListForZoltan2PartitioningProblem );
+  TrilinosCouplings::Rebalance_LinearProblem<Scalar_t, LocalId_t, GlobalId_t, Node_t> rebalanceTransform( paramListForZoltan2PartitioningProblem );
 
   // ****************************************************************
   // Step 4/10: rebalance the original linear problem (its matrix and vectors)
@@ -202,7 +204,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
     std::cout.flush();
   }
   comm->barrier();
-  
+
   // ****************************************************************
   // Step 6/10: compare matrix norms (before and after redistribution)
   // ****************************************************************
@@ -212,7 +214,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
     Scalar_t rebalancedFrobNorm( rebalancedMatrix->getFrobeniusNorm() );
 
     Scalar_t relativeDiff = (rebalancedFrobNorm - originalFrobNorm) / originalFrobNorm;
-  
+
     if (localProc == 0) {
       std::cout << "||originalMat||_frob = " << originalFrobNorm
                 << ", ||rebalancedMat||_2 = " << rebalancedFrobNorm
@@ -249,7 +251,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
       Scalar_t rebalancedNorm2 = rebalancedLhsNorms2_array[v];
 
       Scalar_t relativeDiff = (rebalancedNorm2 - originalNorm2) / originalNorm2;
-  
+
       if (localProc == 0) {
         std::cout << "||originalLhs[" << v << "]||_2 = " << originalNorm2
                   << ", ||rebalancedLhs[" << v << "]||_2 = " << rebalancedNorm2
@@ -287,7 +289,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
       Scalar_t rebalancedNorm2 = rebalancedRhsNorms2_array[v];
 
       Scalar_t relativeDiff = (rebalancedNorm2 - originalNorm2) / originalNorm2;
-  
+
       if (localProc == 0) {
         std::cout << "||originalRhs[" << v << "]||_2 = " << originalNorm2
                   << ", ||rebalancedRhs[" << v << "]||_2 = " << rebalancedNorm2
@@ -331,7 +333,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
       Scalar_t rebalancedNorm2 = rebalancedMatLhsNorms2_array[v];
 
       Scalar_t relativeDiff = (rebalancedNorm2 - originalNorm2) / originalNorm2;
-  
+
       if (localProc == 0) {
         std::cout << "||originalMatLhs[" << v << "]||_2 = " << originalNorm2
                   << ", ||rebalancedMatLhs[" << v << "]||_2 = " << rebalancedNorm2
@@ -409,9 +411,9 @@ int main(int argc, char** argv) {
     else {
       std::cout << "End Result: TEST FAILED!" << std::endl;
     }
-    
+
   }
-  
+
   return 0;
 }
 

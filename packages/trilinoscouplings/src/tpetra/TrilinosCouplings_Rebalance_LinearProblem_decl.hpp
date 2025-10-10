@@ -1,22 +1,22 @@
 // @HEADER
 // *****************************************************************************
-//          Tpetra: Templated Linear Algebra Services Package
+//           Trilinos: An Object-Oriented Solver Framework
 //
-// Copyright 2008 NTESS and the Tpetra contributors.
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
 
-#ifndef TPETRA_REBALANCE_LINEARPROBLEM_DECL_HPP
-#define TPETRA_REBALANCE_LINEARPROBLEM_DECL_HPP
+#ifndef TRILINOSCOUPLINGS_REBALANCE_LINEARPROBLEM_DECL_HPP
+#define TRILINOSCOUPLINGS_REBALANCE_LINEARPROBLEM_DECL_HPP
 
-/// \file Tpetra_Rebalance_LinearProblem_decl.hpp
-/// \brief Declaration of the Tpetra::Rebalance_LinearProblem class
+/// \file TrilinosCouplings_Rebalance_LinearProblem_decl.hpp
+/// \brief Declaration of the TrilinosCouplings::Rebalance_LinearProblem class
 
 #include <Tpetra_Transform.hpp>
 #include <Tpetra_LinearProblem.hpp>
 
-namespace Tpetra {
+namespace TrilinosCouplings {
 
 ///
 /** Given and input Tpetra LinearProblem, a "rebalanced" version will be returned.
@@ -26,11 +26,11 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-class Rebalance_LinearProblem : public ViewTransform< LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+class Rebalance_LinearProblem : public Tpetra::ViewTransform< Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 {
 public:
-using NewType      = typename ViewTransform< LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::NewType;
-using OriginalType = typename ViewTransform< LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalType;
+using NewType      = typename Tpetra::ViewTransform< Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::NewType;
+using OriginalType = typename Tpetra::ViewTransform< Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalType;
 
   ///
   /** Constructor
@@ -51,6 +51,6 @@ private:
   Teuchos::RCP< Teuchos::ParameterList > paramListForZoltan2PartitioningProblem_;
 };
 
-} // namespace Tpetra
+} // namespace TrilinosCouplings
 
-#endif // TPETRA_REBALANCE_LINEARPROBLEM_DECL_HPP
+#endif // TRILINOSCOUPLINGS_REBALANCE_LINEARPROBLEM_DECL_HPP
