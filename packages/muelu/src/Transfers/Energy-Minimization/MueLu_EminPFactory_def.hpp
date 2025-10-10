@@ -90,8 +90,13 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level
   // NOTE: This is a very unique situation, please try not to propagate the
   // mode check any further
 
+// #define externalSuppliedP0
   if (coarseLevel.GetRequestMode() == Level::REQUEST) {
+#ifdef externalSuppliedP0
+    isAvailableP0          = coarseLevel.IsAvailable("P0"      );
+#else
     isAvailableP0          = coarseLevel.IsAvailable("P0", this);
+#endif
     isAvailableConstraint0 = coarseLevel.IsAvailable("Constraint0", this);
   }
 
@@ -125,9 +130,17 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
   // Get/make initial guess
   RCP<Matrix> P0;
   int numIts;
+#ifdef externalSuppliedP0
+  if (coarseLevel.IsAvailable("P0")) {
+#else
   if (coarseLevel.IsAvailable("P0", this)) {
+#endif
     // Reuse data
+#ifdef externalSuppliedP0
+    P0     = coarseLevel.Get<RCP<Matrix>>("P0");
+#else
     P0     = coarseLevel.Get<RCP<Matrix>>("P0", this);
+#endif
     numIts = pL.get<int>("emin: num reuse iterations");
     GetOStream(Runtime0) << "Reusing P0" << std::endl;
 

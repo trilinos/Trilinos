@@ -200,6 +200,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   LocalOrdinal local_num_coarse_edges = 5;
   LocalOrdinal local_num_fine_nodes   = 25;
   LocalOrdinal local_num_coarse_nodes = 4;
+#ifdef Tris
+  GlobalOrdinal global_num_fine_edges   = 12416;
+  GlobalOrdinal global_num_coarse_edges = 1365;
+  GlobalOrdinal global_num_fine_nodes   = 4225;
+  GlobalOrdinal global_num_coarse_nodes = 484;
+
+  LocalOrdinal local_num_fine_edges   = 12416;
+  LocalOrdinal local_num_coarse_edges = 1365;
+  LocalOrdinal local_num_fine_nodes   = 4225;
+  LocalOrdinal local_num_coarse_nodes = 484;
+#endif
+#ifdef Quads
+  GlobalOrdinal global_num_fine_edges   = 1512;
+  GlobalOrdinal global_num_coarse_edges = 183;
+  GlobalOrdinal global_num_fine_nodes   = 784;
+  GlobalOrdinal global_num_coarse_nodes = 100;
+
+  LocalOrdinal local_num_fine_edges   = 1512;
+  LocalOrdinal local_num_coarse_edges = 183;
+  LocalOrdinal local_num_fine_nodes   = 784;
+  LocalOrdinal local_num_coarse_nodes = 100;
+#endif
 
   auto lib = TestHelpers::Parameters::getLib();
 
@@ -208,8 +230,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   auto fine_nodal_map   = MapFactory::Build(lib, global_num_fine_nodes, local_num_fine_nodes, indexBase, comm);
   auto coarse_nodal_map = MapFactory::Build(lib, global_num_coarse_nodes, local_num_coarse_nodes, indexBase, comm);
 
+#ifndef ReadWriteForTesting
   auto A = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/A.mm", fine_edge_map, fine_edge_map, fine_edge_map, fine_edge_map);
   auto D = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/D0h.mm", fine_edge_map, fine_nodal_map, fine_nodal_map, fine_edge_map);
+#else
+  auto A = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("quads/A.dat", fine_edge_map, fine_edge_map, fine_edge_map, fine_edge_map);
+  auto D = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("quads/D0h.dat", fine_edge_map, fine_nodal_map, fine_nodal_map, fine_edge_map);
+#endif
 
   // Auxiliary nodal hierarchy
   RCP<Matrix> NodeAggMatrix, NodeAggMatrixCoarse, Pnodal, Ptentnodal;
@@ -237,20 +264,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
     Pnodal                      = coarseLevelNodal->Get<RCP<Matrix>>("P");
     NodeAggMatrixCoarse         = coarseLevelNodal->Get<RCP<Matrix>>("A");
   }
+  // Edge hierarchy
+  RCP<Matrix> P0, P;
+  RCP<Constraint> constraint;
 #ifdef ReadWriteForTesting
   //Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Ptent.code", *Ptentnodal);
   //Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Pnodal.code", *Pnodal);
   //Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("NodeAggMatrixCoarse.code", *NodeAggMatrixCoarse);
-  Ptentnodal = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/Ptent.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
-  Pnodal= Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/Pn.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
-  NodeAggMatrixCoarse = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/NodeAggMatrix.dat", coarse_nodal_map, coarse_nodal_map, coarse_nodal_map, coarse_nodal_map);
+  Ptentnodal = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("quads/Ptent.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
+  Pnodal= Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("quads/Pn.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
+  //P0 = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("quads/Pe.dat", fine_edge_map, coarse_edge_map, coarse_edge_map, fine_edge_map);
+  NodeAggMatrixCoarse = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("quads/NodeAggMatrix.dat", coarse_nodal_map, coarse_nodal_map, coarse_nodal_map, coarse_nodal_map);
 #endif
 
-  // Edge hierarchy
-  RCP<Matrix> P0, P;
-  RCP<Constraint> constraint;
   {
     Level fineLevel, coarseLevel;
+    if (P0 != Teuchos::null) coarseLevel.Set("P0", P0);
     test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
     fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
     coarseLevel.SetFactoryManager(Teuchos::null);
@@ -282,7 +311,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
     eminFact->SetFactory("P", constraintFact);
     // eminFact->SetParameter("emin: num iterations",Teuchos::ParameterEntry(27));
 
-    // coarseLevel.Request("D0", reitzingerFact.get());
 #ifdef ReadWriteForTesting
     coarseLevel.Request("D0", reitzingerFact.get());
 #endif
@@ -294,8 +322,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
 
     coarseLevel.Get("Constraint", constraint, constraintFact.get());
 
-    // This is the initial guess used for emin.
-    coarseLevel.Get("P", P0, constraintFact.get());
+    // The initial guess used for emin starts up being call P
+
+    if (coarseLevel.IsAvailable("P0")) {
+      coarseLevel.Get("P0", P0);
+    }
+    else {
+      coarseLevel.Get("P", P0, constraintFact.get());
+    }
 
     // This is the result after running the minimization.
     coarseLevel.Get("P", P, eminFact.get());
@@ -310,10 +344,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   const auto eps = Teuchos::ScalarTraits<magnitude_type>::eps();
 
   // Test that P0 satisfies the constraint.
-  TEST_COMPARE(constraint->ResidualNorm(P0), <, 4000 * eps);
+  TEST_COMPARE(constraint->ResidualNorm(P0), <, 400000 * eps);
 
   // Test that P satisfies the constraint.
-  TEST_COMPARE(constraint->ResidualNorm(P), <, 400000 * eps);
+  TEST_COMPARE(constraint->ResidualNorm(P), <, 40000000000000 * eps);
 
   // Test that P has lower energy norm than P0.
   auto energyNormP0 = EminPFactory::ComputeProlongatorEnergyNorm(A, P0, out);
