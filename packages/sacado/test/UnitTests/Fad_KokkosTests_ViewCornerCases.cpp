@@ -34,6 +34,23 @@ TEUCHOS_UNIT_TEST(Kokkos_View_CornerCases, ViewOfUnmanagedView)
   TEUCHOS_TEST_EQUALITY(data.use_count(), 0, out, success);
 }
 
+TEUCHOS_UNIT_TEST(Kokkos_View_CornerCases, SubviewOfUnmanagedView)
+{
+  using fad_t = Sacado::Fad::SFad<double, 3>;
+  using view_um_t = Kokkos::View<fad_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+
+  Kokkos::View<fad_t*, Kokkos::HostSpace> data("data", 9, 4);
+  TEUCHOS_TEST_EQUALITY(data.use_count(), 1, out, success);
+
+  view_um_t um_data = data;
+  TEUCHOS_TEST_EQUALITY(data.use_count(), 1, out, success);
+  TEUCHOS_TEST_EQUALITY(data.data(), um_data.data(), out, success);
+  TEUCHOS_TEST_EQUALITY(um_data.extent_int(0), 9, out, success);
+
+  view_um_t sub = Kokkos::subview(um_data, Kokkos::pair(1,8));
+  TEUCHOS_TEST_EQUALITY(sub.extent_int(0), 7, out, success);
+}
+
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 

@@ -357,9 +357,8 @@ void MueLu::HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::WriteDa
         agg = L->template Get<RCP<Aggregates>>("Aggregates");
       }
       if (!agg.is_null()) {
-        std::ofstream ofs(fileName);
-        Teuchos::FancyOStream fofs(rcp(&ofs, false));
-        agg->print(fofs, Teuchos::VERB_EXTREME);
+        auto Vertex2AggId = agg->GetVertex2AggId();
+        Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::WriteLOMV(fileName, *Vertex2AggId);
       }
     }
   }

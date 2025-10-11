@@ -255,6 +255,14 @@ class Hierarchy : public BaseClass {
   */
   void Write(const LO& start = -1, const LO& end = -1, const std::string& suffix = "");
 
+  void SetLabel(const std::string& hierarchyLabel) {
+    hierarchyLabel_ = hierarchyLabel;
+  }
+
+  std::string GetLabel() const {
+    return hierarchyLabel_;
+  }
+
   //@}
 
   //! @name Permanent storage
@@ -387,6 +395,9 @@ class Hierarchy : public BaseClass {
 
   //! Epetra/Tpetra mode
   Xpetra::UnderlyingLib lib_;
+
+  //! Optional name for this hierarchy
+  std::string hierarchyLabel_;
 
   //! cache description to avoid recreating in each call to description() - use ResetDescription() to force recreation in Setup, SetupRe, etc.
   mutable std::string description_ = "";  // mutable so that we can lazily initialize in description(), which is declared const

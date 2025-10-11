@@ -1,4 +1,5 @@
-#include <Akri_AdaptiveElementContour.hpp>
+#include <Akri_AdaptiveContourTet.hpp>
+#include <Akri_AdaptiveContourTri.hpp>
 #include <Akri_BoundingBox.hpp>
 #include <Akri_Composite_Surface.hpp>
 #include <Akri_ContourElement.hpp>
@@ -390,6 +391,50 @@ bool has_any_chance_of_cut_edge(const std::array<stk::math::Vector3d,NVERT> & co
   return false;
 }
 
+static void adaptively_append_facets_for_tri_mesh_element_using_semilagrangian_distance(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    const FieldRef isoField,
+    const stk::mesh::Entity elem,
+    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> & departure_point_at_point,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_departure_point,
+    const double lengthScale,
+    const int minDepth,
+    const int maxDepth,
+    FacetedSurfaceBase & facets)
+{
+  const StkMeshEntities elemNodes{mesh.begin_nodes(elem), mesh.end_nodes(elem)};
+  const std::array<stk::math::Vector3d,3> nodeCoords = get_triangle_vector(mesh, coordsField, elemNodes, 2);
+  const std::array<double,3> nodeDist = get_triangle_scalar(mesh, isoField, elemNodes);
+
+  if (has_any_chance_of_cut_edge(nodeCoords, nodeDist))
+  {
+    const std::array<stk::math::Vector3d,3> nodalDepartureCoords = {departure_point_at_point(nodeCoords[0]), departure_point_at_point(nodeCoords[1]), departure_point_at_point(nodeCoords[2])};
+    adaptively_append_facets_for_tri_using_semilagrangian_distance(nodeCoords, nodalDepartureCoords, nodeDist, distance_at_departure_point, lengthScale, facets, 0, minDepth, maxDepth);
+  }
+}
+
+static void adaptively_append_facets_for_tet_mesh_element_using_semilagrangian_distance(const stk::mesh::BulkData & mesh,
+    const FieldRef coordsField,
+    const FieldRef isoField,
+    const stk::mesh::Entity elem,
+    const std::function<stk::math::Vector3d(const stk::math::Vector3d & pt)> & departure_point_at_point,
+    const std::function<double(const stk::math::Vector3d & pt)> & distance_at_departure_point,
+    const double lengthScale,
+    const int minDepth,
+    const int maxDepth,
+    FacetedSurfaceBase & facets)
+{
+  const StkMeshEntities elemNodes{mesh.begin_nodes(elem), mesh.end_nodes(elem)};
+  const std::array<stk::math::Vector3d,4> nodeCoords = get_tetrahedron_vector(mesh, coordsField, elemNodes);
+  const std::array<double,4> nodeDist = get_tetrahedron_scalar(mesh, isoField, elemNodes);
+
+  if (has_any_chance_of_cut_edge(nodeCoords, nodeDist))
+  {
+    const std::array<stk::math::Vector3d,4> nodalDepartureCoords = {departure_point_at_point(nodeCoords[0]), departure_point_at_point(nodeCoords[1]), departure_point_at_point(nodeCoords[2]), departure_point_at_point(nodeCoords[3])};
+    adaptively_append_facets_for_tet_using_semilagrangian_distance(nodeCoords, nodalDepartureCoords, nodeDist, distance_at_departure_point, lengthScale, facets, 0, minDepth, maxDepth);
+  }
+}
+
 static void adaptively_append_facets_for_mesh_element_using_semilagrangian_distance(const int dim,
     const stk::mesh::BulkData & mesh,
     const FieldRef coordsField,
@@ -402,15 +447,13 @@ static void adaptively_append_facets_for_mesh_element_using_semilagrangian_dista
     const int maxDepth,
     FacetedSurfaceBase & facets)
 {
-  STK_ThrowRequire(dim == 2);
-  const StkMeshEntities elemNodes{mesh.begin_nodes(elem), mesh.end_nodes(elem)};
-  const std::array<stk::math::Vector3d,3> nodeCoords = get_triangle_vector(mesh, coordsField, elemNodes, 2);
-  const std::array<double,3> nodeDist = get_triangle_scalar(mesh, isoField, elemNodes);
-
-  if (has_any_chance_of_cut_edge(nodeCoords, nodeDist))
+  if (2 == dim)
   {
-    const std::array<stk::math::Vector3d,3> nodalDepartureCoords = {departure_point_at_point(nodeCoords[0]), departure_point_at_point(nodeCoords[1]), departure_point_at_point(nodeCoords[2])};
-    adaptively_append_facets_for_tri_using_semilagrangian_distance(nodeCoords, nodalDepartureCoords, nodeDist, distance_at_departure_point, lengthScale, facets, 0, minDepth, maxDepth);
+    adaptively_append_facets_for_tri_mesh_element_using_semilagrangian_distance(mesh, coordsField, isoField, elem, departure_point_at_point, distance_at_departure_point, lengthScale, minDepth, maxDepth, facets);
+  }
+  else
+  {
+    adaptively_append_facets_for_tet_mesh_element_using_semilagrangian_distance(mesh, coordsField, isoField, elem, departure_point_at_point, distance_at_departure_point, lengthScale, minDepth, maxDepth, facets);
   }
 }
 
@@ -429,7 +472,7 @@ static void build_adaptive_facets_using_semilagrangian_distance(const int dim,
   facets.clear();
   for ( auto * bucketPtr : mesh.get_buckets(stk::topology::ELEMENT_RANK, activeFieldSelector) )
   {
-    STK_ThrowRequireMsg(bucketPtr->topology() == stk::topology::TRIANGLE_3_2D, "Only Tri3d elements currently supported.");
+    STK_ThrowRequireMsg(bucketPtr->topology() == stk::topology::TRIANGLE_3_2D || bucketPtr->topology() == stk::topology::TETRAHEDRON_4, "Only Tri3 and Tet4 elements currently supported.");
     for (auto elem : *bucketPtr)
       adaptively_append_facets_for_mesh_element_using_semilagrangian_distance(dim, mesh, coordsField, distField, elem, departure_point_at_point, distance_at_departure_point, avgEdgeLength, minDepth, maxDepth, facets);
   }
@@ -444,10 +487,10 @@ void build_initial_adaptive_facets_after_nodal_distance_is_initialized_from_init
     const Composite_Surface & initSurfaces,
     FacetedSurfaceBase & facets)
 {
-  const int minDepth = 5;
-  const int maxDepth = 5;
-
   const int dim = mesh.mesh_meta_data().spatial_dimension();
+
+  const int minDepth = (2 == dim) ? 5 : 4;
+  const int maxDepth = 5;
 
   const auto departure_point_at_point = build_departure_point_as_point();
   const auto initial_distance_at_point = build_initial_distance_at_point(initSurfaces, time);

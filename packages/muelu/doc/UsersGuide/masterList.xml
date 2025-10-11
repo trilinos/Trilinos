@@ -398,7 +398,7 @@
       <name>aggregation: mode</name>
       <type>string</type>
       <default>"uncoupled"</default>
-      <description>Controls whether aggregates are allowed to cross processor boundaries. Possible values: "coupled" aggregates can cross processor boundaries, "uncoupled" aggregates cannot cross processor boundaries.</description>
+      <description>Controls whether aggregates are allowed to cross processor boundaries. Possible values: "uncoupled" aggregates cannot cross processor boundaries.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
