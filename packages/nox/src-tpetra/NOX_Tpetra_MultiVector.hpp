@@ -266,7 +266,7 @@ private:
     mutable std::vector<std::optional<nox_tpetra_vector_type>> noxTpetraVecs;
 
     //! Shared pointer holding the @ref ::Tpetra::Vector used for weighting inner products and norms.
-    Teuchos::RCP<const vector_type> weightVec = Teuchos::null;
+    Teuchos::RCP<const vector_type> weightVec;
 
     /**
      * @brief Flag that controls whether the @ref ::Tpetra::Vector for weighting
