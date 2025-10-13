@@ -12,7 +12,10 @@
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+
+#include "NOX_Tpetra_MultiVector.hpp"
 
 namespace NOX::Tpetra
 {
@@ -114,15 +117,15 @@ random(bool useSeed, int seed)
     if (!tpetraVec->isDistributed())
     {
         if (tpetraVec->getMap()->getComm()->getRank() == 0) {
-            tpetraVec->randomize(-Teuchos::ScalarTraits<Scalar>::one(), Teuchos::ScalarTraits<Scalar>::one());
+            tpetraVec->randomize(-Kokkos::ArithTraits<Scalar>::one(), Kokkos::ArithTraits<Scalar>::one());
         }
         else {
-            tpetraVec->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+            tpetraVec->putScalar(Kokkos::ArithTraits<Scalar>::zero());
         }
         tpetraVec->reduce();
     }
     else {
-        tpetraVec->randomize(-Teuchos::ScalarTraits<Scalar>::one(), Teuchos::ScalarTraits<Scalar>::one());
+        tpetraVec->randomize(-Kokkos::ArithTraits<Scalar>::one(), Kokkos::ArithTraits<Scalar>::one());
     }
     return *this;
 }
@@ -200,13 +203,44 @@ clone(CopyType type) const {
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<Abstract::MultiVector> Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 createMultiVector(const Abstract::Vector *const *vecs, int numVecs, CopyType type) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet.");
+    auto newTpetraMultiVec = Teuchos::make_rcp<multivector_type>(tpetraVec->getMap(), numVecs + 1);
+
+    if (type == NOX::DeepCopy)
+    {
+        newTpetraMultiVec->getVectorNonConst(0)->assign(*tpetraVec);
+
+        for (int i = 0; i < numVecs; ++i)
+        {
+            const Vector& tpetraVec_ = dynamic_cast<const Vector&>(*vecs[i]);
+            newTpetraMultiVec->getVectorNonConst(i + 1)->assign(*tpetraVec_.getTpetraVector());
+        }
+    }
+
+    return Teuchos::make_rcp<NOX::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(newTpetraMultiVec);
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<Abstract::MultiVector> Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 createMultiVector(int numVecs, CopyType type) const {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet.");
+    auto newTpetraMultiVec = Teuchos::make_rcp<multivector_type>(tpetraVec->getMap(), numVecs);
+
+    if (type == NOX::DeepCopy)
+    {
+        for (int i = 0; i < numVecs; ++i)
+        {
+            newTpetraMultiVec->getVectorNonConst(i)->assign(*tpetraVec);
+        }
+    }
+
+    auto newMultiVec = Teuchos::make_rcp<NOX::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(newTpetraMultiVec);
+
+    if (!weightVec.is_null())
+    {
+        newMultiVec->setWeightVector(weightVec);
+        newMultiVec->setImplicitWeighting(do_implicit_weighting);
+    }
+
+    return std::move(newMultiVec);
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
