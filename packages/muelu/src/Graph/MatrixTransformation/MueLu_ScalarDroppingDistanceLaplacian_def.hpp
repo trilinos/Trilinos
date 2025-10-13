@@ -35,6 +35,7 @@ void ScalarDroppingDistanceLaplacian<Scalar, LocalOrdinal, GlobalOrdinal, Node, 
   } else if (distanceLaplacianMetric == "material") {
     auto material = level.template Get<Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>>("Material", factory.GetFactory("Material").get());
 
+    // TODO: might want to comment this out ...
     if (factory.IsPrint(Runtime0)) {
       auto spatialDim = coords->getNumVectors();
       if (material->getNumVectors() == 1) {
