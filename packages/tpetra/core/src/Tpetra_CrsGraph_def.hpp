@@ -7311,7 +7311,7 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::copyAndPermuteNew(
 
   crs_graph_type* tgtCrsGraphPtr = dynamic_cast<crs_graph_type*>(&tgtRowGraph);
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      !srcCrsGraphPtr, std::runtime_error, "error tgtGraph type= " << typeid(tgtRowGraph).name());
+      !tgtCrsGraphPtr, std::runtime_error, "error tgtGraph type= " << typeid(tgtRowGraph).name());
 
   crs_graph_type& tgtCrsGraph = *tgtCrsGraphPtr;
   auto padding                = tgtCrsGraph.computeCrsPadding(
