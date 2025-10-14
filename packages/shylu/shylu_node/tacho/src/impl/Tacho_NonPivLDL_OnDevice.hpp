@@ -74,8 +74,6 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
     using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
     using policy_type = Kokkos::RangePolicy<exec_space>;
 
-    const auto &exec_instance = member;
-
     const value_type  one ( 1.0);
     const value_type mone (-1.0);
     const ordinal_type m  = A.extent(0);
@@ -109,6 +107,8 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
         // A22 = -A12*T
         auto A22 = Kokkos::subview(A, range_type(i2, m), range_type(i2, m));
 #if 0
+        const auto &exec_instance = member;
+
         ordinal_type nb2 = m2;
         const ordinal_type num_blks = (m2+nb2-1)/nb2;
         using team_policy_type = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space>;
