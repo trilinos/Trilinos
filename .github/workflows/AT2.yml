@@ -661,7 +661,7 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-          export GENCONFIG_BUILD_NAME=rhel8_oneapi-intelmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
+          export GENCONFIG_BUILD_NAME=rhel_oneapi-intelmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
