@@ -19,6 +19,7 @@
 #include "Tacho_Trsm_OnDevice.hpp"
 #include "Tacho_Scale2x2_BlockInverseDiagonals_OnDevice.hpp"
 #include "Tacho_GemmTriangular_OnDevice.hpp"
+#include "Tacho_Gemm_Internal.hpp"
 
 namespace Tacho {
 
@@ -32,12 +33,13 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
     using policy_type = Kokkos::RangePolicy<exec_space>;
     using value_type = typename ViewTypeA::non_const_value_type;
     using arith_traits = ArithTraits<value_type>;
+
+    const auto &exec_instance = member;
     const ordinal_type m = A.extent(0);
 
     int r_val(0);
     for (ordinal_type i = 0; i < m; i++) {
       ////for (ordinal_type j = i+1; j < m; j++) A(i, j) /= A(i, i);
-      const auto &exec_instance = member;
       const auto policy_scale = policy_type(exec_instance, i+1, m);
       Kokkos::parallel_for(policy_scale, KOKKOS_LAMBDA(const ordinal_type &j) {
           A(i, j) /= A(i, i); });
@@ -72,10 +74,13 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
     using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
     using policy_type = Kokkos::RangePolicy<exec_space>;
 
+    const auto &exec_instance = member;
+
     const value_type  one ( 1.0);
     const value_type mone (-1.0);
-    const ordinal_type m   = A.extent(0);
-    const ordinal_type nb  = 128; //m;
+    const ordinal_type m  = A.extent(0);
+    char *nb_env = getenv("TACHO_BLOCK_SIZE");
+    const ordinal_type nb = (nb_env == NULL ? 256 : atoi(nb_env));
 
     int r_val(0);
     for (ordinal_type b = 0; b < m; b+=nb) {
@@ -103,8 +108,25 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
 
         // A22 = -A12*T
         auto A22 = Kokkos::subview(A, range_type(i2, m), range_type(i2, m));
+#if 0
+        ordinal_type nb2 = m2;
+        const ordinal_type num_blks = (m2+nb2-1)/nb2;
+        using team_policy_type = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space>;
+        team_policy_type team_policy(exec_instance, num_blks, Kokkos::AUTO());
+        Kokkos::parallel_for(
+          team_policy, KOKKOS_LAMBDA(const typename team_policy_type::member_type &team_member) {
+            ordinal_type id = team_member.league_rank();
+            ordinal_type k1 = nb2*id;
+            ordinal_type k2 = (k1+nb2 < m2 ? k1+nb2 : m2);
+            auto Tk = Kokkos::subview(T,   Kokkos::ALL(), range_type(k1, k2));
+            auto Ck = Kokkos::subview(A22, Kokkos::ALL(), range_type(k1, k2));
+            Gemm<Trans::Transpose, Trans::NoTranspose, Algo::Internal>::invoke(
+                      team_member, mone, A12, Tk, one, Ck);
+          });
+#else
         GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                     handle, mone, A12, T, one, A22);
+#endif
       }
     }
     return r_val;

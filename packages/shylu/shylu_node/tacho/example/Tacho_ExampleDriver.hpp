@@ -40,6 +40,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   std::string rhs_file = "";
   std::string graph_file = "";
   std::string weight_file = "";
+  bool default_setup = false;
   int dofs_per_node = 1;
   int graph_algo_type = -1;
   bool order_connected_graph_separately = true;
@@ -73,6 +74,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<std::string>("rhs", "Input RHS file", &rhs_file);
   opts.set_option<std::string>("graph", "Input condensed graph", &graph_file);
   opts.set_option<std::string>("weight", "Input condensed graph weight", &weight_file);
+  opts.set_option<bool>("default", "Flag to use default parameters", &default_setup);
   opts.set_option<int>("dofs-per-node", "# DoFs per node", &dofs_per_node);
   opts.set_option<bool>("order-connected-graph", "Flag to order connected graph separately (METIS)", &order_connected_graph_separately);
   opts.set_option<int>("graph-algo", "Type of graph algorithm (0: Natural, 1: AMD, 2: METIS)", &graph_algo_type);
@@ -121,8 +123,15 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
   std::cout << "     Method Name:: " << method_name << std::endl;
   std::cout << "     Solver Type:: " << variant << std::endl;
-  std::cout << "       # Streams:: " << nstreams << std::endl;
   std::cout << "          # RHSs:: " << nrhs;
+  if (default_setup) {
+    std::cout << " Using default Parameters " << std::endl;
+  } else {
+    std::cout << " Using non default Parameters " << nrhs;
+    std::cout << "       # Streams:: " << nstreams << std::endl;
+    std::cout << "    Small Poblem:: " << small_problem_thres << std::endl;
+    std::cout << "   Device Thresh:: " << device_factor_thres << ", " << device_solve_thres << std::endl;
+  }
   std::cout << std::endl << "    --------------------- " << std::endl << std::endl;
 
   int r_val = 0;
@@ -199,7 +208,6 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     solver.setVerbose(verbose);
     solver.setSolutionMethod(method);
     solver.setLevelSetOptionAlgorithmVariant(variant);
-    solver.setLevelSetOptionNumStreams(nstreams);
 
     /// graph options
     if (order_connected_graph_separately) {
@@ -208,19 +216,22 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     if (graph_algo_type >= 0) {
       solver.setGraphAlgorithmType(graph_algo_type);
     }
-    /// levelset options
-    solver.setSmallProblemThresholdsize(small_problem_thres);
-    solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
-    if (perturbPivot) {
-      if (verbose) std::cout << " > perturb tiny pivots" << std::endl;
-      solver.useDefaultPivotTolerance();
-    }
-    solver.storeExplicitTranspose(storeTranspose);
-    if (verbose) {
-      if (storeTranspose) {
-        std::cout << " > store transpose " << std::endl;
+    if (!default_setup) {
+      /// levelset options
+      solver.setLevelSetOptionNumStreams(nstreams);
+      solver.setSmallProblemThresholdsize(small_problem_thres);
+      solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
+      if (perturbPivot) {
+        if (verbose) std::cout << " > perturb tiny pivots" << std::endl;
+        solver.useDefaultPivotTolerance();
       }
-      std::cout << std::endl;
+      solver.storeExplicitTranspose(storeTranspose);
+      if (verbose) {
+        if (storeTranspose) {
+          std::cout << " > store transpose " << std::endl;
+        }
+        std::cout << std::endl;
+      }
     }
 
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());

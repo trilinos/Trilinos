@@ -2959,7 +2959,7 @@ public:
             const ordinal_type offm = s.row_begin;
             const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
 
-             // Copy current block (NOTE: should be in Trmv?)
+             // Copy current block (TODO: should be in Trmv?)
             _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
             checkDeviceBlasStatus("copy");
 
@@ -4476,7 +4476,7 @@ public:
 #endif
       // this should be considered with average problem sizes in levels
       const ordinal_type half_level = _nlevel / 2;
-      const ordinal_type team_size_solve[2] = {64, 16}, vector_size_solve[2] = {8, 8};
+      const ordinal_type team_size_solve[2] = {16, 16}, vector_size_solve[2] = {8, 8};
       const ordinal_type team_size_update[2] = {128, 32}, vector_size_update[2] = {1, 1};
       {
         typedef TeamFunctor_SolveLowerChol<supernode_info_type> functor_type;
@@ -4838,13 +4838,8 @@ public:
       // this should be considered with average problem sizes in levels
       const ordinal_type half_level = _nlevel / 2;
 #if defined(CUDA_VERSION)
-#if (11000 > CUDA_VERSION)
-      /// cuda 11.1 below
-      const ordinal_type team_size_solve[2] = {32, 16}, vector_size_solve[2] = {8, 8};
-#else
-      /// cuda 11.1 and higher
-      const ordinal_type team_size_solve[2] = {32, 16}, vector_size_solve[2] = {8, 8};
-#endif
+      /// cuda
+      const ordinal_type team_size_solve[2] = {16, 16}, vector_size_solve[2] = {8, 8};
 #else
       /// not cuda
       const ordinal_type team_size_solve[2] = {64, 16}, vector_size_solve[2] = {8, 8};
@@ -5209,13 +5204,8 @@ public:
       // this should be considered with average problem sizes in levels
       const ordinal_type half_level = _nlevel / 2;
 #if defined(CUDA_VERSION)
-#if (11000 > CUDA_VERSION)
-      /// cuda 11.1 below
-      const ordinal_type team_size_solve[2] = {32, 16}, vector_size_solve[2] = {8, 8};
-#else
-      /// cuda 11.1 and higher
-      const ordinal_type team_size_solve[2] = {32, 16}, vector_size_solve[2] = {8, 8};
-#endif
+      /// cuda
+      const ordinal_type team_size_solve[2] = {16, 16}, vector_size_solve[2] = {8, 8};
 #else
       /// not cuda
       const ordinal_type team_size_solve[2] = {64, 16}, vector_size_solve[2] = {8, 8};
