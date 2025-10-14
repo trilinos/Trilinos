@@ -609,7 +609,7 @@ jobs:
 
   oneapi2024:
     needs: pre-checks
-    runs-on: [self-hosted, oneapi-2024.1.0, 20250723]
+    runs-on: [self-hosted, oneapi-2024.2, 20251007]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
