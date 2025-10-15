@@ -8,7 +8,7 @@ else()
 # Typically for Trilinos since don't have fmt as TPL, but instead have embedded versions.
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_OPTIONAL_PACKAGES SEACASExodus Pamgen Zoltan Kokkos
-  LIB_OPTIONAL_TPLS HDF5 CGNS ParMETIS AWSSDK Faodel Cereal DLlib Pthread DataWarp ADIOS2 Catalyst2 ${SEACAS_GTest_TPL_name} Catch2
+  LIB_OPTIONAL_TPLS HDF5 CGNS ParMETIS AWSSDK Faodel Cereal DLlib Pthread DataWarp ADIOS2 Catalyst2 ${SEACAS_GTest_TPL_name}
 )
 endif()
 
