@@ -1,0 +1,39 @@
+<ParameterList name="test_params">
+  <Parameter name="hb_file" type="string" value="nos1.rsa"/>
+  <!-- The coordinates below are randomly generated within a cube with 1-meter length sides. -->
+  <!-- These 237 coordinates are only used for RCB testing purpose and they do not actually -->
+  <!-- have any physical relationship with the matrix rows. -->
+  <Parameter name="coord_mm_file" type="string" value="nos1_random_coords.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="PseudoBlockGmres"/>
+  <ParameterList name="Belos">
+    <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
+    <Parameter name="Num Blocks" type="int" value="300"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Maximum Iterations" type="int" value="1000"/>
+    <Parameter name="Maximum Restarts" type="int" value="20"/>
+    <Parameter name="Orthogonalization" type="string" value="ICGS"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+    <Parameter name="Convergence Tolerance" type="double" value="1e-06"/>
+  </ParameterList>
+
+  <Parameter name="Preconditioner Side" type="string" value="Right"/>
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="SCHWARZ"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="schwarz: overlap level" type="int" value="0"/>
+    <Parameter name="schwarz: combine mode" type="string" value="ZERO"/>
+    <Parameter name="schwarz: use reordering" type="bool" value="false"/>
+    <Parameter name="subdomain solver name" type="string" value="RILUK"/>
+    <ParameterList name="subdomain solver parameters">
+      <Parameter name="fact: iluk level-of-fill" type="int" value="2"/>
+      <Parameter name="fact: type" type="string" value="KSPILUK"/>
+      <Parameter name="fact: kspiluk number-of-streams" type="int" value="4"/>
+      <Parameter name="fact: kspiluk streams use rcb" type="bool" value="true"/>
+      <Parameter name="trisolver: type" type="string" value="KSPTRSV"/>
+    </ParameterList>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="300"/>
+  <Parameter name="Reuse Pattern" type="bool" value="true"/>
+</ParameterList>
