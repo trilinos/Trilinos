@@ -8,8 +8,8 @@ C    See packages/seacas/LICENSE for details
       QAINFO(2) = '        '
       QAINFO(3) = '        '
 
-      QAINFO(2)(:8) = '20250806'
-      QAINFO(3)(:8) = '    4.06'
+      QAINFO(2)(:8) = '20251001'
+      QAINFO(3)(:8) = '    4.07'
 
 c..Dynamic dimensioning of block names+other changes
 c..compress output of distribution factors
@@ -80,3 +80,4 @@ c..Refactor element select to allow add
 c..Fix behavior after bad parse warning
 c..Minor support for change sets
 c..Improved bad map check / output
+c..allow names in list block/set
