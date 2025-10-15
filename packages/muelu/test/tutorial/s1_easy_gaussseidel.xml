@@ -24,6 +24,6 @@
   </ParameterList>
 
   <!-- Direct solver on the coarsest level -->
-  <Parameter name="coarse: type" type="string" value="DIRECT"/>
+  <Parameter name="coarse: type" type="string" value="DirectSolver"/>
 
 </ParameterList>
