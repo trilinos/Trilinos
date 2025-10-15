@@ -636,7 +636,6 @@ public:
   ///   It may change or disappear at any time without warning.
   int getTag () const { return tag_; }
 
-  /// \brief Increments the tag and then returns it.
   int incrementTag() {
     ++tag_;
     if (tag_ == std::numeric_limits<int>::max())
