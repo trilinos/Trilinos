@@ -16,6 +16,7 @@
 
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Ifpack2_RILUK_decl.hpp"
 
 // Ifpack2: key is for Ifpack2's factory to have subordinate
 // factories.  That way, each package still has one factory, but we
@@ -82,10 +83,38 @@ void LinearSolver<SC, LO, GO, NT>::
 }
 
 template <class SC, class LO, class GO, class NT>
+void LinearSolver<SC, LO, GO, NT>::
+    setCoord(const Teuchos::RCP<const coord_type>& C) {
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
+  const char prefix[] = "Ifpack2::Details::LinearSolver::setCoord: ";
+
+  TEUCHOS_TEST_FOR_EXCEPTION(solver_.is_null(), std::logic_error, prefix << "Solver is NULL.  "
+                                                                            "This should never happen! Please report this bug to the Ifpack2 "
+                                                                            "developers.");
+
+  auto innerSolver = rcp_dynamic_cast<Ifpack2::RILUK<row_matrix_type>>(solver_);
+  TEUCHOS_TEST_FOR_EXCEPTION(innerSolver.is_null(), std::logic_error, prefix << "The solver does not "
+                                                                                "implement the setCoord() feature. We should never get here! "
+                                                                                "Please report this bug to the Ifpack2 developers.");
+  innerSolver->setCoord(C);
+
+  C_ = C;
+}
+
+template <class SC, class LO, class GO, class NT>
 Teuchos::RCP<const typename LinearSolver<SC, LO, GO, NT>::OP>
 LinearSolver<SC, LO, GO, NT>::
     getMatrix() const {
   return A_;  // may be null
+}
+
+template <class SC, class LO, class GO, class NT>
+Teuchos::RCP<const typename LinearSolver<SC, LO, GO, NT>::coord_type>
+LinearSolver<SC, LO, GO, NT>::
+    getCoord() const {
+  return C_;
 }
 
 template <class SC, class LO, class GO, class NT>
