@@ -8,9 +8,10 @@
 #include "Ioss_FileInfo.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_Utils.h"
+#include <cstdlib>
 #include <cstring>
+#include <fmt/ostream.h>
 #include <ostream>
-#include <stdlib.h>
 #include <string>
 #include <tokenize.h>
 #include <vector>
@@ -183,9 +184,7 @@ namespace Ioss {
       // We want to run `statfs` on the path; not the filename since it might not exist.
       if (statfs(path, &stat_fs) == -1) {
         free(path);
-        std::ostringstream errmsg;
-        errmsg << "ERROR: Could not run statfs on '" << filename_ << "'.\n";
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: Could not run statfs on '{}'.\n", filename_));
       }
       free(path);
 
@@ -222,9 +221,7 @@ namespace Ioss {
       // We want to run `statfs` on the path; not the filename since it might not exist.
       if (statfs(path, &stat_fs) == -1) {
         free(path);
-        std::ostringstream errmsg;
-        errmsg << "ERROR: Could not run statfs on '" << filename_ << "'.\n";
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format("ERROR: Could not run statfs on '{}'.\n", filename_));
       }
       free(path);
 
@@ -382,8 +379,8 @@ namespace Ioss {
 
   void FileInfo::create_path(const std::string &filename)
   {
-    bool               error_found = false;
-    std::ostringstream errmsg;
+    bool        error_found = false;
+    std::string errmsg;
 
     Ioss::FileInfo file      = Ioss::FileInfo(filename);
     std::string    path      = file.pathname();
@@ -401,15 +398,15 @@ namespace Ioss {
         const int mode = 0777; // Users umask will be applied to this.
         if (mkdir(path_root.c_str(), mode) != 0 && errno != EEXIST) {
 #endif
-          errmsg << "ERROR: Cannot create directory '" << path_root << "': " << std::strerror(errno)
-                 << "\n";
+          errmsg      = fmt::format("ERROR: Cannot create directory '{}': {}\n", path_root,
+                                    std::strerror(errno));
           error_found = true;
           break;
         }
       }
       else if (!S_ISDIR(st.st_mode)) {
-        errno = ENOTDIR;
-        errmsg << "ERROR: Path '" << path_root << "' is not a directory.\n";
+        errno       = ENOTDIR;
+        errmsg      = fmt::format("ERROR: Path '{}' is not a directory.\n", path_root);
         error_found = true;
         break;
       }

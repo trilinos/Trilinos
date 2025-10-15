@@ -270,7 +270,7 @@ C     --Read command line
       INTYP(MIN(MAXFLD,NUMFLD)+1) = -999
       if (numfld .gt. maxfld) then
          write (string, 1) numfld, maxfld
- 1       format('There were ',i3, ' words entered on the command line,'
+ 1       format('There were ',i3, ' words entered on the command line,',
      $          ' but only ',i3,' are allowed.')
          CALL PRTERR ('WARNING', STRING(:LENSTR(STRING)))
          CALL PRTERR ('CMDSPEC',

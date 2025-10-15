@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -135,8 +135,8 @@ void write_blob()
   // applied to the blob, not each entry in the blob.
   std::vector<double> offsets{1.0, 2.0, 0.0};
   std::vector<double> scales{10.5, 11.5, 17.5};
-  blob1->property_add(Ioss::Property("Offset", offsets, Ioss::Property::ATTRIBUTE));
-  blob1->property_add(Ioss::Property("Scale", scales, Ioss::Property::ATTRIBUTE));
+  blob1->property_add(Ioss::Property("Offset", offsets, Ioss::Property::Origin::ATTRIBUTE));
+  blob1->property_add(Ioss::Property("Scale", scales, Ioss::Property::Origin::ATTRIBUTE));
 
   region.end_mode(Ioss::STATE_DEFINE_MODEL);
 
@@ -235,7 +235,8 @@ bool read_blob()
     std::cout << "\nBlob " << blob->name() << " contains: " << blob->entity_count()
               << " item(s).\n";
 
-    Ioss::Utils::info_property(blob, Ioss::Property::ATTRIBUTE, "\tAttributes (Reduction): ");
+    Ioss::Utils::info_property(blob, Ioss::Property::Origin::ATTRIBUTE,
+                               "\tAttributes (Reduction): ");
     Ioss::Utils::info_fields(blob, Ioss::Field::TRANSIENT, "\n\tTransient: ");
     Ioss::Utils::info_fields(blob, Ioss::Field::REDUCTION, "\n\tTransient (Reduction):  ", "\t");
   }
