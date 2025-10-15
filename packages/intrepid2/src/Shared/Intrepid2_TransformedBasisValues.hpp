@@ -69,7 +69,20 @@ namespace Intrepid2 {
     numCells_(numCells),
     transformIsDiagonal_(true),
     basisValues_(basisValues)
-    {}
+    {
+      // implementing an explicitly-stored identity matrix to work around a compiler issue with nvcc
+      const int numPoints = basisValues.extent_int(1); // (F,P,…)
+      const int spaceDim  = basisValues.extent_int(2);
+      Kokkos::Array<int,4> transformationExtents {numCells, numPoints, spaceDim, spaceDim};
+      Kokkos::Array<DataVariationType,4> transformationVariationType {CONSTANT, CONSTANT, BLOCK_PLUS_DIAGONAL, BLOCK_PLUS_DIAGONAL};
+
+      Kokkos::View<Scalar*> identityMatrixView("identity matrix", spaceDim);
+      Kokkos::deep_copy(identityMatrixView, 1.0);
+      
+      const ordinal_type blockPlusDiagonalLastNonDiagonal = -1; // no non-diagonals
+      Data<Scalar,DeviceType> identityMatrix(identityMatrixView, transformationExtents, transformationVariationType, blockPlusDiagonalLastNonDiagonal);
+      transform_ = identityMatrix;
+    }
     
     //! copy-like constructor for differing device types.  This may do a deep_copy of underlying views, depending on the memory spaces involved.
     template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<DeviceType, OtherDeviceType>::value>::type>
@@ -210,50 +223,60 @@ namespace Intrepid2 {
     //! Vector accessor, with arguments (C,F,P,D).
     KOKKOS_INLINE_FUNCTION Scalar operator()(const int &cellOrdinal, const int &fieldOrdinal, const int &pointOrdinal, const int &dim) const
     {
+      int whichCase;
+      Scalar value;
       if (!transform_.isValid())
       {
-        // null transform is understood as the identity
-        return basisValues_(fieldOrdinal,pointOrdinal,dim);
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "transform_ should be explicitly initialized, due to nvcc compilation issue.");
       }
       else if (transformIsDiagonal_)
       {
-        return transform_(cellOrdinal,pointOrdinal,dim,dim) * basisValues_(fieldOrdinal,pointOrdinal,dim);
+        whichCase = 1;
       }
       else if (transform_.rank() == 4)
       {
-        Scalar value = 0.0;
-        for (int d2=0; d2<transform_.extent_int(2); d2++)
-        {
-          value += transform_(cellOrdinal,pointOrdinal,dim,d2) * basisValues_(fieldOrdinal,pointOrdinal,d2);
-        }
-        return value;
+        whichCase = 2; 
       }
       else if (transform_.rank() == 3)
       {
-        Scalar value = transform_(cellOrdinal,pointOrdinal,dim) * basisValues_(fieldOrdinal,pointOrdinal);
-        return value;
+        whichCase = 3;
       }
-      else // rank 2 transform
+      else // transform_.rank() == 2
       {
-        Scalar value = transform_(cellOrdinal,pointOrdinal) * basisValues_(fieldOrdinal,pointOrdinal,dim);
-        return value;
+        whichCase = 4;
       }
-    }
-    
-    //! Returns the specified entry in the (scalar) transform.  (Only valid for scalar-valued BasisValues; see the four-argument transformWeight() for the vector-valued case.)
-    KOKKOS_INLINE_FUNCTION Scalar transformWeight(const int &cellOrdinal, const int &pointOrdinal) const
-    {
-      if (!transform_.isValid())
+      
+      switch (whichCase)
       {
-        // null transform is understood as identity
-        return 1.0;
+        case 4:
+        {
+          value = transform_(cellOrdinal,pointOrdinal) * basisValues_(fieldOrdinal,pointOrdinal,dim);
+        }
+          break;
+        case 3:
+        {
+          value = transform_(cellOrdinal,pointOrdinal,dim) * basisValues_(fieldOrdinal,pointOrdinal);
+        }
+          break;
+        case 2:
+        {
+          value = 0.0;
+          for (int d2=0; d2<transform_.extent_int(2); d2++)
+          {
+            value += transform_(cellOrdinal,pointOrdinal,dim,d2) * basisValues_(fieldOrdinal,pointOrdinal,d2);
+          }
+        }
+        break;
+        case 1:
+        {
+          value = transform_(cellOrdinal,pointOrdinal,dim,dim) * basisValues_(fieldOrdinal,pointOrdinal,dim);
+        }
+        break;
+        default: value = 0;
       }
-      else
-      {
-        return transform_(cellOrdinal,pointOrdinal);
-      }
-    }
-    
+      return value;
+    }    
+
     //! Returns the specified entry in the transformation vector.
     KOKKOS_INLINE_FUNCTION Scalar transformWeight(const int &cellOrdinal, const int &pointOrdinal, const int &d) const
     {

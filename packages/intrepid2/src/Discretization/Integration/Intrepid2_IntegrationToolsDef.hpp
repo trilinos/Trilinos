@@ -1872,8 +1872,8 @@ namespace Intrepid2 {
       const TensorData<Scalar, DeviceType> leftComponent_;
       const TensorData<Scalar, DeviceType> rightComponent_;
       const TensorData<Scalar, DeviceType> cellMeasures_;
-      const TransformedBasisValues<Scalar, DeviceType> &basisValuesLeft_;
-      const TransformedBasisValues<Scalar, DeviceType> &basisValuesRight_;
+      const TransformedBasisValues<Scalar, DeviceType> basisValuesLeft_;
+      const TransformedBasisValues<Scalar, DeviceType> basisValuesRight_;
       const ComponentIntegralsArray componentIntegrals_;
       const ordinal_type d_start_;
       const ordinal_type d_end_;
