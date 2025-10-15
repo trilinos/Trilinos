@@ -7,7 +7,6 @@
  */
 #include "el_check_monot.h" // for check_monot
 #include "exodusII.h"       // for ex_inquire, ex_opts, etc
-#include <fmt/format.h>
 #include "fmt/ostream.h"
 #include "globals.h"     // for ELEM_COMM_MAP, etc
 #include "nem_spread.h"  // for NemSpread, etc
@@ -22,6 +21,7 @@
 #include <cstddef> // for size_t
 #include <cstdio>  // for stderr, etc
 #include <cstdlib> // for exit
+#include <fmt/format.h>
 #include <string>
 
 char **qa_record_ptr, **inf_record_ptr;

@@ -445,28 +445,23 @@ namespace Ioex {
     // Reading a corrupt mesh in which there are elements not in an element block
     // can cause hard to track down problems...
     if (decomposition.m_globalElementCount != decomposition.m_fileBlockIndex[block_count]) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: The sum of the element counts in each element block gives a total of {} "
-                 "elements.\n"
-                 "       This does not match the total element count of {} which indicates a "
-                 "corrupt mesh description.\n"
-                 "       Contact sierra-help@sandia.gov for more details.\n",
-                 decomposition.m_fileBlockIndex[block_count], decomposition.m_globalElementCount);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "ERROR: The sum of the element counts in each element block gives a total of {} "
+          "elements.\n"
+          "       This does not match the total element count of {} which indicates a "
+          "corrupt mesh description.\n"
+          "       Contact sierra-help@sandia.gov for more details.\n",
+          decomposition.m_fileBlockIndex[block_count], decomposition.m_globalElementCount));
     }
 
     // Make sure 'sum' can fit in INT...
     INT tmp_sum = (INT)sum;
     if ((size_t)tmp_sum != sum) {
-      std::ostringstream errmsg;
-      fmt::print(
-          errmsg,
+      IOSS_ERROR(fmt::format(
           "ERROR: The decomposition of this mesh requires 64-bit integers, but is being\n"
           "       run with 32-bit integer code. Please rerun with the property INTEGER_SIZE_API\n"
           "       set to 8. The details of how to do this vary with the code that is being run.\n"
-          "       Contact sierra-help@sandia.gov for more details.\n");
-      IOSS_ERROR(errmsg);
+          "       Contact sierra-help@sandia.gov for more details.\n"));
     }
 
     decomposition.m_pointer.reserve(decomp_elem_count() + 1);
@@ -564,11 +559,10 @@ namespace Ioex {
 
     m_decomposition.show_progress(__func__);
     if (decomposition.m_fileBlockIndex.size() != block_count + 1) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: The `generate_adjacency` function was not called prior to calling "
-                         "`generate_omitted_block_weights`\n"
-                         "       Contact sierra-help@sandia.gov for more details.\n");
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(
+          fmt::format("ERROR: The `generate_adjacency` function was not called prior to calling "
+                      "`generate_omitted_block_weights`\n"
+                      "       Contact sierra-help@sandia.gov for more details.\n"));
     }
 
     // Get the global element block index list at this time also.
@@ -663,14 +657,12 @@ namespace Ioex {
 
     size_t one = 1;
     if (entitylist_size >= one << 31) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: The sum of the {} entity counts is larger than 2.1 Billion "
-                 " which cannot be correctly handled with the current IOSS decomposition "
-                 "implementation.\n"
-                 "       Contact sierra-help@sandia.gov for more details.\n",
-                 set_type_name);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(
+          fmt::format("ERROR: The sum of the {} entity counts is larger than 2.1 Billion "
+                      " which cannot be correctly handled with the current IOSS decomposition "
+                      "implementation.\n"
+                      "       Contact sierra-help@sandia.gov for more details.\n",
+                      set_type_name));
     }
 
     std::vector<INT> entitylist(max_size);
@@ -1323,17 +1315,12 @@ namespace Ioex {
     }
 
     if (type != EX_NODE_SET && type != EX_SIDE_SET) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "ERROR: Invalid set type specified in get_decomp_set. Only node set or side set "
+      IOSS_ERROR("ERROR: Invalid set type specified in get_decomp_set. Only node set or side set "
                  "supported\n");
-      IOSS_ERROR(errmsg);
     }
     else {
-      std::string        typestr = type == EX_NODE_SET ? "node set" : "side set";
-      std::ostringstream errmsg;
-      fmt::print(errmsg, "ERROR: Count not find {} {}\n", typestr, id);
-      IOSS_ERROR(errmsg);
+      std::string typestr = type == EX_NODE_SET ? "node set" : "side set";
+      IOSS_ERROR(fmt::format("ERROR: Count not find {} {}\n", typestr, id));
     }
     return node_sets[0];
   }
@@ -1929,11 +1916,9 @@ namespace Ioex {
                             comm_, &status);
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "ERROR: MPI_Recv error on processor {} receiving nodes_per_face sideset data",
-                   m_processor);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format(
+            "ERROR: MPI_Recv error on processor {} receiving nodes_per_face sideset data",
+            m_processor));
       }
       df_count = nodes_per_face.back();
     }
@@ -1972,11 +1957,9 @@ namespace Ioex {
           MPI_Recv(Data(file_data), file_data.size(), MPI_DOUBLE, set.root_, 333, comm_, &status);
 
       if (result != MPI_SUCCESS) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "ERROR: MPI_Recv error on processor {} receiving nodes_per_face sideset data",
-                   m_processor);
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format(
+            "ERROR: MPI_Recv error on processor {} receiving nodes_per_face sideset data",
+            m_processor));
       }
     }
 
@@ -2117,12 +2100,10 @@ namespace Ioex {
       Ioss::ParallelUtils pu(comm_);
       int                 total_errors = pu.global_minmax(error_count, Ioss::ParallelUtils::DO_MAX);
       if (total_errors > 0) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg,
-                   "ERROR: Ioss Mapping routines detected at least one error mapping global ids.\n"
-                   "       This usually means the node ownership is incorrect for some reason. "
-                   "This should not happen, please report.\n");
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR(fmt::format(
+            "ERROR: Ioss Mapping routines detected at least one error mapping global ids.\n"
+            "       This usually means the node ownership is incorrect for some reason. "
+            "This should not happen, please report.\n"));
       }
     }
     // Send the data back now...

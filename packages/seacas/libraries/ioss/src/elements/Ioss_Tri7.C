@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -13,14 +13,13 @@
 // Define a variable type for storage of this elements connectivity
 #include "Ioss_CodeTypes.h"       // for IntVector
 #include "Ioss_ElementTopology.h" // for ElementTopology
-#include "Ioss_Utils.h"
 
 namespace Ioss {
   const char *Tri7::name = "tri7";
   class St_Tri7 : public ElementVariableType
   {
   public:
-    static void factory() { static St_Tri7 registerThis; }
+    static void factory() { static St_Tri7 const registerThis; }
 
   protected:
     St_Tri7() : ElementVariableType(Ioss::Tri7::name, 7) {}
@@ -46,7 +45,7 @@ namespace {
 
 void Ioss::Tri7::factory()
 {
-  static Ioss::Tri7 registerThis;
+  static Ioss::Tri7 const registerThis;
   Ioss::St_Tri7::factory();
 }
 

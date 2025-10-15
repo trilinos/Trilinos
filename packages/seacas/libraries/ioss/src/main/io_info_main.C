@@ -6,9 +6,9 @@
  * See packages/seacas/LICENSE for details
  */
 
+#include <cstdlib>
 #include <fmt/format.h>
 #include <ostream>
-#include <stdlib.h>
 #include <string>
 
 #include "Ionit_Initializer.h"

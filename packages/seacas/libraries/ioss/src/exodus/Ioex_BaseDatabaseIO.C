@@ -62,10 +62,9 @@
 #include "exodus/Ioex_BaseDatabaseIO.h"
 #include "exodus/Ioex_Internals.h"
 
-// Transitioning from treating global variables as Ioss::Field::TRANSIENT
-// to Ioss::Field::REDUCTION.  To get the old behavior, define the value
-// below to '1'.
-#define GLOBALS_ARE_TRANSIENT 0
+#if IOSS_DEBUG_OUTPUT
+#include "Ioss_use_fmt.h"
+#endif
 
 // ========================================================================
 // Static internal helper functions
@@ -1280,22 +1279,9 @@ namespace Ioex {
       for (int i = 0; i < comp_count; i++) {
         std::string var_name = get_component_name(field, Ioss::Field::InOut::OUTPUT, i + 1);
 
-#if GLOBALS_ARE_TRANSIENT
-        if (type == EX_GLOBAL) {
-          SMART_ASSERT(m_variables[type].find(var_name) != m_variables[type].end())(type)(var_name);
-          var_index = m_variables[type].find(var_name)->second;
-        }
-        else {
-          SMART_ASSERT(m_reductionVariables[type].find(var_name) !=
-                       m_reductionVariables[type].end())
-          (type)(var_name);
-          var_index = m_reductionVariables[type].find(var_name)->second;
-        }
-#else
         SMART_ASSERT(m_reductionVariables[type].find(var_name) != m_reductionVariables[type].end())
         (type)(var_name);
         var_index = m_reductionVariables[type].find(var_name)->second;
-#endif
 
         SMART_ASSERT(static_cast<int>(m_reductionValues[type][id].size()) >= var_index)
         (id)(m_reductionValues[type][id].size())(var_index);
@@ -1337,23 +1323,11 @@ namespace Ioex {
       int         var_index = 0;
       std::string var_name  = get_component_name(field, Ioss::Field::InOut::INPUT, i + 1);
 
-#if GLOBALS_ARE_TRANSIENT
-      if (type == EX_GLOBAL) {
-        assert(m_variables[type].find(var_name) != m_variables[type].end());
-        var_index = m_variables[type].find(var_name)->second;
-      }
-      else {
-        assert(m_reductionVariables[type].find(var_name) != m_reductionVariables[type].end());
-        var_index = m_reductionVariables[type].find(var_name)->second;
-      }
-
-      assert(static_cast<int>(m_reductionValues[type][id].size()) >= var_index);
-#else
       SMART_ASSERT(m_reductionVariables[type].find(var_name) != m_reductionVariables[type].end())
       (type)(var_name);
       var_index = m_reductionVariables[type].find(var_name)->second;
       SMART_ASSERT(static_cast<int>(m_reductionValues[type][id].size()) >= var_index);
-#endif
+
       // Transfer to 'variables' array.
       if (ioss_type == Ioss::Field::REAL) {
         rvar[i] = m_reductionValues[type][id][var_index - 1];
@@ -1479,11 +1453,7 @@ namespace Ioex {
     fileExists = false;
 
     ex_var_params exo_params{};
-#if GLOBALS_ARE_TRANSIENT
-    exo_params.num_glob = m_variables[EX_GLOBAL].size();
-#else
-    exo_params.num_glob = m_reductionVariables[EX_GLOBAL].size();
-#endif
+    exo_params.num_glob  = m_reductionVariables[EX_GLOBAL].size();
     exo_params.num_node  = m_variables[EX_NODE_BLOCK].size();
     exo_params.num_edge  = m_variables[EX_EDGE_BLOCK].size();
     exo_params.num_face  = m_variables[EX_FACE_BLOCK].size();
@@ -1570,11 +1540,7 @@ namespace Ioex {
   // common
   void BaseDatabaseIO::add_region_fields()
   {
-#if GLOBALS_ARE_TRANSIENT
-    int field_count = add_results_fields(get_region());
-#else
     int field_count = add_reduction_results_fields(get_region());
-#endif
     m_reductionValues[EX_GLOBAL][0].resize(field_count);
     add_mesh_reduction_fields(0, get_region());
   }
@@ -1607,7 +1573,7 @@ namespace Ioex {
       for (const auto &att : attr) {
         if (att.value_count == 0) {
           // Just an attribute name.  Give it an empty value...
-          entity->property_add(Ioss::Property(att.name, "", Ioss::Property::ATTRIBUTE));
+          entity->property_add(Ioss::Property(att.name, "", Ioss::Property::Origin::ATTRIBUTE));
           continue;
         }
         assert(att.values != nullptr);
@@ -1616,28 +1582,30 @@ namespace Ioex {
         case EX_INTEGER: {
           const auto *idata = static_cast<int *>(att.values);
           if (att.value_count == 1) {
-            entity->property_add(Ioss::Property(att.name, *idata, Ioss::Property::ATTRIBUTE));
+            entity->property_add(
+                Ioss::Property(att.name, *idata, Ioss::Property::Origin::ATTRIBUTE));
           }
           else {
             std::vector<int> tmp(att.value_count);
             std::copy(idata, idata + att.value_count, tmp.begin());
-            entity->property_add(Ioss::Property(att.name, tmp, Ioss::Property::ATTRIBUTE));
+            entity->property_add(Ioss::Property(att.name, tmp, Ioss::Property::Origin::ATTRIBUTE));
           }
         } break;
         case EX_DOUBLE: {
           const auto *ddata = static_cast<double *>(att.values);
           if (att.value_count == 1) {
-            entity->property_add(Ioss::Property(att.name, *ddata, Ioss::Property::ATTRIBUTE));
+            entity->property_add(
+                Ioss::Property(att.name, *ddata, Ioss::Property::Origin::ATTRIBUTE));
           }
           else {
             std::vector<double> tmp(att.value_count);
             std::copy(ddata, ddata + att.value_count, tmp.begin());
-            entity->property_add(Ioss::Property(att.name, tmp, Ioss::Property::ATTRIBUTE));
+            entity->property_add(Ioss::Property(att.name, tmp, Ioss::Property::Origin::ATTRIBUTE));
           }
         } break;
         case EX_CHAR: {
           const auto *cdata = static_cast<char *>(att.values);
-          entity->property_add(Ioss::Property(att.name, cdata, Ioss::Property::ATTRIBUTE));
+          entity->property_add(Ioss::Property(att.name, cdata, Ioss::Property::Origin::ATTRIBUTE));
         } break;
         }
       }
@@ -1771,7 +1739,7 @@ namespace Ioex {
                                                       ex_entity_type type, Ioss::NameList &names)
   {
     std::vector<Ioss::Field> fields;
-    if (!using_parallel_io() || !entity->get_database()->get_field_recognition()) {
+    if (!entity->get_database()->get_field_recognition()) {
       return fields;
     }
     // See if this entity is using enhanced field attributes...
@@ -1953,11 +1921,7 @@ namespace Ioex {
   {
     if (gather_data) {
       int glob_index = 0;
-#if GLOBALS_ARE_TRANSIENT
-      glob_index = gather_names(m_variables[EX_GLOBAL], get_region(), glob_index, true);
-#else
       glob_index = gather_names(m_reductionVariables[EX_GLOBAL], get_region(), glob_index, true);
-#endif
       m_reductionValues[EX_GLOBAL][0].resize(glob_index);
 
       const Ioss::NodeBlockContainer &node_blocks = get_region()->get_node_blocks();
@@ -2007,11 +1971,7 @@ namespace Ioex {
 
     if (behavior != Ioss::DB_APPEND && behavior != Ioss::DB_MODIFY) {
       ex_var_params exo_params{};
-#if GLOBALS_ARE_TRANSIENT
-      exo_params.num_glob = m_variables[EX_GLOBAL].size();
-#else
-      exo_params.num_glob = m_reductionVariables[EX_GLOBAL].size();
-#endif
+      exo_params.num_glob  = m_reductionVariables[EX_GLOBAL].size();
       exo_params.num_node  = m_variables[EX_NODE_BLOCK].size();
       exo_params.num_edge  = m_variables[EX_EDGE_BLOCK].size();
       exo_params.num_face  = m_variables[EX_FACE_BLOCK].size();
@@ -2315,12 +2275,7 @@ namespace Ioex {
       index     = gather_names(m_variables[type], entity, index, false);
     }
 
-#if GLOBALS_ARE_TRANSIENT
-    size_t value_size =
-        type == EX_GLOBAL ? m_variables[type].size() : m_reductionVariables[type].size();
-#else
     size_t value_size = m_reductionVariables[type].size();
-#endif
     for (const auto &entity : entities) {
       auto id = entity->get_optional_property("id", 0);
       m_reductionValues[type][id].resize(value_size);

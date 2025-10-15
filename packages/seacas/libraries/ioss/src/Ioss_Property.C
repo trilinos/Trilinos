@@ -125,14 +125,14 @@ Ioss::Property::Property(std::string name, void *value, Origin origin)
 {
 }
 
-/** \brief Set implicit property with a specified type.
+/** \brief Create an implicit property with a specified type.
  *
  *  \param[in] ge The property value.
  *  \param[in] name The property name.
  *  \param[in] type The property type.
  */
 Ioss::Property::Property(const Ioss::GroupingEntity *ge, std::string name, const BasicType type)
-    : name_(std::move(name)), type_(type), origin_(IMPLICIT), data_(ge)
+    : name_(std::move(name)), type_(type), origin_(Origin::IMPLICIT), data_(ge)
 {
 }
 

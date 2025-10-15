@@ -11,11 +11,11 @@
 #include "Ioss_SmartAssert.h"
 #include <cassert> // for assert
 #include <cmath>   // for sqrt
+#include <cstdlib>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <iostream> // for ostringstream
-#include <stdlib.h>
-#include <string> // for string, operator==, etc
+#include <string>   // for string, operator==, etc
 #include <vector>
 
 #include "Ioss_Assembly.h"        // for Assembly
