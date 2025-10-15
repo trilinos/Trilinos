@@ -15,7 +15,7 @@
 #include <catalyst/Iocatalyst_CatalystManager.h>
 #include <catalyst/Iocatalyst_DatabaseIO.h>
 #include <catalyst_tests/Iocatalyst_DatabaseIOTest.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 Iocatalyst_DatabaseIOTest::Iocatalyst_DatabaseIOTest()
 {

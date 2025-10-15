@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,11 +6,10 @@
 
 #include <assert.h>
 #include <cmath>
+#include <cstdlib>
 #include <fmt/ostream.h>
-#include <fmt/ranges.h>
 #include <iosfwd>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string>
 #include <vector>
 

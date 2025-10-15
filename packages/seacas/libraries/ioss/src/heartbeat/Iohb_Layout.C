@@ -5,7 +5,6 @@
 // See packages/seacas/LICENSE for details
 
 #include "heartbeat/Iohb_Layout.h"
-#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <string>

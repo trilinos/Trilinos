@@ -10,14 +10,15 @@
 #include "Ioss_ElementTopology.h"
 #include "Ioss_Initializer.h"
 #include "Ioss_NullEntity.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_Utils.h"
 #include "Ioss_VariableType.h"
 
 #include <catch2/catch_session.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <fmt/format.h>
+#include <cstdlib>
+#include <fmt/ostream.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string>
 #include <vector>
 
