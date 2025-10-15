@@ -1005,11 +1005,6 @@ namespace Ioex {
       }
       else {
         if (myProcessor == 0 && max_time == std::numeric_limits<double>::max()) {
-          // NOTE: Don't want to warn on all processors if there are
-          // corrupt steps on all databases, but this will only print
-          // a warning if there is a corrupt step on processor
-          // 0... Need better warnings which won't overload in the
-          // worst case...
           fmt::print(Ioss::WarnOut(),
                      "Skipping step {} at time {} in database file\n\t{}.\nThe data for that step "
                      "is possibly corrupt.\n",

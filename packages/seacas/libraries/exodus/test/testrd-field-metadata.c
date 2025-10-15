@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2024 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -290,10 +290,22 @@ int main(int argc, char **argv)
   }
   {
     int fld_cnt = ex_get_field_metadata_count(exoid, EX_ELEM_BLOCK, 11);
-    assert(fld_cnt == 3);
-    ex_field fields[3] = {{.entity_id = 11, .entity_type = EX_ELEM_BLOCK},
-                          {.entity_id = 11, .entity_type = EX_ELEM_BLOCK},
+    assert(fld_cnt == 2);
+    ex_field fields[2] = {{.entity_id = 11, .entity_type = EX_ELEM_BLOCK},
                           {.entity_id = 11, .entity_type = EX_ELEM_BLOCK}};
+    EXCHECK(ex_get_field_metadata(exoid, fields));
+
+    for (int i = 0; i < fld_cnt; i++) {
+      get_field_cardinality(&fields[i], basis, bas_cnt, quad, quad_cnt);
+      print_field_metadata(&fields[i]);
+      print_full_field_names(&fields[i]);
+    }
+  }
+
+  {
+    int fld_cnt = ex_get_field_metadata_count(exoid, EX_ELEM_BLOCK, 12);
+    assert(fld_cnt == 1);
+    ex_field fields[1] = {{.entity_id = 12, .entity_type = EX_ELEM_BLOCK}};
     EXCHECK(ex_get_field_metadata(exoid, fields));
 
     for (int i = 0; i < fld_cnt; i++) {
@@ -308,9 +320,6 @@ int main(int argc, char **argv)
   EXCHECK(ex_initialize_quadrature_struct(quad, quad_cnt, -1));
   free(basis);
   free(quad);
-
-  int fld_cnt = ex_get_field_metadata_count(exoid, EX_ELEM_BLOCK, 12);
-  assert(fld_cnt == 0);
 
   int error = ex_close(exoid);
   printf("\nafter ex_close, error = %3d\n", error);

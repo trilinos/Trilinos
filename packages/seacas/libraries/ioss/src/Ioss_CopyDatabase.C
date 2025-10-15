@@ -317,11 +317,9 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   int min_step_count = dbi->util().global_minmax(step_count, Ioss::ParallelUtils::DO_MIN);
   int max_step_count = dbi->util().global_minmax(step_count, Ioss::ParallelUtils::DO_MAX);
   if (min_step_count != max_step_count) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "ERROR: Number of timesteps does not match on all ranks.  Range from {} to {}.\n",
-               min_step_count, max_step_count);
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format(
+        "ERROR: Number of timesteps does not match on all ranks.  Range from {} to {}.\n",
+        min_step_count, max_step_count));
   }
 #endif
   for (int istep = 1; istep <= step_count; istep++) {
@@ -475,9 +473,7 @@ namespace {
     dbi->progress("DEFINING MODEL");
     if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
       if (options.verbose) {
-        std::ostringstream errmsg;
-        fmt::print(errmsg, "ERROR: Could not put output region into define model state\n");
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR("ERROR: Could not put output region into define model state\n");
       }
       else {
         std::exit(EXIT_FAILURE);
