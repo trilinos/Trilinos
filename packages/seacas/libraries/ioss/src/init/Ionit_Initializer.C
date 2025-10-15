@@ -37,6 +37,10 @@
 #include "faodel/Iofaodel_DatabaseIO.h"
 #endif
 
+#if defined(SEACAS_HAVE_S3)
+#include "s3/Ios3_DatabaseIO.h"
+#endif
+
 #if defined(SEACAS_HAVE_CGNS)
 #include "cgns/Iocgns_IOFactory.h"
 #endif
@@ -88,6 +92,9 @@ namespace Ioss::Init {
 #endif
 #if defined(SEACAS_HAVE_FAODEL)
     Iofaodel::IOFactory::factory();
+#endif
+#if defined(SEACAS_HAVE_S3)
+    Ios3::IOFactory::factory();
 #endif
 #if defined(SEACAS_HAVE_CGNS)
     Iocgns::IOFactory::factory();
