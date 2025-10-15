@@ -23,11 +23,11 @@
 		connect2:Field@Gradient@separator = "-$" ;
 		connect2:Field@Gradient@type = 8, 3 ;
 		connect2:Field@Gradient@type_name = ",HGRAD_QUAD_C2_FEM" ;
-		connect2:Field@Species@cardinality = 4, 0 ;
-		connect2:Field@Species@separator = "_-" ;
-		connect2:Field@Species@suffices = "h2o,gas,ch4,methane" ;
-		connect2:Field@Species@type = 1, 4 ;
-		connect2:Field@Species@type_name = ",1x2x1" ;
+		connect3:Field@Species@cardinality = 4, 0 ;
+		connect3:Field@Species@separator = "_-" ;
+		connect3:Field@Species@suffices = "h2o,gas,ch4,methane" ;
+		connect3:Field@Species@type = 1, 4 ;
+		connect3:Field@Species@type_name = ",1x2x1" ;
 		coor_names:Field@Disp@separator = "" ;
 		coor_names:Field@Disp@type = 8 ;
 		coor_names:Field@Velocity@separator = "%" ;
