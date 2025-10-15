@@ -35,6 +35,7 @@ namespace Excn {
     bool use_netcdf4() const { return useNetcdf4_; }
     bool sort_times() const { return sortTimes_; }
     bool use_all_times() const { return useAllTimes_; }
+    bool force_status_variable() const { return forceStatusVariable_; }
 
     double alive_value() const { return aliveValue_; }
 
@@ -78,6 +79,7 @@ namespace Excn {
     bool useNetcdf4_{false};
     bool sortTimes_{false};
     bool useAllTimes_{false};
+    bool forceStatusVariable_{false};
 
     double aliveValue_{-1.0};
     double interpartMinimumTimeDelta_{0.0};
