@@ -9,9 +9,9 @@
 #include <string>
 
 #include "add_to_log.h"
-#include "fmt/format.h"
 #include "fmt/chrono.h"
 #include "fmt/color.h"
+#include "fmt/format.h"
 #include "fmt/ostream.h"
 #include "time_stamp.h"
 #include "tokenize.h"

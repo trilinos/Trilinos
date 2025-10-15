@@ -5,7 +5,6 @@
  *
  * See packages/seacas/LICENSE for details
  */
-#include <fmt/format.h>
 #include "fmt/ostream.h"
 #include "nem_spread.h"     // for NemSpread
 #include "ps_pario_const.h" // for PIO_Info, Parallel_IO
@@ -14,6 +13,7 @@
 #include <cstdio>     // for stderr
 #include <cstring>    // for strlen
 #include <exodusII.h> // for ex_close, ex_open, EX_READ
+#include <fmt/format.h>
 
 template int NemSpread<double, int>::check_inp();
 template int NemSpread<float, int>::check_inp();
