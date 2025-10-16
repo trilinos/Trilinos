@@ -27,15 +27,15 @@ template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
           class Node>
-class Reindex_CrsMatrix : public ViewTransform< CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > {
-public:
-using NewType      = typename ViewTransform< CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::NewType;
-using OriginalType = typename ViewTransform< CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalType;
+class Reindex_CrsMatrix : public ViewTransform<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > {
+ public:
+  using NewType      = typename ViewTransform<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::NewType;
+  using OriginalType = typename ViewTransform<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::OriginalType;
 
   ///
   /** Constructor
    */
-  Reindex_CrsMatrix( Teuchos::RCP< Map<LocalOrdinal, GlobalOrdinal, Node> const > newRowMap );
+  Reindex_CrsMatrix(Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> const> newRowMap);
 
   ///
   /** Destructor
@@ -45,13 +45,13 @@ using OriginalType = typename ViewTransform< CrsMatrix<Scalar, LocalOrdinal, Glo
   ///
   /** Constructs "reindexed" Matrix
    */
-  NewType operator()( OriginalType const & origMatrix );
+  NewType operator()(OriginalType const& origMatrix);
 
-private:
-  Teuchos::RCP< Map<LocalOrdinal, GlobalOrdinal, Node> const> newRowMap_;
-  Teuchos::RCP< Map<LocalOrdinal, GlobalOrdinal, Node>      > newColMap_;
+ private:
+  Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> const> newRowMap_;
+  Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > newColMap_;
 };
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_REINDEX_CRSMATRIX_DECL_HPP
+#endif  // TPETRA_REINDEX_CRSMATRIX_DECL_HPP
