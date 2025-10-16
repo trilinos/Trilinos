@@ -288,6 +288,9 @@ public:
   ///   It may change or disappear at any time without warning.
   virtual int getTag () const = 0;
 
+  /// \brief Increments the tag and then returns it.
+  virtual int incrementTag() = 0;
+
   //! @name Destructor
   //@{
 
