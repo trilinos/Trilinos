@@ -1,26 +1,19 @@
 // @HEADER
 // *****************************************************************************
-//          Tpetra: Templated Linear Algebra Services Package
+//           Trilinos: An Object-Oriented Solver Framework
 //
-// Copyright 2008 NTESS and the Tpetra contributors.
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
 
-#ifndef TPETRA_REBALANCE_LINEARPROBLEM_DEF_HPP
-#define TPETRA_REBALANCE_LINEARPROBLEM_DEF_HPP
+#ifndef TRILINOSCOUPLINGS_REBALANCE_LINEARPROBLEM_DEF_HPP
+#define TRILINOSCOUPLINGS_REBALANCE_LINEARPROBLEM_DEF_HPP
 
-/// \file Tpetra_Rebalance_LinearProblem_def.hpp
-/// \brief Definition of the Tpetra::Rebalance_LinearProblem class
-///
-/// If you want to use Tpetra::Rebalance_LinearProblem, include
-/// "Tpetra_Rebalance_LinearProblem.hpp", a file which CMake generates
-/// and installs for you.
-///
-/// If you only want the declaration of Tpetra::Rebalance_LinearProblem,
-/// include "Tpetra_Rebalance_LinearProblem_decl.hpp".
+/// \file TrilinosCouplings_Rebalance_LinearProblem_def.hpp
+/// \brief Definition of the TrilinosCouplings::Rebalance_LinearProblem class
 
-#include <Tpetra_Rebalance_LinearProblem_decl.hpp>
+#include <TrilinosCouplings_Rebalance_LinearProblem_decl.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MultiVector.hpp>
 
@@ -28,7 +21,7 @@
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 
-namespace Tpetra {
+namespace TrilinosCouplings {
 
 template <class Scalar,
           class LocalOrdinal,
@@ -36,7 +29,7 @@ template <class Scalar,
           class Node>
 Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Rebalance_LinearProblem( Teuchos::RCP< Teuchos::ParameterList > paramListForZoltan2PartitioningProblem )
-  : ViewTransform< LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >()
+  : Tpetra::ViewTransform< Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >()
   , paramListForZoltan2PartitioningProblem_( paramListForZoltan2PartitioningProblem )
 {
   // Nothing to do
@@ -58,9 +51,9 @@ template <class Scalar,
 typename Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NewType
 Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( OriginalType const & origProblem )
 {
-  using mv_t  = MultiVector  <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using cm_t  = CrsMatrix    <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using lp_t  = LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using mv_t  = Tpetra::MultiVector  <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using cm_t  = Tpetra::CrsMatrix    <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using lp_t  = Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
   // Save original object
   this->origObj_ = origProblem;
@@ -115,13 +108,12 @@ Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( 
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra namespace!
+// Must be expanded from within the TrilinosCouplings namespace!
 //
 
-#define TPETRA_REBALANCELINEARPROBLEM_INSTANT(SCALAR,LO,GO,NODE) \
+#define TRILINOSCOUPLINGS_REBALANCE_LINEARPROBLEM_INSTANT(SCALAR,LO,GO,NODE) \
   template class Rebalance_LinearProblem< SCALAR , LO , GO , NODE >;
 
-} // namespace Tpetra
+} // namespace TrilinosCouplings
 
-#endif // TPETRA_REBALANCE_LINEARPROBLEM_DEF_HPP
-
+#endif // TRILINOSCOUPLINGS_REBALANCE_LINEARPROBLEM_DEF_HPP

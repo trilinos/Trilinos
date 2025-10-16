@@ -23,36 +23,17 @@ TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 # Make sure that Tpetra actually defined these variables, even if they
 # are empty.
-ASSERT_DEFINED(TpetraCore_ETI_SCALARS)
+ASSERT_DEFINED(TpetraCore_ETI_SCALARS_NO_ORDS)
 ASSERT_DEFINED(TpetraCore_ETI_LORDS)
 ASSERT_DEFINED(TpetraCore_ETI_GORDS)
 ASSERT_DEFINED(TpetraCore_ETI_NODES)
 
-# Exclude GlobalOrdinal types from the list of Scalar types over which
-# Ifpack2 does ETI.
-#
-# Look at each entry in Tpetra's list of ETI Scalar types.  If it is
-# also a Tpetra ETI GlobalOrdinal type, don't append it to Ifpack2's
-# list of ETI Scalar types.  Otherwise, do.
-SET (Ifpack2_ETI_SCALARS_TEMP ) # start with the empty list
-FOREACH (scalarName IN LISTS TpetraCore_ETI_SCALARS)
-  LIST (FIND TpetraCore_ETI_GORDS ${scalarName} scalarNameIndex)
-  IF (-1 EQUAL scalarNameIndex) # not in the list of integer types
-    LIST (APPEND Ifpack2_ETI_SCALARS_TEMP ${scalarName})
-  ENDIF ()
-ENDFOREACH ()
-
-SET(Ifpack2_ETI_SCALARS ${Ifpack2_ETI_SCALARS_TEMP})
-SET(Ifpack2_ETI_LORDS   ${TpetraCore_ETI_LORDS})
-SET(Ifpack2_ETI_GORDS   ${TpetraCore_ETI_GORDS})
-SET(Ifpack2_ETI_NODES   ${TpetraCore_ETI_NODES})
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_Trilinos
-  HAVE_${PACKAGE_NAME}_Trilinos
-  "Building as a Trilinos package"
-  ON
-  )
+# Promote these variables to be visible outside of the "scope" of this
+# directory -- e.g., to other packages.
+GLOBAL_SET(Ifpack2_ETI_SCALARS ${TpetraCore_ETI_SCALARS_NO_ORDS})
+GLOBAL_SET(Ifpack2_ETI_LORDS   ${TpetraCore_ETI_LORDS})
+GLOBAL_SET(Ifpack2_ETI_GORDS   ${TpetraCore_ETI_GORDS})
+GLOBAL_SET(Ifpack2_ETI_NODES   ${TpetraCore_ETI_NODES})
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_DEBUG
@@ -78,7 +59,7 @@ IF(${PACKAGE_NAME}_ENABLE_Lemon AND ${PACKAGE_NAME}_ENABLE_Amesos2 AND ${PACKAGE
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Experimental	
+  ${PACKAGE_NAME}_ENABLE_Experimental
   HAVE_IFPACK2_EXPERIMENTAL
   "Enable building and installation of experimental Ifpack2 features."
   NO )
@@ -127,13 +108,6 @@ ADD_SUBDIRECTORY(adapters)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
-
-# Promote these variables to be visible outside of the "scope" of this
-# directory -- e.g., to other packages.
-GLOBAL_SET(Ifpack2_ETI_SCALARS ${Ifpack2_ETI_SCALARS})
-GLOBAL_SET(Ifpack2_ETI_LORDS   ${Ifpack2_ETI_LORDS})
-GLOBAL_SET(Ifpack2_ETI_GORDS   ${Ifpack2_ETI_GORDS})
-GLOBAL_SET(Ifpack2_ETI_NODES   ${Ifpack2_ETI_NODES})
 
 #
 # Exclude files for source package.
