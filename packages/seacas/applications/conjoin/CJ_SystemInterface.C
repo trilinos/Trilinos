@@ -48,13 +48,20 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("element_status_variable", GetLongOption::MandatoryValue,
                   "Name to use as element existence status variable;\n"
                   "\t\tmust not exist on input files. If NONE, then not created.\n"
+                  "\t\tWill only be output if mesh topology changes between parts.\n"
                   "\t\tDefault = elem_status",
                   "elem_status");
 
   options_.enroll("nodal_status_variable", GetLongOption::MandatoryValue,
                   "Name to use as nodal status variable;\n\t\tmust not exist on input files.\n"
+                  "\t\tWill only be output if mesh topology changes between parts.\n"
                   "\t\tIf NONE, then not created. Default = node_status",
-                  "node_status", nullptr, true);
+                  "node_status");
+
+  options_.enroll("force_status_variable", GetLongOption::NoValue,
+                  "Output the node and element status variables even if they are not needed\n"
+                  "\t\tdue to no changes in mesh topology",
+                  nullptr, nullptr, true);
 
   options_.enroll("netcdf4", GetLongOption::NoValue,
                   "Create output database using the HDF5-based "
@@ -183,7 +190,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     fmt::print("\n\tCan also set options via CONJOIN_OPTIONS environment variable.\n"
                "\n\tDocumentation: "
                "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#conjoin\n"
-               "\n\t->->-> Send email to gdsjaar@sandia.gov for conjoin support.<-<-<-\n");
+               "\n\t->->-> Send email to sierra-help@sandia.gov for conjoin support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -257,13 +264,14 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     }
   }
 
-  useNetcdf4_        = options_.retrieve("netcdf4") != nullptr;
-  sortTimes_         = options_.retrieve("sort_times") != nullptr;
-  ints64Bit_         = options_.retrieve("64-bit") != nullptr;
-  ignoreCoordinates_ = options_.retrieve("ignore_coordinate_check") != nullptr;
-  omitNodesets_      = options_.retrieve("omit_nodesets") != nullptr;
-  omitSidesets_      = options_.retrieve("omit_sidesets") != nullptr;
-  useAllTimes_       = options_.retrieve("use_all_times") != nullptr;
+  useNetcdf4_          = options_.retrieve("netcdf4") != nullptr;
+  sortTimes_           = options_.retrieve("sort_times") != nullptr;
+  ints64Bit_           = options_.retrieve("64-bit") != nullptr;
+  ignoreCoordinates_   = options_.retrieve("ignore_coordinate_check") != nullptr;
+  omitNodesets_        = options_.retrieve("omit_nodesets") != nullptr;
+  omitSidesets_        = options_.retrieve("omit_sidesets") != nullptr;
+  useAllTimes_         = options_.retrieve("use_all_times") != nullptr;
+  forceStatusVariable_ = options_.retrieve("force_status_variable") != nullptr;
 
   zlib_ = (options_.retrieve("zlib") != nullptr);
   szip_ = (options_.retrieve("szip") != nullptr);

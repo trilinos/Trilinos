@@ -12,7 +12,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_TestingUtilities.hpp>
-#include <Tpetra_Util.hpp> // sort2, merge2
+#include <Tpetra_Util.hpp>  // sort2, merge2
 
 /*! \file Issue11704.cpp
 
@@ -28,7 +28,7 @@
    then asserting that it is true for the resulting matrix
 */
 
-namespace { // anonymous
+namespace {  // anonymous
 
 using std::endl;
 using Teuchos::Array;
@@ -53,34 +53,35 @@ struct Test {
   size_t populatedRow;
 };
 
-const Test EMPTY = {"%%MatrixMarket matrix coordinate real general\n"
-                    "5 5 0\n",
-                    5, 5, 0, 0 /*don't care*/};
+const Test EMPTY = {
+    "%%MatrixMarket matrix coordinate real general\n"
+    "5 5 0\n",
+    5, 5, 0, 0 /*don't care*/};
 
-const Test FIRST = {"%%MatrixMarket matrix coordinate real general\n"
-                    "5 5 13\n"
-                    "1 1  2.0\n",
-                    5, 5, 1, 0};
+const Test FIRST = {
+    "%%MatrixMarket matrix coordinate real general\n"
+    "5 5 13\n"
+    "1 1  2.0\n",
+    5, 5, 1, 0};
 
 template <class ScalarType, class LocalOrdinalType, class GlobalOrdinalType,
           class NodeType>
 bool testReadSparseStream(Teuchos::FancyOStream &out, const Test &test,
                           RCP<const Comm<int>> &comm) {
-
   typedef ScalarType ST;
   typedef LocalOrdinalType LO;
   typedef GlobalOrdinalType GO;
   typedef NodeType NT;
-  using map_type = Tpetra::Map<LO, GO, NT>;
+  using map_type        = Tpetra::Map<LO, GO, NT>;
   using crs_matrix_type = Tpetra::CrsMatrix<ST, LO, GO, NT>;
   ;
   using reader_type = Tpetra::MatrixMarket::Reader<crs_matrix_type>;
-  using inds_type = typename crs_matrix_type::local_inds_host_view_type;
-  using vals_type = typename crs_matrix_type::values_host_view_type;
+  using inds_type   = typename crs_matrix_type::local_inds_host_view_type;
+  using vals_type   = typename crs_matrix_type::values_host_view_type;
 
   const bool callFillComplete = true;
-  const bool tolerant = false;
-  const bool debug = false;
+  const bool tolerant         = false;
+  const bool debug            = false;
 
   out << "Original sparse matrix:" << endl;
   out << test.contents << endl;
@@ -93,7 +94,7 @@ bool testReadSparseStream(Teuchos::FancyOStream &out, const Test &test,
   out << "Reading in the matrix" << endl;
   RCP<const map_type> colMap;
   RCP<const map_type> domainMap = rowMap;
-  RCP<const map_type> rangeMap = rowMap;
+  RCP<const map_type> rangeMap  = rowMap;
   RCP<crs_matrix_type> A =
       reader_type::readSparse(iss, rowMap, colMap, domainMap, rangeMap,
                               callFillComplete, tolerant, debug);
@@ -122,14 +123,13 @@ bool testReadSparseStream(Teuchos::FancyOStream &out, const Test &test,
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool testReadSparse(Teuchos::FancyOStream &out) {
-
   out << "Test: https://github.com/trilinos/Trilinos/issues/11704" << std::endl;
   OSTab tab1(out);
 
   RCP<const Comm<int>> comm = Tpetra::getDefaultComm();
 
   bool success = true;
-  success = success &&
+  success      = success &&
             testReadSparseStream<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
                 out, EMPTY, comm);
   success = success &&
@@ -138,7 +138,7 @@ bool testReadSparse(Teuchos::FancyOStream &out) {
   return success;
 }
 
-} // namespace
+}  // namespace
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrixOutputInput, Issue11704, ST, LO, GO,
                                   NT) {
@@ -146,14 +146,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrixOutputInput, Issue11704, ST, LO, GO,
 }
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-#define UNIT_TEST_GROUP(LO, GO, NODE)                                          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrixOutputInput, Issue11704,       \
+#define UNIT_TEST_GROUP(LO, GO, NODE)                                    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrixOutputInput, Issue11704, \
                                        double, LO, GO, NODE)
 
 #elif defined(HAVE_TPETRA_INST_FLOAT)
-#define UNIT_TEST_GROUP(LO, GO, NODE)                                          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrixOutputInput, Issue11704,       \
-                                       float, LO, GO, NODE)                    \
+#define UNIT_TEST_GROUP(LO, GO, NODE)                                    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CrsMatrixOutputInput, Issue11704, \
+                                       float, LO, GO, NODE)              \
 #else
 #define UNIT_TEST_GROUP(LO, GO, NODE)
 #endif

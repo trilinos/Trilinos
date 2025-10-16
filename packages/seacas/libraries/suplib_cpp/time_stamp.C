@@ -4,7 +4,9 @@
 //
 // See packages/seacas/LICENSE for details
 
+#include <ctime>
 #include <fmt/chrono.h>
+#include <fmt/format.h>
 #include <time_stamp.h>
 
 std::string time_stamp(const std::string &format)
@@ -13,7 +15,7 @@ std::string time_stamp(const std::string &format)
     return {""};
   }
 
-  std::time_t t           = std::time(nullptr);
-  std::string time_string = fmt::format(fmt::runtime(format), *std::localtime(&t));
+  auto        now         = std::chrono::system_clock::now();
+  std::string time_string = fmt::format(fmt::runtime(format), now);
   return time_string;
 }

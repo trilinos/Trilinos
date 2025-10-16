@@ -9,6 +9,7 @@
 #include "el_check_monot.h" // for check_monot
 #include "el_elm.h"         // for HEXSHELL, NN_SIDE, etc
 #include "exodusII.h"       // for ex_inquire_int, etc
+#include "fmt/format.h"
 #include "fmt/ostream.h"
 #include "nem_spread.h"        // for NemSpread, second, etc
 #include "netcdf.h"            // for nc_set_fill, NC_NOFILL
@@ -848,8 +849,7 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, std::vector<INT> &num_
 
     if (globals.Num_Side_Set > 0) {
       for (int i = 0; i < globals.Num_Side_Set; i++) {
-        fmt::print("{:6d}{:11d}  {:12}\n", i, Side_Set_Ids[i],
-                   fmt::group_digits(num_elem_in_ssets[i]));
+        fmt::print("{}\t{}\t\t{}\n", i, Side_Set_Ids[i], fmt::group_digits(num_elem_in_ssets[i]));
       }
     }
 

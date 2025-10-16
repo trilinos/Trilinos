@@ -41,9 +41,6 @@ class Utils {
   CreateCartesianCoordinates(std::string const& coordType, RCP<const Map> const& map, Teuchos::ParameterList& list) {
     using Galeri::Xpetra::VectorTraits;
     typedef typename RealValuedMultiVector::scalar_type real_type;
-    using Node       = typename Map::node_type;
-    using exec_space = typename Node::execution_space;
-    using range_type = Kokkos::RangePolicy<LocalOrdinal, exec_space>;
 
     Teuchos::RCP<RealValuedMultiVector> coordinates;
 
@@ -80,6 +77,8 @@ class Utils {
 
 #if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
     using Node             = typename Map::node_type;
+    using exec_space       = typename Node::execution_space;
+    using range_type       = Kokkos::RangePolicy<LocalOrdinal, exec_space>;
     using tpetra_map       = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
     bool useKokkosCodePath = false;
     if constexpr (std::is_same_v<Map, tpetra_map>)

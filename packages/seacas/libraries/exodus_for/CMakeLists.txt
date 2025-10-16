@@ -41,7 +41,7 @@ if (SEACASExodus_ENABLE_STATIC)
 
    # For backwards compatibility, the Fortran exodus library was called libexoIIv2for.a
    # Create a symbolic link from libexodus_for.a to libexoIIv2for.a -- do only for static lib
-   InstallSymLink(libexodus_for.a ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libexoIIv2for.a)
+   InstallSymLink(libexodus_for.a ${CMAKE_INSTALL_PREFIX}/lib/libexoIIv2for.a)
 endif()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

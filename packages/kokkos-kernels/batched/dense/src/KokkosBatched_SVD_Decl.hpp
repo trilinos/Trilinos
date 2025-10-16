@@ -59,13 +59,15 @@ struct SerialSVD {
   template <typename AViewType, typename UViewType, typename VtViewType, typename SViewType, typename WViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       SVD_USV_Tag, const AViewType &A, const UViewType &U, const SViewType &s, const VtViewType &Vt, const WViewType &W,
-      typename AViewType::const_value_type tol = Kokkos::ArithTraits<typename AViewType::value_type>::zero());
+      typename AViewType::const_value_type tol = Kokkos::ArithTraits<typename AViewType::value_type>::zero(),
+      int max_iters                            = 1000000000);
 
   // Version which computes only singular values
   template <typename AViewType, typename SViewType, typename WViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(
       SVD_S_Tag, const AViewType &A, const SViewType &s, const WViewType &W,
-      typename AViewType::const_value_type tol = Kokkos::ArithTraits<typename AViewType::value_type>::zero());
+      typename AViewType::const_value_type tol = Kokkos::ArithTraits<typename AViewType::value_type>::zero(),
+      int max_iters                            = 1000000000);
 };
 
 }  // namespace KokkosBatched

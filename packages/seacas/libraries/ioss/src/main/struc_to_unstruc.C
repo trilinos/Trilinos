@@ -9,11 +9,11 @@
 #include "Ioss_FileInfo.h"
 #include "Ioss_Hex8.h"
 #include "Ioss_ParallelUtils.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_Utils.h"
 #include "cgns/Iocgns_Utils.h"
 #include <cassert>
 #include <cstdlib>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <stdio.h>
 #include <string>
@@ -39,6 +39,9 @@
 #include "Ioss_State.h"
 #include "Ioss_StructuredBlock.h"
 #include "Ioss_VariableType.h"
+#if IOSS_DEBUG_OUTPUT
+#include "Ioss_use_fmt.h"
+#endif
 
 namespace {
 

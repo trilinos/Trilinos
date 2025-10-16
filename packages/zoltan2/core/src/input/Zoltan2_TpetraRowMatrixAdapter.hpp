@@ -305,7 +305,7 @@ TpetraRowMatrixAdapter<User, UserCoord>::TpetraRowMatrixAdapter(
     for (offset_t e = offsHost_(r), i = 0; e < offsHost_(r + 1); e++) {
       colIdsHost_(e) = matrix_->getColMap()->getGlobalElement(localColInds(i++));
     }
-    for (size_t j = 0; j < nnz; j++) {
+    for (size_t j = 0; j < numEntries; j++) {
       valuesHost_(r) = localVals[j];
     }
   }

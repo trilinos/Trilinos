@@ -31,7 +31,7 @@ namespace Zoltan2_TestingFramework {
     ///
     /// @param kind A string equal to the type of the problem (paritioning, ordering, coloring)
     /// @param kind A string equal to the type of the adapter
-    /// @param params Zolta2 parameter list
+    /// @param params Zoltan2 parameter list
     /// @param (MPI) MPI world communicator
     ///
     /// @return returns a pointer to new Zoltan2::Problem or a nullptr if

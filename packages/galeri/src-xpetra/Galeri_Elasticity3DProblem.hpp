@@ -10,8 +10,8 @@
 #ifndef GALERI_ELASTICITY3DPROBLEM_HPP
 #define GALERI_ELASTICITY3DPROBLEM_HPP
 
-#include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_ParameterList.hpp>
+#include "KokkosBlas3_gemm.hpp"
 
 #include "Galeri_Problem.hpp"
 #include "Galeri_MultiVectorTraits.hpp"
@@ -101,21 +101,27 @@ class Elasticity3DProblem : public Problem<Map, Matrix, MultiVector> {
   std::vector<Scalar> stretch;
   std::string mode_;
 
-  void EvalDxi(const std::vector<Point>& refPoints, Point& gaussPoint, SC* dxi);
-  void EvalDeta(const std::vector<Point>& refPoints, Point& gaussPoint, SC* deta);
-  void EvalDzeta(const std::vector<Point>& refPoints, Point& gaussPoint, SC* dzeta);
+#if KOKKOS_VERSION >= 40799
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<SC>::val_type;
+#else
+  using impl_scalar_type = typename Kokkos::ArithTraits<SC>::val_type;
+#endif
+#if KOKKOS_VERSION >= 40799
+  using KAT = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
+  using KAT              = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
+  using Memory2D = Kokkos::View<impl_scalar_type**, Kokkos::HostSpace>;
+
+  void EvalD(const std::vector<Point>& refPoints, Point& gaussPoint, Memory2D S);
 
   void BuildMesh();
-  void BuildMaterialMatrix(Teuchos::SerialDenseMatrix<LO, SC>& D);
+  void BuildMaterialMatrix(Memory2D& D);
   void BuildReferencePoints(size_t& numRefPoints, std::vector<Point>& refPoints, size_t& numGaussPoints, std::vector<Point>& gaussPoints);
 };
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
 Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMatrix() {
-  using Teuchos::SerialDenseMatrix;
-
-  typedef Teuchos::ScalarTraits<Scalar> TST;
-
   BuildMesh();
 
   const size_t numDofPerNode   = 3;
@@ -128,7 +134,7 @@ Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Ma
   SC t = 1;
 
   // Material matrix
-  RCP<SerialDenseMatrix<LO, SC> > D(new SerialDenseMatrix<LO, SC>);
+  RCP<Memory2D> D(new Memory2D);
   BuildMaterialMatrix(*D);
 
   // Reference element, and reference Gauss points
@@ -139,18 +145,16 @@ Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Ma
   // Evaluate the B matrix for the reference element
   size_t sDim = 8;
   size_t bDim = 9;
-  std::vector<SerialDenseMatrix<LO, SC> > Bs(numGaussPoints);
-  std::vector<SerialDenseMatrix<LO, SC> > Ss(numGaussPoints);
+  std::vector<Memory2D> Bs(numGaussPoints);
+  std::vector<Memory2D> Ss(numGaussPoints);
 
   for (size_t j = 0; j < numGaussPoints; j++) {
-    SerialDenseMatrix<LO, SC>& S = Ss[j];
-    S.shape(sDim, nDim_);
-    EvalDxi(refPoints, gaussPoints[j], S[0]);
-    EvalDeta(refPoints, gaussPoints[j], S[1]);
-    EvalDzeta(refPoints, gaussPoints[j], S[2]);
+    Memory2D& S = Ss[j];
+    S           = Memory2D("S", sDim, nDim_);
+    EvalD(refPoints, gaussPoints[j], S);
 
-    SerialDenseMatrix<LO, SC>& B = Bs[j];
-    B.shape(bDim, numDofPerElem);
+    Memory2D& B = Bs[j];
+    B           = Memory2D("B", bDim, numDofPerElem);
 
     for (size_t k = 0; k < numNodesPerElem; k++) {
       B(0, numDofPerNode * k + 0) = S(k, 0);
@@ -166,17 +170,17 @@ Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Ma
   }
 
   // Construct reordering matrix (see 6.2-9 from Cook)
-  SerialDenseMatrix<LO, SC> R(D->numRows(), bDim);
+  Memory2D R("R", D->extent(0), bDim);
   R(0, 0) = R(1, 4) = R(2, 8) = R(3, 1) = R(3, 3) = R(4, 5) = R(4, 7) = R(5, 2) = R(5, 6) = 1;
 
   this->A_ = MatrixTraits<Map, Matrix>::Build(this->Map_, numNodesPerElem * 8 * numDofPerElem);
   this->A_->setObjectLabel(this->getObjectLabel());
 
   SC one = Teuchos::ScalarTraits<SC>::one(), zero = Teuchos::ScalarTraits<SC>::zero();
-  SerialDenseMatrix<LO, SC> prevKE(numDofPerElem, numDofPerElem), prevElementNodes(numNodesPerElem, nDim_);  // cache
+  Memory2D prevKE("prevKE", numDofPerElem, numDofPerElem), prevElementNodes("prevElementNodes", numNodesPerElem, nDim_);  // cache
   for (size_t i = 0; i < elements_.size(); i++) {
     // Select nodes subvector
-    SerialDenseMatrix<LO, SC> elementNodes(numNodesPerElem, nDim_);
+    Memory2D elementNodes("elementNodes", numNodesPerElem, nDim_);
     std::vector<LO>& elemNodes = elements_[i];
     for (size_t j = 0; j < numNodesPerElem; j++) {
       elementNodes(j, 0) = nodes_[elemNodes[j]].x;
@@ -185,33 +189,34 @@ Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Ma
     }
 
     // Check if element is a translation of the previous element
-    SC xMove = elementNodes(0, 0) - prevElementNodes(0, 0), yMove = elementNodes(0, 1) - prevElementNodes(0, 1), zMove = elementNodes(0, 2) - prevElementNodes(0, 2);
-    typename TST::magnitudeType eps = 1e-15;  // coordinate comparison criteria
+    auto xMove = elementNodes(0, 0) - prevElementNodes(0, 0), yMove = elementNodes(0, 1) - prevElementNodes(0, 1), zMove = elementNodes(0, 2) - prevElementNodes(0, 2);
+    typename KAT::magnitudeType eps = 1e-15;  // coordinate comparison criteria
     bool recompute                  = false;
     {
       size_t j = 0;
       for (j = 0; j < numNodesPerElem; j++)
-        if (Teuchos::ScalarTraits<SC>::magnitude(elementNodes(j, 0) - (prevElementNodes(j, 0) + xMove)) > eps ||
-            Teuchos::ScalarTraits<SC>::magnitude(elementNodes(j, 1) - (prevElementNodes(j, 1) + yMove)) > eps ||
-            Teuchos::ScalarTraits<SC>::magnitude(elementNodes(j, 2) - (prevElementNodes(j, 2) + zMove)) > eps)
+        if (KAT::magnitude(elementNodes(j, 0) - (prevElementNodes(j, 0) + xMove)) > eps ||
+            KAT::magnitude(elementNodes(j, 1) - (prevElementNodes(j, 1) + yMove)) > eps ||
+            KAT::magnitude(elementNodes(j, 2) - (prevElementNodes(j, 2) + zMove)) > eps)
           break;
       if (j != numNodesPerElem)
         recompute = true;
     }
 
-    SerialDenseMatrix<LO, SC> KE(numDofPerElem, numDofPerElem);
+    Memory2D KE("KE", numDofPerElem, numDofPerElem);
+    Kokkos::View<SC**, Kokkos::HostSpace> KE2("KE2", KE.extent(0), KE.extent(1));
     if (recompute == false) {
       // If an element has the same form as previous element, reuse stiffness matrix
-      KE = prevKE;
+      Kokkos::deep_copy(KE, prevKE);
 
     } else {
       // Evaluate new stiffness matrix for the element
-      SerialDenseMatrix<LO, SC> K0(D->numRows(), numDofPerElem);
+      Memory2D K0("K0", D->extent(0), numDofPerElem);
       for (size_t j = 0; j < numGaussPoints; j++) {
-        SerialDenseMatrix<LO, SC>& B = Bs[j];
-        SerialDenseMatrix<LO, SC>& S = Ss[j];
+        Memory2D& B = Bs[j];
+        Memory2D& S = Ss[j];
 
-        SerialDenseMatrix<LO, SC> JAC(nDim_, nDim_);
+        Memory2D JAC("JAC", nDim_, nDim_);
 
         for (size_t p = 0; p < nDim_; p++)
           for (size_t q = 0; q < nDim_; q++) {
@@ -221,11 +226,11 @@ Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Ma
               JAC(p, q) += S(k, p) * elementNodes(k, q);
           }
 
-        SC detJ = JAC(0, 0) * JAC(1, 1) * JAC(2, 2) + JAC(2, 0) * JAC(0, 1) * JAC(1, 2) + JAC(0, 2) * JAC(2, 1) * JAC(1, 0) -
-                  JAC(2, 0) * JAC(1, 1) * JAC(0, 2) - JAC(0, 0) * JAC(2, 1) * JAC(1, 2) - JAC(2, 2) * JAC(0, 1) * JAC(1, 0);
+        auto detJ = JAC(0, 0) * JAC(1, 1) * JAC(2, 2) + JAC(2, 0) * JAC(0, 1) * JAC(1, 2) + JAC(0, 2) * JAC(2, 1) * JAC(1, 0) -
+                    JAC(2, 0) * JAC(1, 1) * JAC(0, 2) - JAC(0, 0) * JAC(2, 1) * JAC(1, 2) - JAC(2, 2) * JAC(0, 1) * JAC(1, 0);
 
         // J2 = inv([JAC zeros(3) zeros(3); zeros(3) JAC zeros(3); zeros(3) zeros(3) JAC])
-        SerialDenseMatrix<LO, SC> J2(nDim_ * nDim_, nDim_ * nDim_);
+        Memory2D J2("J2", nDim_ * nDim_, nDim_ * nDim_);
         J2(0, 0) = J2(3, 3) = J2(6, 6) = (JAC(2, 2) * JAC(1, 1) - JAC(2, 1) * JAC(1, 2)) / detJ;
         J2(0, 1) = J2(3, 4) = J2(6, 7) = -(JAC(2, 2) * JAC(0, 1) - JAC(2, 1) * JAC(0, 2)) / detJ;
         J2(0, 2) = J2(3, 5) = J2(6, 8) = (JAC(1, 2) * JAC(0, 1) - JAC(1, 1) * JAC(0, 2)) / detJ;
@@ -236,19 +241,19 @@ Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Ma
         J2(2, 1) = J2(5, 4) = J2(8, 7) = -(JAC(2, 1) * JAC(0, 0) - JAC(2, 0) * JAC(0, 1)) / detJ;
         J2(2, 2) = J2(5, 5) = J2(8, 8) = (JAC(1, 1) * JAC(0, 0) - JAC(1, 0) * JAC(0, 1)) / detJ;
 
-        SerialDenseMatrix<LO, SC> B2(J2.numRows(), B.numCols());
-        B2.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(), J2, B, zero);
+        Memory2D B2("B2", J2.extent(0), B.extent(1));
+        KokkosBlas::gemm("N", "N", one, J2, B, zero, B2);
 
         // KE = KE + t * J2B' * D * J2B * detJ
-        SerialDenseMatrix<LO, SC> J2B(R.numRows(), B2.numCols());
-        J2B.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, R, B2, zero);
-        K0.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, *D, J2B, zero);
-        KE.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, t * detJ, J2B, K0, one);
+        Memory2D J2B("J2B", R.extent(0), B2.extent(1));
+        KokkosBlas::gemm("N", "N", one, R, B2, zero, J2B);
+        KokkosBlas::gemm("N", "N", one, *D, J2B, zero, K0);
+        KokkosBlas::gemm("T", "N", t * detJ, J2B, K0, one, KE);
       }
 
       // Cache the matrix and nodes
-      prevKE           = KE;
-      prevElementNodes = elementNodes;
+      Kokkos::deep_copy(prevKE, KE);
+      Kokkos::deep_copy(prevElementNodes, elementNodes);
     }
 
     Teuchos::Array<GO> elemDofs(numDofPerElem);
@@ -277,8 +282,8 @@ Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Ma
             LO j2 = numDofPerNode * j + 2;
 
             for (size_t k = 0; k < numDofPerElem; k++)
-              KE[j0][k] = KE[k][j0] = KE[j1][k] = KE[k][j1] = KE[j2][k] = KE[k][j2] = zero;
-            KE[j0][j0] = KE[j1][j1] = KE[j2][j2] = one;
+              KE(j0, k) = KE(k, j0) = KE(j1, k) = KE(k, j1) = KE(j2, k) = KE(k, j2) = zero;
+            KE(j0, j0) = KE(j1, j1) = KE(j2, j2) = one;
           }
 
       } else {
@@ -311,11 +316,21 @@ Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Ma
       }
     }
 
+    if constexpr (!std::is_same_v<SC, impl_scalar_type>)
+      Kokkos::deep_copy(KE2, KE);
+
     // Insert KE into the global matrix
     // NOTE: KE is symmetric, therefore it does not matter that it is in the CSC format
     for (size_t j = 0; j < numDofPerElem; j++)
       if (this->Map_->isNodeGlobalElement(elemDofs[j])) {
-        this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
+        auto inds = Kokkos::Compat::getConstArrayView(elemDofs);
+        if constexpr (std::is_same_v<SC, impl_scalar_type>) {
+          auto vals = Kokkos::Compat::getArrayView(Kokkos::subview(KE, j, Kokkos::ALL()));
+          this->A_->insertGlobalValues(elemDofs[j], inds, vals);
+        } else {
+          auto vals = Kokkos::Compat::getArrayView(Kokkos::subview(KE2, j, Kokkos::ALL()));
+          this->A_->insertGlobalValues(elemDofs[j], inds, vals);
+        }
       }
   }
   this->A_->fillComplete();
@@ -331,7 +346,6 @@ Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVecto
   this->Coords_ = MultiVectorTraits<Map, RealValuedMultiVector>::Build(this->Map_, nDim_);
 
   typedef typename RealValuedMultiVector::scalar_type real_type;
-  typedef Teuchos::ScalarTraits<Scalar> TST;
 
   Teuchos::ArrayRCP<real_type> x = this->Coords_->getDataNonConst(0);
   Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
@@ -342,9 +356,9 @@ Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVecto
   // NOTE: coordinates vector local ordering is consistent with that of the
   // matrix map, as it is constructed by going through GIDs and translating
   // those.
-  const typename TST::magnitudeType hx = TST::magnitude(stretch[0]),
-                                    hy = TST::magnitude(stretch[1]),
-                                    hz = TST::magnitude(stretch[2]);
+  const typename KAT::magnitudeType hx = KAT::magnitude(stretch[0]),
+                                    hy = KAT::magnitude(stretch[1]),
+                                    hz = KAT::magnitude(stretch[2]);
   for (GO p = 0; p < GIDs.size(); p += 3) {  // FIXME: we assume that DOF for the same node are label consequently
     GlobalOrdinal ind = GIDs[p] / 3;
     size_t i = ind % nx_, k = ind / (nx_ * ny_), j = (ind - k * nx_ * ny_) / nx_;
@@ -359,7 +373,6 @@ Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVecto
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
 RCP<MultiVector> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildNullspace() {
-  typedef Teuchos::ScalarTraits<Scalar> TST;
   typedef typename RealValuedMultiVector::scalar_type real_type;
 
   const int numVectors = 6;
@@ -375,7 +388,7 @@ RCP<MultiVector> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, M
   Teuchos::ArrayRCP<real_type> y = this->Coords_->getDataNonConst(1);
   Teuchos::ArrayRCP<real_type> z = this->Coords_->getDataNonConst(2);
 
-  SC one = TST::one();
+  auto one = KAT::one();
 
   // NOTE: nullspace local ordering is consistent with that of the matrix
   // map, as it inherits ordering from coordinates, which is consistent.
@@ -413,7 +426,7 @@ RCP<MultiVector> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, M
 
   // Equalize norms of all vectors to that of the first one
   // We do not normalize them as a vector of ones seems nice
-  Teuchos::Array<typename TST::magnitudeType> norms2(numVectors);
+  Teuchos::Array<typename KAT::magnitudeType> norms2(numVectors);
   this->Nullspace_->norm2(norms2);
   Teuchos::Array<SC> norms2scalar(numVectors);
   for (int i = 0; i < numVectors; i++)
@@ -425,10 +438,9 @@ RCP<MultiVector> Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, M
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
 void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMesh() {
-  typedef Teuchos::ScalarTraits<Scalar> TST;
-  const typename TST::magnitudeType hx = TST::magnitude(stretch[0]),
-                                    hy = TST::magnitude(stretch[1]),
-                                    hz = TST::magnitude(stretch[2]);
+  const typename KAT::magnitudeType hx = KAT::magnitude(stretch[0]),
+                                    hy = KAT::magnitude(stretch[1]),
+                                    hz = KAT::magnitude(stretch[2]);
 
   GO myPID         = this->Map_->getComm()->getRank();
   GO const& negOne = -1;
@@ -512,8 +524,8 @@ void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, Multi
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMaterialMatrix(Teuchos::SerialDenseMatrix<LocalOrdinal, Scalar>& D) {
-  D.shape(6, 6);
+void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMaterialMatrix(Memory2D& D) {
+  D                                                   = Memory2D("Material", 6, 6);
   typename Teuchos::ScalarTraits<SC>::magnitudeType c = E / (1 + nu) / (1 - 2 * nu);
   D(0, 0)                                             = c * (1 - nu);
   D(0, 1)                                             = c * nu;
@@ -556,30 +568,18 @@ void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, Multi
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::EvalDxi(const std::vector<Point>& refPoints, Point& gaussPoint, SC* dxi) {
+void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::EvalD(const std::vector<Point>& refPoints, Point& gaussPoint, Memory2D S) {
   const Scalar one    = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar eight  = one + one + one + one + one + one + one + one;
   const Scalar eighth = one / eight;
-  for (size_t j = 0; j < refPoints.size(); j++)
-    dxi[j] = refPoints[j].x * (one + refPoints[j].y * gaussPoint.y) * (one + refPoints[j].z * gaussPoint.z) * eighth;
-}
-
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::EvalDeta(const std::vector<Point>& refPoints, Point& gaussPoint, SC* deta) {
-  const Scalar one    = Teuchos::ScalarTraits<Scalar>::one();
-  const Scalar eight  = one + one + one + one + one + one + one + one;
-  const Scalar eighth = one / eight;
-  for (size_t j = 0; j < refPoints.size(); j++)
-    deta[j] = (one + refPoints[j].x * gaussPoint.x) * refPoints[j].y * (one + refPoints[j].z * gaussPoint.z) * eighth;
-}
-
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
-void Elasticity3DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::EvalDzeta(const std::vector<Point>& refPoints, Point& gaussPoint, SC* dzeta) {
-  const Scalar one    = Teuchos::ScalarTraits<Scalar>::one();
-  const Scalar eight  = one + one + one + one + one + one + one + one;
-  const Scalar eighth = one / eight;
-  for (size_t j = 0; j < refPoints.size(); j++)
-    dzeta[j] = (one + refPoints[j].x * gaussPoint.x) * (one + refPoints[j].y * gaussPoint.y) * refPoints[j].z * eighth;
+  for (size_t j = 0; j < refPoints.size(); j++) {
+    // dxi
+    S(j, 0) = refPoints[j].x * (one + refPoints[j].y * gaussPoint.y) * (one + refPoints[j].z * gaussPoint.z) * eighth;
+    // deta
+    S(j, 1) = (one + refPoints[j].x * gaussPoint.x) * refPoints[j].y * (one + refPoints[j].z * gaussPoint.z) * eighth;
+    // dzeta
+    S(j, 2) = (one + refPoints[j].x * gaussPoint.x) * (one + refPoints[j].y * gaussPoint.y) * refPoints[j].z * eighth;
+  }
 }
 
 }  // namespace Xpetra

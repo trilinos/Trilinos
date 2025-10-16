@@ -250,7 +250,8 @@ bool SystemInterface::parse_options(int argc, char **argv)
     fmt::print(stderr, "\n\t   Can also set options via SLICE_OPTIONS environment variable.\n");
     fmt::print(stderr, "\n\tDocumentation: "
                        "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#slice\n");
-    fmt::print(stderr, "\n\t->->-> Send email to gsjaardema@gmail.com for slice support.<-<-<-\n");
+    fmt::print(stderr,
+               "\n\t->->-> Send email to sierra-help@sandia.gov for slice support.<-<-<-\n");
     exit(EXIT_SUCCESS);
   }
 

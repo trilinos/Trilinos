@@ -29,13 +29,15 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
-  // forward declaration of Array
-  template<class T> class Array;
+// forward declaration of Array
+template <class T>
+class Array;
 
-  // forward declaration of RCP
-  template<class T> class RCP;
-} // namespace Teuchos
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+// forward declaration of RCP
+template <class T>
+class RCP;
+}  // namespace Teuchos
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace Tpetra {
 
@@ -93,25 +95,23 @@ namespace Details {
 /// means "sort remote GIDs."  If you don't want to sort, for
 /// compatibility with Epetra, set sortEachProcsGids to false.
 template <class LO, class GO, class NT>
-int
-makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
-            Teuchos::Array<int>& remotePIDs,
-            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& domMap,
-            const RowGraph<LO, GO, NT>& graph,
-            const bool sortEachProcsGids = true,
-            std::ostream* errStrm = NULL);
+int makeColMap(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
+               Teuchos::Array<int>& remotePIDs,
+               const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
+               const RowGraph<LO, GO, NT>& graph,
+               const bool sortEachProcsGids = true,
+               std::ostream* errStrm        = NULL);
 
 /// \brief Construct a column map for the given set of gids (always sorting remote GIDs within each remote process).
 /// \param colMap [out] Will be set to the new column map.
 /// \param domMap [in] The domain map, used to determine which global columns are locally owned.
 template <class LO, class GO, class NT>
-int
-makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
-            const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
-            Kokkos::View<GO*, typename NT::memory_space> gids,
-            std::ostream* errStrm = NULL);
+int makeColMap(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
+               const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
+               Kokkos::View<GO*, typename NT::memory_space> gids,
+               std::ostream* errStrm = NULL);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_MAKECOLMAP_DECL_HPP
+#endif  // TPETRA_DETAILS_MAKECOLMAP_DECL_HPP

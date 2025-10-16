@@ -352,9 +352,10 @@ Piro::TrapezoidRuleSolver<Scalar>::evalModelImpl(
      // Observe completed time step
      if (observer != Teuchos::null) observer->observeSolution(*soln, t);
 
-     if (g_out != Teuchos::null)
-       *out << "Responses at time step(time) = " << timeStep << "("<<t<<")\n" << g_out << std::endl;
-
+     if (g_out != Teuchos::null) {
+       Scalar gnorm = norm_2(*g_out);
+       *out << "Responses norm at time step(time) = " << timeStep << "("<<t<<")\n" << gnorm << std::endl;
+     }
    }
 
 }

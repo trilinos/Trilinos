@@ -16,7 +16,12 @@
 #include <vector>
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include <Kokkos_Core_fwd.hpp>
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+#include "Sacado.hpp"
+#else
 #include "Kokkos_DynRankView_Fad.hpp" // for copy/assignment specializations
+#endif
 #include "Phalanx_FieldTag_Tag.hpp"
 
 // **********************************************************************

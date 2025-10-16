@@ -11,20 +11,19 @@
 
 namespace TSQR {
 
-  StatTimeMonitor::StatTimeMonitor (Teuchos::Time& timer, TimeStats& stats)
-    : timer_ (timer), stats_ (stats)
-  {
-    if (timer_.isRunning())
-      timer_.stop(); // Just for sanity
-    if (timer_.numCalls() == 0)
-      stats_.init();
-    timer_.start (true);
-  }
+StatTimeMonitor::StatTimeMonitor(Teuchos::Time& timer, TimeStats& stats)
+  : timer_(timer)
+  , stats_(stats) {
+  if (timer_.isRunning())
+    timer_.stop();  // Just for sanity
+  if (timer_.numCalls() == 0)
+    stats_.init();
+  timer_.start(true);
+}
 
-  StatTimeMonitor::~StatTimeMonitor ()
-  {
-    const double curTime = timer_.stop();
-    stats_.update (curTime);
-  }
+StatTimeMonitor::~StatTimeMonitor() {
+  const double curTime = timer_.stop();
+  stats_.update(curTime);
+}
 
-} // namespace TSQR
+}  // namespace TSQR

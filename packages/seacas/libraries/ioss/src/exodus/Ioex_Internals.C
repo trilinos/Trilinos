@@ -6,7 +6,7 @@
 
 #include "exodus/Ioex_Internals.h" // for Internals, ElemBlock, etc
 #include "exodus/Ioex_Utils.h"
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include "Ioss_ElementTopology.h"
 #include "Ioss_GroupingEntity.h"
@@ -677,8 +677,10 @@ void Mesh::populate(Ioss::Region *region)
   {
     const auto &assem = region->get_assemblies();
     for (auto &assembly : assem) {
-      Ioex::Assembly T(*(assembly));
-      assemblies.push_back(T);
+      if (assembly->member_count() > 0) {
+        Ioex::Assembly T(*(assembly));
+        assemblies.push_back(T);
+      }
     }
   }
 

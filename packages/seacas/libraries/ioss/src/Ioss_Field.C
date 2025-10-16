@@ -10,7 +10,6 @@
 #include "Ioss_VariableType.h"
 #include <cstddef>
 #include <cstdint>
-#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <iostream>
@@ -26,13 +25,11 @@ namespace {
 
   void error_message(const Ioss::Field &field, Ioss::Field::BasicType requested_type)
   {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "ERROR: For field named '{}', code requested value of type '{}', but field type is "
-               "'{}'. Types must match\n",
-               field.get_name(), Ioss::Field::type_string(requested_type),
-               Ioss::Field::type_string(field.get_type()));
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format(
+        "ERROR: For field named '{}', code requested value of type '{}', but field type is "
+        "'{}'. Types must match\n",
+        field.get_name(), Ioss::Field::type_string(requested_type),
+        Ioss::Field::type_string(field.get_type())));
   }
 
 } // namespace
@@ -191,11 +188,9 @@ size_t Ioss::Field::verify(size_t data_size) const
     // Check sufficient storage
     size_t required = get_size();
     if (required > data_size) {
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "Field {} requires {} bytes to store its data. Only {} bytes were provided.\n",
-                 name_, required, data_size);
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR(fmt::format(
+          "Field {} requires {} bytes to store its data. Only {} bytes were provided.\n", name_,
+          required, data_size));
     }
   }
   return rawCount_;
@@ -221,12 +216,10 @@ void Ioss::Field::check_type(BasicType the_type) const
 const Ioss::Field &Ioss::Field::set_zero_copy_enabled(bool true_false) const
 {
   if (has_transform()) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "Field {} is being set to `zero_copy_enabled`; however, it contains 1 or more "
-               "transforms which is not allowed.\n",
-               name_);
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(
+        fmt::format("Field {} is being set to `zero_copy_enabled`; however, it contains 1 or more "
+                    "transforms which is not allowed.\n",
+                    name_));
   }
   zeroCopyable_ = true_false;
   return *this;
@@ -277,12 +270,10 @@ size_t Ioss::Field::get_basic_size() const
 bool Ioss::Field::add_transform(Transform *my_transform)
 {
   if (zero_copy_enabled()) {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "Field {} is currently set to `zero_copy_enabled` which does not support adding a "
-               "transform.  The transform has *not* been added to this field.\n",
-               name_);
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format(
+        "Field {} is currently set to `zero_copy_enabled` which does not support adding a "
+        "transform.  The transform has *not* been added to this field.\n",
+        name_));
   }
 
   const Ioss::VariableType *new_storage = my_transform->output_storage(transStorage_);

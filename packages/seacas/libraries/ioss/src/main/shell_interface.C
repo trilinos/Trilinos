@@ -7,7 +7,7 @@
  */
 #include <cstdlib> // for exit, strtod, EXIT_SUCCESS, etc
 #include <cstring> // for strcmp
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <stdio.h>
 #include <string> // for string, char_traits
@@ -42,6 +42,9 @@ void IOShell::Interface::enroll_options()
 #if defined(SEACAS_HAVE_CGNS)
                   "|cgns"
 #endif
+#if defined(SEACAS_HAVE_S3)
+                  "|s3"
+#endif
                   ".\n\t\tIf not specified, guess from extension or exodus is the default.",
                   "unknown");
 
@@ -58,6 +61,9 @@ void IOShell::Interface::enroll_options()
 #endif
 #if defined(SEACAS_HAVE_FAODEL)
                   " faodel"
+#endif
+#if defined(SEACAS_HAVE_S3)
+                  " s3"
 #endif
                   " null.\n\t\tIf not specified, guess from extension or exodus is the default.",
                   "unknown");
@@ -470,7 +476,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
       fmt::print(stderr,
                  "\tDocumentation: "
                  "https://sandialabs.github.io/seacas-docs/sphinx/html/index.html#io-shell\n\n");
-      fmt::print(stderr, "\t->->-> Send email to gdsjaar@sandia.gov for {} support.<-<-<-\n",
+      fmt::print(stderr, "\t->->-> Send email to sierra-help@sandia.gov for {} support.<-<-<-\n",
                  options_.program_name());
     }
     exit(EXIT_SUCCESS);

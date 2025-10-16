@@ -123,7 +123,7 @@ public:
         {
             Scalar tmp = 0.;
             Kokkos::parallel_reduce(
-                Kokkos::TeamThreadRange(team, nj), [=](int jj, Scalar &tmp_sum) {
+                Kokkos::TeamThreadRange(team, nj), [&](int jj, Scalar &tmp_sum) {
                     tmp_sum += A_(jj + j_min, i) * x_(jj + j_min);
                 },
                 tmp);
@@ -137,7 +137,7 @@ public:
         {
             Scalar tmp = 0.;
             Kokkos::parallel_reduce(
-                Kokkos::TeamThreadRange(team, nj), [=](int jj, Scalar &tmp_sum) {
+                Kokkos::TeamThreadRange(team, nj), [&](int jj, Scalar &tmp_sum) {
                     tmp_sum += A_(jj + j_min, i) * x_(jj + j_min);
                 },
                 tmp);

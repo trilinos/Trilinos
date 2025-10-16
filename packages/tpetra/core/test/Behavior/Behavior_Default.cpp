@@ -15,7 +15,7 @@
 #include <Tpetra_Details_Behavior.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_CommHelpers.hpp>
-#include <cstdlib> // std::getenv
+#include <cstdlib>  // std::getenv
 
 namespace {
 
@@ -26,19 +26,18 @@ namespace {
  * they are cached for future use.  Therefore, to test several values of an
  * environment variable, several tests need to be created (one for each distinct
  * value of the environment variable).
-*/
+ */
 
-TEUCHOS_UNIT_TEST(Behavior, Default)
-{
+TEUCHOS_UNIT_TEST(Behavior, Default) {
   bool verbose_default = false;
-  bool verb = Tpetra::Details::Behavior::verbose();
-  TEUCHOS_TEST_ASSERT(verb==verbose_default, out, success);
+  bool verb            = Tpetra::Details::Behavior::verbose();
+  TEUCHOS_TEST_ASSERT(verb == verbose_default, out, success);
 
-  // Print current values of other behaviors. 
-  // Can't test against default since these behaviors may be 
+  // Print current values of other behaviors.
+  // Can't test against default since these behaviors may be
   // changed by environment variables (in which case, test against
   // default fails)
-  std::cout << "\n        GPU-aware MPI?  " 
+  std::cout << "\n        GPU-aware MPI?  "
             << Tpetra::Details::Behavior::assumeMpiIsGPUAware()
             << "\n";
 
@@ -49,15 +48,15 @@ TEUCHOS_UNIT_TEST(Behavior, Default)
 
 TEUCHOS_UNIT_TEST(Behavior, verbosePrintCountThreshold) {
   // We only require that the default be between these values.
-  const size_t maxVal (1000);
-  const size_t minVal (100);
+  const size_t maxVal(1000);
+  const size_t minVal(100);
   const size_t val0 =
-    Tpetra::Details::Behavior::verbosePrintCountThreshold();
-  TEST_ASSERT( val0 >= minVal && val0 <= maxVal );
+      Tpetra::Details::Behavior::verbosePrintCountThreshold();
+  TEST_ASSERT(val0 >= minVal && val0 <= maxVal);
 
   const size_t val1 =
-    Tpetra::Details::Behavior::verbosePrintCountThreshold();
-  TEST_ASSERT( val1 >= minVal && val1 <= maxVal );
+      Tpetra::Details::Behavior::verbosePrintCountThreshold();
+  TEST_ASSERT(val1 >= minVal && val1 <= maxVal);
 }
 
-} // namespace (anonymous)
+}  // namespace

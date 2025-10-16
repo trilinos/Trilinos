@@ -233,10 +233,10 @@ public:
 
         // Do remaining entries with a scalar loop
         for ( ; i < dim; ++i) {
-          const ValueType ai = *aa++;
-          const ValueType xi = *xx++;
-          *yy++ += c1*(a0*xi + ai*x0);
-          y0  += c1*ai*xi;
+          const ValueType ai3 = *aa++;
+          const ValueType xi2 = *xx++;
+          *yy++ += c1*(a0*xi2 + ai3*x0);
+          y0  += c1*ai3*xi2;
         }
         y[0] += y0 + (c0-3.0*c1)*a0*x0;
       }
@@ -271,10 +271,10 @@ public:
 
         // Do remaining entries with a scalar loop
         for ( ; i < dim; ++i) {
-          const ValueType ai = *aa++;
-          const ValueType xi = *xx++;
-          const ValueType aixi = ai*xi;
-          *yy++ += c1*(a0*xi + ai*x0) + c2*aixi;
+          const ValueType ai3 = *aa++;
+          const ValueType xi2 = *xx++;
+          const ValueType aixi = ai3*xi2;
+          *yy++ += c1*(a0*xi2 + ai3*x0) + c2*aixi;
           y0  += c1*aixi;
         }
         y[0] += y0 + (c0-3.0*c1-c2)*a0*x0;

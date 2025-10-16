@@ -3725,7 +3725,7 @@ struct ReduceWeightsFunctor {
       sh_mem_size);
 
     // init the shared array to 0
-    Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
+    Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
       for(int n = 0; n < value_count_weights; ++n) {
         shared_ptr[n] = 0;
       }
@@ -3739,7 +3739,7 @@ struct ReduceWeightsFunctor {
 
     Kokkos::parallel_for(
       Kokkos::TeamThreadRange(teamMember, begin, end),
-      [=] (index_t ii) {
+      [&] (index_t ii) {
 #else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     // create the team shared data - each thread gets one of the arrays
     size_t sh_mem_size = sizeof(array_t) * (value_count_weights +
@@ -4508,7 +4508,7 @@ struct ReduceArrayFunctor {
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     // init the shared array to 0
-    Kokkos::single(Kokkos::PerTeam(teamMember), [=] () {
+    Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
       for(int n = 0; n < value_count; ++n) {
         shared_ptr[n] = 0;
       }
@@ -4516,7 +4516,7 @@ struct ReduceArrayFunctor {
     teamMember.team_barrier();
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, begin, end),
-      [=] (index_t ii) {
+      [&] (index_t ii) {
 #else // KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     // select the array for this thread
     Zoltan2_MJArrayType<array_t> array(&shared_ptr[teamMember.team_rank() *

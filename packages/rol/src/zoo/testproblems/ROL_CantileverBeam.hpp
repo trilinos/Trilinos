@@ -210,9 +210,9 @@ public:
     //(*xp)[1] = std::sqrt(3.0);
 
     Ptr<std::vector<Real>> xp = makePtr<std::vector<Real>>(2*nseg_);
-    for (int i = 0; i < nseg_; ++i) {
-      (*xp)[i]       = 3.0;
-      (*xp)[i+nseg_] = std::sqrt(3.0);
+    for (int li = 0; li < nseg_; ++li) {
+      (*xp)[li]       = 3.0;
+      (*xp)[li+nseg_] = std::sqrt(3.0);
     }
 
     return makePtr<StdVector<Real>>(xp);

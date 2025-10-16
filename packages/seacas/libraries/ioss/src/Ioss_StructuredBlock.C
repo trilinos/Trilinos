@@ -15,11 +15,11 @@
 #include "Ioss_StructuredBlock.h"
 #include <cmath>
 #include <cstddef> // for size_t
+#include <cstdlib>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
 #include <iostream>
-#include <stdlib.h>
 #include <string> // for string
 #include <vector> // for vector
 
@@ -155,16 +155,13 @@ namespace Ioss {
 
     if ((m_ijkGlobal[0] < m_ijk[0] + m_offset[0]) || (m_ijkGlobal[1] < m_ijk[1] + m_offset[1]) ||
         (m_ijkGlobal[2] < m_ijk[2] + m_offset[2])) {
-      auto               util = get_database()->util();
-      std::ostringstream errmsg;
-      fmt::print(errmsg,
-                 "\nERROR: Inconsistent Structured Block parameters for block {} on rank {}.\n"
-                 "       Global IJK: {} x {} x {}; Local IJK: {} x {} x {}; Offset: {} x {} x {}\n"
-                 "       Global must be >= Local + Offset.\n",
-                 my_name, util.parallel_rank(), m_ijkGlobal[0], m_ijkGlobal[1], m_ijkGlobal[2],
-                 m_ijk[0], m_ijk[1], m_ijk[2], m_offset[0], m_offset[1], m_offset[2]);
-      std::cerr << errmsg.str();
-      IOSS_ERROR(errmsg);
+      auto util = get_database()->util();
+      IOSS_ERROR(fmt::format(
+          "\nERROR: Inconsistent Structured Block parameters for block {} on rank {}.\n"
+          "       Global IJK: {} x {} x {}; Local IJK: {} x {} x {}; Offset: {} x {} x {}\n"
+          "       Global must be >= Local + Offset.\n",
+          my_name, util.parallel_rank(), m_ijkGlobal[0], m_ijkGlobal[1], m_ijkGlobal[2], m_ijk[0],
+          m_ijk[1], m_ijk[2], m_offset[0], m_offset[1], m_offset[2]));
     }
 
     SMART_ASSERT(m_ijkGlobal[0] >= m_ijk[0])(m_ijkGlobal[0])(m_ijk[0]);

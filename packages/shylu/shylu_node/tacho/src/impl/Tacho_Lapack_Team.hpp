@@ -21,6 +21,7 @@ namespace Tacho {
 
 template <typename T> struct LapackTeam {
   struct Impl {
+
     template <typename MemberType>
     static KOKKOS_INLINE_FUNCTION void potrf_upper(const MemberType &member, const int m, T *KOKKOS_RESTRICT A,
                                                    const int as0, const int as1, int *info) {
@@ -417,6 +418,38 @@ template <typename T> struct LapackTeam {
       member.team_barrier();
     }
   }
+
+    template <typename MemberType>
+    static KOKKOS_INLINE_FUNCTION void sytrf_nopiv(const MemberType &member, const char uplo, const int m,
+                                                   T *KOKKOS_RESTRICT A, const int lda, int *info) {
+      *info = 0;
+      if (m <= 0)
+        return;
+
+      typedef ArithTraits<T> arith_traits;
+
+      // upper
+      for (int p = 0; p < m; ++p) {
+        const int jend = m - p - 1;
+
+        T *KOKKOS_RESTRICT alpha11 = A + (p)     + (p)*lda,
+          *KOKKOS_RESTRICT a12t    = A + (p)     + (p + 1) * lda,
+          *KOKKOS_RESTRICT A22     = A + (p + 1) + (p + 1) * lda;
+
+        member.team_barrier();
+        const auto alpha = arith_traits::real(*alpha11);
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, jend), [&](const int &j) { a12t[j * lda] /= alpha; });
+        member.team_barrier();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, jend), [&](const int &j) {
+          const T aa = alpha * arith_traits::conj(a12t[j * lda]);
+          Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j + 1), [&](const int &i) {
+            const T bb = a12t[i * lda];
+            A22[i + j * lda] -= aa * bb;
+          });
+        });
+        member.team_barrier();
+      }
+    }
 };
 
 } // namespace Tacho

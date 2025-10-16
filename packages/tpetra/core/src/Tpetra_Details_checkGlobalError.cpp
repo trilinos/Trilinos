@@ -17,17 +17,15 @@
 namespace Tpetra {
 namespace Details {
 
-void
-checkGlobalError(std::ostream& globalOutputStream,
-                 const bool localSuccess,
-                 const char localErrorMessage[],
-                 const char globalErrorMessageHeader[],
-                 const Teuchos::Comm<int>& comm)
-{
+void checkGlobalError(std::ostream& globalOutputStream,
+                      const bool localSuccess,
+                      const char localErrorMessage[],
+                      const char globalErrorMessageHeader[],
+                      const Teuchos::Comm<int>& comm) {
+  using std::endl;
   using Teuchos::outArg;
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
-  using std::endl;
 
   int lclGood = localSuccess ? 1 : 0;
   int gblGood = 0;
@@ -35,33 +33,33 @@ checkGlobalError(std::ostream& globalOutputStream,
   if (gblGood != 1) {
     const int myRank = comm.getRank();
     if (myRank == 0) {
-      globalOutputStream << endl << globalErrorMessageHeader
+      globalOutputStream << endl
+                         << globalErrorMessageHeader
                          << endl;
     }
 
     if (localSuccess || localErrorMessage == nullptr) {
       Details::gathervPrint(globalOutputStream, "", comm);
-    }
-    else {
+    } else {
       std::ostringstream lclMsg;
       lclMsg << endl;
       constexpr int numStars = 60;
       for (int star = 0; star < numStars; ++star) {
         lclMsg << '*';
       }
-      lclMsg << endl << "Proc " << myRank << ": "
+      lclMsg << endl
+             << "Proc " << myRank << ": "
              << localErrorMessage << endl;
       Details::gathervPrint(globalOutputStream, lclMsg.str(), comm);
     }
 
 #ifdef HAVE_TPETRA_MPI
-    (void) MPI_Abort(MPI_COMM_WORLD, -1);
+    (void)MPI_Abort(MPI_COMM_WORLD, -1);
 #else
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (true, std::runtime_error, "Tpetra reports a global error.");
-#endif // HAVE_TPETRA_MPI
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Tpetra reports a global error.");
+#endif  // HAVE_TPETRA_MPI
   }
 }
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra

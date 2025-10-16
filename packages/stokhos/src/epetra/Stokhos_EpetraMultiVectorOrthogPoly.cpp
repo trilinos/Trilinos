@@ -31,12 +31,12 @@ Stokhos::EpetraMultiVectorOrthogPoly::
 EpetraMultiVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
+  const Teuchos::RCP<const Epetra_BlockMap>& _coeff_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& _product_comm,
   int num_vectors) : 
   ProductContainer<Epetra_MultiVector>(block_map),
   VectorOrthogPoly<Epetra_MultiVector>(basis, block_map),
-  ProductEpetraMultiVector(block_map, coeff_map, product_comm, num_vectors) 
+  ProductEpetraMultiVector(block_map, _coeff_map, _product_comm, num_vectors)
 {
 }
 
@@ -44,13 +44,13 @@ Stokhos::EpetraMultiVectorOrthogPoly::
 EpetraMultiVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
+  const Teuchos::RCP<const Epetra_BlockMap>& _coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& _product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& _product_comm,
   int num_vectors) :
   ProductContainer<Epetra_MultiVector>(block_map),
   VectorOrthogPoly<Epetra_MultiVector>(basis, block_map),
-  ProductEpetraMultiVector(block_map, coeff_map, product_map, product_comm, 
+  ProductEpetraMultiVector(block_map, _coeff_map, _product_map, _product_comm,
 			   num_vectors)
 {
 }
@@ -59,14 +59,14 @@ Stokhos::EpetraMultiVectorOrthogPoly::
 EpetraMultiVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
+  const Teuchos::RCP<const Epetra_BlockMap>& _coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& _product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& _product_comm,
   Epetra_DataAccess CV,
   const Epetra_MultiVector& block_vector) :
   ProductContainer<Epetra_MultiVector>(block_map),
   VectorOrthogPoly<Epetra_MultiVector>(basis, block_map),
-  ProductEpetraMultiVector(block_map, coeff_map, product_map, product_comm, CV,
+  ProductEpetraMultiVector(block_map, _coeff_map, _product_map, _product_comm, CV,
 			   block_vector)
 {
 }
@@ -95,11 +95,11 @@ Stokhos::EpetraMultiVectorOrthogPoly::
 reset(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& new_basis,
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
+  const Teuchos::RCP<const Epetra_BlockMap>& _coeff_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& _product_comm,
   int num_vectors) 
 {
-  ProductEpetraMultiVector::reset(block_map, coeff_map, product_comm, 
+  ProductEpetraMultiVector::reset(block_map, _coeff_map, _product_comm,
 				  num_vectors);
   this->basis_ = new_basis;
 }
@@ -109,13 +109,13 @@ Stokhos::EpetraMultiVectorOrthogPoly::
 reset(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& new_basis,
   const Teuchos::RCP<const Epetra_BlockMap>& block_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& coeff_map,
-  const Teuchos::RCP<const Epetra_BlockMap>& product_map,
-  const Teuchos::RCP<const EpetraExt::MultiComm>& product_comm,
+  const Teuchos::RCP<const Epetra_BlockMap>& _coeff_map,
+  const Teuchos::RCP<const Epetra_BlockMap>& _product_map,
+  const Teuchos::RCP<const EpetraExt::MultiComm>& _product_comm,
   int num_vectors) 
 {
-  ProductEpetraMultiVector::reset(block_map, coeff_map, product_map, 
-				  product_comm, num_vectors);
+  ProductEpetraMultiVector::reset(block_map, _coeff_map, _product_map,
+				  _product_comm, num_vectors);
   this->basis_ = new_basis;
 }
 

@@ -146,6 +146,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetPar
   scalingFactor_    = Teuchos::ScalarTraits<double>::one();
   blockSize_        = 1;
   dofOffset_        = 0;
+  hierarchyLabel_   = "";
 
   if (paramList.isSublist("Hierarchy")) {
     SetFactoryParameterList(paramList);
@@ -252,6 +253,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   if (paramList.isParameter("W cycle start level")) {
     WCycleStartLevel_ = paramList.get<int>("W cycle start level");
+  }
+
+  if (paramList.isParameter("hierarchy label")) {
+    this->hierarchyLabel_ = paramList.get<std::string>("hierarchy label");
   }
 
   if (paramList.isParameter("coarse grid correction scaling factor"))
@@ -1075,6 +1080,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: lumping choice", std::string, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: count negative diagonals", bool, dropParams);
     }
 
 #ifdef HAVE_MUELU_COALESCEDROP_ALLOW_OLD_PARAMETERS
@@ -2073,6 +2079,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: lumping choice", std::string, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom growth factor", double, fParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: spread lumping diag dom cap", double, fParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: count negative diagonals", bool, fParams);
       filterFactory->SetParameterList(fParams);
       filterFactory->SetFactory("Graph", manager.GetFactory("Graph"));
       filterFactory->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
@@ -2434,6 +2441,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       this->WCycleStartLevel_ = hieraList.get<int>("W cycle start level");
     }
 
+    if (hieraList.isParameter("hierarchy label")) {
+      this->hierarchyLabel_ = hieraList.get<std::string>("hierarchy label");
+    }
+
     if (hieraList.isParameter("verbosity")) {
       std::string vl = hieraList.get<std::string>("verbosity");
       hieraList.remove("verbosity");
@@ -2762,6 +2773,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupH
   H.SetCycle(Cycle_);
   H.SetCycleStartLevel(WCycleStartLevel_);
   H.SetProlongatorScalingFactor(scalingFactor_);
+  H.SetLabel(hierarchyLabel_);
   HierarchyManager::SetupHierarchy(H);
 }
 

@@ -21,7 +21,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 TPETRA_INSTANTIATE_LGN(TPETRA_DETAILS_TRANSFER_INSTANT)
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif  // HAVE_TPETRA_EXPLICIT_INSTANTIATION

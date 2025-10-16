@@ -14,11 +14,21 @@
 #include "Sacado.hpp"
 #include "Fad_CommTests.hpp"
 
+Sacado::Random<double> rnd;
+
 typedef int Ordinal;
 typedef Sacado::Fad::DFad<double> Fad_DFadType;
 typedef Sacado::Fad::SLFad<double,10> Fad_SLFadType;
 typedef Sacado::Fad::SFad<double,5> Fad_SFadType;
 
+FAD_KOKKOS_COMM_TESTS_CUDA(Fad_SLFadType, Fad_SLFad)
+FAD_KOKKOS_COMM_TESTS_CUDA(Fad_SFadType, Fad_SFad)
+
+#if defined(KOKKOS_ENABLE_CUDA_UVM)
+FAD_KOKKOS_COMM_TESTS_CUDA(Fad_DFadType, Fad_DFad)
+#endif
+
+#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 typedef Sacado::CacheFad::DFad<double> CacheFad_DFadType;
 typedef Sacado::CacheFad::SLFad<double,10> CacheFad_SLFadType;
 typedef Sacado::CacheFad::SFad<double,5> CacheFad_SFadType;
@@ -30,11 +40,7 @@ typedef Sacado::ELRFad::SFad<double,5> ELRFad_SFadType;
 typedef Sacado::ELRCacheFad::DFad<double> ELRCacheFad_DFadType;
 typedef Sacado::ELRCacheFad::SLFad<double,10> ELRCacheFad_SLFadType;
 typedef Sacado::ELRCacheFad::SFad<double,5> ELRCacheFad_SFadType;
-Sacado::Random<double> rnd;
 
-
-FAD_KOKKOS_COMM_TESTS_CUDA(Fad_SLFadType, Fad_SLFad)
-FAD_KOKKOS_COMM_TESTS_CUDA(Fad_SFadType, Fad_SFad)
 
 FAD_KOKKOS_COMM_TESTS_CUDA(CacheFad_SLFadType, CacheFad_SLFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(CacheFad_SFadType, CacheFad_SFad)
@@ -46,10 +52,10 @@ FAD_KOKKOS_COMM_TESTS_CUDA(ELRCacheFad_SLFadType, ELRCacheFad_SLFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(ELRCacheFad_SFadType, ELRCacheFad_SFad)
 
 #if defined(KOKKOS_ENABLE_CUDA_UVM)
-FAD_KOKKOS_COMM_TESTS_CUDA(Fad_DFadType, Fad_DFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(CacheFad_DFadType, CacheFad_DFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(ELRFad_DFadType, ELRFad_DFad)
 FAD_KOKKOS_COMM_TESTS_CUDA(ELRCacheFad_DFadType, ELRCacheFad_DFad)
+#endif
 #endif
 
 

@@ -54,46 +54,48 @@
 
 #include "Teuchos_RCP.hpp"
 
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class CrsMatrixStruct;
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node> class BlockCrsMatrixStruct;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class CrsMatrixStruct;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+class BlockCrsMatrixStruct;
 
-namespace MMdetails{
+namespace MMdetails {
 
-  // Other functions
-template<class Scalar,
-         class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node>
+// Other functions
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 void import_and_extract_views(
-  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M,
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
-  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
-  bool userAssertsThereAreNoRemotes = false,
-  const std::string& label = std::string(),
-  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M,
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
+    bool userAssertsThereAreNoRemotes                                                = false,
+    const std::string& label                                                         = std::string(),
+    const Teuchos::RCP<Teuchos::ParameterList>& params                               = Teuchos::null);
 
-template<class Scalar,
-         class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node>
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node>
 void import_and_extract_views(
-  const BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M,
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
-  BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
-  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
-  bool userAssertsThereAreNoRemotes = false);
+    const BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& M,
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
+    BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
+    bool userAssertsThereAreNoRemotes                                                = false);
 
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType> struct KernelWrappers;
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType> struct KernelWrappers2;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
+struct KernelWrappers;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
+struct KernelWrappers2;
 
-} // namespace MMdetails
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+}  // namespace MMdetails
+}  // namespace Tpetra
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
-#endif // TPETRA_MATRIXMATRIX_FWD_HPP
-
+#endif  // TPETRA_MATRIXMATRIX_FWD_HPP

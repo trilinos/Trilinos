@@ -14,8 +14,8 @@
 #include <cassert>
 #include <cstddef>
 #include <exodusII.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <iosfwd>
 #include <netcdf.h>
 #include <string>
 

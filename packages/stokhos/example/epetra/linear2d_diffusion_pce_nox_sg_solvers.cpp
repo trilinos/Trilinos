@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
     bool scaleOP = true; 
 
     {
-    TEUCHOS_FUNC_TIME_MONITOR("Total PCE Calculation Time");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total PCE Calculation Time", pce);
 
     // Create Stochastic Galerkin basis and expansion
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
@@ -714,11 +714,11 @@ int main(int argc, char *argv[]) {
     // Save mean and variance to file
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x_poly = 
       sg_model->create_x_sg(View, &finalSolution);
-    Epetra_Vector mean(*(model->get_x_map()));
+    Epetra_Vector mean2(*(model->get_x_map()));
     Epetra_Vector std_dev(*(model->get_x_map()));
-    sg_x_poly->computeMean(mean);
+    sg_x_poly->computeMean(mean2);
     sg_x_poly->computeStandardDeviation(std_dev);
-    EpetraExt::VectorToMatrixMarketFile("mean_gal.mm", mean);
+    EpetraExt::VectorToMatrixMarketFile("mean_gal.mm", mean2);
     EpetraExt::VectorToMatrixMarketFile("std_dev_gal.mm", std_dev);
       
     // Evaluate SG responses at SG parameters

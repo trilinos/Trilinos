@@ -61,7 +61,7 @@ public:
 
   void axpy( const Real alpha, const Vector<Real> &x ) {
     const auto& ex = _array(x);
-    std::transform(ex.begin(),ex.end(),data->begin(),data->begin(),[alpha](Real x, Real y){ return alpha*x+y; });
+    std::transform(ex.begin(),ex.end(),data->begin(),data->begin(),[alpha](Real lx, Real y){ return alpha*lx+y; });
   }
 
   void scale( const Real alpha ) {

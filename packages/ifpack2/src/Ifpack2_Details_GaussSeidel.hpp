@@ -30,7 +30,11 @@ struct GaussSeidel {
   using const_values_t           = typename values_t::const_type;
   using Offset                   = typename rowmap_t::non_const_value_type;
   using IST                      = typename crs_matrix_type::impl_scalar_type;
-  using KAT                      = Kokkos::ArithTraits<IST>;
+#if KOKKOS_VERSION >= 40799
+  using KAT = KokkosKernels::ArithTraits<IST>;
+#else
+  using KAT = Kokkos::ArithTraits<IST>;
+#endif
   // Type of view representing inverse diagonal blocks, and its host_mirror_type.
   using InverseBlocks     = Kokkos::View<IST***, typename bcrs_matrix_type::device_type>;
   using InverseBlocksHost = typename InverseBlocks::host_mirror_type;

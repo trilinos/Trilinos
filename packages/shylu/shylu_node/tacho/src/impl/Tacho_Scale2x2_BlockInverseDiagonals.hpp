@@ -25,6 +25,7 @@ namespace Tacho {
 
 /// various implementation for different uplo and algo parameters
 template <typename ArgSide, typename ArgAlgo> struct Scale2x2_BlockInverseDiagonals;
+template <typename ArgSide, typename ArgAlgo> struct Scale_BlockInverseDiagonals;
 } // namespace Tacho
 
 #endif

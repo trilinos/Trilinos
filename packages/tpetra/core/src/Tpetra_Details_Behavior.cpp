@@ -84,16 +84,16 @@ constexpr const std::string_view USE_TEUCHOS_TIMERS =
     "TPETRA_USE_TEUCHOS_TIMERS";
 constexpr const std::string_view USE_KOKKOS_PROFILING =
     "TPETRA_USE_KOKKOS_PROFILING";
-constexpr const std::string_view DEBUG = "TPETRA_DEBUG";
+constexpr const std::string_view DEBUG   = "TPETRA_DEBUG";
 constexpr const std::string_view VERBOSE = "TPETRA_VERBOSE";
-constexpr const std::string_view TIMING = "TPETRA_TIMING";
+constexpr const std::string_view TIMING  = "TPETRA_TIMING";
 constexpr const std::string_view HIERARCHICAL_UNPACK =
     "TPETRA_HIERARCHICAL_UNPACK";
 constexpr const std::string_view SKIP_COPY_AND_PERMUTE =
     "TPETRA_SKIP_COPY_AND_PERMUTE";
-constexpr const std::string_view FUSED_RESIDUAL = "TPETRA_FUSED_RESIDUAL";
-constexpr const std::string_view OVERLAP = "TPETRA_OVERLAP";
-  constexpr const std::string_view DEFAULT_SEND_TYPE = "TPETRA_DEFAULT_SEND_TYPE";
+constexpr const std::string_view FUSED_RESIDUAL     = "TPETRA_FUSED_RESIDUAL";
+constexpr const std::string_view OVERLAP            = "TPETRA_OVERLAP";
+constexpr const std::string_view DEFAULT_SEND_TYPE  = "TPETRA_DEFAULT_SEND_TYPE";
 constexpr const std::string_view GRANULAR_TRANSFERS = "TPETRA_GRANULAR_TRANSFERS";
 constexpr const std::string_view SPACES_ID_WARN_LIMIT =
     "TPETRA_SPACES_ID_WARN_LIMIT";
@@ -111,7 +111,7 @@ constexpr const std::string_view TIME_KOKKOS_FUNCTIONS =
 // string_views
 template <typename... Elems>
 constexpr std::array<std::string_view, sizeof...(Elems)>
-make_array(Elems &&... elems) {
+make_array(Elems &&...elems) {
   return {std::forward<Elems>(elems)...};
 }
 
@@ -128,70 +128,65 @@ constexpr const auto RECOGNIZED_VARS = make_array(
 
 std::map<std::string, std::map<std::string, bool> > namedVariableMap_;
 bool verboseDisabled_ = false;
-bool timingDisabled_ = false;
+bool timingDisabled_  = false;
+}  // namespace BehaviorDetails
+
+namespace {  // (anonymous)
+
+void split(const std::string_view s,
+           std::function<void(const std::string &)> f,
+           const char sep = ',') {
+  typedef std::string::size_type size_type;
+  size_type cur_pos, last_pos = 0, length = s.length();
+  while (last_pos < length + 1) {
+    cur_pos = s.find_first_of(sep, last_pos);
+    if (cur_pos == std::string::npos) {
+      cur_pos = length;
+    }
+    if (cur_pos != last_pos) {
+      auto token = std::string(s.data() + last_pos, (size_type)cur_pos - last_pos);
+      f(token);
+    }
+    last_pos = cur_pos + 1;
+  }
+  return;
 }
 
-namespace { // (anonymous)
-
-  void
-  split(const std::string_view s,
-        std::function<void(const std::string&)> f,
-        const char sep=',')
-  {
-    typedef std::string::size_type size_type;
-    size_type cur_pos, last_pos=0, length=s.length();
-    while(last_pos < length + 1)
-    {
-      cur_pos = s.find_first_of(sep, last_pos);
-      if(cur_pos == std::string::npos)
-      {
-        cur_pos = length;
-      }
-      if(cur_pos!=last_pos) {
-        auto token = std::string(s.data()+last_pos, (size_type)cur_pos-last_pos);
-        f(token);
-      }
-      last_pos = cur_pos + 1;
-     }
-    return;
-  }
-
-  constexpr bool debugDefault () {
+constexpr bool debugDefault() {
 #ifdef HAVE_TPETRA_DEBUG
-    return true;
+  return true;
 #else
-    return false;
-#endif // HAVE_TPETRA_DEBUG
-  }
+  return false;
+#endif  // HAVE_TPETRA_DEBUG
+}
 
-  constexpr bool verboseDefault () {
-    return false;
-  }
+constexpr bool verboseDefault() {
+  return false;
+}
 
-  constexpr bool timingDefault () {
-    return false;
-  }
+constexpr bool timingDefault() {
+  return false;
+}
 
-  constexpr bool assumeMpiIsGPUAwareDefault () {
+constexpr bool assumeMpiIsGPUAwareDefault() {
 #ifdef TPETRA_ASSUME_GPU_AWARE_MPI
-    return true;
+  return true;
 #else
-    return false;
-#endif // TPETRA_ASSUME_GPU_AWARE_MPI
-  }
+  return false;
+#endif  // TPETRA_ASSUME_GPU_AWARE_MPI
+}
 
-  constexpr bool cudaLaunchBlockingDefault () {
-    return false;
-  }
+constexpr bool cudaLaunchBlockingDefault() {
+  return false;
+}
 
-  constexpr bool hierarchicalUnpackDefault () {
-    return true;
-  }
+constexpr bool hierarchicalUnpackDefault() {
+  return true;
+}
 
-} // namespace (anonymous)
+}  // namespace
 
 void Behavior::reject_unrecognized_env_vars() {
-
   static bool once = false;
 
   if (!once) {
@@ -200,10 +195,9 @@ void Behavior::reject_unrecognized_env_vars() {
 #if defined(WIN) && (_MSC_VER >= 1900)
     env = *__p__environ();
 #else
-    env = environ; // defined at the top of this file as extern char **environ;
+    env = environ;  // defined at the top of this file as extern char **environ;
 #endif
     for (; *env; ++env) {
-
       std::string name;
       std::string value;
       const std::string_view ev(*env);
@@ -242,7 +236,7 @@ void Behavior::reject_unrecognized_env_vars() {
 bool Behavior::debug() {
   constexpr bool defaultValue = debugDefault();
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::DEBUG, defaultValue);
@@ -254,7 +248,7 @@ bool Behavior::verbose() {
 
   constexpr bool defaultValue = verboseDefault();
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::VERBOSE, defaultValue);
@@ -266,7 +260,7 @@ bool Behavior::timing() {
 
   constexpr bool defaultValue = timingDefault();
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::TIMING, defaultValue);
@@ -275,7 +269,7 @@ bool Behavior::timing() {
 bool Behavior::assumeMpiIsGPUAware() {
   constexpr bool defaultValue = assumeMpiIsGPUAwareDefault();
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::ASSUME_GPU_AWARE_MPI,
@@ -285,7 +279,7 @@ bool Behavior::assumeMpiIsGPUAware() {
 bool Behavior::cudaLaunchBlocking() {
   constexpr bool defaultValue = cudaLaunchBlockingDefault();
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::CUDA_LAUNCH_BLOCKING,
@@ -293,8 +287,8 @@ bool Behavior::cudaLaunchBlocking() {
 }
 
 int Behavior::TAFC_OptimizationCoreCount() {
-  constexpr int _default = 3000;
-  static int value_ = _default;
+  constexpr int _default   = 3000;
+  static int value_        = _default;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::MM_TAFC_OptimizationCoreCount,
@@ -304,7 +298,7 @@ int Behavior::TAFC_OptimizationCoreCount() {
 size_t Behavior::verbosePrintCountThreshold() {
   constexpr size_t defaultValue(200);
 
-  static size_t value_ = defaultValue;
+  static size_t value_     = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::VERBOSE_PRINT_COUNT_THRESHOLD,
@@ -314,7 +308,7 @@ size_t Behavior::verbosePrintCountThreshold() {
 size_t Behavior::rowImbalanceThreshold() {
   constexpr size_t defaultValue(256);
 
-  static size_t value_ = defaultValue;
+  static size_t value_     = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::ROW_IMBALANCE_THRESHOLD,
@@ -324,7 +318,7 @@ size_t Behavior::rowImbalanceThreshold() {
 bool Behavior::useMergePathMultiVector() {
   constexpr bool defaultValue = false;
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::MULTIVECTOR_USE_MERGE_PATH,
@@ -334,7 +328,7 @@ bool Behavior::useMergePathMultiVector() {
 size_t Behavior::multivectorKernelLocationThreshold() {
   constexpr size_t defaultValue(22000);
 
-  static size_t value_ = defaultValue;
+  static size_t value_     = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::VECTOR_DEVICE_THRESHOLD,
@@ -342,14 +336,13 @@ size_t Behavior::multivectorKernelLocationThreshold() {
 }
 
 size_t Behavior::hierarchicalUnpackBatchSize() {
-
 #ifdef HAVE_TPETRA_INST_CUDA
   constexpr size_t defaultValue(16);
 #else
   constexpr size_t defaultValue(256);
 #endif
 
-  static size_t value_ = defaultValue;
+  static size_t value_     = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::HIERARCHICAL_UNPACK_BATCH_SIZE,
@@ -363,7 +356,7 @@ size_t Behavior::hierarchicalUnpackTeamSize() {
   const size_t defaultValue(Teuchos::OrdinalTraits<size_t>::invalid());
 #endif
 
-  static size_t value_ = defaultValue;
+  static size_t value_     = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::HIERARCHICAL_UNPACK_TEAM_SIZE,
@@ -373,7 +366,7 @@ size_t Behavior::hierarchicalUnpackTeamSize() {
 bool Behavior::profilingRegionUseTeuchosTimers() {
   constexpr bool defaultValue(false);
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::USE_TEUCHOS_TIMERS, defaultValue);
@@ -382,7 +375,7 @@ bool Behavior::profilingRegionUseTeuchosTimers() {
 bool Behavior::profilingRegionUseKokkosProfiling() {
   constexpr bool defaultValue(false);
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::USE_KOKKOS_PROFILING,
@@ -434,7 +427,7 @@ void Behavior::disable_timing() { BehaviorDetails::timingDisabled_ = true; }
 bool Behavior::hierarchicalUnpack() {
   constexpr bool defaultValue = hierarchicalUnpackDefault();
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::HIERARCHICAL_UNPACK, defaultValue);
@@ -443,7 +436,7 @@ bool Behavior::hierarchicalUnpack() {
 bool Behavior::skipCopyAndPermuteIfPossible() {
   constexpr bool defaultValue(false);
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::SKIP_COPY_AND_PERMUTE,
@@ -451,7 +444,7 @@ bool Behavior::skipCopyAndPermuteIfPossible() {
 }
 
 bool Behavior::fusedResidual() {
-#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) || \
+#if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) ||  \
     defined(KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE) || \
     defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
   constexpr bool defaultValue(false);
@@ -459,7 +452,7 @@ bool Behavior::fusedResidual() {
   constexpr bool defaultValue(true);
 #endif
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::FUSED_RESIDUAL, defaultValue);
@@ -468,7 +461,7 @@ bool Behavior::fusedResidual() {
 bool Behavior::overlapCommunicationAndComputation() {
   constexpr bool defaultValue(false);
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::OVERLAP, defaultValue);
@@ -478,7 +471,7 @@ std::string Behavior::defaultSendType() {
   const std::string defaultValue("Send");
 
   static std::string value_ = defaultValue;
-  static bool initialized_ = false;
+  static bool initialized_  = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::DEFAULT_SEND_TYPE, defaultValue);
 }
@@ -486,7 +479,7 @@ std::string Behavior::defaultSendType() {
 bool Behavior::enableGranularTransfers() {
   constexpr bool defaultValue(false);
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::GRANULAR_TRANSFERS, defaultValue);
@@ -495,7 +488,7 @@ bool Behavior::enableGranularTransfers() {
 size_t Behavior::spacesIdWarnLimit() {
   constexpr size_t defaultValue(16);
 
-  static size_t value_ = defaultValue;
+  static size_t value_     = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::SPACES_ID_WARN_LIMIT,
@@ -505,7 +498,7 @@ size_t Behavior::spacesIdWarnLimit() {
 bool Behavior::timeKokkosDeepCopy() {
   constexpr bool defaultValue(false);
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::TIME_KOKKOS_DEEP_COPY,
@@ -515,7 +508,7 @@ bool Behavior::timeKokkosDeepCopy() {
 bool Behavior::timeKokkosDeepCopyVerbose1() {
   constexpr bool defaultValue(false);
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::TIME_KOKKOS_DEEP_COPY_VERBOSE1,
@@ -525,7 +518,7 @@ bool Behavior::timeKokkosDeepCopyVerbose1() {
 bool Behavior::timeKokkosDeepCopyVerbose2() {
   constexpr bool defaultValue(false);
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::TIME_KOKKOS_DEEP_COPY_VERBOSE2,
@@ -535,7 +528,7 @@ bool Behavior::timeKokkosDeepCopyVerbose2() {
 bool Behavior::timeKokkosFence() {
   constexpr bool defaultValue(false);
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::TIME_KOKKOS_FENCE, defaultValue);
@@ -544,12 +537,12 @@ bool Behavior::timeKokkosFence() {
 bool Behavior::timeKokkosFunctions() {
   constexpr bool defaultValue(false);
 
-  static bool value_ = defaultValue;
+  static bool value_       = defaultValue;
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::TIME_KOKKOS_FUNCTIONS,
       defaultValue);
 }
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra

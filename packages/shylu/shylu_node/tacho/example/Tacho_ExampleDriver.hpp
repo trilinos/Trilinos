@@ -40,7 +40,10 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   std::string rhs_file = "";
   std::string graph_file = "";
   std::string weight_file = "";
+  bool default_setup = false;
   int dofs_per_node = 1;
+  int graph_algo_type = -1;
+  bool order_connected_graph_separately = true;
 #if defined(KOKKOS_ENABLE_HIP)
   bool storeTranspose = true;
 #else
@@ -51,7 +54,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   bool randomRHS = false;
   bool onesRHS = false;
   std::string method_name = "chol";
-  int method = 1; // 1 - Chol, 2 - LDL, 3 - SymLU
+  int method = 1; // 0 - LDL no pivot, 1 - Chol, 2 - LDL, 3 - SymLU
   int small_problem_thres = 1024;
   int device_factor_thres = 64;
   int device_solve_thres = 128;
@@ -71,11 +74,14 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<std::string>("rhs", "Input RHS file", &rhs_file);
   opts.set_option<std::string>("graph", "Input condensed graph", &graph_file);
   opts.set_option<std::string>("weight", "Input condensed graph weight", &weight_file);
+  opts.set_option<bool>("default", "Flag to use default parameters", &default_setup);
   opts.set_option<int>("dofs-per-node", "# DoFs per node", &dofs_per_node);
+  opts.set_option<bool>("order-connected-graph", "Flag to order connected graph separately (METIS)", &order_connected_graph_separately);
+  opts.set_option<int>("graph-algo", "Type of graph algorithm (0: Natural, 1: AMD, 2: METIS)", &graph_algo_type);
   opts.set_option<bool>("store-trans", "Flag to store transpose", &storeTranspose);
   opts.set_option<bool>("perturb", "Flag to perturb tiny pivots", &perturbPivot);
   opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
-  opts.set_option<std::string>("method", "Solution method: chol, ldl, lu", &method_name);
+  opts.set_option<std::string>("method", "Solution method: ldl-nopiv, chol, ldl, lu", &method_name);
   opts.set_option<int>("small-problem-thres", "LAPACK is used smaller than this thres", &small_problem_thres);
   opts.set_option<int>("device-factor-thres", "Device function is used above this subproblem size",
                        &device_factor_thres);
@@ -92,7 +98,9 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   if (r_parse)
     return 0; // print help return
 
-  if (method_name == "chol")
+  if (method_name == "ldl-nopiv")
+    method = 0;
+  else if (method_name == "chol")
     method = 1;
   else if (method_name == "ldl")
     method = 2;
@@ -115,8 +123,15 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
   std::cout << "     Method Name:: " << method_name << std::endl;
   std::cout << "     Solver Type:: " << variant << std::endl;
-  std::cout << "       # Streams:: " << nstreams << std::endl;
   std::cout << "          # RHSs:: " << nrhs;
+  if (default_setup) {
+    std::cout << " Using default Parameters " << std::endl;
+  } else {
+    std::cout << " Using non default Parameters " << nrhs;
+    std::cout << "       # Streams:: " << nstreams << std::endl;
+    std::cout << "    Small Poblem:: " << small_problem_thres << std::endl;
+    std::cout << "   Device Thresh:: " << device_factor_thres << ", " << device_solve_thres << std::endl;
+  }
   std::cout << std::endl << "    --------------------- " << std::endl << std::endl;
 
   int r_val = 0;
@@ -193,24 +208,30 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     solver.setVerbose(verbose);
     solver.setSolutionMethod(method);
     solver.setLevelSetOptionAlgorithmVariant(variant);
-    solver.setLevelSetOptionNumStreams(nstreams);
 
     /// graph options
-    solver.setOrderConnectedGraphSeparately();
-
-    /// levelset options
-    solver.setSmallProblemThresholdsize(small_problem_thres);
-    solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
-    if (perturbPivot) {
-      if (verbose) std::cout << " > perturb tiny pivots" << std::endl;
-      solver.useDefaultPivotTolerance();
+    if (order_connected_graph_separately) {
+      solver.setOrderConnectedGraphSeparately();
     }
-    solver.storeExplicitTranspose(storeTranspose);
-    if (verbose) {
-      if (storeTranspose) {
-        std::cout << " > store transpose " << std::endl;
+    if (graph_algo_type >= 0) {
+      solver.setGraphAlgorithmType(graph_algo_type);
+    }
+    if (!default_setup) {
+      /// levelset options
+      solver.setLevelSetOptionNumStreams(nstreams);
+      solver.setSmallProblemThresholdsize(small_problem_thres);
+      solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
+      if (perturbPivot) {
+        if (verbose) std::cout << " > perturb tiny pivots" << std::endl;
+        solver.useDefaultPivotTolerance();
       }
-      std::cout << std::endl;
+      solver.storeExplicitTranspose(storeTranspose);
+      if (verbose) {
+        if (storeTranspose) {
+          std::cout << " > store transpose " << std::endl;
+        }
+        std::cout << std::endl;
+      }
     }
 
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
@@ -260,9 +281,10 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     double facto_time = timer.seconds();
 #endif
 
-    DenseMultiVectorType b("b", A.NumRows(), nrhs), // rhs multivector
-        x("x", A.NumRows(), nrhs),                  // solution multivector
-        t("t", A.NumRows(), nrhs);                  // temp workspace (store permuted rhs)
+    DenseMultiVectorType
+        b("b", A.NumRows(), nrhs),  // rhs multivector
+        x("x", A.NumRows(), nrhs),  // solution multivector
+        t("t", A.NumRows(), nrhs);  // temp workspace (store permuted rhs)
 
     {
       if (rhs_file.length() > 0) {
@@ -322,6 +344,17 @@ template <typename value_type> int driver(int argc, char *argv[]) {
 #ifdef TACHO_HAVE_TEUCHOS
     stackedTimer->stopBaseTimer();
     Teuchos::RCP<const Teuchos::Comm<int>> comm = Teuchos::rcp(new Teuchos::SerialComm<int>());
+    // print stacked timer
+    {
+      Teuchos::StackedTimer::OutputOptions options;
+      options.num_histogram=3;
+      options.print_warnings = false;
+      options.output_histogram = true;
+      options.output_fraction=true;
+      options.output_minmax = true;
+      stackedTimer->report(std::cout, comm, options);
+    }
+    // generate watcher report
     if (!success) {
       std::cerr << "\n Error: Some of the residual norms were too large\n\n";
       stackedTimer = Teuchos::rcp(new Teuchos::StackedTimer("Tacho_ExampleDriver"));
@@ -334,21 +367,15 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       std::cout << "\nFailed to create Watchr performance report (" << testName << ") in " << xmlOut << '\n';
     }
     std::cout << std::endl;
-    {
-      Teuchos::StackedTimer::OutputOptions options;
-      options.num_histogram=3;
-      options.print_warnings = false;
-      options.output_histogram = true;
-      options.output_fraction=true;
-      options.output_minmax = true;
-      stackedTimer->report(std::cout, comm, options);
-    }
 #else
     std::cout << " Initi Time " << initi_time << std::endl;
-    std::cout << " > nnz = " << solver.getNumNonZerosU() << std::endl;
     std::cout << " Facto Time " << facto_time / (double)nfacts << std::endl;
     std::cout << " Solve Time " << solve_time / (double)nsolves << std::endl;
 #endif
+    if (verbose) {
+      std::cout << std::endl;
+      std::cout << " > nnz = " << solver.getNumNonZerosU() << std::endl << std::endl;
+    }
     std::cout << std::endl;
     solver.release();
   } catch (const std::exception &e) {

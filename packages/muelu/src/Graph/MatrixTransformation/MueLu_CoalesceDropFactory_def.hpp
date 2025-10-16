@@ -553,12 +553,20 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
         } else {
           /* Cut Algorithm */
           SubFactoryMonitor m1(*this, "Cut Drop", currentLevel);
-          using ExecSpace        = typename Node::execution_space;
-          using TeamPol          = Kokkos::TeamPolicy<ExecSpace>;
-          using TeamMem          = typename TeamPol::member_type;
-          using ATS              = Kokkos::ArithTraits<Scalar>;
+          using ExecSpace = typename Node::execution_space;
+          using TeamPol   = Kokkos::TeamPolicy<ExecSpace>;
+          using TeamMem   = typename TeamPol::member_type;
+#if KOKKOS_VERSION >= 40799
+          using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+          using ATS     = Kokkos::ArithTraits<Scalar>;
+#endif
           using impl_scalar_type = typename ATS::val_type;
-          using implATS          = Kokkos::ArithTraits<impl_scalar_type>;
+#if KOKKOS_VERSION >= 40799
+          using implATS = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
+          using implATS = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
 
           // move from host to device
           auto ghostedDiagValsView = Kokkos::subview(ghostedDiag->getLocalViewDevice(Xpetra::Access::ReadOnly), Kokkos::ALL(), 0);

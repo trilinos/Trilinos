@@ -94,7 +94,7 @@ template <typename Scalar>
 bool
 Piro::TempusIntegrator<Scalar>::advanceTime(const Scalar time_final)
 {
-  bool out;
+  bool out = false;
   if (basicIntegrator_ != Teuchos::null) {
     out = basicIntegrator_->advanceTime(time_final);
   }
@@ -111,7 +111,7 @@ template <typename Scalar>
 Scalar
 Piro::TempusIntegrator<Scalar>::getTime() const
 {
-  Scalar time;
+  Scalar time = Teuchos::ScalarTraits<Scalar>::nan();
   if (basicIntegrator_ != Teuchos::null) {
     time = basicIntegrator_->getTime();
   }

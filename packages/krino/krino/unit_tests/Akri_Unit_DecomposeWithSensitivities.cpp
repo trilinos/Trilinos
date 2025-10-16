@@ -12,6 +12,7 @@
 #include <Akri_LevelSetShapeSensitivities.hpp>
 #include <Akri_MeshFromFile.hpp>
 #include <Akri_MeshHelpers.hpp>
+#include <Akri_NodalGradient.hpp>
 #include <Akri_NodalSurfaceDistance.hpp>
 #include <Akri_OutputUtils.hpp>
 #include <Akri_Phase_Support.hpp>
@@ -20,31 +21,52 @@
 #include <Akri_TriangleWithSensitivities.hpp>
 #include <Akri_Unit_LogRedirecter.hpp>
 #include <Akri_UnitMeshUtils.hpp>
+#include <Akri_UnitTestUtils.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/environment/EnvData.hpp>
 
-static void setup_fields_for_conforming_decomposition(const stk::mesh::MetaData & meta, const std::vector<krino::LS_Field> & lsFields)
+using krino::expect_near;
+
+static void setup_fields_for_conforming_decomposition(stk::mesh::MetaData & meta, const std::vector<krino::LS_Field> & lsFields, const bool doSetupSnapping, const bool doSetupNodalLevelsetGradient)
 {
   krino::CDFEM_Support & cdfemSupport = krino::CDFEM_Support::get(meta);
   const krino::FieldRef coordsField = meta.coordinate_field();
 
+  if (doSetupSnapping)
+  {
+    cdfemSupport.register_cdfem_snap_displacements_field();
+    if (!doSetupNodalLevelsetGradient)
+      krino::create_levelset_copies_and_set_to_use_as_snap_fields(meta, lsFields);
+  }
+
+  if (doSetupNodalLevelsetGradient)
+  {
+    for(auto & lsField : lsFields)
+    {
+      krino::FieldRef nodalGrad = krino::register_nodal_gradient_for_scalar_field(meta, lsField.isovar);
+      cdfemSupport.add_interpolation_field(nodalGrad);
+    }
+  }
+
   cdfemSupport.set_coords_field(coordsField);
-  cdfemSupport.add_edge_interpolation_field(coordsField);
-  cdfemSupport.setup_levelset_field_stash(krino::get_levelset_fields(lsFields));
   cdfemSupport.register_parent_node_ids_field();
-  cdfemSupport.register_cdfem_snap_displacements_field();
-  cdfemSupport.add_edge_interpolation_field(cdfemSupport.get_cdfem_snap_displacements_field());
   cdfemSupport.finalize_fields();
 }
 
-static void decompose_mesh_to_conform_to_levelsets(stk::mesh::BulkData & mesh, const std::vector<krino::LS_Field> & lsFields)
+static void decompose_mesh_to_conform_to_levelsets(stk::mesh::BulkData & mesh, const std::vector<krino::LS_Field> & lsFields, const bool doSetupNodalLevelsetGradient)
 {
   stk::mesh::MetaData & meta = mesh.mesh_meta_data();
   krino::AuxMetaData & auxMeta = krino::AuxMetaData::get(meta);
   krino::CDFEM_Support & cdfemSupport = krino::CDFEM_Support::get(meta);
   krino::Phase_Support & phaseSupport = krino::Phase_Support::get(meta);
+
+  if (doSetupNodalLevelsetGradient)
+  {
+    for(auto & lsField : lsFields)
+      krino::update_nodal_gradient(mesh, cdfemSupport.get_coords_field(), lsField.isovar);
+  }
 
   std::unique_ptr<krino::InterfaceGeometry> interfaceGeometry = krino::create_levelset_geometry(meta.spatial_dimension(), auxMeta.active_part(), cdfemSupport, phaseSupport, lsFields);
   auxMeta.clear_force_64bit_flag();
@@ -52,7 +74,9 @@ static void decompose_mesh_to_conform_to_levelsets(stk::mesh::BulkData & mesh, c
 }
 
 static void decompose_mesh_to_conform_to_levelsets_using_snapping(
-  stk::mesh::BulkData & mesh, const std::vector<krino::LS_Field> & lsFields)
+  stk::mesh::BulkData & mesh,
+  const std::vector<krino::LS_Field> & lsFields,
+  const bool doSetupNodalLevelsetGradient)
 {
   stk::mesh::MetaData & meta = mesh.mesh_meta_data();
   krino::AuxMetaData & auxMeta = krino::AuxMetaData::get(meta);
@@ -61,7 +85,19 @@ static void decompose_mesh_to_conform_to_levelsets_using_snapping(
     krino::Edge_Degeneracy_Handling::SNAP_TO_INTERFACE_WHEN_QUALITY_ALLOWS_THEN_SNAP_TO_NODE);
   krino::Phase_Support & phaseSupport = krino::Phase_Support::get(meta);
 
-  std::unique_ptr<krino::InterfaceGeometry> interfaceGeometry = krino::create_levelset_geometry(meta.spatial_dimension(), auxMeta.active_part(), cdfemSupport, phaseSupport, lsFields);
+  std::unique_ptr<krino::InterfaceGeometry> interfaceGeometry;
+  if (doSetupNodalLevelsetGradient)
+  {
+    for(auto & lsField : lsFields)
+      krino::update_nodal_gradient(mesh, cdfemSupport.get_coords_field(), lsField.isovar);
+    interfaceGeometry = krino::create_levelset_geometry(meta.spatial_dimension(), auxMeta.active_part(), cdfemSupport, phaseSupport, lsFields);
+  }
+  else
+  {
+    const std::vector<krino::LS_Field> snapLsFields = krino::update_levelset_copies_to_prepare_for_snapping(meta, lsFields);
+    interfaceGeometry = krino::create_levelset_geometry(meta.spatial_dimension(), auxMeta.active_part(), cdfemSupport, phaseSupport, snapLsFields);
+  }
+
   auxMeta.clear_force_64bit_flag();
   krino::CDMesh::decompose_mesh(mesh, *interfaceGeometry);
 }
@@ -111,7 +147,9 @@ stk::math::Vector3d get_snap_displacements(const int dim, const stk::mesh::BulkD
 {
   krino::CDFEM_Support & cdfemSupport = krino::CDFEM_Support::get(bulk.mesh_meta_data());
   krino::FieldRef disp = cdfemSupport.get_cdfem_snap_displacements_field();
-  return get_vector_field(bulk, disp, bulk.get_entity(stk::topology::NODE_RANK,node), dim);
+  if (disp.valid())
+    return get_vector_field(bulk, disp, bulk.get_entity(stk::topology::NODE_RANK,node), dim);
+  return stk::math::Vector3d::ZERO;
 }
 
 stk::math::Vector3d get_node_coordinates(const int dim, const stk::mesh::BulkData &bulk, const stk::mesh::EntityId node)
@@ -154,26 +192,35 @@ void output_full_mesh(stk::mesh::BulkData & mesh, const std::string & fileName, 
 class DecomposeMeshAndComputeSensitivitiesForLineOrPlane : public ::testing::Test
 {
 protected:
-  void build_line_or_plane_conforming_mesh_and_test_sensitivity(const int dim, const double meshSize, const double planeOffset, const bool doSnapping, const bool doWriteMesh)
+  void build_line_or_plane_conforming_mesh_and_test_sensitivity(const int dim, const double meshSize, const double planeOffset, const bool doComputeClosestPointSensitivities, const bool doSnapping, const bool doWriteMesh)
   {
     const stk::topology elemTopo = (dim == 2) ? stk::topology::TRIANGLE_3_2D : stk::topology::TETRAHEDRON_4;
     krino::BoundingBoxMesh bboxMesh(elemTopo, MPI_COMM_WORLD);
 
     const std::vector<krino::LS_Field> lsFields = krino::LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(bboxMesh.meta_data(), 1);
-    setup_fields_for_conforming_decomposition(bboxMesh.meta_data(), lsFields);
+    setup_fields_for_conforming_decomposition(bboxMesh.meta_data(), lsFields, doSnapping, doComputeClosestPointSensitivities);
 
     krino::populate_bounding_box_mesh_and_activate(bboxMesh, {0.,0.,0.}, {1.,1.,1.}, meshSize);
 
     compute_nodal_distance_from_plane(bboxMesh.bulk_data(), bboxMesh.meta_data().coordinate_field(), lsFields[0].isovar, {1.,0.,0.}, planeOffset);
 
     if (doSnapping)
-      decompose_mesh_to_conform_to_levelsets_using_snapping(bboxMesh.bulk_data(), lsFields);
+      decompose_mesh_to_conform_to_levelsets_using_snapping(bboxMesh.bulk_data(), lsFields, doComputeClosestPointSensitivities);
     else
-      decompose_mesh_to_conform_to_levelsets(bboxMesh.bulk_data(), lsFields);
+      decompose_mesh_to_conform_to_levelsets(bboxMesh.bulk_data(), lsFields, doComputeClosestPointSensitivities);
 
-    std::vector<krino::LevelSetShapeSensitivity> sensitivities = get_levelset_shape_sensitivities(bboxMesh.bulk_data(), lsFields);
-    for (auto & sens : sensitivities)
-      test_sensitivity_for_plane(sens, 0);
+    std::vector<krino::LevelSetShapeSensitivity> sensitivities = get_levelset_shape_sensitivities(bboxMesh.bulk_data(), lsFields, doComputeClosestPointSensitivities);
+
+    if (doComputeClosestPointSensitivities)
+    {
+      for (auto & sens : sensitivities)
+        test_closest_point_sensitivity_for_plane(sens, {-1.,0.,0.});
+    }
+    else
+    {
+      for (auto & sens : sensitivities)
+        test_sensitivity_for_plane(sens, 0);
+    }
 
     if (doWriteMesh)
     {
@@ -190,46 +237,97 @@ protected:
 
     EXPECT_NEAR(-1., sum, 1.e-4);
   }
+
+  void test_closest_point_sensitivity_for_plane(const krino::LevelSetShapeSensitivity & sens, const stk::math::Vector3d & goldSens)
+  {
+    stk::math::Vector3d sumSens = stk::math::Vector3d::ZERO;
+    for (auto & dCoordsdParentLevelSet : sens.dCoordsdParentLevelSets)
+      sumSens += dCoordsdParentLevelSet;
+
+    expect_near(goldSens, sumSens);
+  }
 };
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createDecomposedMeshForPlaneNotThroughAnyBackgroundNodes_testSensitivities)
 {
-  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.3333, -0.2, false, false);
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.3333, -0.2, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createSnappedMeshForPlaneNotThroughAnyBackgroundNodes_testSensitivities)
 {
-  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.3333, -0.2, true, false);
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.3333, -0.2, false, true, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createDecomposedMeshForPlaneThroughSomeBackgroundNodes_testSensitivities)
 {
-  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.5, -0.5, false, false);
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.5, -0.5, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createSnappedMeshForPlaneThroughSomeBackgroundNodes_testSensitivities)
 {
-  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.5, -0.5, true, false);
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.5, -0.5, false, true, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createDecomposedMeshForLineNotThroughAnyBackgroundNodes_testSensitivities)
 {
-  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.3333, -0.2, false, false);
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.3333, -0.2, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createSnappedMeshForLineNotThroughAnyBackgroundNodes_testSensitivities)
 {
-  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.3333, -0.2, true, false);
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.3333, -0.2, false, true, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createDecomposedMeshForLineThroughSomeBackgroundNodes_testSensitivities)
 {
-  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.5, -0.5, false, false);
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.5, -0.5, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createSnappedMeshForLineThroughSomeBackgroundNodes_testSensitivities)
 {
-  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.5, -0.5, true, false);
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.5, -0.5, false, true, false);
+}
+
+// closest point version of plane tests
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createDecomposedMeshForPlaneNotThroughAnyBackgroundNodes_testClosestPointSensitivities)
+{
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.3333, -0.2, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createSnappedMeshForPlaneNotThroughAnyBackgroundNodes_testClosestPointSensitivities)
+{
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.3333, -0.2, true, true, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createDecomposedMeshForPlaneThroughSomeBackgroundNodes_testClosestPointSensitivities)
+{
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.5, -0.5, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createSnappedMeshForPlaneThroughSomeBackgroundNodes_testClosestPointSensitivities)
+{
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(3, 0.5, -0.5, true, true, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createDecomposedMeshForLineNotThroughAnyBackgroundNodes_testClosestPointSensitivities)
+{
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.3333, -0.2, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createSnappedMeshForLineNotThroughAnyBackgroundNodes_testClosestPointSensitivities)
+{
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.3333, -0.2, true, true, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createDecomposedMeshForLineThroughSomeBackgroundNodes_testClosestPointSensitivities)
+{
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.5, -0.5, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForLineOrPlane, createSnappedMeshForLineThroughSomeBackgroundNodes_testClosestPointSensitivities)
+{
+  build_line_or_plane_conforming_mesh_and_test_sensitivity(2, 0.5, -0.5, true, true, false);
 }
 
 std::unique_ptr<krino::BoundingBoxMesh> build_circle_or_sphere_conforming_bounding_box_mesh(
@@ -239,6 +337,7 @@ std::unique_ptr<krino::BoundingBoxMesh> build_circle_or_sphere_conforming_boundi
     const double meshSize,
     const stk::math::Vector3d & sphereCenter,
     const double sphereRadius,
+    const bool doComputeClosestPointSensitivities,
     const bool doSnapping,
     const bool doWriteMesh,
     std::vector<krino::LS_Field> & lsFields)
@@ -247,7 +346,7 @@ std::unique_ptr<krino::BoundingBoxMesh> build_circle_or_sphere_conforming_boundi
   std::unique_ptr<krino::BoundingBoxMesh> bboxMesh = std::make_unique<krino::BoundingBoxMesh>(elemTopo, MPI_COMM_WORLD);
 
   lsFields = krino::LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(bboxMesh->meta_data(), 1);
-  setup_fields_for_conforming_decomposition(bboxMesh->meta_data(), lsFields);
+  setup_fields_for_conforming_decomposition(bboxMesh->meta_data(), lsFields, doSnapping, doComputeClosestPointSensitivities);
 
   krino::populate_bounding_box_mesh_and_activate(*bboxMesh, minCorner, maxCorner, meshSize);
 
@@ -256,9 +355,9 @@ std::unique_ptr<krino::BoundingBoxMesh> build_circle_or_sphere_conforming_boundi
   compute_nodal_distance_from_spheres(bboxMesh->bulk_data(), bboxMesh->meta_data().coordinate_field(), lsFields[0].isovar, spheres);
 
   if (doSnapping)
-    decompose_mesh_to_conform_to_levelsets_using_snapping(bboxMesh->bulk_data(), lsFields);
+    decompose_mesh_to_conform_to_levelsets_using_snapping(bboxMesh->bulk_data(), lsFields, doComputeClosestPointSensitivities);
   else
-    decompose_mesh_to_conform_to_levelsets(bboxMesh->bulk_data(), lsFields);
+    decompose_mesh_to_conform_to_levelsets(bboxMesh->bulk_data(), lsFields, doComputeClosestPointSensitivities);
 
   if (doWriteMesh)
   {
@@ -272,14 +371,23 @@ std::unique_ptr<krino::BoundingBoxMesh> build_circle_or_sphere_conforming_boundi
 class DecomposeMeshAndComputeSensitivitiesForCircleOrSphere : public ::testing::Test
 {
 protected:
-  void build_circle_or_sphere_conforming_mesh_and_test_sensitivity(const int dim, const double meshSize, const double radius, const bool doSnapping, const bool doWriteMesh)
+  void build_circle_or_sphere_conforming_mesh_and_test_sensitivity(const int dim, const double meshSize, const double radius, 
+    const bool doComputeClosestPointSensitivities, const bool doSnapping, const bool doWriteMesh)
   {
     std::vector<krino::LS_Field> lsFields;
-    std::unique_ptr<krino::BoundingBoxMesh> mesh = build_circle_or_sphere_conforming_bounding_box_mesh(dim, {-1.,-1.,-1.}, {1.,1.,1.}, meshSize, {0.0,0.0,0.0}, radius, doSnapping, doWriteMesh, lsFields);
+    std::unique_ptr<krino::BoundingBoxMesh> mesh = build_circle_or_sphere_conforming_bounding_box_mesh(dim, {-1.,-1.,-1.}, {1.,1.,1.}, meshSize, {0.0,0.0,0.0}, radius, doComputeClosestPointSensitivities, doSnapping, doWriteMesh, lsFields);
 
-    std::vector<krino::LevelSetShapeSensitivity> sensitivities = get_levelset_shape_sensitivities(mesh->bulk_data(), lsFields);
-    for (auto & sens : sensitivities)
-      test_sensitivity_for_circle_or_sphere_at_origin(dim, sens, mesh->bulk_data());
+    std::vector<krino::LevelSetShapeSensitivity> sensitivities = get_levelset_shape_sensitivities(mesh->bulk_data(), lsFields, doComputeClosestPointSensitivities);
+    if (doComputeClosestPointSensitivities)
+    {
+      for (auto & sens : sensitivities)
+        test_closest_point_sensitivity_for_circle_or_sphere_at_origin(dim, radius, sens, mesh->bulk_data());
+    }
+    else
+    {
+      for (auto & sens : sensitivities)
+        test_sensitivity_for_circle_or_sphere_at_origin(dim, sens, mesh->bulk_data());
+    }
   }
 
   void test_sensitivity_for_circle_or_sphere_at_origin(const int dim, const krino::LevelSetShapeSensitivity & sens, stk::mesh::BulkData & bulk)
@@ -297,65 +405,126 @@ protected:
       EXPECT_DOUBLE_EQ(sum, (parent_coords[0][d]-parent_coords[1][d])/radiusDiff);
     }
   }
+
+  void test_closest_point_sensitivity_for_circle_or_sphere_at_origin(const int dim, const double radius, const krino::LevelSetShapeSensitivity & sens, stk::mesh::BulkData & bulk)
+  {
+    const stk::math::Vector3d nodeCoords = get_node_coordinates(dim, bulk, sens.interfaceNodeId);
+    const stk::math::Vector3d goldSens = -nodeCoords/radius;
+    for(int d=0; d<dim; d++)
+    {
+      stk::math::Vector3d sumSens = stk::math::Vector3d::ZERO;
+      for (auto & dCoordsdParentLevelSet : sens.dCoordsdParentLevelSets)
+        sumSens += dCoordsdParentLevelSet;
+
+      expect_near(goldSens, sumSens, 0.05);
+    }
+  }
 };
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createDecomposedMeshForSphereNotThroughAnyBackgroundNodes_testSensitivities)
 {
-  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.4, 0.5, false, false);
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.4, 0.5, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createSnappedMeshForSphereNotThroughAnyBackgroundNodes_testSensitivities)
 {
-  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.4, 0.5, true, false);
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.4, 0.5, false, true, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createDecomposedMeshForSphereThroughSomeBackgroundNodes_testSensitivities)
 {
-  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.4, 0.6, false, false);
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.4, 0.6, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createSnappedMeshForSphereThroughSomeBackgroundNodes_testSensitivities)
 {
-  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.2, 0.6, true, false);
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.2, 0.6, false, true, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createDecomposedMeshForCircleNotThroughAnyBackgroundNodes_testSensitivities)
 {
-  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.4, 0.5, false, false);
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.4, 0.5, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createSnappedMeshForCircleNotThroughAnyBackgroundNodes_testSensitivities)
 {
-  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.4, 0.5, true, false);
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.4, 0.5, false, true, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createDecomposedMeshForCircleThroughSomeBackgroundNodes_testSensitivities)
 {
-  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.4, 0.6, false, false);
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.4, 0.6, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createSnappedMeshForCircleThroughSomeBackgroundNodes_testSensitivities)
 {
-  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.2, 0.6, true, false);
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.2, 0.6, false, true, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createDecomposedMeshForSphereNotThroughAnyBackgroundNodes_testClosestPointSensitivities)
+{
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.2, 0.5, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createSnappedMeshForSphereNotThroughAnyBackgroundNodes_testClosestPointSensitivities)
+{
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.2, 0.5, true, true, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createDecomposedMeshForSphereThroughSomeBackgroundNodes_testClosestPointSensitivities)
+{
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.2, 0.6, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createSnappedMeshForSphereThroughSomeBackgroundNodes_testClosestPointSensitivities)
+{
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(3, 0.2, 0.6, true, true, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createDecomposedMeshForCircleNotThroughAnyBackgroundNodes_testClosestPointSensitivities)
+{
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.2, 0.5, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createSnappedMeshForCircleNotThroughAnyBackgroundNodes_testClosestPointSensitivities)
+{
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.2, 0.5, true, true, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createDecomposedMeshForCircleThroughSomeBackgroundNodes_testClosestPointSensitivities)
+{
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.2, 0.6, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createSnappedMeshForCircleThroughSomeBackgroundNodes_testClosestPointSensitivities)
+{
+  build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.2, 0.6, true, true, false);
 }
 
 class DecomposeMeshAndCheckConvergenceForSensitivitiesForSphere : public ::testing::Test
 {
 protected:
-  double build_sphere_conforming_mesh_and_compute_sensitivity_error(const double meshSize, const double radius, const bool doSnapping, const bool doWriteMesh)
+  double build_sphere_conforming_mesh_and_compute_sensitivity_error(const double meshSize, const double radius, const bool doComputeClosestPointSensitivities, const bool doSnapping, const bool doWriteMesh)
   {
     std::vector<krino::LS_Field> lsFields;
-    std::unique_ptr<krino::BoundingBoxMesh> mesh = build_circle_or_sphere_conforming_bounding_box_mesh(3, {-1.,-1.,-0.1}, {1.,1.,0.1}, meshSize, {0.0,0.0,0.0}, radius, doSnapping, doWriteMesh, lsFields);
+    std::unique_ptr<krino::BoundingBoxMesh> mesh = build_circle_or_sphere_conforming_bounding_box_mesh(3, {-1.,-1.,-0.1}, {1.,1.,0.1}, meshSize, {0.0,0.0,0.0}, radius, doComputeClosestPointSensitivities, doSnapping, doWriteMesh, lsFields);
 
-    std::vector<krino::LevelSetShapeSensitivity> sensitivities = get_levelset_shape_sensitivities(mesh->bulk_data(), lsFields);
+    std::vector<krino::LevelSetShapeSensitivity> sensitivities = get_levelset_shape_sensitivities(mesh->bulk_data(), lsFields, doComputeClosestPointSensitivities);
     double errorSumSquare = 0.;
     size_t sensCount = 0;
+    double nodeError = 0.;
     for (auto & sens : sensitivities)
     {
-      const double result = difference_against_analytical_sensitivity_for_sphere_at_origin(sens, mesh->bulk_data(), radius);
-      if(result < 0.) continue;
-      errorSumSquare += result;
-      sensCount += 1;
+      if(mesh->bulk_data().bucket(mesh->bulk_data().get_entity(stk::topology::NODE_RANK,sens.interfaceNodeId)).owned())
+      {
+        if (doComputeClosestPointSensitivities)
+          nodeError = difference_against_analytical_closest_point_sensitivity_for_sphere_at_origin(sens, mesh->bulk_data(), radius);
+        else
+          nodeError = difference_against_analytical_sensitivity_for_sphere_at_origin(sens, mesh->bulk_data(), radius);
+
+        errorSumSquare += nodeError;
+        sensCount += 1;
+      }
     }
 
     double globalErrorSumSquare;
@@ -365,7 +534,7 @@ protected:
     return std::sqrt(globalErrorSumSquare)/globalSensCount;
   }
 
-  void check_convergence_of_sensitivities_for_sphere_conforming_meshes(const double radius, const bool doSnapping, const bool doWriteMesh)
+  void check_convergence_of_sensitivities_for_sphere_conforming_meshes(const double radius, const bool doComputeClosestPointSensitivities, const bool doSnapping, const bool doWriteMesh)
   {
     double meshSize = 0.2;
     constexpr unsigned nRefine = 3;
@@ -373,10 +542,12 @@ protected:
 
     for(unsigned r=0; r<nRefine; r++)
     {
-      errorNorms[r] = build_sphere_conforming_mesh_and_compute_sensitivity_error(meshSize, radius, doSnapping, doWriteMesh);
+      errorNorms[r] = build_sphere_conforming_mesh_and_compute_sensitivity_error(meshSize, radius, doComputeClosestPointSensitivities, doSnapping, doWriteMesh);
+      if (0 == stk::EnvData::parallel_rank())
+        std::cout << "Convergence " << meshSize << " " << errorNorms[r] << std::endl;
       meshSize /= 2.;
     }
-    EXPECT_LT(errorNorms[nRefine-1], errorNorms[nRefine-2]/1.9);
+    EXPECT_LT(errorNorms[nRefine-1], errorNorms[nRefine-2]/2.);
   }
 
   double calc_weight_of_exact_sphere_intersection_point(const std::vector<stk::math::Vector3d> & parent_coords, double radius)
@@ -398,12 +569,11 @@ protected:
 
   double difference_against_analytical_sensitivity_for_sphere_at_origin(const krino::LevelSetShapeSensitivity & sens, stk::mesh::BulkData & bulk, double radius)
   {
-    if(bulk.parallel_owner_rank(bulk.get_entity(stk::topology::NODE_RANK,sens.interfaceNodeId)) != bulk.parallel_rank()) return -1.;
     static constexpr int DIM = 3;
     static constexpr double tol = 1e-8;
     STK_ThrowRequire(sens.parentNodeIds.size() == 2u);
 
-    const auto parent_coords = get_parent_node_coordinates_for_sensitivitiy(3, sens, bulk);
+    const auto parent_coords = get_parent_node_coordinates_for_sensitivitiy(DIM, sens, bulk);
     const auto deltaX = parent_coords[1] - parent_coords[0];
     const double t = calc_weight_of_exact_sphere_intersection_point(parent_coords, radius);
 
@@ -411,6 +581,7 @@ protected:
     STK_ThrowRequire(std::fabs(xIntersection.length()-radius) <= tol*radius);
 
     const double cosTheta = stk::math::Dot(xIntersection.unit_vector(), deltaX.unit_vector());
+
 
     stk::math::Vector3d expVal;
     stk::math::Vector3d result;
@@ -434,25 +605,49 @@ protected:
     }
     return (result-expVal).length_squared();
   }
+
+  double difference_against_analytical_closest_point_sensitivity_for_sphere_at_origin(const krino::LevelSetShapeSensitivity & sens, stk::mesh::BulkData & bulk, double radius)
+  {
+    static constexpr int DIM = 3;
+    const stk::math::Vector3d nodeCoords = get_node_coordinates(DIM, bulk, sens.interfaceNodeId);
+
+    stk::math::Vector3d goldVal = -nodeCoords / nodeCoords.length();
+    stk::math::Vector3d result = stk::math::Vector3d::ZERO;
+    for (auto & dCoordsdParentLevelSet : sens.dCoordsdParentLevelSets)
+      result += dCoordsdParentLevelSet;
+    return (result-goldVal).length_squared();
+
+  }
 };
 
 TEST_F(DecomposeMeshAndCheckConvergenceForSensitivitiesForSphere, createDecomposedMeshForSphereNotThroughBackgroundNodes_testAnalyticalSensitivities)
 {
-  check_convergence_of_sensitivities_for_sphere_conforming_meshes(0.869, false, false);
+  check_convergence_of_sensitivities_for_sphere_conforming_meshes(0.869, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndCheckConvergenceForSensitivitiesForSphere, createSnappedMeshForSphereNotThroughBackgroundNodes_testAnalyticalSensitivities)
 {
-  check_convergence_of_sensitivities_for_sphere_conforming_meshes(0.869, true, false);
+  check_convergence_of_sensitivities_for_sphere_conforming_meshes(0.869, false, true, false);
 }
 
-TEST(StashedLevelSetValues, checkSnapBehaviorForStashedLevelSet)
+TEST_F(DecomposeMeshAndCheckConvergenceForSensitivitiesForSphere, createDecomposedMeshForSphereNotThroughBackgroundNodes_testAnalyticalClosestPointSensitivities)
+{
+  check_convergence_of_sensitivities_for_sphere_conforming_meshes(0.869, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndCheckConvergenceForSensitivitiesForSphere, createSnappedMeshForSphereNotThroughBackgroundNodes_testAnalyticalClosestPointSensitivities)
+{
+  check_convergence_of_sensitivities_for_sphere_conforming_meshes(0.869, true, true, false);
+}
+
+TEST(CopiedLevelSetValuesForSnapping, checkThatOriginalLevelsetIsNotModifiedByDecomposition)
 {
   const stk::topology elemTopo = stk::topology::TETRAHEDRON_4;
   std::unique_ptr<krino::BoundingBoxMesh> bboxMesh = std::make_unique<krino::BoundingBoxMesh>(elemTopo, MPI_COMM_WORLD);
 
   auto lsFields = krino::LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(bboxMesh->meta_data(), 1);
-  setup_fields_for_conforming_decomposition(bboxMesh->meta_data(), lsFields);
+  const bool doComputeClosestPointSensitivities = false;
+  setup_fields_for_conforming_decomposition(bboxMesh->meta_data(), lsFields, true, doComputeClosestPointSensitivities);
 
   krino::populate_bounding_box_mesh_and_activate(*bboxMesh, {-1.,-1.,-0.1}, {1.,1.,0.1}, 0.1);
 
@@ -471,17 +666,14 @@ TEST(StashedLevelSetValues, checkSnapBehaviorForStashedLevelSet)
     fieldValuesByEntityId[entityId] = fieldData[0];
   }
 
-  decompose_mesh_to_conform_to_levelsets_using_snapping(bboxMesh->bulk_data(), lsFields);
+  decompose_mesh_to_conform_to_levelsets_using_snapping(bboxMesh->bulk_data(), lsFields, doComputeClosestPointSensitivities);
 
-  krino::CDFEM_Support & cdfemSupport = krino::CDFEM_Support::get(bboxMesh->meta_data());
-  auto LSStash = cdfemSupport.get_stashed_levelsets();
-  auto stashedLS = LSStash[lsFields[0].isovar];
-
+  // Confirm that snapping/decomposition has not modified the field
   for(auto && entry : fieldValuesByEntityId)
   {
     auto n = bboxMesh->bulk_data().get_entity(stk::topology::NODE_RANK, entry.first);
     EXPECT_DOUBLE_EQ(entry.second, 
-      static_cast<double*>(stk::mesh::field_data(stashedLS.field(), n))[0]);
+      static_cast<double*>(stk::mesh::field_data(lsFields[0].isovar.field(), n))[0]);
   }
 }
 
@@ -551,7 +743,8 @@ TEST(DecomposeMeshAndComputeSensitivities, readMeshInitializeDecomposeResetIniti
   krino::MeshFromFile meshFromFile(initialMeshName, MPI_COMM_WORLD);
 
   const std::vector<krino::LS_Field> lsFields = krino::LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(meshFromFile.meta_data(), 1);
-  setup_fields_for_conforming_decomposition(meshFromFile.meta_data(), lsFields);
+  const bool doComputeClosestPointSensitivities = false;
+  setup_fields_for_conforming_decomposition(meshFromFile.meta_data(), lsFields, false, doComputeClosestPointSensitivities);
 
   meshFromFile.populate_mesh();
   krino::activate_all_entities(meshFromFile.bulk_data(), krino::AuxMetaData::get(meshFromFile.meta_data()).active_part());
@@ -572,7 +765,7 @@ TEST(DecomposeMeshAndComputeSensitivities, readMeshInitializeDecomposeResetIniti
 
   compute_nodal_distance_from_spheres(meshFromFile.bulk_data(), meshFromFile.meta_data().coordinate_field(), lsFields[0].isovar, spheres);
 
-  decompose_mesh_to_conform_to_levelsets(meshFromFile.bulk_data(), lsFields);
+  decompose_mesh_to_conform_to_levelsets(meshFromFile.bulk_data(), lsFields, doComputeClosestPointSensitivities);
 
   const bool doWriteMesh = false;
   if (doWriteMesh)
@@ -589,7 +782,7 @@ TEST(DecomposeMeshAndComputeSensitivities, readMeshInitializeDecomposeResetIniti
 
   compute_nodal_distance_from_spheres(meshFromFile.bulk_data(), meshFromFile.meta_data().coordinate_field(), lsFields[0].isovar, spheres );
 
-  decompose_mesh_to_conform_to_levelsets(meshFromFile.bulk_data(), lsFields);
+  decompose_mesh_to_conform_to_levelsets(meshFromFile.bulk_data(), lsFields, doComputeClosestPointSensitivities);
 
   if (doWriteMesh)
     output_full_mesh(meshFromFile.bulk_data(), "output2.e", 1, 1.0);
@@ -606,7 +799,8 @@ void test_moving_islands_to_separate_phase(const std::function<void(stk::mesh::B
 
   const std::vector<krino::LS_Field> lsFields = krino::LSPerInterfacePolicy::setup_levelsets_on_all_blocks_with_void_phase_for_any_negative_levelset(meshFromFile.meta_data(), 1);
   create_extra_phase_per_block(meshFromFile.meta_data(), islandPhaseName);
-  setup_fields_for_conforming_decomposition(meshFromFile.meta_data(), lsFields);
+  const bool doComputeClosestPointSensitivities = false;
+  setup_fields_for_conforming_decomposition(meshFromFile.meta_data(), lsFields, false, doComputeClosestPointSensitivities);
 
   meshFromFile.populate_mesh();
   krino::activate_all_entities(meshFromFile.bulk_data(), krino::AuxMetaData::get(meshFromFile.meta_data()).active_part());
@@ -618,7 +812,7 @@ void test_moving_islands_to_separate_phase(const std::function<void(stk::mesh::B
 
   compute_nodal_distance_from_spheres(meshFromFile.bulk_data(), meshFromFile.meta_data().coordinate_field(), lsFields[0].isovar, oneSphere, -1);
 
-  decompose_mesh_to_conform_to_levelsets(meshFromFile.bulk_data(), lsFields);
+  decompose_mesh_to_conform_to_levelsets(meshFromFile.bulk_data(), lsFields, doComputeClosestPointSensitivities);
 
   const bool doWriteMesh = false;
   if (doWriteMesh)
@@ -637,7 +831,7 @@ void test_moving_islands_to_separate_phase(const std::function<void(stk::mesh::B
 
   compute_nodal_distance_from_spheres(meshFromFile.bulk_data(), meshFromFile.meta_data().coordinate_field(), lsFields[0].isovar, oneConnectedAndOneDisconnectedSphere, -1);
 
-  decompose_mesh_to_conform_to_levelsets(meshFromFile.bulk_data(), lsFields);
+  decompose_mesh_to_conform_to_levelsets(meshFromFile.bulk_data(), lsFields, doComputeClosestPointSensitivities);
 
   island_removal_method(meshFromFile.bulk_data());
 
@@ -678,16 +872,16 @@ protected:
   }
 
   template <unsigned DIM>
-  std::pair<double,double> build_circle_or_sphere_conforming_mesh_and_compute_area_and_sensitivity(const double meshSize, const double radius, const bool doSnapping, const bool doWriteMesh)
+  std::pair<double,double> build_circle_or_sphere_conforming_mesh_and_compute_area_and_sensitivity(const double meshSize, const double radius, const bool doComputeClosestPointSensitivities, const bool doSnapping, const bool doWriteMesh)
   {
     constexpr unsigned numFacetNodes = DIM;
     std::vector<krino::LS_Field> lsFields;
 
-    std::unique_ptr<krino::BoundingBoxMesh> mesh = build_circle_or_sphere_conforming_bounding_box_mesh(DIM, {-1.,-1.,-1.}, {1.,1.,1.}, meshSize, {0.0,0.0,0.0}, radius, doSnapping, doWriteMesh, lsFields);
+    std::unique_ptr<krino::BoundingBoxMesh> mesh = build_circle_or_sphere_conforming_bounding_box_mesh(DIM, {-1.,-1.,-1.}, {1.,1.,1.}, meshSize, {0.0,0.0,0.0}, radius, doComputeClosestPointSensitivities, doSnapping, doWriteMesh, lsFields);
 
     std::vector<krino::LevelSetShapeSensitivity> sensitivities;
     std::vector<std::array<size_t,numFacetNodes>> facetsSensitivityIndices;
-    krino::fill_levelset_facets_and_shape_sensitivities(mesh->bulk_data(), lsFields[0], facetsSensitivityIndices, sensitivities);
+    krino::fill_levelset_facets_and_shape_sensitivities(mesh->bulk_data(), lsFields[0], doComputeClosestPointSensitivities, facetsSensitivityIndices, sensitivities);
 
     double area = 0.;
     double dArea_dLs = 0.;
@@ -724,7 +918,7 @@ protected:
   }
 
   template <unsigned DIM>
-  void check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes(const unsigned nRefine, const bool doSnapping, const bool doWriteMesh)
+  void check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes(const unsigned nRefine, const bool doComputeClosestPointSensitivities, const bool doSnapping, const bool doWriteMesh)
   {
     const double radius = 0.76;
     const auto & [goldArea, gold_dArea_dLS] = compute_gold_area_and_sensitivity(DIM, radius);
@@ -732,7 +926,7 @@ protected:
     for(unsigned r=0; r<nRefine; r++)
     {
       const double meshSize = 0.33 / std::pow(2., r);
-      const auto & [area, dArea_dLs] = build_circle_or_sphere_conforming_mesh_and_compute_area_and_sensitivity<DIM>(meshSize, radius, doSnapping, doWriteMesh);
+      const auto & [area, dArea_dLs] = build_circle_or_sphere_conforming_mesh_and_compute_area_and_sensitivity<DIM>(meshSize, radius, doComputeClosestPointSensitivities, doSnapping, doWriteMesh);
 
       const double errArea = std::abs(area-goldArea);
       const double errdArea = std::abs(dArea_dLs-gold_dArea_dLS);
@@ -748,21 +942,41 @@ protected:
 
 TEST_F(DecomposeMeshAndCheckConvergenceOfAreaAndSensitivity, checkSphereAreaAndSensitivity)
 {
-  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<3>(3, false, false);
+  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<3>(3, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndCheckConvergenceOfAreaAndSensitivity, checkSnappedSphereAreaAndSensitivity)
 {
-  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<3>(3, true, false);
+  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<3>(3, false, true, false);
 }
 
 TEST_F(DecomposeMeshAndCheckConvergenceOfAreaAndSensitivity, checkCircleAreaAndSensitivity)
 {
-  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<2>(5, false, false);
+  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<2>(5, false, false, false);
 }
 
 TEST_F(DecomposeMeshAndCheckConvergenceOfAreaAndSensitivity, checkSnappedCircleAreaAndSensitivity)
 {
-  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<2>(5, true, false);
+  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<2>(5, false, true, false);
+}
+
+TEST_F(DecomposeMeshAndCheckConvergenceOfAreaAndSensitivity, checkSphereAreaAndClosestPointSensitivity)
+{
+  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<3>(3, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndCheckConvergenceOfAreaAndSensitivity, checkSnappedSphereAreaAndClosestPointSensitivity)
+{
+  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<3>(3, true, true, false);
+}
+
+TEST_F(DecomposeMeshAndCheckConvergenceOfAreaAndSensitivity, checkCircleAreaAndClosestPointSensitivity)
+{
+  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<2>(5, true, false, false);
+}
+
+TEST_F(DecomposeMeshAndCheckConvergenceOfAreaAndSensitivity, checkSnappedCircleAreaAndClosestPointSensitivity)
+{
+  check_convergence_of_area_and_sensitivity_for_circle_or_sphere_conforming_meshes<2>(5, true, true, false);
 }
 

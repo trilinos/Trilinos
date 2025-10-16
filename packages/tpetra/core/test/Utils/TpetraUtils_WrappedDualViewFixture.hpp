@@ -24,25 +24,24 @@ namespace {
 
 using DeviceType = Tpetra::Map<>::device_type;
 
-using DualViewType = Kokkos::DualView<int*, DeviceType>;
+using DualViewType        = Kokkos::DualView<int*, DeviceType>;
 using WrappedDualViewType = Tpetra::Details::WrappedDualView<DualViewType>;
 
-using HostViewType = typename DualViewType::t_host;
-using DeviceViewType = typename DualViewType::t_dev;
+using HostViewType        = typename DualViewType::t_host;
+using DeviceViewType      = typename DualViewType::t_dev;
 using ConstDeviceViewType = typename DualViewType::t_dev::const_type;
 
-using ConstDualViewType = Kokkos::DualView<const int*, DeviceType>;
+using ConstDualViewType        = Kokkos::DualView<const int*, DeviceType>;
 using WrappedConstDualViewType = Tpetra::Details::WrappedDualView<ConstDualViewType>;
 
 class WrappedDualViewFixture {
-public:
+ public:
   static constexpr bool deviceMemoryIsHostAccessible = Kokkos::SpaceAccessibility<Kokkos::Serial, typename DeviceType::memory_space>::accessible;
 
   WrappedDualViewFixture()
-    : viewSize(16),
-      dualView("dualView", viewSize)
-  {
-    for (int i=0; i<viewSize; i++) {
+    : viewSize(16)
+    , dualView("dualView", viewSize) {
+    for (int i = 0; i < viewSize; i++) {
       dualView.view_host()(i) = 0;
     }
     dualView.modify_host();
@@ -75,7 +74,7 @@ public:
   }
 
   bool valuesInitializedToZero() {
-    auto hostView = dualView.view_host();
+    auto hostView   = dualView.view_host();
     auto deviceView = dualView.view_device();
     return valuesCorrectOnHost(hostView, 0) && valuesCorrectOnDevice(deviceView, 0);
   }
@@ -87,16 +86,16 @@ public:
 
   template <typename ViewType>
   void fillViewOnHost(ViewType view, int startIndex, int length) {
-    for (int i=0; i<length; i++) {
+    for (int i = 0; i < length; i++) {
       int value = i + startIndex;
-      view(i) = value;
+      view(i)   = value;
     }
   }
 
   template <typename ViewType>
   void multiplyOnHost(ViewType view, int multiplier) {
-    for (unsigned i=0; i<view.size(); i++) {
-      view(i) = multiplier*view(i);
+    for (unsigned i = 0; i < view.size(); i++) {
+      view(i) = multiplier * view(i);
     }
   }
 
@@ -108,8 +107,8 @@ public:
   template <typename ViewType>
   bool valuesCorrectOnHost(ViewType view, int startIndex, int length, int multiplier = 1) {
     bool result = (static_cast<int>(view.size()) == length);
-    for (int i=0; i<length && result; i++) {
-      int value = multiplier*(i + startIndex);
+    for (int i = 0; i < length && result; i++) {
+      int value = multiplier * (i + startIndex);
       result &= (view(i) == value);
     }
     return result;
@@ -122,16 +121,18 @@ public:
 
   template <typename ViewType>
   void fillViewOnDevice(ViewType view, int startIndex, int length) {
-    Kokkos::parallel_for("fill on device", length, KOKKOS_LAMBDA(const int& i) {
+    Kokkos::parallel_for(
+        "fill on device", length, KOKKOS_LAMBDA(const int& i) {
           int value = i + startIndex;
-          view(i) = value;
+          view(i)   = value;
         });
   }
 
   template <typename ViewType>
   void multiplyOnDevice(ViewType view, int multiplier) {
-    Kokkos::parallel_for("multiply on device", view.size(), KOKKOS_LAMBDA(const int& i) {
-          view(i) = multiplier*view(i);
+    Kokkos::parallel_for(
+        "multiply on device", view.size(), KOKKOS_LAMBDA(const int& i) {
+          view(i) = multiplier * view(i);
         });
   }
 
@@ -145,13 +146,14 @@ public:
     int result = 0;
     if (static_cast<int>(view.size()) != length) {
       result++;
-    }
-    else {
-      Kokkos::parallel_reduce("check on device", length,
+    } else {
+      Kokkos::parallel_reduce(
+          "check on device", length,
           KOKKOS_LAMBDA(const int& i, int& localResult) {
-            int value = multiplier*(i + startIndex);
+            int value   = multiplier * (i + startIndex);
             localResult = (view(i) == value) ? 0 : 1;
-          }, result);
+          },
+          result);
     }
     return (result == 0);
   }
@@ -165,10 +167,9 @@ public:
     return viewSize;
   }
 
-private:
+ private:
   int viewSize;
   DualViewType dualView;
 };
 
-
-}
+}  // namespace

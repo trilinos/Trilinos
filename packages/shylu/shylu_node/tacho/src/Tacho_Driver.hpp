@@ -79,13 +79,14 @@ public:
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
 
 private:
-  enum : int { Cholesky = 1, LDL = 2, SymLU = 3, LU = 4 };
+  enum : int { LDL_nopiv = 0, Cholesky = 1, LDL = 2, SymLU = 3, LU = 4 };
 
   // ** solver mode
   ordinal_type _method;
 
   // ** ordering options
-  ordinal_type _order_connected_graph_separately;
+  bool _order_connected_graph_separately;
+  int _graph_algo_type;
 
   // ** problem
   ordinal_type _m;
@@ -197,7 +198,8 @@ public:
   ///
   /// Graph options
   ///
-  void setOrderConnectedGraphSeparately(const ordinal_type order_connected_graph_separately = 1);
+  void setOrderConnectedGraphSeparately(const bool order_connected_graph_separately = true);
+  void setGraphAlgorithmType(const int graph_algo_type);
 
   ///
   /// tasking options

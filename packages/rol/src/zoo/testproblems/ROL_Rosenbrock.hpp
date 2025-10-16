@@ -158,8 +158,8 @@ public:
     int n = 100;
     // Get Solution
     ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
-    for ( int i = 0; i < n; i++ ) {
-      (*xp)[i] = 1.0;
+    for ( int li = 0; li < n; li++ ) {
+      (*xp)[li] = 1.0;
     }
     return ROL::makePtr<StdVector<Real>>(xp);
   }

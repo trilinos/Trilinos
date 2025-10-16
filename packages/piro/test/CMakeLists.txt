@@ -18,6 +18,20 @@ IF (Piro_ENABLE_NOX)
     ADDED_TESTS_NAMES_OUT ThyraSolverTpetra_NAME
   )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      SecondOrderIntegratorThyra
+      SOURCES
+      Main_SecondOrderIntegrator_Thyra.cpp
+      MockModelEval_C_Tpetra.cpp
+      MockModelEval_C_Tpetra.hpp
+      Piro_Test_MockObserver.hpp
+      MatrixBased_LOWS.hpp
+      MatrixBased_LOWS.cpp
+      NUM_MPI_PROCS 1
+      ARGS -v
+      PASS_REGULAR_EXPRESSION "TEST PASSED"
+    )
+
   IF (Piro_ENABLE_Tempus)
     #IF (TPL_ENABLE_MPI)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -166,6 +180,21 @@ IF (Piro_ENABLE_Tempus)
   )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TempusSolverForwardOnly_UnitTests_Tpetra
+    SOURCES
+    Piro_TempusSolverForwardOnly_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    Piro_Test_ThyraSupport.hpp
+    MockModelEval_A_Tpetra.hpp
+    MockModelEval_A_Tpetra.cpp
+    MockModelEval_B_Tpetra.hpp
+    MockModelEval_B_Tpetra.cpp
+    MatrixBased_LOWS.cpp
+    NUM_MPI_PROCS 1-4
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     TempusSolver_SensitivitySinCos_Combined_FSA_UnitTests
     SOURCES
     Piro_TempusSolver_SensitivitySinCos_Combined_FSA_UnitTests.cpp
@@ -247,6 +276,8 @@ ENDIF (Piro_ENABLE_Tempus)
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
   DEST_FILES   
+        input_Solve_LOCA_Thyra.xml
+        input_Solve_NOX_ForwardSensitivities_MatrixFree_Thyra.xml
         input_Solve_NOX_ForwardSensitivities_Thyra.xml
         input_Solve_NOX_AdjointSensitivities_ImplicitAdjointME_Thyra.xml
         input_Solve_NOX_AdjointSensitivities_ExplicitAdjointME_Thyra.xml
@@ -265,6 +296,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
         input_Analysis_ROL_FullSpace_AugmentedLagrangian_BoundConstrained.xml
         input_Tempus_BackwardEuler_SinCos.xml 
         input_tempus_be_nox_solver.yaml
+        input_Solve_TR_Thyra.xml
   SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
   SOURCE_PREFIX "_"
   EXEDEPS ${ThyraSolverTpetra_EXENAME} ${AnalysisDriverTpetra_EXENAME}
@@ -280,10 +312,6 @@ IF (PIRO_HAVE_EPETRA_STACK)
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
     MockModelEval_A.cpp
     MockModelEval_A.hpp
-    MockModelEval_C.cpp
-    MockModelEval_C.hpp
-    MockModelEval_D.cpp
-    MockModelEval_D.hpp
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
   )
@@ -406,6 +434,7 @@ IF (PIRO_HAVE_EPETRA_STACK)
       MockModelEval_A.cpp
       NUM_MPI_PROCS 1-4
       STANDARD_PASS_OUTPUT
+      TARGET_DEFINES TEST_USE_EPETRA
     )
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       TempusSolver_SensitivityUnitTests
@@ -434,13 +463,6 @@ IF (PIRO_HAVE_EPETRA_STACK)
                  input_Solve_VV.xml
                  input_Solve_TR.xml
                  input_Solve_NB.xml
-	             input_SGSolve.xml
-	             input_problem1.xml
-	             input_problem2.xml
-	             input_coupled.xml
-	             input_problem1_sg.xml
-	             input_problem2_sg.xml
-	             input_coupled_sg.xml
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
     EXEDEPS ${ThyraSolver_EXENAME} UnitTests NOXSolver_UnitTests

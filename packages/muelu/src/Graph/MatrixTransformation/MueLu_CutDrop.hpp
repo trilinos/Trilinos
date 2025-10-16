@@ -11,7 +11,11 @@
 #define MUELU_CUTDROP_HPP
 
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include "MueLu_DroppingCommon.hpp"
 #include "MueLu_Utilities.hpp"
 #include "Xpetra_Matrix.hpp"
@@ -45,7 +49,11 @@ class UnscaledComparison {
   results_view results;
 
  private:
-  using ATS           = Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
   using magnitudeType = typename ATS::magnitudeType;
 
  public:
@@ -61,7 +69,11 @@ class UnscaledComparison {
     using memory_space       = typename local_matrix_type2::memory_space;
     using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-    using ATS           = Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+    using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+    using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
     using magnitudeType = typename ATS::magnitudeType;
 
     const local_matrix_type2 A;
@@ -129,7 +141,11 @@ class ScaledComparison {
   results_view results;
 
  private:
-  using ATS           = Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
   using magnitudeType = typename ATS::magnitudeType;
 
   Teuchos::RCP<diag_vec_type> diagVec;
@@ -158,9 +174,17 @@ class ScaledComparison {
     using memory_space       = typename local_matrix_type2::memory_space;
     using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-    using ATS           = Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+    using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+    using ATS  = Kokkos::ArithTraits<scalar_type>;
+#endif
     using magnitudeType = typename ATS::magnitudeType;
-    using mATS          = Kokkos::ArithTraits<magnitudeType>;
+#if KOKKOS_VERSION >= 40799
+    using mATS = KokkosKernels::ArithTraits<magnitudeType>;
+#else
+    using mATS = Kokkos::ArithTraits<magnitudeType>;
+#endif
 
     const local_matrix_type2 A;
     const diag_view_type2 diag;
@@ -187,13 +211,18 @@ class ScaledComparison {
         auto val         = A.values(offset + x);
         auto neg_aij     = -ATS::real(val);
         auto max_neg_aik = ATS::real(diag(rlid));
-        return ATS::magnitude(neg_aij / max_neg_aik);
+        auto v           = neg_aij / max_neg_aik;
+        if (ATS::real(v) <= mATS::zero()) {
+          return -ATS::magnitude(v * v);
+        } else {
+          return ATS::magnitude(v * v);
+        }
       } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
         auto val                  = A.values(offset + x);
         auto x_aiiajj             = ATS::magnitude(diag(rlid) * diag(A.graph.entries(offset + x)));
         const bool is_nonpositive = ATS::real(val) <= mATS::zero();
         magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);
-        if (is_nonpositive)
+        if (!is_nonpositive)
           aij2 = -aij2;
         return (aij2 / x_aiiajj);
       }
@@ -257,7 +286,11 @@ class UnscaledDistanceLaplacianComparison {
   results_view results;
 
  private:
-  using ATS           = Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
   using magnitudeType = typename ATS::magnitudeType;
 
   Teuchos::RCP<diag_vec_type> diagVec;
@@ -283,7 +316,11 @@ class UnscaledDistanceLaplacianComparison {
     using memory_space       = typename local_matrix_type2::memory_space;
     using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-    using ATS           = Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+    using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+    using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
     using magnitudeType = typename ATS::magnitudeType;
 
     const local_matrix_type2 A;
@@ -367,7 +404,11 @@ class ScaledDistanceLaplacianComparison {
   results_view results;
 
  private:
-  using ATS           = Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
   using magnitudeType = typename ATS::magnitudeType;
 
   Teuchos::RCP<diag_vec_type> diagVec;
@@ -399,9 +440,17 @@ class ScaledDistanceLaplacianComparison {
     using memory_space       = typename local_matrix_type2::memory_space;
     using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-    using ATS           = Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+    using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+    using ATS  = Kokkos::ArithTraits<scalar_type>;
+#endif
     using magnitudeType = typename ATS::magnitudeType;
-    using mATS          = Kokkos::ArithTraits<magnitudeType>;
+#if KOKKOS_VERSION >= 40799
+    using mATS = KokkosKernels::ArithTraits<magnitudeType>;
+#else
+    using mATS = Kokkos::ArithTraits<magnitudeType>;
+#endif
 
     const local_matrix_type2 A;
     const diag_view_type2 diag;
@@ -441,16 +490,17 @@ class ScaledDistanceLaplacianComparison {
       } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
         auto neg_aij     = -ATS::real(val);
         auto max_neg_aik = ATS::real(diag(rlid));
+        auto v           = ATS::magnitude(neg_aij / max_neg_aik);
         if (ATS::real(neg_aij) >= mzero)
-          return ATS::magnitude(neg_aij / max_neg_aik);
+          return v * v;
         else
-          return -ATS::magnitude(neg_aij / max_neg_aik);
+          return -v * v;
       } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
         auto aiiajj               = ATS::magnitude(diag(rlid)) * ATS::magnitude(diag(clid));  // |a_ii|*|a_jj|
         const bool is_nonpositive = ATS::real(val) <= mATS::zero();
         magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
         // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
-        if (is_nonpositive)
+        if (!is_nonpositive)
           aij2 = -aij2;
         return aij2 / aiiajj;
       }
@@ -512,7 +562,11 @@ class CutDropFunctor {
   using memory_space       = typename local_matrix_type::memory_space;
   using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-  using ATS                 = Kokkos::ArithTraits<scalar_type>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<scalar_type>;
+#else
+  using ATS = Kokkos::ArithTraits<scalar_type>;
+#endif
   using magnitudeType       = typename ATS::magnitudeType;
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
 

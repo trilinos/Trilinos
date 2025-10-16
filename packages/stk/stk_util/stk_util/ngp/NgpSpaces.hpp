@@ -102,6 +102,9 @@ using DeviceTeamPolicy = Kokkos::TeamPolicy<ExecSpace>;
 
 using ScheduleType = Kokkos::Schedule<Kokkos::Dynamic>;
 
+// Detect if the host and device memory spaces are unified
+constexpr bool DeviceAccessibleFromHost = Kokkos::SpaceAccessibility<HostExecSpace, ExecSpace::memory_space>::accessible;
+
 }
 }
 

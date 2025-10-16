@@ -505,4 +505,14 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(TpetraCore_inout_copy_files
     simple.mtx
     rmat_11.mtx
     rmat_11_lap.mtx
+    ReducedMatrix.mm
+    ReducedMap.mm
 )
+
+TRIBITS_ADD_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_FileTest
+  NAME ReadMapsWithGaps
+  ARGS "--mapInputFilename=ReducedMap.mm --matrixInputFilename=ReducedMatrix.mm"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )

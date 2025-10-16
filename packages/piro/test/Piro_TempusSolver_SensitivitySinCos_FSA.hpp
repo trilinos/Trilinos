@@ -87,6 +87,7 @@ void test_sincos_fsa(const bool use_combined_method,
   if (sens_method_string == "None") sens_method = Piro::NONE;
   else if (sens_method_string == "Forward") sens_method = Piro::FORWARD;
   else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
+  else TEUCHOS_ASSERT(false);
 
   for (int n=0; n<nTimeStepSizes; n++) {
 
@@ -187,12 +188,12 @@ void test_sincos_fsa(const bool use_combined_method,
       typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
 
       std::ofstream ftmp(outfile_name);
-      RCP<const Tempus::SolutionHistory<double> > solutionHistory =
+      RCP<const Tempus::SolutionHistory<double> > lsolutionHistory =
         integrator->getSolutionHistory();
       RCP< Thyra::MultiVectorBase<double> > DxDp_exact_plot =
         Thyra::createMembers(model->get_x_space(), num_param);
-      for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<const Tempus::SolutionState<double> > solutionState = (*solutionHistory)[i];
+      for (int i=0; i<lsolutionHistory->getNumStates(); i++) {
+        RCP<const Tempus::SolutionState<double> > solutionState = (*lsolutionHistory)[i];
         double time_i = solutionState->getTime();
         RCP<const DMVPV> x_prod_plot =
           Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());

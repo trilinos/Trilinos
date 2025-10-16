@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2022, 2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -8,19 +8,13 @@
 #include "Ioex_DatabaseIO.h"
 
 #include "Ioss_CodeTypes.h" // for Int64Vector, IntVector
-#include "Ioss_SmartAssert.h"
-#include <cassert> // for assert
-#include <cmath>   // for sqrt
-#include <fmt/format.h>
+#include <cassert>          // for assert
+#include <cstdlib>
 #include <fmt/ostream.h>
-#include <iostream> // for ostringstream
-#include <stdlib.h>
 #include <string> // for string, operator==, etc
 #include <vector>
 
 #include "Ioss_ChangeSetFactory.h" // for ChangeSetFactory
-#include "Ioss_Property.h"         // for Property
-#include "Ioss_PropertyManager.h"  // for PropertyManager
 #include "Ioss_Region.h"           // for Region
 
 namespace Ioex {

@@ -33,6 +33,7 @@
 #undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
 #endif
 
+#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 namespace Kokkos {
 
 template< class DataType , class ... Properties >
@@ -943,9 +944,9 @@ template <typename T, typename ... P>
 struct is_dynrankview_fad< DynRankView<T,P...> > {
   typedef DynRankView<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFad >::value ||
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
@@ -953,7 +954,7 @@ template <typename T, typename ... P>
 struct is_dynrankview_fad_contiguous< DynRankView<T,P...> > {
   typedef DynRankView<T,P...> view_type;
   static const bool value =
-    std::is_same< typename view_type::specialize,
+    std::is_same< typename view_type::traits::specialize,
                   Impl::ViewSpecializeSacadoFadContiguous >::value;
 };
 
@@ -971,7 +972,6 @@ dimension_scalar(const DynRankView<T,P...>& view) {
 
 
 // Overload of deep_copy for Fad views intializing to a constant scalar
-
 template< class DT, class ... DP >
 void deep_copy(
   const DynRankView<DT,DP...> & view ,
@@ -1317,11 +1317,14 @@ KOKKOS_FUNCTION auto as_view_of_rank_n(
 }
 
 } // end Kokkos
+#endif
 
 #endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #endif // defined(HAVE_SACADO_KOKKOS)
 
+#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 #include "Kokkos_DynRankView_Fad_Contiguous.hpp"
+#endif
 
 #endif /* #ifndef KOKKOS_DYN_RANK_VIEW_SACADO_FAD_HPP */

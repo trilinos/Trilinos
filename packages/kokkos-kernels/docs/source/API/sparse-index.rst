@@ -7,7 +7,10 @@ API: Sparse
 
    sparse/bsr_matrix
    sparse/crs_matrix
+   sparse/ccs_matrix
+   sparse/coo_matrix
    sparse/kokkoskernelshandle
+   sparse/sort_crs
 
    sparse/spmv
    sparse/spadd_symbolic
@@ -26,6 +29,8 @@ API: Sparse
    sparse/spiluk_numeric
    sparse/par_ilut
 
+   sparse/extract_diagonal_blocks_rcb.rst
+
 Containers
 ==========
 
@@ -33,7 +38,20 @@ Sparse containers are data structures that store indices and values associated w
 
 - :doc:`CrsMatrix <sparse/crs_matrix>`
 - :doc:`BsrMatrix <sparse/bsr_matrix>`
+- :doc:`CcsMatrix <sparse/ccs_matrix>`
+- :doc:`CooMatrix <sparse/coo_matrix>`
 - :doc:`KokkosKernelsHandle <sparse/kokkoskernelshandle>`
+
+Sorting
+=========================
+
+- Sort sparse data structures
+
+  - :doc:`sort_crs_matrix <sparse/sort_crs>`
+  - :doc:`sort_brs_matrix <sparse/sort_crs>`
+  - :doc:`sort_and_merge_matrix <sparse/sort_crs>`
+  - :doc:`sort_crs_graph <sparse/sort_crs>`
+  - :doc:`sort_and_merge_graph <sparse/sort_crs>`
 
 Linear Algebra Operations
 =========================
@@ -73,3 +91,10 @@ Linear Solver / Preconditioners
   - :doc:`spiluk_symbolic <sparse/spiluk_symbolic>`
   - :doc:`spiluk_numeric <sparse/spiluk_numeric>`
   - :doc:`par_ilut <sparse/par_ilut>`
+
+Utility Functions
+=================
+
+- Apply RCB to the coordinates associated with rows/columns of a crs matrix then extract the diagonal blocks corresponding to the RCB partitions
+
+  - :doc:`extract_diagonal_blocks_rcb <sparse/extract_diagonal_blocks_rcb>`

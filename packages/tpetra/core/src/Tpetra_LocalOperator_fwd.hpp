@@ -17,10 +17,10 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
-template<class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
-         class Device = ::Tpetra::Details::DefaultTypes::node_type::device_type>
+template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+          class Device = ::Tpetra::Details::DefaultTypes::node_type::device_type>
 class LocalOperator;
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+}  // namespace Tpetra
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
-#endif // TPETRA_LOCALOPERATOR_FWD_HPP
+#endif  // TPETRA_LOCALOPERATOR_FWD_HPP

@@ -66,8 +66,16 @@ class LocalQRDecompFunctor {
   typedef SCType SC;
 
   typedef typename DeviceType::execution_space execution_space;
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<SC>::val_type impl_SC;
+#else
   typedef typename Kokkos::ArithTraits<SC>::val_type impl_SC;
+#endif
+#if KOKKOS_VERSION >= 40799
+  typedef KokkosKernels::ArithTraits<impl_SC> impl_ATS;
+#else
   typedef Kokkos::ArithTraits<impl_SC> impl_ATS;
+#endif
   typedef typename impl_ATS::magnitudeType Magnitude;
 
   typedef Kokkos::View<impl_SC**, typename execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged> shared_matrix;
@@ -542,9 +550,17 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   const size_t numRows = rowMap->getLocalNumElements();
   const size_t NSDim   = fineNullspace->getNumVectors();
 
+#if KOKKOS_VERSION >= 40799
+  typedef KokkosKernels::ArithTraits<SC> ATS;
+#else
   typedef Kokkos::ArithTraits<SC> ATS;
-  using impl_SC      = typename ATS::val_type;
-  using impl_ATS     = Kokkos::ArithTraits<impl_SC>;
+#endif
+  using impl_SC = typename ATS::val_type;
+#if KOKKOS_VERSION >= 40799
+  using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
+#else
+  using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+#endif
   const impl_SC zero = impl_ATS::zero(), one = impl_ATS::one();
 
   const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -967,9 +983,17 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // typedef typename STS::magnitudeType Magnitude;
   const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
+#if KOKKOS_VERSION >= 40799
+  typedef KokkosKernels::ArithTraits<SC> ATS;
+#else
   typedef Kokkos::ArithTraits<SC> ATS;
-  using impl_SC     = typename ATS::val_type;
-  using impl_ATS    = Kokkos::ArithTraits<impl_SC>;
+#endif
+  using impl_SC = typename ATS::val_type;
+#if KOKKOS_VERSION >= 40799
+  using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
+#else
+  using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+#endif
   const impl_SC one = impl_ATS::one();
 
   //    const GO     numAggs   = aggregates->GetNumAggregates();

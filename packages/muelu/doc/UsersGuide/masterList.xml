@@ -398,7 +398,7 @@
       <name>aggregation: mode</name>
       <type>string</type>
       <default>"uncoupled"</default>
-      <description>Controls whether aggregates are allowed to cross processor boundaries. Possible values: "coupled" aggregates can cross processor boundaries, "uncoupled" aggregates cannot cross processor boundaries.</description>
+      <description>Controls whether aggregates are allowed to cross processor boundaries. Possible values: "uncoupled" aggregates cannot cross processor boundaries.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -1586,6 +1586,16 @@ Only used when tentative: calculate qr is set to false.</description>
       <visible>false</visible>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
+
+    <parameter>
+      <name>filtered matrix: count negative diagonals</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Counts the number of negative diagonals (involves MPI communication).</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
 
     <parameter>
       <name>matrix: compute analysis</name>

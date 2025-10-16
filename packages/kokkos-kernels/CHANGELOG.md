@@ -1,5 +1,22 @@
 # Change Log
 
+## [4.7.01](https://github.com/kokkos/kokkos-kernels/tree/4.7.01)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.00...4.7.01)
+
+### New Features and Enhancements
+- First implementation of recursive coordinate bisection (RCB) in graph [\#2708](https://github.com/kokkos/kokkos-kernels/pull/2708)
+- Update the bisect break condition in RCB [\#2766](https://github.com/kokkos/kokkos-kernels/pull/2766)
+- Add setNumRows, setNumCols to sparse matrix structures [\#2700](https://github.com/kokkos/kokkos-kernels/pull/2700)
+- Add optional argument to configure sorting algorithm used in KokkosSparse:sort_crs_matrix [\#2714](https://github.com/kokkos/kokkos-kernels/pull/2714)
+
+### Bug Fixes:
+- Batched - SVD: adding iteration limits [\#2706](https://github.com/kokkos/kokkos-kernels/pull/2706)
+- Minor fix for coefficient type in SPMV_Functor [\#2730](https://github.com/kokkos/kokkos-kernels/pull/2730)
+- cusparse spmv_mv: use native fallback if y not 16B aligned [\#2746](https://github.com/kokkos/kokkos-kernels/pull/2746)
+- Fix a CMake error when benchmarks and perf-tests enabled [\#2729](https://github.com/kokkos/kokkos-kernels/pull/2729)
+- Clean up old SortCrs workaround, update RCB for host_mirror_type renaming [\#2721](https://github.com/kokkos/kokkos-kernels/pull/2721)
+- Drop deprecated double4 type for CUDA 13 [\#2718](https://github.com/kokkos/kokkos-kernels/pull/2718)
+
 ## [4.7.00](https://github.com/kokkos/kokkos-kernels/tree/4.7.00)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.6.02...4.7.00)
 

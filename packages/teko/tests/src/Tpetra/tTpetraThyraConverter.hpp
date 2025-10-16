@@ -39,7 +39,9 @@ class tTpetraThyraConverter : public UnitTest {
   bool test_single_blockTpetraToThyra(int verbosity, std::ostream& os);
   bool test_single_blockThyraToTpetra(int verbosity, std::ostream& os);
   bool test_blockTpetraToThyra(int verbosity, std::ostream& os);
+  bool test_blockTpetraToThyraTpetraVec(int verbosity, std::ostream& os);
   bool test_blockThyraToTpetra(int verbosity, std::ostream& os);
+  bool test_blockThyraToTpetraTpetraVec(int verbosity, std::ostream& os);
 };
 
 }  // namespace Test

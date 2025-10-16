@@ -90,16 +90,17 @@ struct SPMV_Functor {
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
   typedef Kokkos::ArithTraits<value_type> ATV;
+  typedef typename YVector::non_const_value_type coefficient_type;
 
-  const value_type alpha;
+  const coefficient_type alpha;
   AMatrix m_A;
   XVector m_x;
-  const value_type beta;
+  const coefficient_type beta;
   YVector m_y;
 
   const ordinal_type rows_per_team;
 
-  SPMV_Functor(const value_type alpha_, const AMatrix m_A_, const XVector m_x_, const value_type beta_,
+  SPMV_Functor(const coefficient_type alpha_, const AMatrix m_A_, const XVector m_x_, const coefficient_type beta_,
                const YVector m_y_, const int rows_per_team_)
       : alpha(alpha_), m_A(m_A_), m_x(m_x_), beta(beta_), m_y(m_y_), rows_per_team(rows_per_team_) {
     static_assert(static_cast<int>(XVector::rank) == 1, "XVector must be a rank 1 View.");

@@ -501,7 +501,7 @@ void SystemSolve(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
         belosPrec = rcp(new Belos::XpetraOp<SC, LO, GO, NO>(Prec));  // Turns an Xpetra::Operator object into a Belos operator
 #endif
-      } else {
+      } else if (!H.is_null()) {
         H->IsPreconditioner(true);
         belosPrec = rcp(new Belos::MueLuOp<SC, LO, GO, NO>(H));  // Turns a MueLu::Hierarchy object into a Belos operator
       }

@@ -4,12 +4,11 @@ ASSERT_DEFINED(
   ${PACKAGE_NAME}_ENABLE_Amesos2
   ${PACKAGE_NAME}_ENABLE_Epetra
   ${PACKAGE_NAME}_ENABLE_Zoltan2Core
-  )
+)
 
 #
 # Executable
 #
-
 
 #TODO: how to remove that?
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -22,26 +21,25 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 INCLUDE(XpetraAddTest)
 
-IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2 AND
-   ${PACKAGE_NAME}_ENABLE_Zoltan2Core AND Zoltan2_ENABLE_Experimental AND
-   TPL_ENABLE_MPI)
+IF(${PACKAGE_NAME}_ENABLE_Ifpack2
+   AND ${PACKAGE_NAME}_ENABLE_Amesos2
+   AND ${PACKAGE_NAME}_ENABLE_Zoltan2Core
+   AND Zoltan2_ENABLE_Experimental
+   AND TPL_ENABLE_MPI
+)
   TRIBITS_ADD_EXECUTABLE(
     TwoBillionTest
     SOURCES TwoBillion.cpp
     COMM mpi
-    )
-
+  )
 
   TRIBITS_ADD_TEST(
     TwoBillionTest
     NAME "TwoBillionTest"
     NUM_MPI_PROCS 4
     COMM mpi
-    )
+  )
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(TwoBillion_cp
-    SOURCE_FILES TwoBillion.xml
-    )
-
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TwoBillion_cp SOURCE_FILES TwoBillion.xml)
 
 ENDIF()
