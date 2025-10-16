@@ -140,6 +140,10 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
  protected:
   typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
 
+  using local_matrix_op_t =
+      LocalCrsMatrixOperator<Scalar, MatScalar,
+                             typename crs_matrix_type::device_type>;
+
   //! The underlying CrsMatrix object.
   const Teuchos::RCP<const crs_matrix_type> matrix_;
 
