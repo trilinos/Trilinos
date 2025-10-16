@@ -110,14 +110,14 @@ int verifyInputAdapter(
     }
 
     const auto nCols = ia.getLocalNumColumns();
-    const zgno_t *colIds=nullptr;
-    ia.getColumnIDsView(colIds);
+    const zgno_t *colIds2=nullptr;
+    ia.getColumnIDsView(colIds2);
 
     ArrayRCP<const zgno_t> ccsRowIds;
     ArrayRCP<const offset_t> ccsOffsets;
     ia.getCCSView(ccsOffsets, ccsRowIds);
 
-    printMatrix<offset_t>(comm, nCols, colIds, ccsOffsets.getRawPtr(),
+    printMatrix<offset_t>(comm, nCols, colIds2, ccsOffsets.getRawPtr(),
                           ccsRowIds.getRawPtr(), Type::CCS);
   }
   return fail;

@@ -404,12 +404,16 @@ namespace Intrepid2 {
         }
         
         {
+          std::vector<CubatureLineType> lines;
+          for (ordinal_type deg=0;deg<=maxTotalCubatureDegree;++deg) {
+            lines.push_back(CubatureLineType(deg));
+          }
           for (ordinal_type z_deg=0;z_deg<=maxTotalCubatureDegree-2;++z_deg)
             for (ordinal_type y_deg=0;y_deg<=maxTotalCubatureDegree-z_deg;++y_deg)
               for (ordinal_type x_deg=0;x_deg<=maxTotalCubatureDegree-z_deg-y_deg;++x_deg) {
-                const auto x_line = CubatureLineType(x_deg);
-                const auto y_line = CubatureLineType(y_deg);
-                const auto z_line = CubatureLineType(z_deg);
+                const auto &x_line = lines[x_deg];
+                const auto &y_line = lines[y_deg];
+                const auto &z_line = lines[z_deg];
                 CubatureTensorType cub( x_line, y_line, z_line );
 
                 auto cubTensorPoints  = cub.allocateCubaturePoints();

@@ -100,8 +100,9 @@ template <typename ArgUplo> struct Chol<ArgUplo, Algo::OnDevice> {
         int lwork;
         r_val = cusolver_buffer_size(member, A, &lwork);
         r_val = lwork + 1;
-      } else
+      } else {
         r_val = cusolver_invoke(member, A, W);
+      }
     }
 #endif
 

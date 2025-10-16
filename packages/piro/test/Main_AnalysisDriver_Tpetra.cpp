@@ -189,13 +189,16 @@ int main(int argc, char *argv[]) {
             p_exact[0] = 1;
             p_exact[1] = 3;
           }
-          if (mockModel=="MockModelEval_B_Tpetra") {
+          else if (mockModel=="MockModelEval_B_Tpetra") {
             p_exact[0] = 6;
             p_exact[1] = 4;
           }
-          if (mockModel=="MockModelEval_B_Tpetra_2_parameters") {
+          else if (mockModel=="MockModelEval_B_Tpetra_2_parameters") {
             p_exact[0] = 4;
             p_exact[1] = 6;
+          }
+          else {
+            TEUCHOS_ASSERT(false);
           }
           double tol = 1e-5;
 

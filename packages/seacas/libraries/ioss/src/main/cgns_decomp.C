@@ -14,12 +14,12 @@
 #include "Ioss_IOFactory.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
+#include "Ioss_ScopeGuard.h"
 #include "Ioss_SmartAssert.h"
 #include "Ioss_Utils.h"
 #include "Ioss_ZoneConnectivity.h"
 #include "cgns/Iocgns_StructuredZoneData.h"
 #include "cgns/Iocgns_Utils.h"
-#include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -34,7 +34,6 @@
 #include "Ioss_DBUsage.h"
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_PropertyManager.h"
-#include "Ioss_ScopeGuard.h"
 #include "Ioss_StructuredBlock.h"
 
 #include <fmt/color.h>

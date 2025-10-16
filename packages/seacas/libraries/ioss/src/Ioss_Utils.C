@@ -159,14 +159,14 @@ std::ostream &Ioss::Utils::get_debug_stream() { return *m_debugStream; }
 
 void Ioss::Utils::time_and_date(char *time_string, char *date_string, size_t length)
 {
-  std::time_t t    = std::time(nullptr);
-  std::string time = fmt::format("{:%H:%M:%S}", *std::localtime(&t));
+  auto        now  = std::chrono::system_clock::now();
+  std::string time = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
   std::string date;
   if (length >= 10) {
-    date = fmt::format("{:%Y/%m/%d}", *std::localtime(&t));
+    date = fmt::format("{:%Y/%m/%d}", now);
   }
   else {
-    date = fmt::format("{:%y/%m/%d}", *std::localtime(&t));
+    date = fmt::format("{:%y/%m/%d}", now);
   }
   copy_string(time_string, time, 9);
   copy_string(date_string, date, length + 1);
@@ -641,6 +641,7 @@ namespace {
       }
       suffix_size--;
     }
+    // This should never be reached...
     return {"", Ioss::Field::INVALID, IOSS_SCALAR(), fld_role, 1};
   }
 

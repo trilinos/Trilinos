@@ -46,7 +46,8 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   CGNS            "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
   Pnetcdf         "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
   Netcdf          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  PT
-  ADIOS2          "${PROJECT_SOURCE_DIR}/packages/seacas/cmake/tpls/"    EX
+  ADIOS2          "${${PROJECT_NAME}_TRIBITS_DIR}/common_tpls/"  EX
+  AWSSDK          "${PROJECT_SOURCE_DIR}/packages/seacas/cmake/tpls/"    EX
   Faodel          "${PROJECT_SOURCE_DIR}/packages/seacas/cmake/tpls/"    SS
   Cereal          "${PROJECT_SOURCE_DIR}/packages/seacas/cmake/tpls/"    SS
   Catalyst2       "${PROJECT_SOURCE_DIR}/packages/seacas/cmake/tpls/"    EX

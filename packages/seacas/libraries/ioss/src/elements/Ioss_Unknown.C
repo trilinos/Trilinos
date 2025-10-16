@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,7 +11,6 @@
 
 #include "Ioss_CodeTypes.h"       // for IntVector
 #include "Ioss_ElementTopology.h" // for ElementTopology
-#include "Ioss_Utils.h"
 
 // ========================================================================
 namespace Ioss {
@@ -25,7 +24,7 @@ namespace Ioss {
     St_Unknown() : ElementVariableType(Ioss::Unknown::name, 0) {}
   };
 } // namespace Ioss
-void Ioss::St_Unknown::factory() { static Ioss::St_Unknown registerThis; }
+void Ioss::St_Unknown::factory() { static Ioss::St_Unknown const registerThis; }
 
 // ========================================================================
 namespace {
@@ -41,7 +40,7 @@ namespace {
 
 void Ioss::Unknown::factory()
 {
-  static Ioss::Unknown registerThis;
+  static Ioss::Unknown const registerThis;
   Ioss::St_Unknown::factory();
 }
 

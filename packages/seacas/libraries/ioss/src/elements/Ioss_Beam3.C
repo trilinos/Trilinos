@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,7 +11,6 @@
 
 #include "Ioss_CodeTypes.h"       // for IntVector
 #include "Ioss_ElementTopology.h" // for ElementTopology
-#include "Ioss_Utils.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
@@ -20,7 +19,7 @@ namespace Ioss {
   class St_Beam3 : public ElementVariableType
   {
   public:
-    static void factory() { static St_Beam3 registerThis; }
+    static void factory() { static St_Beam3 const registerThis; }
 
   protected:
     St_Beam3() : ElementVariableType(Ioss::Beam3::name, 3) {}
@@ -41,7 +40,7 @@ namespace {
 
 void Ioss::Beam3::factory()
 {
-  static Ioss::Beam3 registerThis;
+  static Ioss::Beam3 const registerThis;
   Ioss::St_Beam3::factory();
 }
 

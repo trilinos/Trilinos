@@ -31,6 +31,10 @@
 #include <Xpetra_TpetraRowMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
 
+#ifdef _WIN32
+#include <basetsd.h>
+#endif
+
 namespace Zoltan2{
 
 // Default local ordinal
@@ -175,7 +179,7 @@ struct InputTraits {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-#ifdef _MSC_VER
+#ifdef _WIN32
   typedef SSIZE_T ssize_t;
 #endif
 

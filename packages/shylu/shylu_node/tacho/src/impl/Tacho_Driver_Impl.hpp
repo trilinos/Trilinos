@@ -104,11 +104,11 @@ void Driver<VT, DT>::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - 
 }
 
 template <typename VT, typename DT>
-void Driver<VT, DT>::setSolutionMethod(const int method) { // 1 - Chol, 2 - LDL, 3 - LU
+void Driver<VT, DT>::setSolutionMethod(const int method) { // 0 - LDL nopivot, 1 - Chol, 2 - LDL, 3 - LU
   {
     std::stringstream ss;
-    ss << "Error: the given method (" << method << ") is not supported, 1 - Chol, 2 - LDL, 3 - SymLU";
-    TACHO_TEST_FOR_EXCEPTION(method != Cholesky && method != LDL && method != SymLU, std::logic_error,
+    ss << "Error: the given method (" << method << ") is not supported, 0 - LDL nopivot, 1 - Chol, 2 - LDL, 3 - SymLU";
+    TACHO_TEST_FOR_EXCEPTION(method != LDL_nopiv && method != Cholesky && method != LDL && method != SymLU, std::logic_error,
                              ss.str().c_str());
   }
   _method = method;
@@ -405,6 +405,11 @@ template <typename VT, typename DT> int Driver<VT, DT>::initialize() {
 template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_type_array &ax) {
   if (_verbose) {
     switch (_method) {
+    case LDL_nopiv: {
+      printf("TachoSolver: Factorize LDL (no pivot)\n");
+      printf("=====================================\n");
+      break;
+    }
     case Cholesky: {
       printf("TachoSolver: Factorize Cholesky\n");
       printf("===============================\n");
@@ -420,6 +425,9 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
       printf("============================\n");
       break;
     }
+    }
+    if (_m <= _small_problem_thres) {
+      printf( " Small matrix\n" );
     }
   }
 
@@ -443,9 +451,10 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
       const size_type jbeg = _h_ap(i), jend = _h_ap(i + 1);
       for (size_type j = jbeg; j < jend; ++j) {
         const ordinal_type col = _h_aj(j);
-        const bool flag = ((_method == Cholesky && i <= col) || /// upper
-                           (_method == LDL && i >= col) ||      /// lower
-                           (_method == SymLU));                 /// full matrix
+        const bool flag = ((_method == LDL_nopiv && i <= col) || /// upper
+                           (_method == Cholesky  && i <= col) || /// upper
+                           (_method == LDL && i >= col) ||       /// lower
+                           (_method == SymLU));                  /// full matrix
         if (flag)
           _A(i, col) = h_ax(j);
       }
@@ -454,7 +463,8 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
 
     timer.reset();
     switch (_method) {
-    case Cholesky: {
+    case LDL_nopiv:
+    case Cholesky : {
       Tacho::Chol<Uplo::Upper, Algo::External>::invoke(_A);
       break;
     }
@@ -474,7 +484,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize_small_host(con
     }
     default: {
       std::stringstream ss;
-      ss << "Error: the solution method (" << _method << ") is not supported, 1 - Chol, 2 - LDL, 3 - SymLU";
+      ss << "Error: the solution method (" << _method << ") is not supported, 0 -  LDL no-pivot, 1 - Chol, 2 - LDL, 3 - SymLU";
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, ss.str().c_str());
     }
     }
@@ -513,6 +523,11 @@ template <typename VT, typename DT>
 int Driver<VT, DT>::solve(const value_type_matrix &x, const value_type_matrix &b, const value_type_matrix &t) {
   if (_verbose) {
     switch (_method) {
+    case LDL_nopiv: {
+      printf("TachoSolver: Solve LDL (no pivot)\n");
+      printf("=================================\n");
+      break;
+    }
     case Cholesky: {
       printf("TachoSolver: Solve Cholesky\n");
       printf("===========================\n");
@@ -555,7 +570,8 @@ int Driver<VT, DT>::solve_small_host(const value_type_matrix &x, const value_typ
 
     timer.reset();
     switch (_method) {
-    case Cholesky: {
+    case LDL_nopiv:
+    case Cholesky : {
       auto h_x = Kokkos::create_mirror_view_and_copy(host_memory_space(), x);
       Trsm<Side::Left, Uplo::Upper, Trans::ConjTranspose, Algo::External>::invoke(Diag::NonUnit(), 1.0, _A, h_x);
       Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::External>::invoke(Diag::NonUnit(), 1.0, _A, h_x);
@@ -730,6 +746,10 @@ template <typename VT, typename DT> void Driver<VT, DT>::printParameters() {
     printf("TachoSolver: Parameters\n");
     printf("=======================\n");
     switch (_method) {
+    case LDL_nopiv: {
+      printf("Factorize LDL (no pivot, variant = %d)\n",_variant);
+      break;
+    }
     case Cholesky: {
       printf("Factorize Cholesky (variant = %d)\n",_variant);
       break;

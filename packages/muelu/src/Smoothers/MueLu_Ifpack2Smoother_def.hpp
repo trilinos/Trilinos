@@ -58,6 +58,11 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Ifpack2Smoother(const std::string& type, const Teuchos::ParameterList& paramList, const LO& overlap)
   : type_(type)
   , overlap_(overlap) {
+  if (!type_.empty()) {
+    // Transform string to "ABCDE" notation
+    std::transform(type_.begin(), type_.end(), type_.begin(), ::toupper);
+  }
+
   typedef Tpetra::RowMatrix<SC, LO, GO, NO> tRowMatrix;
   bool isSupported = Ifpack2::Factory::isSupported<tRowMatrix>(type_) || (type_ == "LINESMOOTHING_TRIDI_RELAXATION" ||
                                                                           type_ == "LINESMOOTHING_TRIDI RELAXATION" ||

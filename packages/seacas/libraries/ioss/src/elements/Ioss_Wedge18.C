@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020, 2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -11,7 +11,6 @@
 
 #include "Ioss_CodeTypes.h"       // for IntVector
 #include "Ioss_ElementTopology.h" // for ElementTopology
-#include "Ioss_Utils.h"
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
@@ -26,7 +25,7 @@ namespace Ioss {
     St_Wedge18() : ElementVariableType(Ioss::Wedge18::name, 18) {}
   };
 } // namespace Ioss
-void Ioss::St_Wedge18::factory() { static Ioss::St_Wedge18 registerThis; }
+void Ioss::St_Wedge18::factory() { static Ioss::St_Wedge18 const registerThis; }
 
 // ========================================================================
 namespace {
@@ -68,7 +67,7 @@ namespace {
 
 void Ioss::Wedge18::factory()
 {
-  static Ioss::Wedge18 registerThis;
+  static Ioss::Wedge18 const registerThis;
   Ioss::St_Wedge18::factory();
 }
 

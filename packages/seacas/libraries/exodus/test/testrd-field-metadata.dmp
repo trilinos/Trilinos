@@ -105,6 +105,7 @@ Field Metadata: Name: `Curl`, Nesting: 1
 		Component 6, Full name = Curl@5
 		Component 7, Full name = Curl@6
 		Component 8, Full name = Curl@7
+after ex_get_field_metadata(exoid, fields), error = 0
 
 Field Metadata: Name: `Species`, Nesting: 2
 	Nesting level: 0, Type: EX_FIELD_TYPE_USER_DEFINED, Cardinality: 4, Separator: "_"
