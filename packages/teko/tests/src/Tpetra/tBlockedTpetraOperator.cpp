@@ -37,6 +37,8 @@
 #include "Teko_BlockedTpetraOperator.hpp"
 #include "Teko_TpetraHelpers.hpp"
 
+#include <random>
+
 namespace Teko {
 namespace Test {
 
@@ -102,6 +104,13 @@ int tBlockedTpetraOperator::runTest(int verbosity, std::ostream& stdstrm, std::o
   status = test_single_block(verbosity, failstrm);
   Teko_TEST_MSG(stdstrm, 1, "   \"test_single_block\" ... PASSED",
                 "   \"test_single_block\" ... FAILED");
+  allTests &= status;
+  failcount += status ? 0 : 1;
+  totalrun++;
+
+  status = test_noncontig(verbosity, failstrm);
+  Teko_TEST_MSG(stdstrm, 1, "   \"test_noncontig\" ... PASSED",
+                "   \"test_noncontig\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
@@ -250,7 +259,31 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   return allPassed;
 }
 
-GO noncontig_id(GO contigId) { return 2 * contigId * contigId + 3; }
+std::vector<GO>
+random_gids(const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& contigMat)
+{
+  std::random_device rd;
+  std::mt19937 g(rd());
+
+  const auto contigRowMap        = contigMat->getRowMap();
+  const auto numGlobalElements = contigRowMap->getGlobalNumElements();
+  const auto numLargestPossibleGid = 10 * numGlobalElements;
+  std::vector<GO> randomGids(numLargestPossibleGid);
+  std::iota(randomGids.begin(), randomGids.end(), 0);
+  std::shuffle(randomGids.begin(), randomGids.end(), g);
+
+  const auto numLocalGids = contigRowMap->getLocalNumElements();
+  const auto gidStart = contigRowMap->getMinGlobalIndex();
+  const auto gidEnd = contigRowMap->getMaxGlobalIndex();
+
+  size_t numGids = gidEnd - gidStart + 1;
+  TEUCHOS_ASSERT(numGids == numLocalGids);
+
+  std::vector<GO> localRandomGids(numLocalGids);
+  std::copy(randomGids.begin() + gidStart, randomGids.begin() + gidStart + numGids, localRandomGids.begin());
+
+  return localRandomGids;
+}
 
 RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> assemble_noncontig_matrix(
     const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& contigMat) {
@@ -258,13 +291,15 @@ RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> assemble_noncontig_matrix(
   const auto comm                = contigRowMap->getComm();
   const auto contigGlobalIndices = contigRowMap->getMyGlobalIndices();
 
+  auto randomGlobalGids = random_gids(contigMat);
+
   decltype(contigGlobalIndices)::non_const_type noncontigGlobalIndices(
       "noncontig", contigGlobalIndices.extent(0));
   for (auto i = 0U; i < contigGlobalIndices.extent(0); ++i) {
-    noncontigGlobalIndices(i) = noncontig_id(contigGlobalIndices(i));
+    noncontigGlobalIndices(i) = randomGlobalGids[i];
   }
 
-  const auto indexBase       = noncontig_id(contigRowMap->getIndexBase());
+  const auto indexBase       = 0;
   const auto invalid         = Teuchos::OrdinalTraits<GO>::invalid();
   const auto noncontigRowMap = Teuchos::make_rcp<Tpetra::Map<LO, GO, NT>>(
       invalid,
@@ -419,6 +454,121 @@ bool tBlockedTpetraOperator::test_single_block(int verbosity, std::ostream& os) 
                               << toString(status) << ": "
                               << "sanity checked - " << max << " >= " << min);
   TEST_ASSERT(max <= tolerance_, "\n   tBlockedTpetraOperator::test_single_block (rebuild): "
+                                     << toString(status) << ": "
+                                     << "testing tolerance over many matrix vector multiplies ( "
+                                     << max << " <= " << tolerance_ << " )");
+
+  return allPassed;
+}
+
+bool tBlockedTpetraOperator::test_noncontig(int verbosity, std::ostream& os) {
+  bool status    = false;
+  bool allPassed = true;
+
+  const Epetra_Comm& comm_epetra            = *GetComm();
+  RCP<const Teuchos::Comm<int>> comm_tpetra = GetComm_tpetra();
+
+  TEST_MSG("\n   tBlockedTpetraOperator::test_noncontig: "
+           << "Running on " << comm_epetra.NumProc() << " processors");
+
+  // pick
+  int nx = 15;  // * comm_epetra.NumProc();
+  int ny = 15;  // * comm_epetra.NumProc();
+
+  // create a big matrix to play with
+  // note: this matrix is not really strided
+  //       however, I just need a nontrivial
+  //       matrix to play with
+  Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d", comm_epetra, false);
+  FGallery.Set("nx", nx);
+  FGallery.Set("ny", ny);
+  RCP<Epetra_CrsMatrix> epetraA = rcp(FGallery.GetMatrix(), false);
+  RCP<Tpetra::CrsMatrix<ST, LO, GO, NT>> contigA =
+      Teko::TpetraHelpers::nonConstEpetraCrsMatrixToTpetra(epetraA, comm_tpetra);
+
+  auto A = assemble_noncontig_matrix(contigA);
+
+  ST beforeNorm = A->getFrobeniusNorm();
+
+  int width = 3;
+  Tpetra::MultiVector<ST, LO, GO, NT> x(A->getDomainMap(), width);
+  Tpetra::MultiVector<ST, LO, GO, NT> ys(A->getRangeMap(), width);
+  Tpetra::MultiVector<ST, LO, GO, NT> y(A->getRangeMap(), width);
+
+  std::vector<std::vector<GO>> vars;
+  buildBlockGIDs(vars, *A->getRowMap(), false);
+
+  Teko::TpetraHelpers::BlockedTpetraOperator shell(vars, A);
+
+  // test the operator against a lot of random vectors
+  int numtests = 50;
+  ST max       = 0.0;
+  ST min       = 1.0;
+  for (int i = 0; i < numtests; i++) {
+    std::vector<ST> norm(width);
+    std::vector<ST> rel(width);
+    x.randomize();
+
+    shell.apply(x, y);
+    A->apply(x, ys);
+
+    Tpetra::MultiVector<ST, LO, GO, NT> e(y, Teuchos::Copy);
+    e.update(-1.0, ys, 1.0);
+    e.norm2(Teuchos::ArrayView<ST>(norm));
+
+    // compute relative error
+    ys.norm2(Teuchos::ArrayView<ST>(rel));
+    for (int j = 0; j < width; j++) {
+      max = max > norm[j] / rel[j] ? max : norm[j] / rel[j];
+      min = min < norm[j] / rel[j] ? min : norm[j] / rel[j];
+    }
+  }
+  TEST_ASSERT(max >= min, "\n   tBlockedTpetraOperator::test_noncontig: "
+                              << toString(status) << ": "
+                              << "sanity checked - " << max << " >= " << min);
+  TEST_ASSERT(max <= tolerance_, "\n   tBlockedTpetraOperator::test_noncontig: "
+                                     << toString(status) << ": "
+                                     << "testing tolerance over many matrix vector multiplies ( "
+                                     << max << " <= "
+                                     << "testing tolerance over many matrix vector multiplies ( "
+                                     << max << " <= " << tolerance_ << " )");
+
+  A->scale(2.0);  // double everything
+
+  ST afterNorm = A->getFrobeniusNorm();
+  TEST_ASSERT(beforeNorm != afterNorm, "\n   tBlockedTpetraOperator::test_noncontig "
+                                           << toString(status) << ": "
+                                           << "verify matrix has been modified");
+
+  shell.RebuildOps();
+
+  // test the operator against a lot of random vectors
+  numtests = 50;
+  max      = 0.0;
+  min      = 1.0;
+  for (int i = 0; i < numtests; i++) {
+    std::vector<ST> norm(width);
+    std::vector<ST> rel(width);
+    x.randomize();
+
+    shell.apply(x, y);
+    A->apply(x, ys);
+
+    Tpetra::MultiVector<ST, LO, GO, NT> e(y, Teuchos::Copy);
+    e.update(-1.0, ys, 1.0);
+    e.norm2(Teuchos::ArrayView<ST>(norm));
+
+    // compute relative error
+    ys.norm2(Teuchos::ArrayView<ST>(rel));
+    for (int j = 0; j < width; j++) {
+      max = max > norm[j] / rel[j] ? max : norm[j] / rel[j];
+      min = min < norm[j] / rel[j] ? min : norm[j] / rel[j];
+    }
+  }
+  TEST_ASSERT(max >= min, "\n   tBlockedTpetraOperator::test_noncontig (rebuild): "
+                              << toString(status) << ": "
+                              << "sanity checked - " << max << " >= " << min);
+  TEST_ASSERT(max <= tolerance_, "\n   tBlockedTpetraOperator::test_noncontig (rebuild): "
                                      << toString(status) << ": "
                                      << "testing tolerance over many matrix vector multiplies ( "
                                      << max << " <= " << tolerance_ << " )");

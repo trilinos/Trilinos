@@ -34,6 +34,7 @@ class tBlockedTpetraOperator : public UnitTest {
 
   bool test_vector_constr(int verbosity, std::ostream& os);
   bool test_single_block(int verbosity, std::ostream& os);
+  bool test_noncontig(int verbosity, std::ostream& os);
   bool test_reorder(int verbosity, std::ostream& os, int total);
 
  protected:
