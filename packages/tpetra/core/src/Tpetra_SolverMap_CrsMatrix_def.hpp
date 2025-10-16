@@ -139,8 +139,8 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origi
     // *****************************************************************
     // Step 5/7: Create new graph
     // *****************************************************************
-    cg_t const * origGraph = dynamic_cast<cg_t const *>(origMatrix->getGraph().get());
-    newGraph_ = Teuchos::rcp<cg_t>(new cg_t(*origGraph));
+    cg_t const* origGraph = dynamic_cast<cg_t const*>(origMatrix->getGraph().get());
+    newGraph_             = Teuchos::rcp<cg_t>(new cg_t(*origGraph));
     newGraph_->resumeFill();
     newGraph_->reindexColumns(newColMap_);
     newGraph_->fillComplete();
