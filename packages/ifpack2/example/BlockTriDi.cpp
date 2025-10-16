@@ -28,6 +28,7 @@ namespace {  // (anonymous)
 struct CmdLineArgs {
   CmdLineArgs()
     : blockSize(-1)
+    , numVecs(1)
     , numIters(10)
     , numRepeats(1)
     , tol(1e-12)
@@ -50,6 +51,7 @@ struct CmdLineArgs {
   std::string rhsFilename;
   std::string lineFilename;
   int blockSize;
+  int numVecs;
   int numIters;
   int numRepeats;
   double tol;
@@ -86,6 +88,7 @@ bool getCmdLineArgs(CmdLineArgs& args, int argc, char* argv[]) {
                  "Name of Matrix Market "
                  "file with the lineid of each node listed");
   cmdp.setOption("blockSize", &args.blockSize, "Size of block to use");
+  cmdp.setOption("numVecs", &args.numVecs, "Number of LHS/RHS vectors");
   cmdp.setOption("numIters", &args.numIters, "Number of iterations per Solve call");
   cmdp.setOption("numRepeats", &args.numRepeats, "Number of times to run preconditioner compute & solve.");
   cmdp.setOption("tol", &args.tol, "Solver tolerance");
@@ -441,7 +444,7 @@ int main(int argc, char* argv[]) {
     std::cout << "p=" << comm->getRank() << " | Ablock, local size: " << Ablock->getLocalNumRows() << std::endl;
 
     // rhs
-    B = rcp(new MV(Ablock->getRangeMap(), 1));
+    B = rcp(new MV(Ablock->getRangeMap(), args.numVecs));
     B->putScalar(Teuchos::ScalarTraits<SC>::one());
 
     // line info (sublinesPerLine lines per proc along direction x)
@@ -549,6 +552,7 @@ int main(int argc, char* argv[]) {
         }
         return EXIT_FAILURE;
       }
+      args.numVecs = B->getNumVectors();
     }
   }
 
@@ -561,15 +565,25 @@ int main(int argc, char* argv[]) {
 
   // Initial Guess
   if (rank0) std::cout << "Allocating initial guess..." << std::endl;
-  X = rcp(new MV(Ablock->getRangeMap(), 1));
+  X = rcp(new MV(Ablock->getRangeMap(), args.numVecs));
   X->putScalar(Teuchos::ScalarTraits<SC>::zero());
 
   // Initial diagnostics
-  Teuchos::Array<MT> normx(1), normb(1);
+  Teuchos::Array<MT> normx(args.numVecs), normb(args.numVecs);
   X->norm2(normx);
   B->norm2(normb);
   if (rank0) {
-    std::cout << "Initial norm X = " << normx[0] << " norm B = " << normb[0] << std::endl;
+    std::cout << "Initial norm X = ";
+    for (int i = 0; i < args.numVecs; i++) {
+      if (i > 0) std::cout << ", ";
+      std::cout << normx[i];
+    }
+    std::cout << " norm B = ";
+    for (int i = 0; i < args.numVecs; i++) {
+      if (i > 0) std::cout << ", ";
+      std::cout << normb[i];
+    }
+    std::cout << std::endl;
   }
 
   // Convert line_info vector to parts arrays
@@ -601,7 +615,7 @@ int main(int argc, char* argv[]) {
   {
     Teuchos::TimeMonitor warmupMatrixApplyTimeMon(*warmupMatrixApplyTime);
 
-    RCP<MV> temp = rcp(new MV(Ablock->getRangeMap(), 1));
+    RCP<MV> temp = rcp(new MV(Ablock->getRangeMap(), args.numVecs));
     Ablock->apply(*X, *temp);
   }
 
@@ -665,7 +679,17 @@ int main(int argc, char* argv[]) {
       Kokkos::DefaultExecutionSpace().fence();
     }
     if (rank0) {
-      std::cout << "Final norm X = " << normx[0] << " norm B = " << normb[0] << std::endl;
+      std::cout << "Final norm X = ";
+      for (int i = 0; i < args.numVecs; i++) {
+        if (i > 0) std::cout << ", ";
+        std::cout << normx[i];
+      }
+      std::cout << " norm B = ";
+      for (int i = 0; i < args.numVecs; i++) {
+        if (i > 0) std::cout << ", ";
+        std::cout << normb[i];
+      }
+      std::cout << std::endl;
     }
   }
 
