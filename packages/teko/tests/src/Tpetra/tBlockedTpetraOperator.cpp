@@ -109,8 +109,7 @@ int tBlockedTpetraOperator::runTest(int verbosity, std::ostream& stdstrm, std::o
   totalrun++;
 
   status = test_noncontig(verbosity, failstrm);
-  Teko_TEST_MSG(stdstrm, 1, "   \"test_noncontig\" ... PASSED",
-                "   \"test_noncontig\" ... FAILED");
+  Teko_TEST_MSG(stdstrm, 1, "   \"test_noncontig\" ... PASSED", "   \"test_noncontig\" ... FAILED");
   allTests &= status;
   failcount += status ? 0 : 1;
   totalrun++;
@@ -259,28 +258,27 @@ bool tBlockedTpetraOperator::test_vector_constr(int verbosity, std::ostream& os)
   return allPassed;
 }
 
-std::vector<GO>
-random_gids(const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& contigMat)
-{
+std::vector<GO> random_gids(const RCP<const Tpetra::CrsMatrix<ST, LO, GO, NT>>& contigMat) {
   std::random_device rd;
   std::mt19937 g(rd());
 
-  const auto contigRowMap        = contigMat->getRowMap();
-  const auto numGlobalElements = contigRowMap->getGlobalNumElements();
+  const auto contigRowMap          = contigMat->getRowMap();
+  const auto numGlobalElements     = contigRowMap->getGlobalNumElements();
   const auto numLargestPossibleGid = 10 * numGlobalElements;
   std::vector<GO> randomGids(numLargestPossibleGid);
   std::iota(randomGids.begin(), randomGids.end(), 0);
   std::shuffle(randomGids.begin(), randomGids.end(), g);
 
   const auto numLocalGids = contigRowMap->getLocalNumElements();
-  const auto gidStart = contigRowMap->getMinGlobalIndex();
-  const auto gidEnd = contigRowMap->getMaxGlobalIndex();
+  const auto gidStart     = contigRowMap->getMinGlobalIndex();
+  const auto gidEnd       = contigRowMap->getMaxGlobalIndex();
 
   size_t numGids = gidEnd - gidStart + 1;
   TEUCHOS_ASSERT(numGids == numLocalGids);
 
   std::vector<GO> localRandomGids(numLocalGids);
-  std::copy(randomGids.begin() + gidStart, randomGids.begin() + gidStart + numGids, localRandomGids.begin());
+  std::copy(randomGids.begin() + gidStart, randomGids.begin() + gidStart + numGids,
+            localRandomGids.begin());
 
   return localRandomGids;
 }
