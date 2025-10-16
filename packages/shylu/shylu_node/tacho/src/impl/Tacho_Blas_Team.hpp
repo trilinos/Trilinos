@@ -130,16 +130,104 @@ template <typename T> struct BlasTeam {
               T t(0);
               Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n),
                                    [&](const int &j) { t += cj(A[i * as0 + j * as1]) * x[j * xs0]; });
-              Kokkos::atomic_add(&y[i * ys0], alpha * t);
+              Kokkos::atomic_add(&y[i * ys0], alpha * t); // TODO: do we need atomic? can different blocks write to same y?
             });
           } else {
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
               T t(0);
               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n),
                                    [&](const int &j) { t += cj(A[i * as0 + j * as1]) * x[j * xs0]; });
-              Kokkos::atomic_add(&y[i * ys0], alpha * t);
+              Kokkos::atomic_add(&y[i * ys0], alpha * t); // TODO: do we need atomic? can different blocks write to same y?
             });
           }
+        }
+      }
+    }
+
+    template <typename MemberType>
+    static KOKKOS_INLINE_FUNCTION void trmv_upper(MemberType &member, const bool trans, const bool unit_diag,
+                                                  const int m, const int n,
+                                                  const T alpha, const T *KOKKOS_RESTRICT A, const int inca, const int lda,
+                                                                 const T *KOKKOS_RESTRICT x, const int incx,
+                                                  const T beta,        T *KOKKOS_RESTRICT y, const int incy) {
+      typedef ArithTraits<T> arith_traits;
+      const T one(1), zero(0);
+      {
+        int mt = (trans ?  n : m);
+        if (beta == zero)
+          set(member, mt, zero, y, incy);
+        if (beta != one)
+          scale(member, mt, beta, y, incy);
+      }
+      if (alpha != zero) { 
+        if (m <= 0 || n <= 0)
+          return;
+        
+        // TODO: need team-thread implementation
+        member.team_barrier();
+        if (trans) {
+          // Trans
+          #if 1
+          Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(member, n),
+            [&](const ordinal_type &j) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
+              T val = zero;
+              if (j < m) {
+                val = (unit_diag ? x[j*incx] : x[j*incx] * arith_traits::conj(A[j + j*lda]));
+                for (int i = 0; i < j; i++) val += arith_traits::conj(A[i*inca + j*lda]) * x[i*incx];
+              } else {
+                for (int i = 0; i < m; i++) val += arith_traits::conj(A[i*inca + j*lda]) * x[i*incx];
+              }
+              y[j*incy] += alpha * val;
+            });
+          #else
+          if (inca == 1 || inca < lda) {
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n), [&](const int &j) {
+              T t = (unit_diag ? x[j * incx] : arith_traits::conj(A[j * inca + j * lda]) * x[j * incx]);
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(member, j),
+                                   [&](const int &i) { t += arith_traits::conj(A[i * inca + j * lda]) * x[i * incx]; });
+              Kokkos::atomic_add(&y[j * incy], alpha * t); // TODO: can different blocks write to same y?
+              //y[j * incy] += alpha * t;
+            });
+          } else {
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
+              T t = (unit_diag ? x[j * incx] : arith_traits::conj(A[j * inca + j * lda]) * x[j * incx]);
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, j), 
+                                   [&](const int &i) { t += arith_traits::conj(A[i * inca + j * lda]) * x[i * incx]; });
+              Kokkos::atomic_add(&y[j * incy], alpha * t); // TODO: can different blocks write to same y?
+              //y[j * incy] += alpha * t;
+            });
+          }
+          #endif
+        } else {
+          // no-transpose
+          #if 1
+          Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(member, m),
+            [&](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
+              T val = (unit_diag ? x[i*incx] : x[i*incx] * A[i + i*lda]);
+              for (int j = i+1; j < n; j++) val += A[i*inca + j*lda] * x[j*incx];
+              y[i*incy] += alpha * val;
+            });
+          #else
+          if (inca == 1 || inca < lda) {
+            Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, m), [&](const int &i) {
+              T t = (unit_diag ? x[i * incx] : A[i * inca + i * lda] * x[i * incx]);
+              Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n-i-1),
+                                   [&](const int &j) { t += (A[i * inca + (i+1+j) * lda]) * x[(i+1+j) * incx]; });
+              Kokkos::atomic_add(&y[i * incy], alpha * t); // TODO: can different blocks write to same y?
+              //y[i * incy] += alpha * t;
+            });
+          } else {
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
+              T t = (unit_diag ? x[i * incx] : A[i * inca + i * lda] * x[i * incx]);
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n-i-1),
+                                   [&](const int &j) { t += (A[i * inca + (i+1+j) * lda]) * x[(i+1+j) * incx]; });
+              Kokkos::atomic_add(&y[i * incy], alpha * t); // TODO: can different blocks write to same y?
+              //y[i * incy] += alpha * t;
+            });
+          }
+          #endif
         }
       }
     }
@@ -439,6 +527,24 @@ template <typename T> struct BlasTeam {
     }
     default:
       Kokkos::abort("Invalid trans character");
+    }
+  }
+
+  template <typename MemberType>
+  static KOKKOS_INLINE_FUNCTION void trmv(MemberType &member, const char uplo, const char trans, const char diag,
+                                          const int m, const int n,
+                                          const T alpha, const T *KOKKOS_RESTRICT a, const int lda,
+                                                         const T *KOKKOS_RESTRICT x, const int xs,
+                                          const T beta,        T *KOKKOS_RESTRICT y, const int ys) {
+    if (uplo == 'U' || uplo == 'u') {
+        Impl::trmv_upper(member, (trans != 'N' && trans != 'n'),
+                                 (diag == 'U' || diag == 'u'),
+                                  m, n,
+                                  alpha, a, 1, lda,
+                                         x, xs,
+                                  beta,  y, ys);
+    } else {
+      Kokkos::abort("Trmv with lower-tridiagonal");
     }
   }
 

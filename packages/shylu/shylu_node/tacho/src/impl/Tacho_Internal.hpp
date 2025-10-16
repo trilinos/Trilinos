@@ -112,6 +112,10 @@
 #include "Tacho_Gemv_External.hpp"
 #include "Tacho_Gemv_Internal.hpp"
 
+#include "Tacho_Trmv.hpp"
+#include "Tacho_Trmv_External.hpp"
+#include "Tacho_Trmv_Internal.hpp"
+
 #include "Tacho_CholSupernodes.hpp"
 #include "Tacho_CholSupernodes_Serial.hpp"
 #include "Tacho_CholSupernodes_SerialPanel.hpp"

@@ -79,7 +79,7 @@ public:
   using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type, device_type, 2>;
 
 private:
-  enum : int { Cholesky = 1, LDL = 2, SymLU = 3, LU = 4 };
+  enum : int { LDL_nopiv = 0, Cholesky = 1, LDL = 2, SymLU = 3, LU = 4 };
 
   // ** solver mode
   ordinal_type _method;

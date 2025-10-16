@@ -69,9 +69,11 @@ int generate2dLaplace(const int nx, CrsMatrixBaseTypeHost &A) {
 // main test driver
 template <typename value_type>
 int driver(const std::string file, const std::string method_name, const int variant, const int nrhs, const bool store_transpose = false) {
-  int nx = 10;
+  int nx = 100;
   int method = 1; // 1 - Chol, 2 - LDL, 3 - SymLU
-  if (method_name == "chol")
+  if (method_name == "ldl-nopiv")
+    method = 0;
+  else if (method_name == "chol")
     method = 1;
   else if (method_name == "ldl")
     method = 2;
@@ -130,6 +132,12 @@ int driver(const std::string file, const std::string method_name, const int vari
       std::cout << "  > Using explicit transpose " << std::endl;
       solver.storeExplicitTranspose(true);
     }
+
+    /// levelset options
+    ///  forcing to have a few device factor/solve tasks
+    int device_factor_thres = 10;
+    int device_solve_thres = 10;
+    solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
 
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
     Kokkos::deep_copy(values_on_device, A.Values());
@@ -234,6 +242,27 @@ TEST( Solver, LDL ) {
   #endif
 }
 
+TEST( Solver, NonPivLDL ) {
+  // Non-piv LDL
+  std::string file = "";
+  // > single RHS
+  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 1), 0);
+  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 1), 0);
+  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 1), 0);
+  //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1), 0);
+  //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1, true), 0);
+  // > multiple RHSs
+  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 5), 0);
+  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 5), 0);
+  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 5), 0);
+  //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5), 0);
+  //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5, true), 0);
+  //#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
+  //// > sequential path
+  //EXPECT_EQ(driver<double>(file, "ldl-nopiv", -1, 1), 0);
+  //EXPECT_EQ(driver<double>(file, "ldl-nopiv", -1, 5), 0);
+  //#endif
+}
 
 int main(int argc, char *argv[]) {
   int info = 0;

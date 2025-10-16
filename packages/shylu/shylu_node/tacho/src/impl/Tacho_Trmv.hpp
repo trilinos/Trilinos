@@ -8,11 +8,11 @@
 // *****************************************************************************
 // @HEADER
 // clang-format on
-#ifndef __TACHO_CHOL_HPP__
-#define __TACHO_CHOL_HPP__
+#ifndef __TACHO_TRMV_HPP__
+#define __TACHO_TRMV_HPP__
 
-/// \file Tacho_Chol.hpp
-/// \brief Front interface for Cholesky dense factorization
+/// \file Tacho_Trmv.hpp
+/// \brief Front interface for Herk operators
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Tacho_Util.hpp"
@@ -20,19 +20,17 @@
 namespace Tacho {
 
 ///
-/// Chol:
-///
+/// Gemm:
 ///
 
 /// various implementation for different uplo and algo parameters
-template <typename ArgUplo, typename ArgAlgo> struct Chol;
-template <typename ArgUplo, typename ArgAlgo> struct LDL_nopiv;
+template <typename ArgUplo, typename ArgTrans, typename ArgAlgo> struct Trmv;
 
-struct CholAlgorithm {
+struct TrmvAlgorithm {
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 };
 
-struct CholAlgorithm_Team {
+struct TrmvAlgorithm_Team {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   using type = ActiveAlgorithm<runsOnCudaOrHIP()>::type;
 #else
