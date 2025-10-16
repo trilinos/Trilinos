@@ -141,15 +141,40 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origi
     // *****************************************************************
     cg_t const * origGraph = dynamic_cast<cg_t const *>(origMatrix->getGraph().get());
     newGraph_ = Teuchos::rcp<cg_t>(new cg_t(*origGraph));
+    newGraph_->resumeFill();
+    newGraph_->reindexColumns(newColMap_);
+    newGraph_->fillComplete();
 
     // *****************************************************************
     // Step 6/7: Create new CRS matrix
     // *****************************************************************
     Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>(new cm_t(newGraph_));
 
-    newGraph_->resumeFill();
-    newMatrix->reindexColumns(newGraph_.get(), newColMap_, Teuchos::null);
-    newGraph_->fillComplete();
+    {
+      typename cm_t::local_inds_host_view_type origMatrix_localIndices;
+      typename cm_t::values_host_view_type origMatrix_localValues;
+      typename cg_t::local_inds_host_view_type newGraph_localIndices;
+
+      size_t const origMatrix_maxNumEntries = origMatrix->getGlobalMaxNumRowEntries();
+      std::vector<Scalar> newMatrix_localValues(origMatrix_maxNumEntries);
+      std::vector<LocalOrdinal> newMatrix_localIndices(origMatrix_maxNumEntries);
+
+      size_t const newMatrix_localNumRows = newMatrix->getLocalNumRows();
+      for (size_t i(0); i < newMatrix_localNumRows; ++i) {
+        origMatrix->getLocalRowView(i, origMatrix_localIndices, origMatrix_localValues);
+        newGraph_->getLocalRowView(i, newGraph_localIndices);
+        assert(origMatrix_localIndices.size() == newGraph_localIndices.size());
+
+        size_t const numEntries(newGraph_localIndices.size());
+        for (size_t j(0); j < numEntries; ++j) {
+          newMatrix_localValues[j]  = origMatrix_localValues[j];
+          newMatrix_localIndices[j] = newGraph_localIndices[j];
+        }
+
+        newMatrix->replaceLocalValues(i, numEntries, newMatrix_localValues.data(), newMatrix_localIndices.data());
+      }
+    }
+
     newMatrix->fillComplete();
 
     // *****************************************************************
