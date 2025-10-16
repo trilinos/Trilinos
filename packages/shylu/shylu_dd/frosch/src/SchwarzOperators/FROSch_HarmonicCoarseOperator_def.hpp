@@ -854,8 +854,8 @@ namespace FROSch {
 
             #if defined(HAVE_XPETRA_TPETRA)
             if (mVPhi->getMap()->lib() == UseTpetra) {
-                using XMap            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
-                using execution_space = typename XMap::local_map_type::execution_space;
+                using XMap2            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
+                using execution_space = typename XMap2::local_map_type::execution_space;
 
                 // explicitly copying indicesIDofsAll in Teuchos::Array to Kokkos::View on "device"
                 using GOIndViewHost = Kokkos::View<GO*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;

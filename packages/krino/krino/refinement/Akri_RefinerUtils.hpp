@@ -1,7 +1,10 @@
 #ifndef KRINO_KRINO_REFINEMENT_AKRI_REFINERUTILS_HPP_
 #define KRINO_KRINO_REFINEMENT_AKRI_REFINERUTILS_HPP_
+#include <algorithm>
 #include <array>
+#include <numeric>
 #include <vector>
+#include <Akri_QualityMetric.hpp>
 
 namespace krino {
 
@@ -28,6 +31,23 @@ void append_child_elements(const std::array<unsigned,NUMREFINEDPARENTNODES> & pe
         childElemDescs[oldSize + i].sideIds[iSide] = -1;
     }
   }
+}
+
+template <size_t SIZE, typename CONTAINER>
+std::array<int,SIZE> get_rank_of_nodes_based_on_coordinates(const CONTAINER & nodeCoords)
+{
+  // initialize original index locations
+  std::array<size_t,SIZE> index;
+  std::iota(index.begin(), index.end(), 0);
+
+  std::stable_sort(index.begin(), index.end(),
+       [&nodeCoords](size_t i1, size_t i2) {return is_less_than_in_x_then_y_then_z(nodeCoords[i1], nodeCoords[i2]);});
+
+  // invert indices to get node rank by coordinates
+  std::array<int,SIZE> rank;
+  for (size_t i=0; i < SIZE; ++i)
+    rank[index[i]] = i;
+  return rank;
 }
 
 }

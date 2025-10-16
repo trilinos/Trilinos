@@ -314,6 +314,11 @@ protected:
       return full_name;
     }
 
+    std::string get_name() const {
+      std::string my_name(name_);
+      return my_name;
+    }
+
     /**
      * Return the number of timers on this level
      * @return the number of timers and sub timers
@@ -490,15 +495,35 @@ public:
   /**
    * Start the base level timer only
    */
-  void startBaseTimer() {
+  void startBaseTimer(const bool push_kokkos_profiling_region = true) {
     timer_.BaseTimer::start();
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+    if (Behavior::fenceTimers()) {
+      Kokkos::fence("timer_fence_begin_"+timer_.get_name());
+    }
+#endif
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
+    if (push_kokkos_profiling_region) {
+      ::Kokkos::Tools::pushRegion(timer_.get_name());
+    }
+#endif
   }
 
   /**
    * Stop the base level timer only
    */
-  void stopBaseTimer() {
+  void stopBaseTimer(const bool pop_kokkos_profiling_region = true) {
     timer_.BaseTimer::stop();
+#ifdef HAVE_TEUCHOSCORE_KOKKOS
+    if (Behavior::fenceTimers()) {
+      Kokkos::fence("timer_fence_end_"+timer_.get_name());
+    }
+#endif
+#if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
+    if (pop_kokkos_profiling_region) {
+      ::Kokkos::Tools::popRegion();
+    }
+#endif
   }
 
   /**

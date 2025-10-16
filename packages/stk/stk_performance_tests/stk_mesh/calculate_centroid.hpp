@@ -43,6 +43,7 @@
 #include "stk_mesh/base/GetNgpMesh.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/ForEachEntity.hpp"
+#include "stk_util/parallel/ParallelReduce.hpp"
 
 namespace stk {
 namespace performance_tests {
@@ -77,8 +78,7 @@ inline
 std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, CentroidFieldType& centroid,
                                                    const stk::mesh::Selector& selector)
 {
-  std::vector<double> average = {0, 0, 0};
-  size_t numElems = 0;
+  std::vector<double> localAverage(4);
   stk::mesh::Selector fieldSelector(centroid);
   fieldSelector &= selector;
   auto centroidData = centroid.template data<stk::mesh::ReadOnly>();
@@ -87,15 +87,21 @@ std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, Ce
     for (stk::mesh::Entity elem : *bucket) {
       auto centroidValues = centroidData.entity_values(elem);
       for (stk::mesh::ComponentIdx component : centroidValues.components()) {
-        average[component] += centroidValues(component);
+        localAverage[component] += centroidValues(component);
       }
-      numElems++;
+      localAverage[3] += 1;
     }
   }
 
+  std::vector<double> globalAverage(4);
+  stk::all_reduce_sum(bulk.parallel(), localAverage.data(), globalAverage.data(), 4);
+
+  const unsigned numElems = globalAverage[3];
+
+  std::vector<double> average(3);
   if (numElems > 0) {
-    for(size_t dim = 0; dim < 3; dim++) {
-      average[dim] /= numElems;
+    for (size_t dim = 0; dim < 3; ++dim) {
+      average[dim] = globalAverage[dim] / numElems;
     }
   }
 
@@ -130,11 +136,14 @@ std::vector<double> get_centroid_average_from_device(stk::mesh::BulkData &bulk, 
 
   Kokkos::deep_copy(hostAverageView, deviceAverageView);
 
-  std::vector<double> average = {0, 0, 0};
-  unsigned numElems = hostAverageView(3);
+  std::vector<double> globalAverage(4);
+  stk::all_reduce_sum(bulk.parallel(), hostAverageView.data(), globalAverage.data(), 4);
 
-  for(size_t dim = 0; dim < 3; dim++) {
-    average[dim] = numElems > 0 ? hostAverageView(dim) / numElems : 0.0;
+  unsigned numElems = globalAverage[3];
+
+  std::vector<double> average(3);
+  for(size_t dim = 0; dim < 3; ++dim) {
+    average[dim] = numElems > 0 ? globalAverage[dim] / numElems : 0.0;
   }
 
   return average;

@@ -1,4 +1,4 @@
-// Copyright(C) 2022, 2023, 2024 National Technology & Engineering Solutions
+// Copyright(C) 2022, 2023, 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,7 +6,7 @@
 
 #include <array>
 #include <assert.h>
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <numeric>
 #include <stddef.h>
 #include <string>
@@ -149,8 +149,9 @@ namespace {
   {
     for (const auto &face : faces) {
       for (int i = 0; i < face.element_count(); i++) {
-        auto element                     = face.element[i] / 10 - offset;
-        auto side                        = face.element[i] % 10; // 0-based side
+        auto element = face.element[i] / 10 - offset;
+        auto side    = face.element[i] % 10; // 0-based side
+        assert(side < 6);
         face_connectivity[element][side] = &face;
       }
     }

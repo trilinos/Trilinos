@@ -14,7 +14,11 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
+#if KOKKOS_VERSION >= 40799
+#include <KokkosKernels_ArithTraits.hpp>
+#else
 #include <Kokkos_ArithTraits.hpp>
+#endif
 
 namespace BlasWrapper {
 namespace Impl {

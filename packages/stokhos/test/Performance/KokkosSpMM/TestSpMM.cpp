@@ -72,11 +72,10 @@ int main(int argc, char *argv[])
 #endif
     CLP.parse( argc, argv );
 
-    typedef int Ordinal;
-    typedef double Scalar;
-
 #ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
+      typedef double Scalar;
+      typedef int Ordinal;
       typedef Kokkos::Threads Device;
 
       Kokkos::InitializationSettings init_args;
@@ -96,6 +95,8 @@ int main(int argc, char *argv[])
 
 #ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
+      typedef double Scalar;
+      typedef int Ordinal;
       typedef Kokkos::Cuda Device;
 
       Kokkos::InitializationSettings init_args;

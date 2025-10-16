@@ -10,7 +10,6 @@
 #ifndef GALERI_HELMHOLTZFEM2DPROBLEM_HPP
 #define GALERI_HELMHOLTZFEM2DPROBLEM_HPP
 
-#include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #include "Galeri_Problem_Helmholtz.hpp"
@@ -128,6 +127,8 @@ class HelmholtzFEM2DProblem : public Problem_Helmholtz<Map, Matrix, MultiVector>
   double LBx_, RBx_, LBy_, RBy_, LBz_, RBz_;
   double PMLwidthx_, PMLwidthy_, PMLwidthz_;
 
+  using Memory2D = Kokkos::View<SC**, Kokkos::HostSpace>;
+
   void BuildMesh();
   void BuildPoints(std::vector<Point>& quadPoints, std::vector<double>& quadWeights);
   void EvalBasis(Point& quadPoint, std::vector<double>& vals, std::vector<double>& dxs, std::vector<double>& dys);
@@ -137,8 +138,6 @@ class HelmholtzFEM2DProblem : public Problem_Helmholtz<Map, Matrix, MultiVector>
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
 Teuchos::RCP<Matrix> HelmholtzFEM2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMatrix() {
-  using Teuchos::SerialDenseMatrix;
-
   BuildMesh();
 
   const size_t numDofPerNode   = 1;
@@ -166,7 +165,7 @@ Teuchos::RCP<Matrix> HelmholtzFEM2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, 
 
   // iterate over elements
   for (size_t i = 0; i < elements.size(); i++) {
-    SerialDenseMatrix<LO, SC> KE(numDofPerElem, numDofPerElem);
+    Memory2D KE("KE", numDofPerElem, numDofPerElem);
 
     // element domain is [shiftx,shiftx+hx] x [shifty,shifty+hy]
     std::vector<LO>& elemNodes = elements[i];
@@ -191,7 +190,7 @@ Teuchos::RCP<Matrix> HelmholtzFEM2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, 
       Scalar pml2                 = qdwt * sx / sy;
       for (unsigned int m = 0; m < numDofPerElem; m++) {
         for (unsigned int n = 0; n < numDofPerElem; n++) {
-          KE[m][n] += pml1 * curdxs[m] * curdxs[n] + pml2 * curdys[m] * curdys[n] - mass * curvals[m] * curvals[n];
+          KE(m, n) += pml1 * curdxs[m] * curdxs[n] + pml2 * curdys[m] * curdys[n] - mass * curvals[m] * curvals[n];
         }
       }
     }
@@ -206,8 +205,11 @@ Teuchos::RCP<Matrix> HelmholtzFEM2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, 
 
     // Insert KE into the global matrix
     for (size_t j = 0; j < numDofPerElem; j++)
-      if (this->Map_->isNodeGlobalElement(elemDofs[j]))
-        this->A_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
+      if (this->Map_->isNodeGlobalElement(elemDofs[j])) {
+        auto inds   = Kokkos::Compat::getConstArrayView(elemDofs);
+        auto values = Kokkos::Compat::getArrayView(Kokkos::subview(KE, j, Kokkos::ALL()));
+        this->A_->insertGlobalValues(elemDofs[j], inds, values);
+      }
   }
 
   this->A_->fillComplete();
@@ -216,8 +218,6 @@ Teuchos::RCP<Matrix> HelmholtzFEM2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, 
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
 std::pair<Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > HelmholtzFEM2DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMatrices() {
-  using Teuchos::SerialDenseMatrix;
-
   BuildMesh();
 
   const size_t numDofPerNode   = 1;
@@ -245,8 +245,8 @@ std::pair<Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > HelmholtzFEM2DProblem<Sca
 
   // iterate over elements
   for (size_t i = 0; i < elements.size(); i++) {
-    SerialDenseMatrix<LO, SC> KE(numDofPerElem, numDofPerElem);
-    SerialDenseMatrix<LO, SC> ME(numDofPerElem, numDofPerElem);
+    Memory2D KE("KE", numDofPerElem, numDofPerElem);
+    Memory2D ME("ME", numDofPerElem, numDofPerElem);
 
     // element domain is [shiftx,shiftx+hx] x [shifty,shifty+hy]
     std::vector<LO>& elemNodes = elements[i];
@@ -271,8 +271,8 @@ std::pair<Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > HelmholtzFEM2DProblem<Sca
       Scalar pml2                 = qdwt * sx / sy;
       for (unsigned int m = 0; m < numDofPerElem; m++) {
         for (unsigned int n = 0; n < numDofPerElem; n++) {
-          KE[m][n] += pml1 * curdxs[m] * curdxs[n] + pml2 * curdys[m] * curdys[n];
-          ME[m][n] += mass * curvals[m] * curvals[n];
+          KE(m, n) += pml1 * curdxs[m] * curdxs[n] + pml2 * curdys[m] * curdys[n];
+          ME(m, n) += mass * curvals[m] * curvals[n];
         }
       }
     }
@@ -288,8 +288,16 @@ std::pair<Teuchos::RCP<Matrix>, Teuchos::RCP<Matrix> > HelmholtzFEM2DProblem<Sca
     // Insert KE and ME into the global matrices
     for (size_t j = 0; j < numDofPerElem; j++) {
       if (this->Map_->isNodeGlobalElement(elemDofs[j])) {
-        this->K_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(KE[j], numDofPerElem));
-        this->M_->insertGlobalValues(elemDofs[j], elemDofs, Teuchos::ArrayView<SC>(ME[j], numDofPerElem));
+        {
+          auto inds   = Kokkos::Compat::getConstArrayView(elemDofs);
+          auto values = Kokkos::Compat::getArrayView(Kokkos::subview(KE, j, Kokkos::ALL()));
+          this->K_->insertGlobalValues(elemDofs[j], inds, values);
+        }
+        {
+          auto inds   = Kokkos::Compat::getConstArrayView(elemDofs);
+          auto values = Kokkos::Compat::getArrayView(Kokkos::subview(ME, j, Kokkos::ALL()));
+          this->M_->insertGlobalValues(elemDofs[j], inds, values);
+        }
       }
     }
   }

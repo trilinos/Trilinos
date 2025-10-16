@@ -24,8 +24,8 @@
 // Your code is an existing MPI code, so it presumably includes mpi.h directly.
 #include <mpi.h>
 
-#include <Teuchos_DefaultMpiComm.hpp> // wrapper for MPI_Comm
-#include <Tpetra_Version.hpp> // Tpetra version string
+#include <Teuchos_DefaultMpiComm.hpp>  // wrapper for MPI_Comm
+#include <Tpetra_Version.hpp>          // Tpetra version string
 
 //
 // ... Your other include files go here ...
@@ -34,18 +34,15 @@
 // Do something with the given communicator.  In this case, we just
 // print Tpetra's version to stdout on Process 0 in the given
 // communicator.
-void
-exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
-{
-  if (comm->getRank () == 0) {
+void exampleRoutine(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+  if (comm->getRank() == 0) {
     // On (MPI) Process 0, print out the Tpetra software version.
-    std::cout << Tpetra::version () << std::endl << std::endl;
+    std::cout << Tpetra::version() << std::endl
+              << std::endl;
   }
 }
 
-int
-main (int argc, char *argv[])
-{
+int main(int argc, char* argv[]) {
   // These "using" declarations make the code more concise, in that
   // you don't have to write the namespace along with the class or
   // object name.  This is especially helpful with commonly used
@@ -60,7 +57,7 @@ main (int argc, char *argv[])
   // We assume that your code calls MPI_Init.  It's bad form
   // to ignore the error codes returned by MPI functions, but
   // we do so here for brevity.
-  (void) MPI_Init (&argc, &argv);
+  (void)MPI_Init(&argc, &argv);
 
   // This code takes the place of whatever you do to get an MPI_Comm.
   MPI_Comm yourComm = MPI_COMM_WORLD;
@@ -87,19 +84,19 @@ main (int argc, char *argv[])
     // passing the result of Teuchos::opaqueWrapper to MpiComm's
     // constructor.)
 
-    RCP<const Comm<int> > comm (new MpiComm<int> (yourComm));
+    RCP<const Comm<int> > comm(new MpiComm<int>(yourComm));
 
     // Get my process' rank, and the total number of processes.
     // Equivalent to MPI_Comm_rank resp. MPI_Comm_size.
-    const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
+    const int myRank   = comm->getRank();
+    const int numProcs = comm->getSize();
 
     if (myRank == 0) {
       cout << "Total number of processes: " << numProcs << endl;
     }
 
     // Do something with the new communicator.
-    exampleRoutine (comm);
+    exampleRoutine(comm);
 
     // This tells the Trilinos test framework that the test passed.
     if (myRank == 0) {
@@ -114,6 +111,6 @@ main (int argc, char *argv[])
 
   // Since you called MPI_Init, you are responsible for calling
   // MPI_Finalize.
-  (void) MPI_Finalize ();
+  (void)MPI_Finalize();
   return 0;
 }

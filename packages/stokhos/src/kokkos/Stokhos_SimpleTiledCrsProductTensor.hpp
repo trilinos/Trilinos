@@ -502,8 +502,8 @@ public:
           size_type nc = i_tiles[idx].parts[jdx].parts[kdx].parts.size();
           for (size_type c=0; c<nc; ++c) {
             size_type i = i_tiles[idx].parts[jdx].parts[kdx].parts[c].i;
-            size_type i_begin = i_tiles[idx].lower;
-            ++(coord_work[idx][jdx][kdx][i-i_begin]);
+            size_type i_begin2 = i_tiles[idx].lower;
+            ++(coord_work[idx][jdx][kdx][i-i_begin2]);
             ++entry_count;
           }
         }

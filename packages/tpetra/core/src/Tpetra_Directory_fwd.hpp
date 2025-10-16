@@ -17,11 +17,11 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
-template<class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
-         class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
-         class Node = ::Tpetra::Details::DefaultTypes::node_type>
+template <class LocalOrdinal  = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+          class Node          = ::Tpetra::Details::DefaultTypes::node_type>
 class Directory;
-} // namespace Tpetra
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+}  // namespace Tpetra
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
 
-#endif // TPETRA_DIRECTORY_FWD_HPP
+#endif  // TPETRA_DIRECTORY_FWD_HPP

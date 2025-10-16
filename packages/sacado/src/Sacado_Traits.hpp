@@ -532,6 +532,7 @@ struct integral_nonzero
   SACADO_INLINE_FUNCTION integral_nonzero( const integral_nonzero & ) {}
   SACADO_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero &) {return *this;}
   SACADO_INLINE_FUNCTION integral_nonzero& operator=(const T &) {return *this;}
+  constexpr SACADO_INLINE_FUNCTION operator value_type() const { return value; }
 };
 
 template< typename T , T zero >
@@ -545,6 +546,7 @@ struct integral_nonzero<T,zero,false>
   SACADO_INLINE_FUNCTION integral_nonzero( const integral_nonzero & v) : value(v.value) {}
   SACADO_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero & v) { value = v.value; return *this; }
   SACADO_INLINE_FUNCTION integral_nonzero& operator=(const T & v) { value = v; return *this; }
+  constexpr SACADO_INLINE_FUNCTION operator value_type() const { return value; }
 };
 
 } // namespace Sacado

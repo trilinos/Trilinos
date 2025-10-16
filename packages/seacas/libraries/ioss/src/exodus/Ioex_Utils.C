@@ -11,7 +11,6 @@
 #include "Ioss_VariableType.h"
 #include "exodus/Ioex_Utils.h"
 #include <cstring>
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <iosfwd>
@@ -723,7 +722,7 @@ namespace Ioex {
     if (!extra.empty()) {
       fmt::print(errmsg, " {}", extra);
     }
-    fmt::print(errmsg, " Please report to gdsjaar@sandia.gov if you need help.");
+    fmt::print(errmsg, " Please report to sierra-help@sandia.gov if you need help.");
 
     ex_err_fn(exoid, nullptr, nullptr, EX_PRTLASTMSG);
     IOSS_ABORT(errmsg);

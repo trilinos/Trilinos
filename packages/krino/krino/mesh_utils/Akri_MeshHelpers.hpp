@@ -73,6 +73,18 @@ std::array<double,3> get_triangle_scalar(const stk::mesh::BulkData & mesh, const
   return {{ get_scalar_field(mesh, field, triangleNodes[0]), get_scalar_field(mesh, field, triangleNodes[1]), get_scalar_field(mesh, field, triangleNodes[2]) }};
 }
 
+template <typename NodeContainer>
+std::array<stk::math::Vector3d,4> get_tetrahedron_vector(const stk::mesh::BulkData & mesh, const FieldRef vecField, const NodeContainer & tetNodes)
+{
+  return {{ get_vector_field(mesh, vecField, tetNodes[0]), get_vector_field(mesh, vecField, tetNodes[1]), get_vector_field(mesh, vecField, tetNodes[2]), get_vector_field(mesh, vecField, tetNodes[3]) }};
+}
+
+template <typename NodeContainer>
+std::array<double,4> get_tetrahedron_scalar(const stk::mesh::BulkData & mesh, const FieldRef field, const NodeContainer & tetNodes)
+{
+  return {{ get_scalar_field(mesh, field, tetNodes[0]), get_scalar_field(mesh, field, tetNodes[1]), get_scalar_field(mesh, field, tetNodes[2]), get_scalar_field(mesh, field, tetNodes[3]) }};
+}
+
 void fill_nodes_attached_to_node(const stk::mesh::BulkData& mesh, const stk::mesh::Entity node, std::vector<stk::mesh::Entity> &nbrNodes);
 void populate_stk_local_ids(stk::mesh::BulkData & mesh);
 void fill_node_ids_for_nodes(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & parentNodes, std::vector<stk::mesh::EntityId> & parentNodeIds);

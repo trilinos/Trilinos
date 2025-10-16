@@ -46,10 +46,9 @@ namespace Details {
 ///
 /// \return Whether the input communicator wraps an MPI
 ///   intercommunicator.
-bool
-isInterComm (const Teuchos::Comm<int>& comm);
+bool isInterComm(const Teuchos::Comm<int>& comm);
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_ISINTERCOMM_HPP
+#endif  // TPETRA_DETAILS_ISINTERCOMM_HPP

@@ -28,7 +28,11 @@ template <typename MatrixType>
 class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
  public:
   typedef typename MatrixType::scalar_type scalar_type;
+#if KOKKOS_VERSION >= 40799
+  typedef typename KokkosKernels::ArithTraits<scalar_type>::val_type impl_scalar_type;
+#else
   typedef typename Kokkos::ArithTraits<scalar_type>::val_type impl_scalar_type;
+#endif
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;

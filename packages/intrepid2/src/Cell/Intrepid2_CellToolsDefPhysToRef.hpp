@@ -70,7 +70,7 @@ namespace Intrepid2 {
     // init guess is created locally and non fad whatever refpoints type is 
     using result_layout = typename DeduceLayout< decltype(refPoints) >::result_layout;
     auto vcprop = Kokkos::common_view_alloc_prop(refPoints);
-    using common_value_type = typename decltype(vcprop)::value_type;
+    using common_value_type = refPointValueType;
     Kokkos::DynRankView< common_value_type, result_layout, deviceType > initGuess ( Kokkos::view_alloc("CellTools::mapToReferenceFrame::initGuess", vcprop), numCells, numPoints, spaceDim );
     //refPointViewSpType initGuess("CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim);
     rst::clone(initGuess, cellCenter);
@@ -124,7 +124,7 @@ namespace Intrepid2 {
 
     using result_layout = typename DeduceLayout< decltype(refPoints) >::result_layout;
     auto vcprop = Kokkos::common_view_alloc_prop(refPoints);
-    using viewType = Kokkos::DynRankView<typename decltype(vcprop)::value_type, result_layout, DeviceType >;
+    using viewType = Kokkos::DynRankView<typename decltype(refPoints)::value_type, result_layout, DeviceType >;
 
     // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
     viewType xOld(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::xOld", vcprop), numCells, numPoints, spaceDim);
@@ -135,7 +135,11 @@ namespace Intrepid2 {
 
     // jacobian should select fad dimension between xOld and worksetCell as they are input; no front interface yet
     auto vcpropJ = Kokkos::common_view_alloc_prop(refPoints, worksetCell);
-    using viewTypeJ = Kokkos::DynRankView<typename decltype(vcpropJ)::value_type, result_layout, DeviceType >;
+    // using valueTypeJ = typename Sacado::Promote<typename decltype(refPoints)::value_type,
+    //	                                        typename decltype(worksetCell)::value_type>::type;
+    using valueTypeJ = std::common_type_t<typename decltype(refPoints)::value_type,
+	                                  typename decltype(worksetCell)::value_type>;
+    using viewTypeJ = Kokkos::DynRankView<valueTypeJ, result_layout, DeviceType >;
     viewTypeJ jacobian(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::jacobian", vcpropJ), numCells, numPoints, spaceDim, spaceDim);
     viewTypeJ jacobianInv(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::jacobianInv", vcpropJ), numCells, numPoints, spaceDim, spaceDim);
     

@@ -1238,7 +1238,7 @@ void evaluateMaterialTensor(ArrayOut &        matTensorValues,
 
   int numWorksetCells  = evaluationPoints.dimension(0);
   int numPoints        = evaluationPoints.dimension(1);
-  int spaceDim         = evaluationPoints.dimension(2);
+  int spaceDim2         = evaluationPoints.dimension(2);
 
   double material[3][3];
 
@@ -1248,12 +1248,12 @@ void evaluateMaterialTensor(ArrayOut &        matTensorValues,
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
       double z = 0.0;
-      if(spaceDim==3) z = evaluationPoints(cell, pt, 2);
+      if(spaceDim2==3) z = evaluationPoints(cell, pt, 2);
 
       materialTensor<double>(material, x, y, z);
 
-      for(int row = 0; row < spaceDim; row++){
-        for(int col = 0; col < spaceDim; col++){
+      for(int row = 0; row < spaceDim2; row++){
+        for(int col = 0; col < spaceDim2; col++){
           matTensorValues(cell, pt, row, col) = material[row][col];
         }
       }
@@ -1313,7 +1313,7 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 
   int numWorksetCells  = evaluationPoints.dimension(0);
   int numPoints = evaluationPoints.dimension(1);
-  int spaceDim  = evaluationPoints.dimension(2);
+  int spaceDim2  = evaluationPoints.dimension(2);
 
   double gradient[3];
 
@@ -1323,12 +1323,12 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
       double x = evaluationPoints(cell, pt, 0);
       double y = evaluationPoints(cell, pt, 1);
       double z = 0.0;
-      if(spaceDim==3)
+      if(spaceDim2==3)
 	z = evaluationPoints(cell, pt, 2);
 
       exactSolutionGrad<double>(gradient, x, y, z);
 
-      for(int row = 0; row < spaceDim; row++){
+      for(int row = 0; row < spaceDim2; row++){
         exactSolutionGradValues(cell, pt, row) = gradient[row];
       }
     }

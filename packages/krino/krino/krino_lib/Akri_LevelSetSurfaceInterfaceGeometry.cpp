@@ -1,3 +1,4 @@
+#include <Akri_ClosestPointRedistance.hpp>
 #include <Akri_LevelSetInterfaceGeometry.hpp>
 #include <Akri_LevelSetSurfaceInterfaceGeometry.hpp>
 #include <Akri_MeshHelpers.hpp>
@@ -173,7 +174,7 @@ void LevelSetSurfaceInterfaceGeometry::build_levelset_facets(const stk::mesh::Bu
     }
     else
     {
-      LevelSet::build_facets_for_elements(mesh, coordsField, myLSFields[i].isovar, elementsToIntersect, avgEdgeLength, *myLSSurfaces[i]);
+      ClosestPointRedistance::build_facets_for_elements(mesh, coordsField, myLSFields[i].isovar, elementsToIntersect, avgEdgeLength, *myLSSurfaces[i]);
     }
   }
 }

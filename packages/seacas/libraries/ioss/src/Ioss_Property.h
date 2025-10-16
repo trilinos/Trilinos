@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -27,7 +27,7 @@ namespace Ioss {
   {
   public:
     enum BasicType { INVALID = -1, REAL, INTEGER, POINTER, STRING, VEC_INTEGER, VEC_DOUBLE };
-    enum Origin {
+    enum class Origin {
       INTERNAL = -1, ///< Property is for internal use
       IMPLICIT, ///< Property is calculated on the fly based on current state of entity containing
                 // property
@@ -35,14 +35,14 @@ namespace Ioss {
       ATTRIBUTE ///< Property created from an Exodus or Database Attribute
     };
 
-    Property(std::string name, int64_t value, Origin origin = INTERNAL);
-    Property(std::string name, int value, Origin origin = INTERNAL);
-    Property(std::string name, double value, Origin origin = INTERNAL);
-    Property(std::string name, const std::string &value, Origin origin = INTERNAL);
-    Property(std::string name, const char *value, Origin origin = INTERNAL);
-    Property(std::string name, void *value, Origin origin = INTERNAL);
-    Property(std::string name, const std::vector<int> &value, Origin origin = INTERNAL);
-    Property(std::string name, const std::vector<double> &value, Origin origin = INTERNAL);
+    Property(std::string name, int64_t value, Origin origin = Origin::INTERNAL);
+    Property(std::string name, int value, Origin origin = Origin::INTERNAL);
+    Property(std::string name, double value, Origin origin = Origin::INTERNAL);
+    Property(std::string name, const std::string &value, Origin origin = Origin::INTERNAL);
+    Property(std::string name, const char *value, Origin origin = Origin::INTERNAL);
+    Property(std::string name, void *value, Origin origin = Origin::INTERNAL);
+    Property(std::string name, const std::vector<int> &value, Origin origin = Origin::INTERNAL);
+    Property(std::string name, const std::vector<double> &value, Origin origin = Origin::INTERNAL);
 
     // To set implicit property
     Property(const GroupingEntity *ge, std::string name, BasicType type);
@@ -61,13 +61,13 @@ namespace Ioss {
      *
      * \returns True if property is calculated; False if it is stored directly.
      */
-    IOSS_NODISCARD bool is_implicit() const { return origin_ == IMPLICIT; }
+    IOSS_NODISCARD bool is_implicit() const { return origin_ == Origin::IMPLICIT; }
 
     /** \brief Tells whether the property is stored, rather than calculated.
      *
      * \returns True if property is stored directly; False if it is calculated.
      */
-    IOSS_NODISCARD bool is_explicit() const { return origin_ != IMPLICIT; }
+    IOSS_NODISCARD bool is_explicit() const { return origin_ != Origin::IMPLICIT; }
 
     /** Tells whether the property has a valid type (currently REAL, INTEGER, POINTER, or STRING)
      *
@@ -113,7 +113,7 @@ namespace Ioss {
 
     /// True if property is calculated rather than stored.
     /// False if property is stored in 'data_'
-    Origin origin_{INTERNAL};
+    Origin origin_{Origin::INTERNAL};
 
     bool get_value(int64_t *value) const;
     bool get_value(double *value) const;

@@ -171,7 +171,11 @@ template <class Scalar, class Map>
 class ScaledIdentityStencil {
   // a
 
-  using ATS               = Kokkos::ArithTraits<Scalar>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS                   = Kokkos::ArithTraits<Scalar>;
+#endif
   using impl_scalar_type  = typename ATS::val_type;
   using LocalOrdinal      = typename Map::local_ordinal_type;
   using GlobalOrdinal     = typename Map::global_ordinal_type;
@@ -189,8 +193,16 @@ class ScaledIdentityStencil {
   impl_scalar_type a;
   local_map_type lclMap;
 
+#if KOKKOS_VERSION >= 40799
+  const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+#else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
+#endif
+#if KOKKOS_VERSION >= 40799
+  const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
+#else
   const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
+#endif
   const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
 
  public:
@@ -224,7 +236,11 @@ template <class Scalar, class Map, bool keepBCs>
 class TriDiagStencil {
   //  b a c
 
-  using ATS               = Kokkos::ArithTraits<Scalar>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS                   = Kokkos::ArithTraits<Scalar>;
+#endif
   using impl_scalar_type  = typename ATS::val_type;
   using LocalOrdinal      = typename Map::local_ordinal_type;
   using GlobalOrdinal     = typename Map::global_ordinal_type;
@@ -243,8 +259,16 @@ class TriDiagStencil {
   DirBC DirichletBC;
   local_map_type lclMap;
 
+#if KOKKOS_VERSION >= 40799
+  const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+#else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
+#endif
+#if KOKKOS_VERSION >= 40799
+  const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
+#else
   const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
+#endif
   const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
 
  public:
@@ -321,7 +345,11 @@ class Cross2DStencil {
   //  b a c
   //    d
 
-  using ATS               = Kokkos::ArithTraits<Scalar>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS                   = Kokkos::ArithTraits<Scalar>;
+#endif
   using impl_scalar_type  = typename ATS::val_type;
   using LocalOrdinal      = typename Map::local_ordinal_type;
   using GlobalOrdinal     = typename Map::global_ordinal_type;
@@ -340,8 +368,16 @@ class Cross2DStencil {
   DirBC DirichletBC;
   local_map_type lclMap;
 
+#if KOKKOS_VERSION >= 40799
+  const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+#else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
+#endif
+#if KOKKOS_VERSION >= 40799
+  const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
+#else
   const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
+#endif
   const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
 
  public:
@@ -430,7 +466,11 @@ class Cross3DStencil {
   //    d
   // + f bottom and g top
 
-  using ATS               = Kokkos::ArithTraits<Scalar>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS                   = Kokkos::ArithTraits<Scalar>;
+#endif
   using impl_scalar_type  = typename ATS::val_type;
   using LocalOrdinal      = typename Map::local_ordinal_type;
   using GlobalOrdinal     = typename Map::global_ordinal_type;
@@ -449,8 +489,16 @@ class Cross3DStencil {
   DirBC DirichletBC;
   local_map_type lclMap;
 
+#if KOKKOS_VERSION >= 40799
+  const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+#else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
+#endif
+#if KOKKOS_VERSION >= 40799
+  const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
+#else
   const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
+#endif
   const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
 
  public:
@@ -561,7 +609,11 @@ class Brick3DStencil {
   //   d  b  d
   //   e  d  e
 
-  using ATS               = Kokkos::ArithTraits<Scalar>;
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS                   = Kokkos::ArithTraits<Scalar>;
+#endif
   using impl_scalar_type  = typename ATS::val_type;
   using LocalOrdinal      = typename Map::local_ordinal_type;
   using GlobalOrdinal     = typename Map::global_ordinal_type;
@@ -581,8 +633,16 @@ class Brick3DStencil {
   DirBC DirichletBC;
   local_map_type lclMap;
 
+#if KOKKOS_VERSION >= 40799
+  const impl_scalar_type one = KokkosKernels::ArithTraits<impl_scalar_type>::one();
+#else
   const impl_scalar_type one  = Kokkos::ArithTraits<impl_scalar_type>::one();
+#endif
+#if KOKKOS_VERSION >= 40799
+  const impl_scalar_type zero = KokkosKernels::ArithTraits<impl_scalar_type>::zero();
+#else
   const impl_scalar_type zero = Kokkos::ArithTraits<impl_scalar_type>::zero();
+#endif
   GlobalOrdinal INVALID;
 
   Kokkos::View<impl_scalar_type[3][3][3], memory_space> stencil_entries;

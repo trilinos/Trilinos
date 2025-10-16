@@ -298,7 +298,7 @@ typename BasisFamily::BasisPtr getBasisForFormulation(FormulationChoice formulat
     case Hcurl:                 fs = FUNCTION_SPACE_HCURL; break;
     case L2:                    fs = FUNCTION_SPACE_HVOL;  break;
     case VectorWeightedPoisson: fs = FUNCTION_SPACE_HGRAD; break;
-    case UnknownFormulation:    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unknown formulation");
+    default:                    INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unknown formulation");
   }
   
   auto basis = getBasis< BasisFamily >(cellTopo, fs, polyOrder);

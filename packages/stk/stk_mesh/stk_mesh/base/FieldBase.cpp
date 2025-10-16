@@ -41,6 +41,7 @@
 #include <stk_mesh/base/FindRestriction.hpp>
 #include <stk_mesh/base/NgpFieldBase.hpp>
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
+#include "stk_mesh/base/NgpProfilingBlock.hpp"
 
 
 namespace stk { namespace mesh { class BulkData; } }
@@ -628,9 +629,15 @@ FieldBase::sync_to_host() const
 
 void FieldBase::sync_to_host(const stk::ngp::ExecSpace& execSpace) const
 {
+  ProfilingBlock prof("FieldBase::sync_to_host() for " + name());
   if (need_sync_to_host()) {
     if (has_device_data()) {
-      m_deviceFieldData->sync_to_host(execSpace, host_data_layout());
+      if (not has_unified_device_storage()) {
+        m_deviceFieldData->sync_to_host(execSpace, host_data_layout());
+      }
+      else {
+        execSpace.fence();
+      }
     }
     increment_num_syncs_to_host();
     clear_device_sync_state();
@@ -645,13 +652,19 @@ FieldBase::sync_to_device() const
 
 void FieldBase::sync_to_device(const stk::ngp::ExecSpace& execSpace) const
 {
+  ProfilingBlock prof("FieldBase::sync_to_device() for " + name());
   if (need_sync_to_device()) {
     if (has_device_data()) {
       if (m_deviceFieldData->needs_update()) {
         m_deviceFieldData->update(execSpace, host_data_layout());
         increment_num_syncs_to_device();
       }
-      m_deviceFieldData->sync_to_device(execSpace, host_data_layout());
+      if (not has_unified_device_storage()) {
+        m_deviceFieldData->sync_to_device(execSpace, host_data_layout());
+      }
+      else {
+        execSpace.fence();
+      }
     }
     increment_num_syncs_to_device();
     clear_host_sync_state();

@@ -112,7 +112,7 @@ public:
       break;
     }
     default: {
-      TACHO_TEST_FOR_EXCEPTION(false, std::logic_error, "The solution method is not supported");
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "The solution method is not supported");
     }
     }
     const double kilo(1024);
@@ -526,7 +526,7 @@ public:
       break;
     }
     default: {
-      TACHO_TEST_FOR_EXCEPTION(false, std::logic_error, "The solution method is not supported");
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "The solution method is not supported");
       break;
     }
     }

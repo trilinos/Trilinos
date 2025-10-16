@@ -4,8 +4,10 @@
 //
 // See packages/seacas/LICENSE for details
 #include <algorithm>
+#include <chrono>
 #include <exception>
 #include <fmt/chrono.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <iomanip>
 #include <iostream>
@@ -69,6 +71,54 @@ namespace {
 #else
     return static_cast<float>(v1) == static_cast<float>(v2);
 #endif
+  }
+
+  template <typename INT>
+  bool is_node_status_needed(size_t global_node_count, std::vector<Excn::Mesh<INT>> &local_mesh)
+  {
+    // Returns true if a node_status variable is needed (i.e., the
+    // global model contains a different number of nodes than one or
+    // more local parts)
+
+    for (const auto &part : local_mesh) {
+      size_t node_count = part.count(Excn::ObjectType::NODE);
+      if (node_count != global_node_count) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool is_element_status_needed(std::vector<std::vector<Excn::Block>> &part_blocks,
+                                const std::vector<Excn::Block>        &glob_blocks)
+  {
+    // Returns true if an element status variable is needed (i.e., the
+    // global model contains a different number of elements than one or
+    // more local parts)
+
+    // Could iterate all elements in the local element blocks, but if
+    // the global block element counts and all local part element
+    // block element counts are the same, then there can be no
+    // dead elements...
+    // Assumes global and local element blocks are in the same order...
+    for (const auto &global_block : glob_blocks) {
+      for (const auto &blocks : part_blocks) {
+        bool match = false;
+        for (const auto &local_block : blocks) {
+          if (local_block.id == global_block.id) {
+            if (local_block.entity_count() != global_block.entity_count()) {
+              return true;
+            }
+            match = true;
+            break;
+          }
+        }
+        if (match == false) { // Did not find a matching element block
+          return true;        // We need a status variable
+        }
+      }
+    }
+    return false;
   }
 } // namespace
 
@@ -410,7 +460,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   std::vector<Excn::Mesh<INT>> local_mesh(part_count);
 
   // ******************************************************************
-  // 1. Read global info
+  // Read global info
 
   int error = 0;
 
@@ -561,7 +611,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     }
 
     // ****************************************************************************
-    // 5. Get Block information including element attributes
+    // Get Block information including element attributes
     // must check for zero length blocks
     get_element_blocks(local_mesh, global, blocks, glob_blocks);
 
@@ -572,7 +622,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     //
     //    NOTE:  Node set/side set information can be different for each part
     /************************************************************************/
-    // 7. Get Side sets
+    // Get Side sets
     if (!interFace.omit_sidesets()) {
       if (debug_level & 1) {
         fmt::print("{}", time_stamp(tsFormat));
@@ -584,7 +634,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     }
 
     /************************************************************************/
-    // 6. Get Node sets
+    // Get Node sets
     if (!interFace.omit_nodesets()) {
       if (debug_level & 1) {
         fmt::print("{}", time_stamp(tsFormat));
@@ -617,7 +667,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     // Output bulk mesh data....
     put_nodesets(glob_nsets);
 
-    // c.2.  Write Global Node Number Map
+    // Write Global Node Number Map
     if (debug_level & 1) {
       fmt::print("{}", time_stamp(tsFormat));
     }
@@ -640,7 +690,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     get_put_sidesets(glob_ssets);
   }
   // ************************************************************************
-  // 2. Get Coordinate Info.
+  // Get Coordinate Info.
   {
     if (debug_level & 1) {
       fmt::print("{}", time_stamp(tsFormat));
@@ -655,19 +705,25 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   }
   // ####################TRANSIENT DATA SECTION###########################
   // ***********************************************************************
-  // 9. Get Variable Information and names
+  // Get Variable Information and names
 
   if (debug_level & 1) {
     fmt::print("{}", time_stamp(tsFormat));
   }
 
-  //  I. read number of variables for each type. Note that exodusII does not
-  //     provide for history variables
+  // Check whether need the status variable(s)
+  bool need_n_status = is_node_status_needed(global.count(Excn::ObjectType::NODE), local_mesh);
+  bool need_e_status = is_element_status_needed(blocks, glob_blocks);
+  fmt::print("Nodal   status variable {} required.\n", need_n_status ? "is" : "is not");
+  fmt::print("Element status variable {} required.\n", need_e_status ? "is" : "is not");
+
+  bool add_n_status = interFace.force_status_variable() ||
+                      (need_n_status && interFace.nodal_status_variable() != "NONE");
+  bool add_e_status = interFace.force_status_variable() ||
+                      (need_e_status && interFace.element_status_variable() != "NONE");
+
   //  NOTE: it is assumed that every part has the same global, nodal,
   //        and element lists
-
-  bool            add_n_status = interFace.nodal_status_variable() != "NONE";
-  bool            add_e_status = interFace.element_status_variable() != "NONE";
   Excn::Variables global_vars(Excn::ObjectType::GLOBAL, part_count);
   Excn::Variables nodal_vars(Excn::ObjectType::NODE, part_count, add_n_status);
   Excn::Variables element_vars(Excn::ObjectType::EBLK, part_count, add_e_status);
@@ -686,7 +742,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
                        element_vars.count(), nullptr, nodeset_vars.count(), nullptr,
                        sideset_vars.count(), nullptr);
 
-  // II. read/write the variable names
+  // read/write the variable names
   int combined_status_variable_index = 0;
   put_variable_names(Excn::ExodusFile::output(), global_vars, interFace);
   put_variable_names(Excn::ExodusFile::output(), nodal_vars, interFace);
@@ -697,8 +753,8 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   ex_update(Excn::ExodusFile::output());
 
   /**********************************************************************/
-  // 10. Get Transient Data
-  //     This routine reads in a time dump from an EXODUSII file
+  // Get Transient Data
+  // This routine reads in a time dump from an EXODUSII file
 
   size_t num_time_steps = global.count(Excn::ObjectType::TIME);
 
@@ -710,9 +766,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
   auto max_ent = find_max_entity_count(part_count, local_mesh, blocks, nodesets, sidesets);
   std::vector<T> values(max_ent);
 
-  // Stage II.  Extracting transient variable data.
-  //            loop over time steps
-
+  // Extracting transient variable data. loop over time steps
   // Determine if user wants a subset of timesteps transferred to the output file.
   // Time steps for output file
   double start_time = seacas_timer();
@@ -827,7 +881,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
 
     // Add element status variable...
     // Use the output time step for writing data
-    if (interFace.element_status_variable() != "NONE") {
+    if (need_e_status && interFace.element_status_variable() != "NONE") {
       add_status_variable(Excn::ExodusFile::output(), global, blocks[p], glob_blocks,
                           local_mesh[p].localElementToGlobal, time_step_out, element_vars.count(),
                           alive, combined_status_variable_index);
@@ -930,7 +984,7 @@ namespace {
 
     free_name_array(info_records, num_info_records + extra_info);
 
-    // II. Get and store QA records, if they exist
+    // Get and store QA records, if they exist
     struct qa_element
     {
       char *qa_record[1][4];
@@ -951,12 +1005,11 @@ namespace {
     copy_string(qaRecord[num_qa_records].qa_record[0][0], qainfo[0], MAX_STR_LENGTH + 1); // Code
     copy_string(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH + 1); // Version
 
-    std::time_t date_time = std::time(nullptr);
-
-    auto date = fmt::format("{:%Y/%m/%d}", *std::localtime(&date_time));
+    auto now  = std::chrono::system_clock::now();
+    auto date = fmt::format("{:%Y/%m/%d}", now);
     copy_string(qaRecord[num_qa_records].qa_record[0][2], date.c_str(), MAX_STR_LENGTH + 1);
 
-    auto time = fmt::format("{:%T}", *std::localtime(&date_time));
+    auto time = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
     copy_string(qaRecord[num_qa_records].qa_record[0][3], time.c_str(), MAX_STR_LENGTH + 1);
 
     error += ex_put_qa(id_out, num_qa_records + 1, qaRecord[0].qa_record);
@@ -1469,8 +1522,9 @@ namespace {
       return;
     }
 
-    size_t max_id        = global_element_map[global->elementCount - 1].first;
-    bool   is_contiguous = max_id == global_element_map.size();
+    size_t max_id =
+        global->elementCount > 0 ? global_element_map[global->elementCount - 1].first : 0;
+    bool is_contiguous = max_id == global_element_map.size();
     // fmt::print("Element id map {}.\n", (is_contiguous ? "is" : "is not"));
 
     // The global_element_map may or may not be globally sorted; however, each
@@ -1599,7 +1653,7 @@ namespace {
     // the nodes back to their original location. Since the nodes are
     // sorted and there are no duplicates, we just need to see if the id
     // at global_node_map.size() == global_node_map.size();
-    INT  max_id = global_node_map[global->nodeCount - 1].id;
+    INT  max_id = global->nodeCount > 0 ? global_node_map[global->nodeCount - 1].id : 0;
     bool is_contiguous =
         static_cast<int64_t>(max_id) == static_cast<int64_t>(global_node_map.size());
     fmt::print("Node map {} contiguous.\n", (is_contiguous ? "is" : "is not"));

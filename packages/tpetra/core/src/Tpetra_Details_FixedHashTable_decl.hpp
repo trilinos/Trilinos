@@ -20,7 +20,11 @@
 #include "Teuchos_VerbosityLevel.hpp"
 
 #include "Kokkos_Core.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 
 namespace Tpetra {
 namespace Details {
@@ -50,11 +54,11 @@ namespace Details {
 /// only \f$O(1)\f$ memory allocation calls, rather than one for each
 /// (key,value) pair or hash bucket.  The compressed sparse row
 /// strategy may also improve locality for hash table lookups.
-template<class KeyType,
-         class ValueType,
-         class DeviceType>
+template <class KeyType,
+          class ValueType,
+          class DeviceType>
 class FixedHashTable {
-private:
+ private:
   typedef typename DeviceType::execution_space execution_space;
   typedef typename DeviceType::memory_space memory_space;
   typedef Kokkos::Device<execution_space, memory_space> device_type;
@@ -70,7 +74,8 @@ private:
   /// LayoutRight mean the same thing, but specifying the layout
   /// explicitly makes Kokkos::deep_copy work.
   typedef typename Kokkos::View<const offset_type*, Kokkos::LayoutLeft,
-                                device_type> ptr_type;
+                                device_type>
+      ptr_type;
   /// \brief Type of the array of (key, value) pairs in the hash table.
   ///
   /// We specify LayoutLeft explicitly so that the layout is the same
@@ -78,7 +83,8 @@ private:
   /// LayoutRight mean the same thing, but specifying the layout
   /// explicitly makes Kokkos::deep_copy work.
   typedef typename Kokkos::View<const Kokkos::pair<KeyType, ValueType>*,
-                                Kokkos::LayoutLeft, device_type> val_type;
+                                Kokkos::LayoutLeft, device_type>
+      val_type;
 
   /// \brief Whether the table was created using one of the
   ///   constructors that assume contiguous values.
@@ -86,11 +92,11 @@ private:
   /// \return false if this object was created using the two-argument
   ///   (keys, vals) constructor (that takes lists of both keys and
   ///   values), else true.
-  KOKKOS_INLINE_FUNCTION bool hasContiguousValues () const {
+  KOKKOS_INLINE_FUNCTION bool hasContiguousValues() const {
     return contiguousValues_;
   }
 
-public:
+ public:
   /// \brief Type of a 1-D Kokkos::View (array) used to store keys.
   ///
   /// This is the type preferred by FixedHashTable's constructors.
@@ -108,7 +114,7 @@ public:
   /// \param keys [in] The keys in the hash table.  The table
   ///   <i>always</i> keeps a (shallow) copy, and thus hasKeys() is
   ///   true on return.
-  FixedHashTable (const keys_type& keys);
+  FixedHashTable(const keys_type& keys);
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with zero.
@@ -117,7 +123,7 @@ public:
   /// for i = 0, 1, ..., <tt>keys.size()</tt>.
   ///
   /// \param keys [in] The keys in the hash table.
-  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys);
+  FixedHashTable(const Teuchos::ArrayView<const KeyType>& keys);
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with \c startingValue.
@@ -132,8 +138,8 @@ public:
   ///   true on return.
   /// \param startingValue [in] First value in the contiguous sequence
   ///   of values.
-  FixedHashTable (const keys_type& keys,
-                  const ValueType startingValue);
+  FixedHashTable(const keys_type& keys,
+                 const ValueType startingValue);
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with \c startingValue.
@@ -146,8 +152,8 @@ public:
   /// \param keys [in] The keys in the hash table.
   /// \param startingValue [in] First value in the contiguous sequence
   ///   of values.
-  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
-                  const ValueType startingValue);
+  FixedHashTable(const Teuchos::ArrayView<const KeyType>& keys,
+                 const ValueType startingValue);
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with \c startingValue, that takes an initial
@@ -167,10 +173,10 @@ public:
   ///   contiguous sequence of keys.
   /// \param startingValue [in] First value in the contiguous sequence
   ///   of values.
-  FixedHashTable (const keys_type& keys,
-                  const KeyType firstContigKey,
-                  const KeyType lastContigKey,
-                  const ValueType startingValue);
+  FixedHashTable(const keys_type& keys,
+                 const KeyType firstContigKey,
+                 const KeyType lastContigKey,
+                 const ValueType startingValue);
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with \c startingValue, that takes an initial
@@ -187,10 +193,10 @@ public:
   ///   contiguous sequence of keys.
   /// \param startingValue [in] First value in the contiguous sequence
   ///   of values.
-  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
-                  const KeyType firstContigKey,
-                  const KeyType lastContigKey,
-                  const ValueType startingValue);
+  FixedHashTable(const Teuchos::ArrayView<const KeyType>& keys,
+                 const KeyType firstContigKey,
+                 const KeyType lastContigKey,
+                 const ValueType startingValue);
 
   /// \brief Constructor for arbitrary keys and arbitrary values.
   ///
@@ -200,10 +206,10 @@ public:
   ///
   /// \param keys [in] The keys in the hash table.
   /// \param vals [in] The values in the hash table.
-  FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
-                  const Teuchos::ArrayView<const ValueType>& vals);
+  FixedHashTable(const Teuchos::ArrayView<const KeyType>& keys,
+                 const Teuchos::ArrayView<const ValueType>& vals);
 
-  template<class K, class V, class D>
+  template <class K, class V, class D>
   friend class FixedHashTable;
 
   /// \brief "Copy" constructor that takes a FixedHashTable with the
@@ -211,10 +217,9 @@ public:
   ///
   /// This constructor makes a deep copy of the input's data if
   /// necessary.
-  template<class InDeviceType>
-  FixedHashTable (const FixedHashTable<KeyType, ValueType, InDeviceType>& src,
-                  typename std::enable_if<! std::is_same<DeviceType, InDeviceType>::value, int>::type* = NULL)
-  {
+  template <class InDeviceType>
+  FixedHashTable(const FixedHashTable<KeyType, ValueType, InDeviceType>& src,
+                 typename std::enable_if<!std::is_same<DeviceType, InDeviceType>::value, int>::type* = NULL) {
     using Kokkos::ViewAllocateWithoutInitializing;
     typedef typename ptr_type::non_const_type nonconst_ptr_type;
     typedef typename val_type::non_const_type nonconst_val_type;
@@ -229,50 +234,50 @@ public:
     // offset_type comes from the memory space's size_type typedef.
     // That's why we use a specialized deep copy function here instead
     // of Kokkos::deep_copy.
-    nonconst_ptr_type ptr (ViewAllocateWithoutInitializing ("Tpetra::FixedHashTable::ptr"),
-                           src.ptr_.extent (0));
-    ::Tpetra::Details::copyOffsets (ptr, src.ptr_);
-    nonconst_val_type val (ViewAllocateWithoutInitializing ("Tpetra::FixedHashTable::val"),
-                           src.val_.extent (0));
+    nonconst_ptr_type ptr(ViewAllocateWithoutInitializing("Tpetra::FixedHashTable::ptr"),
+                          src.ptr_.extent(0));
+    ::Tpetra::Details::copyOffsets(ptr, src.ptr_);
+    nonconst_val_type val(ViewAllocateWithoutInitializing("Tpetra::FixedHashTable::val"),
+                          src.val_.extent(0));
     // val and src.val_ have the same entry types, unlike (possibly)
     // ptr and src.ptr_.  Thus, we can use Kokkos::deep_copy here.
     // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
-    Kokkos::deep_copy (execution_space(), val, src.val_);
+    Kokkos::deep_copy(execution_space(), val, src.val_);
 
-    this->ptr_ = ptr;
-    this->val_ = val;
-    this->minKey_ = src.minKey_;
-    this->maxKey_ = src.maxKey_;
-    this->minVal_ = src.minVal_;
-    this->maxVal_ = src.maxVal_;
-    this->firstContigKey_ = src.firstContigKey_;
-    this->lastContigKey_ = src.lastContigKey_;
-    this->contiguousValues_ = src.contiguousValues_;
+    this->ptr_                     = ptr;
+    this->val_                     = val;
+    this->minKey_                  = src.minKey_;
+    this->maxKey_                  = src.maxKey_;
+    this->minVal_                  = src.minVal_;
+    this->maxVal_                  = src.maxVal_;
+    this->firstContigKey_          = src.firstContigKey_;
+    this->lastContigKey_           = src.lastContigKey_;
+    this->contiguousValues_        = src.contiguousValues_;
     this->checkedForDuplicateKeys_ = src.checkedForDuplicateKeys_;
-    this->hasDuplicateKeys_ = src.hasDuplicateKeys_;
+    this->hasDuplicateKeys_        = src.hasDuplicateKeys_;
   }
 
   //! Get the value corresponding to the given key.
-  KOKKOS_INLINE_FUNCTION ValueType get (const KeyType& key) const {
-    const offset_type size = this->getSize ();
+  KOKKOS_INLINE_FUNCTION ValueType get(const KeyType& key) const {
+    const offset_type size = this->getSize();
     if (size == 0) {
       // Don't use Teuchos::OrdinalTraits or std::numeric_limits here,
       // because neither have the right device function markings.
-      return Tpetra::Details::OrdinalTraits<ValueType>::invalid ();
+      return Tpetra::Details::OrdinalTraits<ValueType>::invalid();
     }
 
     // If this object assumes contiguous values, then it doesn't store
     // the initial sequence of >= 1 contiguous keys in the table.
-    if (this->hasContiguousValues () &&
+    if (this->hasContiguousValues() &&
         key >= firstContigKey_ && key <= lastContigKey_) {
-      return static_cast<ValueType> (key - firstContigKey_) + this->minVal ();
+      return static_cast<ValueType>(key - firstContigKey_) + this->minVal();
     }
 
     const typename hash_type::result_type hashVal =
-      hash_type::hashFunc (key, size);
+        hash_type::hashFunc(key, size);
 
     const offset_type start = ptr_[hashVal];
-    const offset_type end = ptr_[hashVal+1];
+    const offset_type end   = ptr_[hashVal + 1];
     for (offset_type k = start; k < end; ++k) {
       if (val_[k].first == key) {
         return val_[k].second;
@@ -281,23 +286,22 @@ public:
 
     // Don't use Teuchos::OrdinalTraits or std::numeric_limits here,
     // because neither have the right device function markings.
-    return Tpetra::Details::OrdinalTraits<ValueType>::invalid ();
+    return Tpetra::Details::OrdinalTraits<ValueType>::invalid();
   }
 
   /// \brief Number of (key, value) pairs in the table.
   ///
   /// This counts pairs with the same key value as separate pairs.
-  KOKKOS_INLINE_FUNCTION offset_type numPairs () const {
+  KOKKOS_INLINE_FUNCTION offset_type numPairs() const {
     // NOTE (mfh 26 May 2015) Using val_.extent(0) only works
     // because the table stores pairs with duplicate keys separately.
     // If the table didn't do that, we would have to keep a separate
     // numPairs_ field (remembering the size of the input array of
     // keys).
-    if (this->hasContiguousValues ()) {
-      return val_.extent (0) + static_cast<offset_type> (lastContigKey_ - firstContigKey_);
-    }
-    else {
-      return val_.extent (0);
+    if (this->hasContiguousValues()) {
+      return val_.extent(0) + static_cast<offset_type>(lastContigKey_ - firstContigKey_);
+    } else {
+      return val_.extent(0);
     }
   }
 
@@ -309,7 +313,7 @@ public:
   ///
   /// This class assumes that both keys and values are numbers.
   /// Therefore, keys are less-than comparable.
-  KOKKOS_INLINE_FUNCTION KeyType minKey () const {
+  KOKKOS_INLINE_FUNCTION KeyType minKey() const {
     return minKey_;
   }
 
@@ -321,7 +325,7 @@ public:
   ///
   /// This class assumes that both keys and values are numbers.
   /// Therefore, keys are less-than comparable.
-  KOKKOS_INLINE_FUNCTION KeyType maxKey () const {
+  KOKKOS_INLINE_FUNCTION KeyType maxKey() const {
     return maxKey_;
   }
 
@@ -332,7 +336,7 @@ public:
   /// This function does not throw.  If the table is empty, the return
   /// value is undefined.  Furthermore, if the table is empty, we do
   /// not promise that minVal() <= maxVal().
-  KOKKOS_INLINE_FUNCTION ValueType minVal () const {
+  KOKKOS_INLINE_FUNCTION ValueType minVal() const {
     return minVal_;
   }
 
@@ -343,7 +347,7 @@ public:
   /// This function does not throw.  If the table is empty, the return
   /// value is undefined.  Furthermore, if the table is empty, we do
   /// not promise that minVal() <= maxVal().
-  KOKKOS_INLINE_FUNCTION ValueType maxVal () const {
+  KOKKOS_INLINE_FUNCTION ValueType maxVal() const {
     return maxVal_;
   }
 
@@ -359,7 +363,7 @@ public:
   /// certainly not one to one.  The opposite may not necessarily be
   /// true, because a Tpetra::Map might have duplicate global indices
   /// that occur on different MPI processes.
-  bool hasDuplicateKeys ();
+  bool hasDuplicateKeys();
 
   /// \brief Implementation of Teuchos::Describable interface.
   ///
@@ -368,16 +372,16 @@ public:
   /// in GPU __device__ code.  See GitHub issue #1623.
   //@{
   //! Return a simple one-line description of this object.
-  std::string description () const;
+  std::string description() const;
 
   //! Print this object with the given verbosity to the output stream.
   void
-  describe (Teuchos::FancyOStream &out,
-            const Teuchos::EVerbosityLevel verbLevel=
-            Teuchos::Describable::verbLevel_default) const;
+  describe(Teuchos::FancyOStream& out,
+           const Teuchos::EVerbosityLevel verbLevel =
+               Teuchos::Describable::verbLevel_default) const;
   //@}
 
-private:
+ private:
   //! Array of "row" offsets.
   ptr_type ptr_;
   //! Array of hash table entries.
@@ -388,28 +392,42 @@ private:
   /// In Tpetra::Map, this corresponds to the minimum global index
   /// (local to the MPI process).
   /// @remark It will be set in @ref init.
-  KeyType minKey_ = ::Kokkos::ArithTraits<KeyType>::max();
+#if KOKKOS_VERSION >= 40799
+  KeyType minKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
+#else
+  KeyType minKey_         = ::Kokkos::ArithTraits<KeyType>::max();
+#endif
 
   /// \brief Maximum key (computed in init()).
   ///
   /// In Tpetra::Map, this corresponds to the maximum global index
   /// (local to the MPI process).
   /// @remark It will be set in @ref init.
-  KeyType maxKey_ = ::Kokkos::ArithTraits<KeyType>::max();
+#if KOKKOS_VERSION >= 40799
+  KeyType maxKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
+#else
+  KeyType maxKey_         = ::Kokkos::ArithTraits<KeyType>::max();
+#endif
 
   /// \brief Minimum value.
   ///
   /// In Tpetra::Map, this corresponds to the minimum local index
   /// (local to the MPI process).
-  ValueType minVal_ = ::Kokkos::ArithTraits<ValueType>::max();
+#if KOKKOS_VERSION >= 40799
+  ValueType minVal_ = ::KokkosKernels::ArithTraits<ValueType>::max();
+#else
+  ValueType minVal_       = ::Kokkos::ArithTraits<ValueType>::max();
+#endif
 
   /// \brief Maximum value.
   ///
   /// In Tpetra::Map, this corresponds to the maximum local index
   /// (local to the MPI process).
-  ValueType maxVal_ = ::Kokkos::ArithTraits<ValueType>::is_integer ?
-                      ::Kokkos::ArithTraits<ValueType>::min() :
-                     -::Kokkos::ArithTraits<ValueType>::max();
+#if KOKKOS_VERSION >= 40799
+  ValueType maxVal_ = ::KokkosKernels::ArithTraits<ValueType>::is_integer ? ::KokkosKernels::ArithTraits<ValueType>::min() : -::KokkosKernels::ArithTraits<ValueType>::max();
+#else
+  ValueType maxVal_       = ::Kokkos::ArithTraits<ValueType>::is_integer ? ::Kokkos::ArithTraits<ValueType>::min() : -::Kokkos::ArithTraits<ValueType>::max();
+#endif
 
   /// \brief First key in any initial contiguous sequence.
   ///
@@ -417,7 +435,11 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
+#if KOKKOS_VERSION >= 40799
+  KeyType firstContigKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
+#else
   KeyType firstContigKey_ = ::Kokkos::ArithTraits<KeyType>::max();
+#endif
 
   /// \brief Last key in any initial contiguous sequence.
   ///
@@ -425,7 +447,11 @@ private:
   /// In that case, the initial contiguous sequence of keys may have
   /// length 1 or more.  Length 1 means that the sequence is trivial
   /// (there are no initial contiguous keys).
-  KeyType lastContigKey_ = ::Kokkos::ArithTraits<KeyType>::max();
+#if KOKKOS_VERSION >= 40799
+  KeyType lastContigKey_ = ::KokkosKernels::ArithTraits<KeyType>::max();
+#else
+  KeyType lastContigKey_  = ::Kokkos::ArithTraits<KeyType>::max();
+#endif
 
   /// \brief Whether the table was created using one of the
   ///   constructors that assume contiguous values.
@@ -452,24 +478,24 @@ private:
   ///
   /// This method doesn't cache anything (and is therefore marked
   /// const); hasDuplicateKeys() (which see) caches this result.
-  bool checkForDuplicateKeys () const;
+  bool checkForDuplicateKeys() const;
 
   //! The number of "buckets" in the bucket array.
-  KOKKOS_INLINE_FUNCTION offset_type getSize () const {
-    return ptr_.extent (0) == 0 ?
-      static_cast<offset_type> (0) :
-      static_cast<offset_type> (ptr_.extent (0) - 1);
+  KOKKOS_INLINE_FUNCTION offset_type getSize() const {
+    return ptr_.extent(0) == 0 ? static_cast<offset_type>(0) : static_cast<offset_type>(ptr_.extent(0) - 1);
   }
 
   typedef Kokkos::View<const KeyType*,
                        typename ptr_type::host_mirror_type::array_layout,
                        typename ptr_type::host_mirror_type::execution_space,
-                       Kokkos::MemoryUnmanaged> host_input_keys_type;
+                       Kokkos::MemoryUnmanaged>
+      host_input_keys_type;
 
   typedef Kokkos::View<const ValueType*,
                        typename ptr_type::host_mirror_type::array_layout,
                        typename ptr_type::host_mirror_type::execution_space,
-                       Kokkos::MemoryUnmanaged> host_input_vals_type;
+                       Kokkos::MemoryUnmanaged>
+      host_input_vals_type;
 
   /// \brief Allocate storage and initialize the table; use given
   ///   initial min and max keys.
@@ -478,13 +504,13 @@ private:
   /// 0, 1, ..., <tt>keys.size()</tt>.  Optionally, compute any
   /// initial contiguous sequence of keys.
   void
-  init (const keys_type& keys,
-        const ValueType startingValue,
-        KeyType initMinKey,
-        KeyType initMaxKey,
-        KeyType firstContigKey,
-        KeyType lastContigKey,
-        const bool computeInitContigKeys);
+  init(const keys_type& keys,
+       const ValueType startingValue,
+       KeyType initMinKey,
+       KeyType initMaxKey,
+       KeyType firstContigKey,
+       KeyType lastContigKey,
+       const bool computeInitContigKeys);
 
   /// \brief Allocate storage and initialize the table; use given
   ///   initial min and max keys.
@@ -493,13 +519,13 @@ private:
   /// <tt>keys.size()</tt>.  This is called by the version of the
   /// constructor that takes the same arguments.
   void
-  init (const host_input_keys_type& keys,
-        const host_input_vals_type& vals,
-        KeyType initMinKey,
-        KeyType initMaxKey);
+  init(const host_input_keys_type& keys,
+       const host_input_vals_type& vals,
+       KeyType initMinKey,
+       KeyType initMaxKey);
 };
 
-} // Details namespace
-} // Tpetra namespace
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP
+#endif  // TPETRA_DETAILS_FIXEDHASHTABLE_DECL_HPP

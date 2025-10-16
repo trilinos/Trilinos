@@ -1,0 +1,119 @@
+<ParameterList name="MueLu">
+
+  <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <ParameterList name="myTentativePFact">
+      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
+    </ParameterList>
+    <ParameterList name="myProlongatorFact">
+      <Parameter name="factory"                             type="string" value="PgPFactory"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact"/>
+    </ParameterList>
+    <ParameterList name="myRestrictorFact">
+      <Parameter name="factory"                             type="string" value="GenericRFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+    </ParameterList>
+
+    <ParameterList name="myAggExportFact">
+      <Parameter name="factory"                             type="string" value="AggregationExportFactory"/>
+      <Parameter name="Output filename"                     type="string" value="aggs_level%LEVELID_proc%PROCID.out"/>
+    </ParameterList>
+
+    <ParameterList name="myRAPFact">
+      <Parameter name="factory"                             type="string" value="RAPFactory"/>
+      <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- =======================  REPARTITIONING  ======================= -->
+    <!-- amalgamation of coarse level matrix -->
+    <ParameterList name="myRebAmalgFact">
+      <Parameter name="factory"                        type="string" value="AmalgamationFactory"/>
+      <Parameter name="A"                              type="string" value="myRAPFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRepartitionHeuristicFact">
+      <Parameter name="factory"                        type="string" value="RepartitionHeuristicFactory"/>
+      <Parameter name="A"                              type="string" value="myRAPFact"/>
+      <Parameter name="repartition: min rows per proc"      type="int"    value="2000"/>
+      <Parameter name="repartition: max imbalance"          type="double" value="1.1"/>
+      <Parameter name="repartition: start level"            type="int"    value="1"/>    
+    </ParameterList>
+    
+    <ParameterList name="myIsorropiaInterface">
+      <Parameter name="factory"                        type="string" value="IsorropiaInterface"/>
+      <Parameter name="A"                              type="string" value="myRAPFact"/>
+      <Parameter name="UnAmalgamationInfo"             type="string" value="myRebAmalgFact"/>
+      <Parameter name="number of partitions"           type="string" value="myRepartitionHeuristicFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRepartitionInterface">
+      <Parameter name="factory"                        type="string" value="RepartitionInterface"/>
+      <Parameter name="A"                              type="string" value="myRAPFact"/>
+      <Parameter name="AmalgamatedPartition"           type="string" value="myIsorropiaInterface"/>
+      <Parameter name="number of partitions"           type="string" value="myRepartitionHeuristicFact"/>
+    </ParameterList>
+
+
+    <ParameterList name="myRepartitionFact">
+      <Parameter name="factory"                        type="string" value="RepartitionFactory"/>
+      <Parameter name="A"                              type="string" value="myRAPFact"/>
+      <Parameter name="Partition"                      type="string" value="myRepartitionInterface"/>
+      <Parameter name="repartition: remap parts"       type="bool"   value="false"/>
+      <Parameter name="number of partitions"           type="string" value="myRepartitionHeuristicFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceProlongatorFact">
+      <Parameter name="factory"                        type="string" value="RebalanceTransferFactory"/>
+      <Parameter name="type"                           type="string" value="Interpolation"/>
+      <Parameter name="P"                              type="string" value="myProlongatorFact"/>
+      <Parameter name="Nullspace"                      type="string" value="myTentativePFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceRestrictionFact">
+      <Parameter name="factory"                        type="string" value="RebalanceTransferFactory"/>
+      <Parameter name="type"                           type="string" value="Restriction"/>
+      <Parameter name="R"                              type="string" value="myRestrictorFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceAFact">
+      <Parameter name="factory"                        type="string" value="RebalanceAcFactory"/>
+      <Parameter name="A"                              type="string" value="myRAPFact"/>
+    </ParameterList>
+
+    <!-- =======================  SMOOTHERS  ======================= -->
+    <ParameterList name="SymGaussSeidel">
+      <Parameter name="factory"                        type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                           type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"             type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps"           type="int"    value="20"/>
+        <Parameter name="relaxation: damping factor"   type="double" value="1.2"/>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"                            type="int"      value="4"/>
+    <Parameter name="coarse: max size"                      type="int"      value="10"/>
+    <Parameter name="verbosity"                             type="string"   value="High"/>
+
+    <ParameterList name="All">
+      <Parameter name="Smoother"                            type="string"   value="SymGaussSeidel"/>
+      <Parameter name="Nullspace"                           type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
+      <Parameter name="A"                                   type="string"   value="myRebalanceAFact"/>
+      <Parameter name="Importer"                            type="string"   value="myRepartitionFact"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
+    </ParameterList>
+
+  </ParameterList>
+</ParameterList>

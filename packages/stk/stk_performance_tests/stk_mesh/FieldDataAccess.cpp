@@ -47,6 +47,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
+#include <stk_util/util/FieldDataAllocator.hpp>
 #include <stk_unit_test_utils/timer.hpp>
 #include <stk_performance_tests/stk_mesh/calculate_centroid.hpp>
 #include <stk_performance_tests/stk_mesh/multi_block.hpp>
@@ -280,6 +281,177 @@ protected:
     }
 
     batchTimer.print_batch_timing(numIters);
+  }
+
+  template <typename CENTROID_FUNCTOR, typename VERIFIER_FUNCTOR>
+  void run_unified_memory_demo(int numRuns, int numIters, int numExtraFields, int elemsPerDim,
+                               const CENTROID_FUNCTOR& centroidFunctor, const VERIFIER_FUNCTOR& verifierFunctor)
+  {
+    batchTimer.initialize_batch_timer();
+
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+
+    declare_centroid_field();
+
+    if (get_bulk().parallel_rank() == 0) {
+      std::cout << "Declaring " << numExtraFields << " extra Fields..." << std::endl;
+    }
+    for (int f = 0; f < numExtraFields; ++f) {
+      auto& extraField = get_meta().declare_field<double>(stk::topology::ELEM_RANK, "extraField" + std::to_string(f));
+      stk::mesh::put_field_on_mesh(extraField, get_meta().universal_part(), 3, nullptr);
+    }
+
+    if (get_bulk().parallel_rank() == 0) {
+      std::cout << "Building " << elemsPerDim << "x" << elemsPerDim << "x" << elemsPerDim << " mesh..." << std::endl;
+    }
+    stk::io::fill_mesh(stk::unit_test_util::get_mesh_spec(elemsPerDim), get_bulk());
+
+    stk::mesh::Selector selector(get_meta().locally_owned_part());
+    const stk::mesh::Field<double>& coordsField = *dynamic_cast<const stk::mesh::Field<double>*>(get_meta().coordinate_field());
+
+    if (get_bulk().parallel_rank() == 0) {
+      std::cout << "Running centroid calculations: " << numRuns << " runs with " << numIters << " iters..." << std::endl;
+    }
+    for (int run = 0; run < numRuns; ++run) {
+      batchTimer.start_batch_timer();
+      for (int iter = 0; iter < numIters; ++iter) {
+        centroidFunctor(selector, *m_centroidField, coordsField);
+      }
+      batchTimer.stop_batch_timer();
+    }
+
+    if (get_bulk().parallel_rank() == 0) {
+      std::cout << "Verifying results..." << std::endl;
+    }
+    verifierFunctor(elemsPerDim, 1, 1, *m_centroidField);
+
+    batchTimer.print_batch_timing(numIters);
+
+    if (get_bulk().parallel_rank() == 0) {
+      std::cout << std::endl;
+    }
+    stk::parallel_print_time_without_output_and_hwm(get_comm(), batchTimer.get_min_batch_time(), std::cout);
+  }
+
+  void run_bucket_allocation_test(int meshSize, int bucketCapacity, int numNodeFields, int numElemFields,
+                                  bool printPointers, bool allocateOnDevice)
+  {
+    batchTimer.initialize_batch_timer();
+    stk::FieldDataAllocator<std::byte> fieldDataAllocator;
+
+    const int numNodes = (meshSize+1) * (meshSize+1) * (meshSize+1);
+    const int numElems = meshSize * meshSize * meshSize;
+
+    const int numNodeBuckets = (numNodes + bucketCapacity - 1) / bucketCapacity;
+    const int numElemBuckets = (numElems + bucketCapacity - 1) / bucketCapacity;
+
+    const int nodeBucketSize = bucketCapacity * numNodeFields * (3 * sizeof(double));  // Vector double Fields
+    const int elemBucketSize = bucketCapacity * numElemFields * (3 * sizeof(double));  // Vector double Fields
+
+    std::cout << "Using mesh size of " << meshSize << " to generate " << numNodes << " nodes and "
+              << numElems << " elements" << std::endl;
+    std::cout << "Bucket capacity is " << bucketCapacity << std::endl;
+    std::cout << "Using " << numNodeFields << " Node Fields" << std::endl;
+    std::cout << "Using " << numElemFields << " Elem Fields" << std::endl;
+    std::cout << "Allocating " << numNodeBuckets << " Node Buckets of " << nodeBucketSize << " bytes each" << std::endl;
+    std::cout << "Allocating " << numElemBuckets << " Elem Buckets of " << elemBucketSize << " bytes each" << std::endl;
+
+    const int nodeBucketTotalSize = numNodeBuckets * nodeBucketSize;
+    const int elemBucketTotalSize = numElemBuckets * elemBucketSize;
+    const double totalAllocationGB = static_cast<double>(nodeBucketTotalSize + elemBucketTotalSize) /
+                                     (1024.0 * 1024.0 * 1024.0);
+
+    std::cout << "Allocating " << totalAllocationGB << " GB total RAM..." << std::endl;
+
+    batchTimer.start_batch_timer();
+    if (allocateOnDevice) {
+      using AllocationType = stk::FieldDataAllocator<std::byte>::DeviceAllocationType;
+
+      std::vector<AllocationType> nodeAllocations;
+      nodeAllocations.reserve(numNodeBuckets);
+      for (int i = 0; i < numNodeBuckets; ++i) {
+        auto nodeAllocation = fieldDataAllocator.device_allocate(nodeBucketSize);
+        if (printPointers) {
+          printf("###,%p,%i\n", (void*)nodeAllocation.data(), nodeBucketSize);  // Greppable, CSV-formatted output
+        }
+        nodeAllocations.push_back(nodeAllocation);
+      }
+      std::vector<AllocationType> elemAllocations;
+      elemAllocations.reserve(numElemBuckets);
+      for (int i = 0; i < numElemBuckets; ++i) {
+        auto elemAllocation = fieldDataAllocator.device_allocate(elemBucketSize);
+        if (printPointers) {
+          printf("###,%p,%i\n", (void*)elemAllocation.data(), elemBucketSize);  // Greppable, CSV-formatted output
+        }
+        elemAllocations.push_back(elemAllocation);
+      }
+      std::cout << "Deallocating storage..." << std::endl;
+    }
+    else {
+      using AllocationType = stk::FieldDataAllocator<std::byte>::HostAllocationType;
+
+      std::vector<AllocationType> nodeAllocations;
+      nodeAllocations.reserve(numNodeBuckets);
+      for (int i = 0; i < numNodeBuckets; ++i) {
+        auto nodeAllocation = fieldDataAllocator.host_allocate(nodeBucketSize);
+        if (printPointers) {
+          printf("###,%p,%i\n", (void*)nodeAllocation.data(), nodeBucketSize);  // Greppable, CSV-formatted output
+        }
+        nodeAllocations.push_back(nodeAllocation);
+      }
+      std::vector<AllocationType> elemAllocations;
+      elemAllocations.reserve(numElemBuckets);
+      for (int i = 0; i < numElemBuckets; ++i) {
+        auto elemAllocation = fieldDataAllocator.host_allocate(elemBucketSize);
+        if (printPointers) {
+          printf("###,%p,%i\n", (void*)elemAllocation.data(), elemBucketSize);  // Greppable, CSV-formatted output
+        }
+        elemAllocations.push_back(elemAllocation);
+      }
+      std::cout << "Deallocating storage..." << std::endl;
+    }
+    batchTimer.stop_batch_timer();
+    batchTimer.print_batch_timing(1);
+  }
+
+  void run_memory_allocation_test(int allocationSize, int numAllocations, bool printPointers, bool allocateOnDevice)
+  {
+    batchTimer.initialize_batch_timer();
+    stk::FieldDataAllocator<std::byte> fieldDataAllocator;
+
+    std::cout << "Allocating " << numAllocations << " segments of " << allocationSize << " bytes..." << std::endl;
+
+    batchTimer.start_batch_timer();
+    if (allocateOnDevice) {
+      using AllocationType = stk::FieldDataAllocator<std::byte>::DeviceAllocationType;
+
+      std::vector<AllocationType> allocations;
+      allocations.reserve(numAllocations);
+      for (int i = 0; i < numAllocations; ++i) {
+        auto allocation = fieldDataAllocator.device_allocate(allocationSize);
+        if (printPointers) {
+          printf("###,%p,%i\n", (void*)allocation.data(), allocationSize);  // Greppable, CSV-formatted output
+        }
+        allocations.push_back(allocation);
+      }
+      std::cout << "Deallocating storage..." << std::endl;
+    }
+    else {
+      using AllocationType = stk::FieldDataAllocator<std::byte>::HostAllocationType;
+
+      std::vector<AllocationType> allocations;
+      allocations.reserve(numAllocations);
+      for (int i = 0; i < numAllocations; ++i) {
+        auto allocation = fieldDataAllocator.host_allocate(allocationSize);
+        if (printPointers) {
+          printf("###,%p,%i\n", (void*)allocation.data(), allocationSize);  // Greppable, CSV-formatted output
+        }
+        allocations.push_back(allocation);
+      }
+      std::cout << "Deallocating storage..." << std::endl;
+    }
+    batchTimer.stop_batch_timer();
+    batchTimer.print_batch_timing(1);
   }
 
   stk::unit_test_util::BatchTimer batchTimer;
@@ -1418,6 +1590,67 @@ TEST_F(DeviceFieldDataAccess, FieldDataAcquisition)
   if (get_parallel_size() != 1) GTEST_SKIP();
 
   run_field_data_acquisition_test(20'000'000, device_field_data_acquisition);
+}
+
+
+class UnifiedMemoryDemonstration : public DeviceFieldDataAccess {};
+
+//------------------------------------------------------------------------------
+TEST_F(UnifiedMemoryDemonstration, centroidTest)
+{
+  int numRuns = stk::unit_test_util::get_command_line_option<int>("--num-runs", 1);
+  int numIters = stk::unit_test_util::get_command_line_option<int>("--num-iters", 1);
+  int numExtraFields = stk::unit_test_util::get_command_line_option<int>("--num-extra-fields", 85);
+  int elemsPerDim = stk::unit_test_util::get_command_line_option<int>("--elems-per-dim", 480);
+
+  run_unified_memory_demo(numRuns, numIters, numExtraFields, elemsPerDim,
+                          device_compute_centroid_entity_access, device_verify_averaged_centroids_are_center_of_mesh);
+}
+
+//------------------------------------------------------------------------------
+TEST_F(UnifiedMemoryDemonstration, bucketAllocationTestHost)
+{
+  int meshSize = stk::unit_test_util::get_command_line_option<int>("--mesh-size", 480);
+  int bucketCapacity = stk::unit_test_util::get_command_line_option<int>("--bucket-capacity", 512);
+  int numNodeFields = stk::unit_test_util::get_command_line_option<int>("--num-node-fields", 1);
+  int numElemFields = stk::unit_test_util::get_command_line_option<int>("--num-elem-fields", 86);
+  bool printPointers = stk::unit_test_util::get_command_line_option<bool>("--print-pointers", false);
+
+  const bool allocateOnDevice = false;
+  run_bucket_allocation_test(meshSize, bucketCapacity, numNodeFields, numElemFields, printPointers, allocateOnDevice);
+}
+
+TEST_F(UnifiedMemoryDemonstration, bucketAllocationTestDevice)
+{
+  int meshSize = stk::unit_test_util::get_command_line_option<int>("--mesh-size", 480);
+  int bucketCapacity = stk::unit_test_util::get_command_line_option<int>("--bucket-capacity", 512);
+  int numNodeFields = stk::unit_test_util::get_command_line_option<int>("--num-node-fields", 1);
+  int numElemFields = stk::unit_test_util::get_command_line_option<int>("--num-elem-fields", 86);
+  bool printPointers = stk::unit_test_util::get_command_line_option<bool>("--print-pointers", false);
+
+  const bool allocateOnDevice = true;
+  run_bucket_allocation_test(meshSize, bucketCapacity, numNodeFields, numElemFields, printPointers, allocateOnDevice);
+}
+
+//------------------------------------------------------------------------------
+TEST_F(UnifiedMemoryDemonstration, memoryAllocationTestHost)
+{
+  int allocationSize = stk::unit_test_util::get_command_line_option<int>("--allocation-size", 1024);
+  int numAllocations = stk::unit_test_util::get_command_line_option<int>("--num-allocations", 100);
+  bool printPointers = stk::unit_test_util::get_command_line_option<bool>("--print-pointers", false);
+
+  const bool allocateOnDevice = false;
+  run_memory_allocation_test(allocationSize, numAllocations, printPointers, allocateOnDevice);
+}
+
+TEST_F(UnifiedMemoryDemonstration, memoryAllocationTestDevice)
+{
+  int allocationSize = stk::unit_test_util::get_command_line_option<int>("--allocation-size", 1024);
+  int numAllocations = stk::unit_test_util::get_command_line_option<int>("--num-allocations", 100);
+  bool printPointers = stk::unit_test_util::get_command_line_option<bool>("--print-pointers", false);
+
+  const bool allocateOnDevice = true;
+  run_memory_allocation_test(allocationSize, numAllocations, printPointers, allocateOnDevice);
 }
 
 }

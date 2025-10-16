@@ -66,7 +66,7 @@
         
 \cbb{aggregation: type}{string}{"uncoupled"}{Aggregation scheme. Possible values: see Table~\ref{t:aggregation}.}
         
-\cbb{aggregation: mode}{string}{"uncoupled"}{Controls whether aggregates are allowed to cross processor boundaries. Possible values: "coupled" aggregates can cross processor boundaries, "uncoupled" aggregates cannot cross processor boundaries.}
+\cbb{aggregation: mode}{string}{"uncoupled"}{Controls whether aggregates are allowed to cross processor boundaries. Possible values: "uncoupled" aggregates cannot cross processor boundaries.}
         
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
         
@@ -357,6 +357,8 @@ Only used when tentative: calculate qr is set to false.}
 \cbb{filtered matrix: reuse eigenvalue}{bool}{true}{Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.}
         
 \cbb{filtered matrix: reuse graph}{bool}{true}{Set values to zero instead of constructing a new graph.}
+        
+\cbb{filtered matrix: count negative diagonals}{bool}{false}{Counts the number of negative diagonals (involves MPI communication).}
         
 \cbb{matrix: compute analysis}{bool}{false}{Perform matrix analysis. Checks several matrix properties and prints statistics.}
         

@@ -194,6 +194,7 @@ template <typename T> struct LapackSerial {
   }
 #endif
 
+  // uplo = upper
   inline static int potrf(const char uplo, const int m, T *A, const int lda, int *info) {
 
     *info = 0;
@@ -228,6 +229,36 @@ template <typename T> struct LapackSerial {
     }
     return 0;
   }
+
+  // uplo = upper
+  inline static int sytrf_nopiv(const char uplo, const int m, T *A, const int lda, int *info) {
+      
+    *info = 0; 
+    if (m <= 0) 
+      return 0;
+          
+    typedef ArithTraits<T> arith_traits;
+      
+    for (int i = 0; i < m; ++i) {
+      // skip check pivot
+      T alpha = A[i + i*lda];
+      alpha = arith_traits::real(alpha);
+      A[i + i*lda] = alpha;
+  
+      // scale
+      for (int j = i+1; j < m; j++) { A[i + j*lda] /= alpha; }
+    
+      // update
+      for (int j = i+1; j < m; j++) {
+        const T aa = alpha * A[i + j*lda];
+        for (int l = i+1; l <= j; l++) {
+          const T bb = arith_traits::conj(A[i + l*lda]);
+          A[l + j*lda] -= aa * bb;
+        }
+      }
+    }   
+    return 0;
+  }   
 
   inline static int getrf(const int m, const int n, T *  A,
                           const int lda, int * ipiv, int *info) {

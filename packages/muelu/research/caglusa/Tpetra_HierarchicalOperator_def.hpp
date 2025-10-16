@@ -28,9 +28,17 @@ removeSmallEntries(Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOr
   using col_idx_type = typename crs_matrix::local_graph_device_type::entries_type::non_const_type;
   using vals_type    = typename crs_matrix::local_matrix_device_type::values_type;
 
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
   using ATS      = Kokkos::ArithTraits<Scalar>;
-  using impl_SC  = typename ATS::val_type;
+#endif
+  using impl_SC = typename ATS::val_type;
+#if KOKKOS_VERSION >= 40799
+  using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
+#else
   using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+#endif
 
   auto lclA = A->getLocalMatrixDevice();
 

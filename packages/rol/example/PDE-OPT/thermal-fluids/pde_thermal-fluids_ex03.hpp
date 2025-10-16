@@ -859,8 +859,8 @@ public:
               for (int l = 0; l < numVBdryDofs; ++l) {
                 for (int m = 0; m < fv; ++m) {
                   for (int n = 0; n < d; ++n) {
-                    for (int p = 0; p < d; ++p) {
-                      (*J[n][p])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
+                    for (int q = 0; p < d; ++p) {
+                      (*J[n][q])(cidx,fvidx_[j][l],m) = static_cast<Real>(0);
                     }
                     (*J[n][n])(cidx,fvidx_[j][l],fvidx_[j][l]) = static_cast<Real>(1);
                   }
@@ -869,8 +869,8 @@ public:
                   for (int n = 0; n < fp; ++n) {
                     (*J[m][d])(cidx,fvidx_[j][l],n) = static_cast<Real>(0);
                   }
-                  for (int n = 0; n < fh; ++n) {
-                    (*J[m][d+1])(cidx,fvidx_[j][l],n) = static_cast<Real>(0);
+                  for (int nn = 0; nn < fh; ++nn) {
+                    (*J[m][d+1])(cidx,fvidx_[j][l],nn) = static_cast<Real>(0);
                   }
                 }
               }

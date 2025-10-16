@@ -216,11 +216,11 @@ NGP_TEST(NgpMultistateField, setOnDevice_swap_checkOnDevice)
   bulkPtr->update_field_data_states(rotateNgpFieldViews);
 
   {
-    auto stkFieldOldData = stkFieldOld.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto stkFieldNewData = stkFieldNew.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto stkFieldOldData2 = stkFieldOld.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto stkFieldNewData2 = stkFieldNew.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
 
-    check_field_on_device(ngpMesh, selectFieldOld, entityRankFieldOld, stkFieldOldData, newValue);
-    check_field_on_device(ngpMesh, selectFieldNew, entityRankFieldNew, stkFieldNewData, oldValue);
+    check_field_on_device(ngpMesh, selectFieldOld, entityRankFieldOld, stkFieldOldData2, newValue);
+    check_field_on_device(ngpMesh, selectFieldNew, entityRankFieldNew, stkFieldNewData2, oldValue);
   }
   //ENDNgpMultiStateFieldRotateOnDevice
 }

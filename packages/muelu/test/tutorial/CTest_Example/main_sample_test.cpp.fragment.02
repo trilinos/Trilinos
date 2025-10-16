@@ -1,0 +1,3 @@
+  std::cout << "Hello World from fragment.02!";
+  return 0;
+}

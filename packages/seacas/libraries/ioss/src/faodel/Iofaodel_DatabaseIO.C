@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021, 2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -58,12 +58,9 @@ namespace Iofaodel {
 
   void faodel_error(int exoid, int lineno, int /* processor */)
   {
-    std::ostringstream errmsg;
-
-    errmsg << "Faodel error at line " << lineno << " in file '" << Version()
-           << "' Please report to gdsjaar@sandia.gov if you need help.";
-
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format("Faodel error at line {} in file '{}' Please report to "
+                           "sierra-help@sandia.gov if you need help.\n",
+                           lineno, Version()));
   }
   //} // namespace
 
@@ -1121,73 +1118,61 @@ mpisyncstart.enable true
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*reg, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*nb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*nb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*nb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*eb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*fb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*ns, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*ns, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*ns, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*ns, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*fs, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return get_field_internal(*cs, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
@@ -1235,10 +1220,9 @@ mpisyncstart.enable true
         if (dim > 2)
           data_ptr[index++] = data_z[id];
       }
+      return num_to_get;
     }
-    else
-      return get_field_internal(*sb, field, data, data_size);
-    ;
+    return get_field_internal(*sb, field, data, data_size);
   }
   int64_t DatabaseIO::get_field_internal(const Ioss::Assembly *a, const Ioss::Field &field,
                                          void *data, size_t data_size) const
@@ -1254,79 +1238,66 @@ mpisyncstart.enable true
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*reg, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*nb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock *eb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*eb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*nb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*eb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*fb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*ns, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*ns, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*ns, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*ns, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*fs, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*cs, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::StructuredBlock *sb, const Ioss::Field &field,
                                          void *data, size_t data_size) const
   {
     return put_field_internal(*sb, field, data, data_size);
-    ;
   }
   int64_t DatabaseIO::put_field_internal(const Ioss::Assembly *a, const Ioss::Field &field,
                                          void *data, size_t data_size) const

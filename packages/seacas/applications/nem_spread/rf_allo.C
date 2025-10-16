@@ -1,15 +1,16 @@
 /*
- * Copyright(C) 1999-2020, 2022, 2023 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2020, 2022, 2023, 2025 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
  * See packages/seacas/LICENSE for details
  */
-#include "fmt/ostream.h"
 #include <cstdarg> // for va_arg, va_end, va_list, etc
 #include <cstddef> // for size_t
 #include <cstdio>  // for nullptr, stderr
 #include <cstdlib> // for exit, free, malloc
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
 /*#include "rf_allo.h"*/
 

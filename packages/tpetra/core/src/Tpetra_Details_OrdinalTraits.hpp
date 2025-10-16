@@ -26,7 +26,7 @@ namespace Details {
 // local and global indices.
 using ::KokkosSparse::OrdinalTraits;
 
-} // namespace Details
-} // namespace Tpetra
+}  // namespace Details
+}  // namespace Tpetra
 
-#endif // TPETRA_DETAILS_ORDINALTRAITS_HPP
+#endif  // TPETRA_DETAILS_ORDINALTRAITS_HPP

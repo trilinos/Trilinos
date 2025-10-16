@@ -853,7 +853,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::Vector<RealT>     V;
   typedef ROL::StdVector<RealT>  SV;
   
-  typedef typename vector::size_type uint;
+  typedef typename vector::size_type luint;
   
       
 
@@ -874,8 +874,8 @@ int main(int argc, char *argv[]) {
 
   try {
     // Initialize objective function.
-    uint nx     = 64;   // Set spatial discretization.
-    uint nt     = 10;   // Set temporal discretization.
+    luint nx     = 64;   // Set spatial discretization.
+    luint nt     = 10;   // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
     RealT alpha = 1.e-3; // Set penalty parameter.
     RealT eps   = 5.e-1; // Set conductivity 
@@ -889,10 +889,10 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<vector> yz_ptr = ROL::makePtr<vector>(nt, 1.0);
     ROL::Ptr<vector> yu_ptr = ROL::makePtr<vector>(nx*nt, 1.0);
 
-    for (uint i=0; i<nt; i++) {
+    for (luint i=0; i<nt; i++) {
       (*xz_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*yz_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
-      for (uint n=0; n<nx; n++) {
+      for (luint n=0; n<nx; n++) {
         (*xu_ptr)[i*nx + n] = (RealT)rand()/(RealT)RAND_MAX;
         (*yu_ptr)[i*nx + n] = (RealT)rand()/(RealT)RAND_MAX;
       }

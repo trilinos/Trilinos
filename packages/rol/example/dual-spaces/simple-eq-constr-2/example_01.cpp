@@ -410,7 +410,7 @@ int dimension() const {return static_cast<int>(std_vec_->size());}
 int main(int argc, char *argv[]) {
 
   typedef std::vector<RealT>         vector;
-  typedef typename vector::size_type uint;
+  typedef typename vector::size_type luint;
 
     
 
@@ -431,8 +431,8 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    uint dim = 5;
-    uint nc = 3;
+    luint dim = 5;
+    luint nc = 3;
     ROL::Ptr<ROL::Objective<RealT> > obj;
     ROL::Ptr<ROL::Constraint<RealT> > constr;
     ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);
@@ -464,14 +464,14 @@ int main(int argc, char *argv[]) {
     ConStdVector<RealT> vc(vc_ptr);
     ConDualStdVector<RealT> vl(vl_ptr);
     // set xtest, d, v
-    for (uint i=0; i<dim; i++) {
+    for (luint i=0; i<dim; i++) {
       (*xtest_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*d_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*gd_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*v_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
     // set vc, vl
-    for (uint i=0; i<nc; i++) {
+    for (luint i=0; i<nc; i++) {
       (*vc_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*vl_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
@@ -514,7 +514,7 @@ int main(int argc, char *argv[]) {
     //(*x_ptr)[0] = -5.0; (*x_ptr)[1] = -5.0; (*x_ptr)[2] = -5.0; (*x_ptr)[3] = -6.0; (*x_ptr)[4] = -6.0;
 
     std::vector<std::string> output = algo.run(x, g, vl, vc, *obj, *constr, false);
-    for ( uint i = 0; i < output.size(); i++ ) {
+    for ( luint i = 0; i < output.size(); i++ ) {
       *outStream << output[i];
     }
 

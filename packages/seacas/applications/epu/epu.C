@@ -19,6 +19,7 @@
 #include <ctime>
 #include <exception>
 #include <fmt/chrono.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <limits>
 #include <numeric>
@@ -117,7 +118,7 @@ namespace {
   [[noreturn]] void exodus_error(int lineno)
   {
     auto errmsg = fmt::format(
-        "Exodus error ({}) {} at line {} in file epu.C. Please report to gdsjaar@sandia.gov "
+        "Exodus error ({}) {} at line {} in file epu.C. Please report to sierra-help@sandia.gov "
         "if you need help.",
         exerrval, ex_strerror(exerrval), lineno);
 
@@ -1784,13 +1785,11 @@ namespace {
     copy_string(qaRecord[num_qa_records].qa_record[0][0], qainfo[0], MAX_STR_LENGTH + 1); // Code
     copy_string(qaRecord[num_qa_records].qa_record[0][1], qainfo[2], MAX_STR_LENGTH + 1); // Version
 
-    time_t      date_time = std::time(nullptr);
-    auto const *lt        = std::localtime(&date_time);
-
-    buffer = fmt::format("{:%Y/%m/%d}", *lt);
+    auto now = std::chrono::system_clock::now();
+    buffer   = fmt::format("{:%Y/%m/%d}", now);
     copy_string(qaRecord[num_qa_records].qa_record[0][2], buffer, MAX_STR_LENGTH + 1);
 
-    buffer = fmt::format("{:%H:%M:%S}", *lt);
+    buffer = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
     copy_string(qaRecord[num_qa_records].qa_record[0][3], buffer, MAX_STR_LENGTH + 1);
 
     error = ex_put_qa(id_out, num_qa_records + 1, qaRecord[0].qa_record);

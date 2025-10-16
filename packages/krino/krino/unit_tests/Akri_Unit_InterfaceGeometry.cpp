@@ -12,9 +12,9 @@
 
 #include <Akri_Edge.hpp>
 #include <Akri_Intersection_Points.hpp>
-#include <Akri_LevelSet.hpp>
 #include <Akri_MeshSpecs.hpp>
 #include <Akri_Phase_Support.hpp>
+#include <Akri_Sign.hpp>
 #include <Akri_StkMeshFixture.hpp>
 #include <gtest/gtest.h>
 
@@ -47,7 +47,7 @@ void IntersectionPointFromNodalLevelsetInterfaceGeometry::append_element_interse
 
     const double ls0 = nodeLSValues.at(edgeNodes[0]);
     const double ls1 = nodeLSValues.at(edgeNodes[1]);
-    if (LevelSet::sign_change(ls0, ls1))
+    if (sign_change(ls0, ls1))
     {
       const std::vector<stk::mesh::Entity> intersectionPointNodes{edgeNodes[0], edgeNodes[1]};
       const std::vector<int> intersectionPointSortedDomains{0};

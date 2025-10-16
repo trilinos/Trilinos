@@ -63,10 +63,10 @@ int main(int argc, char *argv[]) {
       ROL::Ptr<ROL::Vector<RealT>> e = x0->clone();
       e->zero();
       RealT err(0);
-      for (int i = 0; i < static_cast<int>(z.size()); ++i) {
+      for (int li = 0; li < static_cast<int>(z.size()); ++li) {
         e->set(*x0);
-        e->axpy(-1.0,*z[i]);
-        if (i == 0) {
+        e->axpy(-1.0,*z[li]);
+        if (li == 0) {
           err = e->norm();
         }
         else {

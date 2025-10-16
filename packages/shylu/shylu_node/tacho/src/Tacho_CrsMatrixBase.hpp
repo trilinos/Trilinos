@@ -394,17 +394,23 @@ inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType>
   typedef ArithTraits<value_type> arith_traits;
   const ordinal_type m = h_A.NumRows(), k = h_b.extent(1);
   double diff = 0, norm = 0;
-  for (ordinal_type i = 0; i < m; ++i) {
-    for (ordinal_type p = 0; p < k; ++p) {
+  for (ordinal_type p = 0; p < k; ++p) {
+    double diff_p = 0, norm_p = 0;
+    for (ordinal_type i = 0; i < m; ++i) {
       value_type s = 0;
       const ordinal_type jbeg = h_A.RowPtrBegin(i), jend = h_A.RowPtrEnd(i);
       for (ordinal_type j = jbeg; j < jend; ++j) {
         const ordinal_type col = h_A.Col(j);
         s += h_A.Value(j) * h_x(col, p);
       }
+      norm_p += arith_traits::real(h_b(i, p) * arith_traits::conj(h_b(i, p)));
+      diff_p += arith_traits::real((h_b(i, p) - s) * arith_traits::conj(h_b(i, p) - s));
+
       norm += arith_traits::real(h_b(i, p) * arith_traits::conj(h_b(i, p)));
       diff += arith_traits::real((h_b(i, p) - s) * arith_traits::conj(h_b(i, p) - s));
     }
+    if (verbose)
+      std::cout << " * Relative residual norm(" << p << ") = " << sqrt(diff_p) << " / " << sqrt(norm_p) << " = " << sqrt(diff_p/norm_p) << std::endl;
   }
   if (verbose)
     std::cout << " Relative residual norm = " << sqrt(diff) << " / " << sqrt(norm) << " = " << sqrt(diff/norm) << std::endl;

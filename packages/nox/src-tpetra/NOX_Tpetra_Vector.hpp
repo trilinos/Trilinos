@@ -11,6 +11,7 @@
 #define NOX_TPETRA_VECTOR_HPP
 
 #include "Tpetra_Map_fwd.hpp"
+#include "Tpetra_MultiVector_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
 
 #include "NOX_Abstract_ImplicitWeighting.H"
@@ -20,7 +21,7 @@ namespace NOX::Tpetra
 {
 
  /**
-  * @brief Implementation of @ref NOX::Abstract::Vector for @ref ::Tpetra Vectors.
+  * @brief Implementation of @ref NOX::Abstract::Vector for @ref ::Tpetra vectors.
   *
   * This class is templated on the same quadruple of template parameters as the
   * wrapped @ref ::Tpetra::Vector.
@@ -38,7 +39,13 @@ public:
     //! Type of the wrapped @ref ::Tpetra::Vector.
     using vector_type = ::Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
+    //! Type of a @ref ::Tpetra::MultiVector instantiated with the same quadruple of template parameters.
+    using multivector_type = ::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
 public:
+    //! Default constructor.
+    Vector() = default;
+
     /**
      * @brief Constructor that constructs a @ref NOX::Tpetra::Vector object by encapsulating
      *        the passed shared pointer holding the @ref ::Tpetra::Vector.
@@ -152,7 +159,7 @@ public:
     //! See above.
     Abstract::Vector& update(double alpha, const Abstract::Vector& a, double gamma = 0.) override;
 
-     /**
+    /**
      * @brief Updates the elements of the wrapped @ref ::Tpetra::Vector with the elements of the
      *        @ref ::Tpetra::Vector objects wrapped in the referenced @ref NOX::Tpetra::Vector objects.
      *
@@ -254,8 +261,8 @@ public:
      *
      * Setting a vector of weights results in norms being computed as
      *     - \f$\|x\|_{1} = \sum |w_{i} x_{i})|\f$,
-     *     - \f$\|x\|_{\infty} = \max |w_{i} x_{i})|\f$,
      *     - \f$\|x\|_{2} = \sqrt{\sum (w_{i} x_{i})^{2}}\f$,
+     *     - \f$\|x\|_{\infty} = \max |w_{i} x_{i})|\f$,
      * and inner products as
      *     - \f$(x, y) = \sum w_{i} x_{i}) w_{i} y(i)\f$.
      */
@@ -290,7 +297,7 @@ private:
     Teuchos::RCP<vector_type> tpetraVec;
 
     //! Shared pointer holding the @ref ::Tpetra::Vector used for weighting inner products and norms.
-    Teuchos::RCP<const vector_type> weightVec = Teuchos::null;
+    Teuchos::RCP<const vector_type> weightVec;
 
     /**
      * @brief Flag that controls whether the @ref ::Tpetra::Vector for weighting

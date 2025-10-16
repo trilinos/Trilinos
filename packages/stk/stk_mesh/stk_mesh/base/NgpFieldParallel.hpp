@@ -175,7 +175,7 @@ void parallel_sum_device_mpi(const stk::mesh::NgpMesh& ngpMesh, const std::vecto
 
   const bool includeGhosts = false;
   const bool deterministic = false;
-  stk::mesh::ngp_parallel_data_exchange_sym_pack_unpack<double,Operation::SUM>(bulk.parallel(),
+  stk::mesh::ngp_parallel_data_exchange_sym_pack_unpack<T,Operation::SUM>(bulk.parallel(),
                                                                 exchangeHandler,
                                                                 includeGhosts,
                                                                 deterministic);

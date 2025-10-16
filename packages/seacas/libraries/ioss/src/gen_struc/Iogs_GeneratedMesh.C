@@ -10,10 +10,8 @@
 #include "gen_struc/Iogs_GeneratedMesh.h"
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <iosfwd>
 #include <numeric>
 #include <string>
 #include <tokenize.h> // for tokenize

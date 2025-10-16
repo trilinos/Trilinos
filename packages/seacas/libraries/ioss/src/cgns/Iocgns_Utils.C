@@ -8,18 +8,31 @@
 #include "Ioss_Beam2.h"
 #include "Ioss_Beam3.h"
 #include "Ioss_CodeTypes.h"
+#include "Ioss_DatabaseIO.h"
+#include "Ioss_ElementBlock.h"
+#include "Ioss_ElementTopology.h"
+#include "Ioss_EntityBlock.h"
+#include "Ioss_EntityType.h"
 #include "Ioss_FaceGenerator.h"
+#include "Ioss_GroupingEntity.h"
 #include "Ioss_Hex20.h"
 #include "Ioss_Hex27.h"
 #include "Ioss_Hex8.h"
 #include "Ioss_IOFactory.h"
+#include "Ioss_MeshType.h"
 #include "Ioss_Node.h"
+#include "Ioss_NodeBlock.h"
+#include "Ioss_ParallelUtils.h"
+#include "Ioss_Property.h"
 #include "Ioss_Pyramid13.h"
 #include "Ioss_Pyramid14.h"
 #include "Ioss_Pyramid5.h"
 #include "Ioss_Quad4.h"
 #include "Ioss_Quad8.h"
 #include "Ioss_Quad9.h"
+#include "Ioss_Region.h"
+#include "Ioss_SideBlock.h"
+#include "Ioss_SideSet.h"
 #include "Ioss_Sort.h"
 #include "Ioss_Spring2.h"
 #include "Ioss_Spring3.h"
@@ -30,15 +43,18 @@
 #include "Ioss_Tri6.h"
 #include "Ioss_Unknown.h"
 #include "Ioss_Utils.h"
+#include "Ioss_VariableType.h"
 #include "Ioss_Wedge15.h"
 #include "Ioss_Wedge18.h"
 #include "Ioss_Wedge6.h"
+#include "Ioss_ZoneConnectivity.h"
+
 #include <assert.h>
+#include <cstdlib>
 #include <fmt/chrono.h>
-#include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <stdint.h>
-#include <stdlib.h>
 #if !defined __NVCC__
 #include <fmt/color.h>
 #endif
@@ -49,29 +65,12 @@
 #include <cmath>
 #include <cstring>
 #include <ctime>
-#include <fmt/ostream.h>
 #include <limits>
 #include <numeric>
-#include <ostream>
 #include <set>
 #include <string>
 #include <tokenize.h>
 
-#include "Ioss_DatabaseIO.h"
-#include "Ioss_ElementBlock.h"
-#include "Ioss_ElementTopology.h"
-#include "Ioss_EntityBlock.h"
-#include "Ioss_EntityType.h"
-#include "Ioss_GroupingEntity.h"
-#include "Ioss_MeshType.h"
-#include "Ioss_NodeBlock.h"
-#include "Ioss_ParallelUtils.h"
-#include "Ioss_Property.h"
-#include "Ioss_Region.h"
-#include "Ioss_SideBlock.h"
-#include "Ioss_SideSet.h"
-#include "Ioss_VariableType.h"
-#include "Ioss_ZoneConnectivity.h"
 #include "robin_hash.h"
 #include "robin_set.h"
 #if CG_BUILD_PARALLEL
@@ -494,7 +493,7 @@ void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *functio
   if (processor >= 0) {
     fmt::print(errmsg, " on processor {}", processor);
   }
-  fmt::print(errmsg, ". Please report to gdsjaar@sandia.gov if you need help.");
+  fmt::print(errmsg, ". Please report to sierra-help@sandia.gov if you need help.");
   if (cgnsid > 0) {
 #if CG_BUILD_PARALLEL
     // This can cause a hang if not all processors call this routine
@@ -1050,9 +1049,9 @@ size_t Iocgns::Utils::common_write_metadata(int file_ptr, const Ioss::Region &re
   CGERR(cg_base_write(file_ptr, "Base", phys_dimension, phys_dimension, &base));
 
   CGERR(cg_goto(file_ptr, base, "end"));
-  std::time_t t    = std::time(nullptr);
-  std::string date = fmt::format("{:%Y/%m/%d}", *std::localtime(&t));
-  std::string time = fmt::format("{:%H:%M:%S}", *std::localtime(&t));
+  auto        now  = std::chrono::system_clock::now();
+  std::string date = fmt::format("{:%Y/%m/%d}", now);
+  std::string time = fmt::format("{:%T}", std::chrono::time_point_cast<std::chrono::seconds>(now));
 
   std::string code_version = region.get_optional_property("code_version", "unknown");
   std::string code_name    = region.get_optional_property("code_name", "unknown");

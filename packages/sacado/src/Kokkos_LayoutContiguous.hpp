@@ -42,7 +42,19 @@ struct LayoutContiguous : public Layout {
   constexpr LayoutContiguous( Layout const & layout ) : Layout(layout) {}
   KOKKOS_INLINE_FUNCTION
   constexpr LayoutContiguous( Layout && layout ) : Layout(layout) {}
+
+  KOKKOS_INLINE_FUNCTION
+  Layout base_layout() const { return *this; }
 };
+
+#ifdef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
+namespace Impl {
+template <class Layout, unsigned Stride>
+struct LayoutFromArrayLayout<LayoutContiguous<Layout, Stride>> {
+  using type = typename LayoutFromArrayLayout<Layout>::type;
+};
+}
+#endif
 
 // Is Layout == LayoutContiguous<L> for some L
 template <class Layout>
@@ -50,8 +62,8 @@ struct is_layout_contiguous {
   static const bool value = false;
 };
 
-template <class Layout>
-struct is_layout_contiguous< LayoutContiguous<Layout> > {
+template <class Layout, unsigned Stride>
+struct is_layout_contiguous< LayoutContiguous<Layout, Stride> > {
   static const bool value = true;
 };
 

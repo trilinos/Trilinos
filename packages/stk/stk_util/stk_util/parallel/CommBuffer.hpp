@@ -2,6 +2,7 @@
 #define stk_util_parallel_CommBuffer_hpp
 
 #include <stddef.h>
+#include <cstddef>
 #include <string>
 #include <map>
 #include <vector>
@@ -235,7 +236,7 @@ CommBuffer &CommBuffer::pack( const std::vector<K> & value )
 {
   pack<unsigned>(value.size());
   for (size_t i=0; i<value.size(); ++i) {
-    pack(value[i]);
+    pack<K>(value[i]);
   }
   return *this;
 }

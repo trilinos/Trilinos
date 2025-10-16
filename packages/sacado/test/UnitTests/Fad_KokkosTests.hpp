@@ -1436,7 +1436,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Check dimensions are correct
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
 
   // Check values
   FadType f =
@@ -1474,7 +1473,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_TEST_EQUALITY(v2.extent(0), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride(1), v1.stride(1), out, success);
 
   // Check values
   for (size_type i=0; i<num_rows; ++i) {
@@ -1516,7 +1514,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride(1), v1.stride(1), out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride(2), v1.stride(2), out, success);
 
   // Check values
   for (size_type i=0; i<num_rows; ++i) {
@@ -2029,16 +2026,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
     ViewType::shmem_size(num_rows, num_cols, fad_size+1);
 
   // Check
-  const size_type align = 8;
-  const size_type mask  = align - 1;
   ViewType v;
 #if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
   v = ViewType ("view", num_rows, num_cols);
 #else
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
+#if defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL) || (defined(SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY))
+  size_t scratch_value_alignment =
+      Kokkos::max({sizeof(value_type),
+           alignof(value_type),
+           static_cast<size_t>(
+               ViewType::execution_space::scratch_memory_space::ALIGN)});
+  const size_type shmem_size_expected =
+    sizeof(value_type) * global_num_rows * global_num_cols * (fad_size+1) + scratch_value_alignment;
+#else
+  const size_type align = 8;
+  const size_type mask  = align - 1;
   const size_type shmem_size_expected =
     (( sizeof(value_type) * global_num_rows * global_num_cols * (fad_size+1) + mask ) & ~mask) + sizeof(typename ViewType::traits::value_type);
+#endif
   TEUCHOS_TEST_EQUALITY(shmem_size, shmem_size_expected, out, success);
 }
 
@@ -2371,6 +2378,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 }
 
+#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Partition, FadType, Layout, Device )
 {
@@ -2430,6 +2438,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   }
 #endif
 }
+#endif // SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, AssignLayoutContiguousToLayoutStride, FadType, Layout, Device )
@@ -2530,10 +2539,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
     ViewType::shmem_size(num_rows, num_cols);
 
   // Check
+#if !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+  size_t scratch_value_alignment =
+      Kokkos::max({sizeof(FadType),
+           alignof(FadType),
+           static_cast<size_t>(
+               ViewType::execution_space::scratch_memory_space::ALIGN)});
+  const size_type shmem_size_expected =
+    sizeof(FadType) * global_num_rows * global_num_cols + scratch_value_alignment;
+#else
   static const size_type align = 8;
   static const size_type mask  = align - 1;
   const size_type shmem_size_expected =
     (( sizeof(FadType) * global_num_rows * global_num_cols + mask ) & ~mask) + sizeof(typename ViewType::traits::value_type);
+#endif
   TEUCHOS_TEST_EQUALITY(shmem_size, shmem_size_expected, out, success);
 }
 
@@ -2623,11 +2642,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft> LeftContiguous;
 typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight> RightContiguous;
+
+#ifndef SACADO_HAS_NEW_KOKKOS_VIEW_IMPL
 #define VIEW_FAD_TESTS_FDC( F, D )                                      \
   VIEW_FAD_TESTS_FLD( F, LeftContiguous, D )                            \
   VIEW_FAD_TESTS_FLD( F, RightContiguous, D )                           \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Partition, F, LeftContiguous, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Partition, F, RightContiguous, D )
+#else
+#define VIEW_FAD_TESTS_FDC( F, D )                                      \
+  VIEW_FAD_TESTS_FLD( F, LeftContiguous, D )                            \
+  VIEW_FAD_TESTS_FLD( F, RightContiguous, D )
+#endif
 
 #define VIEW_FAD_TESTS_SFDC( F, D )                                     \
   VIEW_FAD_TESTS_SFLD( F, LeftContiguous, D )                           \

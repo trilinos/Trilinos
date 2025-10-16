@@ -22,6 +22,7 @@
 #include <Akri_QualityMetric.hpp>
 #include "Akri_TriRefiner.hpp"
 #include "Akri_NodeRefiner.hpp"
+#include "Akri_RefinerUtils.hpp"
 
 namespace krino {
 
@@ -519,23 +520,6 @@ stk::mesh::EntityId * Refinement::get_child_element_ids(const unsigned numChildW
   stk::mesh::EntityId * childElemIdsData = stk::mesh::field_data(childElementIdsField, bucket);
   STK_ThrowAssertMsg(nullptr != childElemIdsData, "Bucket does not have " << childElementIdsField.name() << " defined.");
   return childElemIdsData;
-}
-
-template <size_t SIZE, typename CONTAINER>
-std::array<int,SIZE> get_rank_of_nodes_based_on_coordinates(const CONTAINER & nodeCoords)
-{
-  // initialize original index locations
-  std::array<size_t,SIZE> index;
-  std::iota(index.begin(), index.end(), 0);
-
-  std::stable_sort(index.begin(), index.end(),
-       [&nodeCoords](size_t i1, size_t i2) {return is_less_than_in_x_then_y_then_z(nodeCoords[i1], nodeCoords[i2]);});
-
-  // invert indices to get node rank by coordinates
-  std::array<int,SIZE> rank;
-  for (size_t i=0; i < SIZE; ++i)
-    rank[index[i]] = i;
-  return rank;
 }
 
 template <size_t NUMREFINEDNODES>

@@ -34,7 +34,6 @@
 #include "Ioss_SideSet.h"
 #include "Ioss_StructuredBlock.h"
 
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 

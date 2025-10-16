@@ -13,6 +13,7 @@
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 #include <stk_ngp_test/ngp_test.hpp>
+#include "Kokkos_Macros.hpp"
 
 namespace ngp_unit_test_utils {
 
@@ -183,6 +184,49 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk,
                                          << bucket[i];
     }
   }
+}
+
+template <typename DeviceMesh, typename DeviceEntityViewType, typename DevicePartOrdinalsViewType>
+inline void check_entity_parts_on_device(DeviceMesh const& deviceMesh,
+                                         DeviceEntityViewType const& entities,
+                                         DevicePartOrdinalsViewType const& addPartOrdinals,
+                                         DevicePartOrdinalsViewType const& removePartOrdinals,
+                                         const stk::topology::rank_t bucketRank = stk::topology::ELEM_RANK)
+{
+  using TeamType = typename Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>::member_type;
+  Kokkos::TeamPolicy<> teamPolicy(entities.extent(0), Kokkos::AUTO);
+
+  Kokkos::View<int*, stk::ngp::UVMMemSpace> result = Kokkos::View<int*, stk::ngp::UVMMemSpace>("", 1);
+
+  Kokkos::parallel_for(teamPolicy,
+    KOKKOS_LAMBDA(TeamType const& team) {
+      auto idx = team.league_rank();
+      auto fastMeshIndex = deviceMesh.fast_mesh_index(entities(idx));
+      auto bucketId = fastMeshIndex.bucket_id;
+      auto& bucket = deviceMesh.get_bucket(bucketRank, bucketId);
+      auto& bucketPartOrdinals = bucket.get_part_ordinals();
+      int failCount = 0;
+
+      for (unsigned i = 0; i < addPartOrdinals.extent(0); ++i) {
+        auto ordinal = addPartOrdinals(i);
+        auto it = Kokkos::Experimental::find(team, bucketPartOrdinals, ordinal);
+        if (it == Kokkos::Experimental::end(bucketPartOrdinals))
+          failCount++;
+      }
+
+      for (unsigned i = 0; i < removePartOrdinals.extent(0); ++i) {
+        auto ordinal = removePartOrdinals(i);
+        auto it = Kokkos::Experimental::find(team, bucketPartOrdinals, ordinal);
+        if (it != Kokkos::Experimental::end(bucketPartOrdinals))
+          failCount++;
+      }
+
+      Kokkos::single(Kokkos::PerTeam(team), [=]() { result(0) = failCount; });
+    }
+  );
+  Kokkos::fence();
+
+  EXPECT_EQ(result(0), 0);
 }
 
 } // ngp_unit_test_utils

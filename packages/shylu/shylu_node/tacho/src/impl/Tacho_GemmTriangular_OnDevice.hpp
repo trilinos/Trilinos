@@ -73,7 +73,8 @@ template <> struct GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Up
 
     if (m > 0 && n > 0 && k > 0) {
       if (m == n) {
-        const ordinal_type b = 256;
+        char *b_env = getenv("TACHO_BLOCK_SIZE");
+        const ordinal_type b = (b_env == NULL ? 256 : atoi(b_env));
         value_type *aptr = A.data(), *bptr = B.data(), *cptr = C.data();
         const int as1 = A.stride(1), bs1 = B.stride(1), cs1 = C.stride(1);
         if (m < 2 * b) {

@@ -12,42 +12,52 @@
 
 #include "Tpetra_LocalOperator_fwd.hpp"
 #include "Teuchos_BLAS_types.hpp"
+#if KOKKOS_VERSION >= 40799
+#include "KokkosKernels_ArithTraits.hpp"
+#else
 #include "Kokkos_ArithTraits.hpp"
+#endif
 #include <type_traits>
 
 namespace Tpetra {
 
-  /// \class LocalOperator
-  /// \brief Abstract interface for local operators (e.g., matrices
-  ///   and preconditioners).
-  ///
-  /// \tparam Scalar The type of the entries of the input and output
-  ///   (multi)vectors.
-  /// \tparam Device The Kokkos Device type; must be a specialization
-  ///   of Kokkos::Device.
-  template<class Scalar, class Device>
-  class LocalOperator {
-  public:
-    using scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
-    using array_layout = Kokkos::LayoutLeft;
-    using device_type =
+/// \class LocalOperator
+/// \brief Abstract interface for local operators (e.g., matrices
+///   and preconditioners).
+///
+/// \tparam Scalar The type of the entries of the input and output
+///   (multi)vectors.
+/// \tparam Device The Kokkos Device type; must be a specialization
+///   of Kokkos::Device.
+template <class Scalar, class Device>
+class LocalOperator {
+ public:
+#if KOKKOS_VERSION >= 40799
+  using scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
+  using scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
+  using array_layout = Kokkos::LayoutLeft;
+  using device_type =
       Kokkos::Device<typename Device::execution_space,
                      typename Device::memory_space>;
 
-    virtual ~LocalOperator () = default;
+  virtual ~LocalOperator() = default;
 
-    virtual void
-    apply (Kokkos::View<const scalar_type**, array_layout,
-             device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > X,
-           Kokkos::View<scalar_type**, array_layout,
-             device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > Y,
-           const Teuchos::ETransp mode,
-           const scalar_type alpha,
-           const scalar_type beta) const = 0;
+  virtual void
+  apply(Kokkos::View<const scalar_type**, array_layout,
+                     device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+            X,
+        Kokkos::View<scalar_type**, array_layout,
+                     device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+            Y,
+        const Teuchos::ETransp mode,
+        const scalar_type alpha,
+        const scalar_type beta) const = 0;
 
-    virtual bool hasTransposeApply () const { return false; }
-  };
+  virtual bool hasTransposeApply() const { return false; }
+};
 
-} // namespace Tpetra
+}  // namespace Tpetra
 
-#endif // TPETRA_LOCALOPERATOR_HPP
+#endif  // TPETRA_LOCALOPERATOR_HPP

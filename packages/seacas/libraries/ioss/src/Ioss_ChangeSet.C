@@ -1,4 +1,4 @@
-// Copyright(C) 2024 National Technology & Engineering Solutions
+// Copyright(C) 2024, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,20 +6,13 @@
 
 #include "Ioss_ChangeSet.h"
 
-#include "Ioss_CodeTypes.h"
 #include "Ioss_DBUsage.h"
 
-#include "Ioss_DynamicTopology.h"
 #include "Ioss_EntityBlock.h"
-#include "Ioss_EntityType.h"
-#include "Ioss_Field.h"
 #include "Ioss_FileInfo.h"
-#include "Ioss_GroupingEntity.h"
 #include "Ioss_IOFactory.h"
 
-#include <fmt/core.h>
 #include <fmt/format.h>
-#include <fmt/ostream.h>
 
 #include <assert.h>
 #include <iomanip>

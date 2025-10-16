@@ -46,7 +46,7 @@ namespace SDMUtilsUnitTest {
   }
 
   bool test_QR(qr_func_type qr_func, ordinal_type m, ordinal_type n,
-	       scalar_type rtol, scalar_type atol,
+	       scalar_type rtol_, scalar_type atol_,
 	       Teuchos::FancyOStream& out) {
     bool success;
 
@@ -66,20 +66,20 @@ namespace SDMUtilsUnitTest {
     SDM QR(m,k);
     QR.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
     SDM AA(Teuchos::View, A, m, k);
-    success = Stokhos::compareSDM(AA, "A", QR, "Q*R", rtol, atol, out);
+    success = Stokhos::compareSDM(AA, "A", QR, "Q*R", rtol_, atol_, out);
 
     // Test Q^T*Q = I
     SDM eye(k,k), QTQ(k,k);
     for (ordinal_type i=0; i<k; i++)
       eye(i,i) = 1.0;
     QTQ.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, Q, 0.0);
-    success = Stokhos::compareSDM(eye, "eye", QTQ, "Q^T*Q", rtol, atol, out);
+    success = Stokhos::compareSDM(eye, "eye", QTQ, "Q^T*Q", rtol_, atol_, out);
 
     return success;
   }
 
   bool test_CPQR(cpqr_func_type qr_func, ordinal_type m, ordinal_type n,
-		 scalar_type rtol, scalar_type atol,
+		 scalar_type rtol_, scalar_type atol_,
 		 Teuchos::FancyOStream& out) {
     bool success;
 
@@ -102,21 +102,21 @@ namespace SDMUtilsUnitTest {
       for (ordinal_type i=0; i<m; i++)
 	AP(i,j) = A(i,piv[j]);
     QR.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
-    success = Stokhos::compareSDM(AP, "A*P", QR, "Q*R", rtol, atol, out);
+    success = Stokhos::compareSDM(AP, "A*P", QR, "Q*R", rtol_, atol_, out);
 
     // Test Q^T*Q = I
     SDM eye(k,k), QTQ(k,k);
     for (ordinal_type i=0; i<k; i++)
       eye(i,i) = 1.0;
     QTQ.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, Q, 0.0);
-    success = Stokhos::compareSDM(eye, "eye", QTQ, "Q^T*Q", rtol, atol, out);
+    success = Stokhos::compareSDM(eye, "eye", QTQ, "Q^T*Q", rtol_, atol_, out);
 
     return success;
   }
 
   bool test_weighted_CPQR(
     wcpqr_func_type qr_func, ordinal_type m, ordinal_type n, ordinal_type k,
-    scalar_type rtol, scalar_type atol,
+    scalar_type rtol_, scalar_type atol_,
     Teuchos::FancyOStream& out) {
     bool success;
 
@@ -142,7 +142,7 @@ namespace SDMUtilsUnitTest {
       for (ordinal_type i=0; i<m; i++)
 	AP(i,j) = A(i,piv[j]);
     QR.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Q, R, 0.0);
-    success = Stokhos::compareSDM(AP, "A*P", QR, "Q*R", rtol, atol, out);
+    success = Stokhos::compareSDM(AP, "A*P", QR, "Q*R", rtol_, atol_, out);
 
     // Test Q^T*Q = I
     SDM eye(k,k), Qt(m,k), QTQ(k,k);
@@ -152,7 +152,7 @@ namespace SDMUtilsUnitTest {
 	Qt(i,j) = w[i]*Q(i,j);
     }
     QTQ.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Qt, Q, 0.0);
-    success = Stokhos::compareSDM(eye, "eye", QTQ, "Q^T*Q", rtol, atol, out);
+    success = Stokhos::compareSDM(eye, "eye", QTQ, "Q^T*Q", rtol_, atol_, out);
 
     return success;
   }
