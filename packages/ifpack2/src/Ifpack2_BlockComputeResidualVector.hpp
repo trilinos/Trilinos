@@ -596,13 +596,12 @@ struct ComputeResidualVector {
     // subview pattern
     auto bb          = Kokkos::subview(b, block_range, 0);
     auto xx          = bb;
-    auto yy          = Kokkos::subview(y_packed_scalar, 0, block_range, 0, 0);
     auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(tpetra_values.data(), blocksize, blocksize);
 
     const local_ordinal_type row = lr * blocksize;
     for (local_ordinal_type col = 0; col < num_vectors; ++col) {
       // y := b
-      yy.assign_data(&y(row, col));
+      auto yy = Kokkos::subview(y, Kokkos::make_pair(row, row + blocksize), col);
       bb.assign_data(&b(row, col));
       if (member.team_rank() == 0)
         VectorCopy(member, blocksize, bb, yy);

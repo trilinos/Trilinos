@@ -37,6 +37,7 @@ ADD_SUBDIRECTORIES(
   RowMatrixTransposer
   Tsqr
   ReindexTransform
+  SolverMapTransform
   )
 
 IF (Tpetra_ENABLE_DEPRECATED_CODE AND ${PACKAGE_NAME}_ENABLE_Epetra)

@@ -56,6 +56,15 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 1-4
   STANDARD_PASS_OUTPUT
 )
+# Block TriDi with Schur line splitting + multiple RHS vectors
+TRIBITS_ADD_TEST(
+  BlockTriDiagonalSolver
+  NAME BlockTriDiSchurMultivector
+  ARGS "--matrixType=Laplace3D --blockSize=7 --nx=20 --ny=20 --nz=20 --sublinesPerLine=1 --sublinesPerLineSchur=2 --numVecs=3"
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+)
 # Block Jacobi
 TRIBITS_ADD_TEST(
   BlockTriDiagonalSolver
