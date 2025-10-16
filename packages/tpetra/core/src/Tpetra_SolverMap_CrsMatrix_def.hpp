@@ -139,81 +139,18 @@ SolverMap_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origi
     // *****************************************************************
     // Step 5/7: Create new graph
     // *****************************************************************
-    size_t const origRowMap_localSize = origRowMap->getLocalNumElements();
-    std::vector<size_t> origMatrix_numIndicesPerRow_vector(origRowMap_localSize);
-    for (size_t i(0); i < origRowMap_localSize; ++i) {
-      origMatrix_numIndicesPerRow_vector[i] = origMatrix->getNumEntriesInLocalRow(i);
-    }
-    Teuchos::ArrayView<size_t const> origMatrix_numIndicesPerRow_array(origMatrix_numIndicesPerRow_vector.data(), origRowMap_localSize);
-    newGraph_ = Teuchos::rcp<cg_t>(new cg_t(origRowMap  // const Teuchos::RCP<const map_type>     & rowMap
-                                            ,
-                                            newColMap_  // const Teuchos::RCP<const map_type>     & colMap
-                                            ,
-                                            origMatrix_numIndicesPerRow_array  // const Teuchos::ArrayView<const size_t> & numEntPerRow
-                                            ));
-
-    size_t const origMatrix_maxNumEntries = origMatrix->getGlobalMaxNumRowEntries();
-    typename cg_t::nonconst_global_inds_host_view_type indicesFromOriginalGraph("origGraphInds", origMatrix_maxNumEntries);
-    std::vector<GlobalOrdinal> newGraph_indices(origMatrix_maxNumEntries);
-    for (size_t i(0); i < origRowMap_localSize; ++i) {
-      GlobalOrdinal globalRowIndex = origRowMap->getGlobalElement(i);
-      size_t numEntries(0);
-      origMatrix->getGraph()->getGlobalRowCopy(globalRowIndex, indicesFromOriginalGraph, numEntries);
-
-      for (size_t j(0); j < numEntries; ++j) {
-        newGraph_indices[j] = indicesFromOriginalGraph[j];
-      }
-      newGraph_->insertGlobalIndices(globalRowIndex, numEntries, newGraph_indices.data());
-    }
-
-    Teuchos::RCP<map_t const> origRangeMap = origMatrix->getRangeMap();
-    newGraph_->fillComplete(origDomainMap, origRangeMap);
+    cg_t const * origGraph = dynamic_cast<cg_t const *>(origMatrix->getGraph().get());
+    newGraph_ = Teuchos::rcp<cg_t>(new cg_t(*origGraph));
 
     // *****************************************************************
     // Step 6/7: Create new CRS matrix
     // *****************************************************************
     Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>(new cm_t(newGraph_));
 
-    // Kokkos-aware code in the near future
-    // KokkosSparse::CrsMatrix aux( newMatrix->getLocalMatrixDevice() );
-
-    typename cm_t::local_inds_host_view_type origMatrix_localIndices;
-    typename cm_t::values_host_view_type origMatrix_localValues;
-    typename cg_t::local_inds_host_view_type newGraph_localIndices;
-
-    std::vector<Scalar> newMatrix_localValues(origMatrix_maxNumEntries);
-    std::vector<LocalOrdinal> newMatrix_localIndices(origMatrix_maxNumEntries);
-
-    size_t const newMatrix_localNumRows = newMatrix->getLocalNumRows();
-    for (size_t i(0); i < newMatrix_localNumRows; ++i) {
-      origMatrix->getLocalRowView(i, origMatrix_localIndices, origMatrix_localValues);
-      newGraph_->getLocalRowView(i, newGraph_localIndices);
-      assert(origMatrix_localIndices.size() == newGraph_localIndices.size());
-
-      size_t const numEntries(newGraph_localIndices.size());
-      for (size_t j(0); j < numEntries; ++j) {
-        newMatrix_localValues[j]  = origMatrix_localValues[j];
-        newMatrix_localIndices[j] = newGraph_localIndices[j];
-      }
-
-      // If we use "newMatrix->insertLocalValues()" below, we get the error
-      // "Cannot insert indices with static graph; use replaceLocalValues()
-      // instead".
-      newMatrix->replaceLocalValues(i  // const LocalOrdinal localRow
-                                    ,
-                                    numEntries  // const LocalOrdinal numEnt
-                                    ,
-                                    newMatrix_localValues.data()  // const Scalar       inputVals[]
-                                    ,
-                                    newMatrix_localIndices.data()  // const LocalOrdinal inputCols[]
-      );
-
-      // Kokkos-aware code in the near future
-      // row = aux->row(i);
-      // row.vals(j) = something
-    }
-
-    newMatrix->fillComplete(origDomainMap, origRangeMap);
+    newGraph_->resumeFill();
+    newMatrix->reindexColumns(newGraph_.get(), newColMap_, Teuchos::null);
+    newGraph_->fillComplete();
+    newMatrix->fillComplete();
 
     // *****************************************************************
     // Step 7/7: Update newObj_
