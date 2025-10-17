@@ -64,69 +64,55 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   const int numFieldsPerFamilyLeft  = numFields1 * numFields2;
   const int numFieldsPerFamilyRight = numFields2 * numFields2;
   
-  auto fieldComponentDataView = getFixedRankView<DataScalar>("field component data 1", numFields1);
-  auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView);
-  fieldComponentDataViewHost1(0) = 1.0;
+  auto oneElementView = getFixedRankView<DataScalar>("oneElementView", 1);
+  Kokkos::deep_copy(oneElementView, 1.0);
   
-  Kokkos::deep_copy(fieldComponentDataView, fieldComponentDataViewHost1);
-  
-  const int fieldComponentDataRank = 2;
-  Kokkos::Array<int,fieldComponentDataRank> fieldComponentExtents {numFields1,numComponentPoints};
-  Kokkos::Array<DataVariationType,fieldComponentDataRank> fieldComponentVariationTypes {GENERAL,GENERAL};
-  D fieldComponentData(fieldComponentDataView,fieldComponentExtents,fieldComponentVariationTypes);
+  Kokkos::Array<int,2> extents {1,1};
+  Kokkos::Array<DataVariationType,2> variationTypes {GENERAL,GENERAL};
+  D fieldComponentData(oneElementView,extents,variationTypes);
 
-  TD  tensorDataLeft(std::vector<D>{fieldComponentData,fieldComponentData});
-  TD tensorDataRight(std::vector<D>{fieldComponentData,fieldComponentData});
+  TD  tensorData(std::vector<D>{fieldComponentData,fieldComponentData});
   
-  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
-  auto identityMatrixViewHost = getHostCopy(identityMatrixView);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", 1, 1);
+  Kokkos::deep_copy(identityMatrixView, 1.0);
   
-  for (int d1=0; d1<spaceDim; d1++)
-  {
-    for (int d2=0; d2<spaceDim; d2++)
-    {
-      identityMatrixViewHost(d1,d2) = (d1 == d2) ? 1.0 : 0.0;
-    }
-  }
-  Kokkos::deep_copy(identityMatrixView, identityMatrixViewHost);
+  Kokkos::Array<int,4> transformExtents {1, 1, 1, 1};
+  Kokkos::Array<DataVariationType,4> transformationVariationType {GENERAL, GENERAL, GENERAL, GENERAL};
   
-  const int numPoints = numComponentPoints * numComponentPoints;
-  Kokkos::Array<int,4> transformationExtents {numCells, numPoints, spaceDim, spaceDim};
-  Kokkos::Array<DataVariationType,4> transformationVariationType {CONSTANT, CONSTANT, GENERAL, GENERAL};
-  
-  D explicitIdentityMatrix(identityMatrixView, transformationExtents, transformationVariationType);
+  D explicitIdentityMatrix(identityMatrixView, transformExtents, transformationVariationType);
   
   const int numFamilies = 2;
   TD nullTD;
-  Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorDataLeft,nullTD};
-  Kokkos::Array<TD, spaceDim > secondFamilyLeft {nullTD,tensorDataLeft};
+  Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorData,nullTD};
+  Kokkos::Array<TD, spaceDim > secondFamilyLeft {nullTD,tensorData};
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft, secondFamilyLeft};
   
   VD vectorDataLeft(vectorComponentsLeft);
   
-  Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorDataRight,nullTD};
-  Kokkos::Array<TD, spaceDim > secondFamilyRight {nullTD,tensorDataRight};
+  Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorData,nullTD};
+  Kokkos::Array<TD, spaceDim > secondFamilyRight {nullTD,tensorData};
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight, secondFamilyRight};
   
   VD vectorDataRight(vectorComponentsRight);
   
-  TransformedBasisValues<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
-  TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
+  TBV  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
+  TBV transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataLeft);
   
-  D constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
+  D constantCellMeasuresData(1.0, Kokkos::Array<int,2>{1,1});
   TD constantCellMeasures(constantCellMeasuresData);
   
+  // these assignments imitate a function call with arguments (tbvLeft, cellMeasures, tbvRight)
   const TBV      tbvLeft = transformedUnitVectorDataLeft;
   const TD  cellMeasures = constantCellMeasures;
-  const TBV     tbvRight = transformedUnitVectorDataRight;
+  const TBV     tbvRight = transformedUnitVectorDataLeft;
   
-  using IntegrationTools = Intrepid2::IntegrationTools<DeviceType>;
+  using IT = Intrepid2::IntegrationTools<DeviceType>;
   
-  auto integralsBaseline  = IntegrationTools::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
-  auto integralsIntegrate = IntegrationTools::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+  auto integralsBaseline  = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+  auto integralsIntegrate = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
   
   integrate_baseline(integralsBaseline, tbvLeft, cellMeasures, tbvRight);
-  IntegrationTools::integrate(integralsIntegrate, tbvLeft, cellMeasures, tbvRight);
+  IT::integrate(integralsIntegrate, tbvLeft, cellMeasures, tbvRight);
 }
 
 } // anonymous namespace
