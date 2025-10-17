@@ -22,8 +22,9 @@ namespace Tacho {
 
 template <typename VT, typename DT>
 Driver<VT, DT>::Driver()
-    : _method(1), _order_connected_graph_separately(true), _graph_algo_type(-1), _m(0), _nnz(0), _ap(), _h_ap(), _aj(), _h_aj(), _perm(),
-      _h_perm(), _peri(), _h_peri(), _m_graph(0), _nnz_graph(0), _h_ap_graph(), _h_aj_graph(), _h_perm_graph(),
+    : _method_setup(1), _method(1), _order_connected_graph_separately(true), _graph_algo_type(-1), _m(0), _nnz(0),
+      _ap(), _h_ap(), _aj(), _h_aj(), _perm(), _h_perm(), _peri(), _h_peri(),
+      _m_graph(0), _nnz_graph(0), _h_ap_graph(), _h_aj_graph(), _h_perm_graph(),
       _h_peri_graph(), _nnz_u(0), _nsupernodes(0), _N(nullptr), _verbose(0), _small_problem_thres(1024),
 #ifdef TACHO_DEPRECATED_PARAMETERS
       _serial_thres_size(-1), _mb(-1), _nb(-1), _front_update_mode(-1), _levelset(0),
@@ -77,10 +78,12 @@ void Driver<VT, DT>::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - 
                                    const bool is_positive_definite) {
   switch (symmetric) {
   case 0: {
+    _method_setup = LU;
     _method = LU;
     break;
   }
   case 1: {
+    _method_setup = SymLU;
     _method = SymLU;
     break;
   }
@@ -90,9 +93,11 @@ void Driver<VT, DT>::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - 
           std::is_same<value_type, Kokkos::complex<float>>::value ||
           std::is_same<value_type, Kokkos::complex<double>>::value) {
         // real symmetric posdef
+        _method_setup = Cholesky;
         _method = Cholesky;
       }
     } else { // real or complex symmetric indef
+      _method_setup = LDL;
       _method = LDL;
     }
     break;
@@ -111,7 +116,22 @@ void Driver<VT, DT>::setSolutionMethod(const int method) { // 0 - LDL nopivot, 1
     TACHO_TEST_FOR_EXCEPTION(method != LDL_nopiv && method != Cholesky && method != LDL && method != SymLU, std::logic_error,
                              ss.str().c_str());
   }
+  _method_setup = method;
   _method = method;
+}
+
+template <typename VT, typename DT>
+void Driver<VT, DT>::setFactorizationMethod(const int method) { // 0 - LDL nopivot, 1 - Chol, 2 - LDL, 3 - LU
+  {
+    std::stringstream ss;
+    ss << "Error: the given method (" << method << ") is not supported, 0 - LDL nopivot, 1 - Chol, 2 - LDL, 3 - SymLU";
+    TACHO_TEST_FOR_EXCEPTION(method != LDL_nopiv && method != Cholesky && method != LDL && method != SymLU, std::logic_error,
+                             ss.str().c_str());
+  }
+  if (_method_setup == method || method == 1) {
+    // switch only if it is the same as method_setup or chol
+    _method = method;
+  }
 }
 
 template <typename VT, typename DT>
@@ -376,8 +396,8 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze_condensed_graph(
 
 template <typename VT, typename DT> int Driver<VT, DT>::initialize() {
   if (_verbose) {
-    printf("TachoSolver: Initialize\n");
-    printf("=======================\n");
+    printf("TachoSolver: Initialize(method = %d)\n",_method);
+    printf("====================================\n");
   }
 
   ///
@@ -403,6 +423,14 @@ template <typename VT, typename DT> int Driver<VT, DT>::initialize() {
 }
 
 template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_type_array &ax) {
+  return factorize(ax, _method_setup);
+}
+
+template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_type_array &ax, ordinal_type method) {
+  if (method != _method) {
+    setFactorizationMethod(method);
+    _N->setSolutionMethod(method);
+  }
   if (_verbose) {
     switch (_method) {
     case LDL_nopiv: {
