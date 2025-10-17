@@ -154,31 +154,13 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
     
   if ((numPointTensorComponents == numTensorComponentsLeft) && basisValuesLeft.axisAligned() && basisValuesRight.axisAligned())
   {
-    // cellMeasures is a non-trivial tensor product, and the pullbacks are all diagonals.
+    // NOTE: this is not an active part of the test, but it appears to be required for the failure to occur
     
-    // in this case, the integrals in each tensorial direction are entirely separable
-    // allocate some temporary storage for the integrals in each tensorial direction
-    
-    // if cellMeasures is a nontrivial tensor product, that means that all cells have the same shape, up to scaling.
-
     Kokkos::Array<int,Parameters::MaxTensorComponents> pointDimensions;
-    for (int r=0; r<numPointTensorComponents; r++)
-    {
-      // first tensorial component of cell measures is the cell dimension; after that we have (P1,P2,…)
-      pointDimensions[r] = cellMeasures.getTensorComponent(r+1).extent_int(0);
-    }
-
+    
     // only one of these will be a valid container:
     Kokkos::View<Scalar**,  DeviceType> integralView2;
     Kokkos::View<Scalar***, DeviceType> integralView3;
-    if (integralViewRank == 3)
-    {
-      integralView3 = integrals.getUnderlyingView3();
-    }
-    else
-    {
-      integralView2 = integrals.getUnderlyingView2();
-    }
     for (int leftFamilyOrdinal=0; leftFamilyOrdinal<leftFamilyCount; leftFamilyOrdinal++)
     {
       int a_offset = 0; // left vector component offset
@@ -236,63 +218,21 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
             ComponentIntegralsArray componentIntegrals;
             for (int r=0; r<numPointTensorComponents; r++)
             {
-              /*
-               Four vector data cases to consider:
-               1. Both vector data containers are filled with axial components - first component in 3D has form (f,0,0), second (0,f,0), third (0,0,f).
-               2. Both vector data containers have arbitrary components - in 3D: (f1,f2,f3) where f1 is given by the first component, f2 by the second, f3 by the third.
-               3. First container is axial, second arbitrary.
-               4. First is arbitrary, second axial.
-               
-               But note that in all four cases, the structure of the integral is the same: you have three vector component integrals that get summed.  The actual difference between
-               the cases does not show up in the reference-space integrals here, but in the accumulation in physical space below, where the tensor field numbering comes into play.
-               
-               The choice between axial and arbitrary affects the way the fields are numbered; the arbitrary components' indices refer to the same vector function, so they correspond,
-               while the axial components refer to distinct scalar functions, so their numbering in the data container is cumulative.
-              */
-                
-              Data<Scalar,DeviceType>  quadratureWeights = cellMeasures.getTensorComponent(r+1);
+              Data<Scalar,DeviceType>  quadratureWeights;
               const int numPoints = pointDimensions[r];
                 
-                // It may be worth considering the possibility that some of these components point to the same data -- if so, we could possibly get better data locality by making the corresponding componentIntegral entries point to the same location as well.  (And we could avoid some computations here.)
-        
-              Data<Scalar,DeviceType>  leftTensorComponent =  leftComponent.getTensorComponent(r);
-              Data<Scalar,DeviceType> rightTensorComponent = rightComponent.getTensorComponent(r);
+              Data<Scalar,DeviceType>  leftTensorComponent;
+              Data<Scalar,DeviceType> rightTensorComponent;
               
-              const int  leftTensorComponentDimSpan =  leftTensorComponent.extent_int(2);
-              const int  leftTensorComponentFields  =  leftTensorComponent.extent_int(0);
-              const int rightTensorComponentDimSpan = rightTensorComponent.extent_int(2);
-              const int rightTensorComponentFields  = rightTensorComponent.extent_int(0);
-              
-              INTREPID2_TEST_FOR_EXCEPTION(( leftTensorComponentDimSpan != rightTensorComponentDimSpan), std::invalid_argument, "left and right components must span the same number of dimensions.");
-            
-              for (int d=d_start; d<d_end; d++)
-              {
+              const int  leftTensorComponentDimSpan = 0;
+              const int  leftTensorComponentFields  = 0;
+              const int rightTensorComponentFields  = 0;
                 ScalarView<Scalar,DeviceType> componentIntegralView;
-                
-                const bool allocateFadStorage = !(std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value);
-                if (allocateFadStorage)
-                {
-                  auto fad_size_output = dimension_scalar(integrals.getUnderlyingView());
-                  componentIntegralView = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields, fad_size_output);
-                }
-                else
-                {
-                  componentIntegralView = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftTensorComponentFields, rightTensorComponentFields);
-                }
-            
                 auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{leftTensorComponentFields,rightTensorComponentFields});
                 
                 Impl::F_RefSpaceIntegral<Scalar, DeviceType> refSpaceIntegralFunctor(componentIntegralView, leftTensorComponent, rightTensorComponent, quadratureWeights,
                                                                                      leftTensorComponentDimSpan);
                 Kokkos::parallel_for("compute componentIntegrals", policy, refSpaceIntegralFunctor);
-                
-                componentIntegrals[r][d] = componentIntegralView;
-                
-                if (approximateFlops != NULL)
-                {
-                  *approximateFlops += leftTensorComponentFields*rightTensorComponentFields*numPoints*(3); // two multiplies, one add in innermost loop
-                }
-              } // d
             } // r
             
             ExecutionSpace().fence();
@@ -725,6 +665,16 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   const TBV tbvLeft_bl  = tbvLeft;
 //  const TD cellMeasures_bl = cellMeasures;
   const TBV tbvRight_bl = tbvRight;
+  
+  if (tbvLeft.axisAligned())
+    std::cout << "tbvLeft.axisAligned() is TRUE" << std::endl;
+  else
+    std::cout << "tbvLeft.axisAligned() is FALSE" << std::endl;
+  
+  if (tbvRight.axisAligned())
+    std::cout << "tbvRight.axisAligned() is TRUE" << std::endl;
+  else
+    std::cout << "tbvRight.axisAligned() is FALSE" << std::endl;
   
   IT_integrate<DeviceType,DataScalar>(integralsIntegrate, tbvLeft, cellMeasures, tbvRight);
 }
