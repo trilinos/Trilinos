@@ -55,6 +55,12 @@ IF (TARGET Intrepid2_DataTests)
   SET_TARGET_PROPERTIES( Intrepid2_DataTests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 ENDIF()
 
+# DistillPR14546SegFault.cpp
+TRIBITS_ADD_EXECUTABLE( DistillPR14546SegFault NOEXESUFFIX SOURCES DistillPR14546SegFault.cpp UnitTestMain.cpp )
+IF (TARGET Intrepid2_DistillPR14546SegFault )
+  SET_TARGET_PROPERTIES( Intrepid2_DistillPR14546SegFault PROPERTIES EXCLUDE_FROM_ALL TRUE)
+ENDIF()
+
 # StructuredIntegrationTests_QuadratureSynthetic.cpp
 TRIBITS_ADD_EXECUTABLE( StructuredQuadratureSynthetic NOEXESUFFIX SOURCES StructuredIntegrationTests_QuadratureSynthetic.cpp UnitTestMain.cpp )
 IF (TARGET Intrepid2_StructuredQuadratureSynthetic )
