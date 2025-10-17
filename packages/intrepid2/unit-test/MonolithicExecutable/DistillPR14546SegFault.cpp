@@ -46,14 +46,7 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   using TBV = TransformedBasisValues<DataScalar,DeviceType>;
   
   const int spaceDim = 1;
-  
-  const int numCells  = 1;
-  const int numComponentPoints = 1;
-  const int numFields1 = 1;
-  const int numFields2 = 1;
-  const int numFieldsPerFamilyLeft  = numFields1 * numFields2;
-  const int numFieldsPerFamilyRight = numFields2 * numFields2;
-  
+    
   auto oneElementView = getFixedRankView<DataScalar>("oneElementView", 1);
   Kokkos::deep_copy(oneElementView, 1.0);
   
