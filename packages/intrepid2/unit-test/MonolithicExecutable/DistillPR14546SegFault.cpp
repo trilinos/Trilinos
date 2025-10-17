@@ -55,7 +55,7 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   using VD = VectorData<DataScalar,DeviceType>;
   using TBV = TransformedBasisValues<DataScalar,DeviceType>;
   
-  const int spaceDim = 2;
+  const int spaceDim = 1;
   
   const int numCells  = 1;
   const int numComponentPoints = 1;
@@ -73,8 +73,17 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
 
   TD  tensorData(std::vector<D>{fieldComponentData,fieldComponentData});
   
-  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", 1, 1);
-  Kokkos::deep_copy(identityMatrixView, 1.0);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
+  auto identityMatrixViewHost = getHostCopy(identityMatrixView);
+  
+  for (int d1=0; d1<spaceDim; d1++)
+  {
+    for (int d2=0; d2<spaceDim; d2++)
+    {
+      identityMatrixViewHost(d1,d2) = (d1 == d2) ? 1.0 : 0.0;
+    }
+  }
+  Kokkos::deep_copy(identityMatrixView, identityMatrixViewHost);
   
   Kokkos::Array<int,4> transformExtents {1, 1, 1, 1};
   Kokkos::Array<DataVariationType,4> transformationVariationType {GENERAL, GENERAL, GENERAL, GENERAL};
@@ -83,14 +92,14 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   
   const int numFamilies = 2;
   TD nullTD;
-  Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorData,nullTD};
-  Kokkos::Array<TD, spaceDim > secondFamilyLeft {nullTD,tensorData};
+  Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorData};
+  Kokkos::Array<TD, spaceDim > secondFamilyLeft {tensorData};
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft, secondFamilyLeft};
   
   VD vectorDataLeft(vectorComponentsLeft);
   
-  Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorData,nullTD};
-  Kokkos::Array<TD, spaceDim > secondFamilyRight {nullTD,tensorData};
+  Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorData};
+  Kokkos::Array<TD, spaceDim > secondFamilyRight {tensorData};
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight, secondFamilyRight};
   
   VD vectorDataRight(vectorComponentsRight);
