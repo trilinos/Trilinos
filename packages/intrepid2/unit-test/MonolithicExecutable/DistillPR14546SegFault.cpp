@@ -216,6 +216,7 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
             
             using ComponentIntegralsArray = Kokkos::Array< Kokkos::Array<ScalarView<Scalar,DeviceType>, Parameters::MaxTensorComponents>, Parameters::MaxTensorComponents>;
             ComponentIntegralsArray componentIntegrals;
+            const int someInt = 1;
             for (int r=0; r<numPointTensorComponents; r++)
             {
               Data<Scalar,DeviceType>  quadratureWeights;
@@ -224,19 +225,16 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
               Data<Scalar,DeviceType>  leftTensorComponent;
               Data<Scalar,DeviceType> rightTensorComponent;
               
-              const int  leftTensorComponentDimSpan = 0;
-              const int  leftTensorComponentFields  = 0;
-              const int rightTensorComponentFields  = 0;
-                ScalarView<Scalar,DeviceType> componentIntegralView;
-                auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{leftTensorComponentFields,rightTensorComponentFields});
-                
-                Impl::F_RefSpaceIntegral<Scalar, DeviceType> refSpaceIntegralFunctor(componentIntegralView, leftTensorComponent, rightTensorComponent, quadratureWeights,
-                                                                                     leftTensorComponentDimSpan);
-                Kokkos::parallel_for("compute componentIntegrals", policy, refSpaceIntegralFunctor);
+              ScalarView<Scalar,DeviceType> componentIntegralView;
+              auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{someInt,someInt});
+              
+              Impl::F_RefSpaceIntegral<Scalar, DeviceType> refSpaceIntegralFunctor(componentIntegralView, leftTensorComponent, rightTensorComponent, quadratureWeights,
+                                                                                   someInt);
+              Kokkos::parallel_for("compute componentIntegrals", policy, refSpaceIntegralFunctor);
             } // r
             
             ExecutionSpace().fence();
-            Impl::F_ComputeIntegral<Scalar,DeviceType> computeIntegralFunctor(integralView2, integralView3, leftComponent, rightComponent, cellMeasures, basisValuesLeft, basisValuesRight, componentIntegrals, d_start, d_end, numPointTensorComponents, leftFieldOffset, rightFieldOffset, integralViewRank);
+            Impl::F_ComputeIntegral<Scalar,DeviceType> computeIntegralFunctor(integralView2, integralView3, leftComponent, rightComponent, cellMeasures, basisValuesLeft, basisValuesRight, componentIntegrals, someInt, someInt, numPointTensorComponents, someInt, someInt, integralViewRank);
             Kokkos::Array<int,3> upperBounds {cellDataExtent,leftComponentFieldCount,rightComponentFieldCount}; // separately declared in effort to get around Intel 17.0.1 compiler weirdness.
             Kokkos::Array<int,3> lowerBounds {0,0,0};
             auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>(lowerBounds, upperBounds);
