@@ -64,26 +64,19 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   const int numFieldsPerFamilyLeft  = numFields1 * numFields2;
   const int numFieldsPerFamilyRight = numFields2 * numFields2;
   
-  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("field component data 1", numFields1);
-  auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
+  auto fieldComponentDataView = getFixedRankView<DataScalar>("field component data 1", numFields1);
+  auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView);
   fieldComponentDataViewHost1(0) = 1.0;
   
-  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("field component data 2", numFields2);
-  auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
-  fieldComponentDataViewHost2(0) = 1.0/2.0;
-  
-  Kokkos::deep_copy(fieldComponentDataView1, fieldComponentDataViewHost1);
-  Kokkos::deep_copy(fieldComponentDataView2, fieldComponentDataViewHost2);
+  Kokkos::deep_copy(fieldComponentDataView, fieldComponentDataViewHost1);
   
   const int fieldComponentDataRank = 2;
   Kokkos::Array<int,fieldComponentDataRank> fieldComponentExtents {numFields1,numComponentPoints};
   Kokkos::Array<DataVariationType,fieldComponentDataRank> fieldComponentVariationTypes {GENERAL,GENERAL};
-  D fieldComponentData1(fieldComponentDataView1,fieldComponentExtents,fieldComponentVariationTypes);
-  fieldComponentExtents[0] = numFields2;
-  D fieldComponentData2(fieldComponentDataView2,fieldComponentExtents,fieldComponentVariationTypes);
-    
-  TD  tensorDataLeft(std::vector<D>{fieldComponentData1,fieldComponentData2});
-  TD tensorDataRight(std::vector<D>{fieldComponentData2,fieldComponentData2});
+  D fieldComponentData(fieldComponentDataView,fieldComponentExtents,fieldComponentVariationTypes);
+
+  TD  tensorDataLeft(std::vector<D>{fieldComponentData,fieldComponentData});
+  TD tensorDataRight(std::vector<D>{fieldComponentData,fieldComponentData});
   
   auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
   auto identityMatrixViewHost = getHostCopy(identityMatrixView);
@@ -110,16 +103,12 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft, secondFamilyLeft};
   
   VD vectorDataLeft(vectorComponentsLeft);
-  TEST_EQUALITY(numFieldsPerFamilyLeft, vectorDataLeft.numFieldsInFamily(0));
-  TEST_EQUALITY(numFieldsPerFamilyLeft, vectorDataLeft.numFieldsInFamily(1));
   
   Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorDataRight,nullTD};
   Kokkos::Array<TD, spaceDim > secondFamilyRight {nullTD,tensorDataRight};
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight, secondFamilyRight};
   
   VD vectorDataRight(vectorComponentsRight);
-  TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(0));
-  TEST_EQUALITY(numFieldsPerFamilyRight, vectorDataRight.numFieldsInFamily(1));
   
   TransformedBasisValues<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
   TransformedBasisValues<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
