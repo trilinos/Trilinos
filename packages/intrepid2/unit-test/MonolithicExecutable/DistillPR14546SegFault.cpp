@@ -42,20 +42,6 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedBasi
 {
 const int spaceDim       = vectorDataLeft.spaceDim();
 
-// use the CFPD operator() provided by the vector data objects; don't take advantage of tensor product structure at all
-const int numPoints = vectorDataLeft.numPoints();
-
-INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(vectorDataLeft.rank()  != 4, std::invalid_argument, "vectorDataLeft must be of shape (C,F,P,D)");
-INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(vectorDataRight.rank() != 4, std::invalid_argument, "vectorDataRight must be of shape (C,F,P,D)");
-INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(cellMeasures.rank()    != 2, std::invalid_argument, "cellMeasures must be of shape (C,P)");
-
-INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(vectorDataLeft.spaceDim() != vectorDataRight.spaceDim(), std::invalid_argument, "vectorDataLeft and vectorDataRight must agree on the spatial dimension");
-
-INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(vectorDataRight.extent_int(2) != vectorDataLeft.extent_int(2), std::invalid_argument, "vectorData point dimensions must match");
-INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(cellMeasures.extent_int(1) != vectorDataLeft.extent_int(2), std::invalid_argument,
-                                         std::string("cellMeasures point dimension (" + std::to_string(cellMeasures.extent_int(1)) +
-                                                     ") must match vectorData point dimension (" + std::to_string(vectorDataLeft.extent_int(2)) + ")").c_str());
-
 //  printFunctor4(vectorDataLeft, std::cout, "vectorDataLeft");
 //  printFunctor2(cellMeasures, std::cout, "cellMeasures");
 
