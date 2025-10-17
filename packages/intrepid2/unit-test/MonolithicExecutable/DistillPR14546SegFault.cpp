@@ -46,21 +46,6 @@ namespace
 {
  using namespace Intrepid2;
 
-template<class Scalar, typename DeviceType>
-void callIntegrate(const TransformedBasisValues<Scalar,DeviceType> vectorDataLeft,
-                   const TensorData<Scalar,DeviceType> cellMeasures, const TransformedBasisValues<Scalar,DeviceType> vectorDataRight,
-                   Teuchos::FancyOStream &out, bool &success)
-{
-  using IntegrationTools = Intrepid2::IntegrationTools<DeviceType>;
-  
-  auto integralsBaseline  = IntegrationTools::allocateIntegralData(vectorDataLeft, cellMeasures, vectorDataRight);
-  auto integralsIntegrate = IntegrationTools::allocateIntegralData(vectorDataLeft, cellMeasures, vectorDataRight);
-  
-  integrate_baseline(integralsBaseline, vectorDataLeft, cellMeasures, vectorDataRight);
-  IntegrationTools::integrate(integralsIntegrate, vectorDataLeft, cellMeasures, vectorDataRight);
-}
-
-
 TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
 {
   using DataScalar  = double;
@@ -68,6 +53,7 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   using D  = Data<DataScalar,DeviceType>;
   using TD = TensorData<DataScalar,DeviceType>;
   using VD = VectorData<DataScalar,DeviceType>;
+  using TBV = TransformedBasisValues<DataScalar,DeviceType>;
   
   const int spaceDim = 2;
   
@@ -141,7 +127,17 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   D constantCellMeasuresData(1.0, Kokkos::Array<int,2>{numCells,numPoints});
   TD constantCellMeasures(constantCellMeasuresData);
   
-  callIntegrate(transformedUnitVectorDataLeft, constantCellMeasures, transformedUnitVectorDataRight, out, success);
+  const TBV      tbvLeft = transformedUnitVectorDataLeft;
+  const TD  cellMeasures = constantCellMeasures;
+  const TBV     tbvRight = transformedUnitVectorDataRight;
+  
+  using IntegrationTools = Intrepid2::IntegrationTools<DeviceType>;
+  
+  auto integralsBaseline  = IntegrationTools::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+  auto integralsIntegrate = IntegrationTools::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+  
+  integrate_baseline(integralsBaseline, tbvLeft, cellMeasures, tbvRight);
+  IntegrationTools::integrate(integralsIntegrate, tbvLeft, cellMeasures, tbvRight);
 }
 
 } // anonymous namespace
