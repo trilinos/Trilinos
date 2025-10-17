@@ -96,13 +96,18 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   
   using IT = Intrepid2::IntegrationTools<DeviceType>;
   
-  D integralsBaseline  = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+//  D integralsBaseline  = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+  // imitate call to allocateIntegralData() for integralsBaseline
+  TBV tbvLeft_aid     = tbvLeft;
+  TD cellMeasures_aid = cellMeasures;
+  TBV tbvRight_aid    = tbvRight;
+  
   D integralsIntegrate = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
   
   // these assignments imitate a function call (to integrate_baseline) with arguments (integralsBaseline, tbvLeft, cellMeasures, tbvRight)
-  D integrals_bl = integralsBaseline;
+//  D integrals_bl = integralsBaseline;
   const TBV tbvLeft_bl  = tbvLeft;
-  const TD cellMeasures_bl = cellMeasures;
+//  const TD cellMeasures_bl = cellMeasures;
   const TBV tbvRight_bl = tbvRight;
   
   IT::integrate(integralsIntegrate, tbvLeft, cellMeasures, tbvRight);
