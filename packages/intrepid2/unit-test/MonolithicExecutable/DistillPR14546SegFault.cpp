@@ -67,16 +67,21 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   const int numFamilies = 2;
   TD nullTD;
   Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorData};
-//  Kokkos::Array<TD, spaceDim > secondFamilyLeft {tensorData};
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft, firstFamilyLeft};
   
   VD vectorDataLeft(vectorComponentsLeft);
   
   Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorData};
-//  Kokkos::Array<TD, spaceDim > secondFamilyRight {tensorData};
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight, firstFamilyRight};
   
-  VD vectorDataRight(vectorComponentsRight);
+  // imitate VD construction vectorDataRight(vectorComponentsRight)
+  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponents = vectorComponentsRight;
+  using VectorArray = Kokkos::Array< TD, Parameters::MaxVectorComponents >; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
+  using FamilyVectorArray = Kokkos::Array< VectorArray, Parameters::MaxTensorComponents>;
+
+  FamilyVectorArray vectorComponents_; // outer: family ordinal; inner: component/spatial dimension ordinal
+  vectorComponents_[0][0] = vectorComponents[0][0];
+  vectorComponents_[1][0] = vectorComponents[1][0];
   
   TBV  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
   TBV transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataLeft);
