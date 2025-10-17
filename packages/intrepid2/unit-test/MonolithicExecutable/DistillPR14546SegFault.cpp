@@ -20,17 +20,10 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_UnitTestRepository.hpp>
 
-#include <Intrepid2_CellGeometryTestUtils.hpp>
 #include <Intrepid2_CellTools.hpp>
-#include <Intrepid2_DefaultCubatureFactory.hpp>
-#include <Intrepid2_FunctionSpaceTools.hpp>
 #include <Intrepid2_IntegrationTools.hpp>
-#include <Intrepid2_Kernels.hpp>
-#include <Intrepid2_NodalBasisFamily.hpp>
-#include <Intrepid2_TensorArgumentIterator.hpp>
 #include <Intrepid2_TestUtils.hpp>
 
-#include <Intrepid2_CellGeometry.hpp>
 #include "Intrepid2_Data.hpp"
 #include "Intrepid2_TensorData.hpp"
 #include "Intrepid2_TensorPoints.hpp"
@@ -39,12 +32,37 @@
 
 #include "Intrepid2_ScalarView.hpp"
 
-#include "StructuredIntegrationTests_TagDefs.hpp"
-#include "StructuredIntegrationTests_Utils.hpp"
-
 namespace
 {
  using namespace Intrepid2;
+
+template<class Scalar, typename DeviceType>
+void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedBasisValues<Scalar,DeviceType> vectorDataLeft,
+                      const TensorData<Scalar,DeviceType> cellMeasures, const TransformedBasisValues<Scalar,DeviceType> vectorDataRight)
+{
+const int spaceDim       = vectorDataLeft.spaceDim();
+
+// use the CFPD operator() provided by the vector data objects; don't take advantage of tensor product structure at all
+const int numPoints = vectorDataLeft.numPoints();
+
+INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(vectorDataLeft.rank()  != 4, std::invalid_argument, "vectorDataLeft must be of shape (C,F,P,D)");
+INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(vectorDataRight.rank() != 4, std::invalid_argument, "vectorDataRight must be of shape (C,F,P,D)");
+INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(cellMeasures.rank()    != 2, std::invalid_argument, "cellMeasures must be of shape (C,P)");
+
+INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(vectorDataLeft.spaceDim() != vectorDataRight.spaceDim(), std::invalid_argument, "vectorDataLeft and vectorDataRight must agree on the spatial dimension");
+
+INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(vectorDataRight.extent_int(2) != vectorDataLeft.extent_int(2), std::invalid_argument, "vectorData point dimensions must match");
+INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(cellMeasures.extent_int(1) != vectorDataLeft.extent_int(2), std::invalid_argument,
+                                         std::string("cellMeasures point dimension (" + std::to_string(cellMeasures.extent_int(1)) +
+                                                     ") must match vectorData point dimension (" + std::to_string(vectorDataLeft.extent_int(2)) + ")").c_str());
+
+//  printFunctor4(vectorDataLeft, std::cout, "vectorDataLeft");
+//  printFunctor2(cellMeasures, std::cout, "cellMeasures");
+
+// integral data may have shape (C,F1,F2) or (if the variation type is CONSTANT in the cell dimension) shape (F1,F2)
+const int integralViewRank = integrals.getUnderlyingViewRank();
+
+}
 
 TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
 {
@@ -108,10 +126,91 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   
   using IT = Intrepid2::IntegrationTools<DeviceType>;
   
+  D integralsBaseline  = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+  D integralsIntegrate = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+  
+  integrate_baseline(integralsBaseline, tbvLeft, cellMeasures, tbvRight);
+  IT::integrate(integralsIntegrate, tbvLeft, cellMeasures, tbvRight);
+}
+
+TEUCHOS_UNIT_TEST( PR14546, AllocationIssue )
+{
+  // not sure if this is the same issue -- I think so, but in case it isn't, I'm creating a separate test
+  using DataScalar  = double;
+  using DeviceType = DefaultTestDeviceType;
+  using D  = Data<DataScalar,DeviceType>;
+  using TD = TensorData<DataScalar,DeviceType>;
+  using VD = VectorData<DataScalar,DeviceType>;
+  using TBV = TransformedBasisValues<DataScalar,DeviceType>;
+  
+  const int spaceDim = 1;
+  
+  auto oneElementView = getFixedRankView<DataScalar>("oneElementView", 1);
+  Kokkos::deep_copy(oneElementView, 1.0);
+  
+  Kokkos::Array<int,2> extents {1,1};
+  Kokkos::Array<DataVariationType,2> variationTypes {GENERAL,GENERAL};
+  D fieldComponentData(oneElementView,extents,variationTypes);
+
+  TD tensorData(std::vector<D>{fieldComponentData});
+  
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
+  Kokkos::deep_copy(identityMatrixView, 1.0);
+  
+  Kokkos::Array<int,4> transformExtents {1, 1, 1, 1};
+  Kokkos::Array<DataVariationType,4> transformationVariationType {GENERAL, GENERAL, GENERAL, GENERAL};
+  
+  D explicitIdentityMatrix(identityMatrixView, transformExtents, transformationVariationType);
+  {
+    auto data = getMatchingViewWithLabel(identityMatrixView, "Data mat-mat result", 1, 1, 1, 1);
+    std::cout << "data.size(): " << data.size() << std::endl;
+    std::cout << "Got to line " << __LINE__ << std::endl;
+  }
+  
+  const int numFamilies = 1;
+  TD nullTD;
+  Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorData};
+//  Kokkos::Array<TD, spaceDim > secondFamilyLeft {tensorData};
+  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft};//, secondFamilyLeft};
+  
+  VD vectorDataLeft(vectorComponentsLeft);
+  
+  Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorData};
+  Kokkos::Array<TD, spaceDim > secondFamilyRight {tensorData};
+  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight}; //, secondFamilyRight};
+  
+  VD vectorDataRight(vectorComponentsRight);
+  
+  TBV  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
+  TBV transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataLeft);
+  
+  D constantCellMeasuresData(1.0, Kokkos::Array<int,2>{1,1});
+  TD constantCellMeasures(constantCellMeasuresData);
+  
+  // these assignments imitate a function call with arguments (tbvLeft, cellMeasures, tbvRight)
+  const TBV      tbvLeft = transformedUnitVectorDataLeft;
+  const TD  cellMeasures = constantCellMeasures;
+  const TBV     tbvRight = transformedUnitVectorDataLeft;
+  
+  using IT = Intrepid2::IntegrationTools<DeviceType>;
+  
   auto integralsBaseline  = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
   auto integralsIntegrate = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
   
+  {
+    auto data = getMatchingViewWithLabel(identityMatrixView, "Data mat-mat result", 1, 1, 1, 1);
+    std::cout << "data.size(): " << data.size() << std::endl;
+    std::cout << "Got to line " << __LINE__ << std::endl;
+  }
+  
   integrate_baseline(integralsBaseline, tbvLeft, cellMeasures, tbvRight);
+  
+  {
+    auto data = getMatchingViewWithLabel(identityMatrixView, "Data mat-mat result", 1, 1, 1, 1);
+    std::cout << "data.size(): " << data.size() << std::endl;
+    std::cout << "Got to line " << __LINE__ << std::endl;
+  }
+  
   IT::integrate(integralsIntegrate, tbvLeft, cellMeasures, tbvRight);
 }
 
