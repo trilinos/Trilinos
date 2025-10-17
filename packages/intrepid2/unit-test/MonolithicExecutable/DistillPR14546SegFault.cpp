@@ -74,16 +74,7 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   TD  tensorData(std::vector<D>{fieldComponentData,fieldComponentData});
   
   auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
-  auto identityMatrixViewHost = getHostCopy(identityMatrixView);
-  
-  for (int d1=0; d1<spaceDim; d1++)
-  {
-    for (int d2=0; d2<spaceDim; d2++)
-    {
-      identityMatrixViewHost(d1,d2) = (d1 == d2) ? 1.0 : 0.0;
-    }
-  }
-  Kokkos::deep_copy(identityMatrixView, identityMatrixViewHost);
+  Kokkos::deep_copy(identityMatrixView, 1.0);
   
   Kokkos::Array<int,4> transformExtents {1, 1, 1, 1};
   Kokkos::Array<DataVariationType,4> transformationVariationType {GENERAL, GENERAL, GENERAL, GENERAL};
