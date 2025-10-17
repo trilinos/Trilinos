@@ -131,6 +131,7 @@ void Driver<VT, DT>::setFactorizationMethod(const int method) { // 0 - LDL nopiv
   if (_method_setup == method || method == 1) {
     // switch only if it is the same as method_setup or chol
     _method = method;
+    _N->setSolutionMethod(_method);
   }
 }
 
@@ -396,8 +397,12 @@ template <typename VT, typename DT> int Driver<VT, DT>::analyze_condensed_graph(
 
 template <typename VT, typename DT> int Driver<VT, DT>::initialize() {
   if (_verbose) {
-    printf("TachoSolver: Initialize(method = %d)\n",_method);
+    printf("TachoSolver: Initialize(method = %d)\n",_method_setup);
     printf("====================================\n");
+  }
+  if (_method != _method_setup) {
+    // Reset method
+    setFactorizationMethod(_method_setup);
   }
 
   ///
@@ -429,7 +434,6 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
 template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_type_array &ax, ordinal_type method) {
   if (method != _method) {
     setFactorizationMethod(method);
-    _N->setSolutionMethod(method);
   }
   if (_verbose) {
     switch (_method) {
