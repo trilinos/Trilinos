@@ -36,20 +36,6 @@ namespace
 {
  using namespace Intrepid2;
 
-template<class Scalar, typename DeviceType>
-void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedBasisValues<Scalar,DeviceType> vectorDataLeft,
-                      const TensorData<Scalar,DeviceType> cellMeasures, const TransformedBasisValues<Scalar,DeviceType> vectorDataRight)
-{
-const int spaceDim       = vectorDataLeft.spaceDim();
-
-//  printFunctor4(vectorDataLeft, std::cout, "vectorDataLeft");
-//  printFunctor2(cellMeasures, std::cout, "cellMeasures");
-
-// integral data may have shape (C,F1,F2) or (if the variation type is CONSTANT in the cell dimension) shape (F1,F2)
-const int integralViewRank = integrals.getUnderlyingViewRank();
-
-}
-
 TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
 {
   using DataScalar  = double;
@@ -115,7 +101,12 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   D integralsBaseline  = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
   D integralsIntegrate = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
   
-  integrate_baseline(integralsBaseline, tbvLeft, cellMeasures, tbvRight);
+  // these assignments imitate a function call (to integrate_baseline) with arguments (integralsBaseline, tbvLeft, cellMeasures, tbvRight)
+  D integrals_bl = integralsBaseline;
+  const TBV tbvLeft_bl  = tbvLeft;
+  const TD cellMeasures_bl = cellMeasures;
+  const TBV tbvRight_bl = tbvRight;
+  
   IT::integrate(integralsIntegrate, tbvLeft, cellMeasures, tbvRight);
 }
 
@@ -189,8 +180,12 @@ TEUCHOS_UNIT_TEST( PR14546, AllocationIssue )
     std::cout << "Got to line " << __LINE__ << std::endl;
   }
   
-  integrate_baseline(integralsBaseline, tbvLeft, cellMeasures, tbvRight);
-  
+  // these assignments imitate a function call (to integrate_baseline) with arguments (integralsBaseline, tbvLeft, cellMeasures, tbvRight)
+  D integrals_bl = integralsBaseline;
+  const TBV tbvLeft_bl  = tbvLeft;
+  const TD cellMeasures_bl = cellMeasures;
+  const TBV tbvRight_bl = tbvRight;
+    
   {
     auto data = getMatchingViewWithLabel(identityMatrixView, "Data mat-mat result", 1, 1, 1, 1);
     std::cout << "data.size(): " << data.size() << std::endl;
