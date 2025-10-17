@@ -67,14 +67,14 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
   const int numFamilies = 2;
   TD nullTD;
   Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorData};
-  Kokkos::Array<TD, spaceDim > secondFamilyLeft {tensorData};
-  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft, secondFamilyLeft};
+//  Kokkos::Array<TD, spaceDim > secondFamilyLeft {tensorData};
+  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft, firstFamilyLeft};
   
   VD vectorDataLeft(vectorComponentsLeft);
   
   Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorData};
-  Kokkos::Array<TD, spaceDim > secondFamilyRight {tensorData};
-  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight, secondFamilyRight};
+//  Kokkos::Array<TD, spaceDim > secondFamilyRight {tensorData};
+  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight, firstFamilyRight};
   
   VD vectorDataRight(vectorComponentsRight);
   
