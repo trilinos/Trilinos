@@ -209,7 +209,7 @@ void IfpackSmoother<Node>::Setup(Level& currentLevel) {
 
   else {
     // If we're using a linear partitioner and haven't set the # local parts, set it to match the operator's block size
-    ParameterList precList = this->GetParameterList();
+    ParameterList& precList = const_cast<ParameterList&>(this->GetParameterList());
     if (precList.isParameter("partitioner: type") && precList.get<std::string>("partitioner: type") == "linear" &&
         !precList.isParameter("partitioner: local parts")) {
       precList.set("partitioner: local parts", (int)A_->getLocalNumRows() / A_->GetFixedBlockSize());
