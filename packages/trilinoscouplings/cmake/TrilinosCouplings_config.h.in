@@ -1,5 +1,8 @@
 /* src/TrilinosCouplings_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if explicit (template) instantiation is enabled. */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_EXPLICIT_INSTANTIATION
+
 /* Define if want to build amesos */
 #cmakedefine HAVE_AMESOS
 

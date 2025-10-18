@@ -20,37 +20,34 @@
 // in Zoltan2.
 //--------------------------------------------------------------------
 
+#include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-
-#include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
-#include <Zoltan2_XpetraMultiVectorAdapter.hpp>
-
-#include <Teuchos_ParameterList.hpp>
-#include <Teuchos_RCP.hpp>
+#include <TrilinosCouplings_Rebalance_LinearProblem.hpp>
 
 bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   int numProcs( comm->getSize() );
   int localProc( comm->getRank() );
 
   using Map_t      = Tpetra::Map<>;
-  using localId_t  = Map_t::local_ordinal_type;
-  using globalId_t = Map_t::global_ordinal_type;
-  using scalar_t   = Tpetra::Details::DefaultTypes::scalar_type;
-  using Vector_t   = Tpetra::Vector<scalar_t, localId_t, globalId_t>;
-  using Matrix_t   = Tpetra::CrsMatrix<scalar_t, localId_t, globalId_t>;
+  using LocalId_t  = Map_t::local_ordinal_type;
+  using GlobalId_t = Map_t::global_ordinal_type;
+  using Node_t     = Map_t::node_type;
+  using Scalar_t   = Tpetra::Details::DefaultTypes::scalar_type;
+  using MultiV_t   = Tpetra::MultiVector<Scalar_t, LocalId_t, GlobalId_t, Node_t>;
+  using Matrix_t   = Tpetra::CrsMatrix<Scalar_t, LocalId_t, GlobalId_t, Node_t>;
+  using Problem_t  = Tpetra::LinearProblem<Scalar_t, LocalId_t, GlobalId_t, Node_t>;
 
   // ****************************************************************
-  // Step 1/6: create a Tpetra::CrsMatrix with rows spread un-evenly
-  //           over processors.
+  // Step 1/10: create a Tpetra::CrsMatrix with rows spread un-evenly
+  //            over processors.
   // ****************************************************************
-  localId_t  local_num_rows  = 200;
-  localId_t  nnz_per_row     = local_num_rows/4+1;
-  globalId_t global_num_rows = numProcs*local_num_rows;
+  LocalId_t  local_num_rows  = 200;
+  LocalId_t  nnz_per_row     = local_num_rows/4+1;
+  GlobalId_t global_num_rows = numProcs*local_num_rows;
 
   int mid_proc = numProcs/2;
   bool num_procs_even = numProcs%2==0 ? true : false;
-  localId_t adjustment = local_num_rows/2;
+  LocalId_t adjustment = local_num_rows/2;
 
   // Adjust local_num_rows so that it's not equal on all procs.
   if (localProc < mid_proc) {
@@ -72,12 +69,12 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   Teuchos::RCP< Map_t > rowmap = Teuchos::rcp( new Map_t(global_num_rows, local_num_rows, 0, comm) );
   Teuchos::RCP< Matrix_t > originalMatrix = Teuchos::rcp( new Matrix_t(rowmap, nnz_per_row) );
 
-  std::vector<globalId_t> indices(nnz_per_row);
+  std::vector<GlobalId_t> indices(nnz_per_row);
   std::vector<double> coefs(nnz_per_row);
 
-  for (localId_t i(0); i < local_num_rows; ++i) {
-    globalId_t global_row = rowmap->getGlobalElement(i);
-    globalId_t first_col = global_row - nnz_per_row/2;
+  for (LocalId_t i(0); i < local_num_rows; ++i) {
+    GlobalId_t global_row = rowmap->getGlobalElement(i);
+    GlobalId_t first_col = global_row - nnz_per_row/2;
 
     if (first_col < 0) {
       first_col = 0;
@@ -86,7 +83,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
       first_col = global_num_rows - nnz_per_row;
     }
 
-    for (localId_t j(0); j < nnz_per_row; ++j) {
+    for (LocalId_t j(0); j < nnz_per_row; ++j) {
       indices[j] = first_col + j;
       coefs[j] = 1.0;
     }
@@ -100,144 +97,306 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   originalMatrix->fillComplete();
 
   // ****************************************************************
-  // Step 2/6: instantiate a partitioning problem and solve it.
+  // Step 2/10: create the original linear problem
   // ****************************************************************
-  using MatrixAdapter_t = Zoltan2::XpetraCrsMatrixAdapter<Matrix_t>;
-  MatrixAdapter_t matrixAdapter(originalMatrix);
+  size_t numVectors(2);
 
+  Teuchos::RCP<MultiV_t> originalLhs( Teuchos::null );
+  originalLhs  = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getDomainMap(), numVectors );
+  originalLhs->randomize();
+
+  Teuchos::RCP<MultiV_t> originalRhs( Teuchos::null );
+  originalRhs  = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getRangeMap(), numVectors );
+  originalMatrix->apply(*originalLhs, *originalRhs);
+
+  Teuchos::RCP<Problem_t> originalLP = Teuchos::rcp<Problem_t>( new Problem_t(originalMatrix, originalLhs, originalRhs) );
+
+  // ****************************************************************
+  // Step 3/10: create the rebalance transform
+  // ****************************************************************
   std::string partitioningMethod("block"); // "scotch" "parmetis"
-  Teuchos::ParameterList param;
-  param.set("partitioning_approach", "partition");
-  param.set("algorithm", partitioningMethod);
+  Teuchos::RCP<Teuchos::ParameterList> paramListForZoltan2PartitioningProblem = Teuchos::rcp<Teuchos::ParameterList>( new Teuchos::ParameterList() );
+  paramListForZoltan2PartitioningProblem->set("partitioning_approach", "partition");
+  paramListForZoltan2PartitioningProblem->set("algorithm", partitioningMethod);
 
-  Zoltan2::PartitioningProblem<MatrixAdapter_t> partitioningProblem(&matrixAdapter, &param);
-  partitioningProblem.solve();
-
-  // ****************************************************************
-  // Step 3/6: create a random vector compatible (distribution wise)
-  //           with the original matrix. The original matrix will
-  //           multiply this vector in the step 6/6 below.
-  // ****************************************************************
-  Teuchos::RCP<Vector_t> originalVector;
-  originalVector  = Tpetra::createVector<scalar_t,localId_t,globalId_t>( originalMatrix->getDomainMap() );
-  originalVector->randomize();
+  TrilinosCouplings::Rebalance_LinearProblem<Scalar_t, LocalId_t, GlobalId_t, Node_t> rebalanceTransform( paramListForZoltan2PartitioningProblem );
 
   // ****************************************************************
-  // Step 4/6: balance the matrix and the vector
+  // Step 4/10: rebalance the original linear problem (its matrix and vectors)
   // ****************************************************************
-  Teuchos::RCP<Matrix_t> balancedMatrix;
-  matrixAdapter.applyPartitioningSolution(*originalMatrix,
-                                          balancedMatrix,
-                                          partitioningProblem.getSolution());
+  Teuchos::RCP<Problem_t> transformedLP = rebalanceTransform( originalLP );
+  rebalanceTransform.fwd();
 
-  using MultiVectorAdapter_t = Zoltan2::XpetraMultiVectorAdapter<Vector_t>;
-  MultiVectorAdapter_t vectorAdapter(originalVector);
-
-  Teuchos::RCP<Vector_t> balancedVector;
-  vectorAdapter.applyPartitioningSolution(*originalVector,
-                                          balancedVector,
-                                          partitioningProblem.getSolution());
+  Teuchos::RCP<Matrix_t> rebalancedMatrix = Teuchos::rcp<Matrix_t>( dynamic_cast<Matrix_t *>(transformedLP->getMatrix().get()), false );
+  Teuchos::RCP<MultiV_t> rebalancedLhs    = Teuchos::rcp<MultiV_t>( transformedLP->getLHS().get(), false );
+  Teuchos::RCP<MultiV_t> rebalancedRhs    = Teuchos::rcp<MultiV_t>( transformedLP->getRHS().get(), false );
 
   // ****************************************************************
-  // Step 5/6: compare the matrix balancing among MPI nodes, before
-  //           and after the redistribution.
+  // Step 5/10: compare the matrix balancing among MPI nodes, before
+  //            and after the redistribution.
   // ****************************************************************
-  localId_t originalLocalNumRows = originalMatrix->getLocalNumRows();
-  localId_t balancedLocalNumRows = balancedMatrix->getLocalNumRows();
-  localId_t overallMin_originalLocalNumRows(0);
-  localId_t overallMax_originalLocalNumRows(0);
-  localId_t overallMin_balancedLocalNumRows(0);
-  localId_t overallMax_balancedLocalNumRows(0);
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &originalLocalNumRows, &overallMin_originalLocalNumRows);
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &originalLocalNumRows, &overallMax_originalLocalNumRows);
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &balancedLocalNumRows, &overallMin_balancedLocalNumRows);
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &balancedLocalNumRows, &overallMax_balancedLocalNumRows);
+  bool allOk1(true);
+  {
+    LocalId_t originalLocalNumRows   = originalMatrix->getLocalNumRows();
+    LocalId_t rebalancedLocalNumRows = rebalancedMatrix->getLocalNumRows();
+    LocalId_t overallMin_originalLocalNumRows(0);
+    LocalId_t overallMax_originalLocalNumRows(0);
+    LocalId_t overallMin_rebalancedLocalNumRows(0);
+    LocalId_t overallMax_rebalancedLocalNumRows(0);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &originalLocalNumRows,   &overallMin_originalLocalNumRows  );
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &originalLocalNumRows,   &overallMax_originalLocalNumRows  );
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &rebalancedLocalNumRows, &overallMin_rebalancedLocalNumRows);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &rebalancedLocalNumRows, &overallMax_rebalancedLocalNumRows);
 
-  localId_t originalLocalNNZ     = originalMatrix->getLocalNumEntries();
-  localId_t balancedLocalNNZ     = balancedMatrix->getLocalNumEntries();
-  localId_t overallMin_originalLocalNNZ(0);
-  localId_t overallMax_originalLocalNNZ(0);
-  localId_t overallMin_balancedLocalNNZ(0);
-  localId_t overallMax_balancedLocalNNZ(0);
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &originalLocalNNZ, &overallMin_originalLocalNNZ);
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &originalLocalNNZ, &overallMax_originalLocalNNZ);
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &balancedLocalNNZ, &overallMin_balancedLocalNNZ);
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &balancedLocalNNZ, &overallMax_balancedLocalNNZ);
+    LocalId_t originalLocalNNZ   = originalMatrix->getLocalNumEntries();
+    LocalId_t rebalancedLocalNNZ = rebalancedMatrix->getLocalNumEntries();
+    LocalId_t overallMin_originalLocalNNZ(0);
+    LocalId_t overallMax_originalLocalNNZ(0);
+    LocalId_t overallMin_rebalancedLocalNNZ(0);
+    LocalId_t overallMax_rebalancedLocalNNZ(0);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &originalLocalNNZ,   &overallMin_originalLocalNNZ  );
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &originalLocalNNZ,   &overallMax_originalLocalNNZ  );
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &rebalancedLocalNNZ, &overallMin_rebalancedLocalNNZ);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, 1, &rebalancedLocalNNZ, &overallMax_rebalancedLocalNNZ);
 
-  comm->barrier();
-  for (int p(0); p < numProcs; ++p) {
+    comm->barrier();
+    for (int p(0); p < numProcs; ++p) {
+      comm->barrier();
+
+      if (p != localProc) continue;
+
+      std::cout << "proc " << p
+                << ": original matrix local num rows = " << originalLocalNumRows
+                << "( min = " << overallMin_originalLocalNumRows
+                << ", max = " << overallMax_originalLocalNumRows
+                << "); original local NNZ = " << originalLocalNNZ
+                << "( min = " << overallMin_originalLocalNNZ
+                << ", max = " << overallMax_originalLocalNNZ
+                << ")"
+                << std::endl;
+      std::cout.flush();
+      std::cout << "proc " << p
+                << ": rebalanced matrix local num rows = " << rebalancedLocalNumRows
+                << "( min = " << overallMin_rebalancedLocalNumRows
+                << ", max = " << overallMax_rebalancedLocalNumRows
+                << "); rebalanced local NNZ = " << rebalancedLocalNNZ
+                << "( min = " << overallMin_rebalancedLocalNNZ
+                << ", max = " << overallMax_rebalancedLocalNNZ
+                << ")"
+                << std::endl;
+      std::cout.flush();
+    }
     comm->barrier();
 
-    if (p != localProc) continue;
-
-    std::cout << "proc " << p
-              << ": original matrix local num rows = " << originalLocalNumRows
-              << "( min = " << overallMin_originalLocalNumRows
-              << ", max = " << overallMax_originalLocalNumRows
-              << "); original local NNZ = " << originalLocalNNZ
-              << "( min = " << overallMin_originalLocalNNZ
-              << ", max = " << overallMax_originalLocalNNZ
-              << ")"
-              << std::endl;
-    std::cout << "proc " << p
-              << ": balanced matrix local num rows = " << balancedLocalNumRows
-              << "( min = " << overallMin_balancedLocalNumRows
-              << ", max = " << overallMax_balancedLocalNumRows
-              << "); balanced local NNZ = " << balancedLocalNNZ
-              << "( min = " << overallMin_balancedLocalNNZ
-              << ", max = " << overallMax_balancedLocalNNZ
-              << ")"
-              << std::endl;
-  }
-
-  bool allOk1(true);
-  if ((overallMin_originalLocalNumRows <= overallMin_balancedLocalNumRows) &&
-      (overallMax_balancedLocalNumRows <= overallMax_originalLocalNumRows) &&
-      (overallMin_originalLocalNNZ     <= overallMin_balancedLocalNNZ    ) &&
-      (overallMax_balancedLocalNNZ     <= overallMax_originalLocalNNZ    )) {
-    // Ok
-  }
-  else {
-    allOk1 = false;
+    if ((overallMin_originalLocalNumRows   <= overallMin_rebalancedLocalNumRows) &&
+        (overallMax_rebalancedLocalNumRows <= overallMax_originalLocalNumRows  ) &&
+        (overallMin_originalLocalNNZ       <= overallMin_rebalancedLocalNNZ    ) &&
+        (overallMax_rebalancedLocalNNZ     <= overallMax_originalLocalNNZ      )) {
+      // Ok
+    }
+    else {
+      allOk1 = false;
+    }
   }
 
   if (localProc == 0) {
     std::cout << "allOk1 = " << allOk1 << std::endl;
+    std::cout.flush();
   }
-  
   comm->barrier();
-  
-  // ****************************************************************
-  // Step 6/6: check sparse matvec
-  // ****************************************************************
-  Teuchos::RCP<Vector_t> originalMatVec = Tpetra::createVector<scalar_t,localId_t,globalId_t>( originalMatrix->getRangeMap() );
-  originalMatrix->apply(*originalVector, *originalMatVec);
-  scalar_t originalNorm = originalMatVec->norm2();
 
-  Teuchos::RCP<Vector_t> balancedMatVec = Tpetra::createVector<scalar_t,localId_t,globalId_t>( balancedMatrix->getRangeMap() );
-  balancedMatrix->apply(*balancedVector, *balancedMatVec);
-  scalar_t balancedNorm = balancedMatVec->norm2();
+  // ****************************************************************
+  // Step 6/10: compare matrix norms (before and after redistribution)
+  // ****************************************************************
+  bool allOk2(true);
+  {
+    Scalar_t originalFrobNorm  ( originalMatrix->getFrobeniusNorm()   );
+    Scalar_t rebalancedFrobNorm( rebalancedMatrix->getFrobeniusNorm() );
 
-  scalar_t relativeDiff = (balancedNorm - originalNorm) / originalNorm;
-  
-  if (localProc == 0) {
-    std::cout << "||originalMatVec||_2 = " << originalNorm
-              << ", ||balancedMatVec||_2 = " << balancedNorm
-              << ", relativeDiff = " << relativeDiff
-              << ", scalar_t = " << typeid(scalar_t).name()
-              << ", Teuchos::ScalarTraits<scalar_t>::eps() = " << Teuchos::ScalarTraits<scalar_t>::eps()
-              << std::endl;
+    Scalar_t relativeDiff = (rebalancedFrobNorm - originalFrobNorm) / originalFrobNorm;
+
+    if (localProc == 0) {
+      std::cout << "||originalMat||_frob = " << originalFrobNorm
+                << ", ||rebalancedMat||_2 = " << rebalancedFrobNorm
+                << ", relativeDiff = " << relativeDiff
+                << ", Scalar_t = " << typeid(Scalar_t).name()
+                << ", Teuchos::ScalarTraits<Scalar_t>::eps() = " << Teuchos::ScalarTraits<Scalar_t>::eps()
+                << std::endl;
+      std::cout.flush();
+    }
+    allOk2 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
   }
-
-  bool allOk2( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<scalar_t>::eps() );
 
   if (localProc == 0) {
     std::cout << "allOk2 = " << allOk2 << std::endl;
+    std::cout.flush();
   }
-
   comm->barrier();
 
-  return (allOk1 && allOk2);
+  // ****************************************************************
+  // Step 7/10: compare lhs norms (before and after redistribution)
+  // ****************************************************************
+  bool allOk3(true);
+  {
+    std::vector<Scalar_t> originalLhsNorms2_vec( numVectors );
+    Teuchos::ArrayView<Scalar_t> originalLhsNorms2_array( originalLhsNorms2_vec.data(), originalLhsNorms2_vec.size() );
+    originalLhs->norm2(originalLhsNorms2_array);
+
+    std::vector<Scalar_t> rebalancedLhsNorms2_vec( numVectors );
+    Teuchos::ArrayView<Scalar_t> rebalancedLhsNorms2_array( rebalancedLhsNorms2_vec.data(), rebalancedLhsNorms2_vec.size() );
+    rebalancedLhs->norm2(rebalancedLhsNorms2_array);
+
+    for (size_t v(0); (v < numVectors) && allOk3; ++v) {
+      Scalar_t originalNorm2   = originalLhsNorms2_array[v];
+      Scalar_t rebalancedNorm2 = rebalancedLhsNorms2_array[v];
+
+      Scalar_t relativeDiff = (rebalancedNorm2 - originalNorm2) / originalNorm2;
+
+      if (localProc == 0) {
+        std::cout << "||originalLhs[" << v << "]||_2 = " << originalNorm2
+                  << ", ||rebalancedLhs[" << v << "]||_2 = " << rebalancedNorm2
+                  << ", relativeDiff = " << relativeDiff
+                  << ", Scalar_t = " << typeid(Scalar_t).name()
+                  << ", Teuchos::ScalarTraits<Scalar_t>::eps() = " << Teuchos::ScalarTraits<Scalar_t>::eps()
+                  << std::endl;
+        std::cout.flush();
+      }
+      allOk3 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
+    }
+  }
+
+  if (localProc == 0) {
+    std::cout << "allOk3 = " << allOk3 << std::endl;
+    std::cout.flush();
+  }
+  comm->barrier();
+
+  // ****************************************************************
+  // Step 8/10: compare rhs norms (before and after redistribution)
+  // ****************************************************************
+  bool allOk4(true);
+  {
+    std::vector<Scalar_t> originalRhsNorms2_vec( numVectors );
+    Teuchos::ArrayView<Scalar_t> originalRhsNorms2_array( originalRhsNorms2_vec.data(), originalRhsNorms2_vec.size() );
+    originalRhs->norm2(originalRhsNorms2_array);
+
+    std::vector<Scalar_t> rebalancedRhsNorms2_vec( numVectors );
+    Teuchos::ArrayView<Scalar_t> rebalancedRhsNorms2_array( rebalancedRhsNorms2_vec.data(), rebalancedRhsNorms2_vec.size() );
+    rebalancedRhs->norm2(rebalancedRhsNorms2_array);
+
+    for (size_t v(0); (v < numVectors) && allOk4; ++v) {
+      Scalar_t originalNorm2   = originalRhsNorms2_array[v];
+      Scalar_t rebalancedNorm2 = rebalancedRhsNorms2_array[v];
+
+      Scalar_t relativeDiff = (rebalancedNorm2 - originalNorm2) / originalNorm2;
+
+      if (localProc == 0) {
+        std::cout << "||originalRhs[" << v << "]||_2 = " << originalNorm2
+                  << ", ||rebalancedRhs[" << v << "]||_2 = " << rebalancedNorm2
+                  << ", relativeDiff = " << relativeDiff
+                  << ", Scalar_t = " << typeid(Scalar_t).name()
+                  << ", Teuchos::ScalarTraits<Scalar_t>::eps() = " << Teuchos::ScalarTraits<Scalar_t>::eps()
+                  << std::endl;
+        std::cout.flush();
+      }
+      allOk4 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
+    }
+  }
+
+  if (localProc == 0) {
+    std::cout << "allOk4 = " << allOk4 << std::endl;
+    std::cout.flush();
+  }
+  comm->barrier();
+
+  // ****************************************************************
+  // Step 9/10: compare mat * lhs norms (before and after redistribution)
+  // ****************************************************************
+  bool allOk5(true);
+  {
+    std::vector<Scalar_t> originalMatLhsNorms2_vec( numVectors );
+    Teuchos::ArrayView<Scalar_t> originalMatLhsNorms2_array( originalMatLhsNorms2_vec.data(), originalMatLhsNorms2_vec.size() );
+
+    Teuchos::RCP<MultiV_t> originalMatLhs = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getRangeMap(), numVectors );
+    originalMatrix->apply(*originalLhs, *originalMatLhs);
+    originalMatLhs->norm2(originalMatLhsNorms2_array);
+
+    std::vector<Scalar_t> rebalancedMatLhsNorms2_vec( numVectors );
+    Teuchos::ArrayView<Scalar_t> rebalancedMatLhsNorms2_array( rebalancedMatLhsNorms2_vec.data(), rebalancedMatLhsNorms2_vec.size() );
+
+    Teuchos::RCP<MultiV_t> rebalancedMatLhs = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( rebalancedMatrix->getRangeMap(), numVectors );
+    rebalancedMatrix->apply(*rebalancedLhs, *rebalancedMatLhs);
+    rebalancedMatLhs->norm2(rebalancedMatLhsNorms2_array);
+
+    for (size_t v(0); (v < numVectors) && allOk5; ++v) {
+      Scalar_t originalNorm2   = originalMatLhsNorms2_array[v];
+      Scalar_t rebalancedNorm2 = rebalancedMatLhsNorms2_array[v];
+
+      Scalar_t relativeDiff = (rebalancedNorm2 - originalNorm2) / originalNorm2;
+
+      if (localProc == 0) {
+        std::cout << "||originalMatLhs[" << v << "]||_2 = " << originalNorm2
+                  << ", ||rebalancedMatLhs[" << v << "]||_2 = " << rebalancedNorm2
+                  << ", relativeDiff = " << relativeDiff
+                  << ", Scalar_t = " << typeid(Scalar_t).name()
+                  << ", Teuchos::ScalarTraits<Scalar_t>::eps() = " << Teuchos::ScalarTraits<Scalar_t>::eps()
+                  << std::endl;
+        std::cout.flush();
+      }
+      allOk5 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
+    }
+  }
+
+  if (localProc == 0) {
+    std::cout << "allOk5 = " << allOk5 << std::endl;
+    std::cout.flush();
+  }
+  comm->barrier();
+
+  // ****************************************************************
+  // Step 10/10: check that rebalancedRhs == rebalanceMat * rebalancedLhs
+  // ****************************************************************
+  bool allOk6(true);
+  {
+    std::vector<Scalar_t> rebalancedRhsNorms2_vec( numVectors );
+    Teuchos::ArrayView<Scalar_t> rebalancedRhsNorms2_array( rebalancedRhsNorms2_vec.data(), rebalancedRhsNorms2_vec.size() );
+    rebalancedRhs->norm2(rebalancedRhsNorms2_array);
+
+    Teuchos::RCP<MultiV_t> rebalancedMatLhs = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( rebalancedMatrix->getRangeMap(), numVectors );
+    rebalancedMatrix->apply(*rebalancedLhs, *rebalancedMatLhs);
+    MultiV_t diff(*rebalancedRhs);
+    diff.update(-1., *rebalancedMatLhs, 1.); // diff = 1. * diff - 1. * rebalancedMatLhs
+
+    std::vector<Scalar_t> diffNorms2_vec( numVectors );
+    Teuchos::ArrayView<Scalar_t> diffNorms2_array( diffNorms2_vec.data(), diffNorms2_vec.size() );
+    diff.norm2(diffNorms2_array);
+
+    for (size_t v(0); (v < numVectors) && allOk6; ++v) {
+      Scalar_t diffNorm2       = diffNorms2_array[v];
+      Scalar_t rebalancedNorm2 = rebalancedRhsNorms2_array[v];
+
+      Scalar_t ratio = diffNorm2 / rebalancedNorm2;
+
+      if (localProc == 0) {
+        std::cout << "||rabalancedRhs[" << v << "] - rebalancedMat * rebalancedLhs[" << v << "]||_2 = " << diffNorms2_array[v]
+                  << ", ||rebalancedRhs[" << v << "]||_2 = " << rebalancedNorm2
+                  << ", ratio = " << ratio
+                  << ", Scalar_t = " << typeid(Scalar_t).name()
+                  << ", eps = " << Teuchos::ScalarTraits<Scalar_t>::eps()
+                  << std::endl;
+        std::cout.flush();
+      }
+      allOk6 = ( std::fabs(ratio) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
+    }
+  }
+
+  if (localProc == 0) {
+    std::cout << "allOk6 = " << allOk6 << std::endl;
+    std::cout.flush();
+  }
+  comm->barrier();
+
+  return (allOk1 && allOk2 && allOk3 && allOk4 && allOk5 && allOk6);
 }
 
 int main(int argc, char** argv) {
@@ -252,9 +411,9 @@ int main(int argc, char** argv) {
     else {
       std::cout << "End Result: TEST FAILED!" << std::endl;
     }
-    
+
   }
-  
+
   return 0;
 }
 
