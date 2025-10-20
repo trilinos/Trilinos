@@ -160,7 +160,7 @@ public:
 template<typename DeviceType,class Scalar>
 void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValues<Scalar,DeviceType> & basisValuesLeft,
                   const TensorData<Scalar,DeviceType> & cellMeasures,
-                  const TransformedBasisValues<Scalar,DeviceType> & basisValuesRight, const bool sumInto = false)
+                  const TransformedBasisValues<Scalar,DeviceType> & basisValuesRight)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
 
@@ -173,20 +173,13 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
   // integral data may have shape (C,F1,F2) or (if the variation type is CONSTANT in the cell dimension) shape (F1,F2)
   const int integralViewRank = integrals.getUnderlyingViewRank();
   
-  if (!sumInto)
-  {
-    integrals.clear();
-  }
-  
   const int cellDataExtent = integrals.getDataExtent(0);
-  const int numFieldsLeft  = basisValuesLeft.numFields();
-  const int numFieldsRight = basisValuesRight.numFields();
-  const int spaceDim       = basisValuesLeft.spaceDim();
-  
-  INTREPID2_TEST_FOR_EXCEPTION(basisValuesLeft.spaceDim() != basisValuesRight.spaceDim(), std::invalid_argument, "vectorDataLeft and vectorDataRight must agree on the space dimension");
-  
-  const int leftFamilyCount  =  basisValuesLeft.basisValues().numFamilies();
-  const int rightFamilyCount = basisValuesRight.basisValues().numFamilies();
+  const int numFieldsLeft  = 1;
+  const int numFieldsRight = 1;
+  const int spaceDim       = 1;
+    
+  const int leftFamilyCount  = 1;
+  const int rightFamilyCount = 1;
   
   // we require that the number of tensor components in the vectors are the same for each vector entry
   // this is not strictly necessary, but it makes implementation easier, and we don't at present anticipate other use cases
@@ -199,33 +192,14 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
     int numFamiliesLeft         = refVectorLeft.numFamilies();
     int numVectorComponentsLeft = refVectorLeft.numComponents();
     Kokkos::Array<int,7> maxFieldsForComponentLeft  {0,0,0,0,0,0,0};
-    for (int familyOrdinal=0; familyOrdinal<numFamiliesLeft; familyOrdinal++)
-    {
-      for (int vectorComponent=0; vectorComponent<numVectorComponentsLeft; vectorComponent++)
-      {
-        const TensorData<Scalar,DeviceType> &tensorData = refVectorLeft.getComponent(familyOrdinal,vectorComponent);
-        if (tensorData.numTensorComponents() > 0)
-        {
-          if (numTensorComponentsLeft == -1)
-          {
-            numTensorComponentsLeft = tensorData.numTensorComponents();
-          }
-          INTREPID2_TEST_FOR_EXCEPTION(numVectorComponentsLeft != tensorData.numTensorComponents(), std::invalid_argument, "Each valid entry in vectorDataLeft must have the same number of tensor components as every other");
-          for (int r=0; r<numTensorComponentsLeft; r++)
-          {
-            maxFieldsForComponentLeft[r] = std::max(tensorData.getTensorComponent(r).extent_int(0), maxFieldsForComponentLeft[r]);
-          }
-        }
-      }
-    }
+    const TensorData<Scalar,DeviceType> &tensorData = refVectorLeft.getComponent(0,0);
+    numTensorComponentsLeft = tensorData.numTensorComponents();
+    maxFieldsForComponentLeft[0] = std::max(tensorData.getTensorComponent(0).extent_int(0), maxFieldsForComponentLeft[0]);
   }
   else
   {
     numTensorComponentsLeft = basisValuesLeft.basisValues().tensorData(0).numTensorComponents(); // family ordinal 0
-    for (int familyOrdinal = 0; familyOrdinal < leftFamilyCount; familyOrdinal++)
-    {
-      INTREPID2_TEST_FOR_EXCEPTION(basisValuesLeft.basisValues().tensorData(familyOrdinal).numTensorComponents() != numTensorComponentsLeft, std::invalid_argument, "All families must match in the number of tensor components");
-    }
+    INTREPID2_TEST_FOR_EXCEPTION(basisValuesLeft.basisValues().tensorData(0).numTensorComponents() != numTensorComponentsLeft, std::invalid_argument, "All families must match in the number of tensor components");
   }
   int numTensorComponentsRight = -1;
   const bool rightIsVectorValued = basisValuesRight.vectorData().isValid();
