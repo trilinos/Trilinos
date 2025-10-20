@@ -689,21 +689,10 @@ TEUCHOS_UNIT_TEST( PR14546, AllocationIssue )
   Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorData};
   TD td1 = tensorData;
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft};//, secondFamilyLeft};
-  
   VD vectorDataLeft(vectorComponentsLeft);
   
-  Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorData};
-  TD td2 = tensorData;
-  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight}; //, secondFamilyRight};
-  
-  {
-    // Imitate VectorData construction from vectorComponentsRight
-    using VectorArray = Kokkos::Array< TensorData<DataScalar,DeviceType>, Parameters::MaxVectorComponents >; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
-    using FamilyVectorArray = Kokkos::Array< VectorArray, Parameters::MaxTensorComponents>;
-
-    FamilyVectorArray vectorComponents_; // outer: family ordinal; inner: component/spatial dimension ordinal
-    vectorComponents_[0][0] = vectorComponentsRight[0][0];
-  }
+  using BigVectorArray = Kokkos::Array< TensorData<DataScalar,DeviceType>, 200 >;
+  BigVectorArray vectorComponents;
   
   TBV  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
   TBV transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataLeft);
