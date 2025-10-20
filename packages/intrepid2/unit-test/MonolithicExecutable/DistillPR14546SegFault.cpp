@@ -1,64 +1,13 @@
-// @HEADER
-// *****************************************************************************
-//                           Intrepid2 Package
-//
-// Copyright 2007 NTESS and the Intrepid2 contributors.
-// SPDX-License-Identifier: BSD-3-Clause
-// *****************************************************************************
-// @HEADER
+#include <Kokkos_Core.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
 
-
-/** \file
-    \brief  Tests against structured integration facilities - "synthetic" test cases (i.e., no geometry specified).
-    \author Nathan V. Roberts
-*/
-
-#include "Kokkos_Core.hpp"
-
-#include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_UnitTestRepository.hpp>
-
-#include <Intrepid2_TestUtils.hpp>
-
-#include "Intrepid2_ArgExtractor.hpp"
-#include "Intrepid2_DataDimensionInfo.hpp"
-#include "Intrepid2_DataFunctors.hpp"
-#include "Intrepid2_DataVariationType.hpp"
-
-
-  template<class DataScalar,typename DeviceType>
-  class A {
-  public:
-    Kokkos::View<DataScalar*,       DeviceType> data1_;  // the rank 1 data that is explicitly stored
-    Kokkos::View<DataScalar**,      DeviceType> data2_;  // the rank 2 data that is explicitly stored
-    Kokkos::View<DataScalar***,     DeviceType> data3_;  // the rank 3 data that is explicitly stored
-    Kokkos::View<DataScalar****,    DeviceType> data4_;  // the rank 4 data that is explicitly stored
-    Kokkos::View<DataScalar*****,   DeviceType> data5_;  // the rank 5 data that is explicitly stored
-    Kokkos::View<DataScalar******,  DeviceType> data6_;  // the rank 6 data that is explicitly stored
-    Kokkos::View<DataScalar*******, DeviceType> data7_;  // the rank 7 data that is explicitly stored
-    
-    Kokkos::Array<int,7> activeDims_;
-    
-  public:
-            
-    //! default constructor (empty data)
-    A()
-    {}
-    
-  };
-
-namespace
-{
-
-
+class A {
+public:
+  Kokkos::Array<int,7> activeDims_;
+};
 
 TEUCHOS_UNIT_TEST( PR14546, AllocationIssue )
 {
-  using DeviceType = Intrepid2::DefaultTestDeviceType;
-  using BigDataArray = Kokkos::Array< A<double,DeviceType>, 20000 >;
-  BigDataArray vectorComponents;
+  using BigArray = Kokkos::Array< A, 400000 >;
+  BigArray vectorComponents;
 }
-
-} // anonymous namespace
