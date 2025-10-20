@@ -65,67 +65,9 @@ public:
   cellMeasures_(cellMeasures)
   {}
   
-  template<size_t maxComponents, size_t numComponents = maxComponents>
-  KOKKOS_INLINE_FUNCTION
-  int incrementArgument(      Kokkos::Array<int,maxComponents> &arguments,
-                        const Kokkos::Array<int,maxComponents> &bounds) const
-  {
-    return -1;
-  }
-  
-  //! runtime-sized variant of incrementArgument; gets used by approximate flop count.
-  KOKKOS_INLINE_FUNCTION
-  int incrementArgument(      Kokkos::Array<int,Parameters::MaxTensorComponents> &arguments,
-                        const Kokkos::Array<int,Parameters::MaxTensorComponents> &bounds,
-                        const int &numComponents) const
-  {
-    return -1;
-  }
-  
-  template<size_t maxComponents, size_t numComponents = maxComponents>
-  KOKKOS_INLINE_FUNCTION
-  int nextIncrementResult(const Kokkos::Array<int,maxComponents> &arguments,
-                          const Kokkos::Array<int,maxComponents> &bounds) const
-  {
-    return -1;
-  }
-  
-  //! runtime-sized variant of nextIncrementResult; gets used by approximate flop count.
-  KOKKOS_INLINE_FUNCTION
-  int nextIncrementResult(const Kokkos::Array<int,Parameters::MaxTensorComponents> &arguments,
-                          const Kokkos::Array<int,Parameters::MaxTensorComponents> &bounds,
-                          const int &numComponents) const
-  {
-    return -1;
-  }
-  
-  template<size_t maxComponents, size_t numComponents = maxComponents>
-  KOKKOS_INLINE_FUNCTION
-  int relativeEnumerationIndex(const Kokkos::Array<int,maxComponents> &arguments,
-                               const Kokkos::Array<int,maxComponents> &bounds,
-                               const int startIndex) const
-  {
-    return -1;
-  }
-  
-  KOKKOS_INLINE_FUNCTION
-  void runSpecialized3( const TeamMember & teamMember ) const
-  {}
-  
-  template<size_t numTensorComponents>
-  KOKKOS_INLINE_FUNCTION
-  void run( const TeamMember & teamMember ) const
-  {}
-  
   KOKKOS_INLINE_FUNCTION
   void operator()( const TeamMember & teamMember ) const
   {}
-  
-  //! returns an estimate of the number of floating point operations per cell (counting sums, subtractions, divisions, and multiplies, each of which counts as one operation).
-  long approximateFlopCountPerCell() const
-  {
-    return -1;
-  }
 };
 
 template<class Scalar, class DeviceType, int integralViewRank>
@@ -141,162 +83,55 @@ TensorData<Scalar,DeviceType> leftComponent_;
 Data<Scalar,DeviceType> composedTransform_;
 TensorData<Scalar,DeviceType> rightComponent_;
 TensorData<Scalar,DeviceType> cellMeasures_;
-int a_offset_;
-int b_offset_;
-int leftComponentSpan_;   //  leftComponentSpan tracks the dimensions spanned by the left component
-int rightComponentSpan_;  // rightComponentSpan tracks the dimensions spanned by the right component
-int numTensorComponents_;
-int  leftFieldOrdinalOffset_;
-int rightFieldOrdinalOffset_;
 
 size_t fad_size_output_ = 0; // 0 if not a fad type
 
-// as an optimization, we do all the bounds and argument iteration within the functor rather than relying on TensorArgumentIterator
-// (this also makes it easier to reorder loops, etc., for further optimizations)
-  Kokkos::Array<int,Parameters::MaxTensorComponents>  leftFieldBounds_;
-  Kokkos::Array<int,Parameters::MaxTensorComponents> rightFieldBounds_;
-Kokkos::Array<int,Parameters::MaxTensorComponents> pointBounds_;
-
-int maxFieldsLeft_;
-int maxFieldsRight_;
-int maxPointCount_;
 public:
 F_IntegratePointValueCache(Data<Scalar,DeviceType> integralData,
                            TensorData<Scalar,DeviceType> leftComponent,
                            Data<Scalar,DeviceType> composedTransform,
                            TensorData<Scalar,DeviceType> rightComponent,
-                           TensorData<Scalar,DeviceType> cellMeasures,
-                           int a_offset,
-                           int b_offset,
-                           int leftFieldOrdinalOffset,
-                           int rightFieldOrdinalOffset)
+                           TensorData<Scalar,DeviceType> cellMeasures)
 :
 integralView_(integralData.template getUnderlyingView<integralViewRank>()),
 leftComponent_(leftComponent),
 composedTransform_(composedTransform),
 rightComponent_(rightComponent),
-cellMeasures_(cellMeasures),
-a_offset_(a_offset),
-b_offset_(b_offset),
-leftComponentSpan_(leftComponent.extent_int(2)),
-rightComponentSpan_(rightComponent.extent_int(2)),
-numTensorComponents_(leftComponent.numTensorComponents()),
-leftFieldOrdinalOffset_(leftFieldOrdinalOffset),
-rightFieldOrdinalOffset_(rightFieldOrdinalOffset)
-{
-  INTREPID2_TEST_FOR_EXCEPTION(numTensorComponents_ != rightComponent_.numTensorComponents(), std::invalid_argument, "Left and right components must have matching number of tensorial components");
-
-  const int FIELD_DIM = 0;
-  const int POINT_DIM = 1;
-  maxFieldsLeft_  = 0;
-  maxFieldsRight_ = 0;
-  maxPointCount_  = 0;
-  for (int r=0; r<numTensorComponents_; r++)
-  {
-    leftFieldBounds_[r]  = leftComponent_.getTensorComponent(r).extent_int(FIELD_DIM);
-    maxFieldsLeft_       = std::max(maxFieldsLeft_, leftFieldBounds_[r]);
-    rightFieldBounds_[r] = rightComponent_.getTensorComponent(r).extent_int(FIELD_DIM);
-    maxFieldsRight_      = std::max(maxFieldsRight_, rightFieldBounds_[r]);
-    pointBounds_[r]      = leftComponent_.getTensorComponent(r).extent_int(POINT_DIM);
-    maxPointCount_       = std::max(maxPointCount_, pointBounds_[r]);
-  }
-
-  // prepare for allocation of temporary storage
-  // note: tempStorage goes "backward", starting from the final component, which needs just one entry
-
-  const bool allocateFadStorage = !(std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value);
-  if (allocateFadStorage)
-  {
-    fad_size_output_ = dimension_scalar(integralView_);
-  }
-}
+cellMeasures_(cellMeasures)
+{}
 
 template<size_t maxComponents, size_t numComponents = maxComponents>
 KOKKOS_INLINE_FUNCTION
 int incrementArgument(      Kokkos::Array<int,maxComponents> &arguments,
                       const Kokkos::Array<int,maxComponents> &bounds) const
-{
-  if (numComponents == 0) return -1;
-  int r = static_cast<int>(numComponents - 1);
-  while (arguments[r] + 1 >= bounds[r])
-  {
-    arguments[r] = 0; // reset
-    r--;
-    if (r < 0) break;
-  }
-  if (r >= 0) ++arguments[r];
-  return r;
-}
+{}
 
 //! runtime-sized variant of incrementArgument; gets used by approximate flop count.
 KOKKOS_INLINE_FUNCTION
 int incrementArgument(      Kokkos::Array<int,Parameters::MaxTensorComponents> &arguments,
                       const Kokkos::Array<int,Parameters::MaxTensorComponents> &bounds,
                       const int &numComponents) const
-{
-  if (numComponents == 0) return -1;
-  int r = static_cast<int>(numComponents - 1);
-  while (arguments[r] + 1 >= bounds[r])
-  {
-    arguments[r] = 0; // reset
-    r--;
-    if (r < 0) break;
-  }
-  if (r >= 0) ++arguments[r];
-  return r;
-}
+{}
 
 template<size_t maxComponents, size_t numComponents = maxComponents>
 KOKKOS_INLINE_FUNCTION
 int nextIncrementResult(const Kokkos::Array<int,maxComponents> &arguments,
                         const Kokkos::Array<int,maxComponents> &bounds) const
-{
-  if (numComponents == 0) return -1;
-  int r = static_cast<int>(numComponents - 1);
-  while (arguments[r] + 1 >= bounds[r])
-  {
-    r--;
-    if (r < 0) break;
-  }
-  return r;
-}
+{}
 
 //! runtime-sized variant of nextIncrementResult; gets used by approximate flop count.
 KOKKOS_INLINE_FUNCTION
 int nextIncrementResult(const Kokkos::Array<int,Parameters::MaxTensorComponents> &arguments,
                         const Kokkos::Array<int,Parameters::MaxTensorComponents> &bounds,
                         const int &numComponents) const
-{
-  if (numComponents == 0) return -1;
-  int r = numComponents - 1;
-  while (arguments[r] + 1 >= bounds[r])
-  {
-    r--;
-    if (r < 0) break;
-  }
-  return r;
-}
+{}
 
 template<size_t maxComponents, size_t numComponents = maxComponents>
 KOKKOS_INLINE_FUNCTION
 int relativeEnumerationIndex(const Kokkos::Array<int,maxComponents> &arguments,
                              const Kokkos::Array<int,maxComponents> &bounds,
                              const int startIndex) const
-{
-  // the following mirrors what is done in TensorData
-  if (numComponents == 0)
-  {
-    return 0;
-  }
-  int enumerationIndex = 0;
-  for (size_t r=numComponents-1; r>static_cast<size_t>(startIndex); r--)
-  {
-    enumerationIndex += arguments[r];
-    enumerationIndex *= bounds[r-1];
-  }
-  enumerationIndex += arguments[startIndex];
-  return enumerationIndex;
-}
+{}
 
 template<int rank>
 KOKKOS_INLINE_FUNCTION
@@ -317,627 +152,16 @@ integralViewEntry(const IntegralViewType& integralView, const int &cellDataOrdin
   //! Hand-coded 3-component version
 KOKKOS_INLINE_FUNCTION
 void runSpecialized3( const TeamMember & teamMember ) const
-{
-  constexpr int numTensorComponents = 3;
-  
-  const int pointBounds_x = pointBounds_[0];
-  const int pointBounds_y = pointBounds_[1];
-  const int pointBounds_z = pointBounds_[2];
-  const int pointsInNonzeroComponentDimensions = pointBounds_y * pointBounds_z;
-  
-  const int  leftFieldBounds_x =  leftFieldBounds_[0];
-  const int rightFieldBounds_x = rightFieldBounds_[0];
-  const int  leftFieldBounds_y =  leftFieldBounds_[1];
-  const int rightFieldBounds_y = rightFieldBounds_[1];
-  const int  leftFieldBounds_z =  leftFieldBounds_[2];
-  const int rightFieldBounds_z = rightFieldBounds_[2];
-  
-  Kokkos::Array<int,numTensorComponents>  leftFieldBounds;
-  Kokkos::Array<int,numTensorComponents> rightFieldBounds;
-  for (unsigned r=0; r<numTensorComponents; r++)
-  {
-    leftFieldBounds[r]  =  leftFieldBounds_[r];
-    rightFieldBounds[r] = rightFieldBounds_[r];
-  }
-  
-  const auto integralView = integralView_;
-  const auto  leftFieldOrdinalOffset =  leftFieldOrdinalOffset_;
-  const auto rightFieldOrdinalOffset = rightFieldOrdinalOffset_;
-
-  const int cellDataOrdinal  = teamMember.league_rank();
-  const int threadNumber     = teamMember.team_rank();
-  
-  const int numThreads       = teamMember.team_size(); // num threads
-  const int GyEntryCount     = pointBounds_z; // for each thread: store one Gy value per z coordinate
-  Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> GxIntegrals; // for caching Gx values: we integrate out the first component dimension for each coordinate in the remaining dimensios
-  Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> GyIntegrals; // for caching Gy values (each thread gets a stack, of the same height as tensorComponents - 1)
-  Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure; shared by team
-  
-  Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged> leftFields_x, rightFields_x;
-  Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged> leftFields_y, rightFields_y;
-  Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged> leftFields_z, rightFields_z;
-  if (fad_size_output_ > 0) {
-    GxIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),   pointsInNonzeroComponentDimensions, fad_size_output_);
-    GyIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),   GyEntryCount * numThreads,          fad_size_output_);
-    pointWeights  = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1),   fad_size_output_);
-    
-    leftFields_x  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_x, pointBounds_x, fad_size_output_);
-    rightFields_x = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_x, pointBounds_x, fad_size_output_);
-    leftFields_y  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_y, pointBounds_y, fad_size_output_);
-    rightFields_y = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_y, pointBounds_y, fad_size_output_);
-    leftFields_z  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_z, pointBounds_z, fad_size_output_);
-    rightFields_z = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_z, pointBounds_z, fad_size_output_);
-  }
-  else {
-    GxIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  pointsInNonzeroComponentDimensions);
-    GyIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  GyEntryCount * numThreads);
-    pointWeights  = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(),  composedTransform_.extent_int(1));
-  
-    leftFields_x  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_x, pointBounds_x);
-    rightFields_x = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_x, pointBounds_x);
-    leftFields_y  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_y, pointBounds_y);
-    rightFields_y = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_y, pointBounds_y);
-    leftFields_z  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_z, pointBounds_z);
-    rightFields_z = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_z, pointBounds_z);
-  }
-
-//        int approximateFlopCount = 0;
-//        int flopsPerCellMeasuresAccess = cellMeasures_.numTensorComponents() - 1;
-
-  // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
-
-  const int composedTransformRank = composedTransform_.rank();
-  
-  // synchronize threads
-  teamMember.team_barrier();
-
-  for (int a_component=0; a_component < leftComponentSpan_; a_component++)
-  {
-    const int a = a_offset_ + a_component;
-    for (int b_component=0; b_component < rightComponentSpan_; b_component++)
-    {
-      const int b = b_offset_ + b_component;
-
-      const Data<Scalar,DeviceType> &  leftTensorComponent_x =  leftComponent_.getTensorComponent(0);
-      const Data<Scalar,DeviceType> & rightTensorComponent_x = rightComponent_.getTensorComponent(0);
-      const Data<Scalar,DeviceType> &  leftTensorComponent_y =  leftComponent_.getTensorComponent(1);
-      const Data<Scalar,DeviceType> & rightTensorComponent_y = rightComponent_.getTensorComponent(1);
-      const Data<Scalar,DeviceType> &  leftTensorComponent_z =  leftComponent_.getTensorComponent(2);
-      const Data<Scalar,DeviceType> & rightTensorComponent_z = rightComponent_.getTensorComponent(2);
-      
-      const int maxFields = (maxFieldsLeft_ > maxFieldsRight_) ? maxFieldsLeft_ : maxFieldsRight_;
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,maxFields), [&] (const int& fieldOrdinal) {
-        if (fieldOrdinal < leftTensorComponent_x.extent_int(0))
-        {
-          const int pointCount = leftTensorComponent_x.extent_int(1);
-          const int   leftRank = leftTensorComponent_x.rank();
-          for (int pointOrdinal=0; pointOrdinal<pointCount; pointOrdinal++)
-          {
-            leftFields_x(fieldOrdinal,pointOrdinal) = (leftRank == 2) ? leftTensorComponent_x(fieldOrdinal,pointOrdinal) : leftTensorComponent_x(fieldOrdinal,pointOrdinal,a_component);
-          }
-        }
-        if (fieldOrdinal < leftTensorComponent_y.extent_int(0))
-        {
-          const int pointCount = leftTensorComponent_y.extent_int(1);
-          const int   leftRank = leftTensorComponent_y.rank();
-          for (int pointOrdinal=0; pointOrdinal<pointCount; pointOrdinal++)
-          {
-            leftFields_y(fieldOrdinal,pointOrdinal) = (leftRank == 2) ? leftTensorComponent_y(fieldOrdinal,pointOrdinal) : leftTensorComponent_y(fieldOrdinal,pointOrdinal,a_component);
-          }
-        }
-        if (fieldOrdinal < leftTensorComponent_z.extent_int(0))
-        {
-          const int pointCount = leftTensorComponent_z.extent_int(1);
-          const int   leftRank = leftTensorComponent_z.rank();
-          for (int pointOrdinal=0; pointOrdinal<pointCount; pointOrdinal++)
-          {
-            leftFields_z(fieldOrdinal,pointOrdinal) = (leftRank == 2) ? leftTensorComponent_z(fieldOrdinal,pointOrdinal) : leftTensorComponent_z(fieldOrdinal,pointOrdinal,a_component);
-          }
-        }
-        if (fieldOrdinal < rightTensorComponent_x.extent_int(0))
-        {
-          const int pointCount = rightTensorComponent_x.extent_int(1);
-          const int   rightRank = rightTensorComponent_x.rank();
-          for (int pointOrdinal=0; pointOrdinal<pointCount; pointOrdinal++)
-          {
-            rightFields_x(fieldOrdinal,pointOrdinal) = (rightRank == 2) ? rightTensorComponent_x(fieldOrdinal,pointOrdinal) : rightTensorComponent_x(fieldOrdinal,pointOrdinal,a_component);
-          }
-        }
-        if (fieldOrdinal < rightTensorComponent_y.extent_int(0))
-        {
-          const int pointCount = rightTensorComponent_y.extent_int(1);
-          const int   rightRank = rightTensorComponent_y.rank();
-          for (int pointOrdinal=0; pointOrdinal<pointCount; pointOrdinal++)
-          {
-            rightFields_y(fieldOrdinal,pointOrdinal) = (rightRank == 2) ? rightTensorComponent_y(fieldOrdinal,pointOrdinal) : rightTensorComponent_y(fieldOrdinal,pointOrdinal,a_component);
-          }
-        }
-        if (fieldOrdinal < rightTensorComponent_z.extent_int(0))
-        {
-          const int pointCount = rightTensorComponent_z.extent_int(1);
-          const int   rightRank = rightTensorComponent_z.rank();
-          for (int pointOrdinal=0; pointOrdinal<pointCount; pointOrdinal++)
-          {
-            rightFields_z(fieldOrdinal,pointOrdinal) = (rightRank == 2) ? rightTensorComponent_z(fieldOrdinal,pointOrdinal) : rightTensorComponent_z(fieldOrdinal,pointOrdinal,a_component);
-          }
-        }
-      });
-      
-      if (composedTransformRank == 4) // (C,P,D,D)
-      {
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-          pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-        });
-      }
-      else // (C,P)
-      {
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-          pointWeights(pointOrdinal) = composedTransform_(cellDataOrdinal,pointOrdinal) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-        });
-      }
-
-      // synchronize threads
-      teamMember.team_barrier();
-      
-      for (int i0=0; i0<leftFieldBounds_x; i0++)
-      {
-        for (int j0=0; j0<rightFieldBounds_x; j0++)
-        {
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,pointsInNonzeroComponentDimensions), [&] (const int& pointEnumerationIndexLaterDimensions) {
-            // first component is fastest-moving; we can get a tensorPointEnumerationOffset just by multiplying by the pointBounds in x
-            const int tensorPointEnumerationOffset = pointBounds_x * pointEnumerationIndexLaterDimensions; // compute offset for pointWeights container, for which x is the fastest-moving
-            
-            Scalar & Gx = GxIntegrals(pointEnumerationIndexLaterDimensions);
-            
-            Gx = 0;
-            if (fad_size_output_ == 0)
-            {
-              // not a Fad type; we're allow to have a vector range
-              Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(teamMember, pointBounds_x), [&] (const int &x_pointOrdinal, Scalar &integralThusFar)
-              {
-                integralThusFar += leftFields_x(i0,x_pointOrdinal) * rightFields_x(j0,x_pointOrdinal) * pointWeights(tensorPointEnumerationOffset + x_pointOrdinal);
-              }, Gx);
-            }
-            else
-            {
-              for (int x_pointOrdinal=0; x_pointOrdinal<pointBounds_x; x_pointOrdinal++)
-              {
-                Gx += leftFields_x(i0,x_pointOrdinal) * rightFields_x(j0,x_pointOrdinal) * pointWeights(tensorPointEnumerationOffset + x_pointOrdinal);
-              }
-            }
-          });
-
-          // synchronize threads
-          teamMember.team_barrier();
-          
-          Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,leftFieldBounds_y * rightFieldBounds_y), [&] (const int& i1j1) {
-            const int i1 = i1j1 % leftFieldBounds_y;
-            const int j1 = i1j1 / leftFieldBounds_y;
-            
-            int Gy_index_offset = GyEntryCount * threadNumber; // thread-relative index into GyIntegrals container; store one value per z coordinate
-            
-            for (int lz=0; lz<pointBounds_z; lz++)
-            {
-              int pointEnumerationIndex = lz * pointBounds_y;
-              if (fad_size_output_ == 0)
-              {
-                Scalar Gy_local = 0;
-                
-                // not a Fad type; we're allow to have a vector range
-                Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(teamMember, pointBounds_y), [&] (const int &ly, Scalar &integralThusFar)
-                {
-                  const Scalar &  leftValue =  leftFields_y(i1,ly);
-                  const Scalar & rightValue = rightFields_y(j1,ly);
-                  
-                  integralThusFar += leftValue * rightValue * GxIntegrals(pointEnumerationIndex + ly);
-                }, Gy_local);
-                
-              GyIntegrals(Gy_index_offset + lz) = Gy_local;
-              }
-              else
-              {
-                Scalar & Gy = GyIntegrals(Gy_index_offset + lz);
-                for (int ly=0; ly<pointBounds_y; ly++)
-                {
-                  const Scalar &  leftValue =  leftFields_y(i1,ly);
-                  const Scalar & rightValue = rightFields_y(j1,ly);
-                
-                  Gy += leftValue * rightValue * GxIntegrals(pointEnumerationIndex + ly);
-                }
-              }
-            }
-                
-            for (int i2=0; i2<leftFieldBounds_z; i2++)
-            {
-              for (int j2=0; j2<rightFieldBounds_z; j2++)
-              {
-                Scalar Gz = 0.0;
-                
-                if (fad_size_output_ == 0)
-                {
-                  // not a Fad type; we're allow to have a vector range
-                  Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(teamMember, pointBounds_z), [&] (const int &lz, Scalar &integralThusFar)
-                  {
-                    const Scalar &  leftValue =  leftFields_z(i2,lz);
-                    const Scalar & rightValue = rightFields_z(j2,lz);
-                    
-                    integralThusFar += leftValue * rightValue * GyIntegrals(Gy_index_offset+lz);
-                  }, Gz);
-                }
-                else
-                {
-                  for (int lz=0; lz<pointBounds_z; lz++)
-                  {
-                    const Scalar &  leftValue =  leftFields_z(i2,lz);
-                    const Scalar & rightValue = rightFields_z(j2,lz);
-                    
-                    Gz += leftValue * rightValue * GyIntegrals(Gy_index_offset+lz);
-                  }
-                }
-                
-                const int i =  leftFieldOrdinalOffset + i0 + (i1 + i2 *  leftFieldBounds_y) *  leftFieldBounds_x;
-                const int j = rightFieldOrdinalOffset + j0 + (j1 + j2 * rightFieldBounds_y) * rightFieldBounds_x;
-                // the above are an optimization of the below, undertaken on the occasion of a weird Intel compiler segfault, possibly a compiler bug.
-//                      const int i = relativeEnumerationIndex( leftArguments,  leftFieldBounds, 0) +  leftFieldOrdinalOffset;
-//                      const int j = relativeEnumerationIndex(rightArguments, rightFieldBounds, 0) + rightFieldOrdinalOffset;
-                
-                Kokkos::single (Kokkos::PerThread(teamMember), [&] () {
-                  integralViewEntry<integralViewRank>(integralView, cellDataOrdinal, i, j) += Gz;
-                });
-              }
-            }
-          });
-          // synchronize threads
-          teamMember.team_barrier();
-        }
-      }
-    }
-  }
-}
+{}
   
 template<size_t numTensorComponents>
 KOKKOS_INLINE_FUNCTION
 void run( const TeamMember & teamMember ) const
-{
-  INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "implementation incomplete");
-//        Kokkos::Array<int,numTensorComponents>  pointBounds;
-//        Kokkos::Array<int,numTensorComponents>  leftFieldBounds;
-//        Kokkos::Array<int,numTensorComponents> rightFieldBounds;
-//
-//        int pointsInNonzeroComponentDimensions = 1;
-//        for (unsigned r=0; r<numTensorComponents; r++)
-//        {
-//          pointBounds[r] = pointBounds_[r];
-//          if (r > 0) pointsInNonzeroComponentDimensions *= pointBounds[r];
-//          leftFieldBounds[r]  =  leftFieldBounds_[r];
-//          rightFieldBounds[r] = rightFieldBounds_[r];
-//        }
-//
-//        const int cellDataOrdinal  = teamMember.league_rank();
-//        const int numThreads       = teamMember.team_size(); // num threads
-//        const int G_k_StackHeight = numTensorComponents - 1; // per thread
-//        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> G_0_IntegralsView; // for caching G0 values: we integrate out the first component dimension for each coordinate in the remaining dimensios
-//        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> G_k_StackView; // for caching G_k values (each thread gets a stack, of the same height as tensorComponents - 1)
-//        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure; shared by team
-//        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> leftFields, rightFields; // cache the field values at each level for faster access
-//        if (fad_size_output_ > 0) {
-//          G_k_StackView     = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), G_k_StackHeight * numThreads,       fad_size_output_);
-//          G_0_IntegralsView = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), pointsInNonzeroComponentDimensions, fad_size_output_);
-//          pointWeights   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1), fad_size_output_);
-//          leftFields     = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_, fad_size_output_);
-//          rightFields    = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_, fad_size_output_);
-//        }
-//        else {
-//          G_k_StackView     = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), G_k_StackHeight * numThreads);
-//          G_0_IntegralsView = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), pointsInNonzeroComponentDimensions);
-//          pointWeights   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1));
-//          leftFields     = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_);
-//          rightFields    = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_);
-//        }
-//
-////        int approximateFlopCount = 0;
-////        int flopsPerCellMeasuresAccess = cellMeasures_.numTensorComponents() - 1;
-//
-//        constexpr int R = numTensorComponents - 1;
-//
-//        // approximateFlopCount += composedTransform_.extent_int(1) * cellMeasures.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
-//
-//        // synchronize threads
-//        teamMember.team_barrier();
-//
-//        for (int a_component=0; a_component < leftComponentSpan_; a_component++)
-//        {
-//          const int a = a_offset_ + a_component;
-//          for (int b_component=0; b_component < rightComponentSpan_; b_component++)
-//          {
-//            const int b = b_offset_ + b_component;
-//
-//            const Data<Scalar,DeviceType> &  leftFirstComponent =  leftComponent_.getTensorComponent(0);
-//            const Data<Scalar,DeviceType> & rightFirstComponent = rightComponent_.getTensorComponent(0);
-//
-//            const int numLeftFieldsFirst  =  leftFirstComponent.extent_int(0); // shape (F,P[,D])
-//            const int numRightFieldsFirst = rightFirstComponent.extent_int(0); // shape (F,P[,D])
-//
-//            const int numPointsFirst = leftFirstComponent.extent_int(1);
-//
-//            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-//              pointWeights(pointOrdinal) = composedTransform_.access(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-//            });
-//
-//            // synchronize threads
-//            teamMember.team_barrier();
-//
-//            for (int i0=0; i0<numLeftFieldsFirst; i0++)
-//            {
-//              for (int j0=0; j0<numRightFieldsFirst; j0++)
-//              {
-//                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,numLeftFieldsFirst*numPointsFirst), [&] (const int& fieldOrdinalByPointOrdinal) {
-//                  const int fieldOrdinal = fieldOrdinalByPointOrdinal % numPointsFirst;
-//                  const int pointOrdinal = fieldOrdinalByPointOrdinal / numPointsFirst;
-//                  leftFields(pointOrdinal) = leftFirstComponent(fieldOrdinal,pointOrdinal);
-//                });
-//
-//                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,numRightFieldsFirst*numPointsFirst), [&] (const int& fieldOrdinalByPointOrdinal) {
-//                  const int fieldOrdinal = fieldOrdinalByPointOrdinal % numPointsFirst;
-//                  const int pointOrdinal = fieldOrdinalByPointOrdinal / numPointsFirst;
-//                  rightFields(pointOrdinal) = rightFirstComponent(fieldOrdinal,pointOrdinal);
-//                });
-//
-//                // synchronize threads
-//                teamMember.team_barrier();
-//
-//                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,pointsInNonzeroComponentDimensions), [&] (const int& pointEnumerationIndexLaterDimensions) {
-//                  Kokkos::Array<int,numTensorComponents-1> pointArgumentsInLaterDimensions;
-//                  int remainingIndex = pointEnumerationIndexLaterDimensions;
-//
-//                  for (int d=R-1; d>0; d--) // last component (z in 3D hypercube) is fastest-moving // TODO: consider doing first component as fastest-moving.  That would make indexing into pointWeights simpler
-//                  {
-//                    pointArgumentsInLaterDimensions[d] = pointEnumerationIndexLaterDimensions % pointBounds[d+1];
-//                    remainingIndex /= pointBounds[d+1];
-//                  }
-//                  pointArgumentsInLaterDimensions[0] = remainingIndex;
-//
-//                  int tensorPointEnumerationOffset = 0; // compute offset for pointWeights container, for which x is the fastest-moving
-//                  for (int d=R; d>0; d--)
-//                  {
-//                    tensorPointEnumerationOffset += pointArgumentsInLaterDimensions[d-1]; // pointArgumentsInLaterDimensions does not have an x component, hence d-1 here
-//                    tensorPointEnumerationOffset *= pointBounds[d-1];
-//                  }
-//
-//                  Scalar integralValue = 0;
-//                  if (fad_size_output_ == 0)
-//                  {
-//                    // not a Fad type; we're allow to have a vector range
-//                    Kokkos::parallel_reduce("first component integral", Kokkos::ThreadVectorRange(teamMember, numPointsFirst), [&] (const int &x_pointOrdinal, Scalar &integralThusFar)
-//                    {
-//                      integralThusFar += leftFields(x_pointOrdinal) * rightFields(x_pointOrdinal) * pointWeights(tensorPointEnumerationOffset);
-//                    }, integralValue);
-//                  }
-//                  else
-//                  {
-//                    for (int pointOrdinal=0; pointOrdinal<numPointsFirst; pointOrdinal++)
-//                    {
-//                      integralValue += leftFields(pointOrdinal) * rightFields(pointOrdinal) * pointWeights(tensorPointEnumerationOffset);
-//                    }
-//                  }
-//
-//                  G_0_IntegralsView(pointEnumerationIndexLaterDimensions) = integralValue;
-//                });
-//
-//                // synchronize threads
-//                teamMember.team_barrier();
-//
-//                // TODO: finish this, probably after having written up the algorithm for arbitrary component count.  (I have it written down for 3D.)
-//              }
-//            }
-//          }
-//        }
-////        std::cout << "flop count per cell (within operator()) : " << approximateFlopCount << std::endl;
-}
+{}
 
 KOKKOS_INLINE_FUNCTION
 void operator()( const TeamMember & teamMember ) const
 {}
-
-//! returns an estimate of the number of floating point operations per cell (counting sums, subtractions, divisions, and multiplies, each of which counts as one operation).
-long approximateFlopCountPerCell() const
-{
-  // compute flop count on a single cell
-  int flopCount = 0;
-
-  constexpr int numTensorComponents = 3;
-  Kokkos::Array<int,numTensorComponents>  pointBounds;
-  Kokkos::Array<int,numTensorComponents>  leftFieldBounds;
-  Kokkos::Array<int,numTensorComponents> rightFieldBounds;
-
-  int pointsInNonzeroComponentDimensions = 1;
-  for (unsigned r=0; r<numTensorComponents; r++)
-  {
-    pointBounds[r] = pointBounds_[r];
-    if (r > 0) pointsInNonzeroComponentDimensions *= pointBounds[r];
-    leftFieldBounds[r]  =  leftFieldBounds_[r];
-    rightFieldBounds[r] = rightFieldBounds_[r];
-  }
-
-  for (int a_component=0; a_component < leftComponentSpan_; a_component++)
-  {
-    for (int b_component=0; b_component < rightComponentSpan_; b_component++)
-    {
-//            Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransform_.extent_int(1)), [&] (const int& pointOrdinal) {
-//              pointWeights(pointOrdinal) = composedTransform_.access(cellDataOrdinal,pointOrdinal,a,b) * cellMeasures_(cellDataOrdinal,pointOrdinal);
-//            });
-      flopCount += composedTransform_.extent_int(1) * cellMeasures_.numTensorComponents(); // cellMeasures does numTensorComponents - 1 multiplies on each access
-
-      for (int i0=0; i0<leftFieldBounds[0]; i0++)
-      {
-        for (int j0=0; j0<rightFieldBounds[0]; j0++)
-        {
-          flopCount += pointsInNonzeroComponentDimensions * pointBounds[0] * 3; // 3 flops per integration point in the loop commented out below
-//                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,pointsInNonzeroComponentDimensions), [&] (const int& pointEnumerationIndexLaterDimensions) {
-//                  Kokkos::Array<int,numTensorComponents-1> pointArgumentsInLaterDimensions;
-//                  int remainingIndex = pointEnumerationIndexLaterDimensions;
-//
-//                  for (int d=0; d<R-1; d++) // first component is fastest-moving; this is determined by order of access in the lz/ly loop to compute Gy (integrals in y dimension)
-//                  {
-//                    pointArgumentsInLaterDimensions[d] = pointEnumerationIndexLaterDimensions % pointBounds[d+1]; // d+1 because x dimension is being integrated away
-//                    remainingIndex /= pointBounds[d+1];
-//                  }
-//                  pointArgumentsInLaterDimensions[R-1] = remainingIndex;
-//
-//                  int tensorPointEnumerationOffset = 0; // compute offset for pointWeights container, for which x is the fastest-moving
-//                  for (int d=R; d>0; d--)
-//                  {
-//                    tensorPointEnumerationOffset += pointArgumentsInLaterDimensions[d-1]; // pointArgumentsInLaterDimensions does not have an x component, hence d-1 here
-//                    tensorPointEnumerationOffset *= pointBounds[d-1];
-//                  }
-//
-//                  Scalar integralValue = 0;
-//                  if (fad_size_output_ == 0)
-//                  {
-//                    // not a Fad type; we're allow to have a vector range
-//                    Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(teamMember, numPointsFirst), [&] (const int &x_pointOrdinal, Scalar &integralThusFar)
-//                    {
-//                      integralThusFar += leftFields(x_pointOrdinal) * rightFields(x_pointOrdinal) * pointWeights(tensorPointEnumerationOffset + x_pointOrdinal);
-//                    }, integralValue);
-//                  }
-//                  else
-//                  {
-//                    for (int x_pointOrdinal=0; x_pointOrdinal<numPointsFirst; x_pointOrdinal++)
-//                    {
-//                      integralValue += leftFields_x(x_pointOrdinal) * rightFields_x(x_pointOrdinal) * pointWeights(tensorPointEnumerationOffset + x_pointOrdinal);
-//                    }
-//                  }
-//
-//                  GxIntegrals(pointEnumerationIndexLaterDimensions) = integralValue;
-//                });
-
-          
-          flopCount += leftFieldBounds[1] * rightFieldBounds[1] * pointBounds[1] * pointBounds[2] * 3; // 3 flops for each Gy += line in the below
-          flopCount += leftFieldBounds[1] * rightFieldBounds[1] * leftFieldBounds[2] * rightFieldBounds[2] * pointBounds[2] * 3; // 3 flops for each Gz += line in the below
-          flopCount += leftFieldBounds[1] * rightFieldBounds[1] * leftFieldBounds[2] * rightFieldBounds[2] * 1; // 1 flops for the integralView += line below
-          
-//                Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,leftFieldBounds[1] * rightFieldBounds[1]), [&] (const int& i1j1) {
-//                  const int i1 = i1j1 % leftFieldBounds[1];
-//                  const int j1 = i1j1 / leftFieldBounds[1];
-//
-////                  int Gy_index = GyEntryCount * threadNumber; // thread-relative index into GyIntegrals container; store one value per z coordinate
-//
-//                  int pointEnumerationIndex = 0; // incremented at bottom of lz loop below.
-//                  for (int lz=0; lz<pointBounds[2]; lz++)
-//                  {
-//                    Scalar & Gy = GyIntegrals(Gy_index);
-//                    Gy = 0.0;
-//
-//                    const bool  leftRankIs3 = ( leftFields_y.rank() == 3);
-//                    const bool rightRankIs3 = (rightFields_y.rank() == 3);
-//                    for (int ly=0; ly<pointBounds[1]; ly++)
-//                    {
-//                      const Scalar &  leftValue =  leftRankIs3 ?  leftFields_y(i1,ly,a_component) :  leftFields_y(i1,ly);
-//                      const Scalar & rightValue = rightRankIs3 ? rightFields_y(j1,ly,b_component) : rightFields_y(j1,ly);
-//
-//                      Gy += leftValue * rightValue * GxIntegrals(pointEnumerationIndex);
-//
-//                      pointEnumerationIndex++;
-//                    }
-//                    Gy_index++;
-//                  }
-//
-//                  for (int i2=0; i2<leftFieldBounds[2]; i2++)
-//                  {
-//                    for (int j2=0; j2<rightFieldBounds[2]; j2++)
-//                    {
-//                      Scalar Gz = 0.0;
-//
-//                      int Gy_index = GyEntryCount * threadNumber; // thread-relative index into GyIntegrals container; store one value per z coordinate
-//
-//                      const bool  leftRankIs3 = ( leftFields_z.rank() == 3);
-//                      const bool rightRankIs3 = (rightFields_z.rank() == 3);
-//                      for (int lz=0; lz<pointBounds[2]; lz++)
-//                      {
-//                        const Scalar &  leftValue =  leftRankIs3 ?  leftFields_z(i2,lz,a_component) :  leftFields_z(i2,lz);
-//                        const Scalar & rightValue = rightRankIs3 ? rightFields_z(j2,lz,b_component) : rightFields_z(j2,lz);
-//
-//                        Gz += leftValue * rightValue * GyIntegrals(Gy_index);
-//
-//                        Gy_index++;
-//                      }
-//
-//                      Kokkos::Array<int,3>  leftArguments {i0,i1,i2};
-//                      Kokkos::Array<int,3> rightArguments {j0,j1,j2};
-//
-//                      const int i = relativeEnumerationIndex( leftArguments,  leftFieldBounds, 0) +  leftFieldOrdinalOffset_;
-//                      const int j = relativeEnumerationIndex(rightArguments, rightFieldBounds, 0) + rightFieldOrdinalOffset_;
-//
-//                      if (integralViewRank == 2)
-//                      {
-//                        integralView_.access(i,j,0) += Gz;
-//                      }
-//                      else
-//                      {
-//                        integralView_.access(cellDataOrdinal,i,j) += Gz;
-//                      }
-//                    }
-//                  }
-//                });
-        }
-      }
-    }
-  }
-  return flopCount;
-}
-
-//! returns the team size that should be provided to the policy constructor, based on the Kokkos maximum and the amount of thread parallelism we have available.
-int teamSize(const int &maxTeamSizeFromKokkos) const
-{
-  // TODO: fix this to match the actual parallelism expressed
-  const int R = numTensorComponents_ - 1;
-  const int threadParallelismExpressed = leftFieldBounds_[R] * rightFieldBounds_[R];
-  return std::min(maxTeamSizeFromKokkos, threadParallelismExpressed);
-}
-
-//! Provide the shared memory capacity.
-size_t team_shmem_size (int numThreads) const
-{
-  // we use shared memory to create a fast buffer for intermediate values, as well as fast access to the current-cell's field values
-  size_t shmem_size = 0;
-  
-  const int GyEntryCount = pointBounds_[2]; // for each thread: store one Gy value per z coordinate
-
-  int pointsInNonzeroComponentDimensions = 1;
-  for (int d=1; d<numTensorComponents_; d++)
-  {
-    pointsInNonzeroComponentDimensions *= pointBounds_[d];
-  }
-  
-  if (fad_size_output_ > 0)
-  {
-    shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(pointsInNonzeroComponentDimensions, fad_size_output_); // GxIntegrals: entries with x integrated away
-    shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(GyEntryCount * numThreads,          fad_size_output_); // GyIntegrals: entries with x,y integrated away
-    shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size  (composedTransform_.extent_int(1), fad_size_output_); // pointWeights
-    
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[0], pointBounds_[0], fad_size_output_); // leftFields_x
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[0], pointBounds_[0], fad_size_output_); // rightFields_x
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[1], pointBounds_[1], fad_size_output_); // leftFields_y
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[1], pointBounds_[1], fad_size_output_); // rightFields_y
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[2], pointBounds_[2], fad_size_output_); // leftFields_z
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[2], pointBounds_[2], fad_size_output_); // rightFields_z
-  }
-  else
-  {
-    shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(pointsInNonzeroComponentDimensions);  // GxIntegrals: entries with x integrated away
-    shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(GyEntryCount * numThreads);           // GyIntegrals: entries with x,y integrated away
-    shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size  (composedTransform_.extent_int(1)); // pointWeights
-    
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[0], pointBounds_[0]); // leftFields_x
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[0], pointBounds_[0]); // rightFields_x
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[1], pointBounds_[1]); // leftFields_y
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[1], pointBounds_[1]); // rightFields_y
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[2], pointBounds_[2]); // leftFields_z
-    shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[2], pointBounds_[2]); // rightFields_z
-  }
-
-  return shmem_size;
-}
 };
 
 template<class Scalar, class DeviceType>
@@ -1480,13 +704,6 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
             const int vectorSize = getVectorSizeForHierarchicalParallelism<Scalar>();
             Kokkos::TeamPolicy<ExecutionSpace> policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,Kokkos::AUTO(),vectorSize);
             
-            // TODO: expose the options for forceNonSpecialized and usePointCacheForRank3Tensor through an IntegrationAlgorithm enumeration.
-            // AUTOMATIC: let Intrepid2 choose an algorithm based on the inputs (and, perhaps, the execution space)
-            // STANDARD: don't use sum factorization or axis alignment -- just do the simple contraction, a (p+1)^9 algorithm in 3D
-            // SUM_FACTORIZATION                              // (p+1)^7 algorithm in 3D
-            // SUM_FACTORIZATION_AXIS_ALIGNED                 // (p+1)^6 algorithm in 3D
-            // SUM_FACTORIZATION_FORCE_GENERIC_IMPLEMENTATION // mainly intended for testing purposes (specialized implementations perform better when they are provided)
-            // SUM_FACTORIZATION_WITH_POINT_CACHE             // novel (p+1)^7 (in 3D) algorithm in Intrepid2; unclear as yet when and whether this may be a superior approach
             bool forceNonSpecialized = false; // We might expose this in the integrate() arguments in the future.  We *should* default to false in the future.
             bool usePointCacheForRank3Tensor = true; // EXPERIMENTAL; has better performance under CUDA, but slightly worse performance than standard on serial CPU
             
@@ -1499,74 +716,11 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
             haveLaunchedContributionToCurrentFamilyLeft  = true;
             haveLaunchedContributionToCurrentFamilyRight = true;
             
-            if (integralViewRank == 2)
             {
-              if (usePointCacheForRank3Tensor && (leftComponent.numTensorComponents() == 3))
-              {
-                auto functor = F_IntegratePointValueCache<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset);
-                
-                const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
-                const int teamSize            = functor.teamSize(recommendedTeamSize);
-                
-                policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
-                
-                Kokkos::parallel_for("F_IntegratePointValueCache rank 2", policy, functor);
-                
-                if (approximateFlops != NULL)
-                {
-                  *approximateFlops += functor.approximateFlopCountPerCell() * integrals.getDataExtent(0);
-                }
-              }
-              else
-              {
-                auto functor = F_Integrate<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
-                
-                const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
-                const int teamSize            = recommendedTeamSize;
-                
-                policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
-                
-                Kokkos::parallel_for("F_Integrate rank 2", policy, functor);
-                
-                if (approximateFlops != NULL)
-                {
-                  *approximateFlops += functor.approximateFlopCountPerCell() * integrals.getDataExtent(0);
-                }
-              }
-            }
-            else if (integralViewRank == 3)
-            {
-              if (usePointCacheForRank3Tensor && (leftComponent.numTensorComponents() == 3))
-              {
-                auto functor = F_IntegratePointValueCache<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset);
-                
-                const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
-                const int teamSize            = functor.teamSize(recommendedTeamSize);
-                
-                policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
-                
-                Kokkos::parallel_for("F_IntegratePointValueCache rank 3", policy, functor);
-                
-                if (approximateFlops != NULL)
-                {
-                  *approximateFlops += functor.approximateFlopCountPerCell() * integrals.getDataExtent(0);
-                }
-              }
-              else
-              {
-                auto functor = F_Integrate<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
-                
-                const int teamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
-                
-                policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
-                
-                Kokkos::parallel_for("F_Integrate rank 3", policy, functor);
-                
-                if (approximateFlops != NULL)
-                {
-                  *approximateFlops += functor.approximateFlopCountPerCell() * integrals.getDataExtent(0);
-                }
-              }
+              auto functor1 = F_IntegratePointValueCache<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
+              auto functor2 = F_Integrate<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
+              auto functor3 = F_IntegratePointValueCache<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
+              auto functor4 = F_Integrate<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
             }
             b_offset += rightIsVectorValued ? basisValuesRight.vectorData().numDimsForComponent(rightComponentOrdinal) : 1;
           }
@@ -1577,10 +731,6 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
       leftFieldOrdinalOffset += leftIsVectorValued ? basisValuesLeft.vectorData().numFieldsInFamily(leftFamilyOrdinal) : basisValuesLeft.basisValues().numFieldsInFamily(leftFamilyOrdinal);
     }
   }
-//  if (approximateFlops != NULL)
-//  {
-//    std::cout << "Approximate flop count (new): " << *approximateFlops << std::endl;
-//  }
   ExecutionSpace().fence(); // make sure we've finished writing to integrals container before we return
 }
 
