@@ -185,8 +185,6 @@ class F_ComputeIntegral
 
   using ComponentIntegralsArray = Kokkos::Array<Kokkos::Array<ScalarView<Scalar, DeviceType>, Parameters::MaxTensorComponents>, Parameters::MaxTensorComponents>;
 
-  Kokkos::View<Scalar **, DeviceType> integralView2_;
-  Kokkos::View<Scalar ***, DeviceType> integralView3_;
   const TensorData<Scalar, DeviceType> leftComponent_;
   const TensorData<Scalar, DeviceType> rightComponent_;
   const TensorData<Scalar, DeviceType> cellMeasures_;
@@ -211,15 +209,6 @@ public:
       const ordinal_type leftFieldOffset,
       const ordinal_type rightFieldOffset,
       const ordinal_type integralViewRank)
-      :
-      integralView2_(integralView2),
-      integralView3_(integralView3),
-      leftComponent_(leftComponent),
-      rightComponent_(rightComponent),
-      cellMeasures_(cellMeasures),
-      basisValuesLeft_(basisValuesLeft),
-      basisValuesRight_(basisValuesRight),
-      componentIntegrals_(componentIntegrals)
   {}
 
   KOKKOS_INLINE_FUNCTION
