@@ -153,7 +153,7 @@ class Constraint
   void LeastSquaresSolve(const MultiVector& B, MultiVector& C) const;
 
  protected:
-  void PrepareLeastSquaresSolve(const std::string& solverType, bool singular = false);
+  void PrepareLeastSquaresSolve(const std::string& solverType, bool detect_singular_blocks = false);
 
  private:
   //! The constraints matrix
@@ -170,7 +170,7 @@ class Constraint
   RCP<Belos::SolverManager<Scalar, MV, OP>> solver_;
 
   //! Prepare least-squares solve using Belos
-  void PrepareLeastSquaresSolveBelos(bool singular);
+  void PrepareLeastSquaresSolveBelos(bool detect_singular_blocks);
 
   //! Perform least-squares solve using Belos
   void LeastSquaresSolveBelos(const MultiVector& B, MultiVector& C) const;
@@ -179,7 +179,7 @@ class Constraint
   RCP<Matrix> invXXt_;
 
   //! Prepare direct solution of least-squares problem
-  void PrepareLeastSquaresSolveDirect(bool singular);
+  void PrepareLeastSquaresSolveDirect(bool detect_singular_blocks);
 
   //! Direct solve of least-squares problem
   void LeastSquaresSolveDirect(const MultiVector& B, MultiVector& C) const;

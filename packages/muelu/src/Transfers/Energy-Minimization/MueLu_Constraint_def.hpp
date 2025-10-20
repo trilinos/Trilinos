@@ -208,7 +208,7 @@ FindBlocks(RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>& X) {
   return blocks;
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, bool PseudoInverse>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class BlockInverseFunctor {
  public:
   using CrsGraph          = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
@@ -221,11 +221,12 @@ class BlockInverseFunctor {
   using shared_matrix = Kokkos::View<scalar_type**, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
   using shared_vector = Kokkos::View<scalar_type*, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
 
-  BlockInverseFunctor(local_matrix_type A_, local_graph_type blocks_, LocalOrdinal maxBlocksize_, local_matrix_type invA_)
+  BlockInverseFunctor(local_matrix_type A_, local_graph_type blocks_, LocalOrdinal maxBlocksize_, local_matrix_type invA_, const Kokkos::View<bool*>& singular_)
     : A(A_)
     , blocks(blocks_)
     , maxBlocksize(maxBlocksize_)
-    , invA(invA_) {}
+    , invA(invA_)
+    , singular(singular_) {}
 
  private:
   const scalar_type zero = ATS::zero();
@@ -235,6 +236,7 @@ class BlockInverseFunctor {
   local_graph_type blocks;
   LocalOrdinal maxBlocksize;
   local_matrix_type invA;
+  const Kokkos::View<bool*>& singular;
 
  public:
   KOKKOS_INLINE_FUNCTION
@@ -247,6 +249,8 @@ class BlockInverseFunctor {
 
     shared_matrix lclA(thread.team_shmem(), blockSize, blockSize);
     shared_matrix lclInvA(thread.team_shmem(), blockSize, blockSize);
+
+    const bool PseudoInverse = (!(singular.extent(0) == 0)) && singular(blockId);
 
     // Initialize lclA
     // If PseudoInverse, we shift the constant mode.
@@ -353,18 +357,15 @@ class BlockInverseFunctor {
 
   // amount of shared memory
   size_t team_shmem_size(int /* team_size */) const {
-    if (PseudoInverse)
-      return 3 * shared_matrix::shmem_size(maxBlocksize, maxBlocksize) + 2 * shared_vector::shmem_size(maxBlocksize);
-    else
-      return 2 * shared_matrix::shmem_size(maxBlocksize, maxBlocksize) + 2 * shared_vector::shmem_size(maxBlocksize);
+    return 3 * shared_matrix::shmem_size(maxBlocksize, maxBlocksize) + 2 * shared_vector::shmem_size(maxBlocksize);
   }
 };
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolveBelos(const bool singular) {
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolveBelos(const bool detect_singular_blocks) {
   Monitor m(*this, "PrepareLeastSquaresSolveBelos");
 
-  TEUCHOS_ASSERT(!singular);
+  TEUCHOS_ASSERT(!detect_singular_blocks);
 
   problem_ = rcp(new Belos::LinearProblem<Scalar, MV, OP>());
 
@@ -444,7 +445,7 @@ allocateBlockDiagonalMatrix(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, N
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolveDirect(const bool singular) {
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolveDirect(const bool detect_singular_blocks) {
   Monitor m(*this, "PrepareLeastSquaresSolveDirect");
 
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> XXt;
@@ -459,16 +460,19 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresS
 
   LocalOrdinal numBlocks    = blocks.numRows();
   LocalOrdinal maxBlocksize = invXXt_->getLocalMaxNumRowEntries();
+
+  // If we pass a view of size 0 to the functor, all blocks are assumed to be non-singular.
+  Kokkos::View<bool*> block_is_singular;
+  if (detect_singular_blocks) {
+    block_is_singular = Kokkos::View<bool*>("block_is_singular", numBlocks);
+    Kokkos::deep_copy(block_is_singular, true);
+  }
+
   {
     SubMonitor m2(*this, "inversion");
 
-    if (singular) {
-      BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice());
-      Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space>(numBlocks, 1), functor);
-    } else {
-      BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice());
-      Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space>(numBlocks, 1), functor);
-    }
+    BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node> functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice(), block_is_singular);
+    Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space>(numBlocks, 1), functor);
   }
 
   if (IsPrint(Statistics0)) {
@@ -483,11 +487,11 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresS
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolve(const std::string& solverType, const bool singular) {
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolve(const std::string& solverType, const bool detect_singular_blocks) {
   if (solverType == "Belos")
-    PrepareLeastSquaresSolveBelos(singular);
+    PrepareLeastSquaresSolveBelos(detect_singular_blocks);
   else if (solverType == "direct")
-    PrepareLeastSquaresSolveDirect(singular);
+    PrepareLeastSquaresSolveDirect(detect_singular_blocks);
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be one of (Belos|direct), not \"" << solverType << "\".");
   solverType_ = solverType;

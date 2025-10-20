@@ -40,7 +40,7 @@ SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   D_       = D;
   Dc_      = Dc;
   Setup();
-  this->PrepareLeastSquaresSolve(solverType, /*singular=*/true);
+  this->PrepareLeastSquaresSolve(solverType, /*detect_singular_blocks=*/true);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

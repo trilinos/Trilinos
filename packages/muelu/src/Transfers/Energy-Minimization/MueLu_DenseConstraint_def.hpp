@@ -39,7 +39,7 @@ DenseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   B_  = B;
   Bc_ = Bc;
   Setup();
-  this->PrepareLeastSquaresSolve(solverType, /*singular=*/false);
+  this->PrepareLeastSquaresSolve(solverType, /*detect_singular_blocks=*/false);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
