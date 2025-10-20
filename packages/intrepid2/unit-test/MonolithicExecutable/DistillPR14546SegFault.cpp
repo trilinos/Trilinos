@@ -853,27 +853,7 @@ public:
   
   KOKKOS_INLINE_FUNCTION
   void operator()( const TeamMember & teamMember ) const
-  {
-    switch (numTensorComponents_)
-    {
-      case 1: run<1>(teamMember); break;
-      case 2: run<2>(teamMember); break;
-      case 3:
-        if (forceNonSpecialized_)
-          run<3>(teamMember);
-        else
-          runSpecialized3(teamMember);
-        break;
-      case 4: run<4>(teamMember); break;
-      case 5: run<5>(teamMember); break;
-      case 6: run<6>(teamMember); break;
-      case 7: run<7>(teamMember); break;
-#ifdef INTREPID2_HAVE_DEBUG
-      default:
-        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true,std::invalid_argument,"Unsupported component count");
-#endif
-    }
-  }
+  {}
   
   //! returns an estimate of the number of floating point operations per cell (counting sums, subtractions, divisions, and multiplies, each of which counts as one operation).
   long approximateFlopCountPerCell() const
@@ -1596,22 +1576,7 @@ void run( const TeamMember & teamMember ) const
 
 KOKKOS_INLINE_FUNCTION
 void operator()( const TeamMember & teamMember ) const
-{
-  switch (numTensorComponents_)
-  {
-    case 1: run<1>(teamMember); break;
-    case 2: run<2>(teamMember); break;
-    case 3: runSpecialized3(teamMember); break;
-    case 4: run<4>(teamMember); break;
-    case 5: run<5>(teamMember); break;
-    case 6: run<6>(teamMember); break;
-    case 7: run<7>(teamMember); break;
-#ifdef INTREPID2_HAVE_DEBUG
-    default:
-      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true,std::invalid_argument,"Unsupported component count");
-#endif
-  }
-}
+{}
 
 //! returns an estimate of the number of floating point operations per cell (counting sums, subtractions, divisions, and multiplies, each of which counts as one operation).
 long approximateFlopCountPerCell() const
@@ -1843,20 +1808,7 @@ public:
   
   KOKKOS_INLINE_FUNCTION
   void operator()( const ordinal_type & i, const ordinal_type & j ) const
-  {
-    Scalar refSpaceIntegral = 0.0;
-    for (int ptOrdinal=0; ptOrdinal<numPoints_; ptOrdinal++)
-    {
-      const Scalar & weight = weights_(ptOrdinal);
-      for (int a=0; a<dimSpan_; a++)
-      {
-        const Scalar &  leftValue = ( leftRank_ == 2) ?  left_(i,ptOrdinal) :  left_(i,ptOrdinal,a);
-        const Scalar & rightValue = (rightRank_ == 2) ? right_(j,ptOrdinal) : right_(j,ptOrdinal,a);
-        refSpaceIntegral += leftValue * rightValue * weight;
-      }
-    }
-    integral_(i,j) = refSpaceIntegral;
-  }
+  {}
 };
 
 template <class Scalar, class DeviceType>
@@ -1916,47 +1868,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type &cellDataOrdinal, const ordinal_type &leftFieldOrdinal, const ordinal_type &rightFieldOrdinal) const
-  {
-    const Scalar &cellMeasureWeight = cellMeasures_.getTensorComponent(0)(cellDataOrdinal);
-
-    TensorArgumentIterator leftTensorIterator(leftComponent_, 0); // shape is (F,P), and we walk the F dimension of the container
-    leftTensorIterator.setEnumerationIndex(leftFieldOrdinal);
-
-    TensorArgumentIterator rightTensorIterator(rightComponent_, 0); // shape is (F,P), and we walk the F dimension of the container
-    rightTensorIterator.setEnumerationIndex(rightFieldOrdinal);
-
-    Scalar integralSum = 0.0;
-    for (ordinal_type d = d_start_; d < d_end_; d++)
-    {
-      const Scalar &transformLeft_d = basisValuesLeft_.transformWeight(cellDataOrdinal, 0, d, d);
-      const Scalar &transformRight_d = basisValuesRight_.transformWeight(cellDataOrdinal, 0, d, d);
-
-      const Scalar &leftRightTransform_d = transformLeft_d * transformRight_d;
-      //            approximateFlopCount++;
-
-      Scalar integral_d = 1.0;
-
-      for (ordinal_type r = 0; r < numPointTensorComponents_; r++)
-      {
-        integral_d *= componentIntegrals_[r][d](leftTensorIterator.argument(r), rightTensorIterator.argument(r));
-        //              approximateFlopCount++; // product
-      }
-      integralSum += leftRightTransform_d * integral_d;
-      //            approximateFlopCount += 2; // multiply and sum
-
-      const ordinal_type i = leftFieldOrdinal + leftFieldOffset_;
-      const ordinal_type j = rightFieldOrdinal + rightFieldOffset_;
-
-      if (integralViewRank_ == 3)
-      {
-        integralView3_(cellDataOrdinal, i, j) += cellMeasureWeight * integralSum;
-      }
-      else
-      {
-        integralView2_(i, j) += cellMeasureWeight * integralSum;
-      }
-    }
-  }
+  {}
 };
 
 template<typename DeviceType,class Scalar>
