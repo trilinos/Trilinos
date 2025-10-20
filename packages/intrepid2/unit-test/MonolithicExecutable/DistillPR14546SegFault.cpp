@@ -99,86 +99,14 @@ public:
   leftFieldOrdinalOffset_(leftFieldOrdinalOffset),
   rightFieldOrdinalOffset_(rightFieldOrdinalOffset),
   forceNonSpecialized_(forceNonSpecialized)
-  {
-    INTREPID2_TEST_FOR_EXCEPTION(numTensorComponents_ != rightComponent_.numTensorComponents(), std::invalid_argument, "Left and right components must have matching number of tensorial components");
-    
-    // set up bounds containers
-    const int FIELD_DIM = 0;
-    const int POINT_DIM = 1;
-    maxFieldsLeft_  = 0;
-    maxFieldsRight_ = 0;
-    maxPointCount_  = 0;
-    for (int r=0; r<numTensorComponents_; r++)
-    {
-      leftFieldBounds_[r]  = leftComponent_.getTensorComponent(r).extent_int(FIELD_DIM);
-      maxFieldsLeft_       = std::max(maxFieldsLeft_, leftFieldBounds_[r]);
-      rightFieldBounds_[r] = rightComponent_.getTensorComponent(r).extent_int(FIELD_DIM);
-      maxFieldsRight_      = std::max(maxFieldsRight_, rightFieldBounds_[r]);
-      pointBounds_[r]      = leftComponent_.getTensorComponent(r).extent_int(POINT_DIM);
-      maxPointCount_       = std::max(maxPointCount_, pointBounds_[r]);
-    }
-    
-    // set up relative enumeration spans: total number of enumeration indices with arguments prior to the startingComponent fixed.  These are for *truncated* iterators; hence the -2 rather than -1 for the first startingComponent value.
-    int  leftRelativeEnumerationSpan = 1;
-    int rightRelativeEnumerationSpan = 1;
-    for (int startingComponent=numTensorComponents_-2; startingComponent>=0; startingComponent--)
-    {
-      leftRelativeEnumerationSpan  *=  leftFieldBounds_[startingComponent];
-      rightRelativeEnumerationSpan *= rightFieldBounds_[startingComponent];
-      leftFieldRelativeEnumerationSpans_ [startingComponent] =  leftRelativeEnumerationSpan;
-      rightFieldRelativeEnumerationSpans_[startingComponent] = rightRelativeEnumerationSpan;
-    }
-    
-    // prepare for allocation of temporary storage
-    // note: tempStorage goes "backward", starting from the final component, which needs just one entry
-    
-    const bool allocateFadStorage = !(std::is_standard_layout<Scalar>::value && std::is_trivial<Scalar>::value);
-    if (allocateFadStorage)
-    {
-      fad_size_output_ = dimension_scalar(integralView_);
-    }
-    
-    const int R = numTensorComponents_ - 1;
-    
-    int num_ij = 1; // this counts how many entries there are corresponding to components from r to R-1.
-    int allocationSoFar = 0;
-    offsetsForComponentOrdinal_[R] = allocationSoFar;
-    allocationSoFar++; // we store one entry corresponding to R, the final component
-    
-    for (int r=R-1; r>0; r--) // last component is innermost in the for loops (requires least storage)
-    {
-      const int leftFields  =  leftComponent.getTensorComponent(r).extent_int(0);
-      const int rightFields = rightComponent.getTensorComponent(r).extent_int(0);
-      
-      num_ij *= leftFields * rightFields;
-      
-      offsetsForComponentOrdinal_[r] = allocationSoFar;
-      allocationSoFar += num_ij;
-    }
-    offsetsForComponentOrdinal_[0] = allocationSoFar; // first component stores directly to final integralView.
-  }
+  {}
   
   template<size_t maxComponents, size_t numComponents = maxComponents>
   KOKKOS_INLINE_FUNCTION
   int incrementArgument(      Kokkos::Array<int,maxComponents> &arguments,
                         const Kokkos::Array<int,maxComponents> &bounds) const
   {
-    if (numComponents == 0)
-    {
-      return -1;
-    }
-    else
-    {
-      int r = static_cast<int>(numComponents - 1);
-      while (arguments[r] + 1 >= bounds[r])
-      {
-        arguments[r] = 0; // reset
-        r--;
-        if (r < 0) break;
-      }
-      if (r >= 0) ++arguments[r];
-      return r;
-    }
+    return -1;
   }
   
   //! runtime-sized variant of incrementArgument; gets used by approximate flop count.
@@ -187,16 +115,7 @@ public:
                         const Kokkos::Array<int,Parameters::MaxTensorComponents> &bounds,
                         const int &numComponents) const
   {
-    if (numComponents == 0) return -1;
-    int r = static_cast<int>(numComponents - 1);
-    while (arguments[r] + 1 >= bounds[r])
-    {
-      arguments[r] = 0; // reset
-      r--;
-      if (r < 0) break;
-    }
-    if (r >= 0) ++arguments[r];
-    return r;
+    return -1;
   }
   
   template<size_t maxComponents, size_t numComponents = maxComponents>
@@ -204,20 +123,7 @@ public:
   int nextIncrementResult(const Kokkos::Array<int,maxComponents> &arguments,
                           const Kokkos::Array<int,maxComponents> &bounds) const
   {
-    if (numComponents == 0)
-    {
-      return -1;
-    }
-    else
-    {
-      int r = static_cast<int>(numComponents - 1);
-      while (arguments[r] + 1 >= bounds[r])
-      {
-        r--;
-        if (r < 0) break;
-      }
-      return r;
-    }
+    return -1;
   }
   
   //! runtime-sized variant of nextIncrementResult; gets used by approximate flop count.
@@ -226,14 +132,7 @@ public:
                           const Kokkos::Array<int,Parameters::MaxTensorComponents> &bounds,
                           const int &numComponents) const
   {
-    if (numComponents == 0) return -1;
-    int r = numComponents - 1;
-    while (arguments[r] + 1 >= bounds[r])
-    {
-      r--;
-      if (r < 0) break;
-    }
-    return r;
+    return -1;
   }
   
   template<size_t maxComponents, size_t numComponents = maxComponents>
@@ -242,22 +141,7 @@ public:
                                const Kokkos::Array<int,maxComponents> &bounds,
                                const int startIndex) const
   {
-    // the following mirrors what is done in TensorData
-    if (numComponents == 0)
-    {
-      return 0;
-    }
-    else
-    {
-      int enumerationIndex = 0;
-      for (size_t r=numComponents-1; r>static_cast<size_t>(startIndex); r--)
-      {
-        enumerationIndex += arguments[r];
-        enumerationIndex *= bounds[r-1];
-      }
-      enumerationIndex += arguments[startIndex];
-      return enumerationIndex;
-    }
+    return -1;
   }
   
   KOKKOS_INLINE_FUNCTION
