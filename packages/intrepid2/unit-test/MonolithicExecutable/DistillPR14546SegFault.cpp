@@ -62,11 +62,6 @@ using std::enable_if_t;
   template<class DataScalar,typename DeviceType>
   class Data {
   public:
-    using value_type      = DataScalar;
-    using execution_space = typename DeviceType::execution_space;
-    
-    using reference_type       = typename ScalarView<DataScalar,DeviceType>::reference_type;
-    using const_reference_type = typename ScalarView<const DataScalar,DeviceType>::reference_type;
   private:
     ordinal_type dataRank_;
     Kokkos::View<DataScalar*,       DeviceType> data1_;  // the rank 1 data that is explicitly stored
@@ -79,15 +74,9 @@ using std::enable_if_t;
     Kokkos::Array<int,7> extents_;                     // logical extents in each dimension
     Kokkos::Array<DataVariationType,7> variationType_; // for each dimension, whether the data varies in that dimension
     Kokkos::Array<int,7> variationModulus_;            // for each dimension, a value by which indices should be modulused (only used when variationType_ is MODULAR)
-    int blockPlusDiagonalLastNonDiagonal_ = -1;        // last row/column that is part of the non-diagonal part of the matrix indicated by BLOCK_PLUS_DIAGONAL (if any dimensions are thus marked)
     
     Kokkos::Array<ordinal_type,7> activeDims_;
     int numActiveDims_; // how many of the 7 entries are actually filled in
-    
-    ordinal_type rank_;
-    
-    // we use (const_)reference_type as the return for operator() for performance reasons, especially significant when using Sacado types
-    using return_type = const_reference_type;
     
     //! class initialization method.  Called by constructors.
     void setActiveDims()
@@ -99,7 +88,7 @@ using std::enable_if_t;
     //! default constructor (empty data)
     Data()
     :
-    dataRank_(0), extents_({0,0,0,0,0,0,0}), variationType_({Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT}), blockPlusDiagonalLastNonDiagonal_(-1), rank_(0)
+    dataRank_(0), extents_({0,0,0,0,0,0,0}), variationType_({Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT})
     {
       setActiveDims();
     }
