@@ -59,12 +59,7 @@ using std::enable_if_t;
     Kokkos::View<DataScalar*****,   DeviceType> data5_;  // the rank 5 data that is explicitly stored
     Kokkos::View<DataScalar******,  DeviceType> data6_;  // the rank 6 data that is explicitly stored
     Kokkos::View<DataScalar*******, DeviceType> data7_;  // the rank 7 data that is explicitly stored
-    Kokkos::Array<int,7> extents_;                     // logical extents in each dimension
-    Kokkos::Array<DataVariationType,7> variationType_; // for each dimension, whether the data varies in that dimension
-    Kokkos::Array<int,7> variationModulus_;            // for each dimension, a value by which indices should be modulused (only used when variationType_ is MODULAR)
-    int blockPlusDiagonalLastNonDiagonal_ = -1;        // last row/column that is part of the non-diagonal part of the matrix indicated by BLOCK_PLUS_DIAGONAL (if any dimensions are thus marked)
     
-    bool hasNontrivialModulusUNUSED_;  // this is a little nutty, but having this UNUSED member variable improves performance, probably by shifting the alignment of underlyingMatchesLogical_.  This is true with nvcc; it may also be true with Apple clang
     bool underlyingMatchesLogical_;   // if true, this A object has the same rank and extent as the underlying view
     Kokkos::Array<ordinal_type,7> activeDims_;
     int numActiveDims_; // how many of the 7 entries are actually filled in
@@ -75,7 +70,7 @@ using std::enable_if_t;
     //! default constructor (empty data)
     A()
     :
-    dataRank_(0), extents_({0,0,0,0,0,0,0}), variationType_({Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT,Intrepid2::CONSTANT}), blockPlusDiagonalLastNonDiagonal_(-1), rank_(0)
+    dataRank_(0), rank_(0)
     {}
     
   };
