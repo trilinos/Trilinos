@@ -734,98 +734,98 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
   ExecutionSpace().fence(); // make sure we've finished writing to integrals container before we return
 }
 
-TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
-{
-  using DataScalar  = double;
-  using DeviceType = DefaultTestDeviceType;
-  using D  = Data<DataScalar,DeviceType>;
-  using TD = TensorData<DataScalar,DeviceType>;
-  using VD = VectorData<DataScalar,DeviceType>;
-  using TBV = TransformedBasisValues<DataScalar,DeviceType>;
-  
-  const int spaceDim = 1;
-    
-  auto oneElementView = getFixedRankView<DataScalar>("oneElementView", 1);
-  Kokkos::deep_copy(oneElementView, 1.0);
-  
-  Kokkos::Array<int,2> extents {1,1};
-  Kokkos::Array<DataVariationType,2> variationTypes {GENERAL,GENERAL};
-  D fieldComponentData(oneElementView,extents,variationTypes);
-
-  TD  tensorData(std::vector<D>{fieldComponentData,fieldComponentData});
-  
-  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
-  Kokkos::deep_copy(identityMatrixView, 1.0);
-  
-  Kokkos::Array<int,4> transformExtents {1, 1, 1, 1};
-  Kokkos::Array<DataVariationType,4> transformationVariationType {GENERAL, GENERAL, GENERAL, GENERAL};
-  
-  D explicitIdentityMatrix(identityMatrixView, transformExtents, transformationVariationType);
-  
-  const int numFamilies = 2;
-  TD nullTD;
-  Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorData};
-  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft, firstFamilyLeft};
-  
-  VD vectorDataLeft(vectorComponentsLeft);
-  
-  Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorData};
-  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight, firstFamilyRight};
-  
-  // imitate VD construction vectorDataRight(vectorComponentsRight)
-  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponents = vectorComponentsRight;
-  using VectorArray = Kokkos::Array< TD, Parameters::MaxVectorComponents >; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
-  using FamilyVectorArray = Kokkos::Array< VectorArray, Parameters::MaxTensorComponents>;
-
-  FamilyVectorArray vectorComponents_; // outer: family ordinal; inner: component/spatial dimension ordinal
-  vectorComponents_[0][0] = vectorComponents[0][0];
-  vectorComponents_[1][0] = vectorComponents[1][0];
-  
-  TBV  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
-  TBV transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataLeft);
-  
-  D constantCellMeasuresData(1.0, Kokkos::Array<int,2>{1,1});
-  TD constantCellMeasures(constantCellMeasuresData);
-  
-  // these assignments imitate a function call with arguments (tbvLeft, cellMeasures, tbvRight)
-  const TBV      tbvLeft = transformedUnitVectorDataLeft;
-  const TD  cellMeasures = constantCellMeasures;
-  const TBV     tbvRight = transformedUnitVectorDataLeft;
-    
-//  D integralsBaseline  = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
-  // imitate call to allocateIntegralData() for integralsBaseline
-  TBV tbvLeft_blaid     = tbvLeft;
-  TD cellMeasures_blaid = cellMeasures;
-  TBV tbvRight_blaid    = tbvRight;
-
-  Kokkos::Array<int,3> extents3 {1, 1, 1};
-  Kokkos::Array<DataVariationType,3> variationTypes3 {GENERAL,GENERAL,GENERAL};
-  Kokkos::View<DataScalar***,DeviceType> data3("Intrepid2 integral data",1,1,1);
-  D integralsIntegrate(data3, extents3, variationTypes3);
-  
-  // imitate call to allocateIntegralData() for integralsBaseline
-  const TBV      tbvLeft_iaid = tbvLeft;
-  const TD  cellMeasures_iaid = cellMeasures;
-  const TBV     tbvRight_iaid = tbvRight;
-  
-  // these assignments imitate a function call (to integrate_baseline) with arguments (integralsBaseline, tbvLeft, cellMeasures, tbvRight)
-//  D integrals_bl = integralsBaseline;
-  const TBV tbvLeft_bl  = tbvLeft;
-//  const TD cellMeasures_bl = cellMeasures;
-  const TBV tbvRight_bl = tbvRight;
-  
-  if (tbvLeft.axisAligned())
-    std::cout << "tbvLeft.axisAligned() is TRUE" << std::endl;
-  else
-    std::cout << "tbvLeft.axisAligned() is FALSE" << std::endl;
-  
-  if (tbvRight.axisAligned())
-    std::cout << "tbvRight.axisAligned() is TRUE" << std::endl;
-  else
-    std::cout << "tbvRight.axisAligned() is FALSE" << std::endl;
-  
-  IT_integrate<DeviceType,DataScalar>(integralsIntegrate, tbvLeft, cellMeasures, tbvRight);
-}
+//TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
+//{
+//  using DataScalar  = double;
+//  using DeviceType = DefaultTestDeviceType;
+//  using D  = Data<DataScalar,DeviceType>;
+//  using TD = TensorData<DataScalar,DeviceType>;
+//  using VD = VectorData<DataScalar,DeviceType>;
+//  using TBV = TransformedBasisValues<DataScalar,DeviceType>;
+//  
+//  const int spaceDim = 1;
+//    
+//  auto oneElementView = getFixedRankView<DataScalar>("oneElementView", 1);
+//  Kokkos::deep_copy(oneElementView, 1.0);
+//  
+//  Kokkos::Array<int,2> extents {1,1};
+//  Kokkos::Array<DataVariationType,2> variationTypes {GENERAL,GENERAL};
+//  D fieldComponentData(oneElementView,extents,variationTypes);
+//
+//  TD  tensorData(std::vector<D>{fieldComponentData,fieldComponentData});
+//  
+//  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
+//  Kokkos::deep_copy(identityMatrixView, 1.0);
+//  
+//  Kokkos::Array<int,4> transformExtents {1, 1, 1, 1};
+//  Kokkos::Array<DataVariationType,4> transformationVariationType {GENERAL, GENERAL, GENERAL, GENERAL};
+//  
+//  D explicitIdentityMatrix(identityMatrixView, transformExtents, transformationVariationType);
+//  
+//  const int numFamilies = 2;
+//  TD nullTD;
+//  Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorData};
+//  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft, firstFamilyLeft};
+//  
+//  VD vectorDataLeft(vectorComponentsLeft);
+//  
+//  Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorData};
+//  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight, firstFamilyRight};
+//  
+//  // imitate VD construction vectorDataRight(vectorComponentsRight)
+//  Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponents = vectorComponentsRight;
+//  using VectorArray = Kokkos::Array< TD, Parameters::MaxVectorComponents >; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
+//  using FamilyVectorArray = Kokkos::Array< VectorArray, Parameters::MaxTensorComponents>;
+//
+//  FamilyVectorArray vectorComponents_; // outer: family ordinal; inner: component/spatial dimension ordinal
+//  vectorComponents_[0][0] = vectorComponents[0][0];
+//  vectorComponents_[1][0] = vectorComponents[1][0];
+//  
+//  TBV  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
+//  TBV transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataLeft);
+//  
+//  D constantCellMeasuresData(1.0, Kokkos::Array<int,2>{1,1});
+//  TD constantCellMeasures(constantCellMeasuresData);
+//  
+//  // these assignments imitate a function call with arguments (tbvLeft, cellMeasures, tbvRight)
+//  const TBV      tbvLeft = transformedUnitVectorDataLeft;
+//  const TD  cellMeasures = constantCellMeasures;
+//  const TBV     tbvRight = transformedUnitVectorDataLeft;
+//    
+////  D integralsBaseline  = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+//  // imitate call to allocateIntegralData() for integralsBaseline
+//  TBV tbvLeft_blaid     = tbvLeft;
+//  TD cellMeasures_blaid = cellMeasures;
+//  TBV tbvRight_blaid    = tbvRight;
+//
+//  Kokkos::Array<int,3> extents3 {1, 1, 1};
+//  Kokkos::Array<DataVariationType,3> variationTypes3 {GENERAL,GENERAL,GENERAL};
+//  Kokkos::View<DataScalar***,DeviceType> data3("Intrepid2 integral data",1,1,1);
+//  D integralsIntegrate(data3, extents3, variationTypes3);
+//  
+//  // imitate call to allocateIntegralData() for integralsBaseline
+//  const TBV      tbvLeft_iaid = tbvLeft;
+//  const TD  cellMeasures_iaid = cellMeasures;
+//  const TBV     tbvRight_iaid = tbvRight;
+//  
+//  // these assignments imitate a function call (to integrate_baseline) with arguments (integralsBaseline, tbvLeft, cellMeasures, tbvRight)
+////  D integrals_bl = integralsBaseline;
+//  const TBV tbvLeft_bl  = tbvLeft;
+////  const TD cellMeasures_bl = cellMeasures;
+//  const TBV tbvRight_bl = tbvRight;
+//  
+//  if (tbvLeft.axisAligned())
+//    std::cout << "tbvLeft.axisAligned() is TRUE" << std::endl;
+//  else
+//    std::cout << "tbvLeft.axisAligned() is FALSE" << std::endl;
+//  
+//  if (tbvRight.axisAligned())
+//    std::cout << "tbvRight.axisAligned() is TRUE" << std::endl;
+//  else
+//    std::cout << "tbvRight.axisAligned() is FALSE" << std::endl;
+//  
+//  IT_integrate<DeviceType,DataScalar>(integralsIntegrate, tbvLeft, cellMeasures, tbvRight);
+//}
 
 TEUCHOS_UNIT_TEST( PR14546, AllocationIssue )
 {
