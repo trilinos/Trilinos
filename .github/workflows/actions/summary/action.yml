@@ -12,6 +12,7 @@ runs:
       run: |
         AT2_URL=$(</home/runner/AT2_URL.txt)
         AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
+        GENCONFIG_BUILD_NAME=$(</home/Trilinos/build/genconfig_build_name.txt)
 
         cat <<EOF >> $GITHUB_STEP_SUMMARY
         Image:
