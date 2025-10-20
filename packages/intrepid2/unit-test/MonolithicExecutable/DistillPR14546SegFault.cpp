@@ -27,31 +27,10 @@
 #include "Intrepid2_DataFunctors.hpp"
 #include "Intrepid2_DataVariationType.hpp"
 
-#include "Intrepid2_ScalarView.hpp"
-
-template<class DataScalar,typename DeviceType>
-using ScalarView = Intrepid2::ScalarView<DataScalar, DeviceType>;
-
-using ordinal_type = Intrepid2::ordinal_type;
-
-using DimensionInfo = Intrepid2::DimensionInfo;
-using DataVariationType = Intrepid2::DataVariationType;
-
-template<class DataScalar, int rank>
-using RankExpander = Intrepid2::RankExpander<DataScalar, rank>;
-
-using std::enable_if_t;
 
   template<class DataScalar,typename DeviceType>
   class A {
   public:
-    using value_type      = DataScalar;
-    using execution_space = typename DeviceType::execution_space;
-    
-    using reference_type       = typename ScalarView<DataScalar,DeviceType>::reference_type;
-    using const_reference_type = typename ScalarView<const DataScalar,DeviceType>::reference_type;
-  private:
-    ordinal_type dataRank_;
     Kokkos::View<DataScalar*,       DeviceType> data1_;  // the rank 1 data that is explicitly stored
     Kokkos::View<DataScalar**,      DeviceType> data2_;  // the rank 2 data that is explicitly stored
     Kokkos::View<DataScalar***,     DeviceType> data3_;  // the rank 3 data that is explicitly stored
@@ -60,17 +39,12 @@ using std::enable_if_t;
     Kokkos::View<DataScalar******,  DeviceType> data6_;  // the rank 6 data that is explicitly stored
     Kokkos::View<DataScalar*******, DeviceType> data7_;  // the rank 7 data that is explicitly stored
     
-    bool underlyingMatchesLogical_;   // if true, this A object has the same rank and extent as the underlying view
-    Kokkos::Array<ordinal_type,7> activeDims_;
-    int numActiveDims_; // how many of the 7 entries are actually filled in
+    Kokkos::Array<int,7> activeDims_;
     
-    ordinal_type rank_;
   public:
             
     //! default constructor (empty data)
     A()
-    :
-    dataRank_(0), rank_(0)
     {}
     
   };
