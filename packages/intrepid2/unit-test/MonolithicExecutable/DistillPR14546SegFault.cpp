@@ -36,69 +36,6 @@ namespace
 {
  using namespace Intrepid2;
 
-template<class Scalar, class DeviceType, int integralViewRank>
-class F_Integrate
-{
-  using ExecutionSpace = typename DeviceType::execution_space;
-  using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
-  using TeamMember = typename TeamPolicy::member_type;
-  
-  using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, integralViewRank>::value_type, DeviceType>;
-  IntegralViewType integralView_;
-  TensorData<Scalar,DeviceType> leftComponent_;
-  Data<Scalar,DeviceType> composedTransform_;
-  TensorData<Scalar,DeviceType> rightComponent_;
-  TensorData<Scalar,DeviceType> cellMeasures_;
-  
-  size_t fad_size_output_ = 0; // 0 if not a fad type
-public:
-  F_Integrate(Data<Scalar,DeviceType> integralData,
-              TensorData<Scalar,DeviceType> leftComponent,
-              Data<Scalar,DeviceType> composedTransform,
-              TensorData<Scalar,DeviceType> rightComponent,
-              TensorData<Scalar,DeviceType> cellMeasures)
-  {}
-  
-  KOKKOS_INLINE_FUNCTION
-  void operator()( const TeamMember & teamMember ) const
-  {}
-};
-
-template<class Scalar, class DeviceType, int integralViewRank>
-class F_IntegratePointValueCache
-{
-  using ExecutionSpace = typename DeviceType::execution_space;
-using TeamPolicy = Kokkos::TeamPolicy<DeviceType>;
-using TeamMember = typename TeamPolicy::member_type;
-
-using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, integralViewRank>::value_type, DeviceType>;
-IntegralViewType integralView_;
-TensorData<Scalar,DeviceType> leftComponent_;
-Data<Scalar,DeviceType> composedTransform_;
-TensorData<Scalar,DeviceType> rightComponent_;
-TensorData<Scalar,DeviceType> cellMeasures_;
-
-size_t fad_size_output_ = 0; // 0 if not a fad type
-
-public:
-F_IntegratePointValueCache(Data<Scalar,DeviceType> integralData,
-                           TensorData<Scalar,DeviceType> leftComponent,
-                           Data<Scalar,DeviceType> composedTransform,
-                           TensorData<Scalar,DeviceType> rightComponent,
-                           TensorData<Scalar,DeviceType> cellMeasures)
-:
-integralView_(integralData.template getUnderlyingView<integralViewRank>()),
-leftComponent_(leftComponent),
-composedTransform_(composedTransform),
-rightComponent_(rightComponent),
-cellMeasures_(cellMeasures)
-{}
-
-KOKKOS_INLINE_FUNCTION
-void operator()( const TeamMember & teamMember ) const
-{}
-};
-
 template<class Scalar, class DeviceType>
 class F_RefSpaceIntegral
 {
@@ -517,7 +454,6 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
       // "a" keeps track of the spatial dimension over which we are integrating in the left vector
       // components are allowed to span several dimensions; we keep track of the offset for the component in a_offset
       int a_offset = 0;
-      bool haveLaunchedContributionToCurrentFamilyLeft = false; // helps to track whether we need a Kokkos::fence before launching a kernel.
       for (int leftComponentOrdinal=0; leftComponentOrdinal<leftComponentCount; leftComponentOrdinal++)
       {
         TensorData<Scalar,DeviceType> leftComponent = leftIsVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal)
@@ -534,7 +470,6 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
         {
           // "b" keeps track of the spatial dimension over which we are integrating in the right vector
           // components are allowed to span several dimensions; we keep track of the offset for the component in b_offset
-          bool haveLaunchedContributionToCurrentFamilyRight = false; // helps to track whether we need a Kokkos::fence before launching a kernel.
           int b_offset = 0;
           for (int rightComponentOrdinal=0; rightComponentOrdinal<rightComponentCount; rightComponentOrdinal++)
           {
@@ -551,24 +486,76 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
             
             const int vectorSize = getVectorSizeForHierarchicalParallelism<Scalar>();
             Kokkos::TeamPolicy<ExecutionSpace> policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,Kokkos::AUTO(),vectorSize);
-            
-            bool forceNonSpecialized = false; // We might expose this in the integrate() arguments in the future.  We *should* default to false in the future.
-            bool usePointCacheForRank3Tensor = true; // EXPERIMENTAL; has better performance under CUDA, but slightly worse performance than standard on serial CPU
-            
-            // in one branch or another below, we will launch a parallel kernel that contributes to (leftFamily, rightFamily) field ordinal pairs.
-            // if we have already launched something that contributes to that part of the integral container, we need a Kokkos fence() to ensure that these do not interfere with each other.
-            if (haveLaunchedContributionToCurrentFamilyLeft && haveLaunchedContributionToCurrentFamilyRight)
+                        
             {
-              ExecutionSpace().fence();
-            }
-            haveLaunchedContributionToCurrentFamilyLeft  = true;
-            haveLaunchedContributionToCurrentFamilyRight = true;
-            
-            {
-              auto functor1 = F_IntegratePointValueCache<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
-              auto functor2 = F_Integrate<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
-              auto functor3 = F_IntegratePointValueCache<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
-              auto functor4 = F_Integrate<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
+              {
+                // imitate construction of F_IntegratePointValueCache
+                auto in = integrals;
+                auto lc = leftComponent;
+                auto ct = composedTransform;
+                auto rc = rightComponent;
+                auto cm = cellMeasures;
+                
+                using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, 2>::value_type, DeviceType>;
+                IntegralViewType integralView_;
+                TensorData<Scalar,DeviceType> leftComponent_;
+                Data<Scalar,DeviceType> composedTransform_;
+                TensorData<Scalar,DeviceType> rightComponent_;
+                TensorData<Scalar,DeviceType> cellMeasures_;
+              }
+              {
+                // imitate construction of F_Integrate
+                auto in = integrals;
+                auto lc = leftComponent;
+                auto ct = composedTransform;
+                auto rc = rightComponent;
+                auto cm = cellMeasures;
+                
+                using ExecutionSpace = typename DeviceType::execution_space;
+                using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
+                using TeamMember = typename TeamPolicy::member_type;
+                
+                using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, 2>::value_type, DeviceType>;
+                IntegralViewType integralView_;
+                TensorData<Scalar,DeviceType> leftComponent_;
+                Data<Scalar,DeviceType> composedTransform_;
+                TensorData<Scalar,DeviceType> rightComponent_;
+                TensorData<Scalar,DeviceType> cellMeasures_;
+              }
+              {
+                // imitate construction of F_IntegratePointValueCache
+                auto in = integrals;
+                auto lc = leftComponent;
+                auto ct = composedTransform;
+                auto rc = rightComponent;
+                auto cm = cellMeasures;
+                
+                using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, 3>::value_type, DeviceType>;
+                IntegralViewType integralView_;
+                TensorData<Scalar,DeviceType> leftComponent_;
+                Data<Scalar,DeviceType> composedTransform_;
+                TensorData<Scalar,DeviceType> rightComponent_;
+                TensorData<Scalar,DeviceType> cellMeasures_;
+              }
+              {
+                // imitate construction of F_Integrate
+                auto in = integrals;
+                auto lc = leftComponent;
+                auto ct = composedTransform;
+                auto rc = rightComponent;
+                auto cm = cellMeasures;
+                
+                using ExecutionSpace = typename DeviceType::execution_space;
+                using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
+                using TeamMember = typename TeamPolicy::member_type;
+                
+                using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, 3>::value_type, DeviceType>;
+                IntegralViewType integralView_;
+                TensorData<Scalar,DeviceType> leftComponent_;
+                Data<Scalar,DeviceType> composedTransform_;
+                TensorData<Scalar,DeviceType> rightComponent_;
+                TensorData<Scalar,DeviceType> cellMeasures_;
+              }
             }
             b_offset += rightIsVectorValued ? basisValuesRight.vectorData().numDimsForComponent(rightComponentOrdinal) : 1;
           }
