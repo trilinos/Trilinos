@@ -165,25 +165,13 @@ class F_RefSpaceIntegral
   Data<Scalar,DeviceType>  left_;
   Data<Scalar,DeviceType>  right_;
   Data<Scalar,DeviceType>  weights_;
-  ordinal_type dimSpan_;
-  ordinal_type leftRank_;
-  ordinal_type rightRank_;
-  ordinal_type numPoints_;
 public:
   F_RefSpaceIntegral(ScalarView<Scalar,DeviceType> integralView,
                      Data<Scalar,DeviceType> left, Data<Scalar,DeviceType> right, Data<Scalar,DeviceType> weights,
                      ordinal_type dimSpan)
   :
-  integral_(integralView),
-  left_(left),
-  right_(right),
-  weights_(weights),
-  dimSpan_(dimSpan)
-  {
-    leftRank_  = left.rank();
-    rightRank_ = right.rank();
-    numPoints_ = weights.extent_int(0);
-  }
+  integral_(integralView)
+  {}
   
   KOKKOS_INLINE_FUNCTION
   void operator()( const ordinal_type & i, const ordinal_type & j ) const
@@ -205,12 +193,6 @@ class F_ComputeIntegral
   const TransformedBasisValues<Scalar, DeviceType> basisValuesLeft_;
   const TransformedBasisValues<Scalar, DeviceType> basisValuesRight_;
   const ComponentIntegralsArray componentIntegrals_;
-  const ordinal_type d_start_;
-  const ordinal_type d_end_;
-  const ordinal_type numPointTensorComponents_;
-  const ordinal_type leftFieldOffset_;
-  const ordinal_type rightFieldOffset_;
-  const ordinal_type integralViewRank_;
 
 public:
   // Constructor to initialize the functor
@@ -237,13 +219,8 @@ public:
       cellMeasures_(cellMeasures),
       basisValuesLeft_(basisValuesLeft),
       basisValuesRight_(basisValuesRight),
-      componentIntegrals_(componentIntegrals),
-      d_start_(d_start),
-      d_end_(d_end),
-      numPointTensorComponents_(numPointTensorComponents),
-      leftFieldOffset_(leftFieldOffset),
-      rightFieldOffset_(rightFieldOffset),
-      integralViewRank_(integralViewRank) {}
+      componentIntegrals_(componentIntegrals)
+  {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type &cellDataOrdinal, const ordinal_type &leftFieldOrdinal, const ordinal_type &rightFieldOrdinal) const
