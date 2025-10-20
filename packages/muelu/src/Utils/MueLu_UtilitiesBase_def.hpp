@@ -253,7 +253,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   // Some useful type definitions
-  using local_matrix_type = typename Matrix::local_matrix_type;
+  using local_matrix_type = typename Matrix::local_matrix_device_type;
   // using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using value_type      = typename local_matrix_type::value_type;
   using values_type     = typename local_matrix_type::values_type;
@@ -356,7 +356,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Teuchos::TimeMonitor MM = *Teuchos::TimeMonitor::getNewTimer("UtilitiesBase::GetLumpedMatrixDiagonal (Kokkos implementation)");
       // Implement using Kokkos
       using local_vector_type = typename Vector::dual_view_type::t_dev_um;
-      using local_matrix_type = typename Matrix::local_matrix_type;
+      using local_matrix_type = typename Matrix::local_matrix_device_type;
       using execution_space   = typename local_vector_type::execution_space;
       // using rowmap_type       = typename local_matrix_type::row_map_type;
       // using entries_type      = typename local_matrix_type::index_type;
@@ -538,7 +538,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Implement using Kokkos
   using local_vector_type = typename Vector::dual_view_type::t_dev_um;
-  using local_matrix_type = typename Matrix::local_matrix_type;
+  using local_matrix_type = typename Matrix::local_matrix_device_type;
   using execution_space   = typename local_vector_type::execution_space;
   using values_type       = typename local_matrix_type::values_type;
   using scalar_type       = typename values_type::non_const_value_type;
@@ -581,7 +581,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Implement using Kokkos
   using local_vector_type = typename Vector::dual_view_type::t_dev_um;
-  using local_matrix_type = typename Matrix::local_matrix_type;
+  using local_matrix_type = typename Matrix::local_matrix_device_type;
   using execution_space   = typename local_vector_type::execution_space;
   using values_type       = typename local_matrix_type::values_type;
   using scalar_type       = typename values_type::non_const_value_type;
@@ -789,7 +789,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 GlobalOrdinal
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     CountNegativeDiagonalEntries(const Matrix& A) {
-  using local_matrix_type = typename Matrix::local_matrix_type;
+  using local_matrix_type = typename Matrix::local_matrix_device_type;
   using execution_space   = typename local_matrix_type::execution_space;
 #if KOKKOS_VERSION >= 40799
   using KAT_S = typename KokkosKernels::ArithTraits<typename local_matrix_type::value_type>;
@@ -2027,7 +2027,7 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   using ISC = typename Kokkos::ArithTraits<Scalar>::val_type;
 #endif
   using range_type        = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
-  using local_matrix_type = typename CrsMatrix::local_matrix_type;
+  using local_matrix_type = typename CrsMatrix::local_matrix_device_type;
   using values_type       = typename local_matrix_type::values_type;
 
 #if KOKKOS_VERSION >= 40799
@@ -2145,7 +2145,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ReverseCuthillMcKee(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Op) {
-  using local_matrix_type = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using lno_nnz_view_t    = typename local_graph_type::entries_type::non_const_type;
   using device            = typename local_graph_type::device_type;
@@ -2174,7 +2174,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>
 UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     CuthillMcKee(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Op) {
-  using local_matrix_type = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using lno_nnz_view_t    = typename local_graph_type::entries_type::non_const_type;
   using device            = typename local_graph_type::device_type;

@@ -161,7 +161,7 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             RCP<Matrix>& R,
             RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& coarseCoordinates,
             Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim) const {
-  using local_matrix_type = typename CrsMatrix::local_matrix_type;
+  using local_matrix_type = typename CrsMatrix::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using row_map_type      = typename local_matrix_type::row_map_type::non_const_type;
   using entries_type      = typename local_matrix_type::index_type::non_const_type;

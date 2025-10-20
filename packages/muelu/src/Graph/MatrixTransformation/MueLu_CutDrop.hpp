@@ -39,7 +39,7 @@ class UnscaledComparison {
  public:
   using matrix_type = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
@@ -129,7 +129,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, Mis
 class ScaledComparison {
  public:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
@@ -274,7 +274,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 class UnscaledDistanceLaplacianComparison {
  public:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
@@ -392,7 +392,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 class ScaledDistanceLaplacianComparison {
  public:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
