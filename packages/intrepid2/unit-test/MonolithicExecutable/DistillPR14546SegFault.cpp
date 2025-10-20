@@ -41,53 +41,10 @@ Data<Scalar,DeviceType> allocateIntegralData(const TransformedBasisValues<Scalar
                                              const TensorData<Scalar,DeviceType> cellMeasures,
                                              const TransformedBasisValues<Scalar,DeviceType> vectorDataRight)
 {
-  // allocates a (C,F,F) container for storing integral data
-  
-  // ordinal filter is used for Serendipity basis; we don't yet support Serendipity for sum factorization.
-  // (when we do, the strategy will likely be to do sum factorized assembly and then filter the result).
-  const bool  leftHasOrdinalFilter =  vectorDataLeft.basisValues().ordinalFilter().extent_int(0) > 0;
-  const bool rightHasOrdinalFilter = vectorDataRight.basisValues().ordinalFilter().extent_int(0) > 0;
-  TEUCHOS_TEST_FOR_EXCEPTION(leftHasOrdinalFilter || rightHasOrdinalFilter, std::invalid_argument, "Ordinal filters for BasisValues are not yet supported by IntegrationTools");
-  
-  // determine cellDataExtent and variation type.  We currently support CONSTANT, MODULAR, and GENERAL as possible output variation types, depending on the inputs.
-  // If cellMeasures has non-trivial tensor structure, the rank-1 cell Data object is the first component.
-  // If cellMeasures has trivial tensor structure, then the first and only component has the cell index in its first dimension.
-  // I.e., either way the relevant Data object is cellMeasures.getTensorComponent(0)
-  const int CELL_DIM = 0;
-  const auto cellMeasureData = cellMeasures.getTensorComponent(0);
-  const auto leftTransform = vectorDataLeft.transform();
-  
-  DimensionInfo combinedCellDimInfo = cellMeasureData.getDimensionInfo(CELL_DIM);
-  // transforms may be invalid, indicating an identity transform.  If so, it will not constrain the output at all.
-  if (vectorDataLeft.transform().isValid())
-  {
-    combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataLeft.transform().getDimensionInfo(CELL_DIM));
-  }
-  if (vectorDataRight.transform().isValid())
-  {
-    combinedCellDimInfo = combinedDimensionInfo(combinedCellDimInfo, vectorDataRight.transform().getDimensionInfo(CELL_DIM));
-  }
-
-  DataVariationType cellVariationType = combinedCellDimInfo.variationType;
-  int cellDataExtent                  = combinedCellDimInfo.dataExtent;
-  
-  const int numCells       = vectorDataLeft.numCells();
-  const int numFieldsLeft  = vectorDataLeft.numFields();
-  const int numFieldsRight = vectorDataRight.numFields();
-  
-  Kokkos::Array<int,3> extents {numCells, numFieldsLeft, numFieldsRight};
-  Kokkos::Array<DataVariationType,3> variationTypes {cellVariationType,GENERAL,GENERAL};
-  
-  if (cellVariationType != CONSTANT)
-  {
-    Kokkos::View<Scalar***,DeviceType> data("Intrepid2 integral data",cellDataExtent,numFieldsLeft,numFieldsRight);
-    return Data<Scalar,DeviceType>(data, extents, variationTypes);
-  }
-  else
-  {
-    Kokkos::View<Scalar**,DeviceType> data("Intrepid2 integral data",numFieldsLeft,numFieldsRight);
-    return Data<Scalar,DeviceType>(data, extents, variationTypes);
-  }
+  Kokkos::Array<int,3> extents {1, 1, 1};
+  Kokkos::Array<DataVariationType,3> variationTypes {GENERAL,GENERAL,GENERAL};
+  Kokkos::View<Scalar***,DeviceType> data("Intrepid2 integral data",1,1,1);
+  return Data<Scalar,DeviceType>(data, extents, variationTypes);
 }
 
 template<class Scalar, class DeviceType, int integralViewRank>
