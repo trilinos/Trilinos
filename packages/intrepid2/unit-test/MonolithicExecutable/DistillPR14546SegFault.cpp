@@ -36,17 +36,6 @@ namespace
 {
  using namespace Intrepid2;
 
-template<typename DeviceType, class Scalar>
-Data<Scalar,DeviceType> allocateIntegralData(const TransformedBasisValues<Scalar,DeviceType> vectorDataLeft,
-                                             const TensorData<Scalar,DeviceType> cellMeasures,
-                                             const TransformedBasisValues<Scalar,DeviceType> vectorDataRight)
-{
-  Kokkos::Array<int,3> extents {1, 1, 1};
-  Kokkos::Array<DataVariationType,3> variationTypes {GENERAL,GENERAL,GENERAL};
-  Kokkos::View<Scalar***,DeviceType> data("Intrepid2 integral data",1,1,1);
-  return Data<Scalar,DeviceType>(data, extents, variationTypes);
-}
-
 template<class Scalar, class DeviceType, int integralViewRank>
 class F_Integrate
 {
@@ -2583,11 +2572,19 @@ TEUCHOS_UNIT_TEST( PR14546, Distill14546SegFault )
     
 //  D integralsBaseline  = IT::allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
   // imitate call to allocateIntegralData() for integralsBaseline
-  TBV tbvLeft_aid     = tbvLeft;
-  TD cellMeasures_aid = cellMeasures;
-  TBV tbvRight_aid    = tbvRight;
+  TBV tbvLeft_blaid     = tbvLeft;
+  TD cellMeasures_blaid = cellMeasures;
+  TBV tbvRight_blaid    = tbvRight;
+
+  Kokkos::Array<int,3> extents3 {1, 1, 1};
+  Kokkos::Array<DataVariationType,3> variationTypes3 {GENERAL,GENERAL,GENERAL};
+  Kokkos::View<DataScalar***,DeviceType> data3("Intrepid2 integral data",1,1,1);
+  D integralsIntegrate(data3, extents3, variationTypes3);
   
-  D integralsIntegrate = allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+  // imitate call to allocateIntegralData() for integralsBaseline
+  const TBV      tbvLeft_iaid = tbvLeft;
+  const TD  cellMeasures_iaid = cellMeasures;
+  const TBV     tbvRight_iaid = tbvRight;
   
   // these assignments imitate a function call (to integrate_baseline) with arguments (integralsBaseline, tbvLeft, cellMeasures, tbvRight)
 //  D integrals_bl = integralsBaseline;
@@ -2667,8 +2664,20 @@ TEUCHOS_UNIT_TEST( PR14546, AllocationIssue )
   const TD  cellMeasures = constantCellMeasures;
   const TBV     tbvRight = transformedUnitVectorDataLeft;
     
-  auto integralsBaseline  = allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
-  auto integralsIntegrate = allocateIntegralData(tbvLeft, cellMeasures, tbvRight);
+  Kokkos::Array<int,3> extents3 {1, 1, 1};
+  Kokkos::Array<DataVariationType,3> variationTypes3 {GENERAL,GENERAL,GENERAL};
+  Kokkos::View<DataScalar***,DeviceType> data3("Intrepid2 integral data",1,1,1);
+  D integralsBaseline(data3, extents3, variationTypes3);
+  // these assignments imitate a function call to allocateIntegralData()
+  const TBV      tbvLeft_blaid = tbvLeft;
+  const TD  cellMeasures_blaid = cellMeasures;
+  const TBV     tbvRight_blaid = tbvRight;
+  
+  D integralsIntegrate(data3, extents3, variationTypes3);
+  // these assignments imitate a function call to allocateIntegralData()
+  const TBV      tbvLeft_iaid = tbvLeft;
+  const TD  cellMeasures_iaid = cellMeasures;
+  const TBV     tbvRight_iaid = tbvRight;
   
   {
     auto data = getMatchingViewWithLabel(identityMatrixView, "Data mat-mat result", 1, 1, 1, 1);
