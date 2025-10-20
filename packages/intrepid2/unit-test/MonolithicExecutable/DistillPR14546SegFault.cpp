@@ -687,13 +687,13 @@ TEUCHOS_UNIT_TEST( PR14546, AllocationIssue )
   const int numFamilies = 1;
   TD nullTD;
   Kokkos::Array<TD, spaceDim > firstFamilyLeft  {tensorData};
-//  Kokkos::Array<TD, spaceDim > secondFamilyLeft {tensorData};
+  TD td1 = tensorData;
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsLeft {firstFamilyLeft};//, secondFamilyLeft};
   
   VD vectorDataLeft(vectorComponentsLeft);
   
   Kokkos::Array<TD, spaceDim > firstFamilyRight  {tensorData};
-  Kokkos::Array<TD, spaceDim > secondFamilyRight {tensorData};
+  TD td2 = tensorData;
   Kokkos::Array< Kokkos::Array<TD, spaceDim>, numFamilies> vectorComponentsRight {firstFamilyRight}; //, secondFamilyRight};
   
   VD vectorDataRight(vectorComponentsRight);
