@@ -449,38 +449,26 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
     const int rightComponentCount = rightIsVectorValued ? basisValuesRight.vectorData().numComponents() : 1;
     
     int leftFieldOrdinalOffset = 0; // keeps track of the number of fields in prior families
-    for (int leftFamilyOrdinal=0; leftFamilyOrdinal<leftFamilyCount; leftFamilyOrdinal++)
+    int leftFamilyOrdinal=0;
     {
       // "a" keeps track of the spatial dimension over which we are integrating in the left vector
       // components are allowed to span several dimensions; we keep track of the offset for the component in a_offset
       int a_offset = 0;
-      for (int leftComponentOrdinal=0; leftComponentOrdinal<leftComponentCount; leftComponentOrdinal++)
+      int leftComponentOrdinal=0;
       {
         TensorData<Scalar,DeviceType> leftComponent = leftIsVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal)
                                                                          : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
-        if (!leftComponent.isValid())
-        {
-           // represents zero
-          a_offset += basisValuesLeft.vectorData().numDimsForComponent(leftComponentOrdinal);
-          continue;
-        }
            
         int rightFieldOrdinalOffset = 0; // keeps track of the number of fields in prior families
-        for (int rightFamilyOrdinal=0; rightFamilyOrdinal<rightFamilyCount; rightFamilyOrdinal++)
+        int rightFamilyOrdinal=0;
         {
           // "b" keeps track of the spatial dimension over which we are integrating in the right vector
           // components are allowed to span several dimensions; we keep track of the offset for the component in b_offset
           int b_offset = 0;
-          for (int rightComponentOrdinal=0; rightComponentOrdinal<rightComponentCount; rightComponentOrdinal++)
+          int rightComponentOrdinal=0;
           {
             TensorData<Scalar,DeviceType> rightComponent = rightIsVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal)
                                                                                : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
-            if (!rightComponent.isValid())
-            {
-               // represents zero
-              b_offset += basisValuesRight.vectorData().numDimsForComponent(rightComponentOrdinal);
-              continue;
-            }
             
             INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(leftComponent.numTensorComponents() != rightComponent.numTensorComponents(), std::invalid_argument, "left TensorData and right TensorData have different number of tensor components.  This is not supported.");
             
