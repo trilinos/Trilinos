@@ -94,65 +94,6 @@ rightComponent_(rightComponent),
 cellMeasures_(cellMeasures)
 {}
 
-template<size_t maxComponents, size_t numComponents = maxComponents>
-KOKKOS_INLINE_FUNCTION
-int incrementArgument(      Kokkos::Array<int,maxComponents> &arguments,
-                      const Kokkos::Array<int,maxComponents> &bounds) const
-{}
-
-//! runtime-sized variant of incrementArgument; gets used by approximate flop count.
-KOKKOS_INLINE_FUNCTION
-int incrementArgument(      Kokkos::Array<int,Parameters::MaxTensorComponents> &arguments,
-                      const Kokkos::Array<int,Parameters::MaxTensorComponents> &bounds,
-                      const int &numComponents) const
-{}
-
-template<size_t maxComponents, size_t numComponents = maxComponents>
-KOKKOS_INLINE_FUNCTION
-int nextIncrementResult(const Kokkos::Array<int,maxComponents> &arguments,
-                        const Kokkos::Array<int,maxComponents> &bounds) const
-{}
-
-//! runtime-sized variant of nextIncrementResult; gets used by approximate flop count.
-KOKKOS_INLINE_FUNCTION
-int nextIncrementResult(const Kokkos::Array<int,Parameters::MaxTensorComponents> &arguments,
-                        const Kokkos::Array<int,Parameters::MaxTensorComponents> &bounds,
-                        const int &numComponents) const
-{}
-
-template<size_t maxComponents, size_t numComponents = maxComponents>
-KOKKOS_INLINE_FUNCTION
-int relativeEnumerationIndex(const Kokkos::Array<int,maxComponents> &arguments,
-                             const Kokkos::Array<int,maxComponents> &bounds,
-                             const int startIndex) const
-{}
-
-template<int rank>
-KOKKOS_INLINE_FUNCTION
-enable_if_t<rank==3 && rank==integralViewRank, Scalar &>
-integralViewEntry(const IntegralViewType& integralView, const int &cellDataOrdinal, const int &i, const int &j) const
-{
-  return integralView(cellDataOrdinal,i,j);
-}
-  
-template<int rank>
-KOKKOS_INLINE_FUNCTION
-enable_if_t<rank==2 && rank==integralViewRank, Scalar &>
-integralViewEntry(const IntegralViewType& integralView, const int &cellDataOrdinal, const int &i, const int &j) const
-{
-  return integralView(i,j);
-}
-  
-  //! Hand-coded 3-component version
-KOKKOS_INLINE_FUNCTION
-void runSpecialized3( const TeamMember & teamMember ) const
-{}
-  
-template<size_t numTensorComponents>
-KOKKOS_INLINE_FUNCTION
-void run( const TeamMember & teamMember ) const
-{}
-
 KOKKOS_INLINE_FUNCTION
 void operator()( const TeamMember & teamMember ) const
 {}
@@ -219,8 +160,7 @@ public:
 template<typename DeviceType,class Scalar>
 void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValues<Scalar,DeviceType> & basisValuesLeft,
                   const TensorData<Scalar,DeviceType> & cellMeasures,
-                  const TransformedBasisValues<Scalar,DeviceType> & basisValuesRight, const bool sumInto = false,
-                  double* approximateFlops = NULL)
+                  const TransformedBasisValues<Scalar,DeviceType> & basisValuesRight, const bool sumInto = false)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
 
@@ -230,11 +170,6 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
   const bool rightHasOrdinalFilter = basisValuesRight.basisValues().ordinalFilter().extent_int(0) > 0;
   TEUCHOS_TEST_FOR_EXCEPTION(leftHasOrdinalFilter || rightHasOrdinalFilter, std::invalid_argument, "Ordinal filters for BasisValues are not yet supported by IntegrationTools");
   
-  if (approximateFlops != NULL)
-  {
-    *approximateFlops = 0;
-  }
-    
   // integral data may have shape (C,F1,F2) or (if the variation type is CONSTANT in the cell dimension) shape (F1,F2)
   const int integralViewRank = integrals.getUnderlyingViewRank();
   
@@ -425,12 +360,6 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
         a_offset += leftDimSpan;
       } // leftVectorComponentOrdinal
     } // leftFamilyOrdinal
-    
-    if (approximateFlops != NULL)
-    {
-      // TODO: check the accuracy of this
-      *approximateFlops += (2 + spaceDim * (3 + numPointTensorComponents)) * cellDataExtent * numFieldsLeft * numFieldsRight;
-    }
   }
   else // general case (not axis-aligned + affine tensor-product structure)
   {
@@ -459,12 +388,6 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
       {
         composedTransform = Data<Scalar,DeviceType>::allocateMatMatResult(transposeLeft, leftTransform, transposeRight, rightTransform);
         composedTransform.storeMatMat(transposeLeft, leftTransform, transposeRight, rightTransform);
-        
-        // if the composedTransform matrices are full, the following is a good estimate.  If they have some diagonal portions, this will overcount.
-        if (approximateFlops != NULL)
-        {
-          *approximateFlops += composedTransform.getUnderlyingViewSize() * (spaceDim - 1) * 2;
-        }
       }
       else if (bothRank3) // (C,P,D)
       {
