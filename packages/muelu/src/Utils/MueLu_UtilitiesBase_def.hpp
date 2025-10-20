@@ -56,111 +56,32 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 removeSmallEntries(Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
                    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold,
                    const bool keepDiagonal) {
-  using crs_matrix      = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using row_ptr_type    = typename crs_matrix::local_graph_type::row_map_type::non_const_type;
-  using col_idx_type    = typename crs_matrix::local_graph_type::entries_type::non_const_type;
-  using vals_type       = typename crs_matrix::local_matrix_type::values_type;
-  using execution_space = typename crs_matrix::local_matrix_type::execution_space;
-
 #if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<Scalar>;
-#else
-  using ATS      = Kokkos::ArithTraits<Scalar>;
-#endif
-  using impl_SC = typename ATS::val_type;
-#if KOKKOS_VERSION >= 40799
+  using ATS      = KokkosKernels::ArithTraits<Scalar>;
+  using impl_SC  = typename ATS::val_type;
   using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
 #else
+  using ATS      = Kokkos::ArithTraits<Scalar>;
+  using impl_SC  = typename ATS::val_type;
   using impl_ATS = Kokkos::ArithTraits<impl_SC>;
 #endif
 
-  auto lclA = A->getLocalMatrixDevice();
-
-  auto rowptr = row_ptr_type("rowptr", lclA.numRows() + 1);
-  col_idx_type idx;
-  vals_type vals;
-  LocalOrdinal nnz;
-
+  RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> crsA;
   if (keepDiagonal) {
-    auto lclRowMap = A->getRowMap()->getLocalMap();
-    auto lclColMap = A->getColMap()->getLocalMap();
-    Kokkos::parallel_scan(
-        "removeSmallEntries::rowptr",
-        Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, lclA.numRows()),
-        KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& partial_nnz, bool is_final) {
-          auto row      = lclA.row(rlid);
-          auto rowInCol = lclColMap.getLocalElement(lclRowMap.getGlobalElement(rlid));
-          for (LocalOrdinal k = 0; k < row.length; ++k) {
-            if ((impl_ATS::magnitude(row.value(k)) > threshold) || (row.colidx(k) == rowInCol)) {
-              partial_nnz += 1;
-            }
-          }
-          if (is_final)
-            rowptr(rlid + 1) = partial_nnz;
-        },
-        nnz);
-
-    idx  = col_idx_type("idx", nnz);
-    vals = vals_type("vals", nnz);
-
-    Kokkos::parallel_for(
-        "removeSmallEntries::indicesValues",
-        Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, lclA.numRows()),
-        KOKKOS_LAMBDA(const LocalOrdinal rlid) {
-          auto row      = lclA.row(rlid);
-          auto rowInCol = lclColMap.getLocalElement(lclRowMap.getGlobalElement(rlid));
-          auto I        = rowptr(rlid);
-          for (LocalOrdinal k = 0; k < row.length; ++k) {
-            if ((impl_ATS::magnitude(row.value(k)) > threshold) || (row.colidx(k) == rowInCol)) {
-              idx(I)  = row.colidx(k);
-              vals(I) = row.value(k);
-              I += 1;
-            }
-          }
+    crsA = applyFilter_GID(
+        A, KOKKOS_LAMBDA(GlobalOrdinal rgid,
+                         GlobalOrdinal cgid,
+                         impl_SC val) {
+          return ((impl_ATS::magnitude(val) > threshold) || (rgid == cgid));
         });
 
-    Kokkos::fence();
   } else {
-    Kokkos::parallel_scan(
-        "removeSmallEntries::rowptr",
-        Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, lclA.numRows()),
-        KOKKOS_LAMBDA(const LocalOrdinal rlid, LocalOrdinal& partial_nnz, bool is_final) {
-          auto row = lclA.row(rlid);
-          for (LocalOrdinal k = 0; k < row.length; ++k) {
-            if (impl_ATS::magnitude(row.value(k)) > threshold) {
-              partial_nnz += 1;
-            }
-          }
-          if (is_final)
-            rowptr(rlid + 1) = partial_nnz;
-        },
-        nnz);
-
-    idx  = col_idx_type("idx", nnz);
-    vals = vals_type("vals", nnz);
-
-    Kokkos::parallel_for(
-        "removeSmallEntries::indicesValues",
-        Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, lclA.numRows()),
-        KOKKOS_LAMBDA(const LocalOrdinal rlid) {
-          auto row = lclA.row(rlid);
-          auto I   = rowptr(rlid);
-          for (LocalOrdinal k = 0; k < row.length; ++k) {
-            if (impl_ATS::magnitude(row.value(k)) > threshold) {
-              idx(I)  = row.colidx(k);
-              vals(I) = row.value(k);
-              I += 1;
-            }
-          }
+    crsA = applyFilter_vals(
+        A, KOKKOS_LAMBDA(impl_SC val) {
+          return (impl_ATS::magnitude(val) > threshold);
         });
-
-    Kokkos::fence();
   }
-
-  auto lclNewA = typename crs_matrix::local_matrix_type("thresholdedMatrix", lclA.numRows(), lclA.numCols(), nnz, vals, rowptr, idx);
-  auto newA    = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclNewA, A->getRowMap(), A->getColMap(), A->getDomainMap(), A->getRangeMap());
-
-  return newA;
+  return rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(crsA));
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
