@@ -16,7 +16,7 @@ runs:
         cat <<EOF >> $GITHUB_STEP_SUMMARY
         Image:
         \`\`\`
-        ${AT2_IMAGE_FULL_PATH:-${AT2_IMAGE:-unknown}}
+        ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}
         \`\`\`
         GenConfig Build ID:
         \`\`\`
