@@ -57,12 +57,6 @@ public:
               Data<Scalar,DeviceType> composedTransform,
               TensorData<Scalar,DeviceType> rightComponent,
               TensorData<Scalar,DeviceType> cellMeasures)
-  :
-  integralView_(integralData.template getUnderlyingView<integralViewRank>()),
-  leftComponent_(leftComponent),
-  composedTransform_(composedTransform),
-  rightComponent_(rightComponent),
-  cellMeasures_(cellMeasures)
   {}
   
   KOKKOS_INLINE_FUNCTION
@@ -529,11 +523,6 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
         
         composedTransform = Data<Scalar,DeviceType>::allocateMatMatResult(transposeLeft, leftTransformMatrix, transposeRight, rightTransformMatrix); // false: don't transpose
         composedTransform.storeMatMat(transposeLeft, leftTransformMatrix, transposeRight, rightTransformMatrix);
-                
-        if (approximateFlops != NULL)
-        {
-          *approximateFlops += composedTransform.getUnderlyingViewSize(); // one multiply per entry
-        }
       }
       else if (bothRank2)
       {
@@ -545,10 +534,6 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
         auto extents        = composedTransform.getExtents();
         auto variationTypes = composedTransform.getVariationTypes();
         composedTransform = composedTransform.shallowCopy(newRank, extents, variationTypes);
-        if (approximateFlops != NULL)
-        {
-          *approximateFlops += composedTransform.getUnderlyingViewSize(); // one multiply per entry
-        }
       }
       else if (ranks32) // rank 2 / rank 3 combination.
       {
