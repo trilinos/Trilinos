@@ -49,56 +49,20 @@ class F_Integrate
   Data<Scalar,DeviceType> composedTransform_;
   TensorData<Scalar,DeviceType> rightComponent_;
   TensorData<Scalar,DeviceType> cellMeasures_;
-  int a_offset_;
-  int b_offset_;
-  int leftComponentSpan_;   //  leftComponentSpan tracks the dimensions spanned by the left component
-  int rightComponentSpan_;  // rightComponentSpan tracks the dimensions spanned by the right component
-  int numTensorComponents_;
-  int  leftFieldOrdinalOffset_;
-  int rightFieldOrdinalOffset_;
-  bool forceNonSpecialized_; // if true, don't use the specialized (more manual) implementation(s) for particular component counts.  Primary use case is for testing.
   
   size_t fad_size_output_ = 0; // 0 if not a fad type
-  
-  Kokkos::Array<int, 7> offsetsForComponentOrdinal_;
-  
-  // as an optimization, we do all the bounds and argument iteration within the functor rather than relying on TensorArgumentIterator
-  // (this also makes it easier to reorder loops, etc., for further optimizations)
-  Kokkos::Array<int,Parameters::MaxTensorComponents>  leftFieldBounds_;
-  Kokkos::Array<int,Parameters::MaxTensorComponents> rightFieldBounds_;
-  Kokkos::Array<int,Parameters::MaxTensorComponents> pointBounds_;
-  
-  Kokkos::Array<int,Parameters::MaxTensorComponents>  leftFieldRelativeEnumerationSpans_; // total number of enumeration indices with arguments prior to the startingComponent fixed
-  Kokkos::Array<int,Parameters::MaxTensorComponents> rightFieldRelativeEnumerationSpans_;
-  
-  int maxFieldsLeft_;
-  int maxFieldsRight_;
-  int maxPointCount_;
 public:
   F_Integrate(Data<Scalar,DeviceType> integralData,
               TensorData<Scalar,DeviceType> leftComponent,
               Data<Scalar,DeviceType> composedTransform,
               TensorData<Scalar,DeviceType> rightComponent,
-              TensorData<Scalar,DeviceType> cellMeasures,
-              int a_offset,
-              int b_offset,
-              int leftFieldOrdinalOffset,
-              int rightFieldOrdinalOffset,
-              bool forceNonSpecialized)
+              TensorData<Scalar,DeviceType> cellMeasures)
   :
   integralView_(integralData.template getUnderlyingView<integralViewRank>()),
   leftComponent_(leftComponent),
   composedTransform_(composedTransform),
   rightComponent_(rightComponent),
-  cellMeasures_(cellMeasures),
-  a_offset_(a_offset),
-  b_offset_(b_offset),
-  leftComponentSpan_(leftComponent.extent_int(2)),
-  rightComponentSpan_(rightComponent.extent_int(2)),
-  numTensorComponents_(leftComponent.numTensorComponents()),
-  leftFieldOrdinalOffset_(leftFieldOrdinalOffset),
-  rightFieldOrdinalOffset_(rightFieldOrdinalOffset),
-  forceNonSpecialized_(forceNonSpecialized)
+  cellMeasures_(cellMeasures)
   {}
   
   template<size_t maxComponents, size_t numComponents = maxComponents>
@@ -161,36 +125,6 @@ public:
   long approximateFlopCountPerCell() const
   {
     return -1;
-  }
-  
-  //! returns the team size that should be provided to the policy constructor, based on the Kokkos maximum and the amount of thread parallelism we have available.
-  int teamSize(const int &maxTeamSizeFromKokkos) const
-  {
-    return 1;
-  }
-  
-  //! Provide the shared memory capacity.
-  size_t team_shmem_size (int team_size) const
-  {
-    // we use shared memory to create a fast buffer for intermediate values, as well as fast access to the current-cell's field values
-    size_t shmem_size = 0;
-    
-    if (fad_size_output_ > 0)
-    {
-      shmem_size += Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(offsetsForComponentOrdinal_[0] * team_size, fad_size_output_);
-      shmem_size += Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(composedTransform_.extent_int(1),           fad_size_output_);
-      shmem_size += Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsLeft_,  maxPointCount_, fad_size_output_);
-      shmem_size += Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsRight_, maxPointCount_, fad_size_output_);
-    }
-    else
-    {
-      shmem_size += Kokkos::View<Scalar*,   DeviceType>::shmem_size(offsetsForComponentOrdinal_[0] * team_size);
-      shmem_size += Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(composedTransform_.extent_int(1));
-      shmem_size += Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsLeft_,  maxPointCount_);
-      shmem_size += Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsRight_, maxPointCount_);
-    }
-    
-    return shmem_size;
   }
 };
 
@@ -1585,10 +1519,10 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
               }
               else
               {
-                auto functor = F_Integrate<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset, forceNonSpecialized);
+                auto functor = F_Integrate<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
                 
                 const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
-                const int teamSize            = functor.teamSize(recommendedTeamSize);
+                const int teamSize            = recommendedTeamSize;
                 
                 policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
@@ -1620,10 +1554,9 @@ void IT_integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValue
               }
               else
               {
-                auto functor = F_Integrate<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset, forceNonSpecialized);
+                auto functor = F_Integrate<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures);
                 
-                const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
-                const int teamSize            = functor.teamSize(recommendedTeamSize);
+                const int teamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
                 
                 policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
                 
