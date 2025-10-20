@@ -192,6 +192,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   RCP<const Map> ownedCoarseNodeMap           = Pn->getDomainMap();
   RCP<const Map> ownedPlusSharedCoarseNodeMap = D0_Pn->getCrsGraph()->getColMap();
 
+
   for (LO i = 0; i < (LO)Nnc; i++) {
     LO local_column_i = ownedPlusSharedCoarseNodeMap->getLocalElement(PnT_D0T->getRowMap()->getGlobalElement(i));
 
@@ -283,6 +284,74 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   }  // end for i < Nn
 
   LO num_coarse_edges = current / 2;
+
+#define DirFixForEminHcurl 
+#ifdef DirFixForEminHcurl 
+
+  // Mark as orphans any D0 edges with only one node (so these are
+  // edges that connect an interior node with a Dirichlet node).
+  // We also define a vector that records the global Id of the 
+  // interior node associated with each orphan edge
+
+  SC myzero  = Teuchos::ScalarTraits<SC>::zero();
+  SC myone   = Teuchos::ScalarTraits<SC>::one();
+  RCP<MultiVector> nOrphanParents = MultiVectorFactory::Build(D0->getRowMap(),1);
+  RCP<MultiVector> orphanAggGid   = MultiVectorFactory::Build(D0->getRowMap(),1);
+  RCP<MultiVector> oneVec = MultiVectorFactory::Build(D0->getDomainMap(),1);
+  RCP<MultiVector> v1= MultiVectorFactory::Build(PnT_D0T->getRowMap(),1);
+  RCP<MultiVector> v2= MultiVectorFactory::Build(PnT_D0T->getRowMap(),1);
+  oneVec->putScalar(myone );
+  nOrphanParents->putScalar(myzero);
+  orphanAggGid->putScalar(myzero);
+  D0->apply(*oneVec,*nOrphanParents,Teuchos::NO_TRANS);
+  Teuchos::ArrayRCP<SC> nOrphanParentsData = nOrphanParents->getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> orphanAggGidData = orphanAggGid->getDataNonConst(0);
+  ArrayView<const LO> cols;
+  ArrayView<const SC> vals;
+  for (size_t i = 0; i < nOrphanParents->getMap()->getLocalNumElements(); i++ ) {
+    if (nOrphanParentsData[i] != 1) nOrphanParentsData[i] = 0.0;
+    else {
+      D0_Pn->getLocalRowView(i, cols, vals);
+      TEUCHOS_TEST_FOR_EXCEPTION(cols.size() != 1, Exceptions::RuntimeError, "MueLu::ReitzingerPFactory: Orphan Edges should have just 1 nnz.");
+      orphanAggGidData[i] = ownedCoarseNodeMap->getGlobalElement(cols[0]);
+    }
+  }
+
+  // For Orphan edge i, D0_Pn(i,:) has just one nonzero (when Pn is a tentative prolongator
+  // as it should be for ReitzingerPFactory). This means that the transpose has just one
+  // nonzero equal to 1 or -1 in the associated column. We can set all nonzeros equal to 
+  // 1 in PnT_D0T and do matvecs with v. These matvecs should sum all entries of v associated
+  // with the same coarse node (which should all be equal to each other for v1 and for v2). 
+  // Thus, the desired gid is obtained via v2/v1 where v2[i] = gid*k and v1[i]=k where k
+  // is the number of fine orphan edges incident to the same gid^th coarse node (or aggregate)
+
+  PnT_D0T->setAllToScalar(Teuchos::ScalarTraits<Scalar>::one());
+  PnT_D0T->apply(*nOrphanParents,*v1,Teuchos::NO_TRANS);
+  PnT_D0T->apply(*orphanAggGid,*v2,Teuchos::NO_TRANS);
+  Teuchos::ArrayRCP<SC> v1Data = v1->getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> v2Data = v2->getDataNonConst(0);
+  for (size_t i = 0; i < v1->getMap()->getLocalNumElements(); i++ ) {
+    if (v1Data[i] != 0.0)  {
+      printf("create coarse orphan edge with %d as parent .... %e %e\n", (int) (Teuchos::ScalarTraits<SC>::magnitude(v2Data[i])/v1Data[i]),v2Data[i],v1Data[i]);
+      // Exponential memory reallocation, if needed
+      if (current     >= Teuchos::as<LocalOrdinal>(max_edges)) {
+        max_edges *= 2;
+        D0_colind.resize(max_edges);
+        D0_values.resize(max_edges);
+      }
+      if (current / 2 + 1 >= D0_rowptr.size()) {
+        D0_rowptr.resize(2 * D0_rowptr.size() + 1);
+      }
+      printf("we are adding local col %d \n", (int) ownedPlusSharedCoarseNodeMap->getLocalElement( (LO) (Teuchos::ScalarTraits<SC>::magnitude(v2Data[i])/v1Data[i]) ));
+
+      D0_colind[current] = ownedCoarseNodeMap->getLocalElement( (LO) (Teuchos::ScalarTraits<SC>::magnitude(v2Data[i])/v1Data[i]) );
+      D0_values[current] = 1;
+      current++;
+      num_coarse_edges++;
+      D0_rowptr[num_coarse_edges] = current;
+    }
+  }
+#endif
   D0_rowptr.resize(num_coarse_edges + 1);
   D0_colind.resize(current);
   D0_values.resize(current);
@@ -348,6 +417,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     D0_coarse->expertStaticFillComplete(ownedCoarseNodeMap, ownedCoarseEdgeMap);
   }
   RCP<Matrix> D0_coarse_m         = rcp(new CrsMatrixWrap(D0_coarse));
+  Xpetra::IO<SC,LO,GO,NO>::Write("newD0Coarse",*D0_coarse_m);
   RCP<Teuchos::FancyOStream> fout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   // Create the Pe matrix, but with the extra entries.  From ML's notes:
