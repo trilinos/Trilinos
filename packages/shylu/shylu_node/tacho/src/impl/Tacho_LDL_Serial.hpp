@@ -179,7 +179,7 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Serial> {
       int r_val = 0;
       const ordinal_type m = A.extent(0);
       if (m > 0) {
-        LapackSerial<value_type>::sytrf_nopiv(ArgUplo::param, m, A.data(), A.stride_1(), &r_val);
+        LapackSerial<value_type>::sytrf_nopiv(ArgUplo::param, m, A.data(), A.stride(1), &r_val);
         TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, "LapackSerial (ldl-nopiv) returns non-zero error code.");
       }
       return r_val;
