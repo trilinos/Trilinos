@@ -33,7 +33,7 @@ namespace Intrepid2 {
   public:
     using value_type = Scalar;
     using VectorArray = Kokkos::Array< TensorData<Scalar,DeviceType>, Parameters::MaxVectorComponents >; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
-    using FamilyVectorArray = Kokkos::Array< VectorArray, Parameters::MaxTensorComponents>;
+    using FamilyVectorArray = Kokkos::Array< VectorArray, Parameters::MaxBasisFamilies>;
 
     FamilyVectorArray vectorComponents_; // outer: family ordinal; inner: component/spatial dimension ordinal
     bool axialComponents_; // if true, each entry in vectorComponents_ is an axial component vector; for 3D: (f1,0,0); (0,f2,0); (0,0,f3).  The 0s are represented by trivial/invalid TensorData objects.  In this case, numComponents_ == numFamilies_.
