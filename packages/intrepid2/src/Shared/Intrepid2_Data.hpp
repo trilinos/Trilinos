@@ -23,6 +23,8 @@
 #include "Intrepid2_ScalarView.hpp"
 #include "Intrepid2_Utils.hpp"
 
+#include <variant>
+
 /** \file  Intrepid2_Data.hpp
    \brief  Defines the Data class, a wrapper around a Kokkos::View that allows data that is constant or repeating in various logical dimensions to be stored just once, while providing a similar interface to that of View.
    \author Created by N.V. Roberts.
