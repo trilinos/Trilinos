@@ -85,23 +85,11 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
       stratimikos_ParameterList2.xml
   )
 
-  IF(${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK)
-
-    MUELU_ADD_SERIAL_AND_MPI_TEST(
-      Stratimikos
-      NAME Stratimikos_Epetra
-      ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Epetra"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-    )
-
-  ENDIF()
-
   IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       Stratimikos
-      NAME Stratimikos_Tpetra
+      NAME Stratimikos
       ARGS "--xml=stratimikos_ParameterList2.xml --linAlgebra=Tpetra"
       NUM_MPI_PROCS 4
       COMM serial mpi
@@ -109,7 +97,31 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
 
     MUELU_ADD_SERIAL_AND_MPI_TEST(
       Stratimikos
-      NAME Stratimikos_Tpetra_direct
+      NAME HandsOn
+      POSTFIX_AND_ARGS_0 "GMRES" "--xml=set1-gmres.xml"
+      POSTFIX_AND_ARGS_1 "CG" "--xml=set1-cg.xml"
+      WILL_FAIL
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+    )
+
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
+      Stratimikos
+      NAME HandsOn
+      POSTFIX_AND_ARGS_0 "SGS1" "--xml=set2-sgs1.xml"
+      POSTFIX_AND_ARGS_1 "SGS3" "--xml=set2-sgs3.xml"
+      POSTFIX_AND_ARGS_2 "MG-Jacobi" "--xml=set3-mg-jacobi.xml"
+      POSTFIX_AND_ARGS_3 "MG-SGS" "--xml=set3-mg-sgs.xml"
+      POSTFIX_AND_ARGS_4 "MG-GS" "--xml=set3-mg-gs.xml"
+      POSTFIX_AND_ARGS_5 "MG-Chebyshev" "--xml=set3-mg-chebyshev.xml"
+      POSTFIX_AND_ARGS_6 "MG-SGS-reuse" "--xml=set3-mg-sgs-reuse.xml"
+      NUM_MPI_PROCS 1
+      COMM serial mpi
+    )
+
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
+      Stratimikos
+      NAME Stratimikos_direct
       ARGS "--xml=set3-mg-jacobi.xml --linAlgebra=Tpetra --useDirectMatrixConstruction --matrixType=Laplace1D --nx=3000"
       NUM_MPI_PROCS 4
       COMM serial mpi

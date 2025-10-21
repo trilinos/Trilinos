@@ -49,6 +49,7 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 template <typename Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
+  TEUCHOS_ASSERT(lib == Xpetra::UseTpetra);
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::coordinateType real_type;
   typedef Xpetra::MultiVector<real_type, LocalOrdinal, GlobalOrdinal, Node> RealValuedMultiVector;
@@ -63,7 +64,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     //
     // MPI initialization
     //
-    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+    RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
 
     //
     // Parameters
@@ -145,20 +146,51 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // Construct the problem
     //
 
-    RCP<Matrix> A;
-    RCP<const Map> map;
-    RCP<RealValuedMultiVector> coordinates;
-    RCP<MultiVector> nullspace;
-    RCP<MultiVector> material;
-    RCP<LOVector> blocknumber;
-    RCP<MultiVector> X, B;
+    using TpMap                   = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
+    using TpMatrix                = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using TpMultiVector           = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using TpRealValuedMultiVector = Tpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
+    using TpLOVector              = Tpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+
+    RCP<const TpMatrix> A;
+    RCP<const TpMap> map;
+    RCP<TpRealValuedMultiVector> coordinates;
+    RCP<TpMultiVector> nullspace;
+    RCP<TpMultiVector> material;
+    RCP<TpLOVector> blocknumber;
+    RCP<TpMultiVector> X;
+    RCP<const TpMultiVector> B;
 
     if (useGaleriForMatrixConstruction) {
       /////////////////////////////////////////////////////////////////////////
       // Use Galeri package for assembly of matrix and vectors.
+
+      RCP<Matrix> xpetraA;
+      RCP<const Map> xpetraMap;
+      RCP<RealValuedMultiVector> xpetraCoordinates;
+      RCP<MultiVector> xpetraNullspace;
+      RCP<MultiVector> xpetraMaterial;
+      RCP<LOVector> xpetraBlocknumber;
+      RCP<MultiVector> xpetraX;
+      RCP<MultiVector> xpetraB;
+
       std::ostringstream galeriStream;
-      MatrixLoad<SC, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, matrixParameters, xpetraParameters, galeriStream);
+      MatrixLoad<SC, LocalOrdinal, GlobalOrdinal, Node>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, xpetraMap, xpetraA, xpetraCoordinates, xpetraNullspace, xpetraMaterial, xpetraBlocknumber, xpetraX, xpetraB, numVectors, matrixParameters, xpetraParameters, galeriStream);
       out << galeriStream.str();
+
+      A   = toTpetra(xpetraA);
+      map = toTpetra(xpetraMap);
+      if (!xpetraCoordinates.is_null())
+        coordinates = toTpetra(xpetraCoordinates);
+      if (!xpetraNullspace.is_null())
+        nullspace = toTpetra(xpetraNullspace);
+      if (!xpetraMaterial.is_null())
+        material = toTpetra(xpetraMaterial);
+      if (!xpetraBlocknumber.is_null())
+        blocknumber = toTpetra(xpetraBlocknumber);
+      X = toTpetra(xpetraX);
+      B = toTpetra(xpetraB);
+
       X->putScalar(0);
 
     } else {
@@ -173,18 +205,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       //   (row offsets, column indices, values),
       // - mappings from local indices to global indices for rows and columns.
 
-      // The type of the Tpetra sparse matrix.
-      using TpCrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-
-      // The type of the Tpetra map, describing mapping between rank-local and global ids.
-      using TpMap = typename TpCrsMatrix::map_type;
       // Kokkos memory space
       using memory_space = typename Node::memory_space;
 
       // Types of the three data arrays.
-      using rowptr_type  = typename TpCrsMatrix::row_ptrs_device_view_type::non_const_type;
-      using indices_type = typename TpCrsMatrix::local_inds_device_view_type::non_const_type;
-      using values_type  = typename TpCrsMatrix::values_device_view_type::non_const_type;
+      using rowptr_type  = typename TpMatrix::row_ptrs_device_view_type::non_const_type;
+      using indices_type = typename TpMatrix::local_inds_device_view_type::non_const_type;
+      using values_type  = typename TpMatrix::values_device_view_type::non_const_type;
 
       // The three arrays describing the sparse matrix.
       // These could just be unmanaged views for the memory locations of user provided data, see:
@@ -193,9 +220,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       indices_type indices;
       values_type values;
 
-      // The mappings between local indices and global indices for rows and columns of the matrix.
-      RCP<const TpMap> tpetra_rowmap;
-      RCP<const TpMap> tpetra_colmap;
+      // The mappings between local indices and global indices for columns of the matrix.
+      RCP<const TpMap> colmap;
 
       // In this example, we set up a 1D Laplacian with Dirichlet conditions eliminated from
       // the system. This is a tri-diagonal matrix:
@@ -258,7 +284,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         // on rank 0: [0, 1, ..., numLocalElements-1]
         // on rank 1: [numLocalElements, numLocalElements+1, ..., 2*numLocalElements-1]
         // ....
-        tpetra_rowmap = rcp(new TpMap(
+        map = rcp(new TpMap(
             /*numGlobalElements=*/Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
             localNumRows,
             /*indexBase=*/0, comm));
@@ -281,22 +307,22 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         // Copy global indices over for on-rank entries.
         Kokkos::deep_copy(
             Kokkos::subview(columnMapEntries, Kokkos::make_pair(0, localNumRows)),
-            tpetra_rowmap->getMyGlobalIndicesDevice());
+            map->getMyGlobalIndicesDevice());
 
         // For the off-rank entries, we use local indices localNumRows and localNumRows+1.
         auto offset = localNumRows;
         if (comm->getRank() > 0) {
-          Kokkos::deep_copy(Kokkos::subview(columnMapEntries, offset), tpetra_rowmap->getGlobalElement(0) - 1);
+          Kokkos::deep_copy(Kokkos::subview(columnMapEntries, offset), map->getGlobalElement(0) - 1);
           ++offset;
         }
         if (comm->getRank() + 1 < comm->getSize()) {
-          Kokkos::deep_copy(Kokkos::subview(columnMapEntries, offset), tpetra_rowmap->getGlobalElement(localNumRows - 1) + 1);
+          Kokkos::deep_copy(Kokkos::subview(columnMapEntries, offset), map->getGlobalElement(localNumRows - 1) + 1);
           ++offset;
         }
 
         // We now have constructed our local mapping between local indices and global indices
         // and call the Tpetra::Map constructor.
-        tpetra_colmap = rcp(new TpMap(
+        colmap = rcp(new TpMap(
             /*numGlobalElements=*/Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
             columnMapEntries,
             /*indexBase=*/0, comm));
@@ -319,8 +345,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 #endif
 
         LocalOrdinal offset         = (comm->getRank() == 0) ? 2 : 3;
-        GlobalOrdinal numGlobalRows = tpetra_rowmap->getGlobalNumElements();
-        auto lclRowMap              = tpetra_rowmap->getLocalMap();
+        GlobalOrdinal numGlobalRows = map->getGlobalNumElements();
+        auto lclRowMap              = map->getLocalMap();
         LocalOrdinal comm_rank      = comm->getRank();
         Kokkos::parallel_for(
             "matrix_construction",
@@ -367,31 +393,33 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       }
 
       // Construct the Tpetra::CrsMatrix
-      auto tpetraA = rcp(new TpCrsMatrix(tpetra_rowmap, tpetra_colmap,
-                                         rowptr, indices, values));
-      tpetraA->fillComplete();
+      {
+        auto A_nonconst = rcp(new TpMatrix(map, colmap,
+                                           rowptr, indices, values));
+        A_nonconst->fillComplete();
+        A = A_nonconst;
+      }
 
       // Print out the matrix that we just constructed:
-      // tpetraA->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
-
-      // Wrap everything as Xpetra objects.
-      A   = Xpetra::toXpetra(tpetraA);
-      map = Xpetra::toXpetra(tpetra_rowmap);
+      // A->describe(*Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)), Teuchos::VERB_EXTREME);
 
       // Set up left-hand side and right-hand side of the linear system.
-      X = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
-      B = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
-      B->putScalar(1.);
+      X = Teuchos::rcp(new TpMultiVector(map, 1));
+      {
+        auto B_nonconst = Teuchos::rcp(new TpMultiVector(map, 1));
+        B_nonconst->putScalar(1.);
+        B = B_nonconst;
+      }
 
       // Set up a near-nullspace for the linear system. (Only needed for multigrid)
-      nullspace = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
+      nullspace = Teuchos::rcp(new TpMultiVector(map, 1));
       nullspace->putScalar(1.);
 
       // Set up coordinates for the linear system. (Only needed for multigrid)
-      coordinates = Xpetra::MultiVectorFactory<double, LocalOrdinal, GlobalOrdinal, Node>::Build(map, 1);
+      coordinates = Teuchos::rcp(new TpMultiVector(map, 1));
       {
-        GlobalOrdinal numGlobalRows = tpetra_rowmap->getGlobalNumElements();
-        auto lclCoordinates         = coordinates->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+        GlobalOrdinal numGlobalRows = map->getGlobalNumElements();
+        auto lclCoordinates         = coordinates->getLocalViewDevice(Tpetra::Access::OverwriteAll);
         auto lclMap                 = map->getLocalMap();
         Kokkos::parallel_for(
             "fill_coords",
@@ -403,65 +431,53 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     }
 
     //
-    // Build Thyra linear algebra objects
-    //
-
-    RCP<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpCrsA = Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(A, true);
-
-    RCP<const Thyra::LinearOpBase<Scalar> > thyraA    = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyra(xpCrsA->getCrsMatrix());
-    RCP<Thyra::MultiVectorBase<Scalar> > thyraX       = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyraMultiVector(X));
-    RCP<const Thyra::MultiVectorBase<Scalar> > thyraB = Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toThyraMultiVector(B);
-
-    //
     // Build Stratimikos solver
     //
+    RCP<Thyra::LinearOpWithSolveBase<Scalar>> solver;
+    RCP<Thyra::PreconditionerBase<Scalar>> prec;
 
     // This is the Stratimikos main class (= factory of solver factory).
     Stratimikos::LinearSolverBuilder<Scalar> linearSolverBuilder;
     // Register MueLu as a Stratimikos preconditioner strategy.
     Stratimikos::enableMueLu<Scalar, LocalOrdinal, GlobalOrdinal, Node>(linearSolverBuilder);
-
-    // add coordinates and nullspace to parameter list
+    // add coordinates and nullspace to parameter list for multigrid preconditioner
     if (paramList->isSublist("Preconditioner Types") &&
         paramList->sublist("Preconditioner Types").isSublist("MueLu")) {
       ParameterList &userParamList = paramList->sublist("Preconditioner Types").sublist("MueLu").sublist("user data");
       if (!coordinates.is_null())
-        userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", coordinates);
+        userParamList.set("Coordinates", coordinates);
       if (!nullspace.is_null())
-        userParamList.set<RCP<MultiVector> >("Nullspace", nullspace);
+        userParamList.set("Nullspace", nullspace);
+      if (!material.is_null())
+        userParamList.set("Material", material);
+      if (!blocknumber.is_null())
+        userParamList.set("BlockNumber", blocknumber);
     }
-
     // Setup solver parameters using a Stratimikos parameter list.
     linearSolverBuilder.setParameterList(paramList);
 
     // Build a new "solver factory" according to the previously specified parameter list.
-    RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
-    auto precFactory                                                = solverFactory->getPreconditionerFactory();
-    RCP<Thyra::PreconditionerBase<Scalar> > prec;
-    Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA;
-    if (!precFactory.is_null()) {
-      prec = precFactory->createPrec();
+    auto solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
+    auto precFactory   = solverFactory->getPreconditionerFactory();
 
-      // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
-      Thyra::initializePrec<Scalar>(*precFactory, thyraA, prec.ptr());
-      thyraInverseA = solverFactory->createOp();
-      Thyra::initializePreconditionedOp<Scalar>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
+    // Build Thyra solver
+    if (!precFactory.is_null()) {
+      prec   = Thyra::initializePrec(*precFactory, A);
+      solver = Thyra::initializePreconditionedOp(*solverFactory, A, prec);
     } else {
-      thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
+      solver = Thyra::linearOpWithSolve(*solverFactory, A);
     }
 
     // Solve Ax = b.
-    Thyra::SolveStatus<Scalar> status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
-
-    success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+    auto status = Thyra::solve(*solver, Thyra::NOTRANS, B, X);
+    success     = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
 
     for (int solveno = 1; solveno < numSolves; solveno++) {
       if (!precFactory.is_null())
-        Thyra::initializePrec<Scalar>(*precFactory, thyraA, prec.ptr());
-      thyraX->assign(0.);
+        Thyra::initializePrec<Scalar>(*precFactory, A, prec);
+      X->putScalar(0.);
 
-      status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
-
+      status  = Thyra::solve(*solver, Thyra::NOTRANS, B, X);
       success = success && (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
     }
 
