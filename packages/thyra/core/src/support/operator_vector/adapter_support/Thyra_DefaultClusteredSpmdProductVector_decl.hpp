@@ -16,7 +16,8 @@
 namespace Thyra {
 
 /** \brief . */
-template <class Scalar> class DefaultClusteredSpmdProductVectorSpace;
+template <class Scalar>
+class DefaultClusteredSpmdProductVectorSpace;
 
 /** \brief Concrete implementation of a clustered Spmd-based product vector.
  *
@@ -27,18 +28,16 @@ template <class Scalar> class DefaultClusteredSpmdProductVectorSpace;
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultClusteredSpmdProductVector
-  : virtual public ProductVectorBase<Scalar>
-  , virtual protected VectorDefaultBase<Scalar>
-{
-public:
-
+  : virtual public ProductVectorBase<Scalar>,
+    virtual protected VectorDefaultBase<Scalar> {
+ public:
 #ifndef _MSC_VER
   /** \brief . */
   using ProductVectorBase<Scalar>::applyOp;
 #endif
-  
+
   /** @name Constructors/initializers/accessors */
   //@{
 
@@ -47,27 +46,21 @@ public:
 
   /** \brief Constructs to initialized (calls <tt>initialize()</tt>). */
   DefaultClusteredSpmdProductVector(
-    const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]
-    );
+      const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> > &productSpace, const Teuchos::RCP<VectorBase<Scalar> > vecs[]);
 
   /** \brief Initialize.
    *
    * ToDo: Finish documentation.
    */
   void initialize(
-    const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]
-    );
+      const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> > &productSpace, const Teuchos::RCP<VectorBase<Scalar> > vecs[]);
 
   /** \brief Uninitialize.
    *
    * ToDo: Finish documentation.
    */
   void uninitialize(
-    Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  *productSpace = NULL
-    ,Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]        = NULL
-    );
+      Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> > *productSpace = NULL, Teuchos::RCP<VectorBase<Scalar> > vecs[] = NULL);
 
   //@}
 
@@ -75,7 +68,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP<VectorBase<Scalar> > getNonconstVectorBlock(const int k); 
+  Teuchos::RCP<VectorBase<Scalar> > getNonconstVectorBlock(const int k);
   /** \brief . */
   Teuchos::RCP<const VectorBase<Scalar> > getVectorBlock(const int k) const;
 
@@ -87,9 +80,9 @@ public:
   /** \brief . */
   Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > productSpace() const;
   /** \brief . */
-  bool blockIsConst(const int k) const; 
+  bool blockIsConst(const int k) const;
   /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> > getNonconstMultiVectorBlock(const int k); 
+  Teuchos::RCP<MultiVectorBase<Scalar> > getNonconstMultiVectorBlock(const int k);
   /** \brief . */
   Teuchos::RCP<const MultiVectorBase<Scalar> > getMultiVectorBlock(const int k) const;
 
@@ -99,36 +92,32 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > space() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > space() const;
 
   //@}
 
-protected:
-
+ protected:
   /** @name Overridden protected members from VectorBase */
   //@{
 
   /** \brief . */
   void applyOpImpl(
-    const RTOpPack::RTOpT<Scalar> &op,
-    const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
-    const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
-    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal global_offset
-    ) const;
+      const RTOpPack::RTOpT<Scalar> &op,
+      const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
+      const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
+      const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+      const Ordinal global_offset) const;
 
   //@}
 
-private:
-
+ private:
   // //////////////////////////////
   // Private data members
 
-  Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >   productSpace_;
-  std::vector<Teuchos::RCP<VectorBase<Scalar> > >                       vecs_;
-
+  Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> > productSpace_;
+  std::vector<Teuchos::RCP<VectorBase<Scalar> > > vecs_;
 };
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_DECL_HPP
+#endif  // THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_DECL_HPP

@@ -14,28 +14,20 @@
 #include "Thyra_ScalarProdBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
-
 namespace Thyra {
 
-
-template<class Scalar>
-bool EuclideanScalarProd<Scalar>::isEuclideanImpl() const
-{
+template <class Scalar>
+bool EuclideanScalarProd<Scalar>::isEuclideanImpl() const {
   return true;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void EuclideanScalarProd<Scalar>::scalarProdsImpl(
-  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-  const ArrayView<Scalar> &scalarProds_out
-  ) const
-{
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar>& scalarProds_out) const {
   dots(X, Y, scalarProds_out);
 }
 
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 #endif  // THYRA_EUCLIDEAN_SCALAR_PROD_DEF_HPP

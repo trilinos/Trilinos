@@ -13,9 +13,7 @@
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Concrete <tt>LinearOpWithSolveBase</tt> subclass for diagonal linear
  * operators.
@@ -33,7 +31,7 @@ namespace Thyra {
  \verbatim
 
  y = alpha*op(M)*x + beta*y
- 
+
  =>
 
  y(i) = alpha*diag(i)*x(i) + beta*y(i), for i = 0 ... n-1
@@ -46,7 +44,7 @@ namespace Thyra {
  \verbatim
 
  x = inv(op(M))*b
- 
+
  =>
 
  x(i) = b(i)/diag(i), for i = 0 ... n-1
@@ -56,13 +54,11 @@ namespace Thyra {
  *
  * That is all there is to this subclass.
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultDiagonalLinearOpWithSolve
   : virtual public DefaultDiagonalLinearOp<Scalar>,
-    virtual public LinearOpWithSolveBase<Scalar>
-{
-public:
-
+    virtual public LinearOpWithSolveBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
@@ -76,61 +72,49 @@ public:
 
   /// Calls <tt>initialize()</tt>
   DefaultDiagonalLinearOpWithSolve(
-    const RCP<const VectorBase<Scalar> >   &diag
-    );
+      const RCP<const VectorBase<Scalar> > &diag);
 
-protected:
-
+ protected:
   /** @name Overridden from LinearOpWithSolveBase */
   //@{
   /** \brief . */
   bool solveSupportsImpl(EOpTransp M_trans) const;
   /** \brief . */
   bool solveSupportsSolveMeasureTypeImpl(
-    EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const;
+      EOpTransp M_trans, const SolveMeasureType &solveMeasureType) const;
   /** \brief . */
   SolveStatus<Scalar> solveImpl(
-    const EOpTransp transp,
-    const MultiVectorBase<Scalar> &B,
-    const Ptr<MultiVectorBase<Scalar> > &X,
-    const Ptr<const SolveCriteria<Scalar> > solveCriteria
-    ) const;
+      const EOpTransp transp,
+      const MultiVectorBase<Scalar> &B,
+      const Ptr<MultiVectorBase<Scalar> > &X,
+      const Ptr<const SolveCriteria<Scalar> > solveCriteria) const;
   //@}
-
 };
-
 
 /** \brief Nonmember constructor.
  *
  * \relates DefaultDiagonalLinearOpWithSolve
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultDiagonalLinearOpWithSolve<Scalar> >
-defaultDiagonalLinearOpWithSolve()
-{
+defaultDiagonalLinearOpWithSolve() {
   return Teuchos::rcp(new DefaultDiagonalLinearOpWithSolve<Scalar>);
 }
 
-
 /** \brief Nonmember constructor.
  *
  * \relates DefaultDiagonalLinearOpWithSolve
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultDiagonalLinearOpWithSolve<Scalar> >
 defaultDiagonalLinearOpWithSolve(
-  const RCP<const VectorBase<Scalar> >   &diag
-  )
-{
+    const RCP<const VectorBase<Scalar> > &diag) {
   RCP<DefaultDiagonalLinearOpWithSolve<Scalar> > ddlows =
-    defaultDiagonalLinearOpWithSolve<Scalar>();
+      defaultDiagonalLinearOpWithSolve<Scalar>();
   ddlows->initialize(diag);
   return ddlows;
 }
 
+}  // end namespace Thyra
 
-
-}	// end namespace Thyra
-
-
-#endif	// THYRA_DIAGONAL_LINEAR_OP_WITH_SOLVE_DECL_HPP
+#endif  // THYRA_DIAGONAL_LINEAR_OP_WITH_SOLVE_DECL_HPP

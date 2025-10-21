@@ -16,16 +16,13 @@
 
 namespace Thyra {
 
-
 /** \brief .
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-inline const std::string passfail(const bool result)
-{
+inline const std::string passfail(const bool result) {
   return Teuchos::passfail(result);
 }
-
 
 /** \brief .
  *
@@ -33,12 +30,10 @@ inline const std::string passfail(const bool result)
  */
 template <class Scalar>
 inline
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-relErr( const Scalar &s1, const Scalar &s2 )
-{
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+    relErr(const Scalar &s1, const Scalar &s2) {
   return Teuchos::relErr<Scalar>(s1, s2);
 }
-
 
 /** \brief Return relative error of two vectors.
  *
@@ -48,8 +43,7 @@ relErr( const Scalar &s1, const Scalar &s2 )
  */
 template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-relVectorErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 );
-
+relVectorErr(const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2);
 
 /** \brief Compute, check and optionally print the relative errors in two
  * scalar arays.
@@ -61,20 +55,18 @@ relVectorErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 );
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar1, class Scalar2, class ScalarMag>
+template <class Scalar1, class Scalar2, class ScalarMag>
 bool testRelErrors(
-  const std::string &v1_name,
-  const ArrayView<const Scalar1> &v1,
-  const std::string &v2_name,
-  const ArrayView<const Scalar2> &v2,
-  const std::string &maxRelErr_error_name,
-  const ScalarMag &maxRelErr_error,
-  const std::string &maxRelErr_warning_name,
-  const ScalarMag &maxRelErr_warning,
-  const Ptr<std::ostream> &out,
-  const std::string &leadingIndent = std::string("")
-  );
-
+    const std::string &v1_name,
+    const ArrayView<const Scalar1> &v1,
+    const std::string &v2_name,
+    const ArrayView<const Scalar2> &v2,
+    const std::string &maxRelErr_error_name,
+    const ScalarMag &maxRelErr_error,
+    const std::string &maxRelErr_warning_name,
+    const ScalarMag &maxRelErr_warning,
+    const Ptr<std::ostream> &out,
+    const std::string &leadingIndent = std::string(""));
 
 /** \brief Compute, check and optionally print the relative errors in two vectors.
  *
@@ -86,21 +78,19 @@ bool testRelErrors(
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 bool testRelNormDiffErr(
-  const std::string &v1_name,
-  const VectorBase<Scalar> &v1,
-  const std::string &v2_name,
-  const VectorBase<Scalar> &v2,
-  const std::string &maxRelErr_error_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_error,
-  const std::string &maxRelErr_warning_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_warning,
-  std::ostream *out,
-  const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_LOW,
-  const std::string &leadingIndent = std::string("")
-  );
-
+    const std::string &v1_name,
+    const VectorBase<Scalar> &v1,
+    const std::string &v2_name,
+    const VectorBase<Scalar> &v2,
+    const std::string &maxRelErr_error_name,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_error,
+    const std::string &maxRelErr_warning_name,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_warning,
+    std::ostream *out,
+    const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_LOW,
+    const std::string &leadingIndent         = std::string(""));
 
 /** \brief Check that an error is less than some error tolerence.
  *
@@ -108,18 +98,16 @@ bool testRelNormDiffErr(
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 bool testMaxErr(
-  const std::string &error_name,
-  const Scalar &error,
-  const std::string &max_error_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_error,
-  const std::string &max_warning_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_warning,
-  std::ostream *out,
-  const std::string &leadingIndent = std::string("")
-  );
-
+    const std::string &error_name,
+    const Scalar &error,
+    const std::string &max_error_name,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_error,
+    const std::string &max_warning_name,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_warning,
+    std::ostream *out,
+    const std::string &leadingIndent = std::string(""));
 
 /** \brief Check that an array of errors is less than some error tolerence.
  *
@@ -129,18 +117,16 @@ bool testMaxErr(
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 bool testMaxErrors(
-  const std::string &error_name,
-  const ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &errors,
-  const std::string &max_error_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_error,
-  const std::string &max_warning_name,
-  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_warning,
-  const Ptr<std::ostream> &out,
-  const std::string &leadingIndent = std::string("")
-  );
-
+    const std::string &error_name,
+    const ArrayView<const typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &errors,
+    const std::string &max_error_name,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_error,
+    const std::string &max_warning_name,
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &max_warning,
+    const Ptr<std::ostream> &out,
+    const std::string &leadingIndent = std::string(""));
 
 /** \brief Check a boolean result against expected result.
  *
@@ -149,13 +135,11 @@ bool testMaxErrors(
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 bool testBoolExpr(
-  const std::string &boolExprName,
-  const bool &boolExpr,
-  const bool &boolExpected,
-  const Ptr<std::ostream> &out,
-  const std::string &leadingIndent = std::string("")
-  );
-
+    const std::string &boolExprName,
+    const bool &boolExpr,
+    const bool &boolExpected,
+    const Ptr<std::ostream> &out,
+    const std::string &leadingIndent = std::string(""));
 
 /** \brief Print summary outputting for a test or just <tt>passed</tt> or
  * <tt>failed</tt>.
@@ -178,16 +162,15 @@ bool testBoolExpr(
  * Preconditions:<ul>
  * <li><tt>*success==false</tt> if <tt>result==false</tt>
  * </ul>
- * 
+ *
  * Just look at the definition of this function to see what it does.
  */
 void printTestResults(
-  const bool result,
-  const std::string &test_summary,
-  const bool show_all_tests,
-  const Ptr<bool> &success,
-  const Ptr<std::ostream> &out
-  );
+    const bool result,
+    const std::string &test_summary,
+    const bool show_all_tests,
+    const Ptr<bool> &success,
+    const Ptr<std::ostream> &out);
 
 /** \brief Control printing of test results.
  *
@@ -205,7 +188,7 @@ void printTestResults(
  * ToDo: Fill in detailed documentation!
  */
 class TestResultsPrinter {
-public:
+ public:
   /** \brief . */
   TestResultsPrinter(const RCP<FancyOStream> &out, const bool show_all_tests);
   /** \brief Print the test results on destruction if not already printed. */
@@ -218,16 +201,16 @@ public:
   RCP<FancyOStream> getTestOStream();
   /** \brief Print the test result. */
   void printTestResults(const bool this_result, const Ptr<bool> &success);
-private:
+
+ private:
   RCP<FancyOStream> out_;
   bool show_all_tests_;
   std::ostringstream ossStore_;
   RCP<FancyOStream> oss_;
   bool printedTestResults_;
-  TestResultsPrinter(); // Not defined!
-  TestResultsPrinter(const TestResultsPrinter&); // Not defined!
+  TestResultsPrinter();                            // Not defined!
+  TestResultsPrinter(const TestResultsPrinter &);  // Not defined!
 };
-
 
 /** \brief Output operator to pretty print any <tt>Thyra::VectorBase</tt>
  * object.
@@ -236,9 +219,8 @@ private:
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
-std::ostream& operator<<( std::ostream& o, const VectorBase<Scalar>& v );
-
+template <class Scalar>
+std::ostream &operator<<(std::ostream &o, const VectorBase<Scalar> &v);
 
 /** \brief Output operator to pretty print any <tt>Thyra::LinearOpBase</tt>
  * (and therefore MultiVectorBase) object.
@@ -247,10 +229,9 @@ std::ostream& operator<<( std::ostream& o, const VectorBase<Scalar>& v );
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
-std::ostream& operator<<( std::ostream& o, const LinearOpBase<Scalar>& M );
+template <class Scalar>
+std::ostream &operator<<(std::ostream &o, const LinearOpBase<Scalar> &M);
 
-} // namespace Thyra
+}  // namespace Thyra
 
-
-#endif // THYRA_TESTING_TOOLS_DECL_HPP
+#endif  // THYRA_TESTING_TOOLS_DECL_HPP

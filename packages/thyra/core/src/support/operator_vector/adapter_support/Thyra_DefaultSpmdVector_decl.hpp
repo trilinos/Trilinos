@@ -10,12 +10,9 @@
 #ifndef THYRA_DEFAULT_SPMD_VECTOR_DECL_HPP
 #define THYRA_DEFAULT_SPMD_VECTOR_DECL_HPP
 
-
 #include "Thyra_SpmdVectorDefaultBase_decl.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Efficient concrete implementation subclass for SPMD vectors.
  *
@@ -33,23 +30,18 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultSpmdVector : virtual public SpmdVectorDefaultBase<Scalar> {
-public:
-
+ public:
   /** @name Constructors/initializers */
   //@{
-
 
   /** \brief Construct to uninitialized. */
   DefaultSpmdVector();
 
   /** \brief Calls <tt>initialize()</tt>. */
   DefaultSpmdVector(
-    const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace
-    ,const ArrayRCP<Scalar> &localValues
-    ,const Ordinal stride
-    );
+      const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace, const ArrayRCP<Scalar> &localValues, const Ordinal stride);
 
   /** \brief Initialize.
    *
@@ -77,10 +69,7 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace
-    ,const ArrayRCP<Scalar> &localValues
-    ,const Ordinal stride
-    );
+      const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace, const ArrayRCP<Scalar> &localValues, const Ordinal stride);
 
   /** \brief Set to an uninitialized state.
    *
@@ -88,10 +77,7 @@ public:
    * <li><tt>this->spmdSpace().get() == NULL</tt>.
    */
   void uninitialize(
-    RCP<const SpmdVectorSpaceBase<Scalar> > *spmdSpace = NULL
-    ,ArrayRCP<Scalar> *localValues = NULL
-    ,Ordinal *stride = NULL
-    );
+      RCP<const SpmdVectorSpaceBase<Scalar> > *spmdSpace = NULL, ArrayRCP<Scalar> *localValues = NULL, Ordinal *stride = NULL);
 
   //@}
 
@@ -103,12 +89,12 @@ public:
   /** \brief . */
   ArrayRCP<const Scalar> getRCPtr() const;
   /** \brief . */
-  Scalar* getPtr();
+  Scalar *getPtr();
   /** \brief . */
-  const Scalar* getPtr() const;
+  const Scalar *getPtr() const;
   /** \brief . */
   Ordinal getStride() const;
-  
+
   //@}
 
   /** @name Overridden from SpmdMultiVectorBase */
@@ -128,65 +114,45 @@ public:
 
   //@}
 
-private:
-
+ private:
   // ///////////////////////////////////////
   // Private data members
-  
+
   RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace_;
   ArrayRCP<Scalar> localValues_;
   Ordinal stride_;
-
 };
-
 
 // /////////////////////////////////////////////////////
 // Inline members
 
-
-template<class Scalar>
-inline
-ArrayRCP<Scalar>
-DefaultSpmdVector<Scalar>::getRCPtr()
-{
+template <class Scalar>
+inline ArrayRCP<Scalar>
+DefaultSpmdVector<Scalar>::getRCPtr() {
   return localValues_;
 }
 
-
-template<class Scalar>
-inline
-ArrayRCP<const Scalar>
-DefaultSpmdVector<Scalar>::getRCPtr() const
-{
+template <class Scalar>
+inline ArrayRCP<const Scalar>
+DefaultSpmdVector<Scalar>::getRCPtr() const {
   return localValues_;
 }
 
-
-template<class Scalar>
-inline
-Scalar* DefaultSpmdVector<Scalar>::getPtr()
-{
+template <class Scalar>
+inline Scalar *DefaultSpmdVector<Scalar>::getPtr() {
   return localValues_.get();
 }
 
-
-template<class Scalar>
-inline
-const Scalar* DefaultSpmdVector<Scalar>::getPtr() const
-{
+template <class Scalar>
+inline const Scalar *DefaultSpmdVector<Scalar>::getPtr() const {
   return localValues_.get();
 }
 
-
-template<class Scalar>
-inline
-Ordinal DefaultSpmdVector<Scalar>::getStride() const
-{
+template <class Scalar>
+inline Ordinal DefaultSpmdVector<Scalar>::getStride() const {
   return stride_;
-}	
+}
 
+}  // end namespace Thyra
 
-} // end namespace Thyra
-
-
-#endif // THYRA_DEFAULT_SPMD_VECTOR_DECL_HPP
+#endif  // THYRA_DEFAULT_SPMD_VECTOR_DECL_HPP

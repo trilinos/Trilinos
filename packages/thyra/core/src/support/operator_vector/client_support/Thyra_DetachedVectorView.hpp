@@ -12,9 +12,7 @@
 #ifndef THYRA_EXPLICIT_VECTOR_VIEW_HPP
 #define THYRA_EXPLICIT_VECTOR_VIEW_HPP
 
-
 namespace Thyra {
-
 
 /** \brief Create an explicit non-mutable (const) view of a <tt>VectorBase</tt> object.
  *
@@ -36,10 +34,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class ConstDetachedVectorView {
-public:
-
+ public:
   /** \brief Construct an explicit non-mutable (const) view of a subset of elements.
    *
    * @param v [in] The vector that a view will be taken.  This object must be
@@ -76,12 +73,9 @@ public:
    * </ul>
    */
   ConstDetachedVectorView(
-    const Teuchos::RCP<const VectorBase<Scalar> > &v
-    ,const Range1D &rng = Range1D(), const bool forceUnitStride = false
-    )
-    {
-      this->initialize(v,rng,forceUnitStride);
-    }
+      const Teuchos::RCP<const VectorBase<Scalar> >& v, const Range1D& rng = Range1D(), const bool forceUnitStride = false) {
+    this->initialize(v, rng, forceUnitStride);
+  }
 
   /** \brief Construct an explicit non-mutable (const) view of a subset of elements.
    *
@@ -118,21 +112,19 @@ public:
    *
    * </ul>
    */
-  ConstDetachedVectorView( const VectorBase<Scalar>& v,
-    const Range1D &rng = Range1D(), const bool forceUnitStride = false )
-    {
-      this->initialize(Teuchos::rcp(&v,false),rng,forceUnitStride);
-    }
+  ConstDetachedVectorView(const VectorBase<Scalar>& v,
+                          const Range1D& rng = Range1D(), const bool forceUnitStride = false) {
+    this->initialize(Teuchos::rcp(&v, false), rng, forceUnitStride);
+  }
 
   /** \brief Free the explicit view on the <tt>VectorBase</tt> object
    * <tt>v</tt> passed to <tt>ConstDetachedVectorView()</tt>.
    */
-  ~ConstDetachedVectorView()
-    {
-      if( sv_s_.stride() != sv_.stride() )
-        delete [] const_cast<Scalar*>(sv_.values().get());
-      v_->releaseDetachedView(&sv_s_);
-    }
+  ~ConstDetachedVectorView() {
+    if (sv_s_.stride() != sv_.stride())
+      delete[] const_cast<Scalar*>(sv_.values().get());
+    v_->releaseDetachedView(&sv_s_);
+  }
 
   /** \brief Returns the explicit view as an
    * <tt>RTOpPack::ConstSubVectorView<Scalar></tt> object.
@@ -165,38 +157,33 @@ public:
    */
   const Scalar& operator()(Teuchos_Ordinal i) const { return sv_(i); }
 
-private:
-
+ private:
   Teuchos::RCP<const VectorBase<Scalar> > v_;
-  RTOpPack::ConstSubVectorView<Scalar>  sv_s_;
-  RTOpPack::ConstSubVectorView<Scalar>  sv_;
+  RTOpPack::ConstSubVectorView<Scalar> sv_s_;
+  RTOpPack::ConstSubVectorView<Scalar> sv_;
 
   void initialize(
-    const Teuchos::RCP<const VectorBase<Scalar> > &v,
-    const Range1D &rng, const bool forceUnitStride
-    )
-    {
-      v_ = v;
-      v_->acquireDetachedView(rng,&sv_s_);
-      if( forceUnitStride && sv_s_.stride() != 1 ) {
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
-        //const ArrayRCP<Scalar> values = Teuchos::arcp(sv_s_.subDim());
-        //Teuchos_Ordinal i; const Scalar *sv_v;
-        //for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
-        //  values[i] = *sv_v;
-        //sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
-      }
-      else {
-        sv_ = sv_s_;
-      }
+      const Teuchos::RCP<const VectorBase<Scalar> >& v,
+      const Range1D& rng, const bool forceUnitStride) {
+    v_ = v;
+    v_->acquireDetachedView(rng, &sv_s_);
+    if (forceUnitStride && sv_s_.stride() != 1) {
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
+      // const ArrayRCP<Scalar> values = Teuchos::arcp(sv_s_.subDim());
+      // Teuchos_Ordinal i; const Scalar *sv_v;
+      // for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
+      //   values[i] = *sv_v;
+      // sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
+    } else {
+      sv_ = sv_s_;
     }
+  }
   // Not defined and not to be called
   ConstDetachedVectorView();
   ConstDetachedVectorView(const ConstDetachedVectorView<Scalar>&);
   ConstDetachedVectorView<Scalar>& operator==(const ConstDetachedVectorView<Scalar>&);
 };
 
- 
 /** \brief Create an explicit mutable (non-const) view of a <tt>VectorBase</tt> object.
  *
  * This utility class makes it easy to explicitly access a contiguous subset
@@ -218,10 +205,9 @@ private:
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DetachedVectorView {
-public:
-
+ public:
   /** \brief Construct an explicit mutable (non-const) view of a subset of elements.
    *
    * @param v [in] The vector that a view will be taken.  This object must be
@@ -259,12 +245,9 @@ public:
    * </ul>
    */
   DetachedVectorView(
-    const Teuchos::RCP<VectorBase<Scalar> > &v
-    ,const Range1D &rng = Range1D(), const bool forceUnitStride = false
-    )
-    {
-      this->initialize(v,rng,forceUnitStride);
-    }
+      const Teuchos::RCP<VectorBase<Scalar> >& v, const Range1D& rng = Range1D(), const bool forceUnitStride = false) {
+    this->initialize(v, rng, forceUnitStride);
+  }
 
   /** \brief Construct an explicit mutable (non-const) view of a subset of elements.
    *
@@ -299,31 +282,29 @@ public:
    *
    * </ul>
    */
-  DetachedVectorView( VectorBase<Scalar>& v, const Range1D &rng = Range1D(), const bool forceUnitStride = false )
-    {
-      this->initialize(Teuchos::rcp(&v,false),rng,forceUnitStride);
-    }
+  DetachedVectorView(VectorBase<Scalar>& v, const Range1D& rng = Range1D(), const bool forceUnitStride = false) {
+    this->initialize(Teuchos::rcp(&v, false), rng, forceUnitStride);
+  }
 
   /** \brief Commits back the the explicit view on the <tt>VectorBase</tt>
    * object <tt>v</tt> passed to <tt>DetachedVectorView()</tt>.
    */
-  ~DetachedVectorView()
-    {
-      if( sv_s_.stride() != sv_.stride() ) {
-        Teuchos::TestForTermination_terminate("I don't think non-unit stride has ever been tested!");
-        //Teuchos_Ordinal i; Scalar *sv_v; const Scalar *values;
-        //for (
-        //  sv_v = sv_s_.values().get(), values = sv_.values().get(), i=0;
-        //  i < sv_s_.subDim();
-        //  ++i, sv_v += sv_s_.stride()
-        //  )
-        //{
-        //  *sv_v = *values++;
-        //}
-        //delete [] sv_.values().get();
-      }
-      v_->commitDetachedView(&sv_s_);
+  ~DetachedVectorView() {
+    if (sv_s_.stride() != sv_.stride()) {
+      Teuchos::TestForTermination_terminate("I don't think non-unit stride has ever been tested!");
+      // Teuchos_Ordinal i; Scalar *sv_v; const Scalar *values;
+      // for (
+      //   sv_v = sv_s_.values().get(), values = sv_.values().get(), i=0;
+      //   i < sv_s_.subDim();
+      //   ++i, sv_v += sv_s_.stride()
+      //   )
+      //{
+      //   *sv_v = *values++;
+      // }
+      // delete [] sv_.values().get();
     }
+    v_->commitDetachedView(&sv_s_);
+  }
 
   /** \brief Returns the explicit view as an
    * <tt>RTOpPack::ConstSubVectorView<Scalar></tt> object.
@@ -355,41 +336,33 @@ public:
    * < subDim()-1)</tt>. */
   Scalar& operator()(Teuchos_Ordinal i) const { return sv_(i); }
 
-private:
-
+ private:
   Teuchos::RCP<VectorBase<Scalar> > v_;
-  RTOpPack::SubVectorView<Scalar>  sv_s_;
-  RTOpPack::SubVectorView<Scalar>  sv_;
+  RTOpPack::SubVectorView<Scalar> sv_s_;
+  RTOpPack::SubVectorView<Scalar> sv_;
 
   void initialize(
-    const Teuchos::RCP<VectorBase<Scalar> > &v
-    ,const Range1D &rng, const bool forceUnitStride
-    )
-    {
-      v_ = v;
-      v_->acquireDetachedView(rng,&sv_s_);
-      if( forceUnitStride && sv_s_.stride() != 1 ) {
-        TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
-        //Scalar *values = new Scalar[sv_s_.subDim()];
-        //Teuchos_Ordinal i; const Scalar *sv_v;
-        //for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
-        //  values[i] = *sv_v;
-        //sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
-      }
-      else {
-        sv_ = sv_s_;
-      }
+      const Teuchos::RCP<VectorBase<Scalar> >& v, const Range1D& rng, const bool forceUnitStride) {
+    v_ = v;
+    v_->acquireDetachedView(rng, &sv_s_);
+    if (forceUnitStride && sv_s_.stride() != 1) {
+      TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
+      // Scalar *values = new Scalar[sv_s_.subDim()];
+      // Teuchos_Ordinal i; const Scalar *sv_v;
+      // for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
+      //   values[i] = *sv_v;
+      // sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
+    } else {
+      sv_ = sv_s_;
     }
+  }
 
   // Not defined and not to be called
   DetachedVectorView();
   DetachedVectorView(const DetachedVectorView<Scalar>&);
   DetachedVectorView<Scalar>& operator==(const DetachedVectorView<Scalar>&);
-
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_EXPLICIT_VECTOR_VIEW_HPP
+#endif  // THYRA_EXPLICIT_VECTOR_VIEW_HPP

@@ -13,9 +13,7 @@
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Abstract interface for an object that can create
  * <tt>LinearOpWithSolveFactoryBase</tt> objects on demand.
@@ -24,11 +22,9 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  */
-template<class Scalar>
-class LinearSolverBuilderBase : virtual public Teuchos::ParameterListAcceptor
-{
-public:
-  
+template <class Scalar>
+class LinearSolverBuilderBase : virtual public Teuchos::ParameterListAcceptor {
+ public:
   /** \brief Create a new <tt>LinearOpWithSolveFactoryBase</tt> object purely
    * specified by the parameter list.
    *
@@ -42,8 +38,8 @@ public:
    */
   virtual Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >
   createLinearSolveStrategy(
-    const std::string &linearSolveStrategyName ) const = 0;
-  
+      const std::string &linearSolveStrategyName) const = 0;
+
   /** \brief Create a new <tt>PreconditionerFactoryBase</tt> object purely
    * specified by the parameter list.
    *
@@ -58,7 +54,7 @@ public:
    */
   virtual Teuchos::RCP<PreconditionerFactoryBase<Scalar> >
   createPreconditioningStrategy(
-    const std::string &preconditioningStrategyName ) const = 0;
+      const std::string &preconditioningStrategyName) const = 0;
 
   /* \brief Create a new LinearOpWithSolveFactory object given a typical
    * forward linear operator and a typical solve criteria.
@@ -100,47 +96,38 @@ public:
     ) const = 0;
   */
 
-private:
-  
+ private:
   // Not defined and not to be called
-  LinearSolverBuilderBase<Scalar>&
-  operator=(const LinearSolverBuilderBase<Scalar>&);
-
+  LinearSolverBuilderBase<Scalar> &
+  operator=(const LinearSolverBuilderBase<Scalar> &);
 };
 
-
 /** \brief .
  *
  * \relates LinearSolverBuilderBase
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >
 createLinearSolveStrategy(
-  const LinearSolverBuilderBase<Scalar> &linearSolverBuilder,
-  const std::string &linearSolveStrategyName = ""
-  )
-{
+    const LinearSolverBuilderBase<Scalar> &linearSolverBuilder,
+    const std::string &linearSolveStrategyName = "") {
   return linearSolverBuilder.createLinearSolveStrategy(
-    linearSolveStrategyName );
+      linearSolveStrategyName);
 }
-
 
 /** \brief .
  *
  * \relates LinearSolverBuilderBase
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<PreconditionerFactoryBase<Scalar> >
 createPreconditioningStrategy(
-  const LinearSolverBuilderBase<Scalar> &linearSolverBuilder,
-  const std::string &preconditioningStrategyName = ""
-  )
-{
+    const LinearSolverBuilderBase<Scalar> &linearSolverBuilder,
+    const std::string &preconditioningStrategyName = "") {
   return linearSolverBuilder.createPreconditioningStrategy(
-    preconditioningStrategyName );
+      preconditioningStrategyName);
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-#endif // THYRA_LINEAR_SOLVER_BUILDING_BASE
+#endif  // THYRA_LINEAR_SOLVER_BUILDING_BASE

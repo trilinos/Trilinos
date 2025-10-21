@@ -22,35 +22,33 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
-template<class Scalar>
+template <class Scalar>
 class SpmdMultiVectorSerializer {
-public:
-
+ public:
   /// Set to true if to use binary IO and to false if using ASCII.
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, binaryMode );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(bool, binaryMode);
 
   /** \brief . */
   SpmdMultiVectorSerializer(
-    const bool  binaryMode = false
-    );
+      const bool binaryMode = false);
 
   /** \brief Determine if the multi-vector is compatible or not. */
-  bool isCompatible( const MultiVectorBase<Scalar> &mv ) const;
+  bool isCompatible(const MultiVectorBase<Scalar>& mv) const;
 
   /** \brief Write to a stream.
    *
    * ToDo: Finish documentation!
    */
-  void serialize( const MultiVectorBase<Scalar>& mv, std::ostream& out ) const;
+  void serialize(const MultiVectorBase<Scalar>& mv, std::ostream& out) const;
 
   /** \brief Read from a stream
    *
    * ToDo: Finish documentation!
    */
-  void deserialize( std::istream& in, MultiVectorBase<Scalar>* mv ) const;
+  void deserialize(std::istream& in, MultiVectorBase<Scalar>* mv) const;
 
-}; // end class SpmdMultiVectorSerializer
+};  // end class SpmdMultiVectorSerializer
 
-} // end namespace Thyra
+}  // end namespace Thyra
 
-#endif // THYRA_SPMD_MULTI_VECTOR_SERIALIZER_DECL_HPP
+#endif  // THYRA_SPMD_MULTI_VECTOR_SERIALIZER_DECL_HPP

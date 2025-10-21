@@ -12,13 +12,11 @@
 
 #include "Thyra_MultiVectorDefaultBase.hpp"
 
-
 namespace Thyra {
 
-
 /** \brief Forward decl. */
-template<class Scalar> class ScalarProdVectorSpaceBase;
-
+template <class Scalar>
+class ScalarProdVectorSpaceBase;
 
 /** \brief Node subclass for MultiVectorBase subclasses that allows the
  * insertion of an application defined scalar product.
@@ -31,11 +29,9 @@ template<class Scalar> class ScalarProdVectorSpaceBase;
  *
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
-template<class Scalar>
-class MultiVectorAdapterBase : virtual public MultiVectorDefaultBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class MultiVectorAdapterBase : virtual public MultiVectorDefaultBase<Scalar> {
+ public:
   /** @name Pure virtual functions to override in subclasses */
   //@{
 
@@ -56,12 +52,11 @@ public:
    * </ul>
    */
   virtual void euclideanApply(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar>   &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const = 0;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const = 0;
 
   //@}
 
@@ -73,26 +68,21 @@ public:
   RCP<const VectorSpaceBase<Scalar> > domain() const;
   //@}
 
-protected:
-
+ protected:
   /** @name Overridden protected functions from LinearOpBase */
   //@{
   /** \brief . */
   bool opSupportedImpl(EOpTransp M_trans) const;
   /** \brief .  */
   void applyImpl(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const;
   //@}
-
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_MULTI_VECTOR_ADAPTER_BASE_DECL_HPP
+#endif  // THYRA_MULTI_VECTOR_ADAPTER_BASE_DECL_HPP

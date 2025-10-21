@@ -29,6 +29,11 @@
      types_or: [c++, c, cuda]
      files: "packages/tpetra/.*pp"
    - id: clang-format
+     name: clang-format Thyra
+     types_or: [c++, c, cuda]
+     files: "packages/tpetra/.*pp"
+     exclude: "./packages/thyra/adapters/epetra.*"
+   - id: clang-format
      name: clang-format Xpetra
      types_or: [c++, c, cuda]
      files: "packages/xpetra/.*pp"

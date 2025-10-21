@@ -10,20 +10,16 @@
 #ifndef THYRA_DEFAULT_BLOCKED_LINEAR_OP_DECL_HPP
 #define THYRA_DEFAULT_BLOCKED_LINEAR_OP_DECL_HPP
 
-
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_RowStatLinearOpBase.hpp"
 #include "Thyra_ScaledLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
-
-
 namespace Thyra {
 
-
-template<class Scalar> class DefaultProductVectorSpace;
-
+template <class Scalar>
+class DefaultProductVectorSpace;
 
 /** \brief Concrete composite <tt>LinearOpBase</tt> subclass that creates
  * single linear operator object out of a set of constituent <tt>LinearOpBase</tt>
@@ -32,10 +28,10 @@ template<class Scalar> class DefaultProductVectorSpace;
  * This class represents a blocked linear operator <tt>M</tt> of the form:
 
  \verbatim
- 
-  M =  [ Op[0,0], Op[0,1], ... , Op[0,N];  
-         Op[1,0], Op[1,1], ... , Op[1,N];  
-         .        .              .         
+
+  M =  [ Op[0,0], Op[0,1], ... , Op[0,N];
+         Op[1,0], Op[1,1], ... , Op[1,N];
+         .        .              .
          Op[M,0], Op[M,1], ... , Op[M,N]; ]
 
  \endverbatim
@@ -50,14 +46,12 @@ template<class Scalar> class DefaultProductVectorSpace;
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultBlockedLinearOp
-  : virtual public PhysicallyBlockedLinearOpBase<Scalar>
-  , virtual public RowStatLinearOpBase<Scalar>
-  , virtual public ScaledLinearOpBase<Scalar>
-{
-public:
-
+  : virtual public PhysicallyBlockedLinearOpBase<Scalar>,
+    virtual public RowStatLinearOpBase<Scalar>,
+    virtual public ScaledLinearOpBase<Scalar> {
+ public:
   /** @name Constructors */
   //@{
 
@@ -73,27 +67,22 @@ public:
   void beginBlockFill();
   /** \brief . */
   void beginBlockFill(
-    const int numRowBlocks, const int numColBlocks
-    );
+      const int numRowBlocks, const int numColBlocks);
   /** \brief . */
   void beginBlockFill(
-    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productRange,
-    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
-    );
+      const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productRange,
+      const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain);
   /** \brief . */
   bool blockFillIsActive() const;
   /** \brief . */
   bool acceptsBlock(const int i, const int j) const;
   /** \brief . */
   void setNonconstBlock(
-    const int i, const int j,
-    const Teuchos::RCP<LinearOpBase<Scalar> > &block
-    );
+      const int i, const int j,
+      const Teuchos::RCP<LinearOpBase<Scalar> > &block);
   /** \brief . */
   void setBlock(
-    const int i, const int j
-    ,const Teuchos::RCP<const LinearOpBase<Scalar> > &block
-    );
+      const int i, const int j, const Teuchos::RCP<const LinearOpBase<Scalar> > &block);
   /** \brief . */
   void endBlockFill();
   /** \brief . */
@@ -111,15 +100,15 @@ public:
   Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
   productDomain() const;
   /** \brief . */
-  bool blockExists(const int i, const int j) const; 
+  bool blockExists(const int i, const int j) const;
   /** \brief . */
-  bool blockIsConst(const int i, const int j) const; 
+  bool blockIsConst(const int i, const int j) const;
   /** \brief . */
   Teuchos::RCP<LinearOpBase<Scalar> >
-  getNonconstBlock(const int i, const int j); 
+  getNonconstBlock(const int i, const int j);
   /** \brief . */
   Teuchos::RCP<const LinearOpBase<Scalar> >
-  getBlock(const int i, const int j) const; 
+  getBlock(const int i, const int j) const;
 
   //@}
 
@@ -127,9 +116,9 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > range() const;
   /** \brief . */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > domain() const;
   /** \brief . */
   Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
 
@@ -137,7 +126,7 @@ public:
 
   /** @name Overridden from Teuchos::Describable */
   //@{
- 
+
   /** \brief Prints just the name <tt>DefaultBlockedLinearOp</tt> along with
    * the overall dimensions and the number of constituent operators.
    */
@@ -151,14 +140,12 @@ public:
    * ToDo: Finish documentation!
    */
   void describe(
-    Teuchos::FancyOStream &out,
-    const Teuchos::EVerbosityLevel verbLevel
-    ) const;
+      Teuchos::FancyOStream &out,
+      const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
 
-protected:
-
+ protected:
   /** @name Overridden from LinearOpBase */
   //@{
 
@@ -169,13 +156,12 @@ protected:
 
   /** \brief . */
   void applyImpl(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
- 
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const;
+
   //@}
 
   /** @name Overridden from RowStatLinearOpBase */
@@ -183,12 +169,12 @@ protected:
 
   /** \brief . */
   virtual bool rowStatIsSupportedImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
- 	
+      const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
+
   /** \brief . */
   virtual void getRowStatImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat, 
-    const Teuchos::Ptr<VectorBase< Scalar> > &rowStatVec) const;
+      const RowStatLinearOpBaseUtils::ERowStat rowStat,
+      const Teuchos::Ptr<VectorBase<Scalar> > &rowStatVec) const;
 
   //@}
 
@@ -200,34 +186,33 @@ protected:
 
   /** \brief . */
   virtual bool supportsScaleRightImpl() const;
- 
+
   /** \brief . */
   virtual void scaleLeftImpl(
-    const VectorBase< Scalar > &row_scaling
-    );
+      const VectorBase<Scalar> &row_scaling);
 
   /** \brief . */
   virtual void scaleRightImpl(
-    const VectorBase< Scalar > &col_scaling
-    );
+      const VectorBase<Scalar> &col_scaling);
 
   //@}
 
-
-private:
-
+ private:
   // ///////////////////
   // Private types
 
   typedef Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > CNCLO;
   typedef Teuchos::Array<Teuchos::RCP<const VectorSpaceBase<Scalar> > > vec_array_t;
 
-  template<class Scalar2>
+  template <class Scalar2>
   struct BlockEntry {
-    BlockEntry() : i(-1), j(-1) {}
-    BlockEntry( const int i_in, const int j_in, const CNCLO &block_in )
-      :i(i_in),j(j_in),block(block_in)
-      {}
+    BlockEntry()
+      : i(-1)
+      , j(-1) {}
+    BlockEntry(const int i_in, const int j_in, const CNCLO &block_in)
+      : i(i_in)
+      , j(j_in)
+      , block(block_in) {}
     int i;
     int j;
     CNCLO block;
@@ -240,154 +225,132 @@ private:
   Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > productDomain_;
   Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > defaultProductRange_;
   Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > defaultProductDomain_;
-  int numRowBlocks_; // M
-  int numColBlocks_; // N
- 
-  std::vector<CNCLO> Ops_; // Final M x N storage
- 
+  int numRowBlocks_;  // M
+  int numColBlocks_;  // N
+
+  std::vector<CNCLO> Ops_;  // Final M x N storage
+
   vec_array_t rangeBlocks_;
   vec_array_t domainBlocks_;
-  std::vector<BlockEntry<Scalar> > Ops_stack_; // Temp stack of ops begin filled (if Ops_.size()==0).
+  std::vector<BlockEntry<Scalar> > Ops_stack_;  // Temp stack of ops begin filled (if Ops_.size()==0).
   bool blockFillIsActive_;
 
   // ///////////////////////////
   // Private member functions
- 
-  void resetStorage( const int numRowBlocks, const int numColBlocks );
+
+  void resetStorage(const int numRowBlocks, const int numColBlocks);
   void assertBlockFillIsActive(bool) const;
   void assertBlockRowCol(const int i, const int j) const;
   void setBlockSpaces(
-    const int i, const int j, const LinearOpBase<Scalar> &block
-    );
-  template<class LinearOpType>
+      const int i, const int j, const LinearOpBase<Scalar> &block);
+  template <class LinearOpType>
   void setBlockImpl(
-    const int i, const int j,
-    const Teuchos::RCP<LinearOpType> &block
-    );
+      const int i, const int j,
+      const Teuchos::RCP<LinearOpType> &block);
   void adjustBlockSpaces();
 
   // Not defined and not to be called
-  DefaultBlockedLinearOp(const DefaultBlockedLinearOp&);
-  DefaultBlockedLinearOp& operator=(const DefaultBlockedLinearOp&);
-
+  DefaultBlockedLinearOp(const DefaultBlockedLinearOp &);
+  DefaultBlockedLinearOp &operator=(const DefaultBlockedLinearOp &);
 };
-
 
 /** \brief Nonmember default constructor.
  *
  * \relates DefaultBlockedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultBlockedLinearOp<Scalar> > defaultBlockedLinearOp();
 
-
 /** \brief Form an implicit block 1x1 linear operator <tt>[ A00 ]</tt>.
  *
  * \relates DefaultBlockedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
 block1x1(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
-  const std::string &label = ""
-  );
-
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+    const std::string &label = "");
 
 /** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
  *
  * \relates DefaultBlockedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
 block1x2(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A01,
-  const std::string &label = ""
-  );
-
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &A01,
+    const std::string &label = "");
 
 /** \brief Form an implicit block 2x1 linear operator <tt>[ A00; A10 ]</tt>.
  *
  * \relates DefaultBlockedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
 block2x1(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A10,
-  const std::string &label = ""
-  );
-
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &A10,
+    const std::string &label = "");
 
 /** \brief Form an implicit block 2x2 linear operator <tt>[ A00, A01; A10, A11 ]</tt>.
  *
  * \relates DefaultBlockedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
 block2x2(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A01,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A10,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A11,
-  const std::string &label = ""
-  );
-
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &A01,
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &A10,
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &A11,
+    const std::string &label = "");
 
 /** \brief Form an implicit block 1x1 linear operator <tt>[ A00 ]</tt>.
  *
  * \relates DefaultBlockedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstBlock1x1(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
-  const std::string &label = ""
-  );
-
+    const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
+    const std::string &label = "");
 
 /** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
  *
  * \relates DefaultBlockedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstBlock1x2(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A01,
-  const std::string &label = ""
-  );
-
+    const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
+    const Teuchos::RCP<LinearOpBase<Scalar> > &A01,
+    const std::string &label = "");
 
 /** \brief Form an implicit block 2x1 linear operator <tt>[ A00; A10 ]</tt>.
  *
  * \relates DefaultBlockedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstBlock2x1(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A10,
-  const std::string &label = ""
-  );
-
+    const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
+    const Teuchos::RCP<LinearOpBase<Scalar> > &A10,
+    const std::string &label = "");
 
 /** \brief Form an implicit block 2x2 linear operator <tt>[ A00, A01; A10, A11 ]</tt>.
  *
  * \relates DefaultBlockedLinearOp
  */
-template<class Scalar>
+template <class Scalar>
 Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstBlock2x2(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A01,
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A10,
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A11,
-  const std::string &label = ""
-  );
+    const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
+    const Teuchos::RCP<LinearOpBase<Scalar> > &A01,
+    const Teuchos::RCP<LinearOpBase<Scalar> > &A10,
+    const Teuchos::RCP<LinearOpBase<Scalar> > &A11,
+    const std::string &label = "");
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif	// THYRA_DEFAULT_BLOCKED_LINEAR_OP_DECL_HPP
+#endif  // THYRA_DEFAULT_BLOCKED_LINEAR_OP_DECL_HPP

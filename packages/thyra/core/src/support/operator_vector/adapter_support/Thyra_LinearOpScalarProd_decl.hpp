@@ -10,9 +10,7 @@
 #ifndef THYRA_LINEAR_OP_SCALAR_PROD_DECL_HPP
 #define THYRA_LINEAR_OP_SCALAR_PROD_DECL_HPP
 
-
 #include "Thyra_ScalarProdBase_decl.hpp"
-
 
 namespace Thyra {
 
@@ -25,10 +23,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
-template<class Scalar>
+template <class Scalar>
 class LinearOpScalarProd : public ScalarProdBase<Scalar> {
-public:
-
+ public:
   /** @name Constructors, initializers, accessors */
   //@{
 
@@ -36,22 +33,21 @@ public:
   LinearOpScalarProd();
 
   /** \brief . */
-  LinearOpScalarProd( const RCP<const LinearOpBase<Scalar> > &op );
+  LinearOpScalarProd(const RCP<const LinearOpBase<Scalar> >& op);
 
   /** \brief . */
-  void initialize( const RCP<const LinearOpBase<Scalar> > &op );
+  void initialize(const RCP<const LinearOpBase<Scalar> >& op);
 
   /** \brief . */
   const RCP<const LinearOpBase<Scalar> >& op() const;
 
   /** \brief . */
   void uninitialize(
-    const Ptr<RCP<const LinearOpBase<Scalar> > > &op = Teuchos::null );
+      const Ptr<RCP<const LinearOpBase<Scalar> > >& op = Teuchos::null);
 
   //@}
 
-protected:
-  
+ protected:
   /** @name Overridden from ScalarProdBase */
   //@{
 
@@ -60,35 +56,26 @@ protected:
 
   /** \brief . */
   void scalarProdsImpl(
-    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-    const ArrayView<Scalar> &scalarProds_out
-    ) const;
+      const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+      const ArrayView<Scalar>& scalarProds_out) const;
 
   /** \brief . */
   RCP<const LinearOpBase<Scalar> > getLinearOpImpl() const;
 
   //@}
 
-private:
-
-  RCP<const LinearOpBase<Scalar> >  op_;
-
+ private:
+  RCP<const LinearOpBase<Scalar> > op_;
 };
-
 
 // //////////////////////////////////
 // Inline members
 
-
-template<class Scalar>
-inline
-const RCP<const LinearOpBase<Scalar> >& LinearOpScalarProd<Scalar>::op() const
-{
+template <class Scalar>
+inline const RCP<const LinearOpBase<Scalar> >& LinearOpScalarProd<Scalar>::op() const {
   return op_;
 }
 
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 #endif  // THYRA_LINEAR_OP_SCALAR_PROD_DECL_HPP

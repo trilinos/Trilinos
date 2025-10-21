@@ -16,16 +16,14 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base class for all nonlinear equation solvers.
  *
  * <b>Warning!</b> This interface is highly experimental and general
  * developers should not even consider using it in any way if there is any
  * expectation of code stability!
- * 
+ *
  * ToDo: Finish documentation.
  *
  * ToDo:<ul>
@@ -41,12 +39,10 @@ namespace Thyra {
  */
 template <class Scalar>
 class NonlinearSolverBase
-  : virtual public Teuchos::Describable
-  , virtual public Teuchos::VerboseObject<NonlinearSolverBase<Scalar> >
-  , virtual public Teuchos::ParameterListAcceptor
-{
-public:
-  
+  : virtual public Teuchos::Describable,
+    virtual public Teuchos::VerboseObject<NonlinearSolverBase<Scalar> >,
+    virtual public Teuchos::ParameterListAcceptor {
+ public:
   /** @name Pure virtual functions that must be overridden in subclasses */
   //@{
 
@@ -58,12 +54,11 @@ public:
    * called again to reset the model and reinitialize.
    */
   virtual void setModel(
-    const RCP<const ModelEvaluator<Scalar> > &model
-    ) = 0;
-  
+      const RCP<const ModelEvaluator<Scalar> > &model) = 0;
+
   /** \brief Get the model that defines the nonlinear equations. */
   virtual RCP<const ModelEvaluator<Scalar> > getModel() const = 0;
-  
+
   /** \brief Solve a set of nonlinear equations from a given starting
    * point.
    *
@@ -84,13 +79,12 @@ public:
    * </ul>
    */
   virtual SolveStatus<Scalar> solve(
-    VectorBase<Scalar> *x,
-    const SolveCriteria<Scalar> *solveCriteria = NULL,
-    VectorBase<Scalar> *delta = NULL
-    ) = 0;
-  
+      VectorBase<Scalar> *x,
+      const SolveCriteria<Scalar> *solveCriteria = NULL,
+      VectorBase<Scalar> *delta                  = NULL) = 0;
+
   //@}
-  
+
   /** @name Virtual functions with default implementation */
   //@{
 
@@ -114,14 +108,14 @@ public:
    * stateless, this is okay.  Therefore, do not assume that the state of
    * <tt>*returnValue</tt> is exactly the same as the state of <tt>*this</tt>.
    * You have been warned!
-   * 
+   *
    * The default implementation returns <tt>Teuchos::null</tt> which is
    * consistent with the default implementation of <tt>supportsCloning()</tt>.
    * If this function is overridden in a base class to support cloning, then
    * <tt>supportsCloning()</tt> must be overridden to return <tt>true</tt>.
    */
   virtual RCP<NonlinearSolverBase<Scalar> > cloneNonlinearSolver() const;
-  
+
   /** \brief Return the current value of the solution <tt>x</tt> as computed
    * in the last <tt>solve()</tt> operation if supported.
    *
@@ -152,7 +146,7 @@ public:
    * The default implementation returns <tt>return.get()==NULL</tt>.
    */
   virtual RCP<LinearOpWithSolveBase<Scalar> >
-  get_nonconst_W( const bool forceUpToDate = false );
+  get_nonconst_W(const bool forceUpToDate = false);
 
   /** \brief Get a const RCP to the Jacobian if available.
    *
@@ -176,86 +170,70 @@ public:
 
   //@}
 
-private:
-  
+ private:
   // Not defined and not to be called
-  NonlinearSolverBase<Scalar>&
-  operator=(const NonlinearSolverBase<Scalar>&);
-
+  NonlinearSolverBase<Scalar> &
+  operator=(const NonlinearSolverBase<Scalar> &);
 };
 
-
-/** \brief . 
+/** \brief .
  *
  * \relates NonlinearSolverBase
  */
 template <class Scalar>
 const SolveStatus<Scalar> solve(
-  NonlinearSolverBase<Scalar> &nonlinearSolver,
+    NonlinearSolverBase<Scalar> &nonlinearSolver,
     VectorBase<Scalar> *x,
     const SolveCriteria<Scalar> *solveCriteria = NULL,
-    VectorBase<Scalar> *delta = NULL
-    )
-{
-  return nonlinearSolver.solve(x,solveCriteria,delta);
+    VectorBase<Scalar> *delta                  = NULL) {
+  return nonlinearSolver.solve(x, solveCriteria, delta);
 }
-
 
 // ///////////////////////////////
 // Implementations
 
 template <class Scalar>
-bool NonlinearSolverBase<Scalar>::supportsCloning() const
-{
+bool NonlinearSolverBase<Scalar>::supportsCloning() const {
   return false;
 }
 
 template <class Scalar>
 RCP<NonlinearSolverBase<Scalar> >
-NonlinearSolverBase<Scalar>::cloneNonlinearSolver() const
-{
+NonlinearSolverBase<Scalar>::cloneNonlinearSolver() const {
   return Teuchos::null;
 }
 
 template <class Scalar>
 RCP<const VectorBase<Scalar> >
-NonlinearSolverBase<Scalar>::get_current_x() const
-{
+NonlinearSolverBase<Scalar>::get_current_x() const {
   return Teuchos::null;
 }
 
 template <class Scalar>
-bool NonlinearSolverBase<Scalar>::is_W_current() const
-{
+bool NonlinearSolverBase<Scalar>::is_W_current() const {
   return false;
 }
 
 template <class Scalar>
 RCP<LinearOpWithSolveBase<Scalar> >
-NonlinearSolverBase<Scalar>::get_nonconst_W(const bool forceUpToDate)
-{
+NonlinearSolverBase<Scalar>::get_nonconst_W(const bool forceUpToDate) {
   return Teuchos::null;
 }
 
 template <class Scalar>
 RCP<const LinearOpWithSolveBase<Scalar> >
-NonlinearSolverBase<Scalar>::get_W() const
-{
+NonlinearSolverBase<Scalar>::get_W() const {
   return Teuchos::null;
 }
 
 template <class Scalar>
-void NonlinearSolverBase<Scalar>::set_W_is_current(bool W_is_current)
-{
+void NonlinearSolverBase<Scalar>::set_W_is_current(bool W_is_current) {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    true, std::logic_error,
-    "Error, the subclass object described as " << this->description() << " did not"
-    " override this function!"
-    );
+      true, std::logic_error,
+      "Error, the subclass object described as " << this->description() << " did not"
+                                                                           " override this function!");
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_NONLINEAR_SOLVER_BASE_HPP
+#endif  // THYRA_NONLINEAR_SOLVER_BASE_HPP

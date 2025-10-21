@@ -17,9 +17,7 @@
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base class for all linear operators that can support a high-level
  * solve operation.
@@ -32,32 +30,32 @@ namespace Thyra {
  * <li>\ref LOWSB_intro_sec
  * <li>\ref LOWSB_solve_criteria_sec
  * <li>\ref LOWSB_solve_status_sec
- * <li>\ref LOWSB_use_cases_sec 
+ * <li>\ref LOWSB_use_cases_sec
  * <li>\ref LOWSB_developer_notes_sec
  * </ul>
- * 
+ *
  * \section LOWSB_intro_sec Introduction
- * 
+ *
  * This interface supports linear operators (with potentially different range
  * and domain scalar types) that can also support a forward solve operation
  * (using <tt>solve()</tt>) of the form:
 
   \f[
-    A X = B 
+    A X = B
   \f]
- 
+
  * and/or a transpose solve operation (using <tt>A_trans==TRANS</tt>) of the
  * form:
 
   \f[
-    A^T X = B 
+    A^T X = B
   \f]
 
  * and/or an adjoint solve operation (using <tt>A_trans==CONJTRANS()</tt>) of
  * the form:
 
   \f[
-    A^H X = B 
+    A^H X = B
   \f]
 
  * where \f$A\f$ is <tt>*this</tt> linear operator, \f$B\f$ is an appropriate
@@ -83,9 +81,9 @@ namespace Thyra {
  * functions defined \ref Thyra_LinearOpWithSolveBase_helper_grp "here" rather
  * than call these member functions directly as they support a number of other
  * simpler use cases.
- * 
+ *
  * \section LOWSB_solve_criteria_sec Solve Criteria
- * 
+ *
  * This interface potentially allows clients to specify a relative tolerance
  * on either the relative residual norm or the relative norm of the solution
  * error and can target different solution criteria to different blocks of
@@ -98,7 +96,7 @@ namespace Thyra {
  * <tt>solveTransposeSupportsSolveMeasureType()</tt>).  Also, this interface
  * assumes that all implementations can support a "default" solve criteria
  * that is determined internally to <tt>*this</tt>.
- * 
+ *
  * This interface is meant to support direct and iterative linear solvers as
  * well as combinations of the two in a variety of configurations.  Because of
  * the almost infinite number of types of linear solver configurations
@@ -112,9 +110,9 @@ namespace Thyra {
  * client to be passed into a solve operation.  This object can be set up in a
  * variety of ways to support several different use cases which are described
  * below:
- * 
+ *
  * <ul>
- * 
+ *
  * <li> <b>Unspecified (Default) solution criteria type</b> [
  * <tt>solveCriteria.solveMeasureType.useDefault()==true</tt> ]: In this mode,
  * criteria for the solution tolerance is determined internally by
@@ -125,7 +123,7 @@ namespace Thyra {
  * determined in the end by the application or the user in an "appropriate"
  * manner.  In this case, the value of <tt>solveCriteria.requestedTol</tt> is
  * ignored and no meaningful solve status can be returned to the client.
- * 
+ *
  * <li> <b>Relative residual tolerance solution criteria</b> [
  * <tt>solveCriteria.solveMeasureType.numerator==SOLVE_MEASURE_NORM_RESIDUAL
  * && solveCriteria.solveMeasureType.denominator==SOLVE_MEASURE_NORM_RHS &&
@@ -146,18 +144,18 @@ namespace Thyra {
  *
  * <li> ToDo: Add examples of other types of solve measures when they are
  * needed!
- * 
+ *
  * </ul>
- * 
+ *
  * \section LOWSB_solve_status_sec Solve Status
- * 
+ *
  * After the <tt>solve()</tt> and <tt>solveTranspose()</tt> functions return,
  * the client can optionally get back a solution status for each block of
  * linear systems for of block solve criteria.  Specifically, for each block
  * of linear systems
-  
+
   \f[
-    A  X_{(:,i_{j}+1:i_j)} = B_{(:,i_{j}+1:i_j)} 
+    A  X_{(:,i_{j}+1:i_j)} = B_{(:,i_{j}+1:i_j)}
   \f]
 
  * whose solution criteria is specified by a <tt>SolveCriteria</tt> object, a
@@ -173,9 +171,9 @@ namespace Thyra {
  *
  * If <tt>solveStatus</tt> is a <tt>SolveStatus</tt> object returned for the
  * above block linear system the the following return status are significant:
- * 
+ *
  * <ul>
- * 
+ *
  * <li><b>Converged</b> [
  * <tt>solveStatus.solveStatus==SOLVE_STATUS_CONVERGED</tt> ]: This status is
  * returned by the linear solver if the solution criteria was likely achieved
@@ -183,9 +181,9 @@ namespace Thyra {
  * almost always be the return value for a direct linear solver.  The maximum
  * actual tolerance achieved may or may not be returned in the field
  * <tt>solveStatus.achievedTol</tt>.  The two sub-cases are:
- * 
+ *
  *   <ul>
- * 
+ *
  *   <li><b>Known tolerance</b> [
  *   <tt>solveStatus.achievedTol!=SolveStatus::unknownTolerance()</tt> ] : The
  *   linear solver knows the approximate order-of-magnitude estimate of the
@@ -207,9 +205,9 @@ namespace Thyra {
  *   linear solver does not know the tolerance that was achieved but the
  *   achieved tolerance should be very close to the requested tolerance.  This
  *   would be the most likely return status for a direct linear solver.
- * 
+ *
  *   </ul>
- * 
+ *
  * <li><b>Unconverged</b> [
  * <tt>solveStatus.solveStatus==SOLVE_STATUS_UNCONVERGED</tt> ]: The linear
  * solver was most likely not able to achieve the requested tolerance.  A
@@ -218,22 +216,22 @@ namespace Thyra {
  * tolerance).  The linear solver may not be able to return the actual
  * tolerance achieved and the same two cases as for the <it>unconverged</it>
  * case are possible and the two subdcases are:
- * 
+ *
  *   <ul>
- * 
+ *
  *   <li><b>Known tolerance</b> [
  *   <tt>solveStatus.achievedTol!===SolveStatus::unknownTolerance()0</tt> ] :
  *   The linear solver knows the approximate order-of-magnitude estimate of
  *   the maximum tolerance achieved.
- * 
+ *
  *   <li><b>Unknown tolerance</b> [
  *   <tt>solveStatus.achievedTol==SolveStatus::unknownTolerance()</tt> ] : The
  *   linear solver does not know the tolerance that was achieved but the
  *   achieved tolerance is most likely significantly greater than the
  *   requested tolerance.
- * 
+ *
  *   </ul>
- * 
+ *
  * <li><b>Unknown status</b> [
  * <tt>solveStatus.solveStatus==SOLVE_STATUS_UNKNOWN</tt> ]: The linear solver
  * does not know if the solution status was achieved or not.  In this case,
@@ -249,14 +247,14 @@ namespace Thyra {
  * <tt>solveCriteria.solveMeasureType.useDefault()==true</tt> and therefore the
  * client would have no way to interpret this tolerance as a residual or an
  * solution norm.
- * 
+ *
  * </ul>
  *
  * The implementation of the function <tt>accumulateSolveStatus()</tt> defines
  * how to accumulate the individual solve status for each RHS in a block into
  * the overall solve status for an entire block returned in the
  * <tt>SolveStatus</tt> object from teh <tt>solve()</tt>.
- * 
+ *
  * \section LOWSB_use_cases_sec Use cases
  *
  * This interface supports a variety of use cases where where described, more
@@ -265,20 +263,18 @@ namespace Thyra {
  * functions defined \ref Thyra_LinearOpWithSolveBase_helper_grp "here".
  *
  * ToDo: Finish documentation!
- * 
+ *
  * \section LOWSB_developer_notes_sec Notes to subclass developers
- * 
+ *
  * This interface assumes, by default, that subclasses will only support the
  * forward solve operation.  See <tt>LinearOpBase</tt> for what other virtual
  * functions must be overridden to completely define a concrete subclass.
  */
-template<class Scalar>
+template <class Scalar>
 class LinearOpWithSolveBase
-  : virtual public LinearOpBase<Scalar>
-  , virtual public Teuchos::VerboseObject<LinearOpWithSolveBase<Scalar> >
-{
-public:
-
+  : virtual public LinearOpBase<Scalar>,
+    virtual public Teuchos::VerboseObject<LinearOpWithSolveBase<Scalar> > {
+ public:
   using scalar_type = Scalar;
 
   /** \name Public interface funtions. */
@@ -340,23 +336,21 @@ public:
   // for existing subclasses of LOWSB.
   //
   // This refactoring will be done by and by has bug 4915 is implemented.
-  // 
+  //
 
   /** \brief Return if <tt>solve()</tt> supports the argument <tt>transp</tt>.
    *
    * The default implementation returns <tt>true</tt> for non-transposed,
    * non-conjugate solves..
    */
-  bool solveSupports(EOpTransp transp) const
-    { return solveSupportsImpl(transp); }
+  bool solveSupports(EOpTransp transp) const { return solveSupportsImpl(transp); }
 
   /** \brief Return if <tt>solve()</tt> supports a given transpose and solve
    * criteria specification.
    *
    */
   bool solveSupports(EOpTransp transp,
-    const Ptr<const SolveCriteria<Scalar> > solveCriteria) const
-    { return solveSupportsNewImpl(transp, solveCriteria); }
+                     const Ptr<const SolveCriteria<Scalar> > solveCriteria) const { return solveSupportsNewImpl(transp, solveCriteria); }
 
   /** \brief Return if <tt>solve()</tt> supports the given the solve measure
    * type.
@@ -365,9 +359,7 @@ public:
    * <tt>solveMeasureType.useDefault()==true</tt>.
    */
   bool solveSupportsSolveMeasureType(EOpTransp transp,
-    const SolveMeasureType& solveMeasureType
-    ) const
-    { return solveSupportsSolveMeasureTypeImpl(transp, solveMeasureType); }
+                                     const SolveMeasureType &solveMeasureType) const { return solveSupportsSolveMeasureTypeImpl(transp, solveMeasureType); }
 
   /** \brief Request the solution of a block linear system.
    *
@@ -418,17 +410,14 @@ public:
    * and the return value.
    */
   SolveStatus<Scalar> solve(
-    const EOpTransp A_trans,
-    const MultiVectorBase<Scalar> &B,
-    const Ptr<MultiVectorBase<Scalar> > &X,
-    const Ptr<const SolveCriteria<Scalar> > solveCriteria = Teuchos::null
-    ) const 
-    { return solveImpl(A_trans, B, X, solveCriteria); }
+      const EOpTransp A_trans,
+      const MultiVectorBase<Scalar> &B,
+      const Ptr<MultiVectorBase<Scalar> > &X,
+      const Ptr<const SolveCriteria<Scalar> > solveCriteria = Teuchos::null) const { return solveImpl(A_trans, B, X, solveCriteria); }
 
   //@}
 
-protected:
-
+ protected:
   /** \name Protected virtual functions to be overridden by subclasses. */
   //@{
 
@@ -437,103 +426,80 @@ protected:
 
   /** \brief Virtual implementation of <tt>solveSupports()</tt>. */
   virtual bool solveSupportsNewImpl(EOpTransp /* transp */,
-    const Ptr<const SolveCriteria<Scalar> > /* solveCriteria */
-    ) const
-    {
-      TEUCHOS_TEST_FOR_EXCEPT(true);
-      TEUCHOS_UNREACHABLE_RETURN(false);
-    }
+                                    const Ptr<const SolveCriteria<Scalar> > /* solveCriteria */
+  ) const {
+    TEUCHOS_TEST_FOR_EXCEPT(true);
+    TEUCHOS_UNREACHABLE_RETURN(false);
+  }
 
   /** \brief Virtual implementation for solveSupportsSolveMeasureType(). */
   virtual bool solveSupportsSolveMeasureTypeImpl(EOpTransp transp,
-    const SolveMeasureType& solveMeasureType) const;
+                                                 const SolveMeasureType &solveMeasureType) const;
 
   /** \brief Virtual implementation for solve(). */
   virtual SolveStatus<Scalar> solveImpl(
-    const EOpTransp transp,
-    const MultiVectorBase<Scalar> &B,
-    const Ptr<MultiVectorBase<Scalar> > &X,
-    const Ptr<const SolveCriteria<Scalar> > solveCriteria
-    ) const = 0;
+      const EOpTransp transp,
+      const MultiVectorBase<Scalar> &B,
+      const Ptr<MultiVectorBase<Scalar> > &X,
+      const Ptr<const SolveCriteria<Scalar> > solveCriteria) const = 0;
 
   //@}
 
-private:
-
-private:
-  
+ private:
+ private:
   // Not defined and not to be called
-  LinearOpWithSolveBase<Scalar>&
-  operator=(const LinearOpWithSolveBase<Scalar>&);
-
+  LinearOpWithSolveBase<Scalar> &
+  operator=(const LinearOpWithSolveBase<Scalar> &);
 };
-
 
 /** \brief Call <tt>solveSupports()</tt> as a non-member function.
  *
  * \relates LinearOpWithSolveBase
  */
-template<class Scalar>
-inline
-bool solveSupports(const LinearOpWithSolveBase<Scalar> &A, const EOpTransp transp)
-{
+template <class Scalar>
+inline bool solveSupports(const LinearOpWithSolveBase<Scalar> &A, const EOpTransp transp) {
   return A.solveSupports(transp);
 }
 
-
 /** \brief Call <tt>solveSupports()</tt> as a non-member function.
  *
  * \relates LinearOpWithSolveBase
  */
-template<class Scalar>
-inline
-bool solveSupports(
-  const LinearOpWithSolveBase<Scalar> &A,
-  const EOpTransp transp,
-  const Ptr<const SolveCriteria<Scalar> > solveCriteria
-  )
-{
+template <class Scalar>
+inline bool solveSupports(
+    const LinearOpWithSolveBase<Scalar> &A,
+    const EOpTransp transp,
+    const Ptr<const SolveCriteria<Scalar> > solveCriteria) {
   return A.solveSupports(transp, solveCriteria);
 }
-
 
 /** \brief Call <tt>solveSupportsSolveMeasureType()</tt> as a non-member
  * function.
  *
  * \relates LinearOpWithSolveBase
  */
-template<class Scalar>
-inline
-bool solveSupportsSolveMeasureType(
-  const LinearOpWithSolveBase<Scalar> &A,
-  const EOpTransp transp,
-  const SolveMeasureType &solveMeasureType
-  )
-{
+template <class Scalar>
+inline bool solveSupportsSolveMeasureType(
+    const LinearOpWithSolveBase<Scalar> &A,
+    const EOpTransp transp,
+    const SolveMeasureType &solveMeasureType) {
   return A.solveSupportsSolveMeasureType(transp, solveMeasureType);
 }
-
 
 /** \brief Call <tt>solve()</tt> as a non-member function
  *
  * \relates LinearOpWithSolveBase
  */
-template<class Scalar>
-inline
-SolveStatus<Scalar> solve(
-  const LinearOpWithSolveBase<Scalar> &A,
-  const EOpTransp A_trans,
-  const MultiVectorBase<Scalar> &B,
-  const Ptr<MultiVectorBase<Scalar> > &X,
-  const Ptr<const SolveCriteria<Scalar> > solveCriteria = Teuchos::null
-  )
-{
+template <class Scalar>
+inline SolveStatus<Scalar> solve(
+    const LinearOpWithSolveBase<Scalar> &A,
+    const EOpTransp A_trans,
+    const MultiVectorBase<Scalar> &B,
+    const Ptr<MultiVectorBase<Scalar> > &X,
+    const Ptr<const SolveCriteria<Scalar> > solveCriteria = Teuchos::null) {
   return A.solve(A_trans, B, X, solveCriteria);
 }
 
+}  // namespace Thyra
 
-
-} // namespace Thyra
-
-
-#endif // THYRA_LINEAR_OP_WITH_SOLVE_BASE_DECL_HPP
+#endif  // THYRA_LINEAR_OP_WITH_SOLVE_BASE_DECL_HPP

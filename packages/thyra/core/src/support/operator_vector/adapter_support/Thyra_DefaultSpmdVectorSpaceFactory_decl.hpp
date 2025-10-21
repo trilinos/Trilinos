@@ -12,7 +12,10 @@
 
 #include "Thyra_VectorSpaceFactoryBase.hpp"
 
-namespace Teuchos { template<typename Ordinal> class Comm; }
+namespace Teuchos {
+template <typename Ordinal>
+class Comm;
+}
 
 namespace Thyra {
 
@@ -31,10 +34,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultSpmdVectorSpaceFactory : public VectorSpaceFactoryBase<Scalar> {
-public:
-
+ public:
   /** \brief Return the Spmd communicator. */
   Teuchos::RCP<const Teuchos::Comm<Ordinal> > getComm() const;
 
@@ -48,67 +50,57 @@ public:
    *           [in] The dimension of the (locally replicated) vector space to create.
    *
    * This function returns:
-   
+
    \code
    return defaultSpmdVectorSpace(this->getComm(), dim, dim)</tt>
    \endcode
-   
+
    * and therefore <tt>return->dim()==dim</tt> and this implementation fully
    * satisfies the specification of
    * <tt>VectorSpaceFactoryBase::createVecSpc()</tt>.
    */
-   Teuchos::RCP<const VectorSpaceBase<Scalar> > createVecSpc(int dim) const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > createVecSpc(int dim) const;
 
   //@}
 
-private:
+ private:
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
 
-  Teuchos::RCP<const Teuchos::Comm<Ordinal> >  comm_;
-
-public:
-
+ public:
   /** \brief Depreciated . */
   DefaultSpmdVectorSpaceFactory(
-    const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null
-    );
-    
-}; // end class DefaultSpmdVectorSpaceFactory
+      const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null);
 
+};  // end class DefaultSpmdVectorSpaceFactory
 
 /** \brief Construct with a <tt>Teuchos::Comm</tt> object.
  *
  * \param comm [in] The communicator.  This object must be maintained by the
  * client the entire time that <tt>this</tt> is in use.  It is allowed for
  * <tt>comm.get()==NULL</tt>.
- * 
+ *
  * Postconditions:<ul>
  * <li><tt>returnVal->getComm().get() == comm.get()</tt>
  * </ul>
  *
  * \relates DefaultSpmdVectorSpaceFactory
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultSpmdVectorSpaceFactory<Scalar> >
 defaultSpmdVectorSpaceFactory(
-  const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null
-  )
-{
+    const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null) {
   return Teuchos::rcp(new DefaultSpmdVectorSpaceFactory<Scalar>(comm));
 }
-
 
 // ///////////////////////////
 // Inline members
 
-
-template<class Scalar>
-inline
-Teuchos::RCP<const Teuchos::Comm<Ordinal> >
-DefaultSpmdVectorSpaceFactory<Scalar>::getComm() const
-{
+template <class Scalar>
+inline Teuchos::RCP<const Teuchos::Comm<Ordinal> >
+DefaultSpmdVectorSpaceFactory<Scalar>::getComm() const {
   return comm_;
 }
 
-} // end namespace Thyra
+}  // end namespace Thyra
 
 #endif  // THYRA_SPMD_VECTOR_SPACE_FACTORY_STD_DECL_HPP

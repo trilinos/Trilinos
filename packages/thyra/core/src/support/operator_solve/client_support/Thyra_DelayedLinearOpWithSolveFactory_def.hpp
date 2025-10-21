@@ -10,51 +10,39 @@
 #ifndef THYRA_DELAYED_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 #define THYRA_DELAYED_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 
-
 #include "Thyra_DelayedLinearOpWithSolveFactory_decl.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_DelayedLinearOpWithSolve.hpp"
 
-
 namespace Thyra {
-
 
 // Overridden from Constructors/Initializers/Accessors
 
-  
-template<class Scalar>
+template <class Scalar>
 DelayedLinearOpWithSolveFactory<Scalar>::DelayedLinearOpWithSolveFactory(
-  const RCP<LinearOpWithSolveFactoryBase<Scalar> > &lowsf
-  )
-{
+    const RCP<LinearOpWithSolveFactoryBase<Scalar> > &lowsf) {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(is_null(lowsf));
 #endif
   lowsf_ = lowsf;
 }
 
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpWithSolveFactoryBase<Scalar> >
-DelayedLinearOpWithSolveFactory<Scalar>::getUnderlyingLOWSF()
-{
+DelayedLinearOpWithSolveFactory<Scalar>::getUnderlyingLOWSF() {
   return lowsf_;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const LinearOpWithSolveFactoryBase<Scalar> >
-DelayedLinearOpWithSolveFactory<Scalar>::getUnderlyingLOWSF() const
-{
+DelayedLinearOpWithSolveFactory<Scalar>::getUnderlyingLOWSF() const {
   return lowsf_;
 }
-
 
 // Overridden from Teuchos::Describable
 
-
-template<class Scalar>
-std::string DelayedLinearOpWithSolveFactory<Scalar>::description() const
-{
+template <class Scalar>
+std::string DelayedLinearOpWithSolveFactory<Scalar>::description() const {
   std::ostringstream oss;
   oss << this->Teuchos::Describable::description()
       << "{"
@@ -67,157 +55,121 @@ std::string DelayedLinearOpWithSolveFactory<Scalar>::description() const
   return oss.str();
 }
 
-
 // Overridden from ParameterListAcceptor
 
-
-template<class Scalar>
+template <class Scalar>
 void DelayedLinearOpWithSolveFactory<Scalar>::setParameterList(
-  RCP<ParameterList> const& paramList
-  )
-{
+    RCP<ParameterList> const &paramList) {
   lowsf_->setParameterList(paramList);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<ParameterList>
-DelayedLinearOpWithSolveFactory<Scalar>::getNonconstParameterList()
-{
+DelayedLinearOpWithSolveFactory<Scalar>::getNonconstParameterList() {
   return lowsf_->getNonconstParameterList();
 }
 
-
-template<class Scalar>
-RCP<ParameterList> 
-DelayedLinearOpWithSolveFactory<Scalar>::unsetParameterList()
-{
+template <class Scalar>
+RCP<ParameterList>
+DelayedLinearOpWithSolveFactory<Scalar>::unsetParameterList() {
   return lowsf_->unsetParameterList();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const ParameterList>
-DelayedLinearOpWithSolveFactory<Scalar>::getParameterList() const
-{
+DelayedLinearOpWithSolveFactory<Scalar>::getParameterList() const {
   return lowsf_->getParameterList();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<const ParameterList>
-DelayedLinearOpWithSolveFactory<Scalar>::getValidParameters() const
-{
+DelayedLinearOpWithSolveFactory<Scalar>::getValidParameters() const {
   return lowsf_->getValidParameters();
 }
 
-
 // Overridden from LinearOpWithSolveFactoyBase
 
-
-template<class Scalar>
-bool DelayedLinearOpWithSolveFactory<Scalar>::acceptsPreconditionerFactory() const
-{
+template <class Scalar>
+bool DelayedLinearOpWithSolveFactory<Scalar>::acceptsPreconditionerFactory() const {
   return lowsf_->acceptsPreconditionerFactory();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DelayedLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
-  const RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
-  const std::string &precFactoryName
-  )
-{
-  lowsf_->setPreconditionerFactory(precFactory,precFactoryName);
+    const RCP<PreconditionerFactoryBase<Scalar> > &precFactory,
+    const std::string &precFactoryName) {
+  lowsf_->setPreconditionerFactory(precFactory, precFactoryName);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<PreconditionerFactoryBase<Scalar> >
-DelayedLinearOpWithSolveFactory<Scalar>::getPreconditionerFactory() const
-{
+DelayedLinearOpWithSolveFactory<Scalar>::getPreconditionerFactory() const {
   return lowsf_->getPreconditionerFactory();
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DelayedLinearOpWithSolveFactory<Scalar>::unsetPreconditionerFactory(
-  RCP<PreconditionerFactoryBase<Scalar> > *precFactory,
-  std::string * /* precFactoryName */
-  )
-{
+    RCP<PreconditionerFactoryBase<Scalar> > *precFactory,
+    std::string * /* precFactoryName */
+) {
   lowsf_->unsetPreconditionerFactory(precFactory);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 bool DelayedLinearOpWithSolveFactory<Scalar>::isCompatible(
-  const LinearOpSourceBase<Scalar> &fwdOpSrc
-  ) const
-{
+    const LinearOpSourceBase<Scalar> &fwdOpSrc) const {
   return lowsf_->isCompatible(fwdOpSrc);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 RCP<LinearOpWithSolveBase<Scalar> >
-DelayedLinearOpWithSolveFactory<Scalar>::createOp() const
-{
+DelayedLinearOpWithSolveFactory<Scalar>::createOp() const {
   RCP<LinearOpWithSolveBase<Scalar> >
-    dlows = Teuchos::rcp(new DelayedLinearOpWithSolve<Scalar>());
+      dlows = Teuchos::rcp(new DelayedLinearOpWithSolve<Scalar>());
   dlows->setVerbLevel(this->getVerbLevel());
   dlows->setOStream(this->getOStream());
   return dlows;
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DelayedLinearOpWithSolveFactory<Scalar>::initializeOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse
-  ) const
-{
+    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+    LinearOpWithSolveBase<Scalar> *Op,
+    const ESupportSolveUse supportSolveUse) const {
   using Teuchos::null;
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdOpSrc));
-  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0 == Op);
 #endif
   DelayedLinearOpWithSolve<Scalar>
-    &dlows = Teuchos::dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);
-  dlows.initialize( fwdOpSrc, null, null, supportSolveUse, lowsf_ );
+      &dlows = Teuchos::dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);
+  dlows.initialize(fwdOpSrc, null, null, supportSolveUse, lowsf_);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DelayedLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &/* fwdOpSrc */,
-  LinearOpWithSolveBase<Scalar> * /* Op */
-  ) const
-{
+    const RCP<const LinearOpSourceBase<Scalar> > & /* fwdOpSrc */,
+    LinearOpWithSolveBase<Scalar> * /* Op */
+) const {
   TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DelayedLinearOpWithSolveFactory<Scalar>::uninitializeOp(
-  LinearOpWithSolveBase<Scalar> *Op,
-  RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
-  RCP<const PreconditionerBase<Scalar> > *prec,
-  RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
-  ESupportSolveUse *supportSolveUse
-  ) const
-{
-
+    LinearOpWithSolveBase<Scalar> *Op,
+    RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
+    RCP<const PreconditionerBase<Scalar> > *prec,
+    RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
+    ESupportSolveUse *supportSolveUse) const {
   using Teuchos::dyn_cast;
 
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0 == Op);
 #endif
 
   DelayedLinearOpWithSolve<Scalar>
-    &dlows = dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);
-  
+      &dlows = dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);
+
   if (fwdOpSrc)
     *fwdOpSrc = dlows.getFwdOpSrc();
   if (prec)
@@ -228,69 +180,54 @@ void DelayedLinearOpWithSolveFactory<Scalar>::uninitializeOp(
     *supportSolveUse = dlows.getSupportSolveUse();
 
   // ToDo: 2007/08/16: rabartl: Consider uninitalizing dlows?
-
 }
 
-
-template<class Scalar>
+template <class Scalar>
 bool DelayedLinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(
-  const EPreconditionerInputType precOpType
-  ) const
-{
+    const EPreconditionerInputType precOpType) const {
   return lowsf_->supportsPreconditionerInputType(precOpType);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DelayedLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  const RCP<const PreconditionerBase<Scalar> > &prec,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse
-  ) const
-{
+    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+    const RCP<const PreconditionerBase<Scalar> > &prec,
+    LinearOpWithSolveBase<Scalar> *Op,
+    const ESupportSolveUse supportSolveUse) const {
   using Teuchos::null;
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdOpSrc));
-  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0 == Op);
 #endif
   DelayedLinearOpWithSolve<Scalar>
-    &dlows = Teuchos::dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);
-  dlows.initialize( fwdOpSrc, prec, null, supportSolveUse, lowsf_ );
+      &dlows = Teuchos::dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);
+  dlows.initialize(fwdOpSrc, prec, null, supportSolveUse, lowsf_);
 }
 
-
-template<class Scalar>
+template <class Scalar>
 void DelayedLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-  const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-  LinearOpWithSolveBase<Scalar> *Op,
-  const ESupportSolveUse supportSolveUse
-  ) const
-{
+    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+    const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
+    LinearOpWithSolveBase<Scalar> *Op,
+    const ESupportSolveUse supportSolveUse) const {
   using Teuchos::null;
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT(is_null(fwdOpSrc));
-  TEUCHOS_TEST_FOR_EXCEPT(0==Op);
+  TEUCHOS_TEST_FOR_EXCEPT(0 == Op);
 #endif
   DelayedLinearOpWithSolve<Scalar>
-    &dlows = Teuchos::dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);
-  dlows.initialize( fwdOpSrc, null, approxFwdOpSrc, supportSolveUse, lowsf_ );
+      &dlows = Teuchos::dyn_cast<DelayedLinearOpWithSolve<Scalar> >(*Op);
+  dlows.initialize(fwdOpSrc, null, approxFwdOpSrc, supportSolveUse, lowsf_);
 }
-
 
 // protected
 
-
-template<class Scalar>
-void DelayedLinearOpWithSolveFactory<Scalar>::informUpdatedVerbosityState() const
-{
+template <class Scalar>
+void DelayedLinearOpWithSolveFactory<Scalar>::informUpdatedVerbosityState() const {
   lowsf_->setVerbLevel(this->getVerbLevel());
   lowsf_->setOStream(this->getOStream());
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_DELAYED_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
+#endif  // THYRA_DELAYED_LINEAR_OP_WITH_SOLVE_FACTORY_HPP

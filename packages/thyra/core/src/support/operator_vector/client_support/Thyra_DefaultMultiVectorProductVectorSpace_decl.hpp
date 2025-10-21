@@ -10,13 +10,11 @@
 #ifndef THYRA_DEFAULT_MULTI_VECTOR_PRODUCT_VECTOR_SPACE_DECL_HPP
 #define THYRA_DEFAULT_MULTI_VECTOR_PRODUCT_VECTOR_SPACE_DECL_HPP
 
-#include "Thyra_ProductVectorSpaceBase.hpp" // Interface
-#include "Thyra_DefaultProductVectorSpace.hpp" // Implementation
+#include "Thyra_ProductVectorSpaceBase.hpp"     // Interface
+#include "Thyra_DefaultProductVectorSpace.hpp"  // Implementation
 #include "Thyra_VectorSpaceDefaultBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Standard concrete implementation of a product vector space that
  * creates product vectors fromed implicitly from the columns of a
@@ -29,19 +27,17 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultMultiVectorProductVectorSpace
-  : virtual public ProductVectorSpaceBase<Scalar>
-  , virtual protected VectorSpaceDefaultBase<Scalar>
-{
-public:
-
+  : virtual public ProductVectorSpaceBase<Scalar>,
+    virtual protected VectorSpaceDefaultBase<Scalar> {
+ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
   /** \brief Construct to an uninitialized state. */
   DefaultMultiVectorProductVectorSpace();
-  
+
   /** \brief Initialize with a list of constituent vector spaces.
    *
    * \param space [in,persisting] The vector space used to create the
@@ -62,9 +58,8 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<const VectorSpaceBase<Scalar> > &space,
-    const int numColumns
-    );
+      const RCP<const VectorSpaceBase<Scalar> >& space,
+      const int numColumns);
 
   /** \brief . */
   RCP<const DefaultProductVectorSpace<Scalar> >
@@ -91,19 +86,18 @@ public:
    * <tt>DefaultMultiVectorProductVectorSpace</tt> object is still using them.
    */
   void uninitialize(
-    RCP<const VectorSpaceBase<Scalar> > *space = 0,
-    int *numColumns = 0
-    );
-    
+      RCP<const VectorSpaceBase<Scalar> >* space = 0,
+      int* numColumns                            = 0);
+
   //@}
-    
+
   /** @name Overridden from DefaultMultiVectorProductVectorSpace */
   //@{
-    
+
   /** \brief . */
   int numBlocks() const;
   /** \brief . */
-  RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const; 
+  RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const;
 
   //@}
 
@@ -113,24 +107,24 @@ public:
   /** \brief . */
   Ordinal dim() const;
   /** \brief . */
-  bool isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const;
+  bool isCompatible(const VectorSpaceBase<Scalar>& vecSpc) const;
   /** \brief Returns a <tt>DefaultMultiVectorProductVector</tt> object. */
-  RCP< VectorBase<Scalar> > createMember() const;
+  RCP<VectorBase<Scalar> > createMember() const;
   /** \brief Returns the sum of the scalar products of the constituent vectors. */
-  Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
+  Scalar scalarProd(const VectorBase<Scalar>& x, const VectorBase<Scalar>& y) const;
   /** \brief Returns the sum of the scalar products of each of the columns of
    * the constituent multi-vectors.
    */
   void scalarProdsImpl(
-    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
-    const ArrayView<Scalar> &scalarProds ) const;
+      const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+      const ArrayView<Scalar>& scalarProds) const;
   /** \brief Returns true if all of the constituent vector spaces return
    * true.
    */
-  bool hasInCoreView( const Range1D& rng, const EViewType viewType,
-    const EStrideType strideType ) const;
+  bool hasInCoreView(const Range1D& rng, const EViewType viewType,
+                     const EStrideType strideType) const;
   /** \brief Returns <tt>getBlock(0)->smallVecSpcFcty()</tt>. */
-  RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
+  RCP<const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
   /** \brief Returns a <tt>DefaultColumnwiseMultiVector</tt> object.
    *
    * ToDo: It is possible an general and well optimized multi-vector
@@ -139,15 +133,15 @@ public:
    * numBlocks*numMembers total columns.  However, this class is not needed at this
    * time so it is not provided.
    */
-  RCP< MultiVectorBase<Scalar> > createMembers(int numMembers) const;
+  RCP<MultiVectorBase<Scalar> > createMembers(int numMembers) const;
   /** \brief Clones the object as promised. */
-  RCP< const VectorSpaceBase<Scalar> > clone() const;
+  RCP<const VectorSpaceBase<Scalar> > clone() const;
 
   //@}
 
   /** @name Overridden from Teuchos::Describable */
   //@{
-                                                
+
   /** \brief Prints just the name <tt>DefaultMultiVectorProductVectorSpace</tt> along
    * with the overall dimension and the number of blocks.
    */
@@ -161,14 +155,12 @@ public:
    * ToDo: Finish documentation!
    */
   void describe(
-    Teuchos::FancyOStream &out,
-    const Teuchos::EVerbosityLevel verbLevel
-    ) const;
+      Teuchos::FancyOStream& out,
+      const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
 
-private:
- 
+ private:
   // ///////////////////////////////////
   // Private data members
 
@@ -180,66 +172,49 @@ private:
   // Private member functions
 
   void assertInitialized() const;
-
 };
-
 
 /** \brief Nonmember constructor function.
  *
  * \relates DefaultMultiVectorProductVectorSpace
  */
-template<class Scalar>
-inline
-RCP<DefaultMultiVectorProductVectorSpace<Scalar> >
-multiVectorProductVectorSpace()
-{
+template <class Scalar>
+inline RCP<DefaultMultiVectorProductVectorSpace<Scalar> >
+multiVectorProductVectorSpace() {
   return Teuchos::rcp(new DefaultMultiVectorProductVectorSpace<Scalar>());
 }
 
-
 /** \brief Nonmember constructor function.
  *
  * \relates DefaultMultiVectorProductVectorSpace
  */
-template<class Scalar>
-inline
-RCP<DefaultMultiVectorProductVectorSpace<Scalar> >
+template <class Scalar>
+inline RCP<DefaultMultiVectorProductVectorSpace<Scalar> >
 multiVectorProductVectorSpace(
-  const RCP<const VectorSpaceBase<Scalar> > &space,
-  const int numColumns
-  )
-{
+    const RCP<const VectorSpaceBase<Scalar> >& space,
+    const int numColumns) {
   RCP<DefaultMultiVectorProductVectorSpace<Scalar> > multiVecProdVecSpace =
-    multiVectorProductVectorSpace<Scalar>();
-  multiVecProdVecSpace->initialize(space,numColumns);
+      multiVectorProductVectorSpace<Scalar>();
+  multiVecProdVecSpace->initialize(space, numColumns);
   return multiVecProdVecSpace;
 }
-
 
 // /////////////////////////////////
 // Inline members
 
-
-template<class Scalar>
-inline
-RCP<const DefaultProductVectorSpace<Scalar> >
-DefaultMultiVectorProductVectorSpace<Scalar>::getDefaultProductVectorSpace() const
-{
+template <class Scalar>
+inline RCP<const DefaultProductVectorSpace<Scalar> >
+DefaultMultiVectorProductVectorSpace<Scalar>::getDefaultProductVectorSpace() const {
   return defaultProdVecSpc_;
 }
 
-
-template<class Scalar>
-inline
-void DefaultMultiVectorProductVectorSpace<Scalar>::assertInitialized() const
-{
+template <class Scalar>
+inline void DefaultMultiVectorProductVectorSpace<Scalar>::assertInitialized() const {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPT( is_null(space_) );
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(space_));
 #endif
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_DEFAULT_MULTI_VECTOR_PRODUCT_VECTOR_SPACE_DECL_HPP
+#endif  // THYRA_DEFAULT_MULTI_VECTOR_PRODUCT_VECTOR_SPACE_DECL_HPP

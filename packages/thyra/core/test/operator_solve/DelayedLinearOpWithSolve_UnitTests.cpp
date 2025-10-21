@@ -20,59 +20,49 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Thyra_UnitTestHelpers.hpp"
 
-
 namespace Thyra {
-
 
 //
 // Helper code and declarations
 //
 
-
 using Teuchos::as;
+using Teuchos::inOutArg;
 using Teuchos::null;
 using Teuchos::RCP;
-using Teuchos::inOutArg;
-
 
 //
 // Unit Tests
 //
 
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DelayedLinearOpWithSolve, defaultConstruct,
-  Scalar )
-{
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DelayedLinearOpWithSolve, defaultConstruct,
+                                  Scalar) {
   const RCP<DelayedLinearOpWithSolve<Scalar> > dlows =
-    delayedLinearOpWithSolve<Scalar>();
+      delayedLinearOpWithSolve<Scalar>();
   TEST_ASSERT(nonnull(dlows));
   TEST_EQUALITY_CONST(dlows->range(), null);
   TEST_EQUALITY_CONST(dlows->domain(), null);
   out << "dlows = " << *dlows;
 }
-THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DelayedLinearOpWithSolve,
-  defaultConstruct )
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(DelayedLinearOpWithSolve,
+                                                defaultConstruct)
 
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DelayedLinearOpWithSolve, basic,
-  Scalar )
-{
-
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(DelayedLinearOpWithSolve, basic,
+                                  Scalar) {
   // typedef Teuchos::ScalarTraits<Scalar> ST; // nused
 
   const Ordinal dim = 4;
 
   const RCP<const VectorSpaceBase<Scalar> > vs =
-    defaultSpmdVectorSpace<Scalar>(dim);
+      defaultSpmdVectorSpace<Scalar>(dim);
 
   const RCP<const MultiVectorBase<Scalar> > M =
-    createNonsingularMultiVector(vs);
+      createNonsingularMultiVector(vs);
 
   const RCP<DelayedLinearOpWithSolve<Scalar> > dlows =
-    delayedLinearOpWithSolve<Scalar>(
-      defaultLinearOpSource<Scalar>(M),
-      defaultSerialDenseLinearOpWithSolveFactory<Scalar>()
-      );
+      delayedLinearOpWithSolve<Scalar>(
+          defaultLinearOpSource<Scalar>(M),
+          defaultSerialDenseLinearOpWithSolveFactory<Scalar>());
 
   TEST_ASSERT(nonnull(dlows));
   TEST_ASSERT(dlows->range()->isCompatible(*vs));
@@ -86,10 +76,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DelayedLinearOpWithSolve, basic,
   Thyra::LinearOpWithSolveTester<Scalar> linearOpWithSolveTester;
   const bool checkSolveResult = linearOpWithSolveTester.check(*dlows, &out);
   TEST_ASSERT(checkSolveResult);
-
 }
-THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DelayedLinearOpWithSolve,
-  basic )
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES(DelayedLinearOpWithSolve,
+                                                basic)
 
-
-} // namespace Thyra
+}  // namespace Thyra

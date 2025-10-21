@@ -14,11 +14,15 @@
 
 namespace Thyra {
 
-template<class Scalar> class ScalarProdBase;
-template<class Scalar> class ScalarProdVectorSpaceBase;
-template<class Scalar> class SerialVectorSpaceBase;
-template<class Scalar> class SerialVectorBase;
+template <class Scalar>
+class ScalarProdBase;
+template <class Scalar>
+class ScalarProdVectorSpaceBase;
+template <class Scalar>
+class SerialVectorSpaceBase;
+template <class Scalar>
+class SerialVectorBase;
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // THYRA_OPERATOR_VECTOR_ADAPTER_SUPPORT_TYPES_HPP
+#endif  // THYRA_OPERATOR_VECTOR_ADAPTER_SUPPORT_TYPES_HPP

@@ -10,13 +10,10 @@
 #ifndef THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
 #define THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
 
-
 #include "Thyra_MultiVectorRandomizerBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Univeral <tt>MultiVectorRandomizerBase</tt> subclass that is
  * compatible with all <tt>MultiVectorBase</tt> objects.
@@ -26,20 +23,18 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class UniversalMultiVectorRandomizer : public MultiVectorRandomizerBase<Scalar> {
-public:
-
+ public:
   /** \name Overridden from MultiVectorRandomizerBase */
   //@{
 
   /** \brief . */
-  bool isCompatible( const VectorSpaceBase<Scalar> &space ) const;
+  bool isCompatible(const VectorSpaceBase<Scalar> &space) const;
 
   //@}
 
-private:
-
+ private:
   /** \name Overridded private functions */
   //@{
 
@@ -47,47 +42,36 @@ private:
   void randomizeImpl(const Ptr<MultiVectorBase<Scalar> > &mv);
 
   //@}
-  
 };
-
 
 /** \brief Nonmember constructor.
  *
  * \relates UniversalMultiVectorRandomizer
  */
-template<class Scalar>
+template <class Scalar>
 RCP<UniversalMultiVectorRandomizer<Scalar> >
-universalMultiVectorRandomizer()
-{
+universalMultiVectorRandomizer() {
   return Teuchos::rcp(new UniversalMultiVectorRandomizer<Scalar>());
 }
-
 
 // //////////////////////////////
 // Definitions
 
-
-template<class Scalar>
-bool UniversalMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Scalar> &/* space */ ) const
-{
+template <class Scalar>
+bool UniversalMultiVectorRandomizer<Scalar>::isCompatible(const VectorSpaceBase<Scalar> & /* space */) const {
   return true;
 }
 
-
 // Overridded private functions
 
-
-template<class Scalar>
+template <class Scalar>
 void UniversalMultiVectorRandomizer<Scalar>::randomizeImpl(
-  const Ptr<MultiVectorBase<Scalar> > &mv )
-{
+    const Ptr<MultiVectorBase<Scalar> > &mv) {
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Thyra::randomize(as<Scalar>(-ST::one()), as<Scalar>(+ST::one()), mv);
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
+#endif  // THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP

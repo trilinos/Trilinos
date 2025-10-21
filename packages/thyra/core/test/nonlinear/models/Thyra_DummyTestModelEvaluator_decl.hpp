@@ -10,9 +10,7 @@
 #ifndef DUMMY_TEST_MODEL_EVALUATOR_DECL_HPP
 #define DUMMY_TEST_MODEL_EVALUATOR_DECL_HPP
 
-
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
-
 
 namespace Thyra {
 
@@ -20,64 +18,56 @@ namespace Thyra {
 // objects will be defined by a solver that needs to extend the
 // InArgs/OutArgs for specialized data without cluttering the core
 // model evaluator interface.
-template<class Scalar>
-struct MockExtendedInArgs
-{
+template <class Scalar>
+struct MockExtendedInArgs {
   Teuchos::RCP<Thyra::VectorBase<Scalar> > a;
 };
 
-template<class Scalar>
-struct MockExtendedOutArgs
-{
+template <class Scalar>
+struct MockExtendedOutArgs {
   Teuchos::RCP<Thyra::VectorBase<Scalar> > b;
 };
 
-
-template<class Scalar> class DummyTestModelEvaluator;
-
+template <class Scalar>
+class DummyTestModelEvaluator;
 
 /** \brief Nonmember constuctor.
  *
  * \relates DummyTestModelEvaluator
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DummyTestModelEvaluator<Scalar> >
 dummyTestModelEvaluator(
-  const Ordinal x_size = 2,
-  const ArrayView<const Ordinal> &p_sizes = Teuchos::null,
-  const ArrayView<const Ordinal> &g_sizes = Teuchos::null,
-  const bool supports_x_dot = false,
-  const bool supports_x_dot_dot = false,
-  const bool supports_extended_inargs = true,
-  const bool supports_extended_outargs = true,
-  const bool supports_derivatives = false
-  );
-
+    const Ordinal x_size                    = 2,
+    const ArrayView<const Ordinal> &p_sizes = Teuchos::null,
+    const ArrayView<const Ordinal> &g_sizes = Teuchos::null,
+    const bool supports_x_dot               = false,
+    const bool supports_x_dot_dot           = false,
+    const bool supports_extended_inargs     = true,
+    const bool supports_extended_outargs    = true,
+    const bool supports_derivatives         = false);
 
 /** \brief Test helper ModelEvaluator.
  *
  * This class is used to help unit test the various ModelEvaluator support
  * software, that is it.
  */
-template<class Scalar>
-class DummyTestModelEvaluator : public ModelEvaluatorDefaultBase<Scalar>
-{
-public:
-
+template <class Scalar>
+class DummyTestModelEvaluator : public ModelEvaluatorDefaultBase<Scalar> {
+ public:
   /** \name Initializers/Accessors */
   //@{
 
   /** \brief . */
   DummyTestModelEvaluator(
-    const Ordinal x_size,
-    const ArrayView<const Ordinal> &p_sizes,
-    const ArrayView<const Ordinal> &g_sizes,
-    const bool supports_x_dot = false,
-    const bool supports_x_dot_dot = false,
-    const bool supports_extended_inargs = true,
-    const bool supports_extended_outargs = true,
-    const bool supports_derivatives = false
-    );
+      const Ordinal x_size,
+      const ArrayView<const Ordinal> &p_sizes,
+      const ArrayView<const Ordinal> &g_sizes,
+      const bool supports_x_dot            = false,
+      const bool supports_x_dot_dot        = false,
+      const bool supports_extended_inargs  = true,
+      const bool supports_extended_outargs = true,
+      const bool supports_derivatives      = false);
 
   //@}
 
@@ -112,9 +102,8 @@ public:
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
   void reportFinalPoint(
-    const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
-    const bool wasSolved
-    );
+      const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+      const bool wasSolved);
 
   //@}
 
@@ -122,8 +111,7 @@ public:
   void change_p_size_incorrectly(const Ordinal new_size);
   void change_p_size_correctly(const Ordinal new_size);
 
-private: // functions
-
+ private:  // functions
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
 
@@ -131,14 +119,12 @@ private: // functions
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
   void evalModelImpl(
-    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
-    ) const;
+      const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+      const ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
 
-private: // data members
-
+ private:  // data members
   RCP<const VectorSpaceBase<Scalar> > x_space_;
   Array<RCP<const VectorSpaceBase<Scalar> > > p_space_;
   RCP<const VectorSpaceBase<Scalar> > f_space_;
@@ -149,11 +135,8 @@ private: // data members
   RCP<VectorBase<Scalar> > x0_;
   ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
-
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // DUMMY_TEST_MODEL_EVALUATOR_DECL_HPP
+#endif  // DUMMY_TEST_MODEL_EVALUATOR_DECL_HPP

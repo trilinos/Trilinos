@@ -14,18 +14,14 @@
 #include "Thyra_TpetraMultiVector.hpp"
 #include "Thyra_TpetraVector.hpp"
 
-
 namespace Thyra {
 
-
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void TpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scalarProdsImpl(
-  const MultiVectorBase<Scalar>& X,
-  const MultiVectorBase<Scalar>& Y,
-  const ArrayView<Scalar>& scalarProds_out
-  ) const
-{
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
+void TpetraEuclideanScalarProd<Scalar, LocalOrdinal, GlobalOrdinal, Node>::scalarProdsImpl(
+    const MultiVectorBase<Scalar>& X,
+    const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar>& scalarProds_out) const {
+  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMV;
   Teuchos::RCP<const TMV> X_tpetra = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(X));
   Teuchos::RCP<const TMV> Y_tpetra = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(Y));
 
@@ -42,15 +38,13 @@ void TpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node>::scalarPr
   }
 }
 
-
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-TpetraEuclideanScalarProd<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> >& mv) const
-{
+Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+TpetraEuclideanScalarProd<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> >& mv) const {
   using Teuchos::rcp_dynamic_cast;
-  typedef Thyra::TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-  typedef Thyra::TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
+  typedef Thyra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMV;
+  typedef Thyra::TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TV;
 
   RCP<const TMV> tmv = rcp_dynamic_cast<const TMV>(mv);
   if (nonnull(tmv)) {
@@ -65,8 +59,6 @@ getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> >& mv) const
   return Teuchos::null;
 }
 
-
-} // end namespace Thyra
-
+}  // end namespace Thyra
 
 #endif  // THYRA_EUCLIDEAN_SCALAR_PROD_DEF_HPP

@@ -13,9 +13,7 @@
 #include "Thyra_BlockedLinearOpWithSolveBase.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Base interface for linear operators with a solve that are composed
  * out of individual LOB and LOWSB objects.
@@ -24,13 +22,11 @@ namespace Thyra {
  *
  * ToDo: Finish Documentation.
  */
-template<class Scalar>
+template <class Scalar>
 class PhysicallyBlockedLinearOpWithSolveBase
   : virtual public BlockedLinearOpWithSolveBase<Scalar>,
-    virtual public PhysicallyBlockedLinearOpBase<Scalar>
-{
-public:
-
+    virtual public PhysicallyBlockedLinearOpBase<Scalar> {
+ public:
   /** \brief Determines if the block <tt>(i,j)</tt> can be filled with a LOWDB
    * object or not.
    *
@@ -50,26 +46,20 @@ public:
 
   /** \brief . */
   virtual void setNonconstLOWSBlock(
-    const int i, const int j,
-    const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &block
-    ) = 0;
-  
+      const int i, const int j,
+      const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &block) = 0;
+
   /** \brief . */
   virtual void setLOWSBlock(
-    const int i, const int j,
-    const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &block
-    ) = 0;
+      const int i, const int j,
+      const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &block) = 0;
 
-private:
-  
+ private:
   // Not defined and not to be called
-  PhysicallyBlockedLinearOpWithSolveBase<Scalar>&
-  operator=(const PhysicallyBlockedLinearOpWithSolveBase<Scalar>&);
-
+  PhysicallyBlockedLinearOpWithSolveBase<Scalar> &
+  operator=(const PhysicallyBlockedLinearOpWithSolveBase<Scalar> &);
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_PHYSICALLY_BLOCKED_LINEAR_OP_WITH_SOLVE_BASE_HPP
+#endif  // THYRA_PHYSICALLY_BLOCKED_LINEAR_OP_WITH_SOLVE_BASE_HPP

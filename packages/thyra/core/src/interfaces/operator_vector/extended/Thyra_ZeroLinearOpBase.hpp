@@ -18,7 +18,7 @@ namespace Thyra {
  *
  * This interface represents a zero linear operator <tt>M</tt> of the form:
  \verbatim
- 
+
  M = 0
  \endverbatim
  *
@@ -32,10 +32,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
-template<class Scalar>
-class ZeroLinearOpBase : virtual public LinearOpBase<Scalar>
-{};
+template <class Scalar>
+class ZeroLinearOpBase : virtual public LinearOpBase<Scalar> {};
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif	// THYRA_ZERO_LINEAR_OP_BASE_HPP
+#endif  // THYRA_ZERO_LINEAR_OP_BASE_HPP

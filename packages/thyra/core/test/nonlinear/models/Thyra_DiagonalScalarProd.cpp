@@ -18,6 +18,6 @@ namespace Thyra {
 
 TEUCHOS_CLASS_TEMPLATE_INSTANT_REAL_SCALAR_TYPES(DiagonalScalarProd)
 
-} // namespace Thyra
+}  // namespace Thyra
 
-#endif // HAVE_THYRA_EXCPLICIT_INSTANTIATION
+#endif  // HAVE_THYRA_EXCPLICIT_INSTANTIATION

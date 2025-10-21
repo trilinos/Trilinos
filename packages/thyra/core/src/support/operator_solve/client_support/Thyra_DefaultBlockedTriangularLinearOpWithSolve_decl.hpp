@@ -10,16 +10,13 @@
 #ifndef THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_DECL_HPP
 #define THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_DECL_HPP
 
-
 #include "Thyra_PhysicallyBlockedLinearOpWithSolveBase.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_Array.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Concrete composite <tt>LinearOpWithSolveBase</tt> subclass that
  * creates single upper or lower block triangular LOWSB object out of a set of
@@ -36,10 +33,10 @@ namespace Thyra {
 
        [ M(0,0)                   ]
    M = [ M(1,0)   M(1,1)          ]
-       [ M(2,0)   M(2,1)   M(2,2) ]  
+       [ M(2,0)   M(2,1)   M(2,2) ]
 
  \endverbatim
- 
+
  * A linear system of the form:
 
  \verbatim
@@ -76,12 +73,10 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class Scalar>
+template <class Scalar>
 class DefaultBlockedTriangularLinearOpWithSolve
-  : virtual public PhysicallyBlockedLinearOpWithSolveBase<Scalar>
-{
-public:
-
+  : virtual public PhysicallyBlockedLinearOpWithSolveBase<Scalar> {
+ public:
   /** @name Constructors/Initializers/Accessors */
   //@{
 
@@ -89,10 +84,10 @@ public:
   DefaultBlockedTriangularLinearOpWithSolve();
 
   /** \brief . */
-  void setNonconstBlocks( const RCP<PhysicallyBlockedLinearOpBase<Scalar> > &blocks );
+  void setNonconstBlocks(const RCP<PhysicallyBlockedLinearOpBase<Scalar> > &blocks);
 
   /** \brief . */
-  void setBlocks( const RCP<const PhysicallyBlockedLinearOpBase<Scalar> > &blocks );
+  void setBlocks(const RCP<const PhysicallyBlockedLinearOpBase<Scalar> > &blocks);
 
   /** \brief . */
   RCP<PhysicallyBlockedLinearOpBase<Scalar> > getNonconstBlocks();
@@ -104,19 +99,17 @@ public:
 
   /** @name Overridden from PhysicallyBlockedLinearOpWithSolveBase */
   //@{
-  
+
   /** \brief . */
   bool acceptsLOWSBlock(const int i, const int j) const;
   /** \brief . */
   void setNonconstLOWSBlock(
-    const int i, const int j,
-    const RCP<LinearOpWithSolveBase<Scalar> > &block
-    );
+      const int i, const int j,
+      const RCP<LinearOpWithSolveBase<Scalar> > &block);
   /** \brief . */
   void setLOWSBlock(
-    const int i, const int j,
-    const RCP<const LinearOpWithSolveBase<Scalar> > &block
-    );
+      const int i, const int j,
+      const RCP<const LinearOpWithSolveBase<Scalar> > &block);
 
   //@}
 
@@ -127,27 +120,23 @@ public:
   void beginBlockFill();
   /** \brief . */
   void beginBlockFill(
-    const int numRowBlocks, const int numColBlocks
-    );
+      const int numRowBlocks, const int numColBlocks);
   /** \brief . */
   void beginBlockFill(
-    const RCP<const ProductVectorSpaceBase<Scalar> > &productRange,
-    const RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
-    );
+      const RCP<const ProductVectorSpaceBase<Scalar> > &productRange,
+      const RCP<const ProductVectorSpaceBase<Scalar> > &productDomain);
   /** \brief . */
   bool blockFillIsActive() const;
   /** \brief . */
   bool acceptsBlock(const int i, const int j) const;
   /** \brief . */
   void setNonconstBlock(
-    const int i, const int j,
-    const RCP<LinearOpBase<Scalar> > &block
-    );
+      const int i, const int j,
+      const RCP<LinearOpBase<Scalar> > &block);
   /** \brief . */
   void setBlock(
-    const int i, const int j,
-    const RCP<const LinearOpBase<Scalar> > &block
-    );
+      const int i, const int j,
+      const RCP<const LinearOpBase<Scalar> > &block);
   /** \brief . */
   void endBlockFill();
   /** \brief . */
@@ -160,10 +149,10 @@ public:
 
   /** \brief . */
   RCP<LinearOpWithSolveBase<Scalar> >
-  getNonconstLOWSBlock(const int i, const int j); 
+  getNonconstLOWSBlock(const int i, const int j);
   /** \brief . */
   RCP<const LinearOpWithSolveBase<Scalar> >
-  getLOWSBlock(const int i, const int j) const; 
+  getLOWSBlock(const int i, const int j) const;
 
   //@}
 
@@ -177,15 +166,15 @@ public:
   RCP<const ProductVectorSpaceBase<Scalar> >
   productDomain() const;
   /** \brief . */
-  bool blockExists(const int i, const int j) const; 
+  bool blockExists(const int i, const int j) const;
   /** \brief . */
-  bool blockIsConst(const int i, const int j) const; 
+  bool blockIsConst(const int i, const int j) const;
   /** \brief . */
   RCP<LinearOpBase<Scalar> >
-  getNonconstBlock(const int i, const int j); 
+  getNonconstBlock(const int i, const int j);
   /** \brief . */
   RCP<const LinearOpBase<Scalar> >
-  getBlock(const int i, const int j) const; 
+  getBlock(const int i, const int j) const;
 
   //@}
 
@@ -203,7 +192,7 @@ public:
 
   /** @name Overridden from Teuchos::Describable */
   //@{
-                                                
+
   /** \brief Prints just the name
    * <tt>DefaultBlockedTriangularLinearOpWithSolve</tt> along with the overall
    * dimensions and the number of constituent operators.
@@ -218,26 +207,23 @@ public:
    * ToDo: Finish documentation!
    */
   void describe(
-    Teuchos::FancyOStream &out,
-    const Teuchos::EVerbosityLevel verbLevel
-    ) const;
+      Teuchos::FancyOStream &out,
+      const Teuchos::EVerbosityLevel verbLevel) const;
 
   //@}
 
-protected:
-  
+ protected:
   /** @name Overridden from LinearOpBase */
   //@{
   /** \brief . */
   bool opSupportedImpl(EOpTransp M_trans) const;
   /** \brief . */
- void applyImpl(
-   const EOpTransp M_trans,
-   const MultiVectorBase<Scalar> &X,
-   const Ptr<MultiVectorBase<Scalar> > &Y,
-   const Scalar alpha,
-   const Scalar beta
-   ) const;
+  void applyImpl(
+      const EOpTransp M_trans,
+      const MultiVectorBase<Scalar> &X,
+      const Ptr<MultiVectorBase<Scalar> > &Y,
+      const Scalar alpha,
+      const Scalar beta) const;
   //@}
 
   /** @name Overridden from LinearOpWithSolveBase */
@@ -246,36 +232,34 @@ protected:
   bool solveSupportsImpl(EOpTransp M_trans) const;
   /** \brief . */
   bool solveSupportsSolveMeasureTypeImpl(
-    EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const;
+      EOpTransp M_trans, const SolveMeasureType &solveMeasureType) const;
   /** \brief . */
   SolveStatus<Scalar> solveImpl(
-    const EOpTransp transp,
-    const MultiVectorBase<Scalar> &B,
-    const Ptr<MultiVectorBase<Scalar> > &X,
-    const Ptr<const SolveCriteria<Scalar> > solveCriteria
-    ) const;
+      const EOpTransp transp,
+      const MultiVectorBase<Scalar> &B,
+      const Ptr<MultiVectorBase<Scalar> > &X,
+      const Ptr<const SolveCriteria<Scalar> > solveCriteria) const;
   //@}
 
-private:
-
+ private:
   // //////////////////////////
   // Private types
 
   typedef Teuchos::ConstNonconstObjectContainer<LinearOpWithSolveBase<Scalar> >
-  CNCLOWS;
+      CNCLOWS;
 
   typedef Teuchos::ConstNonconstObjectContainer<PhysicallyBlockedLinearOpBase<Scalar> >
-  CNCPBLOB;
+      CNCPBLOB;
 
   // /////////////////////////
   // Private data members
-  
+
   bool blockFillIsActive_;
 
   RCP<const ProductVectorSpaceBase<Scalar> > productRange_;
   RCP<const ProductVectorSpaceBase<Scalar> > productDomain_;
   int numDiagBlocks_;
-  
+
   Array<CNCLOWS> diagonalBlocks_;
 
   // All blocks (including LOB form of diagonals)
@@ -288,36 +272,31 @@ private:
 
   void assertBlockRowCol(const int i, const int j) const;
 
-  template<class LinearOpWithSolveType>
-  void setLOWSBlockImpl( const int i, const int j,
-    const RCP<LinearOpWithSolveType> &block );
+  template <class LinearOpWithSolveType>
+  void setLOWSBlockImpl(const int i, const int j,
+                        const RCP<LinearOpWithSolveType> &block);
 
-  void assertAndSetBlockStructure(const PhysicallyBlockedLinearOpBase<Scalar>& blocks);
-  
+  void assertAndSetBlockStructure(const PhysicallyBlockedLinearOpBase<Scalar> &blocks);
+
   // Not defined and not to be called
 
   DefaultBlockedTriangularLinearOpWithSolve(
-    const DefaultBlockedTriangularLinearOpWithSolve&);
+      const DefaultBlockedTriangularLinearOpWithSolve &);
 
-  DefaultBlockedTriangularLinearOpWithSolve&
-  operator=(const DefaultBlockedTriangularLinearOpWithSolve&);
-  
+  DefaultBlockedTriangularLinearOpWithSolve &
+  operator=(const DefaultBlockedTriangularLinearOpWithSolve &);
 };
-
 
 /** \brief Nonmember constructor.
  *
  * \relates DefaultBlockedTriangularLinearOpWithSolve
  */
-template<class Scalar>
+template <class Scalar>
 RCP<DefaultBlockedTriangularLinearOpWithSolve<Scalar> >
-defaultBlockedTriangularLinearOpWithSolve()
-{
+defaultBlockedTriangularLinearOpWithSolve() {
   return Teuchos::rcp(new DefaultBlockedTriangularLinearOpWithSolve<Scalar>);
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif	// THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_DECL_HPP
+#endif  // THYRA_DEFAULT_BLOCKED_TRIANGULAR_LINEAR_OP_WITH_SOLVE_DECL_HPP

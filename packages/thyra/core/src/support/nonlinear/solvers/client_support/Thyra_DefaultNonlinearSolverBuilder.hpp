@@ -13,9 +13,7 @@
 #include "Thyra_NonlinearSolverBuilderBase.hpp"
 #include "Teuchos_AbstractFactory.hpp"
 
-
 namespace Thyra {
-
 
 /** \brief Concrete subclass of <tt>Thyra::NonlinearSolverBuilderBase</tt> for
  * creating <tt>NonlinearSolverBase</tt> objects and
@@ -27,10 +25,8 @@ namespace Thyra {
  * \ingroup Thyra_Nonlin_ME_solvers_grp
  */
 class DefaultNonlinearSolverBuilder
-  : public Thyra::NonlinearSolverBuilderBase<double>
-{
-public:
-
+  : public Thyra::NonlinearSolverBuilderBase<double> {
+ public:
   /** @name Constructors/Initializers/Accessors */
   //@{
 
@@ -42,11 +38,10 @@ public:
 
   /** \brief Set a new NonlinearSolverBase factory object. */
   void setNonlinearSolverFactory(
-    const RCP<const AbstractFactory<Thyra::NonlinearSolverBase<double> > >
-    &nonlinearSolverFactory,
-    const std::string &nonlinearSolverTypeName
-    );
-  
+      const RCP<const AbstractFactory<Thyra::NonlinearSolverBase<double> > >
+          &nonlinearSolverFactory,
+      const std::string &nonlinearSolverTypeName);
+
   /** \brief Get the name of the NonlinearSolver type that will be created on
    * the next call to <tt>this->createNonlinearSolver()</tt>.
    */
@@ -58,7 +53,7 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(RCP<ParameterList> const& paramList);
+  void setParameterList(RCP<ParameterList> const &paramList);
   /** \brief . */
   RCP<ParameterList> getNonconstParameterList();
   /** \brief . */
@@ -69,7 +64,7 @@ public:
   RCP<const ParameterList> getValidParameters() const;
 
   //@}
-  
+
   /** \name Overridden from NonlinearSolverBuilderBase. */
   //@{
 
@@ -79,17 +74,16 @@ public:
 
   //@}
 
-private:
-
+ private:
   // //////////////////////////////////////
   // Private types
 
   typedef RCP<const AbstractFactory<Thyra::NonlinearSolverBase<double> > >
-  ns_fcty_t;
+      ns_fcty_t;
 
   // //////////////////////////////////////
   // Private data members
-  
+
   RCP<ParameterList> paramList_;
   mutable RCP<const ParameterList> validParamList_;
   Array<std::string> validNonlinearSolverNames_;
@@ -100,24 +94,18 @@ private:
   // Private member functions
 
   void initializeDefaults();
-
 };
 
-
-} // namespace Thyra
-
+}  // namespace Thyra
 
 /** \brief Inject a new solver type into a DefaultNonlinearSolverBuilder
  * object.
  */
-template<class NonlinearSolverType, class Scalar>
+template <class NonlinearSolverType, class Scalar>
 void setNonlinearSolverFactory(
-  const std::string &nonlinearSolverTypeName,
-  const Ptr<DefaultNonlinearSolverBuilder<Scalar> > &defaultNonlinearSolverBuilder
-  )
-{
+    const std::string &nonlinearSolverTypeName,
+    const Ptr<DefaultNonlinearSolverBuilder<Scalar> > &defaultNonlinearSolverBuilder) {
   TEUCHOS_TEST_FOR_EXCEPT(true);
 }
 
-
-#endif // THYRA_DEFAULT_NONLINEAR_SOLVER_BUILDER_HPP
+#endif  // THYRA_DEFAULT_NONLINEAR_SOLVER_BUILDER_HPP

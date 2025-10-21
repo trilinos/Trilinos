@@ -15,14 +15,12 @@
 #include "Thyra_ScaledLinearOpBase.hpp"
 #include "RTOpPack_RTOpT.hpp"
 
-
 namespace Thyra {
 
-
 /** \brief Interface for a collection of column vectors called a multi-vector.
- * 
+ *
  * \section Thyra_MVB_outline_sec Outline
- * 
+ *
  * <ul>
  * <li>\ref Thyra_MVB_intro_sec
  * <li>\ref Thyra_MVB_views_sec
@@ -42,15 +40,15 @@ namespace Thyra {
  * <li>\ref Thyra_MVB_expl_access_utils_sec
  * <li>\ref Thyra_MVB_dev_notes_sec
  * </ul>
- * 
+ *
  * \section Thyra_MVB_intro_sec Introduction
- * 
+ *
  * The primary purpose for this interface is to allow for the convenient
  * aggregation of column vectors as a single matrix-like object.  Such an
  * orderly arrangement of column vectors into a single aggregate object allows
  * for better optimized linear algebra operations such as matrix-matrix
  * multiplication and the solution of linear systems for multiple right-hand
- * sides.  Every computing environment (serial, parallel, out-of-core etc.) 
+ * sides.  Every computing environment (serial, parallel, out-of-core etc.)
  * should be able to define at least one reasonably efficient implementation
  * of this interface.
  *
@@ -62,9 +60,9 @@ namespace Thyra {
  * separately in the next two subsections.  The behavior of the vector and
  * multi-vector views is very similar and the common behavior is described in
  * the subsection \ref Thyra_MVB_view_behavior_sec.
- * 
+ *
  * \subsection Thyra_MVB_col_access_sec Accessing the individual columns as vector views
- * 
+ *
  * The individual columns of a multi-vector can be access using the non-const
  * and const versions of the <tt>col()</tt> function.  For example, the
  * individual columns of one multi-vector can be copied to another as follows
@@ -79,7 +77,7 @@ namespace Thyra {
   {
     for( int j = =; j < X.domain()->dim(); ++j )
       assign( &*Y->col(j), *X.col(j) );
-  } 
+  }
 
  \endcode
 
@@ -91,15 +89,15 @@ namespace Thyra {
  * <b>Note:</b> A modification to <tt>Y</tt> is not guaranteed to be committed
  * back to <tt>Y</tt> until the smart pointer returned from <tt>Y.col(j)</tt>
  * is deleted.
- * 
+ *
  * \subsection Thyra_MVB_subviews_sec Accessing collections of columns as multi-vector views
- * 
+ *
  * Another important aspect of this interface is the ability to allow clients
  * to access non-changeable and changeable <tt>MultiVectorBase</tt> views of
  * columns of a parent <tt>MultiVectorBase</tt> object.  These sub-views are
  * created with one of the overloaded <tt>subView()</tt> functions of which
  * there are two general forms.
- * 
+ *
  * The first form provides views of contiguous columns through the functions
  * <tt>subView(const Range1D&)</tt> and <tt>subView(const Range1D&)const</tt>.
  * For example, the following function shows how to copy the first three columns
@@ -118,7 +116,7 @@ namespace Thyra {
  }
 
  \endcode
- 
+
  * <b>Note:</b> In the above example <tt>*Y</tt> can be the same multi-vector
  * as <tt>X</tt>.
  *
@@ -127,7 +125,7 @@ namespace Thyra {
  * destroyed (which occurs at the end of the statement in which it occurs in
  * this case).
  *
- * <!-- Warning! Do not reformat the below paragraph or the \ref links will break! --> 
+ * <!-- Warning! Do not reformat the below paragraph or the \ref links will break! -->
  * The second form provides views of non-contiguous columns through
  * the functions
  * <tt>\ref Thyra_MVB_subView_noncontiguous_nonconst "subView(const int numCols, const int cols[])"</tt>
@@ -158,7 +156,7 @@ namespace Thyra {
  * updated until the view returned from
  * <tt>Y->subView(tuple<int>(2,4,6)())</tt> is destroyed (which occurs at
  * the end of the statement in which it occurs in this case).
- * 
+ *
  * In general, the first contiguous form of views will be more efficient that
  * the second non-contiguous form.  Therefore, user's should try to structure
  * their ANAs to use the contiguous form of multi-vector views if possible and
@@ -200,9 +198,9 @@ namespace Thyra {
     Teuchos::assign( X, Teuchos::ScalarTraits<Scalar>::one() );
     // Above, changing the parent multi-vector may or may not change the subview
     return Teuchos::norm_1(*X_view); // The value returned is undefined
-    // When the RCP X_view goes out of scope here, the state of the 
+    // When the RCP X_view goes out of scope here, the state of the
     // parent multi-vector *X is undefined!
-  } 
+  }
 
  \endcode
 
@@ -229,8 +227,8 @@ namespace Thyra {
     // Above, changing the view may or may not immediately update the parent multi-vector
     return Teuchos::norm_1(*X); // The value returned from the parent is undefined at this point
     // When the RCP X_view goes out of scope here, the parent multi-vector
-    // *X is guaranteed to be updated 
-  } 
+    // *X is guaranteed to be updated
+  }
 
  \endcode
 
@@ -258,10 +256,10 @@ namespace Thyra {
     // the state of the parent multi-vector *X is undefined!  In some cases,
     // the intial view in X_view1 will be relected in X and in other
     // cases the view in X_view2 will be written to the parent X.
-  } 
+  }
 
  \endcode
- 
+
  * Note that overlapping non-changeable views of a multi-vector are just fine
  * since they do not change the state of the parent multi-vector.
  *
@@ -301,12 +299,12 @@ namespace Thyra {
     // When the RCPs X_view1 and X_view2 go out of scope here,
     // the state of the parent multi-vector *X will be guaranteed to be
     // updated to the values changed in these views.
-  } 
+  }
 
  \endcode
 
  * \section Thyra_MVB_as_LO_sec MultiVectorBase as a linear operator
- * 
+ *
  * The <tt>%MultiVectorBase</tt> interface is derived from the
  * <tt>LinearOpBase</tt> interface and therefore every
  * <tt>%MultiVectorBase</tt> object can be used as a linear operator which has
@@ -322,7 +320,7 @@ namespace Thyra {
  * Let <tt>V</tt> and <tt>Y</tt> be multi-vector objects with the same vector
  * space with a very large number of rows <tt>m</tt> and a moderate number of
  * columns <tt>n</tt>.  Now, consider the block update of the form
- 
+
  \verbatim
 
    Y = Y + V * B
@@ -364,7 +362,7 @@ namespace Thyra {
  * An important operation supported by the
  * <tt>LinearOpBase::applyTranspose()</tt> function is the block inner product
  * which takes the form
- 
+
  \verbatim
 
    B = adjoint(V)*X
@@ -402,7 +400,7 @@ namespace Thyra {
  * processes.
  *
  * \section Thyra_MVB_RTOp_sec Support for reduction/transformation operations
- * 
+ *
  * Another powerful feature of this interface is the ability to apply
  * reduction/transformation operators over a sub-set of rows and columns in a
  * set of multi-vector objects using the <tt>applyOp()</tt> functions.  The
@@ -413,16 +411,16 @@ namespace Thyra {
  * performance in a number of respects.  Also, the intermediate reduction
  * objects over a set of columns can be reduced by a secondary reduction
  * object.
- * 
+ *
  * \section Thyra_MVB_rtop_collection_sec Collection of pre-written RTOps and wrapper functions
  *
  * There already exists RTOp-based implementations of several standard vector
  * operations and some convenience functions that wrap these operators and
  * call <tt>applyOp()</tt>.  See the Operator/Vector Support Software
  * collection for these.
- * 
+ *
  * \section Thyra_MVB_expl_access_sec Explicit multi-vector coefficient access
- * 
+ *
  * This interface also allows a client to extract a sub-set of elements in an
  * explicit form as non-changeable <tt>RTOpPack::ConstSubMultiVectorView</tt> objects or
  * changeable <tt>RTOpPack::SubMultiVectorView</tt> objects using the
@@ -435,18 +433,18 @@ namespace Thyra {
  * elements.  Therefore, all <tt>%MultiVectorBase</tt> subclasses
  * automatically support these operations (even if it is a bad idea to use
  * them).
- * 
+ *
  * \section Thyra_MVB_expl_access_utils_sec Explicit multi-vector coefficient access utilities
- * 
+ *
  * Client code in general should not directly call the above described
  * explicit sub-multi-vector access functions but should instead use the
  * utility classes <tt>ConstDetachedMultiVectorView</tt> and
  * <tt>DetachedMultiVectorView</tt> since these are easier to use and safer in
  * the event that an exception is thrown.  These classes are documented in the
  * Operator/Vector Support Software collection.
- * 
+ *
  * \section Thyra_MVB_dev_notes_sec Notes for subclass developers
- * 
+ *
  * This is a fairly bare-bones interface class without much in the way of
  * default function implementations.  The subclass
  * <tt>MultiVectorDefaultBase</tt> (contained in the Operator/Vector Support
@@ -454,16 +452,14 @@ namespace Thyra {
  * overrides of many of the functions and should be the first choice for
  * subclasses implementations to derive their implementations from rather than
  * starting from scratch.
- * 
+ *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
-template<class Scalar>
-class MultiVectorBase : virtual public LinearOpBase<Scalar>, 
+template <class Scalar>
+class MultiVectorBase : virtual public LinearOpBase<Scalar>,
                         virtual public RowStatLinearOpBase<Scalar>,
-                        virtual public ScaledLinearOpBase<Scalar>
-{
-public:
-
+                        virtual public ScaledLinearOpBase<Scalar> {
+ public:
 #ifdef THYRA_INJECT_USING_DECLARATIONS
   using LinearOpBase<Scalar>::apply;
 #endif
@@ -478,18 +474,16 @@ public:
    *
    * NVI function.
    */
-  void assign(Scalar alpha)
-    { assignImpl(alpha); }
+  void assign(Scalar alpha) { assignImpl(alpha); }
 
   /** \brief V = mv
    *
    * \param mv [in] Multi-vector whose value is assigned to this multi-vector
-   * 
+   *
    *
    * NVI function.
    */
-  void assign(const MultiVectorBase<Scalar>& mv)
-    { assignMultiVecImpl(mv); }
+  void assign(const MultiVectorBase<Scalar> &mv) { assignMultiVecImpl(mv); }
 
   /** V = alpha*V.
    *
@@ -497,8 +491,7 @@ public:
    *
    * NVI function.
    */
-  void scale(Scalar alpha)
-    { scaleImpl(alpha); }
+  void scale(Scalar alpha) { scaleImpl(alpha); }
 
   /** V = alpha*mv + V.
    *
@@ -509,10 +502,8 @@ public:
    * NVI function.
    */
   void update(
-    Scalar alpha,
-    const MultiVectorBase<Scalar>& mv
-    )
-    { updateImpl(alpha, mv); }
+      Scalar alpha,
+      const MultiVectorBase<Scalar> &mv) { updateImpl(alpha, mv); }
 
   /** \brief <tt>Y.col(j)(i) = beta*Y.col(j)(i) + sum( alpha[k]*X[k].col(j)(i),
    *
@@ -540,11 +531,9 @@ public:
    * NVI function.
    */
   void linear_combination(
-    const ArrayView<const Scalar>& alpha,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
-    const Scalar& beta
-    )
-    { linearCombinationImpl(alpha, mv, beta); }
+      const ArrayView<const Scalar> &alpha,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &mv,
+      const Scalar &beta) { linearCombinationImpl(alpha, mv, beta); }
 
   /** \brief Column-wise Euclidean dot product
    *
@@ -556,10 +545,8 @@ public:
    * NVI function.
    */
   void dots(
-    const MultiVectorBase<Scalar>& mv,
-    const ArrayView<Scalar>& prods
-    ) const
-    { dotsImpl(mv, prods); }
+      const MultiVectorBase<Scalar> &mv,
+      const ArrayView<Scalar> &prods) const { dotsImpl(mv, prods); }
 
   /** \brief Column-wise 1-norms
    *
@@ -569,9 +556,7 @@ public:
    * NVI function.
    */
   void norms_1(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const
-    { norms1Impl(norms); }
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) const { norms1Impl(norms); }
 
   /** \brief Column-wise 2-norms
    *
@@ -581,9 +566,7 @@ public:
    * NVI function.
    */
   void norms_2(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const
-    { norms2Impl(norms); }
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) const { norms2Impl(norms); }
 
   /** \brief Column-wise infinity-norms
    *
@@ -593,9 +576,7 @@ public:
    * NVI function.
    */
   void norms_inf(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const
-    { normsInfImpl(norms); }
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) const { normsInfImpl(norms); }
 
   //@}
 
@@ -606,15 +587,13 @@ public:
    *
    * Temporary NVI function.
    */
-  RCP<const VectorBase<Scalar> > col(Ordinal j) const
-    { return colImpl(j); }
+  RCP<const VectorBase<Scalar> > col(Ordinal j) const { return colImpl(j); }
 
   /** \brief Calls nonconstColImpl().
    *
    * Temporary NVI function.
    */
-  RCP<VectorBase<Scalar> > col(Ordinal j)
-    { return nonconstColImpl(j); }
+  RCP<VectorBase<Scalar> > col(Ordinal j) { return nonconstColImpl(j); }
 
   //@}
 
@@ -626,35 +605,31 @@ public:
    * Temporary NVI function.
    */
   RCP<const MultiVectorBase<Scalar> >
-  subView( const Range1D& colRng ) const
-    {
-      return contigSubViewImpl(colRng);
-    }
+  subView(const Range1D &colRng) const {
+    return contigSubViewImpl(colRng);
+  }
 
   /** \brief Calls nonconstContigSubViewImpl().
    *
    * Temporary NVI function.
    */
   RCP<MultiVectorBase<Scalar> >
-  subView( const Range1D& colRng )
-    { return nonconstContigSubViewImpl(colRng); }
+  subView(const Range1D &colRng) { return nonconstContigSubViewImpl(colRng); }
 
   /** \brief nonContigSubViewImpl().
    *
    * Temporary NVI function.
    */
   RCP<const MultiVectorBase<Scalar> >
-  subView( const ArrayView<const int> &cols ) const
-    { return nonContigSubViewImpl(cols); }
+  subView(const ArrayView<const int> &cols) const { return nonContigSubViewImpl(cols); }
 
   /** \brief nonconstNonContigSubViewImpl().
    *
    * Temporary NVI function.
    */
   RCP<MultiVectorBase<Scalar> >
-  subView( const ArrayView<const int> &cols )
-    { return nonconstNonContigSubViewImpl(cols); }
-  
+  subView(const ArrayView<const int> &cols) { return nonconstNonContigSubViewImpl(cols); }
+
   //@}
 
   /** @name Collective reduction/transformation operator apply functions */
@@ -665,34 +640,30 @@ public:
    * Temporary NVI function.
    */
   void applyOp(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-    const Ordinal primary_global_offset
-    ) const
-    {
-      mvMultiReductApplyOpImpl(primary_op, multi_vecs, targ_multi_vecs,
-        reduct_objs, primary_global_offset);
-    }
+      const RTOpPack::RTOpT<Scalar> &primary_op,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+      const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+      const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+      const Ordinal primary_global_offset) const {
+    mvMultiReductApplyOpImpl(primary_op, multi_vecs, targ_multi_vecs,
+                             reduct_objs, primary_global_offset);
+  }
 
   /** \brief mvSingleReductApplyOpImpl().
    *
    * Temporary NVI function.
    */
   void applyOp(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const RTOpPack::RTOpT<Scalar> &secondary_op,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal primary_global_offset
-    ) const
-    {
-      mvSingleReductApplyOpImpl(primary_op, secondary_op, multi_vecs, targ_multi_vecs,
-        reduct_obj, primary_global_offset);
-    }
-  
+      const RTOpPack::RTOpT<Scalar> &primary_op,
+      const RTOpPack::RTOpT<Scalar> &secondary_op,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+      const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+      const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+      const Ordinal primary_global_offset) const {
+    mvSingleReductApplyOpImpl(primary_op, secondary_op, multi_vecs, targ_multi_vecs,
+                              reduct_obj, primary_global_offset);
+  }
+
   //@}
 
   /** @name Explicit sub-multi-vector access */
@@ -703,40 +674,32 @@ public:
    * Temporary NVI function.
    */
   void acquireDetachedView(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
-    ) const
-    { acquireDetachedMultiVectorViewImpl( rowRng, colRng, sub_mv ); }
+      const Range1D &rowRng,
+      const Range1D &colRng,
+      RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv) const { acquireDetachedMultiVectorViewImpl(rowRng, colRng, sub_mv); }
 
   /** \brief Calls releaseDetachedMultiVectorViewImpl().
    *
    * Temporary NVI function.
    */
   void releaseDetachedView(
-    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
-    ) const
-    { releaseDetachedMultiVectorViewImpl(sub_mv); }
+      RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv) const { releaseDetachedMultiVectorViewImpl(sub_mv); }
 
   /** \brief Calls acquireNonconstDetachedMultiVectorViewImpl().
    *
    * Temporary NVI function.
    */
   void acquireDetachedView(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
-    )
-    { acquireNonconstDetachedMultiVectorViewImpl(rowRng,colRng,sub_mv); }
+      const Range1D &rowRng,
+      const Range1D &colRng,
+      RTOpPack::SubMultiVectorView<Scalar> *sub_mv) { acquireNonconstDetachedMultiVectorViewImpl(rowRng, colRng, sub_mv); }
 
   /** \brief Calls commitNonconstDetachedMultiVectorViewImpl().
    *
    * Temporary NVI function.
    */
   void commitDetachedView(
-    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
-    )
-    { commitNonconstDetachedMultiVectorViewImpl(sub_mv); }
+      RTOpPack::SubMultiVectorView<Scalar> *sub_mv) { commitNonconstDetachedMultiVectorViewImpl(sub_mv); }
 
   //@}
 
@@ -763,8 +726,7 @@ public:
 
   //@}
 
-protected:
-
+ protected:
   /** @name Protected virtual functions to be overridden by subclasses */
   //@{
 
@@ -776,7 +738,7 @@ protected:
   /** \brief Virtual implementation for NVI assign(MV).
    *
    */
-  virtual void assignMultiVecImpl(const MultiVectorBase<Scalar>& mv) = 0;
+  virtual void assignMultiVecImpl(const MultiVectorBase<Scalar> &mv) = 0;
 
   /** \brief Virtual implementation for NVI scale().
    *
@@ -787,47 +749,41 @@ protected:
    *
    */
   virtual void updateImpl(
-    Scalar alpha,
-    const MultiVectorBase<Scalar>& mv
-    ) = 0;
+      Scalar alpha,
+      const MultiVectorBase<Scalar> &mv) = 0;
 
   /** \brief Virtual implementation for NVI linear_combination().
    *
    */
   virtual void linearCombinationImpl(
-    const ArrayView<const Scalar>& alpha,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > >& mv,
-    const Scalar& beta
-    ) = 0;
+      const ArrayView<const Scalar> &alpha,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &mv,
+      const Scalar &beta) = 0;
 
   /** \brief Virtual implementation for NVI dots().
    *
    */
   virtual void dotsImpl(
-    const MultiVectorBase<Scalar>& mv,
-    const ArrayView<Scalar>& prods
-    ) const = 0;
+      const MultiVectorBase<Scalar> &mv,
+      const ArrayView<Scalar> &prods) const = 0;
 
   /** \brief Virtual implementation for NVI norms_1().
    *
    */
   virtual void norms1Impl(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const = 0;
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) const = 0;
 
   /** \brief Virtual implementation for NVI norms_2().
    *
    */
   virtual void norms2Impl(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const = 0;
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) const = 0;
 
   /** \brief Virtual implementation for NVI norms_inf().
    *
    */
   virtual void normsInfImpl(
-    const ArrayView<typename ScalarTraits<Scalar>::magnitudeType>& norms
-    ) const = 0;
+      const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms) const = 0;
 
   /** \brief Return a non-changeable view of a constituent column vector.
    *
@@ -899,7 +855,7 @@ protected:
    * the behavior of this view.
    */
   virtual RCP<const MultiVectorBase<Scalar> >
-  contigSubViewImpl( const Range1D& colRng ) const = 0;
+  contigSubViewImpl(const Range1D &colRng) const = 0;
 
   /** \brief Return a changeable sub-view of a contiguous set of columns of
    * the this multi-vector.
@@ -926,7 +882,7 @@ protected:
    * the behavior of this view.
    */
   virtual RCP<MultiVectorBase<Scalar> >
-  nonconstContigSubViewImpl( const Range1D& colRng ) = 0;
+  nonconstContigSubViewImpl(const Range1D &colRng) = 0;
 
   /** \brief Return a non-changeable sub-view of a non-contiguous set of columns of this multi-vector.
    *
@@ -953,7 +909,7 @@ protected:
    * the behavior of this view.
    */
   virtual RCP<const MultiVectorBase<Scalar> >
-  nonContigSubViewImpl( const ArrayView<const int> &cols ) const = 0;
+  nonContigSubViewImpl(const ArrayView<const int> &cols) const = 0;
 
   /** \brief Return a changeable sub-view of a non-contiguous set of columns of this multi-vector.
    *
@@ -980,7 +936,7 @@ protected:
    * the behavior of this view.
    */
   virtual RCP<MultiVectorBase<Scalar> >
-  nonconstNonContigSubViewImpl( const ArrayView<const int> &cols ) = 0;
+  nonconstNonContigSubViewImpl(const ArrayView<const int> &cols) = 0;
 
   /** \brief Apply a reduction/transformation operator column by column and
    * return an array of the reduction objects.
@@ -1004,12 +960,11 @@ protected:
    * ... this->range()->dim()-1</tt>.
    */
   virtual void mvMultiReductApplyOpImpl(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-    const Ordinal primary_global_offset
-    ) const = 0;
+      const RTOpPack::RTOpT<Scalar> &primary_op,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+      const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+      const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+      const Ordinal primary_global_offset) const = 0;
 
   /** \brief Apply a reduction/transformation operator column by column and
    * reduce the intermediate reduction objects into a single reduction object.
@@ -1032,13 +987,12 @@ protected:
    * array of reduction objects is taken.
    */
   virtual void mvSingleReductApplyOpImpl(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const RTOpPack::RTOpT<Scalar> &secondary_op,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal primary_global_offset
-    ) const = 0;
+      const RTOpPack::RTOpT<Scalar> &primary_op,
+      const RTOpPack::RTOpT<Scalar> &secondary_op,
+      const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+      const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+      const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+      const Ordinal primary_global_offset) const = 0;
 
   /** \brief Get a non-changeable explicit view of a sub-multi-vector.
    *
@@ -1104,10 +1058,9 @@ protected:
    * which is a companion to this function's default implementation.
    */
   virtual void acquireDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
-    ) const = 0;
+      const Range1D &rowRng,
+      const Range1D &colRng,
+      RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv) const = 0;
 
   /** \brief Free a non-changeable explicit view of a sub-multi-vector.
    *
@@ -1118,7 +1071,7 @@ protected:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>sub_mv</tt> must have been passed through a call to 
+   * <li> <tt>sub_mv</tt> must have been passed through a call to
    *      <tt>this->acquireDetachedView(...,sub_mv)</tt>
    * </ul>
    *
@@ -1135,8 +1088,7 @@ protected:
    * function must be overridden also!
    */
   virtual void releaseDetachedMultiVectorViewImpl(
-    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
-    ) const = 0;
+      RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv) const = 0;
 
   /** \brief Get a changeable explicit view of a sub-multi-vector.
    *
@@ -1159,7 +1111,7 @@ protected:
    * <li> [<tt>!colRng.full_range()</tt>] <tt>colRng.ubound() < this->domain()->dim()</tt>
    *      (<tt>throw std::out_of_range</tt>)
    * </ul>
-    *
+   *
    * <b>Postconditions:</b><ul>
    * <li> <tt>*sub_mv</tt> contains an explicit changeable view to the elements
    *      in the row and column ranges <tt>full_range(rowRng,0,this->range()->dim()-1)</tt>
@@ -1211,10 +1163,9 @@ protected:
    * implementation.
    */
   virtual void acquireNonconstDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
-    ) = 0;
+      const Range1D &rowRng,
+      const Range1D &colRng,
+      RTOpPack::SubMultiVectorView<Scalar> *sub_mv) = 0;
 
   /** \brief Commit changes for a changeable explicit view of a sub-multi-vector.
    *
@@ -1226,7 +1177,7 @@ protected:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>sub_mv</tt> must have been passed through a call to 
+   * <li> <tt>sub_mv</tt> must have been passed through a call to
    *      <tt>this->acquireDetachedView(...,sub_mv)</tt>
    * </ul>
    *
@@ -1244,58 +1195,53 @@ protected:
    * function must be overridden also!
    */
   virtual void commitNonconstDetachedMultiVectorViewImpl(
-    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
-    ) = 0;
+      RTOpPack::SubMultiVectorView<Scalar> *sub_mv) = 0;
 
   /** From RowStatLinearOpBase */
   virtual bool rowStatIsSupportedImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
+      const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
 
   /** From RowStatLinearOpBase */
   virtual void getRowStatImpl(
-    const RowStatLinearOpBaseUtils::ERowStat rowStat,
-    const Ptr<VectorBase<Scalar> > &rowStatVec) const;
+      const RowStatLinearOpBaseUtils::ERowStat rowStat,
+      const Ptr<VectorBase<Scalar> > &rowStatVec) const;
 
   /** From ScaledLinearOpBase */
   virtual bool supportsScaleLeftImpl() const;
- 	
+
   /** From ScaledLinearOpBase */
   virtual bool supportsScaleRightImpl() const;
- 	
+
   /** From ScaledLinearOpBase */
-  virtual void scaleLeftImpl(const VectorBase< Scalar > &row_scaling);
- 	
+  virtual void scaleLeftImpl(const VectorBase<Scalar> &row_scaling);
+
   /** From ScaledLinearOpBase */
-  virtual void scaleRightImpl(const VectorBase< Scalar > &col_scaling);
+  virtual void scaleRightImpl(const VectorBase<Scalar> &col_scaling);
 
   //@}
 
   /** Compute the absolute row sum of this multivector. Note that the
-    * implementation is suboptimal in that it requires an intermediate
-    * step of computing the absolute value of the multivector, then a "apply"
-    * operation by the rows. 
-    *
-    * \param[out] output A vector constructed from the range vector space.
-    */
-  void absRowSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > & output) const;
+   * implementation is suboptimal in that it requires an intermediate
+   * step of computing the absolute value of the multivector, then a "apply"
+   * operation by the rows.
+   *
+   * \param[out] output A vector constructed from the range vector space.
+   */
+  void absRowSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &output) const;
 
   /** Compute the absolute column sum of this multivector. Note that the
-    * implementation uses the <code>norms_1</code> function.
-    *
-    * \param[out] output A vector constructed from the domain vector space.
-    */
-  void absColSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > & output) const;
+   * implementation uses the <code>norms_1</code> function.
+   *
+   * \param[out] output A vector constructed from the domain vector space.
+   */
+  void absColSum(const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &output) const;
 
-public:
-
-private:
-  
+ public:
+ private:
   // Not defined and not to be called
-  MultiVectorBase<Scalar>&
-  operator=(const MultiVectorBase<Scalar>&);
-
+  MultiVectorBase<Scalar> &
+  operator=(const MultiVectorBase<Scalar> &);
 };
-
 
 /** \brief Apply a reduction/transformation operator column by column and
  * return an array of the reduction objects.
@@ -1304,24 +1250,20 @@ private:
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-inline
-void applyOp(
-  const RTOpPack::RTOpT<Scalar> &primary_op,
-  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-  const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-  const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Ordinal primary_global_offset = 0
-  )
-{
-  if(multi_vecs.size())
+template <class Scalar>
+inline void applyOp(
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+    const Ordinal primary_global_offset = 0) {
+  if (multi_vecs.size())
     multi_vecs[0]->applyOp(primary_op, multi_vecs, targ_multi_vecs,
-      reduct_objs, primary_global_offset);
-  else if(targ_multi_vecs.size())
+                           reduct_objs, primary_global_offset);
+  else if (targ_multi_vecs.size())
     targ_multi_vecs[0]->applyOp(primary_op, multi_vecs, targ_multi_vecs,
-      reduct_objs, primary_global_offset);
+                                reduct_objs, primary_global_offset);
 }
-
 
 /** \brief Apply a reduction/transformation operator column by column and
  * reduce the intermediate reduction objects into one reduction object.
@@ -1330,27 +1272,22 @@ void applyOp(
  *
  * \relates MultiVectorBase
  */
-template<class Scalar>
-inline
-void applyOp(
-  const RTOpPack::RTOpT<Scalar> &primary_op,
-  const RTOpPack::RTOpT<Scalar> &secondary_op,
-  const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-  const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-  const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal primary_global_offset = 0
-  )
-{
-  if(multi_vecs.size())
+template <class Scalar>
+inline void applyOp(
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const RTOpPack::RTOpT<Scalar> &secondary_op,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const Ptr<RTOpPack::ReductTarget> &reduct_obj,
+    const Ordinal primary_global_offset = 0) {
+  if (multi_vecs.size())
     multi_vecs[0]->applyOp(primary_op, secondary_op, multi_vecs, targ_multi_vecs,
-      reduct_obj, primary_global_offset);
-  else if(targ_multi_vecs.size())
+                           reduct_obj, primary_global_offset);
+  else if (targ_multi_vecs.size())
     targ_multi_vecs[0]->applyOp(primary_op, secondary_op, multi_vecs, targ_multi_vecs,
-      reduct_obj, primary_global_offset);
+                                reduct_obj, primary_global_offset);
 }
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif // THYRA_MULTI_VECTOR_BASE_DECL_HPP
+#endif  // THYRA_MULTI_VECTOR_BASE_DECL_HPP

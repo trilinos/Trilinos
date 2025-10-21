@@ -10,22 +10,17 @@
 #ifndef THYRA_LINEAR_OP_TRANSFORMER_BASE_HPP
 #define THYRA_LINEAR_OP_TRANSFORMER_BASE_HPP
 
-
 #include "Thyra_LinearOpBase.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
-
 namespace Thyra {
 
-
 /** \brief Base interface for transforming a LinearOpBase object. */
-template<class Scalar>
+template <class Scalar>
 class LinearOpTransformerBase
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::VerboseObject<LinearOpTransformerBase<Scalar> >
-{
-public:
-
+    virtual public Teuchos::VerboseObject<LinearOpTransformerBase<Scalar> > {
+ public:
   /** \brief Create an uninitialized op. */
   virtual bool isCompatible(const LinearOpBase<Scalar> &op_in) const = 0;
 
@@ -46,14 +41,10 @@ public:
    * in this interface.
    */
   virtual void transform(
-    const LinearOpBase<Scalar> &op_in,
-    const Ptr<LinearOpBase<Scalar> > &op_inout
-    ) const = 0;
-
+      const LinearOpBase<Scalar> &op_in,
+      const Ptr<LinearOpBase<Scalar> > &op_inout) const = 0;
 };
 
+}  // namespace Thyra
 
-} // namespace Thyra
-
-
-#endif	// THYRA_LINEAR_OP_TRANSFORMER_BASE_HPP
+#endif  // THYRA_LINEAR_OP_TRANSFORMER_BASE_HPP

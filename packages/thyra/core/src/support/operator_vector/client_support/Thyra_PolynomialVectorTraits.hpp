@@ -17,45 +17,44 @@
 
 namespace Teuchos {
 
-  //! Specilization of Teuchos::PolynomialTraits for %Thyra vectors.
-  /*!
-   * This class provides a specilization of Teuchos::PolynomialTraits for
-   * Thyra::VectorBase vectors, allowing these vectors to be coefficients
-   * in the Teuchos::Polynomial.
-   */
-  template <typename Scalar>
-  class PolynomialTraits< Thyra::VectorBase<Scalar> > {
-  public:
+//! Specilization of Teuchos::PolynomialTraits for %Thyra vectors.
+/*!
+ * This class provides a specilization of Teuchos::PolynomialTraits for
+ * Thyra::VectorBase vectors, allowing these vectors to be coefficients
+ * in the Teuchos::Polynomial.
+ */
+template <typename Scalar>
+class PolynomialTraits<Thyra::VectorBase<Scalar> > {
+ public:
+  //! Typename of coefficients
+  typedef Thyra::VectorBase<Scalar> coeff_type;
 
-    //! Typename of coefficients
-    typedef Thyra::VectorBase<Scalar> coeff_type;
+  //! Typename of scalars
+  typedef Scalar scalar_type;
 
-    //! Typename of scalars
-    typedef Scalar scalar_type;
+  //! Clone a coefficient
+  static inline Teuchos::RCP<coeff_type> clone(const coeff_type& c) {
+    return c.clone_v();
+  }
 
-    //! Clone a coefficient
-    static inline Teuchos::RCP<coeff_type> clone(const coeff_type& c) {
-      return c.clone_v();
-    }
+  //! Copy a coefficient
+  static inline void copy(const coeff_type& x, coeff_type* y) {
+    Thyra::copy(x, Teuchos::ptr(y));
+  }
 
-    //! Copy a coefficient
-    static inline void copy(const coeff_type& x, coeff_type* y) {
-      Thyra::copy(x, Teuchos::ptr(y));
-    }
+  //! Assign a scalar to a coefficient
+  static inline void assign(coeff_type* y, const scalar_type& alpha) {
+    Thyra::assign(Teuchos::ptr(y), alpha);
+  }
 
-    //! Assign a scalar to a coefficient
-    static inline void assign(coeff_type* y, const scalar_type& alpha) {
-      Thyra::assign(Teuchos::ptr(y), alpha);
-    }
+  //! y = x + beta*y
+  static inline void update(coeff_type* y, const coeff_type& x,
+                            const scalar_type& beta) {
+    Thyra::Vp_V(Teuchos::ptr(y), x, beta);
+  }
 
-    //! y = x + beta*y
-    static inline void update(coeff_type* y, const coeff_type& x, 
-            const scalar_type& beta) {
-      Thyra::Vp_V(Teuchos::ptr(y), x, beta);
-    }
+};  // class PolynomialTraits< Thyra::VectorBase<Scalar> >
 
-  }; // class PolynomialTraits< Thyra::VectorBase<Scalar> >
-
-} // end namespace Teuchos
+}  // end namespace Teuchos
 
 #endif  // THYRA_POLYNOMIAL_VECTOR_TRAITS_HPP
