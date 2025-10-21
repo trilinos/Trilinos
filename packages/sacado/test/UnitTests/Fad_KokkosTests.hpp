@@ -560,7 +560,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type fad_size = global_fad_size;
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
+#if KOKKOS_VERSION >= 40799
+  typename ViewType::type va = v;
+#else
   typename ViewType::array_type va = v;
+#endif
   Kokkos::deep_copy( va, 1.0 );
 
   // Deep copy a constant scalar
@@ -604,7 +608,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type fad_size = global_fad_size;
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
+#if KOKKOS_VERSION >= 40799
+  typename ViewType::type va = v;
+#else
   typename ViewType::array_type va = v;
+#endif
   Kokkos::deep_copy( va, 1.0 );
 
   // Deep copy a constant scalar
@@ -647,7 +655,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type fad_size = global_fad_size;
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
+#if KOKKOS_VERSION >= 40799
+  typename ViewType::type va = v;
+#else
   typename ViewType::array_type va = v;
+#endif
   Kokkos::deep_copy( va, 1.0 );
 
   // Deep copy a constant scalar
@@ -690,7 +702,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #else
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
+#if KOKKOS_VERSION >= 40799
+  typename ViewType::type va = v;
+#else
   typename ViewType::array_type va = v;
+#endif
   Kokkos::deep_copy( va, 1.0 );
 
   // Deep copy a constant Fad
@@ -732,7 +748,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #else
   v = ViewType ("view", num_rows, num_cols, num_slices, fad_size+1);
 #endif
+#if KOKKOS_VERSION >= 40799
+  typename ViewType::type va = v;
+#else
   typename ViewType::array_type va = v;
+#endif
   Kokkos::deep_copy( va, 1.0 );
 
   // Deep copy a constant Fad to the device
@@ -793,7 +813,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #else
   v = ViewType ("view", num_rows, num_cols, num_slices, fad_size+1);
 #endif
+#if KOKKOS_VERSION >= 40799
+  typename ViewType::type va = v;
+#else
   typename ViewType::array_type va = v;
+#endif
   Kokkos::deep_copy( va, 1.0 );
 
   // Deep copy a constant Fad to the device
@@ -854,7 +878,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type fad_size = global_fad_size;
   v = ViewType ("view", num_rows, fad_size+1);
 #endif
+#if KOKKOS_VERSION >= 40799
+  typename ViewType::type va = v;
+#else
   typename ViewType::array_type va = v;
+#endif
   Kokkos::deep_copy( va, 1.0 );
 
   // Deep copy a constant scalar
@@ -899,7 +927,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   v = ViewType ("view", num_rows, fad_size+1);
   a = ScalarViewType ("fad", fad_size+1);
 #endif
+#if KOKKOS_VERSION >= 40799
+  typename ViewType::type va = v;
+#else
   typename ViewType::array_type va = v;
+#endif
   Kokkos::deep_copy( va, 1.0 );
 
   // Deep copy a constant scalar
@@ -1243,7 +1275,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   v = ViewType ("view", 100, 1, 2, 3, 4, 5, 6, fad_size+1);
 #endif
   host_view_type h_v = Kokkos::create_mirror_view(v);
+#if KOKKOS_VERSION >= 40799
+  typename host_view_type::type h_a = h_v;
+#else
   typename host_view_type::array_type h_a = h_v;
+#endif
   Kokkos::deep_copy(h_a, 1.0);
 
   FadType f1 = FadType(fad_size, 2.0);
