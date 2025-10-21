@@ -50,6 +50,10 @@ public:
   ///   It may change or disappear at any time without warning.
   int getTag () const { return 0; }
 
+  int incrementTag() {
+    return 0;
+  }
+
   //! @name Constructors
   //@{
 

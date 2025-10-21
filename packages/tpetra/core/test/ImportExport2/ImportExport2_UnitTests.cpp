@@ -703,8 +703,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(MultiVectorImport, doImport, LO, GO, Scalar) {
       // Create the importer
       Import<LO, GO> importer(src_map, tgt_map, getImportParameterList());
 
+      // We have not yet used the distributor actor, so the MPI message tag matches the default value that was used at initialization.
+      auto previousMpiTag = tgt_mv->getActor().getMpiTag();
+      TEST_EQUALITY(previousMpiTag, Tpetra::Details::DistributorActor::DEFAULT_MPI_TAG);
+
       // Do the import
       tgt_mv->doImport(*src_mv, importer, INSERT);
+
+      // Now we have used the distributor actor. The message tag should be set to
+      // the value the was obtained from the Teuchos::Comm.
+      auto mpiTag = tgt_mv->getActor().getMpiTag();
+      TEST_INEQUALITY(previousMpiTag, mpiTag);
 
       // When collectRank == 0, rank 0 has the GIDs the source map owns ordered first.
       // When collectRank == 1, rank 1 has the GIDs of rank 0 ordered first.
@@ -734,6 +743,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(MultiVectorImport, doImport, LO, GO, Scalar) {
       tgt_mv_reference->doImport(*src_mv, importer, INSERT);
       TEUCHOS_ASSERT(!importer.areRemoteLIDsContiguous());
       TEUCHOS_ASSERT(!tgt_mv_reference->importsAreAliased());
+
+      // We have used the importer for a second time. The tag should have increased by one.
+      auto mpiTagRef = tgt_mv_reference->getActor().getMpiTag();
+      TEST_EQUALITY(mpiTag + 1, mpiTagRef);
 
       // Loop through tgt_mv and make sure the import worked.
       if (tgt_num_local_elements != 0) {

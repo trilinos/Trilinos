@@ -297,15 +297,12 @@ namespace Ioss {
 
   void Face::face_element_error(size_t element_id) const
   {
-    std::ostringstream errmsg;
-    fmt::print(errmsg,
-               "ERROR: Face {} has more than two elements using it.\n"
-               "       The element/local_face are: {}:{}, {}:{}, and {}:{}.\n"
-               "       The face connectivity is {} {} {} {}.\n",
-               hashId_, element[0] / 10, element[0] % 10, element[1] / 10, element[1] % 10,
-               element_id / 10, element_id % 10, connectivity_[0], connectivity_[1],
-               connectivity_[2], connectivity_[3]);
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format("ERROR: Face {} has more than two elements using it.\n"
+                           "       The element/local_face are: {}:{}, {}:{}, and {}:{}.\n"
+                           "       The face connectivity is {} {} {} {}.\n",
+                           hashId_, element[0] / 10, element[0] % 10, element[1] / 10,
+                           element[1] % 10, element_id / 10, element_id % 10, connectivity_[0],
+                           connectivity_[1], connectivity_[2], connectivity_[3]));
   }
 
   size_t FaceGenerator::id_hash(size_t global_id)

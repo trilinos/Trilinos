@@ -152,9 +152,7 @@ namespace Ioss {
     static void check_dynamic_cast(const void *ptr)
     {
       if (ptr == nullptr) {
-        std::ostringstream errmsg;
-        errmsg << "INTERNAL ERROR: Invalid dynamic cast returned nullptr\n";
-        IOSS_ERROR(errmsg);
+        IOSS_ERROR("INTERNAL ERROR: Invalid dynamic cast returned nullptr\n");
       }
     }
 

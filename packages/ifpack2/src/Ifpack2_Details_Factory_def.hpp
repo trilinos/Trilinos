@@ -151,6 +151,63 @@ Factory<SC, LO, GO, NT>::
 }
 
 template <class SC, class LO, class GO, class NT>
+Teuchos::RCP<typename Factory<SC, LO, GO, NT>::prec_type>
+Factory<SC, LO, GO, NT>::
+    create(const std::string& precType,
+           const Teuchos::RCP<const row_matrix_type>& matrix,
+           const Teuchos::RCP<const coord_type>& coordinates) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  RCP<prec_type> prec;
+
+  // precTypeUpper is the upper-case version of precType.
+  std::string precTypeUpper(precType);
+  if (precTypeUpper.size() > 0) {
+    for (size_t k = 0; k < precTypeUpper.size(); ++k) {
+      precTypeUpper[k] = ::toupper(precTypeUpper[k]);
+    }
+  }
+
+  if (precTypeUpper == "SCHWARZ") {
+    // Discussion related to Bug 5987: The line of code below will
+    // give AdditiveSchwarz a default subdomain solver by default.
+    // However, you can change it later via setParameters() or
+    // setInnerPreconditioner().  In the former case, AdditiveSchwarz
+    // will not create the subdomain solver until you call
+    // initialize(), so there is no performance loss in waiting after
+    // calling AdditiveSchwarz's constructor before specifying the
+    // subdomain solver's type.
+    //
+    // FIXME (mfh 14 Jan 2014) Use of "CUSTOM" in AdditiveSchwarz may
+    // destroy information needed for fixing Bug 5987.  In particular,
+    // the input ParameterList needs to keep its subdomain solver
+    // info.  setInnerPreconditioner must _not_ destroy that info _if_
+    // the Factory creates the AdditiveSchwarz instance.
+    //
+    // "CUSTOM" isn't necessary.  If Inverse_ is not null, then
+    // AdditiveSchwarz's initialize() should just use the inner
+    // preconditioner as it is.  If Inverse_ is null, then we assume
+    // you want the default inner preconditioner.  You shouldn't have
+    // called setInnerPreconditioner() with a null argument if that's
+    // not what you meant!
+    prec = rcp(new AdditiveSchwarz<row_matrix_type>(matrix, coordinates));
+  } else {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+                               "Using stream-based RILUK with RCB partitioning on "
+                               "coordinates associated with matrix rows is currently "
+                               "enabled only with Additive Schwarz preconditioner "
+                               "and RILUK as a subdomain solver.");
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      prec.is_null(), std::logic_error,
+      "Ifpack2::Factory::create: "
+      "Return value is null right before return.  This should never happen.  "
+      "Please report this bug to the Ifpack2 developers.");
+  return prec;
+}
+
+template <class SC, class LO, class GO, class NT>
 std::vector<std::string>
 Factory<SC, LO, GO, NT>::
     getSupportedNames() const {

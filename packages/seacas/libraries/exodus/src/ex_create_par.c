@@ -179,14 +179,14 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
   nc_mode = exi_handle_mode(my_mode, is_parallel, run_version);
 
 #if defined NC_NOATTCREORD
-  /* Disable attribute creation order tracking if available... */
+  /* Disable attribute creation order tracking if available (netcdf-c PR #2056) */
   if (my_mode & EX_NETCDF4) {
     nc_mode |= NC_NOATTCREORD;
   }
 #endif
 
 #if defined NC_NODIMSCALE_ATTACH
-  /* Disable attaching dimscales to variables (netcdf-c issue #2128) if available */
+  /* Disable attaching dimscales to variables if available (netcdf-c issue #2128) */
   if (my_mode & EX_NETCDF4) {
     nc_mode |= NC_NODIMSCALE_ATTACH;
   }

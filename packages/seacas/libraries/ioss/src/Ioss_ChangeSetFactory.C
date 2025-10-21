@@ -7,18 +7,11 @@
 #include "Ioss_ChangeSet.h"
 #include "Ioss_ChangeSetFactory.h"
 #include "Ioss_Utils.h" // for IOSS_ERROR
-#include "Ioss_Version.h"
-#include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <fmt/ranges.h>
-#include <map>     // for _Rb_tree_iterator, etc
-#include <ostream> // for basic_ostream, etc
-#include <set>
+#include <map>    // for _Rb_tree_iterator, etc
 #include <string> // for char_traits, string, etc
 
 #include "Ioss_CodeTypes.h"
-#include "Ioss_DBUsage.h" // for DatabaseUsage
-#include "Ioss_PropertyManager.h"
 #include "Ioss_Region.h"
 
 namespace {

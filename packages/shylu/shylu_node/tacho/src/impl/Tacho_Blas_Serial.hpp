@@ -23,9 +23,9 @@ template <typename T> struct BlasSerial {
 
   // GEMV
   inline static void gemv(const char trans, int m, int n,
-                         const T alpha, const T *A, int lda,
-                                        const T *x, int incx,
-                         const T beta,  /* */ T *y, int incy) {
+                          const T alpha, const T *A, int lda,
+                                         const T *x, int incx,
+                          const T beta,  /* */ T *y, int incy) {
 
     typedef ArithTraits<T> arith_traits;
     const T one(1), zero(0);
@@ -58,6 +58,126 @@ template <typename T> struct BlasSerial {
         }
         y[j*incy] += alpha * val;
       }
+    }
+  }
+
+  // TRMV (TODO: not the same interface as BLAS interface, A is m-by-n)
+  inline static void trmv(const char uplo, const char trans, const char diag,
+                          int m, int n,
+                          const T alpha, const T *A, int lda,
+                                         const T *x, int incx,
+                          const T beta,  /* */ T *y, int incy) {
+
+    typedef ArithTraits<T> arith_traits;
+    const T one(1), zero(0);
+
+    {
+      int mt = (trans == 'N' || trans == 'n' ?  m : n);
+      if (beta == zero) {
+        for (int i = 0; i < mt; i++) y[i*incy] = zero;
+      } else if (beta != one) {
+        for (int i = 0; i < mt; i++) y[i*incy] *= beta;
+      }
+    }
+    if (alpha == zero)
+      return;
+    if (n <= 0 || m <= 0)
+      return;
+
+    int mn = (m < n ? m : n);
+    if (trans == 'N' || trans == 'n') {
+      // y = A x
+      if (uplo == 'U' || uplo == 'u') {
+        // upper
+        for (int j = 0; j < n; j++) {
+          T val = alpha*x[j*incx] ;
+          if (j < mn) {
+            // diagonal A(j,j)
+            if (diag == 'U' || diag == 'u')
+              y[j*incy] += val;
+            else
+              y[j*incy] += (A[j + j*lda] * val);
+
+            // upper off-diagonals of A(:,j)
+            for (int i = 0; i < j; i++) {
+              y[i*incy] += (A[i + j*lda] * val);
+            }
+          } else {
+            for (int i = 0; i < m; i++) {
+              y[i*incy] += (A[i + j*lda] * val);
+            }
+          }
+        }
+      } else {
+        // lower
+        for (int j = 0; j < mn; j++) {
+          T val = alpha*x[j*incx] ;
+
+          // diagonal A(j,j)
+          if (diag == 'U' || diag == 'u')
+            y[j*incy] += val;
+          else
+            y[j*incy] += (A[j + j*lda] * val);
+
+          // off-diagonals of A(:,j)
+          for (int i = j+1; i < m; i++) {
+            y[i*incy] += (A[i + j*lda] * val);
+          }
+        }
+      }
+    } else {
+      if (uplo == 'U' || uplo == 'u') {
+        // upper
+        for (int j = 0; j < n; j++) {
+          T val = zero;
+          if (j < mn) {
+            // diagonal A(j,j)
+            val = x[j*incx];
+            if (diag != 'U' && diag != 'u')
+              val *= (arith_traits::conj(A[j + j*lda]));
+
+            // off-diagonals of A(:,j)
+            for (int i = 0; i < j; i++) {
+              val += (arith_traits::conj(A[i + j*lda]) * x[i*incx]);
+            }
+          } else {
+            for (int i = 0; i < m; i++) {
+              val += (arith_traits::conj(A[i + j*lda]) * x[i*incx]);
+            }
+          }
+          y[j*incy] += alpha * val;
+        }
+      } else {
+        for (int j = 0; j < mn; j++) {
+          // diagonal A(j,j)
+          T val = x[j*incx];
+          if (diag != 'U' && diag != 'u')
+            val *= (arith_traits::conj(A[j + j*lda]));
+
+          // off-diagonals of A(:,j)
+          for (int i = j+1; i < m; i++) {
+            val += (arith_traits::conj(A[i + j*lda]) * x[i*incx]);
+          }
+          y[j*incy] += alpha * val;
+        }
+      }
+    }
+  }
+
+  // TRMM (NOTE: calling TRMV on each B & C column)
+  inline static void trmm(const char uplo, const char trans, const char diag,
+                          int m, int n, int k,
+                          const T alpha, const T *A, int lda,
+                                         const T *B, int ldb,
+                          const T beta,  /* */ T *C, int ldc) {
+
+    // C is m-by-n
+    // if trans, A is k-by-m
+    // else,     A is m-by-k
+    int mA = (trans == 'N' || trans == 'n' ? m : k);
+    int nA = (trans == 'N' || trans == 'n' ? k : m);
+    for (int j = 0; j < n; j++) {
+      trmv(uplo, trans, diag, mA, nA, alpha, A, lda, &B[j*ldb], 1, beta, &C[j*ldc], 1);
     }
   }
 

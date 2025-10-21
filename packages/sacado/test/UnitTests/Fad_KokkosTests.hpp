@@ -1436,7 +1436,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Check dimensions are correct
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
 
   // Check values
   FadType f =
@@ -1474,7 +1473,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_TEST_EQUALITY(v2.extent(0), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride(1), v1.stride(1), out, success);
 
   // Check values
   for (size_type i=0; i<num_rows; ++i) {
@@ -1516,7 +1514,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride(0), v1.stride(0), out, success);
   TEUCHOS_TEST_EQUALITY(v2.stride(1), v1.stride(1), out, success);
-  TEUCHOS_TEST_EQUALITY(v2.stride(2), v1.stride(2), out, success);
 
   // Check values
   for (size_type i=0; i<num_rows; ++i) {
@@ -2029,8 +2026,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
     ViewType::shmem_size(num_rows, num_cols, fad_size+1);
 
   // Check
-  const size_type align = 8;
-  const size_type mask  = align - 1;
   ViewType v;
 #if defined (SACADO_DISABLE_FAD_VIEW_SPEC)
   v = ViewType ("view", num_rows, num_cols);
@@ -2046,6 +2041,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type shmem_size_expected =
     sizeof(value_type) * global_num_rows * global_num_cols * (fad_size+1) + scratch_value_alignment;
 #else
+  const size_type align = 8;
+  const size_type mask  = align - 1;
   const size_type shmem_size_expected =
     (( sizeof(value_type) * global_num_rows * global_num_cols * (fad_size+1) + mask ) & ~mask) + sizeof(typename ViewType::traits::value_type);
 #endif

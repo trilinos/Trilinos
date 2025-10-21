@@ -15,6 +15,6 @@
   </ParameterList>
 
   <!-- Jacobi -->
-  <Parameter name="coarse: type" type="string" value="DIRECT"/>
+  <Parameter name="coarse: type" type="string" value="DirectSolver"/>
   
 </ParameterList>

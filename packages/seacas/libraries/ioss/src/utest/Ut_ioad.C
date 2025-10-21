@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2024 National Technology & Engineering Solutions
+// Copyright(C) 1999-2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -15,10 +15,10 @@
 #include "adios/Ioad_TemplateToValue.h"
 
 #include <algorithm>
+#include <cstdlib> // for rand, srand, RAND_MAX
 #include <iostream>
 #include <ostream>
 #include <stddef.h> // for size_t
-#include <stdlib.h> // for rand, srand, RAND_MAX
 #include <string>
 #include <vector>
 
@@ -344,11 +344,9 @@ template <typename Entity> void write_fields(Entity *e, Ioss::Field::RoleType ro
       put_field_data<Ioss::NodeBlock, char>(field_name, local_size, component_count, e);
       break;
     default:
-      std::ostringstream errmsg;
-      errmsg << "INTERNAL ERROR: Invalid field type. "
-             << "Something is wrong in the Ioad::DatabaseIO::get_field_internal_t() function. "
-             << "Please report.\n";
-      IOSS_ERROR(errmsg);
+      IOSS_ERROR("INTERNAL ERROR: Invalid field type. "
+                 "Something is wrong in the Ioad::DatabaseIO::get_field_internal_t() function. "
+                 "Please report.\n");
     }
   }
 }
