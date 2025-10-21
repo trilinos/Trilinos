@@ -1963,9 +1963,9 @@ namespace Intrepid2 {
 
 template<typename DeviceType>
 template<class Scalar>
-Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const TransformedBasisValues<Scalar,DeviceType> vectorDataLeft,
-                                                                           const TensorData<Scalar,DeviceType> cellMeasures,
-                                                                           const TransformedBasisValues<Scalar,DeviceType> vectorDataRight)
+Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const TransformedBasisValues<Scalar,DeviceType> &vectorDataLeft,
+                                                                           const TensorData<Scalar,DeviceType> &cellMeasures,
+                                                                           const TransformedBasisValues<Scalar,DeviceType> &vectorDataRight)
 {
   // allocates a (C,F,F) container for storing integral data
   
@@ -2021,7 +2021,7 @@ Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const
 //! 2. arbitrary mesh: cellMeasures has trivial tensor product structure (one tensorial component).
 template<typename DeviceType>
 template<class Scalar>
-void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, const TransformedBasisValues<Scalar,DeviceType> & basisValuesLeft,
+void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> &integrals, const TransformedBasisValues<Scalar,DeviceType> & basisValuesLeft,
                                              const TensorData<Scalar,DeviceType> & cellMeasures,
                                              const TransformedBasisValues<Scalar,DeviceType> & basisValuesRight, const bool sumInto,
                                              double* approximateFlops)
@@ -2171,8 +2171,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
       const int leftVectorComponentCount = leftIsVectorValued ? basisValuesLeft.vectorData().numComponents() : 1;
       for (int leftVectorComponentOrdinal = 0; leftVectorComponentOrdinal < leftVectorComponentCount; leftVectorComponentOrdinal++)
       {
-        TensorData<Scalar,DeviceType> leftComponent = leftIsVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftVectorComponentOrdinal)
-                                                                         : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
+        const TensorData<Scalar,DeviceType> & leftComponent = leftIsVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftVectorComponentOrdinal)
+                                                                                 : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
         if (!leftComponent.isValid())
         {
           a_offset++; // empty components are understood to take up one dimension
@@ -2190,8 +2190,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
           const int rightVectorComponentCount = rightIsVectorValued ? basisValuesRight.vectorData().numComponents() : 1;
           for (int rightVectorComponentOrdinal = 0; rightVectorComponentOrdinal < rightVectorComponentCount; rightVectorComponentOrdinal++)
           {
-            TensorData<Scalar,DeviceType> rightComponent = rightIsVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightVectorComponentOrdinal)
-                                                                               : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
+            const TensorData<Scalar,DeviceType> & rightComponent = rightIsVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightVectorComponentOrdinal)
+                                                                                       : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
             if (!rightComponent.isValid())
             {
               b_offset++; // empty components are understood to take up one dimension
@@ -2499,8 +2499,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
       bool haveLaunchedContributionToCurrentFamilyLeft = false; // helps to track whether we need a Kokkos::fence before launching a kernel.
       for (int leftComponentOrdinal=0; leftComponentOrdinal<leftComponentCount; leftComponentOrdinal++)
       {
-        TensorData<Scalar,DeviceType> leftComponent = leftIsVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal)
-                                                                         : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
+        const TensorData<Scalar,DeviceType> & leftComponent = leftIsVectorValued ? basisValuesLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal)
+                                                                                 : basisValuesLeft.basisValues().tensorData(leftFamilyOrdinal);
         if (!leftComponent.isValid())
         {
            // represents zero
@@ -2517,8 +2517,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
           int b_offset = 0;
           for (int rightComponentOrdinal=0; rightComponentOrdinal<rightComponentCount; rightComponentOrdinal++)
           {
-            TensorData<Scalar,DeviceType> rightComponent = rightIsVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal)
-                                                                               : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
+            const TensorData<Scalar,DeviceType> & rightComponent = rightIsVectorValued ? basisValuesRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal)
+                                                                                       : basisValuesRight.basisValues().tensorData(rightFamilyOrdinal);
             if (!rightComponent.isValid())
             {
                // represents zero
