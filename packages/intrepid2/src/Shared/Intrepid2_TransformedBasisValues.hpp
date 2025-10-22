@@ -96,7 +96,7 @@ namespace Intrepid2 {
       return transformIsDiagonal_;
     }
 
-    BasisValues<Scalar, DeviceType> basisValues() const
+    const BasisValues<Scalar, DeviceType> & basisValues() const
     {
       return basisValues_;
     }
