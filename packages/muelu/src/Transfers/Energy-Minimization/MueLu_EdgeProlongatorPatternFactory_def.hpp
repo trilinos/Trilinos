@@ -70,6 +70,13 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
   filtered = MatrixFactory::Build(temp2->getRowMap(), temp2->getColMap(), temp2->getLocalMaxNumRowEntries());
   ArrayView<const LO> inds2;
   ArrayView<const SC> vals2;
+
+  RCP<MultiVector> oneVec = MultiVectorFactory::Build(absDc->getDomainMap(),1);
+  oneVec->putScalar(one );
+  RCP<MultiVector> singleParent = MultiVectorFactory::Build(absDc->getRowMap(),1);
+  absDc->apply(*oneVec,*singleParent,Teuchos::NO_TRANS);  // I think we need ghosted version
+  Teuchos::ArrayRCP<SC> singleParentData = singleParent->getDataNonConst(0);
+
   Array<LO> inds;
   Array<SC> vals;
 
@@ -86,7 +93,7 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
 
       size_t numInds = 0;
       for (size_t j = 0; j < nnz; j++) {
-        if (vals2[j] == 2.0) {
+        if ( (vals2[j] == 2.0) || (   (singleParentData[inds2[j]] == 1.0) && (vals2[j] == 1.0)  ) ) {
           inds[numInds] = inds2[j];
           vals[numInds] = vals2[j];
           numInds++;

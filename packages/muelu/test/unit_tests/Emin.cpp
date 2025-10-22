@@ -201,36 +201,48 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   LocalOrdinal local_num_fine_nodes   = 25;
   LocalOrdinal local_num_coarse_nodes = 4;
   std::string inputDir = "";
-  // #define Hexes
-  // #define ReadWriteForTesting
-  // #define GrindEmin
+  std::string dataDir = "/scratch/rstumin/hcurldata/";
+// #define HexesWithDir
+// #define GrindEmin
+// #define UseExternalP0
+
+#if defined(Tris) || defined(Quads) || defined(Tets) || defined(Hexes) ||  defined(HexesWithDir)
+#define ReadWriteForTesting
+#endif
 #ifdef Tris
-  inputDir = "tris/";
+  inputDir = dataDir + "tris/";
   global_num_fine_edges   = 12416; local_num_fine_edges   = global_num_fine_edges;
   global_num_coarse_edges = 1365;  local_num_coarse_edges = global_num_coarse_edges;
   global_num_fine_nodes   = 4225;  local_num_fine_nodes   = global_num_fine_nodes;
   global_num_coarse_nodes = 484;   local_num_coarse_nodes = global_num_coarse_nodes;
 #endif
 #ifdef Quads
-  inputDir = "quads/";
+  inputDir = dataDir + "quads/";
   global_num_fine_edges   = 1512; local_num_fine_edges   = global_num_fine_edges;
   global_num_coarse_edges = 183;  local_num_coarse_edges = global_num_coarse_edges;
   global_num_fine_nodes   = 784;  local_num_fine_nodes   = global_num_fine_nodes;
   global_num_coarse_nodes = 100;  local_num_coarse_nodes = global_num_coarse_nodes;
 #endif
 #ifdef Tets
-  inputDir = "tets/";
+  inputDir = dataDir + "tets/";
   global_num_fine_edges   = 5859; local_num_fine_edges   = global_num_fine_edges;
   global_num_coarse_edges = 330;  local_num_coarse_edges = global_num_coarse_edges;
   global_num_fine_nodes   = 1000; local_num_fine_nodes   = global_num_fine_nodes;
   global_num_coarse_nodes = 64;   local_num_coarse_nodes = global_num_coarse_nodes;
 #endif
 #ifdef Hexes
-  inputDir = "hexes/";
+  inputDir = dataDir + "hexes/";
   global_num_fine_edges   = 2700; local_num_fine_edges   = global_num_fine_edges;
   global_num_coarse_edges = 223;  local_num_coarse_edges = global_num_coarse_edges;
   global_num_fine_nodes   = 1000; local_num_fine_nodes   = global_num_fine_nodes;
   global_num_coarse_nodes = 64;   local_num_coarse_nodes = global_num_coarse_nodes;
+#endif
+#ifdef HexesWithDir
+  inputDir = dataDir + "hexes/withDir/";
+  global_num_fine_edges   = 2691; local_num_fine_edges   = global_num_fine_edges;
+  global_num_coarse_edges = 212;  local_num_coarse_edges = global_num_coarse_edges;
+  global_num_fine_nodes   = 990; local_num_fine_nodes   = global_num_fine_nodes;
+  global_num_coarse_nodes = 60;   local_num_coarse_nodes = global_num_coarse_nodes;
 #endif
 
   auto lib = TestHelpers::Parameters::getLib();
@@ -283,8 +295,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   //Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("NodeAggMatrixCoarse.code", *NodeAggMatrixCoarse);
   Ptentnodal = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir+"Ptent.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
   Pnodal= Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir+"Pn.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
-  // P0 = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir+"Pe.dat", fine_edge_map, coarse_edge_map, coarse_edge_map, fine_edge_map);
-  NodeAggMatrixCoarse = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir+"NodeAggMatrix.dat", coarse_nodal_map, coarse_nodal_map, coarse_nodal_map, coarse_nodal_map);
+#ifdef UseExternalP0
+  P0 = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir+"Pe.dat", fine_edge_map, coarse_edge_map, coarse_edge_map, fine_edge_map);
+#endif
 #endif
 
   {

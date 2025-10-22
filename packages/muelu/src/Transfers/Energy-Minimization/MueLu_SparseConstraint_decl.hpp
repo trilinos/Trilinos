@@ -72,6 +72,9 @@ class SparseConstraint
 
   //! Pattern for RHS
   RCP<const CrsGraph> RHS_pattern_;
+
+  //! block_is_singular(i) indicates whether matrix for ith constraint is singular
+    Kokkos::View<bool*> block_is_singular_;
 };
 
 }  // namespace MueLu

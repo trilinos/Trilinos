@@ -154,6 +154,7 @@ class Constraint
 
  protected:
   void PrepareLeastSquaresSolve(const std::string& solverType, bool detect_singular_blocks = false);
+  void PrepareLeastSquaresSolve(const std::string& solverType, const Kokkos::View<bool*> block_is_singular);
 
  private:
   //! The constraints matrix
@@ -180,6 +181,7 @@ class Constraint
 
   //! Prepare direct solution of least-squares problem
   void PrepareLeastSquaresSolveDirect(bool detect_singular_blocks);
+  void PrepareLeastSquaresSolveDirect(const Kokkos::View<bool*> block_is_singular);
 
   //! Direct solve of least-squares problem
   void LeastSquaresSolveDirect(const MultiVector& B, MultiVector& C) const;

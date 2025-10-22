@@ -487,11 +487,58 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresS
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolveDirect(const Kokkos::View<bool*> block_is_singular) {
+  Monitor m(*this, "PrepareLeastSquaresSolveDirect");
+
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> XXt;
+  {
+    SubMonitor m2(*this, "XXt");
+    XXt = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*X_, false, *X_, true, XXt, GetOStream(Runtime0), true, true);
+  }
+
+  auto XXtgraph = XXt->getCrsGraph();
+  auto blocks   = FindBlocks(XXtgraph);
+  invXXt_       = allocateBlockDiagonalMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(XXt->getRowMap(), blocks);
+
+  LocalOrdinal numBlocks    = blocks.numRows();
+  LocalOrdinal maxBlocksize = invXXt_->getLocalMaxNumRowEntries();
+
+  {
+    SubMonitor m2(*this, "inversion");
+
+    BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node> functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice(), block_is_singular);
+    Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space>(numBlocks, 1), functor);
+  }
+
+  if (IsPrint(Statistics0)) {
+    // print some stats
+
+    auto comm = invXXt_->getRowMap()->getComm();
+    GlobalOrdinal globalNumBlocks;
+    MueLu_sumAll(comm, (GlobalOrdinal)numBlocks, globalNumBlocks);
+
+    GetOStream(Statistics0) << "Least-squares problem:\n maximum block size: " << invXXt_->getGlobalMaxNumRowEntries() << "\n Number of blocks: " << globalNumBlocks << std::endl;
+  }
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolve(const std::string& solverType, const bool detect_singular_blocks) {
   if (solverType == "Belos")
     PrepareLeastSquaresSolveBelos(detect_singular_blocks);
   else if (solverType == "direct")
     PrepareLeastSquaresSolveDirect(detect_singular_blocks);
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be one of (Belos|direct), not \"" << solverType << "\".");
+  solverType_ = solverType;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolve(const std::string& solverType, const Kokkos::View<bool*> block_is_singular) {
+  if (solverType == "Belos") {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be direct, not \"" << solverType << "\".");
+  }
+  else if (solverType == "direct")
+    PrepareLeastSquaresSolveDirect(block_is_singular);
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be one of (Belos|direct), not \"" << solverType << "\".");
   solverType_ = solverType;
