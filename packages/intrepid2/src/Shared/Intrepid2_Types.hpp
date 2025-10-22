@@ -120,6 +120,8 @@ namespace Intrepid2 {
     static constexpr ordinal_type MaxTensorComponents  = 7;
     /// Maximum number of components that a VectorData object will store -- 66 corresponds to OPERATOR_D10 on an H^1 hexahedral basis.  For now, we limit to 7, matching MaxTensorComponents.
     static constexpr ordinal_type MaxVectorComponents  = 7;
+    /// Maximum number of families that a VectorData object will store -- 3 corresponds to H(div) and H(curl) on a hexahedron.
+    static constexpr ordinal_type MaxBasisFamilies = 3;
 
     // we do not want to use hard-wired epsilon, threshold and tolerence. 
     // static constexpr double Epsilon   = 1.0e-16; 
