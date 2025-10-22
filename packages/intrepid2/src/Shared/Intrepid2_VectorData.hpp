@@ -426,7 +426,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "Ambiguous component request; use the two-argument getComponent()");
       }
       // nvcc warns here about a missing return.
-      return vectorComponents_[6][6]; // likely this is an empty container, but anyway it's an unreachable line...
+      return vectorComponents_[Parameters::MaxBasisFamilies-1][Parameters::MaxTensorComponents-1]; // likely this is an empty container, but anyway it's an unreachable line...
     }
     
     /**
