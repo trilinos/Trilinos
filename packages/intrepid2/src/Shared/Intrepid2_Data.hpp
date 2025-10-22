@@ -132,23 +132,7 @@ public:
     
     template <class T>
     KOKKOS_INLINE_FUNCTION const T& get_fixed_view(const std::variant<View1,View2,View3,View4,View5,View6,View7> & v) const {
-      using VariantType = const std::variant<View1,View2,View3,View4,View5,View6,View7>;
-      // Find the index of type T in the variant list
-      constexpr size_t index = []{
-        if constexpr (std::is_same_v<const T, std::variant_alternative_t<0, VariantType>>) return 0;
-        if constexpr (std::is_same_v<const T, std::variant_alternative_t<1, VariantType>>) return 1;
-        if constexpr (std::is_same_v<const T, std::variant_alternative_t<2, VariantType>>) return 2;
-        if constexpr (std::is_same_v<const T, std::variant_alternative_t<3, VariantType>>) return 3;
-        if constexpr (std::is_same_v<const T, std::variant_alternative_t<4, VariantType>>) return 4;
-        if constexpr (std::is_same_v<const T, std::variant_alternative_t<5, VariantType>>) return 5;
-        if constexpr (std::is_same_v<const T, std::variant_alternative_t<6, VariantType>>) return 6;
-        return -1;
-      }();
-
-      if (v.index() == index) {
-        return *reinterpret_cast<const T*>(std::addressof(v));
-      }
-      Kokkos::abort("Error: get_fixed_view called with wrong type");
+      return *reinterpret_cast<const T*>(&v);
     }
     
     //! Returns the extent of the underlying view in the specified dimension.
@@ -1042,93 +1026,6 @@ public:
     const Kokkos::View<DataScalar*******, DeviceType> & getUnderlyingView7() const
     {
       return getUnderlyingView<7>();
-    }
-    
-    //! sets the View that stores the unique data.  For rank-1 underlying containers.
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView1(const Kokkos::View<DataScalar*, DeviceType> & view)
-    {
-      underlyingView_ = view;
-    }
-    
-    //! sets the View that stores the unique data.  For rank-2 underlying containers.
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView2(const Kokkos::View<DataScalar**, DeviceType> & view)
-    {
-      underlyingView_ = view;
-    }
-    
-    //! sets the View that stores the unique data.  For rank-3 underlying containers.
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView3(const Kokkos::View<DataScalar***, DeviceType> & view)
-    {
-      underlyingView_ = view;
-    }
-    
-    //! sets the View that stores the unique data.  For rank-4 underlying containers.
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView4(const Kokkos::View<DataScalar****, DeviceType> & view)
-    {
-      underlyingView_ = view;
-    }
-    
-    //! sets the View that stores the unique data.  For rank-5 underlying containers.
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView5(const Kokkos::View<DataScalar*****, DeviceType> & view)
-    {
-      underlyingView_ = view;
-    }
-    
-    //! sets the View that stores the unique data.  For rank-6 underlying containers.
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView6(const Kokkos::View<DataScalar******, DeviceType> & view)
-    {
-      underlyingView_ = view;
-    }
-    
-    //! sets the View that stores the unique data.  For rank-7 underlying containers.
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView7(const Kokkos::View<DataScalar*******, DeviceType> & view)
-    {
-      underlyingView_ = view;
-    }
-    
-    template<int underlyingRank, class ViewScalar>
-    KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView(const Kokkos::View<ViewScalar, DeviceType> & view)
-    {
-      if constexpr (underlyingRank == 1)
-      {
-        setUnderlyingView1(view);
-      }
-      else if constexpr (underlyingRank == 2)
-      {
-        setUnderlyingView2(view);
-      }
-      else if constexpr (underlyingRank == 3)
-      {
-        setUnderlyingView3(view);
-      }
-      else if constexpr (underlyingRank == 4)
-      {
-        setUnderlyingView4(view);
-      }
-      else if constexpr (underlyingRank == 5)
-      {
-        setUnderlyingView5(view);
-      }
-      else if constexpr (underlyingRank == 6)
-      {
-        setUnderlyingView6(view);
-      }
-      else if constexpr (underlyingRank == 7)
-      {
-        setUnderlyingView7(view);
-      }
-      else
-      {
-        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "implementation for specialization missing");
-      }
     }
     
     //! Returns a DynRankView constructed atop the same underlying data as the fixed-rank Kokkos::View used internally.
