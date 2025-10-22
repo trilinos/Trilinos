@@ -32,7 +32,7 @@ class myTriangle {
     , v2(v2in)
     , v3(v3in) {}
   ~myTriangle() {}
-  bool operator==(const myTriangle& l) {
+  bool operator==(const myTriangle& l) const {
     if (l.v1 == v1 && l.v2 == v2 && l.v3 == v3)
       return true;
     return false;
