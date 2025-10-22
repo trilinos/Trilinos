@@ -134,7 +134,7 @@ namespace phx_example {
     { return Kokkos::View<double*,PHX::Device>(name,num_dofs_); }
     
     local_matrix_type createJacobianMatrix(const std::string& name) const
-    { return local_matrix_type(name,graph_); }
+    { return local_matrix_type(name,graph_,KokkosSparse::maximum_entry(graph_)+1); }
 
 
     // ****************************************************
