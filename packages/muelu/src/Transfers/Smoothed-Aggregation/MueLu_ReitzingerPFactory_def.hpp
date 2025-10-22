@@ -288,32 +288,32 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
 #define DirFixForEminHcurl 
 #ifdef DirFixForEminHcurl 
 
-  // Mark as orphans any D0 edges with only one node (so these are
+  // Mark as singleParents any D0 edges with only one node (so these are
   // edges that connect an interior node with a Dirichlet node).
   // We also define a vector that records the global Id of the 
-  // interior node associated with each orphan edge
+  // interior node associated with each singleParent edge
 
   SC myzero  = Teuchos::ScalarTraits<SC>::zero();
   SC myone   = Teuchos::ScalarTraits<SC>::one();
-  RCP<MultiVector> nOrphanParents = MultiVectorFactory::Build(D0->getRowMap(),1);
-  RCP<MultiVector> orphanAggGid   = MultiVectorFactory::Build(D0->getRowMap(),1);
+  RCP<MultiVector> ntheSingleParent = MultiVectorFactory::Build(D0->getRowMap(),1);
+  RCP<MultiVector> singleParentAggGid   = MultiVectorFactory::Build(D0->getRowMap(),1);
   RCP<MultiVector> oneVec = MultiVectorFactory::Build(D0->getDomainMap(),1);
   RCP<MultiVector> v1= MultiVectorFactory::Build(PnT_D0T->getRowMap(),1);
   RCP<MultiVector> v2= MultiVectorFactory::Build(PnT_D0T->getRowMap(),1);
   oneVec->putScalar(myone );
-  nOrphanParents->putScalar(myzero);
-  orphanAggGid->putScalar(myzero);
-  D0->apply(*oneVec,*nOrphanParents,Teuchos::NO_TRANS);
-  Teuchos::ArrayRCP<SC> nOrphanParentsData = nOrphanParents->getDataNonConst(0);
-  Teuchos::ArrayRCP<SC> orphanAggGidData = orphanAggGid->getDataNonConst(0);
+  ntheSingleParent->putScalar(myzero);
+  singleParentAggGid->putScalar(myzero);
+  D0->apply(*oneVec,*ntheSingleParent,Teuchos::NO_TRANS);
+  Teuchos::ArrayRCP<SC> ntheSingleParentData = ntheSingleParent->getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> singleParentAggGidData = singleParentAggGid->getDataNonConst(0);
   ArrayView<const LO> cols;
   ArrayView<const SC> vals;
-  for (size_t i = 0; i < nOrphanParents->getMap()->getLocalNumElements(); i++ ) {
-    if (nOrphanParentsData[i] != 1) nOrphanParentsData[i] = 0.0;
+  for (size_t i = 0; i < ntheSingleParent->getMap()->getLocalNumElements(); i++ ) {
+    if (ntheSingleParentData[i] != 1) ntheSingleParentData[i] = 0.0;
     else {
       D0_Pn->getLocalRowView(i, cols, vals);
-      TEUCHOS_TEST_FOR_EXCEPTION(cols.size() != 1, Exceptions::RuntimeError, "MueLu::ReitzingerPFactory: Orphan Edges should have just 1 nnz.");
-      orphanAggGidData[i] = ownedCoarseNodeMap->getGlobalElement(cols[0]);
+      TEUCHOS_TEST_FOR_EXCEPTION(cols.size() != 1, Exceptions::RuntimeError, "MueLu::ReitzingerPFactory: single parent Edges should have just 1 nnz.");
+      singleParentAggGidData[i] = ownedCoarseNodeMap->getGlobalElement(cols[0]);
     }
   }
 
@@ -323,16 +323,15 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   // 1 in PnT_D0T and do matvecs with v. These matvecs should sum all entries of v associated
   // with the same coarse node (which should all be equal to each other for v1 and for v2). 
   // Thus, the desired gid is obtained via v2/v1 where v2[i] = gid*k and v1[i]=k where k
-  // is the number of fine orphan edges incident to the same gid^th coarse node (or aggregate)
+  // is the number of fine singleParent edges incident to the same gid^th coarse node (or aggregate)
 
   PnT_D0T->setAllToScalar(Teuchos::ScalarTraits<Scalar>::one());
-  PnT_D0T->apply(*nOrphanParents,*v1,Teuchos::NO_TRANS);
-  PnT_D0T->apply(*orphanAggGid,*v2,Teuchos::NO_TRANS);
+  PnT_D0T->apply(*ntheSingleParent,*v1,Teuchos::NO_TRANS);
+  PnT_D0T->apply(*singleParentAggGid,*v2,Teuchos::NO_TRANS);
   Teuchos::ArrayRCP<SC> v1Data = v1->getDataNonConst(0);
   Teuchos::ArrayRCP<SC> v2Data = v2->getDataNonConst(0);
   for (size_t i = 0; i < v1->getMap()->getLocalNumElements(); i++ ) {
     if (v1Data[i] != 0.0)  {
-      printf("create coarse orphan edge with %d as parent .... %e %e\n", (int) (Teuchos::ScalarTraits<SC>::magnitude(v2Data[i])/v1Data[i]),v2Data[i],v1Data[i]);
       // Exponential memory reallocation, if needed
       if (current     >= Teuchos::as<LocalOrdinal>(max_edges)) {
         max_edges *= 2;
@@ -342,7 +341,6 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
       if (current / 2 + 1 >= D0_rowptr.size()) {
         D0_rowptr.resize(2 * D0_rowptr.size() + 1);
       }
-      printf("we are adding local col %d \n", (int) ownedPlusSharedCoarseNodeMap->getLocalElement( (LO) (Teuchos::ScalarTraits<SC>::magnitude(v2Data[i])/v1Data[i]) ));
 
       D0_colind[current] = ownedCoarseNodeMap->getLocalElement( (LO) (Teuchos::ScalarTraits<SC>::magnitude(v2Data[i])/v1Data[i]) );
       D0_values[current] = 1;
