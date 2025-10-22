@@ -98,7 +98,6 @@ public:
     Kokkos::Array<int,7> variationModulus_;            // for each dimension, a value by which indices should be modulused (only used when variationType_ is MODULAR)
     int blockPlusDiagonalLastNonDiagonal_ = -1;        // last row/column that is part of the non-diagonal part of the matrix indicated by BLOCK_PLUS_DIAGONAL (if any dimensions are thus marked)
     
-    bool hasNontrivialModulusUNUSED_;  // this is a little nutty, but having this UNUSED member variable improves performance, probably by shifting the alignment of underlyingMatchesLogical_.  This is true with nvcc; it may also be true with Apple clang
     bool underlyingMatchesLogical_;   // if true, this Data object has the same rank and extent as the underlying view
     Kokkos::Array<ordinal_type,7> activeDims_;
     int numActiveDims_; // how many of the 7 entries are actually filled in
@@ -151,6 +150,7 @@ public:
     //! class initialization method.  Called by constructors.
     void setActiveDims()
     {
+      INTREPID2_TEST_FOR_EXCEPTION(underlyingView_.valueless_by_exception(), std::invalid_argument, "underlyingView_ not correctly set!");
       zeroView_ = ZeroView<DataScalar,DeviceType>::zeroView(); // one-entry (zero); used to allow getEntry() to return 0 for off-diagonal entries in BLOCK_PLUS_DIAGONAL
       // check that rank is compatible with the claimed extents:
       for (int d=rank_; d<7; d++)
