@@ -22,6 +22,7 @@
 #include "Shards_CellTopology.hpp"
 #include "Shards_BasicTopologies.hpp"
 
+#include "Intrepid2_OrientationOperator.hpp"
 #include "Intrepid2_PointTools.hpp"
 
 #include "Intrepid2_Basis.hpp"
@@ -382,7 +383,11 @@ namespace Intrepid2 {
      */
     using CoeffMatrixDataViewType = Kokkos::View<double****,DeviceType>;
 
-    // 
+    /** \brief subcell ordinal, orientation, transpose (0 or 1)
+     */
+    using OperatorViewType = Kokkos::View<OrientationOperator<DeviceType>***,DeviceType>;
+    
+    //
     /** \brief  key :: basis name, order, value :: matrix data view type 
      */
     using KeyType = std::pair<const std::string,ordinal_type>;
@@ -391,13 +396,43 @@ namespace Intrepid2 {
     static OrtCoeffDataType ortCoeffData;
     static OrtCoeffDataType ortInvCoeffData;
     
+    //
+    /** \brief  key :: basis name, order, value :: matrix data view type, transpose (0 for no transpose, 1 for transpose)
+     */
+    using OrtOperatorDataType = std::map<std::pair<std::string,ordinal_type>,Kokkos::View<OrientationOperator<DeviceType>***,DeviceType> >;
+
+    static OrtOperatorDataType edgeOperatorData;
+    static OrtOperatorDataType invEdgeOperatorData;
+    static OrtOperatorDataType faceOperatorData;
+    static OrtOperatorDataType invFaceOperatorData;
+    
+    using OrtStaticDoubleAllocationType = std::vector< Kokkos::View<double*,DeviceType> >;
+    using OrtStaticOrdinalAllocationType = std::vector< Kokkos::View<ordinal_type*,DeviceType> >;
+    
+    static OrtStaticDoubleAllocationType  doubleViewAllocations;
+    static OrtStaticOrdinalAllocationType ordinalViewAllocations;
+
   private:
 
     template<typename BasisHostType>
     inline 
     static CoeffMatrixDataViewType createCoeffMatrixInternal(const BasisHostType* basis, const bool invTrans = false);
     
+    template<typename BasisHostType>
+    inline
+    static OperatorViewType createEdgeOperatorsInternal(const BasisHostType* basis, CoeffMatrixDataViewType matData);
+    
+    template<typename BasisHostType>
+    inline
+    static OperatorViewType createFaceOperatorsInternal(const BasisHostType* basis, CoeffMatrixDataViewType matData);
 
+    //! allocates managed static storage in doubleViewAllocations and ordinalViewAllocations; constructs OrientationOperator with unmanaged Views corresponding to these.
+    static OrientationOperator<DeviceType> constructOrientationOperatorInternal(const std::vector<ordinal_type> &nonIdentityDofs,
+                                                                                const std::vector<ordinal_type> &rowOffsets, // within the column storage
+                                                                                const std::vector<ordinal_type> &colIDs,
+                                                                                const std::vector<double> &weights,
+                                                                                const bool transpose);
+    
     /** \brief  Compute orientation matrix for HGRAD basis
      */
     template<typename BasisHostType>
@@ -450,6 +485,25 @@ namespace Intrepid2 {
      */
     inline 
     static void clearCoeffMatrix();
+    
+    /** \brief  Create orientation operators.
+        \param  basis      [in]  - basis type
+    */
+    template<typename BasisType>
+    inline 
+    static std::tuple<OperatorViewType, OperatorViewType> createOperators(const BasisType* basis);
+
+    /** \brief  Create inverse orientation operators.
+        \param  basis      [in]  - basis type
+    */
+    template<typename BasisType>
+    inline 
+    static std::tuple<OperatorViewType, OperatorViewType> createInvOperators(const BasisType* basis);
+
+    /** \brief  Clear coefficient matrix
+     */
+    inline 
+    static void clearOperators();
 
     /** \brief  Compute orientations of cells in a workset
         \param  elemOrts      [out]  - cell orientations
@@ -551,6 +605,26 @@ namespace Intrepid2 {
 
   template<typename T> 
   typename OrientationTools<T>::OrtCoeffDataType OrientationTools<T>::ortInvCoeffData;
+
+  //Definition of static members
+  template<typename T>
+  typename OrientationTools<T>::OrtOperatorDataType OrientationTools<T>::edgeOperatorData;
+
+  template<typename T>
+  typename OrientationTools<T>::OrtOperatorDataType OrientationTools<T>::invEdgeOperatorData;
+
+  template<typename T>
+  typename OrientationTools<T>::OrtOperatorDataType OrientationTools<T>::faceOperatorData;
+
+  template<typename T>
+  typename OrientationTools<T>::OrtOperatorDataType OrientationTools<T>::invFaceOperatorData;
+
+  template<typename T>
+  typename OrientationTools<T>::OrtStaticDoubleAllocationType OrientationTools<T>::doubleViewAllocations;
+
+  template<typename T>
+  typename OrientationTools<T>::OrtStaticOrdinalAllocationType OrientationTools<T>::ordinalViewAllocations;
+
 }
 
 // include templated function definitions
