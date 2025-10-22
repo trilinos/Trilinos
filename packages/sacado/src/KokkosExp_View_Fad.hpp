@@ -1067,6 +1067,10 @@ public:
   typedef typename
     ViewDataType< non_const_value_type , dimension >::type  non_const_type ;
 
+  using data_type = type;
+  using const_data_type = const_type;
+  using non_const_data_type = non_const_type;
+
 private:
 
   // A const ?
@@ -1126,6 +1130,10 @@ public:
     ViewDataType< const_value_type , dimension >::type  const_type ;
   typedef typename
     ViewDataType< non_const_value_type , dimension >::type  non_const_type ;
+
+  using data_type = type;
+  using const_data_type = const_type;
+  using non_const_data_type = non_const_type;
 
 private:
 
@@ -1199,6 +1207,10 @@ public:
   typedef type            scalar_array_type ;
   typedef const_type      const_scalar_array_type ;
   typedef non_const_type  non_const_scalar_array_type ;
+
+  using data_type = type;
+  using const_data_type = const_type;
+  using non_const_data_type = non_const_type;
 
 };
 
