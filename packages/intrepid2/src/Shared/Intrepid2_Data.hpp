@@ -130,19 +130,40 @@ public:
       return i - (lastNondiagonal + 1) + numNondiagonalEntries;
     }
     
+    template <class T>
+    KOKKOS_INLINE_FUNCTION const T& get_fixed_view(const std::variant<View1,View2,View3,View4,View5,View6,View7> & v) const {
+      using VariantType = const std::variant<View1,View2,View3,View4,View5,View6,View7>;
+      // Find the index of type T in the variant list
+      constexpr size_t index = []{
+        if constexpr (std::is_same_v<const T, std::variant_alternative_t<0, VariantType>>) return 0;
+        if constexpr (std::is_same_v<const T, std::variant_alternative_t<1, VariantType>>) return 1;
+        if constexpr (std::is_same_v<const T, std::variant_alternative_t<2, VariantType>>) return 2;
+        if constexpr (std::is_same_v<const T, std::variant_alternative_t<3, VariantType>>) return 3;
+        if constexpr (std::is_same_v<const T, std::variant_alternative_t<4, VariantType>>) return 4;
+        if constexpr (std::is_same_v<const T, std::variant_alternative_t<5, VariantType>>) return 5;
+        if constexpr (std::is_same_v<const T, std::variant_alternative_t<6, VariantType>>) return 6;
+        return -1;
+      }();
+
+      if (v.index() == index) {
+        return *reinterpret_cast<const T*>(std::addressof(v));
+      }
+      Kokkos::abort("Error: get_fixed_view called with wrong type");
+    }
+    
     //! Returns the extent of the underlying view in the specified dimension.
     KOKKOS_INLINE_FUNCTION
     int getUnderlyingViewExtent(const int &dim) const
     {
       switch (dataRank_)
       {
-        case 1: return std::get<View1>(underlyingView_).extent_int(dim);
-        case 2: return std::get<View2>(underlyingView_).extent_int(dim);
-        case 3: return std::get<View3>(underlyingView_).extent_int(dim);
-        case 4: return std::get<View4>(underlyingView_).extent_int(dim);
-        case 5: return std::get<View5>(underlyingView_).extent_int(dim);
-        case 6: return std::get<View6>(underlyingView_).extent_int(dim);
-        case 7: return std::get<View7>(underlyingView_).extent_int(dim);
+        case 1: return get_fixed_view<View1>(underlyingView_).extent_int(dim);
+        case 2: return get_fixed_view<View2>(underlyingView_).extent_int(dim);
+        case 3: return get_fixed_view<View3>(underlyingView_).extent_int(dim);
+        case 4: return get_fixed_view<View4>(underlyingView_).extent_int(dim);
+        case 5: return get_fixed_view<View5>(underlyingView_).extent_int(dim);
+        case 6: return get_fixed_view<View6>(underlyingView_).extent_int(dim);
+        case 7: return get_fixed_view<View7>(underlyingView_).extent_int(dim);
         default: return -1;
       }
     }
@@ -434,33 +455,33 @@ public:
         
         if (dataRank_ == 1)
         {
-          return std::get<View1>(underlyingView_)(refEntry[activeDims_[0]]);
+          return get_fixed_view<View1>(underlyingView_)(refEntry[activeDims_[0]]);
         }
         else if (dataRank_ == 2)
         {
-          return std::get<View2>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]]);
+          return get_fixed_view<View2>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]]);
         }
         else if (dataRank_ == 3)
         {
-          return std::get<View3>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]]);
+          return get_fixed_view<View3>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]]);
         }
         else if (dataRank_ == 4)
         {
-          return std::get<View4>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]]);
+          return get_fixed_view<View4>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]]);
         }
         else if (dataRank_ == 5)
         {
-          return std::get<View5>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
+          return get_fixed_view<View5>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
                         refEntry[activeDims_[4]]);
         }
         else if (dataRank_ == 6)
         {
-          return std::get<View6>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
+          return get_fixed_view<View6>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
                         refEntry[activeDims_[4]],refEntry[activeDims_[5]]);
         }
         else // dataRank_ == 7
         {
-          return std::get<View7>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
+          return get_fixed_view<View7>(underlyingView_)(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
                         refEntry[activeDims_[4]],refEntry[activeDims_[5]],refEntry[activeDims_[6]]);
         }
       
@@ -508,13 +529,13 @@ public:
       
       switch (dataRank_)
       {
-        case 1: copyContainer(std::get<View1>(underlyingView_),data); break;
-        case 2: copyContainer(std::get<View2>(underlyingView_),data); break;
-        case 3: copyContainer(std::get<View3>(underlyingView_),data); break;
-        case 4: copyContainer(std::get<View4>(underlyingView_),data); break;
-        case 5: copyContainer(std::get<View5>(underlyingView_),data); break;
-        case 6: copyContainer(std::get<View6>(underlyingView_),data); break;
-        case 7: copyContainer(std::get<View7>(underlyingView_),data); break;
+        case 1: copyContainer(get_fixed_view<View1>(underlyingView_),data); break;
+        case 2: copyContainer(get_fixed_view<View2>(underlyingView_),data); break;
+        case 3: copyContainer(get_fixed_view<View3>(underlyingView_),data); break;
+        case 4: copyContainer(get_fixed_view<View4>(underlyingView_),data); break;
+        case 5: copyContainer(get_fixed_view<View5>(underlyingView_),data); break;
+        case 6: copyContainer(get_fixed_view<View6>(underlyingView_),data); break;
+        case 7: copyContainer(get_fixed_view<View7>(underlyingView_),data); break;
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
     }
@@ -633,13 +654,13 @@ public:
         using MemorySpace = typename DeviceType::memory_space;
         switch (dataRank_)
         {
-          case 1: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView1()); copyContainer(std::get<View1>(underlyingView_), dataViewMirror);} break;
-          case 2: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView2()); copyContainer(std::get<View2>(underlyingView_), dataViewMirror);} break;
-          case 3: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView3()); copyContainer(std::get<View3>(underlyingView_), dataViewMirror);} break;
-          case 4: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView4()); copyContainer(std::get<View4>(underlyingView_), dataViewMirror);} break;
-          case 5: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView5()); copyContainer(std::get<View5>(underlyingView_), dataViewMirror);} break;
-          case 6: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView6()); copyContainer(std::get<View6>(underlyingView_), dataViewMirror);} break;
-          case 7: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView7()); copyContainer(std::get<View7>(underlyingView_), dataViewMirror);} break;
+          case 1: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView1()); copyContainer(get_fixed_view<View1>(underlyingView_), dataViewMirror);} break;
+          case 2: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView2()); copyContainer(get_fixed_view<View2>(underlyingView_), dataViewMirror);} break;
+          case 3: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView3()); copyContainer(get_fixed_view<View3>(underlyingView_), dataViewMirror);} break;
+          case 4: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView4()); copyContainer(get_fixed_view<View4>(underlyingView_), dataViewMirror);} break;
+          case 5: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView5()); copyContainer(get_fixed_view<View5>(underlyingView_), dataViewMirror);} break;
+          case 6: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView6()); copyContainer(get_fixed_view<View6>(underlyingView_), dataViewMirror);} break;
+          case 7: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView7()); copyContainer(get_fixed_view<View7>(underlyingView_), dataViewMirror);} break;
           default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
         }
       }
@@ -673,13 +694,13 @@ public:
 //        using MemorySpace = typename DeviceType::memory_space;
 //        switch (dataRank_)
 //        {
-//          case 1: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView1()); copyContainer(std::get<View1>(underlyingView_), dataViewMirror);} break;
-//          case 2: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView2()); copyContainer(std::get<View2>(underlyingView_), dataViewMirror);} break;
-//          case 3: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView3()); copyContainer(std::get<View3>(underlyingView_), dataViewMirror);} break;
-//          case 4: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView4()); copyContainer(std::get<View4>(underlyingView_), dataViewMirror);} break;
-//          case 5: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView5()); copyContainer(std::get<View5>(underlyingView_), dataViewMirror);} break;
-//          case 6: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView6()); copyContainer(std::get<View6>(underlyingView_), dataViewMirror);} break;
-//          case 7: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView7()); copyContainer(std::get<View7>(underlyingView_), dataViewMirror);} break;
+//          case 1: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView1()); copyContainer(get_fixed_view<View1>(underlyingView_), dataViewMirror);} break;
+//          case 2: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView2()); copyContainer(get_fixed_view<View2>(underlyingView_), dataViewMirror);} break;
+//          case 3: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView3()); copyContainer(get_fixed_view<View3>(underlyingView_), dataViewMirror);} break;
+//          case 4: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView4()); copyContainer(get_fixed_view<View4>(underlyingView_), dataViewMirror);} break;
+//          case 5: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView5()); copyContainer(get_fixed_view<View5>(underlyingView_), dataViewMirror);} break;
+//          case 6: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView6()); copyContainer(get_fixed_view<View6>(underlyingView_), dataViewMirror);} break;
+//          case 7: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView7()); copyContainer(get_fixed_view<View7>(underlyingView_), dataViewMirror);} break;
 //          default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
 //        }
 //      }
@@ -832,7 +853,7 @@ public:
     dataRank_(1), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(-1), rank_(rank)
     {
       underlyingView_ = Kokkos::View<DataScalar*,DeviceType>("Constant Data",1);
-      Kokkos::deep_copy(std::get<View1>(underlyingView_), constantValue);
+      Kokkos::deep_copy(get_fixed_view<View1>(underlyingView_), constantValue);
       for (unsigned d=0; d<rank; d++)
       {
         extents_[d] = extents[d];
@@ -899,7 +920,7 @@ public:
       #ifdef HAVE_INTREPID2_DEBUG
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(dataRank_ != rank, std::invalid_argument, "getUnderlyingView() called for rank that does not match dataRank_");
       #endif
-      return std::get<View1>(underlyingView_);
+      return get_fixed_view<View1>(underlyingView_);
     }
     
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 2.
@@ -911,7 +932,7 @@ public:
       #ifdef HAVE_INTREPID2_DEBUG
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(dataRank_ != rank, std::invalid_argument, "getUnderlyingView() called for rank that does not match dataRank_");
       #endif
-      return std::get<View2>(underlyingView_);
+      return get_fixed_view<View2>(underlyingView_);
     }
     
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 3.
@@ -923,7 +944,7 @@ public:
       #ifdef HAVE_INTREPID2_DEBUG
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(dataRank_ != rank, std::invalid_argument, "getUnderlyingView() called for rank that does not match dataRank_");
       #endif
-      return std::get<View3>(underlyingView_);
+      return get_fixed_view<View3>(underlyingView_);
     }
     
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 4.
@@ -935,7 +956,7 @@ public:
       #ifdef HAVE_INTREPID2_DEBUG
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(dataRank_ != rank, std::invalid_argument, "getUnderlyingView() called for rank that does not match dataRank_");
       #endif
-      return std::get<View4>(underlyingView_);
+      return get_fixed_view<View4>(underlyingView_);
     }
     
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 5.
@@ -947,7 +968,7 @@ public:
       #ifdef HAVE_INTREPID2_DEBUG
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(dataRank_ != rank, std::invalid_argument, "getUnderlyingView() called for rank that does not match dataRank_");
       #endif
-      return std::get<View5>(underlyingView_);
+      return get_fixed_view<View5>(underlyingView_);
     }
     
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 6.
@@ -959,7 +980,7 @@ public:
       #ifdef HAVE_INTREPID2_DEBUG
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(dataRank_ != rank, std::invalid_argument, "getUnderlyingView() called for rank that does not match dataRank_");
       #endif
-      return std::get<View6>(underlyingView_);
+      return get_fixed_view<View6>(underlyingView_);
     }
     
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 7.
@@ -971,7 +992,7 @@ public:
       #ifdef HAVE_INTREPID2_DEBUG
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(dataRank_ != rank, std::invalid_argument, "getUnderlyingView() called for rank that does not match dataRank_");
       #endif
-      return std::get<View7>(underlyingView_);
+      return get_fixed_view<View7>(underlyingView_);
     }
     
     //! returns the View that stores the unique data.  For rank-1 underlying containers.
@@ -1115,13 +1136,13 @@ public:
     {
       switch (dataRank_)
       {
-        case 1: return std::get<View1>(underlyingView_);
-        case 2: return std::get<View2>(underlyingView_);
-        case 3: return std::get<View3>(underlyingView_);
-        case 4: return std::get<View4>(underlyingView_);
-        case 5: return std::get<View5>(underlyingView_);
-        case 6: return std::get<View6>(underlyingView_);
-        case 7: return std::get<View7>(underlyingView_);
+        case 1: return get_fixed_view<View1>(underlyingView_);
+        case 2: return get_fixed_view<View2>(underlyingView_);
+        case 3: return get_fixed_view<View3>(underlyingView_);
+        case 4: return get_fixed_view<View4>(underlyingView_);
+        case 5: return get_fixed_view<View5>(underlyingView_);
+        case 6: return get_fixed_view<View6>(underlyingView_);
+        case 7: return get_fixed_view<View7>(underlyingView_);
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
     }
@@ -1150,13 +1171,13 @@ public:
     {
       switch (dataRank_)
       {
-        case 1: return getMatchingViewWithLabel(std::get<View1>(underlyingView_), "Intrepid2 Data", std::get<View1>(underlyingView_).extent_int(0));
-        case 2: return getMatchingViewWithLabel(std::get<View2>(underlyingView_), "Intrepid2 Data", std::get<View2>(underlyingView_).extent_int(0), std::get<View2>(underlyingView_).extent_int(1));
-        case 3: return getMatchingViewWithLabel(std::get<View3>(underlyingView_), "Intrepid2 Data", std::get<View3>(underlyingView_).extent_int(0), std::get<View3>(underlyingView_).extent_int(1), std::get<View3>(underlyingView_).extent_int(2));
-        case 4: return getMatchingViewWithLabel(std::get<View4>(underlyingView_), "Intrepid2 Data", std::get<View4>(underlyingView_).extent_int(0), std::get<View4>(underlyingView_).extent_int(1), std::get<View4>(underlyingView_).extent_int(2), std::get<View4>(underlyingView_).extent_int(3));
-        case 5: return getMatchingViewWithLabel(std::get<View5>(underlyingView_), "Intrepid2 Data", std::get<View5>(underlyingView_).extent_int(0), std::get<View5>(underlyingView_).extent_int(1), std::get<View5>(underlyingView_).extent_int(2), std::get<View5>(underlyingView_).extent_int(3), std::get<View5>(underlyingView_).extent_int(4));
-        case 6: return getMatchingViewWithLabel(std::get<View6>(underlyingView_), "Intrepid2 Data", std::get<View6>(underlyingView_).extent_int(0), std::get<View6>(underlyingView_).extent_int(1), std::get<View6>(underlyingView_).extent_int(2), std::get<View6>(underlyingView_).extent_int(3), std::get<View6>(underlyingView_).extent_int(4), std::get<View6>(underlyingView_).extent_int(5));
-        case 7: return getMatchingViewWithLabel(std::get<View7>(underlyingView_), "Intrepid2 Data", std::get<View7>(underlyingView_).extent_int(0), std::get<View7>(underlyingView_).extent_int(1), std::get<View7>(underlyingView_).extent_int(2), std::get<View7>(underlyingView_).extent_int(3), std::get<View7>(underlyingView_).extent_int(4), std::get<View7>(underlyingView_).extent_int(5), std::get<View7>(underlyingView_).extent_int(6));
+        case 1: return getMatchingViewWithLabel(get_fixed_view<View1>(underlyingView_), "Intrepid2 Data", get_fixed_view<View1>(underlyingView_).extent_int(0));
+        case 2: return getMatchingViewWithLabel(get_fixed_view<View2>(underlyingView_), "Intrepid2 Data", get_fixed_view<View2>(underlyingView_).extent_int(0), get_fixed_view<View2>(underlyingView_).extent_int(1));
+        case 3: return getMatchingViewWithLabel(get_fixed_view<View3>(underlyingView_), "Intrepid2 Data", get_fixed_view<View3>(underlyingView_).extent_int(0), get_fixed_view<View3>(underlyingView_).extent_int(1), get_fixed_view<View3>(underlyingView_).extent_int(2));
+        case 4: return getMatchingViewWithLabel(get_fixed_view<View4>(underlyingView_), "Intrepid2 Data", get_fixed_view<View4>(underlyingView_).extent_int(0), get_fixed_view<View4>(underlyingView_).extent_int(1), get_fixed_view<View4>(underlyingView_).extent_int(2), get_fixed_view<View4>(underlyingView_).extent_int(3));
+        case 5: return getMatchingViewWithLabel(get_fixed_view<View5>(underlyingView_), "Intrepid2 Data", get_fixed_view<View5>(underlyingView_).extent_int(0), get_fixed_view<View5>(underlyingView_).extent_int(1), get_fixed_view<View5>(underlyingView_).extent_int(2), get_fixed_view<View5>(underlyingView_).extent_int(3), get_fixed_view<View5>(underlyingView_).extent_int(4));
+        case 6: return getMatchingViewWithLabel(get_fixed_view<View6>(underlyingView_), "Intrepid2 Data", get_fixed_view<View6>(underlyingView_).extent_int(0), get_fixed_view<View6>(underlyingView_).extent_int(1), get_fixed_view<View6>(underlyingView_).extent_int(2), get_fixed_view<View6>(underlyingView_).extent_int(3), get_fixed_view<View6>(underlyingView_).extent_int(4), get_fixed_view<View6>(underlyingView_).extent_int(5));
+        case 7: return getMatchingViewWithLabel(get_fixed_view<View7>(underlyingView_), "Intrepid2 Data", get_fixed_view<View7>(underlyingView_).extent_int(0), get_fixed_view<View7>(underlyingView_).extent_int(1), get_fixed_view<View7>(underlyingView_).extent_int(2), get_fixed_view<View7>(underlyingView_).extent_int(3), get_fixed_view<View7>(underlyingView_).extent_int(4), get_fixed_view<View7>(underlyingView_).extent_int(5), get_fixed_view<View7>(underlyingView_).extent_int(6));
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
     }
@@ -1167,13 +1188,13 @@ public:
     {
       switch (dataRank_)
       {
-        case 1: return getMatchingViewWithLabel(std::get<View1>(underlyingView_), "Intrepid2 Data", dims...);
-        case 2: return getMatchingViewWithLabel(std::get<View2>(underlyingView_), "Intrepid2 Data", dims...);
-        case 3: return getMatchingViewWithLabel(std::get<View3>(underlyingView_), "Intrepid2 Data", dims...);
-        case 4: return getMatchingViewWithLabel(std::get<View4>(underlyingView_), "Intrepid2 Data", dims...);
-        case 5: return getMatchingViewWithLabel(std::get<View5>(underlyingView_), "Intrepid2 Data", dims...);
-        case 6: return getMatchingViewWithLabel(std::get<View6>(underlyingView_), "Intrepid2 Data", dims...);
-        case 7: return getMatchingViewWithLabel(std::get<View7>(underlyingView_), "Intrepid2 Data", dims...);
+        case 1: return getMatchingViewWithLabel(get_fixed_view<View1>(underlyingView_), "Intrepid2 Data", dims...);
+        case 2: return getMatchingViewWithLabel(get_fixed_view<View2>(underlyingView_), "Intrepid2 Data", dims...);
+        case 3: return getMatchingViewWithLabel(get_fixed_view<View3>(underlyingView_), "Intrepid2 Data", dims...);
+        case 4: return getMatchingViewWithLabel(get_fixed_view<View4>(underlyingView_), "Intrepid2 Data", dims...);
+        case 5: return getMatchingViewWithLabel(get_fixed_view<View5>(underlyingView_), "Intrepid2 Data", dims...);
+        case 6: return getMatchingViewWithLabel(get_fixed_view<View6>(underlyingView_), "Intrepid2 Data", dims...);
+        case 7: return getMatchingViewWithLabel(get_fixed_view<View7>(underlyingView_), "Intrepid2 Data", dims...);
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
     }
@@ -1183,13 +1204,13 @@ public:
     {
       switch (dataRank_)
       {
-        case 1: Kokkos::deep_copy(std::get<View1>(underlyingView_), 0.0); break;
-        case 2: Kokkos::deep_copy(std::get<View2>(underlyingView_), 0.0); break;
-        case 3: Kokkos::deep_copy(std::get<View3>(underlyingView_), 0.0); break;
-        case 4: Kokkos::deep_copy(std::get<View4>(underlyingView_), 0.0); break;
-        case 5: Kokkos::deep_copy(std::get<View5>(underlyingView_), 0.0); break;
-        case 6: Kokkos::deep_copy(std::get<View6>(underlyingView_), 0.0); break;
-        case 7: Kokkos::deep_copy(std::get<View7>(underlyingView_), 0.0); break;
+        case 1: Kokkos::deep_copy(get_fixed_view<View1>(underlyingView_), 0.0); break;
+        case 2: Kokkos::deep_copy(get_fixed_view<View2>(underlyingView_), 0.0); break;
+        case 3: Kokkos::deep_copy(get_fixed_view<View3>(underlyingView_), 0.0); break;
+        case 4: Kokkos::deep_copy(get_fixed_view<View4>(underlyingView_), 0.0); break;
+        case 5: Kokkos::deep_copy(get_fixed_view<View5>(underlyingView_), 0.0); break;
+        case 6: Kokkos::deep_copy(get_fixed_view<View6>(underlyingView_), 0.0); break;
+        case 7: Kokkos::deep_copy(get_fixed_view<View7>(underlyingView_), 0.0); break;
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
     }
@@ -1200,13 +1221,13 @@ public:
 //      std::cout << "Entered copyDataFromDynRankViewMatchingUnderlying().\n";
       switch (dataRank_)
       {
-        case 1: copyContainer(std::get<View1>(underlyingView_),dynRankView); break;
-        case 2: copyContainer(std::get<View2>(underlyingView_),dynRankView); break;
-        case 3: copyContainer(std::get<View3>(underlyingView_),dynRankView); break;
-        case 4: copyContainer(std::get<View4>(underlyingView_),dynRankView); break;
-        case 5: copyContainer(std::get<View5>(underlyingView_),dynRankView); break;
-        case 6: copyContainer(std::get<View6>(underlyingView_),dynRankView); break;
-        case 7: copyContainer(std::get<View7>(underlyingView_),dynRankView); break;
+        case 1: copyContainer(get_fixed_view<View1>(underlyingView_),dynRankView); break;
+        case 2: copyContainer(get_fixed_view<View2>(underlyingView_),dynRankView); break;
+        case 3: copyContainer(get_fixed_view<View3>(underlyingView_),dynRankView); break;
+        case 4: copyContainer(get_fixed_view<View4>(underlyingView_),dynRankView); break;
+        case 5: copyContainer(get_fixed_view<View5>(underlyingView_),dynRankView); break;
+        case 6: copyContainer(get_fixed_view<View6>(underlyingView_),dynRankView); break;
+        case 7: copyContainer(get_fixed_view<View7>(underlyingView_),dynRankView); break;
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
     }
@@ -1746,13 +1767,13 @@ public:
     {
       switch (dataRank_)
       {
-        case 1: return Data(rank, std::get<View1>(underlyingView_), extents, variationTypes);
-        case 2: return Data(rank, std::get<View2>(underlyingView_), extents, variationTypes);
-        case 3: return Data(rank, std::get<View3>(underlyingView_), extents, variationTypes);
-        case 4: return Data(rank, std::get<View4>(underlyingView_), extents, variationTypes);
-        case 5: return Data(rank, std::get<View5>(underlyingView_), extents, variationTypes);
-        case 6: return Data(rank, std::get<View6>(underlyingView_), extents, variationTypes);
-        case 7: return Data(rank, std::get<View7>(underlyingView_), extents, variationTypes);
+        case 1: return Data(rank, get_fixed_view<View1>(underlyingView_), extents, variationTypes);
+        case 2: return Data(rank, get_fixed_view<View2>(underlyingView_), extents, variationTypes);
+        case 3: return Data(rank, get_fixed_view<View3>(underlyingView_), extents, variationTypes);
+        case 4: return Data(rank, get_fixed_view<View4>(underlyingView_), extents, variationTypes);
+        case 5: return Data(rank, get_fixed_view<View5>(underlyingView_), extents, variationTypes);
+        case 6: return Data(rank, get_fixed_view<View6>(underlyingView_), extents, variationTypes);
+        case 7: return Data(rank, get_fixed_view<View7>(underlyingView_), extents, variationTypes);
         default:
           INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unhandled dataRank_");
       }
