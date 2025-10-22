@@ -821,7 +821,7 @@ public:
     :
     dataRank_(data.rank), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
     {
-      setUnderlyingView<data.rank>(data);
+      underlyingView_ = data;
       for (unsigned d=0; d<rank; d++)
       {
         extents_[d]       = extents[d];
