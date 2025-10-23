@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
 // #define GrindEmin
 // #define UseExternalP0
 
-#if defined(Tris) || defined(Quads) || defined(Tets) || defined(Hexes) ||  defined(HexesWithDir)
+#if defined(Tris)||defined(Quads)||defined(Tets)||defined(Hexes)||defined(HexesWithDir)||defined(TrisWithDir)
 #define ReadWriteForTesting
 #endif
 #ifdef Tris
@@ -216,6 +216,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   global_num_fine_nodes   = 4225;  local_num_fine_nodes   = global_num_fine_nodes;
   global_num_coarse_nodes = 484;   local_num_coarse_nodes = global_num_coarse_nodes;
 #endif
+#ifdef TrisWithDir
+  inputDir = dataDir + "tris/withDir/";
+  global_num_fine_edges   = 12352; local_num_fine_edges   = global_num_fine_edges;
+  global_num_coarse_edges = 1387;  local_num_coarse_edges = global_num_coarse_edges;
+  global_num_fine_nodes   = 4160;  local_num_fine_nodes   = global_num_fine_nodes;
+  global_num_coarse_nodes = 484;   local_num_coarse_nodes = global_num_coarse_nodes;
+#endif
+
 #ifdef Quads
   inputDir = dataDir + "quads/";
   global_num_fine_edges   = 1512; local_num_fine_edges   = global_num_fine_edges;
