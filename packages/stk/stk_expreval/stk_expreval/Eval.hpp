@@ -120,7 +120,7 @@ public:
 
   UndefinedFunctionSet &getUndefinedFunctionSet() { return m_undefinedFunctionSet; }
 
-  void set_fp_error_behavior(FPErrorBehavior flag) { m_fpErrorBehavior = flag; }
+  void set_fp_error_behavior(FPErrorBehavior flag);
 
   FPErrorBehavior get_fp_error_behavior() const { return m_fpErrorBehavior; }
   
@@ -226,6 +226,8 @@ private:
 
   ParsedEvalBase * m_parsedEval;
 };
+
+Eval::FPErrorBehavior fp_error_behavior_string_to_enum(const std::string& str);
 
 }
 }

@@ -58,13 +58,17 @@ namespace stk::mesh {
 // intra-Bucket alignment requirements.
 constexpr int DeviceFieldAlignmentSize = alignof(std::max_align_t);
 
-template <typename NgpMemSpace>
+template <typename Space>
 class DeviceFieldDataManager : public DeviceFieldDataManagerBase
 {
-  using DeviceFieldMetaDataCollectionType = Kokkos::View<DeviceFieldMetaDataArrayType<NgpMemSpace>*, stk::ngp::HostExecSpace>;
-  using HostFieldMetaDataCollectionType = Kokkos::View<HostFieldMetaDataArrayType<NgpMemSpace>*, stk::ngp::HostExecSpace>;
+  using space = Space;
+  using exec_space = typename Space::exec_space;
+  using mem_space = typename Space::mem_space;
 
-  using DeviceBucketsModifiedCollectionType = Kokkos::View<int**, Kokkos::LayoutRight, NgpMemSpace>;
+  using DeviceFieldMetaDataCollectionType = Kokkos::View<DeviceFieldMetaDataArrayType<mem_space>*, stk::ngp::HostExecSpace>;
+  using HostFieldMetaDataCollectionType = Kokkos::View<HostFieldMetaDataArrayType<mem_space>*, stk::ngp::HostExecSpace>;
+
+  using DeviceBucketsModifiedCollectionType = Kokkos::View<int**, Kokkos::LayoutRight, mem_space>;
   using HostBucketsModifiedCollectionType = typename DeviceBucketsModifiedCollectionType::host_mirror_type;
 
   using AllocationType = FieldDataAllocator<std::byte>::DeviceAllocationType;
@@ -135,15 +139,15 @@ private:
 };
 
 
-template <typename NgpMemSpace>
-std::byte* DeviceFieldDataManager<NgpMemSpace>::get_host_bucket_pointer_for_device(const stk::mesh::FieldBase& field,
-                                                                                   int bucketId) const
+template <typename Space>
+std::byte* DeviceFieldDataManager<Space>::get_host_bucket_pointer_for_device(const stk::mesh::FieldBase& field,
+                                                                             int bucketId) const
 {
   return m_fieldDataAllocator.get_host_pointer_for_device(field.get_meta_data_for_field()[bucketId].m_data);
 }
 
-template <typename NgpMemSpace>
-bool DeviceFieldDataManager<NgpMemSpace>::update_all_bucket_allocations()
+template <typename Space>
+bool DeviceFieldDataManager<Space>::update_all_bucket_allocations()
 {
   if (static_cast<int>(m_bulk.synchronized_count()) == m_synchronizedCount) {
     return false;  // Nothing to do
@@ -206,8 +210,8 @@ bool DeviceFieldDataManager<NgpMemSpace>::update_all_bucket_allocations()
 
     for (Bucket* bucket : bucketsOfRank) {
       const PartVector& supersetParts = bucket->supersets();
-      const int oldBucketId = bucket->ngp_field_bucket_id();
-      const int newBucketId = bucket->bucket_id();
+      const unsigned oldBucketId = bucket->ngp_field_bucket_id();
+      const unsigned newBucketId = bucket->bucket_id();
 
       const bool isNewBucket = (oldBucketId == INVALID_BUCKET_ID);
       const bool isGrownBucket = isNewBucket || (bucket->capacity() > oldBucketCapacity[oldBucketId]);
@@ -238,8 +242,8 @@ bool DeviceFieldDataManager<NgpMemSpace>::update_all_bucket_allocations()
   return true;
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::update_host_bucket_pointers(Ordinal fieldOrdinal)
+template <typename Space>
+void DeviceFieldDataManager<Space>::update_host_bucket_pointers(Ordinal fieldOrdinal)
 {
   const MetaData& meta = m_bulk.mesh_meta_data();
   const FieldBase& fieldBase = *meta.get_fields()[fieldOrdinal];
@@ -247,7 +251,7 @@ void DeviceFieldDataManager<NgpMemSpace>::update_host_bucket_pointers(Ordinal fi
 
   const BucketVector& bucketsOfRank = m_bulk.buckets(rank);
 
-  HostFieldMetaDataArrayType<NgpMemSpace>& hostFieldMetaDataArray = m_hostFieldMetaData[fieldOrdinal];
+  HostFieldMetaDataArrayType<mem_space>& hostFieldMetaDataArray = m_hostFieldMetaData[fieldOrdinal];
   for (int bucketId = 0; bucketId < static_cast<int>(bucketsOfRank.size()); ++bucketId) {
     if (fieldBase.has_unified_device_storage()) {
       hostFieldMetaDataArray[bucketId].m_data = get_host_bucket_pointer_for_device(fieldBase, bucketId);
@@ -260,15 +264,15 @@ void DeviceFieldDataManager<NgpMemSpace>::update_host_bucket_pointers(Ordinal fi
   Kokkos::deep_copy(m_deviceFieldMetaData[fieldOrdinal], hostFieldMetaDataArray);
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::swap_field_data(Ordinal fieldOrdinal1, Ordinal fieldOrdinal2)
+template <typename Space>
+void DeviceFieldDataManager<Space>::swap_field_data(Ordinal fieldOrdinal1, Ordinal fieldOrdinal2)
 {
   std::swap(m_hostFieldMetaData[fieldOrdinal1], m_hostFieldMetaData[fieldOrdinal2]);
   std::swap(m_deviceFieldMetaData[fieldOrdinal1], m_deviceFieldMetaData[fieldOrdinal2]);
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::clear_bucket_is_modified(Ordinal fieldOrdinal)
+template <typename Space>
+void DeviceFieldDataManager<Space>::clear_bucket_is_modified(Ordinal fieldOrdinal)
 {
   const MetaData& meta = m_bulk.mesh_meta_data();
   const FieldBase& fieldBase = *meta.get_fields()[fieldOrdinal];
@@ -281,15 +285,15 @@ void DeviceFieldDataManager<NgpMemSpace>::clear_bucket_is_modified(Ordinal field
   }
 }
 
-template <typename NgpMemSpace>
-size_t DeviceFieldDataManager<NgpMemSpace>::get_num_bytes_allocated_on_field(const FieldBase& field) const
+template <typename Space>
+size_t DeviceFieldDataManager<Space>::get_num_bytes_allocated_on_field(const FieldBase& field) const
 {
   if (field.has_unified_device_storage()) {
     return 0;
   }
   else {
     const int fieldOrdinal = field.mesh_meta_data_ordinal();
-    const HostFieldMetaDataArrayType<NgpMemSpace>& hostFieldMetaDataArray = m_hostFieldMetaData[fieldOrdinal];
+    const HostFieldMetaDataArrayType<mem_space>& hostFieldMetaDataArray = m_hostFieldMetaData[fieldOrdinal];
     size_t numBytes = 0;
     for (int bucketId = 0; bucketId < static_cast<int>(hostFieldMetaDataArray.extent(0)); ++bucketId) {
       const DeviceFieldMetaData& deviceFieldMetaData = hostFieldMetaDataArray[bucketId];
@@ -307,26 +311,30 @@ size_t DeviceFieldDataManager<NgpMemSpace>::get_num_bytes_allocated_on_field(con
   }
 }
 
-template <typename NgpMemSpace>
-bool DeviceFieldDataManager<NgpMemSpace>::has_unified_device_storage(Ordinal fieldOrdinal) const
+template <typename Space>
+bool DeviceFieldDataManager<Space>::has_unified_device_storage(Ordinal fieldOrdinal) const
 {
   const FieldBase& fieldBase = *m_bulk.mesh_meta_data().get_fields()[fieldOrdinal];
   return fieldBase.has_unified_device_storage();
 }
 
-template <typename NgpMemSpace>
+template <typename Space>
 void
-DeviceFieldDataManager<NgpMemSpace>::set_device_field_meta_data(FieldDataBase& fieldDataBase)
+DeviceFieldDataManager<Space>::set_device_field_meta_data(FieldDataBase& fieldDataBase)
 {
-  FieldDataBytes<NgpMemSpace>& fieldDataBytes = dynamic_cast<FieldDataBytes<NgpMemSpace>&>(fieldDataBase);
-  const Ordinal fieldOrdinal = fieldDataBytes.field_ordinal();
+  FieldDataBytes<Space>* fieldDataBytes = dynamic_cast<FieldDataBytes<Space>*>(&fieldDataBase);
+  STK_ThrowRequireMsg(fieldDataBytes != nullptr,
+                      "All device Fields must live in the same memory space.  Found a Field with a different memory "
+                      "space than that of the DeviceFieldDataManager");
 
-  fieldDataBytes.m_deviceFieldMetaData = m_deviceFieldMetaData[fieldOrdinal];
+  const Ordinal fieldOrdinal = fieldDataBytes->field_ordinal();
+
+  fieldDataBytes->m_deviceFieldMetaData = m_deviceFieldMetaData[fieldOrdinal];
 }
 
-template <typename NgpMemSpace>
+template <typename Space>
 std::any
-DeviceFieldDataManager<NgpMemSpace>::get_device_bucket_is_modified(Ordinal fieldOrdinal, int& fieldIndex)
+DeviceFieldDataManager<Space>::get_device_bucket_is_modified(Ordinal fieldOrdinal, int& fieldIndex)
 {
   const MetaData& meta = m_bulk.mesh_meta_data();
   const FieldBase& fieldBase = *meta.get_fields()[fieldOrdinal];
@@ -361,9 +369,9 @@ inline DeviceFieldLayoutData get_device_field_layout_data(const FieldBase& field
   return layout;
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::allocate_bucket(EntityRank rank, const FieldVector& fields,
-                                                          const PartVector& parts, int bucketId, int size, int capacity)
+template <typename Space>
+void DeviceFieldDataManager<Space>::allocate_bucket(EntityRank rank, const FieldVector& fields,
+                                                    const PartVector& parts, int bucketId, int size, int capacity)
 {
   int totalFieldBytesThisBucket = 0;
 
@@ -400,6 +408,8 @@ void DeviceFieldDataManager<NgpMemSpace>::allocate_bucket(EntityRank rank, const
     }
     else {
       fieldMetaData = DeviceFieldMetaData{};  // Field not on this bucket
+      fieldMetaData.m_bucketSize = size;
+      fieldMetaData.m_bucketCapacity = capacity;
     }
   }
 
@@ -414,8 +424,8 @@ void DeviceFieldDataManager<NgpMemSpace>::allocate_bucket(EntityRank rank, const
   m_bucketCapacity[rank][bucketId] = capacity;
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::resize_field_arrays(int oldNumAllFields, int newNumAllFields)
+template <typename Space>
+void DeviceFieldDataManager<Space>::resize_field_arrays(int oldNumAllFields, int newNumAllFields)
 {
   if (oldNumAllFields == 0) {
     m_deviceFieldMetaData = DeviceFieldMetaDataCollectionType(Kokkos::view_alloc("deviceFieldMetaData_collection",
@@ -440,15 +450,15 @@ void DeviceFieldDataManager<NgpMemSpace>::resize_field_arrays(int oldNumAllField
   }
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::resize_field_meta_data_arrays(const FieldVector& fields,
-                                                                        int oldNumBuckets, int newNumBuckets)
+template <typename Space>
+void DeviceFieldDataManager<Space>::resize_field_meta_data_arrays(const FieldVector& fields,
+                                                                  int oldNumBuckets, int newNumBuckets)
 {
   for (const FieldBase* field : fields) {
     const int fieldOrdinal = field->mesh_meta_data_ordinal();
     if (oldNumBuckets == 0) {
-      m_deviceFieldMetaData[fieldOrdinal] = DeviceFieldMetaDataArrayType<NgpMemSpace>("deviceFieldMetaDataArray_" +
-                                                                                      field->name(), newNumBuckets);
+      m_deviceFieldMetaData[fieldOrdinal] = DeviceFieldMetaDataArrayType<mem_space>("deviceFieldMetaDataArray_" +
+                                                                                    field->name(), newNumBuckets);
       m_hostFieldMetaData[fieldOrdinal] = Kokkos::create_mirror_view(m_deviceFieldMetaData[fieldOrdinal]);
     }
     else {
@@ -458,8 +468,8 @@ void DeviceFieldDataManager<NgpMemSpace>::resize_field_meta_data_arrays(const Fi
   }
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::resize_bucket_arrays(EntityRank rank, int oldNumBuckets, int newNumBuckets)
+template <typename Space>
+void DeviceFieldDataManager<Space>::resize_bucket_arrays(EntityRank rank, int oldNumBuckets, int newNumBuckets)
 {
   m_bucketCapacity[rank].resize(newNumBuckets);
 
@@ -471,9 +481,8 @@ void DeviceFieldDataManager<NgpMemSpace>::resize_bucket_arrays(EntityRank rank, 
   }
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::resize_bucket_modified_array(EntityRank rank, int newNumFields,
-                                                                       int newNumBuckets)
+template <typename Space>
+void DeviceFieldDataManager<Space>::resize_bucket_modified_array(EntityRank rank, int newNumFields, int newNumBuckets)
 {
   const int oldNumFields = m_hostBucketIsModified[rank].extent(0);
   const int oldNumBuckets = m_hostBucketIsModified[rank].extent(1);
@@ -501,8 +510,8 @@ void DeviceFieldDataManager<NgpMemSpace>::resize_bucket_modified_array(EntityRan
   }
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::reorder_buckets(EntityRank rank)
+template <typename Space>
+void DeviceFieldDataManager<Space>::reorder_buckets(EntityRank rank)
 {
   const MetaData& meta = m_bulk.mesh_meta_data();
   const BucketVector& bucketsOfRank = m_bulk.buckets(rank);
@@ -512,8 +521,8 @@ void DeviceFieldDataManager<NgpMemSpace>::reorder_buckets(EntityRank rank)
   bool anyBucketMovement = false;
 
   for (const Bucket* bucket : bucketsOfRank) {
-    const int oldBucketId = bucket->ngp_field_bucket_id();
-    const int newBucketId = bucket->bucket_id();
+    const unsigned oldBucketId = bucket->ngp_field_bucket_id();
+    const unsigned newBucketId = bucket->bucket_id();
     const bool isNewBucket = (oldBucketId == INVALID_BUCKET_ID);
 
     if (not isNewBucket) {  // Otherwise, values will be filled in later
@@ -530,9 +539,8 @@ void DeviceFieldDataManager<NgpMemSpace>::reorder_buckets(EntityRank rank)
   }
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::shift_bucket_data(EntityRank rank,
-                                                            const std::vector<BucketShift>& bucketShiftList)
+template <typename Space>
+void DeviceFieldDataManager<Space>::shift_bucket_data(EntityRank rank, const std::vector<BucketShift>& bucketShiftList)
 {
   const int numBuckets = m_bucketCapacity[rank].size();
 
@@ -551,9 +559,9 @@ void DeviceFieldDataManager<NgpMemSpace>::shift_bucket_data(EntityRank rank,
   m_bucketRawData[rank] = newBucketRawData;
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::shift_field_and_bucket_data(EntityRank rank, const FieldVector& fieldsOfRank,
-                                                                      const std::vector<BucketShift>& bucketShiftList)
+template <typename Space>
+void DeviceFieldDataManager<Space>::shift_field_and_bucket_data(EntityRank rank, const FieldVector& fieldsOfRank,
+                                                                const std::vector<BucketShift>& bucketShiftList)
 {
   const HostBucketsModifiedCollectionType& oldBucketsModified = m_hostBucketIsModified[rank];
   HostBucketsModifiedCollectionType newBucketsModified("hostBucketModified_" + std::to_string(rank),
@@ -563,9 +571,9 @@ void DeviceFieldDataManager<NgpMemSpace>::shift_field_and_bucket_data(EntityRank
     const int fieldOrdinal = field->mesh_meta_data_ordinal();
     const int fieldRankIndex = m_fieldOrdinalToRankIndex[fieldOrdinal];
 
-    const HostFieldMetaDataArrayType<NgpMemSpace>& oldHostFieldMetaData = m_hostFieldMetaData[fieldOrdinal];
-    HostFieldMetaDataArrayType<NgpMemSpace> newHostFieldMetaData("hostFieldMetaData" + std::to_string(fieldOrdinal),
-                                                                 oldHostFieldMetaData.extent(0));
+    const HostFieldMetaDataArrayType<mem_space>& oldHostFieldMetaData = m_hostFieldMetaData[fieldOrdinal];
+    HostFieldMetaDataArrayType<mem_space> newHostFieldMetaData("hostFieldMetaData" + std::to_string(fieldOrdinal),
+                                                               oldHostFieldMetaData.extent(0));
 
     for (const BucketShift& shift : bucketShiftList) {
       newHostFieldMetaData[shift.newIndex] = oldHostFieldMetaData[shift.oldIndex];
@@ -578,12 +586,13 @@ void DeviceFieldDataManager<NgpMemSpace>::shift_field_and_bucket_data(EntityRank
   m_hostBucketIsModified[rank] = newBucketsModified;
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::update_field_meta_data(const FieldVector& fields, int bucketId,
-                                                                 int bucketSize)
+template <typename Space>
+void DeviceFieldDataManager<Space>::update_field_meta_data(const FieldVector& fields, int bucketId, int bucketSize)
 {
   for (const FieldBase* field : fields) {
     const int fieldOrdinal = field->mesh_meta_data_ordinal();
+    m_hostFieldMetaData[fieldOrdinal][bucketId].m_bucketSize = bucketSize;
+
     if (m_hostFieldMetaData[fieldOrdinal][bucketId].m_data != nullptr) {
       if (field->has_unified_device_storage()) {
         m_hostFieldMetaData[fieldOrdinal][bucketId].m_data = get_host_bucket_pointer_for_device(*field, bucketId);
@@ -592,13 +601,12 @@ void DeviceFieldDataManager<NgpMemSpace>::update_field_meta_data(const FieldVect
       else {
         m_hostFieldMetaData[fieldOrdinal][bucketId].m_hostData = get_host_bucket_pointer_for_device(*field, bucketId);
       }
-      m_hostFieldMetaData[fieldOrdinal][bucketId].m_bucketSize = bucketSize;
     }
   }
 }
 
-template <typename NgpMemSpace>
-void DeviceFieldDataManager<NgpMemSpace>::fill_field_meta_data_pointers_from_offsets(
+template <typename Space>
+void DeviceFieldDataManager<Space>::fill_field_meta_data_pointers_from_offsets(
     int bucketId, const FieldVector& fields, const AllocationType& bucketRawData,
     HostFieldMetaDataCollectionType& hostFieldMetaData)
 {

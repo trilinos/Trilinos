@@ -122,6 +122,8 @@ public:
 
   void hostSizeMessages(int proc, size_t & numValues, bool includeGhosts=false) const
   {
+    const stk::mesh::MetaData& meta = m_ngpMesh.get_bulk_on_host().mesh_meta_data();
+    const auto& allFields = meta.get_fields();
     numValues = 0;
     for(stk::mesh::EntityRank fieldRank : m_fieldRanks) {
       stk::mesh::HostCommMapIndices<stk::ngp::MemSpace> commMapIndices =
@@ -132,7 +134,7 @@ public:
 
         for (NgpFieldType* field : m_ngpFields) {
           if (field->get_rank() == fieldRank) {
-            stk::mesh::FieldBase* stkField = m_ngpMesh.get_bulk_on_host().mesh_meta_data().get_fields()[field->get_ordinal()];
+            const stk::mesh::FieldBase* stkField = allFields[field->get_ordinal()];
             const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(*stkField, bucketId);
             numValues += numScalarsPerEntity;
           }

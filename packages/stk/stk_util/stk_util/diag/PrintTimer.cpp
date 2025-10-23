@@ -149,9 +149,6 @@ printSubtable(
         if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<MPIByteCount>::METRIC)
           table << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<MPIByteCount>::format(timer.getMetric<MPIByteCount>().getAccumulatedLap(timer_checkpoint))
                 << " " << std::setw(8) << Percent(timer.getMetric<MPIByteCount>().getAccumulatedLap(timer_checkpoint), root_timer.getMetric<MPIByteCount>().getAccumulatedLap(timer_checkpoint)) << end_col;
-        if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
-          table << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().getAccumulatedLap(timer_checkpoint))
-                << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().getAccumulatedLap(timer_checkpoint), root_timer.getMetric<HeapAlloc>().getAccumulatedLap(timer_checkpoint)) << end_col;
       }
       else
         table << justify(PrintTable::Cell::LEFT) << indent(depth) << span << timer.getName() << end_col;
@@ -210,13 +207,6 @@ printSubtable(
               << " " << std::setw(8) << Percent(timer.getMetric<MPIByteCount>().m_min, root_timer.getMetric<MPIByteCount>().m_sum) << end_col
               << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<MPIByteCount>::format(timer.getMetric<MPIByteCount>().m_max)
               << " " << std::setw(8) << Percent(timer.getMetric<MPIByteCount>().m_max, root_timer.getMetric<MPIByteCount>().m_sum) << end_col;
-      if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
-        table << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().m_sum)
-              << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().m_sum, root_timer.getMetric<HeapAlloc>().m_sum) << end_col
-              << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().m_min)
-              << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().m_min, root_timer.getMetric<HeapAlloc>().m_sum) << end_col
-              << justify(PrintTable::Cell::RIGHT) << std::setw(12) << MetricTraits<HeapAlloc>::format(timer.getMetric<HeapAlloc>().m_max)
-              << " " << std::setw(8) << Percent(timer.getMetric<HeapAlloc>().m_max, root_timer.getMetric<HeapAlloc>().m_sum) << end_col;
     }
     else
       table << justify(PrintTable::Cell::LEFT) << indent(depth) << span << timer.m_name << end_col;
@@ -258,8 +248,6 @@ printTable(
       table << justify(PrintTable::Cell::CENTER) << MetricTraits<MPICount>::table_header() << end_col;
     if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<MPIByteCount>::METRIC)
       table << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col;
-    if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
-      table << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col;
 
     table << end_header;
 
@@ -311,10 +299,6 @@ printTable(
         table << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col
               << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col
               << justify(PrintTable::Cell::CENTER) << MetricTraits<MPIByteCount>::table_header() << end_col;
-      if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
-        table << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col
-              << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col
-              << justify(PrintTable::Cell::CENTER) << MetricTraits<HeapAlloc>::table_header() << end_col;
 
       table << end_header;
       table << cell_width(name_width) << justify(PrintTable::Cell::CENTER) << "Timer" << (timer_checkpoint ? " (delta time)" : "") << end_col
@@ -333,10 +317,6 @@ printTable(
               << justify(PrintTable::Cell::CENTER) << "Min (% of System)" << end_col
               << justify(PrintTable::Cell::CENTER) << "Max (% of System)" << end_col;
       if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<MPIByteCount>::METRIC)
-        table << justify(PrintTable::Cell::CENTER) << "Sum (% of System)" << end_col
-              << justify(PrintTable::Cell::CENTER) << "Min (% of System)" << end_col
-              << justify(PrintTable::Cell::CENTER) << "Max (% of System)" << end_col;
-      if (metrics_mask & getEnabledTimerMetricsMask() & MetricTraits<HeapAlloc>::METRIC)
         table << justify(PrintTable::Cell::CENTER) << "Sum (% of System)" << end_col
               << justify(PrintTable::Cell::CENTER) << "Min (% of System)" << end_col
               << justify(PrintTable::Cell::CENTER) << "Max (% of System)" << end_col;

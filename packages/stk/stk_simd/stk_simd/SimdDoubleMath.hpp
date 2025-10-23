@@ -130,13 +130,7 @@ STK_MATH_FORCE_INLINE simd::Double exp(const simd::Double& x) {
 #endif
 }
 
-STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const simd::Double& y) {
-  return hidden::apply_per_lane(x, y, [](double X, double Y) { return std::pow(X, Y); });
-}
 
-STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const double y) {
-  return hidden::apply_per_lane(x, [y](double base) { return std::pow(base, y); });
-}
 
 /**
  * @brief Computes the power of a SIMD double raised to an integer exponent.
@@ -246,6 +240,118 @@ STK_MATH_FORCE_INLINE simd::Double if_then_else(const simd::Bool& b, const simd:
 
 STK_MATH_FORCE_INLINE simd::Double if_then_else_zero(const simd::Bool& b, const simd::Double& v) {
   return simd::Double(SIMD_NAMESPACE::choose(b._data, v._data, SIMD_NAMESPACE::native_simd<double>(0.0)));
+}
+
+template <typename T>
+STK_MATH_FORCE_INLINE bool are_all_equal(const T& vec, double value) {
+  for (int i = 0; i < stk::simd::ndoubles; ++i) {
+    if (vec[i] != value) {
+      return false;
+    }
+  }
+  return true;
+}
+
+#if STK_SIMD_INTEL_ENABLED
+/**
+ * @brief Compute SIMD element-wise pow(x, y) = x^y using vectorized log/exp.
+ *
+ * This is the "basic" fast version: it assumes well-behaved inputs and does not
+ * fully replicate all IEEE corner cases (like std::pow). It is intended for
+ * performance-sensitive kernels where speed matters more than covering every
+ * special case.
+ *
+ * Core idea:
+ *   x^y = exp(y * log(x))     when x > 0
+ *
+ * When x < 0 and y is an integer:
+ *   - The magnitude is computed as |x|^y
+ *   - The sign is determined by whether y is odd (result negative) or even
+ *     (result positive)
+ *
+ * Vectorization:
+ *   - Uses Intel SVML (Short Vector Math Library) intrinsics for exp/log,
+ *     which compute across all SIMD lanes in parallel.
+ *   - This avoids looping over each element and gives ~2.5x speedup
+ *     compared to scalar pow() per lane.
+ *
+ * Limitations:
+ *   - If x < 0 and y is not an integer, this returns a value instead of NaN.
+ *   - No explicit handling of x == 0, y == 0, infinities, or NaN inputs.
+ *
+ * References:
+ *   - "Elementary Functions: Algorithms and Implementation" by Jean-Michel Muller
+ *   - SVML intrinsics documentation (Intel oneAPI Math Kernel Library)
+ *   - IEEE-754 standard for floating-point arithmetic
+ */
+STK_MATH_FORCE_INLINE simd::Double pow_vectorized(const simd::Double& x, const simd::Double& y) {
+  using namespace stk::math;
+
+  // Quick return for special cases
+  if (are_all_equal(y, 0.0)) {
+    return simd::Double(1.0); // x^0 = 1 for all lanes
+  }
+  if (are_all_equal(y, 1.0)) {
+    return x; // x^1 = x for all lanes
+  }
+  if (are_all_equal(y, -1.0)) {
+    return simd::Double(1.0) / x; // x^-1 = 1 / x for all lanes
+  }
+
+  // Step 1. Compute the magnitude
+  //
+  // For any real x > 0, we can compute x^y as:
+  //    magnitude = exp(y * log(x))
+  //
+  // If x < 0, we use |x| in the magnitude, and later adjust the sign.
+  const simd::Double ax  = abs(x);      // |x|
+  const simd::Double t   = y * log(ax); // y * log(|x|)
+  const simd::Double mag = exp(t);      // exp(y * log(|x|)) = |x|^y
+
+  // Step 2. Determine if exponent y is odd or even (integer case only)
+  //
+  // Trick: Divide y by 2, round to nearest integer, and check the fractional part.
+  // If (y/2 - round(y/2)) == 0.5, then y is odd.
+  //
+  // We use a "round to nearest" trick for doubles: add a large constant (2^52+2^51),
+  // then subtract it back. This works because doubles have 52 bits of precision
+  // in the mantissa. See: "Hacker's Delight" (Henry S. Warren, 2002).
+  auto round_nearest_abs = [](const simd::Double& v_abs) {
+    constexpr double magic = 6755399441055744.0; // 2^52 + 2^51
+    return (v_abs + simd::Double(magic)) - simd::Double(magic);
+  };
+
+  const simd::Double one(1.0);
+  const simd::Double half(0.5);
+  const simd::Double yh_abs   = abs(y) * half; // |y| / 2
+  const simd::Double yh_rnabs = round_nearest_abs(yh_abs);
+  const auto         odd      = (abs(yh_abs - yh_rnabs) == half);
+
+  // If y is odd, the sign is -1; otherwise, the sign is +1.
+  const simd::Double sign_if_neg = if_then_else(odd, simd::Double(-1.0), one);
+
+  // 3) Form the lane-wise sign and return with a single multiply
+  // sign = +1 when x >= 0; otherwise ±1 depending on parity.
+  const simd::Double sign = if_then_else(x < simd::Double(0.0), sign_if_neg, one);
+
+  return sign * mag;
+}
+#endif
+
+STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const simd::Double& y) {
+#if STK_SIMD_INTEL_ENABLED
+  return pow_vectorized(x, y);
+#else
+  return hidden::apply_per_lane(x, y, [](double X, double Y) { return std::pow(X, Y); });
+#endif
+}
+
+STK_MATH_FORCE_INLINE simd::Double pow(const simd::Double& x, const double y) {
+#if STK_SIMD_INTEL_ENABLED
+  return pow(x, simd::Double(y));
+#else
+  return hidden::apply_per_lane(x, [y](double base) { return std::pow(base, y); });
+#endif
 }
 
 } // namespace math

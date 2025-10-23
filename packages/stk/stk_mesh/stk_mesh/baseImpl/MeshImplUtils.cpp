@@ -1559,9 +1559,9 @@ void fill_inducible_parts_from_list(const MetaData& meta,
                                     OrdinalVector &induciblePartsFromList)
 {
   const PartVector& allParts = meta.get_parts();
-  for (size_t i = 0; i < partList.size(); i++) {
-    if (allParts[partList[i]]->should_induce(rank)) {
-      induciblePartsFromList.push_back(partList[i]);
+  for(Ordinal partOrd : partList) {
+    if (allParts[partOrd]->should_induce(rank)) {
+      induciblePartsFromList.push_back(partOrd);
     }
   }
 }

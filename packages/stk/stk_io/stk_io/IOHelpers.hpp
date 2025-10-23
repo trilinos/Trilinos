@@ -38,6 +38,7 @@
 // clang-format off
 #include <Ioss_Field.h>                            // for Field, etc
 #include <Ioss_PropertyManager.h>                  // for PropertyManager
+#include <Ioss_SideBlock.h>                        // for SideBlock
 #include <stddef.h>                                // for size_t
 #include <algorithm>                               // for swap
 #include <stk_io/DatabasePurpose.hpp>              // for DatabasePurpose

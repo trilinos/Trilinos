@@ -157,7 +157,7 @@ public:
         unsigned numberOfStates,
         FieldState thisState)
     : FieldBase(meta, entityRank, fieldOrdinal, name, dataTraits, numberOfStates, thisState, host_layout, device_layout,
-                new FieldData<T, stk::ngp::HostMemSpace, HostLayout>(entityRank, fieldOrdinal, name, dataTraits))
+                new FieldData<T, stk::ngp::HostSpace, HostLayout>(entityRank, fieldOrdinal, name, dataTraits))
   {
   }
 
@@ -261,13 +261,13 @@ public:
     return f[0];
   }
 
-  template <typename MemSpace, typename Enable = void>
+  template <typename Space, typename Enable = void>
   struct LayoutSelector {
     static constexpr Layout layout = device_layout;
   };
 
   template <typename Enable>
-  struct LayoutSelector<stk::ngp::HostMemSpace, Enable> {
+  struct LayoutSelector<stk::ngp::HostSpace, Enable> {
     static constexpr Layout layout = host_layout;
   };
 
@@ -295,25 +295,24 @@ public:
   //     same access tag and memory space that you would otherwise have used, to get the data movement
   //     correct.  Do not use the Unsynchronized access tags for normal workflows.
   //
-  //   MemSpace : Optional Kokkos memory space of the data that you want to access.  It can be either
-  //     a Kokkos host space or a device space.  You can use the aliases "stk::ngp::HostMemSpace" and
-  //     "stk::ngp::MemSpace" as convenient shortcuts.  The HostMemSpace alias is always the host space
-  //     and the MemSpace alias is the default device space in a device build or the host space in
-  //     a host build.  The default is "stk::ngp::HostMemSpace".
+  //   Space : Optional struct that defines the Kokkos memory space and execution space that you want
+  //     to access.  It can be either a stk::ngp::HostSpace or an arbitrary device-space struct of your
+  //     choosing.  STK provides a stk::ngp::DeviceSpace struct for you if you want to use it on device.
+  //     The default template parameter is stk::ngp::HostSpace.
   //
   // Some sample usage for a Field<double> instance:
   //
   //   auto fieldData = myField.data();                       <-- Read-write access to host data
   //   auto fieldData = myField.data<stk::mesh::ReadOnly>();  <-- Read-only access to host access
-  //   auto fieldData = myField.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>(); <-- Read-write access to device data
-  //   auto fieldData = myField.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();  <-- Read-only access to device data
+  //   auto fieldData = myField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(); <-- Read-write access to device data
+  //   auto fieldData = myField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();  <-- Read-only access to device data
 
   template <FieldAccessTag FieldAccess = ReadWrite,
-            typename MemSpace = stk::ngp::HostMemSpace>
-  typename FieldDataHelper<T, FieldAccess, MemSpace, LayoutSelector<MemSpace>::layout>::FieldDataType
+            typename Space = stk::ngp::HostSpace>
+  typename FieldDataHelper<T, FieldAccess, Space, LayoutSelector<Space>::layout>::FieldDataType
   data() const
   {
-    return FieldBase::data<T, FieldAccess, MemSpace, LayoutSelector<MemSpace>::layout>();
+    return FieldBase::data<T, FieldAccess, Space, LayoutSelector<Space>::layout>();
   }
 
 
@@ -322,12 +321,12 @@ public:
   // be necessary.  This is intended for asynchronous execution.
 
   template <FieldAccessTag FieldAccess = ReadWrite,
-            typename MemSpace = stk::ngp::HostMemSpace,
+            typename Space = stk::ngp::HostSpace,
             typename ExecSpace = stk::ngp::ExecSpace>
-  typename AsyncFieldDataHelper<T, FieldAccess, MemSpace, LayoutSelector<MemSpace>::layout, ExecSpace>::FieldDataType
+  typename AsyncFieldDataHelper<T, FieldAccess, Space, LayoutSelector<Space>::layout, ExecSpace>::FieldDataType
   data(const ExecSpace& execSpace) const
   {
-    return FieldBase::data<T, FieldAccess, MemSpace, LayoutSelector<MemSpace>::layout, ExecSpace>(execSpace);
+    return FieldBase::data<T, FieldAccess, Space, LayoutSelector<Space>::layout, ExecSpace>(execSpace);
   }
 
 private:

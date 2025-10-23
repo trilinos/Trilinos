@@ -88,6 +88,7 @@
 #include "StkIoUtils.hpp"                           // for part_primary_enti...
 #include "mpi.h"                                    // for MPI_COMM_SELF
 #include "stk_io/FieldAndName.hpp"                  // for FieldAndName
+#include "stk_io/IOHelpers.hpp"
 #include "stk_mesh/base/Bucket.hpp"                 // for Bucket
 #include "stk_mesh/base/Entity.hpp"                 // for Entity
 #include "stk_mesh/base/EntityKey.hpp"              // for operator<<
@@ -131,7 +132,7 @@ stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
   {
     const Ioss::SideSet *sset = dynamic_cast<const Ioss::SideSet*>(entity);
     assert(sset != nullptr);
-    int my_rank = sset->max_parametric_dimension();
+    int my_rank = get_max_par_dimension(sset);
     if (my_rank == 2)
       return stk::topology::FACE_RANK;
     if (my_rank == 1)
@@ -147,8 +148,8 @@ stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
     const Ioss::SideBlock *sblk = dynamic_cast<const Ioss::SideBlock*>(entity);
     assert(sblk != nullptr);
 
-    bool useShellAllFaceSides = sblk->get_database()->get_region()->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
-    if (sblk->parent_element_topology()->is_shell() && useShellAllFaceSides) {
+    if (should_use_all_face_sides(sblk))
+    {
       return stk::topology::FACE_RANK;
     }
 
@@ -175,6 +176,66 @@ stk::mesh::EntityRank get_entity_rank(const Ioss::GroupingEntity *entity,
   default:
     return stk::mesh::InvalidEntityRank;
   }
+}
+
+bool should_use_all_face_sides(const Ioss::EntityBlock* entity)
+{
+  if (entity->type() == Ioss::SIDEBLOCK)
+  {
+    return should_use_all_face_sides(dynamic_cast<const Ioss::SideBlock*>(entity));
+  } else
+  {
+    auto useShellAllFaceSides = entity->get_database()->get_region()->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
+    return entity->topology()->is_shell() && useShellAllFaceSides;
+  }
+}
+
+bool should_use_all_face_sides(const Ioss::SideBlock* block)
+{
+    Ioss::Region *region = block->owner()->get_database()->get_region();
+    bool useShellAllFaceSides = region->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");  
+
+    const Ioss::ElementTopology* parentTopo = block->parent_element_topology();
+    const Ioss::ElementTopology* sideTopo   = block->topology();
+    return sideTopo->parametric_dimension() == 1 && 
+           parentTopo->spatial_dimension()  == 3 && parentTopo->is_shell() && 
+           useShellAllFaceSides; 
+}
+
+
+int get_max_par_dimension(const Ioss::SideBlock* block)
+{
+    int par_dim = block->topology()->parametric_dimension();
+    if (should_use_all_face_sides(block))
+    {
+        par_dim++;
+    }
+    
+    STK_ThrowAssertMsg(block->topology()->name() == "unknown" || par_dim == 1 || par_dim == 2, "SideBlock parametric dimension must be 1 or 2");
+    return par_dim;
+}
+
+int get_max_par_dimension(const Ioss::SideSet* sset)
+{
+    int max_par_dim = 0;
+    for (size_t i=0; i < sset->block_count(); ++i)
+    {
+      Ioss::SideBlock* block = sset->get_block(i);
+      max_par_dim = std::max(max_par_dim, get_max_par_dimension(block));      
+    }
+
+    if (max_par_dim == 0)
+    {
+        max_par_dim = sset->max_parametric_dimension();
+    }
+
+    return max_par_dim;
+}
+
+stk::mesh::EntityRank get_side_rank(const Ioss::SideBlock *block)
+{
+    int par_dim = get_max_par_dimension(block);
+    return par_dim == 1 ? stk::topology::EDGE_RANK : stk::topology::FACE_RANK;
 }
 
 }
@@ -1471,8 +1532,7 @@ void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &me
       set_original_topology_type_from_ioss(entity, *part);
     }
 
-    auto useShellAllFaceSides = entity->get_database()->get_region()->property_exists("ENABLE_ALL_FACE_SIDES_SHELL");
-    stk::topology stkTopology = map_ioss_topology_to_stk(topology, meta.spatial_dimension(), useShellAllFaceSides);
+    stk::topology stkTopology = map_ioss_topology_to_stk(topology, meta.spatial_dimension(), should_use_all_face_sides(entity));
     if (stkTopology != stk::topology::INVALID_TOPOLOGY) {
       if (stkTopology.rank() != part->primary_entity_rank() && entity->entity_count() == 0) {
         std::ostringstream os;

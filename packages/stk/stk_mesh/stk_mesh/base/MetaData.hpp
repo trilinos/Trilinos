@@ -291,6 +291,8 @@ public:
     return part;
   }
 
+  void rename(Part& part, const std::string& newName);
+
   void force_no_induce(Part& part)
   {
     if (part.primary_entity_rank() != InvalidEntityRank) {

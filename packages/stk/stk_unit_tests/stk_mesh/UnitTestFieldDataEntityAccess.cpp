@@ -60,26 +60,26 @@ TEST_F(FieldDataEntityAccess, inconsistentTemplateParameters)
 
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
-  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::HostMemSpace, stk::mesh::Layout::Left>()));  // Correct
-  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>()));  // Correct
+  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::HostSpace, stk::mesh::Layout::Left>()));  // Correct
+  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>()));  // Correct
 
   // We only do a static_cast() in release builds and don't do any template parameter checking, so this will
   // not detect any problems and may lead to memory corruption.
 #ifdef STK_FIELD_BOUNDS_CHECK
-  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly,  stk::ngp::HostMemSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
-  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
-  EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::HostMemSpace, stk::mesh::Layout::Right>()));  // Wrong layout
-  EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>()));  // Wrong layout
+  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly,  stk::ngp::HostSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
+  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
+  EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::HostSpace, stk::mesh::Layout::Right>()));  // Wrong layout
+  EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>()));  // Wrong layout
 #endif
 
-  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::MemSpace, stk::mesh::Layout::Left>()));  // Correct
-  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace, stk::mesh::Layout::Left>()));  // Correct
+  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::DeviceSpace, stk::mesh::Layout::Left>()));  // Correct
+  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace, stk::mesh::Layout::Left>()));  // Correct
 
 #ifdef STK_FIELD_BOUNDS_CHECK
-  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly,  stk::ngp::MemSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
-  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::MemSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
-  //EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::MemSpace, stk::mesh::Layout::Right>()));  // Trapped by static_assert()
-  //EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace, stk::mesh::Layout::Right>()));  // Trapped by static_assert()
+  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly,  stk::ngp::DeviceSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
+  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::DeviceSpace, stk::mesh::Layout::Left>()));  // Wrong datatype
+  //EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::DeviceSpace, stk::mesh::Layout::Right>()));  // Trapped by static_assert()
+  //EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace, stk::mesh::Layout::Right>()));  // Trapped by static_assert()
 #endif
 }
 
@@ -90,37 +90,37 @@ TEST_F(FieldDataEntityAccess, inconsistentTemplateParameters_async)
 
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
-  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::HostMemSpace,
+  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::HostSpace,
                                   stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Correct
-  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace,
+  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace,
                                   stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Correct
 
   // We only do a static_cast() in release builds and don't do any template parameter checking, so this will
   // not detect any problems and may lead to memory corruption.
 #ifdef STK_FIELD_BOUNDS_CHECK
-  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly, stk::ngp::HostMemSpace,
+  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly, stk::ngp::HostSpace,
                                    stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Wrong datatype
-  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostMemSpace,
+  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace,
                                    stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Wrong datatype
-  EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::HostMemSpace,
+  EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::HostSpace,
                                    stk::mesh::Layout::Right>(stk::ngp::ExecSpace())));  // Wrong layout
-  EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace,
+  EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace,
                                    stk::mesh::Layout::Right>(stk::ngp::ExecSpace())));  // Wrong layout
 #endif
 
-  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::MemSpace,
+  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::DeviceSpace,
                                   stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Correct
-  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace,
+  EXPECT_NO_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace,
                                   stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Correct
 
 #ifdef STK_FIELD_BOUNDS_CHECK
-  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly,  stk::ngp::MemSpace,
+  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadOnly,  stk::ngp::DeviceSpace,
                                    stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Wrong datatype
-  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::MemSpace,
+  EXPECT_ANY_THROW((fieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::DeviceSpace,
                                    stk::mesh::Layout::Left>(stk::ngp::ExecSpace())));  // Wrong datatype
-  // EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::MemSpace,
+  // EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadOnly,  stk::ngp::DeviceSpace,
   //                                  stk::mesh::Layout::Right>(stk::ngp::ExecSpace())));  // Trapped by static_assert()
-  // EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace,
+  // EXPECT_ANY_THROW((fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace,
   //                                  stk::mesh::Layout::Right>(stk::ngp::ExecSpace())));  // Trapped by static_assert()
 #endif
 }
@@ -242,8 +242,8 @@ TEST_F(FieldDataEntityAccess, host_scalar_fieldBase_layoutLeft)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
   test_host_scalar(get_bulk(),
-                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>(),
-                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>());
+                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>(),
+                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>());
 }
 
 //------------------------------------------------------------------------------
@@ -268,8 +268,8 @@ TEST_F(FieldDataEntityAccess, host_scalar_fieldBase_layoutRight)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_rightField);
 
   test_host_scalar(get_bulk(),
-                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>(),
-                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>());
+                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>(),
+                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>());
 }
 
 //------------------------------------------------------------------------------
@@ -281,8 +281,8 @@ TEST_F(FieldDataEntityAccess, host_scalar_fieldBase_layoutLeft_layoutAuto)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
   test_host_scalar(get_bulk(),
-                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>(),
-                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>(),
+                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
 }
 
 //------------------------------------------------------------------------------
@@ -294,8 +294,8 @@ TEST_F(FieldDataEntityAccess, host_scalar_fieldBase_layoutAuto_layoutLeft)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
   test_host_scalar(get_bulk(),
-                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>(),
-                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>());
+                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>(),
+                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>());
 }
 
 //------------------------------------------------------------------------------
@@ -307,8 +307,8 @@ TEST_F(FieldDataEntityAccess, host_scalar_fieldBase_layoutRight_layoutAuto)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_rightField);
 
   test_host_scalar(get_bulk(),
-                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>(),
-                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>(),
+                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
 }
 
 //------------------------------------------------------------------------------
@@ -320,8 +320,8 @@ TEST_F(FieldDataEntityAccess, host_scalar_fieldBase_layoutAuto_layoutRight)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_rightField);
 
   test_host_scalar(get_bulk(),
-                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>(),
-                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>());
+                   fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>(),
+                   fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>());
 }
 
 //------------------------------------------------------------------------------
@@ -541,8 +541,8 @@ TEST_F(FieldDataEntityAccess, host_multiComponent_fieldBase_layoutLeft)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
   test_host_multi_component(get_bulk(),
-                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>(),
-                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>());
+                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>(),
+                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>());
 }
 
 //------------------------------------------------------------------------------
@@ -567,8 +567,8 @@ TEST_F(FieldDataEntityAccess, host_multiComponent_fieldBase_layoutRight)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_rightField);
 
   test_host_multi_component(get_bulk(),
-                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>(),
-                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>());
+                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>(),
+                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>());
 }
 
 //------------------------------------------------------------------------------
@@ -580,8 +580,8 @@ TEST_F(FieldDataEntityAccess, host_multiComponent_fieldBase_layoutLeft_layoutAut
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
   test_host_multi_component(get_bulk(),
-                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>(),
-                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>(),
+                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
 }
 
 //------------------------------------------------------------------------------
@@ -593,8 +593,8 @@ TEST_F(FieldDataEntityAccess, host_multiComponent_fieldBase_layoutAuto_layoutLef
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
   test_host_multi_component(get_bulk(),
-                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>(),
-                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>());
+                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>(),
+                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>());
 }
 
 //------------------------------------------------------------------------------
@@ -606,8 +606,8 @@ TEST_F(FieldDataEntityAccess, host_multiComponent_fieldBase_layoutRight_layoutAu
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_rightField);
 
   test_host_multi_component(get_bulk(),
-                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>(),
-                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>(),
+                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
 }
 
 //------------------------------------------------------------------------------
@@ -619,8 +619,8 @@ TEST_F(FieldDataEntityAccess, host_multiComponent_fieldBase_layoutAuto_layoutRig
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_rightField);
 
   test_host_multi_component(get_bulk(),
-                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>(),
-                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>());
+                            fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>(),
+                            fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>());
 }
 
 //------------------------------------------------------------------------------
@@ -850,8 +850,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_fieldBase_layoutLeft)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
   test_host_multi_copy(get_bulk(),
-                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>(),
-                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>());
+                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>(),
+                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>());
 }
 
 //------------------------------------------------------------------------------
@@ -876,8 +876,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_fieldBase_layoutRight)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_rightField);
 
   test_host_multi_copy(get_bulk(),
-                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>(),
-                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>());
+                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>(),
+                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>());
 }
 
 //------------------------------------------------------------------------------
@@ -889,8 +889,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_fieldBase_layoutLeft_layoutAuto)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
   test_host_multi_copy(get_bulk(),
-                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>(),
-                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>(),
+                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
 }
 
 //------------------------------------------------------------------------------
@@ -902,8 +902,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_fieldBase_layoutAuto_layoutLeft)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_leftField);
 
   test_host_multi_copy(get_bulk(),
-                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>(),
-                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>());
+                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>(),
+                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>());
 }
 
 //------------------------------------------------------------------------------
@@ -915,8 +915,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_fieldBase_layoutRight_layoutAuto)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_rightField);
 
   test_host_multi_copy(get_bulk(),
-                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>(),
-                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>(),
+                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
 }
 
 //------------------------------------------------------------------------------
@@ -928,8 +928,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_fieldBase_layoutAuto_layoutRight)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_rightField);
 
   test_host_multi_copy(get_bulk(),
-                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>(),
-                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>());
+                       fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>(),
+                       fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>());
 }
 
 //------------------------------------------------------------------------------
@@ -1175,8 +1175,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_multiComponent_fieldBase_layoutLeft
 
   test_host_multi_copy_multi_component(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>());
 }
 
 //------------------------------------------------------------------------------
@@ -1203,8 +1203,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_multiComponent_fieldBase_layoutRigh
 
   test_host_multi_copy_multi_component(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>());
 }
 
 //------------------------------------------------------------------------------
@@ -1217,8 +1217,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_multiComponent_fieldBase_layoutLeft
 
   test_host_multi_copy_multi_component(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
 }
 
 //------------------------------------------------------------------------------
@@ -1231,8 +1231,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_multiComponent_fieldBase_layoutAuto
 
   test_host_multi_copy_multi_component(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>());
 }
 
 //------------------------------------------------------------------------------
@@ -1245,8 +1245,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_multiComponent_fieldBase_layoutRigh
 
   test_host_multi_copy_multi_component(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
 }
 
 //------------------------------------------------------------------------------
@@ -1259,8 +1259,8 @@ TEST_F(FieldDataEntityAccess, host_multiCopy_multiComponent_fieldBase_layoutAuto
 
   test_host_multi_copy_multi_component(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>());
 }
 
 //------------------------------------------------------------------------------
@@ -1570,8 +1570,8 @@ TEST_F(FieldDataEntityAccess, host_multiScalar_fieldBase_layoutLeft)
 
   test_host_multi_scalar(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>());
 }
 
 //------------------------------------------------------------------------------
@@ -1598,8 +1598,8 @@ TEST_F(FieldDataEntityAccess, host_multiScalar_fieldBase_layoutRight)
 
   test_host_multi_scalar(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>());
 }
 
 //------------------------------------------------------------------------------
@@ -1612,8 +1612,8 @@ TEST_F(FieldDataEntityAccess, host_multiScalar_fieldBase_layoutLeft_layoutAuto)
 
   test_host_multi_scalar(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Left>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
 }
 
 //------------------------------------------------------------------------------
@@ -1626,8 +1626,8 @@ TEST_F(FieldDataEntityAccess, host_multiScalar_fieldBase_layoutAuto_layoutLeft)
 
   test_host_multi_scalar(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Left>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Left>());
 }
 
 //------------------------------------------------------------------------------
@@ -1640,8 +1640,8 @@ TEST_F(FieldDataEntityAccess, host_multiScalar_fieldBase_layoutRight_layoutAuto)
 
   test_host_multi_scalar(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Right>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
 }
 
 //------------------------------------------------------------------------------
@@ -1654,8 +1654,8 @@ TEST_F(FieldDataEntityAccess, host_multiScalar_fieldBase_layoutAuto_layoutRight)
 
   test_host_multi_scalar(
         get_bulk(),
-        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>(),
-        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Right>());
+        fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>(),
+        fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Right>());
 }
 
 //------------------------------------------------------------------------------
@@ -1863,8 +1863,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_scalar_field)
   const stk::mesh::Field<int>& field = *m_field;
 
   test_device_scalar(get_bulk(), field,
-                     field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>(),
-                     field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>());
+                     field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(),
+                     field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -1876,8 +1876,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_scalar_fieldBase)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_field);
 
   test_device_scalar(get_bulk(), fieldBase,
-                     fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace>(),
-                     fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::MemSpace>());
+                     fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(),
+                     fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -1887,7 +1887,7 @@ void test_device_scalar_pointer(stk::mesh::BulkData& bulk, stk::mesh::Field<int>
 
   // Write the values normally and read them through a raw pointer to make sure
   // indexing is consistent between the two APIs
-  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto entityValues = fieldData.entity_values(entity);
@@ -1895,7 +1895,7 @@ void test_device_scalar_pointer(stk::mesh::BulkData& bulk, stk::mesh::Field<int>
     }
   );
 
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto constEntityValues = constFieldData.entity_values(entity);
@@ -1972,8 +1972,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_multiComponent_field)
   const stk::mesh::Field<int>& field = *m_field;
 
   test_device_multi_component(get_bulk(), field,
-                              field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>(),
-                              field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>());
+                              field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(),
+                              field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -1985,8 +1985,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_multiComponent_fieldBase)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_field);
 
   test_device_multi_component(get_bulk(), fieldBase,
-                              fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace>(),
-                              fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::MemSpace>());
+                              fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(),
+                              fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -1998,8 +1998,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_multiComponent_field_async)
   const stk::mesh::Field<int>& field = *m_field;
 
   test_device_multi_component(get_bulk(), field,
-                              field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>(stk::ngp::ExecSpace()),
-                              field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>(stk::ngp::ExecSpace()));
+                              field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(stk::ngp::ExecSpace()),
+                              field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(stk::ngp::ExecSpace()));
 }
 
 //------------------------------------------------------------------------------
@@ -2011,8 +2011,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_multiComponent_fieldBase_async)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_field);
 
   test_device_multi_component(get_bulk(), fieldBase,
-                              fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace>(stk::ngp::ExecSpace()),
-                              fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::MemSpace>(stk::ngp::ExecSpace()));
+                              fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(stk::ngp::ExecSpace()),
+                              fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(stk::ngp::ExecSpace()));
 }
 
 //------------------------------------------------------------------------------
@@ -2022,7 +2022,7 @@ void test_device_multi_component_pointer(stk::mesh::BulkData& bulk, stk::mesh::F
 
   // Write the values normally and read them through a raw pointer to make sure
   // indexing is consistent between the two APIs
-  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto entityValues = fieldData.entity_values(entity);
@@ -2033,7 +2033,7 @@ void test_device_multi_component_pointer(stk::mesh::BulkData& bulk, stk::mesh::F
   );
 
   // Read const value from Field<int>
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto constEntityValues = constFieldData.entity_values(entity);
@@ -2114,8 +2114,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_multiCopy_field)
   const stk::mesh::Field<int>& field = *m_field;
 
   test_device_multi_copy(get_bulk(), field,
-                         field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>(),
-                         field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>());
+                         field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(),
+                         field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -2127,8 +2127,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_multiCopy_fieldBase)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_field);
 
   test_device_multi_copy(get_bulk(), fieldBase,
-                         fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace>(),
-                         fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::MemSpace>());
+                         fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(),
+                         fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -2138,7 +2138,7 @@ void test_device_multi_copy_pointer(stk::mesh::BulkData& bulk, stk::mesh::Field<
 
   // Write the values normally and read them through a raw pointer to make sure
   // indexing is consistent between the two APIs
-  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto entityValues = fieldData.entity_values(entity);
@@ -2148,7 +2148,7 @@ void test_device_multi_copy_pointer(stk::mesh::BulkData& bulk, stk::mesh::Field<
     }
   );
 
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto constEntityValues = constFieldData.entity_values(entity);
@@ -2241,8 +2241,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_multiCopy_multiComponent_field)
   const stk::mesh::Field<int>& field = *m_field;
 
   test_device_multi_copy_multi_component(get_bulk(), field,
-                                         field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>(),
-                                         field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>());
+                                         field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(),
+                                         field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -2254,8 +2254,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_multiCopy_multiComponent_fieldBase)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_field);
 
   test_device_multi_copy_multi_component(get_bulk(), fieldBase,
-                                         fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace>(),
-                                         fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::MemSpace>());
+                                         fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(),
+                                         fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -2264,7 +2264,7 @@ void test_device_multi_copy_multi_component_pointer(stk::mesh::BulkData& bulk, s
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   // Write and read values from Field<int>
-  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto entityValues = fieldData.entity_values(entity);
@@ -2277,7 +2277,7 @@ void test_device_multi_copy_multi_component_pointer(stk::mesh::BulkData& bulk, s
     }
   );
 
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto constEntityValues = constFieldData.entity_values(entity);
@@ -2310,7 +2310,7 @@ void test_device_multi_copy_multi_component_traditional_for_loop(stk::mesh::Bulk
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   // Write and read values from Field<int>
-  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto entityValues = fieldData.entity_values(entity);
@@ -2323,7 +2323,7 @@ void test_device_multi_copy_multi_component_traditional_for_loop(stk::mesh::Bulk
     }
   );
 
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto constEntityValues = constFieldData.entity_values(entity);
@@ -2338,7 +2338,7 @@ void test_device_multi_copy_multi_component_traditional_for_loop(stk::mesh::Bulk
   );
 
   // Write and read values from FieldBase
-  auto fieldDataBase = fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  auto fieldDataBase = fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto entityValuesBase = fieldDataBase.entity_values(entity);
@@ -2352,7 +2352,7 @@ void test_device_multi_copy_multi_component_traditional_for_loop(stk::mesh::Bulk
   );
 
   // Read const value from FieldBase
-  auto constFieldDataBase = fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto constFieldDataBase = fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto constEntityValuesBase = constFieldDataBase.entity_values(entity);
@@ -2434,8 +2434,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_multiScalar_field)
   const stk::mesh::Field<int>& field = *m_field;
 
   test_device_multi_scalar(get_bulk(), field,
-                           field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>(),
-                           field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>());
+                           field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(),
+                           field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -2447,8 +2447,8 @@ NGP_TEST_F(FieldDataEntityAccess, device_multiScalar_fieldBase)
   const stk::mesh::FieldBase& fieldBase = static_cast<stk::mesh::FieldBase&>(*m_field);
 
   test_device_multi_scalar(get_bulk(), fieldBase,
-                           fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace>(),
-                           fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::MemSpace>());
+                           fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(),
+                           fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>());
 }
 
 //------------------------------------------------------------------------------
@@ -2457,7 +2457,7 @@ void test_device_multi_scalar_pointer(stk::mesh::BulkData& bulk, stk::mesh::Fiel
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   // Write and read values from Field<int>
-  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto entityValues = fieldData.entity_values(entity);
@@ -2467,7 +2467,7 @@ void test_device_multi_scalar_pointer(stk::mesh::BulkData& bulk, stk::mesh::Fiel
     }
   );
 
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto constEntityValues = constFieldData.entity_values(entity);
@@ -2496,7 +2496,7 @@ void test_device_multi_scalar_traditional_for_loop(stk::mesh::BulkData& bulk,
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   // Write and read values from Field<int>
-  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto entityValues = fieldData.entity_values(entity);
@@ -2506,7 +2506,7 @@ void test_device_multi_scalar_traditional_for_loop(stk::mesh::BulkData& bulk,
     }
   );
 
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto constEntityValues = constFieldData.entity_values(entity);
@@ -2518,7 +2518,7 @@ void test_device_multi_scalar_traditional_for_loop(stk::mesh::BulkData& bulk,
   );
 
   // Write and read values from FieldBase
-  auto fieldDataBase = fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  auto fieldDataBase = fieldBase.data<int, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto entityValuesBase = fieldDataBase.entity_values(entity);
@@ -2529,7 +2529,7 @@ void test_device_multi_scalar_traditional_for_loop(stk::mesh::BulkData& bulk,
   );
 
   // Read const value from FieldBase
-  auto constFieldDataBase = fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto constFieldDataBase = fieldBase.data<int, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
       auto constEntityValuesBase = constFieldDataBase.entity_values(entity);
@@ -2555,7 +2555,7 @@ void test_host_to_device_scalar(stk::mesh::BulkData& bulk, FieldType& field)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
-  field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>(); // Create early so next call is sync instead of update
+  field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(); // Create early so next call is sync instead of update
 
   {
     auto fieldData = field.data();
@@ -2569,7 +2569,7 @@ void test_host_to_device_scalar(stk::mesh::BulkData& bulk, FieldType& field)
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
         int nodeId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::NODE_RANK, fmi));
@@ -2607,7 +2607,7 @@ void test_host_to_device_multi_component(stk::mesh::BulkData& bulk, FieldType& f
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
-  field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>(); // Create early so next call is sync instead of update
+  field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(); // Create early so next call is sync instead of update
 
   {
     auto fieldData = field.data();
@@ -2623,7 +2623,7 @@ void test_host_to_device_multi_component(stk::mesh::BulkData& bulk, FieldType& f
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
         int nodeId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::NODE_RANK, fmi));
@@ -2663,7 +2663,7 @@ void test_host_to_device_multi_copy(stk::mesh::BulkData& bulk, FieldType& field)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
-  field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>(); // Create early so next call is sync instead of update
+  field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(); // Create early so next call is sync instead of update
 
   {
     auto fieldData = field.data();
@@ -2679,7 +2679,7 @@ void test_host_to_device_multi_copy(stk::mesh::BulkData& bulk, FieldType& field)
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
         int nodeId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::NODE_RANK, fmi));
@@ -2719,7 +2719,7 @@ void test_host_to_device_multi_copy_multi_component(stk::mesh::BulkData& bulk, F
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
-  field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>(); // Create early so next call is sync instead of update
+  field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(); // Create early so next call is sync instead of update
 
   {
     auto fieldData = field.data();
@@ -2737,7 +2737,7 @@ void test_host_to_device_multi_copy_multi_component(stk::mesh::BulkData& bulk, F
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
         int nodeId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::NODE_RANK, fmi));
@@ -2779,7 +2779,7 @@ void test_host_to_device_multi_scalar(stk::mesh::BulkData& bulk, FieldType& fiel
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
-  field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>(); // Create early so next call is sync instead of update
+  field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>(); // Create early so next call is sync instead of update
 
   {
     auto fieldData = field.data();
@@ -2795,7 +2795,7 @@ void test_host_to_device_multi_scalar(stk::mesh::BulkData& bulk, FieldType& fiel
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
         int nodeId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::NODE_RANK, fmi));
@@ -2838,7 +2838,7 @@ void test_device_to_host_scalar(stk::mesh::BulkData& bulk, FieldType& field)
   const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
 
   {
-    auto fieldData = field.template data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    auto fieldData = field.template data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
         int nodeId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::NODE_RANK, fmi));
@@ -2889,7 +2889,7 @@ void test_device_to_host_multi_component(stk::mesh::BulkData& bulk, FieldType& f
   const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
 
   {
-    auto fieldData = field.template data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    auto fieldData = field.template data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
         int nodeId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::NODE_RANK, fmi));
@@ -2944,7 +2944,7 @@ void test_device_to_host_multi_copy(stk::mesh::BulkData& bulk, FieldType& field)
   const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
 
   {
-    auto fieldData = field.template data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    auto fieldData = field.template data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
         int nodeId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::NODE_RANK, fmi));
@@ -2999,7 +2999,7 @@ void test_device_to_host_multi_copy_multi_component(stk::mesh::BulkData& bulk, F
   const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
 
   {
-    auto fieldData = field.template data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    auto fieldData = field.template data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
         int nodeId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::NODE_RANK, fmi));
@@ -3058,7 +3058,7 @@ void test_device_to_host_multi_scalar(stk::mesh::BulkData& bulk, FieldType& fiel
   const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::NODE_RANK);
 
   {
-    auto fieldData = field.template data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    auto fieldData = field.template data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& fmi) {
         int nodeId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::NODE_RANK, fmi));
@@ -3140,7 +3140,7 @@ void device_is_field_defined(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& f
                              stk::mesh::Part& part1, stk::mesh::Part& part2)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  auto fieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto fieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, part1,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
@@ -3381,8 +3381,8 @@ TEST_F(FieldDataEntityAccess, host_consistencyCheck_fastMeshIndex)
 // {
 //   {
 //     const stk::mesh::Entity node8 = bulk.get_entity(stk::topology::NODE_RANK, 8);
-//     auto elemFieldData = elemField.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
-//     auto constElemFieldData = elemField.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+//     auto elemFieldData = elemField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+//     auto constElemFieldData = elemField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
 //
 //     Kokkos::parallel_for(1, KOKKOS_LAMBDA(int) {
 //         auto entityValues = elemFieldData.entity_values(node8);           // Abort: Bad Bucket ordinal (wrong rank Entity)
@@ -3395,10 +3395,10 @@ TEST_F(FieldDataEntityAccess, host_consistencyCheck_fastMeshIndex)
 //   {
 //     const stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, 1);
 //     const stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
-//     auto elemFieldData = elemField.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
-//     auto constElemFieldData = elemField.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-//     auto nodeFieldData = nodeField.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
-//     auto constNodeFieldData = nodeField.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+//     auto elemFieldData = elemField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+//     auto constElemFieldData = elemField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+//     auto nodeFieldData = nodeField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+//     auto constNodeFieldData = nodeField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
 //
 //     bulk.modification_begin();
 //     bulk.declare_node(100);
@@ -3425,10 +3425,10 @@ TEST_F(FieldDataEntityAccess, host_consistencyCheck_fastMeshIndex)
 //
 //     const stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, 1);
 //     const stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
-//     auto elemFieldData = elemField.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
-//     auto constElemFieldData = elemField.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-//     auto nodeFieldData = nodeField.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
-//     auto constNodeFieldData = nodeField.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+//     auto elemFieldData = elemField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+//     auto constElemFieldData = elemField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+//     auto nodeFieldData = nodeField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+//     auto constNodeFieldData = nodeField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
 //
 //     bulk.declare_node(101);
 //
@@ -3616,7 +3616,7 @@ void change_node_val_on_device(stk::mesh::Entity node,
                                const stk::mesh::FieldBase* coordField,
                                double newVal)
 {
-  auto deviceCoordData = coordField->data<double,stk::mesh::ReadWrite,stk::ngp::MemSpace>();
+  auto deviceCoordData = coordField->data<double,stk::mesh::ReadWrite,stk::ngp::DeviceSpace>();
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int& /*idx*/)
   {
     auto deviceCoordVals = deviceCoordData.entity_values(node);

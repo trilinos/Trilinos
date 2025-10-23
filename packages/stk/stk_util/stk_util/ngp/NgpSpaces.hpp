@@ -34,6 +34,7 @@
 #ifndef STK_NGP_NGPSPACES_HPP
 #define STK_NGP_NGPSPACES_HPP
 
+#include "stk_util/stk_kokkos_macros.h"
 #include <Kokkos_Core.hpp>
 
 namespace stk {
@@ -102,8 +103,68 @@ using DeviceTeamPolicy = Kokkos::TeamPolicy<ExecSpace>;
 
 using ScheduleType = Kokkos::Schedule<Kokkos::Dynamic>;
 
+
 // Detect if the host and device memory spaces are unified
 constexpr bool DeviceAccessibleFromHost = Kokkos::SpaceAccessibility<HostExecSpace, ExecSpace::memory_space>::accessible;
+
+
+struct HostSpace {
+  using exec_space = HostExecSpace;
+  using mem_space = HostMemSpace;
+};
+
+
+#if defined(STK_ENABLE_GPU)
+
+  struct DeviceSpace {
+    using exec_space = ExecSpace;
+    using mem_space = MemSpace;
+  };
+
+  struct UVMDeviceSpace {
+    using exec_space = ExecSpace;
+    using mem_space = UVMMemSpace;
+  };
+
+  struct HostPinnedDeviceSpace {
+    using exec_space = ExecSpace;
+    using mem_space = HostPinnedSpace;
+  };
+
+#else
+
+  #if defined(STK_USE_DEVICE_MESH)
+
+    // Fake device space that lives on host, for testing and debugging purposes only (wasteful and poorly-performing)
+    struct DeviceSpace {
+      using exec_space = HostExecSpace;
+      using mem_space = HostMemSpace;
+    };
+
+    struct UVMDeviceSpace {
+      using exec_space = HostExecSpace;
+      using mem_space = HostMemSpace;
+    };
+
+    struct HostPinnedDeviceSpace {
+      using exec_space = HostExecSpace;
+      using mem_space = HostMemSpace;
+    };
+
+  #else
+
+    // Alias device to host, to disable specialized device code
+    using DeviceSpace = HostSpace;
+    using UVMDeviceSpace = HostSpace;
+    using HostPinnedDeviceSpace = HostSpace;
+
+  #endif
+
+#endif
+
+
+
+
 
 }
 }

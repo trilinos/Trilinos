@@ -150,9 +150,10 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
   const unsigned auraGhostingOrdinal = bulkData.aura_ghosting().ordinal();
 
   const EntityCommDatabase& commDB = bulkData.internal_comm_db();
+  EntityCommListInfoVector& commList = const_cast<EntityCommListInfoVector&>(commDB.comm_list());
   EntityCommInfoVector comm_ghost ;
   for ( EntityCommListInfoVector::reverse_iterator
-        i = bulkData.m_entity_comm_list.rbegin() ; i != bulkData.m_entity_comm_list.rend() ; ++i) {
+        i = commList.rbegin() ; i != commList.rend() ; ++i) {
 
     if (i->entity_comm == -1) {
       continue;
@@ -196,7 +197,7 @@ void AuraGhosting::change_ghosting(BulkData& bulkData,
       }
     }
 
-    if ( bulkData.internal_entity_comm_map(entityComm.entity).empty() ) {
+    if ( entityComm.entity_comm == -1 || commDB.comm(entityComm.entity_comm).empty() ) {
       removed = true ;
       entityComm.key = EntityKey(); // No longer communicated
     }

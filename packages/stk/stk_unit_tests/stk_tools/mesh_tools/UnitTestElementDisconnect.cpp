@@ -58,8 +58,7 @@ class TestElementDisconnect : public stk::unit_test_util::MeshFixture
     auto facesFiltered = stk::mesh::get_entities(bulk, stk::topology::FACE_RANK);
     auto endFiltered = std::stable_partition(facesFiltered.begin(), facesFiltered.end(), predBound);
     facesFiltered.erase(endFiltered, facesFiltered.end());
-    stk::util::sort_and_unique(facesFiltered);
-    return facesFiltered;
+    return EntityContainer(facesFiltered.begin(), facesFiltered.end());
   }
 
   static auto is_exterior(const stk::mesh::BulkData& bulk, const stk::mesh::Entity& face)
@@ -145,18 +144,16 @@ class TestElementDisconnect : public stk::unit_test_util::MeshFixture
 class ElementDisconnectAdjacencyTests : public TestElementDisconnect
 {
  public:
-  static auto face_is_contained_in_list(const stk::mesh::Entity& face, const stk::mesh::EntityVector& dcFaces)
+  static auto face_is_contained_in_list(const stk::mesh::Entity& face, const EntityContainer& dcFaces)
   {
-    return std::binary_search(dcFaces.begin(), dcFaces.end(), face);
+    return dcFaces.find(face) != dcFaces.end();
   }
 
-  auto is_entity_node_adjacent_to_list(const stk::mesh::Entity& face, const stk::mesh::EntityVector& dcFaces)
+  auto is_entity_node_adjacent_to_list(const stk::mesh::Entity& face, const EntityContainer& dcFaces)
   {
-    bool isNodeAdjacent = false;
-    for_each_adjacent_entity<NodeRank, FaceRank>(get_bulk(), {face}, [&](const stk::mesh::Entity& nodeAdjFace) {
-      isNodeAdjacent |= face_is_contained_in_list(nodeAdjFace, dcFaces);
-    });
-    return isNodeAdjacent;
+    auto adjFaces = get_adjacent_entities<NodeRank, FaceRank>(get_bulk(), {face},
+        [&dcFaces](const stk::mesh::Entity& nodeAdjFace) { return face_is_contained_in_list(nodeAdjFace, dcFaces); });
+    return adjFaces.size() != 0U;
   }
 
   static auto face_is_element_connected(const stk::mesh::BulkData& mesh, const stk::mesh::Entity& face)
@@ -164,7 +161,8 @@ class ElementDisconnectAdjacencyTests : public TestElementDisconnect
     return mesh.num_connectivity(face, stk::topology::ELEMENT_RANK) >= 1;
   }
 
-  void check_faces_are_node_adjacent(const stk::mesh::EntityVector& dcFaces, const stk::mesh::EntityVector& adjFaces)
+  void check_faces_are_node_adjacent(
+      const EntityContainer& dcFaces, const stk::experimental::EntityContainer& adjFaces)
   {
     for (const auto& face : adjFaces) {
       EXPECT_FALSE(face_is_contained_in_list(face, dcFaces))
@@ -175,7 +173,7 @@ class ElementDisconnectAdjacencyTests : public TestElementDisconnect
     }
   }
 
-  void check_adj_faces_are_element_connected(const stk::mesh::EntityVector& adjFaces)
+  void check_adj_faces_are_element_connected(const EntityContainer& adjFaces)
   {
     // Not really checking anything, so mostly for completeness.  Unless something very wrong happens in the unit test
     // fixture, faces from `create_faces` should be guaranteed to be connnected to at least one element.
@@ -185,7 +183,7 @@ class ElementDisconnectAdjacencyTests : public TestElementDisconnect
     }
   }
 
-  void check_elements_are_adjacent(const stk::mesh::EntityVector& dcFaces, const stk::mesh::EntityVector& adjElems)
+  void check_elements_are_adjacent(const EntityContainer& dcFaces, const EntityContainer& adjElems)
   {
     for (const auto& elem : adjElems) {
       EXPECT_TRUE((is_entity_node_adjacent_to_list(elem, dcFaces)))
@@ -199,8 +197,8 @@ TEST_F(ElementDisconnectAdjacencyTests, emptyDisconnectList_gen2x2x2)
   if (stk::parallel_machine_size(stk::parallel_machine_world()) > 1) GTEST_SKIP() << "Test only available in serial!";
   create_mesh_with_faces(2, 2, 2);
 
-  EntityDisconnectTool disconnecter(get_bulk(), {});
-  const auto& adjacentFaces = disconnecter.get_node_adjacent_faces();
+  EntityDisconnectTool disconnecter(get_bulk(), EntityContainer{});
+  const auto& adjacentFaces = disconnecter.get_retained_faces();
   EXPECT_EQ(adjacentFaces.size(), 0U);
   EXPECT_EQ(disconnecter.get_adjacent_elements().size(), 0U);
 }
@@ -214,7 +212,7 @@ TEST_F(ElementDisconnectAdjacencyTests, exteriorDisconnectList_gen2x2x2)
   auto interiorFaces = get_interior_faces();
 
   EntityDisconnectTool disconnecter(get_bulk(), disconnectFaces);
-  const auto& adjacentFaces = disconnecter.get_node_adjacent_faces();
+  const auto& adjacentFaces = disconnecter.get_retained_faces();
   EXPECT_EQ(adjacentFaces.size(), 0U);
   check_faces_are_node_adjacent(disconnectFaces, adjacentFaces);
   check_elements_are_adjacent(disconnectFaces, disconnecter.get_adjacent_elements());
@@ -230,7 +228,7 @@ TEST_F(ElementDisconnectAdjacencyTests, interiorDisconnectList_gen2x2x2)
   auto disconnectFaces = get_interior_faces();
 
   EntityDisconnectTool disconnecter(get_bulk(), disconnectFaces);
-  const auto& adjacentFaces = disconnecter.get_node_adjacent_faces();
+  const auto& adjacentFaces = disconnecter.get_retained_faces();
   EXPECT_EQ(adjacentFaces.size(), exteriorFaces.size());
   check_faces_are_node_adjacent(disconnectFaces, adjacentFaces);
   check_elements_are_adjacent(disconnectFaces, disconnecter.get_adjacent_elements());
@@ -250,7 +248,7 @@ TEST_F(ElementDisconnectAdjacencyTests, disconnectXPlane_gen2x2x2)
   auto disconnectFaces = get_faces(on_x_plane);
 
   EntityDisconnectTool disconnecter(get_bulk(), disconnectFaces);
-  const auto& adjacentFaces = disconnecter.get_node_adjacent_faces();
+  const auto& adjacentFaces = disconnecter.get_retained_faces();
   EXPECT_EQ(adjacentFaces.size(), 24U);
   check_faces_are_node_adjacent(disconnectFaces, adjacentFaces);
   check_elements_are_adjacent(disconnectFaces, disconnecter.get_adjacent_elements());
@@ -270,7 +268,7 @@ TEST_F(ElementDisconnectAdjacencyTests, disconnectXPlane_gen4x2x2)
   auto disconnectFaces = get_faces(on_x_plane);
 
   EntityDisconnectTool disconnecter(get_bulk(), disconnectFaces);
-  const auto& adjacentFaces = disconnecter.get_node_adjacent_faces();
+  const auto& adjacentFaces = disconnecter.get_retained_faces();
   EXPECT_EQ(adjacentFaces.size(), 24U);
   check_faces_are_node_adjacent(disconnectFaces, adjacentFaces);
   check_elements_are_adjacent(disconnectFaces, disconnecter.get_adjacent_elements());
@@ -290,7 +288,7 @@ TEST_F(ElementDisconnectAdjacencyTests, disconnectYPlane_gen2x2x2)
   auto disconnectFaces = get_faces(on_y_plane);
 
   EntityDisconnectTool disconnecter(get_bulk(), disconnectFaces);
-  const auto& adjacentFaces = disconnecter.get_node_adjacent_faces();
+  const auto& adjacentFaces = disconnecter.get_retained_faces();
   EXPECT_EQ(adjacentFaces.size(), 24U);
   check_faces_are_node_adjacent(disconnectFaces, adjacentFaces);
   check_elements_are_adjacent(disconnectFaces, disconnecter.get_adjacent_elements());
@@ -310,7 +308,7 @@ TEST_F(ElementDisconnectAdjacencyTests, disconnectYPlane_gen4x2x2)
   auto disconnectFaces = get_faces(on_y_plane);
 
   EntityDisconnectTool disconnecter(get_bulk(), disconnectFaces);
-  const auto& adjacentFaces = disconnecter.get_node_adjacent_faces();
+  const auto& adjacentFaces = disconnecter.get_retained_faces();
   EXPECT_EQ(adjacentFaces.size(), 44U);
   check_faces_are_node_adjacent(disconnectFaces, adjacentFaces);
   check_elements_are_adjacent(disconnectFaces, disconnecter.get_adjacent_elements());

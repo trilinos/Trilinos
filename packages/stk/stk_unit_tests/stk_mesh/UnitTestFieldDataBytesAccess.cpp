@@ -96,13 +96,13 @@ public:
   template <typename FieldType>
   void build_two_element_mesh(FieldType* field) {
     stk::mesh::fixtures::HexFixture::fill_mesh(2, 1, 1, get_bulk());
-    field->template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();  // Trigger creation of default-initialized device data object
+    field->template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();  // Trigger creation of default-initialized device data object
   }
 
   template <typename FieldType>
   void build_two_bucket_mesh(FieldType* field) {
     stk::mesh::fixtures::HexFixture::fill_mesh(stk::mesh::get_default_maximum_bucket_capacity(), 2, 1, get_bulk());
-    field->template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();  // Trigger creation of default-initialized device data object
+    field->template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();  // Trigger creation of default-initialized device data object
   }
 
 protected:
@@ -376,7 +376,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes_fieldBytes
 void test_device_entity_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& field)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
+  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
@@ -392,8 +392,8 @@ void test_device_entity_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
     }
   );
 
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
       const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
@@ -434,7 +434,7 @@ TEST_F(FieldDataBytesAccess, device_multiCopyMultiComponent_entityBytes)
 void test_device_entity_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& field)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
+  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
@@ -450,8 +450,8 @@ void test_device_entity_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
     }
   );
 
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::DeviceSpace>();
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
       const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
@@ -492,8 +492,8 @@ TEST_F(FieldDataBytesAccess, device_multiCopyMultiComponent_entityBytes_traditio
 void test_device_bucket_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& field)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
   stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
   unsigned numBuckets = bucketIds.size();
@@ -522,7 +522,7 @@ void test_device_bucket_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
     }
   );
 
-  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
+  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::DeviceSpace>();
   Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
     KOKKOS_LAMBDA(const TeamHandleType& team) {
       const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
@@ -572,8 +572,8 @@ TEST_F(FieldDataBytesAccess, device_multiCopyMultiComponent_bucketBytes)
 void test_device_bucket_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& field)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
+  auto constFieldData = field.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+  auto& fieldDataBytes = field.data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
   stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
   unsigned numBuckets = bucketIds.size();
@@ -602,7 +602,7 @@ void test_device_bucket_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
     }
   );
 
-  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
+  auto& constFieldDataBytes = field.data_bytes<std::byte, stk::ngp::DeviceSpace>();
   Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
     KOKKOS_LAMBDA(const TeamHandleType& team) {
       const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
@@ -676,8 +676,8 @@ void test_host_to_device_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
         const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
@@ -774,8 +774,8 @@ void test_host_to_device_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
         const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
@@ -861,8 +861,8 @@ void test_host_to_device_entity_bytes_pointer_and_stride(stk::mesh::BulkData& bu
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
         const int elemId = ngpMesh.identifier(ngpMesh.get_entity(stk::topology::ELEM_RANK, elem));
@@ -966,8 +966,8 @@ void test_host_to_device_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
     Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
       KOKKOS_LAMBDA(const TeamHandleType& team) {
         const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
@@ -1084,8 +1084,8 @@ void test_host_to_device_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
     Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
       KOKKOS_LAMBDA(const TeamHandleType& team) {
         const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
@@ -1184,8 +1184,8 @@ void test_host_to_device_bucket_bytes_pointer_and_stride(stk::mesh::BulkData& bu
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    auto constFieldData = field.template data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto& constFieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
     Kokkos::parallel_for(stk::ngp::TeamPolicy<stk::ngp::ExecSpace>(numBuckets, Kokkos::AUTO),
       KOKKOS_LAMBDA(const TeamHandleType& team) {
         const int bucketId = bucketIds.get<stk::ngp::ExecSpace>(team.league_rank());
@@ -1277,8 +1277,8 @@ void test_device_to_host_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   {
-    field.template synchronize<stk::mesh::OverwriteAll, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
-    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    field.template synchronize<stk::mesh::OverwriteAll, stk::ngp::DeviceSpace>();  // Mark it as modified so that we will sync on the other side
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
@@ -1366,8 +1366,8 @@ void test_device_to_host_entity_bytes_pointer_and_stride(stk::mesh::BulkData& bu
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   {
-    field.template synchronize<stk::mesh::OverwriteAll, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
-    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    field.template synchronize<stk::mesh::OverwriteAll, stk::ngp::DeviceSpace>();  // Mark it as modified so that we will sync on the other side
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
@@ -1469,8 +1469,8 @@ void test_device_to_host_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   {
-    field.template synchronize<stk::mesh::OverwriteAll, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
-    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    field.template synchronize<stk::mesh::OverwriteAll, stk::ngp::DeviceSpace>();  // Mark it as modified so that we will sync on the other side
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, field,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
@@ -1554,8 +1554,8 @@ void test_device_to_host_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   {
-    field.template synchronize<stk::mesh::ReadWrite, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
-    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    field.template synchronize<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();  // Mark it as modified so that we will sync on the other side
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
     unsigned numBuckets = bucketIds.size();
@@ -1657,8 +1657,8 @@ void test_device_to_host_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   {
-    field.template synchronize<stk::mesh::ReadWrite, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
-    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    field.template synchronize<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();  // Mark it as modified so that we will sync on the other side
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
     unsigned numBuckets = bucketIds.size();
@@ -1771,8 +1771,8 @@ void test_device_to_host_bucket_bytes_pointer_and_stride(stk::mesh::BulkData& bu
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   {
-    field.template synchronize<stk::mesh::ReadWrite, stk::ngp::MemSpace>();  // Mark it as modified so that we will sync on the other side
-    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::MemSpace>();
+    field.template synchronize<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();  // Mark it as modified so that we will sync on the other side
+    auto fieldDataBytes = field.template data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, field);
     unsigned numBuckets = bucketIds.size();
@@ -1925,8 +1925,8 @@ void device_is_field_defined(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& f
                              stk::mesh::Part& part1, stk::mesh::Part& part2)
 {
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-  field.data<stk::mesh::Unsynchronized, stk::ngp::MemSpace>();  // Trigger device FieldData creation before accessing bytes
-  auto fieldDataBytes = field.data_bytes<std::byte, stk::ngp::MemSpace>();
+  field.data<stk::mesh::Unsynchronized, stk::ngp::DeviceSpace>();  // Trigger device FieldData creation before accessing bytes
+  auto fieldDataBytes = field.data_bytes<std::byte, stk::ngp::DeviceSpace>();
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, part1,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
