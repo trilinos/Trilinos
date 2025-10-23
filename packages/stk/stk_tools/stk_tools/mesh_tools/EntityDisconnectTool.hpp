@@ -36,6 +36,7 @@
 #define ELEMENT_DISCONNECT_TOOL_HPP
 
 #include <array>
+#include <iterator>
 #include <vector>
 
 #include "DisjointSet.hpp"
@@ -47,30 +48,24 @@
 namespace stk::experimental
 {
 
-// Returns a list of target-rank entities that are adjacent to the source entities via a given edge-rank
-template <stk::topology::rank_t EdgeR, stk::topology::rank_t TargetR>
-auto get_adjacent_entities(const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& srcEntities)
+using EntityContainer = std::unordered_set<stk::mesh::Entity>;
+
+// Returns a list of target-rank entities that are adjacent to the source entities via a given edge-rank such that each
+// target entity satisfies a user-supplied predicate function.
+template <topology::rank_t EdgeR, topology::rank_t TargetR, typename Pred>
+auto get_adjacent_entities(const mesh::BulkData& bulk, const EntityContainer& srcEntities, Pred&& predicate)
 {
-  stk::mesh::EntityVector adjEntities;  // TODO: Reserve with sensible size
+  EntityContainer adjEntitySet;
   for (const auto& srcEntity : srcEntities) {
     const auto& sourceEdges = bulk.get_connected_entities(srcEntity, EdgeR);
-    for (auto e = 0U; e < sourceEdges.size(); ++e) {
-      const auto& targetEntities = bulk.get_connected_entities(sourceEdges[e], TargetR);
-      for (auto i = 0U; i < targetEntities.size(); ++i) {
-        adjEntities.push_back(targetEntities[i]);
+    for (const auto& sEdge : sourceEdges) {
+      const auto& targetEntities = bulk.get_connected_entities(sEdge, TargetR);
+      for (const auto& tEntity : targetEntities) {
+        if (std::forward<Pred>(predicate)(tEntity)) adjEntitySet.insert(tEntity);
       }
     }
   }
-  stk::util::sort_and_unique(adjEntities);
-  return adjEntities;
-}
-
-template <stk::topology::rank_t EdgeR, stk::topology::rank_t TargetR, typename Func>
-void for_each_adjacent_entity(const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& srcEntities, Func func)
-{
-  for (const auto& entity : get_adjacent_entities<EdgeR, TargetR>(bulk, srcEntities)) {
-    func(entity);
-  }
+  return adjEntitySet;
 }
 
 struct FaceInfo {
@@ -84,16 +79,34 @@ struct FacePair {
   FaceInfo faceNew{};
 };
 
+struct RelationTriplet
+{
+  RelationTriplet(const stk::mesh::Entity& entity_,
+      const stk::mesh::Entity& origNode_,
+      const stk::mesh::Entity& newNode_,
+      const stk::mesh::ConnectivityOrdinal& ordinal_)
+      : entity(entity_), origNode(origNode_), newNode(newNode_), ordinal(ordinal_)
+  {
+  }
+
+  stk::mesh::Entity entity{};
+  stk::mesh::Entity origNode{};
+  stk::mesh::Entity newNode{};
+  stk::mesh::ConnectivityOrdinal ordinal{};
+};
+
 class EntityDisconnectTool
 {
  public:
   EntityDisconnectTool() { check_serial_execution(); }
-  EntityDisconnectTool(stk::mesh::BulkData& mesh, stk::mesh::EntityVector dcFaces = {})
-      : m_disconnectFaces(std::move(dcFaces)), m_mesh(&mesh)
+
+  template <typename ContainerT>
+  EntityDisconnectTool(stk::mesh::BulkData& mesh, const ContainerT& dcFaces = {})
+      : m_disconnectFaces(dcFaces.begin(), dcFaces.end()), m_mesh(&mesh)
   {
     check_serial_execution();
     initialize();
-  };
+  }
 
   virtual ~EntityDisconnectTool() = default;
 
@@ -105,8 +118,8 @@ class EntityDisconnectTool
 
   const auto& get_disjoint_set() const { return m_disjointSet; }
   auto& get_disjoint_set() { return m_disjointSet; }
-  const stk::mesh::EntityVector& get_node_adjacent_faces() const { return m_adjacentFaces; }
-  const stk::mesh::EntityVector& get_adjacent_elements() const { return m_adjacentElements; }
+  const EntityContainer& get_retained_faces() const { return m_retainedFaces; }
+  const EntityContainer& get_adjacent_elements() const { return m_adjacentElements; }
   const std::vector<FacePair>& get_elem_side_pairs() const { return m_disconnectFacePairs; }
 
   stk::mesh::EntityIdVector determine_new_nodes();
@@ -117,12 +130,13 @@ class EntityDisconnectTool
 
   void initialize();
   void filter_exterior_faces();
-  void identify_node_adjacent_faces();
+  void identify_adjacent_retained_faces();
+  void identify_all_affected_faces();
   void identify_adjacent_elements();
-  void add_elements_adjacent_to(const stk::mesh::EntityVector& faces, stk::mesh::EntityVector& adjacentElements);
+  void add_elements_adjacent_to(const EntityContainer& faces, EntityContainer& adjacentElements);
   void identify_elem_side_pairs();
 
-  void merge_connected_faces(const stk::mesh::EntityVector& adjacentFaces);
+  void merge_connected_faces(const EntityContainer& adjacentFaces);
 
   stk::mesh::EntityIdVector compute_new_node_ids(const std::vector<NodeElemKey>& newNodeKeys);
   stk::mesh::EntityIdVector get_local_node_ids() const;
@@ -140,7 +154,8 @@ class EntityDisconnectTool
   bool is_element_connected(const stk::mesh::Entity& face) const;
 
   void declare_new_nodes();
-  void update_entity_nodal_relations(const stk::mesh::EntityVector& adjacentEntities);
+  std::vector<RelationTriplet> get_relation_triplets(const EntityContainer& adjacentEntities);
+  void update_entity_nodal_relations(const EntityContainer& adjacentEntities);
 
   void update_face_relations();
   void disconnect_face_from_element(const FaceInfo& info);
@@ -150,9 +165,10 @@ class EntityDisconnectTool
   stk::mesh::Entity get_first_element(const stk::mesh::Entity& entity) const;
 
   DisjointSet m_disjointSet;
-  stk::mesh::EntityVector m_disconnectFaces;
-  stk::mesh::EntityVector m_adjacentFaces;
-  stk::mesh::EntityVector m_adjacentElements;
+  EntityContainer m_disconnectFaces;
+  EntityContainer m_retainedFaces;
+  EntityContainer m_adjacentElements;
+  EntityContainer m_allAffectedFaces;
   std::vector<FacePair> m_disconnectFacePairs;
   stk::mesh::BulkData* m_mesh;
 };

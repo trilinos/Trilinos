@@ -188,9 +188,10 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
           for (size_t fieldIdx = 0; fieldIdx < ngpFieldsOnDevice.extent(0); ++fieldIdx) {
             NgpFieldType const& field = ngpFieldsOnDevice(fieldIdx);
             if (field.get_rank() == fieldRank) {
-              size_t numComponents = field.get_num_components_per_entity(fastMeshIndex);
-              for (size_t comp = 0; comp < numComponents; ++comp) {
-                deviceSendData(dataBegin + sendBufferStartIdx++) = field.get(fastMeshIndex, comp);
+              stk::mesh::EntityFieldData<T> fieldData = field(fastMeshIndex);
+              unsigned numComponents = fieldData.size();
+              for (unsigned comp = 0; comp < numComponents; ++comp) {
+                deviceSendData(dataBegin + sendBufferStartIdx++) = fieldData[comp];
               }
             }
           }
@@ -245,11 +246,12 @@ void ngp_parallel_data_exchange_sym_pack_unpack(MPI_Comm mpi_communicator,
           for (size_t fieldIdx = 0; fieldIdx < ngpFieldsOnDevice.extent(0); ++fieldIdx) {
             NgpFieldType const& field = ngpFieldsOnDevice(fieldIdx);
             if (field.get_rank() == fieldRank) {
-              size_t numComponents = field.get_num_components_per_entity(fastMeshIndex);
+              stk::mesh::EntityFieldData<T> fieldData = field(fastMeshIndex);
+              unsigned numComponents = fieldData.size();
 
-              for (size_t comp = 0; comp < numComponents; ++comp) {
+              for (unsigned comp = 0; comp < numComponents; ++comp) {
                 auto rcv = deviceRecvData(dataBegin + recvBufferStartIdx++);
-                field.get(fastMeshIndex, comp) = doOperation(field.get(fastMeshIndex, comp), rcv);
+                fieldData[comp] = doOperation(fieldData[comp], rcv);
               }
             }
           }

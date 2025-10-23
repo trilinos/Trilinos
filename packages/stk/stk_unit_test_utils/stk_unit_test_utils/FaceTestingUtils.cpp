@@ -187,7 +187,7 @@ unsigned read_file_shared_faces_same_elements_stk(std::string filename)
 bool is_node_not_at_x_equal_half(const stk::mesh::BulkData& mesh, stk::mesh::Entity node)
 {
     auto* coords = mesh.mesh_meta_data().coordinate_field();
-    auto coordsData = coords->data<double, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>();
+    auto coordsData = coords->data<double, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>();
     auto xyz = coordsData.entity_values(node);
 
     return (xyz(0_comp) != 0.5);

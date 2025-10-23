@@ -83,28 +83,28 @@ struct DeviceBucketT {
       m_entityRank(stk::topology::NODE_RANK)
   {}
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   unsigned bucket_id() const { return m_bucketId; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_t size() const { return m_bucketSize; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_t capacity() const { return m_bucketCapacity; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   stk::mesh::EntityRank entity_rank() const { return m_entityRank; }
 
   KOKKOS_FUNCTION
   stk::topology topology() const { return m_bucketTopology; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   unsigned partition_id() const { return m_owningPartitionId; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   bool is_active() const { return m_bucketId != INVALID_BUCKET_ID; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   unsigned get_active_entity_span() const { return m_activeEntitySpan; }
 
   KOKKOS_INLINE_FUNCTION
@@ -213,11 +213,11 @@ struct DeviceBucketT {
   KOKKOS_FUNCTION
   void update_bucket_meta_entity_removed()
   {
-    m_bucketSize--;
+    Kokkos::atomic_dec(&m_bucketSize);
     m_activeEntitySpan--;
   }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void update_bucket_meta_set_entity_span_to_active_count()
   {
     m_activeEntitySpan = m_bucketSize;

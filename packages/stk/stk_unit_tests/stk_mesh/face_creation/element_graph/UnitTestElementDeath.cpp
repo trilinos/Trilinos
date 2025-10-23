@@ -675,6 +675,22 @@ TEST(ElementDeath, abutting_cross_shell_case_3)
   run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 2u, stk::mesh::BulkData::AUTO_AURA);
 }
 
+TEST(ElementDeath, abutting_MTG_case)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+  if(stk::parallel_machine_size(comm) != 1) GTEST_SKIP();
+
+  stk::mesh::EntityIdVector killedElementIds{1u};
+
+  const std::string meshDesc = "textmesh:\n\
+                                0, 1,SHELL_QUAD_4, 1, 2, 3, 4, block_1\n\
+                                0, 2,SHELL_TRI_3 , 1, 4, 5,    block_2\n\
+                                |coordinates: 0,0,0, 1,0,0, 1,1,0, 0,1,0, -1,1,0";
+
+  run_abutting_shell_element_death_case(comm, meshDesc, killedElementIds, 1u);
+}
+
 } // end namespace
 
 

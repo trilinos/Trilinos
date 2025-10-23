@@ -88,10 +88,16 @@ void fill_sorted_procs(PairIterEntityComm ec, std::vector<int>& procs)
 {
   procs.clear();
   procs.reserve(ec.size());
+  int prevProc = -1;
+  bool isSorted = true;
   for(; !ec.empty(); ++ec) {
+    isSorted = isSorted && (prevProc < ec->proc);
     procs.push_back( ec->proc );
+    prevProc = ec->proc;
   }
-  stk::util::sort_and_unique(procs);
+  if (!isSorted) {
+    stk::util::sort_and_unique(procs);
+  }
 }
 
 unsigned fill_procs_shared_then_ghosted(PairIterEntityComm ec, std::vector<int>& procs)

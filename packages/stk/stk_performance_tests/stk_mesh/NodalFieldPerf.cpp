@@ -111,10 +111,10 @@ public:
 
   void testDeviceVectorFieldSum(unsigned NUM_ITERS)
   {
-    auto dispFieldData  = dispField->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto velFieldData   = velField->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto accFieldData   = accField->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
-    auto forceFieldData = forceField->data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    auto dispFieldData  = dispField->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto velFieldData   = velField->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto accFieldData   = accField->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    auto forceFieldData = forceField->data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::NODE_RANK,
                                                                 get_meta().locally_owned_part());

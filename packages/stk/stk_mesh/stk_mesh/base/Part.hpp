@@ -161,6 +161,7 @@ private:
 
   CSet & get_attributes() { return m_attribute; }
 
+  void set_name(const std::string& newName);
   void set_primary_entity_rank( EntityRank entity_rank );
 
   void set_topology( stk::topology topo )
@@ -194,7 +195,7 @@ private:
   bool remove_attribute( const T *);
 
   MetaData* const   m_mesh_meta_data;
-  const std::string m_name;
+  std::string m_name;
   EntityRank        m_entity_rank;
   stk::topology     m_topology;
   int64_t           m_id;

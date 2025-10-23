@@ -1269,7 +1269,7 @@ TEST_F(NgpHowTo, checkPartMembership)
 void fill_field(const stk::mesh::NgpMesh& ngpMesh, stk::mesh::EntityRank rank, const stk::mesh::MetaData& meta, stk::mesh::Field<int>& field, int fieldVal)
 {
   //BEGINNgpMeshIndexUsage
-  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+  auto fieldData = field.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
 
   stk::mesh::for_each_entity_run(ngpMesh, rank, meta.universal_part(), KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                  {

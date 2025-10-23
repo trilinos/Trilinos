@@ -95,7 +95,7 @@ namespace stk { namespace mesh { namespace impl {
   template <typename NgpMemSpace> NgpMeshHostData<NgpMemSpace>* get_ngp_mesh_host_data(const BulkData & bulk);
 }}}
 namespace stk { namespace mesh { namespace impl {
-  template <typename MemSpace> DeviceFieldDataManagerBase* get_device_field_data_manager(const BulkData& bulk);
+  template <typename Space> DeviceFieldDataManagerBase* get_device_field_data_manager(const BulkData& bulk);
 }}}
 
 namespace stk {
@@ -598,7 +598,7 @@ public:
     return m_ghosting;
   }
 
-  size_t get_num_communicated_entities() const { return m_entity_comm_list.size(); }
+  size_t get_num_communicated_entities() const { return m_entity_comm_map.comm_list().size(); }
 
   bool in_shared(EntityKey key) const { return !internal_entity_comm_map_shared(key).empty(); }
   bool in_shared(Entity entity) const;
@@ -918,7 +918,7 @@ protected: //functions
                             const EntityProcVec& entities,
                             EntityProcVec& entitiesWithClosure);
 
-  const EntityCommListInfoVector & internal_comm_list() const { return m_entity_comm_list; }
+  const EntityCommListInfoVector & internal_comm_list() const { return m_entity_comm_map.comm_list(); }
   const EntityCommDatabase& internal_comm_db() const { return m_entity_comm_map; }
 
   PairIterEntityComm internal_entity_comm_map(const EntityKey & key) const { return m_entity_comm_map.comm(key); }
@@ -1241,7 +1241,7 @@ private:
   void set_ngp_mesh(NgpMeshBase * ngpMesh) const { m_ngpMeshBase = ngpMesh; }
   NgpMeshBase * get_ngp_mesh() const { return m_ngpMeshBase; }
 
-  template <typename MemSpace>
+  template <typename Space>
   DeviceFieldDataManagerBase* get_device_field_data_manager() const;
 
   void record_entity_deletion(Entity entity, bool isGhost);
@@ -1328,7 +1328,7 @@ private:
   void remove_entity_field_data_callback(EntityRank rank, unsigned bucket_id, unsigned newBucketSize,
                                          unsigned bucket_ord);
   void add_entity_callback(EntityRank rank, unsigned bucketId, unsigned newBucketSize, unsigned bucketCapacity,
-                           unsigned indexInBucket);
+                           unsigned indexInBucket, bool initializeFieldData = true);
   void reset_empty_field_data_callback(EntityRank rank, unsigned bucketId, unsigned bucketSize,
                                        unsigned bucketCapacity, const FieldVector & fields);
 
@@ -1489,7 +1489,6 @@ protected: //data
   std::vector<uint16_t> m_closure_count; //indexed by Entity
   std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity
   std::unique_ptr<impl::EntityKeyMapping> m_entityKeyMapping;
-  EntityCommListInfoVector m_entity_comm_list;
   std::vector<int> m_entitycomm;
   std::vector<int> m_owner;
   std::vector<std::pair<EntityKey,EntityCommInfo>> m_removedGhosts;
@@ -1976,8 +1975,8 @@ void BulkData::internal_update_ngp_fast_comm_maps() const
 
     if (parallel_size() > 1) {
         const EntityRank num_ranks = static_cast<EntityRank>(get_entity_rank_count());
-        const EntityCommListInfoVector& all_comm = m_entity_comm_list;
         const EntityCommDatabase& commDB = internal_comm_db();
+        const EntityCommListInfoVector& all_comm = commDB.comm_list();
 
         // Assemble map, find all shared and ghost entities and pack into volatile fast map
         Kokkos::View<unsigned**,stk::ngp::HostMemSpace> shared_entity_counts("shared_entity_counts", num_ranks,parallel_size());
@@ -2057,13 +2056,17 @@ BulkData::volatile_fast_shared_comm_map(EntityRank rank, int proc, bool includeG
   confirm_host_mesh_is_synchronized_from_device();
   STK_ThrowAssert(this->in_synchronized_state());
   if (m_ngpMeshHostDataBase == nullptr ||
-      (dynamic_cast<impl::NgpMeshHostData<NgpMemSpace>*>(m_ngpMeshHostDataBase.get()))->volatileFastSharedCommMapSyncCount < synchronized_count()) {
+      m_ngpMeshHostDataBase->volatileFastSharedCommMapSyncCount < synchronized_count()) {
     internal_update_ngp_fast_comm_maps<NgpMemSpace>();
   }
 
   if (parallel_size() > 1)
   {
+#ifndef NDEBUG
     impl::NgpMeshHostData<NgpMemSpace>* ngpHostData = dynamic_cast<impl::NgpMeshHostData<NgpMemSpace>*>(m_ngpMeshHostDataBase.get());
+#else
+    impl::NgpMeshHostData<NgpMemSpace>* ngpHostData = static_cast<impl::NgpMeshHostData<NgpMemSpace>*>(m_ngpMeshHostDataBase.get());
+#endif
 
     const size_t dataBegin = ngpHostData->hostVolatileFastSharedCommMapOffset[rank](proc);
     const size_t dataEnd = includeGhosts ? ngpHostData->hostVolatileFastSharedCommMapOffset[rank](proc+1)
@@ -2282,12 +2285,12 @@ BulkData::set_local_id(Entity entity, unsigned id)
   m_local_ids[entity.local_offset()] = id;
 }
 
-template <typename MemSpace>
+template <typename Space>
 DeviceFieldDataManagerBase*
 BulkData::get_device_field_data_manager() const
 {
   if (not m_deviceFieldDataManager) {
-    m_deviceFieldDataManager = impl::build_device_field_data_manager<MemSpace>(*this);
+    m_deviceFieldDataManager = impl::build_device_field_data_manager<Space>(*this);
   }
   return m_deviceFieldDataManager.get();
 }
@@ -2346,10 +2349,10 @@ inline impl::NgpMeshHostData<NgpMemSpace>* get_ngp_mesh_host_data(const BulkData
   return dynamic_cast<NgpMeshHostData<NgpMemSpace>*>(bulk.m_ngpMeshHostDataBase.get());
 }
 
-template <typename MemSpace>
+template <typename Space>
 inline DeviceFieldDataManagerBase* get_device_field_data_manager(const BulkData& bulk)
 {
-  return bulk.get_device_field_data_manager<MemSpace>();
+  return bulk.get_device_field_data_manager<Space>();
 }
 
 }

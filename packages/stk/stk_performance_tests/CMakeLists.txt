@@ -16,6 +16,7 @@ else()
                                       stk_search/*.cpp
                                       stk_transfer/*.cpp
                                       stk_util/*.cpp
+                                      stk_tools/*.cpp
       )
 
   if (STK_ENABLE_STKMiddle_mesh_util)

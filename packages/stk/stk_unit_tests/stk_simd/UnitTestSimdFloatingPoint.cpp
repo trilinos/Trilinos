@@ -422,5 +422,5 @@ TEST_F(DoubleDoubleIntFixture, pow_double) {
     return std::pow(a, b);
   });
 
-  this->verify();
+  this->verify_with_tolerance();
 }

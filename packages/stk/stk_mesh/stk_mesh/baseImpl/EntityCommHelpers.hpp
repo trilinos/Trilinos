@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,32 +30,44 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#ifndef STK_BALANCE_FILE_VALIDATOR_HPP
-#define STK_BALANCE_FILE_VALIDATOR_HPP
+#ifndef stk_mesh_baseImpl_EntityCommHelpers_hpp
+#define stk_mesh_baseImpl_EntityCommHelpers_hpp
 
-#include <string>
-#include "mpi.h"
+#include <stk_util/parallel/CommBuffer.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <iosfwd>
 
 namespace stk {
-namespace balance {
+namespace mesh {
+namespace impl {
 
-class FileValidator {
-public:
-  FileValidator(MPI_Comm comm);
+void pack_entity_info(const BulkData& mesh,
+                      CommBuffer& buf,
+                      const Entity entity,
+                      bool onlyPackDownwardRelations = false);
 
-  void require_file_exists(const std::string& filename, unsigned numProcs) const;
-  bool input_equals_output(const std::string& infile, const std::string& outfile) const;
-  bool serial_input_equals_output(const std::string& infile, const std::string& outfile) const;
+void unpack_entity_info(CommBuffer     & buf,
+                        const BulkData & mesh ,
+                        EntityKey      & key ,
+                        int            & owner ,
+                        PartVector     & parts ,
+                        RelationVector& relations );
 
-private:
-  bool does_file_exist(const std::string& filename, unsigned numProcs) const;
-  std::string trim_filename(const std::string& filename) const;
+void pack_sideset_info(BulkData& mesh, CommBuffer & buf, const Entity entity);
 
-  MPI_Comm m_comm;
-  const bool m_isSerial;
-};
+void unpack_sideset_info(CommBuffer & buf, BulkData & mesh, const Entity entity);
 
-} }
+void pack_field_values(const BulkData& mesh, CommBuffer & , Entity );
 
-#endif
+bool unpack_field_values(const BulkData& mesh, CommBuffer & , Entity , std::ostream & error_msg );
+
+} // namespace impl
+} // namespace mesh
+} // namespace stk
+
+#endif // stk_mesh_baseImpl_EntityCommHelpers_hpp
+

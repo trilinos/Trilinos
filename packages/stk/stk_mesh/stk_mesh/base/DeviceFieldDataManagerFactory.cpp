@@ -38,16 +38,16 @@
 
 namespace stk::mesh::impl {
 
-template <typename MemSpace>
+template <typename Space>
 std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager(const BulkData& bulk)
 {
-  return std::make_unique<DeviceFieldDataManager<MemSpace>>(bulk);
+  return std::make_unique<DeviceFieldDataManager<Space>>(bulk);
 }
 
-#if defined(STK_ENABLE_GPU)
-template std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager<stk::ngp::MemSpace>(const BulkData& bulk);
-template std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager<stk::ngp::UVMMemSpace>(const BulkData& bulk);
-template std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager<stk::ngp::HostPinnedSpace>(const BulkData& bulk);
+#if defined(STK_USE_DEVICE_MESH)
+template std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager<stk::ngp::DeviceSpace>(const BulkData& bulk);
+template std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager<stk::ngp::UVMDeviceSpace>(const BulkData& bulk);
+template std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager<stk::ngp::HostPinnedDeviceSpace>(const BulkData& bulk);
 #endif
 
 }

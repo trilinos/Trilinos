@@ -47,7 +47,7 @@
 #include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
-
+#include "Kokkos_DualView.hpp"
 #include <complex>
 #include <string>
 #include <iostream>
@@ -693,6 +693,43 @@ private:
   Scalar m_beta;
 };
 
+template <typename FieldDataType, typename DataType>
+void compute_field_dot(const stk::mesh::BulkData& mesh,
+    const stk::mesh::FieldBase & xField,
+    const stk::mesh::FieldBase & yField,
+    DataType& returnVal,
+    const stk::mesh::Selector & select)
+{
+  const stk::mesh::Selector selector = select & stk::mesh::selectField(xField) & stk::mesh::selectField(yField);
+  stk::mesh::EntityRank entityRank = xField.entity_rank();
+  xField.sync_to_device();
+  yField.sync_to_device();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(mesh);
+  auto& ngpXField = stk::mesh::get_updated_ngp_field<FieldDataType>(xField);
+  auto& ngpYField = stk::mesh::get_updated_ngp_field<FieldDataType>(yField);
+
+  using MemSpace = stk::ngp::MemSpace;
+  using Layout = Kokkos::LayoutLeft;
+  Kokkos::DualView<DataType*, Layout, MemSpace> typeView;
+  Kokkos::resize(typeView, 1);
+  typeView.modify_device();
+  stk::mesh::for_each_entity_run(ngpMesh, entityRank, selector,
+                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
+    unsigned num_components = ngpXField.get_num_components_per_entity(entity);
+    unsigned other = ngpYField.get_num_components_per_entity(entity);
+    num_components = (other < num_components) ? other : num_components;
+    for (unsigned i = 0; i < num_components; ++i)
+    {
+      DataType multVal = ngpXField.get(entity, i) * ngpYField.get(entity, i);
+      Kokkos::atomic_add(&typeView.d_view(0), multVal);
+    }
+  });
+
+  typeView.sync_host();
+  returnVal = typeView.h_view(0);
+
+}
+
 template<class DataType, typename EXEC_SPACE>
 inline void field_axpbyz_impl(const stk::mesh::BulkData& mesh,
     const DataType alpha,
@@ -859,10 +896,10 @@ inline void field_swap_impl(const stk::mesh::BulkData& mesh,
         mesh, xField, yField, xField, 0, 0, fieldSelector);
     } else if (dataTraits.type_info == typeid(float)) {
       ngp_field_blas::impl::apply_functor_on_field<FieldSwapFunctor<float>>(
-        mesh, xField, xField, xField, 0, 0, fieldSelector);
+        mesh, xField, yField, xField, 0, 0, fieldSelector);
     } else if (dataTraits.type_info == typeid(int)) {
       ngp_field_blas::impl::apply_functor_on_field<FieldSwapFunctor<int>>(
-        mesh, xField, xField, xField, 0, 0, fieldSelector);
+        mesh, xField, yField, xField, 0, 0, fieldSelector);
     } else if (dataTraits.type_info == typeid(unsigned)) {
       ngp_field_blas::impl::apply_functor_on_field<FieldSwapFunctor<unsigned>>(
         mesh, xField, yField, xField, 0, 0, fieldSelector);
@@ -882,6 +919,50 @@ inline void field_swap_impl(const stk::mesh::BulkData& mesh,
 
 }
 
+template<class DataType, typename EXEC_SPACE>
+inline void field_dot_impl(const stk::mesh::BulkData& mesh,
+    const stk::mesh::FieldBase & xField,
+    const stk::mesh::FieldBase & yField,
+    DataType& returnVal,
+    const stk::mesh::Selector* selectorPtr,
+    const EXEC_SPACE& execSpace)
+{
+  const stk::mesh::DataTraits& dataTraits = xField.data_traits();
+  STK_ThrowRequireMsg(dataTraits == yField.data_traits(), "xField and yField must have same datatype");
+
+  stk::mesh::Selector fieldSelector;
+  if (selectorPtr == nullptr) {
+    fieldSelector = stk::mesh::Selector(xField);
+  } else
+  {
+    fieldSelector = *selectorPtr;
+  }
+
+  if constexpr (ngp_field_blas::impl::operate_on_ngp_mesh<EXEC_SPACE>()) {
+    if (dataTraits.type_info == typeid(double)) {
+      ngp_field_blas::impl::compute_field_dot<double>(mesh, xField, yField, returnVal, fieldSelector);
+    } else if (dataTraits.type_info == typeid(float)) {
+      ngp_field_blas::impl::compute_field_dot<float>(mesh, xField, yField, returnVal, fieldSelector);
+    } else if (dataTraits.type_info == typeid(int)) {
+      ngp_field_blas::impl::compute_field_dot<int>(mesh, xField, yField, returnVal, fieldSelector);
+    } else if (dataTraits.type_info == typeid(unsigned)) {
+      ngp_field_blas::impl::compute_field_dot<unsigned>(mesh, xField, yField, returnVal, fieldSelector);
+    } else
+    {
+      STK_ThrowErrorMsg("field_dot doesn't yet support fields of type "<<dataTraits.type_info.name());
+    }
+    DataType globalReturnVal = returnVal;
+    stk::all_reduce_sum(mesh.parallel(), &returnVal, &globalReturnVal, 1u);
+    returnVal = globalReturnVal;
+  }
+  else {
+    xField.sync_to_host();
+    yField.sync_to_host();
+    stk::mesh::field_dot(returnVal, xField, yField, *selectorPtr, mesh.parallel());
+  }
+}
+
+
 //************ end of implementation detail *********************************
 
 } // namespace impl
@@ -889,4 +970,3 @@ inline void field_swap_impl(const stk::mesh::BulkData& mesh,
 } // stk
 
 #endif // STK_MESH_BASEIMPL_NGPFIELDBLASIMPL_HPP
-

@@ -256,7 +256,7 @@ STK_MATH_FORCE_INLINE void plus_equal_part(Double& value, const Double& incremen
   for (int n=0; n<numValid; ++n) value[n] += increment[n];
 }
 
-STK_MATH_FORCE_INLINE bool are_all(const Bool& a, const int sumNum=ndoubles) {
+STK_MATH_FORCE_INLINE bool are_all(const Bool& a, const int sumNum) {
   assert(sumNum <= ndoubles);
   const Double oneornone = stk::math::if_then_else_zero(a, Double(1.0));
   bool all_true = true;
@@ -266,7 +266,19 @@ STK_MATH_FORCE_INLINE bool are_all(const Bool& a, const int sumNum=ndoubles) {
   return all_true;
 }
 
-STK_MATH_FORCE_INLINE bool are_any(const Bool& a, const int sumNum=ndoubles) {
+STK_MATH_FORCE_INLINE bool are_all(const Bool& a) {
+#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(__HIPCC__) && !defined(USE_STK_SIMD_NONE)
+  // Fast path: work directly with the __mmaskX bits.
+  const unsigned k = (unsigned)a._data.get();
+  const unsigned needed = ((1u << ndoubles) - 1u);
+  return (k & needed) == needed;
+#else
+  // All lanes must be true.
+  return SIMD_NAMESPACE::all_of(a._data);
+#endif
+}
+
+STK_MATH_FORCE_INLINE bool are_any(const Bool& a, const int sumNum) {
   assert(sumNum <= ndoubles);
   Double oneornone = stk::math::if_then_else_zero(a, Double(1.0));
   bool any_true = false;
@@ -274,6 +286,16 @@ STK_MATH_FORCE_INLINE bool are_any(const Bool& a, const int sumNum=ndoubles) {
     any_true = any_true || (oneornone[i] > 0.5);
   }
   return any_true;
+}
+
+STK_MATH_FORCE_INLINE bool are_any(const Bool& a) {
+#if defined(__AVX512F__) && !defined(__CUDACC__) && !defined(__HIPCC__) && !defined(USE_STK_SIMD_NONE)
+  const unsigned k = (unsigned)a._data.get();
+  const unsigned needed = ((1u << ndoubles) - 1u);
+  return (k & needed) != 0u;
+#else
+  return SIMD_NAMESPACE::any_of(a._data);
+#endif
 }
 
 // floats
