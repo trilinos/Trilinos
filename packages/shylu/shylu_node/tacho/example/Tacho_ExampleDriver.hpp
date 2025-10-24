@@ -118,21 +118,21 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
   using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
 
-  std::cout << std::endl << "    --------------------- " << std::endl;
+  std::cout << std::endl << "   ---------------------- " << std::endl;
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
   std::cout << "     Method Name:: " << method_name << std::endl;
   std::cout << "     Solver Type:: " << variant << std::endl;
-  std::cout << "          # RHSs:: " << nrhs;
+  std::cout << "          # RHSs:: " << nrhs << std::endl << std::endl;
   if (default_setup) {
-    std::cout << " Using default Parameters " << std::endl;
+    std::cout << "   Using default Parameters " << std::endl;
   } else {
-    std::cout << " Using non default Parameters " << nrhs;
+    std::cout << "   Using non default Parameters " << std::endl;
     std::cout << "       # Streams:: " << nstreams << std::endl;
     std::cout << "    Small Poblem:: " << small_problem_thres << std::endl;
     std::cout << "   Device Thresh:: " << device_factor_thres << ", " << device_solve_thres << std::endl;
   }
-  std::cout << std::endl << "    --------------------- " << std::endl << std::endl;
+  std::cout << "  ---------------------- " << std::endl << std::endl;
 
   int r_val = 0;
   try {
