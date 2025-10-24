@@ -43,6 +43,8 @@
 #include "KokkosBatched_Trsv_TeamVector_Impl.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_Team_Impl.hpp"
+#include "KokkosBatched_Gemv_Decl.hpp"
+#include "KokkosBatched_Gemv_Team_Impl.hpp"
 #include "KokkosBatched_Copy_Decl.hpp"
 #include "KokkosBatched_Copy_Impl.hpp"
 #include "KokkosBlas1_set.hpp"
@@ -217,6 +219,7 @@ class BlockInverseFunctor {
   using local_matrix_type = typename CrsMatrix::local_matrix_type;
   using scalar_type       = typename local_matrix_type::value_type;
   using ATS               = Kokkos::ArithTraits<scalar_type>;
+  using magnitude_type    = ATS::magnitudeType;
 
   using shared_matrix = Kokkos::View<scalar_type**, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
   using shared_vector = Kokkos::View<scalar_type*, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
@@ -227,6 +230,9 @@ class BlockInverseFunctor {
     , maxBlocksize(maxBlocksize_)
     , invA(invA_)
     , singular(singular_) {}
+
+  class TagFindSingularBlocks {};
+  class TagApply {};
 
  private:
   const scalar_type zero = ATS::zero();
@@ -240,7 +246,51 @@ class BlockInverseFunctor {
 
  public:
   KOKKOS_INLINE_FUNCTION
-  void operator()(const typename Kokkos::TeamPolicy<typename Node::execution_space>::member_type& thread) const {
+  void operator()(TagFindSingularBlocks, const typename Kokkos::TeamPolicy<typename Node::execution_space>::member_type& thread) const {
+    using member_type = typename Kokkos::TeamPolicy<typename Node::execution_space>::member_type;
+
+    auto blockId   = thread.league_rank();
+    auto blockRow  = blocks.rowConst(blockId);
+    auto blockSize = blockRow.length;
+
+    shared_matrix lclA(thread.team_shmem(), blockSize, blockSize);
+    shared_vector lclConst(thread.team_shmem(), blockSize);
+    shared_vector lclAConst(thread.team_shmem(), blockSize);
+
+    // Initialize lclA
+    KokkosBlas::TeamSet<member_type>::invoke(thread, zero, lclA);
+    KokkosBlas::TeamSet<member_type>::invoke(thread, one, lclConst);
+    thread.team_barrier();
+
+    // extract block from A
+    for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+      auto i   = blockRow.colidx(ii);
+      auto row = A.rowConst(i);
+      for (LocalOrdinal jj = 0; jj < row.length; ++jj) {
+        auto j = row.colidx(jj);
+        auto d = row.value(jj);
+        for (LocalOrdinal kk = 0; kk < blockSize; ++kk)
+          if (blockRow.colidx(kk) == j) {
+            lclA(ii, kk) += d;
+            break;
+          }
+      }
+    }
+
+    // lclAConst = lclA * lclConst
+    KokkosBlas::TeamGemv<member_type, KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::Gemv::Unblocked>::invoke(thread, one, lclA, lclConst, zero, lclAConst);
+    thread.team_barrier();
+
+    magnitude_type norm2 = zero;
+    for (LocalOrdinal i = 0; i < blockSize; ++i) {
+      norm2 += ATS::magnitude(lclAConst(i) * lclAConst(i));
+    }
+
+    singular(blockId) = (ATS::magnitude(norm2) < ATS::epsilon());
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagApply, const typename Kokkos::TeamPolicy<typename Node::execution_space>::member_type& thread) const {
     using member_type = typename Kokkos::TeamPolicy<typename Node::execution_space>::member_type;
 
     auto blockId   = thread.league_rank();
@@ -463,51 +513,20 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresS
 
   // If we pass a view of size 0 to the functor, all blocks are assumed to be non-singular.
   Kokkos::View<bool*> block_is_singular;
-  if (detect_singular_blocks) {
+  if (detect_singular_blocks)
     block_is_singular = Kokkos::View<bool*>("block_is_singular", numBlocks);
-    Kokkos::deep_copy(block_is_singular, true);
+
+  using functor_type = BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  functor_type functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice(), block_is_singular);
+
+  if (detect_singular_blocks) {
+    SubMonitor m2(*this, "singular block detection");
+    Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space, typename functor_type::TagFindSingularBlocks>(numBlocks, 1), functor);
   }
 
   {
     SubMonitor m2(*this, "inversion");
-
-    BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node> functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice(), block_is_singular);
-    Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space>(numBlocks, 1), functor);
-  }
-
-  if (IsPrint(Statistics0)) {
-    // print some stats
-
-    auto comm = invXXt_->getRowMap()->getComm();
-    GlobalOrdinal globalNumBlocks;
-    MueLu_sumAll(comm, (GlobalOrdinal)numBlocks, globalNumBlocks);
-
-    GetOStream(Statistics0) << "Least-squares problem:\n maximum block size: " << invXXt_->getGlobalMaxNumRowEntries() << "\n Number of blocks: " << globalNumBlocks << std::endl;
-  }
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolveDirect(const Kokkos::View<bool*> block_is_singular) {
-  Monitor m(*this, "PrepareLeastSquaresSolveDirect");
-
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> XXt;
-  {
-    SubMonitor m2(*this, "XXt");
-    XXt = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*X_, false, *X_, true, XXt, GetOStream(Runtime0), true, true);
-  }
-
-  auto XXtgraph = XXt->getCrsGraph();
-  auto blocks   = FindBlocks(XXtgraph);
-  invXXt_       = allocateBlockDiagonalMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(XXt->getRowMap(), blocks);
-
-  LocalOrdinal numBlocks    = blocks.numRows();
-  LocalOrdinal maxBlocksize = invXXt_->getLocalMaxNumRowEntries();
-
-  {
-    SubMonitor m2(*this, "inversion");
-
-    BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node> functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice(), block_is_singular);
-    Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space>(numBlocks, 1), functor);
+    Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space, typename functor_type::TagApply>(numBlocks, 1), functor);
   }
 
   if (IsPrint(Statistics0)) {
@@ -527,18 +546,6 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresS
     PrepareLeastSquaresSolveBelos(detect_singular_blocks);
   else if (solverType == "direct")
     PrepareLeastSquaresSolveDirect(detect_singular_blocks);
-  else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be one of (Belos|direct), not \"" << solverType << "\".");
-  solverType_ = solverType;
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolve(const std::string& solverType, const Kokkos::View<bool*> block_is_singular) {
-  if (solverType == "Belos") {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be direct, not \"" << solverType << "\".");
-  }
-  else if (solverType == "direct")
-    PrepareLeastSquaresSolveDirect(block_is_singular);
   else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be one of (Belos|direct), not \"" << solverType << "\".");
   solverType_ = solverType;

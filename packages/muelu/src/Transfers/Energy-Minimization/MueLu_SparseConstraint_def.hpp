@@ -40,7 +40,7 @@ SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   D_       = D;
   Dc_      = Dc;
   Setup();
-  this->PrepareLeastSquaresSolve(solverType, block_is_singular_);
+  this->PrepareLeastSquaresSolve(solverType, /*detect_singular_blocks=*/true);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -91,8 +91,6 @@ void SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
   const size_t numConstraints                 = auxGraph->getLocalNumEntries();
   auto constraint_rowmap                      = MapFactory::Build(lib, global_numConstraints, numConstraints, indexBase, comm);
   auto constraint_domainmap                   = MapFactory::Build(lib, global_numUnknowns, numUnknowns, indexBase, comm);
-  block_is_singular_                          = Kokkos::View<bool*>("block_is_singular", numRows);
-  Kokkos::deep_copy(block_is_singular_, true);
 
   RCP<Matrix> ghostedDc;
   if (!Ppattern->getImporter().is_null())
@@ -115,9 +113,6 @@ void SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
         KOKKOS_LAMBDA(const size_t pattern_i, size_t& partial_nnz) {
           for (size_t pattern_jj = lclPattern.row_map(pattern_i); pattern_jj < lclPattern.row_map(pattern_i + 1); ++pattern_jj) {
             auto pattern_j = lclPattern.entries(pattern_jj);
-            // least squares sub-matrix includes at least one D0 row with 1 nnz (i.e., edge adjacent to Dirichlet node)
-            if (lclD0.graph.row_map(pattern_j)+1 == lclD0.graph.row_map(pattern_j + 1) )
-              Kokkos::atomic_store(&block_is_singular_(pattern_i), false);
             for (size_t mat_jj = lclD0.graph.row_map(pattern_j); mat_jj < lclD0.graph.row_map(pattern_j + 1); ++mat_jj) {
               auto mat_j = lclD0.graph.entries(mat_jj);
               // Find entry mat_j in row graph_i of tempGraph
