@@ -86,7 +86,7 @@ namespace Tpetra {
 ///      rows, solved for the corresponding LHS values and updated the
 ///      RHS.  This step will also remove singleton columns from the
 ///      reduced system.  Once the solution of the reduced problem is
-///      is computed (via any solver that understands an Epetra_LinearProblem),
+///      is computed (via any solver that understands an Tpetra::LinearProblem),
 ///      you should call the ComputeFullSolution() method to compute
 ///      the LHS values assocaited with the singleton columns.
 /// <li> Solve reduced problem: Obtain a RCP to the reduced problem
