@@ -62,10 +62,10 @@ namespace Tpetra {
 /// <ol>
 /// <li> Construct full problem: Construct and Tpetra::LinearProblem
 ///      containing the "full" matrix, RHS and LHS.  This is done
-///      outside of Epetra_CrsSingletonFilter class.  Presumably,
+///      outside of Tpetra:CrsSingletonFilter class.  Presumably,
 ///      you have some reason to believe that this system may contain
 ///      singletons.
-/// <li> Construct an Epetra_CrsSingletonFilter instance:  Constructor
+/// <li> Construct an Tpetra::CrsSingletonFilter instance:  Constructor
 ///      needs no arguments.
 /// <li> Analyze matrix: Invoke the Analyze() method, passing in the
 ///      Tpetra::RowMatrix object from your full linear problem
