@@ -60,7 +60,7 @@ namespace Tpetra {
 ///
 /// The basic procedure for using this class is as follows:
 /// <ol>
-/// <li> Construct full problem: Construct and Epetra_LinearProblem
+/// <li> Construct full problem: Construct and Tpetra::LinearProblem
 ///      containing the "full" matrix, RHS and LHS.  This is done
 ///      outside of Epetra_CrsSingletonFilter class.  Presumably,
 ///      you have some reason to believe that this system may contain
