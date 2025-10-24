@@ -212,7 +212,7 @@ class CrsSingletonFilter_LinearProblem : public SameTypeTransform<Tpetra::Linear
 
   /// \brief Return a reduced linear problem based on results of Analyze().
   ///
-  /// Creates a new Epetra_LinearProblem object based on the
+  /// Creates a new Tpetra::LinearProblem object based on the
   /// results of the Analyze phase.  A RCP to the reduced
   /// problem is obtained via a call to ReducedProblem().
   void ConstructReducedProblem(const Teuchos::RCP<linear_problem_type>& Problem);
