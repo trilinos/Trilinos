@@ -31,13 +31,13 @@ namespace Tpetra {
 /// \class CrsSingletonFilter_LinearProblem
 /// \brief A class for explicitly eliminating matrix rows and columns from a LinearProblem.
 ///
-/// The Epetra_CrsSingletonFilter class takes an existing Epetra_LinearProblem
+/// The Tpetra::CrsSingletonFilter class takes an existing Tpetra::LinearProblem
 /// object, analyzes it structure and explicitly eliminates singleton
 /// rows and columns from the matrix and appropriately modifies the RHS
 /// and LHS of the linear problem.  The result of this process is a
-/// reduced system of equations that is itself an Epetra_LinearProblem
+/// reduced system of equations that is itself an Tpetra::LinearProblem
 /// object.  The reduced system can then be solved using any solver
-/// that is understands an Epetra_LinearProblem.  The solution for the
+/// that is understands an Tpetra::LinearProblem.  The solution for the
 /// full system is obtained by calling ComputeFullSolution().
 ///
 /// Singleton rows are defined to be rows that have a single nonzero
