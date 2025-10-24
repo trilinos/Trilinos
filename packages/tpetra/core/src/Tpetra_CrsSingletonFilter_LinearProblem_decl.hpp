@@ -219,7 +219,7 @@ class CrsSingletonFilter_LinearProblem : public SameTypeTransform<Tpetra::Linear
 
   /// \brief Update a reduced linear problem using new values.
   ///
-  /// Updates an existing Epetra_LinearProblem object using new
+  /// Updates an existing Tpetra::LinearProblem object using new
   /// matrix, LHS and RHS values.  The matrix structure must be
   /// \e identical to the matrix that was used to construct the
   /// original reduced problem.
