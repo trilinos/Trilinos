@@ -236,7 +236,7 @@ class CrsSingletonFilter_LinearProblem : public SameTypeTransform<Tpetra::Linear
   /// be called to compute the solution to the original problem,
   /// assuming the solution for the reduced system is valid. The
   /// solution of the unreduced, original problem will be in the
-  /// LHS of the original Epetra_LinearProblem.
+  /// LHS of the original Tpetra::LinearProblem.
   // void ComputeFullSolution();
 
   //@}
