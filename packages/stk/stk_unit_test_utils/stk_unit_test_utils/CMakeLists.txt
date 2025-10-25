@@ -34,7 +34,6 @@ SET(HEADERS_NEED_IO
   ioUtils.hpp
   meshCreationHelpers.hpp
   exampleMeshes.h
-  UnitTestSearchUtils.hpp
   )
 SET(SOURCES_NEED_IO
   BulkDataTester.cpp
@@ -48,7 +47,6 @@ SET(SOURCES_NEED_IO
   TextMesh.cpp
   ioUtils.cpp
   meshCreationHelpers.cpp
-  UnitTestSearchUtils.cpp
   )
 
 SET(HEADERS_NEED_SEARCHUTIL
@@ -57,9 +55,11 @@ SET(HEADERS_NEED_SEARCHUTIL
   MockMasterElementLine2.hpp
   MockMasterElementProvider.hpp
   MockMasterElementQuad4.hpp
+  UnitTestSearchUtils.hpp
   )
 SET(SOURCES_NEED_SEARCHUTIL
   MockMasterElementProvider.cpp
+  UnitTestSearchUtils.cpp
   )
 
 SET(HEADERS_NEED_TRANSFERUTIL

@@ -50,6 +50,9 @@
 
 #cmakedefine STK_HAVE_STKNGP_TEST
 
+#cmakedefine STK_HAVE_STKSEARCHUTIL
+#cmakedefine STK_HAVE_STKTRANSFERUTIL
+
 #cmakedefine STK_HAS_MPI
 
 #cmakedefine STK_HAS_ARBORX

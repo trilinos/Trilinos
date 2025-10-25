@@ -591,13 +591,23 @@ protected:
       if constexpr (std::is_same_v<Space, stk::ngp::HostSpace>) {
         if (has_device_data()) {
           if (m_deviceFieldData->has_copies(ReadWrite) || m_deviceFieldData->has_copies(OverwriteAll)) {
-            print_host_access_error(FieldAccess, m_deviceFieldData->access_tag());
+            if (m_deviceFieldData->has_copies(ReadWrite)) {
+              print_host_access_error(FieldAccess, ReadWrite);
+            }
+            if (m_deviceFieldData->has_copies(OverwriteAll)) {
+              print_host_access_error(FieldAccess, OverwriteAll);
+            }
           }
         }
       }
       else {
         if (m_hostFieldData->has_copies(ReadWrite) || m_hostFieldData->has_copies(OverwriteAll)) {
-          print_device_access_error(FieldAccess, m_hostFieldData->access_tag());
+          if (m_hostFieldData->has_copies(ReadWrite)) {
+            print_device_access_error(FieldAccess, ReadWrite);
+          }
+          if (m_hostFieldData->has_copies(OverwriteAll)) {
+            print_device_access_error(FieldAccess, OverwriteAll);
+          }
         }
       }
     }
@@ -606,14 +616,30 @@ protected:
         if (has_device_data()) {
           if (m_deviceFieldData->has_copies(ReadWrite) || m_deviceFieldData->has_copies(ReadOnly) ||
               m_deviceFieldData->has_copies(OverwriteAll)) {
-            print_host_access_error(FieldAccess, m_deviceFieldData->access_tag());
+            if (m_deviceFieldData->has_copies(ReadWrite)) {
+              print_host_access_error(FieldAccess, ReadWrite);
+            }
+            if (m_deviceFieldData->has_copies(ReadOnly)) {
+              print_host_access_error(FieldAccess, ReadOnly);
+            }
+            if (m_deviceFieldData->has_copies(OverwriteAll)) {
+              print_host_access_error(FieldAccess, OverwriteAll);
+            }
           }
         }
       }
       else {
         if (m_hostFieldData->has_copies(ReadWrite) || m_hostFieldData->has_copies(ReadOnly) ||
             m_hostFieldData->has_copies(OverwriteAll)) {
-          print_device_access_error(FieldAccess, m_hostFieldData->access_tag());
+          if (m_hostFieldData->has_copies(ReadWrite)) {
+            print_device_access_error(FieldAccess, ReadWrite);
+          }
+          if (m_hostFieldData->has_copies(ReadOnly)) {
+            print_device_access_error(FieldAccess, ReadOnly);
+          }
+          if (m_hostFieldData->has_copies(OverwriteAll)) {
+            print_device_access_error(FieldAccess, OverwriteAll);
+          }
         }
       }
     }

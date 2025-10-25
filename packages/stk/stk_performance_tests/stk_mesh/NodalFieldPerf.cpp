@@ -148,15 +148,15 @@ public:
       const stk::mesh::BucketVector& buckets = get_bulk().get_buckets(stk::topology::NODE_RANK,
                                                                       get_meta().locally_owned_part());
       for (const stk::mesh::Bucket* bucket : buckets) {
-        auto dispValues  = dispFieldData.bucket_values(*bucket);
-        auto velValues   = velFieldData.bucket_values(*bucket);
-        auto accValues   = accFieldData.bucket_values(*bucket);
-        auto forceValues = forceFieldData.bucket_values(*bucket);
-        for (stk::mesh::EntityIdx entityIdx : bucket->entities()) {
+        for (const stk::mesh::Entity& entity : *bucket) {
+          auto dispValues  = dispFieldData.entity_values(entity);
+          auto velValues   = velFieldData.entity_values(entity);
+          auto accValues   = accFieldData.entity_values(entity);
+          auto forceValues = forceFieldData.entity_values(entity);
           for (stk::mesh::ComponentIdx component : forceValues.components()) {
-            forceValues(entityIdx, component) = alpha * dispValues(entityIdx, component) +
-                                                beta * velValues(entityIdx, component) +
-                                                gamma * accValues(entityIdx, component);
+            forceValues(component) = alpha * dispValues(component) +
+                                     beta * velValues(component) +
+                                     gamma * accValues(component);
           }
         }
       }

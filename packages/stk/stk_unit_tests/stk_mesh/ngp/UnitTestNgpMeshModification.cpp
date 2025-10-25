@@ -187,7 +187,7 @@ void check_device_mesh_indices(DeviceMeshType& ngpMesh, stk::mesh::EntityRank ra
   Kokkos::parallel_for(deviceBucketRepo.num_buckets(rank),
     KOKKOS_LAMBDA(const int idx) {
       auto& buckets = deviceBucketRepo.m_buckets[rank];
-      auto& bucket = buckets(idx);
+      auto& bucket = buckets[idx];
 
       if (!bucket.is_active()) { return; }
 
@@ -896,7 +896,7 @@ TEST_F(NgpBatchChangeEntityPartsDeathTest, check_impl_batch_change_entity_parts_
   const unsigned nodeId1 = 1;
 
   const stk::mesh::Entity node1 = create_node(*m_bulk, nodeId1, {&part1});
-  auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+  [[maybe_unused]] auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
 
   DeviceEntitiesType devEntities("deviceEntities", 1);
   auto hostEntities = Kokkos::create_mirror_view(devEntities);
@@ -1071,13 +1071,14 @@ NGP_TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, check_impl_populate_a
   
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto maxNumDownwardConnectedEntities = stk::mesh::impl::get_max_num_downward_connected_entities(ngpMesh, entities);
+  auto entityInterval = maxNumDownwardConnectedEntities + 1;
   EXPECT_EQ(8, maxNumDownwardConnectedEntities);
 
-  auto maxNumEntitiesForInducingParts = maxNumDownwardConnectedEntities * entities.extent(0) + entities.extent(0);
+  auto maxNumEntitiesForInducingParts = entityInterval * entities.extent(0);
   EXPECT_EQ(9u, maxNumEntitiesForInducingParts);
 
   EntityWrapperViewType wrappedEntities(Kokkos::view_alloc("wrappedEntities"), maxNumEntitiesForInducingParts);
-  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, maxNumDownwardConnectedEntities, wrappedEntities);
+  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, entityInterval, wrappedEntities);
 
   stk::mesh::impl::remove_invalid_entities_sort_unique_and_resize(wrappedEntities, stk::ngp::ExecSpace{});
 
@@ -1126,11 +1127,12 @@ NGP_TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, check_impl_populate_a
   auto maxNumDownwardConnectedEntities = stk::mesh::impl::get_max_num_downward_connected_entities(ngpMesh, entities);
   EXPECT_EQ(8, maxNumDownwardConnectedEntities);
 
-  auto maxNumEntitiesForInducingParts = maxNumDownwardConnectedEntities * entities.extent(0) + entities.extent(0);
+  auto entityInterval = maxNumDownwardConnectedEntities + 1;
+  auto maxNumEntitiesForInducingParts = entityInterval * entities.extent(0);
   EXPECT_EQ(18u, maxNumEntitiesForInducingParts);
 
   EntityWrapperViewType wrappedEntities(Kokkos::view_alloc("wrappedEntities"), maxNumEntitiesForInducingParts);
-  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, maxNumDownwardConnectedEntities, wrappedEntities);
+  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, entityInterval, wrappedEntities);
 
   stk::mesh::impl::remove_invalid_entities_sort_unique_and_resize(wrappedEntities, stk::ngp::ExecSpace{});
 
@@ -1184,10 +1186,11 @@ NGP_TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, check_impl_set_new_pa
 
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto maxNumDownwardConnectedEntities = stk::mesh::impl::get_max_num_downward_connected_entities(ngpMesh, entities);
-  auto maxNumEntitiesForInducingParts = maxNumDownwardConnectedEntities * entities.extent(0) + entities.extent(0);
+  auto entityInterval = maxNumDownwardConnectedEntities + 1;
+  auto maxNumEntitiesForInducingParts = entityInterval * entities.extent(0);
 
   EntityWrapperViewType wrappedEntities(Kokkos::view_alloc("wrappedEntities"), maxNumEntitiesForInducingParts);
-  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, maxNumDownwardConnectedEntities, wrappedEntities);
+  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, entityInterval, wrappedEntities);
   stk::mesh::impl::remove_invalid_entities_sort_unique_and_resize(wrappedEntities, stk::ngp::ExecSpace{});
 
   // determine resulting parts per entity including inducible parts
@@ -1241,10 +1244,11 @@ NGP_TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, check_impl_set_new_pa
 
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto maxNumDownwardConnectedEntities = stk::mesh::impl::get_max_num_downward_connected_entities(ngpMesh, entities);
-  auto maxNumEntitiesForInducingParts = maxNumDownwardConnectedEntities * entities.extent(0) + entities.extent(0);
+  auto entityInterval = maxNumDownwardConnectedEntities + 1;
+  auto maxNumEntitiesForInducingParts = entityInterval * entities.extent(0);
 
   EntityWrapperViewType wrappedEntities(Kokkos::view_alloc("wrappedEntities"), maxNumEntitiesForInducingParts);
-  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, maxNumDownwardConnectedEntities, wrappedEntities);
+  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, entityInterval, wrappedEntities);
   stk::mesh::impl::remove_invalid_entities_sort_unique_and_resize(wrappedEntities, stk::ngp::ExecSpace{});
 
   // determine resulting parts per entity including inducible parts
@@ -1299,10 +1303,11 @@ NGP_TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, check_impl_set_new_pa
 
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto maxNumDownwardConnectedEntities = stk::mesh::impl::get_max_num_downward_connected_entities(ngpMesh, entities);
-  auto maxNumEntitiesForInducingParts = maxNumDownwardConnectedEntities * entities.extent(0) + entities.extent(0);
+  auto entityInterval = maxNumDownwardConnectedEntities + 1;
+  auto maxNumEntitiesForInducingParts = entityInterval * entities.extent(0);
 
   EntityWrapperViewType wrappedEntities(Kokkos::view_alloc("wrappedEntities"), maxNumEntitiesForInducingParts);
-  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, maxNumDownwardConnectedEntities, wrappedEntities);
+  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, entityInterval, wrappedEntities);
   stk::mesh::impl::remove_invalid_entities_sort_unique_and_resize(wrappedEntities, stk::ngp::ExecSpace{});
 
   // determine resulting parts per entity including inducible parts
@@ -1356,10 +1361,11 @@ NGP_TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, check_impl_set_new_pa
 
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto maxNumDownwardConnectedEntities = stk::mesh::impl::get_max_num_downward_connected_entities(ngpMesh, entities);
-  auto maxNumEntitiesForInducingParts = maxNumDownwardConnectedEntities * entities.extent(0) + entities.extent(0);
+  auto entityInterval = maxNumDownwardConnectedEntities + 1;
+  auto maxNumEntitiesForInducingParts = entityInterval * entities.extent(0);
 
   EntityWrapperViewType wrappedEntities(Kokkos::view_alloc("wrappedEntities"), maxNumEntitiesForInducingParts);
-  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, maxNumDownwardConnectedEntities, wrappedEntities);
+  stk::mesh::impl::populate_all_downward_connected_entities_and_wrap_entities(ngpMesh, entities, entityInterval, wrappedEntities);
   stk::mesh::impl::remove_invalid_entities_sort_unique_and_resize(wrappedEntities, stk::ngp::ExecSpace{});
 
   // determine resulting parts per entity including inducible parts
@@ -1790,7 +1796,7 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, two_elements_with_same_ra
   check_device_entity_part_ordinal_match(ngpMesh, stk::topology::NODE_RANK, devNodes2, expectedDevicePartOrdinal);
 }
 
-TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, two_elements_with_same_ranked_part_remove_ranked_part_from_one_element_and_one_face)
+TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, two_elements_with_same_ranked_part_remove_ranked_part_from_one_face)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
@@ -1817,10 +1823,9 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, two_elements_with_same_ra
   hostElems(1) = elem2;
   auto devElems = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostElems);
 
-  HostEntitiesType hostFace("hostFace", 1);
-  hostFace(0) = face;
-  auto devFace = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostFace);
-
+  HostEntitiesType hostFaces("hostFace", 1);
+  hostFaces(0) = face;
+  auto devFaces = Kokkos::create_mirror_view_and_copy(stk::ngp::MemSpace{}, hostFaces);
 
   HostEntitiesType hostNodes("hostNodes", 2);
   hostNodes(0) = m_bulk->begin_nodes(elem2)[0];
@@ -1833,13 +1838,13 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, two_elements_with_same_ra
   hostRemoveParts(0) = block1Part->mesh_meta_data_ordinal();
   Kokkos::deep_copy(devRemoveParts, hostRemoveParts);
 
-  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(devFace, devAddParts, devRemoveParts));
+  EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(devFaces, devAddParts, devRemoveParts));
 
   auto expectedDevicePartOrdinal = create_device_part_ordinal(stk::mesh::PartVector{block1Part});
   check_device_entity_part_ordinal_match(ngpMesh, stk::topology::ELEM_RANK, devElems, expectedDevicePartOrdinal);
 
   expectedDevicePartOrdinal = create_device_part_ordinal(stk::mesh::PartVector{internalPart});
-  check_device_entity_part_ordinal_match(ngpMesh, stk::topology::FACE_RANK, devFace, expectedDevicePartOrdinal);
+  check_device_entity_part_ordinal_match(ngpMesh, stk::topology::FACE_RANK, devFaces, expectedDevicePartOrdinal);
   check_device_entity_part_ordinal_match(ngpMesh, stk::topology::NODE_RANK, devNodes, expectedDevicePartOrdinal);
 }
 
@@ -1878,6 +1883,50 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, test_repeated_part_additi
 
   for (int i = 0; i < numIters; ++i) {
     EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(devEntities, devAddParts, devRemoveParts));
+  }
+}
+
+TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, test_repeated_part_addition_and_removal)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  build_empty_mesh(1, 1);
+
+  auto numElemsInZ = stk::unit_test_util::get_command_line_option("-n", 10);
+  auto numIters = stk::unit_test_util::get_command_line_option("-i", 10);
+
+  auto genMeshDesc = "generated:10x10x" + std::to_string(numElemsInZ);
+  stk::io::fill_mesh(genMeshDesc, *m_bulk);
+
+  stk::mesh::Part& newPart = m_meta->declare_part_with_topology("newPart", stk::topology::HEX_8);
+
+  stk::mesh::EntityVector entityVector;
+  stk::mesh::get_entities(*m_bulk, stk::topology::ELEM_RANK, stk::mesh::Selector(*m_meta->get_part("block_1")), entityVector);
+
+  DeviceEntitiesType devEntities("deviceEntities", entityVector.size());
+  auto hostEntities = Kokkos::create_mirror_view(devEntities);
+  for (unsigned i = 0; i < entityVector.size(); ++i) {
+    hostEntities(i) = entityVector[i];
+  }
+  Kokkos::deep_copy(devEntities, hostEntities);
+
+  DevicePartOrdinalsType emptyParts("", 0);
+  DevicePartOrdinalsType devAddParts("", 1);
+  DevicePartOrdinalsType devRmParts("", 1);
+
+  auto hostAddParts = Kokkos::create_mirror_view(devAddParts);
+  hostAddParts(0) = newPart.mesh_meta_data_ordinal();
+  Kokkos::deep_copy(devAddParts, hostAddParts);
+
+  auto hostRmParts = Kokkos::create_mirror_view(devRmParts);
+  hostRmParts(0) = newPart.mesh_meta_data_ordinal();
+  Kokkos::deep_copy(devRmParts, hostRmParts);
+
+  auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+
+  for (int i = 0; i < numIters; ++i) {
+    EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(devEntities, devAddParts, emptyParts));
+    EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(devEntities, emptyParts, devRmParts));
   }
 }
 

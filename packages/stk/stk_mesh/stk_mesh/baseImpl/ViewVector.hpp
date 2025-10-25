@@ -53,15 +53,15 @@ public:
   using buffer_type = Kokkos::View<T*, MemSpace>;
   static constexpr SizeT growth_scale = 2;
 
-  ViewVector();
+  KOKKOS_INLINE_FUNCTION ViewVector();
   explicit ViewVector(const std::string& name);
   explicit ViewVector(const std::string& name, SizeT size);
   KOKKOS_INLINE_FUNCTION ~ViewVector();
 
   KOKKOS_DEFAULTED_FUNCTION ViewVector(const ViewVector& other) = default;
-  ViewVector(ViewVector&& other) = default;
-  ViewVector& operator=(const ViewVector& rhs) = default;
-  ViewVector& operator=(ViewVector&& rhs) = default;
+  KOKKOS_DEFAULTED_FUNCTION ViewVector(ViewVector&& other) = default;
+  KOKKOS_DEFAULTED_FUNCTION ViewVector& operator=(const ViewVector& rhs) = default;
+  KOKKOS_DEFAULTED_FUNCTION ViewVector& operator=(ViewVector&& rhs) = default;
 
   KOKKOS_INLINE_FUNCTION SizeT size() const;
   KOKKOS_INLINE_FUNCTION SizeT capacity() const;
@@ -83,6 +83,8 @@ public:
 
   template <typename... Args>
   void emplace_back(Args&&... args);
+
+  KOKKOS_INLINE_FUNCTION auto& get_view() const;
 
 private:
   void change_capacity(SizeT newCapacity);
@@ -148,6 +150,7 @@ bool is_last_reference(const BufferType& buffer)
 
 //------------------------------------------------------------------------------
 template <typename T, typename MemSpace, typename SizeT>
+KOKKOS_INLINE_FUNCTION
 ViewVector<T, MemSpace, SizeT>::ViewVector()
   : m_buffer(),
     m_size(0)
@@ -300,8 +303,9 @@ void ViewVector<T, MemSpace, SizeT>::swap(ViewVector& other)
 template <typename T, typename MemSpace, typename SizeT>
 void ViewVector<T, MemSpace, SizeT>::push_back(const T& value)
 {
-  static_assert(std::is_same_v<mem_space, stk::ngp::HostMemSpace>,
-                "Cannot call ViewVector::push_back() on device because it may need to allocate memory.");
+  KOKKOS_IF_ON_DEVICE((
+    Kokkos::abort("Cannot call ViewVector::push_back() on device because it may need to allocate memory.");
+  ))
 
   const SizeT oldCapacity = capacity();
   if (m_size == oldCapacity) {
@@ -317,8 +321,9 @@ void ViewVector<T, MemSpace, SizeT>::push_back(const T& value)
 template <typename T, typename MemSpace, typename SizeT>
 void ViewVector<T, MemSpace, SizeT>::push_back(T&& value)
 {
-  static_assert(std::is_same_v<mem_space, stk::ngp::HostMemSpace>,
-                "Cannot call ViewVector::push_back() on device because it may need to allocate memory.");
+  KOKKOS_IF_ON_DEVICE((
+    Kokkos::abort("Cannot call ViewVector::push_back() on device because it may need to allocate memory.");
+  ))
 
   const SizeT oldCapacity = capacity();
   if (m_size == oldCapacity) {
@@ -335,8 +340,9 @@ template <typename T, typename MemSpace, typename SizeT>
 template <typename... Args>
 void ViewVector<T, MemSpace, SizeT>::emplace_back(Args&&... args)
 {
-  static_assert(std::is_same_v<mem_space, stk::ngp::HostMemSpace>,
-                "Cannot call ViewVector::emplace_back() on device because it may need to allocate memory.");
+  KOKKOS_IF_ON_DEVICE((
+    Kokkos::abort("Cannot call ViewVector::emplace_back() on device because it may need to allocate memory.");
+  ))
 
   const SizeT oldCapacity = capacity();
   if (m_size == oldCapacity) {
@@ -346,6 +352,14 @@ void ViewVector<T, MemSpace, SizeT>::emplace_back(Args&&... args)
 
   new (&m_buffer[m_size]) T(std::forward<Args>(args)...);
   ++m_size;
+}
+
+//------------------------------------------------------------------------------
+template <typename T, typename MemSpace, typename SizeT>
+KOKKOS_INLINE_FUNCTION
+auto& ViewVector<T, MemSpace, SizeT>::get_view() const
+{
+  return m_buffer;
 }
 
 //------------------------------------------------------------------------------
