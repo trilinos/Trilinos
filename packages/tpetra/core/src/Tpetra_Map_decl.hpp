@@ -1092,14 +1092,9 @@ class Map : public Teuchos::Describable {
       const global_ordinal_type indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 
- public:
   /// \brief Push the device data to host, if needed
-  ///
-  /// \warning lazyPushToHost is SUBJECT TO CHANGE and is for EXPERT USERS ONLY.
-  /// We STRONGLY advise against its use.
   void lazyPushToHost() const;
 
- private:
   //! The communicator over which this Map is distributed.
   Teuchos::RCP<const Teuchos::Comm<int>> comm_;
 
