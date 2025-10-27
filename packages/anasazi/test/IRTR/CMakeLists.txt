@@ -20,9 +20,6 @@ IF(Teuchos_ENABLE_COMPLEX)
     STANDARD_PASS_OUTPUT
     )
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
-IF (${PACKAGE_NAME}_ENABLE_Triutils)
-
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     IRTR_complex_test
     SOURCES cxx_main_complex.cpp
@@ -38,7 +35,5 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     SOURCE_FILES mhd1280b.cua
     EXEDEPS IRTR_complex_test
     )
-
-ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
 
 ENDIF()

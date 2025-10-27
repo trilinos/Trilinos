@@ -33,7 +33,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
-#include <Trilinos_Util_iohb.h>
+#include <Tpetra_Util_iohb.h>
 //I/O for Matrix Market files
 #include <MatrixMarket_Tpetra.hpp>
 

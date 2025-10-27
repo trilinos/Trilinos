@@ -31,9 +31,7 @@
 #endif
 
 // I/O for Harwell-Boeing files
-#ifdef HAVE_ANASAZI_TRIUTILS
-#include "Trilinos_Util_iohb.h"
-#endif
+#include "Tpetra_Util_iohb.h"
 
 // templated multivector and sparse matrix classes
 #include "MyMultiVec.hpp"
@@ -89,17 +87,6 @@ int main(int argc, char *argv[])
       filename = "mhd1280a.cua";
     }
   }
-
-#ifndef HAVE_ANASAZI_TRIUTILS
-  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef HAVE_ANASAZI_MPI
-  MPI_Finalize() ;
-#endif
-  if (MyPID == 0) {
-    cout << "End Result: TEST FAILED" << endl;
-  }
-  return -1;
-#endif
 
   typedef std::complex<double>                ST;
   typedef ScalarTraits<ST>                   SCT;

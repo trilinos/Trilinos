@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef IOHB_H
-#define IOHB_H
+#ifndef TPETRA_IOHB_H
+#define TPETRA_IOHB_H
 
 #ifndef TRILINOS_NO_CONFIG_H
 
