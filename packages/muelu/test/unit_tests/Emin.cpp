@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
 // #define GrindEmin
 // #define UseExternalP0
 
-#if defined(Tris)||defined(Quads)||defined(Tets)||defined(Hexes)||defined(HexesWithDir)||defined(TrisWithDir)
+#if defined(Tris)||defined(Quads)||defined(Tets)||defined(Hexes)|| defined(TrisWithDir)||defined(QuadsWithDir)||defined(TetsWithDir)||defined(HexesWithDir)
 #define ReadWriteForTesting
 #endif
 #ifdef Tris
@@ -223,7 +223,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   global_num_fine_nodes   = 4160;  local_num_fine_nodes   = global_num_fine_nodes;
   global_num_coarse_nodes = 484;   local_num_coarse_nodes = global_num_coarse_nodes;
 #endif
-
 #ifdef Quads
   inputDir = dataDir + "quads/";
   global_num_fine_edges   = 1512; local_num_fine_edges   = global_num_fine_edges;
@@ -231,12 +230,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   global_num_fine_nodes   = 784;  local_num_fine_nodes   = global_num_fine_nodes;
   global_num_coarse_nodes = 100;  local_num_coarse_nodes = global_num_coarse_nodes;
 #endif
+#ifdef QuadsWithDir
+  inputDir = dataDir + "quads/withDir/";
+  global_num_fine_edges   = 1485; local_num_fine_edges   = global_num_fine_edges;
+  global_num_coarse_edges = 181;  local_num_coarse_edges = global_num_coarse_edges;
+  global_num_fine_nodes   = 756;  local_num_fine_nodes   = global_num_fine_nodes;
+  global_num_coarse_nodes =  90;  local_num_coarse_nodes = global_num_coarse_nodes;
+#endif
 #ifdef Tets
   inputDir = dataDir + "tets/";
   global_num_fine_edges   = 5859; local_num_fine_edges   = global_num_fine_edges;
   global_num_coarse_edges = 330;  local_num_coarse_edges = global_num_coarse_edges;
   global_num_fine_nodes   = 1000; local_num_fine_nodes   = global_num_fine_nodes;
   global_num_coarse_nodes = 64;   local_num_coarse_nodes = global_num_coarse_nodes;
+#endif
+#ifdef TetsWithDir
+  inputDir = dataDir + "tets/withDir/";
+  global_num_fine_edges   = 5850; local_num_fine_edges   = global_num_fine_edges;
+  global_num_coarse_edges = 329;  local_num_coarse_edges = global_num_coarse_edges;
+  global_num_fine_nodes   = 990;  local_num_fine_nodes   = global_num_fine_nodes;
+  global_num_coarse_nodes = 61;   local_num_coarse_nodes = global_num_coarse_nodes;
 #endif
 #ifdef Hexes
   inputDir = dataDir + "hexes/";
@@ -341,7 +354,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
     eminFact->SetFactory("Constraint", constraintFact);
     eminFact->SetFactory("P", constraintFact);
 #ifdef GrindEmin
-    eminFact->SetParameter("emin: num iterations",Teuchos::ParameterEntry(320));
+    eminFact->SetParameter("emin: num iterations",Teuchos::ParameterEntry(110));
 #endif
 
 #ifdef ReadWriteForTesting

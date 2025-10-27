@@ -219,7 +219,7 @@ class BlockInverseFunctor {
   using local_matrix_type = typename CrsMatrix::local_matrix_type;
   using scalar_type       = typename local_matrix_type::value_type;
   using ATS               = Kokkos::ArithTraits<scalar_type>;
-  using magnitude_type    = ATS::magnitudeType;
+  using magnitude_type    = typename ATS::magnitudeType;
 
   using shared_matrix = Kokkos::View<scalar_type**, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
   using shared_vector = Kokkos::View<scalar_type*, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
