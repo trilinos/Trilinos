@@ -27,8 +27,8 @@
 
 namespace Belos {
 
-template <class ScalarType, class MV, class OP>
-class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
+template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP,DM> {
 
  public:
 
@@ -49,7 +49,7 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType checkStatus(Iteration<ScalarType,MV,OP> *iSolver );
+  StatusType checkStatus(Iteration<ScalarType,MV,OP,DM> *iSolver );
 
   //! Return the result of the most recent CheckStatus call.
   StatusType getStatus() const {return(status_);}
@@ -117,8 +117,8 @@ private:
 
 };
 
-  template <class ScalarType, class MV, class OP> 
-  StatusTestMaxIters<ScalarType,MV,OP>::StatusTestMaxIters(int maxIters)
+  template <class ScalarType, class MV, class OP, class DM> 
+  StatusTestMaxIters<ScalarType,MV,OP,DM>::StatusTestMaxIters(int maxIters)
   {
     if (maxIters < 1)
       maxIters_ = 1;
@@ -129,8 +129,8 @@ private:
     status_ = Undefined;
   }
   
-  template <class ScalarType, class MV, class OP>
-  StatusType StatusTestMaxIters<ScalarType,MV,OP>::checkStatus(Iteration<ScalarType,MV,OP> *iSolver )
+  template <class ScalarType, class MV, class OP, class DM>
+  StatusType StatusTestMaxIters<ScalarType,MV,OP,DM>::checkStatus(Iteration<ScalarType,MV,OP,DM> *iSolver )
   {
     status_ = Failed;
     nIters_ = iSolver->getNumIters();
@@ -139,15 +139,15 @@ private:
     return status_;
   }
   
-  template <class ScalarType, class MV, class OP>
-  void StatusTestMaxIters<ScalarType,MV,OP>::reset()
+  template <class ScalarType, class MV, class OP, class DM>
+  void StatusTestMaxIters<ScalarType,MV,OP,DM>::reset()
   {
     nIters_ = 0;
     status_ = Undefined;
   }    
     
-  template <class ScalarType, class MV, class OP>
-  void StatusTestMaxIters<ScalarType,MV,OP>::print(std::ostream& os, int indent) const
+  template <class ScalarType, class MV, class OP, class DM>
+  void StatusTestMaxIters<ScalarType,MV,OP,DM>::print(std::ostream& os, int indent) const
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';
@@ -159,8 +159,8 @@ private:
     os << std::endl;
   }
  
-  template <class ScalarType, class MV, class OP>
-  void StatusTestMaxIters<ScalarType,MV,OP>::printStatus(std::ostream& os, StatusType type) const 
+  template <class ScalarType, class MV, class OP, class DM>
+  void StatusTestMaxIters<ScalarType,MV,OP,DM>::printStatus(std::ostream& os, StatusType type) const 
   {
     os << std::left << std::setw(13) << std::setfill('.');
     switch (type) {

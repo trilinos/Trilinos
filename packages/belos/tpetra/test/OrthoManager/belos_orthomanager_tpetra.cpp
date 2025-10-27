@@ -16,6 +16,7 @@
 ///
 #include "belos_orthomanager_tpetra_util.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Tpetra_Core.hpp"
 
 using std::endl;
@@ -65,8 +66,8 @@ getCmdLineArgs (const Teuchos::Comm<int>& comm, int argc, char* argv[])
   // orthogonalization manager types.  We won't use this factory to
   // create them, so we should be able to pick the Scalar, MV, and
   // OP template parameters as we wish.
-  typedef Belos::OrthoManagerFactory<double,
-    Tpetra::MultiVector<ST>, Tpetra::Operator<ST> > factory_type;
+  typedef Belos::OrthoManagerFactory<double, Tpetra::MultiVector<ST>,
+    Tpetra::Operator<ST>, Teuchos::SerialDenseMatrix<int,ST> > factory_type;
   factory_type factory;
 
   ////////////////////////////////////////////////////////////////////
@@ -239,6 +240,7 @@ bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   typedef GlobalOrdinalType global_ordinal_type;
   typedef NodeType node_type;
 
+  typedef Teuchos::SerialDenseMatrix<local_ordinal_type, scalar_type> DM;
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
   typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
@@ -304,14 +306,14 @@ bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 
   // This factory object knows how to make a (Mat)OrthoManager
   // subclass, given a name for the subclass and its parameters.
-  Belos::OrthoManagerFactory<scalar_type, MV, OP> factory;
+  Belos::OrthoManagerFactory<scalar_type, MV, OP, DM> factory;
 
   // Using the factory object, instantiate the specified OrthoManager
   // subclass to be tested.  Specify "default" parameters (which
   // should favor accuracy over performance), but override the default
   // parameters to get the desired normalization method for
   // SimpleOrthoManaager.
-  RCP<Belos::OrthoManager<scalar_type, MV> > orthoMan;
+  RCP<Belos::OrthoManager<scalar_type, MV, DM> > orthoMan;
   {
     std::string label (orthoManName);
     RCP<ParameterList> params =
@@ -342,7 +344,7 @@ bool runTest (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   // should return zero).
   int numFailed = 0;
   {
-    typedef Belos::Test::OrthoManagerTester<scalar_type, MV> tester_type;
+    typedef Belos::Test::OrthoManagerTester<scalar_type, MV, DM> tester_type;
     numFailed = tester_type::runTests (orthoMan, isRankRevealing, S,
                                        sizeX1, sizeX2, outMan);
   }

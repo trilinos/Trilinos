@@ -36,9 +36,8 @@
 #include "BelosTypes.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_Array.hpp"
-
+#include "BelosTeuchosDenseAdapter.hpp"
 
 namespace Belos {
 
@@ -53,7 +52,7 @@ namespace Belos {
 
   //@}
 
-  template <class ScalarType, class MV>
+  template <class ScalarType, class MV, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
   class OrthoManager : 
     public Teuchos::ParameterListAcceptorDefaultBase 
   {
@@ -78,7 +77,7 @@ namespace Belos {
     if there is a mass matrix \c M, then this might be the \c M inner product (\f$x^HMx\f$).
 
      */
-    virtual void innerProd( const MV &X, const MV &Y, Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const = 0;
+    virtual void innerProd( const MV &X, const MV &Y, DM & Z ) const = 0;
 
 
     /// \brief Compute the norm(s) of the column(s) of X.
@@ -131,7 +130,7 @@ namespace Belos {
     ///
     virtual void
     project (MV &X,
-             Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+             Teuchos::Array<Teuchos::RCP<DM> > C,
              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
 
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
@@ -148,13 +147,13 @@ namespace Belos {
 
      @return Rank of the basis computed by this method.
     */
-    virtual int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
+    virtual int normalize ( MV &X, Teuchos::RCP<DM> B ) const = 0;
 
   protected:
     virtual int
     projectAndNormalizeImpl (MV &X,
-                             Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                             Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                             Teuchos::Array<Teuchos::RCP<DM>> C,
+                             Teuchos::RCP<DM> B,
                              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
 
   public:
@@ -215,8 +214,8 @@ namespace Belos {
     ///
     int
     projectAndNormalize (MV &X,
-                         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                         Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                         Teuchos::Array<Teuchos::RCP<DM>> C,
+                         Teuchos::RCP<DM> B,
                          Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       return this->projectAndNormalizeImpl (X, C, B, Q);

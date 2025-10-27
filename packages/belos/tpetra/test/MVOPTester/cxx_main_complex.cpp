@@ -14,8 +14,11 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 #include "BelosConfigDefs.hpp"
+#include "BelosDenseMatTester.hpp"
 #include "BelosMVOPTester.hpp"
 #include "BelosTpetraAdapter.hpp"
+#include "BelosKokkosDenseAdapter.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 #include "BelosOutputManager.hpp"
 
 namespace {
@@ -89,6 +92,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, MVTestDist, O1, O2, Scalar )
   {
     typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    typedef Teuchos::SerialDenseMatrix<int,Scalar> DM;
     const O2 dim = 500;
     const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
@@ -98,7 +102,7 @@ namespace {
     // create a uniform contiguous map
     RCP<Map<O1,O2,Node> > map = rcp( new Map<O1,O2,Node>(dim,0,comm) );
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
-    bool res = Belos::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
+    bool res = Belos::TestMultiVecTraits<Scalar,MV,DM>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -110,6 +114,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, MVTestLocal, O1, O2, Scalar )
   {
     typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    typedef Teuchos::SerialDenseMatrix<int,Scalar> DM;
     const O2 dim = 500;
     const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
@@ -119,7 +124,53 @@ namespace {
     // create a uniform contiguous map
     RCP<Map<O1,O2,Node> > map = rcp(new Map<O1,O2,Node>(dim,0,comm,Tpetra::LocallyReplicated) );
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
-    bool res = Belos::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
+    bool res = Belos::TestMultiVecTraits<Scalar,MV,DM>(MyOM,mvec);
+    TEST_EQUALITY_CONST(res,true);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, MVTestDistKokkos, O1, O2, Scalar )
+  {
+    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    typedef typename MV::impl_scalar_type IST;
+    typedef Kokkos::DualView<IST**,Kokkos::LayoutLeft> DM;
+    const O2 dim = 500;
+    const Teuchos_Ordinal numVecs = 5;
+    // Create an output manager to handle the I/O from the solver
+    RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a uniform contiguous map
+    RCP<Map<O1,O2,Node> > map = rcp( new Map<O1,O2,Node>(dim,0,comm) );
+    RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
+    bool res = Belos::TestMultiVecTraits<Scalar,MV,DM>(MyOM,mvec);
+    TEST_EQUALITY_CONST(res,true);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, MVTestLocalKokkos, O1, O2, Scalar )
+  {
+    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    typedef typename MV::impl_scalar_type IST;
+    typedef Kokkos::DualView<IST**,Kokkos::LayoutLeft> DM;
+    const O2 dim = 500;
+    const Teuchos_Ordinal numVecs = 5;
+    // Create an output manager to handle the I/O from the solver
+    RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a uniform contiguous map
+    RCP<Map<O1,O2,Node> > map = rcp(new Map<O1,O2,Node>(dim,0,comm,Tpetra::LocallyReplicated) );
+    RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
+    bool res = Belos::TestMultiVecTraits<Scalar,MV,DM>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -177,6 +228,42 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, DenseTest, O1, O2, Scalar )
+  {
+    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    typedef Teuchos::SerialDenseMatrix<int,Scalar> DM;
+    // Create an output manager to handle the I/O from the solver
+    RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // Test Dense Traits:
+    bool res = Belos::TestDenseMatTraits<Scalar,DM>(MyOM);
+    TEST_EQUALITY_CONST(res,true);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  } 
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, DenseTestKokkos, O1, O2, Scalar )
+  {
+    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    typedef typename MV::impl_scalar_type IST;
+    typedef Kokkos::DualView<IST**,Kokkos::LayoutLeft> DM;
+    // Create an output manager to handle the I/O from the solver
+    RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // Test Dense Traits:
+    bool res = Belos::TestDenseMatTraits<Scalar,DM>(MyOM);
+    TEST_EQUALITY_CONST(res,true);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  } 
   //
   // INSTANTIATIONS
   //
@@ -184,8 +271,12 @@ namespace {
 #define UNIT_TEST_GROUP( SCALAR, LO, GO ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestDist, LO, GO, SCALAR ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestLocal, LO, GO, SCALAR ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestDistKokkos, LO, GO, SCALAR ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestLocalKokkos, LO, GO, SCALAR ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestDist, LO, GO, SCALAR ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestLocal, LO, GO, SCALAR )
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestLocal, LO, GO, SCALAR ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, DenseTest, LO, GO, SCALAR ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, DenseTestKokkos, LO, GO, SCALAR ) 
 
 #include "TpetraCore_ETIHelperMacros.h"
 

@@ -18,6 +18,7 @@
 #include "BelosMinresSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>

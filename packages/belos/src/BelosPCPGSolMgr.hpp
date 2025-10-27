@@ -20,6 +20,8 @@
 #include "BelosSolverManager.hpp"
 
 #include "BelosPCPGIter.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
+#include "BelosDenseMatTraits.hpp"
 
 #include "BelosOrthoManagerFactory.hpp"
 #include "BelosStatusTestMaxIters.hpp"
@@ -106,19 +108,19 @@ namespace Belos {
   //
   // FIXME (mfh 09 Sep 2015) This also is a stub for types other than
   // float or double.
-  template<class ScalarType, class MV, class OP,
+  template<class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>,
            const bool supportsScalarType =
              Belos::Details::LapackSupportsScalar<ScalarType>::value &&
              ! Teuchos::ScalarTraits<ScalarType>::isComplex>
   class PCPGSolMgr :
-    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP,
+    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM,
                                                     Belos::Details::LapackSupportsScalar<ScalarType>::value &&
                                                     ! Teuchos::ScalarTraits<ScalarType>::isComplex>
   {
     static const bool scalarTypeIsSupported =
       Belos::Details::LapackSupportsScalar<ScalarType>::value &&
       ! Teuchos::ScalarTraits<ScalarType>::isComplex;
-    typedef Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP,
+    typedef Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM,
                                                      scalarTypeIsSupported> base_type;
 
   public:
@@ -132,17 +134,18 @@ namespace Belos {
     virtual ~PCPGSolMgr () {}
 
     //! clone for Inverted Injection (DII)
-    Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const override {
-      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP,supportsScalarType>);
+    Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const override {
+      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP,DM,supportsScalarType>);
     }
   };
 
-  template<class ScalarType, class MV, class OP>
-  class PCPGSolMgr<ScalarType, MV, OP, true> :
-    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, true> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class PCPGSolMgr<ScalarType, MV, OP, DM, true> :
+    public Details::SolverManagerRequiresRealLapack<ScalarType, MV, OP, DM, true> {
   private:
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef DenseMatTraits<ScalarType,DM> DMT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
@@ -201,8 +204,8 @@ namespace Belos {
     virtual ~PCPGSolMgr() {};
 
     //! clone for Inverted Injection (DII)
-    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP> > clone () const {
-      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP>);
+    virtual Teuchos::RCP<SolverManager<ScalarType, MV, OP, DM> > clone () const {
+      return Teuchos::rcp(new PCPGSolMgr<ScalarType,MV,OP,DM>);
     }
     //@}
 
@@ -308,7 +311,7 @@ namespace Belos {
 
     // In the A-inner product, perform an RRQR decomposition without using A unless absolutely necessary.  Given
     // the seed space U and C = A U, find U1 and C1 with span(U1)=span(U) such that C1'U1 = I maintaining C=AU.
-    int ARRQR(int numVecs, int numOrthVecs, const Teuchos::SerialDenseMatrix<int,ScalarType>& D);
+    int ARRQR(int numVecs, int numOrthVecs, const std::vector<ScalarType>& D);
 
     // Linear problem.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
@@ -318,13 +321,13 @@ namespace Belos {
     Teuchos::RCP<std::ostream> outputStream_;
 
     // Status test.
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > convTest_;
-    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > sTest_;
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP,DM> > maxIterTest_;
+    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP,DM> > convTest_;
+    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP,DM> > outputTest_;
 
     // Orthogonalization manager.
-    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
+    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP,DM> > ortho_;
 
     // Current parameter list.
     Teuchos::RCP<Teuchos::ParameterList> params_;
@@ -377,8 +380,8 @@ namespace Belos {
 
 
 // Empty Constructor
-template<class ScalarType, class MV, class OP>
-PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr() :
+template<class ScalarType, class MV, class OP, class DM>
+PCPGSolMgr<ScalarType,MV,OP,DM,true>::PCPGSolMgr() :
   outputStream_(Teuchos::rcpFromRef(std::cout)),
   convtol_(DefaultSolverParameters::convTol),
   orthoKappa_(DefaultSolverParameters::orthoKappa),
@@ -398,8 +401,8 @@ PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr() :
 
 
 // Basic Constructor
-template<class ScalarType, class MV, class OP>
-PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr(
+template<class ScalarType, class MV, class OP, class DM>
+PCPGSolMgr<ScalarType,MV,OP,DM,true>::PCPGSolMgr(
                                              const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                              const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
@@ -433,8 +436,8 @@ PCPGSolMgr<ScalarType,MV,OP,true>::PCPGSolMgr(
 }
 
 
-template<class ScalarType, class MV, class OP>
-void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
+template<class ScalarType, class MV, class OP, class DM>
+void PCPGSolMgr<ScalarType,MV,OP,DM,true>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
@@ -578,14 +581,14 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
     params_->set("Orthogonalization Constant",orthoKappa_);
     if (orthoType_=="DGKS") {
       if (orthoKappa_ > 0 && ortho_ != Teuchos::null && !changedOrthoType) {
-        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP,DM> >(ortho_)->setDepTol( orthoKappa_ );
       }
     }
   }
 
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null || changedOrthoType) {
-    Belos::OrthoManagerFactory<ScalarType, MV, OP> factory;
+    Belos::OrthoManagerFactory<ScalarType, MV, OP,DM> factory;
     Teuchos::RCP<Teuchos::ParameterList> paramsOrtho;   // can be null
     if (orthoType_=="DGKS" && orthoKappa_ > 0) {
       paramsOrtho = Teuchos::rcp(new Teuchos::ParameterList());
@@ -596,8 +599,8 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
   }
 
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP,DM>  StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP,DM>  StatusTestResNorm_t;
 
   // Check for convergence tolerance
   if (params->isParameter("Convergence Tolerance")) {
@@ -619,7 +622,7 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
 
   // Basic test checks maximum iterations and native residual.
   if (maxIterTest_ == Teuchos::null)
-    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP,DM>( maxIters_ ) );
 
   if (convTest_ == Teuchos::null)
     convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
@@ -628,7 +631,7 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
 
   // Create the status test output class.
   // This class manages and formats the output from the status test.
-  StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
+  StatusTestOutputFactory<ScalarType,MV,OP,DM> stoFactory( outputStyle_ );
   outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
 
   // Set the solver string for the output test
@@ -648,9 +651,9 @@ void PCPGSolMgr<ScalarType,MV,OP,true>::setParameters( const Teuchos::RCP<Teucho
 }
 
 
-template<class ScalarType, class MV, class OP>
+template<class ScalarType, class MV, class OP, class DM>
 Teuchos::RCP<const Teuchos::ParameterList>
-PCPGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
+PCPGSolMgr<ScalarType,MV,OP,DM,true>::getValidParameters() const
 {
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
@@ -692,8 +695,8 @@ PCPGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
 
 
 // solve()
-template<class ScalarType, class MV, class OP>
-ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
+template<class ScalarType, class MV, class OP, class DM>
+ReturnType PCPGSolMgr<ScalarType,MV,OP,DM,true>::solve() {
 
   // Set the current parameters if are not set already.
   if (!isSet_) { setParameters( params_ ); }
@@ -713,8 +716,6 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
   std::vector<int> currIdx(1);
   currIdx[0] = 0;
 
-   bool debug = false;
-
   // Inform the linear problem of the current linear system to solve.
   problem_->setLSIndex( currIdx ); // block size == 1
 
@@ -732,8 +733,8 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // PCPG solver
 
-  Teuchos::RCP<PCPGIter<ScalarType,MV,OP> > pcpg_iter;
-  pcpg_iter = Teuchos::rcp( new PCPGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+  Teuchos::RCP<PCPGIter<ScalarType,MV,OP,DM> > pcpg_iter;
+  pcpg_iter = Teuchos::rcp( new PCPGIter<ScalarType,MV,OP,DM>(problem_,printer_,outputTest_,plist) );
   // Number of iterations required to generate initial recycle space (if needed)
 
   // Enter solve() iterations
@@ -766,8 +767,8 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
         MVT::MvNorm( *R_, rnorm0 ); // rnorm0  = norm(R_);
 
         // Z := U_'*R_; xo += U_*Z ;R_ -= C_*Z
-        std::cout  << "Solver Manager:  dimU_ = " << dimU_ << std::endl;
-        Teuchos::SerialDenseMatrix<int,ScalarType> Z( dimU_, 1 );
+        printer_->stream(Debug) << "Solver Manager:  dimU_ = " << dimU_ << std::endl;
+        Teuchos::RCP<DM> Z = DMT::Create( dimU_, 1 );
 
         Teuchos::RCP<const MV> Uactive, Cactive;
         std::vector<int> active_columns( dimU_ );
@@ -775,26 +776,19 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
         Uactive = MVT::CloneView(*U_, active_columns);
         Cactive = MVT::CloneView(*C_, active_columns);
 
-        if( debug ){
-          std::cout << " Solver Manager : check duality of seed basis " << std::endl;
-          Teuchos::SerialDenseMatrix<int,ScalarType> H( dimU_, dimU_ );
-          MVT::MvTransMv( one, *Uactive, *Cactive, H );
-          H.print( std::cout );
-        }
-
-        MVT::MvTransMv( one, *Uactive, *R_, Z );
+        MVT::MvTransMv( one, *Uactive, *R_, *Z );
         Teuchos::RCP<MV> tempU = MVT::Clone( *R_, 1 );
-        MVT::MvTimesMatAddMv( one, *Uactive, Z, zero, *tempU );  // UZ
+        MVT::MvTimesMatAddMv( one, *Uactive, *Z, zero, *tempU );  // UZ
         MVT::MvAddMv( one, *tempU, one, *cur_soln_vec, *cur_soln_vec );  // xo += tmp;
-        MVT::MvTimesMatAddMv( one, *Cactive, Z, zero, *tempU );  // CZ
+        MVT::MvTimesMatAddMv( one, *Cactive, *Z, zero, *tempU );  // CZ
         MVT::MvAddMv( -one, *tempU, one, *R_, *R_ );  // R_ -= tmp;
         std::vector<MagnitudeType> rnorm(1);
         MVT::MvNorm( *R_, rnorm );
         if( rnorm[0] < rnorm0[0] * .001 ){  //reorthogonalize
-          MVT::MvTransMv( one, *Uactive, *R_, Z );
-          MVT::MvTimesMatAddMv( one, *Uactive, Z, zero, *tempU );
+          MVT::MvTransMv( one, *Uactive, *R_, *Z );
+          MVT::MvTimesMatAddMv( one, *Uactive, *Z, zero, *tempU );
           MVT::MvAddMv( one, *tempU, one, *cur_soln_vec, *cur_soln_vec );  // xo += UZ;
-          MVT::MvTimesMatAddMv( one, *Cactive, Z, zero, *tempU );
+          MVT::MvTimesMatAddMv( one, *Cactive, *Z, zero, *tempU );
           MVT::MvAddMv( -one, *tempU, one, *R_, *R_ );  // R_ -= CZ;
         }
         Uactive = Teuchos::null;
@@ -807,7 +801,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
 
 
       // Set the new state and initialize the solver.
-      PCPGIterState<ScalarType,MV> pcpgState; // fails if R == null.
+      PCPGIterState<ScalarType,MV,DM> pcpgState; // fails if R == null.
 
       pcpgState.R = R_;
       if( U_ != Teuchos::null ) pcpgState.U = U_;
@@ -823,13 +817,13 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
       pcpg_iter->resetNumIters();
 
       if( dimU_ > savedBlocks_ )
-        std::cout << "Error: dimU_  = " << dimU_ << " > savedBlocks_ = " << savedBlocks_ << std::endl;
+        printer_->stream(Debug) << "Error: dimU_  = " << dimU_ << " > savedBlocks_ = " << savedBlocks_ << std::endl;
 
       while(1) { // dummy loop for break
 
         // tell pcpg_iter to iterate
         try {
-          if( debug ) printf("********** Calling iterate...\n");
+          printer_->stream(Debug) << "********** Calling iterate...\n" << std::endl;
           pcpg_iter->iterate();
 
           ////////////////////////////////////////////////////////////////////////////////////
@@ -889,28 +883,26 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
       problem_->setCurrLS();
 
       // Get the state.   How did pcpgState die?
-      PCPGIterState<ScalarType,MV> oldState = pcpg_iter->getState();
+      PCPGIterState<ScalarType,MV,DM> oldState = pcpg_iter->getState();
 
       dimU_ = oldState.curDim;
       int q = oldState.prevUdim;
 
-      std::cout << "SolverManager: dimU_ " << dimU_ << "   prevUdim= " << q << std::endl;
+      printer_->stream(Debug) << "SolverManager: dimU_ " << dimU_ << "   prevUdim= " << q << std::endl;
 
       if( q > deflatedBlocks_ )
-        std::cout << "SolverManager: Error deflatedBlocks = " << deflatedBlocks_ << std::endl;
+        printer_->stream(Debug) << "SolverManager: Error deflatedBlocks = " << deflatedBlocks_ << std::endl;
 
       int rank;
       if( dimU_ > q ){ // Orthogonalize [U;C](:,prevUdim:dimU_)
         //Given the seed space U and C = A U for some symmetric positive definite A,
         //find U1 and C1 with span(U1)=span(U) such that C1'U1 = I maintaining C=AU
 
-        //oldState.D->print( std::cout ); D = diag( C'*U )
-
         U_ = oldState.U; //MVT::MvPrint( *U_, std::cout );
         C_ = oldState.C; //MVT::MvPrint( *C_, std::cout );
-        rank = ARRQR(dimU_,q, *oldState.D );
+        rank = ARRQR(dimU_,q, oldState.D );
         if( rank < dimU_ ) {
-                std::cout << " rank decreased in ARRQR, something to do? " << std::endl;
+           printer_->stream(Debug) << " rank decreased in ARRQR, something to do? " << std::endl;
         }
         dimU_ = rank;
 
@@ -940,9 +932,9 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
         }
 
         // Explicitly construct Q and R factors
-        Teuchos::SerialDenseMatrix<int,ScalarType> R(dimU_,dimU_);
-        rank = ortho_->normalize(*Uorth, Teuchos::rcp(&R,false));
-        Uorth = Teuchos::null;
+        Teuchos::RCP<DM> R = DMT::Create(dimU_,dimU_);
+        rank = ortho_->normalize(*Uorth, R);
+        DMT::SyncDeviceToHost( *R );
         // TODO:  During the previous solve, the matrix that normalizes U(1:q) was computed and discarded.
         // One might save it, reuse it here, and just normalize columns U(q+1:dimU_) here.
 
@@ -952,8 +944,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
 
 
         // R VT' = Ur S,
-        Teuchos::SerialDenseMatrix<int,ScalarType> VT; // Not referenced
-        Teuchos::SerialDenseMatrix<int,ScalarType> Ur; // Not referenced
+        ScalarType *VT=0, *Ur=0;                       // Not referenced
         int lwork = 5*dimU_;                           // minimal, extra computation < 67*dimU_
         int info = 0;  // Hermite
         int lrwork = 1;
@@ -962,33 +953,31 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
         std::vector<ScalarType> Svec(dimU_); //
         std::vector<ScalarType> rwork(lrwork);
         lapack.GESVD('N', 'O',
-                   R.numRows(),R.numCols(),R.values(), R.numRows(),
+                   DMT::GetNumRows(*R), DMT::GetNumCols(*R), DMT::GetRawHostPtr(*R), DMT::GetStride(*R),
                    &Svec[0],
-                   Ur.values(),1,
-                   VT.values(),1, // Output: VT stored in R
+                   Ur,1,
+                   VT,1, // Output: VT stored in R
                    &work[0], lwork,
                    &rwork[0], &info);
 
         TEUCHOS_TEST_FOR_EXCEPTION(info != 0, PCPGSolMgrLAPACKFailure,
                              "Belos::PCPGSolMgr::solve(): LAPACK _GESVD failed to compute singular values.");
 
-        if( work[0] !=  67. * dimU_ )
-           std::cout << " SVD " << dimU_ <<  " lwork " << work[0]  << std::endl;
-        for( int i=0; i< dimU_; i++)
-           std::cout << i << " " << Svec[i] << std::endl;
+        DMT::SyncHostToDevice( *R );
 
-        Teuchos::SerialDenseMatrix<int,ScalarType> wholeV( R, Teuchos::TRANS);
+        if( work[0] !=  67. * dimU_ )
+           printer_->stream(Debug) << " SVD " << dimU_ <<  " lwork " << work[0]  << std::endl;
+        for( int i=0; i< dimU_; i++)
+           printer_->stream(Debug) << i << " " << Svec[i] << std::endl;
+
+        Teuchos::RCP<DM> wholeV = DMT::CreateCopy( *R, true );
 
         int startRow = 0, startCol = 0;
         if( Harmonic )
           startCol = dimU_ - deflatedBlocks_;
 
-        Teuchos::SerialDenseMatrix<int,ScalarType> V(Teuchos::Copy,
-                                                     wholeV,
-                                                     wholeV.numRows(),
-                                                     deflatedBlocks_,
-                                                     startRow,
-                                                     startCol);
+        Teuchos::RCP<const DM> V = DMT::SubviewConst( *wholeV, DMT::GetNumRows(*wholeV), deflatedBlocks_, startRow, startCol );
+
         std::vector<int> active_columns( dimU_ );
         std::vector<int> def_cols( deflatedBlocks_ );
         for (int i=0; i < dimU_; ++i) active_columns[i] = i;
@@ -996,14 +985,10 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
 
         Teuchos::RCP<MV> Uactive = MVT::CloneViewNonConst(*U_, def_cols);
         Teuchos::RCP<MV> Ucopy = MVT::CloneCopy( *U_, active_columns );
-        MVT::MvTimesMatAddMv( one, *Ucopy, V, zero, *Uactive ); //  U:= U*V
-        Ucopy   = Teuchos::null;
-        Uactive = Teuchos::null;
+        MVT::MvTimesMatAddMv( one, *Ucopy, *V, zero, *Uactive ); //  U:= U*V
         Teuchos::RCP<MV> Cactive = MVT::CloneViewNonConst(*C_, def_cols);
         Teuchos::RCP<MV> Ccopy = MVT::CloneCopy( *C_, active_columns );
-        MVT::MvTimesMatAddMv( one, *Ccopy, V, zero, *Cactive ); //  C:= C*V
-        Ccopy  = Teuchos::null;
-        Cactive = Teuchos::null;
+        MVT::MvTimesMatAddMv( one, *Ccopy, *V, zero, *Cactive ); //  C:= C*V
         dimU_ = deflatedBlocks_;
       }
       printer_->stream(Debug) << " Generated recycled subspace using RHS index " << currIdx[0] << " of dimension " << dimU_ << std::endl << std::endl;
@@ -1040,7 +1025,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
   // Save the convergence test value ("achieved tolerance") for this solve.
   {
     using Teuchos::rcp_dynamic_cast;
-    typedef StatusTestGenResNorm<ScalarType,MV,OP> conv_test_type;
+    typedef StatusTestGenResNorm<ScalarType,MV,OP,DM> conv_test_type;
     // testValues is nonnull and not persistent.
     const std::vector<MagnitudeType>* pTestValues =
       rcp_dynamic_cast<conv_test_type>(convTest_)->getTestValue();
@@ -1072,17 +1057,16 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
 // A-orthogonalize the Seed Space
 // Note that Anasazi::GenOrthoManager provides simplified versions of the algorithm,
 // that are not rank revealing, and are not designed for PCPG in other ways too.
-template<class ScalarType, class MV, class OP>
-int PCPGSolMgr<ScalarType,MV,OP,true>::ARRQR(int p, int q, const Teuchos::SerialDenseMatrix<int,ScalarType>& D)
+template<class ScalarType, class MV, class OP, class DM>
+int PCPGSolMgr<ScalarType,MV,OP,DM,true>::ARRQR(int p, int q, const std::vector<ScalarType>& D)
 {
   using Teuchos::RCP;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
   // Allocate memory for scalars.
-  Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
-  Teuchos::SerialDenseMatrix<int,ScalarType> gamma( 1, 1 );
-  Teuchos::SerialDenseMatrix<int,ScalarType> anorm( 1, 1 );
+  ScalarType gamma, anorm;
+  Teuchos::RCP<DM> alpha = DMT::Create( 1, 1 );
   std::vector<int> curind(1);
   std::vector<int> ipiv(p - q); // RRQR Pivot indices
   std::vector<ScalarType> Pivots(p); // RRQR Pivots
@@ -1095,9 +1079,9 @@ int PCPGSolMgr<ScalarType,MV,OP,true>::ARRQR(int p, int q, const Teuchos::Serial
     curind[0] = i;
     RCP<MV> P = MVT::CloneViewNonConst(*U_,curind);
     RCP<MV> AP = MVT::CloneViewNonConst(*C_,curind);
-    anorm(0,0) = one / Teuchos::ScalarTraits<ScalarType>::squareroot( D(i-q,i-q) ) ;
-    MVT::MvAddMv( anorm(0,0), *P, zero, *AP, *P );
-    MVT::MvAddMv( zero, *P, anorm(0,0), *AP, *AP );
+    anorm = one / Teuchos::ScalarTraits<ScalarType>::squareroot( D[i-q] ) ;
+    MVT::MvScale( *P, anorm );
+    MVT::MvScale( *AP, anorm );
     Pivots[i]  = one;
   }
 
@@ -1121,16 +1105,17 @@ int PCPGSolMgr<ScalarType,MV,OP,true>::ARRQR(int p, int q, const Teuchos::Serial
     int k = ipiv[i-q];
 
     if( Pivots[k]  > 1.5625e-2 ){
-      anorm(0,0) =  Pivots[k]; // A-norm of u
+      anorm =  Pivots[k]; // A-norm of u
     }
-    else{ // anorm(0,0) = sqrt( U(:,k)'*C(:,k) );
+    else{ // anorm = sqrt( U(:,k)'*C(:,k) );
       curind[0] = k;
       RCP<const MV> P = MVT::CloneView(*U_,curind);
       RCP<const MV> AP = MVT::CloneView(*C_,curind);
-      MVT::MvTransMv( one, *P, *AP, anorm );
-      anorm(0,0) = Teuchos::ScalarTraits<ScalarType>::squareroot( anorm(0,0) ) ;
+      MVT::MvTransMv( one, *P, *AP, *alpha);
+      DMT::SyncDeviceToHost( *alpha );
+      anorm = Teuchos::ScalarTraits<ScalarType>::squareroot( DMT::ValueConst(*alpha,0,0) ) ;
     }
-    if( rteps <= anorm(0,0) && anorm(0,0) < 9.765625e-4){
+    if( rteps <= anorm && anorm < 9.765625e-4){
        /*
        C(:,k) = A*U(:,k);  % Change C
        fixC = U(:, ipiv(1:i-1) )'*C(:,k);
@@ -1138,10 +1123,10 @@ int PCPGSolMgr<ScalarType,MV,OP,true>::ARRQR(int p, int q, const Teuchos::Serial
        C(:,k) = C(:,k) - C(:, ipiv(1:i-1) )*fixC;
        anorm = sqrt( U(:,k)'*C(:,k) );
        */
-       std::cout << "ARRQR: Bad case not implemented" << std::endl;
+       printer_->stream(Errors) << "ARRQR: Bad case not implemented" << std::endl;
     }
-    if( anorm(0,0) < rteps ){ // rank [U;C] = i-1
-       std::cout << "ARRQR : deficient case not implemented " << std::endl;
+    if( anorm < rteps ){ // rank [U;C] = i-1
+       printer_->stream(Errors) << "ARRQR : deficient case not implemented " << std::endl;
        //U = U(:, ipiv(1:i-1) );
        //C = C(:, ipiv(1:i-1) );
        p = q + i;
@@ -1151,26 +1136,21 @@ int PCPGSolMgr<ScalarType,MV,OP,true>::ARRQR(int p, int q, const Teuchos::Serial
     curind[0] = k;
     RCP<MV> P = MVT::CloneViewNonConst(*U_,curind);
     RCP<MV> AP = MVT::CloneViewNonConst(*C_,curind);
-    MVT::MvAddMv( anorm(0,0), *P, zero, *AP, *P ); // U(:,k) = U(:,k)/anorm;
-    MVT::MvAddMv( zero, *P, anorm(0,0), *AP, *AP ); // C(:,k) = C(:,k)/anorm;
-    P = Teuchos::null;
-    AP = Teuchos::null;
-    Pivots[k] = one;                 // delete,  for diagonostic purposes
-    P = MVT::CloneViewNonConst(*U_,curind);  // U(:,k)
-    AP = MVT::CloneViewNonConst(*C_,curind); // C(:,k)
+    MVT::MvScale( *P, anorm ); // U(:,k) = U(:,k)/anorm;
+    MVT::MvScale( *AP, anorm ); // C(:,k) = C(:,k)/anorm;
+    Pivots[k] = one;                 
     for( j = i+1 ; j < p ; j++ ){
       l = ipiv[j-q];   // ahhh
       curind[0] = l;
       RCP<MV> Q = MVT::CloneViewNonConst(*U_,curind); // segmentation fault,  j=i+1=5
-      MVT::MvTransMv( one, *Q, *AP, alpha); // alpha(0,0) = U(:,l)'*C(:,k);
-      MVT::MvAddMv( -alpha(0,0), *P, one, *Q, *Q ); // U(:,l) -= U(:,k) * alpha(0,0);
-      Q = Teuchos::null;
+      MVT::MvTransMv( one, *Q, *AP, *alpha); // alpha(0,0) = U(:,l)'*C(:,k);
+      DMT::SyncDeviceToHost(*alpha);
+      MVT::MvAddMv( -DMT::ValueConst(*alpha,0,0), *P, one, *Q, *Q ); // U(:,l) -= U(:,k) * alpha(0,0);
       RCP<MV> AQ = MVT::CloneViewNonConst(*C_,curind);
-      MVT::MvAddMv( -alpha(0,0), *AP, one, *AQ, *AQ ); // C(:,l) -= C(:,l) - C(:,k) * alpha(0,0);
-      AQ = Teuchos::null;
-      gamma(0,0) = ( Pivots[l] - alpha(0,0))*( Pivots[l] + alpha(0,0));
-      if( gamma(0,0) > 0){
-        Pivots[l] = Teuchos::ScalarTraits<ScalarType>::squareroot( gamma(0,0) );
+      MVT::MvAddMv( -DMT::ValueConst(*alpha,0,0), *AP, one, *AQ, *AQ ); // C(:,l) -= C(:,l) - C(:,k) * alpha(0,0);
+      gamma = ( Pivots[l] - DMT::ValueConst(*alpha,0,0))*( Pivots[l] + DMT::ValueConst(*alpha,0,0));
+      if( gamma > zero){
+        Pivots[l] = Teuchos::ScalarTraits<ScalarType>::squareroot( gamma );
       }
       else {
         Pivots[l] = zero; //rank deficiency revealed
@@ -1181,8 +1161,8 @@ int PCPGSolMgr<ScalarType,MV,OP,true>::ARRQR(int p, int q, const Teuchos::Serial
 }
 
 //  The method returns a string describing the solver manager.
-template<class ScalarType, class MV, class OP>
-std::string PCPGSolMgr<ScalarType,MV,OP,true>::description() const
+template<class ScalarType, class MV, class OP, class DM>
+std::string PCPGSolMgr<ScalarType,MV,OP,DM,true>::description() const
 {
   std::ostringstream oss;
   oss << "Belos::PCPGSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";

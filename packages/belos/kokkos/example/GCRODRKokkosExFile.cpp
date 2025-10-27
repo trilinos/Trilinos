@@ -137,7 +137,7 @@ try {
   //
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<ST,KMV,KOP> > newSolver
-    = rcp( new Belos::GCRODRSolMgr<ST,KMV,KOP,true>(rcpFromRef(problem), rcpFromRef(belosList)) );
+    = rcp( new Belos::GCRODRSolMgr<ST,KMV,KOP>(rcpFromRef(problem), rcpFromRef(belosList)) );
 
   //
   // **********Print out information about problem*******************

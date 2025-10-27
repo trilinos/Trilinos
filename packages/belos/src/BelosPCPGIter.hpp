@@ -18,24 +18,24 @@
 #include "BelosTypes.hpp"
 
 #include "BelosLinearProblem.hpp"
-#include "BelosMatOrthoManager.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDenseMatTraits.hpp"
 #include "BelosCGIteration.hpp"
 
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+
+#include <vector>
 
 /*!	
   \class Belos::PCPGIter
   
   \brief This class implements the PCPG iteration, where a
-  single-std::vector Krylov subspace is constructed.  The documentation
+  single-vector Krylov subspace is constructed.  The documentation
   refers to blocks, but note that at this point, all blocks have unit
   dimension.
  
@@ -51,7 +51,7 @@ namespace Belos {
    *
    * The structure is utilized by initialize() and getState().
    */
-  template <class ScalarType, class MV>
+  template <class ScalarType, class MV, class DM>
   struct PCPGIterState {
     /*! \brief The current dimension of the reduction.
      *
@@ -80,11 +80,11 @@ namespace Belos {
     /*! \brief C = AU, U spans recycled subspace */
     Teuchos::RCP<MV> C;
 
-    /*! \brief The current Hessenberg matrix.
+    /*! \brief The current diagonal matrix.
      *
      * The \c curDim by \c curDim D = diag(P'*AP) = U' * C
      */
-    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > D;
+    std::vector<ScalarType> D;
 
     PCPGIterState() : curDim(0), 
                       prevUdim(0), 
@@ -97,16 +97,17 @@ namespace Belos {
   
   //@}
   
-  template<class ScalarType, class MV, class OP>
-  class PCPGIter : virtual public Iteration<ScalarType,MV,OP> {
+  template<class ScalarType, class MV, class OP, class DM>
+  class PCPGIter : virtual public Iteration<ScalarType,MV,OP,DM> {
     
   public:
     
     //
     // Convenience typedefs
     //
-    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef MultiVecTraits<ScalarType,MV,DM> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef DenseMatTraits<ScalarType,DM>    DMT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
     
@@ -122,8 +123,7 @@ namespace Belos {
      */
     PCPGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 		const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-		const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-		const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+		const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 		Teuchos::ParameterList &params );
     
     //! Destructor.
@@ -172,14 +172,14 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not (supposed to be) copied.
      */
-    void initialize(PCPGIterState<ScalarType,MV>& newstate);
+    void initialize(PCPGIterState<ScalarType,MV,DM>& newstate);
     
     /*! \brief Initialize the solver with the initial vectors from the linear problem.
      *  An exception is thrown if initialzed is called and newstate.R is null.
      */
     void initialize()
     {
-      PCPGIterState<ScalarType,MV> empty;
+      PCPGIterState<ScalarType,MV,DM> empty;
       initialize(empty);
     }
     
@@ -190,8 +190,8 @@ namespace Belos {
      * \returns A PCPGIterState object containing const pointers to the current
      * solver state.
      */
-    PCPGIterState<ScalarType,MV> getState() const {
-      PCPGIterState<ScalarType,MV> state;
+    PCPGIterState<ScalarType,MV,DM> getState() const {
+      PCPGIterState<ScalarType,MV,DM> state;
       state.Z = Z_;         // CG state
       state.P = P_;
       state.AP = AP_;
@@ -285,8 +285,7 @@ namespace Belos {
     //
     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-    const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> >    stest_;
 
     //
     // Algorithmic parameters
@@ -344,21 +343,19 @@ namespace Belos {
     //
     // Projected matrices
     // D_ : Diagonal matrix of pivots D = P'AP 
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > D_;
+    std::vector<ScalarType> D_;
   };
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
-  template<class ScalarType, class MV, class OP>
-  PCPGIter<ScalarType,MV,OP>::PCPGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+  template<class ScalarType, class MV, class OP, class DM>
+  PCPGIter<ScalarType,MV,OP,DM>::PCPGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
 					   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-					   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-					   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+					   const Teuchos::RCP<StatusTest<ScalarType,MV,OP,DM> > &tester,
 					   Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
     stest_(tester),
-    ortho_(ortho),
     savedBlocks_(0),
     initialized_(false),
     stateStorageInitialized_(false),
@@ -386,8 +383,8 @@ namespace Belos {
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and adjust as necessary
-  template <class ScalarType, class MV, class OP>
-  void PCPGIter<ScalarType,MV,OP>::setSize( int savedBlocks )
+  template<class ScalarType, class MV, class OP, class DM>
+  void PCPGIter<ScalarType,MV,OP,DM>::setSize( int savedBlocks )
   {
     // allocate space only; perform no computation
     // Any change in size invalidates the state of the solver as implemented here.
@@ -406,8 +403,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Enable the reuse of a single solver object for completely different linear systems
-  template <class ScalarType, class MV, class OP>
-  void PCPGIter<ScalarType,MV,OP>::resetState()
+  template<class ScalarType, class MV, class OP, class DM>
+  void PCPGIter<ScalarType,MV,OP,DM>::resetState()
   {
       stateStorageInitialized_ = false;
       initialized_ = false;
@@ -418,8 +415,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Setup the state storage.  Called by either initialize or, if savedBlocks_ changes, setSize.
-  template <class ScalarType, class MV, class OP>
-  void PCPGIter<ScalarType,MV,OP>::setStateSize ()
+  template<class ScalarType, class MV, class OP, class DM> 
+  void PCPGIter<ScalarType,MV,OP,DM>::setStateSize ()
   {
     if (!stateStorageInitialized_) {
 
@@ -482,16 +479,8 @@ namespace Belos {
 	  }
 	}
         if (keepDiagonal_) {
-          if (D_ == Teuchos::null) {
-            D_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>() );
-          }
-          if (initDiagonal_) {
-            D_->shape( newsd, newsd );
-          }
-          else {
-            if (D_->numRows() < newsd || D_->numCols() < newsd) {
-              D_->shapeUninitialized( newsd, newsd );
-            }
+          if (initDiagonal_ || ((int)(D_.size()) < newsd)) {
+            D_.resize( newsd );
           }
         }
 	// State storage has now been initialized.
@@ -502,8 +491,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize the iteration object
-  template <class ScalarType, class MV, class OP>
-  void PCPGIter<ScalarType,MV,OP>::initialize(PCPGIterState<ScalarType,MV>& newstate)
+  template<class ScalarType, class MV, class OP, class DM>
+  void PCPGIter<ScalarType,MV,OP,DM>::initialize(PCPGIterState<ScalarType,MV,DM>& newstate)
   {
 
     TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
@@ -590,8 +579,8 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
-  template <class ScalarType, class MV, class OP>
-  void PCPGIter<ScalarType,MV,OP>::iterate()
+  template<class ScalarType, class MV, class OP, class DM>
+  void PCPGIter<ScalarType,MV,OP,DM>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -602,10 +591,9 @@ namespace Belos {
     const bool debug = false;
 
     // Allocate memory for scalars.
-    Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> pAp( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> beta( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> rHz( 1, 1 ), rHz_old( 1, 1 );
+    ScalarType alpha, beta, rHz_old;
+    Teuchos::RCP<DM> pAp = DMT::Create(1,1);
+    Teuchos::RCP<DM> rHz = DMT::Create(1,1);
 
     if( iter_ != 0 )
       std::cout << " Iterate Warning: begin from nonzero iter_ ?" << std::endl;  //DMD
@@ -614,12 +602,12 @@ namespace Belos {
     std::vector<int> prevInd;
     Teuchos::RCP<const MV> Uprev;
     Teuchos::RCP<const MV> Cprev;
-    Teuchos::SerialDenseMatrix<int,ScalarType> CZ;
+    Teuchos::RCP<DM> CZ;
 
     if( prevUdim_ ){
       prevInd.resize( prevUdim_ );
       for( int i=0; i<prevUdim_ ; i++) prevInd[i] = i;
-      CZ.reshape( prevUdim_ , 1 );
+      CZ = DMT::Create( prevUdim_ , 1 );
       Uprev = MVT::CloneView(*U_, prevInd);
       Cprev = MVT::CloneView(*C_, prevInd);
     }
@@ -646,14 +634,9 @@ namespace Belos {
       Teuchos::RCP<MV> P; 
       curind[0] = curDim_ - 1;          // column = dimension - 1 
       P = MVT::CloneViewNonConst(*U_,curind); 
-      MVT::MvTransMv( one, *Cprev, *P, CZ );
-      MVT::MvTimesMatAddMv( -one, *Uprev, CZ, one, *P );       // P -= U*(C'Z)
+      MVT::MvTransMv( one, *Cprev, *P, *CZ );
+      MVT::MvTimesMatAddMv( -one, *Uprev, *CZ, one, *P );       // P -= U*(C'Z)
 
-      if( debug ){
-        MVT::MvTransMv( one, *Cprev, *P, CZ );
-        std::cout << " Input CZ post ortho " << std::endl;
-        CZ.print( std::cout );
-      }
       if( curDim_ == savedBlocks_ ){
         std::vector<int> zero_index(1);
         zero_index[0] = 0;
@@ -663,7 +646,8 @@ namespace Belos {
     }
 
     // Compute first <r,z> a.k.a. rHz
-    MVT::MvTransMv( one, *R_, *Z_, rHz );
+    MVT::MvTransMv( one, *R_, *Z_, *rHz );
+    DMT::SyncDeviceToHost( *rHz );
 
     ////////////////////////////////////////////////////////////////
     // iterate until the status test is satisfied
@@ -682,51 +666,51 @@ namespace Belos {
         P = MVT::CloneView(*U_,curind); 
         AP = MVT::CloneViewNonConst(*C_,curind); 
         lp_->applyOp( *P, *AP );
-        MVT::MvTransMv( one, *P, *AP, pAp );
+        MVT::MvTransMv( one, *P, *AP, *pAp );
       }else{
         if( prevUdim_ + iter_ == savedBlocks_ ){
           AP = MVT::CloneViewNonConst(*C_,curind); 
           lp_->applyOp( *P_, *AP );
-          MVT::MvTransMv( one, *P_, *AP, pAp );
+          MVT::MvTransMv( one, *P_, *AP, *pAp );
         }else{
           lp_->applyOp( *P_, *AP_ );
-          MVT::MvTransMv( one, *P_, *AP_, pAp );
+          MVT::MvTransMv( one, *P_, *AP_, *pAp );
         }
       }
+      DMT::SyncDeviceToHost( *pAp );
 
       if( keepDiagonal_  && prevUdim_ + iter_ <= savedBlocks_ )
-        (*D_)(iter_ -1 ,iter_ -1 ) = pAp(0,0);
+        D_[iter_-1] = DMT::ValueConst(*pAp,0,0);
 
       // positive pAp required 
-      TEUCHOS_TEST_FOR_EXCEPTION( pAp(0,0) <= zero, CGPositiveDefiniteFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( DMT::ValueConst(*pAp,0,0) <= zero, CGPositiveDefiniteFailure,
                           "Belos::PCPGIter::iterate(): non-positive value for p^H*A*p encountered!" );
 
       // alpha := <R_,Z_> / <P,AP>
-      alpha(0,0) = rHz(0,0) / pAp(0,0);
+      alpha = DMT::ValueConst(*rHz,0,0) / DMT::ValueConst(*pAp,0,0);
 
       // positive alpha required 
-      TEUCHOS_TEST_FOR_EXCEPTION( alpha(0,0) <= zero, CGPositiveDefiniteFailure,
+      TEUCHOS_TEST_FOR_EXCEPTION( alpha <= zero, CGPositiveDefiniteFailure,
                           "Belos::PCPGIter::iterate(): non-positive value for alpha encountered!" );
 
       // solution update  x += alpha * P
       if( curDim_ < savedBlocks_ ){
-         MVT::MvAddMv( one, *cur_soln_vec, alpha(0,0), *P, *cur_soln_vec );
+         MVT::MvAddMv( one, *cur_soln_vec, alpha, *P, *cur_soln_vec );
       }else{
-         MVT::MvAddMv( one, *cur_soln_vec, alpha(0,0), *P_, *cur_soln_vec );
+         MVT::MvAddMv( one, *cur_soln_vec, alpha, *P_, *cur_soln_vec );
       }
-      //lp_->updateSolution(); ... does nothing.
       //
       // The denominator of beta is saved before residual is updated [ old <R_, Z_> ].
       //
-      rHz_old(0,0) = rHz(0,0);
+      rHz_old = DMT::ValueConst(*rHz,0,0);
       //
       // residual update R_ := R_ - alpha * AP
       //
       if( prevUdim_ + iter_ <= savedBlocks_ ){
-         MVT::MvAddMv( one, *R_, -alpha(0,0), *AP, *R_ );
+         MVT::MvAddMv( one, *R_, -alpha, *AP, *R_ );
          AP = Teuchos::null;
       }else{
-         MVT::MvAddMv( one, *R_, -alpha(0,0), *AP_, *R_ );
+         MVT::MvAddMv( one, *R_, -alpha, *AP_, *R_ );
       }
       //
       // update beta := [ new <R_, Z_> ] / [ old <R_, Z_> ] and the search direction p.
@@ -737,23 +721,19 @@ namespace Belos {
         Z_ = R_;
       }
       //
-      MVT::MvTransMv( one, *R_, *Z_, rHz );
+      MVT::MvTransMv( one, *R_, *Z_, *rHz );
+      DMT::SyncDeviceToHost( *rHz );
       //
-      beta(0,0) = rHz(0,0) / rHz_old(0,0);
+      beta = DMT::ValueConst(*rHz,0,0) / rHz_old;
       //
       if( curDim_ < savedBlocks_ ){
          curDim_++;                                                         // update basis dim
          curind[0] = curDim_ - 1;
          Teuchos::RCP<MV> Pnext = MVT::CloneViewNonConst(*U_,curind);
-         MVT::MvAddMv( one, *Z_, beta(0,0), *P, *Pnext );
+         MVT::MvAddMv( one, *Z_, beta, *P, *Pnext );
          if( prevUdim_ ){ // Deflate seed space 
-             MVT::MvTransMv( one, *Cprev, *Z_, CZ );
-             MVT::MvTimesMatAddMv( -one, *Uprev, CZ, one, *Pnext ); // Pnext -= U*(C'Z)
-             if( debug ){
-               std::cout << " Check CZ " << std::endl;
-               MVT::MvTransMv( one, *Cprev, *Pnext, CZ );
-               CZ.print( std::cout );
-             }
+             MVT::MvTransMv( one, *Cprev, *Z_, *CZ );
+             MVT::MvTimesMatAddMv( -one, *Uprev, *CZ, one, *Pnext ); // Pnext -= U*(C'Z)
          }
          P = Teuchos::null;
          if( curDim_ == savedBlocks_ ){
@@ -763,16 +743,10 @@ namespace Belos {
          }
          Pnext = Teuchos::null;
       }else{
-         MVT::MvAddMv( one, *Z_, beta(0,0), *P_, *P_ );
+         MVT::MvAddMv( one, *Z_, beta, *P_, *P_ );
          if( prevUdim_ ){ // Deflate seed space
-             MVT::MvTransMv( one, *Cprev, *Z_, CZ );
-             MVT::MvTimesMatAddMv( -one, *Uprev, CZ, one, *P_ );       // P_ -= U*(C'Z)
-
-             if( debug ){
-               std::cout << " Check CZ " << std::endl;
-               MVT::MvTransMv( one, *Cprev, *P_, CZ );
-               CZ.print( std::cout );
-             }
+             MVT::MvTransMv( one, *Cprev, *Z_, *CZ );
+             MVT::MvTimesMatAddMv( -one, *Uprev, *CZ, one, *P_ );       // P_ -= U*(C'Z)
          }
       }
       // CGB: 5/26/2010

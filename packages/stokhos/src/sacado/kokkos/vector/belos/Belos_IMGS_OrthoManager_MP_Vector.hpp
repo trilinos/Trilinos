@@ -20,6 +20,8 @@
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "BelosIMGSOrthoManager.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
 
 namespace Belos {
 

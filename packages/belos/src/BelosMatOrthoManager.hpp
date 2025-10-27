@@ -39,11 +39,12 @@
 #include "BelosOrthoManager.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
+#include "BelosTeuchosDenseAdapter.hpp"
 
 namespace Belos {
 
-  template <class ScalarType, class MV, class OP>
-  class MatOrthoManager : public OrthoManager<ScalarType,MV> {
+  template <class ScalarType, class MV, class OP, class DM = Teuchos::SerialDenseMatrix<int,ScalarType>>
+  class MatOrthoManager : public OrthoManager<ScalarType,MV,DM> { 
   protected:
     Teuchos::RCP<const OP> _Op;
     bool _hasOp;
@@ -81,9 +82,9 @@ namespace Belos {
     All concepts of orthogonality discussed in this class are with respect to this inner product.
      */
     void innerProd( const MV& X, const MV& Y,
-                                  Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
+                                  DM& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
-      typedef MultiVecTraits<ScalarType,MV>     MVT;
+      typedef MultiVecTraits<ScalarType,MV,DM>     MVT;
       typedef OperatorTraits<ScalarType,MV,OP>  OPT;
 
       Teuchos::RCP<const MV> P,Q;
@@ -119,9 +120,9 @@ namespace Belos {
      *  operator application and uses \c *MY in the computation of the inner product.
      */
     void innerProd( const MV& X, const MV& Y, Teuchos::RCP<const MV> MY,
-                            Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
+                            DM& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
-      typedef MultiVecTraits<ScalarType,MV>     MVT;
+      typedef MultiVecTraits<ScalarType,MV,DM>     MVT;
 
       Teuchos::RCP<MV> P,Q;
 
@@ -168,7 +169,7 @@ namespace Belos {
     {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef Teuchos::ScalarTraits<typename SCT::magnitudeType> MT;
-      typedef MultiVecTraits<ScalarType,MV>     MVT;
+      typedef MultiVecTraits<ScalarType,MV,DM>     MVT;
       typedef OperatorTraits<ScalarType,MV,OP>  OPT;
       
       int nvecs = MVT::GetNumberVecs(X);
@@ -237,7 +238,7 @@ namespace Belos {
      orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
     */
     virtual void project ( MV &X, Teuchos::RCP<MV> MX,
-                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                           Teuchos::Array<Teuchos::RCP<DM> > C,
                            Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
 
 
@@ -245,7 +246,7 @@ namespace Belos {
     /*! \brief This method calls project(X,Teuchos::null,C,Q); see documentation for that function.
     */
     virtual void project ( MV &X,
-                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                           Teuchos::Array<Teuchos::RCP<DM> > C,
                            Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const {
       project(X,Teuchos::null,C,Q);
     }
@@ -272,12 +273,12 @@ namespace Belos {
      @return Rank of the basis computed by this method.
     */
     virtual int normalize ( MV &X, Teuchos::RCP<MV> MX,
-                            Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
+                            Teuchos::RCP<DM> B ) const = 0;
 
 
     /*! \brief This method calls normalize(X,Teuchos::null,B); see documentation for that function.
     */
-    virtual int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
+    virtual int normalize ( MV &X, Teuchos::RCP<DM> B ) const {
       return normalize(X,Teuchos::null,B);
     }
 
@@ -286,14 +287,14 @@ namespace Belos {
     virtual int
     projectAndNormalizeWithMxImpl (MV &X,
                                    Teuchos::RCP<MV> MX,
-                                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                                   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                                   Teuchos::Array<Teuchos::RCP<DM> > C,
+                                   Teuchos::RCP<DM> B,
                                    Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const = 0;
 
     virtual int
     projectAndNormalizeImpl (MV &X,
-                             Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                             Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                             Teuchos::Array<Teuchos::RCP<DM> > C,
+                             Teuchos::RCP<DM> B,
                              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       return this->projectAndNormalizeWithMxImpl (X, Teuchos::null, C, B, Q);
@@ -338,8 +339,8 @@ namespace Belos {
     int
     projectAndNormalize (MV &X,
                          Teuchos::RCP<MV> MX,
-                         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
-                         Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
+                         Teuchos::Array<Teuchos::RCP<DM> > C,
+                         Teuchos::RCP<DM> B,
                          Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
     {
       return this->projectAndNormalizeWithMxImpl (X, MX, C, B, Q);
