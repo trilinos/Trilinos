@@ -24,7 +24,7 @@
 #include <Tpetra_DiagPrecond.hpp>
 
 // I/O for Harwell-Boeing files
-#include <Trilinos_Util_iohb.h>
+#include <Tpetra_Util_iohb.h>
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ScalarTraits.hpp>
