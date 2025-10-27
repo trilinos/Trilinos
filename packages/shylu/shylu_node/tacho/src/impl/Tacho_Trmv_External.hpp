@@ -44,15 +44,15 @@ template <typename ArgUplo, typename ArgTrans> struct Trmv<ArgUplo, ArgTrans, Al
         const int mA = A.extent(0), nA = A.extent(1);
         if (nC == 1) {
           BlasSerial<value_type>::trmv(ArgUplo::param, ArgTrans::param, diag.param, mA, nA,
-                                       value_type(alpha), A.data(), A.stride_1(),
-                                                          B.data(), B.stride_0(), 
-                                       value_type(beta),  C.data(), C.stride_0());
+                                       value_type(alpha), A.data(), A.stride(1),
+                                                          B.data(), B.stride(0),
+                                       value_type(beta),  C.data(), C.stride(0));
         } else {
           int k = (ArgTrans::param == 'N' || ArgTrans::param == 'n' ? nA : mA);
           BlasSerial<value_type>::trmm(ArgUplo::param, ArgTrans::param, diag.param, mC, nC, k,
-                                       value_type(alpha), A.data(), A.stride_1(),
-                                                          B.data(), B.stride_1(), 
-                                       value_type(beta),  C.data(), C.stride_1());
+                                       value_type(alpha), A.data(), A.stride(1),
+                                                          B.data(), B.stride(1),
+                                       value_type(beta),  C.data(), C.stride(1));
         }
       }
     } else {

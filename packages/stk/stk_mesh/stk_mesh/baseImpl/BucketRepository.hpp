@@ -70,24 +70,7 @@ public:
    *
    *  Don't call inside BucketRepository member functions!
    */
-  const BucketVector & buckets( EntityRank rank ) const
-  {
-    static const BucketVector emptyBucketVector;
-
-    if( rank < static_cast<EntityRank>(m_buckets.size()) )
-    {
-      if (m_need_sync_from_partitions[rank])
-      {
-        const_cast<BucketRepository *>(this)->sync_from_partitions(rank);
-      }
-
-      return m_buckets[ rank ];
-    }
-    else
-    {
-      return emptyBucketVector;
-    }
-  }
+  const BucketVector & buckets( EntityRank rank ) const;
 
   BulkData& mesh() const { return m_mesh; }
 

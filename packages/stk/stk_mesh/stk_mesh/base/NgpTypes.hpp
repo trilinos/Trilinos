@@ -37,6 +37,7 @@
 
 #include "stk_util/ngp/NgpSpaces.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/baseImpl/ViewVector.hpp"
 #include "Kokkos_Core.hpp"
 
 namespace stk {
@@ -66,6 +67,7 @@ template <typename MemSpace> using MeshIndexType                  = Kokkos::View
 template <typename MemSpace> using HostMeshIndexType              = typename MeshIndexType<MemSpace>::host_mirror_type;
 
 template <typename MemSpace> using UnsignedPairViewType           = Kokkos::View<Kokkos::pair<unsigned, unsigned>*, MemSpace>;
+template <typename MemSpace> using EntityRankViewType             = Kokkos::View<EntityRank*, MemSpace>;
 
 using DeviceStringType = Kokkos::View<char*, stk::ngp::HostPinnedSpace>;
 using HostStringType = Kokkos::View<char*, stk::ngp::HostMemSpace>;
@@ -74,17 +76,17 @@ template <typename MemSpace> using DeviceFieldMetaDataArrayType   = Kokkos::View
 template <typename MemSpace> using HostFieldMetaDataArrayType     = typename DeviceFieldMetaDataArrayType<MemSpace>::host_mirror_type;
 template <typename MemSpace> using DeviceBucketsModifiedCollectionType = Kokkos::View<int**, Kokkos::LayoutRight, MemSpace>;
 
-using FieldMetaDataArrayType = typename Kokkos::View<FieldMetaData*, stk::ngp::HostMemSpace>;
+using FieldMetaDataArrayType = impl::ViewVector<FieldMetaData, stk::ngp::HostMemSpace>;
 
 using FieldMetaDataModCountType = Kokkos::View<unsigned, stk::ngp::HostPinnedSpace>;
 
-template <typename MemSpace>
+template <typename Space>
 struct DefaultLayoutSelector {
   static constexpr Layout layout = DefaultDeviceLayout;
 };
 
 template <>
-struct DefaultLayoutSelector<stk::ngp::HostMemSpace> {
+struct DefaultLayoutSelector<stk::ngp::HostSpace> {
   static constexpr Layout layout = DefaultHostLayout;
 };
 

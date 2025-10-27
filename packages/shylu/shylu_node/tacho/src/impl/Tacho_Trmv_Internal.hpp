@@ -43,16 +43,16 @@ template <typename ArgUplo, typename ArgTrans> struct Trmv<ArgUplo, ArgTrans, Al
       const int mA = A.extent(0), nA = A.extent(1);
       if (n == 1) {
         BlasTeam<value_type>::trmv(member, ArgUplo::param, ArgTrans::param, diag.param,
-                                   mA, nA, value_type(alpha), A.data(), A.stride_1(),
-                                                              B.data(), B.stride_0(),
-                                           value_type(beta),  C.data(), C.stride_0());
+                                   mA, nA, value_type(alpha), A.data(), A.stride(1),
+                                                              B.data(), B.stride(0),
+                                           value_type(beta),  C.data(), C.stride(0));
       } else {
         // TODO: need trmm team
         for (ordinal_type j = 0; j < n; j++ ) {
           BlasTeam<value_type>::trmv(member, ArgUplo::param, ArgTrans::param, diag.param,
-                                     mA, nA, value_type(alpha), A.data(), A.stride_1(),
-                                                                &B(0, j), B.stride_0(),
-                                             value_type(beta),  &C(0, j), C.stride_0());
+                                     mA, nA, value_type(alpha), A.data(), A.stride(1),
+                                                                &B(0, j), B.stride(0),
+                                             value_type(beta),  &C(0, j), C.stride(0));
         }
       }
     }

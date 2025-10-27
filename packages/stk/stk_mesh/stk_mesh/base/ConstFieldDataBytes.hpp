@@ -17,14 +17,16 @@ namespace stk::mesh {
 // Device ConstFieldDataBytes
 //==============================================================================
 
-template <typename MemSpace = stk::ngp::HostMemSpace>
+template <typename Space = stk::ngp::HostSpace>
 class ConstFieldDataBytes : public FieldDataBase
 {
 public:
-  using mem_space = MemSpace;
+  using space = Space;
+  using exec_space = typename Space::exec_space;
+  using mem_space = typename Space::mem_space;
 
   KOKKOS_FUNCTION ConstFieldDataBytes();
-  ConstFieldDataBytes(ConstFieldDataBytes<stk::ngp::HostMemSpace>* hostFieldBytes, Layout dataLayout);
+  ConstFieldDataBytes(ConstFieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes, Layout dataLayout);
   KOKKOS_FUNCTION virtual ~ConstFieldDataBytes() override {}
 
   KOKKOS_INLINE_FUNCTION ConstFieldDataBytes(const ConstFieldDataBytes& other);
@@ -41,21 +43,21 @@ public:
 
   template <Layout DataLayout = Layout::Left>
   KOKKOS_INLINE_FUNCTION
-  EntityBytes<const std::byte, MemSpace, DataLayout> entity_bytes(Entity entity,
-                                                                  const char* file = STK_DEVICE_FILE,
-                                                                  int line = STK_DEVICE_LINE) const;
+  EntityBytes<const std::byte, Space, DataLayout> entity_bytes(Entity entity,
+                                                               const char* file = STK_DEVICE_FILE,
+                                                               int line = STK_DEVICE_LINE) const;
 
   template <Layout DataLayout = Layout::Left>
   KOKKOS_INLINE_FUNCTION
-  EntityBytes<const std::byte, MemSpace, DataLayout> entity_bytes(const FastMeshIndex& fmi,
-                                                                  const char* file = STK_DEVICE_FILE,
-                                                                  int line = STK_DEVICE_LINE) const;
+  EntityBytes<const std::byte, Space, DataLayout> entity_bytes(const FastMeshIndex& fmi,
+                                                               const char* file = STK_DEVICE_FILE,
+                                                               int line = STK_DEVICE_LINE) const;
 
   template <Layout DataLayout = Layout::Left>
   KOKKOS_INLINE_FUNCTION
-  BucketBytes<const std::byte, MemSpace, DataLayout> bucket_bytes(int bucketId,
-                                                                  const char* file = STK_DEVICE_FILE,
-                                                                  int line = STK_DEVICE_LINE) const;
+  BucketBytes<const std::byte, Space, DataLayout> bucket_bytes(int bucketId,
+                                                               const char* file = STK_DEVICE_FILE,
+                                                               int line = STK_DEVICE_LINE) const;
 
 protected:
   template <typename MemSpace_> friend class DeviceFieldDataManager;
@@ -71,7 +73,7 @@ protected:
 
   virtual void sync_to_host(const stk::ngp::ExecSpace&, Layout) override {}
   virtual void sync_to_device(const stk::ngp::ExecSpace&, Layout) override {}
-  virtual void update(const stk::ngp::ExecSpace&, Layout) override {}
+  virtual void update(const stk::ngp::ExecSpace&, Layout, bool) override {}
   virtual void fence(const stk::ngp::ExecSpace&) override {}
 
   KOKKOS_INLINE_FUNCTION const char* field_name() const;
@@ -92,17 +94,17 @@ protected:
   KOKKOS_INLINE_FUNCTION void check_bucket_ordinal(unsigned, unsigned, const char*, int) const {}
 #endif
 
-  DeviceFieldMetaDataArrayType<MemSpace> m_deviceFieldMetaData;
-  MeshIndexType<MemSpace> m_deviceFastMeshIndices;
+  EntityRank m_rank;
+  Layout m_layout;
+  Ordinal m_ordinal;
+  DeviceFieldMetaDataArrayType<mem_space> m_deviceFieldMetaData;
+  MeshIndexType<mem_space> m_deviceFastMeshIndices;
   DeviceStringType m_fieldName;
   FieldMetaDataModCountType m_fieldMetaDataModCount;
   BulkData* m_hostBulk;
-  Ordinal m_ordinal;
   int m_bytesPerScalar;
   int m_fieldDataSynchronizedCount;
   unsigned m_localFieldMetaDataModCount;
-  EntityRank m_rank;
-  Layout m_layout;
 };
 
 
@@ -111,10 +113,12 @@ protected:
 //==============================================================================
 
 template <>
-class ConstFieldDataBytes<stk::ngp::HostMemSpace> : public FieldDataBase
+class ConstFieldDataBytes<stk::ngp::HostSpace> : public FieldDataBase
 {
 public:
-  using mem_space = stk::ngp::HostMemSpace;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
 
   ConstFieldDataBytes();
   ConstFieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName,
@@ -125,6 +129,9 @@ public:
   // below, along with all of the other functions.  Not sure why this one is special.
   inline ConstFieldDataBytes(const ConstFieldDataBytes& other)
     : FieldDataBase(other),
+      m_rank(other.m_rank),
+      m_layout(other.m_layout),
+      m_ordinal(other.m_ordinal),
       m_fieldMetaData(other.m_fieldMetaData),
       m_bulk(other.m_bulk),
       m_dataTraits(other.m_dataTraits),
@@ -134,11 +141,8 @@ public:
       m_fieldName(),
     #endif
       m_fieldMetaDataModCount(other.m_fieldMetaDataModCount),
-      m_ordinal(other.m_ordinal),
       m_fieldDataSynchronizedCount(other.m_fieldDataSynchronizedCount),
-      m_localFieldMetaDataModCount(other.m_localFieldMetaDataModCount),
-      m_rank(other.m_rank),
-      m_layout(other.m_layout)
+      m_localFieldMetaDataModCount(other.m_localFieldMetaDataModCount)
   {}
 
   inline ConstFieldDataBytes(ConstFieldDataBytes&&) = default;
@@ -155,33 +159,33 @@ public:
 
   template <Layout DataLayout = Layout::Auto>
   inline
-  EntityBytes<const std::byte, stk::ngp::HostMemSpace, DataLayout> entity_bytes(Entity entity,
-                                                                                const char* file = STK_HOST_FILE,
-                                                                                int line = STK_HOST_LINE) const;
+  EntityBytes<const std::byte, stk::ngp::HostSpace, DataLayout> entity_bytes(Entity entity,
+                                                                             const char* file = STK_HOST_FILE,
+                                                                             int line = STK_HOST_LINE) const;
 
   template <Layout DataLayout = Layout::Auto>
   inline
-  EntityBytes<const std::byte, stk::ngp::HostMemSpace, DataLayout> entity_bytes(const MeshIndex& mi,
-                                                                                const char* file = STK_HOST_FILE,
-                                                                                int line = STK_HOST_LINE) const;
+  EntityBytes<const std::byte, stk::ngp::HostSpace, DataLayout> entity_bytes(const MeshIndex& mi,
+                                                                             const char* file = STK_HOST_FILE,
+                                                                             int line = STK_HOST_LINE) const;
 
   template <Layout DataLayout = Layout::Auto>
   inline
-  EntityBytes<const std::byte, stk::ngp::HostMemSpace, DataLayout> entity_bytes(const FastMeshIndex& fmi,
-                                                                                const char* file = STK_HOST_FILE,
-                                                                                int line = STK_HOST_LINE) const;
+  EntityBytes<const std::byte, stk::ngp::HostSpace, DataLayout> entity_bytes(const FastMeshIndex& fmi,
+                                                                             const char* file = STK_HOST_FILE,
+                                                                             int line = STK_HOST_LINE) const;
 
   template <Layout DataLayout = Layout::Auto>
   inline
-  BucketBytes<const std::byte, stk::ngp::HostMemSpace, DataLayout> bucket_bytes(const Bucket& bucket,
-                                                                                const char* file = STK_HOST_FILE,
-                                                                                int line = STK_HOST_LINE) const;
+  BucketBytes<const std::byte, stk::ngp::HostSpace, DataLayout> bucket_bytes(const Bucket& bucket,
+                                                                             const char* file = STK_HOST_FILE,
+                                                                             int line = STK_HOST_LINE) const;
 
   template <Layout DataLayout = Layout::Auto>
   inline
-  BucketBytes<const std::byte, stk::ngp::HostMemSpace, DataLayout> bucket_bytes(int bucketId,
-                                                                                const char* file = STK_HOST_FILE,
-                                                                                int line = STK_HOST_LINE) const;
+  BucketBytes<const std::byte, stk::ngp::HostSpace, DataLayout> bucket_bytes(int bucketId,
+                                                                             const char* file = STK_HOST_FILE,
+                                                                             int line = STK_HOST_LINE) const;
 
 protected:
   friend FieldBase;
@@ -198,7 +202,7 @@ protected:
 
   virtual void sync_to_host(const stk::ngp::ExecSpace&, Layout) override {}
   virtual void sync_to_device(const stk::ngp::ExecSpace&, Layout) override {}
-  virtual void update(const stk::ngp::ExecSpace&, Layout) override {}
+  virtual void update(const stk::ngp::ExecSpace&, Layout, bool) override {}
   virtual void fence(const stk::ngp::ExecSpace&) override {}
 
   inline const char* field_name() const;
@@ -220,16 +224,16 @@ protected:
   inline void check_bucket_ordinal(unsigned, unsigned, const char*, int) const {}
 #endif
 
+  EntityRank m_rank;
+  Layout m_layout;
+  Ordinal m_ordinal;
   FieldMetaDataArrayType m_fieldMetaData;
   BulkData* m_bulk;
   const DataTraits* m_dataTraits;
   HostStringType m_fieldName;
   FieldMetaDataModCountType m_fieldMetaDataModCount;
-  Ordinal m_ordinal;
   int m_fieldDataSynchronizedCount;
   unsigned m_localFieldMetaDataModCount;
-  EntityRank m_rank;
-  Layout m_layout;
 };
 
 
@@ -237,32 +241,32 @@ protected:
 // Device ConstFieldDataBytes definitions
 //==============================================================================
 
-template <typename MemSpace>
+template <typename Space>
 KOKKOS_FUNCTION
-ConstFieldDataBytes<MemSpace>::ConstFieldDataBytes()
+ConstFieldDataBytes<Space>::ConstFieldDataBytes()
   : FieldDataBase(),
-    m_hostBulk(nullptr),
+    m_rank(InvalidEntityRank),
+    m_layout(Layout::Left),
     m_ordinal(InvalidOrdinal),
+    m_hostBulk(nullptr),
     m_bytesPerScalar(0),
     m_fieldDataSynchronizedCount(0),
-    m_localFieldMetaDataModCount(0),
-    m_rank(InvalidEntityRank),
-    m_layout(Layout::Left)
+    m_localFieldMetaDataModCount(0)
 {
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
-ConstFieldDataBytes<MemSpace>::ConstFieldDataBytes(ConstFieldDataBytes<stk::ngp::HostMemSpace>* hostFieldBytes,
-                                                   Layout dataLayout)
+template <typename Space>
+ConstFieldDataBytes<Space>::ConstFieldDataBytes(ConstFieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes,
+                                                Layout dataLayout)
   : FieldDataBase(true),
-    m_hostBulk(nullptr),
+    m_rank(hostFieldBytes->entity_rank()),
+    m_layout(dataLayout),
     m_ordinal(hostFieldBytes->field_ordinal()),
+    m_hostBulk(nullptr),
     m_bytesPerScalar(hostFieldBytes->data_traits().alignment_of),
     m_fieldDataSynchronizedCount(0),
-    m_localFieldMetaDataModCount(0),
-    m_rank(hostFieldBytes->entity_rank()),
-    m_layout(dataLayout)
+    m_localFieldMetaDataModCount(0)
 {
   const std::string fieldName(hostFieldBytes->field_name());
   m_fieldName = DeviceStringType(Kokkos::view_alloc(Kokkos::WithoutInitializing, fieldName), fieldName.size()+1);
@@ -271,10 +275,13 @@ ConstFieldDataBytes<MemSpace>::ConstFieldDataBytes(ConstFieldDataBytes<stk::ngp:
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 KOKKOS_INLINE_FUNCTION
-ConstFieldDataBytes<MemSpace>::ConstFieldDataBytes(const ConstFieldDataBytes& other)
+ConstFieldDataBytes<Space>::ConstFieldDataBytes(const ConstFieldDataBytes& other)
   : FieldDataBase(other),
+    m_rank(other.m_rank),
+    m_layout(other.m_layout),
+    m_ordinal(other.m_ordinal),
     m_deviceFieldMetaData(other.m_deviceFieldMetaData),
     m_deviceFastMeshIndices(other.m_deviceFastMeshIndices),
     #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
@@ -284,22 +291,19 @@ ConstFieldDataBytes<MemSpace>::ConstFieldDataBytes(const ConstFieldDataBytes& ot
     #endif
     m_fieldMetaDataModCount(other.m_fieldMetaDataModCount),
     m_hostBulk(other.m_hostBulk),
-    m_ordinal(other.m_ordinal),
     m_bytesPerScalar(other.m_bytesPerScalar),
     m_fieldDataSynchronizedCount(other.m_fieldDataSynchronizedCount),
-    m_localFieldMetaDataModCount(other.m_localFieldMetaDataModCount),
-    m_rank(other.m_rank),
-    m_layout(other.m_layout)
+    m_localFieldMetaDataModCount(other.m_localFieldMetaDataModCount)
 {
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 template <Layout DataLayout>
 KOKKOS_INLINE_FUNCTION
-EntityBytes<const std::byte, MemSpace, DataLayout>
-ConstFieldDataBytes<MemSpace>::entity_bytes(Entity entity,
-                                            const char* file, int line) const
+EntityBytes<const std::byte, Space, DataLayout>
+ConstFieldDataBytes<Space>::entity_bytes(Entity entity,
+                                         const char* file, int line) const
 {
   check_entity_local_offset(entity.local_offset(), file, line);
 
@@ -309,9 +313,9 @@ ConstFieldDataBytes<MemSpace>::entity_bytes(Entity entity,
 
   const DeviceFieldMetaData& fieldMetaData = this->m_deviceFieldMetaData[fmi.bucket_id];
   const int bytesPerEntity = fieldMetaData.m_numComponentsPerEntity * fieldMetaData.m_numCopiesPerEntity *
-                             this->m_bytesPerScalar;
+      this->m_bytesPerScalar;
 
-  return EntityBytes<const std::byte, MemSpace, DataLayout>(
+  return EntityBytes<const std::byte, Space, DataLayout>(
         fieldMetaData.m_data + this->m_bytesPerScalar * fmi.bucket_ord,
         bytesPerEntity,
         this->m_bytesPerScalar,
@@ -319,20 +323,20 @@ ConstFieldDataBytes<MemSpace>::entity_bytes(Entity entity,
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 template <Layout DataLayout>
 KOKKOS_INLINE_FUNCTION
-EntityBytes<const std::byte, MemSpace, DataLayout>
-ConstFieldDataBytes<MemSpace>::entity_bytes(const FastMeshIndex& fmi,
-                                            const char* file, int line) const
+EntityBytes<const std::byte, Space, DataLayout>
+ConstFieldDataBytes<Space>::entity_bytes(const FastMeshIndex& fmi,
+                                         const char* file, int line) const
 {
   check_bucket_id(fmi.bucket_id, "entity", file, line);
 
   const DeviceFieldMetaData& fieldMetaData = this->m_deviceFieldMetaData[fmi.bucket_id];
   const int bytesPerEntity = fieldMetaData.m_numComponentsPerEntity * fieldMetaData.m_numCopiesPerEntity *
-                             this->m_bytesPerScalar;
+      this->m_bytesPerScalar;
 
-  return EntityBytes<const std::byte, MemSpace, DataLayout>(
+  return EntityBytes<const std::byte, Space, DataLayout>(
         fieldMetaData.m_data + this->m_bytesPerScalar * fmi.bucket_ord,
         bytesPerEntity,
         this->m_bytesPerScalar,
@@ -340,20 +344,20 @@ ConstFieldDataBytes<MemSpace>::entity_bytes(const FastMeshIndex& fmi,
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 template <Layout DataLayout>
 KOKKOS_INLINE_FUNCTION
-BucketBytes<const std::byte, MemSpace, DataLayout>
-ConstFieldDataBytes<MemSpace>::bucket_bytes(int bucketId,
-                                            const char* file, int line) const
+BucketBytes<const std::byte, Space, DataLayout>
+ConstFieldDataBytes<Space>::bucket_bytes(int bucketId,
+                                         const char* file, int line) const
 {
   check_bucket_id(bucketId, "bucket", file, line);
 
   const DeviceFieldMetaData& fieldMetaData = this->m_deviceFieldMetaData[bucketId];
   const int bytesPerEntity = fieldMetaData.m_numComponentsPerEntity * fieldMetaData.m_numCopiesPerEntity *
-                             this->m_bytesPerScalar;
+      this->m_bytesPerScalar;
 
-  return BucketBytes<const std::byte, MemSpace, DataLayout>(
+  return BucketBytes<const std::byte, Space, DataLayout>(
         fieldMetaData.m_data,
         bytesPerEntity,
         this->m_bytesPerScalar,
@@ -363,33 +367,33 @@ ConstFieldDataBytes<MemSpace>::bucket_bytes(int bucketId,
 
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 KOKKOS_INLINE_FUNCTION Layout
-ConstFieldDataBytes<MemSpace>::data_layout() const
+ConstFieldDataBytes<Space>::data_layout() const
 {
   return m_layout;
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 KOKKOS_INLINE_FUNCTION EntityRank
-ConstFieldDataBytes<MemSpace>::entity_rank() const
+ConstFieldDataBytes<Space>::entity_rank() const
 {
   return m_rank;
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 KOKKOS_INLINE_FUNCTION Ordinal
-ConstFieldDataBytes<MemSpace>::field_ordinal() const
+ConstFieldDataBytes<Space>::field_ordinal() const
 {
   return m_ordinal;
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 KOKKOS_INLINE_FUNCTION const char*
-ConstFieldDataBytes<MemSpace>::field_name() const
+ConstFieldDataBytes<Space>::field_name() const
 {
 #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   return m_fieldName.data();
@@ -399,17 +403,17 @@ ConstFieldDataBytes<MemSpace>::field_name() const
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 void
-ConstFieldDataBytes<MemSpace>::modify_field_meta_data()
+ConstFieldDataBytes<Space>::modify_field_meta_data()
 {
   ++m_fieldMetaDataModCount();
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 void
-ConstFieldDataBytes<MemSpace>::update_field_meta_data_mod_count()
+ConstFieldDataBytes<Space>::update_field_meta_data_mod_count()
 {
 #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   m_localFieldMetaDataModCount = m_fieldMetaDataModCount();
@@ -417,36 +421,36 @@ ConstFieldDataBytes<MemSpace>::update_field_meta_data_mod_count()
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 BulkData&
-ConstFieldDataBytes<MemSpace>::mesh()
+ConstFieldDataBytes<Space>::mesh()
 {
   STK_ThrowAssert(m_hostBulk != nullptr);
   return *m_hostBulk;
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 const BulkData&
-ConstFieldDataBytes<MemSpace>::mesh() const
+ConstFieldDataBytes<Space>::mesh() const
 {
   STK_ThrowAssert(m_hostBulk != nullptr);
   return *m_hostBulk;
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 void
-ConstFieldDataBytes<MemSpace>::set_mesh(BulkData* bulkData)
+ConstFieldDataBytes<Space>::set_mesh(BulkData* bulkData)
 {
   m_hostBulk = bulkData;
   m_fieldDataSynchronizedCount = 0;
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 bool
-ConstFieldDataBytes<MemSpace>::needs_update() const
+ConstFieldDataBytes<Space>::needs_update() const
 {
 #ifndef NDEBUG
   const int maxValidSyncCount = static_cast<int>(mesh().synchronized_count()+1);
@@ -459,23 +463,23 @@ ConstFieldDataBytes<MemSpace>::needs_update() const
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 int
-ConstFieldDataBytes<MemSpace>::field_data_synchronized_count() const
+ConstFieldDataBytes<Space>::field_data_synchronized_count() const
 {
   return m_fieldDataSynchronizedCount;
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 void
-ConstFieldDataBytes<MemSpace>::swap_field_data(FieldDataBase& other)
+ConstFieldDataBytes<Space>::swap_field_data(FieldDataBase& other)
 {
-  ConstFieldDataBytes<MemSpace>* otherFieldBytes = dynamic_cast<ConstFieldDataBytes<MemSpace>*>(&other);
+  ConstFieldDataBytes<Space>* otherFieldBytes = dynamic_cast<ConstFieldDataBytes<Space>*>(&other);
   STK_ThrowRequireMsg(otherFieldBytes != nullptr,
                       "ConstFieldDataBytes::swap_field_data() called with an imcompatible ConstFieldDataBytes object.");
 
-  DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<MemSpace>(this->mesh());
+  DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<Space>(this->mesh());
   STK_ThrowRequire(deviceFieldDataManager != nullptr);
 
   deviceFieldDataManager->swap_field_data(this->field_ordinal(), otherFieldBytes->field_ordinal());
@@ -485,27 +489,27 @@ ConstFieldDataBytes<MemSpace>::swap_field_data(FieldDataBase& other)
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 void
-ConstFieldDataBytes<MemSpace>::update_host_bucket_pointers()
+ConstFieldDataBytes<Space>::update_host_bucket_pointers()
 {
-  DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<MemSpace>(this->mesh());
+  DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<Space>(this->mesh());
   STK_ThrowRequire(deviceFieldDataManager != nullptr);
 
   deviceFieldDataManager->update_host_bucket_pointers(this->field_ordinal());
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 void
-ConstFieldDataBytes<MemSpace>::incomplete_swap_field_data(FieldDataBase& other)
+ConstFieldDataBytes<Space>::incomplete_swap_field_data(FieldDataBase& other)
 {
-  ConstFieldDataBytes<MemSpace>* otherFieldBytes = dynamic_cast<ConstFieldDataBytes<MemSpace>*>(&other);
+  ConstFieldDataBytes<Space>* otherFieldBytes = dynamic_cast<ConstFieldDataBytes<Space>*>(&other);
   STK_ThrowRequireMsg(otherFieldBytes != nullptr,
                       "ConstFieldDataBytes::incomplete_swap_field_data() called with an imcompatible "
                       "ConstFieldDataBytes object.");
 
-  DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<MemSpace>(this->mesh());
+  DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<Space>(this->mesh());
   STK_ThrowRequire(deviceFieldDataManager != nullptr);
 
   deviceFieldDataManager->swap_field_data(this->field_ordinal(), otherFieldBytes->field_ordinal());
@@ -522,9 +526,9 @@ ConstFieldDataBytes<MemSpace>::incomplete_swap_field_data(FieldDataBase& other)
 
 #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 KOKKOS_INLINE_FUNCTION void
-ConstFieldDataBytes<MemSpace>::check_updated_field(const char* file, int line) const
+ConstFieldDataBytes<Space>::check_updated_field(const char* file, int line) const
 {
   if (this->m_localFieldMetaDataModCount != this->m_fieldMetaDataModCount()) {
     if (line == -1) {
@@ -540,9 +544,9 @@ ConstFieldDataBytes<MemSpace>::check_updated_field(const char* file, int line) c
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 KOKKOS_INLINE_FUNCTION void
-ConstFieldDataBytes<MemSpace>::check_entity_local_offset(unsigned localOffset, const char* file, int line) const
+ConstFieldDataBytes<Space>::check_entity_local_offset(unsigned localOffset, const char* file, int line) const
 {
   if (localOffset >= this->m_deviceFastMeshIndices.extent(0)) {
     if (line == -1) {
@@ -560,10 +564,9 @@ ConstFieldDataBytes<MemSpace>::check_entity_local_offset(unsigned localOffset, c
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 KOKKOS_INLINE_FUNCTION void
-ConstFieldDataBytes<MemSpace>::check_bucket_id(unsigned bucketId, const char* valuesType, const char* file,
-                                               int line) const
+ConstFieldDataBytes<Space>::check_bucket_id(unsigned bucketId, const char* valuesType, const char* file, int line) const
 {
   if (bucketId >= this->m_deviceFieldMetaData.extent(0)) {
     if (line == -1) {
@@ -581,10 +584,9 @@ ConstFieldDataBytes<MemSpace>::check_bucket_id(unsigned bucketId, const char* va
 }
 
 //------------------------------------------------------------------------------
-template <typename MemSpace>
+template <typename Space>
 KOKKOS_INLINE_FUNCTION void
-ConstFieldDataBytes<MemSpace>::check_bucket_ordinal(unsigned bucketId, unsigned bucketOrd, const char* file,
-                                                    int line) const
+ConstFieldDataBytes<Space>::check_bucket_ordinal(unsigned bucketId, unsigned bucketOrd, const char* file, int line) const
 {
   // Only trip if we're referencing an out-of-bounds Entity in a Bucket where the Field is registered,
   // because accessing an EntityValues where the Field isn't valid should be allowed.  This allows users
@@ -612,31 +614,31 @@ ConstFieldDataBytes<MemSpace>::check_bucket_ordinal(unsigned bucketId, unsigned 
 //==============================================================================
 
 inline
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::ConstFieldDataBytes()
+ConstFieldDataBytes<stk::ngp::HostSpace>::ConstFieldDataBytes()
   : FieldDataBase(),
+    m_rank(InvalidEntityRank),
+    m_layout(Layout::Right),
+    m_ordinal(InvalidOrdinal),
     m_bulk(nullptr),
     m_dataTraits(&stk::mesh::data_traits<void>()),
-    m_ordinal(InvalidOrdinal),
     m_fieldDataSynchronizedCount(0),
-    m_localFieldMetaDataModCount(0),
-    m_rank(InvalidEntityRank),
-    m_layout(Layout::Right)
+    m_localFieldMetaDataModCount(0)
 {
 }
 
 //------------------------------------------------------------------------------
 inline
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::ConstFieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal,
-                                                                 [[maybe_unused]] const std::string& fieldName,
-                                                                 const DataTraits& dataTraits, Layout dataLayout)
+ConstFieldDataBytes<stk::ngp::HostSpace>::ConstFieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal,
+                                                              [[maybe_unused]] const std::string& fieldName,
+                                                              const DataTraits& dataTraits, Layout dataLayout)
   : FieldDataBase(true),
+    m_rank(entityRank),
+    m_layout(dataLayout),
+    m_ordinal(fieldOrdinal),
     m_bulk(nullptr),
     m_dataTraits(&dataTraits),
-    m_ordinal(fieldOrdinal),
     m_fieldDataSynchronizedCount(0),
-    m_localFieldMetaDataModCount(0),
-    m_rank(entityRank),
-    m_layout(dataLayout)
+    m_localFieldMetaDataModCount(0)
 {
   m_fieldName = HostStringType(fieldName, fieldName.size()+1);
   std::strcpy(m_fieldName.data(), fieldName.c_str());
@@ -646,9 +648,9 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::ConstFieldDataBytes(EntityRank enti
 //------------------------------------------------------------------------------
 template <>
 inline
-EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Auto>(Entity entity,
-                                                                        const char* file, int line) const
+EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>
+ConstFieldDataBytes<stk::ngp::HostSpace>::entity_bytes<Layout::Auto>(Entity entity,
+                                                                     const char* file, int line) const
 {
   const MeshIndex& mi = this->mesh().mesh_index(entity);
 
@@ -657,13 +659,13 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Auto>(Entity e
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
   if (m_layout == Layout::Right) {
-    return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(
           fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal,
           fieldMetaData.m_bytesPerEntity,
           this->m_dataTraits->alignment_of);
   }
   else if (m_layout == Layout::Left) {
-    return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(
           fieldMetaData.m_data + this->m_dataTraits->alignment_of * mi.bucket_ordinal,
           fieldMetaData.m_bytesPerEntity,
           this->m_dataTraits->alignment_of,
@@ -671,16 +673,16 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Auto>(Entity e
   }
   else {
     STK_ThrowErrorMsg("Unsupported host data layout: " << m_layout);
-    return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0);  // Keep compiler happy
+    return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, 0);  // Keep compiler happy
   }
 }
 
 //------------------------------------------------------------------------------
 template <>
 inline
-EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Auto>(const MeshIndex& mi,
-                                                                        const char* file, int line) const
+EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>
+ConstFieldDataBytes<stk::ngp::HostSpace>::entity_bytes<Layout::Auto>(const MeshIndex& mi,
+                                                                     const char* file, int line) const
 {
   check_mesh(mi.bucket->mesh(), "Entity", file, line);
   check_rank(mi.bucket->entity_rank(), "Entity", file, line);
@@ -688,13 +690,13 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Auto>(const Me
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
   if (m_layout == Layout::Right) {
-    return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(
           fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal,
           fieldMetaData.m_bytesPerEntity,
           this->m_dataTraits->alignment_of);
   }
   else if (m_layout == Layout::Left) {
-    return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(
           fieldMetaData.m_data + this->m_dataTraits->alignment_of * mi.bucket_ordinal,
           fieldMetaData.m_bytesPerEntity,
           this->m_dataTraits->alignment_of,
@@ -702,29 +704,29 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Auto>(const Me
   }
   else {
     STK_ThrowErrorMsg("Unsupported host data layout: " << m_layout);
-    return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0);  // Keep compiler happy
+    return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, 0);  // Keep compiler happy
   }
 }
 
 //------------------------------------------------------------------------------
 template <>
 inline
-EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Auto>(const FastMeshIndex& fmi,
-                                                                        const char* file, int line) const
+EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>
+ConstFieldDataBytes<stk::ngp::HostSpace>::entity_bytes<Layout::Auto>(const FastMeshIndex& fmi,
+                                                                     const char* file, int line) const
 {
   check_bucket_id(fmi.bucket_id, "entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[fmi.bucket_id];
 
   if (m_layout == Layout::Right) {
-    return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(
           fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * fmi.bucket_ord,
           fieldMetaData.m_bytesPerEntity,
           this->m_dataTraits->alignment_of);
   }
   else if (m_layout == Layout::Left) {
-    return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(
           fieldMetaData.m_data + this->m_dataTraits->alignment_of * fmi.bucket_ord,
           fieldMetaData.m_bytesPerEntity,
           this->m_dataTraits->alignment_of,
@@ -732,16 +734,16 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Auto>(const Fa
   }
   else {
     STK_ThrowErrorMsg("Unsupported host data layout: " << m_layout);
-    return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0);  // Keep compiler happy
+    return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, 0);  // Keep compiler happy
   }
 }
 
 //------------------------------------------------------------------------------
 template <>
 inline
-BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Auto>(const Bucket& bucket,
-                                                                        const char* file, int line) const
+BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>
+ConstFieldDataBytes<stk::ngp::HostSpace>::bucket_bytes<Layout::Auto>(const Bucket& bucket,
+                                                                     const char* file, int line) const
 {
   check_mesh(bucket.mesh(), "Bucket", file, line);
   check_rank(bucket.entity_rank(), "Bucket", file, line);
@@ -749,14 +751,14 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Auto>(const Bu
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucket.bucket_id()];
 
   if (m_layout == Layout::Right) {
-    return BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(
+    return BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(
           fieldMetaData.m_data,
           fieldMetaData.m_bytesPerEntity,
           this->m_dataTraits->alignment_of,
           fieldMetaData.m_bucketSize);
   }
   else if (m_layout == Layout::Left) {
-    return BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(
+    return BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(
           fieldMetaData.m_data,
           fieldMetaData.m_bytesPerEntity,
           this->m_dataTraits->alignment_of,
@@ -765,30 +767,30 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Auto>(const Bu
   }
   else {
     STK_ThrowErrorMsg("Unsupported host data layout: " << m_layout);
-    return BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0, 0);  // Keep compiler happy
+    return BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, 0, 0);  // Keep compiler happy
   }
 }
 
 //------------------------------------------------------------------------------
 template <>
 inline
-BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Auto>(int bucketId,
-                                                                        const char* file, int line) const
+BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>
+ConstFieldDataBytes<stk::ngp::HostSpace>::bucket_bytes<Layout::Auto>(int bucketId,
+                                                                     const char* file, int line) const
 {
   check_bucket_id(bucketId, "bucket", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucketId];
 
   if (m_layout == Layout::Right) {
-    return BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(
+    return BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(
           fieldMetaData.m_data,
           fieldMetaData.m_bytesPerEntity,
           this->m_dataTraits->alignment_of,
           fieldMetaData.m_bucketSize);
   }
   else if (m_layout == Layout::Left) {
-    return BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(
+    return BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(
           fieldMetaData.m_data,
           fieldMetaData.m_bytesPerEntity,
           this->m_dataTraits->alignment_of,
@@ -797,7 +799,7 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Auto>(int buck
   }
   else {
     STK_ThrowErrorMsg("Unsupported host data layout: " << m_layout);
-    return BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0, 0);  // Keep compiler happy
+    return BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, 0, 0);  // Keep compiler happy
   }
 }
 
@@ -805,9 +807,9 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Auto>(int buck
 //------------------------------------------------------------------------------
 template <>
 inline
-EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Left>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Left>(Entity entity,
-                                                                        const char* file, int line) const
+EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Left>
+ConstFieldDataBytes<stk::ngp::HostSpace>::entity_bytes<Layout::Left>(Entity entity,
+                                                                     const char* file, int line) const
 {
   const MeshIndex& mi = this->mesh().mesh_index(entity);
 
@@ -815,7 +817,7 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Left>(Entity e
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
-  return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Left>(
+  return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Left>(
         fieldMetaData.m_data + this->m_dataTraits->alignment_of * mi.bucket_ordinal,
         fieldMetaData.m_bytesPerEntity,
         this->m_dataTraits->alignment_of,
@@ -825,16 +827,16 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Left>(Entity e
 //------------------------------------------------------------------------------
 template <>
 inline
-EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Left>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Left>(const MeshIndex& mi,
-                                                                        const char* file, int line) const
+EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Left>
+ConstFieldDataBytes<stk::ngp::HostSpace>::entity_bytes<Layout::Left>(const MeshIndex& mi,
+                                                                     const char* file, int line) const
 {
   check_mesh(mi.bucket->mesh(), "Entity", file, line);
   check_rank(mi.bucket->entity_rank(), "Entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
-  return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Left>(
+  return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Left>(
         fieldMetaData.m_data + this->m_dataTraits->alignment_of * mi.bucket_ordinal,
         fieldMetaData.m_bytesPerEntity,
         this->m_dataTraits->alignment_of,
@@ -844,15 +846,15 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Left>(const Me
 //------------------------------------------------------------------------------
 template <>
 inline
-EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Left>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Left>(const FastMeshIndex& fmi,
-                                                                        const char* file, int line) const
+EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Left>
+ConstFieldDataBytes<stk::ngp::HostSpace>::entity_bytes<Layout::Left>(const FastMeshIndex& fmi,
+                                                                     const char* file, int line) const
 {
   check_bucket_id(fmi.bucket_id, "entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[fmi.bucket_id];
 
-  return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Left>(
+  return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Left>(
         fieldMetaData.m_data + this->m_dataTraits->alignment_of * fmi.bucket_ord,
         fieldMetaData.m_bytesPerEntity,
         this->m_dataTraits->alignment_of,
@@ -862,16 +864,16 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Left>(const Fa
 //------------------------------------------------------------------------------
 template <>
 inline
-BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Left>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Left>(const Bucket& bucket,
-                                                                        const char* file, int line) const
+BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Left>
+ConstFieldDataBytes<stk::ngp::HostSpace>::bucket_bytes<Layout::Left>(const Bucket& bucket,
+                                                                     const char* file, int line) const
 {
   check_mesh(bucket.mesh(), "Bucket", file, line);
   check_rank(bucket.entity_rank(), "Bucket", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucket.bucket_id()];
 
-  return BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Left>(
+  return BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Left>(
         fieldMetaData.m_data,
         fieldMetaData.m_bytesPerEntity,
         this->m_dataTraits->alignment_of,
@@ -882,15 +884,15 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Left>(const Bu
 //------------------------------------------------------------------------------
 template <>
 inline
-BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Left>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Left>(int bucketId,
-                                                                        const char* file, int line) const
+BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Left>
+ConstFieldDataBytes<stk::ngp::HostSpace>::bucket_bytes<Layout::Left>(int bucketId,
+                                                                     const char* file, int line) const
 {
   check_bucket_id(bucketId, "bucket", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucketId];
 
-  return BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Left>(
+  return BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Left>(
         fieldMetaData.m_data,
         fieldMetaData.m_bytesPerEntity,
         this->m_dataTraits->alignment_of,
@@ -902,9 +904,9 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Left>(int buck
 //------------------------------------------------------------------------------
 template <>
 inline
-EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Right>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Right>(Entity entity,
-                                                                         const char* file, int line) const
+EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Right>
+ConstFieldDataBytes<stk::ngp::HostSpace>::entity_bytes<Layout::Right>(Entity entity,
+                                                                      const char* file, int line) const
 {
   const MeshIndex& mi = this->mesh().mesh_index(entity);
 
@@ -912,7 +914,7 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Right>(Entity 
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
-  return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Right>(
+  return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Right>(
         fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal,
         fieldMetaData.m_bytesPerEntity,
         this->m_dataTraits->alignment_of);
@@ -921,16 +923,16 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Right>(Entity 
 //------------------------------------------------------------------------------
 template <>
 inline
-EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Right>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Right>(const MeshIndex& mi,
-                                                                         const char* file, int line) const
+EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Right>
+ConstFieldDataBytes<stk::ngp::HostSpace>::entity_bytes<Layout::Right>(const MeshIndex& mi,
+                                                                      const char* file, int line) const
 {
   check_mesh(mi.bucket->mesh(), "Entity", file, line);
   check_rank(mi.bucket->entity_rank(), "Entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
-  return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Right>(
+  return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Right>(
         fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal,
         fieldMetaData.m_bytesPerEntity,
         this->m_dataTraits->alignment_of);
@@ -939,15 +941,15 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Right>(const M
 //------------------------------------------------------------------------------
 template <>
 inline
-EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Right>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Right>(const FastMeshIndex& fmi,
-                                                                         const char* file, int line) const
+EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Right>
+ConstFieldDataBytes<stk::ngp::HostSpace>::entity_bytes<Layout::Right>(const FastMeshIndex& fmi,
+                                                                      const char* file, int line) const
 {
   check_bucket_id(fmi.bucket_id, "entity", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[fmi.bucket_id];
 
-  return EntityBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Right>(
+  return EntityBytes<const std::byte, stk::ngp::HostSpace, Layout::Right>(
         fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * fmi.bucket_ord,
         fieldMetaData.m_bytesPerEntity,
         this->m_dataTraits->alignment_of);
@@ -956,16 +958,16 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_bytes<Layout::Right>(const F
 //------------------------------------------------------------------------------
 template <>
 inline
-BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Right>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Right>(const Bucket& bucket,
-                                                                         const char* file, int line) const
+BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Right>
+ConstFieldDataBytes<stk::ngp::HostSpace>::bucket_bytes<Layout::Right>(const Bucket& bucket,
+                                                                      const char* file, int line) const
 {
   check_mesh(bucket.mesh(), "Bucket", file, line);
   check_rank(bucket.entity_rank(), "Bucket", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucket.bucket_id()];
 
-  return BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Right>(
+  return BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Right>(
         fieldMetaData.m_data,
         fieldMetaData.m_bytesPerEntity,
         this->m_dataTraits->alignment_of,
@@ -975,15 +977,15 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Right>(const B
 //------------------------------------------------------------------------------
 template <>
 inline
-BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Right>
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Right>(int bucketId,
-                                                                         const char* file, int line) const
+BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Right>
+ConstFieldDataBytes<stk::ngp::HostSpace>::bucket_bytes<Layout::Right>(int bucketId,
+                                                                      const char* file, int line) const
 {
   check_bucket_id(bucketId, "bucket", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucketId];
 
-  return BucketBytes<const std::byte, stk::ngp::HostMemSpace, Layout::Right>(
+  return BucketBytes<const std::byte, stk::ngp::HostSpace, Layout::Right>(
         fieldMetaData.m_data,
         fieldMetaData.m_bytesPerEntity,
         this->m_dataTraits->alignment_of,
@@ -993,28 +995,28 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::bucket_bytes<Layout::Right>(int buc
 
 //------------------------------------------------------------------------------
 inline Layout
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::data_layout() const
+ConstFieldDataBytes<stk::ngp::HostSpace>::data_layout() const
 {
   return m_layout;
 }
 
 //------------------------------------------------------------------------------
 inline EntityRank
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::entity_rank() const
+ConstFieldDataBytes<stk::ngp::HostSpace>::entity_rank() const
 {
   return m_rank;
 }
 
 //------------------------------------------------------------------------------
 inline Ordinal
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::field_ordinal() const
+ConstFieldDataBytes<stk::ngp::HostSpace>::field_ordinal() const
 {
   return m_ordinal;
 }
 
 //------------------------------------------------------------------------------
 inline const char*
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::field_name() const
+ConstFieldDataBytes<stk::ngp::HostSpace>::field_name() const
 {
 #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   return m_fieldName.data();
@@ -1025,14 +1027,14 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::field_name() const
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::modify_field_meta_data()
+ConstFieldDataBytes<stk::ngp::HostSpace>::modify_field_meta_data()
 {
   ++m_fieldMetaDataModCount();
 }
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::update_field_meta_data_mod_count()
+ConstFieldDataBytes<stk::ngp::HostSpace>::update_field_meta_data_mod_count()
 {
 #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
   m_localFieldMetaDataModCount = m_fieldMetaDataModCount();
@@ -1042,14 +1044,14 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::update_field_meta_data_mod_count()
 
 //------------------------------------------------------------------------------
 inline const DataTraits&
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::data_traits() const
+ConstFieldDataBytes<stk::ngp::HostSpace>::data_traits() const
 {
   return *m_dataTraits;
 }
 
 //------------------------------------------------------------------------------
 inline BulkData&
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::mesh()
+ConstFieldDataBytes<stk::ngp::HostSpace>::mesh()
 {
   STK_ThrowAssert(m_bulk != nullptr);
   return *m_bulk;
@@ -1057,7 +1059,7 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::mesh()
 
 //------------------------------------------------------------------------------
 inline const BulkData&
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::mesh() const
+ConstFieldDataBytes<stk::ngp::HostSpace>::mesh() const
 {
   STK_ThrowAssert(m_bulk != nullptr);
   return *m_bulk;
@@ -1065,7 +1067,7 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::mesh() const
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::set_mesh(BulkData* bulkData)
+ConstFieldDataBytes<stk::ngp::HostSpace>::set_mesh(BulkData* bulkData)
 {
   m_bulk = bulkData;
   m_fieldDataSynchronizedCount = 0;
@@ -1073,7 +1075,7 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::set_mesh(BulkData* bulkData)
 
 //------------------------------------------------------------------------------
 inline bool
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::needs_update() const
+ConstFieldDataBytes<stk::ngp::HostSpace>::needs_update() const
 {
 #ifndef NDEBUG
   const int maxValidSyncCount = static_cast<int>(mesh().synchronized_count()+1);
@@ -1088,17 +1090,17 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::needs_update() const
 
 //------------------------------------------------------------------------------
 inline int
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::field_data_synchronized_count() const
+ConstFieldDataBytes<stk::ngp::HostSpace>::field_data_synchronized_count() const
 {
   return m_fieldDataSynchronizedCount;
 }
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::swap_field_data(FieldDataBase& other)
+ConstFieldDataBytes<stk::ngp::HostSpace>::swap_field_data(FieldDataBase& other)
 {
-  ConstFieldDataBytes<stk::ngp::HostMemSpace>* otherFieldBytes =
-      dynamic_cast<ConstFieldDataBytes<stk::ngp::HostMemSpace>*>(&other);
+  ConstFieldDataBytes<stk::ngp::HostSpace>* otherFieldBytes =
+      dynamic_cast<ConstFieldDataBytes<stk::ngp::HostSpace>*>(&other);
   STK_ThrowRequireMsg(otherFieldBytes != nullptr,
                       "ConstFieldDataBytes::swap_field_data() called with an imcompatible ConstFieldDataBytes object.");
 
@@ -1109,7 +1111,7 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::swap_field_data(FieldDataBase& othe
 
 //------------------------------------------------------------------------------
 inline std::string
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::location_string(const char* file, int line) const
+ConstFieldDataBytes<stk::ngp::HostSpace>::location_string(const char* file, int line) const
 {
   if (line != -1) {
     std::string fileName(file);
@@ -1126,17 +1128,17 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::location_string(const char* file, i
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::check_updated_field(const char* file, int line) const
+ConstFieldDataBytes<stk::ngp::HostSpace>::check_updated_field(const char* file, int line) const
 {
   STK_ThrowRequireMsg(m_localFieldMetaDataModCount == m_fieldMetaDataModCount(),
                       location_string(file, line) << "Accessing out-of-date FieldData after a mesh modification "
-                      "for Field '" << field_name() << "'.  Please re-acquire this FieldData instance.");
+                                                     "for Field '" << field_name() << "'.  Please re-acquire this FieldData instance.");
 }
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::check_mesh(const stk::mesh::BulkData& bulk, const char* target,
-                                                        const char* file, int line) const
+ConstFieldDataBytes<stk::ngp::HostSpace>::check_mesh(const stk::mesh::BulkData& bulk, const char* target,
+                                                     const char* file, int line) const
 {
   STK_ThrowRequireMsg(&bulk == &mesh(),
                       location_string(file, line) << "Accessing " << target << " from a different mesh for Field '" <<
@@ -1145,8 +1147,8 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::check_mesh(const stk::mesh::BulkDat
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::check_rank(stk::mesh::EntityRank targetRank, const char* target,
-                                                        const char* file, int line) const
+ConstFieldDataBytes<stk::ngp::HostSpace>::check_rank(stk::mesh::EntityRank targetRank, const char* target,
+                                                     const char* file, int line) const
 {
   STK_ThrowRequireMsg(entity_rank() == targetRank,
                       location_string(file, line) << "Accessing " << target << " with rank " << targetRank <<
@@ -1156,19 +1158,19 @@ ConstFieldDataBytes<stk::ngp::HostMemSpace>::check_rank(stk::mesh::EntityRank ta
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::check_bucket_id(unsigned bucketId, const char* valuesType,
-                                                             const char* file, int line) const
+ConstFieldDataBytes<stk::ngp::HostSpace>::check_bucket_id(unsigned bucketId, const char* valuesType,
+                                                          const char* file, int line) const
 {
-  STK_ThrowRequireMsg(bucketId < m_fieldMetaData.extent(0),
+  STK_ThrowRequireMsg(bucketId < m_fieldMetaData.size(),
                       location_string(file, line) << "Called FieldData::" << valuesType << "_values() for Field '" <<
                       field_name() << "' with an out-of-bounds Bucket ID (" << bucketId <<
-                      ") for a FieldMetaData array with extent " << m_fieldMetaData.extent(0));
+                      ") for a FieldMetaData array with size " << m_fieldMetaData.size());
 }
 
 //------------------------------------------------------------------------------
 inline void
-ConstFieldDataBytes<stk::ngp::HostMemSpace>::check_bucket_ordinal(unsigned bucketId, unsigned bucketOrd,
-                                                                  const char* file, int line) const
+ConstFieldDataBytes<stk::ngp::HostSpace>::check_bucket_ordinal(unsigned bucketId, unsigned bucketOrd,
+                                                               const char* file, int line) const
 {
   // Only trip if we're referencing an out-of-bounds Entity in a Bucket where the Field is registered,
   // because accessing an EntityValues where the Field isn't valid should be allowed.  This allows users

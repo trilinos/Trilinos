@@ -37,6 +37,8 @@
 
 #ifdef STK_BUILT_WITH_BJAM
 
+#define STK_SHOW_DEPRECATED_WARNINGS
+#define STK_HIDE_DEPRECATED_CODE
 #define STK_HAS_MPI
 #define STK_HAS_ARBORX
 #define STK_HAVE_BOOST
@@ -52,8 +54,8 @@
 #define STK_HAVE_FP_ERRNO
 
 #else
-// This file gets created by cmake during a Trilinos build
-// and will not be present in a sierra build using bjam or associated wrappers
+// This file gets created by cmake and will not
+// be present in a sierra build using bjam
 #include "STK_Trilinos_config.h"
 
 #ifndef STK_HAS_MPI
@@ -72,6 +74,11 @@
 
 #endif // STK_HAS_MPI
 #endif // STK_BUILT_WITH_BJAM
+
+#if defined(_OPENMP)
+#include <omp.h>
+#define STK_USE_OPENMP  // Guard our pragmas to avoid unknown-pragma warnings-as-errors
+#endif
 
 // GCC address sanitizer
 #ifdef __SANITIZE_ADDRESS__

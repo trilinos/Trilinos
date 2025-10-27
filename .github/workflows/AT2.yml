@@ -127,25 +127,9 @@ jobs:
           name: ${{ github.job }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
-      - name: Summary
+      - name: Write Summary
         if: ${{ !cancelled() }}
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
-          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
-          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
-          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
-          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
-          AT2_URL=$(</home/runner/AT2_URL.txt)
-          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
-          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
-          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
-          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
-          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
-          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
+        uses: ./.github/workflows/actions/summary
 
   clang19-openmpi4:
     needs: pre-checks
@@ -242,25 +226,9 @@ jobs:
           name: ${{ github.job }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
-      - name: Summary
+      - name: Write Summary
         if: ${{ !cancelled() }}
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
-          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
-          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
-          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
-          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
-          AT2_URL=$(</home/runner/AT2_URL.txt)
-          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
-          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
-          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
-          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
-          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
-          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
+        uses: ./.github/workflows/actions/summary
 
   cuda12:
     needs: pre-checks
@@ -357,25 +325,9 @@ jobs:
           name: ${{ github.job }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
-      - name: Summary
+      - name: Write Summary
         if: ${{ !cancelled() }}
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
-          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
-          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
-          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
-          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
-          AT2_URL=$(</home/runner/AT2_URL.txt)
-          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
-          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
-          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
-          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
-          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
-          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
+        uses: ./.github/workflows/actions/summary
 
   gcc14:
     needs: pre-checks
@@ -473,25 +425,9 @@ jobs:
           name: ${{ github.job }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
-      - name: Summary
+      - name: Write Summary
         if: ${{ !cancelled() }}
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
-          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
-          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
-          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
-          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
-          AT2_URL=$(</home/runner/AT2_URL.txt)
-          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
-          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
-          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
-          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
-          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
-          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
+        uses: ./.github/workflows/actions/summary
 
   cuda12-uvm:
     needs: pre-checks
@@ -587,25 +523,9 @@ jobs:
           name: ${{ github.job }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
-      - name: Summary
+      - name: Write Summary
         if: ${{ !cancelled() }}
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
-          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
-          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
-          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
-          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
-          AT2_URL=$(</home/runner/AT2_URL.txt)
-          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
-          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
-          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
-          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
-          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
-          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
+        uses: ./.github/workflows/actions/summary
 
   oneapi2024:
     needs: pre-checks
@@ -699,23 +619,9 @@ jobs:
           name: ${{ github.job }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
-      - name: Summary
+      - name: Write Summary
         if: ${{ !cancelled() }}
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          echo "## Image" >> $GITHUB_STEP_SUMMARY
-          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
-          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
-          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
-          AT2_URL=$(</home/runner/AT2_URL.txt)
-          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
-          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
-          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
-          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
-          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
-          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
+        uses: ./.github/workflows/actions/summary
 
   openmp:
     needs: pre-checks
@@ -812,25 +718,9 @@ jobs:
           name: ${{ github.job }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
-      - name: Summary
+      - name: Write Summary
         if: ${{ !cancelled() }}
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
-          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
-          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
-          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
-          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
-          AT2_URL=$(</home/runner/AT2_URL.txt)
-          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
-          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
-          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
-          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
-          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
-          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
+        uses: ./.github/workflows/actions/summary
 
   framework-tests:
     needs: pre-checks
@@ -921,22 +811,6 @@ jobs:
           name: ${{ github.job }}-artifacts
           path: /home/runner/artifacts/*
           retention-days: 90
-      - name: Summary
+      - name: Write Summary
         if: ${{ !cancelled() }}
-        shell: bash -l {0}
-        working-directory: /home/Trilinos/build
-        run: |
-          echo "## Run Info" >> $GITHUB_STEP_SUMMARY
-          echo "Image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" >> $GITHUB_STEP_SUMMARY
-          echo "GenConfig Build ID: $(cat ./genconfig_build_name.txt)" >> $GITHUB_STEP_SUMMARY
-          echo "## CDash Links" >> $GITHUB_STEP_SUMMARY
-          echo "### Current Build" >> $GITHUB_STEP_SUMMARY
-          AT2_URL=$(</home/runner/AT2_URL.txt)
-          echo $AT2_URL >> $GITHUB_STEP_SUMMARY
-          echo "### All Builds" >> $GITHUB_STEP_SUMMARY
-          AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
-          echo $AT2_ALL_BUILDS >> $GITHUB_STEP_SUMMARY
-          echo "## Helpful Links" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors" >> $GITHUB_STEP_SUMMARY
-          echo "https://github.com/trilinos/Trilinos/wiki/Containers" >> $GITHUB_STEP_SUMMARY
-          echo "https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia" >> $GITHUB_STEP_SUMMARY
+        uses: ./.github/workflows/actions/summary

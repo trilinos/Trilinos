@@ -144,7 +144,9 @@ template const Timer::Metric<CPUTime> &Timer::getMetric<CPUTime>() const;
 template const Timer::Metric<WallTime> &Timer::getMetric<WallTime>() const;
 template const Timer::Metric<MPICount> &Timer::getMetric<MPICount>() const;
 template const Timer::Metric<MPIByteCount> &Timer::getMetric<MPIByteCount>() const;
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
 template const Timer::Metric<HeapAlloc> &Timer::getMetric<HeapAlloc>() const;
+#endif
 
 
 bool

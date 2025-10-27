@@ -49,8 +49,6 @@ project votd
     $(sierra-warnings)
     <define>STK_BUILT_FOR_SIERRA
     <define>STK_BUILT_WITH_BJAM
-    <define>STK_SHOW_DEPRECATED_WARNINGS
-    <define>STK_HIDE_DEPRECATED_CODE
     <define>SIERRA_MIGRATION
     <include>$(stk_ngp_test-root-inc)
   : usage-requirements

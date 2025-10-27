@@ -36,7 +36,7 @@
 #include <stk_util/stk_config.h>
 #include <stk_util/parallel/ParallelComm.hpp>
 
-#if defined(STK_HAS_MPI) && defined(STK_HAVE_STKMESH)
+#if defined(STK_HAS_MPI) && defined(STK_HAVE_STKIO)
 #include "stk_unit_test_utils/MeshFixture.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #endif
@@ -289,7 +289,7 @@ TEST_F(TestCommBuffer, pack_unpack_vector_string)
   check_unpack(goldstr);
 }
 
-#if defined(STK_HAS_MPI) && defined(STK_HAVE_STKMESH)
+#if defined(STK_HAS_MPI) && defined(STK_HAVE_STKIO)
 
 class TestCommBufferWithMesh : public TestCommBuffer, public stk::unit_test_util::MeshFixtureNoTest
 {
@@ -483,7 +483,7 @@ TEST_F(TestCommBufferWithMesh, pack_layout_left_entity_bytes)
   check_unpack_bytes(initValsPack, entityBytesUnpack2);
 }
 
-#endif // have MPI and STKMESH
+#endif // have MPI and STKIO
 
 }
 

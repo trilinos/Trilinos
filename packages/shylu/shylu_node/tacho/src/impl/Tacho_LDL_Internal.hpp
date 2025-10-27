@@ -163,7 +163,7 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::Internal> {
     int r_val = 0;
     const ordinal_type m = A.extent(0);
     if (m > 0)
-      LapackTeam<value_type>::sytrf_nopiv(member, ArgUplo::param, m, A.data(), A.stride_1(), &r_val);
+      LapackTeam<value_type>::sytrf_nopiv(member, ArgUplo::param, m, A.data(), A.stride(1), &r_val);
     return r_val;
   }
 };

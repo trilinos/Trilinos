@@ -94,7 +94,11 @@ void init_fad(const WgbView& wgb, const WbsView& wbs, const FluxView& flux,
   Kokkos::deep_copy( flux, flux_h );
   Kokkos::deep_copy( src, src_h );
 
+#if KOKKOS_VERSION >= 40799
+  Kokkos::deep_copy(typename ResidualView::type(residual), 0.0);
+#else
   Kokkos::deep_copy(typename ResidualView::array_type(residual), 0.0);
+#endif
 }
 
 template <typename WgbView, typename WbsView, typename FluxView,

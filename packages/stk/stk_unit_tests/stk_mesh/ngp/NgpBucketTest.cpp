@@ -375,11 +375,11 @@ public:
       auto& deviceBucketRepo1 = ngpMesh1.get_device_bucket_repository();
       auto rank = testRank;
 
-      EXPECT_EQ(1u, deviceBucketRepo1.m_buckets[testRank].extent(0));
-      stk::mesh::EntityRank thisRank = testRank;
+      EXPECT_EQ(1u, deviceBucketRepo1.m_buckets[rank].extent(0));
+      stk::mesh::EntityRank thisRank = rank;
       stk::mesh::for_each_entity_run(ngpMesh1, thisRank, universal,
         KOKKOS_LAMBDA(stk::mesh::FastMeshIndex const& index) {
-          const stk::mesh::Entity entity = ngpMesh1.get_entity(thisRank, index);
+          [[maybe_unused]] const stk::mesh::Entity entity = ngpMesh1.get_entity(thisRank, index);
         }
       );
     }
@@ -396,9 +396,10 @@ public:
       auto& deviceBucketRepo2 = ngpMesh2.get_device_bucket_repository();
       EXPECT_EQ(11u, deviceBucketRepo2.m_buckets[testRank].extent(0));
       stk::mesh::EntityRank thisRank = testRank;
-      stk::mesh::for_each_entity_run(ngpMesh2, testRank, universal,
+
+      stk::mesh::for_each_entity_run(ngpMesh2, thisRank, universal,
         KOKKOS_LAMBDA(stk::mesh::FastMeshIndex const& index) {
-          const stk::mesh::Entity entity = ngpMesh2.get_entity(thisRank, index);
+          [[maybe_unused]] const stk::mesh::Entity entity = ngpMesh2.get_entity(thisRank, index);
         }
       );
     }
@@ -432,7 +433,7 @@ public:
       stk::mesh::EntityRank thisRank = testRank;
       stk::mesh::for_each_entity_run(ngpMesh5, testRank, universal,
         KOKKOS_LAMBDA(stk::mesh::FastMeshIndex const& index) {
-          const stk::mesh::Entity entity = ngpMesh5.get_entity(thisRank, index);
+          [[maybe_unused]] const stk::mesh::Entity entity = ngpMesh5.get_entity(thisRank, index);
         }
       );
     }
@@ -1319,7 +1320,7 @@ public:
   template <typename DeviceEntityViewType>
   void fill_device_entities(DeviceEntityViewType& deviceEntityView)
   {
-    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
+    [[maybe_unused]] stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
     stk::mesh::EntityVector entities;
     m_bulk->get_entities(testRank, m_meta->universal_part(), entities);
 
@@ -1456,7 +1457,7 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_get_partition_found_partitions)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
 
   using DevicePartOrdinalView = stk::mesh::PartOrdinalViewType<stk::ngp::MemSpace>;
-  using HostPartOrdinalView = typename DevicePartOrdinalView::HostMirror;
+  using HostPartOrdinalView = typename DevicePartOrdinalView::host_mirror_type;
 
   build_empty_mesh();
 
@@ -1507,9 +1508,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_get_partition_found_partitions)
 NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_same_partition)
 {
   using DevicePartOrdinalView = stk::mesh::PartOrdinalViewType<stk::ngp::MemSpace>;
-  using HostPartOrdinalView = typename DevicePartOrdinalView::HostMirror;
+  using HostPartOrdinalView = typename DevicePartOrdinalView::host_mirror_type;
   using DevicePairViewType = stk::mesh::UnsignedPairViewType<stk::ngp::MemSpace>;
-  using HostPairViewType = typename DevicePairViewType::HostMirror;
+  using HostPairViewType = typename DevicePairViewType::host_mirror_type;
   using DeviceEntitiesType = Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace>;
 
   build_empty_mesh();
@@ -1556,9 +1557,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_same_partition)
 NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_separate_partitions)
 {
   using DevicePartOrdinalView = stk::mesh::PartOrdinalViewType<stk::ngp::MemSpace>;
-  using HostPartOrdinalView = typename DevicePartOrdinalView::HostMirror;
+  using HostPartOrdinalView = typename DevicePartOrdinalView::host_mirror_type;
   using DevicePairViewType = stk::mesh::UnsignedPairViewType<stk::ngp::MemSpace>;
-  using HostPairViewType = typename DevicePairViewType::HostMirror;
+  using HostPairViewType = typename DevicePairViewType::host_mirror_type;
   using DeviceEntitiesType = Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace>;
 
   build_empty_mesh();
@@ -1617,9 +1618,9 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_separate_partitions)
 NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_exchange_partitions)
 {
   using DevicePartOrdinalView = stk::mesh::PartOrdinalViewType<stk::ngp::MemSpace>;
-  using HostPartOrdinalView = typename DevicePartOrdinalView::HostMirror;
+  using HostPartOrdinalView = typename DevicePartOrdinalView::host_mirror_type;
   using DevicePairViewType = stk::mesh::UnsignedPairViewType<stk::ngp::MemSpace>;
-  using HostPairViewType = typename DevicePairViewType::HostMirror;
+  using HostPairViewType = typename DevicePairViewType::host_mirror_type;
   using DeviceEntitiesType = Kokkos::View<stk::mesh::Entity*, stk::ngp::MemSpace>;
 
   build_empty_mesh();

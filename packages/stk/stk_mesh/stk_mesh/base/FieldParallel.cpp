@@ -67,29 +67,6 @@ bool find_proc_before_index(const EntityCommInfoVector& infovec, int proc, int i
     return false;
 }
 
-struct InfoRankLess {
-  bool operator()(const EntityCommListInfo& info, EntityRank rank) const
-  { return info.key.rank() < rank; }
-  bool operator()(EntityRank rank, const EntityCommListInfo& info) const
-  { return rank < info.key.rank(); }
-};
-
-void compute_field_entity_ranges(const EntityCommListInfoVector& commListInfo,
-                                 const std::vector<const FieldBase*>& fields,
-                                 std::vector<std::pair<int,int>>& fieldRange)
-{
-  int numFields = fields.size();
-  for (int fi = 0; fi < numFields; ++fi) {
-    EntityRank fieldRank = fields[fi]->entity_rank();
-    EntityCommListInfoVector::const_iterator startIter = std::lower_bound(commListInfo.begin(), commListInfo.end(),
-                                                                          fieldRank, InfoRankLess());
-    EntityCommListInfoVector::const_iterator endIter = std::upper_bound(startIter, commListInfo.end(), fieldRank,
-                                                                        InfoRankLess());
-    fieldRange[fi].first = std::distance(commListInfo.begin(), startIter);
-    fieldRange[fi].second = std::distance(commListInfo.begin(), endIter);
-  }
-}
-
 void do_initial_sync_to_host(const std::vector<const FieldBase*>& fields)
 {
   for(const FieldBase* fptr : fields) {
@@ -98,8 +75,8 @@ void do_initial_sync_to_host(const std::vector<const FieldBase*>& fields)
 }
 
 template <Layout DataLayout>
-void copy_ghost_entity_data_into_buffer(const ConstFieldDataBytes<stk::ngp::HostMemSpace>& fieldDataBytes,
-                                        const EntityCommListInfo& ecli, PairIterEntityComm info, unsigned ghostId,
+void copy_ghost_entity_data_into_buffer(const ConstFieldDataBytes<stk::ngp::HostSpace>& fieldDataBytes,
+                                        PairIterEntityComm info, unsigned ghostId,
                                         const MeshIndex& meshIndex, std::byte* sendBuffer,
                                         const std::vector<int>& procOffset, std::vector<int>& entityOffset)
 {
@@ -117,8 +94,8 @@ void copy_ghost_entity_data_into_buffer(const ConstFieldDataBytes<stk::ngp::Host
 }
 
 template <Layout DataLayout>
-void copy_ghost_entity_data_out_of_buffer(const FieldDataBytes<stk::ngp::HostMemSpace>& fieldDataBytes,
-                                          const EntityCommListInfo& ecli, PairIterEntityComm info, unsigned ghostId,
+void copy_ghost_entity_data_out_of_buffer(const FieldDataBytes<stk::ngp::HostSpace>& fieldDataBytes,
+                                          PairIterEntityComm info, unsigned ghostId,
                                           int owner, const MeshIndex& meshIndex, const std::byte* recvBuffer,
                                           const std::vector<int>& procOffset, std::vector<int>& entityOffset)
 {
@@ -152,17 +129,10 @@ void communicate_field_data(const Ghosting& ghosts, const std::vector<const Fiel
     return;
   }
 
-  const int numFields = fields.size();
-
   std::vector<int> sendSizes(parallelSize);
   std::vector<int> recvSizes(parallelSize);
   std::vector<int> sendOffsets(parallelSize + 1);
   std::vector<int> recvOffsets(parallelSize + 1);
-
-  std::vector<std::pair<int,int>> fieldEntityRange(numFields, std::make_pair(-1, -1));
-
-  const EntityCommListInfoVector& commInfoVec = mesh.internal_comm_list();
-  compute_field_entity_ranges(commInfoVec, fields, fieldEntityRange);
 
   const unsigned ghostId = ghosts.ordinal();
   const EntityCommDatabase& commDB = mesh.internal_comm_db();
@@ -217,8 +187,8 @@ void communicate_field_data(const Ghosting& ghosts, const std::vector<const Fiel
   const int totalSendSize = sendOffsets.back();
   const int totalRecvSize = recvOffsets.back();
 
-  std::unique_ptr<std::byte[]> sendBuffer(new std::byte[totalSendSize]);
-  std::unique_ptr<std::byte[]> recvBuffer(new std::byte[totalRecvSize]);
+  std::unique_ptr<std::byte[]> sendBuffer(new std::byte[totalSendSize+totalRecvSize]);
+  std::byte* recvBuffer = sendBuffer.get() + totalSendSize;
   const int parallelRank = mesh.parallel_rank();
 
   for (const EntityCommListInfo& ecli : mesh.internal_comm_list()) {
@@ -236,11 +206,11 @@ void communicate_field_data(const Ghosting& ghosts, const std::vector<const Fiel
 
         auto& fieldDataBytes = field.data_bytes<const std::byte>();
         if (field.host_data_layout() == Layout::Right) {
-          copy_ghost_entity_data_into_buffer<Layout::Right>(fieldDataBytes, ecli, info, ghostId, meshIdx,
+          copy_ghost_entity_data_into_buffer<Layout::Right>(fieldDataBytes, info, ghostId, meshIdx,
                                                             sendBuffer.get(), sendOffsets, sendSizes);
         }
         else if (field.host_data_layout() == Layout::Left) {
-          copy_ghost_entity_data_into_buffer<Layout::Left>(fieldDataBytes, ecli, info, ghostId, meshIdx,
+          copy_ghost_entity_data_into_buffer<Layout::Left>(fieldDataBytes, info, ghostId, meshIdx,
                                                            sendBuffer.get(), sendOffsets, sendSizes);
         }
         else {
@@ -251,7 +221,7 @@ void communicate_field_data(const Ghosting& ghosts, const std::vector<const Fiel
   }
 
   parallel_data_exchange_nonsym_known_sizes_t(sendOffsets.data(), sendBuffer.get(),
-                                              recvOffsets.data(), recvBuffer.get(), mesh.parallel(),
+                                              recvOffsets.data(), recvBuffer, mesh.parallel(),
                                               mesh.is_mesh_consistency_check_on());
 
   for (const EntityCommListInfo& ecli : mesh.internal_comm_list()) {
@@ -260,22 +230,21 @@ void communicate_field_data(const Ghosting& ghosts, const std::vector<const Fiel
       Entity e = ecli.entity;
       const MeshIndex meshIdx = mesh.mesh_index(e);
       EntityRank rank = meshIdx.bucket->entity_rank();
+      PairIterEntityComm info = commDB.comm(ecli.entity_comm);
 
       for (const FieldBase* fptr : fields) {
         const FieldBase& field = *fptr;
 
         if (!is_matching_rank(field, rank)) continue;
 
-        PairIterEntityComm info = commDB.comm(ecli.entity_comm);
-
         auto& fieldDataBytes = field.data_bytes<std::byte>();
         if (field.host_data_layout() == Layout::Right) {
-          copy_ghost_entity_data_out_of_buffer<Layout::Right>(fieldDataBytes, ecli, info, ghostId, owner, meshIdx,
-                                                              recvBuffer.get(), recvOffsets, recvSizes);
+          copy_ghost_entity_data_out_of_buffer<Layout::Right>(fieldDataBytes, info, ghostId, owner, meshIdx,
+                                                              recvBuffer, recvOffsets, recvSizes);
         }
         else if (field.host_data_layout() == Layout::Left) {
-          copy_ghost_entity_data_out_of_buffer<Layout::Left>(fieldDataBytes, ecli, info, ghostId, owner, meshIdx,
-                                                             recvBuffer.get(), recvOffsets, recvSizes);
+          copy_ghost_entity_data_out_of_buffer<Layout::Left>(fieldDataBytes, info, ghostId, owner, meshIdx,
+                                                             recvBuffer, recvOffsets, recvSizes);
         }
         else {
           STK_ThrowErrorMsg("Unsupported host Field layout detected: " << field.host_data_layout());
@@ -288,21 +257,22 @@ void communicate_field_data(const Ghosting& ghosts, const std::vector<const Fiel
 
 template <Layout DataLayout>
 void copy_entity_data_into_buffer(const BulkData& bulk,
-                                  const ConstFieldDataBytes<stk::ngp::HostMemSpace>& fieldDataBytes,
-                                  const std::pair<int, int>& fieldRange, const EntityCommDatabase& commDB,
-                                  const EntityCommListInfoVector& commInfoVec, std::vector<int>& commProcs,
+                                  const ConstFieldDataBytes<stk::ngp::HostSpace>& fieldDataBytes,
+                                  const EntityCommDatabase& commDB,
+                                  std::vector<int>& commProcs,
                                   std::byte* sendBuffer, const std::vector<int>& procOffset,
                                   std::vector<int>& entityOffset)
 {
-  for (int i = fieldRange.first; i < fieldRange.second; ++i) {
-    const MeshIndex& meshIndex = bulk.mesh_index(commInfoVec[i].entity);
+  auto commRange = commDB.comm_list_for_rank(fieldDataBytes.entity_rank());
+  for (const auto& commListItem : commRange) {
+    const MeshIndex& meshIndex = bulk.mesh_index(commListItem.entity);
     const Bucket& bucket = *meshIndex.bucket;
 
     if (bucket.owned()) {
       auto entityBytes = fieldDataBytes.entity_bytes<DataLayout>(meshIndex);
 
       if (entityBytes.is_field_defined()) {
-        impl::fill_sorted_procs(commDB.comm(commInfoVec[i].entity_comm), commProcs);
+        impl::fill_sorted_procs(commDB.comm(commListItem.entity_comm), commProcs);
         for (int proc : commProcs) {
           std::byte* bufferPtr = &sendBuffer[procOffset[proc]+entityOffset[proc]];
           for (ByteIdx byte : entityBytes.bytes()) {
@@ -316,14 +286,15 @@ void copy_entity_data_into_buffer(const BulkData& bulk,
 }
 
 template <Layout DataLayout>
-void copy_entity_data_out_of_buffer(const BulkData& bulk, FieldDataBytes<stk::ngp::HostMemSpace>& fieldDataBytes,
-                                    const std::pair<int, int>& fieldRange, const EntityCommListInfoVector& commInfoVec,
+void copy_entity_data_out_of_buffer(const BulkData& bulk, FieldDataBytes<stk::ngp::HostSpace>& fieldDataBytes,
+                                    const EntityCommDatabase& commDB,
                                     const std::byte* recvBuffer, const std::vector<int>& procOffset,
                                     std::vector<int>& entityOffset)
 {
   const int myRank = bulk.parallel_rank();
-  for (int i = fieldRange.first; i < fieldRange.second; ++i) {
-    const int owner = bulk.parallel_owner_rank(commInfoVec[i].entity);
+  auto commRange = commDB.comm_list_for_rank(fieldDataBytes.entity_rank());
+  for (const auto& commListItem : commRange) {
+    const int owner = bulk.parallel_owner_rank(commListItem.entity);
     if (owner == myRank) {
       continue;
     }
@@ -333,7 +304,7 @@ void copy_entity_data_out_of_buffer(const BulkData& bulk, FieldDataBytes<stk::ng
       continue;
     }
 
-    const MeshIndex& meshIndex = bulk.mesh_index(commInfoVec[i].entity);
+    const MeshIndex& meshIndex = bulk.mesh_index(commListItem.entity);
 
     auto entityBytes = fieldDataBytes.entity_bytes<DataLayout>(meshIndex);
     const std::byte* bufferPtr = &recvBuffer[procOffset[owner] + entityOffset[owner]];
@@ -361,18 +332,14 @@ void communicate_field_data(const BulkData& mesh, const std::vector<const FieldB
   std::vector<int> sendOffsets(parallelSize + 1);
   std::vector<int> recvOffsets(parallelSize + 1);
 
-  std::vector<std::pair<int,int>> fieldEntityRange(fields.size(), std::make_pair(-1, -1));
-
-  const EntityCommListInfoVector& commInfoVec = mesh.internal_comm_list();
-  compute_field_entity_ranges(commInfoVec, fields, fieldEntityRange);
-
   const EntityCommDatabase& commDB = mesh.internal_comm_db();
   std::vector<int> commProcs;
 
   for (int fi = 0; fi < numFields; ++fi) {
     const FieldBase& field = *fields[fi];
-    for(int i = fieldEntityRange[fi].first; i<fieldEntityRange[fi].second; ++i) {
-      const MeshIndex& meshIndex = mesh.mesh_index(commInfoVec[i].entity);
+    auto commRange = commDB.comm_list_for_rank(field.entity_rank());
+    for (const auto& commListItem : commRange) {
+      const MeshIndex& meshIndex = mesh.mesh_index(commListItem.entity);
       const Bucket& bucket = *meshIndex.bucket;
       const unsigned bucketId = bucket.bucket_id();
       const unsigned bytesPerEntity = field_bytes_per_entity(field, bucketId);
@@ -383,13 +350,13 @@ void communicate_field_data(const BulkData& mesh, const std::vector<const FieldB
 
       const bool owned = bucket.owned();
       if (owned) {
-        impl::fill_sorted_procs(commDB.comm(commInfoVec[i].entity_comm), commProcs);
+        impl::fill_sorted_procs(commDB.comm(commListItem.entity_comm), commProcs);
         for (int proc : commProcs) {
           sendSizes[proc] += bytesPerEntity;
         }
       }
       else {
-        const int owner = mesh.parallel_owner_rank(commInfoVec[i].entity);
+        const int owner = mesh.parallel_owner_rank(commListItem.entity);
         recvSizes[owner] += bytesPerEntity;
       }
     }
@@ -405,19 +372,19 @@ void communicate_field_data(const BulkData& mesh, const std::vector<const FieldB
   const int totalSendSize = sendOffsets.back();
   const int totalRecvSize = recvOffsets.back();
 
-  std::unique_ptr<std::byte[]> sendBuffer(new std::byte[totalSendSize]);
-  std::unique_ptr<std::byte[]> recvBuffer(new std::byte[totalRecvSize]);
+  std::unique_ptr<std::byte[]> sendBuffer(new std::byte[totalSendSize+totalRecvSize]);
+  std::byte* recvBuffer = sendBuffer.get() + totalSendSize;
 
   for (int fi = 0; fi < numFields; ++fi) {
     const FieldBase& field = *fields[fi];
     auto& fieldDataBytes = field.data_bytes<const std::byte>();
 
     if (field.host_data_layout() == Layout::Right) {
-      copy_entity_data_into_buffer<Layout::Right>(mesh, fieldDataBytes, fieldEntityRange[fi], commDB, commInfoVec,
+      copy_entity_data_into_buffer<Layout::Right>(mesh, fieldDataBytes, commDB,
                                                   commProcs, sendBuffer.get(), sendOffsets, sendSizes);
     }
     else if (field.host_data_layout() == Layout::Left) {
-      copy_entity_data_into_buffer<Layout::Left>(mesh, fieldDataBytes, fieldEntityRange[fi], commDB, commInfoVec,
+      copy_entity_data_into_buffer<Layout::Left>(mesh, fieldDataBytes, commDB,
                                                  commProcs, sendBuffer.get(), sendOffsets, sendSizes);
     }
     else {
@@ -426,7 +393,7 @@ void communicate_field_data(const BulkData& mesh, const std::vector<const FieldB
   }
 
   parallel_data_exchange_nonsym_known_sizes_t(sendOffsets.data(), sendBuffer.get(),
-                                              recvOffsets.data(), recvBuffer.get(), mesh.parallel(),
+                                              recvOffsets.data(), recvBuffer, mesh.parallel(),
                                               mesh.is_mesh_consistency_check_on());
 
   //now unpack and store the recvd data
@@ -435,12 +402,12 @@ void communicate_field_data(const BulkData& mesh, const std::vector<const FieldB
     auto& fieldDataBytes = field.data_bytes<std::byte>();
 
     if (field.host_data_layout() == Layout::Right) {
-      copy_entity_data_out_of_buffer<Layout::Right>(mesh, fieldDataBytes, fieldEntityRange[fi], commInfoVec,
-                                                    recvBuffer.get(), recvOffsets, recvSizes);
+      copy_entity_data_out_of_buffer<Layout::Right>(mesh, fieldDataBytes, commDB,
+                                                    recvBuffer, recvOffsets, recvSizes);
     }
     else if (field.host_data_layout() == Layout::Left) {
-      copy_entity_data_out_of_buffer<Layout::Left>(mesh, fieldDataBytes, fieldEntityRange[fi], commInfoVec,
-                                                   recvBuffer.get(), recvOffsets, recvSizes);
+      copy_entity_data_out_of_buffer<Layout::Left>(mesh, fieldDataBytes, commDB,
+                                                   recvBuffer, recvOffsets, recvSizes);
     }
     else {
       STK_ThrowErrorMsg("Unsupported host Field layout detected: " << field.host_data_layout());
@@ -524,7 +491,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
       auto hostCommMapIndices = mesh.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(f.entity_rank(), proc);
 
       if (f.host_data_layout() == Layout::Right) {
-        auto fieldData = f.data<T, ReadOnly, stk::ngp::HostMemSpace, Layout::Right>();
+        auto fieldData = f.data<T, ReadOnly, stk::ngp::HostSpace, Layout::Right>();
         for (size_t i = 0; i < hostCommMapIndices.extent(0); ++i) {
           const unsigned bucketId = hostCommMapIndices(i).bucket_id;
           const unsigned bucketOrd = hostCommMapIndices(i).bucket_ord;
@@ -535,7 +502,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
         }
       }
       else if (f.host_data_layout() == Layout::Left) {
-        auto fieldData = f.data<T, ReadOnly, stk::ngp::HostMemSpace, Layout::Left>();
+        auto fieldData = f.data<T, ReadOnly, stk::ngp::HostSpace, Layout::Left>();
         for (size_t i = 0; i < hostCommMapIndices.extent(0); ++i) {
           const unsigned bucketId = hostCommMapIndices(i).bucket_id;
           const unsigned bucketOrd = hostCommMapIndices(i).bucket_ord;
@@ -561,7 +528,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
       auto hostCommMapIndices = mesh.template volatile_fast_shared_comm_map<stk::ngp::MemSpace>(f.entity_rank(), proc);
 
       if (f.host_data_layout() == Layout::Right) {
-        auto fieldData = f.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Right>();
+        auto fieldData = f.data<T, ReadWrite, stk::ngp::HostSpace, Layout::Right>();
         for (size_t i = 0; i < hostCommMapIndices.extent(0); ++i) {
           const unsigned bucketId = hostCommMapIndices(i).bucket_id;
           const unsigned bucketOrd = hostCommMapIndices(i).bucket_ord;
@@ -572,7 +539,7 @@ void parallel_op_impl(const BulkData& mesh, std::vector<const FieldBase*> fields
         }
       }
       else if (f.host_data_layout() == Layout::Left) {
-        auto fieldData = f.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Left>();
+        auto fieldData = f.data<T, ReadWrite, stk::ngp::HostSpace, Layout::Left>();
         for (size_t i = 0; i < hostCommMapIndices.extent(0); ++i) {
           const unsigned bucketId = hostCommMapIndices(i).bucket_id;
           const unsigned bucketOrd = hostCommMapIndices(i).bucket_ord;
@@ -648,7 +615,7 @@ void parallel_min(const BulkData& mesh, const std::vector<const FieldBase*>& fie
 template<typename T,Operation OP>
 void parallel_op_including_ghosts_T(const BulkData& mesh, const std::vector<const FieldBase*>& fields, bool deterministic)
 {
-  using HostNgpField = stk::mesh::HostField<T,stk::ngp::HostMemSpace>;
+  using HostNgpField = stk::mesh::HostField<T,stk::ngp::HostSpace>;
   std::vector<HostNgpField*> ngpFields(fields.size());
 
   for(unsigned i=0; i<fields.size(); ++i) {

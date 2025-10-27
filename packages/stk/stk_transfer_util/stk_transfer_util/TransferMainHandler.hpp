@@ -30,45 +30,59 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
 
-#include <gtest/gtest.h>
-#include "stk_unit_test_utils/getOption.h"            // for get_command_lin...
-#include "stk_util/parallel/Parallel.hpp"             // for parallel_machin...
-#include "stk_util/util/ReportHandler.hpp"            // for ThrowRequireMsg
-#include "stk_unit_test_utils/CommandLineArgs.hpp"
-#include "stk_transfer_util/TransferMainOptions.hpp"
+#ifndef STK_TRANSFER_MAIN_HANDLER_HPP
+#define STK_TRANSFER_MAIN_HANDLER_HPP
 
-namespace {
+#include "stk_io/FileValidator.hpp"
+#include "stk_transfer_util/TransferMainSettings.hpp"
+#include "stk_transfer_util/TransferMainParser.hpp"
+#include <stk_util/environment/LogWithTimeAndMemory.hpp>
+#include <stk_util/Version.hpp>
 
-TEST(TransferMainOptions, basic)
-{
-  stk::ParallelMachine comm = stk::parallel_machine_world();
-  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+namespace stk {
+namespace transfer_util {
 
-  stk::unit_test_util::Args args({"exe", "--from-mesh", "foo.exo", "--to-mesh", "bar.exo"});
-  stk::transfer_util::TransferMainOptions options(comm, args.argc(), args.argv());
+enum class TransferMainStatus {
+  SUCCESS                    = 0,
+  PARSE_ONLY                 = 1,
+  PARSE_ERROR                = 2,
+  EXECUTION_ERROR            = 3
+};
 
-  EXPECT_EQ("foo.exo", options.get_fromMesh_filename());
-  EXPECT_EQ("bar.exo", options.get_toMesh_filename());
-}
 
-TEST(TransferMainOptions, help)
-{
-  stk::ParallelMachine comm = stk::parallel_machine_world();
-  if(stk::parallel_machine_size(comm) != 1) { GTEST_SKIP(); }
+class TransferMainHandler {
+public:
+  TransferMainHandler(MPI_Comm c, int argc, const char** argv);
 
-  stk::unit_test_util::Args args({"exe", "--help"});
-  stk::transfer_util::TransferMainOptions options(comm, args.argc(), args.argv());
+  void run();
+  TransferMainStatus exit_code() const;
 
-  EXPECT_EQ(stk::CommandLineParser::ParseHelpOnly, options.get_parse_state());
-  std::ostringstream os;
-  options.print_usage_help(os);
-  std::string usageHelp = os.str();
-  bool found = usageHelp.find("--from-mesh") != std::string::npos;
-  EXPECT_TRUE(found);
-  found = usageHelp.find("--to-mesh") != std::string::npos;
-  EXPECT_TRUE(found);
-}
+  const TransferMainSettings & get_transfer_settings() const { return m_settings; }
 
-}
+private:
+  void parse();
+  void print_parse_error(const char* what) const;
+
+  void print_running_message() const;
+
+  bool is_no_op() const;
+  void print_no_op_message() const;
+
+  void transfer();
+  void print_transfer_error(const char* what) const;
+
+  MPI_Comm m_comm;
+  int m_argc;
+  const char** m_argv;
+  TransferMainStatus m_exitCode;
+  const bool m_isProc0;
+
+  const stk::io::FileValidator m_validator;
+  TransferMainSettings m_settings;
+  TransferMainParser m_parser;
+};
+
+} }
+
+#endif  //STK_TRANSFER_MAIN_HANDLER_HPP

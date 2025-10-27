@@ -539,7 +539,7 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
         FieldDataBase* deviceData = sField->get_device_data();
         if (deviceData != nullptr) {
           if (deviceData->needs_update()) {
-            deviceData->update(m_defaultExecSpace, host_data_layout());
+            deviceData->update(m_defaultExecSpace, host_data_layout(), need_sync_to_device());
             if (sField->has_ngp_field()) {
               // Since DeviceField holds a *copy* of the FieldData, force a reacquisition
               sField->get_ngp_field()->update_field(m_defaultExecSpace);
@@ -629,8 +629,8 @@ FieldBase::sync_to_host() const
 
 void FieldBase::sync_to_host(const stk::ngp::ExecSpace& execSpace) const
 {
-  ProfilingBlock prof("FieldBase::sync_to_host() for " + name());
   if (need_sync_to_host()) {
+    ProfilingBlock prof("FieldBase::sync_to_host() for " + name());
     if (has_device_data()) {
       if (not has_unified_device_storage()) {
         m_deviceFieldData->sync_to_host(execSpace, host_data_layout());
@@ -652,18 +652,19 @@ FieldBase::sync_to_device() const
 
 void FieldBase::sync_to_device(const stk::ngp::ExecSpace& execSpace) const
 {
-  ProfilingBlock prof("FieldBase::sync_to_device() for " + name());
   if (need_sync_to_device()) {
+    ProfilingBlock prof("FieldBase::sync_to_device() for " + name());
     if (has_device_data()) {
       if (m_deviceFieldData->needs_update()) {
-        m_deviceFieldData->update(execSpace, host_data_layout());
-        increment_num_syncs_to_device();
-      }
-      if (not has_unified_device_storage()) {
-        m_deviceFieldData->sync_to_device(execSpace, host_data_layout());
+        m_deviceFieldData->update(execSpace, host_data_layout(), need_sync_to_device());
       }
       else {
-        execSpace.fence();
+        if (not has_unified_device_storage()) {
+          m_deviceFieldData->sync_to_device(execSpace, host_data_layout());
+        }
+        else {
+          execSpace.fence();
+        }
       }
     }
     increment_num_syncs_to_device();

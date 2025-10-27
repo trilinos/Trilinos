@@ -459,6 +459,37 @@ void MetaData::internal_declare_part_subset( Part & superset , Part & subset, bo
   }
 }
 
+void MetaData::rename(Part& part, const std::string& newName)
+{
+#ifndef NDEBUG
+  if (m_bulk_data != nullptr) {
+    stk::parallel_machine_barrier(m_bulk_data->parallel());
+  }
+#endif
+
+  if (newName == part.name()) {
+    return;
+  }
+
+  STK_ThrowRequireMsg(!stk::mesh::impl::is_internal_part(part),"Renaming an internal part ("<<part.name()<<") is not permitted.");
+  STK_ThrowRequireMsg(!stk::mesh::impl::is_internal_part_name(newName),"Rename: newName ("<<newName<<") appears to be an internal part name. Don't use curly-braces.");
+  STK_ThrowRequireMsg(get_part(newName) == nullptr, "Rename can't use the name of an existing other part.");
+  STK_ThrowRequireMsg(m_bulk_data==nullptr || m_bulk_data->in_synchronized_state(), "Rename can't operate when mesh is being modified.");
+
+  std::string oldName = part.name();
+  m_part_repo.rename(&part, newName);
+  const bool deleted = delete_part_alias_case_insensitive(part, oldName);
+  if (deleted) {
+    add_part_alias(part, newName);
+  }
+
+#ifndef NDEBUG
+  if (m_bulk_data != nullptr) {
+    verify_parallel_consistency(*this, m_bulk_data->parallel());
+  }
+#endif
+}
+
 //----------------------------------------------------------------------
 
 void MetaData::declare_field_restriction(FieldBase& field,
@@ -630,23 +661,33 @@ void MetaData::internal_declare_known_cell_topology_parts()
 
 Part& MetaData::register_topology(stk::topology stkTopo)
 {
-  STK_ThrowRequireMsg(is_initialized(), "MetaData::register_topology: initialize() must be called before this function");
+  STK_ThrowRequireMsg(
+    is_initialized(),
+    "MetaData::register_topology: initialize() must be called before this function");
 
-  TopologyPartMap::iterator iter = m_topologyPartMap.find(stkTopo);
-  if (iter == m_topologyPartMap.end()) {
-    std::string part_name = std::string("FEM_ROOT_CELL_TOPOLOGY_PART_") + stkTopo.name();
-    STK_ThrowErrorMsgIf(get_part(part_name) != 0, "Cannot register topology with same name as existing part '" << stkTopo.name() << "'" );
+  // Try to insert a 'nullptr' placeholder for this topology.
+  // If the topology was already registered, inserted==false and
+  // it->second already points at the correct Part.
+  auto [it, inserted] =
+    m_topologyPartMap.try_emplace(stkTopo, /*value=*/ static_cast<Part*>(nullptr));
 
-    Part& part = declare_internal_part(part_name, stkTopo.rank());
+  if (inserted) {
+    // Only now do we need to make the real Part
+    std::string partName = "FEM_ROOT_CELL_TOPOLOGY_PART_";
+    partName += stkTopo.name();
 
-    m_topologyPartMap[stkTopo] = &part;
+    STK_ThrowErrorMsgIf(
+      get_part(partName) != nullptr,
+      "Cannot register topology with same name as existing part '"
+        << stkTopo.name() << "'");
+
+    Part& part = declare_internal_part(partName, stkTopo.rank());
+    it->second = &part;
 
     assign_topology(part, stkTopo);
-
-    return part;
   }
 
-  return *iter->second;
+  return *it->second;
 }
 
 Part& MetaData::get_topology_root_part(stk::topology stkTopo) const
@@ -658,7 +699,11 @@ Part& MetaData::get_topology_root_part(stk::topology stkTopo) const
 
 bool MetaData::has_topology_root_part(stk::topology stkTopo) const
 {
-    return (m_topologyPartMap.find(stkTopo) != m_topologyPartMap.end());
+#if __cplusplus >= 202002L
+    return m_topologyPartMap.contains(stkTopo);
+#else
+    return m_topologyPartMap.find(stkTopo) != m_topologyPartMap.end();
+#endif
 }
 
 stk::topology MetaData::get_topology(const Part & part) const

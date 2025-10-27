@@ -34,6 +34,7 @@
 #ifndef STK_MESH_DEVICE_PARTITION_HPP
 #define STK_MESH_DEVICE_PARTITION_HPP
 
+#include "Kokkos_Atomic.hpp"
 #include "Kokkos_Macros.hpp"
 #include "stk_util/stk_config.h"
 #include "stk_mesh/base/NgpMeshBase.hpp"
@@ -67,10 +68,9 @@ struct DeviceBucketWrapper
 
   DeviceBucketWrapper() = default;
 
-  DeviceBucketWrapper(Type* ptr)
-    : bucketPtr(ptr)
-  {}
+  DeviceBucketWrapper(Type* ptr) : bucketPtr(ptr) {}
 
+  KOKKOS_FUNCTION
   Type* operator->() const {
     return bucketPtr;
   }
@@ -79,7 +79,7 @@ struct DeviceBucketWrapper
   bool operator<(DeviceBucketWrapper<NgpMemSpace> const& other) const {
     return *bucketPtr < *other.bucketPtr;
   }
-  
+
   Type* bucketPtr = nullptr;
 };
 
@@ -133,22 +133,22 @@ class DevicePartition
     set_part_ordinals_from_host(partOrdinals);
   }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   unsigned partition_id() const { return m_partitionId; }
 
   void set_partition_id(unsigned id) { m_partitionId = id; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   EntityRank get_rank() const { return m_rank; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   bool is_active() const { return m_partitionId != INVALID_PARTITION_ID; }
 
   bool add_entity(Entity entity)
   {
     auto bucketToAddTo = get_next_available_bucket();
     bucketToAddTo->add_entity(entity);
-
+  
     update_partition_meta_entity_added();
     return true;
   }
@@ -190,7 +190,6 @@ class DevicePartition
     init_or_expand_bucket_view();
 
     DeviceBucketWrapper<NgpMemSpace> newBucketWrapper(bucket);
-
     auto newBucketIdx = get_next_avail_bucket_idx();
     m_buckets(newBucketIdx) = newBucketWrapper;
 
@@ -312,22 +311,22 @@ class DevicePartition
   KOKKOS_FUNCTION
   void update_partition_meta_entity_removed()
   {
-    m_numEntities--;
+    Kokkos::atomic_dec(&m_numEntities);
     KOKKOS_IF_ON_HOST((
       m_deviceBucketRepo->set_need_sync_from_partition(get_rank(), true);
     ))
   }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   const PartOrdinalViewType<NgpMemSpace>& superset_part_ordinals() const { return m_partOrdinals; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_t num_buckets() const { return m_numBuckets; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   size_t num_entities() const { return m_numEntities; }
 
-  KOKKOS_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   bool has_no_buckets() const { return m_numBuckets == 0; }
 
   KOKKOS_FUNCTION
@@ -345,19 +344,21 @@ class DevicePartition
     return m_bucketViewLastBucketIdx;
   }
 
+  KOKKOS_FUNCTION
   unsigned get_active_bucket_span() const {
     auto lastBucketIdx = m_bucketViewLastBucketIdx;
     auto nextBucketIdx = (lastBucketIdx == INVALID_INDEX) ? 0 : lastBucketIdx+1;
     return nextBucketIdx;
   }
 
+  KOKKOS_FUNCTION
   unsigned get_next_avail_bucket_idx() const {
     auto lastBucketIdx = m_bucketViewLastBucketIdx;
     auto nextBucketIdx = (lastBucketIdx == INVALID_INDEX) ? 0 : lastBucketIdx+1;
     return nextBucketIdx;
   }
 
-  void deep_copy_form_device_partition(DevicePartition<NgpMemSpace> const& rhs)
+  void deep_copy_from_device_partition(DevicePartition<NgpMemSpace> const& rhs)
   {
     m_mesh = rhs.m_mesh;
     m_deviceBucketRepo = rhs.m_deviceBucketRepo;
@@ -373,6 +374,25 @@ class DevicePartition
     auto execSpace = typename NgpMemSpace::execution_space{};
     Kokkos::Experimental::copy(execSpace, rhs.m_partOrdinals, m_partOrdinals);
     Kokkos::Experimental::copy(execSpace, rhs.m_buckets, m_buckets);
+  }
+
+  KOKKOS_FUNCTION
+  void update_bucket_ptr(DeviceBucketT<NgpMemSpace>& newBucket)
+  {
+    auto bucketId = newBucket.bucket_id();
+    auto bucketSpan = get_active_bucket_span();
+
+    for (unsigned i = 0 ; i < bucketSpan; ++i) {
+      auto& bucket = m_buckets(i);
+      if (!bucket->is_active()) {
+        continue;
+      }
+
+      if (bucket->bucket_id() == bucketId) {
+        bucket.bucketPtr = &newBucket;
+        return;
+      }
+    }
   }
   
   DeviceMeshT<NgpMemSpace>* m_mesh;

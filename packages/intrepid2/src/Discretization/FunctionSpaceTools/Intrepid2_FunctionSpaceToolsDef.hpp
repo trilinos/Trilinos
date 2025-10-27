@@ -676,9 +676,10 @@ namespace Intrepid2 {
   multiplyMeasure(       Kokkos::DynRankView<outputValValueType,   outputValProperties...>    outputVals,
                    const Kokkos::DynRankView<inputMeasureValueType,inputMeasureProperties...> inputMeasure,
                    const Kokkos::DynRankView<inputValValueType,    inputValProperties...>     inputVals ) {
-    scalarMultiplyDataField( outputVals, 
+    ArrayTools<DeviceType>::scalarMultiplyDataField( outputVals, 
                              inputMeasure, 
-                             inputVals );
+                             inputVals,
+                             false );
   }
 
   // ------------------------------------------------------------------------------------
@@ -1083,30 +1084,75 @@ namespace Intrepid2 {
     template<typename outputPointViewType,
              typename inputCoeffViewType,
              typename inputFieldViewType>
-    struct F_evaluate {
+    struct F_evaluateScalar {
             outputPointViewType _outputPointVals;
       const inputCoeffViewType  _inputCoeffs;
       const inputFieldViewType  _inputFields;
       
       KOKKOS_INLINE_FUNCTION
-      F_evaluate( outputPointViewType outputPointVals_,
+      F_evaluateScalar( outputPointViewType outputPointVals_,
                   inputCoeffViewType  inputCoeffs_,
                   inputFieldViewType  inputFields_ )
         : _outputPointVals(outputPointVals_), _inputCoeffs(inputCoeffs_), _inputFields(inputFields_) {}
       
       KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type cl) const {
+      void operator()(const ordinal_type cl, const ordinal_type pt) const {
         const ordinal_type nbfs = _inputFields.extent(1);
-        const ordinal_type npts = _inputFields.extent(2);
+        
+        for (ordinal_type bf=0;bf<nbfs;++bf) 
+          _outputPointVals(cl, pt) += _inputCoeffs(cl, bf) * _inputFields(cl, bf, pt);
+      }
+    };
 
+    template<typename outputPointViewType,
+             typename inputCoeffViewType,
+             typename inputFieldViewType>
+    struct F_evaluateVector{
+            outputPointViewType _outputPointVals;
+      const inputCoeffViewType  _inputCoeffs;
+      const inputFieldViewType  _inputFields;
+      
+      KOKKOS_INLINE_FUNCTION
+      F_evaluateVector( outputPointViewType outputPointVals_,
+                  inputCoeffViewType  inputCoeffs_,
+                  inputFieldViewType  inputFields_ )
+        : _outputPointVals(outputPointVals_), _inputCoeffs(inputCoeffs_), _inputFields(inputFields_) {}
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cl, const ordinal_type pt) const {
+        const ordinal_type nbfs = _inputFields.extent(1);
+        const ordinal_type iend = _inputFields.extent(3);
+
+        for (ordinal_type bf=0;bf<nbfs;++bf) 
+          for (ordinal_type i=0;i<iend;++i) 
+            _outputPointVals(cl, pt, i) += _inputCoeffs(cl, bf) * _inputFields(cl, bf, pt, i);
+      }
+    };
+
+    template<typename outputPointViewType,
+             typename inputCoeffViewType,
+             typename inputFieldViewType>
+    struct F_evaluateTensor {
+            outputPointViewType _outputPointVals;
+      const inputCoeffViewType  _inputCoeffs;
+      const inputFieldViewType  _inputFields;
+      
+      KOKKOS_INLINE_FUNCTION
+      F_evaluateTensor( outputPointViewType outputPointVals_,
+                  inputCoeffViewType  inputCoeffs_,
+                  inputFieldViewType  inputFields_ )
+        : _outputPointVals(outputPointVals_), _inputCoeffs(inputCoeffs_), _inputFields(inputFields_) {}
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cl, const ordinal_type pt) const {
+        const ordinal_type nbfs = _inputFields.extent(1);
         const ordinal_type iend = _inputFields.extent(3);
         const ordinal_type jend = _inputFields.extent(4);
         
         for (ordinal_type bf=0;bf<nbfs;++bf) 
-          for (ordinal_type pt=0;pt<npts;++pt)
-            for (ordinal_type i=0;i<iend;++i) 
-              for (ordinal_type j=0;j<jend;++j) 
-                _outputPointVals(cl, pt, i, j) += _inputCoeffs(cl, bf) * _inputFields(cl, bf, pt, i, j);
+          for (ordinal_type i=0;i<iend;++i) 
+            for (ordinal_type j=0;j<jend;++j) 
+              _outputPointVals(cl, pt, i, j) += _inputCoeffs(cl, bf) * _inputFields(cl, bf, pt, i, j);
       }
     };
   }
@@ -1148,12 +1194,23 @@ namespace Intrepid2 {
         typename decltype(inputFields)::memory_space>::accessible;
     static_assert(are_accessible, "FunctionSpaceTools<DeviceType>::evaluate(..): input/output views' memory spaces are not compatible with DeviceType");
 
-    using FunctorType = FunctorFunctionSpaceTools::F_evaluate
-                     <decltype(outputPointVals),decltype(inputCoeffs),decltype(inputFields)>;
-    
-    const ordinal_type C = inputFields.extent(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, C);
-    Kokkos::parallel_for( policy, FunctorType(outputPointVals, inputCoeffs, inputFields) );
+    using range_policy_type = Kokkos::MDRangePolicy< ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+
+    const range_policy_type policy( { 0, 0 },
+                                    { /*C*/ inputFields.extent(0), /*P*/ inputFields.extent(2)} );
+
+    if (inputFields.rank() == 3) {
+      using FunctorType = FunctorFunctionSpaceTools::F_evaluateScalar<decltype(outputPointVals),decltype(inputCoeffs),decltype(inputFields)>;
+      Kokkos::parallel_for( policy, FunctorType(outputPointVals, inputCoeffs, inputFields) );
+    }
+    else if (inputFields.rank() == 4) {
+      using FunctorType = FunctorFunctionSpaceTools::F_evaluateVector<decltype(outputPointVals),decltype(inputCoeffs),decltype(inputFields)>;
+      Kokkos::parallel_for( policy, FunctorType(outputPointVals, inputCoeffs, inputFields) );
+    }
+    else {
+      using FunctorType = FunctorFunctionSpaceTools::F_evaluateTensor<decltype(outputPointVals),decltype(inputCoeffs),decltype(inputFields)>;
+      Kokkos::parallel_for( policy, FunctorType(outputPointVals, inputCoeffs, inputFields) );
+    }
   }
   
   // ------------------------------------------------------------------------------------

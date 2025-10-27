@@ -204,6 +204,11 @@ bool Part::contains(const Part& part) const
   return m_subsetsEmpty ? false : stk::mesh::contains(subsets(), part);
 }
 
+void Part::set_name(const std::string& newName)
+{
+  m_name = newName;
+}
+
 void Part::set_primary_entity_rank( EntityRank entity_rank )
 {
   if ( entity_rank == InvalidEntityRank || entity_rank == m_entity_rank ) return;

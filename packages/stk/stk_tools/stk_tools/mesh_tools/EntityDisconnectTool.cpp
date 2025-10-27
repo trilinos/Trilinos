@@ -33,7 +33,11 @@
 //
 
 #include "stk_tools/mesh_tools/EntityDisconnectTool.hpp"
+#include <algorithm>
+#include <iterator>
 
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/DestroyRelations.hpp"
 #include "stk_mesh/base/Entity.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #include "stk_mesh/base/Types.hpp"
@@ -57,7 +61,8 @@ void EntityDisconnectTool::check_serial_execution()
 void EntityDisconnectTool::initialize()
 {
   filter_exterior_faces();
-  identify_node_adjacent_faces();
+  identify_adjacent_retained_faces();
+  identify_all_affected_faces();
   identify_adjacent_elements();
   identify_elem_side_pairs();
 }
@@ -65,28 +70,40 @@ void EntityDisconnectTool::initialize()
 void EntityDisconnectTool::filter_exterior_faces()
 {
   const auto& bulk = mesh();
-  stk::util::sort_and_unique(m_disconnectFaces);
-  auto endInterior = std::stable_partition(m_disconnectFaces.begin(), m_disconnectFaces.end(),
-      [&bulk](const stk::mesh::Entity& face) { return is_interior(bulk, face); });
-  m_disconnectFaces.erase(endInterior, m_disconnectFaces.end());
+#if __cplusplus >= 202002L
+  std::erase_if(m_disconnectFaces, [&bulk](const stk::mesh::Entity& face) { return !is_interior(bulk, face); });
+#else
+  for(auto it = m_disconnectFaces.begin(); it != m_disconnectFaces.end();) {
+    if (!is_interior(bulk, *it)) {
+      it = m_disconnectFaces.erase(it);
+    }
+    else {
+      ++it;
+    }
+  }
+#endif
 }
 
-void EntityDisconnectTool::identify_node_adjacent_faces()
+void EntityDisconnectTool::identify_adjacent_retained_faces()
 {
-  static constexpr auto NodeR = stk::topology::rank_t::NODE_RANK;
-  static constexpr auto FaceR = stk::topology::rank_t::FACE_RANK;
-  m_adjacentFaces.clear();
-  for_each_adjacent_entity<NodeR, FaceR>(mesh(), m_disconnectFaces, [&](const stk::mesh::Entity& connFace) {
-    if (!is_disconnect_face(connFace) && is_element_connected(connFace)) {
-      m_adjacentFaces.push_back(connFace);
-    }
-  });
-  stk::util::sort_and_unique(m_adjacentFaces);
+  static constexpr auto NodeR = topology::rank_t::NODE_RANK;
+  static constexpr auto FaceR = topology::rank_t::FACE_RANK;
+  m_retainedFaces =
+      get_adjacent_entities<NodeR, FaceR>(mesh(), m_disconnectFaces, [this](const stk::mesh::Entity& connFace) {
+        return !is_disconnect_face(connFace) && is_element_connected(connFace);
+      });
+}
+
+void EntityDisconnectTool::identify_all_affected_faces() {
+  m_allAffectedFaces.clear();
+  m_allAffectedFaces.reserve(m_disconnectFaces.size() + m_retainedFaces.size());
+  m_allAffectedFaces.insert(m_disconnectFaces.begin(), m_disconnectFaces.end());
+  m_allAffectedFaces.insert(m_retainedFaces.begin(), m_retainedFaces.end());
 }
 
 bool EntityDisconnectTool::is_disconnect_face(const stk::mesh::Entity& face) const
 {
-  return std::find(m_disconnectFaces.begin(), m_disconnectFaces.end(), face) != m_disconnectFaces.end();
+  return m_disconnectFaces.find(face) != m_disconnectFaces.end();
 }
 
 bool EntityDisconnectTool::is_element_connected(const stk::mesh::Entity& face) const
@@ -97,19 +114,17 @@ bool EntityDisconnectTool::is_element_connected(const stk::mesh::Entity& face) c
 void EntityDisconnectTool::identify_adjacent_elements()
 {
   m_adjacentElements.clear();
-  m_adjacentElements.reserve(m_adjacentFaces.size() * 2U + m_disconnectFaces.size() * 2U);
-  add_elements_adjacent_to(m_adjacentFaces, m_adjacentElements);
-  add_elements_adjacent_to(m_disconnectFaces, m_adjacentElements);
-  stk::util::sort_and_unique(m_adjacentElements);
+  m_adjacentElements.reserve(2U * m_allAffectedFaces.size());
+  add_elements_adjacent_to(m_allAffectedFaces, m_adjacentElements);
 }
 
 void EntityDisconnectTool::add_elements_adjacent_to(
-    const stk::mesh::EntityVector& faces, stk::mesh::EntityVector& adjacentElements)
+    const EntityContainer& faces, EntityContainer& adjacentElements)
 {
   for (const auto& adjFace : faces) {
     const auto dcElems = mesh().get_connected_entities(adjFace, stk::topology::ELEMENT_RANK);
     for (auto e = 0U; e < dcElems.size(); ++e) {
-      m_adjacentElements.push_back(dcElems[e]);
+      m_adjacentElements.insert(dcElems[e]);
     }
   }
 }
@@ -132,7 +147,7 @@ void EntityDisconnectTool::identify_elem_side_pairs()
 stk::mesh::EntityIdVector EntityDisconnectTool::determine_new_nodes()
 {
   m_disjointSet.fill_set(mesh(), m_adjacentElements);
-  merge_connected_faces(m_adjacentFaces);
+  merge_connected_faces(m_retainedFaces);
 
   auto newNodeKeys = get_new_node_keys();
   const auto newNodeIds = compute_new_node_ids(newNodeKeys);
@@ -141,7 +156,7 @@ stk::mesh::EntityIdVector EntityDisconnectTool::determine_new_nodes()
   return newNodeIds;
 }
 
-void EntityDisconnectTool::merge_connected_faces(const stk::mesh::EntityVector& adjacentFaces)
+void EntityDisconnectTool::merge_connected_faces(const EntityContainer& adjacentFaces)
 {
   for (const auto& connFace : adjacentFaces) {
     if (is_interior(mesh(), connFace)) {
@@ -255,40 +270,56 @@ stk::mesh::Entity EntityDisconnectTool::get_first_element(const stk::mesh::Entit
   }
 }
 
-void EntityDisconnectTool::update_entity_nodal_relations(const stk::mesh::EntityVector& adjacentEntities)
+std::vector<RelationTriplet> EntityDisconnectTool::get_relation_triplets(const EntityContainer& adjacentEntities)
 {
+  std::vector<RelationTriplet> relationTriplets;
+  // TODO: reserve vector with sensible size
+  //   Should be djTrees | filter(new trees) | tree_size | accumulate
+  const auto& disjointSet = get_disjoint_set();
   for (const auto& entity : adjacentEntities) {
     const auto elem = get_first_element(entity);
     const auto numNodes = mesh().num_connectivity(entity, stk::topology::NODE_RANK);
     const auto* entityNodes = mesh().begin(entity, stk::topology::NODE_RANK);
     const auto* entityOrdinals = mesh().begin_ordinals(entity, stk::topology::NODE_RANK);
     for (unsigned n = 0; n < numNodes; ++n) {
-      const auto& djNode = get_disjoint_set().find_root(NodeElemKey(entityNodes[n], elem));
+      const auto& djNode = disjointSet.find_root(NodeElemKey(entityNodes[n], elem));
       if (djNode.isNew) {
         STK_ThrowAssert(entityNodes[n] == djNode.origEntity);
         const auto localOrd = entityOrdinals[n];
-        mesh().destroy_relation(entity, djNode.origEntity, localOrd);
-        mesh().declare_relation(entity, djNode.entity, localOrd);
+        relationTriplets.emplace_back(entity, djNode.origEntity, djNode.entity, localOrd);
       }
     }
+  }
+  return relationTriplets;
+}
+
+void EntityDisconnectTool::update_entity_nodal_relations(const EntityContainer& adjacentEntities)
+{
+  const auto relationTriplets = get_relation_triplets(adjacentEntities);
+  for (auto&& [entity, oldEnt, newEnt, localOrd] : relationTriplets) {
+    mesh().destroy_relation(entity, oldEnt, localOrd);
+  }
+  for (auto&& [entity, oldEnt, newEnt, localOrd] : relationTriplets) {
+    mesh().declare_relation(entity, newEnt, localOrd);
   }
 }
 
 void EntityDisconnectTool::update_face_relations()
 {
   for (auto& [sideOrig, sideNew] : m_disconnectFacePairs) {
+    // Somewhat confusingly, face entity of "New" is a copy of the original face at this stage.  Using info of "New" as
+    // it corresponds to the opposite element of "Orig".
     disconnect_face_from_element(sideNew);
+  }
+  for (auto& [sideOrig, sideNew] : m_disconnectFacePairs) {
     auto newFace = declare_new_face(sideNew);
     sideNew.face = newFace;
   }
-  update_entity_nodal_relations(m_disconnectFaces);
-  update_entity_nodal_relations(m_adjacentFaces);
+  update_entity_nodal_relations(m_allAffectedFaces);
 }
 
 void EntityDisconnectTool::disconnect_face_from_element(const FaceInfo& info)
 {
-  // Somewhat confusingly, face entity of "New" is a copy of the original face at this stage.  Using info of "New" as it
-  // corresponds to the opposite element of "Orig".
   const auto& jElem = info.elem;
   const auto& jSide = info.side;
   mesh().destroy_relation(jElem, info.face, jSide);
@@ -306,7 +337,6 @@ stk::mesh::Entity EntityDisconnectTool::declare_new_face(FaceInfo& info)
   mesh().declare_relation(info.elem, newFace, info.side);
   mesh().copy_entity_fields(info.face, newFace);
 
-  /* bulk.add_face_sharing*/  // Maybe unnecssary?  I'm not sure how stk handles ownership of intermediate-rank entities
   return newFace;
 }
 

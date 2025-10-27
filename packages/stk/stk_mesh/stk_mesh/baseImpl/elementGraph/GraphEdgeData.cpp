@@ -64,12 +64,16 @@ std::vector<GraphEdge> Graph::get_edges_for_element_side(impl::LocalId elem, int
 
 GraphEdgesForElement Graph::get_edges_for_element(impl::LocalId elem) const
 {
-    const unsigned beginOffset = m_elemOffsets[elem].first;
-    const unsigned endOffset   = m_elemOffsets[elem].second;
+    if (m_graphEdges.data() != nullptr) {
+      const unsigned beginOffset = m_elemOffsets[elem].first;
+      const unsigned endOffset   = m_elemOffsets[elem].second;
 
-    const GraphEdge* beginEdge = m_graphEdges.data() + beginOffset;
-    const GraphEdge* endEdge   = m_graphEdges.data() + endOffset;
-    return GraphEdgesForElement(beginEdge, endEdge);
+      const GraphEdge* beginEdge = m_graphEdges.data() + beginOffset;
+      const GraphEdge* endEdge   = m_graphEdges.data() + endOffset;
+      return GraphEdgesForElement(beginEdge, endEdge);
+    }
+
+    return GraphEdgesForElement(nullptr, nullptr);
 }
 
 

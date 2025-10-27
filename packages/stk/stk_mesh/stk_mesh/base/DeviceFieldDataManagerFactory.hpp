@@ -43,11 +43,11 @@ class BulkData;
 
 namespace impl {
 
-// This exists solely to allow clients to construct a DeviceFieldDataManager<MemSpace> without a
+// This exists solely to allow clients to construct a DeviceFieldDataManager<Space> without a
 // direct code dependence, to break dependency cycles.  Since we are moving the dependence to
 // the source file, we have to use ETI.
 
-template <typename MemSpace>
+template <typename Space>
 std::unique_ptr<DeviceFieldDataManagerBase> build_device_field_data_manager(const BulkData& bulk);
 
 }

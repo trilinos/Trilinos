@@ -5,6 +5,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_mesh/baseImpl/EntityCommHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/EntityKeyMapping.hpp>
 #include <stk_mesh/base/EntityLess.hpp>

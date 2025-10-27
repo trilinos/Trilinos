@@ -211,7 +211,7 @@ void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts,
     }
 }
 
-void pack_and_send_induced_parts_from_sharers_to_owners(const BulkData& bulkData, stk::CommSparse& comm, EntityCommListInfoVector& entity_comm_list)
+void pack_and_send_induced_parts_from_sharers_to_owners(const BulkData& bulkData, stk::CommSparse& comm, const EntityCommListInfoVector& entity_comm_list)
 {
     pack_and_communicate(comm,[&bulkData, &comm, &entity_comm_list]()
           { pack_induced_memberships(bulkData, comm, entity_comm_list); });

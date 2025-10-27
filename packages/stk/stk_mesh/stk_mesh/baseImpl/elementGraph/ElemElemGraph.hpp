@@ -41,7 +41,6 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ParallelInfoForGraph.hpp>
-#include <stk_mesh/base/SideIdPool.hpp>
 #include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
 #include <stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp>
 
@@ -123,6 +122,8 @@ public:
     bool is_connected_elem_locally_owned(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
     impl::ElementViaSidePair get_connected_element_and_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const;
+
+    impl::ConnectedElementInfo get_connected_element_info(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
     impl::IdViaSidePair get_connected_remote_id_and_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const;
 

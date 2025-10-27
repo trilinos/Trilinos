@@ -33,6 +33,7 @@
 //
 
 #include <Kokkos_Core.hpp>
+#include <stdlib.h>
 #include <gtest/gtest.h>
 #include <stk_ngp_test/ngp_test.hpp>
 #include <stk_expreval/Evaluator.hpp>
@@ -43,6 +44,7 @@
 #include <iomanip>
 #include <cmath>
 #include <memory>
+#include "stk_expreval/Eval.hpp"
 #include "stk_expreval/NgpNode.hpp"
 #include "stk_expreval/Node.hpp"
 
@@ -218,6 +220,37 @@ std::vector<double> threaded_device_evaluate(const std::string & expression,
   std::vector<double> vectorHostResults(hostResults.data(), hostResults.data()+numThreads);
   return vectorHostResults;
 }
+
+TEST(UnitTestEvaluator, FPErrorBehaviorEnum)
+{
+  EXPECT_EQ(stk::expreval::fp_error_behavior_string_to_enum("Ignore"), stk::expreval::Eval::FPErrorBehavior::Ignore);
+  EXPECT_EQ(stk::expreval::fp_error_behavior_string_to_enum("Warn"), stk::expreval::Eval::FPErrorBehavior::Warn);
+  EXPECT_EQ(stk::expreval::fp_error_behavior_string_to_enum("WarnOnce"), stk::expreval::Eval::FPErrorBehavior::WarnOnce);
+  EXPECT_EQ(stk::expreval::fp_error_behavior_string_to_enum("Error"), stk::expreval::Eval::FPErrorBehavior::Error);
+
+  EXPECT_ANY_THROW(stk::expreval::fp_error_behavior_string_to_enum("ignore"));
+  EXPECT_ANY_THROW(stk::expreval::fp_error_behavior_string_to_enum("foo"));
+}
+
+TEST(UnitTestEvaluator, FPErrorBehaviorEnvVariable)
+{
+
+  std::string env_var("STK_EXPREVAL_FP_ERROR_BEHAVIOR");
+  {
+    setenv(env_var.c_str(), "Error", true);
+    stk::expreval::Eval eval("1+1");
+    EXPECT_EQ(eval.get_fp_error_behavior(), stk::expreval::Eval::FPErrorBehavior::Error);
+    unsetenv(env_var.c_str());
+  }
+
+  {
+    setenv(env_var.c_str(), "Ignore", true);
+    stk::expreval::Eval eval("1+1");
+    EXPECT_EQ(eval.get_fp_error_behavior(), stk::expreval::Eval::FPErrorBehavior::Ignore);
+    unsetenv(env_var.c_str());
+  }  
+}
+
 
 TEST(UnitTestEvaluator, getVariableIndex_validVariables)
 {
