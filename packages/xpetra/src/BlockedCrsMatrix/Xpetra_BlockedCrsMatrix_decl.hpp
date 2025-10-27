@@ -530,7 +530,10 @@ class BlockedCrsMatrix : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
   Teuchos::RCP<Matrix> Merge() const;
   //@}
 
-  typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+  using local_matrix_type        = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_device_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
+  using local_matrix_host_type   = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type;
+
   /// \brief Access the underlying local Kokkos::CrsMatrix object
   local_matrix_type getLocalMatrixDevice() const;
   /// \brief Access the underlying local Kokkos::CrsMatrix object

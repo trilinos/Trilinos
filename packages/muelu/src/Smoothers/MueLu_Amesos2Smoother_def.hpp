@@ -216,7 +216,7 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
 #endif
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
-    typedef typename Matrix::local_matrix_type KCRS;
+    typedef typename Matrix::local_matrix_device_type KCRS;
     typedef typename KCRS::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
     typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;

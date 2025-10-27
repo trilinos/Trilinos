@@ -37,7 +37,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class UnweightedDistanceFunctor {
  private:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
 #if KOKKOS_VERSION >= 40799
@@ -101,7 +101,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 class WeightedDistanceFunctor {
  private:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
 #if KOKKOS_VERSION >= 40799
@@ -171,7 +171,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 class BlockWeightedDistanceFunctor {
  private:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
 #if KOKKOS_VERSION >= 40799
@@ -241,7 +241,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class ScalarMaterialDistanceFunctor {
  private:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
 #if KOKKOS_VERSION >= 40799
@@ -351,7 +351,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class TensorMaterialDistanceFunctor {
  private:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
 #if KOKKOS_VERSION >= 40799
@@ -608,7 +608,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 class DropFunctor {
  public:
   using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_type;
+  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
   using memory_space       = typename local_matrix_type::memory_space;
@@ -736,7 +736,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 class VectorDropFunctor {
  public:
   using matrix_type             = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type       = typename matrix_type::local_matrix_type;
+  using local_matrix_type       = typename matrix_type::local_matrix_device_type;
   using scalar_type             = typename local_matrix_type::value_type;
   using local_ordinal_type      = typename local_matrix_type::ordinal_type;
   using memory_space            = typename local_matrix_type::memory_space;

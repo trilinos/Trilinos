@@ -130,10 +130,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Vector, OffsetViewCtor, ST, LO, GO, NT) {
       auto x_offset_lcl_h =
           Kokkos::subview(x_offset_lcl_h_2d, Kokkos::ALL(), 0);
       for (LO newLclRow = 0; newLclRow < newLclNumRows; ++newLclRow) {
-        TEST_EQUALITY(x_offset_lcl_h(newLclRow),
 #if KOKKOS_VERSION >= 40799
+        TEST_EQUALITY(x_offset_lcl_h(newLclRow),
                       KokkosKernels::ArithTraits<IST>::one());
 #else
+        TEST_EQUALITY(x_offset_lcl_h(newLclRow),
                       Kokkos::ArithTraits<IST>::one());
 #endif
       }

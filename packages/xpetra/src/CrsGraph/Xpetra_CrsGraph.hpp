@@ -194,7 +194,13 @@ class CrsGraph
 #ifdef HAVE_XPETRA_TPETRA
   typedef typename node_type::execution_space execution_space;
   typedef typename node_type::device_type device_type;
-  typedef KokkosSparse::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t> local_graph_type;
+  using local_graph_type        = KokkosSparse::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t>;
+  using local_graph_device_type = KokkosSparse::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t>;
+#if KOKKOS_VERSION >= 40799
+  using local_graph_host_type = typename local_graph_device_type::host_mirror_type;
+#else
+  using local_graph_host_type                                             = typename local_graph_device_type::HostMirror;
+#endif
 
   /// \brief Get the local graph.
   ///
