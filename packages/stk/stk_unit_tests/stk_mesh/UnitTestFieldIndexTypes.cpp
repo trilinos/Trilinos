@@ -38,7 +38,9 @@ namespace {
 
 void strong_function_component(stk::mesh::ComponentIdx /*comp*/) {}
 void strong_function_copy(stk::mesh::CopyIdx /*copy*/) {}
+void strong_function_scalar(stk::mesh::ScalarIdx /*scalar*/) {}
 void strong_function_entity(stk::mesh::EntityIdx /*entity*/) {}
+void strong_function_byte(stk::mesh::ByteIdx /*byte*/) {}
 
 //------------------------------------------------------------------------------
 TEST(FieldIndexTypes, constructionAndArgumentPassing_component)
@@ -51,7 +53,9 @@ TEST(FieldIndexTypes, constructionAndArgumentPassing_component)
   // strong_function_component(0);           // Does not compile
   strong_function_component(0_comp);
   // strong_function_component(0_copy);      // Does not compile
+  // strong_function_component(0_scalar);    // Does not compile
   // strong_function_component(0_entity);    // Does not compile
+  // strong_function_component(0_byte);      // Does not compile
   strong_function_component(componentIdx0);
   strong_function_component(componentIdx0u);
   strong_function_component(componentIdx0l);
@@ -64,6 +68,17 @@ TEST(FieldIndexTypes, constructionAndArgumentPassing_component)
   EXPECT_EQ(x_comp, stk::mesh::ComponentIdx(0));
   EXPECT_EQ(y_comp, stk::mesh::ComponentIdx(1));
   EXPECT_EQ(z_comp, stk::mesh::ComponentIdx(2));
+
+  EXPECT_EQ(stk::mesh::ComponentIdx(5)(), 5);
+
+  static_assert(std::is_convertible_v<stk::mesh::ComponentIdx, int>);
+  static_assert(std::is_convertible_v<stk::mesh::ComponentIdx, unsigned>);
+  static_assert(std::is_convertible_v<stk::mesh::ComponentIdx, long>);
+  static_assert(std::is_convertible_v<stk::mesh::ComponentIdx, unsigned long>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ComponentIdx, int>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ComponentIdx, unsigned>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ComponentIdx, long>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ComponentIdx, unsigned long>);
 }
 
 //------------------------------------------------------------------------------
@@ -77,11 +92,55 @@ TEST(FieldIndexTypes, constructionAndArgumentPassing_copy)
   // strong_function_copy(0);              // Does not compile
   // strong_function_copy(0_comp);         // Does not compile
   strong_function_copy(0_copy);
+  // strong_function_copy(0_scalar);       // Does not compile
   // strong_function_copy(0_entity);       // Does not compile
+  // strong_function_copy(0_byte);         // Does not compile
   strong_function_copy(copyIdx0);
   strong_function_copy(copyIdx0u);
   strong_function_copy(copyIdx0l);
   strong_function_copy(copyIdx0ul);
+
+  EXPECT_EQ(stk::mesh::CopyIdx(6)(), 6);
+
+  static_assert(std::is_convertible_v<stk::mesh::CopyIdx, int>);
+  static_assert(std::is_convertible_v<stk::mesh::CopyIdx, unsigned>);
+  static_assert(std::is_convertible_v<stk::mesh::CopyIdx, long>);
+  static_assert(std::is_convertible_v<stk::mesh::CopyIdx, unsigned long>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::CopyIdx, int>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::CopyIdx, unsigned>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::CopyIdx, long>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::CopyIdx, unsigned long>);
+}
+
+//------------------------------------------------------------------------------
+TEST(FieldIndexTypes, constructionAndArgumentPassing_scalar)
+{
+  stk::mesh::ScalarIdx scalarIdx0(0);     // Same underlying type regardless of construction type
+  stk::mesh::ScalarIdx scalarIdx0u(0u);
+  stk::mesh::ScalarIdx scalarIdx0l(0l);
+  stk::mesh::ScalarIdx scalarIdx0ul(0ul);
+
+  // strong_function_scalar(0);              // Does not compile
+  // strong_function_scalar(0_comp);         // Does not compile
+  // strong_function_scalar(0_copy);         // Does not compile
+  strong_function_scalar(0_scalar);
+  // strong_function_scalar(0_entity);       // Does not compile
+  // strong_function_scalar(0_byte);         // Does not compile
+  strong_function_scalar(scalarIdx0);
+  strong_function_scalar(scalarIdx0u);
+  strong_function_scalar(scalarIdx0l);
+  strong_function_scalar(scalarIdx0ul);
+
+  EXPECT_EQ(stk::mesh::ScalarIdx(6)(), 6);
+
+  static_assert(std::is_convertible_v<stk::mesh::ScalarIdx, int>);
+  static_assert(std::is_convertible_v<stk::mesh::ScalarIdx, unsigned>);
+  static_assert(std::is_convertible_v<stk::mesh::ScalarIdx, long>);
+  static_assert(std::is_convertible_v<stk::mesh::ScalarIdx, unsigned long>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ScalarIdx, int>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ScalarIdx, unsigned>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ScalarIdx, long>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ScalarIdx, unsigned long>);
 }
 
 //------------------------------------------------------------------------------
@@ -95,29 +154,84 @@ TEST(FieldIndexTypes, constructionAndArgumentPassing_entity)
   strong_function_entity(0);  // Don't love this, but must be implicitly convertible from int for Kokkos support
   // strong_function_entity(0_comp);         // Does not compile
   // strong_function_entity(0_copy);         // Does not compile
+  // strong_function_entity(0_scalar);       // Does not compile
   strong_function_entity(0_entity);
+  // strong_function_entity(0_byte);         // Does not compile
   strong_function_entity(entityIdx0);
   strong_function_entity(entityIdx0u);
   strong_function_entity(entityIdx0l);
   strong_function_entity(entityIdx0ul);
+
+  EXPECT_EQ(stk::mesh::EntityIdx(7)(), 7);
+
+  static_assert(std::is_convertible_v<stk::mesh::EntityIdx, int>);
+  static_assert(std::is_convertible_v<stk::mesh::EntityIdx, unsigned>);
+  static_assert(std::is_convertible_v<stk::mesh::EntityIdx, long>);
+  static_assert(std::is_convertible_v<stk::mesh::EntityIdx, unsigned long>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::EntityIdx, int>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::EntityIdx, unsigned>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::EntityIdx, long>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::EntityIdx, unsigned long>);
+}
+
+//------------------------------------------------------------------------------
+TEST(FieldIndexTypes, constructionAndArgumentPassing_byte)
+{
+  stk::mesh::ByteIdx byteIdx0(0);     // Same underlying type regardless of construction type
+  stk::mesh::ByteIdx byteIdx0u(0u);
+  stk::mesh::ByteIdx byteIdx0l(0l);
+  stk::mesh::ByteIdx byteIdx0ul(0ul);
+
+  // strong_function_byte(0);              // Does not compile
+  // strong_function_byte(0_comp);         // Does not compile
+  // strong_function_byte(0_copy);         // Does not compile
+  // strong_function_byte(0_scalar);       // Does not compile
+  // strong_function_byte(0_entity);       // Does not compile
+  strong_function_byte(0_byte);
+  strong_function_byte(byteIdx0);
+  strong_function_byte(byteIdx0u);
+  strong_function_byte(byteIdx0l);
+  strong_function_byte(byteIdx0ul);
+
+  EXPECT_EQ(stk::mesh::ByteIdx(6)(), 6);
+
+  static_assert(std::is_convertible_v<stk::mesh::ByteIdx, int>);
+  static_assert(std::is_convertible_v<stk::mesh::ByteIdx, unsigned>);
+  static_assert(std::is_convertible_v<stk::mesh::ByteIdx, long>);
+  static_assert(std::is_convertible_v<stk::mesh::ByteIdx, unsigned long>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ByteIdx, int>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ByteIdx, unsigned>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ByteIdx, long>);
+  static_assert(std::is_nothrow_constructible_v<stk::mesh::ByteIdx, unsigned long>);
 }
 
 
-using TestTypes = ::testing::Types<stk::mesh::ComponentIdx, stk::mesh::CopyIdx, stk::mesh::EntityIdx>;
+using TestTypes = ::testing::Types<stk::mesh::ComponentIdx, stk::mesh::CopyIdx, stk::mesh::ScalarIdx,
+                                   stk::mesh::EntityIdx, stk::mesh::ByteIdx>;
 using TestTypesInterop = ::testing::Types<std::pair<stk::mesh::ComponentIdx, int>,
-                                        std::pair<stk::mesh::ComponentIdx, unsigned int>,
-                                        std::pair<stk::mesh::ComponentIdx, long>,
-                                        std::pair<stk::mesh::ComponentIdx, unsigned int>,
+                                          std::pair<stk::mesh::ComponentIdx, unsigned int>,
+                                          std::pair<stk::mesh::ComponentIdx, long>,
+                                          std::pair<stk::mesh::ComponentIdx, unsigned int>,
 
-                                        std::pair<stk::mesh::CopyIdx, int>,
-                                        std::pair<stk::mesh::CopyIdx, unsigned int>,
-                                        std::pair<stk::mesh::CopyIdx, long>,
-                                        std::pair<stk::mesh::CopyIdx, unsigned int>,
+                                          std::pair<stk::mesh::CopyIdx, int>,
+                                          std::pair<stk::mesh::CopyIdx, unsigned int>,
+                                          std::pair<stk::mesh::CopyIdx, long>,
+                                          std::pair<stk::mesh::CopyIdx, unsigned int>,
 
-                                        std::pair<stk::mesh::EntityIdx, int>,
-                                        std::pair<stk::mesh::EntityIdx, unsigned int>,
-                                        std::pair<stk::mesh::EntityIdx, long>,
-                                        std::pair<stk::mesh::EntityIdx, unsigned int>>;
+                                          std::pair<stk::mesh::ScalarIdx, int>,
+                                          std::pair<stk::mesh::ScalarIdx, unsigned int>,
+                                          std::pair<stk::mesh::ScalarIdx, long>,
+                                          std::pair<stk::mesh::ScalarIdx, unsigned int>,
+
+                                          std::pair<stk::mesh::EntityIdx, int>,
+                                          std::pair<stk::mesh::EntityIdx, unsigned int>,
+                                          std::pair<stk::mesh::EntityIdx, long>,
+                                          std::pair<stk::mesh::EntityIdx, unsigned int>,
+
+                                          std::pair<stk::mesh::ByteIdx, int>,
+                                          std::pair<stk::mesh::ByteIdx, unsigned int>,
+                                          std::pair<stk::mesh::ByteIdx, long>,
+                                          std::pair<stk::mesh::ByteIdx, unsigned int>>;
 
 
 template <typename T>
@@ -432,9 +546,21 @@ struct CopyThingy {
   int m_size;
 };
 
+struct ScalarThingy {
+  ScalarThingy(int size) : m_size(size) {}
+  inline stk::mesh::ScalarIdxProxy scalars() const { return stk::mesh::ScalarIdxProxy(m_size); }
+  int m_size;
+};
+
 struct EntityThingy {
   EntityThingy(int size) : m_size(size) {}
   inline stk::mesh::EntityIdxProxy entities() const { return stk::mesh::EntityIdxProxy(m_size); }
+  int m_size;
+};
+
+struct ByteThingy {
+  ByteThingy(int size) : m_size(size) {}
+  inline stk::mesh::ByteIdxProxy bytes() const { return stk::mesh::ByteIdxProxy(m_size); }
   int m_size;
 };
 
@@ -459,6 +585,16 @@ TEST(FieldIndexTypes, rangeBasedForLooping_copy) {
   EXPECT_EQ(counter, 45);
 }
 
+TEST(FieldIndexTypes, rangeBasedForLooping_scalar) {
+  ScalarThingy thingy(10);
+
+  int counter = 0;
+  for (stk::mesh::ScalarIdx index : thingy.scalars()) {
+    counter += static_cast<int>(index);
+  }
+  EXPECT_EQ(counter, 45);
+}
+
 TEST(FieldIndexTypes, rangeBasedForLooping_entity) {
   EntityThingy thingy(10);
 
@@ -468,6 +604,17 @@ TEST(FieldIndexTypes, rangeBasedForLooping_entity) {
   }
   EXPECT_EQ(counter, 45);
 }
+
+TEST(FieldIndexTypes, rangeBasedForLooping_byte) {
+  ByteThingy thingy(10);
+
+  int counter = 0;
+  for (stk::mesh::ByteIdx index : thingy.bytes()) {
+    counter += static_cast<int>(index);
+  }
+  EXPECT_EQ(counter, 45);
+}
+
 
 TEST(FieldIndexTypes, iteratorLooping_component) {
   ComponentThingy thingy(10);
@@ -501,6 +648,22 @@ TEST(FieldIndexTypes, iteratorLooping_copy) {
   EXPECT_EQ(counter, 45);
 }
 
+TEST(FieldIndexTypes, iteratorLooping_scalar) {
+  ScalarThingy thingy(10);
+
+  int counter = 0;
+  for (stk::mesh::ScalarIdxIterator iter = thingy.scalars().begin(); iter != thingy.scalars().end(); ++iter) {
+    counter += static_cast<int>(*iter);
+  }
+  EXPECT_EQ(counter, 45);
+
+  counter = 0;
+  for (stk::mesh::ScalarIdxIterator iter = thingy.scalars().rbegin(); iter != thingy.scalars().rend(); --iter) {
+    counter += static_cast<int>(*iter);
+  }
+  EXPECT_EQ(counter, 45);
+}
+
 TEST(FieldIndexTypes, iteratorLooping_entity) {
   EntityThingy thingy(10);
 
@@ -512,6 +675,22 @@ TEST(FieldIndexTypes, iteratorLooping_entity) {
 
   counter = 0;
   for (stk::mesh::EntityIdxIterator iter = thingy.entities().rbegin(); iter != thingy.entities().rend(); --iter) {
+    counter += static_cast<int>(*iter);
+  }
+  EXPECT_EQ(counter, 45);
+}
+
+TEST(FieldIndexTypes, iteratorLooping_byte) {
+  ByteThingy thingy(10);
+
+  int counter = 0;
+  for (stk::mesh::ByteIdxIterator iter = thingy.bytes().begin(); iter != thingy.bytes().end(); ++iter) {
+    counter += static_cast<int>(*iter);
+  }
+  EXPECT_EQ(counter, 45);
+
+  counter = 0;
+  for (stk::mesh::ByteIdxIterator iter = thingy.bytes().rbegin(); iter != thingy.bytes().rend(); --iter) {
     counter += static_cast<int>(*iter);
   }
   EXPECT_EQ(counter, 45);

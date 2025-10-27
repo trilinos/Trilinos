@@ -55,6 +55,7 @@
 #include "stk_util/util/StkNgpVector.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 
+#include "stk_mesh/baseImpl/DeviceMeshViewVector.hpp"
 #include "stk_mesh/baseImpl/Partition.hpp"
 #include "stk_mesh/baseImpl/NgpMeshHostData.hpp"
 #include "stk_mesh/base/DeviceBucket.hpp"
@@ -156,19 +157,19 @@ public:
   stk::mesh::Entity get_entity(stk::mesh::EntityRank rank,
                                const stk::mesh::FastMeshIndex& meshIndex) const
   {
-    return m_deviceBucketRepo.m_buckets[rank](meshIndex.bucket_id)[meshIndex.bucket_ord];
+    return m_deviceBucketRepo.m_buckets[rank][meshIndex.bucket_id][meshIndex.bucket_ord];
   }
 
   KOKKOS_FUNCTION
   ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex, stk::mesh::EntityRank connectedRank) const
   {
-    return m_deviceBucketRepo.m_buckets[rank](entityIndex.bucket_id).get_connected_entities(entityIndex.bucket_ord, connectedRank);
+    return m_deviceBucketRepo.m_buckets[rank][entityIndex.bucket_id].get_connected_entities(entityIndex.bucket_ord, connectedRank);
   }
 
   KOKKOS_FUNCTION
   ConnectedNodes get_nodes(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex) const
   {
-    return m_deviceBucketRepo.m_buckets[rank](entityIndex.bucket_id).get_nodes(entityIndex.bucket_ord);
+    return m_deviceBucketRepo.m_buckets[rank][entityIndex.bucket_id].get_nodes(entityIndex.bucket_ord);
   }
 
   KOKKOS_FUNCTION
@@ -192,7 +193,7 @@ public:
   KOKKOS_FUNCTION
   ConnectedOrdinals get_connected_ordinals(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex, stk::mesh::EntityRank connectedRank) const
   {
-    return m_deviceBucketRepo.m_buckets[rank](entityIndex.bucket_id).get_connected_ordinals(entityIndex.bucket_ord, connectedRank);
+    return m_deviceBucketRepo.m_buckets[rank][entityIndex.bucket_id].get_connected_ordinals(entityIndex.bucket_ord, connectedRank);
   }
 
   KOKKOS_FUNCTION
@@ -222,7 +223,7 @@ public:
   KOKKOS_FUNCTION
   Permutations get_permutations(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex, stk::mesh::EntityRank connectedRank) const
   {
-    return m_deviceBucketRepo.m_buckets[rank](entityIndex.bucket_id).get_connected_permutations(entityIndex.bucket_ord, connectedRank);
+    return m_deviceBucketRepo.m_buckets[rank][entityIndex.bucket_id].get_connected_permutations(entityIndex.bucket_ord, connectedRank);
   }
 
   KOKKOS_FUNCTION
@@ -275,8 +276,8 @@ public:
   KOKKOS_FUNCTION
   const DeviceBucketT<NgpMemSpace> &get_bucket(stk::mesh::EntityRank rank, unsigned index) const
   {
-    m_deviceBucketRepo.m_buckets[rank](index).m_owningMesh = this;
-    return m_deviceBucketRepo.m_buckets[rank](index);
+    m_deviceBucketRepo.m_buckets[rank][index].m_owningMesh = this;
+    return m_deviceBucketRepo.m_buckets[rank][index];
   }
 
   KOKKOS_FUNCTION
@@ -462,13 +463,13 @@ public:
     check_parts_are_not_internal(addPartOrdinals, removePartOrdinals);
 #endif
 
+    Kokkos::Profiling::pushRegion("construct_part_ordinal_proxy");
     auto maxNumDownwardConnectedEntities = impl::get_max_num_downward_connected_entities(*this, entities);
-    auto maxNumEntitiesForInducingParts = maxNumDownwardConnectedEntities * entities.extent(0) + entities.extent(0);
-
+    auto entityInterval = maxNumDownwardConnectedEntities + 1;
+    auto maxNumEntitiesForInducingParts = entityInterval * entities.extent(0);
+  
     EntityWrapperViewType wrappedEntities(Kokkos::view_alloc("wrappedEntities"), maxNumEntitiesForInducingParts);
-
-    impl::populate_all_downward_connected_entities_and_wrap_entities(*this, entities, maxNumDownwardConnectedEntities, wrappedEntities);
-
+    impl::populate_all_downward_connected_entities_and_wrap_entities(*this, entities, entityInterval, wrappedEntities);
     impl::remove_invalid_entities_sort_unique_and_resize(wrappedEntities, MeshExecSpace{});
 
     // determine resulting parts per entity including inducible parts
@@ -653,8 +654,6 @@ bool DeviceMeshT<NgpMemSpace>::fill_buckets(const stk::mesh::BulkData& bulk_in)
     auto& hostPartitions = bulk_in.m_bucket_repository.m_partitions[rank];
     m_deviceBucketRepo.copy_buckets_and_partitions_from_host(rank, hostBuckets, hostPartitions, anyBucketChanges);
   }
-  m_deviceBucketRepo.sync_num_buckets_host_to_device();
-  m_deviceBucketRepo.sync_num_partitions_host_to_device();
   Kokkos::Profiling::popRegion();
 
   return anyBucketChanges;

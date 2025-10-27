@@ -281,7 +281,7 @@ public:
     unsigned initialNumBuckets = partitionToEmpty->num_buckets();
 
     for (unsigned i = 0; i < initialNumBuckets; ++i) {
-      auto bucketPtr = partitionToEmpty->m_buckets(i).bucketPtr;
+      auto bucketPtr = partitionToEmpty->m_buckets[i].bucketPtr;
       partitionToEmpty->remove_bucket(bucketPtr);
     }
   }
@@ -292,7 +292,7 @@ public:
     auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
     for (unsigned i = 0; i < deviceBucketRepo.num_buckets(testRank); ++i) {
-      EXPECT_NE(stk::mesh::INVALID_BUCKET_ID, deviceBucketRepo.m_buckets[testRank](i).bucket_id());
+      EXPECT_NE(stk::mesh::INVALID_BUCKET_ID, deviceBucketRepo.m_buckets[testRank][i].bucket_id());
     }
   }
 
@@ -302,7 +302,7 @@ public:
     auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
     for (unsigned i = 0; i < deviceBucketRepo.num_partitions(testRank); ++i) {
-      EXPECT_NE(stk::mesh::INVALID_PARTITION_ID, deviceBucketRepo.m_partitions[testRank](i).partition_id());
+      EXPECT_NE(stk::mesh::INVALID_PARTITION_ID, deviceBucketRepo.m_partitions[testRank][i].partition_id());
     }
   }
 
@@ -329,7 +329,7 @@ public:
   void check_device_bucket_and_partition_destruction_for_each_entity_run_multiple_copies_in_order_destruction()
   {
     build_empty_mesh(1, 1);
-    auto numInitBucketCapacity = stk::mesh::impl::initialDeviceBucketViewCapacity;
+    auto numInitBucketCapacity = 32u;
     create_parts(numInitBucketCapacity+1);
 
     auto part = m_meta->get_part("part0");
@@ -337,7 +337,7 @@ public:
 
     stk::mesh::NgpMesh ngpMesh1 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
     auto& deviceBucketRepo1 = ngpMesh1.get_device_bucket_repository();
-    EXPECT_EQ(1u, deviceBucketRepo1.m_buckets[testRank].extent(0));
+    EXPECT_EQ(1u, deviceBucketRepo1.m_buckets[testRank].size());
 
     stk::mesh::Selector universal = get_meta().universal_part();
     stk::mesh::for_each_entity_run(ngpMesh1, testRank, universal, KOKKOS_LAMBDA(stk::mesh::FastMeshIndex const&) {});
@@ -351,7 +351,7 @@ public:
 
     stk::mesh::NgpMesh ngpMesh2 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
     auto& deviceBucketRepo2 = ngpMesh2.get_device_bucket_repository();
-    EXPECT_EQ(numInitBucketCapacity+1, deviceBucketRepo2.m_buckets[testRank].extent(0));
+    EXPECT_EQ(numInitBucketCapacity+1, deviceBucketRepo2.m_buckets[testRank].size());
 
     {
       stk::mesh::NgpMesh ngpMesh3 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
@@ -363,7 +363,7 @@ public:
   void check_device_bucket_and_partition_destruction_for_each_entity_run_multiple_copies_reverse_order_destruction()
   {
     build_empty_mesh(1, 1);
-    auto numInitBucketCapacity = stk::mesh::impl::initialDeviceBucketViewCapacity;
+    auto numInitBucketCapacity = 32u;
     create_parts(numInitBucketCapacity*2);
 
     auto part = m_meta->get_part("part0");
@@ -375,7 +375,7 @@ public:
       auto& deviceBucketRepo1 = ngpMesh1.get_device_bucket_repository();
       auto rank = testRank;
 
-      EXPECT_EQ(1u, deviceBucketRepo1.m_buckets[rank].extent(0));
+      EXPECT_EQ(1u, deviceBucketRepo1.m_buckets[rank].size());
       stk::mesh::EntityRank thisRank = rank;
       stk::mesh::for_each_entity_run(ngpMesh1, thisRank, universal,
         KOKKOS_LAMBDA(stk::mesh::FastMeshIndex const& index) {
@@ -394,7 +394,7 @@ public:
     {
       stk::mesh::NgpMesh ngpMesh2 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
       auto& deviceBucketRepo2 = ngpMesh2.get_device_bucket_repository();
-      EXPECT_EQ(11u, deviceBucketRepo2.m_buckets[testRank].extent(0));
+      EXPECT_EQ(11u, deviceBucketRepo2.m_buckets[testRank].size());
       stk::mesh::EntityRank thisRank = testRank;
 
       stk::mesh::for_each_entity_run(ngpMesh2, thisRank, universal,
@@ -414,7 +414,7 @@ public:
     {
       stk::mesh::NgpMesh ngpMesh3 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
       auto& deviceBucketRepo3 = ngpMesh3.get_device_bucket_repository();
-      EXPECT_EQ(17u, deviceBucketRepo3.m_buckets[testRank].extent(0));
+      EXPECT_EQ(17u, deviceBucketRepo3.m_buckets[testRank].size());
 
       for (unsigned i = 18; i <= numInitBucketCapacity+1; ++i) {
         auto part = m_meta->get_part("part" + std::to_string(i));
@@ -425,7 +425,7 @@ public:
 
       stk::mesh::NgpMesh ngpMesh4 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
       auto& deviceBucketRepo4 = ngpMesh4.get_device_bucket_repository();
-      EXPECT_EQ(numInitBucketCapacity+1, deviceBucketRepo4.m_buckets[testRank].extent(0));
+      EXPECT_EQ(numInitBucketCapacity+1, deviceBucketRepo4.m_buckets[testRank].size());
     }
 
     {
@@ -441,7 +441,7 @@ public:
 
   void check_device_bucket_copied_views_after_destroyed_from_copied_buckets() {
     build_empty_mesh(1, 1);
-    auto numInitBucketCapacity = stk::mesh::impl::initialDeviceBucketViewCapacity;
+    auto numInitBucketCapacity = 32u;
     create_parts(numInitBucketCapacity*2);
 
     auto part = m_meta->get_part("part0");
@@ -452,9 +452,9 @@ public:
       auto& deviceBucketRepo1 = ngpMesh1.get_device_bucket_repository();
 
       EXPECT_EQ(1u, deviceBucketRepo1.num_buckets(testRank));
-      EXPECT_EQ(0u, deviceBucketRepo1.m_buckets[testRank](0).bucket_id());
-      EXPECT_EQ(1u, deviceBucketRepo1.m_buckets[testRank](0).m_entities.extent(0));
-      EXPECT_EQ(1, deviceBucketRepo1.m_buckets[testRank](0).m_entities.use_count());
+      EXPECT_EQ(0u, deviceBucketRepo1.m_buckets[testRank][0].bucket_id());
+      EXPECT_EQ(1u, deviceBucketRepo1.m_buckets[testRank][0].m_entities.extent(0));
+      EXPECT_EQ(1, deviceBucketRepo1.m_buckets[testRank][0].m_entities.use_count());
 
       Kokkos::parallel_for(1,
         KOKKOS_LAMBDA(const int) {
@@ -473,9 +473,9 @@ public:
       stk::mesh::NgpMesh ngpMesh2 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
       auto& deviceBucketRepo2 = ngpMesh2.get_device_bucket_repository();
       EXPECT_EQ(numInitBucketCapacity+1, deviceBucketRepo2.num_buckets(testRank));
-      EXPECT_EQ(0u, deviceBucketRepo2.m_buckets[testRank](0).bucket_id());
-      EXPECT_EQ(1u, deviceBucketRepo2.m_buckets[testRank](0).m_entities.extent(0));
-      EXPECT_EQ(2, deviceBucketRepo2.m_buckets[testRank](0).m_entities.use_count());
+      EXPECT_EQ(0u, deviceBucketRepo2.m_buckets[testRank][0].bucket_id());
+      EXPECT_EQ(1u, deviceBucketRepo2.m_buckets[testRank][0].m_entities.extent(0));
+      EXPECT_EQ(2, deviceBucketRepo2.m_buckets[testRank][0].m_entities.use_count());
 
       Kokkos::parallel_for(1,
         KOKKOS_LAMBDA(const int) {
@@ -490,9 +490,8 @@ public:
     stk::mesh::NgpMesh ngpMesh3 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
     auto& deviceBucketRepo3 = ngpMesh3.get_device_bucket_repository();
     EXPECT_EQ(numInitBucketCapacity+1, deviceBucketRepo3.num_buckets(testRank));
-    EXPECT_EQ(0u, deviceBucketRepo3.m_buckets[testRank](0).bucket_id());
-    EXPECT_EQ(1u, deviceBucketRepo3.m_buckets[testRank](0).m_entities.extent(0));
-    EXPECT_EQ(1, deviceBucketRepo3.m_buckets[testRank](0).m_entities.use_count());
+    EXPECT_EQ(0u, deviceBucketRepo3.m_buckets[testRank][0].bucket_id());
+    EXPECT_EQ(1u, deviceBucketRepo3.m_buckets[testRank][0].m_entities.extent(0));
 
     Kokkos::parallel_for(1,
       KOKKOS_LAMBDA(const int) {
@@ -503,33 +502,6 @@ public:
       }
     );
   }
-
-  // void check_device_buckets_have_correct_fast_mesh_indices()
-  // {
-  //   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
-  //   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
-
-  //   Kokkos::View<int, stk::mesh::UVMMemSpace> testResult("");
-
-  //   // fast mesh from an entity of a bucket must match bucket's actual info
-  //   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int) {
-  //     for (unsigned i = 0; i < ngpMesh.num_buckets(testRank); ++i) {
-  //       auto bucket = ngpMesh.get_bucket(testRank, i);
-  //       for (unsigned j = 0; j < bucket.m_entities.extent(0); ++j) {
-  //         auto entity = bucket[j];
-  //         auto fastMeshIndex = ngpMesh.fast_mesh_index(entity);
-  //         auto partition = bucket.m_owningPartitionId
-  //         fastMeshIndex.bucket_id == i
-  //         fastMeshIndex.bucket_ord ==
-  //       }
-
-  //       if (bucket.bucket_id() != i) { testResult()++; }
-
-  //       auto fastMeshIndex = ngpMesh.fast_mesh_index(
-  //       EXPECT_NE(stk::mesh::INVALID_PARTITION_ID, deviceBucketRepo.m_partitions[testRank](i).partition_id());
-  //     }
-  //   });
-  // }
 
   std::unique_ptr<stk::mesh::BulkData> m_bulk;
   stk::mesh::MetaData* m_meta;
@@ -545,9 +517,8 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_get_partitions)
 
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
-  auto& partitions = deviceBucketRepo.get_partitions(testRank);
+  EXPECT_NO_THROW(deviceBucketRepo.get_partitions(testRank));
   EXPECT_EQ(1u, deviceBucketRepo.num_partitions(testRank));
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, partitions.extent(0));
 }
 
 NGP_TEST_F(NgpBucketRepositoryTest, create_empty_partition)
@@ -562,7 +533,7 @@ NGP_TEST_F(NgpBucketRepositoryTest, create_empty_partition)
   auto numPartitions = deviceBucketRepo.num_partitions(testRank);
   EXPECT_EQ(2u, numPartitions);
 
-  auto& partition = partitions(0);
+  auto& partition = partitions[0];
   EXPECT_EQ(0u, partition.num_buckets());
   EXPECT_EQ(0u, partition.num_entities());
 }
@@ -576,7 +547,8 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_invalid_partition)
 
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
-  EXPECT_ANY_THROW(deviceBucketRepo.get_partition(testRank, stk::mesh::impl::initialDevicePartitionViewCapacity));
+  auto invalidIdx = deviceBucketRepo.num_partitions(testRank)+1;
+  EXPECT_ANY_THROW(deviceBucketRepo.get_partition(testRank, invalidIdx));
 }
 
 NGP_TEST_F(NgpBucketRepositoryTest, check_create_partitions)
@@ -592,7 +564,7 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_create_partitions)
  
   for (unsigned i = 0; i < numPartitions; ++i) {
     auto devicePartOrdinals = get_device_part_ordinals(1, i);
-    check_part_ordinal_equality(devicePartOrdinals, partitions(i).superset_part_ordinals());
+    check_part_ordinal_equality(devicePartOrdinals, partitions[i].superset_part_ordinals());
   }
 }
 
@@ -655,11 +627,12 @@ NGP_TEST_F(NgpBucketRepositoryTest, device_bucket_repo_check_invalid_bucket)
   create_device_partitions_with_one_part(2);
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
-  EXPECT_EQ(0u, deviceBucketRepo.m_buckets[testRank].extent(0));
+  EXPECT_EQ(0u, deviceBucketRepo.m_buckets[testRank].size());
   EXPECT_EQ(0u, deviceBucketRepo.num_buckets(testRank));
 
   auto devicePartOrdinals = get_device_part_ordinals(1);
-  EXPECT_ANY_THROW(deviceBucketRepo.get_bucket(testRank, stk::mesh::impl::initialDeviceBucketViewCapacity));
+  auto invalidIdx = deviceBucketRepo.num_buckets(testRank)+1;
+  EXPECT_ANY_THROW(deviceBucketRepo.get_bucket(testRank, invalidIdx));
 }
 
 NGP_TEST_F(NgpBucketRepositoryTest, device_bucket_repo_construct_new_bucket)
@@ -669,15 +642,13 @@ NGP_TEST_F(NgpBucketRepositoryTest, device_bucket_repo_construct_new_bucket)
   create_device_partitions_with_one_part(1);
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
-  EXPECT_EQ(0u, deviceBucketRepo.m_buckets[testRank].extent(0));
+  EXPECT_EQ(0u, deviceBucketRepo.m_buckets[testRank].size());
   EXPECT_EQ(0u, deviceBucketRepo.num_buckets(testRank));
 
   auto devicePartOrdinals = get_device_part_ordinals(1);
   deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals);
 
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].extent(0));
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(testRank));
-
   EXPECT_NO_THROW(deviceBucketRepo.get_bucket(testRank, 0));
   EXPECT_NE(deviceBucketRepo.get_bucket(testRank, 0), nullptr);
 }
@@ -689,23 +660,18 @@ NGP_TEST_F(NgpBucketRepositoryTest, device_bucket_repo_invalidate_bucket_no_sync
   create_device_partitions_with_one_part(1);
   auto& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
-  EXPECT_EQ(0u, deviceBucketRepo.m_buckets[testRank].extent(0));
+  EXPECT_EQ(0u, deviceBucketRepo.m_buckets[testRank].size());
   EXPECT_EQ(0u, deviceBucketRepo.num_buckets(testRank));
 
   auto devicePartOrdinals = get_device_part_ordinals(1);
   auto newBucket = deviceBucketRepo.construct_new_bucket(testRank, devicePartOrdinals);
 
   EXPECT_EQ(1u, deviceBucketRepo.num_buckets(testRank));
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].extent(0));
-  EXPECT_EQ(1u, deviceBucketRepo.num_buckets(testRank));
-
   EXPECT_NO_THROW(deviceBucketRepo.get_bucket(testRank, 0));
   EXPECT_NE(deviceBucketRepo.get_bucket(testRank, 0), nullptr);
 
   EXPECT_ANY_THROW(deviceBucketRepo.invalidate_bucket(newBucket));
 
-  // EXPECT_EQ(0u, deviceBucketRepo.num_buckets(testRank));
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].extent(0));
   EXPECT_EQ(stk::mesh::INVALID_BUCKET_ID, newBucket->bucket_id());
 }
 
@@ -783,10 +749,9 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_sync_from_partitions_condense_bucket_v
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
   EXPECT_EQ(numBuckets, deviceBucketRepo.num_buckets(testRank));
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].extent(0));
 
   for (unsigned i = 0; i < deviceBucketRepo.num_buckets(testRank); ++i) {
-    EXPECT_EQ(0u, deviceBucketRepo.m_buckets[testRank](i).size());
+    EXPECT_EQ(0u, deviceBucketRepo.m_buckets[testRank][i].size());
   }
 
   deviceBucketRepo.sync_from_partitions();
@@ -796,7 +761,6 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_sync_from_partitions_condense_bucket_v
   EXPECT_TRUE(Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactBuckets));
 
   EXPECT_EQ(0u, deviceBucketRepo.num_buckets(testRank));
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].extent(0));
 }
 
 NGP_TEST_F(NgpBucketRepositoryTest, check_sync_from_partitions_remove_empty_partitions)
@@ -810,10 +774,9 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_sync_from_partitions_remove_empty_part
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
   EXPECT_EQ(numBuckets*2, deviceBucketRepo.num_buckets(testRank));
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].extent(0));
 
   for (unsigned i = 0; i < deviceBucketRepo.num_buckets(testRank); ++i) {
-    EXPECT_EQ(0u, deviceBucketRepo.m_buckets[testRank](i).size());
+    EXPECT_EQ(0u, deviceBucketRepo.m_buckets[testRank][i].size());
   }
 
   deviceBucketRepo.sync_from_partitions();
@@ -833,9 +796,9 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_sync_from_partitions_remove_empty_part
 
 void test_copy_to_device(stk::mesh::NgpMesh ngpMesh, stk::mesh::EntityRank testRank)
 {
-  EXPECT_EQ(3, ngpMesh.get_device_bucket_repository().m_buckets[testRank].use_count());
+  EXPECT_EQ(3, ngpMesh.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int) {});
-  EXPECT_EQ(3, ngpMesh.get_device_bucket_repository().m_buckets[testRank].use_count());
+  EXPECT_EQ(3, ngpMesh.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
 }
 
 NGP_TEST_F(NgpBucketRepositoryTest, check_bucket_repo_ref_counts)
@@ -848,11 +811,11 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_bucket_repo_ref_counts)
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
     auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
     EXPECT_EQ(0u, deviceBucketRepo.num_buckets(testRank));
-    EXPECT_EQ(0, deviceBucketRepo.m_buckets[testRank].use_count());
+    EXPECT_EQ(0, deviceBucketRepo.m_buckets[testRank].get_view().use_count());
   }
-  EXPECT_EQ(0, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].use_count());
+  EXPECT_EQ(0, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
 
-  unsigned numBucketsToCreate = stk::mesh::impl::initialDeviceBucketViewCapacity + 1;
+  unsigned numBucketsToCreate = 33;
   for (unsigned i = 1; i <= numBucketsToCreate; ++i) {
     stk::mesh::Part& part = m_meta->declare_part_with_topology("testPart" + std::to_string(i), testTopo);
 
@@ -860,41 +823,41 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_bucket_repo_ref_counts)
     m_bulk->declare_node(i, stk::mesh::PartVector{&part});
     m_bulk->modification_end();
   }
-  EXPECT_EQ(0, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].use_count());
+  EXPECT_EQ(0, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
 
   // reference
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
     auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
     EXPECT_EQ(numBucketsToCreate, deviceBucketRepo.num_buckets(testRank));
-    EXPECT_EQ(1, deviceBucketRepo.m_buckets[testRank].use_count());
-    EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].use_count());
+    EXPECT_EQ(1, deviceBucketRepo.m_buckets[testRank].get_view().use_count());
+    EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
   }
-  EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].use_count());
+  EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
 
   // copy
   {
     auto ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
     auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
     EXPECT_EQ(numBucketsToCreate, deviceBucketRepo.num_buckets(testRank));
-    EXPECT_EQ(2, deviceBucketRepo.m_buckets[testRank].use_count());
-    EXPECT_EQ(2, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].use_count());
+    EXPECT_EQ(2, deviceBucketRepo.m_buckets[testRank].get_view().use_count());
+    EXPECT_EQ(2, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
   }
-  EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].use_count());
+  EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
 
   // copy into device lambda
   {
-    EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].use_count());
+    EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
     auto ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
     auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
     EXPECT_EQ(numBucketsToCreate, deviceBucketRepo.num_buckets(testRank));
-    EXPECT_EQ(2, deviceBucketRepo.m_buckets[testRank].use_count());
-    EXPECT_EQ(2, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].use_count());
+    EXPECT_EQ(2, deviceBucketRepo.m_buckets[testRank].get_view().use_count());
+    EXPECT_EQ(2, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
 
     test_copy_to_device(ngpMesh, testRank);
-    EXPECT_EQ(2, deviceBucketRepo.m_buckets[testRank].use_count());
+    EXPECT_EQ(2, deviceBucketRepo.m_buckets[testRank].get_view().use_count());
   }
-  EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].use_count());
+  EXPECT_EQ(1, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].get_view().use_count());
 }
 
 NGP_TEST_F(NgpBucketRepositoryTest, check_multiple_copies_of_ngp_mesh_updated_copies_requiring_bucket_resize)
@@ -907,7 +870,7 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_multiple_copies_of_ngp_mesh_updated_co
   EXPECT_EQ(0u, deviceBucketRepo.num_buckets(testRank));
   EXPECT_EQ(0u, ngpMeshInit.get_device_bucket_repository().num_buckets(testRank));
 
-  unsigned numBucketsToCreate = stk::mesh::impl::initialDeviceBucketViewCapacity;
+  unsigned numBucketsToCreate = 32;
   for (unsigned i = 1; i <= numBucketsToCreate; ++i) {
     stk::mesh::Part& part = m_meta->declare_part_with_topology("testPart" + std::to_string(i), testTopo);
 
@@ -916,8 +879,8 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_multiple_copies_of_ngp_mesh_updated_co
     m_bulk->modification_end();
   }
   stk::mesh::NgpMesh ngpMesh2 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
-  EXPECT_EQ(0u, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].extent(0));
-  EXPECT_EQ(numBucketsToCreate, ngpMesh2.get_device_bucket_repository().m_buckets[testRank].extent(0));
+  EXPECT_EQ(0u, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].size());
+  EXPECT_EQ(numBucketsToCreate, ngpMesh2.get_device_bucket_repository().m_buckets[testRank].size());
 
   EXPECT_EQ(0u, ngpMeshInit.get_device_bucket_repository().num_buckets(testRank));
   EXPECT_EQ(numBucketsToCreate, ngpMesh2.get_device_bucket_repository().num_buckets(testRank));
@@ -930,9 +893,9 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_multiple_copies_of_ngp_mesh_updated_co
   }
 
   stk::mesh::NgpMesh ngpMesh3 = stk::mesh::get_updated_ngp_mesh(*m_bulk);
-  EXPECT_EQ(0u, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].extent(0));
-  EXPECT_EQ(numBucketsToCreate, ngpMesh2.get_device_bucket_repository().m_buckets[testRank].extent(0));
-  EXPECT_EQ(numBucketsToCreate+1, ngpMesh3.get_device_bucket_repository().m_buckets[testRank].extent(0));
+  EXPECT_EQ(0u, ngpMeshInit.get_device_bucket_repository().m_buckets[testRank].size());
+  EXPECT_EQ(numBucketsToCreate, ngpMesh2.get_device_bucket_repository().m_buckets[testRank].size());
+  EXPECT_EQ(numBucketsToCreate+1, ngpMesh3.get_device_bucket_repository().m_buckets[testRank].size());
 
   EXPECT_EQ(0u, ngpMeshInit.get_device_bucket_repository().num_buckets(testRank));
   EXPECT_EQ(numBucketsToCreate, ngpMesh2.get_device_bucket_repository().num_buckets(testRank));
@@ -979,8 +942,6 @@ NGP_TEST_F(NgpBucketRepositoryTest, check_multiple_copies_of_ngp_mesh_updated_co
 //   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
 //   EXPECT_EQ(numBuckets*2, deviceBucketRepo.num_buckets(testRank));
-//   EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].extent(0));
-
 //   deviceBucketRepo.sync_from_partitions();
 
 //   EXPECT_TRUE(Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, deviceBucketRepo.m_buckets[testRank]));
@@ -1008,9 +969,9 @@ NGP_TEST_F(NgpBucketRepositoryTest, add_buckets_more_than_doubling_partition_cap
   EXPECT_EQ(hostBuckets.size(), ngpMesh.num_buckets(testRank));
 
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
-  auto initDevBucketViewCapacity = stk::mesh::impl::initialDeviceBucketViewCapacity;
+  auto initDevBucketViewCapacity = 32u;
 
-  EXPECT_EQ(1u, deviceBucketRepo.m_buckets[testRank].extent(0));
+  EXPECT_EQ(1u, deviceBucketRepo.m_buckets[testRank].size());
 
   unsigned numNodeToAdd = initDevBucketViewCapacity-1;
   auto& parts = hostBuckets[0]->supersets();
@@ -1020,7 +981,7 @@ NGP_TEST_F(NgpBucketRepositoryTest, add_buckets_more_than_doubling_partition_cap
 
   ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   EXPECT_EQ(initDevBucketViewCapacity, ngpMesh.num_buckets(testRank));
-  EXPECT_EQ(initDevBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].extent(0));
+  EXPECT_EQ(initDevBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].size());
 
   numNodeToAdd = initDevBucketViewCapacity+1;
   for (unsigned i = 1; i <= numNodeToAdd; ++i) {
@@ -1029,7 +990,7 @@ NGP_TEST_F(NgpBucketRepositoryTest, add_buckets_more_than_doubling_partition_cap
 
   ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   EXPECT_EQ(initDevBucketViewCapacity*2+1, ngpMesh.num_buckets(testRank));
-  EXPECT_EQ(initDevBucketViewCapacity*2+1, deviceBucketRepo.m_buckets[testRank].extent(0));
+  EXPECT_EQ(initDevBucketViewCapacity*2+1, deviceBucketRepo.m_buckets[testRank].size());
 }
 
 NGP_TEST_F(NgpBucketRepositoryTest, add_host_buckets_more_than_initial_device_bucket_view_capacity)
@@ -1040,15 +1001,13 @@ NGP_TEST_F(NgpBucketRepositoryTest, add_host_buckets_more_than_initial_device_bu
   stk::mesh::Part& part1 = m_meta->declare_part_with_topology("part1", testTopo);
   stk::mesh::Part& part2 = m_meta->declare_part_with_topology("part2", testTopo);
 
-  unsigned numBucketsToAdd = stk::mesh::impl::initialDeviceBucketViewCapacity+1;
+  unsigned numBucketsToAdd = 33u;
   for (unsigned i = 1; i <= numBucketsToAdd; ++i) {
     create_node(i, {&part1, &part2});
   }
 
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
-  auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
   EXPECT_EQ(numBucketsToAdd, ngpMesh.num_buckets(testRank));
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity+1, deviceBucketRepo.m_buckets[testRank].extent(0));
 }
 
 NGP_TEST_F(NgpBucketRepositoryTest, check_device_bucket_and_partition_destruction_for_each_entity_run_ref)
@@ -1098,10 +1057,10 @@ public:
     auto numPartitions = deviceBucketRepo.num_partitions(testRank);
 
     for (unsigned i = 0; i < numPartitions; ++i) {
-      auto& partition = partitions(i);
+      auto& partition = partitions[i];
       auto numBuckets = partition.num_buckets();
       for (unsigned j = 0; j < numBuckets; ++j) {
-        auto& bucket = partition.m_buckets(i);
+        auto& bucket = partition.m_buckets[i];
         EXPECT_NE(stk::mesh::INVALID_BUCKET_ID, bucket->bucket_id());
       }
     } 
@@ -1123,7 +1082,7 @@ NGP_TEST_F(NgpPartitionTest, check_add_bucket)
   partition->add_bucket(newBucket);
 
   EXPECT_EQ(1u, partition->num_buckets());
-  EXPECT_EQ(newBucket->bucket_id(), partition->m_buckets(0)->bucket_id());
+  EXPECT_EQ(newBucket->bucket_id(), partition->m_buckets[0]->bucket_id());
   EXPECT_EQ(newBucket->m_owningPartitionId, partition->partition_id());
 }
 
@@ -1142,7 +1101,7 @@ NGP_TEST_F(NgpPartitionTest, check_remove_bucket)
   partition->add_bucket(newBucket);
 
   EXPECT_EQ(1u, partition->num_buckets());
-  EXPECT_EQ(newBucket->bucket_id(), partition->m_buckets(0)->bucket_id());
+  EXPECT_EQ(newBucket->bucket_id(), partition->m_buckets[0]->bucket_id());
   EXPECT_EQ(newBucket->m_owningPartitionId, partition->partition_id());
 
   partition->remove_bucket(newBucket);
@@ -1163,18 +1122,15 @@ NGP_TEST_F(NgpPartitionTest, check_valid_bucket_view_after_sync_from_partitions_
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
   EXPECT_EQ(numBuckets, deviceBucketRepo.num_buckets(testRank));
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].extent(0));
 
   auto devicePartOrdinals = get_device_part_ordinals(1);
   auto partition = deviceBucketRepo.get_or_create_partition(testRank, devicePartOrdinals);
 
   EXPECT_EQ(numBuckets, partition->num_buckets());
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, partition->m_buckets.extent(0));
 
   deviceBucketRepo.sync_from_partitions();
 
   EXPECT_EQ(0u, partition->num_buckets());
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, partition->m_buckets.extent(0));
 
   using BucketUView = typename stk::mesh::impl::DeviceBucketRepository<stk::ngp::MemSpace>::DeviceBucketUView;
   BucketUView compactBuckets(deviceBucketRepo.m_buckets[testRank].data(), deviceBucketRepo.num_buckets(testRank));
@@ -1195,14 +1151,12 @@ NGP_TEST_F(NgpPartitionTest, check_valid_bucket_view_after_sync_from_partitions_
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
 
   EXPECT_EQ(numBuckets*2, deviceBucketRepo.num_buckets(testRank));
-  EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, deviceBucketRepo.m_buckets[testRank].extent(0));
 
   for (unsigned i = 0; i < 2; ++i) {
     auto devicePartOrdinals = get_device_part_ordinals(1, i);
     auto partition = deviceBucketRepo.get_or_create_partition(testRank, devicePartOrdinals);
 
     EXPECT_EQ(numBuckets, partition->num_buckets());
-    EXPECT_EQ(stk::mesh::impl::initialDeviceBucketViewCapacity, partition->m_buckets.extent(0));
   }
 
   deviceBucketRepo.sync_from_partitions();
@@ -1212,7 +1166,7 @@ NGP_TEST_F(NgpPartitionTest, check_valid_bucket_view_after_sync_from_partitions_
     auto partition = deviceBucketRepo.get_or_create_partition(testRank, devicePartOrdinals);
 
     EXPECT_EQ(0u, partition->num_buckets());
-    EXPECT_EQ(0u, partition->m_buckets.extent(0));
+    EXPECT_EQ(0u, partition->m_buckets.size());
 
     using BucketUView = typename stk::mesh::impl::DeviceBucketRepository<stk::ngp::MemSpace>::DeviceBucketUView;
     BucketUView compactBuckets(deviceBucketRepo.m_buckets[testRank].data(), deviceBucketRepo.num_buckets(testRank));
@@ -1362,7 +1316,7 @@ public:
       auto& partitions = deviceBucketRepo.m_partitions[rank];
 
       for (unsigned i = 0; i < deviceBucketRepo.num_partitions(rank); ++i) {
-        NGP_EXPECT_EQ(numPartsPerEntity, partitions(i).m_partOrdinals.extent(0));
+        NGP_EXPECT_EQ(numPartsPerEntity, partitions[i].m_partOrdinals.extent(0));
       }
     });
   }
@@ -1385,8 +1339,6 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_create_partition_separate_partitions)
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
   deviceBucketRepo.batch_create_partitions(devicePartOrdinalsProxy);
 
-  deviceBucketRepo.sync_num_partitions_host_to_device();
-
   EXPECT_EQ(2u, deviceBucketRepo.num_partitions(testRank));
   check_partition_part_ordinal_count(numPartsPerEntity);
 }
@@ -1407,8 +1359,6 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_create_partition_same_partitions)
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*m_bulk);
   auto& deviceBucketRepo = ngpMesh.get_device_bucket_repository();
   deviceBucketRepo.batch_create_partitions(devicePartOrdinalsProxy);
-
-  deviceBucketRepo.sync_num_partitions_host_to_device();
 
   EXPECT_EQ(1u, deviceBucketRepo.num_partitions(testRank));
   check_partition_part_ordinal_count(numPartsPerEntity);
@@ -1543,15 +1493,17 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_same_partition)
 
   deviceBucketRepo.batch_move_entities(entities, srcDestPartitions);
 
+  // empty buckets (with stale data) have not been cleared out from partition 0 and 1 at this point
   auto partition0 = deviceBucketRepo.get_partition(testRank, 0);
   EXPECT_EQ(0u, partition0->m_numEntities);
-  EXPECT_EQ(0u, partition0->m_buckets(0)->m_bucketSize);
+  EXPECT_EQ(1u, partition0->num_buckets());
   auto partition1 = deviceBucketRepo.get_partition(testRank, 1);
   EXPECT_EQ(0u, partition1->m_numEntities);
-  EXPECT_EQ(0u, partition1->m_buckets(0)->m_bucketSize);
+  EXPECT_EQ(1u, partition1->num_buckets());
   auto partition2 = deviceBucketRepo.get_partition(testRank, 2);
   EXPECT_EQ(2u, partition2->m_numEntities);
-  EXPECT_EQ(2u, partition2->m_buckets(0)->m_bucketSize);
+  EXPECT_EQ(1u, partition2->num_buckets());
+  EXPECT_EQ(2u, partition2->m_buckets[0]->m_bucketSize);
 }
 
 NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_separate_partitions)
@@ -1601,18 +1553,21 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_separate_partitions)
 
   deviceBucketRepo.batch_move_entities(entities, srcDestPartitions);
 
+  // empty buckets (with stale data) have not been cleared out from partition 0 and 1 at this point
   auto partition0 = deviceBucketRepo.get_partition(testRank, 0);
   EXPECT_EQ(0u, partition0->m_numEntities);
-  EXPECT_EQ(0u, partition0->m_buckets(0)->m_bucketSize);
+  EXPECT_EQ(1u, partition0->num_buckets());
   auto partition1 = deviceBucketRepo.get_partition(testRank, 1);
   EXPECT_EQ(0u, partition1->m_numEntities);
-  EXPECT_EQ(0u, partition1->m_buckets(0)->m_bucketSize);
+  EXPECT_EQ(1u, partition1->num_buckets());
   auto partition2 = deviceBucketRepo.get_partition(testRank, 2);
   EXPECT_EQ(1u, partition2->m_numEntities);
-  EXPECT_EQ(1u, partition2->m_buckets(0)->m_bucketSize);
+  EXPECT_EQ(1u, partition2->num_buckets());
+  EXPECT_EQ(1u, partition2->m_buckets[0]->m_bucketSize);
   auto partition3 = deviceBucketRepo.get_partition(testRank, 2);
   EXPECT_EQ(1u, partition3->m_numEntities);
-  EXPECT_EQ(1u, partition3->m_buckets(0)->m_bucketSize);
+  EXPECT_EQ(1u, partition3->num_buckets());
+  EXPECT_EQ(1u, partition3->m_buckets[0]->m_bucketSize);
 }
 
 NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_exchange_partitions)
@@ -1647,12 +1602,13 @@ NGP_TEST_F(NgpBucketRepoBatchOpTest, batch_move_entities_exchange_partitions)
 
   deviceBucketRepo.batch_move_entities(entities, srcDestPartitions);
 
+  // empty buckets (with stale data) have not been cleared out from partition 0 and 1 at this point
   auto partition0 = deviceBucketRepo.get_partition(testRank, 0);
   EXPECT_EQ(1u, partition0->m_numEntities);
-  EXPECT_EQ(1u, partition0->m_buckets(0)->m_bucketSize);
+  EXPECT_EQ(1u, partition0->num_buckets());
   auto partition1 = deviceBucketRepo.get_partition(testRank, 1);
   EXPECT_EQ(1u, partition1->m_numEntities);
-  EXPECT_EQ(1u, partition1->m_buckets(0)->m_bucketSize);
+  EXPECT_EQ(1u, partition1->num_buckets());
 }
 
 #endif

@@ -58,8 +58,6 @@ namespace impl {
 template <typename NgpMemSpace>
 class DevicePartition;
 
-constexpr unsigned initialDeviceBucketViewCapacity = 32;
-constexpr unsigned initialDevicePartitionViewCapacity = 32;
 constexpr unsigned INVALID_INDEX = std::numeric_limits<unsigned>::max();
 
 }
@@ -80,11 +78,13 @@ struct DeviceBucketT {
       m_bucketCapacity(0),
       m_activeEntitySpan(0),
       m_bucketTopology(),
-      m_entityRank(stk::topology::NODE_RANK)
+      m_entityRank(stk::topology::INVALID_RANK)
   {}
 
   KOKKOS_INLINE_FUNCTION
   unsigned bucket_id() const { return m_bucketId; }
+
+  void set_bucket_id(unsigned id) { m_bucketId = id; }
 
   KOKKOS_INLINE_FUNCTION
   size_t size() const { return m_bucketSize; }
@@ -197,7 +197,7 @@ struct DeviceBucketT {
   void remove_entity(unsigned bucketOrd);
 
   // FIXME. Entity view could be sparse during a mesh mod.
-  bool is_full() const { return m_activeEntitySpan == m_bucketCapacity; }
+  bool is_full() const { return get_next_avail_entity_idx() >= capacity(); }
 
   KOKKOS_FUNCTION
   const PartOrdinalViewType<BucketNgpMemSpace>& get_part_ordinals() const { return m_partOrdinals; }
@@ -214,7 +214,6 @@ struct DeviceBucketT {
   void update_bucket_meta_entity_removed()
   {
     Kokkos::atomic_dec(&m_bucketSize);
-    m_activeEntitySpan--;
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -294,6 +293,7 @@ void DeviceBucketT<BucketNgpMemSpace>::sort_entities()
   if (!Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactEntityUView)) {
     Kokkos::sort(compactEntityUView);
   }
+  STK_ThrowAssert(Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactEntityUView));
 
   update_bucket_meta_set_entity_span_to_active_count();
 }

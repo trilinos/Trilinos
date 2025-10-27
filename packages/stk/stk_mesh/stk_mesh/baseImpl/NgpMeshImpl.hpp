@@ -38,6 +38,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/baseImpl/ViewVector.hpp>
 #include <Kokkos_Sort.hpp>
 #include <Kokkos_StdAlgorithms.hpp>
 #include "Kokkos_Core.hpp"
@@ -50,6 +51,9 @@ namespace impl {
 
 struct DevicePartOrdinalLess
 {
+  KOKKOS_DEFAULTED_FUNCTION
+  DevicePartOrdinalLess() = default;
+
   template <typename PartOrdinal>
   KOKKOS_INLINE_FUNCTION
   bool operator()(PartOrdinal const& lhs, PartOrdinal const& rhs) {
@@ -58,7 +62,7 @@ struct DevicePartOrdinalLess
     }
 
     for (unsigned i = 0; i < lhs.extent(0); ++i) {
-      if (lhs(i) < rhs(i)) {
+      if (lhs(i) < rhs(i)) {   // FIXME
         return true;
       }
     }
@@ -95,7 +99,7 @@ struct EntityWrapper
   KOKKOS_INLINE_FUNCTION
   bool operator<(EntityWrapper other) const {
     if (entity == other.entity) {
-      return isForPartInduction == true;
+      return isForPartInduction == false;
     } else {
       return entity < other;
     }
@@ -119,9 +123,11 @@ unsigned get_max_num_parts_per_entity(const MESH_TYPE& ngpMesh, const EntityView
       const stk::mesh::FastMeshIndex entityIdx = ngpMesh.device_mesh_index(entities(i));
       const BucketType& bucket = ngpMesh.get_bucket(rank, entityIdx.bucket_id);
       auto partOrdinalsPair = bucket.superset_part_ordinals();
-      lmax = partOrdinalsPair.second - partOrdinalsPair.first;
+      auto numParts = partOrdinalsPair.second - partOrdinalsPair.first;
+      lmax = (numParts > lmax) ? numParts : lmax;
     }, Kokkos::Max<unsigned>(max)
   );
+  Kokkos::fence();
 
   return max;
 }
@@ -256,6 +262,7 @@ template <typename ViewType, typename ExecSpace>
 void sort_and_unique(ViewType& view, ExecSpace const& execSpace)
 {
   Kokkos::sort(view);
+  STK_ThrowAssert(Kokkos::Experimental::is_sorted(ExecSpace{}, view));
   Kokkos::Experimental::unique(execSpace, view);
 }
 
@@ -263,6 +270,8 @@ template <typename ViewType, typename ExecSpace>
 void sort_and_unique_and_resize(ViewType& view, ExecSpace const& execSpace)
 {
   Kokkos::sort(view);
+  STK_ThrowAssert(Kokkos::Experimental::is_sorted(ExecSpace{}, view));
+
   auto newEnd = Kokkos::Experimental::unique(execSpace, view);
   auto begin = Kokkos::Experimental::begin(view);
   size_t newSize = Kokkos::Experimental::distance(begin, newEnd);
@@ -332,11 +341,11 @@ int get_max_num_downward_connected_entities(MeshType const& ngpMesh, EntityViewT
 
 template <typename MeshType, typename EntityViewType, typename WrappedEntityViewType>
 void populate_all_downward_connected_entities_and_wrap_entities(MeshType const& ngpMesh, EntityViewType const& entities,
-                                                                int maxNumDownwardConnectedEntities, WrappedEntityViewType const& wrappedEntities)
+                                                                int entityInterval, WrappedEntityViewType const& wrappedEntities)
 {
   Kokkos::parallel_for(entities.extent(0),
     KOKKOS_LAMBDA(const int i) {
-      auto myStartIdx = i * maxNumDownwardConnectedEntities;
+      auto myStartIdx = i * entityInterval;
       auto myCurrentIdx = myStartIdx;
       auto rank = ngpMesh.entity_rank(entities(i));
       auto fastMeshIdx = ngpMesh.device_mesh_index(entities(i));
@@ -374,6 +383,7 @@ void remove_invalid_entities_sort_unique_and_resize(EntityViewType& wrappedEntit
 
   EntityUViewType uview(wrappedEntities.data(), length);
   Kokkos::sort(uview);
+  STK_ThrowAssert(Kokkos::Experimental::is_sorted(ExecSpace{}, uview));
 
   auto newEnd = Kokkos::Experimental::unique(execSpace, uview);
   auto newBegin = Kokkos::Experimental::begin(uview);
@@ -383,7 +393,6 @@ void remove_invalid_entities_sort_unique_and_resize(EntityViewType& wrappedEntit
   }
 }
 
-// ver 1
 template<typename MeshType, typename WrappedEntityViewType, typename AddPartsViewType, typename RmPartsViewType,
          typename NewPartsViewType, typename PartOrdinalsProxyViewType>
 void set_new_part_list_per_entity_with_induced_parts(const MeshType& ngpMesh,
