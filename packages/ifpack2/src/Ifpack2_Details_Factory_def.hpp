@@ -192,11 +192,9 @@ Factory<SC, LO, GO, NT>::
     // not what you meant!
     prec = rcp(new AdditiveSchwarz<row_matrix_type>(matrix, coordinates));
   } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-                               "Using stream-based RILUK with RCB partitioning on "
-                               "coordinates associated with matrix rows is currently "
-                               "enabled only with Additive Schwarz preconditioner "
-                               "and RILUK as a subdomain solver.");
+    // Only stream-based RILUK with RCB partitioning as a subdomain solver
+    // for an Additive Schwarz preconditioner supports using coordinates
+    prec = Factory<SC, LO, GO, NT>::create(precType, matrix);
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(
