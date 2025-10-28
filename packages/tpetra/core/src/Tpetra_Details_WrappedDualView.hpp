@@ -557,6 +557,18 @@ class WrappedDualView {
     return dualView;
   }
 
+  // Stokhos wants to reinterpret Tpetra MV of Stokhos type as
+  // Tpetra MV of scalar type, we need access to the dualView for that
+ public:
+  DualViewType implGetOriginalDualView() const {
+    return originalDualView;
+  }
+
+  DualViewType implGetDualView() const {
+    return dualView;
+  }
+
+ private:
   template <typename ViewType>
   ViewType getSubview(ViewType view, int offset, int numEntries) const {
     return Kokkos::subview(view, Kokkos::pair<int, int>(offset, offset + numEntries));
