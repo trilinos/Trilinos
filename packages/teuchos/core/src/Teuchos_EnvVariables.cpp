@@ -189,6 +189,8 @@ T idempotentlyGetEnvironmentVariable(
   return value;
 }
 
+template std::string getEnvironmentVariable(const std::string_view environmentVariableName,
+  const std::string defaultValue);
 
 template std::string idempotentlyGetEnvironmentVariable<std::string>(std::string&, bool&, const std::string_view, const std::string);
 template int idempotentlyGetEnvironmentVariable<int>(int&, bool&, const std::string_view, const int);
