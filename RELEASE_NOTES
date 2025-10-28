@@ -1,7 +1,131 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 16.2 Release Notes                               TBD, 2025 #
+#                                                                             #
+###############################################################################
+
+Compadre
+
+  - Update from version 1.5.9 to 1.6.4
+    https://github.com/sandialabs/compadre/wiki/Changelog
+    
+
+Framework:
+
+  - Shadow warnings have been promoted to errors.
+
+  - Trilinos now uses pre-commit to run clang-format and cmake-format.
+    https://github.com/trilinos/Trilinos/pull/14478
+
+
+Galeri:
+
+  - The assembly of example problems was rewritten with Kokkos primitives.
+    https://github.com/trilinos/Trilinos/pull/14120
+    
+
+MueLu
+
+  - New parameters for dropping algorithms were introduced that better
+    map to the growing number of availabble schemes. Old parameters
+    are still valid but will eventually be phased out.
+    https://github.com/trilinos/Trilinos/pull/14113
+    https://github.com/trilinos/Trilinos/pull/14093
+
+  - The MueLu tutorial has been modernized and is now available at
+    https://muelu.github.io/
+    https://github.com/trilinos/Trilinos/pull/14357
+
+  - A new distributed lumping scheme
+    https://github.com/trilinos/Trilinos/pull/14351
+
+
+NOX
+
+  - Nox wrappers for Tpetra MultiVector
+    https://github.com/trilinos/Trilinos/pull/14252
+
+
+Panzer
+
+  - Caching of connectivity information
+    https://github.com/trilinos/Trilinos/pull/14042
+
+
+Teko:
+
+  - The conversion between Teko blocked operators and Tpetra matrices
+    has been significantly improved.
+    https://github.com/trilinos/Trilinos/pull/14476
+
+
+SEACAS
+
+  - Update to v2025-10-14. See:
+    https://github.com/sandialabs/seacas/releases
+
+
+STK
+
+  - See:
+    https://github.com/trilinos/Trilinos/blob/master/packages/stk/CHANGELOG.md
+    
+
+Teuchos
+
+  - MPI communication routines are wrapped in Kokkos Profiling regions.
+    https://github.com/trilinos/Trilinos/pull/14363
+
+  - The CommandLineProcessor can now be used to harvest information
+    about the runtime environment by passing --print-system-info
+    https://github.com/trilinos/Trilinos/pull/14494
+
+
+Tpetra
+
+  - The new "Ialltofewv" communication option obtains speedups for
+    many-to-few communication.  
+    https://github.com/trilinos/Trilinos/pull/14146
+
+  - Tpetra can now leverage communication routines from MPI Advance.
+    https://github.com/trilinos/Trilinos/pull/14169
+
+  - A reordering of steps during data transfer that should avoid
+    unexpected messages can be used by setting the environment
+    variable TPETRA_GRANULAR_TRANSFERS=ON.
+    https://github.com/trilinos/Trilinos/pull/13947
+
+  - The Tpetra assembly examples were updated to better showcase
+    current Kokkos pratices.
+    https://github.com/trilinos/Trilinos/pull/14430
+
+  - Helper routines for the common use case of generating matrices by
+    applying a filter to the entries of another matrix.
+    https://github.com/trilinos/Trilinos/pull/14583
+
+
+Thyra:
+
+  - Solver/preconditioner routines can now directly be used with
+    Tpetra objects without having to wrap them to Thyra.
+    https://github.com/trilinos/Trilinos/pull/14459
+
+
+Zoltan
+
+  - Additional Hilbert Space filling curves
+    https://github.com/trilinos/Trilinos/pull/13880
+
+
+Zoltan2
+
+  - Reverse Cuthill-McKee can now symmetrize the input matrix.
+    https://github.com/trilinos/Trilinos/pull/14584
+    
 
 ###############################################################################
 #                                                                             #
-# Trilinos Release 16.1 Release Notes                               TBD, 2024 #
+# Trilinos Release 16.1 Release Notes                          March 20, 2025 #
 #                                                                             #
 ###############################################################################
 
