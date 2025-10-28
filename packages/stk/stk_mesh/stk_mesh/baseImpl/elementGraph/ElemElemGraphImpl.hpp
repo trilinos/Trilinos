@@ -280,6 +280,13 @@ struct ElementViaSidePair
     int side;
 };
 
+struct ConnectedElementInfo
+{
+    stk::mesh::Entity element;
+    int thisSide;
+    int otherSide;
+};
+
 struct IdViaSidePair
 {
     stk::mesh::EntityId id;

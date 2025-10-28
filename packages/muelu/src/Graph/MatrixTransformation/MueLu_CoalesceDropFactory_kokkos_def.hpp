@@ -271,8 +271,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   using MatrixType        = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using GraphType         = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type = typename MatrixType::local_matrix_type;
-  using local_graph_type  = typename GraphType::local_graph_type;
+  using local_matrix_type = typename MatrixType::local_matrix_device_type;
+  using local_graph_type  = typename GraphType::local_graph_device_type;
   using rowptr_type       = typename local_graph_type::row_map_type::non_const_type;
   using entries_type      = typename local_graph_type::entries_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;
@@ -587,8 +587,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   using MatrixType        = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using GraphType         = Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type = typename MatrixType::local_matrix_type;
-  using local_graph_type  = typename GraphType::local_graph_type;
+  using local_matrix_type = typename MatrixType::local_matrix_device_type;
+  using local_graph_type  = typename GraphType::local_graph_device_type;
   using rowptr_type       = typename local_graph_type::row_map_type::non_const_type;
   using entries_type      = typename local_graph_type::entries_type::non_const_type;
   using values_type       = typename local_matrix_type::values_type::non_const_type;

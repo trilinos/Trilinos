@@ -100,6 +100,25 @@ BucketRepository::~BucketRepository()
   } catch(...) {}
 }
 
+const BucketVector & BucketRepository::buckets( EntityRank rank ) const
+{
+  static const BucketVector emptyBucketVector;
+
+  if( rank < static_cast<EntityRank>(m_buckets.size()) )
+  {
+    if (m_need_sync_from_partitions[rank])
+    {
+      const_cast<BucketRepository *>(this)->sync_from_partitions(rank);
+    }
+
+    return m_buckets[ rank ];
+  }
+  else
+  {
+    return emptyBucketVector;
+  }
+}
+
 void BucketRepository::set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool needsSorting)
 {
     bucket.getPartition()->set_flag_needs_to_be_sorted(needsSorting);

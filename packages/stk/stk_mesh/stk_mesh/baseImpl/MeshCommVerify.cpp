@@ -43,6 +43,7 @@
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/baseImpl/EntityCommHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshCommImplUtils.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/check_comm_list.hpp>

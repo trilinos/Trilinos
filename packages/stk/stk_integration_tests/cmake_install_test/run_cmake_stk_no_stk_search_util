@@ -1,0 +1,44 @@
+#!/bin/bash
+
+trilinos_src_dir=${TRILINOS_DIR:-${PWD}/../Trilinos}
+fortran_macro=${FORTRAN_MACRO:-FORTRAN_ONE_UNDERSCORE}
+cmake_cxx_flags=${CMAKE_CXX_FLAGS}
+build_dir=${BUILD_DIR:-${PWD}}
+build_type=${CMAKE_BUILD_TYPE:-release}
+trilinos_install_dir=${TRILINOS_INSTALL_DIR:-${PWD}/../trilinos_install_dir}
+
+printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
+printf "BUILD_DIR=${build_dir}\n";
+printf "CMAKE_BUILD_TYPE=${build_type}\n";
+printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
+printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk_no_stk_mesh'\n\n";
+
+cd ${build_dir}
+
+mkdir -p $trilinos_install_dir
+
+# Cleanup old cache before we configure
+rm -rf CMakeFiles CMakeCache.txt
+
+cmake \
+-DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
+-DCMAKE_BUILD_TYPE=${build_type^^} \
+-DCMAKE_CXX_STANDARD:STRING=17 \
+-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-DTrilinos_ENABLE_TESTS:BOOL=ON \
+-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
+-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
+-DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
+-DTPL_ENABLE_MPI=ON \
+-DTrilinos_ENABLE_Fortran:BOOL=ON \
+-DTPL_ENABLE_BLAS=ON \
+-DTPL_ENABLE_LAPACK=ON \
+-DSTK_ENABLE_TESTS:BOOL=ON \
+-DTrilinos_ENABLE_STK:BOOL=ON \
+-DTrilinos_ENABLE_STKSearchUtil:BOOL=OFF \
+-DTrilinos_ENABLE_STKUnit_tests:BOOL=OFF \
+-DTrilinos_ENABLE_STKDoc_tests:BOOL=OFF \
+-DTrilinos_ENABLE_Gtest:BOOL=ON \
+-DCMAKE_CXX_FLAGS:STRING="-D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
+${trilinos_src_dir}/
+

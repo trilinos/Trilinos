@@ -86,9 +86,7 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
   /// \param A [in] The CrsMatrix to wrap as an
   ///   <tt>Operator<Scalar, ...></tt>.
   CrsMatrixMultiplyOp(const Teuchos::RCP<const crs_matrix_type>& A)
-    : matrix_(A)
-    , localMultiply_(std::make_shared<local_matrix_device_type>(
-          A->getLocalMatrixDevice())) {}
+    : matrix_(A) {}
 
   //! Destructor (virtual for memory safety of derived classes).
   ~CrsMatrixMultiplyOp() override = default;
@@ -142,11 +140,12 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
  protected:
   typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
 
+  using local_matrix_op_t =
+      LocalCrsMatrixOperator<Scalar, MatScalar,
+                             typename crs_matrix_type::device_type>;
+
   //! The underlying CrsMatrix object.
   const Teuchos::RCP<const crs_matrix_type> matrix_;
-
-  //! Implementation of local sparse matrix-vector multiply.
-  LocalCrsMatrixOperator<Scalar, MatScalar, typename crs_matrix_type::device_type> localMultiply_;
 
   /// \brief Column Map MultiVector used in apply().
   ///
@@ -244,13 +243,15 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
 
     auto X_lcl = X->getLocalViewDevice(Access::ReadOnly);
 
+    auto localMultiply = local_matrix_op_t(std::make_shared<local_matrix_device_type>(matrix_->getLocalMatrixDevice()));
+
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
     // We will compute solution into the to-be-exported MV; get a view
     if (importer != null) {
       // Beta is zero here, so we clobber Y_lcl
       auto Y_lcl = importMV_->getLocalViewDevice(Access::OverwriteAll);
 
-      localMultiply_.apply(X_lcl, Y_lcl, mode, alpha, STS::zero());
+      localMultiply.apply(X_lcl, Y_lcl, mode, alpha, STS::zero());
       if (Y_is_overwritten) {
         Y_in.putScalar(STS::zero());
       } else {
@@ -270,7 +271,7 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
         else
           Y_lcl = Y.getLocalViewDevice(Access::ReadWrite);
 
-        localMultiply_.apply(X_lcl, Y_lcl, mode, alpha, beta);
+        localMultiply.apply(X_lcl, Y_lcl, mode, alpha, beta);
         Tpetra::deep_copy(Y_in, Y);
       } else {
         nonconst_view_type Y_lcl;
@@ -279,7 +280,7 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
         else
           Y_lcl = Y_in.getLocalViewDevice(Access::ReadWrite);
 
-        localMultiply_.apply(X_lcl, Y_lcl, mode, alpha, beta);
+        localMultiply.apply(X_lcl, Y_lcl, mode, alpha, beta);
       }
     }
     // Handle case of rangemap being a local replicated map: in this case, sum contributions from each processor
@@ -349,7 +350,7 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
 
     // Temporary MV for Import operation.  After the block of code
     // below, this will be an (Imported if necessary) column Map MV
-    // ready to give to localMultiply_.apply(...).
+    // ready to give to localMultiply.apply(...).
     RCP<const MV> X_colMap;
     if (importer.is_null()) {
       if (!X_in.isConstantStride()) {
@@ -387,7 +388,8 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
     // Export is trivial (null).
     RCP<MV> Y_rowMap = getRowMapMultiVector(Y_in);
 
-    auto X_lcl = X_colMap->getLocalViewDevice(Access::ReadOnly);
+    auto X_lcl         = X_colMap->getLocalViewDevice(Access::ReadOnly);
+    auto localMultiply = local_matrix_op_t(std::make_shared<local_matrix_device_type>(matrix_->getLocalMatrixDevice()));
 
     // If we have a nontrivial Export object, we must perform an
     // Export.  In that case, the local multiply result will go into
@@ -397,8 +399,8 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
     if (!exporter.is_null()) {
       auto Y_lcl = Y_rowMap->getLocalViewDevice(Access::OverwriteAll);
 
-      localMultiply_.apply(X_lcl, Y_lcl, NO_TRANS,
-                           alpha, STS::zero());
+      localMultiply.apply(X_lcl, Y_lcl, NO_TRANS,
+                          alpha, STS::zero());
       {
         ProfilingRegion regionExport("Tpetra::CrsMatrixMultiplyOp::apply: Export");
 
@@ -444,7 +446,7 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
         else
           Y_lcl = Y_rowMap->getLocalViewDevice(Access::ReadWrite);
 
-        localMultiply_.apply(X_lcl, Y_lcl, NO_TRANS, alpha, beta);
+        localMultiply.apply(X_lcl, Y_lcl, NO_TRANS, alpha, beta);
         Tpetra::deep_copy(Y_in, *Y_rowMap);
       } else {
         nonconst_view_type Y_lcl;
@@ -453,7 +455,7 @@ class CrsMatrixMultiplyOp : public Operator<Scalar, LocalOrdinal, GlobalOrdinal,
         else
           Y_lcl = Y_in.getLocalViewDevice(Access::ReadWrite);
 
-        localMultiply_.apply(X_lcl, Y_lcl, NO_TRANS, alpha, beta);
+        localMultiply.apply(X_lcl, Y_lcl, NO_TRANS, alpha, beta);
       }
     }
 

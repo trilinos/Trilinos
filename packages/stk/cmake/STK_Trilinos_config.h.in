@@ -36,6 +36,8 @@
 
 #cmakedefine STK_SHOW_DEPRECATED_WARNINGS
 
+#cmakedefine STK_HIDE_DEPRECATED_CODE
+
 #cmakedefine STK_DISABLE_MPI_NEIGHBOR_COMM
 
 #cmakedefine STK_HAVE_BOOST
@@ -47,6 +49,9 @@
 #cmakedefine STK_HAVE_STKIO
 
 #cmakedefine STK_HAVE_STKNGP_TEST
+
+#cmakedefine STK_HAVE_STKSEARCHUTIL
+#cmakedefine STK_HAVE_STKTRANSFERUTIL
 
 #cmakedefine STK_HAS_MPI
 

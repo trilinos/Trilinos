@@ -117,7 +117,17 @@ class DisjointSet
         success.second, "Unable to insert key " + std::string(key) + "!  Disjoint node already exists.");
   }
 
-  void fill_set(const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& elementList);
+  template <typename ContainerT>
+  void fill_set(const stk::mesh::BulkData& bulk, const ContainerT& elementList)
+  {
+    for (const auto& elem : elementList) {
+      auto elemNodes = bulk.get_connected_entities(elem, stk::topology::NODE_RANK);
+      for (auto n = 0U; n < elemNodes.size(); ++n) {
+        insert(NodeElemKey(elemNodes[n], elem));
+      }
+    }
+    set_first_node_ids(bulk);
+  }
   void fill_set(const stk::mesh::BulkData& bulk, const stk::mesh::Selector& selector);
   void set_first_node_ids(const stk::mesh::BulkData& bulk);
 

@@ -287,8 +287,13 @@ do_time_fad(const size_t m, const size_t n, const size_t p, const size_t nloop,
   // FadType a(p, 1.0);
   // for (size_t k=0; k<p; ++k)
   //   a.fastAccessDx(k) = 1.0;
+#if KOKKOS_VERSION >= 40799
+  Kokkos::deep_copy(typename ViewTypeA::type(A), 1.0);
+  Kokkos::deep_copy(typename ViewTypeB::type(b), 1.0);
+#else
   Kokkos::deep_copy(typename ViewTypeA::array_type(A), 1.0);
   Kokkos::deep_copy(typename ViewTypeB::array_type(b), 1.0);
+#endif
 
   Kokkos::Timer wall_clock;
   Perf perf;
@@ -310,9 +315,15 @@ do_time_fad(const size_t m, const size_t n, const size_t p, const size_t nloop,
 // FIXME: this needs a new way of getting a flattened Kokkos::View from FadView
 #if !defined(SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
   if (check) {
+#if KOKKOS_VERSION >= 40799
+    typename ViewTypeA::type A_flat = A;
+    typename ViewTypeB::type b_flat = b;
+    typename ViewTypeC::type c_flat = c;
+#else
     typename ViewTypeA::array_type A_flat = A;
     typename ViewTypeB::array_type b_flat = b;
     typename ViewTypeC::array_type c_flat = c;
+#endif
     check_deriv(A_flat, b_flat, c_flat);
   }
 #endif
@@ -343,8 +354,13 @@ do_time_scratch(const size_t m, const size_t n, const size_t p, const size_t nlo
   // FadType a(p, 1.0);
   // for (size_t k=0; k<p; ++k)
   //   a.fastAccessDx(k) = 1.0;
+#if KOKKOS_VERSION >= 40799
+  Kokkos::deep_copy(typename ViewTypeA::type(A), 1.0);
+  Kokkos::deep_copy(typename ViewTypeB::type(b), 1.0);
+#else
   Kokkos::deep_copy(typename ViewTypeA::array_type(A), 1.0);
   Kokkos::deep_copy(typename ViewTypeB::array_type(b), 1.0);
+#endif
 
   Kokkos::Timer wall_clock;
   Perf perf;
@@ -366,9 +382,15 @@ do_time_scratch(const size_t m, const size_t n, const size_t p, const size_t nlo
 // FIXME: this needs a new way of getting a flattened Kokkos::View from FadView
 #if !defined(SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(SACADO_HAS_NEW_KOKKOS_VIEW_IMPL)
   if (check) {
+#if KOKKOS_VERSION >= 40799
+    typename ViewTypeA::type A_flat = A;
+    typename ViewTypeB::type b_flat = b;
+    typename ViewTypeC::type c_flat = c;
+#else
     typename ViewTypeA::array_type A_flat = A;
     typename ViewTypeB::array_type b_flat = b;
     typename ViewTypeC::array_type c_flat = c;
+#endif
     check_deriv(A_flat, b_flat, c_flat);
   }
 #endif

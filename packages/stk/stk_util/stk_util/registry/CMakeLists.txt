@@ -48,12 +48,26 @@ ELSE()
   add_library(stk_util_registry ${SOURCES})
 
   target_link_libraries(stk_util_registry PUBLIC stk_util_env)
+
+  execute_process(
+      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/stk_version_gen.sh
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      OUTPUT_VARIABLE  SIERRA_VERSION
+      RESULT_VARIABLE RESULT_CODE
+      ERROR_VARIABLE ERROR_OUTPUT
+  )
+  if (NOT RESULT_CODE EQUAL 0)
+      message(FATAL_ERROR "Command failed with code ${RESULT_CODE}: ${ERROR_OUTPUT}")
+  endif()
+  
+  target_compile_definitions(stk_util_registry PUBLIC STK_VERSION_STRING="${SIERRA_VERSION}")
 ENDIF()
 
 target_include_directories(stk_util_registry PUBLIC
   $<BUILD_INTERFACE:${STK_TOPLEVEL_SOURCE_DIR}/stk_util>
   $<INSTALL_INTERFACE:include>
 )
+
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util/registry/)

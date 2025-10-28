@@ -235,7 +235,13 @@ TEST_F(NgpMeshHostDevice, host_mesh_host_space)
 
   if constexpr(isCPUbuild) {
     auto ngpMeshIsHostMesh = stk::mesh::get_updated_ngp_mesh<stk::ngp::HostMemSpace>(get_bulk());
+#if defined(STK_USE_DEVICE_MESH) && defined(STK_ENABLE_GPU)
     ASSERT_TRUE((std::is_same_v<decltype(ngpMeshIsHostMesh),stk::mesh::HostMesh>));
+#elif defined(STK_USE_DEVICE_MESH)
+    ASSERT_TRUE((std::is_same_v<decltype(ngpMeshIsHostMesh),stk::mesh::DeviceMesh>));
+#else
+    ASSERT_TRUE((std::is_same_v<decltype(ngpMeshIsHostMesh),stk::mesh::HostMesh>));
+#endif
   }
   else {
     auto ngpMeshIsDeviceMesh = stk::mesh::get_updated_ngp_mesh<stk::ngp::MemSpace>(get_bulk());
@@ -492,7 +498,7 @@ TEST(NgpDeviceMesh, dont_let_stacksize_get_out_of_control)
   constexpr size_t expectedBucketSize = 976;
   EXPECT_NEAR(expectedBucketSize, sizeof(stk::mesh::Bucket), tol);
 
-  constexpr size_t expectedDeviceMeshSize = 1096;
+  constexpr size_t expectedDeviceMeshSize = 920;
   EXPECT_NEAR(expectedDeviceMeshSize, sizeof(stk::mesh::DeviceMesh), tol);
 
   constexpr size_t expectedDeviceBucketSize = 264;

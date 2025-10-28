@@ -55,6 +55,7 @@
 #include "stk_util/util/StkNgpVector.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 
+#include "stk_mesh/baseImpl/DeviceMeshViewVector.hpp"
 #include "stk_mesh/baseImpl/Partition.hpp"
 #include "stk_mesh/baseImpl/NgpMeshHostData.hpp"
 #include "stk_mesh/base/DeviceBucket.hpp"
@@ -156,19 +157,19 @@ public:
   stk::mesh::Entity get_entity(stk::mesh::EntityRank rank,
                                const stk::mesh::FastMeshIndex& meshIndex) const
   {
-    return m_deviceBucketRepo.m_buckets[rank](meshIndex.bucket_id)[meshIndex.bucket_ord];
+    return m_deviceBucketRepo.m_buckets[rank][meshIndex.bucket_id][meshIndex.bucket_ord];
   }
 
   KOKKOS_FUNCTION
   ConnectedEntities get_connected_entities(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex, stk::mesh::EntityRank connectedRank) const
   {
-    return m_deviceBucketRepo.m_buckets[rank](entityIndex.bucket_id).get_connected_entities(entityIndex.bucket_ord, connectedRank);
+    return m_deviceBucketRepo.m_buckets[rank][entityIndex.bucket_id].get_connected_entities(entityIndex.bucket_ord, connectedRank);
   }
 
   KOKKOS_FUNCTION
   ConnectedNodes get_nodes(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex) const
   {
-    return m_deviceBucketRepo.m_buckets[rank](entityIndex.bucket_id).get_nodes(entityIndex.bucket_ord);
+    return m_deviceBucketRepo.m_buckets[rank][entityIndex.bucket_id].get_nodes(entityIndex.bucket_ord);
   }
 
   KOKKOS_FUNCTION
@@ -192,7 +193,7 @@ public:
   KOKKOS_FUNCTION
   ConnectedOrdinals get_connected_ordinals(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex, stk::mesh::EntityRank connectedRank) const
   {
-    return m_deviceBucketRepo.m_buckets[rank](entityIndex.bucket_id).get_connected_ordinals(entityIndex.bucket_ord, connectedRank);
+    return m_deviceBucketRepo.m_buckets[rank][entityIndex.bucket_id].get_connected_ordinals(entityIndex.bucket_ord, connectedRank);
   }
 
   KOKKOS_FUNCTION
@@ -222,7 +223,7 @@ public:
   KOKKOS_FUNCTION
   Permutations get_permutations(stk::mesh::EntityRank rank, const stk::mesh::FastMeshIndex &entityIndex, stk::mesh::EntityRank connectedRank) const
   {
-    return m_deviceBucketRepo.m_buckets[rank](entityIndex.bucket_id).get_connected_permutations(entityIndex.bucket_ord, connectedRank);
+    return m_deviceBucketRepo.m_buckets[rank][entityIndex.bucket_id].get_connected_permutations(entityIndex.bucket_ord, connectedRank);
   }
 
   KOKKOS_FUNCTION
@@ -275,8 +276,8 @@ public:
   KOKKOS_FUNCTION
   const DeviceBucketT<NgpMemSpace> &get_bucket(stk::mesh::EntityRank rank, unsigned index) const
   {
-    m_deviceBucketRepo.m_buckets[rank](index).m_owningMesh = this;
-    return m_deviceBucketRepo.m_buckets[rank](index);
+    m_deviceBucketRepo.m_buckets[rank][index].m_owningMesh = this;
+    return m_deviceBucketRepo.m_buckets[rank][index];
   }
 
   KOKKOS_FUNCTION
@@ -326,13 +327,12 @@ public:
                                  const Kokkos::View<stk::mesh::PartOrdinal*, AddPartParams...>& addPartOrdinals,
                                  const Kokkos::View<stk::mesh::PartOrdinal*, RemovePartParams...>& removePartOrdinals)
   {
-#ifdef USE_IMPL_DEVICE_MESH_MOD
-    impl_batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals);
-    m_needSyncToHost = true;
-#else
     using EntitiesMemorySpace = typename std::remove_reference<decltype(entities)>::type::memory_space;
     using AddPartOrdinalsMemorySpace = typename std::remove_reference<decltype(addPartOrdinals)>::type::memory_space;
     using RemovePartOrdinalsMemorySpace = typename std::remove_reference<decltype(removePartOrdinals)>::type::memory_space;
+    using HostEntitiesType = typename std::remove_reference<decltype(entities)>::type::host_mirror_type;
+    using HostAddPartOrdinalsType = typename std::remove_reference<decltype(addPartOrdinals)>::type::host_mirror_type;
+    using HostRemovePartOrdinalsType = typename std::remove_reference<decltype(removePartOrdinals)>::type::host_mirror_type;
 
     static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, EntitiesMemorySpace>::accessible,
                   "The memory space of the 'entities' View is inaccessible from the DeviceMesh execution space");
@@ -341,10 +341,17 @@ public:
     static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, RemovePartOrdinalsMemorySpace>::accessible,
                   "The memory space of the 'removePartOrdinals' View is inaccessible from the DeviceMesh execution space");
 
-    using HostEntitiesType = typename std::remove_reference<decltype(entities)>::type::host_mirror_type;
-    using HostAddPartOrdinalsType = typename std::remove_reference<decltype(addPartOrdinals)>::type::host_mirror_type;
-    using HostRemovePartOrdinalsType = typename std::remove_reference<decltype(removePartOrdinals)>::type::host_mirror_type;
+#ifdef USE_IMPL_DEVICE_MESH_MOD
+    bool hasRankedPart = impl::has_ranked_part(get_device_bucket_repository(), addPartOrdinals, removePartOrdinals);
 
+    if (!hasRankedPart) {
+      impl_batch_change_entity_parts(entities, addPartOrdinals, removePartOrdinals);
+    } else {
+      impl_batch_change_entity_parts_with_inducible_parts(entities, addPartOrdinals, removePartOrdinals);
+    }
+
+    m_needSyncToHost = true;
+#else
     HostEntitiesType copiedEntities = Kokkos::create_mirror_view(entities);
     HostAddPartOrdinalsType copiedAddPartOrdinals = Kokkos::create_mirror_view(addPartOrdinals);
     HostRemovePartOrdinalsType copiedRemovePartOrdinals = Kokkos::create_mirror_view(removePartOrdinals);
@@ -406,18 +413,12 @@ public:
                                  const Kokkos::View<stk::mesh::PartOrdinal*, AddPartParams...>& addPartOrdinals,
                                  const Kokkos::View<stk::mesh::PartOrdinal*, RemovePartParams...>& removePartOrdinals)
   {
-    using EntitiesMemorySpace = typename std::remove_reference<decltype(entities)>::type::memory_space;
-    using AddPartOrdinalsMemorySpace = typename std::remove_reference<decltype(addPartOrdinals)>::type::memory_space;
-    using RemovePartOrdinalsMemorySpace = typename std::remove_reference<decltype(removePartOrdinals)>::type::memory_space;
-
-    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, EntitiesMemorySpace>::accessible,
-                  "The memory space of the 'entities' View is inaccessible from the DeviceMesh execution space");
-    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, AddPartOrdinalsMemorySpace>::accessible,
-                  "The memory space of the 'addPartOrdinals' View is inaccessible from the DeviceMesh execution space");
-    static_assert(Kokkos::SpaceAccessibility<MeshExecSpace, RemovePartOrdinalsMemorySpace>::accessible,
-                  "The memory space of the 'removePartOrdinals' View is inaccessible from the DeviceMesh execution space");
-
     using PartOrdinalsViewType = typename std::remove_reference<decltype(addPartOrdinals)>::type;
+
+#ifndef NDEBUG
+    check_parts_are_not_internal(addPartOrdinals, removePartOrdinals);
+#endif
+
     const unsigned maxCurrentNumPartsPerEntity = impl::get_max_num_parts_per_entity(*this, entities);
     const unsigned maxNewNumPartsPerEntity = maxCurrentNumPartsPerEntity + addPartOrdinals.size();
 
@@ -433,13 +434,7 @@ public:
     PartOrdinalsProxyViewType copiedPartOrdinalsProxy(Kokkos::view_alloc(Kokkos::WithoutInitializing, "copiedPartOrdinalsProxy"), entities.size());
     Kokkos::deep_copy(copiedPartOrdinalsProxy, partOrdinalsProxy);
 
-    Kokkos::sort(partOrdinalsProxy);
-    auto newEnd = Kokkos::Experimental::unique(MeshExecSpace{}, partOrdinalsProxy);
-    auto begin = Kokkos::Experimental::begin(partOrdinalsProxy);
-    size_t newSize = Kokkos::Experimental::distance(begin, newEnd);
-    if (newSize != partOrdinalsProxy.size()) {
-      Kokkos::resize(partOrdinalsProxy, newSize);
-    }
+    impl::sort_and_unique_and_resize(partOrdinalsProxy, MeshExecSpace{});
     Kokkos::fence();
 
     m_deviceBucketRepo.batch_create_partitions(partOrdinalsProxy);
@@ -450,6 +445,61 @@ public:
     m_deviceBucketRepo.batch_get_partitions(entities, copiedPartOrdinalsProxy, srcDestPartitions);
 
     m_deviceBucketRepo.batch_move_entities(entities, srcDestPartitions);
+
+    m_deviceBucketRepo.sync_from_partitions();
+
+    Kokkos::fence();
+  }
+
+  template <typename... EntitiesParams, typename... AddPartParams, typename... RemovePartParams>
+  void impl_batch_change_entity_parts_with_inducible_parts(const Kokkos::View<stk::mesh::Entity*, EntitiesParams...>& entities,
+                                                           const Kokkos::View<stk::mesh::PartOrdinal*, AddPartParams...>& addPartOrdinals,
+                                                           const Kokkos::View<stk::mesh::PartOrdinal*, RemovePartParams...>& removePartOrdinals)
+  {
+    using PartOrdinalsViewType = typename std::remove_reference<decltype(addPartOrdinals)>::type;
+    using EntityWrapperViewType = Kokkos::View<impl::EntityWrapper*>;
+
+#ifndef NDEBUG
+    check_parts_are_not_internal(addPartOrdinals, removePartOrdinals);
+#endif
+
+    Kokkos::Profiling::pushRegion("construct_part_ordinal_proxy");
+    auto maxNumDownwardConnectedEntities = impl::get_max_num_downward_connected_entities(*this, entities);
+    auto entityInterval = maxNumDownwardConnectedEntities + 1;
+    auto maxNumEntitiesForInducingParts = entityInterval * entities.extent(0);
+  
+    EntityWrapperViewType wrappedEntities(Kokkos::view_alloc("wrappedEntities"), maxNumEntitiesForInducingParts);
+    impl::populate_all_downward_connected_entities_and_wrap_entities(*this, entities, entityInterval, wrappedEntities);
+    impl::remove_invalid_entities_sort_unique_and_resize(wrappedEntities, MeshExecSpace{});
+
+    // determine resulting parts per entity including inducible parts
+    const unsigned maxCurrentNumPartsPerEntity = impl::get_max_num_parts_per_entity(*this, wrappedEntities);
+    const unsigned maxNewNumPartsPerEntity = maxCurrentNumPartsPerEntity + addPartOrdinals.size();
+
+    PartOrdinalsViewType newPartOrdinalsPerEntity("newPartOrdinals", wrappedEntities.size() * maxNewNumPartsPerEntity);
+    PartOrdinalsViewType sortedAddPartOrdinals = impl::get_sorted_view(addPartOrdinals);
+
+    // create part ordinals proxy, sort and unique it (and realloc)
+    // A proxy indices view to part ordinals: (rank, startPtr, length)
+    using PartOrdinalsProxyViewType = Kokkos::View<impl::PartOrdinalsProxyIndices*>;
+    PartOrdinalsProxyViewType partOrdinalsProxy(Kokkos::view_alloc("partOrdinalsProxy", Kokkos::WithoutInitializing), wrappedEntities.size());
+    impl::set_new_part_list_per_entity_with_induced_parts(*this, wrappedEntities, sortedAddPartOrdinals, removePartOrdinals,
+                                                          maxNewNumPartsPerEntity, newPartOrdinalsPerEntity, partOrdinalsProxy);
+
+    PartOrdinalsProxyViewType copiedPartOrdinalsProxy(Kokkos::view_alloc(Kokkos::WithoutInitializing, "copiedPartOrdinalsProxy"), wrappedEntities.size());
+    Kokkos::deep_copy(copiedPartOrdinalsProxy, partOrdinalsProxy);
+
+    impl::sort_and_unique_and_resize(partOrdinalsProxy, MeshExecSpace{});
+    Kokkos::fence();
+
+    m_deviceBucketRepo.batch_create_partitions(partOrdinalsProxy);
+
+    UnsignedPairViewType<NgpMemSpace> srcDestPartitions("srcDestPartitionIdPerEntity", wrappedEntities.size());
+    Kokkos::Experimental::fill(MeshExecSpace{}, srcDestPartitions, Kokkos::pair{INVALID_PARTITION_ID, INVALID_PARTITION_ID});
+
+    m_deviceBucketRepo.batch_get_partitions(wrappedEntities, copiedPartOrdinalsProxy, srcDestPartitions);
+
+    m_deviceBucketRepo.batch_move_entities(wrappedEntities, srcDestPartitions);
 
     m_deviceBucketRepo.sync_from_partitions();
 
@@ -486,6 +536,9 @@ public:
     return bulk->should_sort_buckets_by_first_entity_identifier();
   }
 
+  template <typename AddPartOrdinalsViewType, typename RemovePartOrdinalsViewType>
+  void check_parts_are_not_internal(AddPartOrdinalsViewType const& addPartOrdinals, RemovePartOrdinalsViewType const& removePartOrdinals);
+
 private:
   void set_entity_keys(const stk::mesh::BulkData& bulk_in);
 
@@ -502,6 +555,10 @@ private:
   void copy_volatile_fast_shared_comm_map_to_device();
 
   void update_field_data_manager(const stk::mesh::BulkData& bulk_in);
+
+  void update_last_internal_part_ordinal() {
+    m_deviceBucketRepo.update_last_internal_part_ordinal();
+  }
 
   using BucketView = Kokkos::View<DeviceBucketT<NgpMemSpace>*, stk::ngp::UVMMemSpace>;
   stk::mesh::BulkData* bulk;
@@ -577,6 +634,8 @@ void DeviceMeshT<NgpMemSpace>::update_mesh()
 
     update_field_data_manager(*bulk);
 
+    update_last_internal_part_ordinal();
+
     Kokkos::Profiling::popRegion();
   }
 
@@ -595,8 +654,6 @@ bool DeviceMeshT<NgpMemSpace>::fill_buckets(const stk::mesh::BulkData& bulk_in)
     auto& hostPartitions = bulk_in.m_bucket_repository.m_partitions[rank];
     m_deviceBucketRepo.copy_buckets_and_partitions_from_host(rank, hostBuckets, hostPartitions, anyBucketChanges);
   }
-  m_deviceBucketRepo.sync_num_buckets_host_to_device();
-  m_deviceBucketRepo.sync_num_partitions_host_to_device();
   Kokkos::Profiling::popRegion();
 
   return anyBucketChanges;
@@ -680,10 +737,45 @@ void DeviceMeshT<NgpMemSpace>::copy_volatile_fast_shared_comm_map_to_device()
 template<typename NgpMemSpace>
 void DeviceMeshT<NgpMemSpace>::update_field_data_manager(const stk::mesh::BulkData& bulk_in)
 {
-  DeviceFieldDataManagerBase* deviceFieldDataManagerBase = bulk_in.get_device_field_data_manager<NgpMemSpace>();
-  STK_ThrowRequire(deviceFieldDataManagerBase != nullptr);
+  if constexpr (std::is_same_v<NgpMemSpace, stk::ngp::DeviceSpace::mem_space>) {
+    DeviceFieldDataManagerBase* deviceFieldDataManagerBase = bulk_in.get_device_field_data_manager<stk::ngp::DeviceSpace>();
+    STK_ThrowRequire(deviceFieldDataManagerBase != nullptr);
+    deviceFieldDataManagerBase->update_all_bucket_allocations();
+  }
+  else if constexpr (std::is_same_v<NgpMemSpace, stk::ngp::UVMDeviceSpace::mem_space>) {
+    DeviceFieldDataManagerBase* deviceFieldDataManagerBase = bulk_in.get_device_field_data_manager<stk::ngp::UVMDeviceSpace>();
+    STK_ThrowRequire(deviceFieldDataManagerBase != nullptr);
+    deviceFieldDataManagerBase->update_all_bucket_allocations();
+  }
+  else if constexpr (std::is_same_v<NgpMemSpace, stk::ngp::HostPinnedDeviceSpace::mem_space>) {
+    DeviceFieldDataManagerBase* deviceFieldDataManagerBase = bulk_in.get_device_field_data_manager<stk::ngp::HostPinnedDeviceSpace>();
+    STK_ThrowRequire(deviceFieldDataManagerBase != nullptr);
+    deviceFieldDataManagerBase->update_all_bucket_allocations();
+  }
+  else {
+    STK_ThrowErrorMsg("Requested a DeviceFieldDataManager from a DeviceMesh with an unsupported MemorySpace: " <<
+                      typeid(NgpMemSpace).name());
+  }
+}
 
-  deviceFieldDataManagerBase->update_all_bucket_allocations();
+template<typename NgpMemSpace>
+template <typename AddPartOrdinalsViewType, typename RemovePartOrdinalsViewType>
+void DeviceMeshT<NgpMemSpace>::check_parts_are_not_internal(AddPartOrdinalsViewType const& addPartOrdinals,
+                                                            RemovePartOrdinalsViewType const& removePartOrdinals)
+{
+  Kokkos::parallel_for(addPartOrdinals.extent(0),
+    KOKKOS_CLASS_LAMBDA(const int i) {
+      if (m_deviceBucketRepo.is_internal_part(addPartOrdinals(i)))
+        Kokkos::abort("Cannot add an internal part.\n");
+    }
+  );
+
+  Kokkos::parallel_for(removePartOrdinals.extent(0),
+    KOKKOS_CLASS_LAMBDA(const int i) {
+      if (m_deviceBucketRepo.is_internal_part(removePartOrdinals(i)))
+        Kokkos::abort("Cannot remove an internal part.\n");
+    }
+  );
 }
 
 }

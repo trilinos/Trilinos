@@ -14,6 +14,10 @@
 
 namespace Teuchos {
 
+template <typename T>
+T getEnvironmentVariable(const std::string_view environmentVariableName,
+                         const T defaultValue);
+
 bool idempotentlyGetNamedEnvironmentVariableAsBool(
     const char name[], bool &initialized, const char environmentVariableName[],
     const bool defaultValue);

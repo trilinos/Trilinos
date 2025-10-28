@@ -35,6 +35,7 @@
 #ifndef STK_MESH_BASE_FIELDBLAS_HPP
 #define STK_MESH_BASE_FIELDBLAS_HPP
 
+#include <stk_util/stk_config.h>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Selector.hpp>
@@ -49,11 +50,6 @@
 #include <string>
 #include <algorithm>
 #include <type_traits>
-
-#if defined(_OPENMP)
-#include <omp.h>
-#define STK_USE_OPENMP  // Guard our pragmas to avoid unknown-pragma warnings-as-errors
-#endif
 
 namespace stk {
 namespace mesh {
@@ -1032,23 +1028,23 @@ void field_axpy(T alpha, const FieldBase& xField, const FieldBase& yField, const
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
   if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
   }
   else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
   }
   else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
   }
   else if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
   }
   else {
@@ -1080,23 +1076,23 @@ void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yFie
 
   if ( beta == T(1) ) {
     if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
       FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
     }
     else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
       FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
     }
     else if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
       FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
     }
     else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
       FieldBlasImpl<T>::axpy(buckets, alpha, xData, yData);
     }
     else {
@@ -1106,23 +1102,23 @@ void field_axpby(T alpha, const FieldBase& xField, T beta, const FieldBase& yFie
   }
   else {
     if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
       FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
     }
     else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
       FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
     }
     else if (xField.host_data_layout() == Layout::Right && yField.host_data_layout() == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
       FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
     }
     else if (xField.host_data_layout() == Layout::Left && yField.host_data_layout() == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+      auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
       FieldBlasImpl<T>::axpby(buckets, alpha, xData, beta, yData);
     }
     else {
@@ -1159,51 +1155,51 @@ void field_product(const FieldBase& xField, const FieldBase& yField, const Field
   const stk::mesh::Layout zLayout = zField.host_data_layout();
 
   if (xLayout == Layout::Right && yLayout == Layout::Right && zLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::product(buckets, xData, yData, zData);
   }
   else if (xLayout == Layout::Right && yLayout == Layout::Right && zLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::product(buckets, xData, yData, zData);
   }
   else if (xLayout == Layout::Right && yLayout == Layout::Left && zLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::product(buckets, xData, yData, zData);
   }
   else if (xLayout == Layout::Right && yLayout == Layout::Left && zLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::product(buckets, xData, yData, zData);
   }
   else if (xLayout == Layout::Left && yLayout == Layout::Right && zLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::product(buckets, xData, yData, zData);
   }
   else if (xLayout == Layout::Left && yLayout == Layout::Right && zLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::product(buckets, xData, yData, zData);
   }
   else if (xLayout == Layout::Left && yLayout == Layout::Left && zLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::product(buckets, xData, yData, zData);
   }
   else if (xLayout == Layout::Left && yLayout == Layout::Left && zLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto yData = yField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto zData = zField.data<T, Unsynchronized,      stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::product(buckets, xData, yData, zData);
   }
   else {
@@ -1300,23 +1296,23 @@ void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector
     const stk::mesh::Layout yLayout = yField.host_data_layout();
 
     if (xLayout == Layout::Right && yLayout == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Right>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+      auto yData = yField.data<T, ReadWrite, stk::ngp::HostSpace, Layout::Right>();
       FieldBlasImpl<T>::copy(buckets, xData, yData);
     }
     else if (xLayout == Layout::Left && yLayout == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Left>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+      auto yData = yField.data<T, ReadWrite, stk::ngp::HostSpace, Layout::Left>();
       FieldBlasImpl<T>::copy(buckets, xData, yData);
     }
     else if (xLayout == Layout::Right && yLayout == Layout::Left) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Left>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
+      auto yData = yField.data<T, ReadWrite, stk::ngp::HostSpace, Layout::Left>();
       FieldBlasImpl<T>::copy(buckets, xData, yData);
     }
     else if (xLayout == Layout::Left && yLayout == Layout::Right) {
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-      auto yData = yField.data<T, ReadWrite, stk::ngp::HostMemSpace, Layout::Right>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
+      auto yData = yField.data<T, ReadWrite, stk::ngp::HostSpace, Layout::Right>();
       FieldBlasImpl<T>::copy(buckets, xData, yData);
     }
 
@@ -1326,8 +1322,8 @@ void field_copy(const FieldBase& xField, const FieldBase& yField, const Selector
     if constexpr (std::is_floating_point_v<T> || std::is_same_v<T, int>) {
       auto ngpMesh = stk::mesh::get_updated_ngp_mesh(xField.get_mesh());
 
-      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::MemSpace>();
-      auto yData = yField.data<T, ReadWrite, stk::ngp::MemSpace>();
+      auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::DeviceSpace>();
+      auto yData = yField.data<T, ReadWrite, stk::ngp::DeviceSpace>();
       LegacyDeviceFieldCopy fieldCopy(xData, yData);
       stk::mesh::for_each_entity_run(ngpMesh, xField.entity_rank(), selector, fieldCopy);
     }
@@ -1560,11 +1556,11 @@ void field_scale(T alpha, const FieldBase& xField, const Selector& selector)
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
   if (xField.host_data_layout() == Layout::Right) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::scale(buckets, alpha, xData);
   }
   else if (xField.host_data_layout() == Layout::Left) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::scale(buckets, alpha, xData);
   }
   else {
@@ -1594,11 +1590,11 @@ void field_fill(T alpha, const FieldBase& xField, const Selector& selector)
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
   if (xField.host_data_layout() == Layout::Right) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::fill(buckets, alpha, xData);
   }
   else if (xField.host_data_layout() == Layout::Left) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::fill(buckets, alpha, xData);
   }
   else {
@@ -1649,11 +1645,11 @@ void field_fill_component(const T* alpha, const FieldBase& xField, const Selecto
   const BucketVector& buckets = xField.get_mesh().get_buckets(xField.entity_rank(), selector);
 
   if (xField.host_data_layout() == Layout::Right) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::fill_component(buckets, alpha, xData);
   }
   else if (xField.host_data_layout() == Layout::Left) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::fill_component(buckets, alpha, xData);
   }
   else {
@@ -1688,23 +1684,23 @@ void field_swap(const FieldBase& xField, const FieldBase& yField, const Selector
   const stk::mesh::Layout yLayout = yField.host_data_layout();
 
   if (xLayout == Layout::Right && yLayout == Layout::Right) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::swap(buckets, xData, yData);
   }
   else if (xLayout == Layout::Left && yLayout == Layout::Left) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::swap(buckets, xData, yData);
   }
   else if (xLayout == Layout::Right && yLayout == Layout::Left) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
     FieldBlasImpl<T>::swap(buckets, xData, yData);
   }
   else if (xLayout == Layout::Left && yLayout == Layout::Right) {
-    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
-    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
+    auto yData = yField.data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
     FieldBlasImpl<T>::swap(buckets, xData, yData);
   }
 }
@@ -1921,11 +1917,11 @@ Entity field_eamax(const FieldBase& xField, const Selector& selector)
   T localMaxValue {};
 
   if (xLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
     localMinMaxInfo = FieldBlasImpl<T>::iamax(buckets, xData, localMaxValue);
   }
   else if (xLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
     localMinMaxInfo = FieldBlasImpl<T>::iamax(buckets, xData, localMaxValue);
   }
   else {
@@ -2099,11 +2095,11 @@ Entity field_eamin(const FieldBase& xField, const Selector& selector)
   T localMinValue {};
 
   if (xLayout == Layout::Right) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Right>();
     localMinMaxInfo = FieldBlasImpl<T>::iamin(buckets, xData, localMinValue);
   }
   else if (xLayout == Layout::Left) {
-    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto xData = xField.data<T, ConstUnsynchronized, stk::ngp::HostSpace, Layout::Left>();
     localMinMaxInfo = FieldBlasImpl<T>::iamin(buckets, xData, localMinValue);
   }
   else {

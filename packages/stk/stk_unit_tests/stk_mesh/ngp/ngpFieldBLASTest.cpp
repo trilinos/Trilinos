@@ -1431,5 +1431,114 @@ TEST_F(NgpFieldBLASNode, field_amax_no_selector)
 }
 
 #endif
+
+
+#ifdef STK_USE_DEVICE_MESH
+
+TEST_F(NgpFieldBLASNode, field_dot_device)
+{
+  if (get_parallel_size() > 2) GTEST_SKIP();
+
+  stk::mesh::Selector selectRule(*stkField1);
+  ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
+  ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func2);
+
+  stkField1->sync_to_device();
+  stkField2->sync_to_device();
+
+  double hostDotVal = 0.0;
+
+  stk::mesh::EntityVector nodes;
+  get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  auto stkField1Data = stkField1->data<stk::mesh::ReadOnly>();
+  auto stkField2Data = stkField2->data<stk::mesh::ReadOnly>();
+  for (auto& n : nodes) {
+    auto myVal1 = stkField1Data.entity_values(n);
+    auto myVal2 = stkField2Data.entity_values(n);
+    for (stk::mesh::ComponentIdx i : myVal1.components()) {
+      hostDotVal += myVal1(i) * myVal2(i);
+    }
+  }
+
+  double globalHostSum = 0.0;
+  stk::all_reduce_sum(get_bulk().parallel(), &hostDotVal, &globalHostSum, 1u);
+
+  double devDotVal = 0.0;
+  stk::mesh::field_dot(devDotVal, get_bulk(), *stkField1, *stkField2, selectRule, stk::ngp::ExecSpace());
+
+  EXPECT_EQ(globalHostSum, devDotVal);
+}
+
+TEST_F(NgpFieldBLASNode, field_dot_host)
+{
+  if (get_parallel_size() > 2) GTEST_SKIP();
+
+  stk::mesh::Selector selectRule(*stkField1);
+  ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
+  ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func2);
+
+  stkField1->sync_to_device();
+  stkField2->sync_to_device();
+
+  double hostDotVal = 0.0;
+
+  stk::mesh::EntityVector nodes;
+  get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  auto stkField1Data = stkField1->data<stk::mesh::ReadOnly>();
+  auto stkField2Data = stkField2->data<stk::mesh::ReadOnly>();
+  for (auto& n : nodes) {
+    auto myVal1 = stkField1Data.entity_values(n);
+    auto myVal2 = stkField2Data.entity_values(n);
+    for (stk::mesh::ComponentIdx i : myVal1.components()) {
+      hostDotVal += myVal1(i) * myVal2(i);
+    }
+  }
+
+  double globalHostSum = hostDotVal;
+  stk::all_reduce_sum(get_bulk().parallel(), &hostDotVal, &globalHostSum, 1u);
+
+  double devDotVal = 0.0;
+  stk::mesh::field_dot(devDotVal, get_bulk(), *stkField1, *stkField2, selectRule, stk::ngp::HostExecSpace());
+
+  EXPECT_EQ(globalHostSum, devDotVal);
+}
+
+#else
+
+TEST_F(NgpFieldBLASNode, field_dot_exec_space)
+{
+  if (get_parallel_size() != 1) GTEST_SKIP();
+
+  stk::mesh::Selector selectRule(*stkField1);
+  ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func1);
+  ngp_field_test_utils::set_field_data_on_host(get_bulk(), *stkField1, selectRule, &func2);
+
+  stkField1->sync_to_device();
+  stkField2->sync_to_device();
+
+  double hostDotVal = 0.0;
+
+  stk::mesh::EntityVector nodes;
+  get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
+  auto stkField1Data = stkField1->data<stk::mesh::ReadOnly>();
+  auto stkField2Data = stkField2->data<stk::mesh::ReadOnly>();
+  for (auto& n : nodes) {
+    auto myVal1 = stkField1Data.entity_values(n);
+    auto myVal2 = stkField2Data.entity_values(n);
+    for (stk::mesh::ComponentIdx i : myVal1.components()) {
+      hostDotVal += myVal1(i) * myVal2(i);
+    }
+  }
+
+  double globalHostSum = 0.0;
+  stk::all_reduce_sum(get_bulk().parallel(), &hostDotVal, &globalHostSum, 1u);
+
+  double devDotVal = 0.0;
+  stk::mesh::field_dot(devDotVal, get_bulk(), *stkField1, *stkField2, selectRule, stk::ngp::ExecSpace());
+
+  EXPECT_EQ(globalHostSum, devDotVal);
+}
+
+#endif
 }
 

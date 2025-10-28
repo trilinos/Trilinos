@@ -480,9 +480,15 @@ void MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   RCP<XpOp> xpPrecOp;
   if (startingOver == true) {
     // Convert to Xpetra
-    std::list<std::string> convertXpetra = {"Coordinates", "Nullspace"};
+    std::list<std::string> convertXpetra = {"Coordinates", "Nullspace", "Material", "BlockNumber"};
     for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
       Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(paramList, *it);
+
+    if (paramList.isSublist("user data")) {
+      auto& userData = paramList.sublist("user data");
+      for (auto it = convertXpetra.begin(); it != convertXpetra.end(); ++it)
+        Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(userData, *it);
+    }
 
     for (int lvlNo = 0; lvlNo < 10; ++lvlNo) {
       if (paramList.isSublist("level " + std::to_string(lvlNo) + " user data")) {

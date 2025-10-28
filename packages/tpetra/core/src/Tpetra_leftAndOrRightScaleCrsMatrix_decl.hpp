@@ -14,12 +14,12 @@
 /// \brief Declaration of Tpetra::leftAndOrRightScaleCrsMatrix
 
 #include "TpetraCore_config.h"
+#include "Kokkos_Core.hpp"
 #if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else
 #include "Kokkos_ArithTraits.hpp"
 #endif
-#include "Kokkos_Core.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
 

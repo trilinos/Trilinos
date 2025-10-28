@@ -635,6 +635,9 @@ class DistObject : virtual public SrcDistObject,
   virtual void
   removeEmptyProcessesInPlace(const Teuchos::RCP<const map_type>& newMap);
 
+  /// \brief Getter for the DistributorActor
+  const Details::DistributorActor& getActor() { return distributorActor_; }
+
   //@}
 
  protected:

@@ -166,7 +166,7 @@ class HostField : public NgpFieldBase
   void set_all(const HostMesh& ngpMesh, const T& value)
   {
 #ifdef STK_UNIFIED_MEMORY  // Layout::Left
-    auto fieldData = m_hostField->data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Left>();
+    auto fieldData = m_hostField->data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Left>();
     stk::mesh::for_each_entity_run(ngpMesh, m_hostField->entity_rank(), *m_hostField,
       [&](const FastMeshIndex& entity) {
         auto entityValues = fieldData.entity_values(entity);
@@ -176,7 +176,7 @@ class HostField : public NgpFieldBase
       }
     );
 #else  // Layout::Right
-    auto fieldData = m_hostField->data<T, Unsynchronized, stk::ngp::HostMemSpace, Layout::Right>();
+    auto fieldData = m_hostField->data<T, Unsynchronized, stk::ngp::HostSpace, Layout::Right>();
     stk::mesh::for_each_entity_run(ngpMesh, m_hostField->entity_rank(), *m_hostField,
       [&](const FastMeshIndex& entity) {
         auto entityValues = fieldData.entity_values(entity);

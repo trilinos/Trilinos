@@ -994,10 +994,10 @@ struct optimalSatisfyConstraintsForScalarPDEsKernel {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SatisfyPConstraints(const RCP<Matrix> A, RCP<Matrix>& P) const {
-  using Device = typename Matrix::local_matrix_type::device_type;
+  using Device = typename Matrix::local_matrix_device_type::device_type;
   LO nPDEs     = A->GetFixedBlockSize();
 
-  using local_mat_type = typename Matrix::local_matrix_type;
+  using local_mat_type = typename Matrix::local_matrix_device_type;
   constraintKernel<local_mat_type> myKernel(nPDEs, P->getLocalMatrixDevice());
   Kokkos::parallel_for("enforce constraint", Kokkos::RangePolicy<typename Device::execution_space>(0, P->getRowMap()->getLocalNumElements()),
                        myKernel);
@@ -1006,10 +1006,10 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SatisfyPConstraints(
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::optimalSatisfyPConstraintsForScalarPDEs(RCP<Matrix>& P) const {
-  using Device = typename Matrix::local_matrix_type::device_type;
+  using Device = typename Matrix::local_matrix_device_type::device_type;
   LO nPDEs     = 1;  // A->GetFixedBlockSize();
 
-  using local_mat_type = typename Matrix::local_matrix_type;
+  using local_mat_type = typename Matrix::local_matrix_device_type;
   optimalSatisfyConstraintsForScalarPDEsKernel<local_mat_type> myKernel(nPDEs, P->getLocalMaxNumRowEntries(), P->getLocalMatrixDevice());
   Kokkos::parallel_for("enforce constraint", Kokkos::RangePolicy<typename Device::execution_space>(0, P->getLocalNumRows()),
                        myKernel);

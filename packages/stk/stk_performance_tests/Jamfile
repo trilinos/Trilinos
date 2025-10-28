@@ -44,7 +44,6 @@ project votd
     <include>$(stk_performance_tests-root)/..
     <define>STK_BUILT_FOR_SIERRA
     <define>STK_BUILT_WITH_BJAM
-    <define>STK_HIDE_DEPRECATED_CODE
   : usage-requirements
     <include>$(stk_performance_tests-root)
     <include>$(stk_performance_tests-root)/..
@@ -132,6 +131,7 @@ exe stk_performance_tests
     [ glob $(stk_performance_tests-root)/stk_search/*.cpp ]
     [ glob $(stk_performance_tests-root)/stk_transfer/*.cpp ]
     [ glob $(stk_performance_tests-root)/stk_util/*.cpp ]
+    [ glob $(stk_performance_tests-root)/stk_tools/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_balance//stk_balance_lib
     /sierra/stk_middle_mesh_util//stk_middle_mesh_util

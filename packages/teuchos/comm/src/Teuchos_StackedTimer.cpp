@@ -8,6 +8,7 @@
 // @HEADER
 
 #include "Teuchos_StackedTimer.hpp"
+#include "Teuchos_SystemInformation.hpp"
 #include <limits>
 #include <ctime>
 #include <cctype>
@@ -832,6 +833,12 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
       if(gitSHA.length() > 10)
         gitSHA = gitSHA.substr(0, 10);
       os << "  <metadata key=\"Trilinos Version\" value=\"" << gitSHA << "\"/>\n";
+    }
+    auto systemInfo = SystemInformation::collectSystemInformation();
+    for (const auto &e : systemInfo) {
+      os << "  <metadata key=\"" << e.first << "\" value=\"";
+      printXMLEscapedString(os, e.second);
+      os << "\"/>\n";
     }
     printLevelXML("", 0, os, printed, 0.0, buildName + ": " + name);
     os << "</performance-report>\n";

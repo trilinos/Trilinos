@@ -121,25 +121,39 @@ get_nodes_to_deactivate(const stk::mesh::BulkData& bulk,
 
     std::map<stk::mesh::Entity,bool> nodeToActiveStatusMap;
     stk::CommSparse answerComm(bulk.parallel());
+
     pack_and_communicate(answerComm,
-        [&bulk,&answerComm,&incomingNodes,&nodeToActiveStatusMap,&activePart]()
+        [&bulk,
+        &answerComm,
+        &incomingNodes,
+        &nodeToActiveStatusMap,
+        &activePart]()
         {
-            for (stk::mesh::Entity incomingNode : incomingNodes) {
-                std::vector<int> sharingProcs;
-                bulk.comm_shared_procs(bulk.entity_key(incomingNode),sharingProcs);
-                bool activeStatus = is_node_connected_to_active_element_locally(bulk, incomingNode, activePart);
-                for (int otherProc : sharingProcs) {
-                    answerComm.send_buffer(otherProc).pack<stk::mesh::EntityId>(bulk.identifier(incomingNode));
-                    answerComm.send_buffer(otherProc).pack<bool>(activeStatus);
-                }
-                auto nodeLocationInMap = nodeToActiveStatusMap.find(incomingNode);
-                if (nodeLocationInMap == nodeToActiveStatusMap.end()) {
-                    nodeToActiveStatusMap.emplace(incomingNode, activeStatus);
-                }
-                else {
-                    nodeLocationInMap->second = nodeLocationInMap->second || activeStatus;
-                }
-            }
+        // reuse this vector across all nodes
+        std::vector<int> sharingProcs;
+
+        for (stk::mesh::Entity incomingNode : incomingNodes) {
+        sharingProcs.clear();
+        bulk.comm_shared_procs(
+            bulk.entity_key(incomingNode),
+            sharingProcs);
+
+        bool activeStatus =
+        is_node_connected_to_active_element_locally(
+            bulk, incomingNode, activePart);
+
+        // send out to all procs sharing this node
+        for (int otherProc : sharingProcs) {
+          auto &buf = answerComm.send_buffer(otherProc);
+          buf.pack<stk::mesh::EntityId>(
+              bulk.identifier(incomingNode));
+          buf.pack<bool>(activeStatus);
+        }
+
+        // one lookup/insert, then OR in the new status
+        auto &status = nodeToActiveStatusMap[incomingNode];
+        status |= activeStatus;
+        }
         }
     );
 

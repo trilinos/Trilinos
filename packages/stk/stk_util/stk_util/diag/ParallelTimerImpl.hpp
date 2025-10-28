@@ -35,6 +35,7 @@
 #ifndef STK_UTIL_DIAG_ParallelTimerImpl_hpp
 #define STK_UTIL_DIAG_ParallelTimerImpl_hpp
 
+#include "stk_util/stk_config.h"
 #include "stk_util/diag/Timer.hpp"
 #include "stk_util/util/Writer.hpp"
 #include "WriterExt.hpp"
@@ -109,7 +110,9 @@ struct ParallelTimer
   Metric<WallTime>              m_wallTime;             ///< Wall time
   Metric<MPICount>              m_MPICount;             ///< MPI call count
   Metric<MPIByteCount>          m_MPIByteCount;	        ///< MPI byte count
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
   Metric<HeapAlloc>             m_heapAlloc;            ///< MPI byte count
+#endif
 
   std::list<ParallelTimer>      m_subtimerList;         ///< Sub timers
 
@@ -150,12 +153,13 @@ ParallelTimer::getMetric<MPIByteCount>() const {
   return m_MPIByteCount;
 }
 
-
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
 template<>
-inline const ParallelTimer::Metric<HeapAlloc> &
+STK_DEPRECATED inline const ParallelTimer::Metric<HeapAlloc> &
 ParallelTimer::getMetric<HeapAlloc>() const {
   return m_heapAlloc;
 }
+#endif
 
 
 template <typename T>

@@ -46,17 +46,6 @@ NodeElemKey::operator std::string() const
   return ss.str();
 }
 
-void DisjointSet::fill_set(const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& elementList)
-{
-  for (const auto& elem : elementList) {
-    auto elemNodes = bulk.get_connected_entities(elem, stk::topology::NODE_RANK);
-    for (auto n = 0U; n < elemNodes.size(); ++n) {
-      insert(NodeElemKey(elemNodes[n], elem));
-    }
-  }
-  set_first_node_ids(bulk);
-}
-
 void DisjointSet::fill_set(const stk::mesh::BulkData& bulk, const stk::mesh::Selector& selector)
 {
   auto elemBuckets = bulk.get_buckets(stk::topology::ELEMENT_RANK, selector);

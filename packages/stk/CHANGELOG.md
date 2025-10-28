@@ -1,5 +1,13 @@
 # CHANGELOG
 
+5.27.1-01    (STK_VERSION 5270101) 10/24/25
+  stk_unit_test_utils: Fix missing-header build-error encountered by Albany
+
+5.27.1    (STK_VERSION 5270100) 10/21/25
+  stk_util: deprecate unused/unimplemented 'malloc_used()' and also the
+            HeapAlloc specialization of stk::diag::MetricTraits.
+  stk_mesh: Added ability to rename Part (MetaData::rename)
+
 5.25.7    (STK_VERSION 5250700) 9/15/2025
   stk_util: add missing include of <cstdlib> in stk_util/util/AlignedAllocator.hpp
             add missing include of <cstddef> in stk_util/parallel/CommBuffer.hpp

@@ -91,14 +91,14 @@ TEST_F(MathFunctionWithOneDoubleArg, Sinh_ScalarAndSimdMatch)
 {
   test_simd_operator([](double xArg) { return std::sinh(xArg); },
                      [](stk::simd::Double xArg) { return stk::math::sinh(xArg); },
-                     fullRange);
+                     oneRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Cosh_ScalarAndSimdMatch)
 {
   test_simd_operator([](double xArg) { return std::cosh(xArg); },
                      [](stk::simd::Double xArg) { return stk::math::cosh(xArg); },
-                     fullRange);
+                     oneRange);
 }
 
 TEST_F(MathFunctionWithOneDoubleArg, Tanh_ScalarAndSimdMatch)

@@ -22,8 +22,8 @@ RCP<MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node> > MueLu::LWGraph<Lo
   auto graph = this->getGraph();
 
   using dev_crs_graph_type = typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrdinal, Node>::crs_graph_type;
-  auto rows                = typename dev_crs_graph_type::local_graph_type::row_map_type::non_const_type("rows", graph.numRows() + 1);
-  auto entries             = typename dev_crs_graph_type::local_graph_type::entries_type::non_const_type("columns", graph.entries.extent(0));
+  auto rows                = typename dev_crs_graph_type::local_graph_device_type::row_map_type::non_const_type("rows", graph.numRows() + 1);
+  auto entries             = typename dev_crs_graph_type::local_graph_device_type::entries_type::non_const_type("columns", graph.entries.extent(0));
   Kokkos::deep_copy(rows, graph.row_map);
   Kokkos::deep_copy(entries, graph.entries);
 

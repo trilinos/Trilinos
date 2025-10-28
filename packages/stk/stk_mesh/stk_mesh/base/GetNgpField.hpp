@@ -50,10 +50,12 @@ NgpField<T, NgpMemSpace> & get_updated_ngp_field_async(const FieldBase & stkFiel
   if (ngpField == nullptr) {
     ngpField = new NgpField<T, NgpMemSpace>(stkField, true);
     ngpField->update_field(execSpace);
+#if (!defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)) || (defined(STK_USE_DEVICE_MESH) && defined(STK_ENABLE_GPU))
     if constexpr (std::is_same_v<NgpMemSpace, stk::ngp::HostMemSpace>) {
-      // Add a false host-side sync because updating behavior after construction of HostField has changed
+      // Add a false sync to match first-time updating of DeviceFields
       stkField.increment_num_syncs_to_device();
     }
+#endif
     impl::set_ngp_field(stkField, ngpField);
     ngpField->clear_host_sync_state();
   }
@@ -74,10 +76,12 @@ NgpField<T, NgpMemSpace> & get_updated_ngp_field_async(const FieldBase & stkFiel
   if (ngpField == nullptr) {
     ngpField = new NgpField<T, NgpMemSpace>(stkField, true);
     ngpField->update_field(std::forward<stk::ngp::ExecSpace>(execSpace));
+#if (!defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)) || (defined(STK_USE_DEVICE_MESH) && defined(STK_ENABLE_GPU))
     if constexpr (std::is_same_v<NgpMemSpace, stk::ngp::HostMemSpace>) {
-      // Add a false host-side sync because updating behavior after construction of HostField has changed
+      // Add a false sync to match first-time updating of DeviceFields
       stkField.increment_num_syncs_to_device();
     }
+#endif
     impl::set_ngp_field(stkField, ngpField);
     ngpField->clear_host_sync_state();
   }

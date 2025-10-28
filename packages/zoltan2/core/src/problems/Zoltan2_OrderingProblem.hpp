@@ -131,6 +131,8 @@ public:
         Teuchos::tuple<std::string>( "pseudoperipheral", "first", "smallest_degree" )));
     pl.set("root_method", "pseudoperipheral", "method for selecting RCM root",
       rcm_root_selection_Validator);
+
+    pl.set("symmetrize", false, "Whether the input graph should be symmetrizes");
   }
 
   //!  \brief Direct the problem to create a solution.

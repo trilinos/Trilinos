@@ -39,12 +39,12 @@ template <class View1, class View2>
 constexpr bool areKokkosViews = Kokkos::is_view<View1>::value&& Kokkos::is_view<View2>::value;
 
 class DistributorActor {
-  static constexpr int DEFAULT_MPI_TAG = 1;
-
   using IndexView     = DistributorPlan::IndexView;
   using SubViewLimits = DistributorPlan::SubViewLimits;
 
  public:
+  static constexpr int DEFAULT_MPI_TAG = 1;
+
   DistributorActor();
   DistributorActor(const DistributorActor& otherActor) = default;
 
@@ -106,6 +106,8 @@ class DistributorActor {
   void doWaitsIalltofewv(const DistributorPlan& plan);
 
   bool isReady() const;
+
+  int getMpiTag() const { return mpiTag_; };
 
  private:
   template <class ImpView>
@@ -556,6 +558,16 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
   using Teuchos::ireceive;
   using size_type         = Array<size_t>::size_type;
   using imports_view_type = ImpView;
+
+  // Set the MPI message tag for this round of communication.
+  // The same tag will be used for recvs and sends. For every round of communication,
+  // the tag gets incremented by one, until it eventually gets looped around back to a
+  // small value. This logic is implemented in Teuchos.
+  auto comm = plan.getComm();
+  {
+    auto non_const_comm = Teuchos::rcp_const_cast<Teuchos::Comm<int>>(comm);
+    mpiTag_             = non_const_comm->incrementTag();
+  }
 
 #ifdef KOKKOS_ENABLE_CUDA
   static_assert(!std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,

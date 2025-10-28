@@ -30,7 +30,7 @@
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
-#include <Trilinos_Util_iohb.h>
+#include <Tpetra_Util_iohb.h>
 
 using namespace Teuchos;
 using Tpetra::Operator;

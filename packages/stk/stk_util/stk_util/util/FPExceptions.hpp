@@ -39,7 +39,7 @@ inline bool have_errexcept()
 // provide string names for them portably.  Instead, only check
 // for the standard ones (except FE_INEXACT, which isn't something we want
 // to warn about)
-constexpr int FE_EXCEPT_CHECKS = FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW;
+constexpr int FE_EXCEPT_CHECKS = FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW;
 
 std::string get_fe_except_string(int fe_except_bitmask);
 

@@ -701,7 +701,7 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   size_t nnz = 0;  // actual number of nnz
 
-  typedef typename Xpetra::Matrix<SC, LO, GO, NO>::local_matrix_type local_matrix_type;
+  typedef typename Xpetra::Matrix<SC, LO, GO, NO>::local_matrix_device_type local_matrix_type;
   typedef typename local_matrix_type::row_map_type::non_const_type rows_type;
   typedef typename local_matrix_type::index_type::non_const_type cols_type;
   typedef typename local_matrix_type::values_type::non_const_type vals_type;
@@ -1116,7 +1116,7 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   auto fineNS   = fineNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
   auto coarseNS = coarseNullspace->getLocalViewDevice(Xpetra::Access::OverwriteAll);
 
-  typedef typename Xpetra::Matrix<SC, LO, GO, NO>::local_matrix_type local_matrix_type;
+  typedef typename Xpetra::Matrix<SC, LO, GO, NO>::local_matrix_device_type local_matrix_type;
   typedef typename local_matrix_type::row_map_type::non_const_type rows_type;
   typedef typename local_matrix_type::index_type::non_const_type cols_type;
   // typedef typename local_matrix_type::values_type::non_const_type    vals_type;

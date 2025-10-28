@@ -18,6 +18,7 @@ ADD_SUBDIRECTORIES(
   FECrsGraph
   FECrsMatrix
   FEMultiVector
+  Filter
   HashTable
   ImportExport
   ImportExport2
