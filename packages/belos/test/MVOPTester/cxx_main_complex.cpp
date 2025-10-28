@@ -22,9 +22,7 @@
 #endif
 
 // I/O for Harwell-Boeing files
-#ifdef HAVE_BELOS_TRIUTILS
-#include "Trilinos_Util_iohb.h"
-#endif
+#include "Tpetra_Util_iohb.h"
 
 #include "MyMultiVec.hpp"
 #include "MyOperator.hpp"
@@ -83,15 +81,6 @@ int main(int argc, char *argv[])
     if (verbose) {
       MyOM->setVerbosity( Belos::Warnings );
     }
-
-#ifndef HAVE_BELOS_TRIUTILS
-    std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
-#ifdef EPETRA_MPI
-    MPI_Finalize() ;
-#endif
-    MyOM->print(Belos::Warnings,"End Result: TEST FAILED\n");
-    return -1;
-#endif
 
     // Get the data from the HB file
     int info;

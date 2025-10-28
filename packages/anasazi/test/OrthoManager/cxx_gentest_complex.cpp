@@ -26,9 +26,7 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 
 // I/O for Harwell-Boeing files
-#ifdef HAVE_ANASAZI_TRIUTILS
-#include "Trilinos_Util_iohb.h"
-#endif
+#include "Tpetra_Util_iohb.h"
 
 // templated multivector and sparse matrix classes
 #include "MyMultiVec.hpp"
