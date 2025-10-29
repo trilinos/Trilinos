@@ -83,50 +83,27 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
     v_t newCols(origMatrix->getColMap());
     newCols.doImport(cols, importer, INSERT, false);
 
-    size_t newColsSize(newCols.getData().size());
-    Kokkos::View<GlobalOrdinal*, typename Node::device_type> newColIndices("", newColsSize);
+    auto newColsView = newCols.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    size_t newColsSize(newColsView.extent(0));
+    Kokkos::View<GlobalOrdinal*, typename Node::device_type> newColIndices("newColIndices", newColsSize);
     {
       using exec_space = typename Node::device_type::execution_space;
       Kokkos::parallel_for(
           "Tpetra::Reindex_CrsMatrix::operator()",
           Kokkos::RangePolicy<exec_space, size_t>(0, newColsSize),
           KOKKOS_LAMBDA(size_t const i)->void {
-            newColIndices(i) = newCols.getData()[i];
+	    newColIndices(i) = newColsView(i,0);
           });
     }
+
     this->newColMap_ = Teuchos::RCP<map_t>(new map_t(origMatrix->getColMap()->getGlobalNumElements(),
                                                      newColIndices,
                                                      origMatrix->getColMap()->getIndexBase(),
                                                      origMatrix->getColMap()->getComm()));
 
     // Create the new matrix
-    size_t const origMatrix_maxNumEntries = origMatrix->getGlobalMaxNumRowEntries();
-    Teuchos::RCP<cm_t> newMatrix          = Teuchos::rcp<cm_t>(new cm_t(this->newRowMap_, this->newColMap_, origMatrix_maxNumEntries));
-
-    std::vector<Scalar> newMatrix_localValues(origMatrix_maxNumEntries);
-    std::vector<LocalOrdinal> newMatrix_localIndices(origMatrix_maxNumEntries);
-
-    typename cm_t::local_inds_host_view_type origMatrix_localIndices;
-    typename cm_t::values_host_view_type origMatrix_localValues;
-
-    size_t const newMatrix_localNumRows = newMatrix->getLocalNumRows();
-    for (size_t i(0); i < newMatrix_localNumRows; ++i) {
-      origMatrix->getLocalRowView(i, origMatrix_localIndices, origMatrix_localValues);
-
-      size_t const numEntries(origMatrix_localIndices.size());
-      for (size_t j(0); j < numEntries; ++j) {
-        newMatrix_localValues[j]  = origMatrix_localValues[j];
-        newMatrix_localIndices[j] = origMatrix_localIndices[j];
-      }
-
-      newMatrix->insertLocalValues(i,
-                                   numEntries,
-                                   newMatrix_localValues.data(),
-                                   newMatrix_localIndices.data(),
-                                   INSERT);
-    }
-
-    newMatrix->fillComplete();
+    auto origMatrixLocal = origMatrix->getLocalMatrixDevice();
+    Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>(new cm_t(origMatrixLocal, this->newRowMap_, this->newColMap_));
 
     this->newObj_ = newMatrix;
   }
