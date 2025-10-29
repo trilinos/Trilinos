@@ -82,6 +82,7 @@ private:
   enum : int { LDL_nopiv = 0, Cholesky = 1, LDL = 2, SymLU = 3, LU = 4 };
 
   // ** solver mode
+  ordinal_type _method_setup;
   ordinal_type _method;
 
   // ** ordering options
@@ -193,7 +194,8 @@ public:
   void setSmallProblemThresholdsize(const ordinal_type small_problem_thres = 1024);
   void setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric
                      const bool is_positive_definite);
-  void setSolutionMethod(const int method); /// 1 - cholesky, 2 - LDL, 3 - LU
+  void setSolutionMethod(const int method);      /// 1 - cholesky, 2 - LDL, 3 - LU
+  void setFactorizationMethod(const int method); /// 1 - cholesky, 2 - LDL, 3 - LU
 
   ///
   /// Graph options
@@ -440,6 +442,7 @@ public:
   int initialize();
 
   int factorize(const value_type_array &ax);
+  int factorize(const value_type_array &ax, ordinal_type method);
   int factorize_small_host(const value_type_array &ax);
 
   int solve(const value_type_matrix &x, const value_type_matrix &b, const value_type_matrix &t);
