@@ -56,27 +56,37 @@ Reindex_MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origi
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > origValues = origMultiVector->get2dView();
 
   using size_type = typename Teuchos::ArrayRCP<Scalar>::size_type;
+  size_type const nVecs( origValues.size() );
+  size_type const vecLen( origValues[0].size() );
+  size_type const numEntries( nVecs * vecLen );
 
-  size_type numEntries(origValues.size() * origValues[0].size());
-
-  std::vector<Scalar> tmpVec(numEntries);
-  size_t k(0);
-  for (size_type v(0); v < origValues.size(); ++v) {
-    for (size_type i(0); i < origValues[v].size(); ++i) {
-      tmpVec[k++] = origValues[v][i];
-    }
+  using RowView = Kokkos::View<const Scalar*, typename Node::device_type>;
+  Kokkos::View<RowView*, typename Node::device_type> src("src", nVecs);
+  for (size_type v(0); v < nVecs; ++v) {
+    src(v) = Kokkos::View<const Scalar*, typename Node::device_type>(origValues[v].getRawPtr(), origValues[v].size());
   }
-  Teuchos::ArrayView<Scalar const> valuesToInsert(tmpVec.data(), numEntries);
+
+  Kokkos::View<Scalar*, typename Node::device_type> dst("dst", numEntries);
+  {
+    using exec_space = typename Node::device_type::execution_space;
+    Kokkos::parallel_for(
+      "Tpetra::Reindex_MultiVector::operator()",
+      Kokkos::RangePolicy<exec_space, size_type>(0, numEntries),
+      KOKKOS_LAMBDA(size_type const idx) {
+        size_type const v( idx / vecLen );
+        size_type const i( idx % vecLen );
+        dst(idx) = src(v)(i);
+      });
+    Kokkos::fence();
+  }
+
+  Teuchos::ArrayView<const Scalar> valuesToInsert(dst.data(), static_cast<ptrdiff_t>(dst.extent(0)));
 
   using mv_t    = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  this->newObj_ = Teuchos::RCP<mv_t>(new mv_t(newRowMap_  // const Teuchos::RCP<const map_type> & map
-                                              ,
-                                              valuesToInsert  // const Teuchos::ArrayView<const Scalar> & A
-                                              ,
-                                              origMultiVector->getStride()  // const size_t LDA
-                                              ,
-                                              origMultiVector->getNumVectors()  // const size_t NumVectors
-                                              ));
+  this->newObj_ = Teuchos::RCP<mv_t>(new mv_t(newRowMap_,
+                                              valuesToInsert,
+                                              origMultiVector->getStride(),
+                                              origMultiVector->getNumVectors()));
 
   return this->newObj_;
 }

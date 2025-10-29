@@ -81,30 +81,23 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
 
     imp_t importer(origMatrix->getDomainMap(), origMatrix->getColMap());
     v_t newCols(origMatrix->getColMap());
-    newCols.doImport(cols  // const SrcDistObject& source
-                     ,
-                     importer  // const Import<LocalOrdinal, GlobalOrdinal, Node>& importer
-                     ,
-                     INSERT  // const CombineMode CM
-                     ,
-                     false  // const bool restrictedMode
-    );
+    newCols.doImport(cols, importer, INSERT, false);
 
-    Teuchos::ArrayRCP<GlobalOrdinal const> newColIndicesArray = newCols.getData();
-    std::vector<GlobalOrdinal> newColIndicesVector(newColIndicesArray.size());
-    for (size_t j(0); j < newColIndicesVector.size(); ++j) {
-      newColIndicesVector[j] = newColIndicesArray[j];
+    size_t newColsSize( newCols.getData().size() );
+    Kokkos::View<GlobalOrdinal*, typename Node::device_type> newColIndices("", newColsSize);
+    {
+      using exec_space = typename Node::device_type::execution_space;
+      Kokkos::parallel_for(
+        "Tpetra::Reindex_CrsMatrix::operator()",
+        Kokkos::RangePolicy<exec_space, size_t>(0, newColsSize),
+        KOKKOS_LAMBDA(size_t const i)->void {
+          newColIndices(i) = newCols.getData()[i];
+        });
     }
-    this->newColMap_ = Teuchos::RCP<map_t>(new map_t(origMatrix->getColMap()->getGlobalNumElements()  // const global_size_t       numGlobalElements
-                                                     ,
-                                                     newColIndicesVector.data()  // const global_ordinal_type indexList[]
-                                                     ,
-                                                     origMatrix->getColMap()->getLocalNumElements()  // const local_ordinal_type  indexListSize
-                                                     ,
-                                                     origMatrix->getColMap()->getIndexBase()  // const global_ordinal_type indexBase
-                                                     ,
-                                                     origMatrix->getColMap()->getComm()  // const Teuchos::RCP<const Teuchos::Comm<int> >& comm
-                                                     ));
+    this->newColMap_ = Teuchos::RCP<map_t>(new map_t(origMatrix->getColMap()->getGlobalNumElements(),
+                                                     newColIndices,
+                                                     origMatrix->getColMap()->getIndexBase(),
+                                                     origMatrix->getColMap()->getComm()));
 
     // Create the new matrix
     size_t const origMatrix_maxNumEntries = origMatrix->getGlobalMaxNumRowEntries();
@@ -126,16 +119,11 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
         newMatrix_localIndices[j] = origMatrix_localIndices[j];
       }
 
-      newMatrix->insertLocalValues(i  // const LocalOrdinal localRow
-                                   ,
-                                   numEntries  // const LocalOrdinal numEnt
-                                   ,
-                                   newMatrix_localValues.data()  // const Scalar       vals[]
-                                   ,
-                                   newMatrix_localIndices.data()  // const LocalOrdinal cols[]
-                                   ,
-                                   INSERT  // const CombineMode  CM
-      );
+      newMatrix->insertLocalValues(i,
+                                   numEntries,
+                                   newMatrix_localValues.data(),
+                                   newMatrix_localIndices.data(),
+                                   INSERT);
     }
 
     newMatrix->fillComplete();
