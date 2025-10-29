@@ -92,7 +92,7 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
           "Tpetra::Reindex_CrsMatrix::operator()",
           Kokkos::RangePolicy<exec_space, size_t>(0, newColsSize),
           KOKKOS_LAMBDA(size_t const i)->void {
-	    newColIndices(i) = newColsView(i,0);
+            newColIndices(i) = newColsView(i, 0);
           });
     }
 
@@ -102,7 +102,7 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
                                                      origMatrix->getColMap()->getComm()));
 
     // Create the new matrix
-    auto origMatrixLocal = origMatrix->getLocalMatrixDevice();
+    auto origMatrixLocal         = origMatrix->getLocalMatrixDevice();
     Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>(new cm_t(origMatrixLocal, this->newRowMap_, this->newColMap_));
 
     this->newObj_ = newMatrix;
