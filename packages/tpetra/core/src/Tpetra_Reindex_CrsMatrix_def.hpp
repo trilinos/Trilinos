@@ -85,29 +85,24 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
     }
 
     using kv_t = Kokkos::View<GlobalOrdinal*, typename Node::device_type>;
-    typename kv_t::HostMirror newColIndices_host;
+    Teuchos::RCP<kv_t> newColIndices;
     {
       auto newColsView = newCols.getLocalViewDevice(Tpetra::Access::ReadOnly);
       size_t newColsSize(newColsView.extent(0));
-      kv_t newColIndices_dev("newColIndices_dev", newColsSize);
+      newColIndices = Teuchos::RCP<kv_t>(new kv_t("newColIndices", newColsSize));
 
       using exec_space = typename Node::device_type::execution_space;
       Kokkos::parallel_for(
           "Tpetra::Reindex_CrsMatrix::operator()",
           Kokkos::RangePolicy<exec_space, size_t>(0, newColsSize),
           KOKKOS_LAMBDA(size_t const i)->void {
-            newColIndices_dev(i) = newColsView(i, 0);
+            (*newColIndices)(i) = newColsView(i, 0);
           });
-
-      exec_space().fence();
-
-      newColIndices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), newColIndices_dev);
-
       exec_space().fence();
     }
 
     this->newColMap_ = Teuchos::RCP<map_t>(new map_t(origMatrix->getColMap()->getGlobalNumElements(),
-                                                     newColIndices_host,
+                                                     *newColIndices,
                                                      origMatrix->getColMap()->getIndexBase(),
                                                      origMatrix->getColMap()->getComm()));
 
