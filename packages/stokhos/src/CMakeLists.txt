@@ -632,25 +632,23 @@ IF (Stokhos_ENABLE_Sacado)
   SET(SACADO_HEADERS "")
   SET(SACADO_SOURCES "")
   SET(STOKHOS_DEPLIBS stokhos)
-  IF(Stokhos_ENABLE_PCE_Scalar_Type)
-    LIST(APPEND SACADO_HEADERS
-      sacado/Stokhos_Sacado.hpp
-      sacado/Stokhos_Sacado_MathFunctions.hpp
-      sacado/Sacado_PCE_OrthogPoly.hpp
-      sacado/Sacado_PCE_OrthogPolyImp.hpp
-      sacado/Sacado_PCE_OrthogPolyTraits.hpp
-      sacado/Sacado_PCE_ScalarTraitsImp.hpp
-      sacado/Sacado_ETPCE_OrthogPoly.hpp
-      sacado/Sacado_ETPCE_OrthogPolyImp.hpp
-      sacado/Sacado_ETPCE_OrthogPolyTraits.hpp
-      sacado/Sacado_ETPCE_OrthogPolyOps.hpp
-      sacado/Sacado_ETPCE_ExpressionTraits.hpp
-      )
-    LIST(APPEND SACADO_SOURCES
-      sacado/Sacado_PCE_OrthogPoly.cpp
-      sacado/Sacado_ETPCE_OrthogPoly.cpp
-      )
-  ENDIF()
+  LIST(APPEND SACADO_HEADERS
+    sacado/Stokhos_Sacado.hpp
+    sacado/Stokhos_Sacado_MathFunctions.hpp
+    sacado/Sacado_PCE_OrthogPoly.hpp
+    sacado/Sacado_PCE_OrthogPolyImp.hpp
+    sacado/Sacado_PCE_OrthogPolyTraits.hpp
+    sacado/Sacado_PCE_ScalarTraitsImp.hpp
+    sacado/Sacado_ETPCE_OrthogPoly.hpp
+    sacado/Sacado_ETPCE_OrthogPolyImp.hpp
+    sacado/Sacado_ETPCE_OrthogPolyTraits.hpp
+    sacado/Sacado_ETPCE_OrthogPolyOps.hpp
+    sacado/Sacado_ETPCE_ExpressionTraits.hpp
+    )
+  LIST(APPEND SACADO_SOURCES
+    sacado/Sacado_PCE_OrthogPoly.cpp
+    sacado/Sacado_ETPCE_OrthogPoly.cpp
+    )
   TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos)
   LIST(APPEND SACADO_HEADERS
     sacado/kokkos/Stokhos_Sacado_Kokkos.hpp
