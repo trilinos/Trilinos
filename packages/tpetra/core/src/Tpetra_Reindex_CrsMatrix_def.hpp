@@ -65,9 +65,8 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
     // Construct a zero matrix as a placeholder, don't do reindexing analysis.
     this->newObj_ = Teuchos::rcp<cm_t>(new cm_t(origMatrix->getRowMap(), origMatrix->getColMap(), 0));
   } else {
-    using map_t = Map<LocalOrdinal, GlobalOrdinal, Node>;
-    using imp_t = Import<LocalOrdinal, GlobalOrdinal, Node>;
     using v_t   = Vector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>;
+    using map_t = Map<LocalOrdinal, GlobalOrdinal, Node>;
 
     // Construct new column map
     v_t cols(origMatrix->getDomainMap());
@@ -80,28 +79,26 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
 
     v_t newCols(origMatrix->getColMap());
     {
-      imp_t importer(origMatrix->getDomainMap(), origMatrix->getColMap());
-      newCols.doImport(cols, importer, INSERT, false);
+      using imp_t = Import<LocalOrdinal, GlobalOrdinal, Node>;
+      Teuchos::RCP<const imp_t> importer = origMatrix->getCrsGraph()->getImporter();
+      if (importer.is_null()) {
+        newCols = cols;
+      }
+      else {
+        newCols.doImport(cols, *importer, INSERT, false);
+      }
     }
 
     using kv_t = Kokkos::View<GlobalOrdinal*, typename Node::device_type>;
-    Teuchos::RCP<kv_t> newColIndices;
+    kv_t newColIndices;
     {
       auto newColsView = newCols.getLocalViewDevice(Tpetra::Access::ReadOnly);
-      size_t newColsSize(newColsView.extent(0));
-      newColIndices = Teuchos::RCP<kv_t>(new kv_t("newColIndices", newColsSize));
-      using exec_space = typename Node::device_type::execution_space;
-      Kokkos::parallel_for(
-          "Tpetra::Reindex_CrsMatrix::operator()",
-          Kokkos::RangePolicy<exec_space, size_t>(0, newColsSize),
-          KOKKOS_LAMBDA(size_t const i)->void {
-            (*newColIndices)(i) = newColsView(i, 0);
-          });
-      exec_space().fence();
+      newColIndices = kv_t("newColIndices", newColsView.extent(0));
+      Kokkos::deep_copy(newColIndices, Kokkos::subview(newColsView, Kokkos::ALL(), 0));
     }
 
     this->newColMap_ = Teuchos::RCP<map_t>(new map_t(origMatrix->getColMap()->getGlobalNumElements(),
-                                                     *newColIndices,
+                                                     newColIndices,
                                                      origMatrix->getColMap()->getIndexBase(),
                                                      origMatrix->getColMap()->getComm()));
 
