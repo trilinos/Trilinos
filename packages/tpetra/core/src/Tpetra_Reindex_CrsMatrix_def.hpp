@@ -74,36 +74,38 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
     {
       size_t origDomainMap_localSize = origMatrix->getDomainMap()->getLocalNumElements();
       map_t tmpColMap(origMatrix->getDomainMap()->getGlobalNumElements(), origDomainMap_localSize, 0, origMatrix->getDomainMap()->getComm());
-      for (size_t i(0); i < origDomainMap_localSize; ++i) {
-        cols.replaceLocalValue(i, tmpColMap.getGlobalElement(i));
-      }
+      Kokkos::deep_copy(Kokkos::subview(cols.getLocalViewDevice(Tpetra::Access::OverwriteAll), Kokkos::ALL(), 0),
+                        tmpColMap.getMyGlobalIndicesDevice());
     }
 
     imp_t importer(origMatrix->getDomainMap(), origMatrix->getColMap());
     v_t newCols(origMatrix->getColMap());
     newCols.doImport(cols, importer, INSERT, false);
 
-    auto newColsView = newCols.getLocalViewDevice(Tpetra::Access::ReadOnly);
-    size_t newColsSize(newColsView.extent(0));
-    Kokkos::View<GlobalOrdinal*, typename Node::device_type> newColIndices("newColIndices", newColsSize);
+    Kokkos::View<GlobalOrdinal*, typename Node::device_type> newColIndices_host;
     {
-      using exec_space = typename Node::device_type::execution_space;
-      Kokkos::parallel_for(
-          "Tpetra::Reindex_CrsMatrix::operator()",
-          Kokkos::RangePolicy<exec_space, size_t>(0, newColsSize),
-          KOKKOS_LAMBDA(size_t const i)->void {
-            newColIndices(i) = newColsView(i, 0);
-          });
+      auto newColsView = newCols.getLocalViewDevice(Tpetra::Access::ReadOnly);
+      size_t newColsSize(newColsView.extent(0));
+      Kokkos::View<GlobalOrdinal*, typename Node::device_type> newColIndices_dev("newColIndices_dev", newColsSize);
+      {
+        using exec_space = typename Node::device_type::execution_space;
+        Kokkos::parallel_for(
+            "Tpetra::Reindex_CrsMatrix::operator()",
+            Kokkos::RangePolicy<exec_space, size_t>(0, newColsSize),
+            KOKKOS_LAMBDA(size_t const i)->void {
+              newColIndices_dev(i) = newColsView(i, 0);
+            });
+      }
+      newColIndices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), newColIndices_dev);
     }
 
     this->newColMap_ = Teuchos::RCP<map_t>(new map_t(origMatrix->getColMap()->getGlobalNumElements(),
-                                                     newColIndices,
+                                                     newColIndices_host,
                                                      origMatrix->getColMap()->getIndexBase(),
                                                      origMatrix->getColMap()->getComm()));
 
     // Create the new matrix
-    auto origMatrixLocal         = origMatrix->getLocalMatrixDevice();
-    Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>(new cm_t(origMatrixLocal, this->newRowMap_, this->newColMap_));
+    Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>(new cm_t(origMatrix->getLocalMatrixDevice(), this->newRowMap_, this->newColMap_));
 
     this->newObj_ = newMatrix;
   }
