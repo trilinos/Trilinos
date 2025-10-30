@@ -89,9 +89,6 @@ ELSE()
   SET(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES_DEFAULT ON)
   SET(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT ON)
 
-  tribits_disable_optional_dependency( EpetraExt
-    "NOTE: Setting Xpetra_ENABLE_EpetraExt=OFF since Xpetra_ENABLE_Epetra='${Xpetra_ENABLE_Epetra}'" )
-
 ENDIF()
 
 #
