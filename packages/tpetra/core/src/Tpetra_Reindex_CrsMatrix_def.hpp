@@ -79,12 +79,11 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
 
     v_t newCols(origMatrix->getColMap());
     {
-      using imp_t = Import<LocalOrdinal, GlobalOrdinal, Node>;
+      using imp_t                        = Import<LocalOrdinal, GlobalOrdinal, Node>;
       Teuchos::RCP<const imp_t> importer = origMatrix->getCrsGraph()->getImporter();
       if (importer.is_null()) {
         newCols = cols;
-      }
-      else {
+      } else {
         newCols.doImport(cols, *importer, INSERT, false);
       }
     }
@@ -93,7 +92,7 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
     kv_t newColIndices;
     {
       auto newColsView = newCols.getLocalViewDevice(Tpetra::Access::ReadOnly);
-      newColIndices = kv_t("newColIndices", newColsView.extent(0));
+      newColIndices    = kv_t("newColIndices", newColsView.extent(0));
       Kokkos::deep_copy(newColIndices, Kokkos::subview(newColsView, Kokkos::ALL(), 0));
     }
 
