@@ -83,7 +83,9 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
     newCols.doImport(cols, importer, INSERT, false);
 
     using kv_t = Kokkos::View<GlobalOrdinal*, typename Node::device_type>;
-    kv_t newColIndices_host;
+    using host_layout = typename kv_t::array_layout;
+    using host_view_t = Kokkos::View<GlobalOrdinal*, host_layout, Kokkos::HostSpace>;
+    host_view_t newColIndices_host;
     {
       auto newColsView = newCols.getLocalViewDevice(Tpetra::Access::ReadOnly);
       size_t newColsSize(newColsView.extent(0));
@@ -96,6 +98,7 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
           KOKKOS_LAMBDA(size_t const i)->void {
             newColIndices_dev(i) = newColsView(i, 0);
           });
+
       newColIndices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), newColIndices_dev);
     }
 
