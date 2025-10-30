@@ -395,49 +395,45 @@ IF (Stokhos_ENABLE_EpetraExt)
 
 ENDIF()
 
-IF(Stokhos_ENABLE_PCE_Scalar_Type)
+TRIBITS_ADD_EXECUTABLE(
+  uq_handbook_pce_example
+  SOURCES uq_handbook/pce_example.cpp
+  COMM serial mpi
+  )
 
-  TRIBITS_ADD_EXECUTABLE(
-    uq_handbook_pce_example
-    SOURCES uq_handbook/pce_example.cpp
-    COMM serial mpi
-    )
-
-  IF (Stokhos_ENABLE_EpetraExt AND
-      Stokhos_ENABLE_AztecOO AND
-      Stokhos_ENABLE_ML AND
-      Stokhos_ENABLE_Ifpack AND
-      Stokhos_ENABLE_NOX)
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      uq_handbook_nonlinear_sg_example
-      SOURCES uq_handbook/nonlinear_sg_example.cpp
-              uq_handbook/SimpleME.hpp
-              uq_handbook/SimpleME.cpp
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      )
-
-  ENDIF()
+IF (Stokhos_ENABLE_EpetraExt AND
+    Stokhos_ENABLE_AztecOO AND
+    Stokhos_ENABLE_ML AND
+    Stokhos_ENABLE_Ifpack AND
+    Stokhos_ENABLE_NOX)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    sacado_example
-    SOURCES sacado/sacado_example.cpp
+    uq_handbook_nonlinear_sg_example
+    SOURCES uq_handbook/nonlinear_sg_example.cpp
+            uq_handbook/SimpleME.hpp
+            uq_handbook/SimpleME.cpp
     ARGS
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    division_example
-    SOURCES sacado/division_example.cpp
-    COMM serial mpi
-    PASS_REGULAR_EXPRESSION "Example Passed"
-    NUM_MPI_PROCS 1
-    )
-
 ENDIF()
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  sacado_example
+  SOURCES sacado/sacado_example.cpp
+  ARGS
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  division_example
+  SOURCES sacado/division_example.cpp
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "Example Passed"
+  NUM_MPI_PROCS 1
+  )
 
 IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
   TRIBITS_ADD_EXECUTABLE(
