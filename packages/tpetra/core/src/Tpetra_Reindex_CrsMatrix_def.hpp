@@ -78,14 +78,14 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
                         tmpColMap.getMyGlobalIndicesDevice());
     }
 
-    imp_t importer(origMatrix->getDomainMap(), origMatrix->getColMap());
     v_t newCols(origMatrix->getColMap());
-    newCols.doImport(cols, importer, INSERT, false);
+    {
+      imp_t importer(origMatrix->getDomainMap(), origMatrix->getColMap());
+      newCols.doImport(cols, importer, INSERT, false);
+    }
 
-    using kv_t        = Kokkos::View<GlobalOrdinal*, typename Node::device_type>;
-    using host_layout = typename kv_t::array_layout;
-    using host_view_t = Kokkos::View<GlobalOrdinal*, host_layout, Kokkos::HostSpace>;
-    host_view_t newColIndices_host;
+    using kv_t = Kokkos::View<GlobalOrdinal*, typename Node::device_type>;
+    typename kv_t::HostMirror newColIndices_host;
     {
       auto newColsView = newCols.getLocalViewDevice(Tpetra::Access::ReadOnly);
       size_t newColsSize(newColsView.extent(0));
@@ -99,7 +99,11 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
             newColIndices_dev(i) = newColsView(i, 0);
           });
 
+      exec_space().fence();
+
       newColIndices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), newColIndices_dev);
+
+      exec_space().fence();
     }
 
     this->newColMap_ = Teuchos::RCP<map_t>(new map_t(origMatrix->getColMap()->getGlobalNumElements(),
