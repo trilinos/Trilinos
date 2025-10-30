@@ -1537,7 +1537,9 @@ int Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   NormFrob_ = -1.0;
 
-  EPETRA_CHK_ERR(ierr);
+  int gerr;
+  Comm().MaxAll(&ierr, &gerr, 1);
+  EPETRA_CHK_ERR(gerr);
 
   return(0);
 }
