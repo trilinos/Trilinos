@@ -82,7 +82,7 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
     v_t newCols(origMatrix->getColMap());
     newCols.doImport(cols, importer, INSERT, false);
 
-    using kv_t = Kokkos::View<GlobalOrdinal*, typename Node::device_type>;
+    using kv_t        = Kokkos::View<GlobalOrdinal*, typename Node::device_type>;
     using host_layout = typename kv_t::array_layout;
     using host_view_t = Kokkos::View<GlobalOrdinal*, host_layout, Kokkos::HostSpace>;
     host_view_t newColIndices_host;
