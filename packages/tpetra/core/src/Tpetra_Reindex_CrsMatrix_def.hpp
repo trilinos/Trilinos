@@ -90,7 +90,6 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
       auto newColsView = newCols.getLocalViewDevice(Tpetra::Access::ReadOnly);
       size_t newColsSize(newColsView.extent(0));
       newColIndices = Teuchos::RCP<kv_t>(new kv_t("newColIndices", newColsSize));
-
       using exec_space = typename Node::device_type::execution_space;
       Kokkos::parallel_for(
           "Tpetra::Reindex_CrsMatrix::operator()",
@@ -107,7 +106,8 @@ Reindex_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origina
                                                      origMatrix->getColMap()->getComm()));
 
     // Create the new matrix
-    Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>(new cm_t(origMatrix->getLocalMatrixDevice(), this->newRowMap_, this->newColMap_));
+    typename cm_t::local_matrix_device_type tmpLocalMatrix("", origMatrix->getLocalMatrixDevice());
+    Teuchos::RCP<cm_t> newMatrix = Teuchos::rcp<cm_t>(new cm_t(tmpLocalMatrix, this->newRowMap_, this->newColMap_));
 
     this->newObj_ = newMatrix;
   }
