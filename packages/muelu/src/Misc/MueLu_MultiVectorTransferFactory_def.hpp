@@ -141,6 +141,9 @@ void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     auto lcl_fineVector   = fineVector->getLocalViewDevice(Xpetra::Access::ReadOnly);
     auto lcl_coarseVector = coarseVector->getLocalViewDevice(Xpetra::Access::OverwriteAll);
 
+    const auto globalNumAggs   = aggregates->GetNumGlobalAggregatesComputeIfNeeded();
+    const double scalingFactor = static_cast<double>(globalNumAggs) / static_cast<double>(fineVector->getMap()->getGlobalNumElements());
+
     Kokkos::parallel_for(
         "MueLu:MultiVectorTransferFactory",
         Kokkos::RangePolicy<LocalOrdinal, execution_space>(0, numAggs),
@@ -151,7 +154,7 @@ void MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
             for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
               sum += lcl_fineVector(aggregate(colID), j);
             if (normalize)
-              lcl_coarseVector(i, j) = sum / aggregate.length;
+              lcl_coarseVector(i, j) = sum * scalingFactor;
             else
               lcl_coarseVector(i, j) = sum;
           }
