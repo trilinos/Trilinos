@@ -37,6 +37,7 @@ ADD_SUBDIRECTORIES(
   Utils
   RowMatrixTransposer
   Tsqr
+  ReindexTransform
   SolverMapTransform
   )
 
