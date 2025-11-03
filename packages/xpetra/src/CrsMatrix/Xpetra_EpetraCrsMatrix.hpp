@@ -49,6 +49,7 @@ namespace Xpetra {
 template <class EpetraGlobalOrdinal, class Node>
 class XPETRA_DEPRECATED EpetraCrsMatrixT
   : public CrsMatrix<double, int, EpetraGlobalOrdinal, Node> {
+ public:
   typedef EpetraGlobalOrdinal GlobalOrdinal;
   typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::scalar_type Scalar;
   typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::local_ordinal_type LocalOrdinal;
