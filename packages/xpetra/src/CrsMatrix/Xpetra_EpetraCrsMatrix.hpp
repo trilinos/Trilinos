@@ -49,16 +49,18 @@ namespace Xpetra {
 template <class EpetraGlobalOrdinal, class Node>
 class XPETRA_DEPRECATED EpetraCrsMatrixT
   : public CrsMatrix<double, int, EpetraGlobalOrdinal, Node> {
- public:
   typedef EpetraGlobalOrdinal GlobalOrdinal;
   typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::scalar_type Scalar;
   typedef typename CrsMatrix<double, int, GlobalOrdinal, Node>::local_ordinal_type LocalOrdinal;
 
 #ifdef HAVE_XPETRA_TPETRA
+ public:
   using local_matrix_type        = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
   using local_matrix_device_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using local_matrix_host_type   = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type;
   typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type node_type;
+
+ private:
 #endif
 
 #if KOKKOS_VERSION >= 40799
@@ -267,8 +269,13 @@ class EpetraCrsMatrixT<int, EpetraNode>
 
   // The following typedefs are used by the Kokkos interface
 #ifdef HAVE_XPETRA_TPETRA
+ public:
   typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+  using local_matrix_device_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
+  using local_matrix_host_type   = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type;
   typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type node_type;
+
+ private:
 #endif
 
  public:
@@ -1383,8 +1390,13 @@ class EpetraCrsMatrixT<long long, EpetraNode>
 
   // The following typedefs are used by the Kokkos interface
 #ifdef HAVE_XPETRA_TPETRA
+ public:
   typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+  using local_matrix_device_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
+  using local_matrix_host_type   = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type;
   typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type node_type;
+
+ private:
 #endif
 
  public:
