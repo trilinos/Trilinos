@@ -1,55 +1,56 @@
 // @HEADER
 // *****************************************************************************
-//             Xpetra: A linear algebra interface package
+//             MueLu: A linear algebra interface package
 //
-// Copyright 2012 NTESS and the Xpetra contributors.
+// Copyright 2012 NTESS and the MueLu contributors.
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
 
-#include "Xpetra_IteratorOps.hpp"
+#include "MueLu_IteratorOps.hpp"
 
-namespace Xpetra {
+namespace MueLu {
 
-#if defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
+#if defined(HAVE_MUELU_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 template <>
 void Jacobi<double, int, int, EpetraNode>(double omega,
-                                          const Xpetra::Vector<double, int, int, EpetraNode>& Dinv,
-                                          const Xpetra::Matrix<double, int, int, EpetraNode>& A,
-                                          const Xpetra::Matrix<double, int, int, EpetraNode>& B,
-                                          Xpetra::Matrix<double, int, int, EpetraNode>& C,
-                                          bool call_FillComplete_on_result,
-                                          bool doOptimizeStorage,
-                                          const std::string& label,
-                                          const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                          const Xpetra
+                                          : Vector<double, int, int, EpetraNode>& Dinv,
+                                            const Xpetra::Matrix<double, int, int, EpetraNode>& A,
+                                            const Xpetra::Matrix<double, int, int, EpetraNode>& B,
+                                            Xpetra::Matrix<double, int, int, EpetraNode>& C,
+                                            bool call_FillComplete_on_result,
+                                            bool doOptimizeStorage,
+                                            const std::string& label,
+                                            const Teuchos::RCP<Teuchos::ParameterList>& params) {
   typedef double SC;
   typedef int LO;
   typedef int GO;
   typedef EpetraNode NO;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*A.getRowMap()) == false, Exceptions::RuntimeError,
+  TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*A.getRowMap()) == false, MueLu::Exceptions::RuntimeError,
                              "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A")
-  TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*B.getRowMap()) == false, Exceptions::RuntimeError,
+  TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*B.getRowMap()) == false, MueLu::Exceptions::RuntimeError,
                              "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B");
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
-  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), MueLu::Exceptions::RuntimeError, "A is not fill-completed");
+  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), MueLu::Exceptions::RuntimeError, "B is not fill-completed");
 
   bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
 
   if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifndef HAVE_XPETRA_EPETRAEXT
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::IteratorOps::Jacobi requires EpetraExt to be compiled."));
+#ifndef HAVE_MUELU_EPETRAEXT
+    throw(MueLu::Exceptions::RuntimeError("Xpetra::IteratorOps::Jacobi requires EpetraExt to be compiled."));
 #else
     Epetra_CrsMatrix& epA = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(A);
     Epetra_CrsMatrix& epB = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix& epC = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(C);
     // FIXME
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+    MUELU_DYNAMIC_CAST(const EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "MueLu::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega, *epD.getEpetra_Vector(), epA, epB, epC, haveMultiplyDoFillComplete);
     if (haveMultiplyDoFillComplete) {
       // Due to Epetra wrapper intricacies, we need to explicitly call
-      // fillComplete on Xpetra matrix here. Specifically, EpetraCrsMatrix
+      // fillComplete on MueLu matrix here. Specifically, EpetraCrsMatrix
       // only keeps an internal variable to check whether we are in resumed
       // state or not, but never touches the underlying Epetra object. As
       // such, we need to explicitly update the state of Xpetra matrix to
@@ -65,10 +66,10 @@ void Jacobi<double, int, int, EpetraNode>(double omega,
     }
 #endif
   } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_MUELU_TPETRA
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=<double,int,int> enabled."));
+    throw(MueLu::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=<double,int,int> enabled."));
 #else
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(A);
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpB    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(B);
@@ -77,7 +78,7 @@ void Jacobi<double, int, int, EpetraNode>(double omega,
     Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label, params);
 #endif
 #else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
+    throw(MueLu::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
   }
 
@@ -94,7 +95,7 @@ void Jacobi<double, int, int, EpetraNode>(double omega,
 }
 #endif
 
-#if defined(HAVE_XPETRA_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
+#if defined(HAVE_MUELU_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
 template <>
 void Jacobi<double, int, long long, EpetraNode>(double omega,
                                                 const Xpetra::Vector<double, int, long long, EpetraNode>& Dinv,
@@ -110,32 +111,32 @@ void Jacobi<double, int, long long, EpetraNode>(double omega,
   typedef long long GO;
   typedef EpetraNode NO;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*A.getRowMap()) == false, Exceptions::RuntimeError,
-                             "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A")
-  TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*B.getRowMap()) == false, Exceptions::RuntimeError,
-                             "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B");
-  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
-  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
+  TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*A.getRowMap()) == false, MueLu::Exceptions::RuntimeError,
+                             "MueLuExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A")
+  TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*B.getRowMap()) == false, MueLu::Exceptions::RuntimeError,
+                             "MueLuExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B");
+  TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), MueLu::Exceptions::RuntimeError, "A is not fill-completed");
+  TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), MueLu::Exceptions::RuntimeError, "B is not fill-completed");
 
   bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
 
   if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifndef HAVE_XPETRA_EPETRAEXT
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::IteratorOps::Jacobi requires EpetraExt to be compiled."));
+#ifndef HAVE_MUELU_EPETRAEXT
+    throw(MueLu::Exceptions::RuntimeError("Xpetra::IteratorOps::Jacobi requires EpetraExt to be compiled."));
 #else
     Epetra_CrsMatrix& epA = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(A);
     Epetra_CrsMatrix& epB = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix& epC = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(C);
     // FIXME
-    XPETRA_DYNAMIC_CAST(const EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "Xpetra::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+    MUELU_DYNAMIC_CAST(const EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "MueLu::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega, *epD.getEpetra_Vector(), epA, epB, epC, haveMultiplyDoFillComplete);
     if (haveMultiplyDoFillComplete) {
       // Due to Epetra wrapper intricacies, we need to explicitly call
-      // fillComplete on Xpetra matrix here. Specifically, EpetraCrsMatrix
+      // fillComplete on MueLu matrix here. Specifically, EpetraCrsMatrix
       // only keeps an internal variable to check whether we are in resumed
       // state or not, but never touches the underlying Epetra object. As
-      // such, we need to explicitly update the state of Xpetra matrix to
+      // such, we need to explicitly update the state of MueLu matrix to
       // that of Epetra one afterwords
       C.fillComplete();
     }
@@ -148,10 +149,10 @@ void Jacobi<double, int, long long, EpetraNode>(double omega,
     }
 #endif
   } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
+#ifdef HAVE_MUELU_TPETRA
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=<double,int,long long> enabled."));
+    throw(MueLu::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=<double,int,long long> enabled."));
 #else
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(A);
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpB    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(B);
@@ -160,7 +161,7 @@ void Jacobi<double, int, long long, EpetraNode>(double omega,
     Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label, params);
 #endif
 #else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
+    throw(MueLu::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
   }
 
@@ -171,10 +172,10 @@ void Jacobi<double, int, long long, EpetraNode>(double omega,
   }
 
   // transfer striding information
-  Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(A));
-  Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(B));
+  Teuchos::RCP<MueLu::Matrix<SC, LO, GO, NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(A));
+  Teuchos::RCP<MueLu::Matrix<SC, LO, GO, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(B));
   C.CreateView("stridedMaps", rcpA, false, rcpB, false);  // TODO use references instead of RCPs
 }
 #endif
 
-}  // namespace Xpetra
+}  // namespace MueLu

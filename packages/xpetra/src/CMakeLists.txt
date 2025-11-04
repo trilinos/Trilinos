@@ -85,7 +85,6 @@ SET(HEADERS "")
 APPEND_GLOB(SOURCES
   Utils/Xpetra_Utils.cpp
   Utils/Xpetra_EpetraUtils.cpp
-  Utils/Xpetra_IteratorOps.cpp
   Platform/Xpetra_DefaultPlatform.cpp
   )
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
