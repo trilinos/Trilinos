@@ -569,6 +569,14 @@
       <name-ML>aggregation: threshold</name-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregation: zero drop tol after level</name>
+      <type>int</type>
+      <default>0</default>
+      <description>If positive, set the drop tol to zero when the level exceeds the specified level. Otherwise, this has no effect. </description>
+      <name-ML>parameter not existing in ML</name-ML>
+    </parameter>
+
   <parameter>
       <name>aggregation: use ml scaling of drop tol</name>
       <type>bool</type>

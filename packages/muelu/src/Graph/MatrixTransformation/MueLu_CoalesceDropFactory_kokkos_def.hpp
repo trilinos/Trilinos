@@ -49,6 +49,7 @@ RCP<const ParameterList> CoalesceDropFactory_kokkos<Scalar, LocalOrdinal, Global
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("aggregation: use blocking");
   SET_VALID_ENTRY("aggregation: drop tol");
+  SET_VALID_ENTRY("aggregation: zero drop tol after level");
   SET_VALID_ENTRY("aggregation: use ml scaling of drop tol");
   SET_VALID_ENTRY("aggregation: Dirichlet threshold");
   SET_VALID_ENTRY("aggregation: greedy Dirichlet");
@@ -309,6 +310,15 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     threshold = pL.get<double>("aggregation: drop tol") / pow(2.0, currentLevel.GetLevelID());
   else
     threshold = as<magnitudeType>(pL.get<double>("aggregation: drop tol"));
+
+  if (pL.get<int>("aggregation: zero drop tol after level") > 0)
+  {
+    if(currentLevel.GetLevelID() >= pL.get<int>("aggregation: zero drop tol after level"))
+    {
+      threshold = 0.0;
+    }
+  }
+
   bool aggregationMayCreateDirichlet = pL.get<bool>("aggregation: dropping may create Dirichlet");
 
   // Fill

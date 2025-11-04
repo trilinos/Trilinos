@@ -92,6 +92,7 @@ RCP<const ParameterList> CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("aggregation: drop tol");
+  SET_VALID_ENTRY("aggregation: zero drop tol after level");
   SET_VALID_ENTRY("aggregation: use ml scaling of drop tol");
   SET_VALID_ENTRY("aggregation: Dirichlet threshold");
   SET_VALID_ENTRY("aggregation: greedy Dirichlet");
@@ -293,6 +294,12 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
       threshold = pL.get<double>("aggregation: drop tol") / pow(2.0, currentLevel.GetLevelID());
     else
       threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
+
+    if (pL.get<int>("aggregation: zero drop tol after level") > 0) {
+      if (currentLevel.GetLevelID() >= pL.get<int>("aggregation: zero drop tol after level")) {
+        threshold = 0.0;
+      }
+    }
 
     std::string distanceLaplacianAlgoStr = pL.get<std::string>("aggregation: distance laplacian algo");
     std::string classicalAlgoStr         = pL.get<std::string>("aggregation: classical algo");

@@ -86,6 +86,7 @@ namespace MueLu {
     if (name == "problem: symmetric") { ss << "<Parameter name=\"problem: symmetric\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "hierarchy label") { ss << "<Parameter name=\"hierarchy label\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "aggregation: drop tol") { ss << "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "aggregation: zero drop tol after level") { ss << "<Parameter name=\"aggregation: zero drop tol after level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "print initial parameters") { ss << "<Parameter name=\"print initial parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "print unused parameters") { ss << "<Parameter name=\"print unused parameters\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "sa: damping factor") { ss << "<Parameter name=\"sa: damping factor\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
@@ -187,6 +188,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: distance laplacian metric\" type=\"string\" value=\"unweighted\"/>"
   "<Parameter name=\"aggregation: classical algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"aggregation: zero drop tol after level\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: use ml scaling of drop tol\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: min agg size\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"aggregation: max agg size\" type=\"int\" value=\"-1\"/>"
@@ -651,6 +653,8 @@ namespace MueLu {
          ("aggregation: classical algo","aggregation: classical algo")
       
          ("aggregation: threshold","aggregation: drop tol")
+      
+         ("parameter not existing in ML","aggregation: zero drop tol after level")
       
          ("aggregation: use ml scaling of drop tol","aggregation: use ml scaling of drop tol")
       
