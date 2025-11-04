@@ -66,7 +66,6 @@ set(upcoming_warnings
     class-memaccess
     dangling-pointer=2
     mismatched-new-delete
-    missing-braces
     overloaded-virtual=1
     pessimizing-move
     range-loop-construct
