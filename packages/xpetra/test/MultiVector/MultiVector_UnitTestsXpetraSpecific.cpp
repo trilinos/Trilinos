@@ -111,7 +111,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_7_DECL(MultiVector, XpetraSpecific_GetHostLocalView, 
   }
 
   // get a view of the multivector data on the host memory
-  typename dual_view_type::t_host_um hostView = mv->getLocalViewHost(Xpetra::Access::ReadWrite);
+  typename dual_view_type::t_host_um hostView = mv->getLocalViewHost(Tpetra::Access::ReadWrite);
 
   TEST_EQUALITY(hostView.extent(0), numLocal);
   TEST_EQUALITY(hostView.extent(1), 3);

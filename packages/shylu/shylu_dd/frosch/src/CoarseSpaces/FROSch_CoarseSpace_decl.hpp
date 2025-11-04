@@ -12,7 +12,7 @@
 
 //#include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
-#include <Xpetra_Access.hpp>
+#include <Tpetra_Access.hpp>
 
 #include<KokkosKernels_Utils.hpp>
 

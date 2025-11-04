@@ -157,11 +157,11 @@ class ScaledComparison {
     , results(results_) {
     if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
       diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
-      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
       diagVec    = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixMaxMinusOffDiagonal(A_);
-      auto lcl2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lcl2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag       = Kokkos::subview(lcl2d, Kokkos::ALL(), 0);
     }
   }
@@ -304,7 +304,7 @@ class UnscaledDistanceLaplacianComparison {
     , dist2(dist2_) {
     // Construct ghosted distance Laplacian diagonal
     diagVec        = DistanceLaplacian::getDiagonal(A_, dist2);
-    auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
     diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
   }
 
@@ -423,11 +423,11 @@ class ScaledDistanceLaplacianComparison {
     // Construct ghosted distance Laplacian diagonal
     if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
       diagVec        = DistanceLaplacian::getDiagonal(A_, dist2);
-      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
       diagVec        = DistanceLaplacian::getMaxMinusOffDiagonal(A_, dist2);
-      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     }
   }
