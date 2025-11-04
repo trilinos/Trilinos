@@ -18,7 +18,6 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_Import.hpp>
-#include <Xpetra_ImportUtils.hpp>
 #include <Xpetra_IO.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 
@@ -27,6 +26,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
+#include "MueLu_ImportUtils.hpp"
 #include "MueLu_ClassicalPFactory_decl.hpp"
 #include "MueLu_ClassicalMapFactory.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
