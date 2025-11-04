@@ -100,12 +100,15 @@ IF (HAVE_STK_Trilinos)
     message("STK_HAS_MPI is false")
     SET(STK_HAS_MPI OFF)
   endif()
+
+  set(STK_HAVE_KOKKOS ON)
 ELSE()
   if(STK_ENABLE_TESTS)
     enable_testing()
   endif()
 
   find_package(Kokkos REQUIRED)
+  set(STK_HAVE_KOKKOS ON)
 
   IF(DEFINED STK_ENABLE_MPI)
     IF(STK_ENABLE_MPI)
@@ -232,9 +235,9 @@ ENDIF()
 
 message("\nCMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 
-STK_CONFIGURE_FILE(STK_Trilinos_config.h)
+STK_CONFIGURE_FILE(STK_cmake_config.h)
 
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/STK_Trilinos_config.h DESTINATION
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/STK_cmake_config.h DESTINATION
         ${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}/stk_util)
 
 STK_SUBPACKAGES()

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+5.27.2       (STK_VERSION 5270200) 11/04/25
+  stk_expreval: fix Nvidia/cuda compile warning: "calling a constexpr __host__ function("min")
+           from a __host__ __device__ function("time_space_normal") is not allowed. "
+  stk_mesh: restore ability to build with -DSTK_USE_DEVICE_MESH on non-GPU builds
+            (very useful for debugging)
+
 5.27.1-01    (STK_VERSION 5270101) 10/24/25
   stk_unit_test_utils: Fix missing-header build-error encountered by Albany
 

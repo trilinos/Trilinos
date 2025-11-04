@@ -49,6 +49,8 @@
 #include "stk_io/FillMesh.hpp"
 #include "stk_util/command_line/CommandLineParser.hpp"
 #include "stk_util/command_line/CommandLineParserUtils.hpp"
+#include "stk_unit_test_utils/BulkDataTester.hpp"
+#include "stk_mesh/base/GetEntities.hpp"
 
 #ifdef STK_USE_DEVICE_MESH
 namespace
@@ -78,6 +80,68 @@ protected:
   std::unique_ptr<stk::mesh::BulkData> m_bulk;
   stk::mesh::MetaData * m_meta;
 };
+
+using Memspace = stk::mesh::NgpMeshDefaultMemSpace;
+using DeviceBucket = stk::mesh::DeviceBucketT<Memspace>;
+
+class NgpBatchChangeEntityPartsTwoBlocks : public ::ngp_testing::Test
+{
+  public:
+    NgpBatchChangeEntityPartsTwoBlocks() :
+      meta(3),
+      bulk(meta,
+           stk::parallel_machine_world(),
+           stk::mesh::BulkData::AUTO_AURA,
+           false,
+           std::unique_ptr<stk::mesh::FieldDataManager>(),
+           maximumBucketCapacity,
+           maximumBucketCapacity),
+      block2(&meta.declare_part("block_2", stk::topology::ELEM_RANK))
+    {
+      if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2)
+      {
+        return;
+      }
+      
+      stk::io::fill_mesh("generated:1x1x2", bulk);
+      block1 = bulk.mesh_meta_data().get_part("block_1");
+    }
+
+    void move_entity_on_device(const std::vector<unsigned>& elemOrdinals)
+    {
+      stk::mesh::Bucket* bucket = bulk.buckets(stk::topology::ELEM_RANK)[0];
+      Kokkos::View<stk::mesh::Entity*, Memspace> entities("entities", elemOrdinals.size());
+      Kokkos::View<stk::mesh::PartOrdinal*, Memspace> add_part_ordinals("add_part_ords", 1);
+      Kokkos::View<stk::mesh::PartOrdinal*, Memspace> remove_part_ordinals("remove_part_rods", 1);
+
+      auto entities_host             = Kokkos::create_mirror_view(entities);
+      auto add_part_ordinals_host    = Kokkos::create_mirror_view(add_part_ordinals);
+      auto remove_part_ordinals_host = Kokkos::create_mirror_view(remove_part_ordinals);
+
+      for (unsigned i=0; i < elemOrdinals.size(); ++i)
+      {
+        entities_host(i)             = (*bucket)[elemOrdinals[i]];
+      }
+      add_part_ordinals_host(0)    = block2->mesh_meta_data_ordinal();
+      remove_part_ordinals_host(0) = block1->mesh_meta_data_ordinal();
+
+      Kokkos::deep_copy(entities, entities_host);
+      Kokkos::deep_copy(add_part_ordinals,    add_part_ordinals_host);
+      Kokkos::deep_copy(remove_part_ordinals, remove_part_ordinals_host);
+
+      stk::mesh::NgpMesh& deviceMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+      deviceMesh.impl_batch_change_entity_parts(entities, add_part_ordinals, remove_part_ordinals);
+    }
+
+    stk::mesh::MetaData meta;
+    stk::unit_test_util::BulkDataTester bulk;
+    stk::mesh::Part* block1;
+    stk::mesh::Part* block2;
+
+    static constexpr unsigned maximumBucketCapacity = 2;
+};
+
+
 
 stk::mesh::Entity create_node(stk::mesh::BulkData& bulk, stk::mesh::EntityId nodeId, 
                               const stk::mesh::PartVector& initialParts = stk::mesh::PartVector())
@@ -1929,6 +1993,111 @@ TEST_F(NgpBatchChangeEntityPartsInducedPartMembership, test_repeated_part_additi
     EXPECT_NO_THROW(ngpMesh.impl_batch_change_entity_parts_with_inducible_parts(devEntities, emptyParts, devRmParts));
   }
 }
+
+namespace {
+void check_entities_valid(stk::mesh::NgpMesh& deviceMesh)
+{
+  stk::mesh::impl::DeviceBucketRepository<stk::mesh::NgpMeshDefaultMemSpace>& deviceBucketRepo = deviceMesh.get_device_bucket_repository();
+
+  for (stk::mesh::EntityRank rank=stk::topology::BEGIN_RANK; rank < stk::topology::END_RANK; ++rank)
+  {
+    Kokkos::parallel_for(
+      "check_entities_valid" ,
+      stk::ngp::RangePolicy<stk::ngp::DeviceSpace::exec_space>(0, deviceBucketRepo.num_buckets(rank)),
+      KOKKOS_LAMBDA(unsigned bucket_id)
+      {
+        DeviceBucket& bucket = *(deviceBucketRepo.get_bucket(rank, bucket_id));
+        for (unsigned i=0; i < bucket.size(); ++i)
+        {
+          NGP_EXPECT_NE(bucket[i], stk::mesh::Entity());
+        }
+      }
+    );
+  }
+}
+
+void check_entities_unique(stk::mesh::NgpMesh& deviceMesh)
+{
+  using Policy = Kokkos::MDRangePolicy<Kokkos::Rank<2>, stk::ngp::DeviceSpace::exec_space>;
+
+  stk::mesh::impl::DeviceBucketRepository<stk::mesh::NgpMeshDefaultMemSpace>& deviceBucketRepo = deviceMesh.get_device_bucket_repository();
+
+
+  for (stk::mesh::EntityRank rank=stk::topology::BEGIN_RANK; rank < stk::topology::END_RANK; ++rank)
+  {
+    Policy policy({0, 0}, {deviceBucketRepo.num_buckets(rank), deviceBucketRepo.num_buckets(rank)});
+
+    Kokkos::parallel_for(
+      "check_entities_unique" ,
+      policy,
+      KOKKOS_LAMBDA(unsigned bucketId_i, unsigned bucketId_j)
+      {
+        if (bucketId_i == bucketId_j)
+        {
+          return;
+        }
+        DeviceBucket& bucket_i = *(deviceBucketRepo.get_bucket(rank, bucketId_i));
+        DeviceBucket& bucket_j = *(deviceBucketRepo.get_bucket(rank, bucketId_j));
+        for (unsigned i=0; i < bucket_i.size(); ++i)
+        {
+          for (unsigned j=0; j < bucket_j.size(); ++j)
+          {
+            NGP_EXPECT_NE(bucket_i[i], bucket_j[j]);
+          }
+        }
+      }
+    );
+  }
+}
+
+}
+
+TEST_F(NgpBatchChangeEntityPartsTwoBlocks, MoveElementOne)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  stk::mesh::NgpMesh& deviceMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+  stk::mesh::impl::DeviceBucketRepository<stk::mesh::NgpMeshDefaultMemSpace>& deviceBucketRepo = deviceMesh.get_device_bucket_repository();
+
+  move_entity_on_device({0});
+
+  check_entities_valid(deviceMesh);
+  check_entities_unique(deviceMesh);
+  EXPECT_EQ(deviceBucketRepo.get_bucket(stk::topology::ELEM_RANK, 0)->size(), 1u);
+  EXPECT_EQ(deviceBucketRepo.get_bucket(stk::topology::ELEM_RANK, 1)->size(), 1u);
+}
+
+TEST_F(NgpBatchChangeEntityPartsTwoBlocks, MoveElementTwo)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  stk::mesh::NgpMesh& deviceMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+  stk::mesh::impl::DeviceBucketRepository<stk::mesh::NgpMeshDefaultMemSpace>& deviceBucketRepo = deviceMesh.get_device_bucket_repository();
+
+  move_entity_on_device({1});
+
+  check_entities_valid(deviceMesh);
+  check_entities_unique(deviceMesh);
+  EXPECT_EQ(deviceBucketRepo.get_bucket(stk::topology::ELEM_RANK, 0)->size(), 1u);
+  EXPECT_EQ(deviceBucketRepo.get_bucket(stk::topology::ELEM_RANK, 1)->size(), 1u);
+}
+
+TEST_F(NgpBatchChangeEntityPartsTwoBlocks, MoveBothElements)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+
+  stk::mesh::NgpMesh& deviceMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+  stk::mesh::impl::DeviceBucketRepository<stk::mesh::NgpMeshDefaultMemSpace>& deviceBucketRepo = deviceMesh.get_device_bucket_repository();
+
+  move_entity_on_device({0, 1});
+
+  check_entities_valid(deviceMesh);
+  check_entities_unique(deviceMesh);
+  EXPECT_EQ(deviceBucketRepo.num_buckets(stk::topology::ELEM_RANK), 1u);
+  EXPECT_EQ(deviceBucketRepo.get_bucket(stk::topology::ELEM_RANK, 0)->size(), 2u);
+}
+
+
 
 }  // namespace
 #endif
