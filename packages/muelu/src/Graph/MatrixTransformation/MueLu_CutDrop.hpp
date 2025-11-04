@@ -55,11 +55,14 @@ class UnscaledComparison {
   using ATS = Kokkos::ArithTraits<scalar_type>;
 #endif
   using magnitudeType = typename ATS::magnitudeType;
+  using values_view   = Kokkos::View<magnitudeType*, memory_space>;
+  mutable values_view values;
 
  public:
   UnscaledComparison(matrix_type& A_, results_view& results_)
     : A(A_.getLocalMatrixDevice())
-    , results(results_) {}
+    , results(results_)
+    , values("UnscaledComparison::values", A.nnz()) {}
 
   template <class local_matrix_type2>
   struct Comparator {
@@ -75,21 +78,28 @@ class UnscaledComparison {
     using ATS = Kokkos::ArithTraits<scalar_type>;
 #endif
     using magnitudeType = typename ATS::magnitudeType;
+    using values_view   = Kokkos::View<magnitudeType*, memory_space>;
 
     const local_matrix_type2 A;
     const local_ordinal_type offset;
     const results_view results;
+    mutable values_view values;
 
    public:
     KOKKOS_INLINE_FUNCTION
-    Comparator(const local_matrix_type2& A_, local_ordinal_type rlid_, const results_view& results_)
+    Comparator(const local_matrix_type2& A_, local_ordinal_type rlid_, const results_view& results_, values_view& values_)
       : A(A_)
       , offset(A_.graph.row_map(rlid_))
-      , results(results_) {}
+      , results(results_)
+      , values(Kokkos::subview(values_, Kokkos::make_pair(A.graph.row_map(rlid_), A.graph.row_map(rlid_ + 1)))) {
+      for (auto i = 0U; i < values.extent(0); ++i) {
+        values(i) = get_value_impl(i);
+      }
+    }
 
-    KOKKOS_INLINE_FUNCTION
+    KOKKOS_FORCEINLINE_FUNCTION
     magnitudeType get_value(size_t x) const {
-      return ATS::magnitude(A.values(offset + x) * A.values(offset + x));
+      return values(x);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -111,13 +121,19 @@ class UnscaledComparison {
         }
       }
     }
+
+   private:
+    KOKKOS_INLINE_FUNCTION
+    magnitudeType get_value_impl(size_t x) const {
+      return ATS::magnitude(A.values(offset + x) * A.values(offset + x));
+    }
   };
 
   using comparator_type = Comparator<local_matrix_type>;
 
   KOKKOS_INLINE_FUNCTION
   comparator_type getComparator(local_ordinal_type rlid) const {
-    return comparator_type(A, rlid, results);
+    return comparator_type(A, rlid, results, values);
   }
 };
 
