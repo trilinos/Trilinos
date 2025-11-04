@@ -9,7 +9,7 @@
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
-#include <Xpetra_UnitTestHelpers.hpp>
+#include <MueLu_TestHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <KokkosSparse_CrsMatrix.hpp>
@@ -19,7 +19,7 @@
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsMatrixUtils.hpp>
+#include <MueLu_CrsMatrixUtils.hpp>
 
 namespace {
 

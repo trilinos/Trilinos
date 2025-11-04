@@ -11,7 +11,7 @@
 #define MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_DEF_HPP
 
 #include "Xpetra_CrsGraph.hpp"
-#include "Xpetra_CrsMatrixUtils.hpp"
+#include "MueLu_CrsMatrixUtils.hpp"
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"

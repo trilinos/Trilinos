@@ -21,7 +21,7 @@
 #include "Xpetra_MatrixMatrix.hpp"
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_TripleMatrixMultiply.hpp"
-#include "Xpetra_CrsMatrixUtils.hpp"
+#include "MueLu_CrsMatrixUtils.hpp"
 #include "Xpetra_MatrixUtils.hpp"
 
 #include "MueLu_RefMaxwell_decl.hpp"
