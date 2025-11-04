@@ -23,7 +23,7 @@ mkdir -p $build_dir
 cd ${build_dir}
 
 if [ "${clear_cache}" == "ON" ] ; then
-  rm -rf stk_* STK_Trilinos_config.h Makefile cmake_install.cmake C*
+  rm -rf stk_* STK_cmake_config.h Makefile cmake_install.cmake C*
 fi
 
 printf "calling cmake from run_cmake_stk_standalone, stk_src_dir='${stk_src_dir}'...\n\n"

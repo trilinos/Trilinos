@@ -60,6 +60,19 @@ class DevicePartition;
 
 constexpr unsigned INVALID_INDEX = std::numeric_limits<unsigned>::max();
 
+struct EntityCompareInvalidAtEnd
+{
+  using entity_value_type = stk::mesh::Entity::entity_value_type;
+  static_assert(entity_value_type(Entity::InvalidEntity)-1 == std::numeric_limits<entity_value_type>::max(), 
+                "InvalidEntity must wrap around to large value");
+
+  KOKKOS_INLINE_FUNCTION
+  constexpr bool operator()(const Entity& lhs, const Entity& rhs) const
+  {
+    return lhs.local_offset() - 1 < rhs.local_offset() - 1;
+  }
+};
+
 }
 
 template <typename BucketNgpMemSpace>
@@ -290,10 +303,10 @@ void DeviceBucketT<BucketNgpMemSpace>::sort_entities()
 {
   using EntityUViewType = Kokkos::View<Entity*, BucketNgpMemSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   EntityUViewType compactEntityUView(m_entities.data(), get_active_entity_span());
-  if (!Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactEntityUView)) {
-    Kokkos::sort(compactEntityUView);
+  if (!Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactEntityUView, impl::EntityCompareInvalidAtEnd{})) {
+    Kokkos::sort(compactEntityUView, impl::EntityCompareInvalidAtEnd{});
   }
-  STK_ThrowAssert(Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactEntityUView));
+  STK_ThrowAssert(Kokkos::Experimental::is_sorted(stk::ngp::ExecSpace{}, compactEntityUView, impl::EntityCompareInvalidAtEnd{}));
 
   update_bucket_meta_set_entity_span_to_active_count();
 }

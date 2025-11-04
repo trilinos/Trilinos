@@ -43,6 +43,7 @@
 #define STK_HAS_ARBORX
 #define STK_HAVE_BOOST
 #define STK_HAVE_INTREPID2
+#define STK_HAVE_KOKKOS
 #define STK_HAVE_STKMESH
 #define STK_HAVE_STKIO
 #define STK_HAVE_STKSEARCHUTIL
@@ -58,7 +59,7 @@
 #else
 // This file gets created by cmake and will not
 // be present in a sierra build using bjam
-#include "STK_Trilinos_config.h"
+#include "STK_cmake_config.h"
 
 #ifndef STK_HAS_MPI
 

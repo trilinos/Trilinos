@@ -34,7 +34,7 @@
 #ifndef STK_NGP_NGPSPACES_HPP
 #define STK_NGP_NGPSPACES_HPP
 
-#include "stk_util/stk_kokkos_macros.h"
+#include "stk_util/stk_config.h"
 #include <Kokkos_Core.hpp>
 
 namespace stk {

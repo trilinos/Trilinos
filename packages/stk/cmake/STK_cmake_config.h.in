@@ -44,6 +44,8 @@
 
 #cmakedefine STK_HAVE_INTREPID2
 
+#cmakedefine STK_HAVE_KOKKOS
+
 #cmakedefine STK_HAVE_STKMESH
 
 #cmakedefine STK_HAVE_STKIO
