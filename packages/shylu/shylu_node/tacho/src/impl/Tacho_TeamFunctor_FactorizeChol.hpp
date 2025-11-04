@@ -80,7 +80,6 @@ public:
                                                  const value_type_matrix &ABR, const value_type_matrix &W) const {
     using CholAlgoType = typename CholAlgorithm_Team::type; // Internal (on device), External (on host with CUDA/HIP enabled, TODO: Serial?), Serial (on host without CUDA/HIP)
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
-    using HerkAlgoType = typename HerkAlgorithm_Team::type;
     using GemmAlgoType = typename GemmAlgorithm_Team::type;
 
     int err = 0;
@@ -121,7 +120,6 @@ public:
                                                  const value_type_matrix &ABR, const value_type_matrix &W) const {
     using CholAlgoType = typename CholAlgorithm_Team::type;
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
-    using HerkAlgoType = typename HerkAlgorithm_Team::type;
     using GemmAlgoType = typename GemmAlgorithm_Team::type;
 
     int err = 0;
@@ -261,7 +259,6 @@ public:
     using CholAlgoType = typename CholAlgorithm_Team::type; // Internal (on device), External (on host with CUDA/HIP enabled, TODO: Serial?), Serial (on host without CUDA/HIP)
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using HerkAlgoType = typename HerkAlgorithm_Team::type;
-    using GemmAlgoType = typename GemmAlgorithm_Team::type;
 
     int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
@@ -299,7 +296,6 @@ public:
     using CholAlgoType = typename CholAlgorithm_Team::type;
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using HerkAlgoType = typename HerkAlgorithm_Team::type;
-    using GemmAlgoType = typename GemmAlgorithm_Team::type;
 
     int err = 0;
     const value_type one(1), minus_one(-1), zero(0);
