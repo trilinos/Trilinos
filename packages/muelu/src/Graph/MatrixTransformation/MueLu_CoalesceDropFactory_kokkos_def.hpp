@@ -311,10 +311,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   else
     threshold = as<magnitudeType>(pL.get<double>("aggregation: drop tol"));
 
-  if (pL.get<int>("aggregation: zero drop tol after level") > 0)
-  {
-    if(currentLevel.GetLevelID() >= pL.get<int>("aggregation: zero drop tol after level"))
-    {
+  if (pL.get<int>("aggregation: zero drop tol after level") > 0) {
+    if (currentLevel.GetLevelID() >= pL.get<int>("aggregation: zero drop tol after level")) {
       threshold = 0.0;
     }
   }
