@@ -285,7 +285,7 @@ void test_matrix(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
                       compositeMatrix);
 
   // Extract the local data from the original and final matrices to compare them
-  using local_matrix_type = typename Matrix::local_matrix_type;
+  using local_matrix_type = typename Matrix::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
@@ -385,7 +385,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, CompositeToRegionMatrix, Scalar,
                      regionMatVecLIDs, regionInterfaceImporter);
 
   // Extract the local data from the region matrix
-  using local_matrix_type = typename Matrix::local_matrix_type;
+  using local_matrix_type = typename Matrix::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
@@ -574,7 +574,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, RegionToCompositeMatrix, Scalar,
   // isequivalent to applying the identity operator.
 
   // Extract the local data from the original and final matrices to compare them
-  using local_matrix_type = typename Matrix::local_matrix_type;
+  using local_matrix_type = typename Matrix::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
@@ -1069,7 +1069,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace2D, Scalar, LocalOrdinal,
               out, success);
 
   // Extract the local data from the region matrix
-  using local_matrix_type = typename Matrix::local_matrix_type;
+  using local_matrix_type = typename Matrix::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;
@@ -1245,7 +1245,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, Laplace3D, Scalar, LocalOrdinal,
               out, success);
 
   // Extract the local data from the region matrix
-  using local_matrix_type = typename Matrix::local_matrix_type;
+  using local_matrix_type = typename Matrix::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using entries_type      = typename local_graph_type::entries_type;
   using values_type       = typename local_matrix_type::values_type;

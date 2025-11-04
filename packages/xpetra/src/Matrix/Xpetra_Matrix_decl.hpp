@@ -71,8 +71,17 @@ class Matrix : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node
   typedef Node node_type;
 
 #ifdef HAVE_XPETRA_TPETRA
-  typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+  using local_matrix_type        = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_device_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
+  using local_matrix_host_type   = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type;
 #endif
+
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS = Kokkos::ArithTraits<Scalar>;
+#endif
+  using impl_scalar_type = typename ATS::val_type;
 
   //! @name Constructor/Destructor Methods
   //@{

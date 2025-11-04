@@ -220,7 +220,7 @@ void initializeCollection() {
   registerAllPrefixedVariables("CRAY");
 
   // modules
-  registerCommand("module", "module list", "module");
+  registerCommand("module", "module list 2>&1", "module");
 
   // CUDA
   registerCommand("nvidia-smi", "nvidia-smi --query", "nvidia-smi");

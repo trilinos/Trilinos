@@ -41,7 +41,7 @@ class NotayAggregationFactory : public SingleLevelFactoryBase {
  public:
   //! @name typedefs
   //@{
-  using local_matrix_type = typename Matrix::local_matrix_type;
+  using local_matrix_type = typename Matrix::local_matrix_device_type;
   using device_type       = typename local_matrix_type::device_type;
   using execution_space   = typename device_type::execution_space;
   using magnitude_type    = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;

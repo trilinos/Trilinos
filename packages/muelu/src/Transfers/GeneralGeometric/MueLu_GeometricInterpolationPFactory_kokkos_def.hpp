@@ -228,12 +228,12 @@ void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
     if (P_tpetra.is_null()) throw std::runtime_error("BuildConstantP: Matrix factory did not return a Tpetra::BlockCrsMatrix");
     RCP<CrsMatrixWrap> P_wrap = rcp(new CrsMatrixWrap(P_xpetra));
 
-    const LO stride                                 = strideInfo[0] * strideInfo[0];
-    const LO in_stride                              = strideInfo[0];
-    typename CrsMatrix::local_graph_type localGraph = prolongatorGraph->getLocalGraphDevice();
-    auto rowptr                                     = localGraph.row_map;
-    auto indices                                    = localGraph.entries;
-    auto values                                     = P_tpetra->getTpetra_BlockCrsMatrix()->getValuesDeviceNonConst();
+    const LO stride                                        = strideInfo[0] * strideInfo[0];
+    const LO in_stride                                     = strideInfo[0];
+    typename CrsMatrix::local_graph_device_type localGraph = prolongatorGraph->getLocalGraphDevice();
+    auto rowptr                                            = localGraph.row_map;
+    auto indices                                           = localGraph.entries;
+    auto values                                            = P_tpetra->getTpetra_BlockCrsMatrix()->getValuesDeviceNonConst();
 
     using ISC = typename Tpetra::BlockCrsMatrix<SC, LO, GO, NO>::impl_scalar_type;
     ISC one   = Teuchos::ScalarTraits<ISC>::one();

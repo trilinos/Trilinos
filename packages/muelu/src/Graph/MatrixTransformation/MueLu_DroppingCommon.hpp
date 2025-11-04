@@ -93,7 +93,7 @@ class PointwiseDropBoundaryFunctor {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class PointwiseSymmetricDropBoundaryFunctor {
  private:
-  using local_matrix_type   = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type   = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using scalar_type         = typename local_matrix_type::value_type;
   using local_ordinal_type  = typename local_matrix_type::ordinal_type;
   using memory_space        = typename local_matrix_type::memory_space;
@@ -178,7 +178,7 @@ class VectorDropBoundaryFunctor {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class VectorSymmetricDropBoundaryFunctor {
  private:
-  using local_matrix_type       = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type       = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using scalar_type             = typename local_matrix_type::value_type;
   using local_ordinal_type      = typename local_matrix_type::ordinal_type;
   using memory_space            = typename local_matrix_type::memory_space;
@@ -388,7 +388,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class BlockDiagonalizeFunctor {
  private:
   using matrix_type       = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type = typename matrix_type::local_matrix_type;
+  using local_matrix_type = typename matrix_type::local_matrix_device_type;
 
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
@@ -441,7 +441,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class BlockDiagonalizeVectorFunctor {
  private:
   using matrix_type       = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type = typename matrix_type::local_matrix_type;
+  using local_matrix_type = typename matrix_type::local_matrix_device_type;
 
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;

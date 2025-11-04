@@ -28,7 +28,7 @@ jobs:
         
       - name: Dispatch repository_dispatch event
         if: steps.changes.outputs.tutorial == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.MUELU_REPO_ACCESS_TOKEN }} # A PAT with 'repo' scope
           script: |

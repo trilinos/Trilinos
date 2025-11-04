@@ -20,7 +20,7 @@ PeriodicBC_Parser::PeriodicBC_Parser()
    : countStr_("Count")
    , condPrefix_("Periodic Condition ")
    , searchStr_("Use BBox Search")
-   , useBBoxSearch_(false) // TODO swap this to change default search (see also STK_interface.hpp)
+   , useBBoxSearch_(true)
 {
 }
 

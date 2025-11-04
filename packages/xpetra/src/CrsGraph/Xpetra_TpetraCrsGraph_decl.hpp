@@ -38,7 +38,9 @@ class TpetraCrsGraph
   typedef TpetraExport<LocalOrdinal, GlobalOrdinal, Node> TpetraExportClass;
   typedef Map map_type;
 
-  typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type local_graph_type;
+  using local_graph_type        = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type;
+  using local_graph_device_type = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type;
+  using local_graph_host_type   = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_host_type;
 
  public:
   //! @name Constructor/Destructor Methods
