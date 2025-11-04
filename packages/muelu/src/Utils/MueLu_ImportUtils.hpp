@@ -289,7 +289,7 @@ class ImportUtils<int, long long, EpetraNode> {
 };      // end class ImportUtils
 #endif  // HAVE_XPETRA_EPETRA for Epetra scpecialization
 
-}  // end namespace Xpetra
+}  // namespace MueLu
 
 #define MUELU_IMPORTUTILS_SHORT
 

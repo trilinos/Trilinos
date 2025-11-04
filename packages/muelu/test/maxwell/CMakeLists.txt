@@ -26,7 +26,7 @@ IF(${PACKAGE_NAME}_ENABLE_Amesos2 AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
         M1.mat
         S.mat
     )
-    
+
     TRIBITS_COPY_FILES_TO_BINARY_DIR(
       Reitzinger_cp_complex
       SOURCE_FILES
