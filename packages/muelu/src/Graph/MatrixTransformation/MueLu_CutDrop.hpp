@@ -324,6 +324,8 @@ class UnscaledDistanceLaplacianComparison {
   using ATS = Kokkos::ArithTraits<scalar_type>;
 #endif
   using magnitudeType = typename ATS::magnitudeType;
+  using values_view   = Kokkos::View<magnitudeType*, memory_space>;
+  mutable values_view values;
 
   Teuchos::RCP<diag_vec_type> diagVec;
   diag_view_type diag;
@@ -333,7 +335,8 @@ class UnscaledDistanceLaplacianComparison {
   UnscaledDistanceLaplacianComparison(matrix_type& A_, DistanceFunctorType& dist2_, results_view& results_)
     : A(A_.getLocalMatrixDevice())
     , results(results_)
-    , dist2(dist2_) {
+    , dist2(dist2_)
+    , values("UnscaledDistanceLaplacianComparison::values", A.nnz()) {
     // Construct ghosted distance Laplacian diagonal
     diagVec        = DistanceLaplacian::getDiagonal(A_, dist2);
     auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
@@ -354,6 +357,7 @@ class UnscaledDistanceLaplacianComparison {
     using ATS = Kokkos::ArithTraits<scalar_type>;
 #endif
     using magnitudeType = typename ATS::magnitudeType;
+    using values_view   = Kokkos::View<magnitudeType*, memory_space>;
 
     const local_matrix_type2 A;
     const diag_view_type2 diag;
@@ -361,30 +365,28 @@ class UnscaledDistanceLaplacianComparison {
     const local_ordinal_type rlid;
     const local_ordinal_type offset;
     const results_view results;
+    mutable values_view values;
 
     const scalar_type one = ATS::one();
 
    public:
     KOKKOS_INLINE_FUNCTION
-    Comparator(const local_matrix_type2& A_, const diag_view_type2& diag_, const DistanceFunctorType2* dist2_, local_ordinal_type rlid_, const results_view& results_)
+    Comparator(const local_matrix_type2& A_, const diag_view_type2& diag_, const DistanceFunctorType2* dist2_, local_ordinal_type rlid_, const results_view& results_, values_view& values_)
       : A(A_)
       , diag(diag_)
       , dist2(dist2_)
       , rlid(rlid_)
       , offset(A_.graph.row_map(rlid_))
-      , results(results_) {}
-
-    KOKKOS_INLINE_FUNCTION
-    magnitudeType get_value(size_t x) const {
-      auto clid = A.graph.entries(offset + x);
-      scalar_type val;
-      if (rlid != clid) {
-        val = -one / dist2->distance2(rlid, clid);
-      } else {
-        val = diag(rlid);
+      , results(results_)
+      , values(Kokkos::subview(values_, Kokkos::make_pair(A.graph.row_map(rlid_), A.graph.row_map(rlid_ + 1)))) {
+      for (auto i = 0U; i < values.extent(0); ++i) {
+        values(i) = get_value_impl(i);
       }
-      auto aij2 = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
-      return aij2;
+    }
+
+    KOKKOS_FORCEINLINE_FUNCTION
+    magnitudeType get_value(size_t x) const {
+      return values(x);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -406,13 +408,27 @@ class UnscaledDistanceLaplacianComparison {
         }
       }
     }
+
+   private:
+    KOKKOS_INLINE_FUNCTION
+    magnitudeType get_value_impl(size_t x) const {
+      auto clid = A.graph.entries(offset + x);
+      scalar_type val;
+      if (rlid != clid) {
+        val = -one / dist2->distance2(rlid, clid);
+      } else {
+        val = diag(rlid);
+      }
+      auto aij2 = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+      return aij2;
+    }
   };
 
   using comparator_type = Comparator<local_matrix_type, DistanceFunctorType, diag_view_type>;
 
   KOKKOS_INLINE_FUNCTION
   comparator_type getComparator(local_ordinal_type rlid) const {
-    return comparator_type(A, diag, &dist2, rlid, results);
+    return comparator_type(A, diag, &dist2, rlid, results, values);
   }
 };
 
