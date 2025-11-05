@@ -1,5 +1,10 @@
 # CHANGELOG
 
+5.27.2-01    (STK_VERSION 5270201) 11/05/25
+  stk_doc_tests: fix build error when Seacas/Ioss is on but MPI is off
+  stk_mesh: add GPU-compatible APIs for parallel_sum and friends.
+  stk_util: add Default constructor for MPITag.
+
 5.27.2       (STK_VERSION 5270200) 11/04/25
   stk_expreval: fix Nvidia/cuda compile warning: "calling a constexpr __host__ function("min")
            from a __host__ __device__ function("time_space_normal") is not allowed. "

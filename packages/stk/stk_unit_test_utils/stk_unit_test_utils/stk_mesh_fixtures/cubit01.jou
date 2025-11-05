@@ -1,7 +1,0 @@
-## /projects/cubit/Cubit-17.04/bin/clarox
-## Cubit Version 17.04.7
-## Cubit Build 37894f122b
-## Revised Wed Sep 3 09:16:14 2025 -0600
-## Running 10/30/2025 07:17:44 PM
-## Command Options:
-import mesh geometry "/ceeGPFS/fgs/william/code/stk/stk_unit_test_utils/stk_unit_test_utils/stk_mesh_fixtures/heterogeneous.g" feature_angle 135 merge
