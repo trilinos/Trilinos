@@ -222,3 +222,18 @@ endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     disable_warnings("${explicitly_disabled_warnings}")
 endif()
+
+
+# Make sure that all deprecated packages are forcefully disabled (and that the variables controlling enablement are defined)
+macro(force_disable_package packageName)
+    tribits_filter_package_list_from_var(Trilinos_DEFINED_PACKAGES INTERNAL ON NONEMPTY packageSublist)
+    set(Trilinos_ENABLE_${packageName} OFF CACHE BOOL "Enable ${packageName} (special setting for force-disable, should ALWAYS be `OFF`)")
+    foreach(package ${packageSublist})
+        set(${package}_ENABLE_${packageName} OFF CACHE BOOL "Enable ${packageName} support in ${package} (special setting for force-disable, should ALWAYS be `OFF`)")
+    endforeach()
+endmacro()
+
+set(DEPRECATED_PACKAGES Amesos AztecOO Epetra EpetraExt Ifpack Intrepid Isorropia ML NewPackage Pliris PyTrilinos ShyLU_DDCore ThyraEpetraAdapters ThyraEpetraExtAdapters Triutils)
+FOREACH(package ${DEPRECATED_PACKAGES})
+  force_disable_package(${package})
+ENDFOREACH()
