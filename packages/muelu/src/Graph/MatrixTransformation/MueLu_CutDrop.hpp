@@ -166,11 +166,14 @@ class ScaledComparison {
 
   Teuchos::RCP<diag_vec_type> diagVec;
   diag_view_type diag;
+  using values_view = Kokkos::View<magnitudeType*, memory_space>;
+  mutable values_view values;
 
  public:
   ScaledComparison(matrix_type& A_, results_view& results_)
     : A(A_.getLocalMatrixDevice())
-    , results(results_) {
+    , results(results_)
+    , values("ScaledComparison::values", A.nnz()) {
     if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
       diagVec        = Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(A_);
       auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
@@ -201,24 +204,57 @@ class ScaledComparison {
 #else
     using mATS = Kokkos::ArithTraits<magnitudeType>;
 #endif
+    using values_view = Kokkos::View<magnitudeType*, memory_space>;
 
     const local_matrix_type2 A;
     const diag_view_type2 diag;
     const local_ordinal_type rlid;
     const local_ordinal_type offset;
     const results_view results;
+    mutable values_view values;
 
    public:
     KOKKOS_INLINE_FUNCTION
-    Comparator(const local_matrix_type2& A_, const diag_view_type2& diag_, const local_ordinal_type rlid_, const results_view& results_)
+    Comparator(const local_matrix_type2& A_, const diag_view_type2& diag_, const local_ordinal_type rlid_, const results_view& results_, values_view& values_)
       : A(A_)
       , diag(diag_)
       , rlid(rlid_)
       , offset(A_.graph.row_map(rlid_))
-      , results(results_) {}
+      , results(results_)
+      , values(Kokkos::subview(values_, Kokkos::make_pair(A.graph.row_map(rlid_), A.graph.row_map(rlid_ + 1)))) {
+      for (auto i = 0U; i < values.extent(0); ++i) {
+        values(i) = get_value_impl(i);
+      }
+    }
 
     KOKKOS_INLINE_FUNCTION
     magnitudeType get_value(size_t x) const {
+      return values(x);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    bool operator()(size_t x, size_t y) const {
+      if (results(offset + x) != UNDECIDED) {
+        if (results(offset + y) != UNDECIDED) {
+          // does not matter
+          return (x < y);
+        } else {
+          // sort undecided to the right
+          return true;
+        }
+      } else {
+        if (results(offset + y) != UNDECIDED) {
+          // sort undecided to the right
+          return false;
+        } else {
+          return get_value(x) > get_value(y);
+        }
+      }
+    }
+
+   private:
+    KOKKOS_INLINE_FUNCTION
+    magnitudeType get_value_impl(size_t x) const {
       if constexpr (measure == Misc::SmoothedAggregationMeasure) {
         auto x_aij    = ATS::magnitude(A.values(offset + x) * A.values(offset + x));
         auto x_aiiajj = ATS::magnitude(diag(rlid) * diag(A.graph.entries(offset + x)));
@@ -243,33 +279,13 @@ class ScaledComparison {
         return (aij2 / x_aiiajj);
       }
     }
-
-    KOKKOS_INLINE_FUNCTION
-    bool operator()(size_t x, size_t y) const {
-      if (results(offset + x) != UNDECIDED) {
-        if (results(offset + y) != UNDECIDED) {
-          // does not matter
-          return (x < y);
-        } else {
-          // sort undecided to the right
-          return true;
-        }
-      } else {
-        if (results(offset + y) != UNDECIDED) {
-          // sort undecided to the right
-          return false;
-        } else {
-          return get_value(x) > get_value(y);
-        }
-      }
-    }
   };
 
   using comparator_type = Comparator<local_matrix_type, diag_view_type>;
 
   KOKKOS_INLINE_FUNCTION
   comparator_type getComparator(local_ordinal_type rlid) const {
-    return comparator_type(A, diag, rlid, results);
+    return comparator_type(A, diag, rlid, results, values);
   }
 };
 
