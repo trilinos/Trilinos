@@ -17,6 +17,11 @@ if (UMFPACK_ALLOW_PREFIND)
 endif()
 
 if (NOT TARGET UMFPACK::all_libs)
+
+  set(UMFPACK_INCLUDE_DIRS_DEFAULT "/usr/include/suitesparse")
+  set(UMFPACK_INCLUDE_DIRS "${UMFPACK_INCLUDE_DIRS_DEFAULT}" CACHE PATH
+    "Default path to find UMFPACK include files")
+
   tribits_tpl_find_include_dirs_and_libraries( UMFPACK
     REQUIRED_HEADERS ${REQUIRED_HEADERS}
     REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} )

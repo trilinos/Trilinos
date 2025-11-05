@@ -19,6 +19,11 @@ if (AMD_ALLOW_PREFIND)
 endif()
 
 if (NOT TARGET AMD::all_libs)
+
+  set(AMD_INCLUDE_DIRS_DEFAULT "/usr/include/suitesparse")
+  set(AMD_INCLUDE_DIRS "${AMD_INCLUDE_DIRS_DEFAULT}" CACHE PATH
+    "Default path to find AMD include files")
+
   tribits_tpl_find_include_dirs_and_libraries( AMD
     REQUIRED_HEADERS ${REQUIRED_HEADERS}
     REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} )
