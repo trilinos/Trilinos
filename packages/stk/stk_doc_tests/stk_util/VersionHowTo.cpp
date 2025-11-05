@@ -40,7 +40,7 @@
 //portions of stk won't depend on Kokkos...
 #include <Kokkos_Core.hpp>
 #endif
-#ifdef STK_HAS_SEACAS_IOSS
+#if defined(STK_HAVE_STKIO) && defined(STK_HAS_SEACAS_IOSS)
 #include <Ioss_Version.h>
 #endif
 #if defined(HAVE_STK_Trilinos) || defined(STK_BUILT_FOR_SIERRA)
@@ -59,7 +59,7 @@ TEST(stkHowTo, reportVersion)
   std::cout << "This program is using STK Version: " << stk_version << std::endl;
   std::cout << "Value of STK_VERSION macro: " << STK_VERSION << std::endl;
   std::cout << "Kokkos Version: " << KOKKOS_VERSION << std::endl;
-#ifdef STK_HAS_SEACAS_IOSS
+#if defined(STK_HAVE_STKIO) && defined(STK_HAS_SEACAS_IOSS)
   std::cout << "SEACAS/IOSS Version: " << Ioss::Version() << std::endl;
 #endif
 #ifdef TRILINOS_VERSION_STRING

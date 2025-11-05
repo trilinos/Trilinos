@@ -41,6 +41,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_mesh/base/NgpParallelComm.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg
 
 #include <stddef.h>                     // for size_t
@@ -48,8 +49,7 @@
 
 namespace stk { namespace mesh { class Ghosting; } }
 
-namespace stk {
-namespace mesh {
+namespace stk::mesh {
 
 /**
  * This file contains some helper functions that are part of the Field API.
@@ -86,8 +86,112 @@ void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<cons
 void parallel_max_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic = true);
 void parallel_min_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool deterministic = true);
 
-} // namespace mesh
-} // namespace stk
+template <typename NgpSpace, Operation OP, bool includeGhosts>
+void ngp_parallel_op(const BulkData & bulk,
+                     const std::vector<const FieldBase*> & fields,
+                     bool deterministic)
+{
+  if (bulk.parallel_size() == 1 || fields.empty()) return;
+
+  if (fields[0]->type_is<double>()) {
+    ngp_parallel_data_excahnge_sym_pack_unpack<double, OP, NgpSpace>(bulk.parallel(), bulk, fields, includeGhosts, deterministic);
+  }
+  else if (fields[0]->type_is<int>()) {
+    ngp_parallel_data_excahnge_sym_pack_unpack<int, OP, NgpSpace>(bulk.parallel(), bulk, fields, includeGhosts, deterministic);
+  }
+  else if (fields[0]->type_is<float>()) {
+    ngp_parallel_data_excahnge_sym_pack_unpack<float, OP, NgpSpace>(bulk.parallel(), bulk, fields, includeGhosts, deterministic);
+  }
+  else if (fields[0]->type_is<long double>()) {
+    ngp_parallel_data_excahnge_sym_pack_unpack<long double, OP, NgpSpace>(bulk.parallel(), bulk, fields, includeGhosts, deterministic);
+  }
+  else if (fields[0]->type_is<unsigned long>()) {
+    ngp_parallel_data_excahnge_sym_pack_unpack<unsigned long, OP, NgpSpace>(bulk.parallel(), bulk, fields, includeGhosts, deterministic);
+  }
+}
+
+template <typename NgpSpace>
+void parallel_sum(const BulkData & bulk,
+                  const std::vector<const FieldBase*> & fields,
+                  bool deterministic = true)
+{
+  if constexpr (std::is_same_v<NgpSpace, stk::ngp::HostSpace>) {
+    parallel_sum(bulk, fields, deterministic);
+  }
+  else {
+    constexpr bool includeGhosts = false;
+    ngp_parallel_op<NgpSpace, Operation::SUM, includeGhosts>(bulk, fields, deterministic);
+  }
+}
+
+template <typename NgpSpace>
+void parallel_sum_including_ghosts(const BulkData & bulk,
+                                   const std::vector<const FieldBase*> & fields,
+                                   bool deterministic = true)
+{
+  if constexpr (std::is_same_v<NgpSpace, stk::ngp::HostSpace>) {
+    parallel_sum_including_ghosts(bulk, fields, deterministic);
+  }
+  else {
+    constexpr bool includeGhosts = true;
+    ngp_parallel_op<NgpSpace, Operation::SUM, includeGhosts>(bulk, fields, deterministic);
+  }
+}
+
+template <typename NgpSpace>
+void parallel_min(const BulkData & bulk, const std::vector<const FieldBase*> & fields, bool deterministic = true)
+{
+  if constexpr (std::is_same_v<NgpSpace, stk::ngp::HostSpace>) {
+    parallel_min(bulk, fields);
+  }
+  else {
+    constexpr bool includeGhosts = false;
+    ngp_parallel_op<NgpSpace, Operation::MIN, includeGhosts>(bulk, fields, deterministic);
+  }
+}
+
+template <typename NgpSpace>
+void parallel_min_including_ghosts(const BulkData & bulk,
+                                   const std::vector<const FieldBase*> & fields,
+                                   bool deterministic = true)
+{
+  if constexpr (std::is_same_v<NgpSpace, stk::ngp::HostSpace>) {
+    parallel_min_including_ghosts(bulk, fields, deterministic);
+  }
+  else {
+    constexpr bool includeGhosts = true;
+    ngp_parallel_op<NgpSpace, Operation::MIN, includeGhosts>(bulk, fields, deterministic);
+  }
+}
+
+template <typename NgpSpace>
+void parallel_max(const BulkData & bulk,
+                  const std::vector<const FieldBase*> & fields,
+                  bool deterministic = true)
+{
+  if constexpr (std::is_same_v<NgpSpace, stk::ngp::HostSpace>) {
+    parallel_max(bulk, fields);
+  }
+  else {
+    constexpr bool includeGhosts = false;
+    ngp_parallel_op<NgpSpace, Operation::MAX, includeGhosts>(bulk, fields, deterministic);
+  }
+}
+
+template <typename NgpSpace>
+void parallel_max_including_ghosts(const BulkData & bulk,
+                                   const std::vector<const FieldBase*> & fields,
+                                   bool deterministic = true)
+{
+  if constexpr (std::is_same_v<NgpSpace, stk::ngp::HostSpace>) {
+    parallel_max_including_ghosts(bulk, fields, deterministic);
+  }
+  else {
+    constexpr bool includeGhosts = true;
+    ngp_parallel_op<NgpSpace, Operation::MAX, includeGhosts>(bulk, fields, deterministic);
+  }
+}
+} // namespace stk::mesh
 
 #endif
 
