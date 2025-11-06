@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -108,12 +95,12 @@ struct SpilukTest {
   using RowMapType  = Kokkos::View<size_type*, device>;
   using EntriesType = Kokkos::View<lno_t*, device>;
   using ValuesType  = Kokkos::View<scalar_t*, device>;
-  using AT          = Kokkos::ArithTraits<scalar_t>;
-  using mag_t       = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using AT          = KokkosKernels::ArithTraits<scalar_t>;
+  using mag_t       = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
-  using RowMapType_hostmirror  = typename RowMapType::HostMirror;
-  using EntriesType_hostmirror = typename EntriesType::HostMirror;
-  using ValuesType_hostmirror  = typename ValuesType::HostMirror;
+  using RowMapType_hostmirror  = typename RowMapType::host_mirror_type;
+  using EntriesType_hostmirror = typename EntriesType::host_mirror_type;
+  using ValuesType_hostmirror  = typename ValuesType::host_mirror_type;
   using execution_space        = typename device::execution_space;
   using memory_space           = typename device::memory_space;
   using range_policy           = Kokkos::RangePolicy<execution_space>;

@@ -1,5 +1,60 @@
 # Change Log
 
+## [5.0.0](https://github.com/kokkos/kokkos-kernels/tree/5.0.0)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.01...5.0.0)
+
+### Enhancements and updates:
+- Prefer bit manipulation functions from Kokkos Core [\#2786](https://github.com/kokkos/kokkos-kernels/pull/2786)
+- Common - ArithTraits: moving from Kokkos to KokkosKernels [\#2771](https://github.com/kokkos/kokkos-kernels/pull/2771)
+- Update headers in preparation for the 5.0 release [\#2795](https://github.com/kokkos/kokkos-kernels/pull/2795)
+- Add a member function to BsrMatrix to convert to Crs [\#2809](https://github.com/kokkos/kokkos-kernels/pull/2809)
+
+### Bug Fixes:
+- Kokkos Batched InnerTrsm: Allocate in inner scope to avoid warnings with Sacado types [\#2810](https://github.com/kokkos/kokkos-kernels/pull/2810)
+- Define Fortran interface macros for LAPACK [\#2802](https://github.com/kokkos/kokkos-kernels/pull/2802)
+- Fixed blas includes [\#2776](https://github.com/kokkos/kokkos-kernels/pull/2776)
+- Minor fix for coefficient type in SPMV_Functor [\#2730](https://github.com/kokkos/kokkos-kernels/pull/2730)
+- Drop deprecated double4 type for CUDA 13 [\#2718](https://github.com/kokkos/kokkos-kernels/pull/2718)
+
+### Deprecations:
+- Require `KOKKOS_ENABLE_DEPRECATED_CODE_5` to be defined for including `<Kokkos_ArithTraits.hpp>` [\#2798](https://github.com/kokkos/kokkos-kernels/pull/2798)
+
+### Cleanup:
+- Batched: Remove deprecated macros [\#2836](https://github.com/kokkos/kokkos-kernels/pull/2836)
+- Sparse, Graph: remove deprecated declarations [\#2835](https://github.com/kokkos/kokkos-kernels/pull/2835)
+- Avoid opening the Kokkos namespace [\#2800](https://github.com/kokkos/kokkos-kernels/pull/2800)
+- Avoid using `Kokkos::reduction_identity` [\#2751](https://github.com/kokkos/kokkos-kernels/pull/2751)
+- Rename more reserved identifiers [\#2727](https://github.com/kokkos/kokkos-kernels/pull/2727)
+- variety of reserved indentifier cleanups [\#2720](https://github.com/kokkos/kokkos-kernels/pull/2720)
+- Rename type HostMirror -> host_mirror_type [\#2713](https://github.com/kokkos/kokkos-kernels/pull/2713)
+- Documentation: small clean-ups [\#2749](https://github.com/kokkos/kokkos-kernels/pull/2749)
+
+### Documentation and Testing:
+- [Docs] Adding the graph coloring publication [\#2834](https://github.com/kokkos/kokkos-kernels/pull/2834)
+- [Docs] Add batched serial trsv documentation [\#2830](https://github.com/kokkos/kokkos-kernels/pull/2830)
+- [Docs] batched serial laswp [\#2828](https://github.com/kokkos/kokkos-kernels/pull/2828)
+- [Docs] batched serial lacgv [\#2825](https://github.com/kokkos/kokkos-kernels/pull/2825)
+- [Docs] batched serial iamax [\#2804](https://github.com/kokkos/kokkos-kernels/pull/2804)
+- [Docs] Add batched serial trsv example for documentation [\#2803](https://github.com/kokkos/kokkos-kernels/pull/2803)
+- [Docs] Add batched serial lacgv example for documentation [\#2801](https://github.com/kokkos/kokkos-kernels/pull/2801)
+- [Docs] Add batched serial laswp example for documentation [\#2797](https://github.com/kokkos/kokkos-kernels/pull/2797)
+- [Docs] batched serial tbsv [\#2796](https://github.com/kokkos/kokkos-kernels/pull/2796)
+- [Docs] Add serial iamax example for documentation [\#2789](https://github.com/kokkos/kokkos-kernels/pull/2789)
+- [Docs] Add serial tbsv example for documentation [\#2788](https://github.com/kokkos/kokkos-kernels/pull/2788)
+- [Docs] batched serial syr [\#2787](https://github.com/kokkos/kokkos-kernels/pull/2787)
+- [Docs] Add serial syr example for documentation [\#2774](https://github.com/kokkos/kokkos-kernels/pull/2774)
+- [Docs] batched serial ger [\#2773](https://github.com/kokkos/kokkos-kernels/pull/2773)
+- [Docs] Add batched serial gbtrf/gbtrs [\#2767](https://github.com/kokkos/kokkos-kernels/pull/2767)
+- [Docs] Add batched serial getrf/getrs [\#2765](https://github.com/kokkos/kokkos-kernels/pull/2765)
+- [Docs] Add serial ger example for documentation [\#2756](https://github.com/kokkos/kokkos-kernels/pull/2756)
+- [Docs] List available batched dense functions in a table [\#2750](https://github.com/kokkos/kokkos-kernels/pull/2750)
+- [Docs] batched serial pbtrf and pbtrs [\#2748](https://github.com/kokkos/kokkos-kernels/pull/2748)
+- [Docs] batched serial pttrf and pttrs [\#2678](https://github.com/kokkos/kokkos-kernels/pull/2678)
+- CI: Adding benchmark build and run on Aurora [\#2824](https://github.com/kokkos/kokkos-kernels/pull/2824)
+- CI: Adding ci yaml file for Polaris [\#2812](https://github.com/kokkos/kokkos-kernels/pull/2812)
+- CI: Add V100 CUDA 12.6.2 build with TPLs [\#2738](https://github.com/kokkos/kokkos-kernels/pull/2738)
+- CI: adding new build to test previous minor release [\#2737](https://github.com/kokkos/kokkos-kernels/pull/2737)
+
 ## [4.7.01](https://github.com/kokkos/kokkos-kernels/tree/4.7.01)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.00...4.7.01)
 

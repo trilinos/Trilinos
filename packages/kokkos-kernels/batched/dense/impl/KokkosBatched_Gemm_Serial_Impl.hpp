@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_GEMM_SERIAL_IMPL_HPP
 #define KOKKOSBATCHED_GEMM_SERIAL_IMPL_HPP
 
@@ -231,7 +218,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::NoTranspose, Algo
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::NoTranspose, Algo::Gemm::CompactMKL>::invoke(
@@ -450,7 +437,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::Transpose, Algo::
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::Transpose, Algo::Gemm::CompactMKL>::invoke(
@@ -523,7 +510,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::Transpose, Al
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::ConjTranspose, Algo::Gemm::CompactMKL>::invoke(
@@ -596,7 +583,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::NoTranspose, Trans::ConjTranspose, 
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::ConjTranspose, Algo::Gemm::CompactMKL>::invoke(
@@ -669,7 +656,7 @@ KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::Transpose, Trans::ConjTranspose, Al
 ///
 
 #if defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL) && defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED) && \
-    defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
+    defined(KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
 template <>
 template <typename ScalarType, typename AViewType, typename BViewType, typename CViewType>
 KOKKOS_INLINE_FUNCTION int SerialGemm<Trans::ConjTranspose, Trans::ConjTranspose, Algo::Gemm::CompactMKL>::invoke(

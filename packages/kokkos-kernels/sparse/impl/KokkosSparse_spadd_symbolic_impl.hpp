@@ -1,25 +1,12 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_SPADD_SYMBOLIC_IMPL_HPP
 #define KOKKOSSPARSE_SPADD_SYMBOLIC_IMPL_HPP
 
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosSparse_SortCrs.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -44,7 +31,7 @@ struct SortedCountEntriesRange {
         Crowcounts(Crowcounts_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const {
-    const ordinal_type ORDINAL_MAX = Kokkos::ArithTraits<ordinal_type>::max();
+    const ordinal_type ORDINAL_MAX = KokkosKernels::ArithTraits<ordinal_type>::max();
 
     // count the union of nonzeros in Arow and Brow
     size_type numEntries = 0;
@@ -93,7 +80,7 @@ struct SortedCountEntriesTeam {
   using TeamMem = typename TeamPol::member_type;
 
   KOKKOS_INLINE_FUNCTION void longRowFallback(const ordinal_type i) const {
-    const ordinal_type ORDINAL_MAX = Kokkos::ArithTraits<ordinal_type>::max();
+    const ordinal_type ORDINAL_MAX = KokkosKernels::ArithTraits<ordinal_type>::max();
 
     // count the union of nonzeros in Arow and Brow
     size_type numEntries = 0;
@@ -150,8 +137,9 @@ struct SortedCountEntriesTeam {
                          [&](ordinal_type j) { scratch[npot - 1 - j] = Bcolinds(Browstart + j); });
     // Fill space between A and B with ORDINAL_MAX,
     // to maintain a valid bitonic sequence of power-of-two length
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, npot - n),
-                         [&](ordinal_type j) { scratch[Arowlen + j] = Kokkos::ArithTraits<ordinal_type>::max(); });
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(t, npot - n), [&](ordinal_type j) {
+      scratch[Arowlen + j] = KokkosKernels::ArithTraits<ordinal_type>::max();
+    });
     // npot = 2^levels
     for (ordinal_type level = 0; level < levels; level++) {
       // npot/2 pairs of items are compared in parallel

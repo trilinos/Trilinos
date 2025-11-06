@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "gtest/gtest.h"
@@ -105,7 +92,7 @@ template <typename DeviceType, typename MatrixViewType, typename VectorViewType,
           typename AlgoTagType>
 void impl_test_batched_qr(const int N, const int BlkSize) {
   typedef typename MatrixViewType::non_const_value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
   const value_type one(1);
   /// randomized input testing views
   MatrixViewType a("a", N, BlkSize, BlkSize);
@@ -127,7 +114,7 @@ void impl_test_batched_qr(const int N, const int BlkSize) {
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename VectorViewType::HostMirror x_host = Kokkos::create_mirror_view(x);
+  typename VectorViewType::host_mirror_type x_host = Kokkos::create_mirror_view(x);
   Kokkos::deep_copy(x_host, x);
 
   /// check x = 1; this eps is about 1e-14

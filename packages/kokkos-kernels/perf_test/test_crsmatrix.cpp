@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <cstdio>
 
 #include <ctime>
@@ -222,7 +209,7 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
   typedef Kokkos::CrsMatrix<Scalar, LocalOrdinalType, execution_space, void, int> matrix_type;
   typedef typename Kokkos::MultiVectorDynamic<Scalar, execution_space>::type mv_type;
   typedef typename Kokkos::MultiVectorDynamic<Scalar, execution_space>::random_read_type mv_random_read_type;
-  typedef typename mv_type::HostMirror h_mv_type;
+  typedef typename mv_type::host_mirror_type h_mv_type;
 
   Scalar* val           = NULL;
   LocalOrdinalType* row = NULL;
@@ -242,11 +229,11 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
   mv_type x("X", numCols, numVecs);
   mv_random_read_type t_x(x);
   mv_type y("Y", numRows, numVecs);
-  h_mv_type h_x                                                = Kokkos::create_mirror_view(x);
-  h_mv_type h_y                                                = Kokkos::create_mirror_view(y);
-  h_mv_type h_y_compare                                        = Kokkos::create_mirror(y);
-  typename matrix_type::StaticCrsGraphType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
-  typename matrix_type::values_type::HostMirror h_values       = Kokkos::create_mirror_view(A.values);
+  h_mv_type h_x                                                      = Kokkos::create_mirror_view(x);
+  h_mv_type h_y                                                      = Kokkos::create_mirror_view(y);
+  h_mv_type h_y_compare                                              = Kokkos::create_mirror(y);
+  typename matrix_type::StaticCrsGraphType::host_mirror_type h_graph = Kokkos::create_mirror(A.graph);
+  typename matrix_type::values_type::host_mirror_type h_values       = Kokkos::create_mirror_view(A.values);
 
   // Kokkos::deep_copy(h_graph.row_map,A.graph.row_map);
   for (LocalOrdinalType k = 0; k < numVecs; k++) {
@@ -336,7 +323,7 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
   typedef typename Kokkos::View<Scalar*, Kokkos::LayoutLeft, execution_space> mv_type;
   typedef typename Kokkos::View<Scalar*, Kokkos::LayoutLeft, execution_space, Kokkos::MemoryRandomAccess>
       mv_random_read_type;
-  typedef typename mv_type::HostMirror h_mv_type;
+  typedef typename mv_type::host_mirror_type h_mv_type;
 
   Scalar* val = NULL;
   int* row    = NULL;
@@ -355,11 +342,11 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
   mv_type x("X", numCols);
   mv_random_read_type t_x(x);
   mv_type y("Y", numRows);
-  h_mv_type h_x                                                = Kokkos::create_mirror_view(x);
-  h_mv_type h_y                                                = Kokkos::create_mirror_view(y);
-  h_mv_type h_y_compare                                        = Kokkos::create_mirror(y);
-  typename matrix_type::StaticCrsGraphType::HostMirror h_graph = Kokkos::create_mirror(A.graph);
-  typename matrix_type::values_type::HostMirror h_values       = Kokkos::create_mirror_view(A.values);
+  h_mv_type h_x                                                      = Kokkos::create_mirror_view(x);
+  h_mv_type h_y                                                      = Kokkos::create_mirror_view(y);
+  h_mv_type h_y_compare                                              = Kokkos::create_mirror(y);
+  typename matrix_type::StaticCrsGraphType::host_mirror_type h_graph = Kokkos::create_mirror(A.graph);
+  typename matrix_type::values_type::host_mirror_type h_values       = Kokkos::create_mirror_view(A.values);
 
   // Kokkos::deep_copy(h_graph.row_map,A.graph.row_map);
   // h_a(k) = (Scalar) (1.0*(rand()%40)-20.);

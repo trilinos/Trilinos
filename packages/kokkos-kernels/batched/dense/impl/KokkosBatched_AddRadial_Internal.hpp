@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_ADD_RADIAL_INTERNAL_HPP
 #define KOKKOSBATCHED_ADD_RADIAL_INTERNAL_HPP
 
@@ -37,7 +24,7 @@ struct SerialAddRadialInternal {
 #endif
     for (int i = 0; i < m; ++i) {
       // const auto a_real = RealPart(A[i*as]);
-      const auto a_real = Kokkos::ArithTraits<ValueType>::real(A[i * as]);
+      const auto a_real = KokkosKernels::ArithTraits<ValueType>::real(A[i * as]);
       A[i * as] += ValueType(minus_abs_tiny) * ValueType(a_real < 0);
       A[i * as] += ValueType(abs_tiny) * ValueType(a_real >= 0);
     }
@@ -58,7 +45,7 @@ struct TeamAddRadialInternal {
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
       // const auto a_real = RealPart(A[i*as]);
-      const auto a_real = Kokkos::ArithTraits<ValueType>::real(A[i * as]);
+      const auto a_real = KokkosKernels::ArithTraits<ValueType>::real(A[i * as]);
       A[i * as] += ValueType(minus_abs_tiny) * ValueType(a_real < 0);
       A[i * as] += ValueType(abs_tiny) * ValueType(a_real >= 0);
     });
