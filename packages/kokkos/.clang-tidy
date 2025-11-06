@@ -7,10 +7,15 @@ Checks: >
   -bugprone-narrowing-conversions,
   -bugprone-suspicious-include,
   cppcoreguidelines-pro-type-cstyle-cast,
+  cppcoreguidelines-rvalue-reference-param-not-moved,
   modernize-type-traits,
   modernize-use-nullptr,
   modernize-use-using,
   kokkos-*
+
+CheckOptions:
+  - key: cppcoreguidelines-rvalue-reference-param-not-moved.AllowPartialMove
+    value: true
 
 FormatStyle: file
 HeaderFilterRegex: '(algorithms|benchmarks|containers|core|example|simd).*\.hpp'
