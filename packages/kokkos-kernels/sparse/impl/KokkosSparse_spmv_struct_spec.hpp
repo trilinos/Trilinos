@@ -1,24 +1,11 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSSPARSE_IMPL_SPMV_STRUCT_SPEC_HPP_
 #define KOKKOSSPARSE_IMPL_SPMV_STRUCT_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 #include "KokkosSparse_CrsMatrix.hpp"
 // Include the actual functors
@@ -143,9 +130,9 @@ struct SPMV_STRUCT<ExecutionSpace, AMatrix, XVector, YVector, false, KOKKOSKERNE
                           const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& structure,
                           const coefficient_type& alpha, const AMatrix& A, const XVector& x,
                           const coefficient_type& beta, const YVector& y) {
-    typedef Kokkos::ArithTraits<coefficient_type> KAT;
+    typedef KokkosKernels::ArithTraits<coefficient_type> KAT;
 
-    typedef Kokkos::ArithTraits<coefficient_type> KAT;
+    typedef KokkosKernels::ArithTraits<coefficient_type> KAT;
 
     if (alpha == KAT::zero()) {
       if (beta != KAT::one()) {
@@ -178,7 +165,7 @@ struct SPMV_MV_STRUCT<ExecutionSpace, AMatrix, XVector, YVector, false, false, K
 
   static void spmv_mv_struct(const ExecutionSpace& space, const char mode[], const coefficient_type& alpha,
                              const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {
-    typedef Kokkos::ArithTraits<coefficient_type> KAT;
+    typedef KokkosKernels::ArithTraits<coefficient_type> KAT;
 
     if (alpha == KAT::zero()) {
       spmv_alpha_mv_struct<ExecutionSpace, AMatrix, XVector, YVector, 0>(space, mode, alpha, A, x, beta, y);

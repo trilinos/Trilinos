@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_SUM_IMPL_HPP_
 #define KOKKOSBLAS1_SUM_IMPL_HPP_
 
@@ -39,7 +26,7 @@ struct V_Sum_Functor {
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
+  typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename RV::non_const_value_type value_type;
 
   typename XV::const_type m_x;
@@ -67,7 +54,7 @@ struct V_Sum_Functor {
 template <class ExecSpace, class RV, class XV, class size_type>
 struct Sum_MV_Functor {
   typedef typename RV::non_const_value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> AT;
+  typedef KokkosKernels::ArithTraits<value_type> AT;
 
   using TeamMem = typename Kokkos::TeamPolicy<ExecSpace>::member_type;
 
@@ -124,7 +111,7 @@ void MV_Sum_Invoke(
     throw std::runtime_error(oss.str());
   }
   // Zero out the result vector
-  Kokkos::deep_copy(space, r, Kokkos::ArithTraits<typename RV::non_const_value_type>::zero());
+  Kokkos::deep_copy(space, r, KokkosKernels::ArithTraits<typename RV::non_const_value_type>::zero());
   size_type teamsPerVec;
   KokkosBlas::Impl::multipleReductionWorkDistribution<execution_space, size_type>(x.extent(0), x.extent(1),
                                                                                   teamsPerVec);

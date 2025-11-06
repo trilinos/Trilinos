@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_APPLY_HOUSEHOLDER_SERIAL_INTERNAL_HPP
 #define KOKKOSBATCHED_APPLY_HOUSEHOLDER_SERIAL_INTERNAL_HPP
 
@@ -53,7 +40,8 @@ struct SerialApplyLeftHouseholderInternal {
     // w1t /= tau
     for (int j = 0; j < n; ++j) {
       value_type tmp = a1t[j * a1ts];
-      for (int i = 0; i < m; ++i) tmp += Kokkos::ArithTraits<value_type>::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
+      for (int i = 0; i < m; ++i)
+        tmp += KokkosKernels::ArithTraits<value_type>::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
       w1t[j] = tmp * inv_tau;  // /= (*tau);
     }
 
@@ -101,7 +89,8 @@ struct SerialApplyRightHouseholderInternal {
 
     // A2 -= w1 * u2' (ger with conjugate)
     for (int j = 0; j < n; ++j)
-      for (int i = 0; i < m; ++i) A2[i * as0 + j * as1] -= w1[i] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
+      for (int i = 0; i < m; ++i)
+        A2[i * as0 + j * as1] -= w1[i] * KokkosKernels::ArithTraits<ValueType>::conj(u2[j * u2s]);
 
     return 0;
   }

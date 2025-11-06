@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_UPDATE_SPEC_HPP_
 #define KOKKOSBLAS1_UPDATE_SPEC_HPP_
 
@@ -108,9 +95,9 @@ struct Update {
 template <class execution_space, class XMV, class YMV, class ZMV>
 struct Update<execution_space, XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XMV::size_type size_type;
-  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATA;
-  typedef Kokkos::ArithTraits<typename YMV::non_const_value_type> ATB;
-  typedef Kokkos::ArithTraits<typename ZMV::non_const_value_type> ATC;
+  typedef KokkosKernels::ArithTraits<typename XMV::non_const_value_type> ATA;
+  typedef KokkosKernels::ArithTraits<typename YMV::non_const_value_type> ATB;
+  typedef KokkosKernels::ArithTraits<typename ZMV::non_const_value_type> ATC;
 
   static void update(const execution_space& space, const typename XMV::non_const_value_type& alpha, const XMV& X,
                      const typename YMV::non_const_value_type& beta, const YMV& Y,
@@ -202,9 +189,9 @@ struct Update<execution_space, XMV, YMV, ZMV, 2, false, KOKKOSKERNELS_IMPL_COMPI
 template <class execution_space, class XV, class YV, class ZV>
 struct Update<execution_space, XV, YV, ZV, 1, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef typename XV::size_type size_type;
-  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATA;
-  typedef Kokkos::ArithTraits<typename YV::non_const_value_type> ATB;
-  typedef Kokkos::ArithTraits<typename ZV::non_const_value_type> ATC;
+  typedef KokkosKernels::ArithTraits<typename XV::non_const_value_type> ATA;
+  typedef KokkosKernels::ArithTraits<typename YV::non_const_value_type> ATB;
+  typedef KokkosKernels::ArithTraits<typename ZV::non_const_value_type> ATC;
 
   static void update(const execution_space& space, const typename XV::non_const_value_type& alpha, const XV& X,
                      const typename YV::non_const_value_type& beta, const YV& Y,

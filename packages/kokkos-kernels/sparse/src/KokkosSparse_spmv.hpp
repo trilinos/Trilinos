@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file
 /// \brief Interfaces for the Kokkos sparse-matrix-vector multiply
@@ -142,12 +129,12 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
   }
 
   // Efficiently handle cases where alpha*Op(A) is equivalent to the zero matrix
-  if (alpha == Kokkos::ArithTraits<AlphaType>::zero() || m == 0 || n == 0 || A.nnz() == 0) {
+  if (alpha == KokkosKernels::ArithTraits<AlphaType>::zero() || m == 0 || n == 0 || A.nnz() == 0) {
     // This is required to maintain semantics of KokkosKernels native SpMV:
     // if y contains NaN but beta = 0, the result y should be filled with 0.
     // For example, this is useful for passing in uninitialized y and beta=0.
-    if (beta == Kokkos::ArithTraits<BetaType>::zero())
-      Kokkos::deep_copy(space, y, Kokkos::ArithTraits<BetaType>::zero());
+    if (beta == KokkosKernels::ArithTraits<BetaType>::zero())
+      Kokkos::deep_copy(space, y, KokkosKernels::ArithTraits<BetaType>::zero());
     else
       KokkosBlas::scal(space, y, beta, y);
     return;
@@ -259,7 +246,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
       if (useNative) {
         // Explicitly call the non-TPL SPMV implementation
         std::string label = "KokkosSparse::spmv[NATIVE," +
-                            Kokkos::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
+                            KokkosKernels::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
         Kokkos::Profiling::pushRegion(label);
         Impl::SPMV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal, false>::spmv(
             space, handle, mode, alpha, A_i, x_i, beta, y_i);
@@ -293,7 +280,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
 
       if (useNative) {
         std::string label = "KokkosSparse::spmv[NATIVE,MV," +
-                            Kokkos::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
+                            KokkosKernels::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
         Kokkos::Profiling::pushRegion(label);
         return Impl::SPMV_MV<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
                              std::is_integral<typename AMatrix_Internal::value_type>::value, false>::spmv_mv(space,
@@ -335,7 +322,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
       if (useNative) {
         // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
         std::string label = "KokkosSparse::spmv[NATIVE,BSRMATRIX," +
-                            Kokkos::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
+                            KokkosKernels::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
         Kokkos::Profiling::pushRegion(label);
         Impl::SPMV_BSRMATRIX<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
                              false>::spmv_bsrmatrix(space, handle, mode, alpha, A_i, x_i, beta, y_i);
@@ -363,7 +350,7 @@ void spmv(const ExecutionSpace& space, Handle* handle, const char mode[], const 
       if (useNative) {
         // Explicitly call the non-TPL SPMV_BSRMATRIX implementation
         std::string label = "KokkosSparse::spmv[NATIVE,MV,BSMATRIX," +
-                            Kokkos::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
+                            KokkosKernels::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
         Kokkos::Profiling::pushRegion(label);
         Impl::SPMV_MV_BSRMATRIX<ExecutionSpace, HandleImpl, AMatrix_Internal, XVector_Internal, YVector_Internal,
                                 std::is_integral<typename AMatrix_Internal::const_value_type>::value,
@@ -704,13 +691,6 @@ struct SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::L
 #endif
 }  // namespace Impl
 
-template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector,
-          class XLayout = typename XVector::array_layout>
-using SPMV2D1D_STRUCT
-    [[deprecated("KokkosSparse::SPMV2D1D_STRUCT is not part of the public "
-                 "interface - use KokkosSparse::spmv_struct instead")]] =
-        Impl::SPMV2D1D_STRUCT<AlphaType, AMatrix, XVector, BetaType, YVector>;
-
 template <class ExecutionSpace, class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 void spmv_struct(const ExecutionSpace& space, const char mode[], const int stencil_type,
                  const Kokkos::View<typename AMatrix::non_const_ordinal_type*, Kokkos::HostSpace>& structure,
@@ -855,10 +835,5 @@ void spmv_struct(const ExecutionSpace& space, const char mode[], const int stenc
 
 }  // namespace Experimental
 }  // namespace KokkosSparse
-
-// Pull in all the deprecated versions of spmv
-// It's included here (and not at the top) because it uses definitions in this
-// file.
-#include "KokkosSparse_spmv_deprecated.hpp"
 
 #endif

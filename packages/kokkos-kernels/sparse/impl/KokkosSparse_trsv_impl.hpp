@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_TRSV_IMPL_HPP_
 #define KOKKOSSPARSE_TRSV_IMPL_HPP_
@@ -21,7 +8,7 @@
 /// \brief Implementation(s) of sequential sparse triangular solve.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include "KokkosBatched_Axpy.hpp"
 #include "KokkosBatched_Gemm_Decl.hpp"
 #include "KokkosBatched_Gemm_Serial_Impl.hpp"
@@ -40,7 +27,7 @@ struct TrsvWrap {
   using scalar_t    = typename CrsMatrixType::values_type::non_const_value_type;
   using device_t    = typename CrsMatrixType::device_type;
   using sview_1d    = typename Kokkos::View<scalar_t*, device_t>;
-  using STS         = Kokkos::ArithTraits<scalar_t>;
+  using STS         = KokkosKernels::ArithTraits<scalar_t>;
 
   static inline void manual_copy(RangeMultiVectorType X, DomainMultiVectorType Y) {
     auto numRows = X.extent(0);

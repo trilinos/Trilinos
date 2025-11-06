@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_EIGENVALUE_SERIAL_INTERNAL_HPP
 #define KOKKOSBATCHED_EIGENVALUE_SERIAL_INTERNAL_HPP
 
@@ -66,7 +53,7 @@ struct SerialEigenvalueInternal {
                                            /* */ RealType *ei, const int eis, const bool restart = false,
                                            const int user_max_iteration = -1) {
     typedef RealType real_type;
-    typedef Kokkos::ArithTraits<real_type> ats;
+    typedef KokkosKernels::ArithTraits<real_type> ats;
     const real_type zero(0), nan(ats::nan()), tol = 1e2 * ats::epsilon();
     const int max_iteration = user_max_iteration < 0 ? 300 : user_max_iteration;
 

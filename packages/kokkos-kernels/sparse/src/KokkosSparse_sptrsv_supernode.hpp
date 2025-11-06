@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file KokkosSparse_sptrsv.hpp
 /// \brief Parallel sparse triangular solve
@@ -1880,9 +1867,9 @@ void split_crsmat(KernelHandle *kernelHandleL, host_crsmat_t superluL) {
   using cols_view_t    = typename graph_t::entries_type::non_const_type;
   using values_view_t  = typename crsmat_t::values_type::non_const_type;
 
-  using row_map_view_host_t = typename row_map_view_t::HostMirror;
-  using cols_view_host_t    = typename cols_view_t::HostMirror;
-  using values_view_host_t  = typename values_view_t::HostMirror;
+  using row_map_view_host_t = typename row_map_view_t::host_mirror_type;
+  using cols_view_host_t    = typename cols_view_t::host_mirror_type;
+  using values_view_host_t  = typename values_view_t::host_mirror_type;
 
   using scalar_t  = typename KernelHandle::nnz_scalar_t;
   using size_type = typename KernelHandle::size_type;

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSLAPACK_TRTRI_SPEC_HPP_
 #define KOKKOSLAPACK_TRTRI_SPEC_HPP_
 
@@ -74,12 +61,12 @@ struct TRTRI<RVIT, AVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosLapack::trtri[ETI]"
                                                                      : "KokkosLapack::trtri[noETI]");
 
-    typename AVIT::HostMirror host_A = Kokkos::create_mirror_view(A);
-    typename RVIT::HostMirror host_R = Kokkos::create_mirror_view(R);
+    typename AVIT::host_mirror_type host_A = Kokkos::create_mirror_view(A);
+    typename RVIT::host_mirror_type host_R = Kokkos::create_mirror_view(R);
 
     Kokkos::deep_copy(host_A, A);
 
-    SerialTrtri_Invoke<typename RVIT::HostMirror, typename AVIT::HostMirror>(R, uplo, diag, host_A);
+    SerialTrtri_Invoke<typename RVIT::host_mirror_type, typename AVIT::host_mirror_type>(R, uplo, diag, host_A);
 
     Kokkos::deep_copy(A, host_A);
 

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_IMPL_DOT_IMPL_HPP_
 #define KOKKOSBLAS1_IMPL_DOT_IMPL_HPP_
 
@@ -52,7 +39,9 @@ struct DotFunctor {
     Kokkos::Details::updateDot(sum, m_x(i), m_y(i));  // sum += m_x(i) * m_y(i)
   }
 
-  KOKKOS_INLINE_FUNCTION void init(value_type& update) const { update = Kokkos::ArithTraits<value_type>::zero(); }
+  KOKKOS_INLINE_FUNCTION void init(value_type& update) const {
+    update = KokkosKernels::ArithTraits<value_type>::zero();
+  }
 
   KOKKOS_INLINE_FUNCTION void join(value_type& update, const value_type& source) const { update += source; }
 };

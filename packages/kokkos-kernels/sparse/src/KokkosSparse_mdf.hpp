@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file KokkosSparse_spiluk.hpp
 /// \brief Parallel Minimum Discarded Fill method
@@ -61,7 +48,7 @@ void mdf_symbolic(const crs_matrix_type& A, MDF_handle& handle) {
 
 template <class view_t, class ordinal_t = size_t>
 void mdf_print_joined_view(const view_t& dev_view, const char* sep,
-                           ordinal_t max_count = Kokkos::ArithTraits<ordinal_t>::max()) {
+                           ordinal_t max_count = KokkosKernels::ArithTraits<ordinal_t>::max()) {
   const auto host_view = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dev_view);
 
   max_count = max_count > (ordinal_t)host_view.extent(0) ? (ordinal_t)host_view.extent(0) : max_count;
@@ -100,8 +87,8 @@ void mdf_numeric(const crs_matrix_type& A, MDF_handle& handle) {
   ordinal_type update_list_len = 0;
   col_ind_type update_list("update list", A.numRows());
   col_ind_type factored("factored rows", A.numRows());
-  Kokkos::deep_copy(discarded_fill, Kokkos::ArithTraits<value_mag_type>::max());
-  Kokkos::deep_copy(deficiency, Kokkos::ArithTraits<ordinal_type>::max());
+  Kokkos::deep_copy(discarded_fill, KokkosKernels::ArithTraits<value_mag_type>::max());
+  Kokkos::deep_copy(deficiency, KokkosKernels::ArithTraits<ordinal_type>::max());
   permutation_set_type permutation_set(A.numRows());
 
   KokkosSparse::Impl::MDF_discarded_fill_norm<crs_matrix_type, true> MDF_df_norm(

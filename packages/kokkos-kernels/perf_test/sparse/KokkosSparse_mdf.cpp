@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <iostream>
 #include "KokkosKernels_config.h"
@@ -132,7 +119,7 @@ void run_experiment(int argc, char** argv, CommonInputParams /*params*/) {
 
       // Generate the values of A
       Kokkos::Random_XorShift64_Pool<exec_space> rand_pool(13718);
-      Kokkos::fill_random(valuesA, rand_pool, 10 * Kokkos::ArithTraits<scalar_t>::one());
+      Kokkos::fill_random(valuesA, rand_pool, 10 * KokkosKernels::ArithTraits<scalar_t>::one());
 
       // Actually put A together
       graph_t graph(entriesA, rowmapA);

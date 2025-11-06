@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_IMPL_SPTRSV_SOLVE_HPP_
 #define KOKKOSSPARSE_IMPL_SPTRSV_SOLVE_HPP_
@@ -21,7 +8,7 @@
 /// \brief Implementation(s) of sparse triangular solve.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_sptrsv_handle.hpp>
 #include <KokkosSparse_spmv.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
@@ -72,7 +59,7 @@ struct SptrsvWrap {
   using values_t        = typename TriSolveHandle::nnz_scalar_view_t;
   using work_view_t     = Kokkos::View<scalar_t *, Kokkos::Device<execution_space, temp_mem_space>>;
   using work_view_int_t = Kokkos::View<int *, Kokkos::Device<execution_space, temp_mem_space>>;
-  using karith          = typename Kokkos::ArithTraits<scalar_t>;
+  using karith          = typename KokkosKernels::ArithTraits<scalar_t>;
   using team_policy     = typename TriSolveHandle::TeamPolicy;
   using member_type     = typename team_policy::member_type;
   using range_policy    = typename TriSolveHandle::RangePolicy;

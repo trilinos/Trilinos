@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
@@ -107,16 +94,16 @@ matrix_type generate_unbalanced_matrix(const typename matrix_type::ordinal_type 
   values_type values("values", numNNZ);
 
   // Copy row map values to view
-  typename row_map_type::HostMirror row_map_h = Kokkos::create_mirror_view(row_map);
-  row_map_h(0)                                = 0;
+  typename row_map_type::host_mirror_type row_map_h = Kokkos::create_mirror_view(row_map);
+  row_map_h(0)                                      = 0;
   for (lno_t rowIdx = 0; rowIdx < numRows; ++rowIdx) {
     row_map_h(rowIdx + 1) = row_map_vec[rowIdx + 1];
   }
   Kokkos::deep_copy(row_map, row_map_h);
 
   // Copy column indices to view
-  typename row_map_type::HostMirror entries_h = Kokkos::create_mirror_view(entries);
-  entries_h(0)                                = 0;
+  typename row_map_type::host_mirror_type entries_h = Kokkos::create_mirror_view(entries);
+  entries_h(0)                                      = 0;
   for (lno_t entryIdx = 0; entryIdx < numNNZ; ++entryIdx) {
     entries_h(entryIdx) = colind_vec[entryIdx];
   }
@@ -224,7 +211,7 @@ int main(int argc, char** argv) {
     using matrix_type = KokkosSparse::CrsMatrix<Scalar, lno_t, Kokkos::DefaultExecutionSpace, void, lno_t>;
     using values_type = typename matrix_type::values_type::non_const_type;
     using handle_type = KokkosSparse::SPMVHandle<Kokkos::DefaultExecutionSpace, matrix_type, values_type, values_type>;
-    const Scalar SC_ONE = Kokkos::ArithTraits<Scalar>::one();
+    const Scalar SC_ONE = KokkosKernels::ArithTraits<Scalar>::one();
     const Scalar alpha  = SC_ONE + SC_ONE;
     const Scalar beta   = alpha + SC_ONE;
 
