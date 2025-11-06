@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef PACKAGES_MUELU_SUP_UTILS_XPETRA_ITERATOROPS_HPP_
-#define PACKAGES_MUELU_SUP_UTILS_XPETRA_ITERATOROPS_HPP_
+#ifndef MUELU_ITERATOROPS_HPP_
+#define MUELU_ITERATOROPS_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
 
@@ -61,15 +61,11 @@ void Jacobi(
     throw(MueLu::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires you to use an Epetra-compatible data type."));
 #endif
   } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(A);
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpB    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(B);
     Tpetra::CrsMatrix<SC, LO, GO, NO>& tpC          = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<SC, LO, GO, NO> >& tpD = toTpetra(Dinv);
     Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label, params);
-#else
-    throw(MueLu::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
   }
 
   if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {

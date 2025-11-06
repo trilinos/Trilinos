@@ -66,7 +66,6 @@ void Jacobi<double, int, int, EpetraNode>(double omega,
     }
 #endif
   } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
     throw(MueLu::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=<double,int,int> enabled."));
@@ -76,9 +75,6 @@ void Jacobi<double, int, int, EpetraNode>(double omega,
     Tpetra::CrsMatrix<SC, LO, GO, NO>& tpC          = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<SC, LO, GO, NO> >& tpD = toTpetra(Dinv);
     Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label, params);
-#endif
-#else
-    throw(MueLu::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
   }
 
@@ -133,10 +129,10 @@ void Jacobi<double, int, long long, EpetraNode>(double omega,
     int i = EpetraExt::MatrixMatrix::Jacobi(omega, *epD.getEpetra_Vector(), epA, epB, epC, haveMultiplyDoFillComplete);
     if (haveMultiplyDoFillComplete) {
       // Due to Epetra wrapper intricacies, we need to explicitly call
-      // fillComplete on MueLu matrix here. Specifically, EpetraCrsMatrix
+      // fillComplete on Xpetra matrix here. Specifically, EpetraCrsMatrix
       // only keeps an internal variable to check whether we are in resumed
       // state or not, but never touches the underlying Epetra object. As
-      // such, we need to explicitly update the state of MueLu matrix to
+      // such, we need to explicitly update the state of Xpetra matrix to
       // that of Epetra one afterwords
       C.fillComplete();
     }
@@ -149,7 +145,6 @@ void Jacobi<double, int, long long, EpetraNode>(double omega,
     }
 #endif
   } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_MUELU_TPETRA
 #if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
     throw(MueLu::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra GO=<double,int,long long> enabled."));
@@ -159,9 +154,6 @@ void Jacobi<double, int, long long, EpetraNode>(double omega,
     Tpetra::CrsMatrix<SC, LO, GO, NO>& tpC          = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<SC, LO, GO, NO> >& tpD = toTpetra(Dinv);
     Tpetra::MatrixMatrix::Jacobi(omega, *tpD, tpA, tpB, tpC, haveMultiplyDoFillComplete, label, params);
-#endif
-#else
-    throw(MueLu::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
   }
 
