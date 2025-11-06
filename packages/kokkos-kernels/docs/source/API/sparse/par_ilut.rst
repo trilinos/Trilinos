@@ -172,7 +172,7 @@ Example
        using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
        using KernelHandle =
            KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
-       using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+       using float_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
        // Create a diagonally dominant sparse matrix to test:
        //  par_ilut settings max_iters, res_delta_stop, fill_in_limit, and

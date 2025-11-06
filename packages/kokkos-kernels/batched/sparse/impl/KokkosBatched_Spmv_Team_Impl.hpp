@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_SPMV_TEAM_IMPL_HPP
 #define KOKKOSBATCHED_SPMV_TEAM_IMPL_HPP
 
@@ -207,9 +194,9 @@ struct TeamSpmv<MemberType, Trans::NoTranspose> {
   template <typename ValuesViewType, typename IntView, typename xViewType, typename yViewType, int dobeta>
   KOKKOS_INLINE_FUNCTION static int invoke(
       const MemberType& member,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& alpha,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& alpha,
       const ValuesViewType& values, const IntView& row_ptr, const IntView& colIndices, const xViewType& X,
-      const typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& beta,
+      const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& beta,
       const yViewType& Y) {
 #if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<ValuesViewType>::value, "KokkosBatched::spmv: ValuesViewType is not a Kokkos::View.");
@@ -260,7 +247,7 @@ struct TeamSpmv<MemberType, Trans::NoTranspose> {
     }
 
     return TeamSpmvInternal::template invoke<
-        MemberType, typename Kokkos::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type,
+        MemberType, typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type,
         typename ValuesViewType::non_const_value_type, typename IntView::non_const_value_type,
         typename ValuesViewType::array_layout, dobeta>(
         member, X.extent(0), X.extent(1), alpha, values.data(), values.stride(0), values.stride(1), row_ptr.data(),
