@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS_SERIAL_NRM2_HPP_
 #define KOKKOSBLAS_SERIAL_NRM2_HPP_
@@ -32,14 +19,14 @@ KOKKOS_INLINE_FUNCTION static typename Kokkos::Details::InnerProductSpaceTraits<
   using IPT       = Kokkos::Details::InnerProductSpaceTraits<ValueType>;
   using norm_type = typename IPT::mag_type;
 
-  norm_type nrm = Kokkos::ArithTraits<norm_type>::zero();
+  norm_type nrm = KokkosKernels::ArithTraits<norm_type>::zero();
 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
   for (int i = 0; i < m; ++i) nrm += IPT::norm(IPT::dot(X[i * xs0], X[i * xs0]));
 
-  return Kokkos::ArithTraits<norm_type>::sqrt(nrm);
+  return KokkosKernels::ArithTraits<norm_type>::sqrt(nrm);
 }
 
 template <typename ValueType>

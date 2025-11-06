@@ -1,19 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-// ************************************************************************
-//@HEADER
 
 /// @file KokkosSparse_LUPrec.hpp
 
@@ -48,12 +34,12 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   using EXSP       = typename CRS::execution_space;
   using MEMSP      = typename CRS::memory_space;
   using DEVICE     = typename Kokkos::Device<EXSP, MEMSP>;
-  using karith     = typename Kokkos::ArithTraits<ScalarType>;
+  using karith     = typename KokkosKernels::ArithTraits<ScalarType>;
   using View1d     = typename Kokkos::View<ScalarType *, DEVICE>;
 
  private:
   // trsm takes host views
-  CRS _L, _U;
+  CRS L_, U_;
   View1d _tmp, _tmp2;
   mutable KernelHandle _khL;
   mutable KernelHandle _khU;
@@ -62,7 +48,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   //! Constructor:
   template <class CRSArg>
   LUPrec(const CRSArg &L, const CRSArg &U, const size_type block_size = 0)
-      : _L(L), _U(U), _tmp("LUPrec::_tmp", L.numPointRows()), _tmp2("LUPrec::_tmp", L.numPointRows()), _khL(), _khU() {
+      : L_(L), U_(U), _tmp("LUPrec::_tmp", L.numPointRows()), _tmp2("LUPrec::_tmp", L.numPointRows()), _khL(), _khU() {
     KK_REQUIRE_MSG(L.numPointRows() == U.numPointRows(), "LUPrec: L.numRows() != U.numRows()");
 
     _khL.create_sptrsv_handle(SPTRSVAlgorithm::SEQLVLSCHD_TP1, L.numRows(), true, block_size);
@@ -91,11 +77,11 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
                      ScalarType beta = karith::zero()) const {
     KK_REQUIRE_MSG(transM[0] == NoTranspose[0], "LUPrec::apply only supports 'N' for transM");
 
-    KokkosSparse::sptrsv_symbolic(&_khL, _L.graph.row_map, _L.graph.entries);
-    KokkosSparse::sptrsv_solve(&_khL, _L.graph.row_map, _L.graph.entries, _L.values, X, _tmp);
+    KokkosSparse::sptrsv_symbolic(&_khL, L_.graph.row_map, L_.graph.entries);
+    KokkosSparse::sptrsv_solve(&_khL, L_.graph.row_map, L_.graph.entries, L_.values, X, _tmp);
 
-    KokkosSparse::sptrsv_symbolic(&_khU, _U.graph.row_map, _U.graph.entries);
-    KokkosSparse::sptrsv_solve(&_khU, _U.graph.row_map, _U.graph.entries, _U.values, _tmp, _tmp2);
+    KokkosSparse::sptrsv_symbolic(&_khU, U_.graph.row_map, U_.graph.entries);
+    KokkosSparse::sptrsv_solve(&_khU, U_.graph.row_map, U_.graph.entries, U_.values, _tmp, _tmp2);
 
     KokkosBlas::axpby(alpha, _tmp2, beta, Y);
   }

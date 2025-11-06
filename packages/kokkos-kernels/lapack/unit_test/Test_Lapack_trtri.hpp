@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -54,7 +41,7 @@ struct VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::ArithTraits<ScalarC> APT;
+  typedef KokkosKernels::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -96,7 +83,7 @@ template <class ViewTypeA, class Device>
 int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag, const int M, const int N) {
   using execution_space = typename ViewTypeA::device_type::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  using APT             = Kokkos::ArithTraits<ScalarA>;
+  using APT             = KokkosKernels::ArithTraits<ScalarA>;
   using mag_type        = typename APT::mag_type;
 
   double machine_eps         = APT::epsilon();
@@ -117,8 +104,8 @@ int impl_test_trtri(int bad_diag_idx, const char* uplo, const char* diag, const 
   // START\n", uplo[0],diag[0],M,N,eps,typeid(ViewTypeA).name(), As0, As1, Ae0,
   // Ae1); fflush(stdout);
 
-  typename ViewTypeA::HostMirror host_A = Kokkos::create_mirror_view(A);
-  typename ViewTypeA::HostMirror host_I = Kokkos::create_mirror_view(A);
+  typename ViewTypeA::host_mirror_type host_A = Kokkos::create_mirror_view(A);
+  typename ViewTypeA::host_mirror_type host_I = Kokkos::create_mirror_view(A);
 
   if (M != N || bad_diag_idx > 0) {
     if (bad_diag_idx > 0) {
