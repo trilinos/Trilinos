@@ -395,15 +395,12 @@ TensorBase<T, ST>::fill(Filler const value)
     }
     break;
 
+#if KOKKOS_VERSION >= 40799
   case Filler::RANDOM:
     KOKKOS_IF_ON_HOST((
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-#if KOKKOS_VERSION >= 40799
       fill_AD<T>(entry, KokkosKernels::ArithTraits<S>::zero());
-#else
-      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
-#endif
       entry = random<S>();
     }
     break;
@@ -411,16 +408,27 @@ TensorBase<T, ST>::fill(Filler const value)
     KOKKOS_IF_ON_DEVICE((
     [[fallthrough]];
     ))
+#else
+  case Filler::RANDOM:
+    KOKKOS_IF_ON_HOST((
+    for (Index i = 0; i < number_components; ++i) {
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
+      entry = random<S>();
+    }
+    break;
+    ))
+    KOKKOS_IF_ON_DEVICE((
+    [[fallthrough]];
+    ))
+#endif
 
+#if KOKKOS_VERSION >= 40799
   case Filler::RANDOM_UNIFORM:
     KOKKOS_IF_ON_HOST((
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-#if KOKKOS_VERSION >= 40799
       fill_AD<T>(entry, KokkosKernels::ArithTraits<S>::zero());
-#else
-      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
-#endif
       entry = random_uniform<S>();
     }
     break;
@@ -428,16 +436,27 @@ TensorBase<T, ST>::fill(Filler const value)
     KOKKOS_IF_ON_DEVICE((
     [[fallthrough]];
     ))
+#else
+  case Filler::RANDOM_UNIFORM:
+    KOKKOS_IF_ON_HOST((
+    for (Index i = 0; i < number_components; ++i) {
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
+      entry = random_uniform<S>();
+    }
+    break;
+    ))
+    KOKKOS_IF_ON_DEVICE((
+    [[fallthrough]];
+    ))
+#endif
 
+#if KOKKOS_VERSION >= 40799
   case Filler::RANDOM_NORMAL:
     KOKKOS_IF_ON_HOST((
     for (Index i = 0; i < number_components; ++i) {
       auto & entry = (*this)[i];
-#if KOKKOS_VERSION >= 40799
       fill_AD<T>(entry, KokkosKernels::ArithTraits<S>::zero());
-#else
-      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
-#endif
       entry = random_normal<S>();
     }
     break;
@@ -445,6 +464,20 @@ TensorBase<T, ST>::fill(Filler const value)
     KOKKOS_IF_ON_DEVICE((
     [[fallthrough]];
     ))
+#else
+  case Filler::RANDOM_NORMAL:
+    KOKKOS_IF_ON_HOST((
+    for (Index i = 0; i < number_components; ++i) {
+      auto & entry = (*this)[i];
+      fill_AD<T>(entry, Kokkos::ArithTraits<S>::zero());
+      entry = random_normal<S>();
+    }
+    break;
+    ))
+    KOKKOS_IF_ON_DEVICE((
+    [[fallthrough]];
+    ))
+#endif
 
   default:
     MT_ERROR_EXIT("Unknown or undefined (in execution space) specification of "
