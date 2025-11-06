@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <Kokkos_Core.hpp>
 #include <iostream>
@@ -77,10 +64,10 @@ class SPTRSVHandle {
   // Row_map type (managed memory)
   using nnz_row_view_temp_t = typename Kokkos::View<size_type *, HandleTempMemorySpace>;
   using nnz_row_view_t      = typename Kokkos::View<size_type *, HandlePersistentMemorySpace>;
-  using host_nnz_row_view_t = typename nnz_row_view_t::HostMirror;
+  using host_nnz_row_view_t = typename nnz_row_view_t::host_mirror_type;
   using int_row_view_t      = typename Kokkos::View<int *, HandlePersistentMemorySpace>;
   using int64_row_view_t    = typename Kokkos::View<int64_t *, HandlePersistentMemorySpace>;
-  // typedef typename row_lno_persistent_work_view_t::HostMirror
+  // typedef typename row_lno_persistent_work_view_t::host_mirror_type
   // row_lno_persistent_work_host_view_t; //Host view type
   using nnz_row_unmanaged_view_t =
       typename Kokkos::View<const size_type *, HandlePersistentMemorySpace,
@@ -89,7 +76,7 @@ class SPTRSVHandle {
   // values type (managed memory)
   using nnz_scalar_view_temp_t = typename Kokkos::View<scalar_t *, HandleTempMemorySpace>;
   using nnz_scalar_view_t      = typename Kokkos::View<scalar_t *, HandlePersistentMemorySpace>;
-  using host_nnz_scalar_view_t = typename nnz_scalar_view_t::HostMirror;
+  using host_nnz_scalar_view_t = typename nnz_scalar_view_t::host_mirror_type;
   using nnz_scalar_unmanaged_view_t =
       typename Kokkos::View<const scalar_t *, HandlePersistentMemorySpace,
                             Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;  // for rank1 subviews
@@ -98,11 +85,11 @@ class SPTRSVHandle {
   using nnz_lno_view_temp_t      = typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace>;
   using nnz_lno_view_t           = typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace>;
   using hostspace_nnz_lno_view_t = typename Kokkos::View<nnz_lno_t *, Kokkos::HostSpace>;
-  using host_nnz_lno_view_t      = typename nnz_lno_view_t::HostMirror;
+  using host_nnz_lno_view_t      = typename nnz_lno_view_t::host_mirror_type;
   using nnz_lno_unmanaged_view_t =
       typename Kokkos::View<const nnz_lno_t *, HandlePersistentMemorySpace,
                             Kokkos::MemoryTraits<Kokkos::Unmanaged | Kokkos::RandomAccess>>;  // for rank1 subviews
-  // typedef typename nnz_lno_persistent_work_view_t::HostMirror
+  // typedef typename nnz_lno_persistent_work_view_t::host_mirror_type
   // nnz_lno_persistent_work_host_view_t; //Host view type
 
   using signed_integral_t = typename std::make_signed<typename nnz_row_view_t::non_const_value_type>::type;
@@ -110,7 +97,7 @@ class SPTRSVHandle {
       Kokkos::View<signed_integral_t *, typename nnz_row_view_t::array_layout, typename nnz_row_view_t::device_type,
                    typename nnz_row_view_t::memory_traits>;
 
-  using host_signed_nnz_lno_view_t = typename signed_nnz_lno_view_t::HostMirror;
+  using host_signed_nnz_lno_view_t = typename signed_nnz_lno_view_t::host_mirror_type;
 
   using mtx_scalar_view_t = typename Kokkos::View<scalar_t **, HandlePersistentMemorySpace>;
 
@@ -476,7 +463,7 @@ class SPTRSVHandle {
     }
 
 #if defined(__clang__) && defined(KOKKOS_ENABLE_CUDA)
-    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && Kokkos::ArithTraits<scalar_t>::isComplex &&
+    if (algm == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && KokkosKernels::ArithTraits<scalar_t>::isComplex &&
         std::is_same_v<execution_space, Kokkos::Cuda> && block_size_ != 0) {
       throw(std::runtime_error(
           "sptrsv handle: SPTRSV may not work with blocks+clang+cuda+complex due to a compiler bug"));

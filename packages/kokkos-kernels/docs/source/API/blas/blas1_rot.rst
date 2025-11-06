@@ -43,7 +43,7 @@ Type Requirements
 - `MagnitudeView` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 0 that satisfies:
 
   - ``Kokkos::SpaceAccessibility<execution_space, typename MagnitudeView::memory_space>::accessible == true``
-  - ``!Kokkos::ArithTraits<typename MagnitudeView::value_type>::is_complex``
+  - ``!KokkosKernels::ArithTraits<typename MagnitudeView::value_type>::is_complex``
 
 - `ScalarView` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 0 that satisfies:
 

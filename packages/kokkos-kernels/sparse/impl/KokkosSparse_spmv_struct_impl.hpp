@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_IMPL_SPMV_STRUCT_DEF_HPP_
 #define KOKKOSSPARSE_IMPL_SPMV_STRUCT_DEF_HPP_
@@ -37,7 +24,7 @@ struct SPMV_Struct_Transpose_Functor {
   typedef typename AMatrix::non_const_value_type value_type;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
-  typedef Kokkos::ArithTraits<value_type> ATV;
+  typedef KokkosKernels::ArithTraits<value_type> ATV;
   typedef typename YVector::non_const_value_type coefficient_type;
   typedef typename YVector::non_const_value_type y_value_type;
 
@@ -85,7 +72,7 @@ struct SPMV_Struct_Functor {
   typedef typename KokkosSparse::SparseRowViewConst<AMatrix> row_view_const;
   typedef typename Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename team_policy::member_type team_member;
-  typedef Kokkos::ArithTraits<value_type> ATV;
+  typedef KokkosKernels::ArithTraits<value_type> ATV;
   typedef Kokkos::View<ordinal_type*, scratch_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > shared_ordinal_1d;
   using y_value_type = typename YVector::non_const_value_type;
 
@@ -818,7 +805,7 @@ struct SPMV_MV_Struct_Transpose_Functor {
 
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, row_length), [&](ordinal_type iEntry) {
         const A_value_type val =
-            conjugate ? Kokkos::ArithTraits<A_value_type>::conj(row.value(iEntry)) : row.value(iEntry);
+            conjugate ? KokkosKernels::ArithTraits<A_value_type>::conj(row.value(iEntry)) : row.value(iEntry);
         const ordinal_type ind = row.colidx(iEntry);
 
         if (doalpha != 1) {
@@ -881,14 +868,14 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
 #pragma unroll
 #endif
     for (int k = 0; k < UNROLL; ++k) {
-      sum[k] = Kokkos::ArithTraits<y_value_type>::zero();
+      sum[k] = KokkosKernels::ArithTraits<y_value_type>::zero();
     }
 
     const auto row = m_A.rowConst(iRow);
 
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(dev, row.length), [&](ordinal_type iEntry) {
       const A_value_type val =
-          conjugate ? Kokkos::ArithTraits<A_value_type>::conj(row.value(iEntry)) : row.value(iEntry);
+          conjugate ? KokkosKernels::ArithTraits<A_value_type>::conj(row.value(iEntry)) : row.value(iEntry);
       const ordinal_type ind = row.colidx(iEntry);
 
 #ifdef KOKKOS_ENABLE_PRAGMA_UNROLL
@@ -956,7 +943,7 @@ struct SPMV_MV_Struct_LayoutLeft_Functor {
         Kokkos::ThreadVectorRange(dev, row.length),
         [&](ordinal_type iEntry, y_value_type& lsum) {
           const A_value_type val =
-              conjugate ? Kokkos::ArithTraits<A_value_type>::conj(row.value(iEntry)) : row.value(iEntry);
+              conjugate ? KokkosKernels::ArithTraits<A_value_type>::conj(row.value(iEntry)) : row.value(iEntry);
           lsum += val * m_x(row.colidx(iEntry), 0);
         },
         sum);
@@ -1238,7 +1225,7 @@ void spmv_alpha_mv_struct(const execution_space& exec, const char mode[],
                           const typename YVector::non_const_value_type& alpha, const AMatrix& A, const XVector& x,
                           const typename YVector::non_const_value_type& beta, const YVector& y) {
   typedef typename YVector::non_const_value_type coefficient_type;
-  typedef Kokkos::ArithTraits<coefficient_type> KAT;
+  typedef KokkosKernels::ArithTraits<coefficient_type> KAT;
 
   if (beta == KAT::zero()) {
     spmv_alpha_beta_mv_struct<execution_space, AMatrix, XVector, YVector, doalpha, 0>(exec, mode, alpha, A, x, beta, y);

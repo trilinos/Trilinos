@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file KokkosSparse_CrsMatrix.hpp
 /// \brief Local sparse matrix interface
@@ -342,7 +329,7 @@ class CrsMatrix {
   typedef SizeType size_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
-  typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> HostMirror;
+  typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> host_mirror_type;
   //! Type of the graph structure of the sparse matrix.
   typedef StaticCrsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits, size_type>
       StaticCrsGraphType;
@@ -440,18 +427,6 @@ class CrsMatrix {
     numCols_ = mat_.numCols();
     graph    = StaticCrsGraphType(cols, rowmap);
   }
-
-  /// \brief Construct with a graph that will be shared.
-  ///
-  /// Allocate the values array for subsequent fill.
-  template <typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
-  [[deprecated(
-      "Use the constructor that accepts ncols as input "
-      "instead.")]] CrsMatrix(const std::string& label,
-                              const StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_)
-      : graph(graph_.entries, graph_.row_map),
-        values(label, graph_.entries.extent(0)),
-        numCols_(maximum_entry(graph_) + 1) {}
 
   /// \brief Constructor that accepts a a static graph, and numCols.
   ///

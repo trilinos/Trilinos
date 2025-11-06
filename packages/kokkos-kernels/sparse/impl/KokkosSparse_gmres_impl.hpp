@@ -1,20 +1,5 @@
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_IMPL_GMRES_HPP_
 #define KOKKOSSPARSE_IMPL_GMRES_HPP_
@@ -23,7 +8,7 @@
 /// \brief Implementation(s) of the numeric phase of GMRES.
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_gmres_handle.hpp>
 #include <KokkosBlas.hpp>
 #include <KokkosBlas3_trsm_impl.hpp>
@@ -48,7 +33,7 @@ struct GmresWrap {
   using HandleDeviceRowMapType  = typename GmresHandle::nnz_row_view_t;
   using HandleDeviceValueType   = typename GmresHandle::nnz_value_view_t;
   using HandleDevice2dValueType = typename GmresHandle::nnz_value_view2d_t;
-  using karith                  = typename Kokkos::ArithTraits<scalar_t>;
+  using karith                  = typename KokkosKernels::ArithTraits<scalar_t>;
   using device_t                = typename HandleDeviceEntriesType::device_type;
 
   /**
@@ -61,7 +46,7 @@ struct GmresWrap {
     using ST = typename karith::val_type;  // So this code will run with
                                            // scalar_t = std::complex<T>.
     using MT                  = typename karith::mag_type;
-    using HandleHostValueType = typename HandleDeviceValueType::HostMirror;
+    using HandleHostValueType = typename HandleDeviceValueType::host_mirror_type;
 
     ST one  = karith::one();
     ST zero = karith::zero();

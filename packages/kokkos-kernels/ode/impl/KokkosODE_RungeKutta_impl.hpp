@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS_RUNGEKUTTA_IMPL_HPP
 #define KOKKOSBLAS_RUNGEKUTTA_IMPL_HPP
@@ -39,7 +26,7 @@ template <class ode_type, class mat_type, class vec_type, class res_type, class 
 KOKKOS_FUNCTION void first_step_size(const ode_type ode, const int order, const scalar_type t0, const scalar_type atol,
                                      const scalar_type rtol, const vec_type& y0, const res_type& f0, const vec_type y1,
                                      const mat_type temp, scalar_type& dt_ini) {
-  using KAT = Kokkos::ArithTraits<scalar_type>;
+  using KAT = KokkosKernels::ArithTraits<scalar_type>;
 
   // Extract subviews to store intermediate data
   auto f1 = Kokkos::subview(temp, 1, Kokkos::ALL());

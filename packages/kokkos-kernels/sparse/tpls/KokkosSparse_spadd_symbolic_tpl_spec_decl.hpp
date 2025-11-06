@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_HPP_
 #define KOKKOSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_HPP_
@@ -58,7 +45,7 @@ namespace Impl {
                                const ORDINAL_TYPE n, rowmap_view_t rowmapA, colidx_view_t colidxA,                     \
                                rowmap_view_t rowmapB, colidx_view_t colidxB, non_const_rowmap_view_t rowmapC) {        \
       Kokkos::Profiling::pushRegion("KokkosSparse::spadd_symbolic[TPL_CUSPARSE," +                                     \
-                                    Kokkos::ArithTraits<KOKKOS_SCALAR_TYPE>::name() + "]");                            \
+                                    KokkosKernels::ArithTraits<KOKKOS_SCALAR_TYPE>::name() + "]");                     \
                                                                                                                        \
       auto addHandle   = handle->get_spadd_handle();                                                                   \
       auto& cuspData   = addHandle->cusparseData;                                                                      \
@@ -151,7 +138,7 @@ KOKKOSSPARSE_SPADD_SYMBOLIC_TPL_SPEC_DECL_CUSPARSE_EXT(false)
                                const ORDINAL_TYPE n, rowmap_view_t rowmapA, colidx_view_t colidxA,                     \
                                rowmap_view_t rowmapB, colidx_view_t colidxB, non_const_rowmap_view_t rowmapC) {        \
       Kokkos::Profiling::pushRegion("KokkosSparse::spadd_symbolic[TPL_ROCSPARSE," +                                    \
-                                    Kokkos::ArithTraits<KOKKOS_SCALAR_TYPE>::name() + "]");                            \
+                                    KokkosKernels::ArithTraits<KOKKOS_SCALAR_TYPE>::name() + "]");                     \
                                                                                                                        \
       auto addHandle    = handle->get_spadd_handle();                                                                  \
       auto& rocData     = addHandle->rocsparseData;                                                                    \

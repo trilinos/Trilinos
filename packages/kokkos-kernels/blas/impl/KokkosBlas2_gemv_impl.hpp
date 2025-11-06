@@ -1,25 +1,12 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS2_MV_IMPL_GEMV_HPP_
 #define KOKKOSBLAS2_MV_IMPL_GEMV_HPP_
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
@@ -60,7 +47,7 @@ struct SingleLevelNontransposeGEMV {
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType& i) const {
     AccumScalar y_i;
     if (betaPreset == 0) {
-      y_i = Kokkos::ArithTraits<AccumScalar>::zero();
+      y_i = KokkosKernels::ArithTraits<AccumScalar>::zero();
     } else if (betaPreset == 1) {
       y_i = AccumScalar(y_(i));
     } else {  // beta_ != 0 and beta != 1
@@ -135,7 +122,7 @@ struct SingleLevelTransposeGEMV {
  public:
   KOKKOS_INLINE_FUNCTION void init(value_type y_cur) const {
     for (IndexType j = 0; j < value_count; ++j) {
-      y_cur[j] = Kokkos::ArithTraits<AccumScalar>::zero();
+      y_cur[j] = KokkosKernels::ArithTraits<AccumScalar>::zero();
     }
   }
 
@@ -156,7 +143,7 @@ struct SingleLevelTransposeGEMV {
   }
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType& i, value_type y_cur) const {
-    using Kokkos::ArithTraits;
+    using KokkosKernels::ArithTraits;
     using KAT = ArithTraits<typename AViewType::non_const_value_type>;
 
     const auto x_i = x_(i);
@@ -203,9 +190,9 @@ void singleLevelGemv(const ExecutionSpace& space, const char trans[], typename A
   // depend on that or its implementation details.  Instead, we reuse
   // an instantiation of the non-transpose case for alpha=0.
   if (A.extent(0) == 0 && (tr != 'N' && tr != 'n')) {
-    if (beta == Kokkos::ArithTraits<BetaCoeffType>::zero()) {
-      Kokkos::deep_copy(y, Kokkos::ArithTraits<BetaCoeffType>::zero());
-    } else if (beta != Kokkos::ArithTraits<BetaCoeffType>::one()) {
+    if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::zero()) {
+      Kokkos::deep_copy(y, KokkosKernels::ArithTraits<BetaCoeffType>::zero());
+    } else if (beta != KokkosKernels::ArithTraits<BetaCoeffType>::one()) {
       // "Fake out" a scal() by using the non-transpose alpha=0,
       // general beta case.  This assumes that the functor doesn't
       // check dimensions.
@@ -217,23 +204,23 @@ void singleLevelGemv(const ExecutionSpace& space, const char trans[], typename A
   }
 
   if (tr == 'N' || tr == 'n') {
-    if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
-      if (beta == Kokkos::ArithTraits<BetaCoeffType>::zero()) {
+    if (alpha == KokkosKernels::ArithTraits<AlphaCoeffType>::zero()) {
+      if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::zero()) {
         // Fill y with zeros
-        Kokkos::deep_copy(y, Kokkos::ArithTraits<y_value_type>::zero());
-      } else if (beta == Kokkos::ArithTraits<BetaCoeffType>::one()) {
+        Kokkos::deep_copy(y, KokkosKernels::ArithTraits<y_value_type>::zero());
+      } else if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::one()) {
         // Do nothing (y := 1 * y)
       } else {  // beta != 0 && beta != 1
         using functor_type = SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType, 0, -1, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_for("KokkosBlas::gemv[SingleLevel]", range, functor);
       }
-    } else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::one()) {
-      if (beta == Kokkos::ArithTraits<BetaCoeffType>::zero()) {
+    } else if (alpha == KokkosKernels::ArithTraits<AlphaCoeffType>::one()) {
+      if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::zero()) {
         using functor_type = SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType, 1, 0, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_for("KokkosBlas::gemv[SingleLevel]", range, functor);
-      } else if (beta == Kokkos::ArithTraits<BetaCoeffType>::one()) {
+      } else if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::one()) {
         using functor_type = SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType, 1, 1, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_for("KokkosBlas::gemv[SingleLevel]", range, functor);
@@ -243,11 +230,11 @@ void singleLevelGemv(const ExecutionSpace& space, const char trans[], typename A
         Kokkos::parallel_for("KokkosBlas::gemv[SingleLevel]", range, functor);
       }
     } else {  // alpha != 0 and alpha != 1
-      if (beta == Kokkos::ArithTraits<BetaCoeffType>::zero()) {
+      if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::zero()) {
         using functor_type = SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType, -1, 0, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_for("KokkosBlas::gemv[SingleLevel]", range, functor);
-      } else if (beta == Kokkos::ArithTraits<BetaCoeffType>::one()) {
+      } else if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::one()) {
         using functor_type = SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType, -1, 1, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_for("KokkosBlas::gemv[SingleLevel]", range, functor);
@@ -258,23 +245,23 @@ void singleLevelGemv(const ExecutionSpace& space, const char trans[], typename A
       }
     }
   } else if (tr == 'T' || tr == 't') {  // transpose, no conjugate
-    if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
-      if (beta == Kokkos::ArithTraits<BetaCoeffType>::zero()) {
+    if (alpha == KokkosKernels::ArithTraits<AlphaCoeffType>::zero()) {
+      if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::zero()) {
         // Fill y with zeros
-        Kokkos::deep_copy(y, Kokkos::ArithTraits<y_value_type>::zero());
-      } else if (beta == Kokkos::ArithTraits<BetaCoeffType>::one()) {
+        Kokkos::deep_copy(y, KokkosKernels::ArithTraits<y_value_type>::zero());
+      } else if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::one()) {
         // Do nothing (y := 1 * y)
       } else {  // beta != 0 && beta != 1
         using functor_type = SingleLevelTransposeGEMV<AViewType, XViewType, YViewType, false, 0, -1, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
       }
-    } else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::one()) {
-      if (beta == Kokkos::ArithTraits<BetaCoeffType>::zero()) {
+    } else if (alpha == KokkosKernels::ArithTraits<AlphaCoeffType>::one()) {
+      if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::zero()) {
         using functor_type = SingleLevelTransposeGEMV<AViewType, XViewType, YViewType, false, 1, 0, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
-      } else if (beta == Kokkos::ArithTraits<BetaCoeffType>::one()) {
+      } else if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::one()) {
         using functor_type = SingleLevelTransposeGEMV<AViewType, XViewType, YViewType, false, 1, 1, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
@@ -284,11 +271,11 @@ void singleLevelGemv(const ExecutionSpace& space, const char trans[], typename A
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
       }
     } else {  // alpha != 0 and alpha != 1
-      if (beta == Kokkos::ArithTraits<BetaCoeffType>::zero()) {
+      if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::zero()) {
         using functor_type = SingleLevelTransposeGEMV<AViewType, XViewType, YViewType, false, -1, 0, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
-      } else if (beta == Kokkos::ArithTraits<BetaCoeffType>::one()) {
+      } else if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::one()) {
         using functor_type = SingleLevelTransposeGEMV<AViewType, XViewType, YViewType, false, -1, 1, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
@@ -299,23 +286,23 @@ void singleLevelGemv(const ExecutionSpace& space, const char trans[], typename A
       }
     }
   } else if (tr == 'C' || tr == 'c' || tr == 'H' || tr == 'h') {  // conj xpose
-    if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
-      if (beta == Kokkos::ArithTraits<BetaCoeffType>::zero()) {
+    if (alpha == KokkosKernels::ArithTraits<AlphaCoeffType>::zero()) {
+      if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::zero()) {
         // Fill y with zeros
-        Kokkos::deep_copy(y, Kokkos::ArithTraits<y_value_type>::zero());
-      } else if (beta == Kokkos::ArithTraits<BetaCoeffType>::one()) {
+        Kokkos::deep_copy(y, KokkosKernels::ArithTraits<y_value_type>::zero());
+      } else if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::one()) {
         // Do nothing (y := 1 * y)
       } else {  // beta != 0 && beta != 1
         using functor_type = SingleLevelTransposeGEMV<AViewType, XViewType, YViewType, true, 0, -1, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
       }
-    } else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::one()) {
-      if (beta == Kokkos::ArithTraits<BetaCoeffType>::zero()) {
+    } else if (alpha == KokkosKernels::ArithTraits<AlphaCoeffType>::one()) {
+      if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::zero()) {
         using functor_type = SingleLevelTransposeGEMV<AViewType, XViewType, YViewType, true, 1, 0, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
-      } else if (beta == Kokkos::ArithTraits<BetaCoeffType>::one()) {
+      } else if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::one()) {
         using functor_type = SingleLevelTransposeGEMV<AViewType, XViewType, YViewType, true, 1, 1, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
@@ -325,11 +312,11 @@ void singleLevelGemv(const ExecutionSpace& space, const char trans[], typename A
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
       }
     } else {  // alpha != 0 and alpha != 1
-      if (beta == Kokkos::ArithTraits<BetaCoeffType>::zero()) {
+      if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::zero()) {
         using functor_type = SingleLevelTransposeGEMV<AViewType, XViewType, YViewType, true, -1, 0, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
-      } else if (beta == Kokkos::ArithTraits<BetaCoeffType>::one()) {
+      } else if (beta == KokkosKernels::ArithTraits<BetaCoeffType>::one()) {
         using functor_type = SingleLevelTransposeGEMV<AViewType, XViewType, YViewType, true, -1, 1, IndexType>;
         functor_type functor(alpha, A, x, beta, y);
         Kokkos::parallel_reduce("KokkosBlas::gemv[SingleLevelTranspose]", range, functor);
@@ -380,8 +367,8 @@ struct TwoLevelGEMV {
   //  results into shared. -Then individual thread results are combined with
   //  parallel_reduce.
   KOKKOS_INLINE_FUNCTION void operator()(TwoLevelGEMV_LayoutLeftTag, const member_type& team) const {
-    using KAT  = Kokkos::ArithTraits<y_value_type>;
-    using AKAT = Kokkos::ArithTraits<AccumScalar>;
+    using KAT  = KokkosKernels::ArithTraits<y_value_type>;
+    using AKAT = KokkosKernels::ArithTraits<AccumScalar>;
     // Allocate a Scalar in shared for each thread
     AccumScalar* blockResult = (AccumScalar*)team.team_shmem().get_shmem(32 * sizeof(AccumScalar));
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 32), [&](int i) { blockResult[i] = AKAT::zero(); });
@@ -415,7 +402,7 @@ struct TwoLevelGEMV {
 
   // LayoutRight version: one team per row
   KOKKOS_INLINE_FUNCTION void operator()(TwoLevelGEMV_LayoutRightTag, const member_type& team) const {
-    using KAT = Kokkos::ArithTraits<y_value_type>;
+    using KAT = KokkosKernels::ArithTraits<y_value_type>;
 
     const IndexType N = A_.extent(1);
     const int i       = team.league_rank();  // batch id
@@ -477,7 +464,7 @@ struct TwoLevelTransposeGEMV {
 
  public:
   KOKKOS_INLINE_FUNCTION void operator()(const member_type& team) const {
-    using Kokkos::ArithTraits;
+    using KokkosKernels::ArithTraits;
     using KAT_A = ArithTraits<typename AViewType::non_const_value_type>;
     using KAT_Y = ArithTraits<typename YViewType::non_const_value_type>;
 
@@ -530,7 +517,7 @@ void twoLevelGemv(const ExecutionSpace& space, const char trans[], typename AVie
   using team_policy_type  = Kokkos::TeamPolicy<ExecutionSpace>;
   using range_policy_type = Kokkos::RangePolicy<ExecutionSpace, IndexType>;
 
-  using Kokkos::ArithTraits;
+  using KokkosKernels::ArithTraits;
   using KAT  = ArithTraits<typename AViewType::non_const_value_type>;
   using YKAT = ArithTraits<typename YViewType::non_const_value_type>;
 
@@ -600,7 +587,7 @@ void twoLevelGemv(const ExecutionSpace& space, const char trans[], typename AVie
   } else {
     if (alpha == KAT::zero() && beta == KAT::zero()) {
       // Fill y with zeros
-      Kokkos::deep_copy(y, Kokkos::ArithTraits<y_value_type>::zero());
+      Kokkos::deep_copy(y, KokkosKernels::ArithTraits<y_value_type>::zero());
     } else if (alpha == KAT::zero() && beta == KAT::one()) {
       // Do nothing (y := 1 * y)
     } else if (tr == 'T') {

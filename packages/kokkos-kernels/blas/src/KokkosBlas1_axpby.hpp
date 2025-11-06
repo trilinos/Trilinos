@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS1_AXPBY_HPP
 #define KOKKOSBLAS1_AXPBY_HPP
@@ -275,7 +262,7 @@ void axpby(const AV& a, const XMV& X, const BV& b, const YMV& Y) {
 ///                        stored.
 template <class execution_space, class AV, class XMV, class YMV>
 void axpy(const execution_space& exec_space, const AV& a, const XMV& X, const YMV& Y) {
-  axpby(exec_space, a, X, Kokkos::ArithTraits<typename YMV::non_const_value_type>::one(), Y);
+  axpby(exec_space, a, X, KokkosKernels::ArithTraits<typename YMV::non_const_value_type>::one(), Y);
 }
 
 /// \brief Computes Y := a*X + Y

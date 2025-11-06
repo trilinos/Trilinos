@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 //
 // Created by Poliakoff, David Zoeller on 4/26/21.
 //
@@ -71,9 +58,9 @@ test_list construct_kernel_base(const rajaperf::RunParams& run_params, Ordinal n
 struct SPMVTestData {
   using matrix_type   = KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset>;
   using mv_type       = Kokkos::View<Scalar*, Layout>;
-  using h_mv_type     = mv_type::HostMirror;
-  using h_graph_type  = matrix_type::StaticCrsGraphType::HostMirror;
-  using h_values_type = matrix_type::values_type::HostMirror;
+  using h_mv_type     = mv_type::host_mirror_type;
+  using h_graph_type  = matrix_type::StaticCrsGraphType::host_mirror_type;
+  using h_values_type = matrix_type::values_type::host_mirror_type;
 
   Ordinal numRows;
   Ordinal numCols;

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSPARSE_SPMV_MV_TPL_SPEC_DECL_HPP_
 #define KOKKOSPARSE_SPMV_MV_TPL_SPEC_DECL_HPP_
@@ -217,7 +204,7 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle, const char mode[
                                                                                                                     \
     static void spmv_mv(const Kokkos::Cuda &exec, Handle *handle, const char mode[], const coefficient_type &alpha, \
                         const AMatrix &A, const XVector &x, const coefficient_type &beta, const YVector &y) {       \
-      std::string label = "KokkosSparse::spmv_mv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]";        \
+      std::string label = "KokkosSparse::spmv_mv[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);                                                                         \
       spmv_mv_cusparse(exec, handle, mode, alpha, A, x, beta, y);                                                   \
       Kokkos::Profiling::popRegion();                                                                               \
@@ -409,7 +396,7 @@ void spmv_mv_rocsparse(const Kokkos::HIP &exec, Handle *handle, const char mode[
                                                                                                                        \
     static void spmv_mv(const Kokkos::HIP &exec, Handle *handle, const char mode[], const coefficient_type &alpha,     \
                         const AMatrix &A, const XVector &x, const coefficient_type &beta, const YVector &y) {          \
-      std::string label = "KokkosSparse::spmv_mv[TPL_ROCSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]";          \
+      std::string label = "KokkosSparse::spmv_mv[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";   \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       spmv_mv_rocsparse(exec, handle, mode, alpha, A, x, beta, y);                                                     \
       Kokkos::Profiling::popRegion();                                                                                  \

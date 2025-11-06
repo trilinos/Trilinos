@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosKernels_TestUtils.hpp"
@@ -63,7 +50,7 @@ void run_test_extract_diagonal_blocks_rcb(lno_t n_pts_per_dim, lno_t nblocks) {
   using RowMapType       = Kokkos::View<size_type *, device>;
   using EntriesType      = Kokkos::View<lno_t *, device>;
   using ValuesType       = Kokkos::View<scalar_t *, device>;
-  using magnitude_t      = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using magnitude_t      = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   using CoorsViewType    = Kokkos::View<magnitude_t **, device>;
   using PermViewType     = Kokkos::View<lno_t *, device>;
   using CoorsViewType_hm = typename CoorsViewType::host_mirror_type;

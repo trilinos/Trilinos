@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBATCHED_IAMAX_SERIAL_INTERNAL_HPP_
 #define KOKKOSBATCHED_IAMAX_SERIAL_INTERNAL_HPP_
@@ -37,7 +24,7 @@ struct SerialIamaxInternal {
 template <typename IndexType, typename ValueType>
 KOKKOS_INLINE_FUNCTION IndexType SerialIamaxInternal::invoke(const int n, const ValueType *KOKKOS_RESTRICT x,
                                                              const int xs0) {
-  using ats      = typename Kokkos::ArithTraits<ValueType>;
+  using ats      = typename KokkosKernels::ArithTraits<ValueType>;
   using RealType = typename ats::mag_type;
 
   RealType amax  = Kokkos::abs(x[0 * xs0]);

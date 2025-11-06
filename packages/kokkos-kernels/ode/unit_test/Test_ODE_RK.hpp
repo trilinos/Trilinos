@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include "KokkosKernels_TestUtils.hpp"
@@ -50,7 +37,7 @@ struct duho {
 
   template <class vec_type>
   KOKKOS_FUNCTION void solution(const double t, const vec_type& y0, const vec_type& y) const {
-    using KAT = Kokkos::ArithTraits<double>;
+    using KAT = KokkosKernels::ArithTraits<double>;
 
     const double gamma = c / (2 * m);
     const double omega = KAT::sqrt(k / m - gamma * gamma);
@@ -113,7 +100,7 @@ template <class ode_type, KokkosODE::Experimental::RK_type rk_type, class vec_ty
 void test_method(const std::string label, ode_type& my_ode, const scalar_type& tstart, const scalar_type& tend,
                  const int num_steps, vec_type& y_old, vec_type& y_new, const int order, const int num_stages,
                  const Kokkos::View<double**, Kokkos::HostSpace>& ks,
-                 const Kokkos::View<double*, Kokkos::HostSpace>& sol, typename vec_type::HostMirror y_ref_h) {
+                 const Kokkos::View<double*, Kokkos::HostSpace>& sol, typename vec_type::host_mirror_type y_ref_h) {
   using execution_space = typename vec_type::execution_space;
   using solver_type     = KokkosODE::Experimental::RungeKutta<rk_type>;
   using count_type      = Kokkos::View<int*, execution_space>;
@@ -187,9 +174,9 @@ void test_RK() {
   // for each method tested we do not want to use
   // create_mirror_view which would not do a copy
   // when y_old is in HostSpace.
-  typename vec_type::HostMirror y_old_h = Kokkos::create_mirror(y_old);
-  y_old_h(0)                            = 1;
-  y_old_h(1)                            = 0;
+  typename vec_type::host_mirror_type y_old_h = Kokkos::create_mirror(y_old);
+  y_old_h(0)                                  = 1;
+  y_old_h(1)                                  = 0;
 
   // First compute analytical solution as reference
   // and to evaluate the error from each RK method.
@@ -288,8 +275,8 @@ void test_RK() {
 
 template <class ode_type, KokkosODE::Experimental::RK_type rk_type, class vec_type, class mv_type, class scalar_type>
 void test_rate(ode_type& my_ode, const scalar_type& tstart, const scalar_type& tend,
-               Kokkos::View<int*, Kokkos::HostSpace> num_steps, typename vec_type::HostMirror& y_old_h,
-               typename vec_type::HostMirror& y_ref_h, typename vec_type::HostMirror& error) {
+               Kokkos::View<int*, Kokkos::HostSpace> num_steps, typename vec_type::host_mirror_type& y_old_h,
+               typename vec_type::host_mirror_type& y_ref_h, typename vec_type::host_mirror_type& error) {
   using execution_space = typename vec_type::execution_space;
   using solver_type     = KokkosODE::Experimental::RungeKutta<rk_type>;
   using count_type      = Kokkos::View<int*, execution_space>;
@@ -356,9 +343,9 @@ void test_convergence_rate() {
   // for each method tested we do not want to use
   // create_mirror_view which would not do a copy
   // when y_old is in HostSpace.
-  typename vec_type::HostMirror y_old_h = Kokkos::create_mirror(y_old);
-  y_old_h(0)                            = 1;
-  y_old_h(1)                            = 0;
+  typename vec_type::host_mirror_type y_old_h = Kokkos::create_mirror(y_old);
+  y_old_h(0)                                  = 1;
+  y_old_h(1)                                  = 0;
 
   // First compute analytical solution as reference
   // and to evaluate the error from each RK method.
@@ -377,7 +364,7 @@ void test_convergence_rate() {
 #endif
   }
 
-  typename vec_type::HostMirror error("error", num_steps.extent(0));
+  typename vec_type::host_mirror_type error("error", num_steps.extent(0));
   test_rate<duho, RK_type::RKEH, vec_type, mv_type, double>(my_oscillator, tstart, tend, num_steps, y_old_h, y_ref_h,
                                                             error);
 
@@ -456,9 +443,9 @@ void test_adaptivity() {
   // for each method tested we do not want to use
   // create_mirror_view which would not do a copy
   // when y_old is in HostSpace.
-  typename vec_type::HostMirror y_old_h = Kokkos::create_mirror(y_old);
-  y_old_h(0)                            = 1;
-  y_old_h(1)                            = 0;
+  typename vec_type::host_mirror_type y_old_h = Kokkos::create_mirror(y_old);
+  y_old_h(0)                                  = 1;
+  y_old_h(1)                                  = 0;
 
   // First compute analytical solution as reference
   // and to evaluate the error from each RK method.

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_MDF_IMPL_HPP_
 #define KOKKOSSPARSE_MDF_IMPL_HPP_
@@ -22,7 +9,7 @@
 #include "KokkosKernels_Sorting.hpp"
 #include "KokkosSparse_findRelOffset.hpp"
 #include <type_traits>
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -30,7 +17,7 @@ namespace Impl {
 template <typename crs_matrix_type>
 struct MDF_types {
   using scalar_type     = typename crs_matrix_type::value_type;
-  using KAS             = typename Kokkos::ArithTraits<scalar_type>;
+  using KAS             = typename KokkosKernels::ArithTraits<scalar_type>;
   using scalar_mag_type = typename KAS::mag_type;
   using values_mag_type = Kokkos::View<scalar_mag_type*, Kokkos::LayoutRight, typename crs_matrix_type::device_type,
                                        typename crs_matrix_type::memory_traits>;
@@ -41,7 +28,7 @@ struct MDF_count_lower {
   using col_ind_type = typename crs_matrix_type::StaticCrsGraphType::entries_type::non_const_type;
   using size_type    = typename crs_matrix_type::ordinal_type;
   using value_type   = typename crs_matrix_type::size_type;
-  using KAV          = typename Kokkos::ArithTraits<value_type>;
+  using KAV          = typename KokkosKernels::ArithTraits<value_type>;
 
   crs_matrix_type A;
   col_ind_type permutation;
@@ -86,9 +73,9 @@ struct MDF_discarded_fill_norm {
   using size_type             = typename crs_matrix_type::size_type;
   using ordinal_type          = typename crs_matrix_type::ordinal_type;
   using scalar_type           = typename crs_matrix_type::value_type;
-  using KAS                   = typename Kokkos::ArithTraits<scalar_type>;
+  using KAS                   = typename KokkosKernels::ArithTraits<scalar_type>;
   using scalar_mag_type       = typename KAS::mag_type;
-  using KAM                   = typename Kokkos::ArithTraits<scalar_mag_type>;
+  using KAM                   = typename KokkosKernels::ArithTraits<scalar_mag_type>;
   using permutation_set_type  = Kokkos::UnorderedMap<ordinal_type, void, device_type>;
 
   crs_matrix_type A, At;
@@ -144,8 +131,8 @@ struct MDF_discarded_fill_norm {
 
     KOKKOS_INLINE_FUNCTION
     static void init(value_type& val) {
-      val.discarded_norm = Kokkos::reduction_identity<scalar_mag_type>::sum();
-      val.numFillEntries = Kokkos::reduction_identity<ordinal_type>::sum();
+      val.discarded_norm = 0;
+      val.numFillEntries = 0;
       val.diag_val       = KAS::zero();
     }
 
@@ -411,7 +398,7 @@ struct MDF_factorize_row {
 
     // Only one of the values will match selected so can just sum all contribs
     const auto rowView = A.rowConst(selected_row);
-    value_type diag    = Kokkos::ArithTraits<value_type>::zero();
+    value_type diag    = KokkosKernels::ArithTraits<value_type>::zero();
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(team, rowView.length),
         [&](const size_type ind, value_type& running_diag) {
@@ -520,7 +507,7 @@ struct MDF_compute_list_length {
 
     Kokkos::single(Kokkos::PerTeam(team), [&] {
       selected_row                 = permutation(selected_row_idx);
-      discarded_fill(selected_row) = Kokkos::ArithTraits<value_mag_type>::max();
+      discarded_fill(selected_row) = KokkosKernels::ArithTraits<value_mag_type>::max();
 
       // Swap entries in permutation vectors
       permutation(selected_row_idx)                    = permutation(factorization_step);
@@ -530,7 +517,7 @@ struct MDF_compute_list_length {
 
       // Diagonal value of L
       entriesL(L_entryIdx) = selected_row;
-      valuesL(L_entryIdx)  = Kokkos::ArithTraits<value_type>::one();
+      valuesL(L_entryIdx)  = KokkosKernels::ArithTraits<value_type>::one();
 
       // Insert into permutation set for later
       const auto res = permutation_set.insert(selected_row);
@@ -547,7 +534,7 @@ struct MDF_compute_list_length {
     // Insert the upper part of the selected row in U
     // including the diagonal term.
     ordinal_type updateIdx = 0;
-    value_type diag        = Kokkos::ArithTraits<value_type>::zero();
+    value_type diag        = KokkosKernels::ArithTraits<value_type>::zero();
     {
       Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, rowView.length),
                             [&](const size_type alpha, ordinal_type& running_update, bool is_final) {

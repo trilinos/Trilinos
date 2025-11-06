@@ -1,24 +1,11 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_NRM2_SPEC_HPP_
 #define KOKKOSBLAS1_NRM2_SPEC_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 
 // Include the actual functors
@@ -159,7 +146,7 @@ struct Nrm2<execution_space, RV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
 
     const size_type numRows = X.extent(0);
     const size_type numCols = X.extent(1);
-    if (numCols == Kokkos::ArithTraits<size_type>::one()) {
+    if (numCols == KokkosKernels::ArithTraits<size_type>::one()) {
       auto R0 = Kokkos::subview(R, 0);
       auto X0 = Kokkos::subview(X, Kokkos::ALL(), 0);
       if (numRows < static_cast<size_type>(INT_MAX)) {
