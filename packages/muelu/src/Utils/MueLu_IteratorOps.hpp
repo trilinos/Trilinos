@@ -46,9 +46,9 @@ void Jacobi(
   typedef Node NO;
 
   TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*A.getRowMap()) == false, MueLu::Exceptions::RuntimeError,
-                             "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A")
+                             "MueLu::Jacobi: row map of C is not same as row map of A")
   TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*B.getRowMap()) == false, MueLu::Exceptions::RuntimeError,
-                             "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B");
+                             "MueLu::Jacobi: row map of C is not same as row map of B");
   TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), MueLu::Exceptions::RuntimeError, "A is not fill-completed");
   TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), MueLu::Exceptions::RuntimeError, "B is not fill-completed");
 
@@ -58,7 +58,7 @@ void Jacobi(
 #ifndef HAVE_MUELU_EPETRAEXT
     throw(MueLu::Exceptions::RuntimeError("MueLu::Jacobi requires EpetraExt to be compiled."));
 #else
-    throw(MueLu::Exceptions::RuntimeError("MueLu:Jacobi requires you to use an Epetra-compatible data type."));
+    throw(MueLu::Exceptions::RuntimeError("MueLu::Jacobi requires you to use an Epetra-compatible data type."));
 #endif
   } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(A);
