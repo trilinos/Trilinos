@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// @file KokkosSparse_MatrixPrec.hpp
 
@@ -45,17 +32,17 @@ namespace Experimental {
 template <class CRS>
 class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
  private:
-  CRS _A;
+  CRS A_;
 
  public:
   using ScalarType = typename std::remove_const<typename CRS::value_type>::type;
   using EXSP       = typename CRS::execution_space;
   using MEMSP      = typename CRS::memory_space;
-  using karith     = typename Kokkos::ArithTraits<ScalarType>;
+  using karith     = typename KokkosKernels::ArithTraits<ScalarType>;
 
   //! Constructor:
   template <class CRSArg>
-  MatrixPrec(const CRSArg &mat) : _A(mat) {}
+  MatrixPrec(const CRSArg &mat) : A_(mat) {}
 
   //! Destructor.
   virtual ~MatrixPrec() {}
@@ -79,7 +66,7 @@ class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   virtual void apply(const Kokkos::View<const ScalarType *, Kokkos::Device<EXSP, MEMSP>> &X,
                      const Kokkos::View<ScalarType *, Kokkos::Device<EXSP, MEMSP>> &Y, const char transM[] = "N",
                      ScalarType alpha = karith::one(), ScalarType beta = karith::zero()) const {
-    KokkosSparse::spmv(transM, alpha, _A, X, beta, Y);
+    KokkosSparse::spmv(transM, alpha, A_, X, beta, Y);
   }
   //@}
 

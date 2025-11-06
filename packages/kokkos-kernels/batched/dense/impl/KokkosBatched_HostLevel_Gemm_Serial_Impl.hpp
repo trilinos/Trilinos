@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_HOSTLEVEL_GEMM_SERIAL_IMPL_HPP
 #define KOKKOSBATCHED_HOSTLEVEL_GEMM_SERIAL_IMPL_HPP
 #include "KokkosBatched_Gemm_Decl.hpp"
@@ -160,7 +147,7 @@ class BatchedSerialGemm {
     // KokkosBatched::SerialDotInternal::invoke(svA_row.extent(0), svA_row.data(), svA_row.stride(0),
     //   svB_col.data(), svB_col.stride(0), &svA_row_x_svB_col);
 
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     // iC[0]      = ValueType(0);
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSLAPACK_GESV_TPL_SPEC_DECL_HPP_
 #define KOKKOSLAPACK_GESV_TPL_SPEC_DECL_HPP_
@@ -59,8 +46,8 @@ void lapackGesvWrapper(const AViewType& A, const BViewType& B, const IPIVViewTyp
   int info = 0;
 
   if (with_pivot) {
-    if constexpr (Kokkos::ArithTraits<Scalar>::is_complex) {
-      using MagType = typename Kokkos::ArithTraits<Scalar>::mag_type;
+    if constexpr (KokkosKernels::ArithTraits<Scalar>::is_complex) {
+      using MagType = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
 
       HostLapack<std::complex<MagType>>::gesv(N, NRHS, reinterpret_cast<std::complex<MagType>*>(A.data()), LDA,
                                               IPIV.data(), reinterpret_cast<std::complex<MagType>*>(B.data()), LDB,
@@ -138,7 +125,8 @@ template <class ExecSpace, class AViewType, class BViewType, class IPIVViewType>
 void magmaGesvWrapper(const ExecSpace& space, const AViewType& A, const BViewType& B, const IPIVViewType& IPIV) {
   using scalar_type = typename AViewType::non_const_value_type;
 
-  Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA," + Kokkos::ArithTraits<scalar_type>::name() + "]");
+  Kokkos::Profiling::pushRegion("KokkosLapack::gesv[TPL_MAGMA," + KokkosKernels::ArithTraits<scalar_type>::name() +
+                                "]");
   gesv_print_specialization<AViewType, BViewType, IPIVViewType>();
 
   const bool with_pivot = !((IPIV.extent(0) == 0) && (IPIV.data() == nullptr));

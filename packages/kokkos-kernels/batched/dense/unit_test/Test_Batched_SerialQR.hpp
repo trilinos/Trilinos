@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Luc Berger-Vergiat (lberg@sandia.gov)
 /// \author Cameron Smith (smithc11@rpi.edu)
 
@@ -54,8 +41,8 @@ struct qrFunctor {
     auto I   = Kokkos::subview(Is, matIdx, Kokkos::ALL, Kokkos::ALL);
     auto B   = Kokkos::subview(Bs, matIdx, Kokkos::ALL, Kokkos::ALL);
 
-    const Scalar SC_one = Kokkos::ArithTraits<Scalar>::one();
-    const Scalar tol    = Kokkos::ArithTraits<Scalar>::eps() * max_rows_cols * max_rows_cols * max_val;
+    const Scalar SC_one = KokkosKernels::ArithTraits<Scalar>::one();
+    const Scalar tol    = KokkosKernels::ArithTraits<Scalar>::eps() * max_rows_cols * max_rows_cols * max_val;
 
     int error_lcl = 0;
 
@@ -117,7 +104,7 @@ struct qrFunctor {
     // Store identity in Q
     for (int rowIdx = 0; rowIdx < Q.extent_int(0); ++rowIdx) {
       for (int colIdx = 0; colIdx < Q.extent_int(1); ++colIdx) {
-        Q(rowIdx, colIdx) = (rowIdx == colIdx) ? SC_one : Kokkos::ArithTraits<Scalar>::zero();
+        Q(rowIdx, colIdx) = (rowIdx == colIdx) ? SC_one : KokkosKernels::ArithTraits<Scalar>::zero();
       }
     }
 
@@ -174,7 +161,7 @@ void test_QR_square() {
   using ColVectorViewType = Kokkos::View<Scalar*>;
   using ColWorkViewType   = Kokkos::View<Scalar*>;
 
-  const Scalar tol = 20 * Kokkos::ArithTraits<Scalar>::eps();
+  const Scalar tol = 20 * KokkosKernels::ArithTraits<Scalar>::eps();
   constexpr int m = 3, n = 3;
 
   MatrixViewType A("A", m, n), B("B", m, n), Q("Q", m, m);
@@ -310,7 +297,7 @@ void test_QR_rectangular() {
   using ColVectorViewType = Kokkos::View<Scalar*>;
   using ColWorkViewType   = Kokkos::View<Scalar*>;
 
-  const Scalar tol = 10 * Kokkos::ArithTraits<Scalar>::eps();
+  const Scalar tol = 10 * KokkosKernels::ArithTraits<Scalar>::eps();
   constexpr int m = 3, n = 2;
 
   MatrixViewType A("A", m, n), B("B", m, n), Q("Q", m, m);

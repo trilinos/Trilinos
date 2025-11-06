@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
@@ -41,10 +28,10 @@ void do_xpy(size_t n, bool time_only = false) {
 
   View<ReferenceScalarType *, LayoutType, HostSpace> expected("expected", n);
   View<ReferenceScalarType *, LayoutType, HostSpace> relative_error("relative_error", n);
-  typename ViewType::HostMirror x_host = create_mirror_view(x);
-  typename ViewType::HostMirror y_host = create_mirror_view(y);
+  typename ViewType::host_mirror_type x_host = create_mirror_view(x);
+  typename ViewType::host_mirror_type y_host = create_mirror_view(y);
   // TODO: Report segfault in random_pool creation with:
-  // typename ViewType::HostMirror y_host = create_mirror_view(y_host);
+  // typename ViewType::host_mirror_type y_host = create_mirror_view(y_host);
 
   Random_XorShift64_Pool<ExecutionSpace> random_pool(12345);
   fill_random(x_rand, random_pool, ReferenceScalarType(1.0), ReferenceScalarType(2.0));

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSPARSE_SPMV_TPL_SPEC_DECL_HPP_
 #define KOKKOSPARSE_SPMV_TPL_SPEC_DECL_HPP_
@@ -54,7 +41,8 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
   }
   // cuSPARSE doesn't directly support mode H with real values, but this is
   // equivalent to mode T
-  if (myCusparseOperation == CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE && !Kokkos::ArithTraits<value_type>::isComplex)
+  if (myCusparseOperation == CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE &&
+      !KokkosKernels::ArithTraits<value_type>::isComplex)
     myCusparseOperation = CUSPARSE_OPERATION_TRANSPOSE;
 
 // Hopefully this corresponds to CUDA reelase 10.1, which is the first to
@@ -217,7 +205,7 @@ void spmv_cusparse(const Kokkos::Cuda& exec, Handle* handle, const char mode[],
                                                                                                                     \
     static void spmv(const Kokkos::Cuda& exec, Handle* handle, const char mode[], const coefficient_type& alpha,    \
                      const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {          \
-      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]";           \
+      std::string label = "KokkosSparse::spmv[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";    \
       Kokkos::Profiling::pushRegion(label);                                                                         \
       spmv_cusparse(exec, handle, mode, alpha, A, x, beta, y);                                                      \
       Kokkos::Profiling::popRegion();                                                                               \
@@ -408,7 +396,7 @@ void spmv_rocsparse(const Kokkos::HIP& exec, Handle* handle, const char mode[],
                                                                                                                        \
     static void spmv(const Kokkos::HIP& exec, Handle* handle, const char mode[], const coefficient_type& alpha,        \
                      const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {             \
-      std::string label = "KokkosSparse::spmv[TPL_ROCSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]";             \
+      std::string label = "KokkosSparse::spmv[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";      \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       spmv_rocsparse(exec, handle, mode, alpha, A, x, beta, y);                                                        \
       Kokkos::Profiling::popRegion();                                                                                  \
@@ -525,7 +513,7 @@ inline void spmv_mkl(Handle* handle, sparse_operation_t op, Scalar alpha, Scalar
                                                                                                                      \
     static void spmv(const EXECSPACE&, Handle* handle, const char mode[], const coefficient_type& alpha,             \
                      const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {           \
-      std::string label = "KokkosSparse::spmv[TPL_MKL," + Kokkos::ArithTraits<SCALAR>::name() + "]";                 \
+      std::string label = "KokkosSparse::spmv[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";          \
       Kokkos::Profiling::pushRegion(label);                                                                          \
       spmv_mkl(handle, mode_kk_to_mkl(mode[0]), alpha, beta, A.numRows(), A.numCols(), A.graph.row_map.data(),       \
                A.graph.entries.data(), A.values.data(), x.data(), y.data());                                         \
@@ -571,7 +559,7 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle, oneapi::mkl
 
   // oneAPI doesn't directly support mode H with real values, but this is
   // equivalent to mode T
-  if (mkl_mode == oneapi::mkl::transpose::conjtrans && !Kokkos::ArithTraits<scalar_type>::isComplex)
+  if (mkl_mode == oneapi::mkl::transpose::conjtrans && !KokkosKernels::ArithTraits<scalar_type>::isComplex)
     mkl_mode = oneapi::mkl::transpose::trans;
 
   OneMKL_SpMV_Data* subhandle;
@@ -627,7 +615,7 @@ inline void spmv_onemkl(const execution_space& exec, Handle* handle, oneapi::mkl
                                                                                                                        \
     static void spmv(const execution_space& exec, Handle* handle, const char mode[], const coefficient_type& alpha,    \
                      const AMatrix& A, const XVector& x, const coefficient_type& beta, const YVector& y) {             \
-      std::string label = "KokkosSparse::spmv[TPL_ONEMKL," + Kokkos::ArithTraits<SCALAR>::name() + "]";                \
+      std::string label = "KokkosSparse::spmv[TPL_ONEMKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";         \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       oneapi::mkl::transpose mkl_mode = mode_kk_to_onemkl(mode[0]);                                                    \
       spmv_onemkl(exec, handle, mkl_mode, alpha, A, x, beta, y);                                                       \

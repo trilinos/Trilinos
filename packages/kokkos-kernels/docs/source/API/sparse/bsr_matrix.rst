@@ -64,7 +64,7 @@ Member Types
    * - memory_traits
      - Alias for MemoryTraits.
 
-   * - HostMirror
+   * - host_mirror_type
      - CrsMatrix type templated on ScalarType, OrdinalType, host_mirror_space, MemoryTraits and SizeType.
 
    * - StaticCrsGraph
@@ -321,10 +321,25 @@ unmanaged_block_const
 Return a const view of the i-th block in the matrix.
 
 
+convertToCrs
+^^^^^^^^^^^^
+
+.. code:: cppkokkos
+
+  template <typename CrsMatrixType = KokkosSparse::CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType>>
+  CrsMatrixType convertToCrs() const;
+
+Convert the Bsr into a CrsMatrix
+
+The default return type will be a CrsMatrix with all the same template arguments
+as this Bsr, but you can provide your own type if needed. The only requirement
+is that the execution spaces match.
+
+This is a host function.
+
 Example
 =======
 
 .. literalinclude:: ../../../../example/wiki/sparse/KokkosSparse_wiki_bsrmatrix_2.cpp
   :language: c++
   :lines: 16-
-

@@ -147,10 +147,10 @@ View Member Types
      - View of rank 1 holding ``size_type`` values and allocated in ``HandlePersistentMemorySpace``.
 
    * - row_lno_persistent_work_host_view_t
-     - ``HostMirror`` type of ``row_lno_persistent_work_host_view_t`` type.
+     - ``host_mirror_type`` type of ``row_lno_persistent_work_host_view_t`` type.
 
    * - size_type_persistent_work_host_view_t
-     - ``HostMirror`` type of ``size_type_persistent_work_view_t`` type.
+     - ``host_mirror_type`` type of ``size_type_persistent_work_view_t`` type.
 
    * - scalar_temp_work_view_t
      - View of rank 1 holding ``scalar`` values and allocated in ``HandleTempMemorySpace``.
@@ -168,7 +168,7 @@ View Member Types
      - View of rank 1 holding ``nnz_lno_t`` values and allocated in ``HandlePersistentMemorySpace``.
 
    * - nnz_lno_persistent_work_host_view_t
-     - ``HostMirror`` type of ``nnz_lno_persistent_work_host_view_t`` type.
+     - ``host_mirror_type`` type of ``nnz_lno_persistent_work_host_view_t`` type.
 
    * - bool_persistent_view_t
      - View of rank 1 holding ``bool`` values and allocated in ``HandlePersistentMemorySpace``.

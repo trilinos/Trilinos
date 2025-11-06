@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP
 #define KOKKOSKERNELS_SPARSEUTILS_CUSPARSE_HPP
@@ -66,21 +53,6 @@ inline void cusparse_internal_safe_call(cusparseStatus_t cusparseStatus, const c
 
 #define KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(call) \
   KokkosSparse::Impl::cusparse_internal_safe_call(call, #call, __FILE__, __LINE__)
-
-// Deprecated public interface for the cuSparse safe calls
-#if defined(KOKKOS_COMPILER_MSVC)
-#define KOKKOS_CUSPARSE_SAFE_CALL(call)                                                                          \
-  (__pragma(message("warning: KOKKOS_CUSPARSE_SAFE_CALL is deprecated and will be removed in a future version")) \
-       KOKKOSPARSE_IMPL_CUSPARSE_SAFE_CALL(call))
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define KOKKOS_CUSPARSE_SAFE_CALL(call)                                                             \
-  (__extension__({                                                                                  \
-    _Pragma("\"KOKKOS_CUSPARSE_SAFE_CALL is deprecated and will be removed in a future version\""); \
-    KOKKOSPARSE_IMPL_CUSPARSE_SAFE_CALL(call);                                                      \
-  }))
-#else
-#define KOKKOS_CUSPARSE_SAFE_CALL(call) KOKKOSPARSE_IMPL_CUSPARSE_SAFE_CALL(call)  // no good way to deprecate?
-#endif
 
 template <typename T>
 cudaDataType cuda_data_type_from() {

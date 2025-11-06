@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <fstream>
 
@@ -29,7 +16,7 @@
 #include "KokkosBatched_Vector.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosBatched_Util.hpp>
 #include "examples_helper.hpp"
 #include <KokkosBatched_Spmv.hpp>
@@ -47,8 +34,8 @@ struct Functor_TestBatchedTeamVectorGMRES {
   const ValuesViewType _diag;
   const IntView _r;
   const IntView _c;
-  const VectorViewType _X;
-  const VectorViewType _B;
+  const VectorViewType X_;
+  const VectorViewType B_;
   const int _team_size, _vector_length;
   KrylovHandleType _handle;
 
@@ -59,8 +46,8 @@ struct Functor_TestBatchedTeamVectorGMRES {
       : _values(values),
         _r(r),
         _c(c),
-        _X(X),
-        _B(B),
+        X_(X),
+        B_(B),
         _team_size(team_size),
         _vector_length(vector_length),
         _handle(handle) {}
@@ -73,8 +60,8 @@ struct Functor_TestBatchedTeamVectorGMRES {
         _diag(diag),
         _r(r),
         _c(c),
-        _X(X),
-        _B(B),
+        X_(X),
+        B_(B),
         _team_size(team_size),
         _vector_length(vector_length),
         _handle(handle) {}
@@ -86,8 +73,8 @@ struct Functor_TestBatchedTeamVectorGMRES {
     using TeamVectorCopy1D = KokkosBatched::TeamVectorCopy<MemberType, KokkosBatched::Trans::NoTranspose, 1>;
 
     auto d = Kokkos::subview(_values, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
-    auto x = Kokkos::subview(_X, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
-    auto b = Kokkos::subview(_B, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto x = Kokkos::subview(X_, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
+    auto b = Kokkos::subview(B_, Kokkos::make_pair(first_matrix, last_matrix), Kokkos::ALL);
 
     using ScratchPadIntViewType = Kokkos::View<typename IntView::non_const_value_type *, typename IntView::array_layout,
                                                typename IntView::execution_space::scratch_memory_space>;
@@ -147,7 +134,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
     size_t bytes_1D      = ViewType2D::shmem_size(_handle.get_number_of_systems_per_team(), 1);
     size_t bytes_row_ptr = IntView::shmem_size(_r.extent(0));
     size_t bytes_col_idc = IntView::shmem_size(_c.extent(0));
-    size_t bytes_2D_1    = ViewType2D::shmem_size(_handle.get_number_of_systems_per_team(), _X.extent(1));
+    size_t bytes_2D_1    = ViewType2D::shmem_size(_handle.get_number_of_systems_per_team(), X_.extent(1));
     size_t bytes_2D_2    = ViewType2D::shmem_size(_handle.get_number_of_systems_per_team(), maximum_iteration + 1);
 
     size_t bytes_int  = bytes_row_ptr + bytes_col_idc;
@@ -174,9 +161,6 @@ int main(int /*argc*/, char ** /*argv*/) {
     using IntView          = Kokkos::View<int *, layout, exec_space>;
     using AMatrixValueView = Kokkos::View<double **, layout, exec_space>;
     using XYType           = Kokkos::View<double **, layout, exec_space>;
-
-    std::string name_A = "mat.mm";
-    std::string name_B = "rhs.mm";
 
     int N, Blk, nnz;
 
@@ -207,7 +191,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     using Layout     = typename AMatrixValueView::array_layout;
     using EXSP       = typename AMatrixValueView::execution_space;
 
-    using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+    using MagnitudeType = typename KokkosKernels::ArithTraits<ScalarType>::mag_type;
 
     using Norm2DViewType   = Kokkos::View<MagnitudeType **, Layout, EXSP>;
     using Scalar3DViewType = Kokkos::View<ScalarType ***, Layout, EXSP>;

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 template <class AMatrix, class IntView, class XVector, class YVector, int dobeta>
 struct BSPMV_Functor_View {
@@ -22,7 +9,7 @@ struct BSPMV_Functor_View {
   typedef typename Kokkos::TeamPolicy<exec_space> team_policy;
   typedef typename team_policy::member_type team_member;
   typedef typename AMatrix::non_const_value_type entries_type;
-  typedef Kokkos::ArithTraits<value_type> ATV;
+  typedef KokkosKernels::ArithTraits<value_type> ATV;
 
   const value_type* alpha;
   const AMatrix m_A_values;

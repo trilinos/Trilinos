@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_SCAL_IMPL_HPP_
 #define KOKKOSBLAS1_SCAL_IMPL_HPP_
 
@@ -45,7 +32,7 @@ namespace Impl {
 template <class RV, class AV, class XV, int scalar_x, class SizeType>
 struct V_Scal_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV m_r;
   XV m_x;
@@ -93,7 +80,7 @@ struct V_Scal_Functor {
 template <class RV, class XV, int scalar_x, class SizeType>
 struct V_Scal_Functor<RV, typename XV::non_const_value_type, XV, scalar_x, SizeType> {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV m_r;
   XV m_x;

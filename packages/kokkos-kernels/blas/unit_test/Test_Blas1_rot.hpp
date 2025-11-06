@@ -1,23 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <KokkosBlas1_rot.hpp>
 
 template <class Scalar, class ExecutionSpace>
 int test_rot() {
-  using mag_type        = typename Kokkos::ArithTraits<Scalar>::mag_type;
+  using mag_type        = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
   using vector_type     = Kokkos::View<Scalar*, ExecutionSpace>;
   using magnitude_type  = Kokkos::View<mag_type, ExecutionSpace>;
   using scalar_type     = Kokkos::View<Scalar, ExecutionSpace>;
@@ -29,16 +16,16 @@ int test_rot() {
   scalar_type s("s");
 
   // Initialize inputs
-  typename vector_type::HostMirror X_h = Kokkos::create_mirror_view(X);
-  typename vector_type::HostMirror Y_h = Kokkos::create_mirror_view(Y);
-  X_h(0)                               = 0.6;
-  X_h(1)                               = 0.1;
-  X_h(2)                               = -0.5;
-  X_h(3)                               = 0.8;
-  Y_h(0)                               = 0.5;
-  Y_h(1)                               = -0.9;
-  Y_h(2)                               = 0.3;
-  Y_h(3)                               = 0.7;
+  typename vector_type::host_mirror_type X_h = Kokkos::create_mirror_view(X);
+  typename vector_type::host_mirror_type Y_h = Kokkos::create_mirror_view(Y);
+  X_h(0)                                     = 0.6;
+  X_h(1)                                     = 0.1;
+  X_h(2)                                     = -0.5;
+  X_h(3)                                     = 0.8;
+  Y_h(0)                                     = 0.5;
+  Y_h(1)                                     = -0.9;
+  Y_h(2)                                     = 0.3;
+  Y_h(3)                                     = 0.7;
   Kokkos::deep_copy(X, X_h);
   Kokkos::deep_copy(Y, Y_h);
 
@@ -63,7 +50,7 @@ int test_rot() {
   Yref(2) = 0.54;
   Yref(3) = 0.08;
 
-  Scalar const tol = 10 * Kokkos::ArithTraits<Scalar>::eps();
+  Scalar const tol = 10 * KokkosKernels::ArithTraits<Scalar>::eps();
   for (int idx = 0; idx < 4; ++idx) {
     Test::EXPECT_NEAR_KK_REL(X_h(idx), Xref(idx), tol);
     Test::EXPECT_NEAR_KK_REL(Y_h(idx), Yref(idx), tol);

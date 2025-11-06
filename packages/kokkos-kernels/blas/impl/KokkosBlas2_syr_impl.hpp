@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS2_SYR_IMPL_HPP_
 #define KOKKOSBLAS2_SYR_IMPL_HPP_
@@ -20,7 +7,7 @@
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_ExecSpaceUtils.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
@@ -39,7 +26,7 @@ struct ThreadParallelSYR {
 
   KOKKOS_INLINE_FUNCTION void operator()(const IndexType& i) const {
     // Condition 'alpha_ == zero' has already been checked.
-    if (x_(i) == Kokkos::ArithTraits<XComponentType>::zero()) {
+    if (x_(i) == KokkosKernels::ArithTraits<XComponentType>::zero()) {
       // Nothing to do
     } else {
       const XComponentType x_fixed(x_(i));
@@ -54,7 +41,7 @@ struct ThreadParallelSYR {
       } else {
         for (IndexType j = 0; j < N; ++j) {
           if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
-            A_(i, j) += AComponentType(alpha_ * x_fixed * Kokkos::ArithTraits<XComponentType>::conj(x_(j)));
+            A_(i, j) += AComponentType(alpha_ * x_fixed * KokkosKernels::ArithTraits<XComponentType>::conj(x_(j)));
           }
         }
       }
@@ -77,7 +64,7 @@ void threadParallelSyr(const ExecutionSpace& space, const typename AViewType::co
 
   if (x.extent(0) == 0) {
     // no entries to update
-  } else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
+  } else if (alpha == KokkosKernels::ArithTraits<AlphaCoeffType>::zero()) {
     // no entries to update
   } else {
     Kokkos::RangePolicy<ExecutionSpace, IndexType> rangePolicy(space, 0, A.extent(0));
@@ -111,7 +98,7 @@ struct TeamParallelSYR {
   KOKKOS_INLINE_FUNCTION void operator()(TeamParallelSYR_LayoutLeftTag, const member_type& team) const {
     // Condition 'alpha_ == zero' has already been checked
     const IndexType j(team.league_rank());
-    if (x_(j) == Kokkos::ArithTraits<XComponentType>::zero()) {
+    if (x_(j) == KokkosKernels::ArithTraits<XComponentType>::zero()) {
       // Nothing to do
     } else {
       const IndexType M(A_.extent(0));
@@ -123,7 +110,7 @@ struct TeamParallelSYR {
           }
         });
       } else {
-        const XComponentType x_fixed(Kokkos::ArithTraits<XComponentType>::conj(x_(j)));
+        const XComponentType x_fixed(KokkosKernels::ArithTraits<XComponentType>::conj(x_(j)));
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, M), [&](const IndexType& i) {
           if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
             A_(i, j) += AComponentType(alpha_ * x_(i) * x_fixed);
@@ -137,7 +124,7 @@ struct TeamParallelSYR {
   KOKKOS_INLINE_FUNCTION void operator()(TeamParallelSYR_LayoutRightTag, const member_type& team) const {
     // Condition 'alpha_ == zero' has already been checked
     const IndexType i(team.league_rank());
-    if (x_(i) == Kokkos::ArithTraits<XComponentType>::zero()) {
+    if (x_(i) == KokkosKernels::ArithTraits<XComponentType>::zero()) {
       // Nothing to do
     } else {
       const IndexType N(A_.extent(1));
@@ -151,7 +138,7 @@ struct TeamParallelSYR {
       } else {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, N), [&](const IndexType& j) {
           if (((tJustUp == true) && (i <= j)) || ((tJustUp == false) && (i >= j))) {
-            A_(i, j) += AComponentType(alpha_ * x_fixed * Kokkos::ArithTraits<XComponentType>::conj(x_(j)));
+            A_(i, j) += AComponentType(alpha_ * x_fixed * KokkosKernels::ArithTraits<XComponentType>::conj(x_(j)));
           }
         });
       }
@@ -175,7 +162,7 @@ void teamParallelSyr(const ExecutionSpace& space, const typename AViewType::cons
   if (x.extent(0) == 0) {
     // no entries to update
     return;
-  } else if (alpha == Kokkos::ArithTraits<AlphaCoeffType>::zero()) {
+  } else if (alpha == KokkosKernels::ArithTraits<AlphaCoeffType>::zero()) {
     // no entries to update
     return;
   }

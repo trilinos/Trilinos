@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS_TRTRI_PERF_TEST_H_
 #define KOKKOSBLAS_TRTRI_PERF_TEST_H_
 
@@ -53,7 +40,7 @@ void (*do_trtri_invoke[LOOP_N][TEST_N])(options_t) = {{do_trtri_serial_blas, do_
 
 // Flop count formula from lapack working note 41:
 // http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
-static inline double __trtri_flop_count(double a_m, double a_n) {
+static inline double trtri_flop_count(double a_m, double a_n) {
   double flops;
   double flops_per_mul;
   double flops_per_add;
@@ -94,8 +81,8 @@ static std::string trtri_csv_header_str =
     "total_time(s),average_time(s),FLOPS,GFLOP/average_time(s)";
 
 /*************************** Internal helper fns **************************/
-static void __trtri_output_csv_row(options_t options, trtri_args_t trtri_args, double time_in_seconds) {
-  double flops        = trtri_args.A.extent(0) * __trtri_flop_count(trtri_args.A.extent(1), trtri_args.A.extent(2));
+static void trtri_output_csv_row(options_t options, trtri_args_t trtri_args, double time_in_seconds) {
+  double flops        = trtri_args.A.extent(0) * trtri_flop_count(trtri_args.A.extent(1), trtri_args.A.extent(2));
   double gflops       = flops / 1e9;
   double average_time = time_in_seconds / options.n;
 
@@ -106,7 +93,7 @@ static void __trtri_output_csv_row(options_t options, trtri_args_t trtri_args, d
 }
 
 #ifdef TRTRI_PERF_TEST_DEBUG
-static void __print_trtri_perf_test_options(options_t options) {
+static void print_trtri_perf_test_options(options_t options) {
   printf("options.test      = %s\n", test_e_str[options.test].c_str());
   printf("options.loop      = %s\n", loop_e_str[options.loop].c_str());
   printf("options.start     = %dx%d,%dx%d\n", options.start.a.m, options.start.a.n, options.start.b.m,
@@ -121,7 +108,7 @@ static void __print_trtri_perf_test_options(options_t options) {
             << ", LAYOUT:" << typeid(KokkosKernels::default_layout).name() << ", DEVICE:."
             << typeid(KokkosKernels::default_device).name() << std::endl;
 #else
-static void __print_trtri_perf_test_options(options_t) {
+static void print_trtri_perf_test_options(options_t) {
 #endif  // TRTRI_PERF_TEST_DEBUG
   return;
 }
@@ -129,7 +116,7 @@ static void __print_trtri_perf_test_options(options_t) {
 /*************************** Internal templated fns **************************/
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
 template <class scalar_type, class vta, class device_type>
-void __do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
+void do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
   // Need to take subviews on the device
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
@@ -157,12 +144,12 @@ void __do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
     // Fence after each batch operation
     Kokkos::fence();
   }
-  __trtri_output_csv_row(options, trtri_args, timer.seconds());
+  trtri_output_csv_row(options, trtri_args, timer.seconds());
   return;
 }
 #else
 template <class scalar_type, class vta, class device_type>
-void __do_trtri_serial_blas(options_t /*options*/, trtri_args_t /*trtri_args*/) {
+void do_trtri_serial_blas(options_t /*options*/, trtri_args_t /*trtri_args*/) {
   std::cerr << std::string(__func__) << " disabled since KOKKOS_ENABLE_DEVICE is defined." << std::endl;
   return;
 }
@@ -171,7 +158,7 @@ void __do_trtri_serial_blas(options_t /*options*/, trtri_args_t /*trtri_args*/) 
 // Need to take subviews on the device
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
 template <class uplo, class diag>
-void __do_trtri_serial_batched_template(options_t options, trtri_args_t trtri_args) {
+void do_trtri_serial_batched_template(options_t options, trtri_args_t trtri_args) {
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -197,37 +184,37 @@ void __do_trtri_serial_batched_template(options_t options, trtri_args_t trtri_ar
     // Fence after each batch operation
     Kokkos::fence();
   }
-  __trtri_output_csv_row(options, trtri_args, timer.seconds());
+  trtri_output_csv_row(options, trtri_args, timer.seconds());
 }
 #else
 template <class uplo, class diag>
-void __do_trtri_serial_batched_template(options_t /*options*/, trtri_args_t /*trtri_args*/) {
+void do_trtri_serial_batched_template(options_t /*options*/, trtri_args_t /*trtri_args*/) {
   std::cerr << std::string(__func__) << " disabled since KOKKOS_ENABLE_DEVICE is defined." << std::endl;
 }
 #endif  // !KOKKOS_ENABLE_CUDA
 
 template <class scalar_type, class vta, class device_type>
-void __do_trtri_serial_batched(options_t options, trtri_args_t trtri_args) {
+void do_trtri_serial_batched(options_t options, trtri_args_t trtri_args) {
   using KokkosBatched::Diag;
   using KokkosBatched::Uplo;
 
-  char __uplo = tolower(trtri_args.uplo), __diag = tolower(trtri_args.diag);
+  char uplo = tolower(trtri_args.uplo), diag = tolower(trtri_args.diag);
 
   STATUS;
 
   //// Lower ////
-  if (__uplo == 'l') {
-    if (__diag == 'u') {
-      __do_trtri_serial_batched_template<Uplo::Lower, Diag::Unit>(options, trtri_args);
+  if (uplo == 'l') {
+    if (diag == 'u') {
+      do_trtri_serial_batched_template<Uplo::Lower, Diag::Unit>(options, trtri_args);
     } else {
-      __do_trtri_serial_batched_template<Uplo::Lower, Diag::NonUnit>(options, trtri_args);
+      do_trtri_serial_batched_template<Uplo::Lower, Diag::NonUnit>(options, trtri_args);
     }
   } else {
     //// Upper ////
-    if (__diag == 'u') {
-      __do_trtri_serial_batched_template<Uplo::Upper, Diag::Unit>(options, trtri_args);
+    if (diag == 'u') {
+      do_trtri_serial_batched_template<Uplo::Upper, Diag::Unit>(options, trtri_args);
     } else {
-      __do_trtri_serial_batched_template<Uplo::Upper, Diag::NonUnit>(options, trtri_args);
+      do_trtri_serial_batched_template<Uplo::Upper, Diag::NonUnit>(options, trtri_args);
     }
   }
 
@@ -252,7 +239,7 @@ struct parallel_blas_trtri {
         // !KOKKOS_ENABLE_OPENMPTARGET
 
 template <class scalar_type, class vta, class device_type>
-void __do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args) {
+void do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args) {
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
@@ -277,13 +264,13 @@ void __do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args) {
     // Fence after each batch operation
     Kokkos::fence();
   }
-  __trtri_output_csv_row(options, trtri_args, timer.seconds());
+  trtri_output_csv_row(options, trtri_args, timer.seconds());
 #else
   std::cerr << std::string(__func__)
             << " disabled since KOKKOS_ENABLE_CUDA, KOKKOS_ENABLE_HIP or "
                "KOKKOS_ENABLE_OPENMPTARGET is defined."
             << std::endl;
-  __trtri_output_csv_row(options, trtri_args, -1);
+  trtri_output_csv_row(options, trtri_args, -1);
 #endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_HIP &&
         // !defined(KOKKOS_ENABLE_OPENMPTARGET)
   return;
@@ -304,7 +291,7 @@ struct parallel_batched_trtri {
 };
 
 template <class uplo, class diag, class device_type>
-void __do_trtri_parallel_batched_template(options_t options, trtri_args_t trtri_args) {
+void do_trtri_parallel_batched_template(options_t options, trtri_args_t trtri_args) {
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -330,33 +317,33 @@ void __do_trtri_parallel_batched_template(options_t options, trtri_args_t trtri_
     // Fence after each batch operation
     Kokkos::fence();
   }
-  __trtri_output_csv_row(options, trtri_args, timer.seconds());
+  trtri_output_csv_row(options, trtri_args, timer.seconds());
 
   return;
 }
 
 template <class scalar_type, class vta, class device_type>
-void __do_trtri_parallel_batched(options_t options, trtri_args_t trtri_args) {
+void do_trtri_parallel_batched(options_t options, trtri_args_t trtri_args) {
   using KokkosBatched::Diag;
   using KokkosBatched::Uplo;
 
-  char __uplo = tolower(trtri_args.uplo), __diag = tolower(trtri_args.diag);
+  char uplo = tolower(trtri_args.uplo), diag = tolower(trtri_args.diag);
 
   STATUS;
 
   //// Lower ////
-  if (__uplo == 'l') {
-    if (__diag == 'u') {
-      __do_trtri_parallel_batched_template<Uplo::Lower, Diag::Unit, device_type>(options, trtri_args);
+  if (uplo == 'l') {
+    if (diag == 'u') {
+      do_trtri_parallel_batched_template<Uplo::Lower, Diag::Unit, device_type>(options, trtri_args);
     } else {
-      __do_trtri_parallel_batched_template<Uplo::Lower, Diag::NonUnit, device_type>(options, trtri_args);
+      do_trtri_parallel_batched_template<Uplo::Lower, Diag::NonUnit, device_type>(options, trtri_args);
     }
   } else {
     //// Upper ////
-    if (__diag == 'u') {
-      __do_trtri_parallel_batched_template<Uplo::Upper, Diag::Unit, device_type>(options, trtri_args);
+    if (diag == 'u') {
+      do_trtri_parallel_batched_template<Uplo::Upper, Diag::Unit, device_type>(options, trtri_args);
     } else {
-      __do_trtri_parallel_batched_template<Uplo::Upper, Diag::NonUnit, device_type>(options, trtri_args);
+      do_trtri_parallel_batched_template<Uplo::Upper, Diag::NonUnit, device_type>(options, trtri_args);
     }
   }
 
@@ -365,14 +352,14 @@ void __do_trtri_parallel_batched(options_t options, trtri_args_t trtri_args) {
 
 /*************************** Internal setup fns **************************/
 template <class scalar_type, class vta, class device_type>
-trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
+trtri_args_t do_setup(options_t options, matrix_dims_t dim) {
   using execution_space = typename device_type::execution_space;
 
   trtri_args_t trtri_args;
   uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   decltype(dim.a.m) min_dim = dim.a.m < dim.a.n ? dim.a.m : dim.a.n;
-  typename vta::HostMirror host_A;
+  typename vta::host_mirror_type host_A;
   STATUS;
 
   trtri_args.uplo = options.blas_args.trtri.trtri_args.c_str()[0];
@@ -423,12 +410,12 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
 }
 
 /*************************** Interal run helper fns **************************/
-void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trtri_args_t)) {
+void do_loop_and_invoke(options_t options, void (*fn)(options_t, trtri_args_t)) {
   matrix_dims_t cur_dims;
   trtri_args_t trtri_args;
   STATUS;
 
-  __print_trtri_perf_test_options(options);
+  print_trtri_perf_test_options(options);
   std::cout << "SCALAR:" << typeid(KokkosKernels::default_scalar).name()
             << ", LAYOUT:" << typeid(KokkosKernels::default_layout).name() << ", DEVICE:."
             << typeid(KokkosKernels::default_device).name() << std::endl;
@@ -440,7 +427,7 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trtri_args_t)
        cur_dims.a.m += options.step, cur_dims.a.n += options.step, cur_dims.b.m += options.step,
       cur_dims.b.n += options.step) {
     trtri_args =
-        __do_setup<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>(options, cur_dims);
+        do_setup<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>(options, cur_dims);
     fn(options, trtri_args);
   }
   return;
@@ -449,29 +436,29 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trtri_args_t)
 /*************************** External fns **************************/
 void do_trtri_serial_blas(options_t options) {
   STATUS;
-  __do_loop_and_invoke(
-      options, __do_trtri_serial_blas<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
+  do_loop_and_invoke(options,
+                     do_trtri_serial_blas<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
 void do_trtri_serial_batched(options_t options) {
   STATUS;
-  __do_loop_and_invoke(
-      options, __do_trtri_serial_batched<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
+  do_loop_and_invoke(
+      options, do_trtri_serial_batched<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
 void do_trtri_parallel_blas(options_t options) {
   STATUS;
-  __do_loop_and_invoke(
-      options, __do_trtri_parallel_blas<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
+  do_loop_and_invoke(
+      options, do_trtri_parallel_blas<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
 void do_trtri_parallel_batched(options_t options) {
   STATUS;
-  __do_loop_and_invoke(
-      options, __do_trtri_parallel_batched<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
+  do_loop_and_invoke(
+      options, do_trtri_parallel_batched<KokkosKernels::default_scalar, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
