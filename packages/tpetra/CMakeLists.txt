@@ -24,7 +24,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Supported Kokkos version in Trilinos
 # NOTE: When we snapshot Kokkos into Trilinos, we have to update these numbers to maintain
 # compatibility with external Kokkos
-SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.7.1")
+SET(Tpetra_SUPPORTED_KOKKOS_VERSION "5.0.0")
 
 
 # Option to allow developers to ignore incompatible Kokkos versions
