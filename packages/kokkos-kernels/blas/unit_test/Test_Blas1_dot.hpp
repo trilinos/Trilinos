@@ -1,22 +1,9 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosBlas1_dot.hpp>
 #include <KokkosKernels_TestUtils.hpp>
 
@@ -25,7 +12,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_dot(int N) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> ats;
+  typedef KokkosKernels::ArithTraits<ScalarA> ats;
 
   view_stride_adapter<ViewTypeA> a("a", N);
   view_stride_adapter<ViewTypeB> b("b", N);
@@ -67,7 +54,7 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_dot_mv(int N, int K) {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> ats;
+  typedef KokkosKernels::ArithTraits<ScalarA> ats;
 
   view_stride_adapter<ViewTypeA> a("A", N, K);
   view_stride_adapter<ViewTypeB> b("B", N, K);

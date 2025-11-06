@@ -1,20 +1,5 @@
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSPARSE_SPGEMM_NOREUSE_TPL_SPEC_DECL_HPP_
 #define KOKKOSPARSE_SPGEMM_NOREUSE_TPL_SPEC_DECL_HPP_
@@ -50,8 +35,8 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
   int m            = A.numRows();
   int n            = B.numRows();
   int k            = B.numCols();
-  const auto alpha = Kokkos::ArithTraits<Scalar>::one();
-  const auto beta  = Kokkos::ArithTraits<Scalar>::zero();
+  const auto alpha = KokkosKernels::ArithTraits<Scalar>::one();
+  const auto beta  = KokkosKernels::ArithTraits<Scalar>::zero();
   typename Matrix::row_map_type::non_const_type row_mapC(Kokkos::view_alloc(Kokkos::WithoutInitializing, "C rowmap"),
                                                          m + 1);
 
@@ -110,25 +95,26 @@ Matrix spgemm_noreuse_cusparse(const MatrixConst &A, const MatrixConst &B) {
   return Matrix("C", m, k, c_nnz, valuesC, row_mapC, entriesC);
 }
 
-#define SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, MEMSPACE, TPL_AVAIL)                                                   \
-  template <>                                                                                                       \
-  struct SPGEMM_NOREUSE<KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int>,    \
-                        KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,    \
-                                                Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                \
-                        KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,    \
-                                                Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,                \
-                        true, TPL_AVAIL> {                                                                          \
-    using Matrix      = KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int>;    \
-    using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,    \
-                                                Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;                \
-    static KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int> spgemm_noreuse(  \
-        const ConstMatrix &A, bool, const ConstMatrix &B, bool) {                                                   \
-      std::string label = "KokkosSparse::spgemm_noreuse[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
-      Kokkos::Profiling::pushRegion(label);                                                                         \
-      Matrix C = spgemm_noreuse_cusparse<Matrix>(A, B);                                                             \
-      Kokkos::Profiling::popRegion();                                                                               \
-      return C;                                                                                                     \
-    }                                                                                                               \
+#define SPGEMM_NOREUSE_DECL_CUSPARSE(SCALAR, MEMSPACE, TPL_AVAIL)                                                  \
+  template <>                                                                                                      \
+  struct SPGEMM_NOREUSE<KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int>,   \
+                        KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
+                                                Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
+                        KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
+                                                Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>,               \
+                        true, TPL_AVAIL> {                                                                         \
+    using Matrix      = KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int>;   \
+    using ConstMatrix = KokkosSparse::CrsMatrix<const SCALAR, const int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,   \
+                                                Kokkos::MemoryTraits<Kokkos::Unmanaged>, const int>;               \
+    static KokkosSparse::CrsMatrix<SCALAR, int, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, void, int> spgemm_noreuse( \
+        const ConstMatrix &A, bool, const ConstMatrix &B, bool) {                                                  \
+      std::string label =                                                                                          \
+          "KokkosSparse::spgemm_noreuse[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";         \
+      Kokkos::Profiling::pushRegion(label);                                                                        \
+      Matrix C = spgemm_noreuse_cusparse<Matrix>(A, B);                                                            \
+      Kokkos::Profiling::popRegion();                                                                              \
+      return C;                                                                                                    \
+    }                                                                                                              \
   };
 
 #define SPGEMM_NOREUSE_DECL_CUSPARSE_S(SCALAR, TPL_AVAIL)            \
@@ -213,7 +199,7 @@ Matrix spgemm_noreuse_mkl(const MatrixConst &A, const MatrixConst &B) {
                                                 Kokkos::MemoryTraits<Kokkos::Unmanaged>, const MKL_INT>;              \
     static KokkosSparse::CrsMatrix<SCALAR, MKL_INT, Kokkos::Device<EXEC, Kokkos::HostSpace>, void, MKL_INT>           \
     spgemm_noreuse(const ConstMatrix &A, bool, const ConstMatrix &B, bool) {                                          \
-      std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," + Kokkos::ArithTraits<SCALAR>::name() + "]";        \
+      std::string label = "KokkosSparse::spgemm_noreuse[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);                                                                           \
       Matrix C = spgemm_noreuse_mkl<Matrix>(A, B);                                                                    \
       Kokkos::Profiling::popRegion();                                                                                 \

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS3_TRMM_SPEC_HPP_
 #define KOKKOSBLAS3_TRMM_SPEC_HPP_
 
@@ -85,16 +72,16 @@ struct TRMM<execution_space, AVIT, BVIT, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRA
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::trmm[ETI]"
                                                                      : "KokkosBlas::trmm[noETI]");
 
-    typename AVIT::HostMirror host_A = Kokkos::create_mirror_view(A);
-    typename BVIT::HostMirror host_B = Kokkos::create_mirror_view(B);
+    typename AVIT::host_mirror_type host_A = Kokkos::create_mirror_view(A);
+    typename BVIT::host_mirror_type host_B = Kokkos::create_mirror_view(B);
 
     // Copy A to host_A and B to host_B
     // no-op if A and B MemorySpace is HostSpace
     Kokkos::deep_copy(host_A, A);
     Kokkos::deep_copy(host_B, B);
 
-    SerialTrmm_Invoke<typename AVIT::HostMirror, typename BVIT::HostMirror>(side, uplo, trans, diag, alpha, host_A,
-                                                                            host_B);
+    SerialTrmm_Invoke<typename AVIT::host_mirror_type, typename BVIT::host_mirror_type>(side, uplo, trans, diag, alpha,
+                                                                                        host_A, host_B);
 
     // Copy host_B to B
     // no-op if B's MemorySpace is HostSpace

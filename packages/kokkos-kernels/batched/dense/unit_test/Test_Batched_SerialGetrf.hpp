@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -143,7 +130,7 @@ struct Functor_BatchedSerialGemm {
 /// \param Nb [in] Batch size of matrices
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_getrf_analytical(const int Nb) {
-  using ats           = typename Kokkos::ArithTraits<ScalarType>;
+  using ats           = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType      = typename ats::mag_type;
   using View3DType    = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;
   using PivView2DType = Kokkos::View<int **, LayoutType, DeviceType>;
@@ -316,7 +303,7 @@ void impl_test_batched_getrf_analytical(const int Nb) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_getrf(const int N, const int BlkSize) {
-  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using ats            = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View3DType     = Kokkos::View<ScalarType ***, LayoutType, DeviceType>;

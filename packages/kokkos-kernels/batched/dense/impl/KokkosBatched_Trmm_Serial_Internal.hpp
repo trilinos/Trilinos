@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP
 #define KOKKOSBATCHED_TRMM_SERIAL_INTERNAL_HPP
@@ -71,7 +58,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalLeftLower<Algo::Trmm::Unblocked>::i
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
   int left_m  = am;
   int right_n = bn;
   // echo-TODO: See about coniditionally setting conjOp at compile time.
@@ -146,7 +133,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalRightLower<Algo::Trmm::Unblocked>::
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
   int left_m  = bm;
   int right_n = an;
   // echo-TODO: See about coniditionally setting conjOp at compile time.
@@ -221,7 +208,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalLeftUpper<Algo::Trmm::Unblocked>::i
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
   int left_m  = am;
   int right_n = bn;
   // echo-TODO: See about coniditionally setting conjOp at compile time.
@@ -293,7 +280,7 @@ KOKKOS_INLINE_FUNCTION int SerialTrmmInternalRightUpper<Algo::Trmm::Unblocked>::
     const ScalarType alpha, const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
   const ScalarType one(1.0), zero(0.0);
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
   int left_m  = bm;
   int right_n = an;
   // echo-TODO: See about coniditionally setting conjOp at compile time.

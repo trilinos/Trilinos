@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSKERNELS_KOKKOS_INNERPRODUCTSPACETRAITS_HPP
 #define KOKKOSKERNELS_KOKKOS_INNERPRODUCTSPACETRAITS_HPP
@@ -21,7 +8,7 @@
 /// \brief Declaration and definition of
 /// Kokkos::Details::InnerProductSpaceTraits
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace Kokkos {
 namespace Details {
@@ -105,7 +92,7 @@ namespace Details {
 ///
 /// \section Kokkos_IPST_new Adding a specialization for a new type T
 ///
-/// You must first add a specialization of Kokkos::ArithTraits<T>.  Please
+/// You must first add a specialization of KokkosKernels::ArithTraits<T>.  Please
 /// note that if CUDA does not support using T in device functions,
 /// then you must <i>not</t> mark norm() or dot() as device functions
 /// in your specialization.  (Simply omit the KOKKOS_FORCEINLINE_FUNCTION
@@ -119,13 +106,15 @@ class InnerProductSpaceTraits {
   typedef T val_type;
 
   //! The type returned by norm(x) for a value x of type val_type.
-  typedef typename Kokkos::ArithTraits<val_type>::mag_type mag_type;
+  typedef typename KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
 
   //! The type returned by dot(x,y) for values x and y of type val_type.
   typedef val_type dot_type;
 
   //! The "norm" (absolute value or magnitude) of a value x of type val_type.
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm(const val_type& x) { return Kokkos::ArithTraits<val_type>::abs(x); }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm(const val_type& x) {
+    return KokkosKernels::ArithTraits<val_type>::abs(x);
+  }
   /// \brief The "dot product" of two values x and y of type val_type.
   ///
   /// This default implementation should suffice unless val_type is
@@ -141,10 +130,10 @@ class InnerProductSpaceTraits {
 template <>
 struct InnerProductSpaceTraits<long double> {
   typedef long double val_type;
-  typedef Kokkos::ArithTraits<val_type>::mag_type mag_type;
+  typedef KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static mag_type norm(const val_type& x) { return Kokkos::ArithTraits<val_type>::abs(x); }
+  static mag_type norm(const val_type& x) { return KokkosKernels::ArithTraits<val_type>::abs(x); }
   static dot_type dot(const val_type& x, const val_type& y) { return x * y; }
 };
 
@@ -153,10 +142,12 @@ template <class T>
 class InnerProductSpaceTraits<Kokkos::complex<T>> {
  public:
   typedef Kokkos::complex<T> val_type;
-  typedef typename Kokkos::ArithTraits<val_type>::mag_type mag_type;
+  typedef typename KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm(const val_type& x) { return Kokkos::ArithTraits<val_type>::abs(x); }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type norm(const val_type& x) {
+    return KokkosKernels::ArithTraits<val_type>::abs(x);
+  }
   static KOKKOS_FORCEINLINE_FUNCTION dot_type dot(const val_type& x, const val_type& y) { return Kokkos::conj(x) * y; }
 };
 
@@ -167,10 +158,10 @@ class InnerProductSpaceTraits<Kokkos::complex<T>> {
 template <class T>
 struct InnerProductSpaceTraits<std::complex<T>> {
   typedef std::complex<T> val_type;
-  typedef typename Kokkos::ArithTraits<val_type>::mag_type mag_type;
+  typedef typename KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static mag_type norm(const val_type& x) { return Kokkos::ArithTraits<val_type>::abs(x); }
+  static mag_type norm(const val_type& x) { return KokkosKernels::ArithTraits<val_type>::abs(x); }
   static dot_type dot(const val_type& x, const val_type& y) { return std::conj(x) * y; }
 };
 
@@ -184,10 +175,10 @@ struct InnerProductSpaceTraits<std::complex<T>> {
 template <>
 struct InnerProductSpaceTraits<__float128> {
   typedef __float128 val_type;
-  typedef typename Kokkos::ArithTraits<val_type>::mag_type mag_type;
+  typedef typename KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static mag_type norm(const val_type& x) { return Kokkos::ArithTraits<val_type>::abs(x); }
+  static mag_type norm(const val_type& x) { return KokkosKernels::ArithTraits<val_type>::abs(x); }
   static dot_type dot(const val_type& x, const val_type& y) { return x * y; }
 };
 
@@ -205,26 +196,26 @@ struct InnerProductSpaceTraits<__float128> {
 // functions.  It should be possible to use Kokkos' support for
 // aggregate types to implement device function support for dd_real
 // and qd_real, but we have not done this yet (as of 07 Jan 2014).
-// Hence, the class methods of the Kokkos::ArithTraits specializations for
+// Hence, the class methods of the KokkosKernels::ArithTraits specializations for
 // dd_real and qd_real are not marked as device functions.
 #ifdef HAVE_KOKKOS_QD
 template <>
 struct InnerProductSpaceTraits<dd_real> {
   typedef dd_real val_type;
-  typedef Kokkos::ArithTraits<val_type>::mag_type mag_type;
+  typedef KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static mag_type norm(const val_type& x) { return Kokkos::ArithTraits<val_type>::abs(x); }
+  static mag_type norm(const val_type& x) { return KokkosKernels::ArithTraits<val_type>::abs(x); }
   static dot_type dot(const val_type& x, const val_type& y) { return x * y; }
 };
 
 template <>
 struct InnerProductSpaceTraits<qd_real> {
   typedef qd_real val_type;
-  typedef Kokkos::ArithTraits<val_type>::mag_type mag_type;
+  typedef KokkosKernels::ArithTraits<val_type>::mag_type mag_type;
   typedef val_type dot_type;
 
-  static mag_type norm(const val_type& x) { return Kokkos::ArithTraits<val_type>::abs(x); }
+  static mag_type norm(const val_type& x) { return KokkosKernels::ArithTraits<val_type>::abs(x); }
   static dot_type dot(const val_type& x, const val_type& y) { return x * y; }
 };
 #endif  // HAVE_KOKKOS_QD

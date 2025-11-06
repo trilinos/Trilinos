@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file KokkosSparse_BsrMatrix.hpp
 /// \brief Local sparse matrix interface
@@ -30,7 +17,7 @@
 #include <type_traits>
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 #include "KokkosKernels_Error.hpp"
 #include "KokkosKernels_default_types.hpp"
@@ -145,11 +132,11 @@ struct BsrRowView {
   }
 
   /// \brief Return offset into colidx_ for the requested block idx
-  ///        If none found, return Kokkos::ArithTraits::max
+  ///        If none found, return KokkosKernels::ArithTraits::max
   /// \param idx_to_match [in] local block idx within block-row
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset(const ordinal_type idx_to_match, bool /*is_sorted*/ = false) const {
-    ordinal_type offset = Kokkos::ArithTraits<ordinal_type>::max();
+    ordinal_type offset = KokkosKernels::ArithTraits<ordinal_type>::max();
     for (ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset) {
       ordinal_type idx = colidx_[blk_offset];
       if (idx == idx_to_match) {
@@ -269,12 +256,12 @@ struct BsrRowViewConst {
   }
 
   /// \brief Return offset into colidx_ for the requested block idx
-  ///        If none found, return Kokkos::ArithTraits::max
+  ///        If none found, return KokkosKernels::ArithTraits::max
   /// \param idx_to_match [in] local block idx within block-row
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset(const ordinal_type& idx_to_match, bool /*is_sorted*/ = false) const {
     typedef typename std::remove_cv<ordinal_type>::type non_const_ordinal_type;
-    non_const_ordinal_type offset = Kokkos::ArithTraits<non_const_ordinal_type>::max();
+    non_const_ordinal_type offset = KokkosKernels::ArithTraits<non_const_ordinal_type>::max();
     for (non_const_ordinal_type blk_offset = 0; blk_offset < length; ++blk_offset) {
       ordinal_type idx = colidx_[blk_offset];
       if (idx == idx_to_match) {
@@ -329,7 +316,7 @@ class BsrMatrix {
   typedef SizeType size_type;
 
   //! Type of a host-memory mirror of the sparse matrix.
-  typedef BsrMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, size_type> HostMirror;
+  typedef BsrMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, size_type> host_mirror_type;
   //! Type of the graph structure of the sparse matrix.
   typedef StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
@@ -682,9 +669,9 @@ class BsrMatrix {
     // row_map with cum sum!!
     std::vector<OrdinalType> block_rows(nbrows, 0);
 
-    typename crs_graph_row_map_type::HostMirror h_crs_row_map = Kokkos::create_mirror_view(crs_mtx.graph.row_map);
+    typename crs_graph_row_map_type::host_mirror_type h_crs_row_map = Kokkos::create_mirror_view(crs_mtx.graph.row_map);
     Kokkos::deep_copy(h_crs_row_map, crs_mtx.graph.row_map);
-    typename crs_graph_entries_type::HostMirror h_crs_entries = Kokkos::create_mirror_view(crs_mtx.graph.entries);
+    typename crs_graph_entries_type::host_mirror_type h_crs_entries = Kokkos::create_mirror_view(crs_mtx.graph.entries);
     Kokkos::deep_copy(h_crs_entries, crs_mtx.graph.entries);
 
     // determine size of block cols indices == number of blocks,
@@ -702,11 +689,11 @@ class BsrMatrix {
     // create_staticcrsgraph takes the frequency of blocks per row
     // and returns the cum sum pointer row_map with nbrows+1 size, and total
     // numBlocks in the final entry
-    graph                                       = create_staticcrsgraph<staticcrsgraph_type>("blockgraph", block_rows);
-    typename row_map_type::HostMirror h_row_map = Kokkos::create_mirror_view(graph.row_map);
+    graph = create_staticcrsgraph<staticcrsgraph_type>("blockgraph", block_rows);
+    typename row_map_type::host_mirror_type h_row_map = Kokkos::create_mirror_view(graph.row_map);
     Kokkos::deep_copy(h_row_map, graph.row_map);
 
-    typename index_type::HostMirror h_entries = Kokkos::create_mirror_view(graph.entries);
+    typename index_type::host_mirror_type h_entries = Kokkos::create_mirror_view(graph.entries);
 
     OrdinalType ientry = 0;
     for (OrdinalType ib = 0; ib < nbrows; ++ib) {
@@ -724,10 +711,10 @@ class BsrMatrix {
 
     // Copy the numerical values
 
-    typename values_type::HostMirror h_crs_values = Kokkos::create_mirror_view(crs_mtx.values);
+    typename values_type::host_mirror_type h_crs_values = Kokkos::create_mirror_view(crs_mtx.values);
     Kokkos::deep_copy(h_crs_values, crs_mtx.values);
 
-    typename values_type::HostMirror h_values = Kokkos::create_mirror_view(values);
+    typename values_type::host_mirror_type h_values = Kokkos::create_mirror_view(values);
     if (h_values.extent(0) < static_cast<size_t>(numBlocks) * blockDim_ * blockDim_) {
       Kokkos::resize(h_values, static_cast<size_t>(numBlocks) * blockDim_ * blockDim_);
       Kokkos::resize(values, static_cast<size_t>(numBlocks) * blockDim_ * blockDim_);
@@ -920,6 +907,96 @@ class BsrMatrix {
     return const_block_type(&values(i * blockDim_ * blockDim_), blockDim_, blockDim_);
   }
 
+  /// \brief Convert the Bsr into a CrsMatrix
+  ///
+  /// The default return type will be a CrsMatrix with all the same template arguments
+  /// as this Bsr, but you can provide your own type if needed. The only requirement
+  /// is that the execution spaces match.
+  ///
+  /// This is a host function.
+  ///
+  template <typename CrsMatrixType = KokkosSparse::CrsMatrix<ScalarType, OrdinalType, Device, MemoryTraits, SizeType>>
+  CrsMatrixType convertToCrs() const {
+    using crs_size_t      = typename CrsMatrixType::size_type;
+    using crs_rowmap_t    = typename CrsMatrixType::row_map_type::non_const_type;
+    using crs_entries_t   = typename CrsMatrixType::index_type::non_const_type;
+    using crs_values_t    = typename CrsMatrixType::values_type::non_const_type;
+    using crs_exe_space_t = typename CrsMatrixType::execution_space;
+    using policy_t        = typename Kokkos::TeamPolicy<execution_space>;
+    using member_t        = typename policy_t::member_type;
+
+    static_assert(std::is_same_v<crs_exe_space_t, execution_space>,
+                  "We do not currently support converting a BsrMatrix to a CsrMatrix with a different execution space");
+
+    // Get size/dimension info from this Bsr. We will use crs_size_t for all int types
+    const crs_size_t blockDim        = this->blockDim();
+    const crs_size_t blockSize       = blockDim * blockDim;
+    const crs_size_t numBlockRows    = numRows();
+    const crs_size_t numBlockCols    = numCols();
+    const crs_size_t numBlockEntries = nnz();
+
+    // Get graph and values from this Bsr
+    const auto blockRowMap  = graph.row_map;
+    const auto blockEntries = graph.entries;
+    const auto blockValues  = values;
+
+    // Compute Csr row/col/entry sizes by multiplying Bsr sizes by block dimension
+    const crs_size_t numCrsRows    = numBlockRows * blockDim;
+    const crs_size_t numCrsCols    = numBlockCols * blockDim;
+    const crs_size_t numCrsEntries = numBlockEntries * blockSize;
+
+    // Allocate CrsMatrix views
+    crs_rowmap_t crsRowMap("crsRowMap", numCrsRows + 1);
+    crs_entries_t crsEntries("crsEntries", numCrsEntries);
+    crs_values_t crsValues("crsValues", numCrsEntries);
+
+    // Create the policy, we have 3 levels of parallelism available in the algorithm
+    const crs_size_t maxvec = policy_t::vector_length_max();
+    const crs_size_t veclen = (blockDim <= maxvec) ? blockDim : maxvec;
+    policy_t policy(numBlockRows, Kokkos::AUTO(), veclen);
+
+    // Fill CrsMatrix row map, entries, and values
+    Kokkos::parallel_for(
+        "ConvertBsrToCrs", policy, KOKKOS_LAMBDA(const member_t& team) {
+          const crs_size_t blockRow      = team.league_rank();
+          const crs_size_t blockRowStart = blockRowMap(blockRow);
+          const crs_size_t blockRowEnd   = blockRowMap(blockRow + 1);
+          const crs_size_t blockRowCount = blockRowEnd - blockRowStart;
+
+          // Iterate over block entries in this row.
+          Kokkos::parallel_for(
+              Kokkos::TeamThreadRange(team, blockRowStart, blockRowEnd), [&](const crs_size_t& blockNnz) {
+                const crs_size_t blockCol = blockEntries(blockNnz);
+                const crs_size_t blockNum = blockNnz - blockRowStart;
+
+                // Iterate over block dim to get the unblocked rows
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, blockDim), [&](const crs_size_t& blockRowOffset) {
+                  const crs_size_t crsRow = blockRow * blockDim + blockRowOffset;
+                  // Each unblocked row has blockRowCount * blockDim items
+                  const crs_size_t crsRowStart = blockRowStart * blockSize + blockRowCount * blockDim * blockRowOffset;
+                  crsRowMap(crsRow)            = crsRowStart;
+
+                  // Iterate over block dim to get the unblocked cols
+                  for (crs_size_t blockColOffset = 0; blockColOffset < blockDim; ++blockColOffset) {
+                    const crs_size_t crsCol = blockCol * blockDim + blockColOffset;
+                    const crs_size_t crsNnz = crsRowStart + blockNum * blockDim + blockColOffset;
+                    crsEntries(crsNnz)      = crsCol;
+                    crsValues(crsNnz) = blockValues(blockNnz * blockSize + blockRowOffset * blockDim + blockColOffset);
+                  }
+                });
+              });
+
+          // Finalize CrsMatrix row map
+          if (blockRow == numBlockRows - 1) {
+            crsRowMap(numCrsRows) = blockRowMap(numBlockRows) * blockSize;
+          }
+        });
+
+    // Construct CrsMatrix
+    return CrsMatrixType("convertedFromBsrMatrix", numCrsRows, numCrsCols, crsEntries.extent(0), crsValues, crsRowMap,
+                         crsEntries);
+  }
+
  protected:
   enum class valueOperation { ADD, ASSIGN };
 
@@ -956,7 +1033,7 @@ class BsrMatrix {
       // + 1] (not global offset) colidx_ and values_ are already offset to the
       // beginning of blockrow rowi
       auto blk_offset = row_view.findRelBlockOffset(cols[i], is_sorted);
-      if (blk_offset != Kokkos::ArithTraits<ordinal_type>::max()) {
+      if (blk_offset != KokkosKernels::ArithTraits<ordinal_type>::max()) {
         ordinal_type offset_into_vals = i * block_size * block_size;  // stride == 1 assumed between elements
         for (ordinal_type lrow = 0; lrow < block_size; ++lrow) {
           auto local_row_values =

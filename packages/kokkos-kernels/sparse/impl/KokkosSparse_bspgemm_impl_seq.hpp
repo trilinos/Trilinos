@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSSPARSE_BSPGEMM_DEBUG_HPP_
 #define KOKKOSSPARSE_BSPGEMM_DEBUG_HPP_
 #include "KokkosKernels_helpers.hpp"
@@ -44,24 +31,24 @@ void bspgemm_debug_numeric(KernelHandle* /* handle */, typename KernelHandle::nn
                            bool /* transposeA */, blno_row_view_t_ row_mapB, blno_nnz_view_t_ entriesB,
                            bscalar_nnz_view_t_ valuesB, bool /* transposeB */, clno_row_view_t_ row_mapC,
                            clno_nnz_view_t_ entriesC, cscalar_nnz_view_t_ valuesC) {
-  typename alno_row_view_t_::HostMirror h_rma = Kokkos::create_mirror_view(row_mapA);
+  typename alno_row_view_t_::host_mirror_type h_rma = Kokkos::create_mirror_view(row_mapA);
   Kokkos::deep_copy(h_rma, row_mapA);
-  typename alno_nnz_view_t_::HostMirror h_enta = Kokkos::create_mirror_view(entriesA);
+  typename alno_nnz_view_t_::host_mirror_type h_enta = Kokkos::create_mirror_view(entriesA);
   Kokkos::deep_copy(h_enta, entriesA);
-  typename ascalar_nnz_view_t_::HostMirror h_vala = Kokkos::create_mirror_view(valuesA);
+  typename ascalar_nnz_view_t_::host_mirror_type h_vala = Kokkos::create_mirror_view(valuesA);
   Kokkos::deep_copy(h_vala, valuesA);
 
-  typename blno_row_view_t_::HostMirror h_rmb = Kokkos::create_mirror_view(row_mapB);
+  typename blno_row_view_t_::host_mirror_type h_rmb = Kokkos::create_mirror_view(row_mapB);
   Kokkos::deep_copy(h_rmb, row_mapB);
-  typename blno_nnz_view_t_::HostMirror h_entb = Kokkos::create_mirror_view(entriesB);
+  typename blno_nnz_view_t_::host_mirror_type h_entb = Kokkos::create_mirror_view(entriesB);
   Kokkos::deep_copy(h_entb, entriesB);
-  typename bscalar_nnz_view_t_::HostMirror h_valb = Kokkos::create_mirror_view(valuesB);
+  typename bscalar_nnz_view_t_::host_mirror_type h_valb = Kokkos::create_mirror_view(valuesB);
   Kokkos::deep_copy(h_valb, valuesB);
-  typename clno_row_view_t_::HostMirror h_rmc = Kokkos::create_mirror_view(row_mapC);
+  typename clno_row_view_t_::host_mirror_type h_rmc = Kokkos::create_mirror_view(row_mapC);
   Kokkos::deep_copy(h_rmc, row_mapC);
 
-  typename clno_nnz_view_t_::HostMirror h_entc    = Kokkos::create_mirror_view(entriesC);
-  typename cscalar_nnz_view_t_::HostMirror h_valc = Kokkos::create_mirror_view(valuesC);
+  typename clno_nnz_view_t_::host_mirror_type h_entc    = Kokkos::create_mirror_view(entriesC);
+  typename cscalar_nnz_view_t_::host_mirror_type h_valc = Kokkos::create_mirror_view(valuesC);
   Kokkos::fence();
 
   using lno_t     = typename KernelHandle::nnz_lno_t;
@@ -73,7 +60,7 @@ void bspgemm_debug_numeric(KernelHandle* /* handle */, typename KernelHandle::nn
   const auto ZERO       = static_cast<scalar_t>(0);
   const auto ONE        = static_cast<scalar_t>(1);
 
-  typename cscalar_nnz_view_t_::HostMirror accumulator("acc", k * block_size);
+  typename cscalar_nnz_view_t_::host_mirror_type accumulator("acc", k * block_size);
   Kokkos::deep_copy(accumulator, ZERO);
   Kokkos::fence();
   std::vector<bool> acc_flag(k, false);

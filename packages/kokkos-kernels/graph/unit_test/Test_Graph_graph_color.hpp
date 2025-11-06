@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -139,9 +126,9 @@ void test_coloring(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size
     lno_t conf = 0;
     {
       // also check the correctness of the validation code :)
-      typename lno_view_t::HostMirror hrm          = Kokkos::create_mirror_view(input_mat.graph.row_map);
-      typename lno_nnz_view_t::HostMirror hentries = Kokkos::create_mirror_view(input_mat.graph.entries);
-      typename color_view_t::HostMirror hcolor     = Kokkos::create_mirror_view(vector_colors);
+      typename lno_view_t::host_mirror_type hrm          = Kokkos::create_mirror_view(input_mat.graph.row_map);
+      typename lno_nnz_view_t::host_mirror_type hentries = Kokkos::create_mirror_view(input_mat.graph.entries);
+      typename color_view_t::host_mirror_type hcolor     = Kokkos::create_mirror_view(vector_colors);
       Kokkos::deep_copy(hrm, input_mat.graph.row_map);
       Kokkos::deep_copy(hentries, input_mat.graph.entries);
       Kokkos::deep_copy(hcolor, vector_colors);

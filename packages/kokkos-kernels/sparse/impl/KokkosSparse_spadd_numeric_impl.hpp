@@ -1,25 +1,12 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_SPADD_NUMERIC_IMPL_HPP
 #define KOKKOSSPARSE_SPADD_NUMERIC_IMPL_HPP
 
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_Sorting.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -47,7 +34,7 @@ struct SortedNumericSumFunctor {
         beta(beta_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(const ordinal_type i) const {
-    const ordinal_type ORDINAL_MAX = Kokkos::ArithTraits<ordinal_type>::max();
+    const ordinal_type ORDINAL_MAX = KokkosKernels::ArithTraits<ordinal_type>::max();
 
     // count the union of nonzeros in Arow and Brow
     size_type ai        = 0;
@@ -64,7 +51,7 @@ struct SortedNumericSumFunctor {
       // Eat all entries in both A and B which have this column
       // This also results in Acol/Bcol being updated to following entries for
       // next loop iter
-      CscalarT accum = Kokkos::ArithTraits<CscalarT>::zero();
+      CscalarT accum = KokkosKernels::ArithTraits<CscalarT>::zero();
       while (Acol == Ccol) {
         accum += static_cast<CscalarT>(alpha * Avalues(Arowstart + ai));
         ai++;
@@ -131,7 +118,7 @@ struct UnsortedNumericSumFunctor {
     size_type ArowEnd   = Arowptrs(i + 1);
     size_type BrowStart = Browptrs(i);
     size_type BrowEnd   = Browptrs(i + 1);
-    for (size_type j = CrowStart; j < CrowEnd; j++) Cvalues(j) = Kokkos::ArithTraits<CscalarT>::zero();
+    for (size_type j = CrowStart; j < CrowEnd; j++) Cvalues(j) = KokkosKernels::ArithTraits<CscalarT>::zero();
     // add in A entries, while setting C colinds
     for (size_type j = ArowStart; j < ArowEnd; j++) {
       Cvalues(CrowStart + Apos(j)) += alpha * Avalues(j);

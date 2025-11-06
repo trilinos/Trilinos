@@ -64,7 +64,7 @@ Member Types
    * - memory_traits
      - Alias for MemoryTraits.
 
-   * - HostMirror
+   * - host_mirror_type
      - CrsMatrix type templated on ScalarType, OrdinalType, host_mirror_space, MemoryTraits and SizeType.
 
    * - StaticCrsGraph

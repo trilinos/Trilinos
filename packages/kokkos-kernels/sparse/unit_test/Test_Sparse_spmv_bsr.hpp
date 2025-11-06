@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /*! \file Test_Sparse_spmv_bsr.hpp
 
@@ -145,7 +132,7 @@ void test_spmv(Handle *handle, const char *mode, const Alpha &alpha, const Beta 
                size_t maxNnzPerRow, const XVector &x, const YVector &y) {
   using scalar_type  = typename Bsr::non_const_value_type;
   using ordinal_type = typename Bsr::non_const_ordinal_type;
-  using KATS         = Kokkos::ArithTraits<scalar_type>;
+  using KATS         = KokkosKernels::ArithTraits<scalar_type>;
   using mag_type     = typename KATS::mag_type;
 
   // generate expected result from reference (CRS) implementation
@@ -472,7 +459,7 @@ void test_spm_mv(Handle *handle, const char *mode, const Alpha &alpha, const Bet
                  size_t maxNnzPerRow, const XVector &x, const YVector &y) {
   using scalar_type  = typename Bsr::non_const_value_type;
   using ordinal_type = typename Bsr::non_const_ordinal_type;
-  using KATS         = Kokkos::ArithTraits<scalar_type>;
+  using KATS         = KokkosKernels::ArithTraits<scalar_type>;
   using mag_type     = typename KATS::mag_type;
 
   // generate expected result from reference (CRS) implementation

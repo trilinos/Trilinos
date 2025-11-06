@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // **********************************************************************
 // The tests executed by the code below cover many combinations for
@@ -71,12 +58,12 @@ class Syr2Tester {
   using _ViewTypeY = Kokkos::View<ScalarY*, tLayoutY, Device>;
   using _ViewTypeA = Kokkos::View<ScalarA**, tLayoutA, Device>;
 
-  using _HostViewTypeX    = typename _ViewTypeX::HostMirror;
-  using _HostViewTypeY    = typename _ViewTypeY::HostMirror;
-  using _HostViewTypeA    = typename _ViewTypeA::HostMirror;
+  using _HostViewTypeX    = typename _ViewTypeX::host_mirror_type;
+  using _HostViewTypeY    = typename _ViewTypeY::host_mirror_type;
+  using _HostViewTypeA    = typename _ViewTypeA::host_mirror_type;
   using _ViewTypeExpected = Kokkos::View<ScalarA**, tLayoutA, Kokkos::HostSpace>;
 
-  using _KAT_A   = Kokkos::ArithTraits<ScalarA>;
+  using _KAT_A   = KokkosKernels::ArithTraits<ScalarA>;
   using _AuxType = typename _KAT_A::mag_type;
 
   void populateVariables(ScalarA& alpha, view_stride_adapter<_ViewTypeX, false>& x,
@@ -251,7 +238,7 @@ void Syr2Tester<ScalarX, tLayoutX, ScalarY, tLayoutY, ScalarA, tLayoutA, Device>
   bool expectedResultIsKnown = false;
 
   using AlphaCoeffType = typename _ViewTypeA::non_const_value_type;
-  ScalarA alpha(Kokkos::ArithTraits<AlphaCoeffType>::zero());
+  ScalarA alpha(KokkosKernels::ArithTraits<AlphaCoeffType>::zero());
 
   // ********************************************************************
   // Step 2 of 7: populate alpha, h_x, h_A, h_expected, x, A

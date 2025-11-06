@@ -63,18 +63,18 @@ Type Requirements
 
   - ``Kokkos::SpaceAccessibility<execution_space, typename DXView::memory_space>::accessible == true``
   - ``std::is_same_v<typename DXView::non_const_value_type, typename DXView::value_type> == true``
-  - ``!Kokkos::ArithTraits<typename DXView::value_type>::is_complex``
+  - ``!KokkosKernels::ArithTraits<typename DXView::value_type>::is_complex``
 
 - `YView` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 0 that satisfies:
 
   - ``Kokkos::SpaceAccessibility<execution_space, typename YView::memory_space>::accessible == true``
-  - ``!Kokkos::ArithTraits<typename YView::value_type>::is_complex``
+  - ``!KokkosKernels::ArithTraits<typename YView::value_type>::is_complex``
 
 - `PView` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 and compile-time extent 5 that satisfies:
 
   - ``Kokkos::SpaceAccessibility<execution_space, typename PView::memory_space>::accessible == true``
   - ``std::is_same_v<typename PView::non_const_value_type, typename PView::value_type> == true``
-  - ``!Kokkos::ArithTraits<typename PView::value_type>::is_complex``
+  - ``!KokkosKernels::ArithTraits<typename PView::value_type>::is_complex``
 
 Example
 =======

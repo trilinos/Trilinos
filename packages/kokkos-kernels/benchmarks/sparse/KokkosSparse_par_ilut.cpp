@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
@@ -49,8 +36,8 @@ namespace {
 using KokkosSparse::Experimental::par_ilut_numeric;
 using KokkosSparse::Experimental::par_ilut_symbolic;
 
-using KokkosSparse::Experimental::spiluk_numeric;
-using KokkosSparse::Experimental::spiluk_symbolic;
+using KokkosSparse::spiluk_numeric;
+using KokkosSparse::spiluk_symbolic;
 using KokkosSparse::Experimental::SPILUKAlgorithm;
 
 // Build up useful types
@@ -68,7 +55,7 @@ using ValuesType  = Kokkos::View<scalar_t*, device>;
 using sp_matrix_type = KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type>;
 using KernelHandle =
     KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
-using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+using float_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
 ///////////////////////////////////////////////////////////////////////////////
 void run_par_ilut_test(benchmark::State& state, KernelHandle& kh, const sp_matrix_type& A, int& num_iters)

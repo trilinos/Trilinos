@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef TEST_BLAS_SERIAL_NRM2_HPP_
 #define TEST_BLAS_SERIAL_NRM2_HPP_
@@ -49,12 +36,12 @@ struct Functor_TestBlasSerialNrm2 {
   KOKKOS_INLINE_FUNCTION
   void operator()(const NaiveTag &, const int k) const {
     auto X  = Kokkos::subview(_x, k, Kokkos::ALL());
-    _nrm(k) = Kokkos::ArithTraits<norm_type>::zero();
+    _nrm(k) = KokkosKernels::ArithTraits<norm_type>::zero();
     for (int i = 0; i < X.extent_int(0); ++i) {
       _nrm(k) += IPT::norm(IPT::dot(X(i), X(i)));
     }
 
-    _nrm(k) = Kokkos::ArithTraits<norm_type>::sqrt(_nrm(k));
+    _nrm(k) = KokkosKernels::ArithTraits<norm_type>::sqrt(_nrm(k));
   }
 
   inline void run() {
@@ -100,11 +87,11 @@ struct Functor_TestBlasSerialNrm2MV {
     auto R = Kokkos::subview(_nrm, k, Kokkos::ALL());
 
     for (int colIdx = 0; colIdx < X.extent_int(1); ++colIdx) {
-      R(colIdx) = Kokkos::ArithTraits<norm_type>::zero();
+      R(colIdx) = KokkosKernels::ArithTraits<norm_type>::zero();
       for (int rowIdx = 0; rowIdx < X.extent_int(0); ++rowIdx) {
         R(colIdx) += IPT::norm(IPT::dot(X(rowIdx, colIdx), X(rowIdx, colIdx)));
       }
-      R(colIdx) = Kokkos::ArithTraits<norm_type>::sqrt(R(colIdx));
+      R(colIdx) = KokkosKernels::ArithTraits<norm_type>::sqrt(R(colIdx));
     }
   }
 
@@ -129,7 +116,7 @@ void impl_test_blas_serial_nrm2(const int N, const int BlkSize) {
   /// typedefs
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::non_const_value_type;
-  using ats             = Kokkos::ArithTraits<value_type>;
+  using ats             = KokkosKernels::ArithTraits<value_type>;
   using IPT             = Kokkos::Details::InnerProductSpaceTraits<value_type>;
   using norm_type       = typename IPT::mag_type;
   using norm_view_type  = Kokkos::View<norm_type *, execution_space>;
@@ -150,8 +137,8 @@ void impl_test_blas_serial_nrm2(const int N, const int BlkSize) {
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename norm_view_type::HostMirror norms_host     = Kokkos::create_mirror_view(norms);
-  typename norm_view_type::HostMirror norms_ref_host = Kokkos::create_mirror_view(norms_ref);
+  typename norm_view_type::host_mirror_type norms_host     = Kokkos::create_mirror_view(norms);
+  typename norm_view_type::host_mirror_type norms_ref_host = Kokkos::create_mirror_view(norms_ref);
 
   Kokkos::deep_copy(norms_host, norms);
   Kokkos::deep_copy(norms_ref_host, norms_ref);
@@ -166,7 +153,7 @@ void impl_test_blas_serial_nrm2mv(const int N, const int vecLength, const int nu
   /// typedefs
   using execution_space = typename DeviceType::execution_space;
   using value_type      = typename ViewType::non_const_value_type;
-  using ats             = Kokkos::ArithTraits<value_type>;
+  using ats             = KokkosKernels::ArithTraits<value_type>;
   using IPT             = Kokkos::Details::InnerProductSpaceTraits<value_type>;
   using norm_type       = typename IPT::mag_type;
   using norm_view_type  = Kokkos::View<norm_type **, execution_space>;
@@ -187,8 +174,8 @@ void impl_test_blas_serial_nrm2mv(const int N, const int vecLength, const int nu
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename norm_view_type::HostMirror norms_host     = Kokkos::create_mirror_view(norms);
-  typename norm_view_type::HostMirror norms_ref_host = Kokkos::create_mirror_view(norms_ref);
+  typename norm_view_type::host_mirror_type norms_host     = Kokkos::create_mirror_view(norms);
+  typename norm_view_type::host_mirror_type norms_ref_host = Kokkos::create_mirror_view(norms_ref);
 
   Kokkos::deep_copy(norms_host, norms);
   Kokkos::deep_copy(norms_ref_host, norms_ref);

@@ -12,13 +12,6 @@ KokkosSparse::CrsMatrix<>::CrsMatrix
   CrsMatrix(const std::string&, const CrsMatrix<InScalar, InOrdinal, InDevice, InMemTraits, InSizeType>& mat_);
 
   template <typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
-  [[deprecated(
-      "Use the constructor that accepts ncols as input "
-      "instead.")]] CrsMatrix(const std::string& label,
-                              const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>&
-                                  graph_);
-
-  template <typename InOrdinal, typename InLayout, typename InDevice, typename InMemTraits, typename InSizeType>
   CrsMatrix(const std::string& label,
             const Kokkos::StaticCrsGraph<InOrdinal, InLayout, InDevice, InMemTraits, InSizeType>& graph_,
             const OrdinalType& ncols);
@@ -38,11 +31,10 @@ Constructs a CrsMatrix from specified inputs.
 1. Default constructors with empty graph and values.
 2. Copy constructor, it performs shallow copies of the underlying data into the constructed CrsMatrix.
 3. Copy constructor, does a deep copy of the ``mat_`` into the constructed CrsMatrix. ``mat_`` and the constructed CrsMatrix can be in different memory spaces.
-4. **Deprecated** Constructor from existing ``graph_``. It makes a shallow copy of the graph and initializes the ``values`` view to zeros and sets its label.
-5. Constructor from existing ``graph_``. It makes a shallow copy of the graph and initializes the ``values`` view to zeros and sets its label, assign the number of columns to ``ncols``.
-6. Construct the matrix from ``graph_``, ``values`` and ``ncols`` using their respective copy constructors (shallow copies).
-7. Constructor from raw pointers on host, the pointers are wrapped into unmanaged views that are then deep copied into device views.
-8. Constructor using input views and copy constructs the underlying graph and values view.
+4. Constructor from existing ``graph_``. It makes a shallow copy of the graph and initializes the ``values`` view to zeros and sets its label, assign the number of columns to ``ncols``.
+5. Construct the matrix from ``graph_``, ``values`` and ``ncols`` using their respective copy constructors (shallow copies).
+6. Constructor from raw pointers on host, the pointers are wrapped into unmanaged views that are then deep copied into device views.
+7. Constructor using input views and copy constructs the underlying graph and values view.
 
 ..
    .. warning::

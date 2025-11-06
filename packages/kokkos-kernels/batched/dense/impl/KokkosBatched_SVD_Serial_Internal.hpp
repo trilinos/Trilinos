@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_SVD_SERIAL_INTERNAL_HPP
 #define KOKKOSBATCHED_SVD_SERIAL_INTERNAL_HPP
 
@@ -51,10 +38,10 @@ struct SerialSVDInternal {
   template <typename value_type>
   KOKKOS_INLINE_FUNCTION static void symEigen2x2(value_type a11, value_type a21, value_type a22, value_type& e1,
                                                  value_type& e2) {
-    value_type a       = Kokkos::ArithTraits<value_type>::one();
+    value_type a       = KokkosKernels::ArithTraits<value_type>::one();
     value_type b       = -a11 - a22;
     value_type c       = a11 * a22 - a21 * a21;
-    value_type sqrtDet = Kokkos::sqrt(Kokkos::max(Kokkos::ArithTraits<value_type>::zero(), b * b - 4 * a * c));
+    value_type sqrtDet = Kokkos::sqrt(Kokkos::max(KokkosKernels::ArithTraits<value_type>::zero(), b * b - 4 * a * c));
     e1                 = (-b + sqrtDet) / (2 * a);
     e2                 = (-b - sqrtDet) / (2 * a);
   }
@@ -67,7 +54,7 @@ struct SerialSVDInternal {
   template <typename value_type>
   KOKKOS_INLINE_FUNCTION static void svdStep(value_type* B, value_type* U, value_type* Vt, int um, int vn, int n,
                                              int Bs0, int Bs1, int Us0, int Us1, int Vts0, int Vts1) {
-    using KAT = Kokkos::ArithTraits<value_type>;
+    using KAT = KokkosKernels::ArithTraits<value_type>;
     // Compute the eigenvalues of trailing 2x2
     value_type dn     = SVDIND(B, n - 1, n - 1);
     value_type dm     = SVDIND(B, n - 2, n - 2);
@@ -129,7 +116,7 @@ struct SerialSVDInternal {
     for (int j = i + 1; j < n; j++) {
       // Zero out B(i, j) against diagonal j, introducing nonzero in B(i, j + 1)
       KokkosBatched::SerialGivensInternal::invoke<value_type>(SVDIND(B, j, j), SVDIND(B, i, j), &G, &SVDIND(B, j, j));
-      SVDIND(B, i, j) = Kokkos::ArithTraits<value_type>::zero();
+      SVDIND(B, i, j) = KokkosKernels::ArithTraits<value_type>::zero();
       // Now, only need to apply givens to a single column (if not already at
       // the end), introducing the next nonzero
       if (j < n - 1) {
@@ -151,7 +138,7 @@ struct SerialSVDInternal {
     for (int j = n - 2; j >= 0; j--) {
       KokkosBatched::SerialGivensInternal::invoke<value_type>(SVDIND(B, j, j), SVDIND(B, j, n - 1), &G,
                                                               &SVDIND(B, j, j));
-      SVDIND(B, j, n - 1) = Kokkos::ArithTraits<value_type>::zero();
+      SVDIND(B, j, n - 1) = KokkosKernels::ArithTraits<value_type>::zero();
       if (j != 0) {
         KokkosBatched::SerialApplyRightGivensInternal::invoke<value_type>(G, 1, &SVDIND(B, j - 1, n - 1), Bs0,
                                                                           &SVDIND(B, j - 1, j), Bs0);
@@ -167,7 +154,7 @@ struct SerialSVDInternal {
   KOKKOS_INLINE_FUNCTION static void bidiagonalize(int m, int n, value_type* A, int As0, int As1, value_type* U,
                                                    int Us0, int Us1, value_type* Vt, int Vts0, int Vts1,
                                                    value_type* work) {
-    using KAT = Kokkos::ArithTraits<value_type>;
+    using KAT = KokkosKernels::ArithTraits<value_type>;
     value_type tau;
     for (int i = 0; i < n; i++) {
       // Eliminating column i of A below the diagonal
@@ -215,8 +202,8 @@ struct SerialSVDInternal {
   KOKKOS_INLINE_FUNCTION static int bidiSVD(int m, int n, value_type* B, int Bs0, int Bs1, value_type* U, int Us0,
                                             int Us1, value_type* Vt, int Vts0, int Vts1, value_type* sigma, int ss,
                                             const value_type& tol, int max_iters) {
-    using KAT            = Kokkos::ArithTraits<value_type>;
-    const value_type eps = Kokkos::ArithTraits<value_type>::epsilon();
+    using KAT            = KokkosKernels::ArithTraits<value_type>;
+    const value_type eps = KokkosKernels::ArithTraits<value_type>::epsilon();
     int p                = 0;
     int q                = 0;
     for (int iters = 0; iters < max_iters; ++iters) {
@@ -328,8 +315,9 @@ struct SerialSVDInternal {
   template <typename value_type>
   KOKKOS_INLINE_FUNCTION static int invoke(int m, int n, value_type* A, int As0, int As1, value_type* U, int Us0,
                                            int Us1, value_type* Vt, int Vts0, int Vts1, value_type* sigma, int ss,
-                                           value_type* work, value_type tol = Kokkos::ArithTraits<value_type>::zero(),
-                                           int max_iters = 1000000000) {
+                                           value_type* work,
+                                           value_type tol = KokkosKernels::ArithTraits<value_type>::zero(),
+                                           int max_iters  = 1000000000) {
     // First, if m < n, need to instead compute (V, s, U^T) = A^T.
     // This just means swapping U & Vt, and implicitly transposing A, U and Vt.
     if (m < n) {

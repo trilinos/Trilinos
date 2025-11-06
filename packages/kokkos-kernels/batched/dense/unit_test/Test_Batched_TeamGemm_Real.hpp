@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #if defined(KOKKOS_BHALF_T_IS_FLOAT)
 TEST_F(TestCategory, batched_scalar_team_gemm_nt_nt_bhalf_bhalf) {
   typedef ::Test::TeamGemm::ParamTag<Trans::NoTranspose, Trans::NoTranspose> param_tag_type;

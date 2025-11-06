@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 // Note: Luc Berger-Vergiat 04/14/21
 //       This tests uses KOKKOS_LAMBDA so we need
 //       to make sure that these are enabled in
@@ -40,7 +27,7 @@ void impl_test_team_scal(int N) {
 
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   view_stride_adapter<ViewTypeA> x("X", N);
   view_stride_adapter<ViewTypeB> y("Y", N);
@@ -80,7 +67,7 @@ void impl_test_team_scal(int N) {
     EXPECT_NEAR_KK(diff, zero, eps);
   }
 
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
@@ -113,7 +100,7 @@ void impl_test_team_scal_mv(int N, int K) {
 
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   view_stride_adapter<ViewTypeA> x("X", N, K);
   view_stride_adapter<ViewTypeB> y("Y", N, K);
@@ -155,7 +142,7 @@ void impl_test_team_scal_mv(int N, int K) {
   }
 
   // Zero out y again, and run again with const input
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
@@ -189,7 +176,7 @@ void impl_test_team_scal_mv(int N, int K) {
   }
 
   // Zero out y to run again
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA(const team_member &teamMember) {
@@ -207,7 +194,7 @@ void impl_test_team_scal_mv(int N, int K) {
   }
 
   // Zero out y again, and run again with const input
-  Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarB>::zero());
+  Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarB>::zero());
 
   Kokkos::parallel_for(
       "KokkosBlas::Test::TeamScal", policy, KOKKOS_LAMBDA(const team_member &teamMember) {

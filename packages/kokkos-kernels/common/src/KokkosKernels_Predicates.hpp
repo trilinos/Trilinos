@@ -1,23 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSKERNELS_PREDICATES_HPP
 #define KOKKOSKERNELS_PREDICATES_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 /*! \file KokkosKernels_Predicates.hpp
  * Define predicates for KokkosKernels search functions
@@ -32,7 +19,8 @@ namespace KokkosKernels {
 template <typename T>
 struct GT {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex, "Please define custom predicates for ordering complex types");
+  static_assert(!KokkosKernels::ArithTraits<T>::is_complex,
+                "Please define custom predicates for ordering complex types");
 
   /**
    * @brief Return true if a is greater than b
@@ -50,7 +38,8 @@ struct GT {
 template <typename T>
 struct GTE {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex, "Please define custom predicates for ordering complex types");
+  static_assert(!KokkosKernels::ArithTraits<T>::is_complex,
+                "Please define custom predicates for ordering complex types");
 
   /// \brief return a >= b
   KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {
@@ -64,7 +53,8 @@ struct GTE {
 template <typename T>
 struct LT {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex, "Please define custom predicates for ordering complex types");
+  static_assert(!KokkosKernels::ArithTraits<T>::is_complex,
+                "Please define custom predicates for ordering complex types");
 
   /// \brief return a < b
   KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {
@@ -78,7 +68,8 @@ struct LT {
 template <typename T>
 struct LTE {
   using value_type = T;
-  static_assert(!Kokkos::ArithTraits<T>::is_complex, "Please define custom predicates for ordering complex types");
+  static_assert(!KokkosKernels::ArithTraits<T>::is_complex,
+                "Please define custom predicates for ordering complex types");
 
   /// \brief return a <= b
   KOKKOS_INLINE_FUNCTION constexpr bool operator()(const value_type &a, const value_type &b) const noexcept {

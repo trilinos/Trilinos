@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "Kokkos_Random.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -139,7 +126,7 @@ void free_cholmod(cholmod_factor *L, cholmod_common *cm) {
 template <typename scalar_type>
 int test_sptrsv_perf(std::vector<int> tests, std::string &filename, bool u_in_csr, bool invert_diag,
                      bool invert_offdiag, int block_size, int loop) {
-  using STS      = Kokkos::ArithTraits<scalar_type>;
+  using STS      = KokkosKernels::ArithTraits<scalar_type>;
   using mag_type = typename STS::mag_type;
 
   // using cholmod_int_type = long;

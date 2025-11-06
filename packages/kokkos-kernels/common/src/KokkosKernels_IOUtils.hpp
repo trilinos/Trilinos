@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -27,7 +14,7 @@
 #ifndef KOKKOSKERNELS_IOUTILS_HPP
 #define KOKKOSKERNELS_IOUTILS_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include <Kokkos_Core.hpp>
 #include "Kokkos_Random.hpp"
 #include "KokkosKernels_SimpleUtils.hpp"
@@ -42,8 +29,8 @@ namespace Impl {
 // For complex, both real and imaginary parts will have interval (-mag, mag)
 template <typename Scalar>
 inline void getRandomBounds(double mag, Scalar &start, Scalar &end) {
-  start = -mag * Kokkos::ArithTraits<Scalar>::one();
-  end   = mag * Kokkos::ArithTraits<Scalar>::one();
+  start = -mag * KokkosKernels::ArithTraits<Scalar>::one();
+  end   = mag * KokkosKernels::ArithTraits<Scalar>::one();
 }
 
 template <>
@@ -133,7 +120,7 @@ void buildEdgeListFromBinSrcTarg_undirected(const char *fnameSrc, const char *fn
 
 template <typename idx_array_type>
 inline void kk_write_1Dview_to_file(idx_array_type view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
@@ -147,7 +134,7 @@ inline void kk_write_1Dview_to_file(idx_array_type view, const char *filename) {
 
 template <typename idx_array_type>
 inline void kk_read_1Dview_from_file(idx_array_type &view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   std::ifstream myFile(filename, std::ios::in);
@@ -162,7 +149,7 @@ inline void kk_read_1Dview_from_file(idx_array_type &view, const char *filename)
 
 template <typename idx_array_type>
 inline void kk_write_2Dview_to_file(idx_array_type view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
@@ -179,7 +166,7 @@ inline void kk_write_2Dview_to_file(idx_array_type view, const char *filename) {
 
 template <typename idx_array_type>
 inline void kk_read_2Dview_from_file(idx_array_type &view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   std::ifstream myFile(filename, std::ios::in);
@@ -196,7 +183,7 @@ inline void kk_read_2Dview_from_file(idx_array_type &view, const char *filename)
 
 template <typename idx_array_type>
 inline void kk_write_3Dview_to_file(idx_array_type view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);
@@ -216,7 +203,7 @@ inline void kk_write_3Dview_to_file(idx_array_type view, const char *filename) {
 
 template <typename idx_array_type>
 inline void kk_read_3Dview_from_file(idx_array_type &view, const char *filename) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   // typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   std::ifstream myFile(filename, std::ios::in);
