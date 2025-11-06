@@ -56,9 +56,9 @@ void Jacobi(
 
   if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
 #ifndef HAVE_MUELU_EPETRAEXT
-    throw(MueLu::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires EpetraExt to be compiled."));
+    throw(MueLu::Exceptions::RuntimeError("MueLu::Jacobi requires EpetraExt to be compiled."));
 #else
-    throw(MueLu::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Jacobi requires you to use an Epetra-compatible data type."));
+    throw(MueLu::Exceptions::RuntimeError("MueLu:Jacobi requires you to use an Epetra-compatible data type."));
 #endif
   } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(A);
