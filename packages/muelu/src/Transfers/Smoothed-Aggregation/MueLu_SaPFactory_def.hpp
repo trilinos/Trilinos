@@ -18,7 +18,6 @@
 #include "MueLu_SaPFactory_decl.hpp"
 
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_IteratorOps.hpp>
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
@@ -26,6 +25,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_IteratorOps.hpp"
 #include "MueLu_Utilities.hpp"
 
 #include <sstream>
@@ -210,9 +210,9 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
       TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
 
       {
-        SubFactoryMonitor m3(*this, "Xpetra::IteratorOps::Jacobi", coarseLevel);
+        SubFactoryMonitor m3(*this, "MueLu::IteratorOps::Jacobi", coarseLevel);
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
+        finalP = MueLu::IteratorOps<SC, LO, GO, NO>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
         if (enforceConstraints) {
           if (!pL.get<bool>("use kokkos refactor")) {
             if (A->GetFixedBlockSize() == 1)
