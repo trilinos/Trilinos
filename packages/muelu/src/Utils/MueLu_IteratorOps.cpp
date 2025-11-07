@@ -39,7 +39,7 @@ void Jacobi<double, int, int, EpetraNode>(double omega,
 
   if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
 #ifndef HAVE_MUELU_EPETRAEXT
-    throw(MueLu::Exceptions::RuntimeError("Xpetra::IteratorOps::Jacobi requires EpetraExt to be compiled."));
+    throw(MueLu::Exceptions::RuntimeError("MueLu::Jacobi requires EpetraExt to be compiled."));
 #else
     Epetra_CrsMatrix& epA = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(A);
     Epetra_CrsMatrix& epB = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(B);
