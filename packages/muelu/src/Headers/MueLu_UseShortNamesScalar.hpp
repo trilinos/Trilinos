@@ -65,9 +65,6 @@ using BrickAggregationFactory [[maybe_unused]] = MueLu::BrickAggregationFactory<
 #ifdef MUELU_BRAESSSARAZINSMOOTHER_SHORT
 using BraessSarazinSmoother [[maybe_unused]] = MueLu::BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_CGSOLVER_SHORT
-using CGSolver [[maybe_unused]] = MueLu::CGSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_CLASSICALMAPFACTORY_SHORT
 using ClassicalMapFactory [[maybe_unused]] = MueLu::ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -107,11 +104,17 @@ using CoupledRBMFactory [[maybe_unused]] = MueLu::CoupledRBMFactory<Scalar, Loca
 #ifdef MUELU_DEMOFACTORY_SHORT
 using DemoFactory [[maybe_unused]] = MueLu::DemoFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
+#ifdef MUELU_DENSECONSTRAINT_SHORT
+using DenseConstraint [[maybe_unused]] = MueLu::DenseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
 #ifdef MUELU_DIRECTSOLVER_SHORT
 using DirectSolver [[maybe_unused]] = MueLu::DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_DROPNEGATIVEENTRIESFACTORY_SHORT
 using DropNegativeEntriesFactory [[maybe_unused]] = MueLu::DropNegativeEntriesFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
+#ifdef MUELU_EDGEPROLONGATORPATTERNFACTORY_SHORT
+using EdgeProlongatorPatternFactory [[maybe_unused]] = MueLu::EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_EMINPFACTORY_SHORT
 using EminPFactory [[maybe_unused]] = MueLu::EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -143,6 +146,9 @@ using FilteredAFactory [[maybe_unused]] = MueLu::FilteredAFactory<Scalar, LocalO
 #ifdef MUELU_FINELEVELINPUTDATAFACTORY_SHORT
 using FineLevelInputDataFactory [[maybe_unused]] = MueLu::FineLevelInputDataFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
+#ifdef MUELU_FLATOPERATOR_SHORT
+using FlatOperator [[maybe_unused]] = MueLu::FlatOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
 #ifdef MUELU_GENERALGEOMETRICPFACTORY_SHORT
 using GeneralGeometricPFactory [[maybe_unused]] = MueLu::GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -154,9 +160,6 @@ using GeometricInterpolationPFactory [[maybe_unused]] = MueLu::GeometricInterpol
 #endif
 #ifdef MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_SHORT
 using GeometricInterpolationPFactory_kokkos [[maybe_unused]] = MueLu::GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_GMRESSOLVER_SHORT
-using GMRESSolver [[maybe_unused]] = MueLu::GMRESSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_HIERARCHY_SHORT
 using Hierarchy [[maybe_unused]] = MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -247,6 +250,9 @@ using PreDropFunctionBaseClass [[maybe_unused]] = MueLu::PreDropFunctionBaseClas
 #endif
 #ifdef MUELU_PREDROPFUNCTIONCONSTVAL_SHORT
 using PreDropFunctionConstVal [[maybe_unused]] = MueLu::PreDropFunctionConstVal<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
+#ifdef MUELU_PRODUCTOPERATOR_SHORT
+using ProductOperator [[maybe_unused]] = MueLu::ProductOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_PROJECTORSMOOTHER_SHORT
 using ProjectorSmoother [[maybe_unused]] = MueLu::ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -341,11 +347,8 @@ using SmootherPrototype [[maybe_unused]] = MueLu::SmootherPrototype<Scalar, Loca
 #ifdef MUELU_SMOOVECCOALESCEDROPFACTORY_SHORT
 using SmooVecCoalesceDropFactory [[maybe_unused]] = MueLu::SmooVecCoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_SOLVERBASE_SHORT
-using SolverBase [[maybe_unused]] = MueLu::SolverBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-#ifdef MUELU_STEEPESTDESCENTSOLVER_SHORT
-using SteepestDescentSolver [[maybe_unused]] = MueLu::SteepestDescentSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#ifdef MUELU_SPARSECONSTRAINT_SHORT
+using SparseConstraint [[maybe_unused]] = MueLu::SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 #ifdef MUELU_STRATIMIKOSSMOOTHER_SHORT
 using StratimikosSmoother [[maybe_unused]] = MueLu::StratimikosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>;

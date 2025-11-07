@@ -7,21 +7,16 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef MUELU_SHIFTEDLAPLACIANOPERATOR_FWD_HPP
-#define MUELU_SHIFTEDLAPLACIANOPERATOR_FWD_HPP
-
-#include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_BELOS) && defined(HAVE_TPETRA_COMPLEX_DOUBLE)
+#ifndef MUELU_PRODUCTOPERATOR_FWD_HPP
+#define MUELU_PRODUCTOPERATOR_FWD_HPP
 
 namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class ShiftedLaplacianOperator;
+class ProductOperator;
 }
 
-#ifndef MUELU_SHIFTEDLAPLACIANOPERATOR_SHORT
-#define MUELU_SHIFTEDLAPLACIANOPERATOR_SHORT
+#ifndef MUELU_PRODUCTOPERATOR_SHORT
+#define MUELU_PRODUCTOPERATOR_SHORT
 #endif
 
-#endif
-
-#endif  // MUELU_SHIFTEDLAPLACIANOPERATOR_FWD_HPP
+#endif  // MUELU_PRODUCTOPERATOR_FWD_HPP
