@@ -29,7 +29,7 @@ void Jacobi<double, int, int, EpetraNode>(double omega,
   typedef EpetraNode NO;
 
   TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*A.getRowMap()) == false, MueLu::Exceptions::RuntimeError,
-                             "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of A")
+                             "MueLu::Jacobi: row map of C is not same as row map of A")
   TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*B.getRowMap()) == false, MueLu::Exceptions::RuntimeError,
                              "XpetraExt::MatrixMatrix::Jacobi: row map of C is not same as row map of B");
   TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), MueLu::Exceptions::RuntimeError, "A is not fill-completed");
