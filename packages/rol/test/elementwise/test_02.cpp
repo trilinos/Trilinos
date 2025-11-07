@@ -25,7 +25,7 @@ typedef Tpetra::Map<>::global_ordinal_type        GO;
 typedef Tpetra::Map<>::node_type                  Node;
 typedef Tpetra::Map<LO, GO, Node>                 Map;
 typedef Tpetra::MultiVector<RealT, LO, GO, Node>  MV;
-typedef ROL::TpetraMultiVector<RealT,LO,GO,Node>  V;
+typedef ROL::TpetraMultiVector<RealT,LO,GO,Node>  Vec;
 
 
 // Unary function
@@ -92,13 +92,13 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<MV> z_ptr        = ROL::makePtr<MV>(map,1,true);
     ROL::Ptr<MV> z_thresh_ptr = ROL::makePtr<MV>(map,1,true);
  
-    V w(w_ptr);
-    V w2(w2_ptr);
-    V x(x_ptr);
-    V x_recip(x_recip_ptr); 
-    V y(y_ptr);
-    V z(z_ptr);
-    V z_thresh(z_thresh_ptr);
+    Vec w(w_ptr);
+    Vec w2(w2_ptr);
+    Vec x(x_ptr);
+    Vec x_recip(x_recip_ptr);
+    Vec y(y_ptr);
+    Vec z(z_ptr);
+    Vec z_thresh(z_thresh_ptr);
 
     LO numElements = static_cast<LO>( map->getLocalNumElements() );
  
