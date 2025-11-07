@@ -410,7 +410,8 @@ struct UnitTestSetup {
 #define TERNARY_UNIT_TEST(VEC, SCALAR_T)                                \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, ternay) {                        \
     UTS setup;                                                          \
-    UTS::vec_type u = std::sin(setup.x);                                \
+    UTS::vec_type u;                                                    \
+    u = std::sin(setup.x);                                              \
     UTS::vec_type v = -std::sin(setup.x);                               \
     u = u >= 0 ? -u : u;                                                 \
     success = compareVecs(u, "u", v, "v",                               \
