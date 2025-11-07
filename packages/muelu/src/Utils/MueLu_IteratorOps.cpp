@@ -164,8 +164,8 @@ void Jacobi<double, int, long long, EpetraNode>(double omega,
   }
 
   // transfer striding information
-  Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpA = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(A));
-  Teuchos::RCP<Xpetra:Matrix<SC, LO, GO, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(B));
+  Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpA  = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(A));
+  Teuchos::RCP<Xpetra : Matrix<SC, LO, GO, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(B));
   C.CreateView("stridedMaps", rcpA, false, rcpB, false);  // TODO use references instead of RCPs
 }
 #endif
