@@ -124,7 +124,7 @@ void Jacobi<double, int, long long, EpetraNode>(double omega,
     Epetra_CrsMatrix& epB = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix& epC = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(C);
     // FIXME
-    MUELU_DYNAMIC_CAST(const EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "MueLu::IteratorOps::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+    MUELU_DYNAMIC_CAST(const EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "MueLu::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega, *epD.getEpetra_Vector(), epA, epB, epC, haveMultiplyDoFillComplete);
     if (haveMultiplyDoFillComplete) {
