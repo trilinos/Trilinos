@@ -50,6 +50,9 @@ namespace LOCA {
      */
     virtual double computeFreeEnergy() = 0;
 
+    //! Bring NOX::Abstract::Group::operator=() into scope
+    using NOX::Abstract::Group::operator=;
+
     }; // class AbstractGroup
 
   } // namespace PhaseTransition
