@@ -326,14 +326,14 @@ void SemiCoarsenPFactory_kokkos<
     importer = ImportFactory::Build(Amat->getDomainMap(), Amat->getColMap());
   {
     // Fill local temp with layer ids and fill ghost nodes
-    const auto localTempHost = localTemp->getLocalViewHost(Xpetra::Access::ReadWrite);
+    const auto localTempHost = localTemp->getLocalViewHost(Tpetra::Access::ReadWrite);
     for (int row = 0; row < NFRows; row++)
       localTempHost(row, 0) = LayerId[row / DofsPerNode];
-    const auto localTempView = localTemp->getLocalViewDevice(Xpetra::Access::ReadWrite);
+    const auto localTempView = localTemp->getLocalViewDevice(Tpetra::Access::ReadWrite);
     Kokkos::deep_copy(localTempView, localTempHost);
     FCol2LayerVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
   }
-  const auto FCol2LayerView = FCol2LayerVector->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  const auto FCol2LayerView = FCol2LayerVector->getLocalViewDevice(Tpetra::Access::ReadOnly);
   const auto FCol2Layer     = Kokkos::subview(FCol2LayerView, Kokkos::ALL(), 0);
 
   // Construct a map from fine level column to local dof per node id (including
@@ -342,14 +342,14 @@ void SemiCoarsenPFactory_kokkos<
       Xpetra::VectorFactory<LO, LO, GO, NO>::Build(Amat->getColMap());
   {
     // Fill local temp with local dof per node ids and fill ghost nodes
-    const auto localTempHost = localTemp->getLocalViewHost(Xpetra::Access::ReadWrite);
+    const auto localTempHost = localTemp->getLocalViewHost(Tpetra::Access::ReadWrite);
     for (int row = 0; row < NFRows; row++)
       localTempHost(row, 0) = row % DofsPerNode;
-    const auto localTempView = localTemp->getLocalViewDevice(Xpetra::Access::ReadWrite);
+    const auto localTempView = localTemp->getLocalViewDevice(Tpetra::Access::ReadWrite);
     Kokkos::deep_copy(localTempView, localTempHost);
     FCol2DofVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
   }
-  const auto FCol2DofView = FCol2DofVector->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  const auto FCol2DofView = FCol2DofVector->getLocalViewDevice(Tpetra::Access::ReadOnly);
   const auto FCol2Dof     = Kokkos::subview(FCol2DofView, Kokkos::ALL(), 0);
 
   // Compute NVertLines
@@ -635,8 +635,8 @@ void SemiCoarsenPFactory_kokkos<
   coarseNullspace =
       MultiVectorFactory::Build(coarseMap, fineNullspace->getNumVectors());
   const int numVectors           = fineNullspace->getNumVectors();
-  const auto fineNullspaceView   = fineNullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
-  const auto coarseNullspaceView = coarseNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
+  const auto fineNullspaceView   = fineNullspace->getLocalViewDevice(Tpetra::Access::ReadOnly);
+  const auto coarseNullspaceView = coarseNullspace->getLocalViewDevice(Tpetra::Access::ReadWrite);
   using range_policy             = Kokkos::RangePolicy<execution_space>;
   Kokkos::parallel_for(
       "MueLu::SemiCoarsenPFactory_kokkos::BuildSemiCoarsenP Inject Nullspace",
