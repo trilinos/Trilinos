@@ -1156,7 +1156,6 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           // Copy src_j into tgt_j
           // DEEP_COPY REVIEW - HOSTMIRROR-TO-HOSTMIRROR
           Kokkos::deep_copy(space, tgt_j, src_j);
-          space.fence("Tpetra::MultiVector::copyAndPermute-1");
         }
       }
     } else {  // copy on device
@@ -1183,7 +1182,6 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
           // Copy src_j into tgt_j
           // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
           Kokkos::deep_copy(space, tgt_j, src_j);
-          space.fence("Tpetra::MultiVector::copyAndPermute-2");
         }
       }
     }
