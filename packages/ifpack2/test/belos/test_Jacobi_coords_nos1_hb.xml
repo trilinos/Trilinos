@@ -24,5 +24,7 @@
     <Parameter name="relaxation: type" type="string" value="Jacobi"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="222"/>
+  <!-- Either 222 or 223 dependent upon platform. -->
+  <!-- Ergo, we choose a relatively generous 230 to allow for some wiggle room. -->
+  <Parameter name="expectNumIters" type="int" value="230"/>
 </ParameterList>

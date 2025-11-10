@@ -1,5 +1,5 @@
 set(REQUIRED_HEADERS cholmod.h cholmod_core.h )
-set(REQUIRED_LIBS_NAMES libcholmod.a libamd.a libcolamd.a libccolamd.a libcamd.a libsuitesparseconfig.a )
+set(REQUIRED_LIBS_NAMES cholmod amd colamd ccolamd camd suitesparseconfig )
 set(IMPORTED_TARGETS_FOR_ALL_LIBS SuiteSparse::CHOLMOD )
 
 tribits_tpl_allow_pre_find_package(Cholmod  Cholmod_ALLOW_PREFIND)
@@ -17,6 +17,10 @@ if (Cholmod_ALLOW_PREFIND)
 endif()
 
 if (NOT TARGET Cholmod::all_libs)
+  set(Cholmod_INCLUDE_DIRS_DEFAULT "/usr/include/suitesparse")
+  set(Cholmod_INCLUDE_DIRS "${Cholmod_INCLUDE_DIRS_DEFAULT}" CACHE PATH
+    "Default path to find Cholmod include files")
+
   tribits_tpl_find_include_dirs_and_libraries( Cholmod
     REQUIRED_HEADERS ${REQUIRED_HEADERS}
     REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} )

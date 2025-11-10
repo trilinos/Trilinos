@@ -9,13 +9,33 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters/belos)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
-IF(${PACKAGE_NAME}_ENABLE_Amesos2)
+IF(${PACKAGE_NAME}_ENABLE_Amesos2 AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ReitzingerPFactory
     SOURCES ReitzingerPFactory.cpp
     ARGS ""
     COMM serial mpi
   )
+
+  IF(NOT ${PACKAGE_NAME}_ENABLE_Belos)
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(
+      Reitzinger_cp
+      SOURCE_FILES
+        coords.mat
+        D0.mat
+        M1.mat
+        S.mat
+    )
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(
+      Reitzinger_cp_complex
+      SOURCE_FILES
+        D0_complex.mat
+        M1_complex.mat
+        Maxwell_complex.xml
+        S_complex.mat
+    )
+  ENDIF()
 ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Belos)

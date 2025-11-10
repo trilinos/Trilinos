@@ -87,7 +87,6 @@ class AlgRCM : public Algorithm<Adapter>
 #endif
 
     bool symmetrize = pl->get("symmetrize", false);
-    using device = Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>;
     using local_graph_type = KokkosSparse::StaticCrsGraph<const gno_t, Kokkos::LayoutLeft, Kokkos::HostSpace, void, const offset_t>;
 
     typename local_graph_type::row_map_type::non_const_type symRowmap;

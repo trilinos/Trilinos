@@ -119,6 +119,7 @@ public:
     stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
     stk::mesh::ConnectedEntities edges = get_bulk().get_connected_entities(elem1, stk::topology::EDGE_RANK);
     stk::mesh::ConnectedEntities edgeElems = get_bulk().get_connected_entities(edges[0], stk::topology::ELEM_RANK);
+    EXPECT_FALSE(edgeElems.empty());
     EXPECT_EQ(1u, edgeElems.size());
     EXPECT_EQ(elem1, edgeElems[0]);
 

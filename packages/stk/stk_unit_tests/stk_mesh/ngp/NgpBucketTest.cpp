@@ -509,6 +509,16 @@ public:
   stk::topology::topology_t testTopo = stk::topology::NODE;
 };
 
+TEST(NgpEntitySorting, Comparator)
+{
+  stk::mesh::impl::EntityCompareInvalidAtEnd compare;
+  EXPECT_TRUE( compare(stk::mesh::Entity(1), stk::mesh::Entity(2)));
+  EXPECT_TRUE( compare(stk::mesh::Entity(1), stk::mesh::Entity(stk::mesh::Entity::InvalidEntity)));
+  EXPECT_FALSE(compare(stk::mesh::Entity(stk::mesh::Entity::InvalidEntity), stk::mesh::Entity(1)));
+  EXPECT_TRUE( compare(stk::mesh::Entity(stk::mesh::Entity::MaxEntity), stk::mesh::Entity(stk::mesh::Entity::InvalidEntity)));
+  EXPECT_FALSE(compare(stk::mesh::Entity(stk::mesh::Entity::InvalidEntity), stk::mesh::Entity(stk::mesh::Entity::MaxEntity)));
+}
+
 NGP_TEST_F(NgpBucketRepositoryTest, check_get_partitions)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();

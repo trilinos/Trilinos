@@ -34,7 +34,7 @@ jobs:
 
   gcc10-openmpi4:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6, 20250723]
+    runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6, 20251023]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -625,7 +625,7 @@ jobs:
 
   openmp:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6, 20250723]
+    runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6, 20251023]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env

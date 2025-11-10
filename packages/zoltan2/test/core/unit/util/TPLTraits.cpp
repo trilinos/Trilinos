@@ -112,7 +112,7 @@ int main(int narg, char *arg[])
   }
 
   try {
-    unsigned zgno = (1 << 31) + 1;
+    unsigned zgno = (1U << 31) + 1;
     Zoltan2::TPL_Traits<int,unsigned>::ASSIGN(intIdx, zgno);
   }
   catch (std::exception &e) {

@@ -109,6 +109,10 @@ TEST( StridedArray, comparison)
   stk::util::StridedArray<int> stridedArray2(vec.data(), vec.size());
 
   EXPECT_EQ(stridedArray1, stridedArray2);
+  EXPECT_FALSE(stridedArray1.empty());
+
+  stk::util::StridedArray<int> emptyArray(nullptr, 0);
+  EXPECT_TRUE(emptyArray.empty());
 
   std::vector<int> otherVec = {1, 4, 3, 2};
   stk::util::StridedArray<int> otherStridedArray(otherVec.data(), otherVec.size());
@@ -146,6 +150,7 @@ void run_comparison_test_on_device()
 
     stk::util::StridedArray<int> saWrong(v1.data(), N2, wrongStride);
     localResult += (sa != saWrong) ? 0 : 15;
+    localResult += !sa.empty() ? 0 : 31;
   }, result);
 
   EXPECT_EQ(0, result);
