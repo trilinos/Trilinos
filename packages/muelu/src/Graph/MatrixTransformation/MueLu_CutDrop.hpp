@@ -325,11 +325,11 @@ class UnscaledDistanceLaplacianComparison {
 #endif
   using magnitudeType = typename ATS::magnitudeType;
   using values_view   = Kokkos::View<magnitudeType*, memory_space>;
-  mutable values_view values;
 
   Teuchos::RCP<diag_vec_type> diagVec;
   diag_view_type diag;
   DistanceFunctorType dist2;
+  mutable values_view values;
 
  public:
   UnscaledDistanceLaplacianComparison(matrix_type& A_, DistanceFunctorType& dist2_, results_view& results_)
