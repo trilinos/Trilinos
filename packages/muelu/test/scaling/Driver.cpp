@@ -234,6 +234,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("tol", &dtol, "solver convergence tolerance");
   bool binaryFormat = false;
   clp.setOption("binary", "ascii", &binaryFormat, "format of input matrix file");
+  std::string repartitionXMLFilename = "";
+  clp.setOption("repartXML", &repartitionXMLFilename, "read initial repartitioning parameters from an xml file");
 
   std::string rowMapFile;
   clp.setOption("rowmap", &rowMapFile, "map data file");
@@ -353,6 +355,12 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
   }
 
+  Teuchos::RCP<ParameterList> repartitionParamList;
+  if (repartitionXMLFilename != "") {
+    repartitionParamList = Teuchos::make_rcp<ParameterList>();
+    Teuchos::updateParametersFromXmlFileAndBroadcast(repartitionXMLFilename, repartitionParamList, *comm);
+  }
+
   if (inst == Xpetra::COMPLEX_INT_INT && dsolveType == "belos") {
     belosType = "gmres";
     out << "WARNING: CG will not work with COMPLEX scalars, switching to GMRES" << std::endl;
@@ -432,7 +440,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   RCP<MultiVector> B;
 
   // Load the matrix off disk (or generate it via Galeri)
-  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream);
+  MatrixLoad<SC, LO, GO, NO>(comm, lib, binaryFormat, matrixFile, rhsFile, rowMapFile, colMapFile, domainMapFile, rangeMapFile, coordFile, coordMapFile, nullFile, materialFile, blockNumberFile, map, A, coordinates, nullspace, material, blocknumber, X, B, numVectors, galeriParameters, xpetraParameters, galeriStream, repartitionParamList);
   comm->barrier();
   tm = Teuchos::null;
 
