@@ -185,12 +185,6 @@ class MatrixMatrix {
                            const Matrix& B, bool transposeB, const SC& beta,
                            RCP<Matrix>& C, Teuchos::FancyOStream& fos, bool AHasFixedNnzPerRow = false);
 
-#ifdef HAVE_XPETRA_TPETRA
-  using tcrs_matrix_type = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  static Teuchos::RCP<Matrix> tpetraAdd(
-      const tcrs_matrix_type& A, bool transposeA, const typename tcrs_matrix_type::scalar_type alpha,
-      const tcrs_matrix_type& B, bool transposeB, const typename tcrs_matrix_type::scalar_type beta);
-#endif
 };  // class MatrixMatrix
 
 #ifdef HAVE_XPETRA_EPETRA

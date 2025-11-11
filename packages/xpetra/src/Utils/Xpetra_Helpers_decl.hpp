@@ -98,6 +98,13 @@ class Helpers {
 
 #endif  // HAVE_XPETRA_TPETRA
 
+#ifdef HAVE_XPETRA_TPETRA
+  using tcrs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NO>;
+  static Teuchos::RCP<Matrix> tpetraAdd(
+      const tcrs_matrix_type& A, bool transposeA, const typename tcrs_matrix_type::scalar_type alpha,
+      const tcrs_matrix_type& B, bool transposeB, const typename tcrs_matrix_type::scalar_type beta);
+#endif
+
 #ifdef HAVE_XPETRA_EPETRAEXT
   static void epetraExtMult(const Matrix& A, bool transposeA, const Matrix& B, bool transposeB, Matrix& C, bool fillCompleteResult);
 #endif
