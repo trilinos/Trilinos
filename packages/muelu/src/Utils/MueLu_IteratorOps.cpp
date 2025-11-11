@@ -13,20 +13,19 @@ namespace MueLu {
 
 #if defined(HAVE_MUELU_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 template <>
-void Jacobi<double, int, int, EpetraNode>(double omega,
-                                          const Xpetra
-                                          : Vector<double, int, int, EpetraNode>& Dinv,
-                                            const Xpetra::Matrix<double, int, int, EpetraNode>& A,
-                                            const Xpetra::Matrix<double, int, int, EpetraNode>& B,
-                                            Xpetra::Matrix<double, int, int, EpetraNode>& C,
-                                            bool call_FillComplete_on_result,
-                                            bool doOptimizeStorage,
-                                            const std::string& label,
-                                            const Teuchos::RCP<Teuchos::ParameterList>& params) {
+void Jacobi<double, int, int, Xpetra::EpetraNode>(double omega,
+                                                  const Xpetra::Vector<double, int, int, Xpetra::EpetraNode>& Dinv,
+                                                  const Xpetra::Matrix<double, int, int, Xpetra::EpetraNode>& A,
+                                                  const Xpetra::Matrix<double, int, int, Xpetra::EpetraNode>& B,
+                                                  Xpetra::Matrix<double, int, int, Xpetra::EpetraNode>& C,
+                                                  bool call_FillComplete_on_result,
+                                                  bool doOptimizeStorage,
+                                                  const std::string& label,
+                                                  const Teuchos::RCP<Teuchos::ParameterList>& params) {
   typedef double SC;
   typedef int LO;
   typedef int GO;
-  typedef EpetraNode NO;
+  typedef Xpetra::EpetraNode NO;
 
   TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*A.getRowMap()) == false, MueLu::Exceptions::RuntimeError,
                              "MueLu::Jacobi: row map of C is not same as row map of A")
@@ -45,7 +44,7 @@ void Jacobi<double, int, int, EpetraNode>(double omega,
     Epetra_CrsMatrix& epB = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix& epC = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(C);
     // FIXME
-    MUELU_DYNAMIC_CAST(const EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "MueLu::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+    XPETRA_DYNAMIC_CAST(const Xpetra::EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "MueLu::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega, *epD.getEpetra_Vector(), epA, epB, epC, haveMultiplyDoFillComplete);
     if (haveMultiplyDoFillComplete) {
@@ -93,19 +92,19 @@ void Jacobi<double, int, int, EpetraNode>(double omega,
 
 #if defined(HAVE_MUELU_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
 template <>
-void Jacobi<double, int, long long, EpetraNode>(double omega,
-                                                const Xpetra::Vector<double, int, long long, EpetraNode>& Dinv,
-                                                const Xpetra::Matrix<double, int, long long, EpetraNode>& A,
-                                                const Xpetra::Matrix<double, int, long long, EpetraNode>& B,
-                                                Xpetra::Matrix<double, int, long long, EpetraNode>& C,
-                                                bool call_FillComplete_on_result,
-                                                bool doOptimizeStorage,
-                                                const std::string& label,
-                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
+void Jacobi<double, int, long long, Xpetra::EpetraNode>(double omega,
+                                                        const Xpetra::Vector<double, int, long long, Xpetra::EpetraNode>& Dinv,
+                                                        const Xpetra::Matrix<double, int, long long, Xpetra::EpetraNode>& A,
+                                                        const Xpetra::Matrix<double, int, long long, Xpetra::EpetraNode>& B,
+                                                        Xpetra::Matrix<double, int, long long, Xpetra::EpetraNode>& C,
+                                                        bool call_FillComplete_on_result,
+                                                        bool doOptimizeStorage,
+                                                        const std::string& label,
+                                                        const Teuchos::RCP<Teuchos::ParameterList>& params) {
   typedef double SC;
   typedef int LO;
   typedef long long GO;
-  typedef EpetraNode NO;
+  typedef Xpetra::EpetraNode NO;
 
   TEUCHOS_TEST_FOR_EXCEPTION(C.getRowMap()->isSameAs(*A.getRowMap()) == false, MueLu::Exceptions::RuntimeError,
                              "MueLu::Jacobi: row map of C is not same as row map of A")
@@ -124,7 +123,7 @@ void Jacobi<double, int, long long, EpetraNode>(double omega,
     Epetra_CrsMatrix& epB = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(B);
     Epetra_CrsMatrix& epC = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstEpetraCrs(C);
     // FIXME
-    MUELU_DYNAMIC_CAST(const EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "MueLu::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
+    XPETRA_DYNAMIC_CAST(const Xpetra::EpetraVectorT<GO XPETRA_COMMA NO>, Dinv, epD, "MueLu::Jacobi() only accepts Xpetra::EpetraVector as input argument.");
 
     int i = EpetraExt::MatrixMatrix::Jacobi(omega, *epD.getEpetra_Vector(), epA, epB, epC, haveMultiplyDoFillComplete);
     if (haveMultiplyDoFillComplete) {
