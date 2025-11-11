@@ -65,6 +65,10 @@ class KokkosDeviceWrapperNode {
   //! Whether the ExecutionSpace is GPU-like (its default memory space is not HostSpace)
   static constexpr bool is_gpu = !is_cpu;
 
+  //! Whether the device is an APU with a single memory space shared between device and host (but which is not HostSpace).
+  static constexpr bool is_unified_memory_space = is_gpu &&
+                                                  Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace, typename execution_space::memory_space>::accessible;
+
   KokkosDeviceWrapperNode(Teuchos::ParameterList& /* params */) = delete;
   KokkosDeviceWrapperNode()                                     = delete;
 
