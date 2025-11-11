@@ -110,9 +110,9 @@ static void zobjlist(void *data, int ngid, int nlid,
   *ierr = ZOLTAN_OK;
   tMVector_t *vec = (tMVector_t *) data;
   size_t n = vec->getLocalLength();
-
+  zgno_t vgid = 0;
   for (size_t i = 0; i < n; i++) {
-    zgno_t vgid = vec->getMap()->getGlobalElement(i);
+    vgid = vec->getMap()->getGlobalElement(i);
     ZOLTAN_ID_PTR vgidptr = (ZOLTAN_ID_PTR) &vgid;
     SET_ZID(znGidEnt, &(gids[i*znGidEnt]), vgidptr);
     lids[i] = i;
