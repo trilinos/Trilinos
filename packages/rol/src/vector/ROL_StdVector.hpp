@@ -185,7 +185,7 @@ public:
 //      (*std_vec_)[i] = a*x + b;
 //    }
     auto get_rand = [a,b]( Real& e ) { 
-      auto x = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX); 
+      Real x = ((rand())/static_cast<Real>(RAND_MAX));
       e = a*x+b;
     };
     std::for_each( std_vec_->begin(), std_vec_->end(), get_rand );
