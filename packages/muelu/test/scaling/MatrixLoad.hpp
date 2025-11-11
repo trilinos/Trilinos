@@ -28,7 +28,37 @@
 #include <Galeri_XpetraUtils.hpp>
 #include <Galeri_XpetraMaps.hpp>
 
+#include "MueLu_Zoltan2Interface_decl.hpp"
+#include "MueLu_RepartitionFactory_decl.hpp"
+
 #include <MueLu.hpp>
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
+RepartitionMap(
+    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> >& coordinates,
+    Teuchos::RCP<Teuchos::ParameterList> repartitionParams) {
+#include <MueLu_UseShortNames.hpp>
+  auto comm           = A->getRowMap()->getComm();
+  auto lib            = A->getRowMap()->lib();
+  const auto numRanks = comm->getSize();
+  if (!repartitionParams || !coordinates) {
+    if (comm->getRank() == 0)
+      std::cout << "No rowmap file specified, redistributing matrix using a uniformly distributed rowmap." << std::endl;
+    return Xpetra::MapFactory<LO, GO, Node>::Build(lib, A->getRowMap()->getGlobalNumElements(), (int)0, comm);
+  }
+
+  if (comm->getRank() == 0)
+    std::cout << "No rowmap file specified, redistributing matrix using Zoltan2." << std::endl;
+
+  auto decomposition = MueLu::Zoltan2Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeDecomposition(numRanks, A, coordinates, *repartitionParams);
+  auto [GIDs, _]     = MueLu::RepartitionUtilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ConstructGIDs(decomposition);
+
+  auto rowMap  = A->getRowMap();
+  GO indexBase = rowMap->getIndexBase();
+  return MapFactory ::Build(lib, rowMap->getGlobalNumElements(), GIDs(), indexBase, comm);
+}
 
 // This is a standard Galeri-or-MatrixFile loading routine designed to be shared between the various scaling tests
 
@@ -52,7 +82,8 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
                 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& B,
                 const int numVectors,
                 Galeri::Xpetra::Parameters<GlobalOrdinal>& galeriParameters, Xpetra::Parameters& xpetraParameters,
-                std::ostringstream& galeriStream) {
+                std::ostringstream& galeriStream,
+                Teuchos::RCP<Teuchos::ParameterList> repartitionParams = {}) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -65,6 +96,22 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
   Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
   galeriStream << "========================================================\n"
                << xpetraParameters;
+
+  auto readCoordinates = [&]() {
+    if (coordFile.empty()) return;
+
+    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1c - Read coordinates")));
+    RCP<const Map> coordMap;
+    if (!coordMapFile.empty())
+      coordMap = Xpetra::IO<SC, LO, GO, Node>::ReadMap(coordMapFile, lib, comm);
+    else
+      coordMap = map;
+
+    if (!coordMap) coordMap = A->getRowMap();
+    coordinates = Xpetra::IO<real_type, LO, GO, Node>::ReadMultiVector(coordFile, coordMap);
+    comm->barrier();
+  };
+
   if (matrixFile.empty()) {
     galeriStream << galeriParameters;
 
@@ -166,17 +213,26 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
     // If no rowmap file has been provided and the driver is being run in parallel,
     // create a uniformly distributed map and use it as A's row map.
     if (map.is_null() && comm->getSize() > 1) {
-      RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1b - Matrix redistribute")));
-      if (comm->getRank() == 0)
-        std::cout << "No rowmap file specified, redistributing matrix using a uniformly distributed rowmap." << std::endl;
-      map = Xpetra::MapFactory<LO, GO, Node>::Build(lib, A->getRowMap()->getGlobalNumElements(), (int)0, comm);
+      if (repartitionParams)
+        readCoordinates();
 
-      RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
-      RCP<Import> importer  = ImportFactory::Build(A->getRowMap(), map);
-      newMatrix->doImport(*A, *importer, Xpetra::INSERT);
-      newMatrix->fillComplete();
+      RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1b - Matrix redistribute")));
+      map                 = RepartitionMap(A, coordinates, repartitionParams);
+
+      RCP<Import> importer = ImportFactory::Build(A->getRowMap(), map);
+      auto targetMap       = importer->getTargetMap();
+
+      Teuchos::ParameterList XpetraList;
+      auto newMatrix = MatrixFactory::Build(A, *importer, *importer, targetMap, targetMap, rcp(&XpetraList, false));
 
       A.swap(newMatrix);
+
+      if (coordinates) {  // avoid re-reading coordinates by performing import here
+        auto newCoordinates = MultiVectorFactory::Build(map, coordinates->getNumVectors());
+        newCoordinates->doImport(*coordinates, *importer, Xpetra::INSERT);
+        coordinates.swap(newCoordinates);
+      }
+
     } else {
       map = A->getRowMap();
     }
@@ -184,15 +240,8 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
     comm->barrier();
   }
 
-  if (!coordFile.empty()) {
-    RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1c - Read coordinates")));
-    RCP<const Map> coordMap;
-    if (!coordMapFile.empty())
-      coordMap = Xpetra::IO<SC, LO, GO, Node>::ReadMap(coordMapFile, lib, comm);
-    else
-      coordMap = map;
-    coordinates = Xpetra::IO<real_type, LO, GO, Node>::ReadMultiVector(coordFile, coordMap);
-    comm->barrier();
+  if (!coordinates) {
+    readCoordinates();
   }
 
   if (!nullFile.empty()) {
