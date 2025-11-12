@@ -195,7 +195,10 @@ public:
 
   /// If you enable caching with cacheConnectivity(), this must be called prior to exiting the code.
   static void clearCachedConnectivityData()
-  { cached_conn_managers_.clear(); }
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::ConnectivityManager::clearCachedConnectivityData()");
+    cached_conn_managers_.clear();
+  }
 
   /// This is purely for unit testing. Returns the number of times that buildConnectivity() was called, but a cached version was found to use instead.
   static int getCachedReuseCount()
