@@ -1077,7 +1077,7 @@ ConvergenceStatus Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Iterate(
 
           Iterate(*coarseRhs, *coarseX, 1, true, startLevel + 1);
           // ^^ zero initial guess
-          if (Cycle_ == WCYCLE && WCycleStartLevel_ >= startLevel)
+          if (Cycle_ == WCYCLE && WCycleStartLevel_ <= startLevel)
             Iterate(*coarseRhs, *coarseX, 1, false, startLevel + 1);
           // ^^ nonzero initial guess
 
