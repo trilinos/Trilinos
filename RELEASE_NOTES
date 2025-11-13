@@ -17,12 +17,27 @@ Framework:
   - Trilinos now uses pre-commit to run clang-format and cmake-format.
     https://github.com/trilinos/Trilinos/pull/14478
 
+Belos:
+  - Added LSQR example
+    https://github.com/trilinos/Trilinos/pull/14486
 
 Galeri:
 
   - The assembly of example problems was rewritten with Kokkos primitives.
     https://github.com/trilinos/Trilinos/pull/14120
+  - Added recirculant example
+    https://github.com/trilinos/Trilinos/pull/14028
     
+Ifpack2:
+  - Improve Chebyshev performance on GPU
+    https://github.com/trilinos/Trilinos/pull/14124
+  - Added heuristic to Chebyshev to select performant kernel based on architecture
+    https://github.com/trilinos/Trilinos/pull/14154
+  - Add support for streams in RBILUK
+    https://github.com/trilinos/Trilinos/pull/14127
+  - Use empirical models for choosing the number of sublines in block tridi (with Schur line splitting).
+    https://github.com/trilinos/Trilinos/pull/14246
+  
 
 MueLu
 
@@ -38,6 +53,18 @@ MueLu
 
   - A new distributed lumping scheme
     https://github.com/trilinos/Trilinos/pull/14351
+
+  - New "combined" max levels option for problems with multiple hierarchies (due to subblocks)
+    https://github.com/trilinos/Trilinos/pull/14387
+
+  - New Stratimikos example for demonstrating how to assemble matrix 
+    https://github.com/trilinos/Trilinos/pull/14339
+
+  - New hands-on material for ATPESC 2025
+    https://github.com/trilinos/Trilinos/pull/14461
+
+  - Clean up of timer usage in MueLu, make timer fencing a configurable option
+    https://github.com/trilinos/Trilinos/pull/14253
 
 
 NOX
