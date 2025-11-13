@@ -4,7 +4,7 @@ API: Batched Dense (DLA)
 .. toctree::
    :maxdepth: 2
    :hidden:
-   
+
    dense/batched_iamax
    dense/batched_trsv
    dense/batched_tbsv
@@ -20,6 +20,8 @@ API: Batched Dense (DLA)
    dense/batched_pttrs
    dense/batched_lacgv
    dense/batched_laswp
+   dense/batched_apply_householder
+   dense/batched_householder
 
 Our implementation of batched dense linear algebra (DLA) allows user to compose various batched DLA operations.
 For example, consider a case where small element matrices are created via `gemm` and those matrices are triangular solved by `lu` and `trsv`.

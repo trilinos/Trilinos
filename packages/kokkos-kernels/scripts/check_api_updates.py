@@ -3,10 +3,10 @@
 
 """Check if an API change in Kokkos Kernels might be undocumented
 
-This script is intended to run in a github action when a Pull Request is opened against 
-Kokkos Kernels' develop branch. It will read the output of git diff --name-only, stored locally 
-in 'modified_files.txt' to get a list of modified files. If one of the modified files is a key 
-in src_doc_mapping it checks if one of the corresponding documentation files has also been 
+This script is intended to run in a github action when a Pull Request is opened against
+Kokkos Kernels' develop branch. It will read the output of git diff --name-only, stored locally
+in 'modified_files.txt' to get a list of modified files. If one of the modified files is a key
+in src_doc_mapping it checks if one of the corresponding documentation files has also been
 modified which indicates some amount of documentation was done. Otherwise the script will
 return with exit core 1. For API files stored in one of the 'src_directories' but not listed
 in 'src_doc_mapping' an exit code 1 is also returned.
@@ -24,6 +24,8 @@ src_directories = ["batched/dense/src",
                    "sparse/src"]
 
 src_doc_mapping = dict([
+                        ('batched/dense/src/KokkosBatched_ApplyHouseholder_Decl.hpp', ['docs/source/API/batched/dense/batched_apply_householder.rst']),
+                        ('batched/dense/src/KokkosBatched_Householder_Decl.hpp', ['docs/source/API/batched/dense/batched_householder.rst']),
                         ('blas/src/KokkosBlas1_abs.hpp', ['blas1_abs.rst']),
                         ('blas/src/KokkosBlas1_axpby.hpp', ['blas1_axpy.rst']),
                         ('blas/src/KokkosBlas1_dot.hpp', ['blas1_dot.rst']),
