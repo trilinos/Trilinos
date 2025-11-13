@@ -41,7 +41,3 @@ ADD_SUBDIRECTORIES(
   SolverMapTransform
   SingletonFiltering
   )
-
-IF (Tpetra_ENABLE_DEPRECATED_CODE AND ${PACKAGE_NAME}_ENABLE_Epetra)
-  ADD_SUBDIRECTORY(EpetraRowMatrix)
-ENDIF()

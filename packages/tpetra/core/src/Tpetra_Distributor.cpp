@@ -26,13 +26,6 @@ namespace {
 const bool tpetraDistributorDebugDefault = false;
 }  // namespace
 
-#if defined(TPETRA_ENABLE_DEPRECATED_CODE)
-Teuchos::Array<std::string>
-distributorSendTypes() {
-  return Details::distributorSendTypes();
-}
-#endif
-
 Distributor::
     Distributor(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                 const Teuchos::RCP<Teuchos::FancyOStream>& /* out */,
