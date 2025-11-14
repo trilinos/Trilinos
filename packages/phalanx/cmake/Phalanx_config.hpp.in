@@ -11,20 +11,17 @@
 
 #cmakedefine PHX_ENABLE_DEVICE_DAG
 
-#cmakedefine PHX_KOKKOS_DEVICE_TYPE_SERIAL
-#cmakedefine PHX_KOKKOS_DEVICE_TYPE_CUDA
-#cmakedefine PHX_KOKKOS_DEVICE_TYPE_HIP
-#cmakedefine PHX_KOKKOS_DEVICE_TYPE_SYCL
-#cmakedefine PHX_KOKKOS_DEVICE_TYPE_THREAD
-#cmakedefine PHX_KOKKOS_DEVICE_TYPE_OPENMP
-
-#cmakedefine PHX_INDEX_SIZE_TYPE_KOKKOS
-#cmakedefine PHX_INDEX_SIZE_TYPE_INT
-#cmakedefine PHX_INDEX_SIZE_TYPE_UINT
-#cmakedefine PHX_INDEX_SIZE_TYPE_LONGINT
-#cmakedefine PHX_INDEX_SIZE_TYPE_ULONGINT
-
 #cmakedefine PHX_ENABLE_KOKKOS_AMT
+
+#include <Kokkos_Core.hpp>
+namespace PHX {
+  using DefaultExecutionSpace = @Phalanx_DEFAULT_EXECUTION_SPACE@;
+  using DefaultMemorySpace = @Phalanx_DEFAULT_MEMORY_SPACE@;
+  //using Device = Kokkos::Device<PHX::DefaultExecutionSpace,PHX::DefaultMemorySpace>;
+  using Device = PHX::DefaultExecutionSpace;
+  using index_size_type = @Phalanx_INDEX_SIZE_TYPE@;
+  using index_t = index_size_type;
+}
 
 @PHALANX_DEPRECATED_DECLARATIONS@
 

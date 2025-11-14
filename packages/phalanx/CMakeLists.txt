@@ -23,80 +23,29 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
   "Build with explicit template instation enabled in the examples."
   OFF )
 
-# If not explicitly defined by the user, pick a default node type that
-# is enabled in kokkos.  This is complicated by ETI node type
-# instantiation in Tpetra.  We need to use a node instantiated by
-# Tpetra for panzer to build correctly.  Below we copy the logic from
-# Tpetra for choosing the default node type to be in line with tpetra.
-# This is somewhat fragile until we get new ETI system in place.
-IF(NOT DEFINED ${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE)
-  IF (Kokkos_ENABLE_SYCL)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "SYCL")
-  ELSEIF (Kokkos_ENABLE_HIP)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "HIP")
-  ELSEIF (Kokkos_ENABLE_CUDA)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "CUDA")
-  ELSEIF (Kokkos_ENABLE_OPENMP)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "OPENMP")
-  ELSEIF (Kokkos_ENABLE_SERIAL)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "SERIAL")
-  ELSEIF (Kokkos_ENABLE_THREADS)
-    SET(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE "THREAD")
-  ELSE()
-    MESSAGE(FATAL_ERROR "No Kokkos execution space is enabled.")
-  ENDIF()
-ENDIF()
-
-IF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "SYCL")
-  SET(PHX_KOKKOS_DEVICE_TYPE_SYCL ON)
-  MESSAGE(STATUS "Execution Space: HIP")
-ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "HIP")
-  SET(PHX_KOKKOS_DEVICE_TYPE_HIP ON)
-  MESSAGE(STATUS "Execution Space: HIP")
-ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "CUDA")
-  SET(PHX_KOKKOS_DEVICE_TYPE_CUDA ON)
-  MESSAGE(STATUS "Execution Space: CUDA")
-ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "OPENMP")
-  SET(PHX_KOKKOS_DEVICE_TYPE_OPENMP ON)
-  MESSAGE(STATUS "Execution Space: OPENMP")
-ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "THREAD")
-  SET(PHX_KOKKOS_DEVICE_TYPE_THREAD ON)
-  MESSAGE(STATUS "Execution Space: THREAD")
-ELSEIF(${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE STREQUAL "SERIAL")
-  SET(PHX_KOKKOS_DEVICE_TYPE_SERIAL ON)
-  MESSAGE(STATUS "Execution Space: SERIAL")
+OPTION(${PACKAGE_NAME}_ENABLE_SHARED_SPACE "If set to ON, the default memory space for phalanx will be Kokkos::SharedSpace (default=OFF)" OFF)
+SET(${PACKAGE_NAME}_DEFAULT_EXECUTION_SPACE "Kokkos::DefaultExecutionSpace" CACHE STRING "The default execution space")
+IF (${PACKAGE_NAME}_ENABLE_SHARED_SPACE)
+  SET(${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE "Kokkos::SharedSpace" CACHE STRING "The default memory space")
 ELSE()
-  MESSAGE(FATAL_ERROR, " The specified device type ${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE = ${${PACKAGE_NAME}_KOKKOS_DEVICE_TYPE} is not valid!  Please set this to one of the valid device types: SERIAL,OPENMP,CUDA,THREAD.")
+  SET(${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE "Kokkos::DefaultExecutionSpace::memory_space" CACHE STRING "The default memory space")
 ENDIF()
+SET(${PACKAGE_NAME}_INDEX_SIZE_TYPE "int" CACHE STRING "The default index type, choose a C++ integer type or PHX::DefaultExecutionSpace::size_type (default=int)")
 
-# Index size type
-IF(NOT DEFINED ${PACKAGE_NAME}_INDEX_SIZE_TYPE)
-  SET(${PACKAGE_NAME}_INDEX_SIZE_TYPE "INT")
-ENDIF()
+MESSAGE(STATUS "Enable Shared Space: ${${PACKAGE_NAME}_ENABLE_SHARED_SPACE}")
+MESSAGE(STATUS "Default Execution Space: ${${PACKAGE_NAME}_DEFAULT_EXECUTION_SPACE}")
+MESSAGE(STATUS "Default Memory Space: ${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}")
+MESSAGE(STATUS "Index Size Type: ${${PACKAGE_NAME}_INDEX_SIZE_TYPE}")
 
-IF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "KOKKOS")
-  SET(PHX_INDEX_SIZE_TYPE_KOKKOS ON)
-  MESSAGE(STATUS "Index Size Type: KOKKOS")
-ELSEIF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "INT")
-  SET(PHX_INDEX_SIZE_TYPE_INT ON)
-  MESSAGE(STATUS "Index Size Type: INT")
-ELSEIF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "UINT")
-  SET(PHX_INDEX_SIZE_TYPE_UINT ON)
-  MESSAGE(STATUS "Index Size Type: UINT")
-ELSEIF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "LONGINT")
-  SET(PHX_INDEX_SIZE_TYPE_LONGINT ON)
-  MESSAGE(STATUS "Index Size Type: LONGINT")
-ELSEIF(${PACKAGE_NAME}_INDEX_SIZE_TYPE STREQUAL "ULONGINT")
-  SET(PHX_INDEX_SIZE_TYPE_ULONGINT ON)
-  MESSAGE(STATUS "Index Size Type: ULONGINT")
-ELSE()
-  MESSAGE(FATAL_ERROR, " The specified index size type ${PACKAGE_NAME}_INDEX_SIZE_TYPE = ${${PACKAGE_NAME}_INDEX_SIZE_TYPE} is not valid!  Please set this to one of the valid types: KOKKOS,INT,UINT,LONGINT,ULONGINT.")
+IF (${${PACKAGE_NAME}_ENABLE_SHARED_SPACE} AND NOT "${${PACKAGE_NAME}_DEFAULT_MEMORY_SPACE}" STREQUAL "Kokkos::SharedSpace")
+  MESSAGE(FATAL_ERROR "ERROR (Phalanx): You cannot enable SharedSpace and set the default memory space. Do one or the other.")
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   PHX_DEBUG
   "Build with debug code enabled. Typically, this enables array bounds checking and runtime checking of rank accessors in multidimensional arrays."
   OFF )
+MESSAGE(STATUS "Enable DEBUG: ${${PACKAGE_NAME}_ENABLE_DEBUG}")
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   PHX_TEUCHOS_TIME_MONITOR

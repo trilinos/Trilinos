@@ -30,48 +30,11 @@
 
 namespace PHX {
 
-#if defined(PHX_KOKKOS_DEVICE_TYPE_CUDA)
-  using Device = Kokkos::Cuda;
-#elif defined(PHX_KOKKOS_DEVICE_TYPE_HIP)
-  using Device = Kokkos::HIP;
-#elif defined(PHX_KOKKOS_DEVICE_TYPE_SYCL)
-  using Device = Kokkos::SYCL;
-#elif defined(PHX_KOKKOS_DEVICE_TYPE_OPENMP)
-  using Device = Kokkos::OpenMP;
-#elif defined(PHX_KOKKOS_DEVICE_TYPE_THREAD)
-  #include <Kokkos_hwloc.hpp>
-  using Device = Kokkos::Threads;
-#elif defined(PHX_KOKKOS_DEVICE_TYPE_SERIAL)
-  using Device = Kokkos::Serial;
-#endif
-
   using exec_space = PHX::Device::execution_space;
   using mem_space  = PHX::Device::memory_space;
 
   using ExecSpace  = PHX::Device::execution_space;
   using MemSpace   = PHX::Device::memory_space;
-
-}
-
-// ***************************************
-// * INDEX SIZE TYPE
-// ***************************************
-
-namespace PHX {
-
-#if defined(PHX_INDEX_SIZE_TYPE_KOKKOS)
-  typedef PHX::Device::size_type index_size_type;
-#elif defined(PHX_INDEX_SIZE_TYPE_INT)
-  typedef int index_size_type;
-#elif defined(PHX_INDEX_SIZE_TYPE_UINT)
-  typedef unsigned int index_size_type;
-#elif defined(PHX_INDEX_SIZE_TYPE_LONGINT)
-  typedef long int index_size_type;
-#elif defined(PHX_INDEX_SIZE_TYPE_ULONGINT)
-  typedef unsigned long int index_size_type;
-#endif
-
-  using index_t = index_size_type;
 
 }
 
