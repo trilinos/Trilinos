@@ -54,7 +54,9 @@ class XPETRA_DEPRECATED EpetraCrsGraphT
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
 #ifdef HAVE_XPETRA_TPETRA
-  typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type local_graph_type;
+  using local_graph_type        = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type;
+  using local_graph_device_type = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type;
+  using local_graph_host_type   = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_host_type;
   typedef typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::node_type node_type;
   typedef typename node_type::execution_space execution_space;
 #endif

@@ -109,7 +109,7 @@ public:
     ScalarType B_zero = ScalarTraits<ScalarType>::zero();
     alpha_type alpha_one = ScalarTraits<alpha_type>::one();
     ScalarType B_one = ScalarTraits<ScalarType>::one();
-    ScalarType temp;
+    ScalarType temp = ScalarTraits<ScalarType>::zero();
     OrdinalType NRowA = m;
     bool BadArgument = false;
     bool noUnit = (EDiagChar[diag] == 'N');

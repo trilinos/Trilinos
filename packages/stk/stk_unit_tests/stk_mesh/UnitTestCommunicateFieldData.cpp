@@ -114,11 +114,9 @@ TEST(CommunicateFieldData, communicateMultipleGhostings)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
-  int numProcs = stk::parallel_machine_size(communicator);
-  if (numProcs != 2) {
-    return;
-  }
-  int myProc = stk::parallel_machine_rank(communicator);
+  const int numProcs = stk::parallel_machine_size(communicator);
+  if (numProcs != 2) { GTEST_SKIP(); }
+  const int myProc = stk::parallel_machine_rank(communicator);
 
   const unsigned spatialDim = 2;
   std::shared_ptr<stk::mesh::BulkData> bulkPtr = build_mesh(spatialDim, communicator);

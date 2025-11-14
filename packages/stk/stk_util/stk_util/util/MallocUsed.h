@@ -35,16 +35,19 @@
 #ifndef STK_UTIL_UTIL_MALLOCUSED_H
 #define STK_UTIL_UTIL_MALLOCUSED_H
 
+#include <stk_util/stk_config.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
-size_t malloc_used();
+STK_DEPRECATED size_t malloc_used();
 #else
-inline size_t malloc_used() { return 0; }
+STK_DEPRECATED inline size_t malloc_used() { return 0; }
+#endif
 #endif
 
 #ifdef __cplusplus

@@ -325,8 +325,8 @@ enum ConnectivityType
   INVALID_CONNECTIVITY_TYPE
 };
 
-constexpr unsigned INVALID_BUCKET_ID = std::numeric_limits<int>::max();
-constexpr unsigned INVALID_PARTITION_ID = std::numeric_limits<int>::max();
+constexpr unsigned INVALID_BUCKET_ID = std::numeric_limits<unsigned>::max();
+constexpr unsigned INVALID_PARTITION_ID = std::numeric_limits<unsigned>::max();
 
 #define STK_16BIT_CONNECTIVITY_ORDINAL
 #ifdef STK_16BIT_CONNECTIVITY_ORDINAL

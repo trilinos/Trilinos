@@ -72,18 +72,28 @@ class MPITagData
 class MPITag
 {
   public:
+    MPITag() = default;
+
     explicit MPITag(std::shared_ptr<impl::MPITagData> data) :
       m_data(data)
     {}
 
-    operator int() const { return m_data->get_tag(); }
+    operator int() const {
+      STK_ThrowRequireMsg(m_data, "Cannot convert unitialized MPITag to int");
+      return m_data->get_tag();
+    }
 
-    MPI_Comm get_comm() const { return m_data->get_comm(); }
+    MPI_Comm get_comm() const {
+      STK_ThrowRequireMsg(m_data, "Cannot call get_comm on unitialized MPITag");
+      return m_data->get_comm();
+    }
 
   private:
     void set_free()
     {
-      m_data->set_free();
+      if(m_data) {
+        m_data->set_free();
+      }
     }
 
     std::shared_ptr<impl::MPITagData> m_data;

@@ -16,6 +16,8 @@
 #include <Zoltan2_Sort.hpp>
 #include <queue>
 
+#include <KokkosKernels_Utils.hpp>
+#include <KokkosCompat_View.hpp>
 
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgRCM.hpp
@@ -83,6 +85,24 @@ class AlgRCM : public Algorithm<Adapter>
     cout << "rank " << comm->getRank() << ": edgeIds: " << edgeIds << endl;
     cout << "rank " << comm->getRank() << ": offsets: " << offsets << endl;
 #endif
+
+    bool symmetrize = pl->get("symmetrize", false);
+    using local_graph_type = KokkosSparse::StaticCrsGraph<const gno_t, Kokkos::LayoutLeft, Kokkos::HostSpace, void, const offset_t>;
+
+    typename local_graph_type::row_map_type::non_const_type symRowmap;
+    typename local_graph_type::entries_type::non_const_type symEntries;
+    if (symmetrize) {
+      Kokkos::View<const gno_t *, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> edgeIdsKokkos(edgeIds.data(), edgeIds.size());
+      Kokkos::View<const offset_t *, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> offsetsKokkos(offsets.data(), offsets.size());
+
+      local_graph_type localGraph(edgeIdsKokkos, offsetsKokkos);
+
+      KokkosKernels::Impl::symmetrize_graph_symbolic_hashmap<typename local_graph_type::row_map_type, typename local_graph_type::entries_type,
+                                                             typename local_graph_type::row_map_type::non_const_type, typename local_graph_type::entries_type::non_const_type,
+                                                             Kokkos::Serial>(localGraph.numRows(), localGraph.row_map, localGraph.entries, symRowmap, symEntries);
+      edgeIds = Kokkos::Compat::getConstArrayView(symEntries);
+      offsets = Kokkos::Compat::getConstArrayView(symRowmap);
+    }
 
     // RCM constructs invPerm, not perm
     const ArrayRCP<lno_t> invPerm = solution->getPermutationRCP(true);
@@ -190,6 +210,12 @@ class AlgRCM : public Algorithm<Adapter>
         invPerm[temp] = nVtx-1-i;
       }
 
+    }
+
+    for (size_t i = 0; i < nVtx; ++i) {
+      if (static_cast<Tpetra::global_size_t>(invPerm[i]) == INVALID) {
+        throw std::runtime_error("An invalid permutation index had been detected in the RCM solution. This can occur if RCM is run on a non-symmetric matrix without setting \"symmetrize\"=\"true\".");
+      }
     }
 
     solution->setHaveInverse(true);

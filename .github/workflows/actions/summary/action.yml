@@ -1,0 +1,33 @@
+name: "Write AT2 Summary"
+description: |
+  Writes a markdown summary to $GITHUB_STEP_SUMMARY that contains
+  the container image, the GenConfig build ID and CDash links.
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Write job summary"
+      shell: bash -e {0}
+      working-directory: /home/Trilinos/build
+      run: |
+        AT2_URL=$(</home/runner/AT2_URL.txt)
+        AT2_ALL_BUILDS=$(</home/runner/AT2_ALL_BUILDS.txt)
+        GENCONFIG_BUILD_NAME=$(</home/Trilinos/build/genconfig_build_name.txt)
+
+        cat <<EOF >> $GITHUB_STEP_SUMMARY
+        Image:
+        \`\`\`
+        ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}
+        \`\`\`
+        GenConfig Build ID:
+        \`\`\`
+        ${GENCONFIG_BUILD_NAME:-unknown}
+        \`\`\`
+        ### CDash Links
+        - [Filter current build only](${AT2_URL:-unknown})
+        - [Filter all builds in PR](${AT2_ALL_BUILDS:-unknown})
+        ### Helpful Wiki Links
+        - [How to Reproducing Pull Request Testing Errors](https://github.com/trilinos/Trilinos/wiki/Reproducing-Pull-Request-Testing-Errors)
+        - [How to use Trilinos Containers](https://github.com/trilinos/Trilinos/wiki/Containers)
+        - [Containers at Sandia](https://gitlab-ex.sandia.gov/trilinos-project/trilinos-containers/-/wikis/Containers-at-Sandia)
+        EOF

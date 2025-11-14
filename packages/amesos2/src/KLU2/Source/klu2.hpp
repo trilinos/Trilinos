@@ -304,7 +304,7 @@ void KLU_lsolve
             break ;
 
         default:
-            throw std::domain_error("More than 4 right-hand sides is not supported.");
+            throw ::std::domain_error("More than 4 right-hand sides is not supported.");
 
     }
 }

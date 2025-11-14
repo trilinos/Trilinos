@@ -1423,7 +1423,7 @@ protected:
                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
 
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
-   bool useBBoxSearch_ = false;  // TODO swap this to change default periodic BC search (see also PeriodicBC_Parser.cpp)
+   bool useBBoxSearch_ = true;
 
    Teuchos::RCP<stk::mesh::MetaData> metaData_;
    Teuchos::RCP<stk::mesh::BulkData> bulkData_;

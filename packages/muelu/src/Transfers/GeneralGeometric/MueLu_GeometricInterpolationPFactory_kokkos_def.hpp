@@ -11,7 +11,7 @@
 #define MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_DEF_HPP
 
 #include "Xpetra_CrsGraph.hpp"
-#include "Xpetra_CrsMatrixUtils.hpp"
+#include "MueLu_CrsMatrixUtils.hpp"
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -127,8 +127,8 @@ void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
     // Construct and launch functor to fill coarse coordinates values
     // function should take a const view really
     coarseCoordinatesBuilderFunctor myCoarseCoordinatesBuilder(geoData,
-                                                               fineCoordinates->getLocalViewDevice(Xpetra::Access::ReadWrite),
-                                                               coarseCoordinates->getLocalViewDevice(Xpetra::Access::OverwriteAll));
+                                                               fineCoordinates->getLocalViewDevice(Tpetra::Access::ReadWrite),
+                                                               coarseCoordinates->getLocalViewDevice(Tpetra::Access::OverwriteAll));
     Kokkos::parallel_for("GeometricInterpolation: build coarse coordinates",
                          Kokkos::RangePolicy<execution_space>(0, geoData->getNumCoarseNodes()),
                          myCoarseCoordinatesBuilder);
@@ -228,12 +228,12 @@ void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
     if (P_tpetra.is_null()) throw std::runtime_error("BuildConstantP: Matrix factory did not return a Tpetra::BlockCrsMatrix");
     RCP<CrsMatrixWrap> P_wrap = rcp(new CrsMatrixWrap(P_xpetra));
 
-    const LO stride                                 = strideInfo[0] * strideInfo[0];
-    const LO in_stride                              = strideInfo[0];
-    typename CrsMatrix::local_graph_type localGraph = prolongatorGraph->getLocalGraphDevice();
-    auto rowptr                                     = localGraph.row_map;
-    auto indices                                    = localGraph.entries;
-    auto values                                     = P_tpetra->getTpetra_BlockCrsMatrix()->getValuesDeviceNonConst();
+    const LO stride                                        = strideInfo[0] * strideInfo[0];
+    const LO in_stride                                     = strideInfo[0];
+    typename CrsMatrix::local_graph_device_type localGraph = prolongatorGraph->getLocalGraphDevice();
+    auto rowptr                                            = localGraph.row_map;
+    auto indices                                           = localGraph.entries;
+    auto values                                            = P_tpetra->getTpetra_BlockCrsMatrix()->getValuesDeviceNonConst();
 
     using ISC = typename Tpetra::BlockCrsMatrix<SC, LO, GO, NO>::impl_scalar_type;
     ISC one   = Teuchos::ScalarTraits<ISC>::one();

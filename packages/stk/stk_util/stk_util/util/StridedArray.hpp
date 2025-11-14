@@ -105,6 +105,12 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
+  bool empty() const
+  {
+    return size() == 0;
+  }
+
+  KOKKOS_INLINE_FUNCTION
   bool operator==(const StridedArray<T>& rhs) const
   {
     if (this->size() != rhs.size()) {

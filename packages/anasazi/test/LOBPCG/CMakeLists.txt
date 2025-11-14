@@ -13,24 +13,19 @@ IF(Teuchos_ENABLE_COMPLEX)
     STANDARD_PASS_OUTPUT
     )
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
-IF (${PACKAGE_NAME}_ENABLE_Triutils)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  LOBPCG_complex_test
+  SOURCES cxx_main_complex.cpp
+  COMM serial mpi
+  ARGS
+    "--verbose --filename=mhd1280b.cua"
+  STANDARD_PASS_OUTPUT
+  )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    LOBPCG_complex_test
-    SOURCES cxx_main_complex.cpp
-    COMM serial mpi
-    ARGS
-      "--verbose --filename=mhd1280b.cua"
-    STANDARD_PASS_OUTPUT
-    )
-
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestLOBPCGComplexFiles
-    SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
-    SOURCE_FILES mhd1280b.cua
-    EXEDEPS LOBPCG_complex_test
-    )
-
-ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestLOBPCGComplexFiles
+  SOURCE_DIR ${PACKAGE_SOURCE_DIR}/testmatrices
+  SOURCE_FILES mhd1280b.cua
+  EXEDEPS LOBPCG_complex_test
+  )
 
 ENDIF()

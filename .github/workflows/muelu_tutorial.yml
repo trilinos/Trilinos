@@ -1,0 +1,40 @@
+# The MueLu tutorial is hosted from
+# https://github.com/muelu/muelu.github.io
+#
+# This workflow checks the relevant files in MueLu have changed and
+# triggers a rebuild of the tutorial.
+
+name: MueLu tutorial
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+
+jobs:
+  muelu_tutorial_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out webpage repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            tutorial:
+            - 'packages/muelu/doc/Tutorial/**'
+            - 'packages/muelu/test/tutorial/**'
+        
+      - name: Dispatch repository_dispatch event
+        if: steps.changes.outputs.tutorial == 'true'
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.MUELU_REPO_ACCESS_TOKEN }} # A PAT with 'repo' scope
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: "muelu",
+              repo: "muelu.github.io", 
+              event_type: "build", 
+              client_payload: {}
+            });

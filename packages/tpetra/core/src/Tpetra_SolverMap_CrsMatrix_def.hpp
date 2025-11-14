@@ -23,7 +23,6 @@
 #include <Tpetra_SolverMap_CrsMatrix_decl.hpp>
 
 #include <vector>
-#include <filesystem>
 
 namespace Tpetra {
 

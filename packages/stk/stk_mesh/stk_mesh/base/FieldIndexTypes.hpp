@@ -56,19 +56,22 @@ public:
 
   // Implicit conversion constructor from integral types
   template <typename T, typename = EnableIfIntegral<T>>
-  constexpr KOKKOS_INLINE_FUNCTION FieldIndex(T value) : m_value(static_cast<IndexType>(value)) {}
+  constexpr KOKKOS_INLINE_FUNCTION FieldIndex(T value) noexcept : m_value(static_cast<IndexType>(value)) {}
   KOKKOS_DEFAULTED_FUNCTION ~FieldIndex() = default;
 
-  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex(const FieldIndex&) = default;
-  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex(FieldIndex&&) = default;
-  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex& operator=(const FieldIndex&) = default;
-  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex& operator=(FieldIndex&&) = default;
+  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex(const FieldIndex&) noexcept = default;
+  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex(FieldIndex&&) noexcept = default;
+  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex& operator=(const FieldIndex&) noexcept = default;
+  constexpr KOKKOS_DEFAULTED_FUNCTION FieldIndex& operator=(FieldIndex&&) noexcept = default;
+
+  // Direct accessor for the internal integral value
+  constexpr KOKKOS_INLINE_FUNCTION index_type operator()() const noexcept { return m_value; }
 
   // Implicit conversion operators to integral types
-  constexpr KOKKOS_INLINE_FUNCTION operator int() const { return static_cast<int>(m_value); }
-  constexpr KOKKOS_INLINE_FUNCTION operator unsigned int() const { return static_cast<unsigned int>(m_value); }
-  constexpr KOKKOS_INLINE_FUNCTION operator long int() const { return static_cast<long int>(m_value); }
-  constexpr KOKKOS_INLINE_FUNCTION operator unsigned long int() const { return static_cast<unsigned long int>(m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION operator int() const noexcept { return static_cast<int>(m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION operator unsigned int() const noexcept { return static_cast<unsigned int>(m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION operator long int() const noexcept { return static_cast<long int>(m_value); }
+  constexpr KOKKOS_INLINE_FUNCTION operator unsigned long int() const noexcept { return static_cast<unsigned long int>(m_value); }
 
   // Mutating operators
   constexpr KOKKOS_INLINE_FUNCTION Derived& operator++() { ++m_value; return static_cast<Derived&>(*this); }
@@ -215,8 +218,8 @@ private:
 //==============================================================================
 class ComponentIdx : public FieldIndex<ComponentIdx, int> {
 public:
-  constexpr KOKKOS_INLINE_FUNCTION explicit ComponentIdx(int value) : FieldIndex(value) {}
-  constexpr KOKKOS_INLINE_FUNCTION ComponentIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION explicit ComponentIdx(int value) noexcept : FieldIndex(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION ComponentIdx& operator=(int rhs) noexcept { FieldIndex::operator=(rhs); return *this; }
 };
 
 class ComponentIdxIterator : public FieldIndexIterator<ComponentIdxIterator, ComponentIdx> {
@@ -233,8 +236,8 @@ public:
 //==============================================================================
 class CopyIdx : public FieldIndex<CopyIdx, int> {
 public:
-  constexpr KOKKOS_INLINE_FUNCTION explicit CopyIdx(int value) : FieldIndex(value) {}
-  constexpr KOKKOS_INLINE_FUNCTION CopyIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION explicit CopyIdx(int value) noexcept : FieldIndex(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION CopyIdx& operator=(int rhs) noexcept { FieldIndex::operator=(rhs); return *this; }
 };
 
 class CopyIdxIterator : public FieldIndexIterator<CopyIdxIterator, CopyIdx> {
@@ -251,8 +254,8 @@ public:
 //==============================================================================
 class ScalarIdx : public FieldIndex<ScalarIdx, int> {
 public:
-  constexpr KOKKOS_INLINE_FUNCTION explicit ScalarIdx(int value) : FieldIndex(value) {}
-  constexpr KOKKOS_INLINE_FUNCTION ScalarIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION explicit ScalarIdx(int value) noexcept : FieldIndex(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION ScalarIdx& operator=(int rhs) noexcept { FieldIndex::operator=(rhs); return *this; }
 };
 
 class ScalarIdxIterator : public FieldIndexIterator<ScalarIdxIterator, ScalarIdx> {
@@ -271,8 +274,8 @@ public:
 // Kokkos thread team iteration
 class EntityIdx : public FieldIndex<EntityIdx, int> {
 public:
-  constexpr KOKKOS_INLINE_FUNCTION EntityIdx(int value) : FieldIndex(value) {}
-  constexpr KOKKOS_INLINE_FUNCTION EntityIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION EntityIdx(int value) noexcept : FieldIndex(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION EntityIdx& operator=(int rhs) noexcept { FieldIndex::operator=(rhs); return *this; }
 };
 
 class EntityIdxIterator : public FieldIndexIterator<EntityIdxIterator, EntityIdx> {
@@ -288,8 +291,8 @@ public:
 //==============================================================================
 class ByteIdx : public FieldIndex<ByteIdx, int> {
 public:
-  constexpr KOKKOS_INLINE_FUNCTION explicit ByteIdx(int value) : FieldIndex(value) {}
-  constexpr KOKKOS_INLINE_FUNCTION ByteIdx& operator=(int rhs) { FieldIndex::operator=(rhs); return *this; }
+  constexpr KOKKOS_INLINE_FUNCTION explicit ByteIdx(int value) noexcept : FieldIndex(value) {}
+  constexpr KOKKOS_INLINE_FUNCTION ByteIdx& operator=(int rhs) noexcept { FieldIndex::operator=(rhs); return *this; }
 };
 
 class ByteIdxIterator : public FieldIndexIterator<ByteIdxIterator, ByteIdx> {

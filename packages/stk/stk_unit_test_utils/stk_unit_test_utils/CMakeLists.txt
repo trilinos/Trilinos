@@ -13,6 +13,8 @@ SET(HEADERS_NEED_IO
   FaceCreationTestUtils.hpp
   FaceTestingUtils.hpp
   GeneratedMeshToFile.hpp
+  MeshFixture.hpp
+  MockSearchMesh.hpp
   ReadWriteSidesetTester.hpp
   StkMeshFromGeneratedMesh.hpp
   TextMeshAdjacencyGraph.hpp
@@ -53,7 +55,6 @@ SET(HEADERS_NEED_SEARCHUTIL
   MockMasterElementLine2.hpp
   MockMasterElementProvider.hpp
   MockMasterElementQuad4.hpp
-  MockSearchMesh.hpp
   UnitTestSearchUtils.hpp
   )
 SET(SOURCES_NEED_SEARCHUTIL
@@ -73,7 +74,6 @@ SET(HEADERS_NEED_MESH_BUT_NOT_IO
   BucketTester.hpp
   DebugWriter.hpp
   FieldEvaluator.hpp
-  MeshFixture.hpp
   MeshFileFixture.hpp
   MeshUtilsForBoundingVolumes.hpp
   ParticleUtils.hpp
@@ -103,6 +103,7 @@ SET(HEADERS
   Legendre.hpp
   CommandLineArgs.hpp
   getOption.h
+  ObjectLifetimeSpy.hpp
   StkReportRedirector.hpp
   stringAndNumberComparisons.hpp
   timer.hpp
@@ -110,6 +111,7 @@ SET(HEADERS
 SET(SOURCES
   AssemblyUtils.cpp
   Legendre.cpp
+  ObjectLifetimeSpy.cpp
   StkReportRedirector.cpp
   stringAndNumberComparisons.cpp
   )

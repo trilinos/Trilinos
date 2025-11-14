@@ -149,7 +149,7 @@ void reorderMatrix(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdin
 
   Kokkos::View<GlobalOrdinal*, typename Node::memory_space> elementList("", sourceMap->getLocalNumElements());
   auto lclSourceMap = sourceMap->getLocalMap();
-  auto lclOrdering  = ordering->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  auto lclOrdering  = ordering->getLocalViewDevice(Tpetra::Access::ReadOnly);
   Kokkos::parallel_for(
       "",
       Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>(0, sourceMap->getLocalNumElements()),
@@ -233,7 +233,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   double dtol = 1e-12, tol;
   clp.setOption("tol", &dtol, "solver convergence tolerance");
   bool binaryFormat = false;
-  clp.setOption("binary", "ascii", &binaryFormat, "print timings to screen");
+  clp.setOption("binary", "ascii", &binaryFormat, "format of input matrix file");
 
   std::string rowMapFile;
   clp.setOption("rowmap", &rowMapFile, "map data file");

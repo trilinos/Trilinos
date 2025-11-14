@@ -585,9 +585,9 @@ void Bucket::reset_entity_location(unsigned to_ordinal, const Bucket* fromBucket
                                      fromBucket->m_bucket_id, fromOrdinal, fields);
 }
 
-void Bucket::reset_empty_space(const FieldVector & fields)
+void Bucket::reset_empty_space(const FieldVector& fieldsOfRank)
 {
-  m_mesh.reset_empty_field_data_callback(m_entity_rank, m_bucket_id, m_size, m_capacity, fields);
+  m_mesh.reset_empty_field_data_callback(m_entity_rank, m_bucket_id, m_size, m_capacity, fieldsOfRank);
 }
 
 void Bucket::add_entity(Entity entity)
@@ -689,7 +689,8 @@ void Bucket::copy_entity(const Bucket* fromBucket, unsigned fromOrdinal)
 
   mark_for_modification();
 
-  this->mesh().add_entity_callback(entity_rank(), bucket_id(), m_size+1, capacity(), m_size);
+  constexpr bool initializeFieldData = false;
+  this->mesh().add_entity_callback(entity_rank(), bucket_id(), m_size+1, capacity(), m_size, initializeFieldData);
   const unsigned newOrdinal = m_size;
   reset_entity_location(newOrdinal, fromBucket, fromOrdinal);
 

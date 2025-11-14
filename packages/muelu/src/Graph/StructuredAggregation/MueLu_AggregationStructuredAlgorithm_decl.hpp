@@ -58,7 +58,7 @@ class AggregationStructuredAlgorithm : public MueLu::AggregationAlgorithmBase<Lo
   using execution_space        = typename local_graph_type::device_type::execution_space;
   using memory_space           = typename local_graph_type::device_type::memory_space;
 
-  using LOVectorView      = decltype(std::declval<LOVector>().getLocalViewDevice(Xpetra::Access::ReadWrite));
+  using LOVectorView      = decltype(std::declval<LOVector>().getLocalViewDevice(Tpetra::Access::ReadWrite));
   using constIntTupleView = typename Kokkos::View<const int[3], device_type>;
   using constLOTupleView  = typename Kokkos::View<const LO[3], device_type>;
   //! @name Constructors/Destructors.

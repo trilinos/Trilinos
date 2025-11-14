@@ -19,7 +19,6 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Import.hpp>
-#include <Xpetra_ImportUtils.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_StridedMap.hpp>
@@ -31,6 +30,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_ImportUtils.hpp"
 
 namespace MueLu {
 
@@ -140,7 +140,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
 
     // Get owning PID information on columns for tie-breaking
     if (!D0_Pn->getCrsGraph()->getImporter().is_null()) {
-      Xpetra::ImportUtils<LO, GO, NO> utils;
+      MueLu::ImportUtils<LO, GO, NO> utils;
       utils.getPids(*D0_Pn->getCrsGraph()->getImporter(), D0_Pn_col_pids, false);
     } else {
       D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getLocalNumElements(), MyPID);
@@ -165,7 +165,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     D0_Pn                          = D0_Pn_new;
     // Get owning PID information on columns for tie-breaking
     if (!D0_Pn->getCrsGraph()->getImporter().is_null()) {
-      Xpetra::ImportUtils<LO, GO, NO> utils;
+      MueLu::ImportUtils<LO, GO, NO> utils;
       utils.getPids(*D0_Pn->getCrsGraph()->getImporter(), D0_Pn_col_pids, false);
     } else {
       D0_Pn_col_pids.resize(D0_Pn->getCrsGraph()->getColMap()->getLocalNumElements(), MyPID);

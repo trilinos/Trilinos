@@ -233,7 +233,12 @@ void resize(
     size_t total_extent = 1;
     for (size_t r = 0; r < view_t::rank(); r++)
       total_extent *= Kokkos::min(src.extent(r), dst.extent(r));
+    // It looks like SFAD only works with 64 wide vector in HIP
+#ifdef KOKKOS_ENABLE_HIP
+    size_t vector_size = 64;
+#else
     size_t vector_size = 32;
+#endif
 
     // Just arbitraryly using team_size = 1 for low concurrency backends (i.e.
     // CPUs)

@@ -730,15 +730,10 @@ TEST ( UnitTestBulkData_new , testUninitializedMetaData )
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
   std::shared_ptr<BulkData> bulk = stk::mesh::MeshBuilder(pm).create();
-  MetaData& meta = bulk->mesh_meta_data();
-
-  meta.initialize(2);
-
-  meta.commit();
 
   bulk->modification_begin();
 
-  ASSERT_THROW( bulk->declare_node(1, PartVector()), std::logic_error);
+  ASSERT_ANY_THROW(bulk->declare_node(1, PartVector()));
 }
 
 TEST ( UnitTestBulkData_new , testGhostHandleRemainsValidAfterRefresh )

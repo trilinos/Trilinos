@@ -17,7 +17,7 @@
 
 #include "Xpetra_CrsMatrixWrap_decl.hpp"
 #include "Xpetra_Map.hpp"
-#include "Xpetra_CrsMatrixUtils.hpp"
+#include "MueLu_CrsMatrixUtils.hpp"
 #include "Xpetra_MatrixUtils.hpp"
 
 #include "MueLu_Maxwell1_decl.hpp"

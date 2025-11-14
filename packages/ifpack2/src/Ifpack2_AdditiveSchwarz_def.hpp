@@ -992,36 +992,45 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::initialize() {
 
     setup();  // This does a lot of the initialization work.
 
-    if (!Inverse_.is_null()) {
+    [&]() {
+      if (Inverse_.is_null()) return;
       const std::string innerName = innerPrecName();
-      if ((innerName.compare("RILUK") == 0) && (Coordinates_ != Teuchos::null)) {
-        auto ifpack2_Inverse = Teuchos::rcp_dynamic_cast<Ifpack2::Details::LinearSolver<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>(Inverse_);
-        if (!IsOverlapping_ && !UseReordering_) {
-          ifpack2_Inverse->setCoord(Coordinates_);
-        } else {
-          RCP<coord_type> tmp_Coordinates_;
-          if (IsOverlapping_) {
-            tmp_Coordinates_ = rcp(new coord_type(OverlappingMatrix_->getRowMap(), Coordinates_->getNumVectors(), false));
-            Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> importer(Coordinates_->getMap(), tmp_Coordinates_->getMap());
-            tmp_Coordinates_->doImport(*Coordinates_, importer, Tpetra::INSERT);
-          } else {
-            tmp_Coordinates_ = rcp(new coord_type(*Coordinates_, Teuchos::Copy));
-          }
-          if (UseReordering_) {
-            auto coorDevice = tmp_Coordinates_->getLocalViewDevice(Tpetra::Access::ReadWrite);
-            auto permDevice = perm_coors.view_device();
-            Kokkos::View<magnitude_type**, Kokkos::LayoutLeft> tmp_coor(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_coor"), coorDevice.extent(0), coorDevice.extent(1));
-            Kokkos::parallel_for(
-                Kokkos::RangePolicy<typename crs_matrix_type::execution_space>(0, static_cast<int>(coorDevice.extent(0))), KOKKOS_LAMBDA(const int& i) {
-                  for (int j = 0; j < static_cast<int>(coorDevice.extent(1)); j++) {
-                    tmp_coor(permDevice(i), j) = coorDevice(i, j);
-                  }
-                });
-            Kokkos::deep_copy(coorDevice, tmp_coor);
-          }
-          ifpack2_Inverse->setCoord(tmp_Coordinates_);
-        }
+      if (innerName.compare("RILUK") != 0) return;
+      if (Coordinates_ == Teuchos::null) return;
+
+      // a user may provide coordinates that do not match the row map
+      if (rowMap->getGlobalNumElements() != Coordinates_->getMap()->getGlobalNumElements()) return;
+
+      auto ifpack2_Inverse = Teuchos::rcp_dynamic_cast<Ifpack2::Details::LinearSolver<scalar_type, local_ordinal_type, global_ordinal_type, node_type>>(Inverse_);
+      if (!IsOverlapping_ && !UseReordering_) {
+        ifpack2_Inverse->setCoord(Coordinates_);
+        return;
       }
+
+      RCP<coord_type> tmp_Coordinates_;
+      if (IsOverlapping_) {
+        tmp_Coordinates_ = rcp(new coord_type(OverlappingMatrix_->getRowMap(), Coordinates_->getNumVectors(), false));
+        Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> importer(Coordinates_->getMap(), tmp_Coordinates_->getMap());
+        tmp_Coordinates_->doImport(*Coordinates_, importer, Tpetra::INSERT);
+      } else {
+        tmp_Coordinates_ = rcp(new coord_type(*Coordinates_, Teuchos::Copy));
+      }
+      if (UseReordering_) {
+        auto coorDevice = tmp_Coordinates_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+        auto permDevice = perm_coors.view_device();
+        Kokkos::View<magnitude_type**, Kokkos::LayoutLeft> tmp_coor(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_coor"), coorDevice.extent(0), coorDevice.extent(1));
+        Kokkos::parallel_for(
+            Kokkos::RangePolicy<typename crs_matrix_type::execution_space>(0, static_cast<int>(coorDevice.extent(0))), KOKKOS_LAMBDA(const int& i) {
+              for (int j = 0; j < static_cast<int>(coorDevice.extent(1)); j++) {
+                tmp_coor(permDevice(i), j) = coorDevice(i, j);
+              }
+            });
+        Kokkos::deep_copy(coorDevice, tmp_coor);
+      }
+      ifpack2_Inverse->setCoord(tmp_Coordinates_);
+    }();
+
+    if (!Inverse_.is_null()) {
       Inverse_->symbolic();  // Initialize subdomain solver.
     }
 

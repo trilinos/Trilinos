@@ -1436,7 +1436,7 @@ TEST_F(NgpFieldFixture, UpdateNgpFieldAfterMeshMod_WithMostCurrentDataOnHost)
   sync_field_to_host(stkIntField);
   check_field_on_host(get_bulk(), stkIntField, multiplier*multiplier);
 
-  const size_t expectedSyncsToDevice = (stkIntField.has_device_data()) ? 3 : 2;
+  const size_t expectedSyncsToDevice = 2;
   const size_t expectedSyncsToHost = 1;
 
   EXPECT_EQ(expectedSyncsToDevice, stkIntField.num_syncs_to_device());
@@ -1950,7 +1950,7 @@ TEST_F(ModifyBySelectorFixture, hostToDevice_partialField_byReference)
 TEST(DeviceField, checkSizeof)
 {
 #ifdef STK_USE_DEVICE_MESH
-  size_t expectedNumBytes = 184;
+  size_t expectedNumBytes = 176;
 #else
   size_t expectedNumBytes = 160;
 #endif
@@ -1961,21 +1961,21 @@ TEST(DeviceField, checkSizeof)
 TEST(DeviceFieldData, checkSizeof)
 {
 #ifdef STK_USE_DEVICE_MESH
-  size_t expectedNumBytes = 168;
+  size_t expectedNumBytes = 160;
 #else
   size_t expectedNumBytes = 144;
 #endif
-  std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::MemSpace>): "
-            << sizeof(stk::mesh::FieldData<double, stk::ngp::MemSpace>) << std::endl;
-  EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::MemSpace>) <= expectedNumBytes);
+  std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::DeviceSpace>): "
+            << sizeof(stk::mesh::FieldData<double, stk::ngp::DeviceSpace>) << std::endl;
+  EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::DeviceSpace>) <= expectedNumBytes);
 }
 
 TEST(HostFieldData, checkSizeof)
 {
   size_t expectedNumBytes = 144;
-  std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::HostMemSpace>): "
-            << sizeof(stk::mesh::FieldData<double, stk::ngp::HostMemSpace>) << std::endl;
-  EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::HostMemSpace>) <= expectedNumBytes);
+  std::cout << "sizeof(stk::mesh::FieldData<double, stk::ngp::HostSpace>): "
+            << sizeof(stk::mesh::FieldData<double, stk::ngp::HostSpace>) << std::endl;
+  EXPECT_TRUE(sizeof(stk::mesh::FieldData<double, stk::ngp::HostSpace>) <= expectedNumBytes);
 }
 
 
@@ -2004,7 +2004,7 @@ protected:
 public:
   bool should_sort_buckets_by_first_entity_identifier() const override {
     return true;
-  };
+  }
 };
 
 class SortedMeshBuilder : public stk::mesh::MeshBuilder

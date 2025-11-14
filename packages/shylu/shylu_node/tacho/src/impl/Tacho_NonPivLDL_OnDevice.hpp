@@ -69,10 +69,8 @@ template <typename ArgUplo> struct LDL_nopiv<ArgUplo, Algo::OnDevice> {
   template <typename HandleType, typename MemberType, typename ViewTypeA, typename ViewTypeW>
   inline static int invoke(HandleType &handle, MemberType &member, const ViewTypeA &A, const ViewTypeW &W) {
 
-    using exec_space = MemberType;
     using value_type = typename ViewTypeA::non_const_value_type;
     using range_type = Kokkos::pair<ordinal_type, ordinal_type>;
-    using policy_type = Kokkos::RangePolicy<exec_space>;
 
     const value_type  one ( 1.0);
     const value_type mone (-1.0);

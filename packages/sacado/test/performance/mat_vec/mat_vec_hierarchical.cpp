@@ -122,8 +122,13 @@ do_time_fad_hierarchical(const size_t m, const size_t n, const size_t p,
   // AlignedFadType a(pa, 1.0);
   // for (size_t k=0; k<pa; ++k)
   //   a.fastAccessDx(k) = 1.0;
+#if KOKKOS_VERSION >= 40799
+  Kokkos::deep_copy(typename ConViewTypeA::type(A), 1.0);
+  Kokkos::deep_copy(typename ConViewTypeB::type(b), 1.0);
+#else
   Kokkos::deep_copy(typename ConViewTypeA::array_type(A), 1.0);
   Kokkos::deep_copy(typename ConViewTypeB::array_type(b), 1.0);
+#endif
 
   Kokkos::Timer wall_clock;
   Perf perf;

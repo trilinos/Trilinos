@@ -254,9 +254,10 @@ public:
     const auto size = kWeights_.extent(0);
     deviceWgts = typename Base::WeightsDeviceView1D("weights", size);
 
+    auto kWeights = this->kWeights_;
     Kokkos::parallel_for(
-        size, KOKKOS_CLASS_LAMBDA(const int id) {
-          deviceWgts(id) = kWeights_(id, idx);
+        size, KOKKOS_LAMBDA(const int id) {
+          deviceWgts(id) = kWeights(id, idx);
         });
 
     Kokkos::fence();

@@ -19,7 +19,7 @@
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <MatrixMarket_Tpetra.hpp>
-#include <Trilinos_Util_iohb.h>
+#include <Tpetra_Util_iohb.h>
 
 template <class ST>
 void print(std::vector<ST> const &a) {

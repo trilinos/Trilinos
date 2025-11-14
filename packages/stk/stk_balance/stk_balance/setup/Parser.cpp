@@ -35,29 +35,10 @@
 #include "stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp"
 #include "stk_util/command_line/CommandLineParserUtils.hpp"
 #include "stk_util/util/string_utils.hpp"
+#include "stk_io/FileValidator.hpp"
 
 namespace stk {
 namespace balance {
-
-std::string construct_output_file_name(const std::string& outputDirectory, const std::string& inputFile)
-{
-  if (outputDirectory == DefaultSettings::outputDirectory) {
-    return inputFile;
-  }
-  else {
-    std::size_t found = inputFile.find_last_of("/");
-    std::string filename = inputFile;
-    if (found != std::string::npos) {
-      filename = inputFile.substr(found + 1);
-    }
-    return outputDirectory + "/" + filename;
-  }
-}
-
-std::string construct_generic_parallel_file_name(const std::string& inputFile, unsigned numProcs)
-{
-  return (numProcs > 1) ? inputFile + "." + std::to_string(numProcs) + ".*" : inputFile;
-}
 
 std::string Examples::get_quick_example()
 {
@@ -106,7 +87,11 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
 {
   setup_messages(argv);
 
+  stk::ErrorHandler orig = stk::set_assert_handler(stk::clean_error_handler);
+
   stk::parse_command_line(argc, argv, m_quickExample, m_longExamples, m_commandLineParser, m_comm);
+
+  stk::set_assert_handler(orig);
 
   set_filenames(settings);
   set_processors(settings);
@@ -269,7 +254,7 @@ void Parser::set_filenames(BalanceSettings& settings) const
 {
   std::string outputDirectory = m_commandLineParser.get_option_value<std::string>(m_optionNames.outputDirectory);
   const std::string inputFilename = m_commandLineParser.get_option_value<std::string>(m_optionNames.infile);
-  const std::string outputFilename = construct_output_file_name(outputDirectory, inputFilename);
+  const std::string outputFilename = stk::io::construct_output_file_name(outputDirectory, inputFilename);
 
   settings.set_input_filename(inputFilename);
   settings.set_output_filename(outputFilename);

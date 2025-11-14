@@ -47,20 +47,23 @@ namespace stk::mesh {
 // Device BucketValues
 //==============================================================================
 
-template <typename T, typename MemSpace = stk::ngp::HostMemSpace,
-          Layout DataLayout = DefaultLayoutSelector<MemSpace>::layout>
-class BucketValues {
+template <typename T, typename Space = stk::ngp::HostSpace,
+          Layout DataLayout = DefaultLayoutSelector<Space>::layout>
+class BucketValues
+{
 public:
   using value_type = T;
-  using mem_space = MemSpace;
+  using space = Space;
+  using exec_space = typename Space::exec_space;
+  using mem_space = typename Space::mem_space;
   static constexpr Layout layout = DataLayout;
 
   KOKKOS_INLINE_FUNCTION BucketValues(T* dataPtr, int numComponents, int numCopies, int numEntities,
                                       int scalarStride, [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_numEntities(numEntities),
@@ -150,7 +153,7 @@ public:
     check_copy_and_component_bounds(copy, component, file, line);
 
     return m_dataPtr[(static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride +
-                     static_cast<int>(entity)];
+        static_cast<int>(entity)];
   }
 
   KOKKOS_INLINE_FUNCTION T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -365,14 +368,21 @@ private:
 //==============================================================================
 
 template<typename T>
-class BucketValues<T, stk::ngp::HostMemSpace, Layout::Right> {
+class BucketValues<T, stk::ngp::HostSpace, Layout::Right>
+{
 public:
+  using value_type = T;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Right;
+
   inline BucketValues(T* dataPtr, int numComponents, int numCopies, int numEntities,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_numEntities(numEntities)
@@ -461,7 +471,7 @@ public:
     check_copy_and_component_bounds(copy, component, file, line);
 
     return m_dataPtr[(static_cast<int>(entity)*m_numCopies + static_cast<int>(copy))*m_numComponents +
-                     static_cast<int>(component)];
+        static_cast<int>(component)];
   }
 
   inline T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -524,24 +534,24 @@ private:
   inline void check_defined_field(const char* file, int line) const {
     STK_ThrowRequireMsg(is_field_defined(),
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " that is not defined on this Bucket.");
+                                                                                                              " that is not defined on this Bucket.");
   }
   inline void check_single_scalar_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents*m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
+                                                                                                              " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that takes appropriate index arguments.");
   }
   inline void check_single_component_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " as if it only has one component when it actually has " << m_numComponents <<
+                                                                                                              " as if it only has one component when it actually has " << m_numComponents <<
                         " components.  Please use a Bucket operator() that also has a component argument.");
   }
   inline void check_single_copy_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " as if it only has one copy when it actually has " << m_numCopies <<
+                                                                                                              " as if it only has one copy when it actually has " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that also has a copy argument.");
   }
   inline void check_component_bounds(int component, const char* file, int line) const {
@@ -616,14 +626,21 @@ private:
 //==============================================================================
 
 template<typename T>
-class BucketValues<T, stk::ngp::HostMemSpace, Layout::Left> {
+class BucketValues<T, stk::ngp::HostSpace, Layout::Left>
+{
 public:
+  using value_type = T;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Left;
+
   inline BucketValues(T* dataPtr, int numComponents, int numCopies, int numEntities, int scalarStride,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_numEntities(numEntities),
@@ -713,7 +730,7 @@ public:
     check_copy_and_component_bounds(copy, component, file, line);
 
     return m_dataPtr[(static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride +
-                     static_cast<int>(entity)];
+        static_cast<int>(entity)];
   }
 
   inline T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -776,24 +793,24 @@ private:
   inline void check_defined_field(const char* file, int line) const {
     STK_ThrowRequireMsg(is_field_defined(),
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " that is not defined on this Bucket.");
+                                                                                                              " that is not defined on this Bucket.");
   }
   inline void check_single_scalar_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents*m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
+                                                                                                              " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that takes appropriate index arguments.");
   }
   inline void check_single_component_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " as if it only has one component when it actually has " << m_numComponents <<
+                                                                                                              " as if it only has one component when it actually has " << m_numComponents <<
                         " components.  Please use a Bucket operator() that also has a component argument.");
   }
   inline void check_single_copy_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " as if it only has one copy when it actually has " << m_numCopies <<
+                                                                                                              " as if it only has one copy when it actually has " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that also has a copy argument.");
   }
   inline void check_component_bounds(int component, const char* file, int line) const {
@@ -869,14 +886,21 @@ private:
 //==============================================================================
 
 template<typename T>
-class BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto> {
+class BucketValues<T, stk::ngp::HostSpace, Layout::Auto>
+{
 public:
+  using value_type = T;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Auto;
+
   inline BucketValues(T* dataPtr, int numComponents, int numCopies, int numEntities,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_numEntities(numEntities),
@@ -887,9 +911,9 @@ public:
   inline BucketValues(T* dataPtr, int numComponents, int numCopies, int numEntities, int scalarStride,
                       [[maybe_unused]] const char* fieldName)
     : m_dataPtr(dataPtr),
-#ifdef STK_FIELD_BOUNDS_CHECK
+    #ifdef STK_FIELD_BOUNDS_CHECK
       m_fieldName(fieldName),
-#endif
+    #endif
       m_numComponents(numComponents),
       m_numCopies(numCopies),
       m_numEntities(numEntities),
@@ -980,7 +1004,7 @@ public:
     check_copy_and_component_bounds(copy, component, file, line);
 
     return m_dataPtr[static_cast<int>(entity)*m_entityStride +
-                     (static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride];
+        (static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride];
   }
 
   inline T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -1043,24 +1067,24 @@ private:
   inline void check_defined_field(const char* file, int line) const {
     STK_ThrowRequireMsg(is_field_defined(),
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " that is not defined on this Bucket.");
+                                                                                                              " that is not defined on this Bucket.");
   }
   inline void check_single_scalar_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents*m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
+                                                                                                              " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that takes appropriate index arguments.");
   }
   inline void check_single_component_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " as if it only has one component when it actually has " << m_numComponents <<
+                                                                                                              " as if it only has one component when it actually has " << m_numComponents <<
                         " components.  Please use a Bucket operator() that also has a component argument.");
   }
   inline void check_single_copy_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                        " as if it only has one copy when it actually has " << m_numCopies <<
+                                                                                                              " as if it only has one copy when it actually has " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that also has a copy argument.");
   }
   inline void check_component_bounds(int component, const char* file, int line) const {

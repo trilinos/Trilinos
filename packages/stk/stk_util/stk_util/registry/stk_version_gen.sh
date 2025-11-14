@@ -34,6 +34,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 DIR=$(dirname $0)
+STK_HEADER_FILE=${1:-stk_version.hpp}
 
 # The current working directory might not be the source tree, so go there
 # so that the git commands will work (if the source tree is a git repository.)
@@ -44,7 +45,6 @@ cd ${DIR}
 REMOTE_REPO="git@cee-gitlab.sandia.gov:1540-compsim/sierra/base"
 
 # Don't prepend DIR here, since we are now in that directory.
-STK_HEADER_FILE=stk_version.hpp
 test -r $STK_HEADER_FILE &&
     CURRENT_VERSION=$(cat $STK_HEADER_FILE)
 
@@ -56,19 +56,23 @@ NEW_VERSION=$(git describe --long --abbrev=8 --match=[0-9]*.[0-9]*.[0-9]* HEAD 2
 # If we do not have access to the REMOTE_REPO assume this is an external customer build.
 if ! git ls-remote --exit-code --tags ${REMOTE_REPO} >/dev/null 2>&1
 then
+    # External user builds.
     # This could still be a clone of our repo (ie, Goodyear), in which case
     # NEW_VERSION will be set. If not try some fallbacks.
     test -z "${NEW_VERSION}" && NEW_VERSION=${CURRENT_VERSION##* }
     test -z "${NEW_VERSION}" && NEW_VERSION=unset
 else
-    # For internal builds we are either in a repo or not. Determine versions based on that.
+    # Internal user builds
     if [ -z "${NEW_VERSION}" ] ; then
-        NEW_VERSION=$(git ls-remote --tags ${REMOTE_REPO} 2>/dev/null | awk -F'/' '{print $3}' | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" | sort -V | tail -n 1)
-        if [ -z "${NEW_VERSION}" ] ; then
-            echo >&2 "stk_version_gen.sh: Unable to determine version!"
-            exit 1
+        # Not in a local repo; try to use current header file.
+        if [ -n "${CURRENT_VERSION:-}" ]
+        then
+            NEW_VERSION=${CURRENT_VERSION##* }
+        else
+            NEW_VERSION="no-version"
         fi
     else
+        # In a local repo; check for changes.
         ROOT=$(git rev-parse --show-toplevel)
         test -z "$(git ls-files -m $ROOT)" ||
             NEW_VERSION="${NEW_VERSION}-modified"

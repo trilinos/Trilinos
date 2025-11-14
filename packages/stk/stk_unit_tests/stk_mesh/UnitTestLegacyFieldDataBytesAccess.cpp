@@ -59,12 +59,12 @@ public:
 
   void build_two_element_mesh() {
     stk::mesh::fixtures::HexFixture::fill_mesh(2, 1, 1, get_bulk());
-    m_field->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();  // Trigger creation of default-initialized device data object
+    m_field->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();  // Trigger creation of default-initialized device data object
   }
 
   void build_two_bucket_mesh() {
     stk::mesh::fixtures::HexFixture::fill_mesh(stk::mesh::get_default_maximum_bucket_capacity(), 2, 1, get_bulk());
-    m_field->data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();  // Trigger creation of default-initialized device data object
+    m_field->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();  // Trigger creation of default-initialized device data object
   }
 
 protected:

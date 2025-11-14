@@ -20,14 +20,10 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Tpetra_Util_iohb.h"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
-#endif
-
-// I/O for Harwell-Boeing files
-#ifdef HAVE_BELOS_TRIUTILS
-#include "Trilinos_Util_iohb.h"
 #endif
 
 #include "MyMultiVec.hpp"
@@ -87,15 +83,6 @@ int main(int argc, char *argv[]) {
     }
     if (!verbose)
       frequency = -1;  // reset frequency if test is not verbose
-
-
-#ifndef HAVE_BELOS_TRIUTILS
-    std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
-    if (MyPID==0) {
-      std::cout << "End Result: TEST FAILED" << std::endl;
-    }
-    return -1;
-#endif
 
     // Get the data from the HB file
     int dim,dim2,nnz;

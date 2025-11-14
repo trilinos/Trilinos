@@ -271,6 +271,8 @@ double time_space_random(double t, double x, double y, double z)
   return seeded_pseudo_random(seed, low, high);
 }
 
+inline constexpr double minDouble = std::numeric_limits<double>::min();
+
 KOKKOS_INLINE_FUNCTION
 double time_space_normal(double t, double x, double y, double z, double mu, double sigma, double minR, double maxR)
 {
@@ -283,12 +285,10 @@ double time_space_normal(double t, double x, double y, double z, double mu, doub
   int low = 0;
   int high = 0;
 
-  static const double epsilon = std::numeric_limits<double>::min();
-
   // Box-Muller transformation from two uniform random numbers
   // to a gaussian distribution
-  double u1 = std::fmax(epsilon, seeded_pseudo_random(seed, low, high));
-  double u2 = std::fmax(epsilon, seeded_pseudo_random(seed, low, high));
+  double u1 = std::fmax(minDouble, seeded_pseudo_random(seed, low, high));
+  double u2 = std::fmax(minDouble, seeded_pseudo_random(seed, low, high));
 
   double z0 = std::sqrt(-2.0 * std::log(u1)) * std::cos(two_pi() * u2);
 

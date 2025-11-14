@@ -18,6 +18,7 @@ ADD_SUBDIRECTORIES(
   FECrsGraph
   FECrsMatrix
   FEMultiVector
+  Filter
   HashTable
   ImportExport
   ImportExport2
@@ -36,6 +37,7 @@ ADD_SUBDIRECTORIES(
   Utils
   RowMatrixTransposer
   Tsqr
+  ReindexTransform
   SolverMapTransform
   )
 

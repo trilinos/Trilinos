@@ -192,7 +192,6 @@ EntityKeyMapping::add_to_cache(const EntityKey& key)
     EntityKeyEntityVector& entities = m_entities[rank];
     EntityKeyEntityVector::iterator iter = std::lower_bound(entities.begin(), entities.end(),
                                                             key, EntityKeyEntityLess());
-    Entity entity;
     if (iter == entities.end() || iter->first != key) {
         cache.emplace_back(key, Entity());
         iter = cache.begin()+(cache.size()-1);

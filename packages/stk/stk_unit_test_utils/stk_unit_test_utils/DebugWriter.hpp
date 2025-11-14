@@ -111,8 +111,8 @@ protected:
     }
 
 private:
-    using DoubleField = stk::mesh::ConstFieldData<double, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>;
-    using IntField    = stk::mesh::ConstFieldData<int, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>;
+    using DoubleField = stk::mesh::ConstFieldData<double, stk::ngp::HostSpace, stk::mesh::Layout::Auto>;
+    using IntField    = stk::mesh::ConstFieldData<int, stk::ngp::HostSpace, stk::mesh::Layout::Auto>;
 
     void writeLocationInformation(std::ofstream &out, const std::string& callingFile, int lineNumber)
     {
@@ -171,11 +171,11 @@ private:
         {
             if (is_double_field(field))
             {
-                doubleFields.push_back(field->data<double, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+                doubleFields.push_back(field->data<double, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
                 doubleFieldNames.push_back(field->name());
             } else if (is_int_field(field))
             {
-                intFields.push_back(field->data<int, stk::mesh::ReadOnly, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>());
+                intFields.push_back(field->data<int, stk::mesh::ReadOnly, stk::ngp::HostSpace, stk::mesh::Layout::Auto>());
                 intFieldNames.push_back(field->name());
             }
         }

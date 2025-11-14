@@ -44,13 +44,19 @@ namespace stk::mesh {
 //==============================================================================
 
 template <typename T,
-          typename MemSpace = stk::ngp::HostMemSpace,
-          Layout DataLayout = DefaultLayoutSelector<MemSpace>::layout>
-class FieldData : public ConstFieldData<T, MemSpace, DataLayout>
+          typename Space = stk::ngp::HostSpace,
+          Layout DataLayout = DefaultLayoutSelector<Space>::layout>
+class FieldData : public ConstFieldData<T, Space, DataLayout>
 {
 public:
+  using value_type = T;
+  using space = Space;
+  using exec_space = typename Space::exec_space;
+  using mem_space = typename Space::mem_space;
+  static constexpr Layout layout = DataLayout;
+
   KOKKOS_FUNCTION FieldData();
-  FieldData(FieldDataBytes<stk::ngp::HostMemSpace>* hostFieldBytes);
+  FieldData(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes);
   KOKKOS_FUNCTION virtual ~FieldData() override {}
 
   FieldData(const FieldData& fieldData, FieldAccessTag accessTag);
@@ -60,19 +66,19 @@ public:
   KOKKOS_DEFAULTED_FUNCTION FieldData& operator=(FieldData&&) = default;
 
   KOKKOS_INLINE_FUNCTION
-  EntityValues<T, MemSpace, DataLayout> entity_values(Entity entity,
-                                                      const char* file = STK_DEVICE_FILE,
-                                                      int line = STK_DEVICE_LINE) const;
+  EntityValues<T, Space, DataLayout> entity_values(Entity entity,
+                                                   const char* file = STK_DEVICE_FILE,
+                                                   int line = STK_DEVICE_LINE) const;
 
   KOKKOS_INLINE_FUNCTION
-  EntityValues<T, MemSpace, DataLayout> entity_values(const FastMeshIndex& fmi,
-                                                      const char* file = STK_DEVICE_FILE,
-                                                      int line = STK_DEVICE_LINE) const;
+  EntityValues<T, Space, DataLayout> entity_values(const FastMeshIndex& fmi,
+                                                   const char* file = STK_DEVICE_FILE,
+                                                   int line = STK_DEVICE_LINE) const;
 
   KOKKOS_INLINE_FUNCTION
-  BucketValues<T, MemSpace, DataLayout> bucket_values(int bucketId,
-                                                      const char* file = STK_DEVICE_FILE,
-                                                      int line = STK_DEVICE_LINE) const;
+  BucketValues<T, Space, DataLayout> bucket_values(int bucketId,
+                                                   const char* file = STK_DEVICE_FILE,
+                                                   int line = STK_DEVICE_LINE) const;
 };
 
 
@@ -81,10 +87,16 @@ public:
 //==============================================================================
 
 template <typename T>
-class FieldData<T, stk::ngp::HostMemSpace, Layout::Right>
-    : public ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>
+class FieldData<T, stk::ngp::HostSpace, Layout::Right>
+    : public ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>
 {
 public:
+  using value_type = T;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Right;
+
   FieldData();
   FieldData(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName, const DataTraits& dataTraits);
   KOKKOS_DEFAULTED_FUNCTION virtual ~FieldData() override = default;
@@ -96,37 +108,43 @@ public:
   KOKKOS_DEFAULTED_FUNCTION FieldData& operator=(FieldData&&) = default;
 
   inline
-  EntityValues<T, stk::ngp::HostMemSpace, Layout::Right> entity_values(Entity entity,
-                                                                       const char* file = STK_HOST_FILE,
-                                                                       int line = STK_HOST_LINE) const;
+  EntityValues<T, stk::ngp::HostSpace, Layout::Right> entity_values(Entity entity,
+                                                                    const char* file = STK_HOST_FILE,
+                                                                    int line = STK_HOST_LINE) const;
 
   inline
-  EntityValues<T, stk::ngp::HostMemSpace, Layout::Right> entity_values(const MeshIndex& mi,
-                                                                       const char* file = STK_HOST_FILE,
-                                                                       int line = STK_HOST_LINE) const;
+  EntityValues<T, stk::ngp::HostSpace, Layout::Right> entity_values(const MeshIndex& mi,
+                                                                    const char* file = STK_HOST_FILE,
+                                                                    int line = STK_HOST_LINE) const;
 
   inline
-  EntityValues<T, stk::ngp::HostMemSpace, Layout::Right> entity_values(const FastMeshIndex& fmi,
-                                                                       const char* file = STK_HOST_FILE,
-                                                                       int line = STK_HOST_LINE) const;
+  EntityValues<T, stk::ngp::HostSpace, Layout::Right> entity_values(const FastMeshIndex& fmi,
+                                                                    const char* file = STK_HOST_FILE,
+                                                                    int line = STK_HOST_LINE) const;
 
   inline
-  BucketValues<T, stk::ngp::HostMemSpace, Layout::Right> bucket_values(const Bucket& bucket,
-                                                                       const char* file = STK_HOST_FILE,
-                                                                       int line = STK_HOST_LINE) const;
+  BucketValues<T, stk::ngp::HostSpace, Layout::Right> bucket_values(const Bucket& bucket,
+                                                                    const char* file = STK_HOST_FILE,
+                                                                    int line = STK_HOST_LINE) const;
 
   inline
-  BucketValues<T, stk::ngp::HostMemSpace, Layout::Right> bucket_values(int bucketId,
-                                                                       const char* file = STK_HOST_FILE,
-                                                                       int line = STK_HOST_LINE) const;
+  BucketValues<T, stk::ngp::HostSpace, Layout::Right> bucket_values(int bucketId,
+                                                                    const char* file = STK_HOST_FILE,
+                                                                    int line = STK_HOST_LINE) const;
 };
 
 //------------------------------------------------------------------------------
 template <typename T>
-class FieldData<T, stk::ngp::HostMemSpace, Layout::Left>
-    : public ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>
+class FieldData<T, stk::ngp::HostSpace, Layout::Left>
+    : public ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>
 {
 public:
+  using value_type = T;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Left;
+
   FieldData();
   FieldData(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName, const DataTraits& dataTraits);
   KOKKOS_DEFAULTED_FUNCTION virtual ~FieldData() override = default;
@@ -138,39 +156,45 @@ public:
   KOKKOS_DEFAULTED_FUNCTION FieldData& operator=(FieldData&&) = default;
 
   inline
-  EntityValues<T, stk::ngp::HostMemSpace, Layout::Left> entity_values(Entity entity,
-                                                                      const char* file = STK_HOST_FILE,
-                                                                      int line = STK_HOST_LINE) const;
+  EntityValues<T, stk::ngp::HostSpace, Layout::Left> entity_values(Entity entity,
+                                                                   const char* file = STK_HOST_FILE,
+                                                                   int line = STK_HOST_LINE) const;
 
   inline
-  EntityValues<T, stk::ngp::HostMemSpace, Layout::Left> entity_values(const MeshIndex& mi,
-                                                                      const char* file = STK_HOST_FILE,
-                                                                      int line = STK_HOST_LINE) const;
+  EntityValues<T, stk::ngp::HostSpace, Layout::Left> entity_values(const MeshIndex& mi,
+                                                                   const char* file = STK_HOST_FILE,
+                                                                   int line = STK_HOST_LINE) const;
 
   inline
-  EntityValues<T, stk::ngp::HostMemSpace, Layout::Left> entity_values(const FastMeshIndex& fmi,
-                                                                      const char* file = STK_HOST_FILE,
-                                                                      int line = STK_HOST_LINE) const;
+  EntityValues<T, stk::ngp::HostSpace, Layout::Left> entity_values(const FastMeshIndex& fmi,
+                                                                   const char* file = STK_HOST_FILE,
+                                                                   int line = STK_HOST_LINE) const;
 
   inline
-  BucketValues<T, stk::ngp::HostMemSpace, Layout::Left> bucket_values(const Bucket& bucket,
-                                                                      const char* file = STK_HOST_FILE,
-                                                                      int line = STK_HOST_LINE) const;
+  BucketValues<T, stk::ngp::HostSpace, Layout::Left> bucket_values(const Bucket& bucket,
+                                                                   const char* file = STK_HOST_FILE,
+                                                                   int line = STK_HOST_LINE) const;
 
   inline
-  BucketValues<T, stk::ngp::HostMemSpace, Layout::Left> bucket_values(int bucketId,
-                                                                      const char* file = STK_HOST_FILE,
-                                                                      int line = STK_HOST_LINE) const;
+  BucketValues<T, stk::ngp::HostSpace, Layout::Left> bucket_values(int bucketId,
+                                                                   const char* file = STK_HOST_FILE,
+                                                                   int line = STK_HOST_LINE) const;
 };
 
 //------------------------------------------------------------------------------
 template <typename T>
-class FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>
-    : public ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>
+class FieldData<T, stk::ngp::HostSpace, Layout::Auto>
+    : public ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>
 {
 public:
+  using value_type = T;
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Auto;
+
   FieldData();
-  FieldData(const FieldDataBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag);
+  FieldData(const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes, FieldAccessTag accessTag);
   KOKKOS_DEFAULTED_FUNCTION virtual ~FieldData() override = default;
 
   KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
@@ -179,29 +203,29 @@ public:
   KOKKOS_DEFAULTED_FUNCTION FieldData& operator=(FieldData&&) = default;
 
   inline
-  EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto> entity_values(Entity entity,
-                                                                      const char* file = STK_HOST_FILE,
-                                                                      int line = STK_HOST_LINE) const;
+  EntityValues<T, stk::ngp::HostSpace, Layout::Auto> entity_values(Entity entity,
+                                                                   const char* file = STK_HOST_FILE,
+                                                                   int line = STK_HOST_LINE) const;
 
   inline
-  EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto> entity_values(const MeshIndex& mi,
-                                                                      const char* file = STK_HOST_FILE,
-                                                                      int line = STK_HOST_LINE) const;
+  EntityValues<T, stk::ngp::HostSpace, Layout::Auto> entity_values(const MeshIndex& mi,
+                                                                   const char* file = STK_HOST_FILE,
+                                                                   int line = STK_HOST_LINE) const;
 
   inline
-  EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto> entity_values(const FastMeshIndex& fmi,
-                                                                      const char* file = STK_HOST_FILE,
-                                                                      int line = STK_HOST_LINE) const;
+  EntityValues<T, stk::ngp::HostSpace, Layout::Auto> entity_values(const FastMeshIndex& fmi,
+                                                                   const char* file = STK_HOST_FILE,
+                                                                   int line = STK_HOST_LINE) const;
 
   inline
-  BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto> bucket_values(const Bucket& bucket,
-                                                                      const char* file = STK_HOST_FILE,
-                                                                      int line = STK_HOST_LINE) const;
+  BucketValues<T, stk::ngp::HostSpace, Layout::Auto> bucket_values(const Bucket& bucket,
+                                                                   const char* file = STK_HOST_FILE,
+                                                                   int line = STK_HOST_LINE) const;
 
   inline
-  BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto> bucket_values(int bucketId,
-                                                                      const char* file = STK_HOST_FILE,
-                                                                      int line = STK_HOST_LINE) const;
+  BucketValues<T, stk::ngp::HostSpace, Layout::Auto> bucket_values(int bucketId,
+                                                                   const char* file = STK_HOST_FILE,
+                                                                   int line = STK_HOST_LINE) const;
 };
 
 
@@ -209,31 +233,31 @@ public:
 // Device FieldData definitions
 //==============================================================================
 
-template <typename T, typename MemSpace, Layout DataLayout>
+template <typename T, typename Space, Layout DataLayout>
 KOKKOS_FUNCTION
-FieldData<T, MemSpace, DataLayout>::FieldData()
-  : ConstFieldData<T, MemSpace, DataLayout>()
+FieldData<T, Space, DataLayout>::FieldData()
+  : ConstFieldData<T, Space, DataLayout>()
 {}
 
 //------------------------------------------------------------------------------
-template <typename T, typename MemSpace, Layout DataLayout>
-FieldData<T, MemSpace, DataLayout>::FieldData(FieldDataBytes<stk::ngp::HostMemSpace>* hostFieldBytes)
-  : ConstFieldData<T, MemSpace, DataLayout>(hostFieldBytes)
+template <typename T, typename Space, Layout DataLayout>
+FieldData<T, Space, DataLayout>::FieldData(FieldDataBytes<stk::ngp::HostSpace>* hostFieldBytes)
+  : ConstFieldData<T, Space, DataLayout>(hostFieldBytes)
 {
   static_assert(DataLayout == Layout::Left, "Only Layout::Left is supported for device data");
 }
 
 //------------------------------------------------------------------------------
-template <typename T, typename MemSpace, Layout DataLayout>
-FieldData<T, MemSpace, DataLayout>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag)
-  : ConstFieldData<T, MemSpace, DataLayout>(fieldData, accessTag)
+template <typename T, typename Space, Layout DataLayout>
+FieldData<T, Space, DataLayout>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag)
+  : ConstFieldData<T, Space, DataLayout>(fieldData, accessTag)
 {}
 
 //------------------------------------------------------------------------------
-template <typename T, typename MemSpace, Layout DataLayout>
-KOKKOS_INLINE_FUNCTION EntityValues<T, MemSpace, DataLayout>
-FieldData<T, MemSpace, DataLayout>::entity_values(Entity entity,
-                                                  const char* file, int line) const
+template <typename T, typename Space, Layout DataLayout>
+KOKKOS_INLINE_FUNCTION EntityValues<T, Space, DataLayout>
+FieldData<T, Space, DataLayout>::entity_values(Entity entity,
+                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_entity_local_offset(entity.local_offset(), file, line);
@@ -245,7 +269,7 @@ FieldData<T, MemSpace, DataLayout>::entity_values(Entity entity,
 
   const DeviceFieldMetaData& fieldMetaData = this->m_deviceFieldMetaData[fmi.bucket_id];
 
-  return EntityValues<T, MemSpace, DataLayout>(
+  return EntityValues<T, Space, DataLayout>(
         reinterpret_cast<T*>(fieldMetaData.m_data) + fmi.bucket_ord,
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity,
@@ -253,10 +277,10 @@ FieldData<T, MemSpace, DataLayout>::entity_values(Entity entity,
 }
 
 //------------------------------------------------------------------------------
-template <typename T, typename MemSpace, Layout DataLayout>
-KOKKOS_INLINE_FUNCTION EntityValues<T, MemSpace, DataLayout>
-FieldData<T, MemSpace, DataLayout>::entity_values(const FastMeshIndex& fmi,
-                                                  const char* file, int line) const
+template <typename T, typename Space, Layout DataLayout>
+KOKKOS_INLINE_FUNCTION EntityValues<T, Space, DataLayout>
+FieldData<T, Space, DataLayout>::entity_values(const FastMeshIndex& fmi,
+                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_bucket_id(fmi.bucket_id, "entity", file, line);
@@ -264,7 +288,7 @@ FieldData<T, MemSpace, DataLayout>::entity_values(const FastMeshIndex& fmi,
 
   const DeviceFieldMetaData& fieldMetaData = this->m_deviceFieldMetaData[fmi.bucket_id];
 
-  return EntityValues<T, MemSpace, DataLayout>(
+  return EntityValues<T, Space, DataLayout>(
         reinterpret_cast<T*>(fieldMetaData.m_data) + fmi.bucket_ord,
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity,
@@ -272,17 +296,17 @@ FieldData<T, MemSpace, DataLayout>::entity_values(const FastMeshIndex& fmi,
 }
 
 //------------------------------------------------------------------------------
-template <typename T, typename MemSpace, Layout DataLayout>
-KOKKOS_INLINE_FUNCTION BucketValues<T, MemSpace, DataLayout>
-FieldData<T, MemSpace, DataLayout>::bucket_values(int bucketId,
-                                                  const char* file, int line) const
+template <typename T, typename Space, Layout DataLayout>
+KOKKOS_INLINE_FUNCTION BucketValues<T, Space, DataLayout>
+FieldData<T, Space, DataLayout>::bucket_values(int bucketId,
+                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_bucket_id(bucketId, "bucket", file, line);
 
   const DeviceFieldMetaData& fieldMetaData = this->m_deviceFieldMetaData[bucketId];
 
-  return BucketValues<T, MemSpace, DataLayout>(
+  return BucketValues<T, Space, DataLayout>(
         reinterpret_cast<T*>(fieldMetaData.m_data),
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity,
@@ -296,29 +320,29 @@ FieldData<T, MemSpace, DataLayout>::bucket_values(int bucketId,
 //==============================================================================
 
 template <typename T>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::FieldData()
-  : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>()
+FieldData<T, stk::ngp::HostSpace, Layout::Right>::FieldData()
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>()
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::FieldData(EntityRank entityRank, Ordinal fieldOrdinal,
-                                                               const std::string& fieldName,
-                                                               const DataTraits& dataTraits)
-  : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>(entityRank, fieldOrdinal, fieldName, dataTraits)
+FieldData<T, stk::ngp::HostSpace, Layout::Right>::FieldData(EntityRank entityRank, Ordinal fieldOrdinal,
+                                                            const std::string& fieldName,
+                                                            const DataTraits& dataTraits)
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>(entityRank, fieldOrdinal, fieldName, dataTraits)
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag)
-  : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Right>(fieldData, accessTag)
+FieldData<T, stk::ngp::HostSpace, Layout::Right>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag)
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Right>(fieldData, accessTag)
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Right>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::entity_values(Entity entity,
-                                                                   const char* file, int line) const
+inline EntityValues<T, stk::ngp::HostSpace, Layout::Right>
+FieldData<T, stk::ngp::HostSpace, Layout::Right>::entity_values(Entity entity,
+                                                                const char* file, int line) const
 {
   const MeshIndex& mi = this->mesh().mesh_index(entity);
 
@@ -327,7 +351,7 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::entity_values(Entity entity
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
-  return EntityValues<T, stk::ngp::HostMemSpace, Layout::Right>(
+  return EntityValues<T, stk::ngp::HostSpace, Layout::Right>(
         reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal),
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity, this->field_name());
@@ -335,9 +359,9 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::entity_values(Entity entity
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Right>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::entity_values(const MeshIndex& mi,
-                                                                   const char* file, int line) const
+inline EntityValues<T, stk::ngp::HostSpace, Layout::Right>
+FieldData<T, stk::ngp::HostSpace, Layout::Right>::entity_values(const MeshIndex& mi,
+                                                                const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_mesh(mi.bucket->mesh(), "Entity", file, line);
@@ -346,7 +370,7 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::entity_values(const MeshInd
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
-  return EntityValues<T, stk::ngp::HostMemSpace, Layout::Right>(
+  return EntityValues<T, stk::ngp::HostSpace, Layout::Right>(
         reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal),
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity, this->field_name());
@@ -354,9 +378,9 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::entity_values(const MeshInd
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Right>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::entity_values(const FastMeshIndex& fmi,
-                                                                   const char* file, int line) const
+inline EntityValues<T, stk::ngp::HostSpace, Layout::Right>
+FieldData<T, stk::ngp::HostSpace, Layout::Right>::entity_values(const FastMeshIndex& fmi,
+                                                                const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_bucket_id(fmi.bucket_id, "entity", file, line);
@@ -364,7 +388,7 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::entity_values(const FastMes
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[fmi.bucket_id];
 
-  return EntityValues<T, stk::ngp::HostMemSpace, Layout::Right>(
+  return EntityValues<T, stk::ngp::HostSpace, Layout::Right>(
         reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * fmi.bucket_ord),
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity, this->field_name());
@@ -372,9 +396,9 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::entity_values(const FastMes
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline BucketValues<T, stk::ngp::HostMemSpace, Layout::Right>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::bucket_values(const Bucket& bucket,
-                                                                   const char* file, int line) const
+inline BucketValues<T, stk::ngp::HostSpace, Layout::Right>
+FieldData<T, stk::ngp::HostSpace, Layout::Right>::bucket_values(const Bucket& bucket,
+                                                                const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_mesh(bucket.mesh(), "Bucket", file, line);
@@ -382,7 +406,7 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::bucket_values(const Bucket&
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucket.bucket_id()];
 
-  return BucketValues<T, stk::ngp::HostMemSpace, Layout::Right>(
+  return BucketValues<T, stk::ngp::HostSpace, Layout::Right>(
         reinterpret_cast<T*>(fieldMetaData.m_data),
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity,
@@ -391,16 +415,16 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::bucket_values(const Bucket&
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline BucketValues<T, stk::ngp::HostMemSpace, Layout::Right>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::bucket_values(int bucketId,
-                                                                   const char* file, int line) const
+inline BucketValues<T, stk::ngp::HostSpace, Layout::Right>
+FieldData<T, stk::ngp::HostSpace, Layout::Right>::bucket_values(int bucketId,
+                                                                const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_bucket_id(bucketId, "bucket", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucketId];
 
-  return BucketValues<T, stk::ngp::HostMemSpace, Layout::Right>(
+  return BucketValues<T, stk::ngp::HostSpace, Layout::Right>(
         reinterpret_cast<T*>(fieldMetaData.m_data),
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity,
@@ -413,29 +437,29 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Right>::bucket_values(int bucketId,
 //==============================================================================
 
 template <typename T>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::FieldData()
-  : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>()
+FieldData<T, stk::ngp::HostSpace, Layout::Left>::FieldData()
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>()
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::FieldData(EntityRank entityRank, Ordinal fieldOrdinal,
-                                                              const std::string& fieldName,
-                                                              const DataTraits& dataTraits)
-  : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>(entityRank, fieldOrdinal, fieldName, dataTraits)
+FieldData<T, stk::ngp::HostSpace, Layout::Left>::FieldData(EntityRank entityRank, Ordinal fieldOrdinal,
+                                                           const std::string& fieldName,
+                                                           const DataTraits& dataTraits)
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>(entityRank, fieldOrdinal, fieldName, dataTraits)
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag)
-  : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Left>(fieldData, accessTag)
+FieldData<T, stk::ngp::HostSpace, Layout::Left>::FieldData(const FieldData& fieldData, FieldAccessTag accessTag)
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Left>(fieldData, accessTag)
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Left>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::entity_values(Entity entity,
-                                                                  const char* file, int line) const
+inline EntityValues<T, stk::ngp::HostSpace, Layout::Left>
+FieldData<T, stk::ngp::HostSpace, Layout::Left>::entity_values(Entity entity,
+                                                               const char* file, int line) const
 {
   const MeshIndex& mi = this->mesh().mesh_index(entity);
 
@@ -444,7 +468,7 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::entity_values(Entity entity,
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
-  return EntityValues<T, stk::ngp::HostMemSpace, Layout::Left>(
+  return EntityValues<T, stk::ngp::HostSpace, Layout::Left>(
         reinterpret_cast<T*>(fieldMetaData.m_data) + mi.bucket_ordinal,
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity,
@@ -453,9 +477,9 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::entity_values(Entity entity,
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Left>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::entity_values(const MeshIndex& mi,
-                                                                  const char* file, int line) const
+inline EntityValues<T, stk::ngp::HostSpace, Layout::Left>
+FieldData<T, stk::ngp::HostSpace, Layout::Left>::entity_values(const MeshIndex& mi,
+                                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_mesh(mi.bucket->mesh(), "Entity", file, line);
@@ -464,7 +488,7 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::entity_values(const MeshInde
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
-  return EntityValues<T, stk::ngp::HostMemSpace, Layout::Left>(
+  return EntityValues<T, stk::ngp::HostSpace, Layout::Left>(
         reinterpret_cast<T*>(fieldMetaData.m_data) + mi.bucket_ordinal,
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity,
@@ -473,9 +497,9 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::entity_values(const MeshInde
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Left>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::entity_values(const FastMeshIndex& fmi,
-                                                                  const char* file, int line) const
+inline EntityValues<T, stk::ngp::HostSpace, Layout::Left>
+FieldData<T, stk::ngp::HostSpace, Layout::Left>::entity_values(const FastMeshIndex& fmi,
+                                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_bucket_id(fmi.bucket_id, "entity", file, line);
@@ -483,7 +507,7 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::entity_values(const FastMesh
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[fmi.bucket_id];
 
-  return EntityValues<T, stk::ngp::HostMemSpace, Layout::Left>(
+  return EntityValues<T, stk::ngp::HostSpace, Layout::Left>(
         reinterpret_cast<T*>(fieldMetaData.m_data) + fmi.bucket_ord,
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity,
@@ -492,9 +516,9 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::entity_values(const FastMesh
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline BucketValues<T, stk::ngp::HostMemSpace, Layout::Left>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::bucket_values(const Bucket& bucket,
-                                                                  const char* file, int line) const
+inline BucketValues<T, stk::ngp::HostSpace, Layout::Left>
+FieldData<T, stk::ngp::HostSpace, Layout::Left>::bucket_values(const Bucket& bucket,
+                                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_mesh(bucket.mesh(), "Bucket", file, line);
@@ -502,7 +526,7 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::bucket_values(const Bucket& 
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucket.bucket_id()];
 
-  return BucketValues<T, stk::ngp::HostMemSpace, Layout::Left>(
+  return BucketValues<T, stk::ngp::HostSpace, Layout::Left>(
         reinterpret_cast<T*>(fieldMetaData.m_data),
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity,
@@ -512,16 +536,16 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::bucket_values(const Bucket& 
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline BucketValues<T, stk::ngp::HostMemSpace, Layout::Left>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::bucket_values(int bucketId,
-                                                                  const char* file, int line) const
+inline BucketValues<T, stk::ngp::HostSpace, Layout::Left>
+FieldData<T, stk::ngp::HostSpace, Layout::Left>::bucket_values(int bucketId,
+                                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_bucket_id(bucketId, "bucket", file, line);
 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucketId];
 
-  return BucketValues<T, stk::ngp::HostMemSpace, Layout::Left>(
+  return BucketValues<T, stk::ngp::HostSpace, Layout::Left>(
         reinterpret_cast<T*>(fieldMetaData.m_data),
         fieldMetaData.m_numComponentsPerEntity,
         fieldMetaData.m_numCopiesPerEntity,
@@ -535,22 +559,22 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Left>::bucket_values(int bucketId,
 //==============================================================================
 
 template <typename T>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::FieldData()
-  : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>()
+FieldData<T, stk::ngp::HostSpace, Layout::Auto>::FieldData()
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>()
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::FieldData(
-    const FieldDataBytes<stk::ngp::HostMemSpace>& hostFieldBytes, FieldAccessTag accessTag)
-  : ConstFieldData<T, stk::ngp::HostMemSpace, Layout::Auto>(hostFieldBytes, accessTag)
+FieldData<T, stk::ngp::HostSpace, Layout::Auto>::FieldData(
+    const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes, FieldAccessTag accessTag)
+  : ConstFieldData<T, stk::ngp::HostSpace, Layout::Auto>(hostFieldBytes, accessTag)
 {}
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(Entity entity,
-                                                                  const char* file, int line) const
+inline EntityValues<T, stk::ngp::HostSpace, Layout::Auto>
+FieldData<T, stk::ngp::HostSpace, Layout::Auto>::entity_values(Entity entity,
+                                                               const char* file, int line) const
 {
   const MeshIndex& mi = this->mesh().mesh_index(entity);
 
@@ -560,13 +584,13 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(Entity entity,
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
   if (this->m_layout == Layout::Right) {
-    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityValues<T, stk::ngp::HostSpace, Layout::Auto>(
           reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal),
           fieldMetaData.m_numComponentsPerEntity,
           fieldMetaData.m_numCopiesPerEntity, this->field_name());
   }
   else if (this->m_layout == Layout::Left) {
-    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityValues<T, stk::ngp::HostSpace, Layout::Auto>(
           reinterpret_cast<T*>(fieldMetaData.m_data) + mi.bucket_ordinal,
           fieldMetaData.m_numComponentsPerEntity,
           fieldMetaData.m_numCopiesPerEntity,
@@ -574,16 +598,16 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(Entity entity,
   }
   else {
     STK_ThrowErrorMsg("Unsupported host data layout: " << this->m_layout << ".  The actual run-time layout must be "
-                      "either Layout::Right or Layout::Left.");
-    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
+                                                                            "either Layout::Right or Layout::Left.");
+    return EntityValues<T, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
   }
 }
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(const MeshIndex& mi,
-                                                                  const char* file, int line) const
+inline EntityValues<T, stk::ngp::HostSpace, Layout::Auto>
+FieldData<T, stk::ngp::HostSpace, Layout::Auto>::entity_values(const MeshIndex& mi,
+                                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_mesh(mi.bucket->mesh(), "Entity", file, line);
@@ -593,13 +617,13 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(const MeshInde
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[mi.bucket->bucket_id()];
 
   if (this->m_layout == Layout::Right) {
-    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityValues<T, stk::ngp::HostSpace, Layout::Auto>(
           reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * mi.bucket_ordinal),
           fieldMetaData.m_numComponentsPerEntity,
           fieldMetaData.m_numCopiesPerEntity, this->field_name());
   }
   else if (this->m_layout == Layout::Left) {
-    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityValues<T, stk::ngp::HostSpace, Layout::Auto>(
           reinterpret_cast<T*>(fieldMetaData.m_data) + mi.bucket_ordinal,
           fieldMetaData.m_numComponentsPerEntity,
           fieldMetaData.m_numCopiesPerEntity,
@@ -607,16 +631,16 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(const MeshInde
   }
   else {
     STK_ThrowErrorMsg("Unsupported host data layout: " << this->m_layout << ".  The actual run-time layout must be "
-                      "either Layout::Right or Layout::Left.");
-    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
+                                                                            "either Layout::Right or Layout::Left.");
+    return EntityValues<T, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
   }
 }
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(const FastMeshIndex& fmi,
-                                                                  const char* file, int line) const
+inline EntityValues<T, stk::ngp::HostSpace, Layout::Auto>
+FieldData<T, stk::ngp::HostSpace, Layout::Auto>::entity_values(const FastMeshIndex& fmi,
+                                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_bucket_id(fmi.bucket_id, "entity", file, line);
@@ -625,13 +649,13 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(const FastMesh
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[fmi.bucket_id];
 
   if (this->m_layout == Layout::Right) {
-    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityValues<T, stk::ngp::HostSpace, Layout::Auto>(
           reinterpret_cast<T*>(fieldMetaData.m_data + fieldMetaData.m_bytesPerEntity * fmi.bucket_ord),
           fieldMetaData.m_numComponentsPerEntity,
           fieldMetaData.m_numCopiesPerEntity, this->field_name());
   }
   else if (this->m_layout == Layout::Left) {
-    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+    return EntityValues<T, stk::ngp::HostSpace, Layout::Auto>(
           reinterpret_cast<T*>(fieldMetaData.m_data) + fmi.bucket_ord,
           fieldMetaData.m_numComponentsPerEntity,
           fieldMetaData.m_numCopiesPerEntity,
@@ -639,16 +663,16 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::entity_values(const FastMesh
   }
   else {
     STK_ThrowErrorMsg("Unsupported host data layout: " << this->m_layout << ".  The actual run-time layout must be "
-                      "either Layout::Right or Layout::Left.");
-    return EntityValues<T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
+                                                                            "either Layout::Right or Layout::Left.");
+    return EntityValues<T, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, nullptr);  // Keep compiler happy
   }
 }
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::bucket_values(const Bucket& bucket,
-                                                                  const char* file, int line) const
+inline BucketValues<T, stk::ngp::HostSpace, Layout::Auto>
+FieldData<T, stk::ngp::HostSpace, Layout::Auto>::bucket_values(const Bucket& bucket,
+                                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_mesh(bucket.mesh(), "Bucket", file, line);
@@ -657,14 +681,14 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::bucket_values(const Bucket& 
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucket.bucket_id()];
 
   if (this->m_layout == Layout::Right) {
-    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+    return BucketValues<T, stk::ngp::HostSpace, Layout::Auto>(
           reinterpret_cast<T*>(fieldMetaData.m_data),
           fieldMetaData.m_numComponentsPerEntity,
           fieldMetaData.m_numCopiesPerEntity,
           fieldMetaData.m_bucketSize, this->field_name());
   }
   else if (this->m_layout == Layout::Left) {
-    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+    return BucketValues<T, stk::ngp::HostSpace, Layout::Auto>(
           reinterpret_cast<T*>(fieldMetaData.m_data),
           fieldMetaData.m_numComponentsPerEntity,
           fieldMetaData.m_numCopiesPerEntity,
@@ -673,16 +697,16 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::bucket_values(const Bucket& 
   }
   else {
     STK_ThrowErrorMsg("Unsupported host data layout: " << this->m_layout << ".  The actual run-time layout must be "
-                      "either Layout::Right or Layout::Left.");
-    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0, nullptr);  // Keep compiler happy
+                                                                            "either Layout::Right or Layout::Left.");
+    return BucketValues<T, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, 0, nullptr);  // Keep compiler happy
   }
 }
 
 //------------------------------------------------------------------------------
 template <typename T>
-inline BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>
-FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::bucket_values(int bucketId,
-                                                                  const char* file, int line) const
+inline BucketValues<T, stk::ngp::HostSpace, Layout::Auto>
+FieldData<T, stk::ngp::HostSpace, Layout::Auto>::bucket_values(int bucketId,
+                                                               const char* file, int line) const
 {
   this->check_updated_field(file, line);
   this->check_bucket_id(bucketId, "bucket", file, line);
@@ -690,14 +714,14 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::bucket_values(int bucketId,
   const FieldMetaData& fieldMetaData = this->m_fieldMetaData[bucketId];
 
   if (this->m_layout == Layout::Right) {
-    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+    return BucketValues<T, stk::ngp::HostSpace, Layout::Auto>(
           reinterpret_cast<T*>(fieldMetaData.m_data),
           fieldMetaData.m_numComponentsPerEntity,
           fieldMetaData.m_numCopiesPerEntity,
           fieldMetaData.m_bucketSize, this->field_name());
   }
   else if (this->m_layout == Layout::Left) {
-    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(
+    return BucketValues<T, stk::ngp::HostSpace, Layout::Auto>(
           reinterpret_cast<T*>(fieldMetaData.m_data),
           fieldMetaData.m_numComponentsPerEntity,
           fieldMetaData.m_numCopiesPerEntity,
@@ -706,8 +730,8 @@ FieldData<T, stk::ngp::HostMemSpace, Layout::Auto>::bucket_values(int bucketId,
   }
   else {
     STK_ThrowErrorMsg("Unsupported host data layout: " << this->m_layout << ".  The actual run-time layout must be "
-                      "either Layout::Right or Layout::Left.");
-    return BucketValues<T, stk::ngp::HostMemSpace, Layout::Auto>(nullptr, 0, 0, 0, nullptr);  // Keep compiler happy
+                                                                            "either Layout::Right or Layout::Left.");
+    return BucketValues<T, stk::ngp::HostSpace, Layout::Auto>(nullptr, 0, 0, 0, nullptr);  // Keep compiler happy
   }
 }
 

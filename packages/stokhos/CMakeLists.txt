@@ -53,9 +53,6 @@ SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default OFF)
 SET(Stokhos_ENABLE_PCE_Scalar_Type_Default OFF)
 IF(Stokhos_ENABLE_Sacado)
   SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default ON)
-  IF(NOT Stokhos_HIDE_DEPRECATED_CODE)
-    SET(Stokhos_ENABLE_PCE_Scalar_Type_Default ON)
-  ENDIF()
 ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(Stokhos_ENABLE_Ensemble_Scalar_Type
@@ -69,11 +66,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(Stokhos_ENABLE_PCE_Scalar_Type
   ${Stokhos_ENABLE_PCE_Scalar_Type_Default}  )
 
 IF(Stokhos_ENABLE_PCE_Scalar_Type)
-  IF(Stokhos_HIDE_DEPRECATED_CODE)
-    MESSAGE(FATAL_ERROR "The PCE scalar type is deprecated in Stokhos but Stokhos_HIDE_DEPRECATED_CODE=ON.  You must set Stokhos_ENABLE_PCE_Scalar_Type=OFF or Stokhos_HIDE_DEPRECATED_CODE=OFF.")
-  ELSE()
-    MESSAGE(WARNING "The PCE scalar type is deprecated in Stokhos but Stokhos_HIDE_DEPRECATED_CODE=OFF.")
-  ENDIF()
+  MESSAGE(WARNING "The PCE scalar type is deprecated in Stokhos and no longer tested or maintained. USE AT YOUR OWN RISK.")
 ENDIF()
 
 IF(Stokhos_ENABLE_Ensemble_Scalar_Type AND NOT Stokhos_ENABLE_Sacado)

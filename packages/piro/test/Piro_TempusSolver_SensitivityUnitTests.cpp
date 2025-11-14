@@ -136,8 +136,9 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
   SENS_METHOD sens_method; 
   if (sens_method_string == "None") sens_method = Piro::NONE; 
-  else if (sens_method_string == "Forward") sens_method = Piro::FORWARD; 
-  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT; 
+  else if (sens_method_string == "Forward") sens_method = Piro::FORWARD;
+  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
+  else TEUCHOS_ASSERT(false);
   Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
       = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel, sens_method));
   auto x0 =  thyraModel->getNominalValues().get_x(); 
@@ -188,7 +189,8 @@ const RCP<TempusSolver<double> > solverNew(
   SENS_METHOD sens_method; 
   if (sens_method_string == "None") sens_method = Piro::NONE; 
   else if (sens_method_string == "Forward") sens_method = Piro::FORWARD; 
-  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT; 
+  else if (sens_method_string == "Adjoint") sens_method = Piro::ADJOINT;
+  else TEUCHOS_ASSERT(false);
   Teuchos::RCP<Piro::TempusIntegrator<double> > integrator 
       = Teuchos::rcp(new Piro::TempusIntegrator<double>(tempusPL, thyraModel, sens_method));
   const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();

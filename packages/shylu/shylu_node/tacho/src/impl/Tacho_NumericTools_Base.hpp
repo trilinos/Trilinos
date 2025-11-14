@@ -198,6 +198,7 @@ public:
 
   virtual ~NumericToolsBase() {}
 
+  inline void setSolutionMethod(const ordinal_type method) { _method = method; }
   inline ordinal_type getSolutionMethod() const { return _method; }
 
   inline ordinal_type getNumRows() const { return _m; }
