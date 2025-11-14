@@ -42,7 +42,7 @@ Ifpack2:
 MueLu
 
   - New parameters for dropping algorithms were introduced that better
-    map to the growing number of availabble schemes. Old parameters
+    map to the growing number of available schemes. Old parameters
     are still valid but will eventually be phased out.
     https://github.com/trilinos/Trilinos/pull/14113
     https://github.com/trilinos/Trilinos/pull/14093
