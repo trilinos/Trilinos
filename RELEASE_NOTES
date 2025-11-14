@@ -86,6 +86,19 @@ Teko:
     https://github.com/trilinos/Trilinos/pull/14476
 
 
+ShyLU:
+
+  - ShyLU-Basker: Threaded sparse-triangular solver
+    https://github.com/trilinos/Trilinos/pull/14065
+
+  - Tacho: No-pivoted LDLt factorization
+    https://github.com/trilinos/Trilinos/pull/14537
+    https://github.com/trilinos/Trilinos/pull/14640
+
+  - Tacho: Uniform symbolic factorization interfce to fall-back from Chol to LU or LDLt
+    https://github.com/trilinos/Trilinos/pull/14603
+
+
 SEACAS
 
   - Update to v2025-10-14. See:
