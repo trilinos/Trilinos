@@ -82,17 +82,11 @@ Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( 
   // ****************************************************************
   // Rebalance the matrix
   // ****************************************************************
-#if 1
   using MatrixAdapter_t = Zoltan2::XpetraCrsMatrixAdapter<cm_t>;
   MatrixAdapter_t matrixAdapter(origMatrix);
 
   Teuchos::RCP<cm_t> newMatrix( Teuchos::null );
   matrixAdapter.applyPartitioningSolution(*origMatrix, newMatrix, partitioningProblem.getSolution());
-#else
-  Teuchos::RCP<cm_t> newMatrix( Teuchos::null );
-  newMatrix = Teuchos::rcp<cm_t>( new cm_t(*origMatrix, newGraph, Teuchos::null) );
-  newMatrix->fillComplete(Teuchos::null);
-#endif
   
   // ****************************************************************
   // Rebalance the lhs vector
