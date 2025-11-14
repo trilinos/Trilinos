@@ -28,7 +28,7 @@
 #include <Galeri_XpetraUtils.hpp>
 #include <Galeri_XpetraMaps.hpp>
 
-#include "MueLu_Zoltan2Interface_decl.hpp"
+#include "MueLu_Zoltan2Interface.hpp"
 #include "MueLu_RepartitionFactory_decl.hpp"
 
 #include <MueLu.hpp>
@@ -49,6 +49,7 @@ RepartitionMap(
     return Teuchos::null;
   }
 
+#if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
   if (comm->getRank() == 0)
     std::cout << "Redistributing matrix using Zoltan2." << std::endl;
 
@@ -58,6 +59,11 @@ RepartitionMap(
   auto rowMap  = A->getRowMap();
   GO indexBase = rowMap->getIndexBase();
   return MapFactory ::Build(lib, rowMap->getGlobalNumElements(), GIDs(), indexBase, comm);
+#else
+  if (comm->getRank() == 0)
+    std::cout << "Not repartitioning because Zoltan2 was not enabled." << std::endl;
+  return Teuchos::null;
+#endif
 }
 
 // This is a standard Galeri-or-MatrixFile loading routine designed to be shared between the various scaling tests
