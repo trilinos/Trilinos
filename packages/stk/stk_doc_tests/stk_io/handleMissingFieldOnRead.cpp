@@ -144,7 +144,7 @@ namespace {
       EXPECT_EQ("disp", missing_fields[1].db_name());
       EXPECT_EQ("displacement_STKFS_N", missing_fields[1].field()->name());
 
-      auto temperatureData = temperature.data<stk::mesh::ReadOnly>();
+      auto temperatureData = temperature.data();
 
       // The value of the "temperature" field at all nodes should be 2.0
       stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,

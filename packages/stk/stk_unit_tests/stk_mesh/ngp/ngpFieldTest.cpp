@@ -240,7 +240,7 @@ public:
     stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), rank, selector, elements);
-    auto stkFieldData = stkField.template data<stk::mesh::ReadOnly>();
+    auto stkFieldData = stkField.data();
 
     for(stk::mesh::Entity element : elements) {
       auto data = stkFieldData.entity_values(element);
@@ -289,7 +289,7 @@ public:
   void verify_field_data_on_device(const stk::mesh::EntityVector& elements, const stk::mesh::Field<T>& stkField,
                                    const FieldDataMirror& hostData, Func&& checkFunc)
   {
-    auto stkFieldData = stkField.template data<stk::mesh::ReadOnly>();
+    auto stkFieldData = stkField.data();
     for(unsigned i = 0; i < elements.size(); i++) {
       auto data = stkFieldData.entity_values(elements[i]);
       for(stk::mesh::ComponentIdx j : data.components()) {
@@ -729,7 +729,7 @@ void move_data_between_fields_on_host(const stk::mesh::BulkData & bulk,
   stk::mesh::NgpField<int>& ngpSource = stk::mesh::get_updated_ngp_field<int>(source);
   ngpSource.sync_to_host();
 
-  auto sourceFieldData = source.data<stk::mesh::ReadOnly>();
+  auto sourceFieldData = source.data();
   auto destFieldData = dest.data<stk::mesh::ReadWrite>();
 
   for(size_t iBucket=0; iBucket<buckets.size(); iBucket++)
@@ -808,7 +808,7 @@ void test_field_values_on_host_without_initial_sync(const stk::mesh::BulkData& b
 {
   stk::mesh::Selector selection = bulk.mesh_meta_data().locally_owned_part() & part;
   const stk::mesh::BucketVector& buckets = bulk.get_buckets(stkField.entity_rank(), selection);
-  auto stkFieldData = stkField.data<stk::mesh::ReadOnly>();
+  auto stkFieldData = stkField.data();
   for (size_t iBucket=0; iBucket<buckets.size(); iBucket++) {
     const stk::mesh::Bucket &bucket = *buckets[iBucket];
 
@@ -942,7 +942,7 @@ void check_field_on_host(const stk::mesh::BulkData & bulk,
                          int expectedValue)
 {
   const stk::mesh::BucketVector& buckets = bulk.buckets(stkField.entity_rank());
-  auto stkFieldData = stkField.template data<stk::mesh::ReadOnly>();
+  auto stkFieldData = stkField.template data<>();
   for (stk::mesh::Bucket * bucket : buckets) {
     auto fieldData = stkFieldData.bucket_values(*bucket);
     for(stk::mesh::EntityIdx iEntity : bucket->entities()) {
@@ -2182,7 +2182,7 @@ public:
   {
     for (stk::mesh::Field<int>* field : m_fields) {
       const stk::mesh::BucketVector& buckets = m_bulk->get_buckets(stk::topology::NODE_RANK, *field);
-      auto fieldData = field->data<stk::mesh::ReadOnly>();
+      auto fieldData = field->data();
       for (const stk::mesh::Bucket* bucket : buckets) {
         auto bktFieldData = fieldData.bucket_values(*bucket);
         for (stk::mesh::EntityIdx nodeIdx : bucket->entities()) {

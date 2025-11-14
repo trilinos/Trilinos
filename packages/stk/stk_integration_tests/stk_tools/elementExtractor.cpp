@@ -69,7 +69,7 @@ void stk_determine_centroid(const int spatial_dim, stk::mesh::Entity element,
   const stk::mesh::Entity* const node_vec = bulk_data.begin_nodes(element);
   const unsigned num_nodes = bulk_data.num_nodes(element);
 
-  auto nodal_coord_data = nodal_coord.data<double, stk::mesh::ReadOnly>();
+  auto nodal_coord_data = nodal_coord.data<double>();
   for (unsigned iNode = 0; iNode < num_nodes; ++iNode) {
     stk::mesh::Entity node = node_vec[iNode];
     auto coor = nodal_coord_data.entity_values(node);

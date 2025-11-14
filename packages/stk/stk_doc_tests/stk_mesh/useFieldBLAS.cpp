@@ -90,7 +90,7 @@ TEST(stkMeshHowTo, useFieldBLAS)
 
   const double expectedVal = 10.0 + alpha*99.0;
 
-  auto velocityFieldData = velocityField.data<stk::mesh::ReadOnly>();
+  auto velocityFieldData = velocityField.data();
   auto expectEqualVal = [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
     auto velocityDataForNode = velocityFieldData.entity_values(node);
     for(stk::mesh::ComponentIdx i=0_comp; i<numValuesPerNode; ++i) {

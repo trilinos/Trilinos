@@ -151,13 +151,15 @@ public:
 
   Field(MetaData* meta,
         stk::topology::rank_t entityRank,
-        unsigned fieldOrdinal,
+        unsigned ordinal,
+        unsigned rankedOrdinal,
         const std::string& name,
         const DataTraits& dataTraits,
         unsigned numberOfStates,
         FieldState thisState)
-    : FieldBase(meta, entityRank, fieldOrdinal, name, dataTraits, numberOfStates, thisState, host_layout, device_layout,
-                new FieldData<T, stk::ngp::HostSpace, HostLayout>(entityRank, fieldOrdinal, name, dataTraits))
+    : FieldBase(meta, entityRank, ordinal, rankedOrdinal, name, dataTraits, numberOfStates, thisState,
+                host_layout, device_layout,
+                new FieldData<T, stk::ngp::HostSpace, HostLayout>(entityRank, ordinal, name, dataTraits))
   {
   }
 
@@ -247,6 +249,7 @@ public:
       f[i] = new Field(&fieldRepo.mesh_meta_data(),
                        entity_rank(),
                        fieldRepo.get_fields().size(),
+                       fieldRepo.get_fields(entity_rank()).size(),
                        fieldNames[i],
                        data_traits(),
                        number_of_states(),
@@ -281,8 +284,8 @@ public:
   //
   //   FieldAccessTag : Optional tag indicating how you will access the data.  Options are:
 
-  //     - stk::mesh::ReadWrite     : Sync data to memory space and mark modified; Allow modification [default]
-  //     - stk::mesh::ReadOnly      : Sync data to memory space and do not mark modified; Disallow modification
+  //     - stk::mesh::ReadOnly      : Sync data to memory space and do not mark modified; Disallow modification [default]
+  //     - stk::mesh::ReadWrite     : Sync data to memory space and mark modified; Allow modification
   //     - stk::mesh::OverwriteAll  : Do not sync data and mark modified; Allow modification
 
   //     - stk::mesh::Unsynchronized       : Do not sync data and do not mark modified; Allow modification
@@ -302,12 +305,12 @@ public:
   //
   // Some sample usage for a Field<double> instance:
   //
-  //   auto fieldData = myField.data();                       <-- Read-write access to host data
-  //   auto fieldData = myField.data<stk::mesh::ReadOnly>();  <-- Read-only access to host access
-  //   auto fieldData = myField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(); <-- Read-write access to device data
+  //   auto fieldData = myField.data();                       <-- Read-only access to host data
+  //   auto fieldData = myField.data<stk::mesh::ReadWrite>(); <-- Read-write access to host data
   //   auto fieldData = myField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();  <-- Read-only access to device data
+  //   auto fieldData = myField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(); <-- Read-write access to device data
 
-  template <FieldAccessTag FieldAccess = ReadWrite,
+  template <FieldAccessTag FieldAccess = ReadOnly,
             typename Space = stk::ngp::HostSpace>
   typename FieldDataHelper<T, FieldAccess, Space, LayoutSelector<Space>::layout>::FieldDataType
   data() const
@@ -320,7 +323,7 @@ public:
   // that will be used to run any data syncing or updating after a mesh modification that may
   // be necessary.  This is intended for asynchronous execution.
 
-  template <FieldAccessTag FieldAccess = ReadWrite,
+  template <FieldAccessTag FieldAccess = ReadOnly,
             typename Space = stk::ngp::HostSpace,
             typename ExecSpace = stk::ngp::ExecSpace>
   typename AsyncFieldDataHelper<T, FieldAccess, Space, LayoutSelector<Space>::layout, ExecSpace>::FieldDataType

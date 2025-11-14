@@ -62,7 +62,7 @@ void verify_field_data_is_same_for_all_nodes(const stk::mesh::BulkData& bulkData
   stk::mesh::get_selected_entities(meta.locally_owned_part(), bulkData.buckets(stk::topology::NODE_RANK), nodes);
 
   stk::mesh::FieldBase* nodalTestDataField = meta.get_field(stk::topology::NODE_RANK, fieldName);
-  auto nodalTestData = nodalTestDataField->data<double, stk::mesh::ReadOnly>();
+  auto nodalTestData = nodalTestDataField->data<double>();
 
   for(stk::mesh::Entity node : nodes)
   {

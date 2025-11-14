@@ -69,7 +69,7 @@ void testFieldOnNodes(stk::mesh::BulkData &stkMeshBulkData,
                       stk::mesh::Part &nodePart,
                       stk::mesh::Field<double> &nodeField1)
 {
-  auto nodeField1Data = nodeField1.data<stk::mesh::ReadOnly>();
+  auto nodeField1Data = nodeField1.data();
   for(size_t i = 0; i < nodes.size(); ++i)
   {
     EXPECT_TRUE(stkMeshBulkData.bucket(nodes[i]).member(nodePart));

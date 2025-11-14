@@ -54,7 +54,7 @@ double BalanceSettings::getFieldVertexWeight(const stk::mesh::BulkData &bulkData
 {
     const stk::mesh::Field<double> &field = *getVertexWeightField(bulkData, criteria_index);
     if (field.defined_on(entity)) {
-      auto fieldData = field.data<stk::mesh::ReadOnly>();
+      auto fieldData = field.data();
       auto weight = fieldData.entity_values(entity);
       STK_ThrowRequireWithSierraHelpMsg(weight() >= 0);
       return weight();

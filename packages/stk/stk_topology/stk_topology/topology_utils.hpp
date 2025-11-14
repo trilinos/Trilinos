@@ -45,14 +45,14 @@ namespace stk { namespace topology_detail {
 struct num_nodes_impl {
   using result_type = unsigned;
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::num_nodes; }
 };
 
 struct rank_impl {
   using result_type = topology::rank_t;
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::rank; }
 };
 
@@ -60,13 +60,13 @@ template <typename NodeArrayA, typename NodeArrayB>
 struct is_equivalent_impl {
   using result_type = EquivalentPermutation;
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   is_equivalent_impl( const NodeArrayA &a , const NodeArrayB &b )
     : m_a(a), m_b(b)
   {}
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::is_equivalent(m_a, m_b); }
 
   const NodeArrayA & m_a;
@@ -77,13 +77,13 @@ template <typename NodeArray>
 struct lexicographical_smallest_permutation_impl {
   using result_type = unsigned;
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   lexicographical_smallest_permutation_impl( const NodeArray &nodes , bool only_positive_permutations )
     : m_nodes(nodes), m_only_positive_permutations(only_positive_permutations)
   {}
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const
   { return Topology::lexicographical_smallest_permutation(m_nodes, m_only_positive_permutations); }
 
@@ -95,13 +95,13 @@ template <typename NodeArray>
 struct lexicographical_smallest_permutation_preserve_polarity_impl {
   using result_type = unsigned;
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   lexicographical_smallest_permutation_preserve_polarity_impl( const NodeArray &nodes, const NodeArray &element_nodes)
     : m_nodes(nodes), m_element_nodes(element_nodes)
   {}
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const
   { return Topology::lexicographical_smallest_permutation_preserve_polarity(m_nodes, m_element_nodes); }
 
@@ -120,7 +120,7 @@ struct has_mixed_rank_sides_impl {
   using result_type = bool;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const {
     if constexpr (HasMixedRankSides<Topology>::value) {
       return Topology::has_mixed_rank_sides;
@@ -133,7 +133,7 @@ struct has_homogeneous_faces_impl {
   using result_type = bool;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::has_homogeneous_faces; }
 };
 
@@ -141,20 +141,20 @@ struct is_shell_impl {
   using result_type = bool;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::is_shell; }
 };
 
 struct side_rank_impl {
   using result_type = stk::topology::rank_t;
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   side_rank_impl(unsigned ordinal)
     : m_ordinal(ordinal)
   {}
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { 
     if (!has_mixed_rank_sides_impl{}(Topology{})) {
       return Topology::side_rank;
@@ -170,7 +170,7 @@ struct num_side_ranks_impl {
   using result_type = unsigned;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::num_side_ranks(); }
 };
 
@@ -178,7 +178,7 @@ struct dimension_impl {
   using result_type = unsigned;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::dimension; }
 };
 
@@ -186,7 +186,7 @@ struct num_vertices_impl {
   using result_type = unsigned;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::num_vertices; }
 };
 
@@ -194,7 +194,7 @@ struct num_edges_impl {
   using result_type = unsigned;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::num_edges; }
 };
 
@@ -202,7 +202,7 @@ struct num_faces_impl {
   using result_type = unsigned;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::num_faces; }
 };
 
@@ -210,7 +210,7 @@ struct num_permutations_impl {
   using result_type = unsigned;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::num_permutations; }
 };
 
@@ -218,7 +218,7 @@ struct num_positive_permutations_impl {
   using result_type = unsigned;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::num_positive_permutations; }
 };
 
@@ -226,20 +226,20 @@ struct base_impl {
   using result_type = stk::topology;
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::base; }
 };
 
 struct edge_topology_impl {
   using result_type = stk::topology;
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   edge_topology_impl(unsigned ordinal = 0)
     : m_ordinal(ordinal)
   {}
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::edge_topology(m_ordinal); }
 
   unsigned m_ordinal;
@@ -248,13 +248,13 @@ struct edge_topology_impl {
 struct defined_on_spatial_dimension_impl {
   using result_type = bool;
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   defined_on_spatial_dimension_impl(unsigned ordinal)
     : m_ordinal(ordinal)
   {}
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::defined_on_spatial_dimension(m_ordinal); }
 
   unsigned m_ordinal;
@@ -263,13 +263,13 @@ struct defined_on_spatial_dimension_impl {
 struct face_topology_impl {
   using result_type = stk::topology;
 
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   face_topology_impl(unsigned ordinal)
     : m_ordinal(ordinal)
   {}
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   result_type operator()(Topology) const { return Topology::face_topology(m_ordinal); }
 
   unsigned m_ordinal;
@@ -278,12 +278,12 @@ struct face_topology_impl {
 template <typename SideRanksOutputIterator>
 struct side_ranks_impl {
   using result_type = void;
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   side_ranks_impl(SideRanksOutputIterator output_side_ranks)
     : m_output_side_ranks(output_side_ranks)
   {}
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()(Topology) const { Topology::side_ranks(m_output_side_ranks); }
 
   SideRanksOutputIterator m_output_side_ranks;
@@ -292,13 +292,13 @@ struct side_ranks_impl {
 template <typename OrdinalOutputIterator>
 struct edge_node_ordinals_impl {
   using result_type = void;
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   edge_node_ordinals_impl(unsigned ordinal, OrdinalOutputIterator output_ordinals)
     : m_ordinal(ordinal)
     , m_output_ordinals(output_ordinals)
   {}
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()(Topology) const { Topology::edge_node_ordinals(m_ordinal,m_output_ordinals); }
   unsigned m_ordinal;
   OrdinalOutputIterator m_output_ordinals;
@@ -307,13 +307,13 @@ struct edge_node_ordinals_impl {
 template <typename OrdinalOutputIterator>
 struct face_node_ordinals_impl {
   using result_type = void;
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   face_node_ordinals_impl(unsigned ordinal, OrdinalOutputIterator output_ordinals)
     : m_ordinal(ordinal)
     , m_output_ordinals(output_ordinals)
   {}
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()(Topology) const { Topology::face_node_ordinals(m_ordinal,m_output_ordinals); }
   unsigned m_ordinal;
   OrdinalOutputIterator m_output_ordinals;
@@ -322,13 +322,13 @@ struct face_node_ordinals_impl {
 template <typename OrdinalOutputIterator>
 struct permutation_node_ordinals_impl {
   using result_type = void;
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   permutation_node_ordinals_impl(unsigned ordinal, OrdinalOutputIterator output_ordinals)
     : m_ordinal(ordinal)
     , m_output_ordinals(output_ordinals)
   {}
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()(Topology) const { Topology::permutation_node_ordinals(m_ordinal,m_output_ordinals); }
   unsigned m_ordinal;
   OrdinalOutputIterator m_output_ordinals;
@@ -337,7 +337,7 @@ struct permutation_node_ordinals_impl {
 template <typename NodeArray, typename NodeOutputIterator>
 struct edge_nodes_impl {
   using result_type = void;
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   edge_nodes_impl(const NodeArray &nodes,
                   unsigned ordinal,
                   NodeOutputIterator output_ordinals)
@@ -347,7 +347,7 @@ struct edge_nodes_impl {
   {}
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()(Topology) const { Topology::edge_nodes(m_nodes,m_ordinal,m_output_ordinals); }
 
   const NodeArray & m_nodes;
@@ -358,7 +358,7 @@ struct edge_nodes_impl {
 template <typename NodeArray, typename NodeOutputIterator>
 struct face_nodes_impl {
   using result_type = void;
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   face_nodes_impl(const NodeArray &nodes,
                   unsigned ordinal,
                   NodeOutputIterator output_ordinals)
@@ -368,7 +368,7 @@ struct face_nodes_impl {
   {}
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()(Topology) const { Topology::face_nodes(m_nodes,m_ordinal,m_output_ordinals); }
 
   const NodeArray & m_nodes;
@@ -379,7 +379,7 @@ struct face_nodes_impl {
 template <typename NodeArray, typename NodeOutputIterator>
 struct permutation_nodes_impl {
   using result_type = void;
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   permutation_nodes_impl(const NodeArray &nodes,
                   unsigned ordinal,
                   NodeOutputIterator output_ordinals)
@@ -389,7 +389,7 @@ struct permutation_nodes_impl {
   {}
 
   template <typename Topology>
-  STK_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void operator()(Topology) const { Topology::permutation_nodes(m_nodes,m_ordinal,m_output_ordinals); }
 
   const NodeArray & m_nodes;

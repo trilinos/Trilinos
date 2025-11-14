@@ -126,65 +126,7 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
           if (secondary_selector && !((*secondary_selector)(mesh.bucket(potential_element))))
             continue;  // skip elements not in the secondary selector
 
-          const unsigned potential_num_sides = potential_element_topology.num_sides();
-          Entity const * const potential_elem_nodes = mesh.begin_nodes(potential_element);
-
-          for (unsigned m=0; m < potential_num_sides; ++m) {
-            stk::topology potential_side_topology = potential_element_topology.side_topology(m);
-
-            // the side topologies are different -- not a match
-            if (side_topology != potential_side_topology) continue;
-
-            potential_side_nodes.resize(potential_side_topology.num_nodes());
-            potential_element_topology.side_nodes(potential_elem_nodes, m, potential_side_nodes.data());
-
-            stk::EquivalentPermutation result = stk::mesh::side_equivalent(mesh, elem, k, potential_side_nodes.data());
-
-            // the sides are not a match
-            if (result.is_equivalent == false) continue;
-            // if the permutation_id is to a positive permutation
-            // the sides are not opposing, i.e. the elements are superimposed on each other
-
-            if ( result.permutation_number < side_topology.num_positive_permutations() )
-            {
-                stk::mesh::PartVector user_parts_elem1;
-                stk::mesh::PartVector user_parts_elem2;
-
-                const stk::mesh::PartVector &parts1 = mesh.bucket(elem).supersets();
-                const stk::mesh::PartVector &parts2 = mesh.bucket(potential_element).supersets();
-                for (size_t mm=0;mm<parts1.size();mm++)
-                {
-                    if ( !stk::mesh::is_auto_declared_part(*parts1[mm]) )
-                    {
-                        user_parts_elem1.push_back(parts1[mm]);
-                    }
-                }
-                for (size_t mm=0;mm<parts2.size();mm++)
-                {
-                    if ( !stk::mesh::is_auto_declared_part(*parts2[mm]) )
-                    {
-                        user_parts_elem2.push_back(parts2[mm]);
-                    }
-                } 
-                std::ostringstream os;
-                os << "*** Warning: element " << mesh.identifier(elem) << " ( ";
-                for (size_t mm=0;mm<user_parts_elem1.size();mm++)
-                {
-                    os << user_parts_elem1[mm]->name() << " ";
-                } 
-                os << ") and element " << mesh.identifier(potential_element) << " ( ";
-                for (size_t mm=0;mm<user_parts_elem2.size();mm++)
-                {
-                    os << user_parts_elem2[mm]->name() << " ";
-                } 
-                os << ") have overlapping volumes. ***" << std::endl;
-                std::cerr << os.str();
-                continue;
-            }
-            
-            found_adjacent_element = true;
-            break;
-          }
+          found_adjacent_element = true;
         }
         if (!found_adjacent_element) {
           ConnectivityOrdinal const* existing_side_ordinals = mesh.begin_ordinals(elem,side_rank);

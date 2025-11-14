@@ -42,7 +42,7 @@ void check_field_data_on_host(const stk::mesh::HostMesh& stkMesh,
                               int component = -1,
                               T componentValue = 0)
 {
-  auto stkFieldData = stkField.template data<T,stk::mesh::ReadOnly>();
+  auto stkFieldData = stkField.template data<T>();
   stk::mesh::for_each_entity_run(stkMesh, stkField.entity_rank(), selector,
     [&](const stk::mesh::FastMeshIndex& fastMeshIndex) {
       stk::mesh::Entity entity = stkMesh.get_entity(stkField.entity_rank(), fastMeshIndex);
@@ -67,7 +67,7 @@ void check_field_data_on_host(const stk::mesh::BulkData& stkMesh,
                               int component = -1,
                               T componentValue = 0)
 {
-  auto stkFieldData = stkField.template data<T,stk::mesh::ReadOnly>();
+  auto stkFieldData = stkField.template data<T>();
   stk::mesh::for_each_entity_run(stkMesh, stkField.entity_rank(), selector,
     [&](const stk::mesh::BulkData& bulk, const stk::mesh::Entity entity) {
       auto fieldValues = stkFieldData.entity_values(entity);
@@ -89,8 +89,8 @@ inline void set_field_data_on_host(const stk::mesh::BulkData& stkMesh,
                             std::function<std::vector<double>(stk::mesh::EntityValues<const double>)> func)
 {
   const stk::mesh::FieldBase* coordField = stkMesh.mesh_meta_data().coordinate_field();
-  auto coordFieldData = coordField->data<double,stk::mesh::ReadOnly>();
-  auto stkFieldData = stkField.data<double,stk::mesh::ReadWrite>();
+  auto coordFieldData = coordField->data<double>();
+  auto stkFieldData = stkField.data<double, stk::mesh::ReadWrite>();
 
   stk::mesh::for_each_entity_run(stkMesh, stkField.entity_rank(), selector,
     [&](const stk::mesh::BulkData& /*bulk*/, const stk::mesh::Entity entity) {
@@ -111,8 +111,8 @@ inline void check_field_data_on_host_func(const stk::mesh::BulkData& stkMesh,
                             std::function<std::vector<double>(stk::mesh::EntityValues<const double>)> func)
 {
   const stk::mesh::FieldBase* coordField = stkMesh.mesh_meta_data().coordinate_field();
-  auto coordFieldData = coordField->data<double,stk::mesh::ReadOnly>();
-  auto stkFieldData = stkField.data<double,stk::mesh::ReadWrite>();
+  auto coordFieldData = coordField->data<double>();
+  auto stkFieldData = stkField.data<double, stk::mesh::ReadWrite>();
 
   stk::mesh::for_each_entity_run(stkMesh, stkField.entity_rank(), selector,
     [&](const stk::mesh::BulkData& /*bulk*/, const stk::mesh::Entity entity) {

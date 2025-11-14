@@ -81,7 +81,7 @@ void fill_node_ids_and_coords(const stk::mesh::BulkData& bulk,
     int spatial_dim = meta.spatial_dimension();
 
     STK_ThrowAssert(coordField != NULL);
-    auto coordFieldData = coordField->data<stk::mesh::ReadOnly>();
+    auto coordFieldData = coordField->data();
 
     stk::mesh::Selector locallyOwned = meta.locally_owned_part();
 

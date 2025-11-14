@@ -48,6 +48,8 @@ NgpField<T, NgpMemSpace> & get_updated_ngp_field_async(const FieldBase & stkFiel
   NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 
   if (ngpField == nullptr) {
+    const bool isConstructingNewDeviceData = not stkField.has_device_data();
+
     ngpField = new NgpField<T, NgpMemSpace>(stkField, true);
     ngpField->update_field(execSpace);
 #if (!defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)) || (defined(STK_USE_DEVICE_MESH) && defined(STK_ENABLE_GPU))
@@ -57,7 +59,10 @@ NgpField<T, NgpMemSpace> & get_updated_ngp_field_async(const FieldBase & stkFiel
     }
 #endif
     impl::set_ngp_field(stkField, ngpField);
-    ngpField->clear_host_sync_state();
+
+    if (isConstructingNewDeviceData) {
+      ngpField->clear_host_sync_state();
+    }
   }
   else {
     ngpField->update_field(execSpace);
@@ -74,6 +79,8 @@ NgpField<T, NgpMemSpace> & get_updated_ngp_field_async(const FieldBase & stkFiel
   NgpFieldBase * ngpField = impl::get_ngp_field(stkField);
 
   if (ngpField == nullptr) {
+    const bool isConstructingNewDeviceData = not stkField.has_device_data();
+
     ngpField = new NgpField<T, NgpMemSpace>(stkField, true);
     ngpField->update_field(std::forward<stk::ngp::ExecSpace>(execSpace));
 #if (!defined(STK_USE_DEVICE_MESH) && !defined(STK_ENABLE_GPU)) || (defined(STK_USE_DEVICE_MESH) && defined(STK_ENABLE_GPU))
@@ -83,7 +90,10 @@ NgpField<T, NgpMemSpace> & get_updated_ngp_field_async(const FieldBase & stkFiel
     }
 #endif
     impl::set_ngp_field(stkField, ngpField);
-    ngpField->clear_host_sync_state();
+
+    if (isConstructingNewDeviceData) {
+      ngpField->clear_host_sync_state();
+    }
   }
   else {
     ngpField->update_field(std::forward<stk::ngp::ExecSpace>(execSpace));

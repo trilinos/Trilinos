@@ -91,7 +91,7 @@ TEST(StkInterface, twoToThree_externalFile)
   std::vector<stk::mesh::Entity> entities;
   stk::mesh::get_selected_entities(selPart, buckets, entities);
 
-  auto fPtrData = fPtr->data<stk::mesh::ReadOnly>();
+  auto fPtrData = fPtr->data();
   for (auto& e : entities)
   {
     auto dataE              = fPtrData.entity_values(e);
