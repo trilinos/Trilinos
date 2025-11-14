@@ -10,6 +10,8 @@
 #ifndef ROL_TYPEP_SPECTRALGRADIENTALGORITHM_DEF_HPP
 #define ROL_TYPEP_SPECTRALGRADIENTALGORITHM_DEF_HPP
 
+#include <deque>
+
 namespace ROL {
 namespace TypeP {
 

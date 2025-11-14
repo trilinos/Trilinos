@@ -13,7 +13,7 @@
 #include <vector>
 #include <mpi.h>
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_TimeStamp.hpp"
 #include "ROL_PinTCommunicators.hpp"

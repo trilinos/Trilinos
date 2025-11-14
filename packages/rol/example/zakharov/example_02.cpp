@@ -21,19 +21,17 @@
 #include "ROL_Zakharov.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  using namespace Teuchos;
-
   typedef std::vector<RealT>          vector;  
   typedef ROL::Vector<RealT>          V;      // Abstract vector
   typedef ROL::StdVector<RealT>       SV;     // Concrete vector containing std::vector data
 
-  GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );

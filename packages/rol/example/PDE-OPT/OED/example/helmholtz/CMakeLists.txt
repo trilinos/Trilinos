@@ -1,7 +1,7 @@
 ADD_SUBDIRECTORY(singleFrequency)
 ADD_SUBDIRECTORY(multipleFrequency)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(
+ROL_COPY_FILES_TO_BINARY_DIR(
   OEDHelmholtzOCTRealDataCopy
   SOURCE_FILES
     meshfiles/octagon.jou

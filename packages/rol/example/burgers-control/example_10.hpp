@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -139,7 +139,7 @@ private:
               const std::vector<Real> &r, const bool transpose = false) {
     u.assign(r.begin(),r.end());
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     std::vector<Real> du2(nx_-2,0.0);
     std::vector<int> ipiv(nx_,0);
     int info;

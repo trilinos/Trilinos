@@ -1,11 +1,11 @@
 
-TRIBITS_ADD_EXECUTABLE(
+ROL_ADD_EXECUTABLE(
   PolynomialRegression1D
   SOURCES example_01.cpp
   ADD_DIR_TO_NAME
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(
+ROL_COPY_FILES_TO_BINARY_DIR(
   OEDExampleDataCopy
   SOURCE_FILES
     input.xml plotResults.m pointsGL.txt weightsGL.txt

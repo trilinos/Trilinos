@@ -1,6 +1,6 @@
-# Rapid Optimization Library (ROL) Package
+# Rapid Optimization Library (ROL)
 
-![Rapid Optimization Library](rol.png)
+![Rapid Optimization Library](https://raw.githubusercontent.com/sandialabs/rol/refs/heads/develop/rol.png)
 
 **ROL** (as in rock and _roll_) is a high-performance C++ library for numerical optimization.
 ROL brings an extensive collection of state-of-the-art optimization algorithms to virtually
@@ -20,16 +20,17 @@ Feature highlights:
 4. Fast and robust algorithms for nonsmooth optimization
 5. Trust-region methods for inexact and adaptive computations
 6. PDE-OPT application development kit for PDE-constrained optimization
+7. Interfaces and algorithms for optimal experimental design
 
 
 ## Copyright and License
-See rol/COPYRIGHT, rol/LICENSE, https://trilinos.github.io/license.html and individual file headers for additional information.
+See COPYRIGHT and LICENSE.
 
 
-## Questions? 
-Contact lead developers:
+## Questions?
+Contact team or developers:
 
-* ROL team     (GitHub handle: @trilinos/rol)
+* ROL Team     (GitHub handle: @sandialabs/rol)
 * Drew Kouri   (GitHub handle: [dpkouri](https://github.com/dpkouri) or dpkouri@sandia.gov)
 * Denis Ridzal (GitHub handle: [dridzal](https://github.com/dridzal) or dridzal@sandia.gov)
 

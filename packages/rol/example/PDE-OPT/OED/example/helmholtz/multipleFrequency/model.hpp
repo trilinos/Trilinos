@@ -25,11 +25,11 @@ public:
 
   void setParameter(const std::vector<Real> &param) {
     ROL::Constraint<Real>::setParameter(param);
-    for (const auto obj : objs_) obj->setParameter(param);
+    for (const auto & obj : objs_) obj->setParameter(param);
   }
 
   void update(const ROL::Vector<Real> &x, bool flag = true, int iter = -1) {
-    for (const auto obj : objs_) obj->update(x,flag,iter);
+    for (const auto & obj : objs_) obj->update(x,flag,iter);
   }
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &x, Real &tol ) {

@@ -15,8 +15,7 @@
 #include "ROL_Ptr.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "Teuchos_StackedTimer.hpp"
 
 #include "ROL_Stream.hpp"
@@ -36,14 +35,14 @@ using size_type = std::vector<RealT>::size_type;
 
 void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream);
 
-int main( int argc, char* argv[] ) 
+int main( int argc, char* argv[] )
 {
   using ROL::Ptr;
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
-  int myRank = Teuchos::GlobalMPISession::getRank();
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
+  int myRank = ROL::GlobalMPISession::getRank();
 
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
 
@@ -157,11 +156,11 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   }
 
   // Add MGRIT parameter list stuff
-  int sweeps    = pl->get("MGRIT Sweeps", 1); 
+  int sweeps    = pl->get("MGRIT Sweeps", 1);
   RealT omega   = pl->get("MGRIT Relaxation",2.0/3.0);
   int numLevels = pl->get("MGRIT Levels",3);
   double relTol = pl->get("MGRIT Krylov Relative Tolerance",1e-4);
-  
+
   if(myRank==0) {
     (*outStream) << "Sweeps = " << sweeps    << std::endl;
     (*outStream) << "Omega = "  << omega     << std::endl;
@@ -211,7 +210,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
   if(myRank==0)
     (*outStream) << std::endl;
 
-  // check jacobi is reducing the norm 
+  // check jacobi is reducing the norm
   if(false) {
     auto kkt_x_out = kkt_vector->clone();
     auto kkt_diff = kkt_vector->clone();
@@ -230,7 +229,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
         res_0 = norm_res;
       if(myRank==0)
         (*outStream) << "NORM RES = " << norm_res << "  " << norm_res/res_0<< std::endl;
-    
+
       pint_con->applyWathenInverse(*kkt_diff,*kkt_res,*state,*control,tol,true); // dx_i = M^{-1} r
 
       kkt_x_out->axpy(omega,*kkt_diff);                                                // x_{i+1} = x_i + omega*dx_i
@@ -269,7 +268,7 @@ void run_test_kkt(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream)
     Teuchos::ParameterList parlist;
     parlist.set("Absolute Tolerance",1.e-1);
     parlist.set("Relative Tolerance",relTol);
- 
+
     ROL::GMRES<RealT> krylov(parlist); // TODO: Do Belos
 
     int flag = 0, iter = 0;

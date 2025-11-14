@@ -19,9 +19,7 @@
 #include "ROL_Minimax3.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -30,7 +28,7 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
@@ -72,7 +70,7 @@ int main(int argc, char *argv[]) {
     // Run algorithm.
     algo.run(x, obj, true, *outStream);
 
-    // Compute error 
+    // Compute error
     ROL::Ptr<ROL::Vector<RealT>> diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,z);

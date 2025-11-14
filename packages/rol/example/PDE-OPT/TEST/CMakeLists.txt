@@ -2,7 +2,7 @@
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
    ${PROJECT_NAME}_ENABLE_Epetra )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ROL_ADD_EXECUTABLE_AND_TEST(
     test_01
     SOURCES test_01.cpp
     ARGS PrintItAll
@@ -12,7 +12,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ROL_ADD_EXECUTABLE_AND_TEST(
     test_02
     SOURCES test_02.cpp
     ARGS PrintItAll
@@ -22,7 +22,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ROL_ADD_EXECUTABLE_AND_TEST(
     test_03
     SOURCES test_03.cpp
     ARGS PrintItAll
@@ -32,7 +32,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ROL_ADD_EXECUTABLE_AND_TEST(
     test_04
     SOURCES test_04.cpp
     ARGS PrintItAll
@@ -42,7 +42,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ROL_ADD_EXECUTABLE_AND_TEST(
     test_05
     SOURCES test_05.cpp
     ARGS PrintItAll
@@ -52,7 +52,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ROL_ADD_EXECUTABLE_AND_TEST(
     test_07
     SOURCES test_07.cpp
     ARGS PrintItAll
@@ -62,7 +62,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ROL_ADD_EXECUTABLE_AND_TEST(
     test_08
     SOURCES test_08.cpp
     ARGS PrintItAll
@@ -72,7 +72,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ROL_ADD_EXECUTABLE_AND_TEST(
     test_09
     SOURCES test_09.cpp
     ARGS PrintItAll
@@ -82,7 +82,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  ROL_COPY_FILES_TO_BINARY_DIR(
     TestDataCopy
     SOURCE_FILES
       input_01.xml input_02.xml input_03.xml input_04.xml input_05.xml input_07.xml input_08.xml input_09.xml cube.txt L-cubes.txt
@@ -94,7 +94,7 @@ ENDIF()
 
 
 #IF(${PROJECT_NAME}_ENABLE_Sacado)
-#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  ROL_ADD_EXECUTABLE_AND_TEST(
 #    test_06
 #    SOURCES test_06.cpp
 #    ARGS PrintItAll

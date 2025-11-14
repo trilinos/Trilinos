@@ -1,4 +1,4 @@
-#TRIBITS_ADD_EXECUTABLE(
+#ROL_ADD_EXECUTABLE(
 #   ConicModel
 #   SOURCES test_01.cpp
 #   ARGS PrintItAll

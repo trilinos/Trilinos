@@ -13,7 +13,8 @@
 
 #define ROL_UNUSED(x) (void) x
 
-#include <ostream>
+#include <iostream>
+#include <iomanip>
 #include <vector>
 #include <algorithm>
 
@@ -37,7 +38,7 @@
     a duality pairing (in general Banach space).
 
     There are additional virtual member functions that can be
-    overloaded for computational efficiency. 
+    overloaded for computational efficiency.
 */
 
 namespace ROL {
@@ -45,8 +46,8 @@ namespace ROL {
 template <class Real>
 class Vector
 #ifdef ENABLE_PYROL
- : public std::enable_shared_from_this<Vector<Real>> 
-#endif 
+ : public std::enable_shared_from_this<Vector<Real>>
+#endif
 {
 public:
 
@@ -100,7 +101,7 @@ public:
 
              Provides the means of allocating temporary memory in ROL.
 
-             ---             
+             ---
   */
   virtual ROL::Ptr<Vector> clone() const = 0;
 
@@ -221,7 +222,7 @@ public:
   virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     ROL_UNUSED(r);
     ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
-      "The method reduce was called, but not implemented" << std::endl); 
+      "The method reduce was called, but not implemented" << std::endl);
   }
 
   virtual void print( std::ostream &outStream ) const {

@@ -22,7 +22,7 @@
 #include "ROL_ValidParameters.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iomanip>
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   typedef NonlinearProgram<RealT>    NLP;
   typedef AlgorithmState<RealT>      STATE;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;

@@ -12,6 +12,7 @@
 
 #include "Thyra_ModelEvaluator.hpp" // Interface
 #include "Thyra_StateFuncModelEvaluatorBase.hpp" // Implementation
+#include "ROL_GlobalMPISession.hpp"
 
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_ParameterList.hpp"

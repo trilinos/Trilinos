@@ -36,7 +36,7 @@
 #include <iostream>
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_ParameterList.hpp"
 #include "ROL_StdVector.hpp"
@@ -111,7 +111,7 @@ private:
 
   public: 
 
-  Objective_GrossPitaevskii(const Real &g, const Vector<Real> &pV) : g_(g),  
+  Objective_GrossPitaevskii(const Real &g, const Vector<Real> &pV) : g_(g),
     Vp_(getVector(pV))  {
     nx_ = Vp_->size(); 
     dx_ = (1.0/(1.0+nx_));

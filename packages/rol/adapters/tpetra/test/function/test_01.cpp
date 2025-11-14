@@ -18,7 +18,7 @@
 #include "ROL_Types.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "Tpetra_Core.hpp"
  
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     int iprint     = argc - 1;
     ROL::Ptr<std::ostream> outStream;
     ROL::nullstream bhs; // outputs nothing
-    Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
+    ROL::GlobalMPISession mpiSession (&argc, &argv, &bhs);
 
     if (iprint > 0)
         ROL::makePtrFromRef(std::cout);

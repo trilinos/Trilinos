@@ -12,7 +12,7 @@
 */
 
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
 #include "Tpetra_Core.hpp"
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
   using Teuchos::RCP;
 
   /*** Initialize communicator. ***/
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // pauseToAttach(MPI_COMM_WORLD);
 

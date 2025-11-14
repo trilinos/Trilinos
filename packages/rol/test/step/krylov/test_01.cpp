@@ -18,7 +18,7 @@
 #include "ROL_ParameterList.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include<iomanip>
 
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
   typedef typename vector::size_type    luint;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;

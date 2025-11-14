@@ -20,7 +20,7 @@
 #include "ROL_Zakharov.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "Tpetra_Core.hpp"
 
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
      
     typedef ROL::Ptr<MV> MVP;
 
-    Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+    ROL::GlobalMPISession mpiSession(&argc, &argv,0);
 
     ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
