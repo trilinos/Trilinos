@@ -1333,7 +1333,7 @@ TEST_F(NgpFieldBLASNode, field_amax_device)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
-  auto stkField1Data = stkField1->data<stk::mesh::ReadOnly>();
+  auto stkField1Data = stkField1->data();
   for (auto& n : nodes) {
     auto myVal = stkField1Data.entity_values(n);
     for (stk::mesh::ComponentIdx i : myVal.components()) {
@@ -1361,7 +1361,7 @@ TEST_F(NgpFieldBLASNode, field_amax_host)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
-  auto stkField1Data = stkField1->data<stk::mesh::ReadOnly>();
+  auto stkField1Data = stkField1->data();
   for (auto& n : nodes) {
     auto myVal = stkField1Data.entity_values(n);
     for (stk::mesh::ComponentIdx i : myVal.components()) {
@@ -1391,7 +1391,7 @@ TEST_F(NgpFieldBLASNode, field_amax_exec_space)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
-  auto stkField1Data = stkField1->template data<stk::mesh::ReadOnly>();
+  auto stkField1Data = stkField1->data();
   for (auto& n : nodes) {
     auto myVal = stkField1Data.entity_values(n);
     for (stk::mesh::ComponentIdx i : myVal.components()) {
@@ -1416,7 +1416,7 @@ TEST_F(NgpFieldBLASNode, field_amax_no_selector)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
-  auto stkField1Data = stkField1->template data<stk::mesh::ReadOnly>();
+  auto stkField1Data = stkField1->data();
   for (auto& n : nodes) {
     auto myVal = stkField1Data.entity_values(n);
     for (stk::mesh::ComponentIdx i : myVal.components()) {
@@ -1450,8 +1450,8 @@ TEST_F(NgpFieldBLASNode, field_dot_device)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
-  auto stkField1Data = stkField1->data<stk::mesh::ReadOnly>();
-  auto stkField2Data = stkField2->data<stk::mesh::ReadOnly>();
+  auto stkField1Data = stkField1->data();
+  auto stkField2Data = stkField2->data();
   for (auto& n : nodes) {
     auto myVal1 = stkField1Data.entity_values(n);
     auto myVal2 = stkField2Data.entity_values(n);
@@ -1484,8 +1484,8 @@ TEST_F(NgpFieldBLASNode, field_dot_host)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
-  auto stkField1Data = stkField1->data<stk::mesh::ReadOnly>();
-  auto stkField2Data = stkField2->data<stk::mesh::ReadOnly>();
+  auto stkField1Data = stkField1->data();
+  auto stkField2Data = stkField2->data();
   for (auto& n : nodes) {
     auto myVal1 = stkField1Data.entity_values(n);
     auto myVal2 = stkField2Data.entity_values(n);
@@ -1520,8 +1520,8 @@ TEST_F(NgpFieldBLASNode, field_dot_exec_space)
 
   stk::mesh::EntityVector nodes;
   get_bulk().get_entities(stk::topology::NODE_RANK, selectRule, nodes);
-  auto stkField1Data = stkField1->data<stk::mesh::ReadOnly>();
-  auto stkField2Data = stkField2->data<stk::mesh::ReadOnly>();
+  auto stkField1Data = stkField1->data();
+  auto stkField2Data = stkField2->data();
   for (auto& n : nodes) {
     auto myVal1 = stkField1Data.entity_values(n);
     auto myVal2 = stkField2Data.entity_values(n);

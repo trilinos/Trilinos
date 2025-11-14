@@ -25,8 +25,6 @@
 
 namespace {
 
-using IntDualViewType = Kokkos::DualView<int*, stk::ngp::ExecSpace>;
-
 void set_field_on_device(stk::mesh::BulkData &bulk,
                          stk::mesh::EntityRank rank,
                          stk::mesh::Part &meshPart,
@@ -61,7 +59,7 @@ void check_field_on_host(const stk::mesh::BulkData & bulk,
   const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
   const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::ELEM_RANK, meta.locally_owned_part());
 
-  auto stkFieldData = stkField.template data<stk::mesh::ReadOnly>();
+  auto stkFieldData = stkField.template data<>();
   for(const stk::mesh::Bucket* bptr : buckets) {
     for(stk::mesh::Entity elem : *bptr) {
       auto fieldData = stkFieldData.entity_values(elem);
@@ -103,7 +101,7 @@ TEST_F(NgpHowTo, loopOverSubsetOfMesh)
   double fieldVal = 13.0;
   set_field_on_device(get_bulk(), stk::topology::ELEM_RANK, shellQuadPart, shellQuadField, fieldVal);
 
-  auto shellQuadFieldData = shellQuadField.data<stk::mesh::ReadOnly>();
+  auto shellQuadFieldData = shellQuadField.data();
 
   for(const stk::mesh::Bucket *bucket : get_bulk().get_buckets(stk::topology::ELEM_RANK, shellQuadPart))
   {
@@ -211,7 +209,7 @@ TEST_F(NgpHowTo, loopOverAllMeshNodes)
   double fieldVal = 13.0;
   set_field_on_device(get_bulk(), stk::topology::NODE_RANK, get_meta().universal_part(), field, fieldVal);
 
-  auto fieldData = field.data<stk::mesh::ReadOnly>();
+  auto fieldData = field.data();
   for(const stk::mesh::Bucket *bucket : get_bulk().get_buckets(stk::topology::NODE_RANK, get_meta().universal_part())) {
     for(stk::mesh::Entity node : *bucket) {
       auto entityValues = fieldData.entity_values(node);
@@ -234,7 +232,7 @@ TEST_F(NgpHowTo, loopOverMeshFaces)
   double fieldVal = 13.0;
   set_field_on_device(get_bulk(), stk::topology::FACE_RANK, facePart, field, fieldVal);
 
-  auto fieldData = field.data<stk::mesh::ReadOnly>();
+  auto fieldData = field.data();
 
   for(const stk::mesh::Bucket *bucket : get_bulk().get_buckets(stk::topology::FACE_RANK, get_meta().universal_part())) {
     for(stk::mesh::Entity node : *bucket) {
@@ -809,7 +807,7 @@ TEST_F(NgpHowTo, exerciseAura)
   set_num_elems_in_field_on_device_and_copy_back(get_bulk(), get_meta().universal_part(), field);
 
   int expectedNumElemsPerProc = 2;
-  auto fieldData = field.data<stk::mesh::ReadOnly>();
+  auto fieldData = field.data();
   for(const stk::mesh::Bucket *bucket : get_bulk().get_buckets(stk::topology::ELEM_RANK, get_meta().universal_part()))
     for(stk::mesh::Entity elem : *bucket) {
       auto entityValues = fieldData.entity_values(elem);
@@ -981,7 +979,7 @@ protected:
     stk::io::fill_mesh("generated:1x2x4", get_bulk());
     stk::mesh::EntityVector elems;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);
-    auto elemFieldData = elemField->data();
+    auto elemFieldData = elemField->data<stk::mesh::ReadWrite>();
     for(stk::mesh::Entity elem : elems)
     {
       auto fieldDataValue = elemFieldData.entity_values(elem);
@@ -1301,7 +1299,7 @@ TEST(NgpMesh, meshIndices)
 
   fill_field(ngpMesh, rank, meta, field, fieldVal);
 
-  auto fieldData = field.data<stk::mesh::ReadOnly>();
+  auto fieldData = field.data();
 
   stk::mesh::EntityId id = 1;
   stk::mesh::Entity entity = bulk->get_entity(rank, id);

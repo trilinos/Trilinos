@@ -93,7 +93,7 @@ void ConstructedMesh::populate_bulk_data(stk::mesh::BulkData& bulk)
       elemIdOffset += m_elemBlocks[i].connectivityIndex.size();
     }
 
-    auto coordData = coordsField.data();
+    auto coordData = coordsField.data<stk::mesh::ReadWrite>();
     for(size_t nodeIndex=0; nodeIndex < m_nodeIds.size(); nodeIndex++)
     {
       stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, m_nodeIds[nodeIndex]);

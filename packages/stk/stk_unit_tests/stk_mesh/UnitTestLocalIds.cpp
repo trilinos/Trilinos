@@ -119,7 +119,7 @@ public:
   stk::mesh::EntityValues<const double> get_coordinates(unsigned node_index) const
   {
     stk::mesh::Entity node = m_localIdToNode[node_index];
-    return m_coords->data<stk::mesh::ReadOnly>().entity_values(node);
+    return m_coords->data().entity_values(node);
   }
 
   void reset_local_ids()
@@ -223,7 +223,7 @@ TEST_F(LocalIds, using_entities)
 
     typedef stk::mesh::Field<double> CoordFieldType;
     CoordFieldType *coords = get_meta().get_field<double>(stk::topology::NODE_RANK, "coordinates");
-    auto coordData = coords->data<stk::mesh::ReadOnly>();
+    auto coordData = coords->data();
 
     unsigned elemIndex = 0;
     const stk::mesh::BucketVector& elemBuckets = get_bulk().buckets(stk::topology::ELEM_RANK);

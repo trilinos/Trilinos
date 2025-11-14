@@ -127,7 +127,7 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionMultiSubset)
                             elements);
     EXPECT_TRUE(elements.size() >= 729);
 
-    auto pressureData = pressure.data<stk::mesh::ReadOnly>();
+    auto pressureData = pressure.data();
     for(size_t i=0; i<729; i++) {
       auto fieldDataForElement = pressureData.entity_values(elements[i]);
       EXPECT_DOUBLE_EQ(0.0, fieldDataForElement());

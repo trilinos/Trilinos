@@ -344,7 +344,7 @@ createArborXBoundingBoxesForEntities(const stk::mesh::BulkData &bulk,
 
   std::vector<double> boxCoordinates(6);
 
-  auto coordsData = coords->data<double,stk::mesh::ReadOnly>();
+  auto coordsData = coords->data<double>();
 
   for (size_t i = 0; i < entities.size(); ++i) {
     unsigned num_nodes = bulk.num_nodes(entities[i]);

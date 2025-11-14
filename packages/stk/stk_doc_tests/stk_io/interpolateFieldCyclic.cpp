@@ -155,7 +155,7 @@ TEST(StkMeshIoBrokerHowTo, interpolateFieldCyclic)
       // ============================================================
       //+ VERIFICATION
       // The value of the "temperature" field at all nodes should be 'expected'
-      auto temperatureData = temperature.data<stk::mesh::ReadOnly>();
+      auto temperatureData = temperature.data();
       stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
         [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
         auto nodeTemperatureData = temperatureData.entity_values(node);

@@ -57,7 +57,7 @@ public:
       const stk::mesh::Part & sidesetPart = *meta.get_part(dfFieldInfo.second);
 
       const stk::mesh::EntityVector faces = stk::mesh::get_entities(bulk, stk::topology::FACE_RANK, sidesetPart);
-      auto dfFieldData = dfField.data<stk::mesh::ReadOnly>();
+      auto dfFieldData = dfField.data();
       for (stk::mesh::Entity face : faces) {
         auto df = dfFieldData.entity_values(face);
         for (stk::mesh::ComponentIdx i : df.components()) {

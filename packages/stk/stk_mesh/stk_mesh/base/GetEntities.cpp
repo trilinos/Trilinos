@@ -155,7 +155,15 @@ void get_entities( const BulkData& bulk,
   bulk.get_entities(rank, selector, entities);
 
   if (entities.size() > 0 && sortByGlobalId) {
-    std::sort(entities.begin(), entities.end(), EntityLess(bulk));
+    const bool useFastLess = rank != stk::topology::FACE_RANK;
+    if (useFastLess) {
+      auto fastEntityLess = [&bulk](const Entity lhs, const Entity rhs)->bool
+                            {return (bulk.entity_key(lhs) < bulk.entity_key(rhs));};
+      std::sort(entities.begin(), entities.end(), fastEntityLess);
+    }
+    else {
+      std::sort(entities.begin(), entities.end(), EntityLess(bulk));
+    }
   }
 }
 

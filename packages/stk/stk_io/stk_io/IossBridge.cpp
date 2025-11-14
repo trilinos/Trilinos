@@ -366,29 +366,30 @@ void internal_field_data_to_ioss(const stk::mesh::BulkData& mesh,
   if (!(ioEntity->type() & supports)) {
     return;
   }
-  int iossFieldLength = ioField.transformed_storage()->component_count();
-  size_t entityCount = entities.size();
+  const int iossFieldLength = ioField.transformed_storage()->component_count();
+  const size_t entityCount = entities.size();
 
   std::vector<T> ioFieldData(entityCount*iossFieldLength);
 
   stk::mesh::field_data_execute<T, stk::mesh::ReadOnly>(*field,
     [&](auto& fieldData) {
-      for (size_t i=0; i < entityCount; ++i) {
-        if (mesh.is_valid(entities[i]) && mesh.entity_rank(entities[i]) == field->entity_rank()) {
-          if (field->defined_on(entities[i])) {
-            auto fldData = fieldData.entity_values(entities[i]);
-            int stkFieldLength = fldData.num_scalars();
-            STK_ThrowRequireMsg((iossFieldLength >= stkFieldLength), "Field " << field->name() << " scalars-per-entity="
-                                << static_cast<int>(stkFieldLength) << " doesn't match Ioss iossFieldLength(="
+      T* ioFieldDataPtr = ioFieldData.data();
+      for (stk::mesh::Entity entity : entities) {
+        if (mesh.is_valid(entity) && mesh.entity_rank(entity) == field->entity_rank()) {
+          auto fldData = fieldData.entity_values(entity);
+          const int stkFieldLength = fldData.num_scalars();
+          if (stkFieldLength > 0) {
+            STK_ThrowAssertMsg((iossFieldLength >= stkFieldLength), "Field " << field->name() << " scalars-per-entity="
+                                << stkFieldLength << " doesn't match Ioss iossFieldLength(="
                                 << iossFieldLength << ") for io_entity " << ioEntity->name());
-            stk::mesh::ScalarIdx length ( std::min(iossFieldLength, stkFieldLength) );
-
-            T* ioFieldDataPtr = ioFieldData.data()+i*iossFieldLength;
+            stk::mesh::ScalarIdx length ( iossFieldLength > stkFieldLength ? stkFieldLength : iossFieldLength );
 
             for(stk::mesh::ScalarIdx j(0); j<length; ++j) {
               ioFieldDataPtr[j] = fldData(j);
             }
+
           }
+          ioFieldDataPtr += iossFieldLength;
         }
       }
     }
@@ -397,16 +398,12 @@ void internal_field_data_to_ioss(const stk::mesh::BulkData& mesh,
   size_t ioEntityCount = ioEntity->put_field_data(ioField.get_name(), ioFieldData);
   assert(ioFieldData.size() == entities.size() * iossFieldLength);
 
-  if (ioEntityCount != entityCount) {
-    std::ostringstream errmsg;
-    errmsg << "ERROR: Field count mismatch for IO field '"
-           << ioField.get_name()
-           << "' on " << ioEntity->type_string() << " " << ioEntity->name()
-           << ". The IO system has " << ioEntityCount
-           << " entries, but the stk:mesh system has " << entityCount
-           << " entries. The two counts must match.";
-    throw std::runtime_error(errmsg.str());
-  }
+  STK_ThrowRequireMsg(ioEntityCount == entityCount, "ERROR: Field count mismatch for IO field '"
+                                                    << ioField.get_name()
+                                                    << "' on " << ioEntity->type_string() << " " << ioEntity->name()
+                                                    << ". The IO system has " << ioEntityCount
+                                                    << " entries, but stk::mesh has " << entityCount
+                                                    << " entries. The two counts must match.");
 }
 
 bool will_output_lower_rank_fields(const stk::mesh::Part &part, stk::mesh::EntityRank rank)
