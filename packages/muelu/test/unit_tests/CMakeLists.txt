@@ -81,6 +81,7 @@ APPEND_SET(
   PermutationFactory.cpp
   RigidBodyModeFactory.cpp
   ML2MueLuParameterTranslator.cpp
+  Zoltan2InitialRebalance.cpp
 )
 
 APPEND_SET(SOURCES_INTREPID2 MueLu_UnitTests.cpp MueLu_TestHelpers.cpp)
