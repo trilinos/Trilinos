@@ -234,9 +234,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("tol", &dtol, "solver convergence tolerance");
   bool binaryFormat = false;
   clp.setOption("binary", "ascii", &binaryFormat, "format of input matrix file");
-  std::string repartitionXMLFilename = "";
-  clp.setOption("repartXML", &repartitionXMLFilename, "read initial repartitioning parameters from an xml file");
-
   std::string rowMapFile;
   clp.setOption("rowmap", &rowMapFile, "map data file");
   std::string colMapFile;
@@ -288,6 +285,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   clp.setOption("equilibrate", &equilibrate, "equilibrate the system (no | diag | 1-norm)");
   bool reorder = false;
   clp.setOption("reorder", "no-reorder", &reorder, "reorder system using reverse CuthillMcKee");
+  bool repartition = false;
+  clp.setOption("repartition", "no-repartition", &repartition, "Repartition matrix before setting up a solver");
+  std::string repartitionXMLFilename = "";
+  clp.setOption("repartXML", &repartitionXMLFilename, "read initial repartitioning parameters from an xml file");
 
   bool profileSetup = false;
   bool profileSolve = false;
@@ -356,9 +357,16 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   }
 
   Teuchos::RCP<ParameterList> repartitionParamList;
-  if (repartitionXMLFilename != "") {
-    repartitionParamList = Teuchos::make_rcp<ParameterList>();
-    Teuchos::updateParametersFromXmlFileAndBroadcast(repartitionXMLFilename, repartitionParamList, *comm);
+  if (repartition) {
+    if (!repartitionXMLFilename.empty()) {
+      repartitionParamList = Teuchos::make_rcp<ParameterList>();
+      Teuchos::updateParametersFromXmlFileAndBroadcast(repartitionXMLFilename, repartitionParamList, *comm);
+    } else if (paramList.isSublist("repartition: params")) {
+      repartitionParamList = Teuchos::rcpFromRef(paramList.sublist("repartition: params"));
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                                 "To repartition either provide repartitioning parameters in the preconditioner input deck (specified using --xml) or as a separate file (--repartitionXMLFilename)");
+    }
   }
 
   if (inst == Xpetra::COMPLEX_INT_INT && dsolveType == "belos") {
