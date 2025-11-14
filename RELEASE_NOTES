@@ -136,7 +136,7 @@ Tpetra
     https://github.com/trilinos/Trilinos/pull/13947
 
   - The Tpetra assembly examples were updated to better showcase
-    current Kokkos pratices.
+    current Kokkos practices.
     https://github.com/trilinos/Trilinos/pull/14430
 
   - Helper routines for the common use case of generating matrices by
