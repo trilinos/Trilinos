@@ -269,15 +269,6 @@ reset()
   status = StatusTest::Unconverged;
   if (useCounters)
     counters->reset();
-
-  // Test the initial guess
-  status = testPtr->checkStatus(*this, checkType);
-
-  if (utils->isPrintType(NOX::Utils::Parameters)) {
-    utils->out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
-    testPtr->print(utils->out(), 5);
-    utils->out() <<"\n" << NOX::Utils::fill(72) << "\n";
-  }
 }
 
 //*************************************************************************
