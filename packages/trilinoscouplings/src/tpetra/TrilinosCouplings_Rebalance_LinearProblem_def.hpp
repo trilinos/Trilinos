@@ -18,6 +18,7 @@
 #include <Tpetra_MultiVector.hpp>
 
 #include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 
@@ -51,6 +52,7 @@ template <class Scalar,
 typename Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NewType
 Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( OriginalType const & origProblem )
 {
+  using cg_t  = Tpetra::CrsGraph     <        LocalOrdinal, GlobalOrdinal, Node>;
   using mv_t  = Tpetra::MultiVector  <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using cm_t  = Tpetra::CrsMatrix    <Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using lp_t  = Tpetra::LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -58,27 +60,40 @@ Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( 
   // Save original object
   this->origObj_ = origProblem;
 
-  Teuchos::RCP<cm_t> origMatrix = Teuchos::rcp<cm_t>( dynamic_cast<cm_t *>(origProblem->getMatrix().get()), false );
-  Teuchos::RCP<mv_t> origLHS    = origProblem->getLHS();
-  Teuchos::RCP<mv_t> origRHS    = origProblem->getRHS();
+  Teuchos::RCP<cm_t>       origMatrix = Teuchos::rcp<cm_t>( dynamic_cast<cm_t *>(origProblem->getMatrix().get()), false );
+  Teuchos::RCP<cg_t const> origGraph  = Teuchos::rcp<cg_t const>( dynamic_cast<cg_t const *>(origMatrix->getGraph().get()), false );
+  Teuchos::RCP<mv_t>       origLHS    = origProblem->getLHS();
+  Teuchos::RCP<mv_t>       origRHS    = origProblem->getRHS();
 
   // ****************************************************************
   // Instantiate a partitioning problem and solve it.
   // ****************************************************************
-  using MatrixAdapter_t = Zoltan2::XpetraCrsMatrixAdapter<cm_t>;
-  MatrixAdapter_t matrixAdapter(origMatrix);
-
-  Zoltan2::PartitioningProblem<MatrixAdapter_t> partitioningProblem(&matrixAdapter, paramListForZoltan2PartitioningProblem_.get());
+  using GraphAdapter_t = Zoltan2::XpetraCrsGraphAdapter<cg_t>;
+  GraphAdapter_t graphAdapter(origGraph);
+  Zoltan2::PartitioningProblem<GraphAdapter_t> partitioningProblem(&graphAdapter, paramListForZoltan2PartitioningProblem_.get());
   partitioningProblem.solve();
+
+  // ****************************************************************
+  // Rebalance the graph
+  // ****************************************************************
+  Teuchos::RCP<cg_t> newGraph( Teuchos::null );
+  graphAdapter.applyPartitioningSolution(*origGraph, newGraph, partitioningProblem.getSolution());
 
   // ****************************************************************
   // Rebalance the matrix
   // ****************************************************************
-  Teuchos::RCP<cm_t> newMatrix( Teuchos::null );
-  matrixAdapter.applyPartitioningSolution(*origMatrix,
-                                          newMatrix, // The rebalanced one
-                                          partitioningProblem.getSolution());
+#if 1
+  using MatrixAdapter_t = Zoltan2::XpetraCrsMatrixAdapter<cm_t>;
+  MatrixAdapter_t matrixAdapter(origMatrix);
 
+  Teuchos::RCP<cm_t> newMatrix( Teuchos::null );
+  matrixAdapter.applyPartitioningSolution(*origMatrix, newMatrix, partitioningProblem.getSolution());
+#else
+  Teuchos::RCP<cm_t> newMatrix( Teuchos::null );
+  newMatrix = Teuchos::rcp<cm_t>( new cm_t(*origMatrix, newGraph, Teuchos::null) );
+  newMatrix->fillComplete(Teuchos::null);
+#endif
+  
   // ****************************************************************
   // Rebalance the lhs vector
   // ****************************************************************
@@ -86,9 +101,7 @@ Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( 
   MultiVectorAdapter_t lhsAdapter(origLHS);
 
   Teuchos::RCP<mv_t> newLHS( Teuchos::null );
-  lhsAdapter.applyPartitioningSolution(*origLHS,
-                                       newLHS, // The rebalanced one
-                                       partitioningProblem.getSolution());
+  lhsAdapter.applyPartitioningSolution(*origLHS, newLHS, partitioningProblem.getSolution());
 
   // ****************************************************************
   // Rebalance the rhs vector
@@ -96,9 +109,7 @@ Rebalance_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()( 
   MultiVectorAdapter_t rhsAdapter(origRHS);
 
   Teuchos::RCP<mv_t> newRHS( Teuchos::null );
-  rhsAdapter.applyPartitioningSolution(*origRHS,
-                                       newRHS, // The rebalanced one
-                                       partitioningProblem.getSolution());
+  rhsAdapter.applyPartitioningSolution(*origRHS, newRHS, partitioningProblem.getSolution());
 
   this->newObj_ = Teuchos::rcp<lp_t>( new lp_t(newMatrix, newLHS, newRHS) );
 

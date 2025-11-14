@@ -217,7 +217,7 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
 
     if (localProc == 0) {
       std::cout << "||originalMat||_frob = " << originalFrobNorm
-                << ", ||rebalancedMat||_2 = " << rebalancedFrobNorm
+                << ", ||rebalancedMat||_frob = " << rebalancedFrobNorm
                 << ", relativeDiff = " << relativeDiff
                 << ", Scalar_t = " << typeid(Scalar_t).name()
                 << ", Teuchos::ScalarTraits<Scalar_t>::eps() = " << Teuchos::ScalarTraits<Scalar_t>::eps()
