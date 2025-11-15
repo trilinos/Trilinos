@@ -65,7 +65,7 @@ RCP<ParameterList> Factory::RemoveFactoriesFromList(const ParameterList& list) c
   return paramList;
 }
 
-RCP<const ParameterList> Factory::GetValidParameterList() const {
+RCP<const ParameterList> Factory::GetValidParameterListImpl() const {
   return Teuchos::null;  // Teuchos::null == GetValidParameterList() not implemented == skip validation and no default values (dangerous)
 }
 

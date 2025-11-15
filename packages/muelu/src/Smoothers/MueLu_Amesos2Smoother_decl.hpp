@@ -73,7 +73,9 @@ class Amesos2Smoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrd
   //! Destructor
   virtual ~Amesos2Smoother();
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

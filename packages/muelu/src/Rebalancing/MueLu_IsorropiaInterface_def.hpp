@@ -49,7 +49,7 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
