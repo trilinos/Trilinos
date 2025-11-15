@@ -926,6 +926,20 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   // the overlapping of communication and computation when constantNumPackets > 0
   // and Behavior::enableGranularTransfers().
 
+  // Fencing Behavior
+  //
+  // There are two spots where fences might be required during transfer:
+  //
+  // (1) Between packAndPrepare and doPostSends:
+  //     This guarantees that the send buffers are filled before MPI tries to send them.
+  //     These fences are only required if the communication buffers were packed on device
+  //     and device-aware MPI is used. Otherwise the sync between host and device or vice-versa
+  //     will fence.
+  //     The call is in doPostSends.
+  // (2) After copyAndPermute and unpackAndCombine:
+  //     This makes sure that the target view is fully processed at the end of the transfer.
+  //     The call is at the end of endTransfer.
+
   const bool overlapTransferSteps = (constantNumPackets != 0) && Behavior::enableGranularTransfers();
 
   if (verbose) {
@@ -1344,6 +1358,9 @@ void DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
       distributorActor_.doWaitsSend(distributorPlan);
     }  // if (needCommunication)
   }    // if (CM != ZERO)
+
+  // Guarantee that copyAndPermute and unpackAndCombine are done.
+  execution_space().fence("Tpetra::DistObject::endTransfer");
 
   if (verbose) {
     std::ostringstream os;
