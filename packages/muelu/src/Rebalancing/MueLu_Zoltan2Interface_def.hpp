@@ -84,14 +84,14 @@ void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& l
 
   typedef typename Teuchos::ScalarTraits<SC>::coordinateType real_type;
   typedef typename Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
+  using Util = Zoltan2Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-  RCP<Matrix> A         = Get<RCP<Matrix> >(level, "A");
-  RCP<const Map> rowMap = A->getRowMap();
-  LO blkSize            = A->GetFixedBlockSize();
+  RCP<Matrix> A = Get<RCP<Matrix> >(level, "A");
 
   int numParts = Get<int>(level, "number of partitions");
   if (numParts == 1 || numParts == -1) {
     // Single processor, decomposition is trivial: all zeros
+    RCP<const Map> rowMap                              = A->getRowMap();
     RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);
     Set(level, "Partition", decomposition);
     return;
@@ -119,22 +119,51 @@ void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& l
   }
   Zoltan2Params.set("num_global_parts", Teuchos::as<int>(numParts));
 
+  const std::string& algo = Zoltan2Params.get<std::string>("algorithm");
+
+  if (algo == "multijagged" && !Zoltan2Params.isParameter("mj_premigration_coordinate_count")) {
+    LO heuristicTargetRowsPerProcess = Get<LO>(level, "repartition: heuristic target rows per process");
+    Zoltan2Params.set("mj_premigration_coordinate_count", heuristicTargetRowsPerProcess);
+  }
+
   GetOStream(Runtime0) << "Zoltan2 parameters:\n----------\n"
                        << Zoltan2Params << "----------" << std::endl;
+
+  RCP<RealValuedMultiVector> coords;
+
+  if (algo == "multijagged" || algo == "rcb")
+    coords = Get<RCP<RealValuedMultiVector> >(level, "Coordinates");
+
+  const std::string debuggingFile = "mj_debug.lvl_" + std::to_string(level.GetLevelID());
+  RCP<typename Util::GOVector> decomposition;
+  {
+    SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
+    decomposition = Util::ComputeDecomposition(numParts, A, coords, Zoltan2Params, debuggingFile);
+  }
+
+  Set(level, "Partition", decomposition);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<typename Zoltan2Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GOVector>
+Zoltan2Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeDecomposition(int numPartitions, RCP<Matrix>& A, RCP<RealValuedMultiVector> coords, Teuchos::ParameterList& Zoltan2Params, std::string debuggingFile) {
+  Zoltan2Params.set("num_global_parts", numPartitions);
+
+  RCP<const Map> rowMap = A->getRowMap();
+  LO blkSize            = A->GetFixedBlockSize();
 
   const std::string& algo = Zoltan2Params.get<std::string>("algorithm");
 
   if (algo == "multijagged" || algo == "rcb") {
-    RCP<RealValuedMultiVector> coords = Get<RCP<RealValuedMultiVector> >(level, "Coordinates");
-    RCP<const Map> map                = coords->getMap();
-    GO numElements                    = map->getLocalNumElements();
+    TEUCHOS_ASSERT(coords);
+    RCP<const Map> map = coords->getMap();
+    GO numElements     = map->getLocalNumElements();
 
     // Check that the number of local coordinates is consistent with the #rows in A
     TEUCHOS_TEST_FOR_EXCEPTION(rowMap->getLocalNumElements() / blkSize != coords->getLocalLength(), Exceptions::Incompatible,
                                "Coordinate vector length (" + toString(coords->getLocalLength()) << " is incompatible with number of block rows in A (" + toString(rowMap->getLocalNumElements() / blkSize) + "The vector length should be the same as the number of mesh points.");
 #ifdef HAVE_MUELU_DEBUG
     GO indexBase = rowMap->getIndexBase();
-    GetOStream(Runtime0) << "Checking consistence of row and coordinates maps" << std::endl;
     // Make sure that logical blocks in row map coincide with logical nodes in coordinates map
     ArrayView<const GO> rowElements    = rowMap->getLocalElementList();
     ArrayView<const GO> coordsElements = map->getLocalElementList();
@@ -155,11 +184,6 @@ void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& l
       }
     }
 
-    // MultiJagged: Grab the target rows per process from the Heuristic to use unless the Zoltan2 list says otherwise
-    if (algo == "multijagged" && !Zoltan2Params.isParameter("mj_premigration_coordinate_count")) {
-      LO heuristicTargetRowsPerProcess = Get<LO>(level, "repartition: heuristic target rows per process");
-      Zoltan2Params.set("mj_premigration_coordinate_count", heuristicTargetRowsPerProcess);
-    }
     const bool writeZoltan2DebuggingFiles = Zoltan2Params.get("mj_debug", false);
     Zoltan2Params.remove("mj_debug");
 
@@ -173,9 +197,8 @@ void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& l
     RCP<ProblemType> problem(new ProblemType(&adapter, &Zoltan2Params, (*zoltanComm)()));
 
     {
-      SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
       if (writeZoltan2DebuggingFiles)
-        adapter.generateFiles(("mj_debug.lvl_" + std::to_string(level.GetLevelID())).c_str(), *(rowMap->getComm()));
+        adapter.generateFiles(debuggingFile.c_str(), *(rowMap->getComm()));
       problem->solve();
     }
 
@@ -191,40 +214,36 @@ void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& l
         decompEntries[i * blkSize + j] = partNum;
     }
 
-    Set(level, "Partition", decomposition);
-
-  } else {
-    GO numElements = rowMap->getLocalNumElements();
-
-    typedef Zoltan2::XpetraCrsGraphAdapter<CrsGraph> InputAdapterType;
-    typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;
-
-    RCP<const Teuchos::MpiComm<int> > dupMpiComm            = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm()->duplicate());
-    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = dupMpiComm->getRawMpiComm();
-
-    InputAdapterType adapter(A->getCrsGraph());
-    RCP<ProblemType> problem(new ProblemType(&adapter, &Zoltan2Params, (*zoltanComm)()));
-
-    {
-      SubFactoryMonitor m1(*this, "Zoltan2 " + toString(algo), level);
-      problem->solve();
-    }
-
-    RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, false);
-    ArrayRCP<GO> decompEntries                         = decomposition->getDataNonConst(0);
-
-    const typename InputAdapterType::part_t* parts = problem->getSolution().getPartListView();
-
-    // For blkSize > 1, ignore solution for every row but the first ones in a block.
-    for (GO i = 0; i < numElements / blkSize; i++) {
-      int partNum = parts[i * blkSize];
-
-      for (LO j = 0; j < blkSize; j++)
-        decompEntries[i * blkSize + j] = partNum;
-    }
-
-    Set(level, "Partition", decomposition);
+    return decomposition;
   }
+
+  GO numElements = rowMap->getLocalNumElements();
+
+  typedef Zoltan2::XpetraCrsGraphAdapter<CrsGraph> InputAdapterType;
+  typedef Zoltan2::PartitioningProblem<InputAdapterType> ProblemType;
+
+  RCP<const Teuchos::MpiComm<int> > dupMpiComm            = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(rowMap->getComm()->duplicate());
+  RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > zoltanComm = dupMpiComm->getRawMpiComm();
+
+  InputAdapterType adapter(A->getCrsGraph());
+  RCP<ProblemType> problem(new ProblemType(&adapter, &Zoltan2Params, (*zoltanComm)()));
+
+  problem->solve();
+
+  RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, false);
+  ArrayRCP<GO> decompEntries                         = decomposition->getDataNonConst(0);
+
+  const typename InputAdapterType::part_t* parts = problem->getSolution().getPartListView();
+
+  // For blkSize > 1, ignore solution for every row but the first ones in a block.
+  for (GO i = 0; i < numElements / blkSize; i++) {
+    int partNum = parts[i * blkSize];
+
+    for (LO j = 0; j < blkSize; j++)
+      decompEntries[i * blkSize + j] = partNum;
+  }
+
+  return decomposition;
 }
 
 }  // namespace MueLu

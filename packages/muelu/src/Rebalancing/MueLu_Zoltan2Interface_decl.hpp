@@ -203,6 +203,21 @@ class Zoltan2Interface<double, int, int, Xpetra::EpetraNode> : public SingleLeve
 
 #endif  // HAVE_MUELU_EPETRA
 
+template <class Scalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+struct Zoltan2Utilities {
+#undef MUELU_ZOLTAN2INTERFACE_SHORT
+#include "MueLu_UseShortNames.hpp"
+
+  using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+  using RealValuedMultiVector = typename Xpetra::MultiVector<real_type, LO, GO, NO>;
+
+  static RCP<GOVector>
+  ComputeDecomposition(int numPartitions, RCP<Matrix>& A, RCP<RealValuedMultiVector> coords, Teuchos::ParameterList& Zoltan2Params, std::string debuggingFile = "");
+};
+
 }  // namespace MueLu
 
 #define MUELU_ZOLTAN2INTERFACE_SHORT
