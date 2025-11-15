@@ -26,6 +26,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Shards                packages/shards                   PT
   Triutils              packages/triutils                 ST
   EpetraExt             packages/epetraext                ST
+  KokkosComm            packages/kokkos-comm              EX
   Tpetra                packages/tpetra                   PT
   TrilinosSS            packages/common/auxiliarySoftware/SuiteSparse PT # Auxiliary software.
   Domi                  packages/domi                     PT
@@ -121,6 +122,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(xSDKTrilinos)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SGM)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(UMR)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(TrilinosLinearSolvers)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(KokkosComm)
 
 # TRILFRAME-500
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(Rythmos)    # 27115 targets
