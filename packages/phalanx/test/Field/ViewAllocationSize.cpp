@@ -29,7 +29,7 @@ namespace phalanx_test {
 
   // ********************************************************
   template<typename ScalarT>
-  void test_span(std::ostream& out,bool success)  {
+  void test_span(std::ostream& out,bool &success)  {
     using namespace std;
     using namespace Teuchos;
     using namespace PHX;

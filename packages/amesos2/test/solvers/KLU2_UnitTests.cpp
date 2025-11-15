@@ -241,7 +241,7 @@ namespace {
 
     if ( rank == 0 ) {
       TEST_ASSERT( solver->getStatus().getNnzLU() != 0 );
-      TEST_ASSERT( solver->getStatus().getNnzLU() == numLocal*static_cast<const size_t>(2*comm->getSize()) );
+      TEST_ASSERT( solver->getStatus().getNnzLU() == numLocal*static_cast<size_t>(2*comm->getSize()) );
       // Good way to check the factors L and U?  Probs not, since they are private members
     }
   }

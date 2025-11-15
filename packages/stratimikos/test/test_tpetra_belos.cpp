@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
     paramList->validateParametersAndSetDefaults(validParamList);
 
     const std::string
-      &matrixFile = getParameter<std::string>(*paramList,"Matrix File");
+      matrixFile = getParameter<std::string>(*paramList,"Matrix File");
     RCP<ParameterList>
       solverBuilderSL  = sublist(paramList,"Linear Solver Builder",true);
 

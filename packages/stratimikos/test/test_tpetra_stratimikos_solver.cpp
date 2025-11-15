@@ -61,7 +61,7 @@ bool Thyra::test_tpetra_stratimikos_solver(
     paramList->validateParametersAndSetDefaults(validParamList);
 
     const std::string
-      &matrixFile = getParameter<std::string>(*paramList,"Matrix File");
+      matrixFile = getParameter<std::string>(*paramList,"Matrix File");
     const bool
       solveAdjoint = getParameter<bool>(*paramList,"Solve Adjoint");
     RCP<ParameterList>

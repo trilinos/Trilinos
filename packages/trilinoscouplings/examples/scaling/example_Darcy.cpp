@@ -912,15 +912,15 @@ int main(int argc, char *argv[]) {
              }
                if (edgeIndex != -1 && edgeIndex < 8){
                  if (edgeIndex < 4 && faceIsOwned[elemToFace(i,4)]){
-                   vals2[m]=-1.0*vals[m];
+                   vals2[m]=-1.0*vals2[m];
                  }
                  else if (edgeIndex > 3 && faceIsOwned[elemToFace(i,5)]){
-                   vals2[m]=-1.0*vals[m];
+                   vals2[m]=-1.0*vals2[m];
                  }
                }
             } // end loop over face edges
 
-           DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals);
+           DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals2);
            faceDone2(iface)=1;
 
        } // end if face is owned and face not done

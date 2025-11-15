@@ -255,7 +255,7 @@ createMultiVector(int numVecs, CopyType type) const {
         newMultiVec->setImplicitWeighting(do_implicit_weighting);
     }
 
-    return std::move(newMultiVec);
+    return newMultiVec;
 }
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>

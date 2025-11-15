@@ -62,20 +62,19 @@ set(explicitly_disabled_warnings
 )
 set(upcoming_warnings
     aggressive-loop-optimizations
-    array-bounds=2
-    class-memaccess
-    dangling-pointer=2
-    mismatched-new-delete
-    overloaded-virtual=1
-    pessimizing-move
-    range-loop-construct
-    unused-but-set-variable
-    uninitialized
+    array-bounds=2  # -Wall
+    class-memaccess  # -Wall
+    dangling-pointer=2  # -Wall
+    # deprecated-copy  # -Wextra, lots of warnings
+    implicit-fallthrough=3  # -Wextra
+    pessimizing-move  # -Wall
+    #unused-parameter  # -Wextra, lots of warnings
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
 set(promoted_warnings
     address
     aligned-new
+    alloc-size  # -Wextra
     array-compare
     bool-compare
     bool-operation
@@ -84,16 +83,22 @@ set(promoted_warnings
     c++14-compat
     c++17compat
     c++20compat
+    calloc-transposed-args
     cast-align
+    cast-function-type  # -Wextra
     catch-value
     char-subscripts
+    clobbered
     comment
     dangling-else
+    dangling-reference  # -Wextra
     delete-non-virtual-dtor
     div-by-zero
     duplicate-decl-specifier
+    empty-body
     enum-compare
     enum-int-mismatch
+    expansion-to-defined  # -Wextra
     format
     format=1
     format-contains-nul
@@ -103,6 +108,7 @@ set(promoted_warnings
     format-truncation=1
     format-zero-length
     frame-address
+    ignored-qualifiers  # -Wextra
     implicit
     implicit-function-declaration
     implicit-int
@@ -116,16 +122,21 @@ set(promoted_warnings
     memset-elt-size
     memset-transposed-args
     misleading-indentation
+    mismatched-new-delete
     mismatched-dealloc
     missing-attributes
+    missing-field-initializers  # -Wextra
     multistatement-macros
     narrowing
     nonnull
     nonnull-compare
     openmp-simd
+    overloaded-virtual=1
     packed-not-aligned
     parentheses
     pointer-sign
+    range-loop-construct
+    redundant-move  # -Wextra
     reorder
     restrict
     return-type
@@ -133,17 +144,22 @@ set(promoted_warnings
     sequence-point
     shadow
     sign-compare
+    sized-deallocation  # -Wextra
     sizeof-array-div
     sizeof-pointer-div
     sizeof-pointer-memaccess
     strict-aliasing
     strict-overflow=1
+    string-compare  # -Wextra
     switch
     tautological-compare
     trigraphs
     type-limits
+    uninitialized
     unknown-pragmas
     unused
+    unused-but-set-parameter
+    unused-but-set-variable
     unused-const-variable=1
     unused-function
     unused-label

@@ -600,12 +600,15 @@ void externallyPreconditionedLinearSolveUseCases(
   // Clang 3.2 issues a warning if semicolons are on the same line as
   // the 'if' statement.  It's good practice in any case to make the
   // empty 'if' body clear.
-  if (nonnull (P_op = P->getUnspecifiedPrecOp ()))
-    ;
-  else if (nonnull (P_op = P->getLeftPrecOp ()))
-    ;
-  else if (nonnull (P_op = P->getRightPrecOp ()))
-    ;
+  if (nonnull(P_op = P->getUnspecifiedPrecOp())) {
+    // pass
+  }
+  else if (nonnull (P_op = P->getLeftPrecOp ())) {
+    // pass
+  }
+  else if (nonnull (P_op = P->getRightPrecOp ())) {
+    // pass
+  }
   // Create a LOWSB object given an unspecified preconditioner operator
   invertibleA = createUnspecifiedPreconditionedLinearOpWithSolve(
     rcpFromRef(A), P_op, lowsFactory, out);
