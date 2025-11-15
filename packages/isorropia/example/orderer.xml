@@ -1,9 +1,0 @@
-<ParameterList name="Isorropia Driver Input">
-    <Parameter name="mm_file" type ="string" value="simple.mtx" />
-    <ParameterList name="Isorropia Input">
-    <!--Parameter name="partitioning method" type="string" value="graph" /-->
-        <ParameterList name="Zoltan">
-        <Parameter name="ORDER_METHOD" type="string" value="PTSCOTCH" />
-    </ParameterList>
-    </ParameterList>
-</ParameterList>

@@ -133,7 +133,7 @@ ENDFUNCTION()
 
 
 set(ALL_TOPLEVEL_PACKAGES_REGEX
-  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos Teuchos KokkosKernels .*EpetraExt Tpetra .*Thyra .*SEACAS .*Teko Intrepid .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL Piro Panzer Adelus TrilinosCouplings TrilinosBuildStats TrilinosInstallTests")
+  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos Teuchos KokkosKernels .*Tpetra .*Thyra .*SEACAS .*Teko .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL .*Panzer Adelus TrilinosCouplings TrilinosBuildStats TrilinosInstallTests")
 
 create_get_changed_trilinos_packages_test(ProjectsList_TeuchosCore
   "ProjectsList.cmake\npackages/teuchos/core/CMakeLists.txt"
@@ -153,27 +153,27 @@ create_get_changed_trilinos_packages_test(ProjectsList_TeuchosCore
   # want to list too many packages above in the regex.
 
 
-create_get_changed_trilinos_packages_test(cmake_std_atdm_TeuchosCore_PyTrilinos_Pliris
-  "cmake/std/atdm/anything\npackages/teuchos/core/CMakeLists.txt\npackages/PyTrilinos/anything\npackages/pliris/CMakeLists.txt"
-  "TrilinosATDMConfigTests,TeuchosCore,PyTrilinos,Pliris"
-  "TrilinosATDMConfigTests,TeuchosCore,Pliris"
-  "Setting Trilinos_ENABLE_TrilinosATDMConfigTests = ON;Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_Pliris = ON"
+create_get_changed_trilinos_packages_test(cmake_std_atdm_TeuchosCore_PyTrilinos_Compadre
+  "cmake/std/atdm/anything\npackages/teuchos/core/CMakeLists.txt\npackages/PyTrilinos/anything\npackages/compadre/CMakeLists.txt"
+  "TrilinosATDMConfigTests,TeuchosCore,Compadre"
+  "TrilinosATDMConfigTests,TeuchosCore,Compadre"
+  "Setting Trilinos_ENABLE_TrilinosATDMConfigTests = ON;Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_Compadre = ON"
   "${ALL_TOPLEVEL_PACKAGES_REGEX}"
   )
   # The above test ensures that cmake/std/atdm/ changes don't trigger global
-  # builds and it makes sure that PT (TeuchosCore) and ST packages (Pliris) do
+  # builds and it makes sure that PT (TeuchosCore) and ST packages (Compadre) do
   # get enabled (but excluded ST package PyTrilinos does not get included).
 
 
-create_get_changed_trilinos_packages_test(TeuchosCore_NewPackage_Pliris
-  "packages/teuchos/core/CMakeLists.txt\npackages/new_package/anything\npackages/pliris/a.txt"
-  "TeuchosCore,NewPackage,Pliris"
-  "TeuchosCore,Pliris"
-  "Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_Pliris = ON"
+create_get_changed_trilinos_packages_test(TeuchosCore_PyTrilinos2_Compadre
+  "packages/teuchos/core/CMakeLists.txt\npackages/PyTrilinos2/anything\npackages/compadre/a.txt"
+  "TeuchosCore,PyTrilinos2,Compadre"
+  "TeuchosCore,Compadre"
+  "Setting Trilinos_ENABLE_TeuchosCore = ON;Setting Trilinos_ENABLE_Compadre = ON"
   "${ALL_TOPLEVEL_PACKAGES_REGEX}"
   )
-  # The above test ensures PT (TeuchosCore) and ST packages (Piro) do get
-  # enabled but EX packages (NewPackage) don't.
+  # The above test ensures PT (TeuchosCore) and ST packages (Compadre) do get
+  # enabled but EX packages (PyTrilinos2) don't.
 
 
 create_get_changed_trilinos_packages_test(cmake_std_atdm
