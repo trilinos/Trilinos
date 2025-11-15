@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_IAMAX_IMPL_HPP_
 #define KOKKOSBLAS1_IAMAX_IMPL_HPP_
 
@@ -75,7 +62,7 @@ struct V_Iamax_Functor {
 ///   View) X, and store the result in the 0-D View r.
 template <class execution_space, class RV, class XV, class SizeType>
 void V_Iamax_Invoke(const execution_space& space, const RV& r, const XV& X) {
-  using AT       = Kokkos::ArithTraits<typename XV::non_const_value_type>;
+  using AT       = KokkosKernels::ArithTraits<typename XV::non_const_value_type>;
   using mag_type = typename AT::mag_type;
 
   const SizeType numRows = static_cast<SizeType>(X.extent(0));

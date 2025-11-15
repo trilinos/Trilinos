@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath('.'))
 master_doc = "index"
 
 project = 'Kokkos Kernels'
-copyright = '2024, National Technology & Engineering Solutions of Sandia, LLC (NTESS)'
+copyright = 'Copyright Contributors to the Kokkos project'
 author = 'lots of people'
 
 # The full version, including alpha/beta/rc tags

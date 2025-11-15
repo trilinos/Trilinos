@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS3_GEMM_DOTBASED_IMPL_HPP_
 #define KOKKOSBLAS3_GEMM_DOTBASED_IMPL_HPP_
@@ -43,8 +30,8 @@ struct DotBasedGEMM {
   using size_A   = typename AV::size_type;
   using scalar_C = typename CV::non_const_value_type;
   using size_C   = typename CV::size_type;
-  using AVT      = Kokkos::ArithTraits<scalar_A>;
-  using CVT      = Kokkos::ArithTraits<scalar_C>;
+  using AVT      = KokkosKernels::ArithTraits<scalar_A>;
+  using CVT      = KokkosKernels::ArithTraits<scalar_C>;
 
   const scalar_A alpha;
   const scalar_C beta;

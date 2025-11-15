@@ -1,21 +1,8 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // #include "Teuchos_UnitTestHarness.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include <sstream>
 
 #include "KokkosSparse_CrsMatrix.hpp"
@@ -45,7 +32,7 @@ class ModifyEntries {
       : A_(A), replace_(replace), sorted_(sorted), atomic_(atomic) {}
 
   KOKKOS_FUNCTION void operator()(const ordinal_type& lclRow, ordinal_type& numModified) const {
-    typedef Kokkos::ArithTraits<scalar_type> KAT;
+    typedef KokkosKernels::ArithTraits<scalar_type> KAT;
     typedef typename KAT::mag_type mag_type;
     const scalar_type ONE = KAT::one();
 
@@ -161,7 +148,7 @@ void checkWhetherEntriesWereModified(bool& success, std::ostream& outRef,
   // using Teuchos::RCP;
   typedef typename CrsMatrixType::value_type value_type;
   typedef typename CrsMatrixType::ordinal_type ordinal_type;
-  typedef Kokkos::ArithTraits<value_type> KAT;
+  typedef KokkosKernels::ArithTraits<value_type> KAT;
 
   // If debug is false, we capture all output in an
   // std::ostringstream, and don't print it unless the test fails
@@ -265,7 +252,7 @@ void testOneCaseImpl(bool& /*success*/, std::ostream& out,
 
     // Restore original values.
     auto val_h            = Kokkos::create_mirror_view(A.values);
-    const scalar_type ONE = Kokkos::ArithTraits<scalar_type>::one();
+    const scalar_type ONE = KokkosKernels::ArithTraits<scalar_type>::one();
     scalar_type curVal    = ONE;
     for (ordinal_type k = 0; k < A.numCols(); ++k, curVal += ONE) {
       val_h[k] = curVal;
@@ -362,7 +349,7 @@ void testAllSizes(bool& success,
   typedef typename matrix_type::value_type value_type;
   typedef typename matrix_type::ordinal_type ordinal_type;
   typedef typename matrix_type::size_type size_type;
-  const value_type ONE = Kokkos::ArithTraits<value_type>::one();
+  const value_type ONE = KokkosKernels::ArithTraits<value_type>::one();
 
   // Teuchos::OSTab tab0 (out);
   out << "maxNumEnt: " << maxNumEnt << endl;
