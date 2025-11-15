@@ -189,7 +189,8 @@ struct InputTraits {
 
 #define Z2_STYPES(s) ( Z2_ISSAME(s,float) || \
   Z2_ISSAME(s,double) || Z2_ISSAME(s,int) || Z2_ISSAME(s,long) || \
-  Z2_ISSAME(s,long long) || Z2_ISSAME(s, int64_t) || Z2_ISSAME(s, int32_t))
+  Z2_ISSAME(s,long long) || Z2_ISSAME(s, int64_t) || Z2_ISSAME(s, int32_t)) || \
+  Z2_ISSAME(s,std::complex<double>) || Z2_ISSAME(s,std::complex<float>)
 
 #define Z2_LTYPES(l) ( Z2_ISSAME(l,int) ||  \
   Z2_ISSAME(l,long) || Z2_ISSAME(l,long long) || Z2_ISSAME(l,ssize_t) )

@@ -704,3 +704,91 @@ FUNCTION(TPETRA_PROCESS_ALL_N_TEMPLATES OUTPUT_FILES TEMPLATE_FILE
   # that the caller can see the result.
   SET(${OUTPUT_FILES} ${OUT_FILES} PARENT_SCOPE)
 ENDFUNCTION(TPETRA_PROCESS_ALL_N_TEMPLATES)
+
+
+# Function to generate .cpp files for ETI of a list of classes or
+# functions, over all enabled Scalar, LocalOrdinal, GlobalOrdinal, and
+# Node template parameters.  We generate one .cpp file for each
+# (Scalar, LocalOrdinal, GlobalOrdinal, Node) type combination over
+# which Tpetra does ETI.
+#
+# OUTPUT_FILES [out] List of the generated .cpp files.
+#
+# TEMPLATE_FILE [in] Name of the input .tmpl "template" file.  This
+#   function does string substitution in that file, using the input
+#   arguments of this function.  For example, @SC_MACRO_EXPR@ (Scalar
+#   macro expression) gets substituted for the value of this
+#   function's SC_MACRO_EXPR input argument.
+#
+# CLASS_LIST [in] List of classes (without namespace
+#   qualifiers)
+#
+# SCALAR_TYPES [in] All Scalar types over which to do ETI for the given
+#   class.  This may include Scalar = GlobalOrdinal and/or Scalar =
+#   int, if appropriate for that class.
+#
+# LOCALORDINAL_TYPES [in] All LocalOrdinal types over which to do ETI
+#   for the given class.
+#
+# GLOBALORDINAL_TYPES [in] All GlobalOrdinal types over which to do
+#   ETI for the given class.
+#
+# NODE_TYPES [in] All Node types over which to do ETI for the given
+#   class.
+#
+# MUST_HAVE_SCALAR_INT [in] (Boolean) Whether the class must be
+#   instantiated with Scalar = int, even if int is not in the set of
+#   GlobalOrdinal types.
+FUNCTION(TPETRA_PROCESS_ETI_TEMPLATES_SLGN OUTPUT_FILES TEMPLATE_FILE CLASS_LIST SCALAR_TYPES LOCALORDINAL_TYPES GLOBALORDINAL_TYPES NODE_TYPES MUST_HAVE_SCALAR_INT)
+  SET(SRCS "")
+  FOREACH(CLASS ${CLASS_LIST})
+    TPETRA_MANGLE_TEMPLATE_PARAMETER(CLASS_MANGLED ${CLASS})
+    string(TOUPPER "${CLASS_MANGLED}" UPPER_CASE_CLASS)
+    TPETRA_PROCESS_ALL_SLGN_TEMPLATES(TMP_OUTPUT_FILES ${TEMPLATE_FILE} ${CLASS_MANGLED} ${UPPER_CASE_CLASS} "${SCALAR_TYPES}" "${LOCALORDINAL_TYPES}" "${GLOBALORDINAL_TYPES}" "${NODE_TYPES}" ${MUST_HAVE_SCALAR_INT})
+    LIST(APPEND SRCS ${TMP_OUTPUT_FILES})
+  ENDFOREACH()
+
+  # This is the standard CMake idiom for setting an output variable so
+  # that the caller can see the result.
+  SET(${OUTPUT_FILES} ${SRCS} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ETI_TEMPLATES_SLGN)
+
+
+# Function to generate .cpp files for ETI of a list of classes or
+# functions, over all enabled LocalOrdinal, GlobalOrdinal, and
+# Node template parameters.  We generate one .cpp file for each
+# (LocalOrdinal, GlobalOrdinal, Node) type combination over
+# which Tpetra does ETI.
+#
+# OUTPUT_FILES [out] List of the generated .cpp files.
+#
+# TEMPLATE_FILE [in] Name of the input .tmpl "template" file.  This
+#   function does string substitution in that file, using the input
+#   arguments of this function.  For example, @SC_MACRO_EXPR@ (Scalar
+#   macro expression) gets substituted for the value of this
+#   function's SC_MACRO_EXPR input argument.
+#
+# CLASS_LIST [in] List of classes (without namespace
+#   qualifiers)
+#
+# LOCALORDINAL_TYPES [in] All LocalOrdinal types over which to do ETI
+#   for the given class.
+#
+# GLOBALORDINAL_TYPES [in] All GlobalOrdinal types over which to do
+#   ETI for the given class.
+#
+# NODE_TYPES [in] All Node types over which to do ETI for the given
+#   class.
+FUNCTION(TPETRA_PROCESS_ETI_TEMPLATES_LGN OUTPUT_FILES TEMPLATE_FILE CLASS_LIST LOCALORDINAL_TYPES GLOBALORDINAL_TYPES NODE_TYPES)
+  SET(SRCS "")
+  FOREACH(CLASS ${CLASS_LIST})
+    TPETRA_MANGLE_TEMPLATE_PARAMETER(CLASS_MANGLED ${CLASS})
+    string(TOUPPER "${CLASS_MANGLED}" UPPER_CASE_CLASS)
+    TPETRA_PROCESS_ALL_LGN_TEMPLATES(TMP_OUTPUT_FILES ${TEMPLATE_FILE} ${CLASS_MANGLED} ${UPPER_CASE_CLASS} "${LOCALORDINAL_TYPES}" "${GLOBALORDINAL_TYPES}" "${NODE_TYPES}" ${MUST_HAVE_SCALAR_INT})
+    LIST(APPEND SRCS ${TMP_OUTPUT_FILES})
+  ENDFOREACH()
+
+  # This is the standard CMake idiom for setting an output variable so
+  # that the caller can see the result.
+  SET(${OUTPUT_FILES} ${SRCS} PARENT_SCOPE)
+ENDFUNCTION(TPETRA_PROCESS_ETI_TEMPLATES_LGN)
