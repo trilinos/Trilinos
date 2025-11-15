@@ -20,6 +20,7 @@
 #include <iostream>
 #include <memory>
 #include <unordered_map>
+#include <algorithm>
 
 /// \file Tpetra_Details_crsUtils.hpp
 /// \brief Functions for manipulating CRS arrays
@@ -482,15 +483,54 @@ find_crs_indices(
   const size_t end   = start + curNumEntries;
   size_t num_found   = 0;
   for (size_t k = 0; k < new_indices.size(); k++) {
-    auto row_offset = start;
-    auto idx        = std::forward<IndexMap>(map)(new_indices[k]);
+    auto idx = std::forward<IndexMap>(map)(new_indices[k]);
     if (idx == invalid_ordinal)
       continue;
-    for (; row_offset < end; row_offset++) {
-      if (idx == cur_indices[row_offset]) {
-        std::forward<Callback>(cb)(k, start, row_offset - start);
+    for (size_t row_offset = start; row_offset < end; row_offset++) {
+      size_t off = row_offset - start;
+      auto lidx  = cur_indices[row_offset];
+      if (idx == lidx) {
+        std::forward<Callback>(cb)(k, start, off);
         num_found++;
       }
+    }
+  }
+  return num_found;
+}
+
+/// \brief Implementation of findCrsIndices
+template <class Pointers, class Indices1, class Indices2, class IndexMap, class Callback>
+size_t find_crs_indices_sorted(
+    typename Pointers::value_type const row,
+    Pointers const& row_ptrs,
+    const size_t curNumEntries,
+    Indices1 const& cur_indices,
+    Indices2 const& new_indices,
+    IndexMap&& map,
+    Callback&& cb) {
+  if (new_indices.size() == 0)
+    return 0;
+
+  using ordinal        = typename std::remove_const<typename Indices1::value_type>::type;
+  auto invalid_ordinal = Teuchos::OrdinalTraits<ordinal>::invalid();
+
+  const size_t start = static_cast<size_t>(row_ptrs[row]);
+  const size_t end   = start + curNumEntries;
+  size_t num_found   = 0;
+  for (size_t k = 0; k < new_indices.size(); k++) {
+    auto idx = std::forward<IndexMap>(map)(new_indices[k]);
+    if (idx == invalid_ordinal)
+      continue;
+
+    // FIXME use kokkos findRelOffset
+    auto first  = &cur_indices[start];
+    auto first0 = first;
+    auto last   = &cur_indices[end];
+    first       = std::lower_bound(first, last, idx);
+    size_t off  = first - first0;
+    if (first != last && !(idx < *first)) {
+      std::forward<Callback>(cb)(k, start, off);
+      num_found++;
     }
   }
   return num_found;
@@ -689,6 +729,18 @@ findCrsIndices(
     IndexMap&& map,
     Callback&& cb) {
   return impl::find_crs_indices(row, rowPtrs, curNumEntries, curIndices, newIndices, map, cb);
+}
+
+template <class Pointers, class Indices1, class Indices2, class IndexMap, class Callback>
+size_t findCrsIndicesSorted(
+    typename Pointers::value_type const row,
+    Pointers const& rowPtrs,
+    const size_t curNumEntries,
+    Indices1 const& curIndices,
+    Indices2 const& newIndices,
+    IndexMap&& map,
+    Callback&& cb) {
+  return impl::find_crs_indices_sorted(row, rowPtrs, curNumEntries, curIndices, newIndices, map, cb);
 }
 
 }  // namespace Details
