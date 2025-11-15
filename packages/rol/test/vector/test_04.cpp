@@ -15,7 +15,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 typedef double RealT;
 
@@ -45,13 +45,11 @@ void print_vector( const ROL::Vector<Real> &x ) {
 
 int main(int argc, char *argv[]) {
 
-  using namespace Teuchos;
-
   typedef ROL::Vector<RealT>            V;
   typedef ROL::StdVector<RealT>         SV;
   typedef ROL::PartitionedVector<RealT> PV;
 
-  GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint = argc - 1;
 

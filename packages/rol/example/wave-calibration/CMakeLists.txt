@@ -1,6 +1,6 @@
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+ROL_ADD_EXECUTABLE_AND_TEST(
     example_01
     SOURCES example_01.cpp
     ARGS PrintItAll

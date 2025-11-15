@@ -1,131 +1,124 @@
-INCLUDE(TribitsPackageMacros)
-INCLUDE(TribitsAddOptionAndDefine)
+# Rapid Optimization Library
 
+if( COMMAND TRIBITS_PACKAGE )
+  set( STANDALONE_ROL FALSE )
+else()
+  set( STANDALONE_ROL TRUE )
+endif()
 
-#
-# A) Define the package
-#
+if( STANDALONE_ROL )
 
-TRIBITS_PACKAGE(ROL)
+  cmake_minimum_required(VERSION 3.23)
 
-#
-# B) Set up package-specific options
-#
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
-  HAVE_ROL_DEBUG
-  "Enable a host of runtime debug checking."
-  ${${PROJECT_NAME}_ENABLE_DEBUG}
+  project( ROL
+           VERSION 2.0
+           DESCRIPTION "Rapid Optimization Library"
+           LANGUAGES CXX )
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+  set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+
+  find_package(BLAS REQUIRED)
+  find_package(LAPACK REQUIRED)
+
+  if(NOT CMAKE_BUILD_TYPE)
+      set(CMAKE_BUILD_TYPE RELEASE CACHE STRING "Build type" FORCE)
+  endif()
+
+  # Set F77_BLAS_MANGLE macro based on Fortran-C interface (similar to Kokkos Kernels)
+  if("${F77_BLAS_MANGLE}" STREQUAL "")
+    enable_language(C)
+    enable_language(Fortran)
+    include(FortranCInterface)
+    FortranCInterface_HEADER(${CMAKE_CURRENT_BINARY_DIR}/FortranCInterface.h MACRO_NAMESPACE "F77_")
+    if(FortranCInterface_GLOBAL_SUFFIX STREQUAL "")
+      set(F77_BLAS_MANGLE "(name,NAME) ${FortranCInterface_GLOBAL_PREFIX}name")
+    else()
+      set(F77_BLAS_MANGLE "(name,NAME) ${FortranCInterface_GLOBAL_PREFIX}name ## ${FortranCInterface_GLOBAL_SUFFIX}")
+    endif()
+    message(STATUS "Detected Fortran name mangling: ${F77_BLAS_MANGLE}")
+  endif()
+
+  # Add pugixml for XML parameter file support
+  include(FetchContent)
+  FetchContent_Declare(
+    pugixml
+    GIT_REPOSITORY https://github.com/zeux/pugixml.git
+    GIT_TAG        v1.14
   )
+  FetchContent_MakeAvailable(pugixml)
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
-  ROL_TIMERS
-  "Build ROL with Teuchos TimeMonitors enabled."
-  OFF
-  )
+  include(ROLUtils)
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PYROL
-  ENABLE_PYBIND11_PYROL
-  "Build ROL with PyROL interface."
-  OFF
-  )
+  # Configure the config header
+  configure_file("${PROJECT_SOURCE_DIR}/cmake/ROL_config.h.in" ROL_config.h @ONLY)
 
-TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PARAMETERLIST_VALIDATION
-  ENABLE_PARAMETERLIST_VALIDATION
-  "Build ROL with ParameterList validation."
-  OFF
-  )
+  add_library(rol SHARED)
 
-# Build Options
-SET( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-INCLUDE(BuildOptions)
-GET_PROPERTY( STACKTRACE_STRING GLOBAL PROPERTY STACKTRACE_IMPL )
-#IF( ${STACKTRACE_STRING} STREQUAL "backward-cpp" )
-#INCLUDE(BackwardConfig)
-#ENDIF()
+  set(SRC ${PROJECT_SOURCE_DIR}/src)
 
+  # Set up compatibility includes (specific directories to avoid conflicts)
+  set(ROL_COMPATIBILITY_INCLUDES ${SRC}/compatibility/teuchos/blas
+                                 ${SRC}/compatibility/teuchos/la
+                                 ${SRC}/compatibility/simple/lapack
+                                 ${SRC}/compatibility/simple/mpi
+                                 ${SRC}/compatibility/simple/parameterlist
+                                 ${SRC}/compatibility/std/shared_ptr
+                                 ${SRC}/compatibility/teuchos/stacktrace
+                                 ${SRC}/compatibility/teuchos-lite)
 
-include(ROLParameters)
+  add_library(Teuchos_BLAS OBJECT ${SRC}/compatibility/teuchos-lite/Teuchos_BLAS.cpp)
+  add_library(Teuchos_CompObject OBJECT ${SRC}/compatibility/teuchos-lite/Teuchos_CompObject.cpp)
+  add_library(Teuchos_TestForException OBJECT ${SRC}/compatibility/teuchos-lite/Teuchos_TestForException.cpp)
 
+  # Use GLOB_RECURSE to find all directories in core components
+  set(ROL_CORE_DIRS ${SRC}/algorithm
+                    ${SRC}/elementwise
+                    ${SRC}/function
+                    ${SRC}/oed
+                    ${SRC}/sol
+                    ${SRC}/status
+                    ${SRC}/step
+                    ${SRC}/utils
+                    ${SRC}/vector
+                    ${SRC}/zoo)
 
-#
-# C) Add the libraries, tests, and examples
-#
+  set(ROL_CORE_INCLUDES)
+  foreach(core_dir ${ROL_CORE_DIRS})
+    file(GLOB_RECURSE subdirs LIST_DIRECTORIES true "${core_dir}/*")
+    list(APPEND ROL_CORE_INCLUDES ${core_dir})
+    foreach(subdir ${subdirs})
+      if(IS_DIRECTORY ${subdir})
+        list(APPEND ROL_CORE_INCLUDES ${subdir})
+      endif()
+    endforeach()
+  endforeach()
 
-ADD_SUBDIRECTORY(src)
+  target_include_directories(rol PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
+                                        ${ROL_COMPATIBILITY_INCLUDES}
+                                        ${ROL_CORE_INCLUDES})
 
-IF( ROL_ENABLE_Sacado ) 
-ADD_SUBDIRECTORY(adapters/sacado)
-ENDIF()
+  target_link_libraries(rol PUBLIC ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES}
+                                    pugixml
+                                    Teuchos_BLAS Teuchos_CompObject Teuchos_TestForException)
 
-IF (ROL_ENABLE_ArrayFireCPU)
-  ADD_SUBDIRECTORY(adapters/arrayfire)
-ENDIF()
+  add_library(rol::rol ALIAS rol)
 
-IF( ROL_ENABLE_PYROL ) 
-  ADD_SUBDIRECTORY(pyrol)
-ENDIF()
+  option(ENABLE_TESTS OFF)
+  option(ENABLE_EXAMPLES OFF)
 
-# Adapters which require use of Teuchos
+  if(ENABLE_TESTS)
+    enable_testing()
+    add_subdirectory(test)
+  endif()
 
-#GET_PROPERTY( PTR_STRING GLOBAL PROPERTY PTR_IMPL )
-#GET_PROPERTY( PARAMETERLIST_STRING GLOBAL PROPERTY PARAMETERLIST_IMPL )
-#IF( PTR_STRING STREQUAL "Teuchos::RCP" )
-#IF( PARAMETERLIST_STRING STREQUAL "Teuchos::ParameterList" )
+  if(ENABLE_EXAMPLES)
+    add_subdirectory(example)
+  endif()
 
-IF( ${USING_TEUCHOS_ALL} )
-
-
-ADD_SUBDIRECTORY(adapters/teuchos)
-
-IF( TPL_ENABLE_MPI ) 
-ADD_SUBDIRECTORY(adapters/mpi)
-ENDIF()
-
-IF( ROL_ENABLE_Epetra )
-ADD_SUBDIRECTORY(adapters/epetra)
-ENDIF()
-
-IF( ROL_ENABLE_Tpetra )
-ADD_SUBDIRECTORY(adapters/tpetra)
-ENDIF()
-
-IF( ROL_ENABLE_Belos )
-ADD_SUBDIRECTORY(adapters/belos)
-ENDIF()
-
-IF( ROL_ENABLE_Thyra )
-ADD_SUBDIRECTORY(adapters/thyra)
-ENDIF()
-
-IF( ROL_ENABLE_TriKota )
-ADD_SUBDIRECTORY(adapters/trikota)
-ENDIF()
-
-IF( ROL_ENABLE_pebbl )
-ADD_SUBDIRECTORY(adapters/pebbl)
-ENDIF()
-
-IF (ROL_ENABLE_Boost AND ROL_ENABLE_MiniTensor)
-  ADD_SUBDIRECTORY(adapters/minitensor)
-ENDIF()
-
-ENDIF( ${USING_TEUCHOS_ALL} )
-
-#ENDIF( PARAMETERLIST_STRING STREQUAL "Teuchos::ParameterList" )
-#ENDIF( PTR_STRING           STREQUAL "Teuchos::RCP" )
-
-IF (ROL_ENABLE_Eigen)
-  ADD_SUBDIRECTORY(adapters/eigen)
-ENDIF()
-
-
-TRIBITS_ADD_TEST_DIRECTORIES(test)
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(tutorial)
-
-#
-# D) Do standard postprocessing
-#
-
-TRIBITS_PACKAGE_POSTPROCESS()
+else() # Build with Trilinos
+  include(cmake/TrilinosROL.cmake)
+endif()

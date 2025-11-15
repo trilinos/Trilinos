@@ -17,7 +17,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"

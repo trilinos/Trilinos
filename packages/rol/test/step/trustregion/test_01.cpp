@@ -12,7 +12,7 @@
 */
 
 #include "ROL_OptimizationSolver.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_Stream.hpp"
 #include "ROL_RandomVector.hpp"
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
   using RealT = double;
   using namespace ROL;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   auto outStream = makeStreamPtr( std::cout, argc > 1 );

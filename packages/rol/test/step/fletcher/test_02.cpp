@@ -19,7 +19,7 @@
 #include "ROL_OptimizationSolver.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 
 typedef double RealT;
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::StdVector<RealT>         SV;
   typedef ROL::Ptr<ROL::Vector<RealT> > PtrV;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   std::string filename = "input_ex02.xml";
   

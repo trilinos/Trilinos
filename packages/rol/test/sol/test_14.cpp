@@ -7,10 +7,9 @@
 // *****************************************************************************
 // @HEADER
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_ParameterList.hpp"
+#include "ROL_Stream.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_StdVector.hpp"
 #include "ROL_StdBoundConstraint.hpp"
@@ -84,12 +83,12 @@ void printSolution(const std::vector<RealT> &x,
 
 int main(int argc, char* argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
+  ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
     outStream = ROL::makePtrFromRef(std::cout);
   else
@@ -103,9 +102,9 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Get ROL parameterlist
     std::string filename = "input_14.xml";
-//    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
-//    Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
-//    Teuchos::ParameterList list = *parlist;
+//    ROL::RCP<ROL::ParameterList> parlist = ROL::rcp( new ROL::ParameterList() );
+//    ROL::updateParametersFromXmlFile( filename, parlist.ptr() );
+//    ROL::ParameterList list = *parlist;
       ROL::Ptr<ROL::ParameterList> parlist = ROL::getParametersFromXmlFile( filename );
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/

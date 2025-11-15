@@ -15,7 +15,7 @@
 #include "ROL_Types.hpp"
 #include "Epetra_Map.h"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -30,7 +30,7 @@ typedef double ElementT;
 int main(int argc, char *argv[]) {
 
 #ifdef HAVE_MPI
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  ROL::GlobalMPISession mpiSession(&argc, &argv,0);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;

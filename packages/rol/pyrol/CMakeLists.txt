@@ -27,6 +27,8 @@ TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_BINDER_USE_ONE_FILE
   "Enable the use of one file by Binder."
   OFF )
 
+SET(PYROL_BINDER_NUM_FILES "100" CACHE STRING "Number of files to use when PYROL_USE_ONE_FILE=OFF.")
+
 TRIBITS_ADD_OPTION_AND_DEFINE(PYROL_BINDER_CMAKE_ERROR
   PYROL_CMAKE_ERROR
   "Stop the configuration if Binder fails."
@@ -402,6 +404,7 @@ EXECUTE_PROCESS(COMMAND
   )
 MESSAGE(STATUS "pybind11 CMake path: ${pybind11_DIR}")
 
+find_package(Python3 REQUIRED Development.Module)
 find_package(pybind11 REQUIRED)
 
 EXECUTE_PROCESS(COMMAND

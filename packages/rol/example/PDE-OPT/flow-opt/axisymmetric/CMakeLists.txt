@@ -1,6 +1,6 @@
 ADD_SUBDIRECTORY(models)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(
+ROL_COPY_FILES_TO_BINARY_DIR(
   ProjectAxisymmetricDataCopy
   SOURCE_FILES
     mesh/axi-diffuser-tri-clip.jou

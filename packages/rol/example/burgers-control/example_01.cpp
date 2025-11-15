@@ -16,9 +16,7 @@
 #include "ROL_TypeB_LinMoreAlgorithm.hpp"
 #include "ROL_Bounds.hpp"
 
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -38,7 +36,7 @@ int main(int argc, char *argv[]) {
 
   typedef typename vector::size_type luint;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;

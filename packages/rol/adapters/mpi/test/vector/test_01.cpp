@@ -8,7 +8,7 @@
 // @HEADER
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_PinTVector.hpp"
 #include "ROL_PinTVectorCommunication_StdVector.hpp"
@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 
   typedef ROL::Ptr<ROL::Vector<RealT>> PtrVector;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;

@@ -27,17 +27,17 @@ private:
   std::vector<ROL::Ptr<ROL::Distribution<Real>>> distVec_;
 
 public:
-  BuildSampler(Teuchos::ParameterList &parlist, int probDim, std::string ex = "Default") : stochDim_(0) {
+  BuildSampler(ROL::ParameterList &parlist, int probDim, std::string ex = "Default") : stochDim_(0) {
     if (ex == "2D Wheel") {
       stochDim_ = probDim;
       // Magnitude distribution.
-      Teuchos::ParameterList magList;
+      ROL::ParameterList magList;
       magList.sublist("Distribution").set("Name","Uniform");
       magList.sublist("Distribution").sublist("Uniform").set("Lower Bound",-0.5);
       magList.sublist("Distribution").sublist("Uniform").set("Upper Bound", 0.5);
       distVec_.push_back(ROL::DistributionFactory<Real>(magList));
       // Polar angle distribution.
-      Teuchos::ParameterList polList;
+      ROL::ParameterList polList;
       polList.sublist("Distribution").set("Name","Truncated Gaussian");
       polList.sublist("Distribution").sublist("Truncated Gaussian").set("Mean",                0.0);
       polList.sublist("Distribution").sublist("Truncated Gaussian").set("Standard Deviation", 17.0);
@@ -48,19 +48,19 @@ public:
     else if (ex == "2D Truss" || ex == "3D Cantilever") {
       stochDim_ = probDim;
       // Magnitude distribution.
-      Teuchos::ParameterList magList;
+      ROL::ParameterList magList;
       magList.sublist("Distribution").set("Name","Uniform");
       magList.sublist("Distribution").sublist("Uniform").set("Lower Bound",-0.5);
       magList.sublist("Distribution").sublist("Uniform").set("Upper Bound", 0.5);
       distVec_.push_back(ROL::DistributionFactory<Real>(magList));
       // Polar angle distribution.
-      Teuchos::ParameterList polList;
+      ROL::ParameterList polList;
       polList.sublist("Distribution").set("Name","Uniform");
       polList.sublist("Distribution").sublist("Uniform").set("Lower Bound",-45.0);
       polList.sublist("Distribution").sublist("Uniform").set("Upper Bound", 45.0);
       distVec_.push_back(ROL::DistributionFactory<Real>(polList));
       if (probDim == 3) {
-        Teuchos::ParameterList aziList;
+        ROL::ParameterList aziList;
         aziList.sublist("Distribution").set("Name","Uniform");
         aziList.sublist("Distribution").sublist("Uniform").set("Lower Bound",-45.0);
         aziList.sublist("Distribution").sublist("Uniform").set("Upper Bound", 45.0);
@@ -70,25 +70,25 @@ public:
     else if (ex == "2D Beams") {
       stochDim_ = 2*probDim;
       // Load 1: Magnitude distribution.
-      Teuchos::ParameterList magList1;
+      ROL::ParameterList magList1;
       magList1.sublist("Distribution").set("Name","Uniform");
       magList1.sublist("Distribution").sublist("Uniform").set("Lower Bound",-0.25);
       magList1.sublist("Distribution").sublist("Uniform").set("Upper Bound", 0.25);
       distVec_.push_back(ROL::DistributionFactory<Real>(magList1));
       // Load 1: Polar angle distribution.
-      Teuchos::ParameterList polList1;
+      ROL::ParameterList polList1;
       polList1.sublist("Distribution").set("Name","Uniform");
       polList1.sublist("Distribution").sublist("Uniform").set("Lower Bound",-25.0);
       polList1.sublist("Distribution").sublist("Uniform").set("Upper Bound", 25.0);
       distVec_.push_back(ROL::DistributionFactory<Real>(polList1));
       // Load 2: Magnitude distribution.
-      Teuchos::ParameterList magList2;
+      ROL::ParameterList magList2;
       magList2.sublist("Distribution").set("Name","Uniform");
       magList2.sublist("Distribution").sublist("Uniform").set("Lower Bound",-0.75);
       magList2.sublist("Distribution").sublist("Uniform").set("Upper Bound", 0.75);
       distVec_.push_back(ROL::DistributionFactory<Real>(magList2));
       // Load 2: Polar angle distribution.
-      Teuchos::ParameterList polList2;
+      ROL::ParameterList polList2;
       polList2.sublist("Distribution").set("Name","Uniform");
       polList2.sublist("Distribution").sublist("Uniform").set("Lower Bound",-45.0);
       polList2.sublist("Distribution").sublist("Uniform").set("Upper Bound", 45.0);
@@ -104,16 +104,16 @@ public:
           std::stringstream sli;
           sli << "Stochastic Load " << i;
           // Magnitude distribution.
-          Teuchos::ParameterList magList;
+          ROL::ParameterList magList;
           magList.sublist("Distribution") = parlist.sublist(sli.str()).sublist("Magnitude");
           distVec_.push_back(ROL::DistributionFactory<Real>(magList));
           // Polar angle distribution.
-          Teuchos::ParameterList polList;
+          ROL::ParameterList polList;
           polList.sublist("Distribution") = parlist.sublist(sli.str()).sublist("Polar Angle");
           distVec_.push_back(ROL::DistributionFactory<Real>(polList));
           // Azimuth angle distribution.
           if (probDim == 3) {
-            Teuchos::ParameterList aziList;
+            ROL::ParameterList aziList;
             aziList.sublist("Distribution") = parlist.sublist(sli.str()).sublist("Azimuth Angle");
             distVec_.push_back(ROL::DistributionFactory<Real>(aziList));
           }
@@ -128,16 +128,16 @@ public:
           std::stringstream sli;
           sli << "Stochastic Traction " << i;
           // Magnitude distribution.
-          Teuchos::ParameterList magList;
+          ROL::ParameterList magList;
           magList.sublist("Distribution") = parlist.sublist(sli.str()).sublist("Magnitude");
           distVec_.push_back(ROL::DistributionFactory<Real>(magList));
           // Polar angle distribution.
-          Teuchos::ParameterList polList;
+          ROL::ParameterList polList;
           polList.sublist("Distribution") = parlist.sublist(sli.str()).sublist("Polar Angle");
           distVec_.push_back(ROL::DistributionFactory<Real>(polList));
           // Azimuth angle distribution.
           if (probDim == 3) {
-            Teuchos::ParameterList aziList;
+            ROL::ParameterList aziList;
             aziList.sublist("Distribution") = parlist.sublist(sli.str()).sublist("Azimuth Angle");
             distVec_.push_back(ROL::DistributionFactory<Real>(aziList));
           }

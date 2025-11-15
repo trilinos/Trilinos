@@ -13,7 +13,7 @@
 #include <utility>
 #include "ROL_Ptr.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "LowerBandedMatrix.hpp"
 
 using RealT = double;
@@ -30,7 +30,7 @@ int main( int argc, char* argv[] ) {
   default_random_engine gen(r());
   uniform_real_distribution<RealT> dist(1.0, 2.0);
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
+  ROL::GlobalMPISession mpiSession(&argc, &argv);  
 
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;

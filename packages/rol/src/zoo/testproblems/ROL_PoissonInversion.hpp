@@ -23,7 +23,8 @@
 #include "ROL_TestProblem.hpp"
 #include "ROL_HelperFunctions.hpp"
 
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_LAPACK.hpp"
+#include "ROL_LinearAlgebra.hpp"
 
 namespace ROL {
 namespace ZOO {
@@ -214,7 +215,7 @@ public:
     }
 
     // Solve Tridiagonal System Using LAPACK's SPD Tridiagonal Solver
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int ldb  = nu_;
     int nhrs = 1;
@@ -467,7 +468,7 @@ public:
 
 
     // Compute dense Hessian.
-    Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
+    ROL::LA::Matrix<Real> H(dim, dim);
     Objective_PoissonInversion<Real> & obj = *this; 
     H = computeDenseHessian<Real>(obj, x);
 
@@ -496,12 +497,19 @@ public:
     }
 
     // Compute dense inverse Hessian.
-    Teuchos::SerialDenseMatrix<int, Real> invH = computeInverse<Real>(H);
+    ROL::LA::Matrix<Real> invH = computeInverse<Real>(H);
 
-    // Apply dense inverse Hessian.
-    Teuchos::SerialDenseVector<int, Real> hv_teuchos(Teuchos::View, &((*hvp)[0]), dim);
-    const Teuchos::SerialDenseVector<int, Real> v_teuchos(Teuchos::View, &(vp[0]), dim);
-    hv_teuchos.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, invH, v_teuchos, 0.0);
+    // Apply dense inverse Hessian using view constructors
+    ROL::LA::Vector<Real> hv_la(ROL::LA::View, &((*hvp)[0]), dim);
+    ROL::LA::Vector<Real> v_la(ROL::LA::View, &(vp[0]), dim);
+    
+    // Apply matrix-vector multiply: hv_la = invH * v_la
+    for (int i = 0; i < dim; i++) {
+      hv_la(i) = 0.0;
+      for (int j = 0; j < dim; j++) {
+        hv_la(i) += invH(i,j) * v_la(j);
+      }
+    }
   }
 
 };
@@ -541,7 +549,7 @@ public:
         (*xp)[li] = std::log(k1);
       }
       else if ( pt >= 0.5 && pt < 1.0 ) {
-        (*xp)[li] = std::log(k2); 
+        (*xp)[li] = std::log(k2);
       }
     }
     return ROL::makePtr<StdVector<Real>>(xp);

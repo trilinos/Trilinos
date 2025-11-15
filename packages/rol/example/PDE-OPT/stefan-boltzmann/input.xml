@@ -28,7 +28,7 @@
     <Parameter name="Statistic Initial Guess"             type="double"  value="5.0"     />
     <Parameter name="Number of Samples"                   type="int"     value="4"       />
     <!-- OUTPUT -->
-    <Parameter name="Check Derivatives"                   type="bool"    value="true"    />
+    <Parameter name="Check Derivatives"                   type="bool"    value="false"    />
     <Parameter name="Print Mean Value State"              type="bool"    value="false"   />
     <Parameter name="Number of Output Samples"            type="int"     value="4"       />
     <!-- FINITE ELEMENT INFORMATION -->
@@ -65,10 +65,16 @@
   <ParameterList name="SOL">
     <Parameter name="Type" type="string" value="Mean Value"   />
     <!--
-      <Parameter name="Type" type="string" value="Risk Averse"  />
       <Parameter name="Type" type="string" value="Risk Neutral" />
+      <Parameter name="Type" type="string" value="Risk Averse"  />
       <Parameter name="Type" type="string" value="Probability"  />
     -->
+    <ParameterList name="Objective">
+      <Parameter name="Type" type="string" value="Mean Value"   />
+      <!--
+      <Parameter name="Type" type="string" value="Risk Neutral" />
+      -->
+    </ParameterList>
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="Entropic Risk" />
       <!--

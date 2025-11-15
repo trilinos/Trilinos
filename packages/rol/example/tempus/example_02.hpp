@@ -17,11 +17,11 @@
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
+#include "ROL_LAPACK.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -341,7 +341,7 @@ private:
       std::vector<Real> Du(du);
       std::vector<Real> D(d);
       // Perform LDL factorization
-      Teuchos::LAPACK<int,Real> lp;
+      ROL::LAPACK<int,Real> lp;
       std::vector<Real> Du2(nx_-2,0.0);
       std::vector<int> ipiv(nx_,0);
       int info;
@@ -392,8 +392,8 @@ private:
 
 public:
 
-  Constraint_BurgersControl(int nx = 128, int nt = 100, Real T = 1, 
-                                    Real nu = 1.e-2, Real u0 = 0.0, Real u1 = 0.0, Real f = 0.0) 
+  Constraint_BurgersControl(int nx = 128, int nt = 100, Real T = 1,
+                                    Real nu = 1.e-2, Real u0 = 0.0, Real u1 = 0.0, Real f = 0.0)
     : nx_((unsigned)nx), nt_((unsigned)nt), T_(T), nu_(nu), u0_(u0), u1_(u1), f_(f) {
     dx_ = 1.0/((Real)nx+1.0);
     dt_ = T/((Real)nt);
@@ -479,7 +479,7 @@ public:
     value(c,u,z,tol);
   }
 
-  void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
+  void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
     ROL::Ptr<std::vector<Real> > jvp =
       dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
@@ -500,7 +500,7 @@ public:
       apply_pde_jacobian(J,vold,uold,vnew,unew);
       for (unsigned n = 0; n < nx_; n++) {
         (*jvp)[t*nx_+n] = J[n];
-      }  
+      }
       vold.assign(vnew.begin(),vnew.end());
       uold.assign(unew.begin(),unew.end());
     }
@@ -571,7 +571,7 @@ public:
     }
   }
 
-  void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
+  void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
     ROL::Ptr<std::vector<Real> > jvp =
       dynamic_cast<ROL::StdVector<Real>&>(ajv).getVector();
@@ -591,7 +591,7 @@ public:
       apply_pde_jacobian(J,vold,unew,vnew,unew,true);
       for (unsigned n = 0; n < nx_; n++) {
         (*jvp)[(t-1)*nx_+n] = J[n];
-      }  
+      }
       vold.assign(vnew.begin(),vnew.end());
     }
   }
@@ -670,7 +670,7 @@ public:
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     std::vector<Real> snew(nx_,0.0);
     std::vector<Real> wnew(nx_,0.0);
-    std::vector<Real> wold(nx_,0.0); 
+    std::vector<Real> wold(nx_,0.0);
     std::vector<Real> vnew(nx_,0.0);
     for (unsigned t = nt_; t > 0; t--) {
       for (unsigned n = 0; n < nx_; n++) {
@@ -684,7 +684,7 @@ public:
       wold.assign(wnew.begin(),wnew.end());
     }
   }
-  
+
   void applyAdjointHessian_12(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     ahwv.zero();
@@ -763,7 +763,7 @@ private:
 
 public:
 
-  Objective_BurgersControl(Real alpha = 1.e-4, int nx = 128, int nt = 100, Real T = 1.0) 
+  Objective_BurgersControl(Real alpha = 1.e-4, int nx = 128, int nt = 100, Real T = 1.0)
     : alpha_(alpha), nx_((unsigned)nx), nt_((unsigned)nt), T_(T) {
     dx_ = 1.0/((Real)nx+1.0);
     dt_ = T/((Real)nt);
@@ -841,7 +841,7 @@ public:
     }
   }
 
-  void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+  void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     ROL::Ptr<std::vector<Real> > hvp =
       dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
@@ -863,17 +863,17 @@ public:
     }
   }
 
-  void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+  void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     hv.zero();
   }
 
-  void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+  void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     hv.zero();
   }
 
-  void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
+  void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     ROL::Ptr<std::vector<Real> > hvp = ROL::constPtrCast<std::vector<Real> >(
       (dynamic_cast<const ROL::StdVector<Real>&>(hv)).getVector());

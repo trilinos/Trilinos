@@ -44,7 +44,7 @@ public:
   Traction(void) {};
 
   Traction(int dim) : dim_(dim) {
-    assert(dim > 3 || dim < 2);
+    assert(dim <= 3 && dim >= 2);
     if (dim==2) {
       offset_ = 0;
       sidesets_.push_back(2);
