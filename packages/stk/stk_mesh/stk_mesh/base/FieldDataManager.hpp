@@ -81,8 +81,8 @@ public:
   void allocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets,
                            const std::vector<FieldBase*>& fieldsOfRank, unsigned totalNumFields);
 
-  // Called when adding a late Field.  Initializes storage for new Field.
-  void reallocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, FieldBase& newField,
+  // Called when adding a late Field or adding a Field to a late Part.  Initializes new storage.
+  void reallocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets, FieldBase& targetField,
                              const std::vector<FieldBase*>& fieldsOfRank, unsigned totalNumFields);
 
   // Called when adding an entity to a Bucket.  Adds space for new Entity but doesn't initialize the field data.

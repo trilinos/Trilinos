@@ -146,7 +146,7 @@ TEST(UnitTestField, fieldDataAccess_rankMustMatch)
   ASSERT_TRUE(!nodes.empty());
   ASSERT_TRUE(!faces.empty());
 
-  auto nodalFieldData = nodalField.data<stk::mesh::ReadOnly>();
+  auto nodalFieldData = nodalField.data();
 
   EXPECT_NO_THROW(nodalFieldData.entity_values(nodes[0]));
 #ifndef NDEBUG
@@ -485,7 +485,7 @@ TEST(UnitTestField, writeFieldsWithSameName)
     stk::mesh::BulkData &mesh = stkIo.bulk_data();
     stk::mesh::MetaData &metaData = stkIo.meta_data();
 
-    auto nodeFieldData = nodeField.data<stk::mesh::ReadOnly>();
+    auto nodeFieldData = nodeField.data();
     const stk::mesh::BucketVector &nodeBuckets = mesh.get_buckets(stk::topology::NODE_RANK, metaData.locally_owned_part());
     for (size_t bucket_i=0 ; bucket_i<nodeBuckets.size() ; ++bucket_i) {
       stk::mesh::Bucket &nodeBucket = *nodeBuckets[bucket_i];
@@ -495,7 +495,7 @@ TEST(UnitTestField, writeFieldsWithSameName)
       }
     }
 
-    auto elemFieldData = elemField.data<stk::mesh::ReadOnly>();
+    auto elemFieldData = elemField.data();
     const stk::mesh::BucketVector &elemBuckets = mesh.get_buckets(stk::topology::ELEM_RANK, metaData.locally_owned_part());
     for (size_t bucket_i=0 ; bucket_i<elemBuckets.size() ; ++bucket_i) {
       stk::mesh::Bucket &elemBucket = *elemBuckets[bucket_i];
@@ -809,17 +809,15 @@ protected:
   }
 
   template <typename T>
-  stk::mesh::Field<T> & declare_field(const std::string & fieldName, stk::mesh::EntityRank rank)
+  stk::mesh::Field<T> & declare_field(const std::string & fieldName, stk::mesh::EntityRank rank, unsigned numStates = 1)
   {
-    const int numStates = 1;
     stk::mesh::Field<T> & field = get_meta().declare_field<T>(rank, fieldName, numStates);
     return field;
   }
 
   template <typename T>
-  void put_field(stk::mesh::Field<T> & field, const stk::mesh::Part & part)
+  void put_field(stk::mesh::Field<T> & field, const stk::mesh::Part & part, T initVal = 123)
   {
-    const T initVal = 123;
     stk::mesh::put_field_on_mesh(field, part, &initVal);
   }
 
@@ -831,7 +829,7 @@ protected:
     for (stk::mesh::Bucket * bucket : buckets) {
       auto bucketFieldData = fieldData.bucket_values(*bucket);
       for (stk::mesh::EntityIdx nodeIdx : bucket->entities()) {
-        bucketFieldData(nodeIdx,0_comp) = get_bulk().identifier((*bucket)[nodeIdx]) * scaleFactor;
+        bucketFieldData(nodeIdx) = get_bulk().identifier((*bucket)[nodeIdx]) * scaleFactor;
       }
     }
   }
@@ -840,13 +838,52 @@ protected:
   void expect_field_values_with_scale_factor(stk::mesh::Field<T> & field, T scaleFactor)
   {
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(field.entity_rank(), field);
+    auto fieldData = field.template data<>();
+    for (stk::mesh::Bucket * bucket : buckets) {
+      auto bucketFieldData = fieldData.bucket_values(*bucket);
+      for (stk::mesh::EntityIdx nodeIdx : bucket->entities()) {
+        EXPECT_EQ(static_cast<T>(get_bulk().identifier((*bucket)[nodeIdx]) * scaleFactor),
+                  bucketFieldData(nodeIdx)) << "For field: " << field.name();
+      }
+    }
+  }
+
+  template <typename T>
+  void expect_field_values(stk::mesh::Field<T>& field, T expectedValue)
+  {
+    const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(field.entity_rank(), field);
     auto fieldData = field.template data<stk::mesh::ReadOnly>();
     for (stk::mesh::Bucket * bucket : buckets) {
       auto bucketFieldData = fieldData.bucket_values(*bucket);
       for (stk::mesh::EntityIdx nodeIdx : bucket->entities()) {
-        EXPECT_EQ(static_cast<T>(get_bulk().identifier((*bucket)[nodeIdx]) * scaleFactor), bucketFieldData(nodeIdx,0_comp)) << "For field: " << field.name();
+        EXPECT_EQ(expectedValue, bucketFieldData(nodeIdx)) << "For field: " << field.name();
       }
     }
+  }
+
+  int expected_bytes_allocated(const stk::mesh::FieldBase& field)
+  {
+    const stk::mesh::BulkData& bulk = field.get_mesh();
+    const stk::mesh::FieldDataManager& fieldDataManager = bulk.get_field_data_manager();
+    const stk::mesh::EntityRank fieldRank = field.entity_rank();
+    const stk::mesh::BucketVector& buckets = bulk.buckets(fieldRank);
+
+    return std::accumulate(buckets.begin(), buckets.end(), 0,
+      [&](int currentValue, const stk::mesh::Bucket* bucket) {
+         const size_t dataSize = static_cast<size_t>(stk::mesh::field_bytes_per_entity(field, *bucket));
+         return currentValue + stk::adjust_up_to_alignment_boundary(dataSize * bucket->capacity(),
+                                                                    fieldDataManager.get_alignment_padding_size());
+      });
+  }
+
+  void check_expected_bytes_allocated(const stk::mesh::FieldBase& field)
+  {
+    const stk::mesh::BulkData& bulk = field.get_mesh();
+    const stk::mesh::FieldDataManager& fieldDataManager = bulk.get_field_data_manager();
+    const unsigned fieldOrdinal = field.mesh_meta_data_ordinal();
+    const int bytesAllocated = fieldDataManager.get_num_bytes_allocated_on_field(fieldOrdinal);
+
+    EXPECT_EQ(bytesAllocated, expected_bytes_allocated(field));
   }
 
   template <typename T>
@@ -879,6 +916,29 @@ protected:
 
     expect_field_values_with_scale_factor(earlyField, 1);
     expect_field_values_with_scale_factor(lateField, 2);
+
+    check_expected_bytes_allocated(lateField);
+  }
+
+  template <typename T>
+  void setup_add_late_multistate_field(stk::mesh::EntityRank rank)
+  {
+    setup_empty_mesh_with_late_fields(stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::mesh::Field<T> & earlyField = declare_field<T>("early_field", rank);
+    put_field(earlyField, get_meta().universal_part());
+    stk::io::fill_mesh("generated:1x1x2", *bulkData);
+    set_field_values_with_scale_factor(earlyField, 1);
+
+    const unsigned numStates = 2;
+    stk::mesh::Field<T>& lateField = declare_field<T>("late_field", rank, numStates);
+    put_field(lateField, get_meta().universal_part(), 100);
+
+    stk::mesh::Field<T>& lateFieldOld = lateField.field_of_state(stk::mesh::StateOld);
+    expect_field_values(lateField, 100);
+    expect_field_values(lateFieldOld, 100);
+
+    check_expected_bytes_allocated(lateField);
+    check_expected_bytes_allocated(lateFieldOld);
   }
 
   template <typename T>
@@ -908,6 +968,9 @@ protected:
 
     expect_field_values_with_scale_factor(earlyField, 1);
     expect_field_values_with_scale_factor(lateField, 2);
+
+    check_expected_bytes_allocated(earlyField);
+    check_expected_bytes_allocated(lateField);
   }
 
   template <typename T>
@@ -927,6 +990,9 @@ protected:
 
     expect_field_values_with_scale_factor(earlyField, 1);
     expect_field_values_with_scale_factor(lateField, 2);
+
+    check_expected_bytes_allocated(earlyField);
+    check_expected_bytes_allocated(lateField);
   }
 
   template <typename T>
@@ -947,6 +1013,9 @@ protected:
 
     expect_field_values_with_scale_factor(earlyField, 1);
     expect_field_values_with_scale_factor(lateField, 2);
+
+    check_expected_bytes_allocated(earlyField);
+    check_expected_bytes_allocated(lateField);
   }
 
   template <typename T>
@@ -969,6 +1038,10 @@ protected:
     expect_field_values_with_scale_factor(earlyField, 1);
     expect_field_values_with_scale_factor(lateField1, 2);
     expect_field_values_with_scale_factor(lateField2, 3);
+
+    check_expected_bytes_allocated(earlyField);
+    check_expected_bytes_allocated(lateField1);
+    check_expected_bytes_allocated(lateField2);
   }
 
   template <typename T>
@@ -992,6 +1065,10 @@ protected:
     expect_field_values_with_scale_factor(earlyField, 1);
     expect_field_values_with_scale_factor(lateField1, 2);
     expect_field_values_with_scale_factor(lateField2, 3);
+
+    check_expected_bytes_allocated(earlyField);
+    check_expected_bytes_allocated(lateField1);
+    check_expected_bytes_allocated(lateField2);
   }
 
   template <typename T>
@@ -1015,6 +1092,10 @@ protected:
     expect_field_values_with_scale_factor(earlyField, 1);
     expect_field_values_with_scale_factor(lateField1, 2);
     expect_field_values_with_scale_factor(lateField2, 3);
+
+    check_expected_bytes_allocated(earlyField);
+    check_expected_bytes_allocated(lateField1);
+    check_expected_bytes_allocated(lateField2);
   }
 
   template <typename T1, typename T2>
@@ -1038,6 +1119,10 @@ protected:
     expect_field_values_with_scale_factor<T1>(earlyField, 1);
     expect_field_values_with_scale_factor<T1>(lateField1, 2);
     expect_field_values_with_scale_factor<T2>(lateField2, 3);
+
+    check_expected_bytes_allocated(earlyField);
+    check_expected_bytes_allocated(lateField1);
+    check_expected_bytes_allocated(lateField2);
   }
 
   template <typename T>
@@ -1061,6 +1146,10 @@ protected:
     expect_field_values_with_scale_factor(earlyField, 1);
     expect_field_values_with_scale_factor(lateField1, 2);
     expect_field_values_with_scale_factor(lateField2, 3);
+
+    check_expected_bytes_allocated(earlyField);
+    check_expected_bytes_allocated(lateField1);
+    check_expected_bytes_allocated(lateField2);
   }
 
   template <typename T>
@@ -1099,6 +1188,8 @@ protected:
     set_field_values_with_scale_factor(earlyField, 1);
 
     expect_field_values_with_scale_factor(earlyField, 1);
+
+    check_expected_bytes_allocated(earlyField);
   }
 
   template <typename T>
@@ -1129,6 +1220,9 @@ protected:
 
     expect_field_values_with_scale_factor(earlyField, 1);
     expect_field_values_with_scale_factor(lateField, 2);
+
+    check_expected_bytes_allocated(earlyField);
+    check_expected_bytes_allocated(lateField);
   }
 
 };
@@ -1143,6 +1237,12 @@ TEST_F(LateFieldFixture, addLateIntNodalField)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
   setup_add_late_field<int>(stk::topology::NODE_RANK);
+}
+
+TEST_F(LateFieldFixture, addLateIntNodalMultistateField)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 2) return;
+  setup_add_late_multistate_field<int>(stk::topology::NODE_RANK);
 }
 
 TEST_F(LateFieldFixture, addLateIntElementField)
@@ -1320,7 +1420,7 @@ TEST(SharedSidesetField, verifySidesetFieldAfterMeshRead) {
 
       stk::mesh::FieldBase* field = meta.get_field(stk::topology::FACE_RANK, fieldName);
       ASSERT_NE(nullptr, field);
-      auto fieldData = field->data<double,stk::mesh::ReadOnly>();
+      auto fieldData = field->data<double>();
       const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::FACE_RANK, meta.universal_part());
       ASSERT_EQ(1u, buckets.size());
       for (const stk::mesh::Bucket* bucket : buckets) {
@@ -1905,7 +2005,7 @@ public:
   void check_field_values(const stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & stkField)
   {
     const stk::mesh::BucketVector & buckets = m_bulk->buckets(stk::topology::NODE_RANK);
-    auto stkFieldDataHost = stkField.data<FieldValueType,stk::mesh::ReadOnly>();
+    auto stkFieldDataHost = stkField.data<FieldValueType>();
     auto& fieldMetaData = stkField.get_meta_data_for_field();
 
     for (const stk::mesh::Bucket * bucket : buckets) {
@@ -1929,7 +2029,7 @@ public:
     Kokkos::View<FieldValueType*>::host_mirror_type hostValuesFromDevice = Kokkos::create_mirror_view(deviceValues);
 
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-    auto stkFieldDataDevice = stkField.data<FieldValueType,stk::mesh::ReadOnly,stk::ngp::DeviceSpace>();
+    auto stkFieldDataDevice = stkField.data<FieldValueType, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
     Kokkos::parallel_for(stk::ngp::DeviceRangePolicy(0, 1),
       KOKKOS_LAMBDA(size_t /*index*/) {
         unsigned nodeGlobalIndex = 0;
@@ -1969,7 +2069,7 @@ public:
                           const stk::mesh::EntityId nodeId, const std::vector<int>& expectedValues)
   {
     stk::mesh::Entity node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
-    auto stkFieldDataHost = stkField.template data<stk::mesh::ReadOnly>();
+    auto stkFieldDataHost = stkField.template data<>();
     auto nodeValuesHost = stkFieldDataHost.entity_values(node);
     for (stk::mesh::ComponentIdx component : nodeValuesHost.components()) {
       EXPECT_EQ(nodeValuesHost(component), expectedValues[component]);
@@ -1983,14 +2083,14 @@ public:
       KOKKOS_LAMBDA(size_t /*index*/) {
         auto nodeValuesDevice = stkFieldDataDevice.entity_values(node);
         for (stk::mesh::ComponentIdx component : nodeValuesDevice.components()) {
-          deviceValues(static_cast<int>(component)) = nodeValuesDevice(component);
+          deviceValues(component()) = nodeValuesDevice(component);
         }
       });
 
     Kokkos::deep_copy(hostValuesFromDevice, deviceValues);
 
     for (stk::mesh::ComponentIdx component(0); component < static_cast<int>(expectedValues.size()); ++component) {
-      EXPECT_EQ(hostValuesFromDevice[static_cast<int>(component)], expectedValues[component]);
+      EXPECT_EQ(hostValuesFromDevice[component()], expectedValues[component]);
     }
   }
 
@@ -2017,7 +2117,7 @@ public:
 
     Kokkos::deep_copy(hostPointersFromDevice, devicePointers);
 
-    auto hostFieldData = stkField.template data<stk::mesh::ReadOnly>();
+    auto hostFieldData = stkField.template data<>();
 
     for (unsigned i = 0; i < numBuckets; ++i) {
       auto bucketValuesHost = hostFieldData.bucket_values(bucketIds[i]);
@@ -2050,7 +2150,7 @@ public:
 
     Kokkos::deep_copy(hostPointersFromDevice, devicePointers);
 
-    auto hostFieldData = stkField.template data<stk::mesh::ReadOnly>();
+    auto hostFieldData = stkField.template data<>();
 
     for (unsigned i = 0; i < numBuckets; ++i) {
       auto bucketValuesHost = hostFieldData.bucket_values(bucketIds[i]);

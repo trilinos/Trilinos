@@ -200,7 +200,7 @@ void select_nodal_data(const BulkData& mesh,
   angle = TWO_PI;
   height = 0.0;
 
-  auto cylindrical_field_data = cylindrical_coord_field.data<stk::mesh::ReadOnly>();
+  auto cylindrical_field_data = cylindrical_coord_field.data();
   int numNodes = mesh.num_nodes(element);
   Entity const *elem_nodes = mesh.begin_nodes(element);
   for (int i = 0; i < numNodes; ++i)

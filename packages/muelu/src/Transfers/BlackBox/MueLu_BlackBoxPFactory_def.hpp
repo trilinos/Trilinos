@@ -18,7 +18,7 @@
 #include <Teuchos_SerialDenseVector.hpp>
 #include <Teuchos_SerialDenseSolver.hpp>
 
-#include <Xpetra_CrsMatrixUtils.hpp>
+#include <MueLu_CrsMatrixUtils.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Matrix.hpp>

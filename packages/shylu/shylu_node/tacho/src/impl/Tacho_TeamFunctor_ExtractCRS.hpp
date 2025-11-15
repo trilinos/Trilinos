@@ -65,6 +65,9 @@ private:
   value_type* _nzvalsT;
   // pivot
   ordinal_type_array _piv;
+  // unit-diag?
+  bool _unit_diag;
+  value_type* _d;
 
 public:
   KOKKOS_INLINE_FUNCTION
@@ -73,7 +76,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   TeamFunctor_ExtractCrs(const supernode_info_type &info, const ordinal_type_array &compute_mode,
                          const ordinal_type_array &level_sids)
-      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids) {}
+      : _info(info), _compute_mode(compute_mode), _level_sids(level_sids), _unit_diag(false) {}
 
   inline void setGlobalSize(const ordinal_type m) {
     _m = m;
@@ -93,6 +96,10 @@ public:
   inline void setCrsViewT(int *colindT, value_type *nzvalsT) {
     _colindT = colindT;
     _nzvalsT = nzvalsT;
+  }
+  inline void withUnitDiag(value_type *nzvalsD) {
+    _unit_diag = true;
+    _d = nzvalsD;
   }
   inline void setPivPtr(ordinal_type_array &piv) { _piv = piv; }
 
@@ -191,8 +198,19 @@ public:
           Kokkos::parallel_for(Kokkos::TeamThreadRange(member, s.m),
                                [&](const int& i) {
                                  // diagonal block
-                                 ordinal_type j;
-                                 for (j = i; j < s.m; j++) {
+                                 ordinal_type j = i;
+                                 if (_unit_diag) {
+                                   // one on diagonal
+                                   int nnz = _rowptr[i+offm];
+                                   _colind[nnz] = j+offm;
+                                   _nzvals[nnz] = one;
+                                   _rowptr[i+offm] ++;
+                                   // save diagonal
+                                   _d[i+offm] = AT(i,i);
+                                   // move to next entry
+                                   j ++;
+                                 }
+                                 for (; j < s.m; j++) {
                                    if (AT(i,j) != zero) {
                                      int nnz = _rowptr[i+offm];
                                      _colind[nnz] = j+offm;
@@ -321,7 +339,15 @@ public:
                                  ordinal_type gid_j = (no_perm ? j+offm : perm(j)+offm);
                                  // diagnal block 
                                  for (ordinal_type i = 0; i < s.m; i++) {
-                                   if (AL(i,j) != zero) {
+                                   if (_unit_diag && i == j) {
+                                     // set diagonal to be one
+                                     ordinal_type nnz = Kokkos::atomic_fetch_add(&(_rowptr[offm+i]), 1);
+                                     _colind[nnz] = gid_j;
+                                     _nzvals[nnz] = one;
+                                     // save diagonal
+                                     _d[gid_j] = AL(i,j);
+                                   }
+                                   else if (AL(i,j) != zero) {
                                      ordinal_type nnz = Kokkos::atomic_fetch_add(&(_rowptr[offm+i]), 1);
                                      _colind[nnz] = gid_j;
                                      _nzvals[nnz] = AL(i,j);

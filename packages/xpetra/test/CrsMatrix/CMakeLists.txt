@@ -10,14 +10,3 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
-
-
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrixUtils_UnitTests
-  SOURCES
-    CrsMatrixUtils_UnitTests.cpp
-    ../Xpetra_UnitTests.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )

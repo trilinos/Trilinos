@@ -79,7 +79,7 @@ namespace MueLu {
 
     if (name == "cycle type") {
       std::stringstream temp1; temp1 << "\"" << "MGV" << "\"";
-      std::stringstream temp2; temp2 << "\"" << "MGV" << "\"";
+      std::stringstream temp2; temp2 << "\"" << "MGW" << "\"";
       if (value == temp1.str() ) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"; }
       else if (value == temp2.str()) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"W\"/>"; }
       else TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MasterList::interpretParameterName, Line " << __LINE__ << ". "

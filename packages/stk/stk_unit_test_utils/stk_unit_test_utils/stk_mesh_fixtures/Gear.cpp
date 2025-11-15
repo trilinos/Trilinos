@@ -107,10 +107,10 @@ Gear::Gear(MetaData & meta,
 void Gear::populate_fields(FieldState state) {
 
   //setup the cylindrical_coord_field on the hex nodes
-  auto cylindrical_field_data = cylindrical_coord_field.data();
-  auto translation_field_data = translation_field.data();
-  auto cartesian_field_data = cartesian_coord_field.data();
-  auto displacement_field_data = displacement_field.field_of_state(state).data();
+  auto cylindrical_field_data = cylindrical_coord_field.data<stk::mesh::ReadWrite>();
+  auto translation_field_data = translation_field.data<stk::mesh::ReadWrite>();
+  auto cartesian_field_data = cartesian_coord_field.data<stk::mesh::ReadWrite>();
+  auto displacement_field_data = displacement_field.field_of_state(state).data<stk::mesh::ReadWrite>();
   for ( size_t ir = 0 ; ir < rad_num-1; ++ir ) {
     const double rad = rad_min + rad_increment * ir ;
 
@@ -288,10 +288,10 @@ void Gear::move( const GearMovement & data) {
 
   enum { Node = 0 };
 
-  auto cylindrical_field_data = cylindrical_coord_field.data();
-  auto translation_field_data = translation_field.data();
+  auto cylindrical_field_data = cylindrical_coord_field.data<stk::mesh::ReadWrite>();
+  auto translation_field_data = translation_field.data<stk::mesh::ReadWrite>();
   auto cartesian_field_data = cartesian_coord_field.data();
-  auto displacement_field_data = displacement_field.field_of_state(StateNew).data();
+  auto displacement_field_data = displacement_field.field_of_state(StateNew).data<stk::mesh::ReadWrite>();
   Selector select = gear_part & cylindrical_coord_part & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
 
   BucketVector const& node_buckets = bulk_data.get_buckets(NODE_RANK, select);

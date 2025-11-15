@@ -268,12 +268,12 @@ std::ostream & output_stacktrace(std::ostream & os)
 
 #ifndef STK_ENABLE_GPU_BUT_NO_RDC
 
-STK_FUNCTION void ThrowMsgDevice(const char * message)
+KOKKOS_FUNCTION void ThrowMsgDevice(const char * message)
 {
   Kokkos::abort(message);
 }
 
-STK_FUNCTION void ThrowErrorMsgDevice(const char * message)
+KOKKOS_FUNCTION void ThrowErrorMsgDevice(const char * message)
 {
   Kokkos::abort(message);
 }

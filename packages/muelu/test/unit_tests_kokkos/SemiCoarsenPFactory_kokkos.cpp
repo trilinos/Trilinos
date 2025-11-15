@@ -116,7 +116,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SemiCoarsenPFactory_kokkos, TestSemiCoarsenP, 
 #else
   using impl_ATS = Kokkos::ArithTraits<impl_SC>;
 #endif
-  const auto fineCoordsDiffView = fineCoordsDiff->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  const auto fineCoordsDiffView = fineCoordsDiff->getLocalViewDevice(Tpetra::Access::ReadOnly);
   const int numNodes            = fineCoordsDiff->getLocalLength();
   const int numVectors          = fineCoordsDiff->getNumVectors();
   const auto fineMap            = fineCoordsDiff->getMap()->getLocalMap();

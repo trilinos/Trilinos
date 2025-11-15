@@ -81,7 +81,7 @@ std::vector<double> get_centroid_average_from_host(stk::mesh::BulkData &bulk, Ce
   std::vector<double> localAverage(4);
   stk::mesh::Selector fieldSelector(centroid);
   fieldSelector &= selector;
-  auto centroidData = centroid.template data<stk::mesh::ReadOnly>();
+  auto centroidData = centroid.template data<>();
 
   for (const stk::mesh::Bucket *bucket : bulk.get_buckets(stk::topology::ELEM_RANK, fieldSelector)) {
     for (stk::mesh::Entity elem : *bucket) {

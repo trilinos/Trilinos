@@ -50,7 +50,7 @@ void putDecompFieldDataOnMesh(stk::mesh::BulkData &bulkData, int proc_rank)
 
     const std::string fieldName1 = "DomainProc";
     stk::mesh::Field<double> &field1 = *bulkData.mesh_meta_data().get_field<double>(stk::topology::ELEMENT_RANK, fieldName1);
-    auto field1Data = field1.data();
+    auto field1Data = field1.data<stk::mesh::ReadWrite>();
 
     for(size_t i = 0; i < buckets.size(); i++)
     {

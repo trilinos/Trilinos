@@ -273,12 +273,12 @@ void do_parallel_assemble()
 
   // Check field values
 
-  auto universal_scalar_field_data = universal_scalar_node_field.template data<stk::mesh::ReadOnly>();
-  auto universal_cartesian_field_data = universal_cartesian_node_field.template data<stk::mesh::ReadOnly>();
-  auto universal_scalar_int_field_data = universal_scalar_int_node_field.template data<stk::mesh::ReadOnly>();
-  auto non_universal_scalar_field_data = non_universal_scalar_node_field.template data<stk::mesh::ReadOnly>();
-  auto universal_scalar_long_double_field_data = universal_scalar_long_double_node_field.template data<stk::mesh::ReadOnly>();
-  auto universal_scalar_id_field_data = universal_scalar_id_node_field.template data<stk::mesh::ReadOnly>();
+  auto universal_scalar_field_data = universal_scalar_node_field.data();
+  auto universal_cartesian_field_data = universal_cartesian_node_field.data();
+  auto universal_scalar_int_field_data = universal_scalar_int_node_field.data();
+  auto non_universal_scalar_field_data = non_universal_scalar_node_field.data();
+  auto universal_scalar_long_double_field_data = universal_scalar_long_double_node_field.data();
+  auto universal_scalar_id_field_data = universal_scalar_id_node_field.data();
 
   for (size_t b = 0, be = all_node_buckets.size(); b < be; ++b) {
     Bucket& bucket = *all_node_buckets[b];
@@ -327,7 +327,7 @@ void do_parallel_assemble()
     }
   }
 
-  auto universal_scalar_edge_field_data = universal_scalar_edge_field.template data<stk::mesh::ReadOnly>();
+  auto universal_scalar_edge_field_data = universal_scalar_edge_field.data();
   for (size_t b = 0, be = all_edge_buckets.size(); b < be; ++b) {
     Bucket& bucket = *all_edge_buckets[b];
     auto universal_scalar_edge_bucket_values = universal_scalar_edge_field_data.bucket_values(bucket);
@@ -542,11 +542,11 @@ void do_parallel_assemble_including_ghosts()
 
   // Check field values
 
-  auto universal_scalar_field_data = universal_scalar_node_field.template data<stk::mesh::ReadOnly>();
-  auto universal_cartesian_field_data = universal_cartesian_node_field.template data<stk::mesh::ReadOnly>();
-  auto universal_scalar_int_field_data = universal_scalar_int_node_field.template data<stk::mesh::ReadOnly>();
-  auto non_universal_scalar_field_data = non_universal_scalar_node_field.template data<stk::mesh::ReadOnly>();
-  auto universal_scalar_id_field_data = universal_scalar_id_node_field.template data<stk::mesh::ReadOnly>();
+  auto universal_scalar_field_data = universal_scalar_node_field.data();
+  auto universal_cartesian_field_data = universal_cartesian_node_field.data();
+  auto universal_scalar_int_field_data = universal_scalar_int_node_field.data();
+  auto non_universal_scalar_field_data = non_universal_scalar_node_field.data();
+  auto universal_scalar_id_field_data = universal_scalar_id_node_field.data();
 
   for (size_t b = 0, be = all_node_buckets.size(); b < be; ++b) {
     Bucket& bucket = *all_node_buckets[b];

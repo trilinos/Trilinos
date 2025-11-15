@@ -226,7 +226,7 @@ void heterogeneous_mesh_bulk_data(stk::mesh::BulkData & bulk_data, const VectorF
     stk::mesh::declare_element( bulk_data, tri_shell_block, elem_id, shell_tri_node_ids[i] );
   }
 
-  auto coord_field_data = node_coord.data();
+  auto coord_field_data = node_coord.data<stk::mesh::ReadWrite>();
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
 
     stk::mesh::Entity const node = bulk_data.get_entity( stk::topology::NODE_RANK , i + 1 );

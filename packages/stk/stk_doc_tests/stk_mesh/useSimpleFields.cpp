@@ -81,7 +81,7 @@ TEST(stkMeshHowTo, useSimpleFields)
   stk::mesh::BulkData& mesh = *bulkPtr;
   create_two_tet_element_mesh(mesh);
 
-  auto displacementsFieldData = displacementsField.data<stk::mesh::ReadOnly>();
+  auto displacementsFieldData = displacementsField.data();
   auto expectEqualZero = [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
     auto displacementDataForNode = displacementsFieldData.entity_values(node);
     for(stk::mesh::ComponentIdx i=0_comp; i<vectorFieldLengthPerEntity; ++i) {
@@ -93,7 +93,7 @@ TEST(stkMeshHowTo, useSimpleFields)
 
   stk::mesh::field_fill(99.0, displacementsField);
 
-  displacementsFieldData = displacementsField.data<stk::mesh::ReadOnly>();
+  displacementsFieldData = displacementsField.data();
   auto expectEqual99 = [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
     auto displacementDataForNode = displacementsFieldData.entity_values(node);
     for(stk::mesh::ComponentIdx i=0_comp; i<vectorFieldLengthPerEntity; ++i) {
@@ -103,7 +103,7 @@ TEST(stkMeshHowTo, useSimpleFields)
 
   stk::mesh::for_each_entity_run(mesh, stk::topology::NODE_RANK, expectEqual99);
 
-  auto pressureFieldData = pressureField.data<stk::mesh::ReadOnly>();
+  auto pressureFieldData = pressureField.data();
   stk::mesh::Entity elem1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
   auto pressureFieldDataForElem1 = pressureFieldData.entity_values(elem1);
   EXPECT_EQ(initialPressureValue, pressureFieldDataForElem1());

@@ -124,10 +124,10 @@ class ImportUtils {
 #ifdef HAVE_XPETRA_EPETRA
 // Specialization for int, int, EpetraNode
 template <>
-class ImportUtils<int, int, EpetraNode> {
+class ImportUtils<int, int, Xpetra::EpetraNode> {
   typedef int LocalOrdinal;
   typedef int GlobalOrdinal;
-  typedef EpetraNode Node;
+  typedef Xpetra::EpetraNode Node;
 #undef MUELU_IMPORTUTILS_SHORT
 
  public:
@@ -137,9 +137,9 @@ class ImportUtils<int, int, EpetraNode> {
                  bool use_minus_one_for_local) {
     Xpetra::UnderlyingLib lib = Importer.getSourceMap()->lib();
     if (lib == Xpetra::UseEpetra) {
-      RCP<const Xpetra::Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
+      RCP<const Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
       std::vector<std::pair<int, GlobalOrdinal> > gpids_v(gpids.size());
-      Xpetra::Epetra_Util::GetPidGidPairs(*e_Importer, gpids_v, use_minus_one_for_local);
+      Epetra_Util::GetPidGidPairs(*e_Importer, gpids_v, use_minus_one_for_local);
       std::copy(gpids_v.begin(), gpids_v.end(), gpids.begin());
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
@@ -155,9 +155,9 @@ class ImportUtils<int, int, EpetraNode> {
           bool use_minus_one_for_local) {
     Xpetra::UnderlyingLib lib = Importer.getSourceMap()->lib();
     if (lib == Xpetra::UseEpetra) {
-      RCP<const Xpetra::Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
+      RCP<const Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
       std::vector<int> pids_v(pids.size());
-      Xpetra::Epetra_Util::GetPids(*e_Importer, pids_v, use_minus_one_for_local);
+      Epetra_Util::GetPids(*e_Importer, pids_v, use_minus_one_for_local);
       std::copy(pids_v.begin(), pids_v.end(), pids.begin());
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
@@ -174,9 +174,9 @@ class ImportUtils<int, int, EpetraNode> {
           bool use_minus_one_for_local) {
     Xpetra::UnderlyingLib lib = Importer.getSourceMap()->lib();
     if (lib == Xpetra::UseEpetra) {
-      RCP<const Xpetra::Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
+      RCP<const Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
       std::vector<int> pids_v(pids.begin(), pids.end());
-      Xpetra::Epetra_Util::GetPids(*e_Importer, pids_v, use_minus_one_for_local);
+      Epetra_Util::GetPids(*e_Importer, pids_v, use_minus_one_for_local);
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
       Tpetra::Import_Util::getPids(Xpetra::toTpetra(Importer), pids, use_minus_one_for_local);
@@ -191,9 +191,9 @@ class ImportUtils<int, int, EpetraNode> {
                 Teuchos::Array<int>& RemotePIDs) {
     Xpetra::UnderlyingLib lib = Importer.getSourceMap()->lib();
     if (lib == Xpetra::UseEpetra) {
-      RCP<const Xpetra::Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
+      RCP<const Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
       std::vector<int> pids_v(RemotePIDs.size());
-      Xpetra::Epetra_Util::GetRemotePIDs(*e_Importer, pids_v);
+      Epetra_Util::GetRemotePIDs(*e_Importer, pids_v);
       std::copy(pids_v.begin(), pids_v.end(), RemotePIDs.begin());
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
@@ -206,10 +206,10 @@ class ImportUtils<int, int, EpetraNode> {
 
 // Specialization for double, int, long long, EpetraNode
 template <>
-class ImportUtils<int, long long, EpetraNode> {
+class ImportUtils<int, long long, Xpetra::EpetraNode> {
   typedef int LocalOrdinal;
   typedef long long GlobalOrdinal;
-  typedef EpetraNode Node;
+  typedef Xpetra::EpetraNode Node;
 #undef MUELU_IMPORTUTILS_SHORT
 
  public:
@@ -219,9 +219,9 @@ class ImportUtils<int, long long, EpetraNode> {
                  bool use_minus_one_for_local) {
     Xpetra::UnderlyingLib lib = Importer.getSourceMap()->lib();
     if (lib == Xpetra::UseEpetra) {
-      RCP<const Xpetra::Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
+      RCP<const Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
       std::vector<std::pair<int, GlobalOrdinal> > gpids_v(gpids.size());
-      Xpetra::Epetra_Util::GetPidGidPairs(*e_Importer, gpids_v, use_minus_one_for_local);
+      Epetra_Util::GetPidGidPairs(*e_Importer, gpids_v, use_minus_one_for_local);
       std::copy(gpids_v.begin(), gpids_v.end(), gpids.begin());
 
     } else if (lib == Xpetra::UseTpetra) {
@@ -238,9 +238,9 @@ class ImportUtils<int, long long, EpetraNode> {
           bool use_minus_one_for_local) {
     Xpetra::UnderlyingLib lib = Importer.getSourceMap()->lib();
     if (lib == Xpetra::UseEpetra) {
-      RCP<const Xpetra::Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
+      RCP<const Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
       std::vector<int> pids_v(pids.size());
-      Xpetra::Epetra_Util::GetPids(*e_Importer, pids_v, use_minus_one_for_local);
+      Epetra_Util::GetPids(*e_Importer, pids_v, use_minus_one_for_local);
       std::copy(pids_v.begin(), pids_v.end(), pids.begin());
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
@@ -257,9 +257,9 @@ class ImportUtils<int, long long, EpetraNode> {
           bool use_minus_one_for_local) {
     Xpetra::UnderlyingLib lib = Importer.getSourceMap()->lib();
     if (lib == Xpetra::UseEpetra) {
-      RCP<const Xpetra::Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
+      RCP<const Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
       std::vector<int> pids_v(pids.size());
-      Xpetra::Epetra_Util::GetPids(*e_Importer, pids_v, use_minus_one_for_local);
+      Epetra_Util::GetPids(*e_Importer, pids_v, use_minus_one_for_local);
       std::copy(pids_v.begin(), pids_v.end(), pids.begin());
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
@@ -275,9 +275,9 @@ class ImportUtils<int, long long, EpetraNode> {
                 Teuchos::Array<int>& RemotePIDs) {
     Xpetra::UnderlyingLib lib = Importer.getSourceMap()->lib();
     if (lib == Xpetra::UseEpetra) {
-      RCP<const Xpetra::Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
+      RCP<const Epetra_Import> e_Importer = dynamic_cast<const Xpetra::EpetraImportT<GlobalOrdinal, Node>*>(&Importer)->getEpetra_Import();
       std::vector<int> pids_v(RemotePIDs.size());
-      Xpetra::Epetra_Util::GetRemotePIDs(*e_Importer, pids_v);
+      Epetra_Util::GetRemotePIDs(*e_Importer, pids_v);
       std::copy(pids_v.begin(), pids_v.end(), RemotePIDs.begin());
     } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA

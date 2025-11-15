@@ -75,7 +75,7 @@ void do_stk_gather_test(stk::mesh::BulkData& bulk, std::vector<double>& sum_cent
   BucketVector const& buckets = bulk.get_buckets(stk::topology::ELEMENT_RANK, local);
 
   std::vector<double> elem_node_coords;
-  auto coordsData = coord_field->data<stk::mesh::ReadOnly>();
+  auto coordsData = coord_field->data();
 
   for (stk::mesh::Bucket* elemBucket : buckets) {
     const size_t num_nodes = elemBucket->topology().num_nodes();

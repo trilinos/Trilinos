@@ -66,7 +66,7 @@ void check_vertex_coordinates(std::unique_ptr<stk::mesh::BulkData>& bulkDataPtr,
 
       EXPECT_EQ(meshVerts.size(), stkVerts.size());
       const stk::mesh::FieldBase& stkCoordField = *(metaData.coordinate_field());
-      auto stkCoordFieldData = stkCoordField.data<double, stk::mesh::ReadOnly>();
+      auto stkCoordFieldData = stkCoordField.data<double>();
       for (int j=0; j < nverts; ++j)
       {
         auto stkVertCoords = stkCoordFieldData.entity_values(stkVerts[j]);
@@ -110,7 +110,7 @@ void check_simple_field(std::unique_ptr<stk::mesh::BulkData>& bulkDataPtr, int d
 {
   int idx = 0;
   stk::mesh::EntityRank rank = dim == 0 ? stk::topology::NODE_RANK : stk::topology::ELEM_RANK;
-  auto fieldData = field.data<double, stk::mesh::ReadOnly>();
+  auto fieldData = field.data<double>();
   for (stk::mesh::Bucket* bucket : bulkDataPtr->buckets(rank))
     for (const stk::mesh::Entity& entity : *bucket)
     {

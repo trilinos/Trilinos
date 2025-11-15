@@ -218,7 +218,7 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
         unsigned nx = 0, ny = 0;
         node_x_y(elem_nodes[i], nx, ny);
 
-        auto data = m_coord_field->data().entity_values(node);
+        auto data = m_coord_field->data<stk::mesh::ReadWrite>().entity_values(node);
 
         // The CoordinateMappings are used for 2D and 3D so make sure we give it enough space to write to.
         std::array<double, 3> temp;
@@ -414,7 +414,7 @@ void Quad9Fixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_pro
       STK_ThrowRequireMsg( m_bulk_data.is_valid(node),
           "This process should know about the nodes that make up its element");
 
-      auto data = m_coord_field->data().entity_values(node);
+      auto data = m_coord_field->data<stk::mesh::ReadWrite>().entity_values(node);
 
       data(0_comp) = nodeCoords[2*i+0];
       data(1_comp) = nodeCoords[2*i+1] ;

@@ -146,8 +146,8 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionSpecifiedTime)
 
     // ============================================================
     //+ VERIFICATION
-    auto temperatureData = temperature.data<stk::mesh::ReadOnly>();
-    auto heatFluxData = heat_flux.data<stk::mesh::ReadOnly>();
+    auto temperatureData = temperature.data();
+    auto heatFluxData = heat_flux.data();
 
     stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
       [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {

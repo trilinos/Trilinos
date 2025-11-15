@@ -76,8 +76,8 @@ void StkMeshCreator::write_back_coords(std::shared_ptr<mesh::Mesh> mesh, const s
   stk::mesh::Selector select             = *m_part;
   const stk::mesh::BucketVector& buckets = m_bulkDataPtr->get_buckets(stk::topology::NODE_RANK, select);
 
-  auto m_stkNodeFieldData = m_stkNodeField->data<stk::mesh::ReadOnly>();
-  auto coordFieldData = coordField.data<double>();
+  auto m_stkNodeFieldData = m_stkNodeField->data();
+  auto coordFieldData = coordField.data<double, stk::mesh::ReadWrite>();
   for (stk::mesh::Bucket* bucket : buckets)
     for (auto& vert : *bucket)
     {
@@ -101,8 +101,8 @@ void StkMeshCreator::create_nodes(std::shared_ptr<mesh::Mesh> mesh)
   stk::mesh::Selector select             = *m_part & (owned | shared);
   const stk::mesh::BucketVector& buckets = m_bulkDataPtr->get_buckets(stk::topology::NODE_RANK, select);
 
-  auto m_stkNodeFieldData = m_stkNodeField->data();
-  auto coordFieldData = coordField.data<double, stk::mesh::ReadOnly>();
+  auto m_stkNodeFieldData = m_stkNodeField->data<stk::mesh::ReadWrite>();
+  auto coordFieldData = coordField.data<double>();
   for (stk::mesh::Bucket* bucket : buckets)
     for (auto& vert : *bucket)
     {
@@ -118,14 +118,14 @@ void StkMeshCreator::create_nodes(std::shared_ptr<mesh::Mesh> mesh)
 
 void StkMeshCreator::create_faces_from_sideset(std::shared_ptr<mesh::Mesh> mesh, MeshFieldPtr stkEls)
 {
-  stk::mesh::Entity invalidEntity;
+  [[maybe_unused]] stk::mesh::Entity invalidEntity;
   assert(m_bulkDataPtr->does_sideset_exist(*m_part));
   const stk::mesh::SideSet& sideset = m_bulkDataPtr->get_sideset(*m_part);
   const auto& meshVerts             = mesh->get_vertices();
 
   std::array<mesh::MeshEntityPtr, 4> verts;
 
-  auto m_stkNodeFieldData = m_stkNodeField->data<stk::mesh::ReadOnly>();
+  auto m_stkNodeFieldData = m_stkNodeField->data();
   for (auto sIt = sideset.begin(); sIt != sideset.end(); ++sIt)
   {
     stk::mesh::SideSetEntry entry = *sIt;
@@ -160,7 +160,7 @@ void StkMeshCreator::create_faces_from_shells(std::shared_ptr<mesh::Mesh> mesh, 
 
   std::array<mesh::MeshEntityPtr, 4> verts;
 
-  auto m_stkNodeFieldData = m_stkNodeField->data<stk::mesh::ReadOnly>();
+  auto m_stkNodeFieldData = m_stkNodeField->data();
   for (stk::mesh::Bucket* bucket : buckets)
     for (auto& stkEl : *bucket)
     {
@@ -212,7 +212,7 @@ void StkMeshCreator::setup_vert_sharing(std::shared_ptr<mesh::Mesh> mesh)
 
   const std::vector<mesh::MeshEntityPtr>& verts = mesh->get_vertices();
 
-  auto stkNodeFieldData = stkNodeField.data<stk::mesh::ReadOnly>();
+  auto stkNodeFieldData = stkNodeField.data();
   for(int p=0; p<commSparse.parallel_size(); ++p) {
     stk::CommBuffer& buf = commSparse.recv_buffer(p);
     while(buf.remaining()) {
@@ -244,7 +244,7 @@ void StkMeshCreator::create_edges(std::shared_ptr<mesh::Mesh> mesh, stk::mesh::E
   std::vector<stk::mesh::Entity> edgeNodes(maxNumNodesPerEdge);
   const std::vector<mesh::MeshEntityPtr>& verts = mesh->get_vertices();
 
-  auto stkNodeFieldData = stkNodeField.data<stk::mesh::ReadOnly>();
+  auto stkNodeFieldData = stkNodeField.data();
   for(const stk::mesh::Bucket* bptr : buckets) {
     stk::topology stkTopo = bptr->topology();
     edgeNodes.resize(stkTopo.num_edges());

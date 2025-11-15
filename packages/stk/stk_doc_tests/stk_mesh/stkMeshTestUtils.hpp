@@ -58,7 +58,7 @@ void testTemperatureFieldSetCorrectly(const stk::mesh::Field<double> &temperatur
 {
   const stk::mesh::BulkData &stkMeshBulkData = temperatureField.get_mesh();
 
-  auto temperatureFieldData = temperatureField.data<stk::mesh::ReadOnly>();
+  auto temperatureFieldData = temperatureField.data();
   stk::mesh::for_each_entity_run(stkMeshBulkData, stk::topology::NODE_RANK, boundaryNodesSelector,
     [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
       auto temperatureValues = temperatureFieldData.entity_values(node);

@@ -646,7 +646,7 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> importOffRank
   finalVec->doImport(*toggleVec, *importer, Xpetra::ABSMAX);
 
   std::vector<GO> finalDropMapEntries = {};
-  auto finalVec_h_2D                  = finalVec->getLocalViewHost(Xpetra::Access::ReadOnly);
+  auto finalVec_h_2D                  = finalVec->getLocalViewHost(Tpetra::Access::ReadOnly);
   auto finalVec_h_1D                  = Kokkos::subview(finalVec_h_2D, Kokkos::ALL(), 0);
   const size_t localLength            = finalVec->getLocalLength();
 

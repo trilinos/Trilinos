@@ -190,17 +190,17 @@ struct topology::apply_functor
 {
   typedef typename Functor::result_type result_type;
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   apply_functor()
     : m_functor()
   {}
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   apply_functor(Functor f)
     : m_functor(f)
   {}
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   result_type operator()(topology_t t) const
   {
     switch(t)
@@ -264,7 +264,7 @@ struct topology::apply_functor
     return m_functor( topology_type<INVALID_TOPOLOGY>() );
   }
  
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   result_type operator()(topology_t t)
   {
     switch(t)

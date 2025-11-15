@@ -467,11 +467,11 @@ ConstFieldData<T, Space, DataLayout>::update(const stk::ngp::ExecSpace& execSpac
     }
     else {
       // Just sync the modified Buckets
-      int fieldIndex = -1;
+      int rankedOrdinal = -1;
       const auto deviceBucketsModified = std::any_cast<DeviceBucketsModifiedCollectionType<mem_space>>(
-              deviceFieldDataManager->get_device_bucket_is_modified(this->field_ordinal(), fieldIndex));
+              deviceFieldDataManager->get_device_bucket_is_modified(this->field_ordinal(), rankedOrdinal));
 
-      impl::transpose_modified_buckets_to_device<T>(execSpace, this->m_deviceFieldMetaData, fieldIndex,
+      impl::transpose_modified_buckets_to_device<T>(execSpace, this->m_deviceFieldMetaData, rankedOrdinal,
                                                     deviceBucketsModified, hostDataLayout);
     }
   }

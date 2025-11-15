@@ -100,7 +100,7 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   //now insist that data for dfield on node is equal to the initial-value specified above:
 
-  auto dfieldData = dfield.data<stk::mesh::ReadOnly>();
+  auto dfieldData = dfield.data();
   auto data = dfieldData.entity_values(node);
 
   ASSERT_EQ( data(0_comp), initial_value );
@@ -212,7 +212,7 @@ TEST(UnitTestFieldDataInitVal, test_vector_field)
   mesh.modification_end();
 
   //now insist that data for vfield on node is equal to the initial-value specified above:
-  auto vfieldData = vfield.data<stk::mesh::ReadOnly>();
+  auto vfieldData = vfield.data();
   auto data = vfieldData.entity_values(node);
 
   ASSERT_EQ( data(0_comp), initial_value[0] );
@@ -279,7 +279,7 @@ TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   //now insist that data for vfield on node is equal to the initial-value specified above:
 
-  auto vfieldData = vfield.data<stk::mesh::ReadOnly>();
+  auto vfieldData = vfield.data();
   auto data = vfieldData.entity_values(node);
 
   ASSERT_EQ( data(0_comp), initial_value[0] );
@@ -334,8 +334,8 @@ TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
   VectorField& vfield_old = vfield.field_of_state(stk::mesh::StateOld);
 
   {
-    auto vfieldDataNew = vfield_new.data<stk::mesh::ReadOnly>();
-    auto vfieldDataOld = vfield_old.data<stk::mesh::ReadOnly>();
+    auto vfieldDataNew = vfield_new.data();
+    auto vfieldDataOld = vfield_old.data();
     auto dataNew = vfieldDataNew.entity_values(node);
     auto dataOld = vfieldDataOld.entity_values(node);
 

@@ -62,7 +62,7 @@ public:
     for(unsigned i = 0; i < edgeField->number_of_states(); i++) {
       stk::mesh::FieldState state = stk::mesh::FieldState(i+stk::mesh::StateNP1);
       stk::mesh::FieldBase* field = edgeField->field_state(state);
-      auto edgeFieldData = field->data<double,stk::mesh::ReadWrite>();
+      auto edgeFieldData = field->data<double, stk::mesh::ReadWrite>();
       for(auto edge : edges) {
         auto data = edgeFieldData.entity_values(edge);
 
@@ -115,7 +115,7 @@ public:
     stk::mesh::EntityVector edges;
     stk::mesh::get_entities(bulk, stk::topology::EDGE_RANK, edges);
 
-    auto fieldData = field->data<double,stk::mesh::ReadOnly>();
+    auto fieldData = field->data<double>();
     for(stk::mesh::Entity& edge : edges) {
       auto data = fieldData.entity_values(edge);
       EXPECT_EQ((double)bulk.identifier(edge), data());
@@ -178,8 +178,8 @@ public:
 
     stk::mesh::FieldBase* fieldStateN   = field->field_state(stk::mesh::StateN);
     stk::mesh::FieldBase* fieldStateNM1 = field->field_state(stk::mesh::StateNM1);
-    auto fieldStateNData = fieldStateN->data<double,stk::mesh::ReadOnly>();
-    auto fieldStateNM1Data = fieldStateNM1->data<double,stk::mesh::ReadOnly>();
+    auto fieldStateNData = fieldStateN->data<double>();
+    auto fieldStateNM1Data = fieldStateNM1->data<double>();
 
     for(auto edge : edges) {
       auto dataN   = fieldStateNData.entity_values(edge);

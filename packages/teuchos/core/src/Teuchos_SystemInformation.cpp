@@ -39,6 +39,12 @@ std::set<std::string>& getEnvironmentVariablesSet() {
   return environmentVariables;
 }
 
+std::set<std::string>& getEnvironmentVariablePrefixSet() {
+  static std::set<std::string> environmentVariablePrefixes;
+  return environmentVariablePrefixes;
+}
+
+
 }
 
 bool commandIsAvailable(const std::string &command) {
@@ -91,13 +97,30 @@ void registerAllPrefixedVariables(const std::string &prefix) {
 
     // split name=value on the first =, everything before = is name
     auto substrings = StrUtils::splitString(*env, '=');
-    std::string name = substrings[0];
+    if (substrings.size() > 0) {
+      std::string name = substrings[0];
 
-    if (name.size() >= prefix.size() &&
-        name.substr(0, prefix.size()) == prefix) {
-      Teuchos::SystemInformation::registerEnvironmentVariable(name);
+      if (name.size() >= prefix.size() &&
+          name.substr(0, prefix.size()) == prefix) {
+        Teuchos::SystemInformation::registerEnvironmentVariable(name);
+      }
     }
   }
+}
+
+RegistrationResult
+registerEnvironmentVariablePrefix(const std::string &prefix) {
+  auto &environmentVariablePrefixes = getEnvironmentVariablePrefixSet();
+  if (auto search = environmentVariablePrefixes.find(prefix);
+      search != environmentVariablePrefixes.end()) {
+    // variable is already present
+    return ALREADY_PRESENT;
+  } else {
+    // variable not found
+    environmentVariablePrefixes.insert(prefix);
+    return REGISTERED;
+  }
+
 }
 
 RegistrationResult
@@ -206,25 +229,25 @@ void initializeCollection() {
   registerCommand("sensors");
 
   // OpenMP
-  registerAllPrefixedVariables("OMP");
+  registerEnvironmentVariablePrefix("OMP");
 
   // OpenMPI
   registerCommand("ompi_info");
-  registerAllPrefixedVariables("OMPI");
+  registerEnvironmentVariablePrefix("OMPI");
 
   // MPICH
   registerCommand("mpichinfo");
-  registerAllPrefixedVariables("MPICH");
+  registerEnvironmentVariablePrefix("MPICH");
 
   // CRAY
-  registerAllPrefixedVariables("CRAY");
+  registerEnvironmentVariablePrefix("CRAY");
 
   // modules
   registerCommand("module", "module list 2>&1", "module");
 
   // CUDA
   registerCommand("nvidia-smi", "nvidia-smi --query", "nvidia-smi");
-  registerAllPrefixedVariables("CUDA");
+  registerEnvironmentVariablePrefix("CUDA");
 
   // ROCm
   registerCommand("rocm-smi", "rocm-smi --showallinfo", "rocm-smi");
@@ -234,7 +257,7 @@ void initializeCollection() {
 
   // package namespaced environment variables
   for (auto &prefix : {"TEUCHOS", "KOKKOS", "TPETRA", "STK"})
-    registerAllPrefixedVariables(prefix);
+    registerEnvironmentVariablePrefix(prefix);
 }
 
 std::map<std::string, std::string> collectSystemInformation() {
@@ -251,6 +274,11 @@ std::map<std::string, std::string> collectSystemInformation() {
     } else {
       data[command.first] = DATA_NOT_AVAILABLE;
     }
+  }
+
+  auto &environmentVariablePrefixes = getEnvironmentVariablePrefixSet();
+  for (auto &prefix : environmentVariablePrefixes) {
+    registerAllPrefixedVariables(prefix);
   }
 
   auto &environmentVariables = getEnvironmentVariablesSet();

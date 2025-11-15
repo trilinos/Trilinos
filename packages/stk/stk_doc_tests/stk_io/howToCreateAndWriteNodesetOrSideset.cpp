@@ -76,8 +76,8 @@ void compare_fields(const stk::mesh::BulkData& bulk1,
 
   ASSERT_EQ(entityList1.size(), entityList2.size());
 
-  auto field1Data = field1->data<double,stk::mesh::ReadOnly>();
-  auto field2Data = field2->data<double,stk::mesh::ReadOnly>();
+  auto field1Data = field1->data<double>();
+  auto field2Data = field2->data<double>();
 
   for(unsigned i=0; i<entityList1.size(); ++i)
   {
@@ -105,7 +105,7 @@ void verify_field_is_valid(const stk::mesh::MetaData &meta,
   stk::topology::rank_t rank = meta.mesh_bulk_data().entity_rank(entity);
   stk::mesh::FieldBase* field = meta.get_field(rank, fieldName);
   ASSERT_TRUE(field != nullptr);
-  auto fieldData = field->data<double,stk::mesh::ReadOnly>();
+  auto fieldData = field->data<double>();
   auto fieldDataForEntity = fieldData.entity_values(entity);
   const unsigned numComponents = fieldDataForEntity.num_components();
   ASSERT_EQ(fieldLength, numComponents);

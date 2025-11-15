@@ -61,7 +61,7 @@ public:
 
     for(stk::mesh::FieldBase * transientField : allTransientFields)
     {
-        auto transientFieldData = transientField->data<double>();
+        auto transientFieldData = transientField->data<double, stk::mesh::ReadWrite>();
         for(size_t i = 0; i < entities.size(); i++)
         {
             double value = 100.0 * static_cast<double>(bulk.identifier(entities[i])) + time;
@@ -131,7 +131,7 @@ TEST_F(BalanceFromField, 6elems2procs_readLastTimeStepFromFile)
   stk::mesh::BulkData & bulk = initialMesh.get_bulk();
   stk::mesh::Field<double> &weightField = *bulk.mesh_meta_data().get_field<double>(stk::topology::ELEM_RANK,
                                                                                    m_transientFieldName + "_scalar");
-  auto weightFieldData = weightField.data<stk::mesh::ReadOnly>();
+  auto weightFieldData = weightField.data();
   const stk::mesh::BucketVector & elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK,
                                                                  bulk.mesh_meta_data().locally_owned_part());
   for (const stk::mesh::Bucket * bucket : elemBuckets) {

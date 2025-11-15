@@ -98,7 +98,7 @@ class TestElementDisconnect : public stk::unit_test_util::MeshFixture
     const auto& coordField = *bulk.mesh_meta_data().coordinate_field();
     auto faceNodes = bulk.get_connected_entities(entity, stk::topology::NODE_RANK);
     stk::math::Vec<double, 3> centroid;
-    const auto coordData = coordField.data<double>();
+    const auto coordData = coordField.data<double, stk::mesh::ReadWrite>();
     for (auto n = 0U; n < faceNodes.size(); ++n) {
       const auto& node = faceNodes[n];
       const auto nodeCoords = coordData.entity_values(node);

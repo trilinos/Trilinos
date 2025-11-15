@@ -132,6 +132,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
     int* colindL;
     value_type* nzvalsL;
 
+    value_type* nzvalsD;
+
     bool spmv_explicit_transpose;
 #if defined(KOKKOS_ENABLE_CUDA)
     cusparseSpMatDescr_t U_cusparse;

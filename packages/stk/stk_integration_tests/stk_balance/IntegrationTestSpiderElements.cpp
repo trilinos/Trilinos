@@ -51,7 +51,7 @@ protected:
 
     stk::mesh::Entity sphereNode = get_bulk().get_entity(stk::topology::NODE_RANK, sphereNodeID);
     stk::mesh::FieldBase * coordsField = get_meta().get_field(stk::topology::NODE_RANK,"coordinates");
-    auto coordsFieldData = coordsField->data<double>();
+    auto coordsFieldData = coordsField->data<double, stk::mesh::ReadWrite>();
     EXPECT_TRUE(coordsField != nullptr);
     auto coords = coordsFieldData.entity_values(sphereNode);
     coords(0_comp) = 0.0;
@@ -71,7 +71,7 @@ protected:
     stk::mesh::EntityVector nodes;
     stk::mesh::get_selected_entities(get_meta().locally_owned_part(), get_bulk().buckets(stk::topology::NODE_RANK), nodes);
     for (stk::mesh::Entity node : nodes) {
-      coordsFieldData = coordsField->data<double>();
+      coordsFieldData = coordsField->data<double, stk::mesh::ReadWrite>();
       auto nodeCoords = coordsFieldData.entity_values(node);
       if (nodeCoords(1_comp) < 0.5 && nodeCoords(1_comp) > -0.5) {
         stk::mesh::EntityIdVector beamNodes = {sphereNodeID, get_bulk().identifier(node)};

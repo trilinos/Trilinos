@@ -96,7 +96,7 @@ protected:
   void fill_multi_criteria_fields(std::vector<const stk::mesh::Field<double>*> & multiCriteriaFields) {
     for (unsigned i = 0; i < multiCriteriaFields.size(); ++i) {
       const stk::mesh::Field<double> & field = *multiCriteriaFields[i];
-      auto fieldData = field.data();
+      auto fieldData = field.data<stk::mesh::ReadWrite>();
 
       stk::mesh::EntityVector elems;
       stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, elems);

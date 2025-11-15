@@ -665,15 +665,15 @@ class EpetraMultiVectorT<int, EpetraNode>
 
   typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
-  typename dual_view_type::t_host_const_um getLocalViewHost(Access::ReadOnlyStruct) const override { return getLocalViewHost(Access::ReadWrite); }
+  typename dual_view_type::t_host_const_um getLocalViewHost(Tpetra::Access::ReadOnlyStruct) const override { return getLocalViewHost(Tpetra::Access::ReadWrite); }
 
-  typename dual_view_type::t_dev_const_um getLocalViewDevice(Access::ReadOnlyStruct) const override { return getLocalViewDevice(Access::ReadWrite); }
+  typename dual_view_type::t_dev_const_um getLocalViewDevice(Tpetra::Access::ReadOnlyStruct) const override { return getLocalViewDevice(Tpetra::Access::ReadWrite); }
 
-  typename dual_view_type::t_host_um getLocalViewHost(Access::OverwriteAllStruct) const override { return getLocalViewHost(Access::ReadWrite); }
+  typename dual_view_type::t_host_um getLocalViewHost(Tpetra::Access::OverwriteAllStruct) const override { return getLocalViewHost(Tpetra::Access::ReadWrite); }
 
-  typename dual_view_type::t_dev_um getLocalViewDevice(Access::OverwriteAllStruct) const override { return getLocalViewDevice(Access::ReadWrite); }
+  typename dual_view_type::t_dev_um getLocalViewDevice(Tpetra::Access::OverwriteAllStruct) const override { return getLocalViewDevice(Tpetra::Access::ReadWrite); }
 
-  typename dual_view_type::t_host_um getLocalViewHost(Access::ReadWriteStruct) const override {
+  typename dual_view_type::t_host_um getLocalViewHost(Tpetra::Access::ReadWriteStruct) const override {
     typedef Kokkos::View<typename dual_view_type::t_host::data_type,
                          Kokkos::LayoutLeft,
                          typename dual_view_type::t_host::device_type,
@@ -694,7 +694,7 @@ class EpetraMultiVectorT<int, EpetraNode>
     return ret;
   }
 
-  typename dual_view_type::t_dev_um getLocalViewDevice(Access::ReadWriteStruct) const override { return getLocalViewHost(Access::ReadWrite); }
+  typename dual_view_type::t_dev_um getLocalViewDevice(Tpetra::Access::ReadWriteStruct) const override { return getLocalViewHost(Tpetra::Access::ReadWrite); }
 
   //@}
 

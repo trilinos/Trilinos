@@ -466,8 +466,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP
     auto aggGraph = aggregates->GetGraph();
     auto numAggs  = aggGraph.numRows();
 
-    auto fineCoordsView   = fineCoords->getLocalViewDevice(Xpetra::Access::ReadOnly);
-    auto coarseCoordsView = coarseCoords->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+    auto fineCoordsView   = fineCoords->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto coarseCoordsView = coarseCoords->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
     // Fill in coarse coordinates
     {
@@ -599,8 +599,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GO globalOffset = amalgInfo->GlobalOffset();
 
   // Extract aggregation info (already in Kokkos host views)
-  auto procWinner            = aggregates->GetProcWinner()->getLocalViewDevice(Xpetra::Access::ReadOnly);
-  auto vertex2AggId          = aggregates->GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  auto procWinner            = aggregates->GetProcWinner()->getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto vertex2AggId          = aggregates->GetVertex2AggId()->getLocalViewDevice(Tpetra::Access::ReadOnly);
   const size_t numAggregates = aggregates->GetNumAggregates();
 
   int myPID = aggregates->GetMap()->getComm()->getRank();
@@ -696,8 +696,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
 
   // Pull out the nullspace vectors so that we can have random access (on the device)
-  auto fineNS   = fineNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
-  auto coarseNS = coarseNullspace->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+  auto fineNS   = fineNullspace->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  auto coarseNS = coarseNullspace->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
   size_t nnz = 0;  // actual number of nnz
 
@@ -1045,8 +1045,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // GO globalOffset = amalgInfo->GlobalOffset();
 
   // Extract aggregation info (already in Kokkos host views)
-  auto procWinner            = aggregates->GetProcWinner()->getLocalViewDevice(Xpetra::Access::ReadOnly);
-  auto vertex2AggId          = aggregates->GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  auto procWinner            = aggregates->GetProcWinner()->getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto vertex2AggId          = aggregates->GetVertex2AggId()->getLocalViewDevice(Tpetra::Access::ReadOnly);
   const size_t numAggregates = aggregates->GetNumAggregates();
 
   int myPID = aggregates->GetMap()->getComm()->getRank();
@@ -1113,8 +1113,8 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   coarseNullspace = MultiVectorFactory::Build(coarsePointMap, NSDim);
 
   // Pull out the nullspace vectors so that we can have random access (on the device)
-  auto fineNS   = fineNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
-  auto coarseNS = coarseNullspace->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+  auto fineNS   = fineNullspace->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  auto coarseNS = coarseNullspace->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
   typedef typename Xpetra::Matrix<SC, LO, GO, NO>::local_matrix_device_type local_matrix_type;
   typedef typename local_matrix_type::row_map_type::non_const_type rows_type;

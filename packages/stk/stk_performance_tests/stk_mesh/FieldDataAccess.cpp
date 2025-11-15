@@ -823,7 +823,7 @@ auto compute_centroid_entity_access = [](const stk::mesh::Selector& selector,
   const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   auto centroidData = centroidField.data<stk::mesh::ReadWrite>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
+  auto coordsData = coordsField.data();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
     const unsigned numNodes = bucket->topology().num_nodes();
@@ -862,7 +862,7 @@ auto compute_centroid_entity_access_left = [](const stk::mesh::Selector& selecto
   const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   auto centroidData = centroidField.data<stk::mesh::ReadWrite>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
+  auto coordsData = coordsField.data();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
     const unsigned numNodes = bucket->topology().num_nodes();
@@ -901,7 +901,7 @@ auto compute_centroid_entity_access_right = [](const stk::mesh::Selector& select
   const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   auto centroidData = centroidField.data<stk::mesh::ReadWrite>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
+  auto coordsData = coordsField.data();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
     const unsigned numNodes = bucket->topology().num_nodes();
@@ -941,7 +941,7 @@ auto compute_centroid_entity_access_left_auto = [](const stk::mesh::Selector& se
 
   stk::mesh::FieldBase& centroidFieldBase = static_cast<stk::mesh::FieldBase&>(centroidField);
   auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
+  auto coordsData = coordsField.data();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
     const unsigned numNodes = bucket->topology().num_nodes();
@@ -981,7 +981,7 @@ auto compute_centroid_entity_access_right_auto = [](const stk::mesh::Selector& s
 
   stk::mesh::FieldBase& centroidFieldBase = static_cast<stk::mesh::FieldBase&>(centroidField);
   auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
+  auto coordsData = coordsField.data();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
     const unsigned numNodes = bucket->topology().num_nodes();
@@ -1020,7 +1020,7 @@ auto compute_centroid_bucket_access = [](const stk::mesh::Selector& selector,
   const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   auto centroidData = centroidField.data<stk::mesh::ReadWrite>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
+  auto coordsData = coordsField.data();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
     auto centroid = centroidData.bucket_values(*bucket);
@@ -1058,7 +1058,7 @@ auto compute_centroid_bucket_access_left = [](const stk::mesh::Selector& selecto
   const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   auto centroidData = centroidField.data<stk::mesh::ReadWrite>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
+  auto coordsData = coordsField.data();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
     auto centroid = centroidData.bucket_values(*bucket);
@@ -1096,7 +1096,7 @@ auto compute_centroid_bucket_access_right = [](const stk::mesh::Selector& select
   const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   auto centroidData = centroidField.data<stk::mesh::ReadWrite>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
+  auto coordsData = coordsField.data();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
     auto centroid = centroidData.bucket_values(*bucket);
@@ -1135,7 +1135,7 @@ auto compute_centroid_bucket_access_left_auto = [](const stk::mesh::Selector& se
 
   stk::mesh::FieldBase& centroidFieldBase = static_cast<stk::mesh::FieldBase&>(centroidField);
   auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
+  auto coordsData = coordsField.data();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
     auto centroid = centroidData.bucket_values(*bucket);
@@ -1174,7 +1174,7 @@ auto compute_centroid_bucket_access_right_auto = [](const stk::mesh::Selector& s
 
   stk::mesh::FieldBase& centroidFieldBase = static_cast<stk::mesh::FieldBase&>(centroidField);
   auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
+  auto coordsData = coordsField.data();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
     auto centroid = centroidData.bucket_values(*bucket);

@@ -111,7 +111,7 @@ protected:
     stk::mesh::get_entities(bulk, meta.side_rank(), selector, faces);
     EXPECT_EQ(expectedNumFaces, faces.size());
 
-    auto ssFieldData = ssFieldExtracted->data<double,stk::mesh::ReadOnly>();
+    auto ssFieldData = ssFieldExtracted->data<double>();
     for(stk::mesh::Entity face : faces) {
       stk::mesh::ConnectedEntities faceNodes = bulk.get_connected_entities(face, stk::topology::NODE_RANK);
       unsigned numFaceNodes = faceNodes.size();

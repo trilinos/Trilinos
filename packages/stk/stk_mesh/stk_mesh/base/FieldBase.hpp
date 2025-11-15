@@ -110,6 +110,9 @@ public:
    */
   unsigned mesh_meta_data_ordinal() const { return m_ordinal; }
 
+  // The ordinal of this Field in the list of all Fields of just one rank
+  unsigned field_ranked_ordinal() const { return m_rankedOrdinal; }
+
   /** \brief  Application-defined text name of this field */
   const std::string & name() const { return m_name ; }
 
@@ -659,7 +662,7 @@ public:
   // This function is completely unnecessary for the normal workflow of reacquiring your
   // FieldData instance with a FieldBase::data() call before each use.
 
-  template <FieldAccessTag FieldAccess = ReadWrite,
+  template <FieldAccessTag FieldAccess = ReadOnly,
             typename Space = stk::ngp::HostSpace>
   void synchronize() const
   {
@@ -696,7 +699,7 @@ public:
   // argument that will be used to run any synchronization operations that may need to take
   // place.  This is intended for asynchronous execution.
 
-  template <FieldAccessTag FieldAccess = ReadWrite,
+  template <FieldAccessTag FieldAccess = ReadOnly,
             typename Space = stk::ngp::HostSpace,
             typename ExecSpace = stk::ngp::ExecSpace>
   void synchronize([[maybe_unused]] const ExecSpace& execSpace) const
@@ -743,8 +746,8 @@ public:
   //
   //   FieldAccessTag : Optional tag indicating how you will access the data.  Options are:
 
-  //     - stk::mesh::ReadWrite     : Sync data to memory space and mark modified; Allow modification [default]
-  //     - stk::mesh::ReadOnly      : Sync data to memory space and do not mark modified; Disallow modification
+  //     - stk::mesh::ReadOnly      : Sync data to memory space and do not mark modified; Disallow modification [default]
+  //     - stk::mesh::ReadWrite     : Sync data to memory space and mark modified; Allow modification
   //     - stk::mesh::OverwriteAll  : Do not sync data and mark modified; Allow modification
 
   //     - stk::mesh::Unsynchronized       : Do not sync data and do not mark modified; Allow modification
@@ -773,13 +776,13 @@ public:
   //
   // Some sample usage for a FieldBase instance of a Field<double>:
   //
-  //   auto fieldData = myField.data<double>();                       <-- Read-write access to host data
-  //   auto fieldData = myField.data<double, stk::mesh::ReadOnly>();  <-- Read-only access to host access
-  //   auto fieldData = myField.data<double, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(); <-- Read-write access to device data
+  //   auto fieldData = myField.data<double>();                       <-- Read-only access to host data
+  //   auto fieldData = myField.data<double, stk::mesh::ReadWrite>(); <-- Read-write access to host data
   //   auto fieldData = myField.data<double, stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();  <-- Read-only access to device data
+  //   auto fieldData = myField.data<double, stk::mesh::ReadWrite, stk::ngp::DeviceSpace>(); <-- Read-write access to device data
 
   template <typename T,
-            FieldAccessTag FieldAccess = ReadWrite,
+            FieldAccessTag FieldAccess = ReadOnly,
             typename Space = stk::ngp::HostSpace,
             Layout DataLayout = DefaultLayoutSelector<Space>::layout>
   typename std::enable_if_t<is_field_datatype_v<T>,
@@ -804,7 +807,7 @@ public:
   // be necessary.  This is for asynchronous execution.
 
   template <typename T,
-            FieldAccessTag FieldAccess = ReadWrite,
+            FieldAccessTag FieldAccess = ReadOnly,
             typename Space = stk::ngp::HostSpace,
             Layout DataLayout = DefaultLayoutSelector<Space>::layout,
             typename ExecSpace = stk::ngp::ExecSpace>
@@ -832,10 +835,10 @@ public:
   // few consistency checks and no bounds-checking performed.  This is intended for internal
   // STK Mesh use only.
   //
-  //   auto& fieldDataBytes = myField.data_bytes<std::byte>();        <-- Read-write access to host data
   //   auto& fieldDataBytes = myField.data_bytes<const std::byte>();  <-- Read-only access to host data
-  //   auto& fieldDataBytes = myField.data_bytes<std::byte, stk::ngp::DeviceSpace>();        <-- Read-write access to device data
+  //   auto& fieldDataBytes = myField.data_bytes<std::byte>();        <-- Read-write access to host data
   //   auto& fieldDataBytes = myField.data_bytes<const std::byte, stk::ngp::DeviceSpace>();  <-- Read-only access to device data
+  //   auto& fieldDataBytes = myField.data_bytes<std::byte, stk::ngp::DeviceSpace>();        <-- Read-write access to device data
 
   template <typename ConstnessType, typename Space = stk::ngp::HostSpace>
   typename FieldDataBytesHelper<ConstnessType, Space>::FieldDataBytesType& data_bytes() const
@@ -948,6 +951,7 @@ protected:
   FieldBase(MetaData* arg_mesh_meta_data,
             stk::topology::rank_t arg_entity_rank,
             unsigned arg_ordinal,
+            unsigned arg_ranked_ordinal,
             const std::string& arg_name,
             const DataTraits& arg_traits,
             unsigned arg_number_of_states,
@@ -967,6 +971,7 @@ protected:
       m_data_traits( arg_traits ),
       m_meta_data(arg_mesh_meta_data),
       m_ordinal(arg_ordinal),
+      m_rankedOrdinal(arg_ranked_ordinal),
       m_this_state(arg_this_state),
       m_ngpField(nullptr),
       m_numSyncsToHost(0),
@@ -1001,6 +1006,7 @@ private:
   const DataTraits& m_data_traits;
   MetaData* const m_meta_data;
   const unsigned m_ordinal;
+  const unsigned m_rankedOrdinal;
   const FieldState m_this_state;
   mutable NgpFieldBase* m_ngpField;
   mutable size_t m_numSyncsToHost;

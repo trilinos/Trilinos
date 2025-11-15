@@ -277,7 +277,7 @@ void write_serial_cube_mesh_with_spider(unsigned meshSize, bool addParticleBody,
     bulk->modification_begin();
 
     stk::mesh::Entity spiderNode = bulk->declare_node(newNodeId);
-    auto coordinatesData = coordinates.data();
+    auto coordinatesData = coordinates.data<stk::mesh::ReadWrite>();
     auto spiderCoords = coordinatesData.entity_values(spiderNode);
     spiderCoords(0_comp) = maxCoord + 1.0;
     spiderCoords(1_comp) = maxCoord / 2.0;
@@ -287,7 +287,7 @@ void write_serial_cube_mesh_with_spider(unsigned meshSize, bool addParticleBody,
     const stk::mesh::ConstPartVector elemParts {&block2Part};
 
     const auto allNodes = stk::mesh::get_entities(*bulk, stk::topology::NODE_RANK, meta.locally_owned_part());
-    coordinatesData = coordinates.data();
+    coordinatesData = coordinates.data<stk::mesh::ReadWrite>();
     stk::mesh::EntityVector edgeNodes;
     for (const stk::mesh::Entity & node : allNodes) {
       auto coords = coordinatesData.entity_values(node);

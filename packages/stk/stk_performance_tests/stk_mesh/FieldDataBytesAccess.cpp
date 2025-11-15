@@ -177,7 +177,7 @@ auto verify_initialized_field = [](const stk::mesh::Selector& selector, auto& el
   const stk::mesh::BucketVector& buckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   std::array<double, 3> initValue { 1.0, 2.0, 3.0 };
-  auto fieldData = elementField.template data<stk::mesh::ReadOnly>();
+  auto fieldData = elementField.template data<>();
 
   for (const stk::mesh::Bucket* bucket : buckets) {
     for (stk::mesh::Entity elem : *bucket) {

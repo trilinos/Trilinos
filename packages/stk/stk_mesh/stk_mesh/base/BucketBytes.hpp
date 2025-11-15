@@ -77,8 +77,8 @@ public:
   KOKKOS_INLINE_FUNCTION bool is_field_defined() const { return m_numBytesPerEntity != 0; }
 
   KOKKOS_INLINE_FUNCTION T& operator()(EntityIdx entity, ByteIdx byte) const {
-    const int scalar = static_cast<int>(byte) / m_numBytesPerScalar;
-    const int byteInScalar = static_cast<int>(byte) % m_numBytesPerScalar;
+    const int scalar = byte / m_numBytesPerScalar;
+    const int byteInScalar = byte() % m_numBytesPerScalar;
     return m_bytePtr[entity*m_numBytesPerScalar + scalar*m_scalarByteStride + byteInScalar];
   }
 
@@ -139,11 +139,11 @@ public:
 
   inline T& operator()(EntityIdx entity, ByteIdx byte) const {
     if (m_isLayoutRight) {
-      return m_bytePtr[static_cast<int>(entity)*m_numBytesPerEntity + static_cast<int>(byte)];
+      return m_bytePtr[entity()*m_numBytesPerEntity + byte()];
     }
     else {
-      const int scalar = static_cast<int>(byte) / m_numBytesPerScalar;
-      const int byteInScalar = static_cast<int>(byte) % m_numBytesPerScalar;
+      const int scalar = byte / m_numBytesPerScalar;
+      const int byteInScalar = byte() % m_numBytesPerScalar;
       return m_bytePtr[entity*m_numBytesPerScalar + scalar*m_scalarByteStride + byteInScalar];
     }
   }
@@ -196,8 +196,8 @@ public:
   inline bool is_field_defined() const { return m_numBytesPerEntity != 0; }
 
   inline T& operator()(EntityIdx entity, ByteIdx byte) const {
-    const int scalar = static_cast<int>(byte) / m_numBytesPerScalar;
-    const int byteInScalar = static_cast<int>(byte) % m_numBytesPerScalar;
+    const int scalar = byte / m_numBytesPerScalar;
+    const int byteInScalar = byte() % m_numBytesPerScalar;
     return m_bytePtr[entity*m_numBytesPerScalar + scalar*m_scalarByteStride + byteInScalar];
   }
 
@@ -246,7 +246,7 @@ public:
   inline bool is_field_defined() const { return m_numBytesPerEntity != 0; }
 
   inline T& operator()(EntityIdx entity, ByteIdx byte) const {
-    return m_bytePtr[static_cast<int>(entity)*m_numBytesPerEntity + static_cast<int>(byte)];
+    return m_bytePtr[entity()*m_numBytesPerEntity + byte()];
   }
 
 

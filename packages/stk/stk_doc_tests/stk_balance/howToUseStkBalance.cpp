@@ -39,7 +39,7 @@ bool is_mesh_balanced(const stk::mesh::BulkData& bulk)
 
 bool is_mesh_balanced_wrt_weight(const stk::mesh::BulkData& bulk, stk::mesh::Field<double>& weightField)
 {
-    auto weightFieldData = weightField.data<stk::mesh::ReadOnly>();
+    auto weightFieldData = weightField.data();
 
     std::vector<size_t> counts;
     stk::mesh::comm_mesh_counts(bulk, counts);
@@ -246,7 +246,7 @@ protected:
 
 void set_vertex_weights(const stk::mesh::BulkData& bulk, stk::mesh::Selector selector, stk::mesh::Field<double>& weightField)
 {
-    auto weightFieldData = weightField.data();
+    auto weightFieldData = weightField.data<stk::mesh::ReadWrite>();
 
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, selector, elements);
@@ -406,8 +406,8 @@ void set_vertex_weights_checkerboard(stk::mesh::BulkData& bulk, stk::mesh::Selec
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, selector, elements);
 
-    auto weightField1Data = weightField1.data();
-    auto weightField2Data = weightField2.data();
+    auto weightField1Data = weightField1.data<stk::mesh::ReadWrite>();
+    auto weightField2Data = weightField2.data<stk::mesh::ReadWrite>();
     for(stk::mesh::Entity element : elements)
     {
         auto data1 = weightField1Data.entity_values(element);

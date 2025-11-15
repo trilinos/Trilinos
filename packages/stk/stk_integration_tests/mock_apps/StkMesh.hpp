@@ -54,7 +54,7 @@ public:
     stk::mesh::Entity entity = m_bulk->get_entity(entityKey);
     const stk::mesh::FieldBase* field = m_bulk->mesh_meta_data().get_field(rank, fieldName);
     if (field->defined_on(entity)) {
-      auto fieldData = field->data<double,stk::mesh::ReadOnly>();
+      auto fieldData = field->data<double>();
       auto fieldValue = fieldData.entity_values(entity);
       return fieldValue(0_comp);
     }
@@ -69,7 +69,7 @@ public:
     stk::mesh::Entity entity = m_bulk->get_entity(entityKey);
     const stk::mesh::FieldBase* field = m_bulk->mesh_meta_data().get_field(rank, fieldName);
     if (field->defined_on(entity)) {
-      auto fieldData = field->data<double,stk::mesh::ReadWrite>();
+      auto fieldData = field->data<double, stk::mesh::ReadWrite>();
       auto entityFieldData = fieldData.entity_values(entity);
       entityFieldData(0_comp) = fieldValue;
     }
@@ -91,7 +91,7 @@ public:
     stk::mesh::Selector fieldSelector(*field);
     stk::mesh::EntityVector sides;
     stk::mesh::get_entities(*m_bulk, stk::topology::FACE_RANK, fieldSelector, sides);
-    auto fieldData = field->data<double,stk::mesh::ReadOnly>();
+    auto fieldData = field->data<double>();
     for(stk::mesh::Entity side : sides) {
       auto sideFieldData = fieldData.entity_values(side);
       if (std::abs(sideFieldData(0_comp) - expectedFieldValue) > 1.e-6) {
@@ -109,7 +109,7 @@ public:
     double minXYZ[3] = {maxDouble, maxDouble, maxDouble};
     double maxXYZ[3] = {0.0, 0.0, 0.0};
     const stk::mesh::FieldBase* coordField = m_bulk->mesh_meta_data().coordinate_field();
-    auto coordFieldData = coordField->data<double,stk::mesh::ReadOnly>();
+    auto coordFieldData = coordField->data<double>();
 
     const stk::mesh::Entity* nodes = m_bulk->begin_nodes(side);
     const unsigned numNodes = m_bulk->num_nodes(side);
@@ -145,7 +145,7 @@ public:
   {
     double sumXYZ[3] = {0.0, 0.0, 0.0};
     const stk::mesh::FieldBase* coordField = m_bulk->mesh_meta_data().coordinate_field();
-    auto coordFieldData = coordField->data<double,stk::mesh::ReadOnly>();
+    auto coordFieldData = coordField->data<double>();
 
     const stk::mesh::Entity* nodes = m_bulk->begin_nodes(side);
     const unsigned numNodes = m_bulk->num_nodes(side);

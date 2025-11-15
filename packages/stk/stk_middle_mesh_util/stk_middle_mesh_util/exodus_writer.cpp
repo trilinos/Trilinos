@@ -101,7 +101,7 @@ mesh::FieldPtr<stk::mesh::Entity> ExodusWriter::create_part_verts()
   m_bulkDataOutPtr->modification_end();
 
   const stk::mesh::FieldBase& coordField = *(m_metaDataOutPtr->coordinate_field());
-  auto coordFieldData = coordField.data<double>();
+  auto coordFieldData = coordField.data<double, stk::mesh::ReadWrite>();
   int entityIdx                          = 0;
   for (auto& vert : m_mesh->get_vertices())
     if (vert)

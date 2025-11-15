@@ -289,18 +289,22 @@ TEST( Solver, NonPivLDL ) {
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 1), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 1), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 1), 0);
+  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 1, false, false), 0); // with mixed nopiv-LDL or Chol
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 1, false, false), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 1, false, false), 0);
+  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1, false, false), 0);
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1), 0);
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1, true), 0);
   // > multiple RHSs
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 5), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 5), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 5), 0);
+  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 5, false, false), 0); // with mixed nopiv-LDL or Chol
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 5, false, false), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 5, false, false), 0);
+  EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5, false, false), 0);
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5), 0);
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5, true), 0);
   //#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)

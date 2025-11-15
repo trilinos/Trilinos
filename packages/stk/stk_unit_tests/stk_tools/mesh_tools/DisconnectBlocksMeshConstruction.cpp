@@ -924,7 +924,7 @@ void setup_mesh_with_hinge_ring(stk::mesh::BulkData& bulk)
   bulk.modification_end();
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
-  auto coordsData = coords->data<double>();
+  auto coordsData = coords->data<double, stk::mesh::ReadWrite>();
   auto coordNode22 = coordsData.entity_values(node22);
   auto coordNode23 = coordsData.entity_values(node23);
   auto coordNode26 = coordsData.entity_values(node26);

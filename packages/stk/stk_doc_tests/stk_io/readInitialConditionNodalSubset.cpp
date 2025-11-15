@@ -155,7 +155,7 @@ TEST(StkMeshIoBrokerHowTo, readInitialConditionNodalSubset)
     EXPECT_EQ(expected_nodes, shell_nodes.size());
     EXPECT_EQ(all_nodes-expected_nodes, other_nodes.size());
 
-    auto temperatureData = temperature.data<stk::mesh::ReadOnly>();
+    auto temperatureData = temperature.data();
     for(size_t i=0; i<other_nodes.size(); i++) {
       auto fieldDataForNode = temperatureData.entity_values(other_nodes[i]);
       EXPECT_DOUBLE_EQ(0.0, fieldDataForNode());

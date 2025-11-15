@@ -8,7 +8,6 @@
 #include <stk_balance/internal/DiagnosticsContainer.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/FieldBase.hpp>  // for field_data
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -35,7 +34,6 @@
 #include "stk_mesh/base/FieldParallel.hpp"
 #include <stk_mesh/base/SideSetEntry.hpp>
 #include <stk_mesh/base/SkinBoundary.hpp>
-#include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_util/environment/Env.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/parallel/OutputStreams.hpp>
@@ -769,7 +767,7 @@ void fill_spider_connectivity_count_fields_and_parts(stk::mesh::BulkData & bulk,
 
 
   const stk::mesh::Field<int> * volumeConnectivityCountField = balanceSettings.getSpiderVolumeConnectivityCountField(bulk);
-  auto volumeConnectivityCountFieldData = volumeConnectivityCountField->data();
+  auto volumeConnectivityCountFieldData = volumeConnectivityCountField->data<stk::mesh::ReadWrite>();
   stk::mesh::Selector selectBeamElements(meta.locally_owned_part() &
                                          meta.get_topology_root_part(stk::topology::BEAM_2));
   stk::mesh::EntityVector beams;
@@ -787,7 +785,7 @@ void fill_output_subdomain_field(const stk::mesh::BulkData & bulk, const Balance
 {
   if (balanceSettings.shouldFixSpiders()) {
     const stk::mesh::Field<int> * outputSubdomainField = balanceSettings.getOutputSubdomainField(bulk);
-    auto outputSubdomainFieldData = outputSubdomainField->data();
+    auto outputSubdomainFieldData = outputSubdomainField->data<stk::mesh::ReadWrite>();
 
     for (const stk::mesh::EntityProc & entityProc : decomp) {
       const stk::mesh::Entity elem = entityProc.first;
@@ -859,7 +857,7 @@ void store_diagnostic_element_weights(const stk::mesh::BulkData & bulk,
 {
   if (stk::balance::get_diagnostic<TotalElementWeightDiagnostic>()) {
     const stk::mesh::Field<double> & weightField = *balanceSettings.getDiagnosticElementWeightField(bulk);
-    auto weightFieldData = weightField.data();
+    auto weightFieldData = weightField.data<stk::mesh::ReadWrite>();
     const std::vector<double> & vertexWeights = vertices.get_vertex_weights();
     const int numSelectors = 1;
     const int selectorIndex = 0;
@@ -1043,7 +1041,7 @@ std::pair<stk::mesh::Entity, stk::mesh::Entity> get_spider_beam_body_and_node_fo
   const stk::mesh::Entity * elems = bulk.begin_elements(bodyNode);
   const unsigned numElements = bulk.num_elements(bodyNode);
   const stk::mesh::Field<int> & volumeElemConnectivityCountField = *balanceSettings.getSpiderVolumeConnectivityCountField(bulk);
-  auto volumeElemConnectivityCountFieldData = volumeElemConnectivityCountField.data<stk::mesh::ReadOnly>();
+  auto volumeElemConnectivityCountFieldData = volumeElemConnectivityCountField.data();
 
   for (unsigned i = 0; i < numElements; ++i) {
     if (bulk.bucket(elems[i]).topology() == stk::topology::BEAM_2) {
@@ -1149,7 +1147,7 @@ stk::mesh::EntityVector get_local_spider_legs(const stk::mesh::BulkData & bulk,
 int get_new_spider_leg_owner(const stk::mesh::BulkData & bulk, const stk::mesh::Entity & footNode,
                              const stk::mesh::Part & spiderPart, const stk::mesh::Field<int> & outputSubdomainField)
 {
-  auto outputSubdomainFieldData = outputSubdomainField.data<stk::mesh::ReadOnly>();
+  auto outputSubdomainFieldData = outputSubdomainField.data();
   const stk::mesh::Entity* footElements = bulk.begin_elements(footNode);
   const unsigned numElements = bulk.num_elements(footNode);
   int newLegOwner = std::numeric_limits<int>::max();
@@ -1196,7 +1194,7 @@ void update_output_subdomain_field(const stk::mesh::BulkData & bulk,
                                    stk::mesh::Entity spiderEntity,
                                    int newLegOwner)
 {
-  auto outputSubdomainFieldData = outputSubdomainField.data();
+  auto outputSubdomainFieldData = outputSubdomainField.data<stk::mesh::ReadWrite>();
   if (bulk.entity_rank(spiderEntity) == stk::topology::ELEM_RANK) {
     auto outputSubdomain = outputSubdomainFieldData.entity_values(spiderEntity);
     outputSubdomain() = newLegOwner;
@@ -1493,7 +1491,7 @@ void compute_total_element_weight_diagnostic(TotalElementWeightDiagnostic & diag
                                              const stk::balance::BalanceSettings & balanceSettings,
                                              const stk::mesh::Field<double> & weightField, int rank)
 {
-  auto weightFieldData = weightField.data<stk::mesh::ReadOnly>();
+  auto weightFieldData = weightField.data();
   const stk::mesh::BucketVector & buckets = bulk.get_buckets(stk::topology::ELEM_RANK,
                                                              bulk.mesh_meta_data().locally_owned_part());
   const int numCriteria = balanceSettings.getNumCriteria();
@@ -1635,7 +1633,7 @@ double get_connected_node_weight(const stk::mesh::BulkData & bulk, std::vector<s
 void spread_weight_across_connected_elements(const stk::mesh::BulkData & bulk, const stk::mesh::Entity & node,
                                              double nodeWeight, const stk::mesh::Field<double> & elementWeights)
 {
-  auto elementWeightsData = elementWeights.data();
+  auto elementWeightsData = elementWeights.data<stk::mesh::ReadWrite>();
   const unsigned numElements = bulk.num_elements(node);
   const stk::mesh::Entity * elements = bulk.begin_elements(node);
 
@@ -1677,7 +1675,7 @@ void compute_connectivity_weight_diagnostic(ConnectivityWeightDiagnostic & diag,
 {
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   const stk::mesh::Field<double> & elementWeights = *balanceSettings.getVertexConnectivityWeightField(bulk);
-  auto elementWeightsData = elementWeights.data<stk::mesh::ReadOnly>();
+  auto elementWeightsData = elementWeights.data();
 
   double totalWeight = 0.0;
   const stk::mesh::BucketVector & buckets = bulk.get_buckets(stk::topology::ELEM_RANK, meta.locally_owned_part());

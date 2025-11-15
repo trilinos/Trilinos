@@ -32,7 +32,7 @@ using stk::unit_test_util::build_mesh;
 
 void getMaxMinForNodes(stk::mesh::BulkData& bulk, stk::mesh::EntityVector& nodes, std::vector<double>& minCoord, std::vector<double>& maxCoord, const stk::mesh::FieldBase & coordField)
 {
-  auto coordFieldData = coordField.data<double, stk::mesh::ReadOnly>();
+  auto coordFieldData = coordField.data<double>();
   for(stk::mesh::Entity node : nodes)
   {
     auto coord = coordFieldData.entity_values(node);

@@ -459,7 +459,7 @@ FieldDataManager::get_new_bucket_field_offsets(const EntityRank rank,
 
 void
 FieldDataManager::reallocate_bucket_field_data(const EntityRank rank, const unsigned bucketId,
-                                               FieldBase & newField,
+                                               FieldBase & targetField,
                                                const std::vector<FieldBase*> & fieldsOfRank,
                                                const PartVector& supersetParts, unsigned bucketSize,
                                                unsigned bucketCapacity)
@@ -474,10 +474,16 @@ FieldDataManager::reallocate_bucket_field_data(const EntityRank rank, const unsi
   std::vector<BucketFieldSegment> newOffsetForField = get_new_bucket_field_offsets(rank, bucketId, fieldsOfRank,
                                                                                    bucketCapacity);
   const int newBucketAllocationSize = newOffsetForField.back().offset;
+  const unsigned numberOfStates = targetField.number_of_states();
+  const unsigned fieldOrdinal = targetField.mesh_meta_data_ordinal();
+  const unsigned fieldRankedOrdinal = targetField.field_ranked_ordinal();
 
+  // What is the code path for an early field into a late part?  Why does this not increase the size?
   if (newBucketAllocationSize > oldBucketAllocationSize) {
-    const BucketFieldSegment & lastFieldSegment = newOffsetForField[newOffsetForField.size()-2];
-    m_numBytesAllocatedPerField.back() += lastFieldSegment.size;
+    for (unsigned state = 0; state < numberOfStates; ++state) {
+      const BucketFieldSegment & lastFieldSegment = newOffsetForField[fieldRankedOrdinal+state];
+      m_numBytesAllocatedPerField[fieldOrdinal+state] += lastFieldSegment.size;
+    }
 
     auto newAllocationAllFields = m_fieldDataAllocator.host_allocate(newBucketAllocationSize);
     const auto& oldAllocationAllFields = m_fieldRawData[rank][bucketId];
@@ -492,7 +498,10 @@ FieldDataManager::reallocate_bucket_field_data(const EntityRank rank, const unsi
 
     update_field_pointers_to_new_bucket(rank, bucketId, fieldsOfRank, bucketCapacity, newAllocationAllFields.data(),
                                         m_alignmentPaddingSize);
-    initialize_new_field_values(newField, rank, bucketId, bucketSize, bucketCapacity);
+    for (unsigned state = 0; state < numberOfStates; ++state) {
+      FieldBase* fieldOfState = targetField.field_state(static_cast<FieldState>(state));
+      initialize_new_field_values(*fieldOfState, rank, bucketId, bucketSize, bucketCapacity);
+    }
   }
 }
 
@@ -567,13 +576,13 @@ FieldDataManager::allocate_field_data(EntityRank rank, const std::vector<Bucket*
 
 void
 FieldDataManager::reallocate_field_data(EntityRank rank, const std::vector<Bucket*>& buckets,
-                                        FieldBase& newField, const std::vector<FieldBase*>& fieldsOfRank,
+                                        FieldBase& targetField, const std::vector<FieldBase*>& fieldsOfRank,
                                         unsigned totalNumFields)
 {
   m_numBytesAllocatedPerField.resize(totalNumFields, 0);
   for (Bucket* bucket : buckets) {
     const PartVector& supersetParts = bucket->supersets();
-    reallocate_bucket_field_data(rank, bucket->bucket_id(), newField, fieldsOfRank, supersetParts,
+    reallocate_bucket_field_data(rank, bucket->bucket_id(), targetField, fieldsOfRank, supersetParts,
                                  bucket->size(), bucket->capacity());
   }
 }
@@ -641,8 +650,7 @@ FieldDataManager::grow_bucket_capacity(const FieldVector& fieldsOfRank, EntityRa
 
   unsigned i = 0;
   for (const stk::mesh::FieldBase* field : fieldsOfRank) {
-    m_numBytesAllocatedPerField[field->mesh_meta_data_ordinal()] += newOffsetForField[i].size -
-                                                                    oldOffsetForField[i].size;
+    m_numBytesAllocatedPerField[field->mesh_meta_data_ordinal()] += newOffsetForField[i].size - oldOffsetForField[i].size;
     ++i;
   }
 

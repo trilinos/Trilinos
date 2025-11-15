@@ -373,6 +373,18 @@ int get_number_of_connected_active_elements(const stk::mesh::BulkData& bulkData,
     }
   }
 
+  const std::vector<GraphEdge> & coincidentGraphEdges = elementGraph.get_coincident_edges_for_element(elemLocalId);
+
+  for(const GraphEdge& graphEdge : coincidentGraphEdges) {
+    STK_ThrowAssertMsg(stk::mesh::impl::is_local_element(graphEdge.elem2()), "Violation of split coincident element rule");
+
+    stk::mesh::Entity otherElement = elementGraph.get_entity(graphEdge.elem2());
+    bool isOtherElementAlive = bulkData.bucket(otherElement).member(activePart);
+    if(isOtherElementAlive) {
+      numConnectedActiveElements++;
+    }
+  }
+
   return numConnectedActiveElements;
 }
 

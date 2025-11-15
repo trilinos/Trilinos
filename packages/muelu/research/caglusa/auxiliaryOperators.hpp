@@ -45,8 +45,8 @@ buildDistanceLaplacian(RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, N
   ghosted_coords->doImport(*coords, *graph->getImporter(), Xpetra::INSERT);
 
   {
-    auto lcl_coords         = coords->getLocalViewHost(Xpetra::Access::ReadOnly);
-    auto lcl_ghosted_coords = ghosted_coords->getLocalViewHost(Xpetra::Access::ReadOnly);
+    auto lcl_coords         = coords->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto lcl_ghosted_coords = ghosted_coords->getLocalViewHost(Tpetra::Access::ReadOnly);
     auto lcl_distLapl       = distLapl->getLocalMatrixHost();
 
     // TODO: parallel_for

@@ -48,7 +48,7 @@ TEST(FixNodeSharingViaSearch, twoHex_2proc)
 
   unsigned counter = 0;
   stk::mesh::ConnectedEntities nodes = bulkPtr->get_connected_entities(elem, stk::topology::NODE_RANK);
-  auto coordData = coordField.data();
+  auto coordData = coordField.data<stk::mesh::ReadWrite>();
   for(unsigned n=0; n<nodes.size(); ++n) {
     auto nodeCoords = coordData.entity_values(nodes[n]);
     for(stk::mesh::ComponentIdx d=0_comp; d<dim; ++d) {
@@ -95,7 +95,7 @@ TEST(FixNodeSharingViaSearch, oneD_userTolerance)
 
   unsigned counter = 0;
   stk::mesh::ConnectedEntities nodes = bulkPtr->get_connected_entities(elem, stk::topology::NODE_RANK);
-  auto coordFieldData = coordField.data();
+  auto coordFieldData = coordField.data<stk::mesh::ReadWrite>();
   for(unsigned n=0; n<nodes.size(); ++n) {
     auto nodeCoords = coordFieldData.entity_values(nodes[n]);
     for(stk::mesh::ComponentIdx d=0_comp; d<dim; ++d) {

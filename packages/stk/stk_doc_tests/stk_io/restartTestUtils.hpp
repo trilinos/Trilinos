@@ -89,7 +89,7 @@ inline void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, const doubl
 {
   std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
-  auto fieldData = field.data<double,stk::mesh::ReadWrite>();
+  auto fieldData = field.data<double, stk::mesh::ReadWrite>();
   for(size_t i=0; i<nodes.size(); i++)
   {
     auto fieldDataForNode = fieldData.entity_values(nodes[i]);
@@ -101,7 +101,7 @@ inline void testDataOnField(stk::mesh::BulkData &stkMeshBulkData, const double g
 {
   std::vector<stk::mesh::Entity> nodes;
   stk::mesh::get_entities(stkMeshBulkData, stk::topology::NODE_RANK, nodes);
-  auto fieldData = field.data<double,stk::mesh::ReadOnly>();
+  auto fieldData = field.data<double>();
   for(size_t i=0; i<nodes.size(); i++)
   {
     auto fieldDataForNode = fieldData.entity_values(nodes[i]);

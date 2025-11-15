@@ -31,6 +31,7 @@ APPEND_SET(
   BlackBoxPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
+  CrsMatrixUtils.cpp
   ClassicalPFactory.cpp
   Emin.cpp
   FineLevelInputDataFactory.cpp

@@ -16,7 +16,7 @@ void set_criteria_on_mesh(std::vector<const stk::mesh::Field<double>*> critField
   const stk::mesh::BucketVector& buckets = bulkData.buckets(stk::topology::ELEM_RANK);
 
   auto critField = critFields[bulkData.parallel_rank()];
-  auto critFieldData = critField->data();
+  auto critFieldData = critField->data<stk::mesh::ReadWrite>();
 
   for(size_t i=0;i<buckets.size();++i)
   {
@@ -48,7 +48,7 @@ public:
 
   void put_decomposition_on_mesh(stk::mesh::Field<double>& procId)
   {
-    auto procIdData = procId.data();
+    auto procIdData = procId.data<stk::mesh::ReadWrite>();
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, get_meta().locally_owned_part(), elements);
     for(stk::mesh::Entity element : elements)
@@ -87,8 +87,8 @@ public:
       size_t weight1 = 0;
       size_t weight2 = 0;
 
-      auto criteria1Data = criteria1.data<stk::mesh::ReadOnly>();
-      auto criteria2Data = criteria2.data<stk::mesh::ReadOnly>();
+      auto criteria1Data = criteria1.data();
+      auto criteria2Data = criteria2.data();
       for(stk::mesh::Entity element : elements)
       {
         os << "Before - Proc " << get_bulk().parallel_rank() << " has element " << get_bulk().identifier(element) << std::endl;
@@ -107,8 +107,8 @@ public:
 
       weight1 = 0;
       weight2 = 0;
-      criteria1Data = criteria1.data<stk::mesh::ReadOnly>();
-      criteria2Data = criteria2.data<stk::mesh::ReadOnly>();
+      criteria1Data = criteria1.data();
+      criteria2Data = criteria2.data();
       for(stk::mesh::Entity element : elements)
       {
         os << "After - Proc " << get_bulk().parallel_rank() << " has element " << get_bulk().identifier(element) << std::endl;

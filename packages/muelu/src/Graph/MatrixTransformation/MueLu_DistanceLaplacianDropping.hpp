@@ -73,10 +73,10 @@ class UnweightedDistanceFunctor {
     if (!importer.is_null()) {
       ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
-      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
-      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
     } else {
-      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedCoords = coords;
     }
   }
@@ -139,10 +139,10 @@ class WeightedDistanceFunctor {
     if (!importer.is_null()) {
       ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
-      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
-      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
     } else {
-      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedCoords = coords;
     }
     weight = weight_;
@@ -210,10 +210,10 @@ class BlockWeightedDistanceFunctor {
     if (!importer.is_null()) {
       ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
-      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
-      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
     } else {
-      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedCoords = coords;
     }
     weight                = weight_;
@@ -286,18 +286,18 @@ class ScalarMaterialDistanceFunctor {
     if (!importer.is_null()) {
       ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
-      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
-      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
       ghostedMaterialMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), materialMV->getNumVectors());
       ghostedMaterialMV->doImport(*materialMV, *importer, Xpetra::INSERT);
-      material        = materialMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
-      ghostedMaterial = ghostedMaterialMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      material        = materialMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      ghostedMaterial = ghostedMaterialMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
     } else {
-      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedCoords = coords;
 
-      material        = materialMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      material        = materialMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedMaterial = material;
     }
   }
@@ -399,10 +399,10 @@ class TensorMaterialDistanceFunctor {
     if (!importer.is_null()) {
       ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
-      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
-      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
     } else {
-      coords        = coordsMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedCoords = coords;
     }
 
@@ -419,7 +419,7 @@ class TensorMaterialDistanceFunctor {
       using range_type      = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
 
       local_ordinal_type dim = std::sqrt(material_->getNumVectors());
-      auto lclMaterial       = ghostedMaterial->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclMaterial       = ghostedMaterial->getLocalViewDevice(Tpetra::Access::ReadOnly);
       material               = local_material_type("material", lclMaterial.extent(0), dim, dim);
       lcl_dist               = local_dist_type("material", lclMaterial.extent(0), dim);
       TensorInversion<local_ordinal_type, typename material_type::dual_view_type::t_dev_const_um, local_material_type> functor(lclMaterial, material);
@@ -500,7 +500,7 @@ getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   auto diag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRowMap(), 1);
   {
     auto lclA    = A.getLocalMatrixDevice();
-    auto lclDiag = diag->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+    auto lclDiag = diag->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
     Kokkos::parallel_for(
         "MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag",
@@ -560,7 +560,7 @@ getMaxMinusOffDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   auto diag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRowMap(), 1);
   {
     auto lclA    = A.getLocalMatrixDevice();
-    auto lclDiag = diag->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+    auto lclDiag = diag->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
     Kokkos::parallel_for(
         "MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag",
@@ -647,11 +647,11 @@ class DropFunctor {
     , results(results_) {
     if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
       diagVec        = getDiagonal(A_, dist2);
-      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
       diagVec        = getMaxMinusOffDiagonal(A_, dist2);
-      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     }
   }
@@ -780,11 +780,11 @@ class VectorDropFunctor {
     , ghosted_point_to_block(ghosted_point_to_block_) {
     if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
       diagVec        = getDiagonal(mergedA_, dist2);
-      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     } else if (measure == Misc::SignedRugeStuebenMeasure) {
       diagVec        = getMaxMinusOffDiagonal(A_, dist2);
-      auto lclDiag2d = diagVec->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
       diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
     }
   }

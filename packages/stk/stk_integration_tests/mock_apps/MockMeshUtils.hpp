@@ -71,7 +71,7 @@ void read_mesh(MPI_Comm comm,
   const stk::mesh::FieldBase* coordField = stkBulk->mesh_meta_data().coordinate_field();
   std::vector<mock::SparcSide> sparcSides(sides.size());
 
-  auto coordFieldData = coordField->data<double,stk::mesh::ReadOnly>();
+  auto coordFieldData = coordField->data<double>();
 
   unsigned i = 0;
   for(stk::mesh::Entity side : sides) {

@@ -19,9 +19,9 @@
 #endif
 #endif
 
-#define STK_INLINE_FUNCTION KOKKOS_INLINE_FUNCTION
-#define STK_FUNCTION KOKKOS_FUNCTION
-
+#define STK_INLINE_FUNCTION \
+  STK_DEPRECATED_MSG("STK_INLINE_FUNCTION is deprecated. Use KOKKOS_INLINE_FUNCTION directly") KOKKOS_INLINE_FUNCTION
+#define STK_FUNCTION STK_DEPRECATED_MSG("STK_FUNCTION is deprecated. Use KOKKOS_FUNCTION directly") KOKKOS_FUNCTION
 
 // Until we can use the C++20 std::source_location capability, we must instead fall back
 // on compiler extensions.  Detect what we have available.

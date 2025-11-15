@@ -56,7 +56,7 @@ fi
 
 exe cp ${stk_cmake_testing_source_dir}/run_cmake_stk_serial ${stk_build_dir}
 exe cd ${stk_build_dir}
-exe source ${stk_cmake_testing_source_dir}/load_gcc_modules
+exe source ${stk_cmake_testing_source_dir}/load_aue_serial_modules_no_boost
 printf "Configuring trilinos/stk (running cmake)...\n";
 exe "TRILINOS_DIR=${trilinos_dir} \
      TRILINOS_INSTALL_DIR=${trilinos_install_dir} \

@@ -206,8 +206,8 @@ NGP_TEST(NgpMultistateField, setOnDevice_swap_checkOnDevice)
   set_field_on_device(ngpMesh, stkFieldOld, oldValue);
   set_field_on_device(ngpMesh, stkFieldNew, newValue);
 
-  auto stkFieldOldData = stkFieldOld.data<stk::mesh::ReadOnly>();
-  auto stkFieldNewData = stkFieldNew.data<stk::mesh::ReadOnly>();
+  auto stkFieldOldData = stkFieldOld.data();
+  auto stkFieldNewData = stkFieldNew.data();
 
   check_field_on_host(*bulkPtr, selectFieldOld, entityRankFieldOld, stkFieldOldData, oldValue);
   check_field_on_host(*bulkPtr, selectFieldNew, entityRankFieldNew, stkFieldNewData, newValue);

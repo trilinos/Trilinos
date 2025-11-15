@@ -43,7 +43,7 @@
 namespace stk { namespace topology_detail {
 
 template <class InputIt1, class InputIt2>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 bool stk_equal(InputIt1 first1, InputIt1 last1, InputIt2 first2)
 {
   for (; first1 != last1; ++first1, ++first2) {
@@ -55,7 +55,7 @@ bool stk_equal(InputIt1 first1, InputIt1 last1, InputIt2 first2)
 }
 
 template <typename Topology, typename NodeArrayA, typename NodeArrayB, typename Node>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 EquivalentPermutation is_equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
 {
   if constexpr (Topology::num_permutations == 0u)
@@ -78,7 +78,7 @@ EquivalentPermutation is_equivalent_helper(Topology, const NodeArrayA &a, const 
 }
 
 template<class InputIt, class OutputIt>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 OutputIt stk_copy(InputIt first, InputIt last, OutputIt d_first)
 {
     while (first != last) {
@@ -88,7 +88,7 @@ OutputIt stk_copy(InputIt first, InputIt last, OutputIt d_first)
 }
 
 template<class InputIt1, class InputIt2>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 bool stk_lexicographical_compare(InputIt1 first1, InputIt1 last1,
                                  InputIt2 first2, InputIt2 last2)
 {
@@ -100,7 +100,7 @@ bool stk_lexicographical_compare(InputIt1 first1, InputIt1 last1,
 }
 
 template <typename Topology, typename NodeArray, typename Node>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 unsigned lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bool only_positive_permutations, Node)
 {
   if constexpr (Topology::num_permutations > 0u)
@@ -145,7 +145,7 @@ unsigned lexicographical_smallest_permutation_helper(Topology, const NodeArray &
 }
 
 template <typename Topology, typename NodeArray, typename Node>
-STK_INLINE_FUNCTION
+KOKKOS_INLINE_FUNCTION
 unsigned lexicographical_smallest_permutation_preserve_polarity_helper(Topology, const NodeArray &nodes, const NodeArray &element_nodes, Node)
 {
   if constexpr (Topology::num_permutations > 0u)

@@ -1675,7 +1675,7 @@ public:
     std::vector<stk::mesh::PartVector> addParts;
     std::vector<stk::mesh::PartVector> removeParts;
     const stk::mesh::BucketVector& elements = bulkData->buckets(stk::topology::ELEM_RANK);
-    auto deathStatusData = deathStatusField->data<stk::mesh::ReadOnly>();
+    auto deathStatusData = deathStatusField->data();
     const int deadElementStatus = 1;
     for (size_t bucketI=0 ; bucketI<elements.size() ; ++bucketI) {
       stk::mesh::Bucket& bucket = *(elements[bucketI]);

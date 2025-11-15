@@ -105,7 +105,7 @@ void test_third_node_is_midpoint(stk::mesh::BulkData& bulk)
 {
   std::vector<std::array<double, 3>> edgeNodeCoords;
   const stk::mesh::FieldBase* coordField = bulk.mesh_meta_data().coordinate_field();
-  auto coordFieldData = coordField->data<double,stk::mesh::ReadOnly>();
+  auto coordFieldData = coordField->data<double>();
 
   for (const stk::mesh::Bucket* bucket : bulk.buckets(stk::topology::EDGE_RANK)) {
     for (stk::mesh::Entity edge : *bucket) {

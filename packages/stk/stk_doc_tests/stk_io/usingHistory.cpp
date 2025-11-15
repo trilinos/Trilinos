@@ -255,7 +255,7 @@ void verify_data(stk::mesh::BulkData& bulk, stk::mesh::Field<double>& field, stk
 {
   stk::mesh::EntityVector entities;
   stk::mesh::get_entities(bulk, rank, bulk.mesh_meta_data().locally_owned_part(), entities);
-  auto fieldData = field.data<stk::mesh::ReadOnly>();
+  auto fieldData = field.data();
 
   for(stk::mesh::Entity entity : entities)
   {

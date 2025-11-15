@@ -131,7 +131,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_component_bounds(component, file, line);
 
-    return m_dataPtr[static_cast<int>(component)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[component()*m_scalarStride + entity()];
   }
 
   KOKKOS_INLINE_FUNCTION T& operator()(EntityIdx entity, CopyIdx copy,
@@ -142,7 +142,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_bounds(copy, file, line);
 
-    return m_dataPtr[static_cast<int>(copy)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[copy()*m_scalarStride + entity()];
   }
 
   KOKKOS_INLINE_FUNCTION T& operator()(EntityIdx entity, CopyIdx copy, ComponentIdx component,
@@ -152,8 +152,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[(static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride +
-        static_cast<int>(entity)];
+    return m_dataPtr[(copy()*m_numComponents + component())*m_scalarStride + entity()];
   }
 
   KOKKOS_INLINE_FUNCTION T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -163,7 +162,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_scalar_bounds(scalar, file, line);
 
-    return m_dataPtr[static_cast<int>(scalar)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[scalar()*m_scalarStride + entity()];
   }
 
 
@@ -313,7 +312,7 @@ private:
     }
   }
   KOKKOS_INLINE_FUNCTION void check_entity_bounds(int entity, const char* file, int line) const {
-    if ((static_cast<int>(entity) < 0) || (static_cast<int>(entity) >= m_numEntities)) {
+    if ((entity < 0) || (entity >= m_numEntities)) {
       if (line == -1) {
         printf("Error: Out-of-bounds access to BucketValues for Field '%s' with Entity index %i for a Bucket"
                " with %i Entities.\n", m_fieldName, entity, m_numEntities);
@@ -449,7 +448,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_component_bounds(component, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_numComponents + static_cast<int>(component)];
+    return m_dataPtr[entity()*m_numComponents + component()];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy,
@@ -460,7 +459,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_bounds(copy, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_numCopies + static_cast<int>(copy)];
+    return m_dataPtr[entity()*m_numCopies + copy()];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy, ComponentIdx component,
@@ -470,8 +469,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[(static_cast<int>(entity)*m_numCopies + static_cast<int>(copy))*m_numComponents +
-        static_cast<int>(component)];
+    return m_dataPtr[(entity()*m_numCopies + copy())*m_numComponents + component()];
   }
 
   inline T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -481,7 +479,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_scalar_bounds(scalar, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_numCopies*m_numComponents + static_cast<int>(scalar)];
+    return m_dataPtr[entity()*m_numCopies*m_numComponents + scalar()];
   }
 
 
@@ -534,24 +532,24 @@ private:
   inline void check_defined_field(const char* file, int line) const {
     STK_ThrowRequireMsg(is_field_defined(),
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " that is not defined on this Bucket.");
+                        " that is not defined on this Bucket.");
   }
   inline void check_single_scalar_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents*m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
+                        " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that takes appropriate index arguments.");
   }
   inline void check_single_component_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " as if it only has one component when it actually has " << m_numComponents <<
+                        " as if it only has one component when it actually has " << m_numComponents <<
                         " components.  Please use a Bucket operator() that also has a component argument.");
   }
   inline void check_single_copy_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " as if it only has one copy when it actually has " << m_numCopies <<
+                        " as if it only has one copy when it actually has " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that also has a copy argument.");
   }
   inline void check_component_bounds(int component, const char* file, int line) const {
@@ -708,7 +706,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_component_bounds(component, file, line);
 
-    return m_dataPtr[static_cast<int>(component)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[component()*m_scalarStride + entity()];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy,
@@ -719,7 +717,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_bounds(copy, file, line);
 
-    return m_dataPtr[static_cast<int>(copy)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[copy()*m_scalarStride + entity()];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy, ComponentIdx component,
@@ -729,8 +727,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[(static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride +
-        static_cast<int>(entity)];
+    return m_dataPtr[(copy()*m_numComponents + component())*m_scalarStride + entity()];
   }
 
   inline T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -740,7 +737,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_scalar_bounds(scalar, file, line);
 
-    return m_dataPtr[static_cast<int>(scalar)*m_scalarStride + static_cast<int>(entity)];
+    return m_dataPtr[scalar()*m_scalarStride + entity()];
   }
 
 
@@ -793,24 +790,24 @@ private:
   inline void check_defined_field(const char* file, int line) const {
     STK_ThrowRequireMsg(is_field_defined(),
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " that is not defined on this Bucket.");
+                        " that is not defined on this Bucket.");
   }
   inline void check_single_scalar_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents*m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
+                        " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that takes appropriate index arguments.");
   }
   inline void check_single_component_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " as if it only has one component when it actually has " << m_numComponents <<
+                        " as if it only has one component when it actually has " << m_numComponents <<
                         " components.  Please use a Bucket operator() that also has a component argument.");
   }
   inline void check_single_copy_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " as if it only has one copy when it actually has " << m_numCopies <<
+                        " as if it only has one copy when it actually has " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that also has a copy argument.");
   }
   inline void check_component_bounds(int component, const char* file, int line) const {
@@ -982,7 +979,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_component_bounds(component, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_entityStride + static_cast<int>(component)*m_scalarStride];
+    return m_dataPtr[entity()*m_entityStride + component()*m_scalarStride];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy,
@@ -993,7 +990,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_bounds(copy, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_entityStride + static_cast<int>(copy)*m_scalarStride];
+    return m_dataPtr[entity()*m_entityStride + copy()*m_scalarStride];
   }
 
   inline T& operator()(EntityIdx entity, CopyIdx copy, ComponentIdx component,
@@ -1003,8 +1000,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_copy_and_component_bounds(copy, component, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_entityStride +
-        (static_cast<int>(copy)*m_numComponents + static_cast<int>(component))*m_scalarStride];
+    return m_dataPtr[entity()*m_entityStride + (copy()*m_numComponents + component())*m_scalarStride];
   }
 
   inline T& operator()(EntityIdx entity, ScalarIdx scalar,
@@ -1014,7 +1010,7 @@ public:
     check_entity_bounds(entity, file, line);
     check_scalar_bounds(scalar, file, line);
 
-    return m_dataPtr[static_cast<int>(entity)*m_entityStride + static_cast<int>(scalar)*m_scalarStride];
+    return m_dataPtr[entity()*m_entityStride + scalar()*m_scalarStride];
   }
 
 
@@ -1067,24 +1063,24 @@ private:
   inline void check_defined_field(const char* file, int line) const {
     STK_ThrowRequireMsg(is_field_defined(),
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " that is not defined on this Bucket.");
+                        " that is not defined on this Bucket.");
   }
   inline void check_single_scalar_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents*m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
+                        " as a scalar when it has " << m_numComponents << " components and " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that takes appropriate index arguments.");
   }
   inline void check_single_component_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numComponents == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " as if it only has one component when it actually has " << m_numComponents <<
+                        " as if it only has one component when it actually has " << m_numComponents <<
                         " components.  Please use a Bucket operator() that also has a component argument.");
   }
   inline void check_single_copy_access(const char* file, int line) const {
     STK_ThrowRequireMsg(m_numCopies == 1,
                         location_string(file, line) << "Accessing BucketValues for Field '" << m_fieldName << "'"
-                                                                                                              " as if it only has one copy when it actually has " << m_numCopies <<
+                        " as if it only has one copy when it actually has " << m_numCopies <<
                         " copies.  Please use a Bucket operator() that also has a copy argument.");
   }
   inline void check_component_bounds(int component, const char* file, int line) const {

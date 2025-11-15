@@ -72,20 +72,20 @@ TEST(stkMeshHowTo, useMultistateField)
   mesh.modification_end();
 
   EXPECT_EQ(stk::mesh::StateNP1, temperatureFieldStateNp1.state());
-  auto temperatureFieldStateNp1Data = temperatureFieldStateNp1.data();
+  auto temperatureFieldStateNp1Data = temperatureFieldStateNp1.data<stk::mesh::ReadWrite>();
   auto temperatureStateNp1 = temperatureFieldStateNp1Data.entity_values(node);
   EXPECT_EQ(initialTemperatureValue, temperatureStateNp1());
   double newTemperatureValue = 2.0;
   temperatureStateNp1() = newTemperatureValue;
 
   ScalarField& temperatureFieldStateN = temperatureFieldStateNp1.field_of_state(stk::mesh::StateN);
-  auto temperatureFieldStateNData = temperatureFieldStateN.data();
+  auto temperatureFieldStateNData = temperatureFieldStateN.data<stk::mesh::ReadWrite>();
   auto temperatureStateN = temperatureFieldStateNData.entity_values(node);
   EXPECT_EQ(initialTemperatureValue, temperatureStateN());
 
   mesh.update_field_data_states();
 
-  temperatureFieldStateNData = temperatureFieldStateN.data();
+  temperatureFieldStateNData = temperatureFieldStateN.data<stk::mesh::ReadWrite>();
   temperatureStateN() = temperatureFieldStateNData.entity_values(node)();
   EXPECT_EQ(newTemperatureValue, temperatureStateN());
 }

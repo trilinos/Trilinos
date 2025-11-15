@@ -240,7 +240,7 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
   // Sanity check
   for (int i = 0; i < numFields; ++i) {
     const ScalarField& field = dynamic_cast<const ScalarField&>(*fields[i]);
-    auto fieldData = field.data<stk::mesh::ReadOnly>();
+    auto fieldData = field.data();
     for (stk::mesh::Bucket* bucket : node_buckets) {
       const bool isShared = bucket->shared();
       auto bucketValues = fieldData.bucket_values(*bucket);

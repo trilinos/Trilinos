@@ -67,7 +67,7 @@ TEST(StkIoHowTo, WriteRestartWithEdges)
     stk::mesh::EntityVector edges;
     stk::mesh::get_entities(*bulk, stk::topology::EDGE_RANK, edges);
 
-    auto edgeFieldData = edgeField.data<stk::mesh::ReadOnly>();
+    auto edgeFieldData = edgeField.data();
 
     for(auto edge : edges) {
       auto data = edgeFieldData.entity_values(edge);

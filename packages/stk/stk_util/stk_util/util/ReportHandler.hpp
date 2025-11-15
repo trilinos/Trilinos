@@ -40,7 +40,7 @@
 #include <string>     // for operator+, allocator, string, char_traits
 #include <type_traits>
 
-#include "stk_util/stk_kokkos_macros.h"  // for STK_FUNCTION
+#include "stk_util/stk_kokkos_macros.h"  // for KOKKOS_FUNCTION
 
 #ifdef STK_ENABLE_GPU_BUT_NO_RDC
 #include <Kokkos_Core.hpp>
@@ -301,12 +301,12 @@ inline void ThrowMsgHost(bool /* expr */, const char* exprString, const char* me
 }
 
 #ifdef STK_ENABLE_GPU_BUT_NO_RDC
-STK_INLINE_FUNCTION void ThrowMsgDevice(const char * message)
+KOKKOS_INLINE_FUNCTION void ThrowMsgDevice(const char * message)
 { 
   Kokkos::abort(message);
 }
 #else
-STK_FUNCTION void ThrowMsgDevice(const char * message);
+KOKKOS_FUNCTION void ThrowMsgDevice(const char * message);
 #endif
 
 inline void ThrowHost(bool /* expr */, const char* exprString, const std::string& location)
@@ -330,12 +330,12 @@ inline void ThrowErrorMsgHost(const char * message, const std::string & location
 }
 
 #ifdef STK_ENABLE_GPU_BUT_NO_RDC
-STK_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
+KOKKOS_INLINE_FUNCTION void ThrowErrorMsgDevice(const char * message)
 { 
   Kokkos::abort(message);
 }
 #else
-STK_FUNCTION void ThrowErrorMsgDevice(const char * message);
+KOKKOS_FUNCTION void ThrowErrorMsgDevice(const char * message);
 #endif
 
 // This generic macro is for unconditional throws. We pass "" as the expr

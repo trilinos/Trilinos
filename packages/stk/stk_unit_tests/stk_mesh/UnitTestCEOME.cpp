@@ -456,7 +456,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
     Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
     stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
-    auto elemFieldData = elem_field->data<double,stk::mesh::ReadWrite>();
+    auto elemFieldData = elem_field->data<double, stk::mesh::ReadWrite>();
     auto elemFieldDataNode5 = elemFieldData.entity_values(node5);
     elemFieldDataNode5(0_comp) = 5.0;
     auto elemFieldDataNode6 = elemFieldData.entity_values(node6);
@@ -506,7 +506,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
     Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
     stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
-    auto elemFieldData = elem_field->data<double,stk::mesh::ReadWrite>();
+    auto elemFieldData = elem_field->data<double, stk::mesh::ReadWrite>();
     auto elemFieldDataNode5 = elemFieldData.entity_values(node5);
     elemFieldDataNode5(0_comp) = 5.0;
     auto elemFieldDataNode6 = elemFieldData.entity_values(node6);
@@ -529,7 +529,7 @@ TEST(CEOME, change_entity_owner_4Elem4ProcEdge)
     Entity node5 = mesh.get_entity(stk::topology::NODE_RANK,5);
     Entity node6 = mesh.get_entity(stk::topology::NODE_RANK,6);
     stk::mesh::FieldBase* elem_field = meta_data.get_field(stk::topology::NODE_RANK, "elem_field");
-    auto elemFieldData = elem_field->data<double,stk::mesh::ReadWrite>();
+    auto elemFieldData = elem_field->data<double, stk::mesh::ReadWrite>();
     auto elemFieldDataNode5 = elemFieldData.entity_values(node5);
     elemFieldDataNode5(0_comp) = 5.0;
     auto elemFieldDataNode6 = elemFieldData.entity_values(node6);

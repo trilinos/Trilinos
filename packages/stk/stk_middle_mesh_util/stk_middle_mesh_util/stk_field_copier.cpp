@@ -46,8 +46,8 @@ void StkFieldCopier::copy(const stk::mesh::Field<double>& stkField, mesh::FieldP
   int numCompPerNode = middleMeshFieldPtr->get_num_comp();
   auto& middleMeshField = *middleMeshFieldPtr;
 
-  auto stkVertFieldData = m_stkVertField->data<stk::mesh::ReadOnly>();
-  auto stkFieldData     = stkField.data<stk::mesh::ReadOnly>();
+  auto stkVertFieldData = m_stkVertField->data();
+  auto stkFieldData     = stkField.data();
   for (const stk::mesh::Bucket* bucket : buckets)
     for (stk::mesh::Entity node : *bucket)
     {
@@ -73,7 +73,7 @@ void StkFieldCopier::copy(const mesh::FieldPtr<double> middleMeshFieldPtr, stk::
   int numCompPerNode = middleMeshFieldPtr->get_num_comp();
   auto& middleMeshField = *middleMeshFieldPtr;
 
-  auto stkVertFieldData = m_stkVertField->data<stk::mesh::ReadOnly>();
+  auto stkVertFieldData = m_stkVertField->data();
   auto stkFieldData = stkField.data<stk::mesh::ReadWrite>();
   for (const stk::mesh::Bucket* bucket : buckets)
     for (stk::mesh::Entity node : *bucket)

@@ -11,7 +11,7 @@
 #define MUELU_GEOMETRICINTERPOLATIONPFACTORY_KOKKOS_DEF_HPP
 
 #include "Xpetra_CrsGraph.hpp"
-#include "Xpetra_CrsMatrixUtils.hpp"
+#include "MueLu_CrsMatrixUtils.hpp"
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
@@ -127,8 +127,8 @@ void GeometricInterpolationPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, 
     // Construct and launch functor to fill coarse coordinates values
     // function should take a const view really
     coarseCoordinatesBuilderFunctor myCoarseCoordinatesBuilder(geoData,
-                                                               fineCoordinates->getLocalViewDevice(Xpetra::Access::ReadWrite),
-                                                               coarseCoordinates->getLocalViewDevice(Xpetra::Access::OverwriteAll));
+                                                               fineCoordinates->getLocalViewDevice(Tpetra::Access::ReadWrite),
+                                                               coarseCoordinates->getLocalViewDevice(Tpetra::Access::OverwriteAll));
     Kokkos::parallel_for("GeometricInterpolation: build coarse coordinates",
                          Kokkos::RangePolicy<execution_space>(0, geoData->getNumCoarseNodes()),
                          myCoarseCoordinatesBuilder);

@@ -309,7 +309,7 @@ public:
       break;
     }
     case 3: {
-      if (_method == 1 || _method == 3) {
+      if (_method != 2) {
         TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
       } else {
         TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
@@ -378,7 +378,7 @@ public:
       break;
     }
     case 3: {
-      if (_method == 1 || _method == 3) {
+      if (_method != 2) {
         TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
       } else {
         TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
