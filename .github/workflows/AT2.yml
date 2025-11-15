@@ -79,6 +79,8 @@ jobs:
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
         run: |
+          module load llvm
+
           # Set up python-is-python3 hackery
           mkdir bin
           pushd bin

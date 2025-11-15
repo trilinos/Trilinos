@@ -17,6 +17,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_FEMultiVector_decl.hpp"
 
 namespace Tpetra {
 
