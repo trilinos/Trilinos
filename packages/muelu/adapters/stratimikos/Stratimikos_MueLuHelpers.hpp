@@ -45,11 +45,6 @@ void enableMueLu(LinearSolverBuilder<Scalar>& builder, const std::string& stratN
 #endif
 }
 
-template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-MUELU_DEPRECATED void enableMueLu(LinearSolverBuilder<double>& builder, const std::string& stratName = "MueLu") {
-  enableMueLu<double, LocalOrdinal, GlobalOrdinal, Node>(builder, stratName);
-}
-
 template <typename Scalar = MueLu::DefaultScalar, typename LocalOrdinal = MueLu::DefaultLocalOrdinal, typename GlobalOrdinal = MueLu::DefaultGlobalOrdinal, typename Node = MueLu::DefaultNode>
 void enableMueLuRefMaxwell(LinearSolverBuilder<Scalar>& builder, const std::string& stratName = "MueLuRefMaxwell") {
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -65,11 +60,6 @@ void enableMueLuRefMaxwell(LinearSolverBuilder<Scalar>& builder, const std::stri
 #endif
 }
 
-template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-MUELU_DEPRECATED void enableMueLuRefMaxwell(LinearSolverBuilder<double>& builder, const std::string& stratName = "MueLuRefMaxwell") {
-  enableMueLuRefMaxwell<double, LocalOrdinal, GlobalOrdinal, Node>(builder, stratName);
-}
-
 template <typename Scalar = MueLu::DefaultScalar, typename LocalOrdinal = MueLu::DefaultLocalOrdinal, typename GlobalOrdinal = MueLu::DefaultGlobalOrdinal, typename Node = MueLu::DefaultNode>
 void enableMueLuMaxwell1(LinearSolverBuilder<Scalar>& builder, const std::string& stratName = "MueLuMaxwell1") {
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
@@ -83,11 +73,6 @@ void enableMueLuMaxwell1(LinearSolverBuilder<Scalar>& builder, const std::string
 
   builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
 #endif
-}
-
-template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-MUELU_DEPRECATED void enableMueLuMaxwell1(LinearSolverBuilder<double>& builder, const std::string& stratName = "MueLuMaxwell1") {
-  enableMueLuMaxwell1<double, LocalOrdinal, GlobalOrdinal, Node>(builder, stratName);
 }
 
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)

@@ -125,9 +125,6 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos_fwd.hpp"
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-#include "MueLu_SaPFactory_kokkos_fwd.hpp"
-#endif
 #include "MueLu_SemiCoarsenPFactory_kokkos_fwd.hpp"
 #include "MueLu_StructuredAggregationFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"
