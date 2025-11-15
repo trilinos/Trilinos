@@ -54,7 +54,7 @@ Reindex_MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator()(Origi
   assert(origMultiVector->isConstantStride() == true);  // So that it is valid to call origMultiVector->getStride()
 
   using mv_t    = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  this->newObj_ = Teuchos::RCP<mv_t>(new mv_t(*origMultiVector, Teuchos::DataAccess::Copy));
+  this->newObj_ = Teuchos::RCP<mv_t>(new mv_t(*origMultiVector, Teuchos::DataAccess::View));
   this->newObj_->replaceMap(newRowMap_);
 
   return this->newObj_;
