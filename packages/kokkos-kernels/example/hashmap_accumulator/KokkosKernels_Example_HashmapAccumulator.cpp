@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -173,7 +160,7 @@ template <typename execution_space, typename scalar_t = int>
 void experiment(const parameters_t& params) {
   typedef typename KokkosKernels::Impl::UniformMemoryPool<execution_space, scalar_t> uniform_memory_pool_t;
   typedef typename Kokkos::View<scalar_t*> data_view_t;
-  typedef typename data_view_t::HostMirror data_view_hostmirror_t;
+  typedef typename data_view_t::host_mirror_type data_view_hostmirror_t;
 
   size_t num_entries = params.problem_size;
 

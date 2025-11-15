@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSKERNELS_SPARSEUTILS_HPP
 #define KOKKOSKERNELS_SPARSEUTILS_HPP
 #include <vector>
@@ -53,11 +40,11 @@ void kk_create_bsr_formated_point_crsmatrix(int block_size, size_t num_rows, siz
   typedef typename in_row_view_t::non_const_value_type size_type;
   typedef typename in_val_view_t::non_const_value_type scalar_t;
 
-  typename in_row_view_t::HostMirror hr = Kokkos::create_mirror_view(in_xadj);
+  typename in_row_view_t::host_mirror_type hr = Kokkos::create_mirror_view(in_xadj);
   Kokkos::deep_copy(hr, in_xadj);
-  typename in_nnz_view_t::HostMirror he = Kokkos::create_mirror_view(in_adj);
+  typename in_nnz_view_t::host_mirror_type he = Kokkos::create_mirror_view(in_adj);
   Kokkos::deep_copy(he, in_adj);
-  typename in_val_view_t::HostMirror hv = Kokkos::create_mirror_view(in_vals);
+  typename in_val_view_t::host_mirror_type hv = Kokkos::create_mirror_view(in_vals);
   Kokkos::deep_copy(hv, in_vals);
 
   out_num_rows = (num_rows / block_size) * block_size;
@@ -164,9 +151,9 @@ void kk_create_bsr_formated_point_crsmatrix(int block_size, size_t num_rows, siz
   out_adj  = out_nnz_view_t("BlockedPointCRS ADJ", block_adj.size());
   out_vals = out_val_view_t("BlockedPointCRS VALS", block_vals.size());
 
-  typename out_row_view_t::HostMirror hor = Kokkos::create_mirror_view(out_xadj);
-  typename out_nnz_view_t::HostMirror hoe = Kokkos::create_mirror_view(out_adj);
-  typename out_val_view_t::HostMirror hov = Kokkos::create_mirror_view(out_vals);
+  typename out_row_view_t::host_mirror_type hor = Kokkos::create_mirror_view(out_xadj);
+  typename out_nnz_view_t::host_mirror_type hoe = Kokkos::create_mirror_view(out_adj);
+  typename out_val_view_t::host_mirror_type hov = Kokkos::create_mirror_view(out_vals);
 
   for (lno_t i = 0; i < lno_t(out_num_rows) + 1; ++i) {
     hor(i) = block_rows_xadj[i];
@@ -1684,7 +1671,7 @@ struct CountDroppedEntriesFunctor {
   CountDroppedEntriesFunctor(const Values &values_, Mag tol_) : values(values_), tol(tol_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(int64_t i, Offset &lcount) const {
-    if (Kokkos::ArithTraits<Scalar>::abs(values(i)) <= tol) lcount++;
+    if (KokkosKernels::ArithTraits<Scalar>::abs(values(i)) <= tol) lcount++;
   }
 
   Values values;
@@ -1741,7 +1728,7 @@ struct DropEntriesFunctor {
     // i_in is the index of the input entry being processed
     // i_out (if finalPass == true) is the index of where that same entry goes
     // in the filtered matrix
-    bool filter   = Kokkos::ArithTraits<Scalar>::abs(valuesIn(i_in)) <= tol;
+    bool filter   = KokkosKernels::ArithTraits<Scalar>::abs(valuesIn(i_in)) <= tol;
     bool isRowEnd = rowEndMarkers.test(i_in);
     if (finalPass) {
       if (!filter) {
@@ -1797,7 +1784,7 @@ struct ExpandRowmapFunctor {
 // Otherwise a new matrix is returned.
 template <typename Matrix>
 Matrix removeCrsMatrixZeros(const Matrix &A,
-                            typename Kokkos::ArithTraits<typename Matrix::value_type>::mag_type tol = 0) {
+                            typename KokkosKernels::ArithTraits<typename Matrix::value_type>::mag_type tol = 0) {
   using Ordinal   = typename Matrix::non_const_ordinal_type;
   using Offset    = typename Matrix::non_const_size_type;
   using Device    = typename Matrix::device_type;
@@ -1961,9 +1948,9 @@ kk_extract_diagonal_blocks_crsmatrix_sequential(const crsMat_t &A, std::vector<c
   using out_row_map_type            = typename graph_t::row_map_type::non_const_type;
   using out_entries_type            = typename graph_t::entries_type::non_const_type;
   using out_values_type             = typename crsMat_t::values_type::non_const_type;
-  using out_row_map_hostmirror_type = typename out_row_map_type::HostMirror;
-  using out_entries_hostmirror_type = typename out_entries_type::HostMirror;
-  using out_values_hostmirror_type  = typename out_values_type::HostMirror;
+  using out_row_map_hostmirror_type = typename out_row_map_type::host_mirror_type;
+  using out_entries_hostmirror_type = typename out_entries_type::host_mirror_type;
+  using out_values_hostmirror_type  = typename out_values_type::host_mirror_type;
 
   using ordinal_type       = typename crsMat_t::non_const_ordinal_type;
   using size_type          = typename crsMat_t::non_const_size_type;

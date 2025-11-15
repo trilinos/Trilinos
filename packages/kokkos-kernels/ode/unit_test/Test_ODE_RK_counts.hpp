@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include "KokkosKernels_TestUtils.hpp"
@@ -61,9 +48,9 @@ void RK_Count(const Device, const OdeType myODE, const double relTol, const doub
   vec_type y_new("y new", neqs), y_old("y old", neqs);
   count_type count("time step count", 1);
 
-  auto y_h                              = Kokkos::create_mirror_view(y);
-  typename vec_type::HostMirror y_old_h = Kokkos::create_mirror(y_old);
-  auto y_ref_h                          = Kokkos::create_mirror(y);
+  auto y_h                                    = Kokkos::create_mirror_view(y);
+  typename vec_type::host_mirror_type y_old_h = Kokkos::create_mirror(y_old);
+  auto y_ref_h                                = Kokkos::create_mirror(y);
   for (int dofIdx = 0; dofIdx < neqs; ++dofIdx) {
     y_h(dofIdx)     = myODE.expected_val(tstart, dofIdx);
     y_old_h(dofIdx) = y_h(dofIdx);
@@ -84,7 +71,7 @@ void RK_Count(const Device, const OdeType myODE, const double relTol, const doub
   auto y_new_h = Kokkos::create_mirror(y_new);
   Kokkos::deep_copy(y_new_h, y_new);
 
-  typename count_type::HostMirror count_h = Kokkos::create_mirror_view(count);
+  typename count_type::host_mirror_type count_h = Kokkos::create_mirror_view(count);
   Kokkos::deep_copy(count_h, count);
 
   double error = 0.0;

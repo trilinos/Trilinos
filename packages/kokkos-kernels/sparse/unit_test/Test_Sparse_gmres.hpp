@@ -1,20 +1,5 @@
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -78,7 +63,7 @@ struct GmresTest {
   using RowMapType  = Kokkos::View<size_type*, device>;
   using EntriesType = Kokkos::View<lno_t*, device>;
   using ValuesType  = Kokkos::View<scalar_t*, device>;
-  using AT          = Kokkos::ArithTraits<scalar_t>;
+  using AT          = KokkosKernels::ArithTraits<scalar_t>;
   using exe_space   = typename device::execution_space;
   using mem_space   = typename device::memory_space;
 
@@ -87,7 +72,7 @@ struct GmresTest {
 
   using KernelHandle =
       KokkosKernels::Experimental::KokkosKernelsHandle<size_type, lno_t, scalar_t, exe_space, mem_space, mem_space>;
-  using float_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using float_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
   template <bool UseBlocks>
   static void run_test_gmres() {
