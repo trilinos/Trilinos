@@ -163,9 +163,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Zoltan2Repartition, DeterminePartition, Scalar
   matrixList.set("keepBCs", false);
 
   // Describes the initial layout of matrix rows across processors.
-  const GlobalOrdinal numGlobalElements = nx * ny;  // 24
+  const global_size_t numGlobalElements = nx * ny;  // 24
   const size_t numMyElements            = myRank == 0 ? numGlobalElements : 0;
-  const GlobalOrdinal indexBase         = 0;
+  const global_size_t indexBase         = 0;
 
   RCP<const Map> rank0Map = MapFactory::Build(TestHelpers::Parameters::getLib(), numGlobalElements, numMyElements, indexBase, comm);
 
@@ -207,7 +207,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Zoltan2Repartition, DeterminePartition, Scalar
     std::vector<double> localCoords_y(expectedNumLocalRows);
 
     auto distCoordsView = distCoords->getLocalViewHost(Tpetra::Access::ReadOnly);
-    for (auto i = 0; i < distCoordsView.extent(0); i++) {
+    for (auto i = 0U; i < distCoordsView.extent(0); i++) {
       localCoords_x[i] = distCoordsView(i, 0);
       localCoords_y[i] = distCoordsView(i, 1);
     }
@@ -222,11 +222,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Zoltan2Repartition, DeterminePartition, Scalar
     processorLocalCoords.resize(numProcs);
     for (int rank = 0; rank < numProcs; ++rank) {
       processorLocalCoords[rank].resize(expectedNumLocalRows);
-      for (auto i = 0; i < expectedNumLocalRows; i++) {
+      for (auto i = 0U; i < expectedNumLocalRows; i++) {
         const auto gRow               = expectedNumLocalRows * rank + i;
-        processorLocalCoords[rank][i] = Point{
-            .x = globalCoords_x[gRow],
-            .y = globalCoords_y[gRow]};
+        processorLocalCoords[rank][i] = Point{globalCoords_x[gRow], globalCoords_y[gRow]};
       }
     }
 

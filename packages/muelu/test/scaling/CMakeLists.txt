@@ -619,7 +619,7 @@ IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     TRIBITS_ADD_TEST(
       Driver
       NAME "DriverRebalanceInitialSystem"
-      ARGS "--belosType=gmres --tol=1e-8 --xml=scaling.xml --matrix=aux2.mat --coords=coords2.mat --repartXML=repart.xml --its=9"
+      ARGS "--linAlgebra=Tpetra --belosType=\"Pseudoblock GMRES\" --tol=1e-8 --xml=scaling.xml --matrix=aux2.mat --coords=coords2.mat --repartXML=repart.xml --its=9"
       NUM_MPI_PROCS 3
       COMM mpi # HAVE_MPI required
       PASS_REGULAR_EXPRESSION "Belos converged"
