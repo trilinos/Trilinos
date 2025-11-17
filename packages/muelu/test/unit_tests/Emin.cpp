@@ -35,10 +35,9 @@
 
 namespace MueLuTests {
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void testNullspaceConstraint(const std::string &matrixType, Teuchos::FancyOStream &out, bool &success) {
 #include "MueLu_UseShortNames.hpp"
-  MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
   using TST                   = Teuchos::ScalarTraits<SC>;
   using magnitude_type        = typename TST::magnitudeType;
@@ -49,115 +48,151 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint, Scalar, Loc
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  std::vector<std::string> matrixTypes = {
-      "Laplace1D",
-      "Laplace2D",
-      "Laplace3D",
-      "Brick3D",
-      "Elasticity2D",
-      "Elasticity3D",
-  };
-  for (auto &matrixType : matrixTypes) {
-    out << "\n\n==================================================\nTesting " << matrixType << "\n\n";
+  out << "\n\n==================================================\nTesting " << matrixType << "\n\n";
 
-    Level fineLevel;
-    Level coarseLevel;
-    test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
-    fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
-    coarseLevel.SetFactoryManager(Teuchos::null);
+  Level fineLevel;
+  Level coarseLevel;
+  test_factory::createTwoLevelHierarchy(fineLevel, coarseLevel);
+  fineLevel.SetFactoryManager(Teuchos::null);  // factory manager is not used on this test
+  coarseLevel.SetFactoryManager(Teuchos::null);
 
-    GlobalOrdinal nx, ny = 1, nz = 1;
-    if (matrixType == "Laplace1D") {
-      nx = 200;
-    } else if ((matrixType == "Laplace2D") || (matrixType == "Brick2D") || (matrixType == "Elasticity2D")) {
-      nx = 20;
-      ny = 20;
-    } else if ((matrixType == "Laplace3D") || (matrixType == "Brick3D") || (matrixType == "Elasticity3D")) {
-      nx = 20;
-      ny = 20;
-      nz = 20;
-    }
-
-    Teuchos::ParameterList galeriList;
-    galeriList.set("matrixType", matrixType);
-    galeriList.set("nx", nx);
-    galeriList.set("ny", ny);
-    galeriList.set("nz", nz);
-
-    auto [A, coordinates, nullSpace, DofsPerNode] = test_factory::BuildMatrixCoordsNullspace(galeriList);
-
-    fineLevel.Request("A");
-    fineLevel.Set("A", A);
-    fineLevel.Set("Coordinates", coordinates);
-    fineLevel.Set("Nullspace", nullSpace);
-    fineLevel.Set("DofsPerNode", DofsPerNode);
-
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-    RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
-    dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
-    RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
-    UncoupledAggFact->SetFactory("Graph", dropFact);
-    UncoupledAggFact->SetMinNodesPerAggregate(3);
-    UncoupledAggFact->SetMaxNeighAlreadySelected(0);
-    UncoupledAggFact->SetOrdering("natural");
-
-    RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
-    coarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
-    RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
-    TentativePFact->SetFactory("Aggregates", UncoupledAggFact);
-    TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
-    TentativePFact->SetFactory("CoarseMap", coarseMapFact);
-
-    RCP<PatternFactory> patternFact = rcp(new PatternFactory());
-    patternFact->SetFactory("P", TentativePFact);
-
-    RCP<ConstraintFactory> constraintFact = rcp(new ConstraintFactory());
-    constraintFact->SetFactory("CoarseNullspace", TentativePFact);
-    constraintFact->SetFactory("Ppattern", patternFact);
-
-    RCP<EminPFactory> eminFact = rcp(new EminPFactory());
-    eminFact->SetFactory("P", TentativePFact);
-    eminFact->SetFactory("Constraint", constraintFact);
-
-    coarseLevel.Request("P", TentativePFact.get());  // request Ptent
-    coarseLevel.Request("P", eminFact.get());        // request P
-    coarseLevel.Request("Nullspace", TentativePFact.get());
-    coarseLevel.Request("Constraint", constraintFact.get());
-    coarseLevel.Request(*eminFact);
-    TentativePFact->Build(fineLevel, coarseLevel);
-
-    RCP<Matrix> Ptent, P;
-    coarseLevel.Get("P", Ptent, TentativePFact.get());
-    coarseLevel.Get("P", P, eminFact.get());
-
-    RCP<Constraint> constraint;
-    coarseLevel.Get("Constraint", constraint, constraintFact.get());
-
-    using Magnitude = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
-    const auto eps  = Teuchos::ScalarTraits<Magnitude>::eps();
-
-    // Test that Ptent satisfies the constraint.
-    TEST_COMPARE(constraint->ResidualNorm(Ptent), <, 400 * eps);
-
-    // Test that both Ptent satisfies the constraint after converting it to a vector and back to a matrix.
-    auto vecP = MultiVectorFactory::Build(constraint->getDomainMap(), 1);
-    constraint->AssignMatrixEntriesToVector(*Ptent, *vecP);
-    auto Ptent2 = constraint->GetMatrixWithEntriesFromVector(*vecP);
-    TEST_COMPARE(constraint->ResidualNorm(Ptent2), <, 400 * eps);
-
-    // Teuchos::rcp_const_cast<CrsGraph>(Ptent->getCrsGraph())->computeGlobalConstants();
-    // Teuchos::rcp_const_cast<CrsGraph>(Ptent2->getCrsGraph())->computeGlobalConstants();
-    // Ptent->describe(out, Teuchos::VERB_EXTREME);
-    // Ptent2->describe(out, Teuchos::VERB_EXTREME);
-
-    // Test that P satisfies the constraint.
-    TEST_COMPARE(constraint->ResidualNorm(P), <, 20000 * eps);
-
-    // Test that P has lower energy norm than Ptent.
-    auto energyNormPtent = EminPFactory::ComputeProlongatorEnergyNorm(A, Ptent, out);
-    auto energyNormP     = EminPFactory::ComputeProlongatorEnergyNorm(A, P, out);
-    TEST_COMPARE(energyNormP, <, energyNormPtent);
+  GlobalOrdinal nx, ny = 1, nz = 1;
+  if (matrixType == "Laplace1D") {
+    nx = 200;
+  } else if ((matrixType == "Laplace2D") || (matrixType == "Brick2D") || (matrixType == "Elasticity2D")) {
+    nx = 20;
+    ny = 20;
+  } else if ((matrixType == "Laplace3D") || (matrixType == "Brick3D")) {
+    nx = 20;
+    ny = 20;
+    nz = 20;
+  } else if (matrixType == "Elasticity3D") {
+    nx = 10;
+    ny = 10;
+    nz = 10;
   }
+
+  Teuchos::ParameterList galeriList;
+  galeriList.set("matrixType", matrixType);
+  galeriList.set("nx", nx);
+  galeriList.set("ny", ny);
+  galeriList.set("nz", nz);
+
+  auto [A, coordinates, nullSpace, DofsPerNode] = test_factory::BuildMatrixCoordsNullspace(galeriList);
+
+  fineLevel.Request("A");
+  fineLevel.Set("A", A);
+  fineLevel.Set("Coordinates", coordinates);
+  fineLevel.Set("Nullspace", nullSpace);
+  fineLevel.Set("DofsPerNode", DofsPerNode);
+
+  RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+  RCP<CoalesceDropFactory> dropFact  = rcp(new CoalesceDropFactory());
+  dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
+  RCP<UncoupledAggregationFactory> UncoupledAggFact = rcp(new UncoupledAggregationFactory());
+  UncoupledAggFact->SetFactory("Graph", dropFact);
+  UncoupledAggFact->SetMinNodesPerAggregate(3);
+  UncoupledAggFact->SetMaxNeighAlreadySelected(0);
+  UncoupledAggFact->SetOrdering("natural");
+
+  RCP<CoarseMapFactory> coarseMapFact = rcp(new CoarseMapFactory());
+  coarseMapFact->SetFactory("Aggregates", UncoupledAggFact);
+  RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
+  TentativePFact->SetFactory("Aggregates", UncoupledAggFact);
+  TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
+  TentativePFact->SetFactory("CoarseMap", coarseMapFact);
+
+  RCP<PatternFactory> patternFact = rcp(new PatternFactory());
+  patternFact->SetFactory("P", TentativePFact);
+
+  RCP<ConstraintFactory> constraintFact = rcp(new ConstraintFactory());
+  constraintFact->SetFactory("CoarseNullspace", TentativePFact);
+  constraintFact->SetFactory("Ppattern", patternFact);
+
+  RCP<EminPFactory> eminFact = rcp(new EminPFactory());
+  eminFact->SetFactory("P", TentativePFact);
+  eminFact->SetFactory("Constraint", constraintFact);
+
+  coarseLevel.Request("P", TentativePFact.get());  // request Ptent
+  coarseLevel.Request("P", eminFact.get());        // request P
+  coarseLevel.Request("Nullspace", TentativePFact.get());
+  coarseLevel.Request("Constraint", constraintFact.get());
+  coarseLevel.Request(*eminFact);
+  TentativePFact->Build(fineLevel, coarseLevel);
+
+  RCP<Matrix> Ptent, P;
+  coarseLevel.Get("P", Ptent, TentativePFact.get());
+  coarseLevel.Get("P", P, eminFact.get());
+
+  RCP<Constraint> constraint;
+  coarseLevel.Get("Constraint", constraint, constraintFact.get());
+
+  using Magnitude = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  const auto eps  = Teuchos::ScalarTraits<Magnitude>::eps();
+
+  // Test that Ptent satisfies the constraint.
+  TEST_COMPARE(constraint->ResidualNorm(Ptent), <, 400 * eps);
+
+  // Test that both Ptent satisfies the constraint after converting it to a vector and back to a matrix.
+  auto vecP = MultiVectorFactory::Build(constraint->getDomainMap(), 1);
+  constraint->AssignMatrixEntriesToVector(*Ptent, *vecP);
+  auto Ptent2 = constraint->GetMatrixWithEntriesFromVector(*vecP);
+  TEST_COMPARE(constraint->ResidualNorm(Ptent2), <, 400 * eps);
+
+  // Teuchos::rcp_const_cast<CrsGraph>(Ptent->getCrsGraph())->computeGlobalConstants();
+  // Teuchos::rcp_const_cast<CrsGraph>(Ptent2->getCrsGraph())->computeGlobalConstants();
+  // Ptent->describe(out, Teuchos::VERB_EXTREME);
+  // Ptent2->describe(out, Teuchos::VERB_EXTREME);
+
+  // Test that P satisfies the constraint.
+  TEST_COMPARE(constraint->ResidualNorm(P), <, 20000 * eps);
+
+  // Test that P has lower energy norm than Ptent.
+  auto energyNormPtent = EminPFactory::ComputeProlongatorEnergyNorm(A, Ptent, out);
+  auto energyNormP     = EminPFactory::ComputeProlongatorEnergyNorm(A, P, out);
+  TEST_COMPARE(energyNormP, <, energyNormPtent);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint_Laplace1D, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  testNullspaceConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>("Laplace1D", out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint_Laplace2D, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  testNullspaceConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>("Laplace2D", out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint_Laplace3D, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  testNullspaceConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>("Laplace3D", out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint_Brick3D, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  testNullspaceConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>("Brick3D", out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint_Elasticity2D, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  testNullspaceConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>("Elasticity2D", out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, NullspaceConstraint_Elasticity3D, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  testNullspaceConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>("Elasticity3D", out, success);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -200,70 +235,102 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   LocalOrdinal local_num_coarse_edges = 5;
   LocalOrdinal local_num_fine_nodes   = 25;
   LocalOrdinal local_num_coarse_nodes = 4;
-  std::string inputDir = "";
-  std::string dataDir = "/scratch/rstumin/hcurldata/";
-// #define HexesWithDir
-// #define GrindEmin
-// #define UseExternalP0
+  std::string inputDir                = "";
+  std::string dataDir                 = "/scratch/rstumin/hcurldata/";
+  // #define HexesWithDir
+  // #define GrindEmin
+  // #define UseExternalP0
 
-#if defined(Tris)||defined(Quads)||defined(Tets)||defined(Hexes)|| defined(TrisWithDir)||defined(QuadsWithDir)||defined(TetsWithDir)||defined(HexesWithDir)
+#if defined(Tris) || defined(Quads) || defined(Tets) || defined(Hexes) || defined(TrisWithDir) || defined(QuadsWithDir) || defined(TetsWithDir) || defined(HexesWithDir)
 #define ReadWriteForTesting
 #endif
 #ifdef Tris
-  inputDir = dataDir + "tris/";
-  global_num_fine_edges   = 12416; local_num_fine_edges   = global_num_fine_edges;
-  global_num_coarse_edges = 1365;  local_num_coarse_edges = global_num_coarse_edges;
-  global_num_fine_nodes   = 4225;  local_num_fine_nodes   = global_num_fine_nodes;
-  global_num_coarse_nodes = 484;   local_num_coarse_nodes = global_num_coarse_nodes;
+  inputDir                = dataDir + "tris/";
+  global_num_fine_edges   = 12416;
+  local_num_fine_edges    = global_num_fine_edges;
+  global_num_coarse_edges = 1365;
+  local_num_coarse_edges  = global_num_coarse_edges;
+  global_num_fine_nodes   = 4225;
+  local_num_fine_nodes    = global_num_fine_nodes;
+  global_num_coarse_nodes = 484;
+  local_num_coarse_nodes  = global_num_coarse_nodes;
 #endif
 #ifdef TrisWithDir
-  inputDir = dataDir + "tris/withDir/";
-  global_num_fine_edges   = 12352; local_num_fine_edges   = global_num_fine_edges;
-  global_num_coarse_edges = 1387;  local_num_coarse_edges = global_num_coarse_edges;
-  global_num_fine_nodes   = 4160;  local_num_fine_nodes   = global_num_fine_nodes;
-  global_num_coarse_nodes = 484;   local_num_coarse_nodes = global_num_coarse_nodes;
+  inputDir                = dataDir + "tris/withDir/";
+  global_num_fine_edges   = 12352;
+  local_num_fine_edges    = global_num_fine_edges;
+  global_num_coarse_edges = 1387;
+  local_num_coarse_edges  = global_num_coarse_edges;
+  global_num_fine_nodes   = 4160;
+  local_num_fine_nodes    = global_num_fine_nodes;
+  global_num_coarse_nodes = 484;
+  local_num_coarse_nodes  = global_num_coarse_nodes;
 #endif
 #ifdef Quads
-  inputDir = dataDir + "quads/";
-  global_num_fine_edges   = 1512; local_num_fine_edges   = global_num_fine_edges;
-  global_num_coarse_edges = 183;  local_num_coarse_edges = global_num_coarse_edges;
-  global_num_fine_nodes   = 784;  local_num_fine_nodes   = global_num_fine_nodes;
-  global_num_coarse_nodes = 100;  local_num_coarse_nodes = global_num_coarse_nodes;
+  inputDir                = dataDir + "quads/";
+  global_num_fine_edges   = 1512;
+  local_num_fine_edges    = global_num_fine_edges;
+  global_num_coarse_edges = 183;
+  local_num_coarse_edges  = global_num_coarse_edges;
+  global_num_fine_nodes   = 784;
+  local_num_fine_nodes    = global_num_fine_nodes;
+  global_num_coarse_nodes = 100;
+  local_num_coarse_nodes  = global_num_coarse_nodes;
 #endif
 #ifdef QuadsWithDir
-  inputDir = dataDir + "quads/withDir/";
-  global_num_fine_edges   = 1485; local_num_fine_edges   = global_num_fine_edges;
-  global_num_coarse_edges = 181;  local_num_coarse_edges = global_num_coarse_edges;
-  global_num_fine_nodes   = 756;  local_num_fine_nodes   = global_num_fine_nodes;
-  global_num_coarse_nodes =  90;  local_num_coarse_nodes = global_num_coarse_nodes;
+  inputDir                = dataDir + "quads/withDir/";
+  global_num_fine_edges   = 1485;
+  local_num_fine_edges    = global_num_fine_edges;
+  global_num_coarse_edges = 181;
+  local_num_coarse_edges  = global_num_coarse_edges;
+  global_num_fine_nodes   = 756;
+  local_num_fine_nodes    = global_num_fine_nodes;
+  global_num_coarse_nodes = 90;
+  local_num_coarse_nodes  = global_num_coarse_nodes;
 #endif
 #ifdef Tets
-  inputDir = dataDir + "tets/";
-  global_num_fine_edges   = 5859; local_num_fine_edges   = global_num_fine_edges;
-  global_num_coarse_edges = 330;  local_num_coarse_edges = global_num_coarse_edges;
-  global_num_fine_nodes   = 1000; local_num_fine_nodes   = global_num_fine_nodes;
-  global_num_coarse_nodes = 64;   local_num_coarse_nodes = global_num_coarse_nodes;
+  inputDir                = dataDir + "tets/";
+  global_num_fine_edges   = 5859;
+  local_num_fine_edges    = global_num_fine_edges;
+  global_num_coarse_edges = 330;
+  local_num_coarse_edges  = global_num_coarse_edges;
+  global_num_fine_nodes   = 1000;
+  local_num_fine_nodes    = global_num_fine_nodes;
+  global_num_coarse_nodes = 64;
+  local_num_coarse_nodes  = global_num_coarse_nodes;
 #endif
 #ifdef TetsWithDir
-  inputDir = dataDir + "tets/withDir/";
-  global_num_fine_edges   = 5850; local_num_fine_edges   = global_num_fine_edges;
-  global_num_coarse_edges = 329;  local_num_coarse_edges = global_num_coarse_edges;
-  global_num_fine_nodes   = 990;  local_num_fine_nodes   = global_num_fine_nodes;
-  global_num_coarse_nodes = 61;   local_num_coarse_nodes = global_num_coarse_nodes;
+  inputDir                = dataDir + "tets/withDir/";
+  global_num_fine_edges   = 5850;
+  local_num_fine_edges    = global_num_fine_edges;
+  global_num_coarse_edges = 329;
+  local_num_coarse_edges  = global_num_coarse_edges;
+  global_num_fine_nodes   = 990;
+  local_num_fine_nodes    = global_num_fine_nodes;
+  global_num_coarse_nodes = 61;
+  local_num_coarse_nodes  = global_num_coarse_nodes;
 #endif
 #ifdef Hexes
-  inputDir = dataDir + "hexes/";
-  global_num_fine_edges   = 2700; local_num_fine_edges   = global_num_fine_edges;
-  global_num_coarse_edges = 223;  local_num_coarse_edges = global_num_coarse_edges;
-  global_num_fine_nodes   = 1000; local_num_fine_nodes   = global_num_fine_nodes;
-  global_num_coarse_nodes = 64;   local_num_coarse_nodes = global_num_coarse_nodes;
+  inputDir                = dataDir + "hexes/";
+  global_num_fine_edges   = 2700;
+  local_num_fine_edges    = global_num_fine_edges;
+  global_num_coarse_edges = 223;
+  local_num_coarse_edges  = global_num_coarse_edges;
+  global_num_fine_nodes   = 1000;
+  local_num_fine_nodes    = global_num_fine_nodes;
+  global_num_coarse_nodes = 64;
+  local_num_coarse_nodes  = global_num_coarse_nodes;
 #endif
 #ifdef HexesWithDir
-  inputDir = dataDir + "hexes/withDir/";
-  global_num_fine_edges   = 2691; local_num_fine_edges   = global_num_fine_edges;
-  global_num_coarse_edges = 212;  local_num_coarse_edges = global_num_coarse_edges;
-  global_num_fine_nodes   = 990; local_num_fine_nodes   = global_num_fine_nodes;
-  global_num_coarse_nodes = 60;   local_num_coarse_nodes = global_num_coarse_nodes;
+  inputDir                = dataDir + "hexes/withDir/";
+  global_num_fine_edges   = 2691;
+  local_num_fine_edges    = global_num_fine_edges;
+  global_num_coarse_edges = 212;
+  local_num_coarse_edges  = global_num_coarse_edges;
+  global_num_fine_nodes   = 990;
+  local_num_fine_nodes    = global_num_fine_nodes;
+  global_num_coarse_nodes = 60;
+  local_num_coarse_nodes  = global_num_coarse_nodes;
 #endif
 
   auto lib = TestHelpers::Parameters::getLib();
@@ -277,8 +344,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   auto A = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/A.mm", fine_edge_map, fine_edge_map, fine_edge_map, fine_edge_map);
   auto D = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read("emin_matrices/D0h.mm", fine_edge_map, fine_nodal_map, fine_nodal_map, fine_edge_map);
 #else
-  auto A = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir+"A.dat", fine_edge_map, fine_edge_map, fine_edge_map, fine_edge_map);
-  auto D = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir+"D0h.dat", fine_edge_map, fine_nodal_map, fine_nodal_map, fine_edge_map);
+  auto A = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir + "A.dat", fine_edge_map, fine_edge_map, fine_edge_map, fine_edge_map);
+  auto D = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir + "D0h.dat", fine_edge_map, fine_nodal_map, fine_nodal_map, fine_edge_map);
 #endif
 
   // Auxiliary nodal hierarchy
@@ -311,13 +378,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   RCP<Matrix> P0, P;
   RCP<Constraint> constraint;
 #ifdef ReadWriteForTesting
-  //Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Ptent.code", *Ptentnodal);
-  //Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Pnodal.code", *Pnodal);
-  //Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("NodeAggMatrixCoarse.code", *NodeAggMatrixCoarse);
-  Ptentnodal = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir+"Ptent.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
-  Pnodal= Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir+"Pn.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
+  // Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Ptent.code", *Ptentnodal);
+  // Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Pnodal.code", *Pnodal);
+  // Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("NodeAggMatrixCoarse.code", *NodeAggMatrixCoarse);
+  Ptentnodal = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir + "Ptent.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
+  Pnodal     = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir + "Pn.dat", fine_nodal_map, coarse_nodal_map, coarse_nodal_map, fine_nodal_map);
 #ifdef UseExternalP0
-  P0 = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir+"Pe.dat", fine_edge_map, coarse_edge_map, coarse_edge_map, fine_edge_map);
+  P0 = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(inputDir + "Pe.dat", fine_edge_map, coarse_edge_map, coarse_edge_map, fine_edge_map);
 #endif
 #endif
 
@@ -354,7 +421,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
     eminFact->SetFactory("Constraint", constraintFact);
     eminFact->SetFactory("P", constraintFact);
 #ifdef GrindEmin
-    eminFact->SetParameter("emin: num iterations",Teuchos::ParameterEntry(110));
+    eminFact->SetParameter("emin: num iterations", Teuchos::ParameterEntry(110));
 #endif
 
 #ifdef ReadWriteForTesting
@@ -372,15 +439,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
 
     if (coarseLevel.IsAvailable("P0")) {
       coarseLevel.Get("P0", P0);
-    }
-    else {
+    } else {
       coarseLevel.Get("P", P0, constraintFact.get());
     }
 
     // This is the result after running the minimization.
     coarseLevel.Get("P", P, eminFact.get());
 #ifdef ReadWriteForTesting
-    RCP<Matrix> D0H; 
+    RCP<Matrix> D0H;
     D0H = coarseLevel.Get<RCP<Matrix>>("D0");
     Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("D0H.code", *D0H);
     Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write("Pe.code", *P);
@@ -401,8 +467,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   TEST_COMPARE(energyNormP, <, energyNormP0);
 }
 
-#define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint, SC, LO, GO, Node) \
+#define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint_Laplace1D, SC, LO, GO, Node)    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint_Laplace2D, SC, LO, GO, Node)    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint_Laplace3D, SC, LO, GO, Node)    \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint_Brick3D, SC, LO, GO, Node)      \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint_Elasticity2D, SC, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint_Elasticity3D, SC, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, MaxwellConstraint, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
