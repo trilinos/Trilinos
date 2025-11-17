@@ -360,7 +360,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
   if (repartition) {
     if (!repartitionXMLFilename.empty()) {
       repartitionParamList = Teuchos::make_rcp<ParameterList>();
-      Teuchos::updateParametersFromXmlFileAndBroadcast(repartitionXMLFilename, repartitionParamList, *comm);
+      Teuchos::updateParametersFromXmlFileAndBroadcast(repartitionXMLFilename, repartitionParamList.ptr(), *comm);
     } else if (paramList.isSublist("repartition: params")) {
       repartitionParamList = Teuchos::rcpFromRef(paramList.sublist("repartition: params"));
     } else {
