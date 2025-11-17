@@ -129,5 +129,79 @@ template <> struct Scale2x2_BlockInverseDiagonals<Side::Left, Algo::Internal> {
   }
 };
 
+// diagonal scaling
+template <> struct Scale_BlockInverseDiagonals<Side::Left, Algo::Internal> {
+  template <typename ViewTypeD, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ViewTypeD &D, const ViewTypeA &A) {
+    ordinal_type m = A.extent(0);
+    ordinal_type n = A.extent(1);
+    if (m == ordinal_type(D.extent(0))) {
+      // apply from left
+      for (ordinal_type j=0; j<n; j++) {
+        for (ordinal_type i=0; i<m; i++) {
+          A(i, j) /= D(i, i);
+        }
+      }
+    } else {
+      return -1;
+    }
+    return 0;
+  }
+
+  template <typename MemberType, typename ViewTypeD, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeD &D, const ViewTypeA &A) {
+    KOKKOS_IF_ON_DEVICE((
+      ordinal_type m = A.extent(0);
+      ordinal_type n = A.extent(1);
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const ordinal_type &i) {
+        for (ordinal_type j=0; j<n; j++) {
+          A(i, j) /= D(i, i);
+        }
+      });
+    ))
+    KOKKOS_IF_ON_HOST((
+      invoke(D, A);
+    ))
+    return 0;
+ }
+};
+
+template <> struct Scale_BlockInverseDiagonals<Side::Right, Algo::Internal> {
+  template <typename ViewTypeD, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(const ViewTypeD &D, const ViewTypeA &A) {
+    ordinal_type m = A.extent(0);
+    ordinal_type n = A.extent(1);
+    if (n == ordinal_type(D.extent(0))) {
+      // apply from right
+      for (ordinal_type j=0; j<n; j++) {
+        for (ordinal_type i=0; i<m; i++) {
+          A(i, j) /= D(j, j);
+        }
+      }
+    } else {
+      return -1;
+    }
+    return 0;
+  }
+
+  template <typename MemberType, typename ViewTypeD, typename ViewTypeA>
+  KOKKOS_INLINE_FUNCTION static int invoke(MemberType &member, const ViewTypeD &D, const ViewTypeA &A) {
+    KOKKOS_IF_ON_DEVICE((
+      ordinal_type m = A.extent(0);
+      ordinal_type n = A.extent(1);
+      // apply from right
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, m), [&](const ordinal_type &i) {
+        for (ordinal_type j=0; j<n; j++) {
+          A(i, j) /= D(j, j);
+        }
+      });
+    ))
+    KOKKOS_IF_ON_HOST((
+      invoke(D, A);
+    ))
+    return 0;
+ }
+};
+
 } // namespace Tacho
 #endif

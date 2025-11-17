@@ -46,9 +46,15 @@ namespace stk::mesh {
 // Device BucketBytes: Layout::Left
 //==============================================================================
 
-template<typename T = std::byte, typename MemSpace = stk::ngp::HostMemSpace, Layout DataLayout = Layout::Auto>
-class BucketBytes {
+template<typename T = std::byte, typename Space = stk::ngp::HostSpace, Layout DataLayout = Layout::Auto>
+class BucketBytes
+{
 public:
+  using space = Space;
+  using exec_space = typename Space::exec_space;
+  using mem_space = typename Space::mem_space;
+  static constexpr Layout layout = DataLayout;
+
   KOKKOS_INLINE_FUNCTION BucketBytes(T* bytePtr, int numBytesPerEntity, int numBytesPerScalar, int numEntities,
                                      int scalarStride)
     : m_bytePtr(bytePtr),
@@ -95,8 +101,13 @@ private:
 //==============================================================================
 
 template<typename T>
-class BucketBytes<T, stk::ngp::HostMemSpace, Layout::Auto> {
+class BucketBytes<T, stk::ngp::HostSpace, Layout::Auto>
+{
 public:
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Auto;
 
   inline BucketBytes(T* bytePtr, int numBytesPerEntity, int numBytesPerScalar, int numEntities, int scalarStride)
     : m_bytePtr(bytePtr),
@@ -158,8 +169,13 @@ private:
 //==============================================================================
 
 template<typename T>
-class BucketBytes<T, stk::ngp::HostMemSpace, Layout::Left> {
+class BucketBytes<T, stk::ngp::HostSpace, Layout::Left>
+{
 public:
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Left;
 
   inline BucketBytes(T* bytePtr, int numBytesPerEntity, int numBytesPerScalar, int numEntities, int scalarStride)
     : m_bytePtr(bytePtr),
@@ -204,8 +220,13 @@ private:
 //==============================================================================
 
 template<typename T>
-class BucketBytes<T, stk::ngp::HostMemSpace, Layout::Right> {
+class BucketBytes<T, stk::ngp::HostSpace, Layout::Right>
+{
 public:
+  using space = stk::ngp::HostSpace;
+  using mem_space = stk::ngp::HostSpace::mem_space;
+  using exec_space = stk::ngp::HostSpace::exec_space;
+  static constexpr Layout layout = Layout::Right;
 
   inline BucketBytes(T* bytePtr, int numBytesPerEntity, int numBytesPerScalar, int numEntities)
     : m_bytePtr(bytePtr),

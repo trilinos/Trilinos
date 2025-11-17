@@ -18,7 +18,7 @@
 #else
 #include "Kokkos_ArithTraits.hpp"
 #endif
-#include "Xpetra_Access.hpp"
+#include "Tpetra_Access.hpp"
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_VectorFactory.hpp"
 #include "MueLu_Utilities.hpp"
@@ -93,7 +93,7 @@ class PointwiseDropBoundaryFunctor {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class PointwiseSymmetricDropBoundaryFunctor {
  private:
-  using local_matrix_type   = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type   = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using scalar_type         = typename local_matrix_type::value_type;
   using local_ordinal_type  = typename local_matrix_type::ordinal_type;
   using memory_space        = typename local_matrix_type::memory_space;
@@ -178,7 +178,7 @@ class VectorDropBoundaryFunctor {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class VectorSymmetricDropBoundaryFunctor {
  private:
-  using local_matrix_type       = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_type       = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using scalar_type             = typename local_matrix_type::value_type;
   using local_ordinal_type      = typename local_matrix_type::ordinal_type;
   using memory_space            = typename local_matrix_type::memory_space;
@@ -388,7 +388,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class BlockDiagonalizeFunctor {
  private:
   using matrix_type       = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type = typename matrix_type::local_matrix_type;
+  using local_matrix_type = typename matrix_type::local_matrix_device_type;
 
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
@@ -400,20 +400,21 @@ class BlockDiagonalizeFunctor {
 
   local_matrix_type A;
   local_block_indices_view_type point_to_block;
+  Teuchos::RCP<block_indices_type> ghosted_point_to_blockMV;
   local_block_indices_view_type ghosted_point_to_block;
   results_view results;
 
  public:
   BlockDiagonalizeFunctor(matrix_type& A_, block_indices_type& point_to_block_, results_view& results_)
     : A(A_.getLocalMatrixDevice())
-    , point_to_block(point_to_block_.getLocalViewDevice(Xpetra::Access::ReadOnly))
+    , point_to_block(point_to_block_.getLocalViewDevice(Tpetra::Access::ReadOnly))
     , results(results_) {
     auto importer = A_.getCrsGraph()->getImporter();
 
     if (!importer.is_null()) {
-      auto ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
+      ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
       ghosted_point_to_blockMV->doImport(point_to_block_, *importer, Xpetra::INSERT);
-      ghosted_point_to_block = ghosted_point_to_blockMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      ghosted_point_to_block = ghosted_point_to_blockMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
     } else
       ghosted_point_to_block = point_to_block;
   }
@@ -441,7 +442,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class BlockDiagonalizeVectorFunctor {
  private:
   using matrix_type       = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type = typename matrix_type::local_matrix_type;
+  using local_matrix_type = typename matrix_type::local_matrix_device_type;
 
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = typename local_matrix_type::ordinal_type;
@@ -464,14 +465,14 @@ class BlockDiagonalizeVectorFunctor {
  public:
   BlockDiagonalizeVectorFunctor(matrix_type& A_, block_indices_type& point_to_block_, const RCP<const importer_type>& importer, results_view& results_, id_translation_type row_translation_, id_translation_type col_translation_)
     : A(A_.getLocalMatrixDevice())
-    , point_to_block(point_to_block_.getLocalViewDevice(Xpetra::Access::ReadOnly))
+    , point_to_block(point_to_block_.getLocalViewDevice(Tpetra::Access::ReadOnly))
     , results(results_)
     , row_translation(row_translation_)
     , col_translation(col_translation_) {
     if (!importer.is_null()) {
       ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
       ghosted_point_to_blockMV->doImport(point_to_block_, *importer, Xpetra::INSERT);
-      ghosted_point_to_block = ghosted_point_to_blockMV->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      ghosted_point_to_block = ghosted_point_to_blockMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
     } else
       ghosted_point_to_block = point_to_block;
   }

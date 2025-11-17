@@ -49,11 +49,9 @@ project votd
     $(sierra-warnings)
     <define>STK_BUILT_FOR_SIERRA
     <define>STK_BUILT_WITH_BJAM
-    <define>STK_HIDE_DEPRECATED_CODE
     <include>$(stk_io-root-inc)
   : usage-requirements
     <include>$(stk_io-root-inc)
-    <define>STK_HIDE_DEPRECATED_CODE
   : build-dir $(stk_io-builddir)
   ;
 

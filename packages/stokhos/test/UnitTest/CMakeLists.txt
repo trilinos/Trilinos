@@ -354,40 +354,41 @@ IF(Stokhos_ENABLE_Sacado)
     STANDARD_PASS_OUTPUT
     )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoPCEUnitTest
+    SOURCES Stokhos_SacadoPCEUnitTest.cpp Stokhos_SacadoPCEUnitTest.hpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoETPCEUnitTest
+    SOURCES Stokhos_SacadoETPCEUnitTest.cpp Stokhos_SacadoPCEUnitTest.hpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoPCESerializationTests
+    SOURCES Stokhos_SacadoPCESerializationTests.cpp ${UTILS_SOURCES}
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoPCECommTests
+    SOURCES Stokhos_SacadoPCECommTests.cpp ${UTILS_SOURCES}
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
   IF(Stokhos_ENABLE_PCE_Scalar_Type)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      SacadoPCEUnitTest
-      SOURCES Stokhos_SacadoPCEUnitTest.cpp Stokhos_SacadoPCEUnitTest.hpp
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      SacadoETPCEUnitTest
-      SOURCES Stokhos_SacadoETPCEUnitTest.cpp Stokhos_SacadoPCEUnitTest.hpp
-      COMM serial mpi
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      SacadoPCESerializationTests
-      SOURCES Stokhos_SacadoPCESerializationTests.cpp ${UTILS_SOURCES}
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      SacadoPCECommTests
-      SOURCES Stokhos_SacadoPCECommTests.cpp ${UTILS_SOURCES}
-      ARGS
-      COMM serial mpi
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       SacadoUQPCEUnitTest

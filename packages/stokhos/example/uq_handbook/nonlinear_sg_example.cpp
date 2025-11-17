@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
   // Initialize MPI
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  int MyPID;
+  int MyPID = 0;
   bool success = true;
   try {
 

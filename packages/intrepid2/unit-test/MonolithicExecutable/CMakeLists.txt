@@ -55,6 +55,12 @@ IF (TARGET Intrepid2_DataTests)
   SET_TARGET_PROPERTIES( Intrepid2_DataTests PROPERTIES EXCLUDE_FROM_ALL TRUE)
 ENDIF()
 
+# StructuredIntegrationTests_QuadratureSynthetic.cpp
+TRIBITS_ADD_EXECUTABLE( StructuredQuadratureSynthetic NOEXESUFFIX SOURCES StructuredIntegrationTests_QuadratureSynthetic.cpp UnitTestMain.cpp )
+IF (TARGET Intrepid2_StructuredQuadratureSynthetic )
+  SET_TARGET_PROPERTIES( Intrepid2_StructuredQuadratureSynthetic PROPERTIES EXCLUDE_FROM_ALL TRUE)
+ENDIF()
+
 # StructuredVersusStandard integration
 TRIBITS_ADD_EXECUTABLE( StructuredVersusStandard NOEXESUFFIX SOURCES StructuredIntegrationTests_StructuredVersusStandard.cpp UnitTestMain.cpp )
 IF (TARGET Intrepid2_StructuredVersusStandard)

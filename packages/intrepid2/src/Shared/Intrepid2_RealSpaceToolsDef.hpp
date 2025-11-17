@@ -1507,25 +1507,31 @@ det( DeterminantArrayViewType detArray, const MatrixViewType inMats );
 
         const auto r = _inLeft.rank();
 
-        auto left   = ( r == 1 ? Kokkos::subview(_inLeft,         Kokkos::ALL()) :
-                        r == 2 ? Kokkos::subview(_inLeft,   i,    Kokkos::ALL()) :
-                                 Kokkos::subview(_inLeft,   i, j, Kokkos::ALL()) );
-
-        auto right  = ( r == 1 ? Kokkos::subview(_inRight,        Kokkos::ALL()) :
-                        r == 2 ? Kokkos::subview(_inRight,  i,    Kokkos::ALL()) :
-                                 Kokkos::subview(_inRight,  i, j, Kokkos::ALL()) );
-
-        auto result = ( r == 1 ? Kokkos::subview(_vecProd,        Kokkos::ALL()) :
-                        r == 2 ? Kokkos::subview(_vecProd,  i,    Kokkos::ALL()) :
-                                 Kokkos::subview(_vecProd,  i, j, Kokkos::ALL()) );
-
         // branch prediction is possible
-        if (_is_vecprod_3d) {
-          result(0) = left(1)*right(2) - left(2)*right(1);
-          result(1) = left(2)*right(0) - left(0)*right(2);
-          result(2) = left(0)*right(1) - left(1)*right(0);
+        if(r == 1) {
+          if (_is_vecprod_3d) {
+            _vecProd(0) = _inLeft(1)*_inRight(2) - _inLeft(2)*_inRight(1);
+            _vecProd(1) = _inLeft(2)*_inRight(0) - _inLeft(0)*_inRight(2);
+            _vecProd(2) = _inLeft(0)*_inRight(1) - _inLeft(1)*_inRight(0);
+          } else {
+            _vecProd(0) = _inLeft(0)*_inRight(1) - _inLeft(1)*_inRight(0);
+          }
+        } else if(r == 2) {
+          if (_is_vecprod_3d) {
+            _vecProd(i, 0) = _inLeft(i, 1)*_inRight(i, 2) - _inLeft(i, 2)*_inRight(i, 1);
+            _vecProd(i, 1) = _inLeft(i, 2)*_inRight(i, 0) - _inLeft(i, 0)*_inRight(i, 2);
+            _vecProd(i, 2) = _inLeft(i, 0)*_inRight(i, 1) - _inLeft(i, 1)*_inRight(i, 0);
+          } else {
+            _vecProd(i, 0) = _inLeft(i, 0)*_inRight(i, 1) - _inLeft(i, 1)*_inRight(i, 0);
+          }
         } else {
-          result(0) = left(0)*right(1) - left(1)*right(0);
+          if (_is_vecprod_3d) {
+            _vecProd(i, j, 0) = _inLeft(i, j, 1)*_inRight(i, j, 2) - _inLeft(i, j, 2)*_inRight(i, j, 1);
+            _vecProd(i, j, 1) = _inLeft(i, j, 2)*_inRight(i, j, 0) - _inLeft(i, j, 0)*_inRight(i, j, 2);
+            _vecProd(i, j, 2) = _inLeft(i, j, 0)*_inRight(i, j, 1) - _inLeft(i, j, 1)*_inRight(i, j, 0);
+          } else {
+            _vecProd(i, j, 0) = _inLeft(i, j, 0)*_inRight(i, j, 1) - _inLeft(i, j, 1)*_inRight(i, j, 0);
+          }
         }
       }
     };

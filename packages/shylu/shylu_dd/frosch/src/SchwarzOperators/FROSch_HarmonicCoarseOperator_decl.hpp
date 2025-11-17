@@ -132,8 +132,13 @@ namespace FROSch {
         struct detectLinearDependenciesFunctor
         {
             using Real = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+#if KOKKOS_VERSION >= 40799
+            using STS = KokkosKernels::ArithTraits<SC>;
+            using RTS = KokkosKernels::ArithTraits<Real>;
+#else
             using STS = Kokkos::ArithTraits<SC>;
             using RTS = Kokkos::ArithTraits<Real>;
+#endif
 
             UN numRows;
             UN numCols;

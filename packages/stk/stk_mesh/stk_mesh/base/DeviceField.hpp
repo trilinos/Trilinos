@@ -75,7 +75,7 @@ public:
   DeviceField(const FieldBase& stkField, bool isFromGetUpdatedNgpField = false)
     : NgpFieldBase(),
       m_hostField(&stkField),
-      m_deviceFieldData(stkField.data<T, Unsynchronized, NgpMemSpace>())
+      m_deviceFieldData(stkField.data<T, Unsynchronized, stk::ngp::DeviceSpace>())
   {
     STK_ThrowRequireMsg(isFromGetUpdatedNgpField, "NgpField must be obtained from get_updated_ngp_field()");
   }
@@ -178,7 +178,7 @@ public:
     if (m_hostField->need_sync_to_device()) {
       set_execution_space(execSpace);
       if (m_deviceFieldData.needs_update()) {
-        m_deviceFieldData.update(get_execution_space(), m_hostField->host_data_layout());
+        m_deviceFieldData.update(get_execution_space(), m_hostField->host_data_layout(), need_sync_to_device());
       }
       if (not m_hostField->has_unified_device_storage()) {
         m_deviceFieldData.sync_to_device(get_execution_space(), m_hostField->host_data_layout());
@@ -348,11 +348,11 @@ private:
 
   void update_field()
   {
-    m_deviceFieldData = m_hostField->data<T, Unsynchronized, NgpMemSpace>();  // Reacquire current copy
+    m_deviceFieldData = m_hostField->data<T, Unsynchronized, stk::ngp::DeviceSpace>();  // Reacquire current copy
   }
 
   const FieldBase* m_hostField;
-  FieldData<T, NgpMemSpace> m_deviceFieldData;
+  FieldData<T, stk::ngp::DeviceSpace> m_deviceFieldData;
 };
 
 }

@@ -43,7 +43,7 @@ struct UnitTestSetup {
     atol = 1e-5;
     crtol = 1e-12;
     catol = 1e-12;
-    a = 3.1;
+    a = 0.3;
     sz = 8;
 
     // Create vector
@@ -52,8 +52,8 @@ struct UnitTestSetup {
     cx.reset(1);
     cx = a;
     for (int i=0; i<sz; i++) {
-      x.fastAccessCoeff(i) = 0.1*i;
-      y.fastAccessCoeff(i) = 0.25*i;
+      x.fastAccessCoeff(i) = 0.1*(i+1);
+      y.fastAccessCoeff(i) = 0.25*(i+1);
     }
   }
 };
@@ -62,27 +62,27 @@ struct UnitTestSetup {
  * @def UNARY_UNIT_TEST
  * Common series of test for any unary operator.
  */
-#define UNARY_UNIT_TEST(VEC, SCALAR_T, OP, OPNAME, USING_OP)            \
+#define UNARY_UNIT_TEST(VEC, SCALAR_T, OP, OPNAME, USING_OP, SHIFT)     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME) {                        \
     UTS setup;                                                          \
-    UTS::vec_type u = OP(setup.x);                                      \
+    UTS::vec_type u = OP(setup.x + SHIFT);                              \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
     {                                                                   \
       USING_OP                                                          \
-      v.fastAccessCoeff(i) = OP(setup.x.fastAccessCoeff(i));            \
+      v.fastAccessCoeff(i) = OP(setup.x.fastAccessCoeff(i) + SHIFT);    \
     }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
   }                                                                     \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_const) {                \
     UTS setup;                                                          \
-    UTS::vec_type u = OP(setup.cx);                                     \
+    UTS::vec_type u = OP(setup.cx + SHIFT);                             \
     UTS::vec_type v(1, 0.0);                                            \
     for (int i=0; i<v.size(); i++)                                      \
     {                                                                   \
     USING_OP                                                            \
-      v.fastAccessCoeff(i) = OP(setup.cx.fastAccessCoeff(0));           \
+      v.fastAccessCoeff(i) = OP(setup.cx.fastAccessCoeff(0) + SHIFT);   \
     }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
@@ -90,12 +90,12 @@ struct UnitTestSetup {
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, OPNAME##_resize) {               \
     UTS setup;                                                          \
     UTS::vec_type u;                                                    \
-    u = OP(setup.x);                                                    \
+    u = OP(setup.x + SHIFT);                                            \
     UTS::vec_type v(setup.sz, 0.0);                                     \
     for (int i=0; i<setup.sz; i++)                                      \
     {                                                                   \
     USING_OP                                                            \
-      v.fastAccessCoeff(i) = OP(setup.x.fastAccessCoeff(i));            \
+      v.fastAccessCoeff(i) = OP(setup.x.fastAccessCoeff(i) + SHIFT);    \
     }                                                                   \
     success = compareVecs(u, "u",v, "v",                                \
                           setup.rtol, setup.atol, out);                 \
@@ -410,7 +410,8 @@ struct UnitTestSetup {
 #define TERNARY_UNIT_TEST(VEC, SCALAR_T)                                \
   TEUCHOS_UNIT_TEST( VEC##_##SCALAR_T, ternay) {                        \
     UTS setup;                                                          \
-    UTS::vec_type u = std::sin(setup.x);                                \
+    UTS::vec_type u;                                                    \
+    u = std::sin(setup.x);                                              \
     UTS::vec_type v = -std::sin(setup.x);                               \
     u = u >= 0 ? -u : u;                                                 \
     success = compareVecs(u, "u", v, "v",                               \
@@ -421,25 +422,25 @@ struct UnitTestSetup {
  * Default series of tests to perform for any type.
  * The set of operators should make sense for both real and complex types.
  */
-#define VECTOR_UNIT_TESTS_ANY_TYPE(VEC,SCALAR_T)                        \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, +    , UnaryPlus ,)                    \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, -    , UnaryMinus,)                    \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, exp  , Exp       , using std::exp;  )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, log  , Log       , using std::log;  )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, log10, Log10     , using std::log10;)  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, sqrt , Sqrt      , using std::sqrt; )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, sin  , Sin       , using std::sin;  )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, cos  , Cos       , using std::cos;  )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, tan  , Tan       , using std::tan;  )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, sinh , Sinh      , using std::sinh; )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, cosh , Cosh      , using std::cosh; )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, tanh , Tanh      , using std::tanh; )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, asin , ASin      , using std::asin; )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, acos , ACos      , using std::acos; )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, atan , ATan      , using std::atan; )  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, asinh, ASinh     , using std::asinh;)  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, acosh, ACosh     , using std::acosh;)  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, atanh, ATanh     , using std::atanh;)  \
+#define VECTOR_UNIT_TESTS_ANY_TYPE(VEC,SCALAR_T)                             \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, +    , UnaryPlus , ;                , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, -    , UnaryMinus, ;                , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, exp  , Exp       , using std::exp;  , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, log  , Log       , using std::log;  , 1.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, log10, Log10     , using std::log10;, 1.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, sqrt , Sqrt      , using std::sqrt; , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, sin  , Sin       , using std::sin;  , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, cos  , Cos       , using std::cos;  , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, tan  , Tan       , using std::tan;  , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, sinh , Sinh      , using std::sinh; , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, cosh , Cosh      , using std::cosh; , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, tanh , Tanh      , using std::tanh; , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, asin , ASin      , using std::asin; , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, acos , ACos      , using std::acos; , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, atan , ATan      , using std::atan; , 0.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, asinh, ASinh     , using std::asinh;, 1.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, acosh, ACosh     , using std::acosh;, 1.0)  \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, atanh, ATanh     , using std::atanh;, 0.0)  \
                                                                 \
   BINARY_UNIT_TEST(VEC, SCALAR_T, +, Plus)                              \
   BINARY_UNIT_TEST(VEC, SCALAR_T, -, Minus)                             \
@@ -527,7 +528,7 @@ struct UnitTestSetup {
   /* Run the series of tests for any type. */                                      \
   VECTOR_UNIT_TESTS_ANY_TYPE(VEC,SCALAR_T)                                         \
   /* Operator cbrt not supported for complex type but supported for real type. */  \
-  UNARY_UNIT_TEST(VEC, SCALAR_T, cbrt , Cbrt, using std::cbrt;)                    \
+  UNARY_UNIT_TEST(VEC, SCALAR_T, cbrt , Cbrt, using std::cbrt;, 0.0)               \
   /* Operator atan2 not supported for complex type but supported for real type. */ \
   BINARYFUNC_UNIT_TEST(VEC, SCALAR_T, atan2, atan2, using std::atan2;, ATan2)      \
   /* Operators min and max are not supported for complex type. */                  \

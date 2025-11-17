@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -13,7 +13,6 @@
 // Define a variable type for storage of this elements connectivity
 #include "Ioss_CodeTypes.h"       // for IntVector
 #include "Ioss_ElementTopology.h" // for ElementTopology
-#include "Ioss_Utils.h"
 
 namespace Ioss {
   const char *Pyramid14::name = "pyramid14";
@@ -27,7 +26,7 @@ namespace Ioss {
   };
 } // namespace Ioss
 
-void Ioss::St_Pyramid14::factory() { static Ioss::St_Pyramid14 registerThis; }
+void Ioss::St_Pyramid14::factory() { static Ioss::St_Pyramid14 const registerThis; }
 
 // ========================================================================
 namespace {
@@ -73,7 +72,7 @@ namespace {
 
 void Ioss::Pyramid14::factory()
 {
-  static Ioss::Pyramid14 registerThis;
+  static Ioss::Pyramid14 const registerThis;
   Ioss::St_Pyramid14::factory();
 }
 

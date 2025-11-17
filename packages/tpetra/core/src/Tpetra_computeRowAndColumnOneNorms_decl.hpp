@@ -14,6 +14,7 @@
 /// \brief Declaration of Tpetra::computeRowAndColumnOneNorms
 
 #include "TpetraCore_config.h"
+#include "Kokkos_Core.hpp"
 #if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
 #else

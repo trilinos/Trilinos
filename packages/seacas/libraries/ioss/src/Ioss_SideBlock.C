@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2023 National Technology & Engineering Solutions
+// Copyright(C) 1999-2023, 2025 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -88,10 +88,8 @@ std::string Ioss::SideBlock::generate_sideblock_name(const std::string &sideset_
     tmp_face_topology = face_topology->name();
   }
   else {
-    std::ostringstream errmsg;
-    fmt::print(errmsg, "ERROR: Invalid face topology '{}' in function {}.\n", face_topology_name,
-               __func__);
-    IOSS_ERROR(errmsg);
+    IOSS_ERROR(fmt::format("ERROR: Invalid face topology '{}' in function {}.\n",
+                           face_topology_name, __func__));
   }
 
   auto tokens = Ioss::tokenize(sideset_name, "_");

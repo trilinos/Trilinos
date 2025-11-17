@@ -162,7 +162,13 @@ public:
   {
     for (int i = 0; i < SIZE_A; ++i) {
       // lane-wise compare: ResultType is expected to be SIMD with SIZE_A lanes
-      EXPECT_EQ(static_cast<ResultScalar>(m_result[i]), m_expectedResult[i]);
+      if(std::is_same_v<ResultScalar,float>) {
+        EXPECT_FLOAT_EQ(static_cast<ResultScalar>(m_result[i]), m_expectedResult[i]);
+      } else if (std::is_same_v<ResultScalar,double>) {
+        EXPECT_DOUBLE_EQ(static_cast<ResultScalar>(m_result[i]), m_expectedResult[i]);
+      } else {
+        EXPECT_EQ(static_cast<ResultScalar>(m_result[i]), m_expectedResult[i]);
+      }
     }
   }
 

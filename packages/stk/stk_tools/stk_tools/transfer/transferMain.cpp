@@ -31,36 +31,22 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/environment/LogWithTimeAndMemory.hpp>
-#include <stk_transfer_util/TransferMainOptions.hpp>
-#include <stk_util/Version.hpp>
 #include <Kokkos_Core.hpp>
-#include <stk_transfer_util/LogMessage.hpp>
+
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_transfer_util/TransferMainHandler.hpp>
 
 int main(int argc, const char** argv)
 {
   MPI_Init(&argc, const_cast<char***>(&argv));
   MPI_Comm comm = stk::parallel_machine_world();
-  Kokkos::initialize(argc, const_cast<char**>(argv));
 
-  stk::transfer_util::log_message(comm, "STK Transfer: STK Version "+stk::version_string());
-
-  {
-    stk::transfer_util::TransferMainOptions options(comm, argc, argv);
-
-    if (options.get_parse_state() == stk::CommandLineParser::ParseHelpOnly) {
-      options.print_usage_help(stk::outputP0());
-    }
-    else if (options.get_parse_state() != stk::CommandLineParser::ParseVersionOnly) {
-      stk::transfer_util::log_message(comm, "From-mesh: "+options.get_fromMesh_filename());
-      stk::transfer_util::log_message(comm, "To-mesh: "+options.get_toMesh_filename());
-    }
-
-    stk::transfer_util::log_message(comm, "The stk_transfer executable doesn't have any capabilities yet.");
+  stk::transfer_util::TransferMainHandler transfer(comm, argc, argv);
+  if (transfer.exit_code() == stk::transfer_util::TransferMainStatus::SUCCESS) {
+    Kokkos::ScopeGuard guard(argc, const_cast<char**>(argv));
+    transfer.run();
   }
 
-  Kokkos::finalize();
   MPI_Finalize();
 
   return 0;

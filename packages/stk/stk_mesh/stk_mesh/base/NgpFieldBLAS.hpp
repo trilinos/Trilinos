@@ -313,6 +313,17 @@ inline void field_swap(const stk::mesh::BulkData& mesh,
   ngp_field_blas::impl::field_swap_impl(mesh, xField, yField, nullptr, execSpace, isDeviceExecSpaceUserOverride);
 }
 
+template<typename ReturnT, typename EXEC_SPACE>
+inline void field_dot(ReturnT& result,
+                      const stk::mesh::BulkData& mesh,
+                      const stk::mesh::FieldBase & xField,
+                      const stk::mesh::FieldBase & yField,
+                      const stk::mesh::Selector & selector,
+                      const EXEC_SPACE& execSpace)
+{
+  ngp_field_blas::impl::field_dot_impl(mesh, xField, yField, result, &selector, execSpace);
+}
+
 } // mesh
 } // stk
 

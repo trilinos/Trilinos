@@ -5,12 +5,12 @@
  *
  * See packages/seacas/LICENSE for details
  */
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <cstdarg> // for va_arg, va_end, va_list, etc
 #include <cstddef> // for size_t
 #include <cstdio>  // for nullptr, stderr
 #include <cstdlib> // for exit, free, malloc
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
 /*#include "rf_allo.h"*/
 

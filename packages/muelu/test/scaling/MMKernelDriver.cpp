@@ -238,7 +238,7 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal,
 
   if (lib == Xpetra::UseTpetra) {
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
-    typedef typename crs_matrix_type::local_matrix_type KCRS;
+    typedef typename crs_matrix_type::local_matrix_device_type KCRS;
     typedef typename KCRS::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
     typedef typename graph_t::row_map_type::const_type c_lno_view_t;

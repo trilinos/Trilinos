@@ -43,8 +43,6 @@
 namespace stk {
 namespace balance {
 
-std::string construct_output_file_name(const std::string& outputDirectory, const std::string& inputFile);
-std::string construct_generic_parallel_file_name(const std::string& inputFile, unsigned numProcs);
 
 struct OptionNames
 {

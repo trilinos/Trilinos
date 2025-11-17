@@ -83,7 +83,7 @@ protected:
 
   virtual void sync_to_host(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout) = 0;
   virtual void sync_to_device(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout) = 0;
-  virtual void update(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout) = 0;
+  virtual void update(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout, bool needsSync) = 0;
   virtual void fence(const stk::ngp::ExecSpace& execSpace) = 0;
 
   Kokkos::View<int[NumTrackedFieldAccessTags], stk::ngp::HostMemSpace> m_copyCount;

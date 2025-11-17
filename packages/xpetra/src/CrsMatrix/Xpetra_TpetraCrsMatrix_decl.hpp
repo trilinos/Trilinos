@@ -43,6 +43,7 @@ class TpetraCrsMatrix
 #undef XPETRA_TPETRACRSMATRIX_SHORT
 #include "Xpetra_UseShortNamesScalar.hpp"
 
+ public:
   // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
   typedef TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TpetraCrsMatrixClass;
   typedef TpetraVector TpetraVectorClass;
@@ -51,10 +52,18 @@ class TpetraCrsMatrix
 
   // The following typedefs are used by the Kokkos interface
 #ifdef HAVE_XPETRA_TPETRA
-  typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+  using local_matrix_type        = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using local_matrix_device_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
+  using local_matrix_host_type   = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type;
 #endif
 
- public:
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<Scalar>;
+#else
+  using ATS = Kokkos::ArithTraits<Scalar>;
+#endif
+  using impl_scalar_type = typename ATS::val_type;
+
   //! @name Constructor/Destructor Methods
   //@{
 

@@ -44,7 +44,7 @@ Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Kokkos::View<Scalar**, Kokkos::LayoutLeft, Kokkos::HostSpace> Q("Q", Nullspace->getNumVectors(), Nullspace->getNumVectors());
   int LDQ;
   {
-    auto dots = tempMV->getLocalViewHost(Xpetra::Access::ReadOnly);
+    auto dots = tempMV->getLocalViewHost(Tpetra::Access::ReadOnly);
     Kokkos::deep_copy(Q, dots);
     LDQ = Q.stride(1);
   }
@@ -75,7 +75,7 @@ void Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // Nullspace_ ^T * X
   Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, X.getNumVectors());
   tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace_, X, ZERO);
-  auto dots      = tempMV->getLocalViewHost(Xpetra::Access::ReadOnly);
+  auto dots      = tempMV->getLocalViewHost(Tpetra::Access::ReadOnly);
   bool doProject = true;
   for (size_t i = 0; i < X.getNumVectors(); i++) {
     for (size_t j = 0; j < Nullspace_->getNumVectors(); j++) {
@@ -216,7 +216,7 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
 #endif
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
-    typedef typename Matrix::local_matrix_type KCRS;
+    typedef typename Matrix::local_matrix_device_type KCRS;
     typedef typename KCRS::StaticCrsGraphType graph_t;
     typedef typename graph_t::row_map_type::non_const_type lno_view_t;
     typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -239,8 +239,8 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
 
     // form normalization * nullspace * nullspace^T
     {
-      auto lclNullspace        = Nullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
-      auto lclGhostedNullspace = ghostedNullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
+      auto lclNullspace        = Nullspace->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto lclGhostedNullspace = ghostedNullspace->getLocalViewDevice(Tpetra::Access::ReadOnly);
       Kokkos::parallel_for(
           "MueLu:Amesos2Smoother::fixNullspace_1", range_type(0, lclNumRows + 1),
           KOKKOS_LAMBDA(const size_t i) {

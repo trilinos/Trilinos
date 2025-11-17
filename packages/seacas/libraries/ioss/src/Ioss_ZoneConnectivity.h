@@ -10,8 +10,8 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
 #include <iosfwd>
-#include <stdlib.h>
 #include <string>
 #include <vector>
 

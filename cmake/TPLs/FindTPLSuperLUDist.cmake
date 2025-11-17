@@ -1,3 +1,16 @@
+IF  ((NOT DEFINED SuperLUDist_LIBRARY_DIRS) AND (NOT DEFINED SuperLUDist_INCLUDE_DIRS))
+  FIND_PACKAGE(PkgConfig)
+  IF (PkgConfig_FOUND)
+    pkg_check_modules(SUPERLU_DIST superlu_dist)
+    IF (SUPERLU_DIST_FOUND)
+      MESSAGE("-- Loaded pkgconfig")
+      MESSAGE("-- Setting SuperLUDist_LIBRARY_DIRS='${SUPERLU_DIST_LIBRARY_DIRS}'")
+      MESSAGE("-- Setting SuperLUDist_INCLUDE_DIRS='${SUPERLU_DIST_INCLUDE_DIRS}'")
+      SET(SuperLUDist_LIBRARY_DIRS ${SUPERLU_DIST_LIBRARY_DIRS})
+      SET(SuperLUDist_INCLUDE_DIRS ${SUPERLU_DIST_INCLUDE_DIRS})
+    ENDIF()
+  ENDIF()
+ENDIF ()
 
 TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( SuperLUDist
   REQUIRED_HEADERS "superlu_defs.h superludefs.h" supermatrix.h

@@ -940,7 +940,7 @@ auto compute_centroid_entity_access_left_auto = [](const stk::mesh::Selector& se
   const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   stk::mesh::FieldBase& centroidFieldBase = static_cast<stk::mesh::FieldBase&>(centroidField);
-  auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>();
+  auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>();
   auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
@@ -980,7 +980,7 @@ auto compute_centroid_entity_access_right_auto = [](const stk::mesh::Selector& s
   const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   stk::mesh::FieldBase& centroidFieldBase = static_cast<stk::mesh::FieldBase&>(centroidField);
-  auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>();
+  auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>();
   auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
@@ -1134,7 +1134,7 @@ auto compute_centroid_bucket_access_left_auto = [](const stk::mesh::Selector& se
   const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   stk::mesh::FieldBase& centroidFieldBase = static_cast<stk::mesh::FieldBase&>(centroidField);
-  auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>();
+  auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>();
   auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
@@ -1173,7 +1173,7 @@ auto compute_centroid_bucket_access_right_auto = [](const stk::mesh::Selector& s
   const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
 
   stk::mesh::FieldBase& centroidFieldBase = static_cast<stk::mesh::FieldBase&>(centroidField);
-  auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostMemSpace, stk::mesh::Layout::Auto>();
+  auto centroidData = centroidFieldBase.data<double, stk::mesh::ReadWrite, stk::ngp::HostSpace, stk::mesh::Layout::Auto>();
   auto coordsData = coordsField.data<stk::mesh::ReadOnly>();
 
   for (const stk::mesh::Bucket* bucket : elemBuckets) {
@@ -1424,8 +1424,8 @@ void device_compute_centroid_entity_access_function(const stk::mesh::Selector& s
   const stk::mesh::BulkData& bulk = centroidField.get_mesh();
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  auto centroidData = centroidField.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto centroidData = centroidField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+  auto coordsData = coordsField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
 
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elem) {
@@ -1461,8 +1461,8 @@ void device_compute_centroid_bucket_access_function(const stk::mesh::Selector& s
   const stk::mesh::BulkData& bulk = centroidField.get_mesh();
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
-  auto centroidData = centroidField.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
-  auto coordsData = coordsField.data<stk::mesh::ReadOnly, stk::ngp::MemSpace>();
+  auto centroidData = centroidField.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+  auto coordsData = coordsField.data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
 
   stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, selector);
   unsigned numBuckets = bucketIds.size();
@@ -1521,10 +1521,10 @@ void device_field_data_acquisition_function(int numIters, stk::mesh::Field<doubl
                                             stk::mesh::Field<double>& field4)
 {
   for (int iter = 0; iter < numIters; ++iter) {
-    [[maybe_unused]] auto fieldData1 = field1.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
-    [[maybe_unused]] auto fieldData2 = field2.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
-    [[maybe_unused]] auto fieldData3 = field3.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
-    [[maybe_unused]] auto fieldData4 = field4.data<stk::mesh::ReadWrite, stk::ngp::MemSpace>();
+    [[maybe_unused]] auto fieldData1 = field1.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+    [[maybe_unused]] auto fieldData2 = field2.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+    [[maybe_unused]] auto fieldData3 = field3.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+    [[maybe_unused]] auto fieldData4 = field4.data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
   }
 }
 

@@ -19,7 +19,7 @@ namespace Ioss {
   class St_Hex16 : public ElementVariableType
   {
   public:
-    static void factory() { static St_Hex16 registerThis; }
+    static void factory() { static St_Hex16 const registerThis; }
 
   protected:
     St_Hex16() : ElementVariableType(Ioss::Hex16::name, 16) {}
@@ -67,7 +67,7 @@ namespace {
 
 void Ioss::Hex16::factory()
 {
-  static Ioss::Hex16 registerThis;
+  static Ioss::Hex16 const registerThis;
   Ioss::St_Hex16::factory();
 }
 

@@ -104,7 +104,11 @@ void init_fad(const V1& v1, const V2& v2, const V3& v3, const V4& v4,
   Kokkos::deep_copy( v3, v3_h );
   Kokkos::deep_copy( v4, v4_h );
 
+#if KOKKOS_VERSION >= 40799
+  Kokkos::deep_copy(typename V5::type(v5), 0.0);
+#else
   Kokkos::deep_copy(typename V5::array_type(v5), 0.0);
+#endif
 }
 
 template <typename V1, typename V2, typename V3, typename V4, typename V5>
@@ -166,7 +170,11 @@ void init_array(const V1& v1, const V2& v2, const V3& v3, const V4& v4,
   Kokkos::deep_copy( v3, v3_h );
   Kokkos::deep_copy( v4, v4_h );
 
+#if KOKKOS_VERSION >= 40799
+  Kokkos::deep_copy(typename V5::type(v5), 0.0);
+#else
   Kokkos::deep_copy(typename V5::array_type(v5), 0.0);
+#endif
 }
 
 template <typename View1, typename View2>

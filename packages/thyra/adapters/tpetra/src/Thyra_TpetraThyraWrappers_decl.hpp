@@ -16,7 +16,9 @@
 #include "Thyra_TpetraVector_decl.hpp"
 #include "Thyra_TpetraMultiVector_decl.hpp"
 #include "Thyra_TpetraLinearOp_decl.hpp"
-
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_PreconditionerFactoryHelpers.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace Thyra {
 
@@ -126,6 +128,88 @@ createConstLinearOp(
   const RCP<const VectorSpaceBase<Scalar> > domainSpace = Teuchos::null
   );
 
+/** \brief Initialize a preconditioner from a forward linear operator.
+ *
+*/
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Thyra::PreconditionerBase<Scalar>>
+initializePrec(
+  const PreconditionerFactoryBase<Scalar> &precFactory,
+  const RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp,
+  const Teuchos::RCP<PreconditionerBase<Scalar>> &prec = Teuchos::null,
+  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED);
+
+/** \brief Initialize a preconditioner from a forward linear operator.
+ *
+*/
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Thyra::PreconditionerBase<Scalar>>
+initializePrec(
+  const PreconditionerFactoryBase<Scalar> &precFactory,
+  const RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp,
+  const Teuchos::RCP<PreconditionerBase<Scalar>> &prec = Teuchos::null,
+  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED);
+
+/** \brief Create and initialize a <tt>LinearOpWithSolveBase</tt> object from
+ * a <tt>Tpetra::Operator</tt> object using a
+ * <tt>LinearOpWithSolveFactoryBase</tt> strategy object.
+ * \relates LinearOpWithSolveFactoryBase */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<LinearOpWithSolveBase<Scalar>>
+linearOpWithSolve(
+  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
+  const RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp,
+  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED);
+
+
+/** \brief Create and initialize a <tt>LinearOpWithSolveBase</tt> object from
+ * a <tt>Tpetra::CrsMatrix</tt> object using a
+ * <tt>LinearOpWithSolveFactoryBase</tt> strategy object.
+ * \relates LinearOpWithSolveFactoryBase */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<LinearOpWithSolveBase<Scalar>>
+linearOpWithSolve(
+  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
+  const RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp,
+  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED);
+
+/** \brief Initialize a preconditioned LOWSB object given an external
+ * preconditioner.
+ *
+ * \relates LinearOpWithSolveFactoryBase
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<LinearOpWithSolveBase<Scalar>>
+initializePreconditionedOp(
+  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
+  const RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp,
+  const RCP<PreconditionerBase<Scalar>> &prec,
+  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED);
+
+/** \brief Initialize a preconditioned LOWSB object given an external
+ * preconditioner.
+ *
+ * \relates LinearOpWithSolveFactoryBase
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<LinearOpWithSolveBase<Scalar>>
+initializePreconditionedOp(
+  const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
+  const RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp,
+  const RCP<PreconditionerBase<Scalar>> &prec,
+  const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED);
+
+/** \brief Call <tt>solve()</tt> as a non-member function
+ *
+ * \relates LinearOpWithSolveBase
+ */
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+inline SolveStatus<Scalar>
+solve(
+  const LinearOpWithSolveBase<Scalar> &A, const EOpTransp A_trans,
+  const RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraB,
+  const RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraX,
+  const Ptr<const SolveCriteria<Scalar>> solveCriteria = Teuchos::null);
 
 /** \brief Traits class that enables the extraction of Tpetra operator/vector
  * objects wrapped in Thyra operator/vector objects.

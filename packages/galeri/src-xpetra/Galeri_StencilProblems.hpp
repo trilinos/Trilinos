@@ -53,7 +53,6 @@ class Laplace1DProblem : public ScalarProblem<Map, Matrix, MultiVector> {
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
 Teuchos::RCP<Matrix> Laplace1DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, Matrix, MultiVector>::BuildMatrix() {
   GlobalOrdinal nx = this->list_.get("nx", (GlobalOrdinal)-1);
-  bool keepBCs     = false;
 
   if (nx == -1)
     nx = this->Map_->getGlobalNumElements();
@@ -61,6 +60,7 @@ Teuchos::RCP<Matrix> Laplace1DProblem<Scalar, LocalOrdinal, GlobalOrdinal, Map, 
     // The Kokkos code path does not work for Epetra.
     // Once Epetra has been removed this logic should be simplified.
 #if defined(HAVE_GALERI_KOKKOS) && defined(HAVE_GALERI_KOKKOSKERNELS)
+  bool keepBCs     = false;
   using Node       = typename Map::node_type;
   using tpetra_map = Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
   if constexpr (std::is_same_v<Map, tpetra_map>) {

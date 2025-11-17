@@ -250,11 +250,11 @@ namespace panzer
       {
         for (int dim(0); dim < numDim; ++dim)
         {
-          tmp_(cell) = 0.0;
+          tmp(cell) = 0.0;
           for (int dim2(0); dim2 < numDim; ++dim2)
-            tmp_(cell) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
+            tmp(cell) += kokkosTensor_(cell, qp, dim, dim2) * vector_(cell, qp, dim2);
 	  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,numBases), [&] (const int basis) {
-	    tmp_field(basis) += basis_(cell, basis, qp, dim) * tmp_(cell);
+	    tmp_field(basis) += basis_(cell, basis, qp, dim) * tmp(cell);
 	  });
         } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points

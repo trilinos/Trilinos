@@ -234,6 +234,14 @@ impl::ElementViaSidePair ElemElemGraph::get_connected_element_and_via_side(stk::
     return {m_idMapper.local_to_entity(other_element_id),graphEdge.side1()};
 }
 
+impl::ConnectedElementInfo ElemElemGraph::get_connected_element_info(stk::mesh::Entity localElement, size_t indexConnElement) const
+{
+    impl::LocalId local_id = get_local_element_id(localElement);
+    const GraphEdge & graphEdge = m_graph.get_edge_for_element(local_id, indexConnElement);
+    impl::LocalId other_element_id = graphEdge.elem2();
+    return {m_idMapper.local_to_entity(other_element_id),graphEdge.side1(),graphEdge.side2()};
+}
+
 impl::IdViaSidePair ElemElemGraph::get_connected_remote_id_and_via_side(stk::mesh::Entity localElement, size_t indexConnElement) const
 {
     STK_ThrowRequireWithSierraHelpMsg(!is_connected_elem_locally_owned(localElement, indexConnElement));

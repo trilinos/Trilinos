@@ -1,7 +1,6 @@
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ../../../test/MVOPTester)
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
-IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_DOUBLE)
+IF (Tpetra_INST_DOUBLE)
 
     # FIXME (mfh 15 May 2011) The TSQR version of the OrthoManager seems
     # to be broken.  I'm disabling that test for now by running a simple
@@ -18,7 +17,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_DOUBLE)
     ENDIF ()
 ENDIF ()
 
-IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_COMPLEX_DOUBLE)
+IF (Tpetra_INST_COMPLEX_DOUBLE)
 
    TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Tpetra_OrthoManagerComplexTester

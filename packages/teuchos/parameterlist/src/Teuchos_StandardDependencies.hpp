@@ -1727,14 +1727,16 @@ void RangeValidatorDependency<T>::validateDep() const{
       );
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    nonnull(defaultValidator_)
-    &&
-    typeid(*rawValidatorPtr) != typeid(*defaultValidator_),
-    InvalidDependencyException,
-    "Ay no! The default validator of a RangeValidatorDependency "
-    "must have the same type as the validators in rangesAndValidators map."
-  );
+  if (nonnull(defaultValidator_)) {
+    // Get raw reference for default validator to avoid typeid side-effect warning
+    const ParameterEntryValidator &defaultValidatorRef = *defaultValidator_;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      typeid(*rawValidatorPtr) != typeid(defaultValidatorRef),
+      InvalidDependencyException,
+      "Ay no! The default validator of a RangeValidatorDependency "
+      "must have the same type as the validators in rangesAndValidators map."
+    );
+  }
 
 }
 

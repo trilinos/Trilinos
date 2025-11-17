@@ -32,6 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include "stk_util/stk_config.h"
 #include "stk_util/diag/TimerMetricTraits.hpp"
 #include "stk_util/environment/CPUTime.hpp"           // for cpu_time
 #include "stk_util/environment/FormatMemorySize.hpp"  // for format_memory_size
@@ -95,11 +96,13 @@ MetricTraits<MPIByteCount>::value_now()
   return 0;
 }
 
-MetricTraits<HeapAlloc>::Type
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
+STK_DEPRECATED MetricTraits<HeapAlloc>::Type
 MetricTraits<HeapAlloc>::value_now()
 {
   return ::malloc_used();
 }
+#endif
 
 std::string
 MetricTraits<LapCount>::table_header() {
@@ -126,10 +129,12 @@ MetricTraits<MPIByteCount>::table_header() {
   return "MPI Byte Count";
 }
 
-std::string
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
+STK_DEPRECATED std::string
 MetricTraits<HeapAlloc>::table_header() {
   return "Heap Allocated";
 }
+#endif
 
 
 std::string
@@ -171,12 +176,14 @@ MetricTraits<MPIByteCount>::format(
   return strout.str();
 }
 
-std::string
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Nov 2025
+STK_DEPRECATED std::string
 MetricTraits<HeapAlloc>::format(
   MetricTraits<HeapAlloc>::Type         count)
 {
   return format_memory_size(count);
 }
+#endif
 
 } // namespace diag
 } // namespace stk

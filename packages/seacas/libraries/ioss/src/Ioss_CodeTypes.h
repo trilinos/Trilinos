@@ -41,6 +41,7 @@ inline std::string IOSS_SYM_TENSOR() { return {"sym_tensor_33"}; }
 #define SEACAS_HAVE_EXONULL
 #define SEACAS_HAVE_CGNS
 /* #undef SEACAS_HAVE_FAODEL */
+/* #undef SEACAS_HAVE_S3 */
 #define SEACAS_HAVE_PAMGEN
 #endif
 

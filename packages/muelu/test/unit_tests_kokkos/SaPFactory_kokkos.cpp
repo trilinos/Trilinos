@@ -13,10 +13,10 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
-#include <Xpetra_IteratorOps.hpp>
 #include <Xpetra_IO.hpp>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
+#include "MueLu_IteratorOps.hpp"
 #include "MueLu_Version.hpp"
 
 #include "MueLu_SaPFactory.hpp"
@@ -81,7 +81,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(SaPFactory_kokkos, Build, Scalar, LocalOrdinal
   SC omega                    = dampingFactor / lambdaMax;
   RCP<Vector> invDiag         = Utilities::GetMatrixDiagonalInverse(*A);
   RCP<ParameterList> APparams = rcp(new ParameterList);
-  RCP<Matrix> Ptest           = Xpetra::IteratorOps<SC, LO, GO, NO>::Jacobi(omega, *invDiag, *A, *Ptent, Teuchos::null, out, "label", APparams);
+  RCP<Matrix> Ptest           = MueLu::IteratorOps<SC, LO, GO, NO>::Jacobi(omega, *invDiag, *A, *Ptent, Teuchos::null, out, "label", APparams);
 
   // compare matrices by multiplying them by a random vector
   RCP<MultiVector> X = MultiVectorFactory::Build(A->getDomainMap(), 1);

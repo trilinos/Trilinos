@@ -161,7 +161,7 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             RCP<Matrix>& R,
             RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& coarseCoordinates,
             Teuchos::Array<LocalOrdinal>& lCoarseNodesPerDim) const {
-  using local_matrix_type = typename CrsMatrix::local_matrix_type;
+  using local_matrix_type = typename CrsMatrix::local_matrix_device_type;
   using local_graph_type  = typename local_matrix_type::staticcrsgraph_type;
   using row_map_type      = typename local_matrix_type::row_map_type::non_const_type;
   using entries_type      = typename local_matrix_type::index_type::non_const_type;
@@ -215,8 +215,8 @@ void RegionRFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                                                numDimensions);
 
   // Get device views of coordinates
-  auto fineCoordsView   = fineCoordinates->getLocalViewDevice(Xpetra::Access::ReadOnly);
-  auto coarseCoordsView = coarseCoordinates->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+  auto fineCoordsView   = fineCoordinates->getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto coarseCoordsView = coarseCoordinates->getLocalViewDevice(Tpetra::Access::OverwriteAll);
 
   Array<ArrayRCP<const real_type> > fineCoordData(numDimensions);
   Array<ArrayRCP<real_type> > coarseCoordData(numDimensions);

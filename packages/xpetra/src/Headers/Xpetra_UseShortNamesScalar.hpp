@@ -21,10 +21,6 @@ using CrsMatrix [[maybe_unused]] = Xpetra::CrsMatrix<Scalar, LocalOrdinal, Globa
 using IO [[maybe_unused]] = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
-#ifdef XPETRA_ITERATOROPS_SHORT
-using IteratorOps [[maybe_unused]] = Xpetra::IteratorOps<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
-
 #ifdef XPETRA_VECTOR_SHORT
 using Vector [[maybe_unused]] = Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif

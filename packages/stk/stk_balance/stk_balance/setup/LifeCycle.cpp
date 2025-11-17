@@ -257,10 +257,10 @@ void LifeCycle::print_running_message() const
     }
 
     diag_stream << "     Input files:  "
-                << construct_generic_parallel_file_name(m_settings.get_input_filename(), inputRanks) << std::endl;
+                << stk::io::construct_generic_parallel_file_name(m_settings.get_input_filename(), inputRanks) << std::endl;
 
     diag_stream << "    Output files:  "
-                << construct_generic_parallel_file_name(m_settings.get_output_filename(), outputRanks) << std::endl;
+                << stk::io::construct_generic_parallel_file_name(m_settings.get_output_filename(), outputRanks) << std::endl;
 
     stk::unregister_ostream(diag_stream);
   }

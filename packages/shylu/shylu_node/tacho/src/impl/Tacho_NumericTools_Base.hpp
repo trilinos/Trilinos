@@ -58,7 +58,7 @@ protected:
   ///
 
   // solution method
-  ordinal_type _method; // 1 - cholesky, 2 - LDL, 3 - LU
+  ordinal_type _method; // 0 -  LDL no-pivot, 1 - cholesky, 2 - LDL, 3 - LU
 
   // matrix input
   ordinal_type _m;
@@ -157,7 +157,7 @@ protected:
   }
 
 public:
-  NumericToolsBase() : _method(0), _m(0), stat() {}
+  NumericToolsBase() : _method(-1), _m(0), stat() {}
 
   NumericToolsBase(const NumericToolsBase &b) = default;
 
@@ -198,6 +198,7 @@ public:
 
   virtual ~NumericToolsBase() {}
 
+  inline void setSolutionMethod(const ordinal_type method) { _method = method; }
   inline ordinal_type getSolutionMethod() const { return _method; }
 
   inline ordinal_type getNumRows() const { return _m; }
@@ -244,7 +245,8 @@ public:
     }
   }
 
-  inline virtual void factorize(const value_type_array &ax, const bool store_transpose, const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) {
+  inline virtual void factorize(const value_type_array &ax, const bool store_transpose,
+                                const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) {
     TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "The function should be overriden by derived classes");
   }
 

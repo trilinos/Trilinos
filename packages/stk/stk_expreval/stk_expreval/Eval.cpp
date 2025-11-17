@@ -46,12 +46,12 @@ Eval::Eval(VariableMap::Resolver & resolver, const std::string & expression, Var
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
-    m_fpErrorBehavior(FPErrorBehavior::WarnOnce),
     m_fpWarningIssued(false),
     m_headNode(nullptr),
     m_arrayOffsetType(arrayOffsetType),
     m_parsedEval(nullptr)
 {
+  set_fp_error_behavior(FPErrorBehavior::WarnOnce);
   initialize_function_map();
 }
 
@@ -60,12 +60,12 @@ Eval::Eval(const std::string & expression, Variable::ArrayOffset arrayOffsetType
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
-    m_fpErrorBehavior(FPErrorBehavior::WarnOnce),
     m_fpWarningIssued(false),
     m_headNode(nullptr),
     m_arrayOffsetType(arrayOffsetType),
     m_parsedEval(nullptr)
 {
+  set_fp_error_behavior(FPErrorBehavior::WarnOnce);
   initialize_function_map();
 }
 
@@ -321,6 +321,19 @@ Eval::get_last_node_index() const
   return (!m_evaluationNodes.empty()) ? m_evaluationNodes.back()->m_currentNodeIndex : -1;
 }
 
+void
+Eval::set_fp_error_behavior(FPErrorBehavior flag) 
+{
+  const char* env_var = std::getenv("STK_EXPREVAL_FP_ERROR_BEHAVIOR");
+  if (env_var)
+  {
+    flag = fp_error_behavior_string_to_enum(env_var);
+  }
+
+  m_fpErrorBehavior = flag; 
+}
+
+
 FunctionType
 Eval::get_function_type(const std::string& functionName) const
 {
@@ -570,6 +583,29 @@ Eval::print_expression_if_fp_warning(bool fpWarningPreviouslyIssued) const
     std::cerr << "a floating point exception (converted to warning) was raised during evaluation of expression:\n"
               << m_expression << std::endl;
   }
+}
+
+Eval::FPErrorBehavior fp_error_behavior_string_to_enum(const std::string& str)
+{
+  if (str == "Ignore")
+  {
+     return Eval::FPErrorBehavior::Ignore; 
+  } else if (str == "Warn")
+  {
+    return Eval::FPErrorBehavior::Warn;
+  } else if (str == "WarnOnce")
+  {
+    return Eval::FPErrorBehavior::WarnOnce;
+  } else if (str == "Error")
+  {
+    return Eval::FPErrorBehavior::Error;
+  }
+  else
+  {
+    STK_ThrowRequireMsg(false, "unable to convert string " + str + " to FPErrorBehavior enum");
+  }
+
+  return Eval::FPErrorBehavior::Error; // appease the compiler
 }
 
 

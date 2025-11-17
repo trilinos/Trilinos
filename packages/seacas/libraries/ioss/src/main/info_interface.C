@@ -45,6 +45,9 @@ void Info::Interface::enroll_options()
 #if defined(SEACAS_HAVE_FAODEL)
                   ", faodel"
 #endif
+#if defined(SEACAS_HAVE_S3)
+                  ", s3"
+#endif
                   ".",
                   "unknown");
   options_.enroll("in_type", Ioss::GetLongOption::OptType::MandatoryValue, "(alias for db_type)",

@@ -34,8 +34,20 @@
 
 //BEGINVersion
 #include "gtest/gtest.h"
-#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/stk_config.h>
+#ifdef STK_HAVE_KOKKOS
+//currently stk *ALWAYS* has Kokkos, but in the future perhaps some
+//portions of stk won't depend on Kokkos...
+#include <Kokkos_Core.hpp>
+#endif
+#if defined(STK_HAVE_STKIO) && defined(STK_HAS_SEACAS_IOSS)
+#include <Ioss_Version.h>
+#endif
+#if defined(HAVE_STK_Trilinos) || defined(STK_BUILT_FOR_SIERRA)
+#include <Trilinos_version.h>
+#endif
 #include <stk_util/Version.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <iostream>
 #include <string>
 
@@ -44,9 +56,14 @@ TEST(stkHowTo, reportVersion)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
 
   const std::string stk_version = stk::version_string();
-  std::cout << "This program is using STK version: " << stk_version << std::endl;
-#ifdef STK_VERSION
+  std::cout << "This program is using STK Version: " << stk_version << std::endl;
   std::cout << "Value of STK_VERSION macro: " << STK_VERSION << std::endl;
+  std::cout << "Kokkos Version: " << KOKKOS_VERSION << std::endl;
+#if defined(STK_HAVE_STKIO) && defined(STK_HAS_SEACAS_IOSS)
+  std::cout << "SEACAS/IOSS Version: " << Ioss::Version() << std::endl;
+#endif
+#ifdef TRILINOS_VERSION_STRING
+  std::cout << "Trilinos Version: " << TRILINOS_VERSION_STRING << std::endl;
 #endif
 }
 //ENDVersion

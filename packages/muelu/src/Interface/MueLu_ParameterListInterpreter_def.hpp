@@ -147,6 +147,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetPar
   scalingFactor_    = Teuchos::ScalarTraits<double>::one();
   blockSize_        = 1;
   dofOffset_        = 0;
+  hierarchyLabel_   = "";
 
   if (paramList.isSublist("Hierarchy")) {
     SetFactoryParameterList(paramList);
@@ -253,6 +254,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   if (paramList.isParameter("W cycle start level")) {
     WCycleStartLevel_ = paramList.get<int>("W cycle start level");
+  }
+
+  if (paramList.isParameter("hierarchy label")) {
+    this->hierarchyLabel_ = paramList.get<std::string>("hierarchy label");
   }
 
   if (paramList.isParameter("coarse grid correction scaling factor"))
@@ -2504,6 +2509,10 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       this->WCycleStartLevel_ = hieraList.get<int>("W cycle start level");
     }
 
+    if (hieraList.isParameter("hierarchy label")) {
+      this->hierarchyLabel_ = hieraList.get<std::string>("hierarchy label");
+    }
+
     if (hieraList.isParameter("verbosity")) {
       std::string vl = hieraList.get<std::string>("verbosity");
       hieraList.remove("verbosity");
@@ -2832,6 +2841,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupH
   H.SetCycle(Cycle_);
   H.SetCycleStartLevel(WCycleStartLevel_);
   H.SetProlongatorScalingFactor(scalingFactor_);
+  H.SetLabel(hierarchyLabel_);
   HierarchyManager::SetupHierarchy(H);
 }
 

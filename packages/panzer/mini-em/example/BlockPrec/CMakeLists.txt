@@ -27,18 +27,12 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   solverMueLuHO.xml solverMueLuHOCuda.xml
   solverAugmentationUseILU.xml
   solverML.xml
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  )
-
-TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecPerfFiles
-  SOURCE_FILES
   maxwell-large.xml
   solverMueLu.xml solverMueLu2D.xml solverMueLuEpetra.xml
   solverMueLuOpenMP.xml solverMueLuCuda.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
-  CATEGORIES PERFORMANCE
+  CATEGORIES BASIC PERFORMANCE
   )
 
 # rather than list all files like above, I glob all xmls

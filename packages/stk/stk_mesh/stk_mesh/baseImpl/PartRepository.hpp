@@ -63,6 +63,7 @@ public:
   Part * universal_part() const;
 
   Part * get_part_by_name(const std::string &name) const;
+  void rename(Part* part, const std::string& newName);
   const PartVector & get_all_parts()  const;  // returns all parts
   const PartVector   get_mesh_parts() const; // returns the non-internal parts
 

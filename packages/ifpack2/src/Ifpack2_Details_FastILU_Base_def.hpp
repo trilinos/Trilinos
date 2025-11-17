@@ -214,7 +214,7 @@ void FastILU_Base<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       int info = METIS_NodeND(&nrows, metis_rowptr.data(), metis_colidx.data(),
                               NULL, NULL, metis_perm_.data(), metis_iperm_.data());
       if (METIS_OK != info) {
-        throw std::runtime_error(std::string("METIS_NodeND returned info = " + info));
+        throw std::runtime_error(std::string("METIS_NodeND returned info = ") + std::to_string(info));
       }
     }
 #else

@@ -569,7 +569,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 #endif
 
           // move from host to device
-          auto ghostedDiagValsView = Kokkos::subview(ghostedDiag->getLocalViewDevice(Xpetra::Access::ReadOnly), Kokkos::ALL(), 0);
+          auto ghostedDiagValsView = Kokkos::subview(ghostedDiag->getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
           auto thresholdKokkos     = static_cast<impl_scalar_type>(threshold);
           auto realThresholdKokkos = implATS::magnitude(thresholdKokkos);
           auto columnsDevice       = Kokkos::create_mirror_view(ExecSpace(), columns);
@@ -588,7 +588,7 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
           } else {
             boundaryColumnVector = boundaryNodesVector;
           }
-          auto boundaryColumn = boundaryColumnVector->getLocalViewDevice(Xpetra::Access::ReadOnly);
+          auto boundaryColumn = boundaryColumnVector->getLocalViewDevice(Tpetra::Access::ReadOnly);
           auto boundary       = Kokkos::subview(boundaryColumn, Kokkos::ALL(), 0);
 
           Kokkos::View<LO*, ExecSpace> rownnzView("rownnzView", A_device.numRows());
@@ -1817,20 +1817,20 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Coalesce
   Teuchos::ArrayRCP<const LO> col_block_number = ghostedBlockNumber->getData(0);
 
   // allocate space for the local graph
-  typename CrsMatrix::local_matrix_type::row_map_type::host_mirror_type::non_const_type rows_mat;
+  typename CrsMatrix::local_matrix_device_type::row_map_type::host_mirror_type::non_const_type rows_mat;
   typename LWGraph::row_type::non_const_type rows_graph;
   typename LWGraph::entries_type::non_const_type columns;
-  typename CrsMatrix::local_matrix_type::values_type::host_mirror_type::non_const_type values;
+  typename CrsMatrix::local_matrix_device_type::values_type::host_mirror_type::non_const_type values;
   RCP<CrsMatrixWrap> crs_matrix_wrap;
 
   if (generate_matrix) {
     crs_matrix_wrap = rcp(new CrsMatrixWrap(A->getRowMap(), A->getColMap(), 0));
-    rows_mat        = typename CrsMatrix::local_matrix_type::row_map_type::host_mirror_type::non_const_type("rows_mat", A->getLocalNumRows() + 1);
+    rows_mat        = typename CrsMatrix::local_matrix_device_type::row_map_type::host_mirror_type::non_const_type("rows_mat", A->getLocalNumRows() + 1);
   } else {
     rows_graph = typename LWGraph::row_type::non_const_type("rows_graph", A->getLocalNumRows() + 1);
   }
   columns = typename LWGraph::entries_type::non_const_type("columns", A->getLocalNumEntries());
-  values  = typename CrsMatrix::local_matrix_type::values_type::host_mirror_type::non_const_type("values", A->getLocalNumEntries());
+  values  = typename CrsMatrix::local_matrix_device_type::values_type::host_mirror_type::non_const_type("values", A->getLocalNumEntries());
 
   LO realnnz    = 0;
   GO numDropped = 0, numTotal = 0;
@@ -1891,14 +1891,14 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Coalesce
     // if you're using Epetra.  I'm not really sure why. By using the Col==Domain and Row==Range maps, we get null Import/Export objects
     // here, which is legit, because we never use them anyway.
     if constexpr (std::is_same<typename LWGraph::row_type,
-                               typename CrsMatrix::local_matrix_type::row_map_type>::value) {
+                               typename CrsMatrix::local_matrix_device_type::row_map_type>::value) {
       crs_matrix_wrap->getCrsMatrix()->setAllValues(rows_mat, columns, values);
     } else {
-      auto rows_mat2 = typename CrsMatrix::local_matrix_type::row_map_type::non_const_type("rows_mat2", rows_mat.extent(0));
+      auto rows_mat2 = typename CrsMatrix::local_matrix_device_type::row_map_type::non_const_type("rows_mat2", rows_mat.extent(0));
       Kokkos::deep_copy(rows_mat2, rows_mat);
-      auto columns2 = typename CrsMatrix::local_graph_type::entries_type::non_const_type("columns2", columns.extent(0));
+      auto columns2 = typename CrsMatrix::local_graph_device_type::entries_type::non_const_type("columns2", columns.extent(0));
       Kokkos::deep_copy(columns2, columns);
-      auto values2 = typename CrsMatrix::local_matrix_type::values_type::non_const_type("values2", values.extent(0));
+      auto values2 = typename CrsMatrix::local_matrix_device_type::values_type::non_const_type("values2", values.extent(0));
       Kokkos::deep_copy(values2, values);
       crs_matrix_wrap->getCrsMatrix()->setAllValues(rows_mat2, columns2, values2);
     }

@@ -1,0 +1,17 @@
+<ParameterList      name="Driver">
+  <Parameter        name="skipForComplex"             type="bool"     value="true"/>
+  <Parameter        name="convergence rate"           type="double"   value="0.5"/>
+
+  <ParameterList    name="MueLu">
+    <Parameter      name="verbosity"               type="string"   value="medium"/>
+    <Parameter      name="cycle type"               type="string"   value="W"/>
+
+    <Parameter      name="smoother: type"               type="string"   value="CHEBYSHEV"/>
+    <ParameterList  name="smoother: params">
+      <Parameter    name="chebyshev: degree"         type="int"      value="2"/>
+    </ParameterList>
+    
+    <Parameter      name="coarse: type"               type="string"   value="klu2"/>
+  </ParameterList>
+
+</ParameterList>

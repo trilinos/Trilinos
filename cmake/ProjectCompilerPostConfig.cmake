@@ -66,11 +66,9 @@ set(upcoming_warnings
     class-memaccess
     dangling-pointer=2
     mismatched-new-delete
-    missing-braces
     overloaded-virtual=1
     pessimizing-move
     range-loop-construct
-    shadow
     unused-but-set-variable
     uninitialized
     ${Trilinos_ADDITIONAL_WARNINGS}
@@ -133,6 +131,7 @@ set(promoted_warnings
     return-type
     self-move
     sequence-point
+    shadow
     sign-compare
     sizeof-array-div
     sizeof-pointer-div

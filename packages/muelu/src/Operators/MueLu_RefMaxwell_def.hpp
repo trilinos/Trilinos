@@ -21,7 +21,7 @@
 #include "Xpetra_MatrixMatrix.hpp"
 #include "Xpetra_MultiVector.hpp"
 #include "Xpetra_TripleMatrixMultiply.hpp"
-#include "Xpetra_CrsMatrixUtils.hpp"
+#include "MueLu_CrsMatrixUtils.hpp"
 #include "Xpetra_MatrixUtils.hpp"
 
 #include "MueLu_RefMaxwell_decl.hpp"
@@ -173,6 +173,12 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   ParameterList &matvecParams = params->sublist("matvec params");
   matvecParams.disableRecursiveValidation();
+
+  ParameterList &importerCoarse11Params = params->sublist("refmaxwell: ImporterCoarse11 params");
+  importerCoarse11Params.disableRecursiveValidation();
+
+  ParameterList &importer22Params = params->sublist("refmaxwell: Importer22 params");
+  importer22Params.disableRecursiveValidation();
 
   params->set("multigrid algorithm", "unsmoothed");
   params->set("aggregation: type", MasterList::getDefault<std::string>("aggregation: type"));
@@ -1527,8 +1533,8 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> RefMaxwell<S
     RCP<MultiVector> Nullspace = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(facesToNodes->getRangeMap(), dim_);
     {
       auto facesToNodesLocal     = facesToNodes->getLocalMatrixDevice();
-      auto localNodalCoordinates = ghostedNodalCoordinates->getLocalViewDevice(Xpetra::Access::ReadOnly);
-      auto localFaceNullspace    = Nullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
+      auto localNodalCoordinates = ghostedNodalCoordinates->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto localFaceNullspace    = Nullspace->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
       // enter values
       Kokkos::parallel_for(
@@ -1582,7 +1588,7 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildProjection(const int
 #endif
   using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
-  typedef typename Matrix::local_matrix_type KCRS;
+  typedef typename Matrix::local_matrix_device_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -1670,7 +1676,7 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildProjection(const int
         rowptr(i) = dim * localIncidence.graph.row_map(i);
       });
 
-  auto localNullspace = Nullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
+  auto localNullspace = Nullspace->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
   // set column indices and values
   magnitudeType tol = 1e-5;
@@ -1690,9 +1696,9 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildProjection(const int
       });
 
   // Create matrix
-  typename CrsMatrix::local_matrix_type lclProjection("local projection " + spaceLabel,
-                                                      numLocalRows, numLocalColumns, nnzEstimate,
-                                                      vals, rowptr, colind);
+  typename CrsMatrix::local_matrix_device_type lclProjection("local projection " + spaceLabel,
+                                                             numLocalRows, numLocalColumns, nnzEstimate,
+                                                             vals, rowptr, colind);
   RCP<Matrix> projection = MatrixFactory::Build(lclProjection,
                                                 rowMap, blockColMap,
                                                 blockDomainMap, rowMap);
@@ -1822,7 +1828,7 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildVectorNodalProlongat
 
   using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
-  typedef typename Matrix::local_matrix_type KCRS;
+  typedef typename Matrix::local_matrix_device_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -1870,9 +1876,9 @@ RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::buildVectorNodalProlongat
         }
       });
 
-  typename CrsMatrix::local_matrix_type lclVectorNodalP("local vector nodal prolongator",
-                                                        numLocalRows, numLocalColumns, nnzEstimate,
-                                                        vals, rowptr, colind);
+  typename CrsMatrix::local_matrix_device_type lclVectorNodalP("local vector nodal prolongator",
+                                                               numLocalRows, numLocalColumns, nnzEstimate,
+                                                               vals, rowptr, colind);
   RCP<Matrix> vectorNodalP = MatrixFactory::Build(lclVectorNodalP,
                                                   blockRowMap, blockColMap,
                                                   blockDomainMap, blockRowMap);
@@ -1964,7 +1970,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
     //   auto localP = Prolongator->getLocalMatrixDevice();
     //   auto localAggsToFaces = aggsToFaces->getLocalMatrixDevice();
-    //   auto localNullspace = Nullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    //   auto localNullspace = Nullspace->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
     //   size_t dim = dim_;
     //   Kokkos::parallel_for(solverName_+"::buildVectorNodalProlongator_adjustRowptr",
@@ -1987,8 +1993,8 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     size_t dim      = dim_;
     coarseNullspace = MultiVectorFactory::Build(vectorP_nodal->getDomainMap(), dim);
 
-    auto localNullspace_nodal  = coarseNodalNullspace->getLocalViewDevice(Xpetra::Access::ReadOnly);
-    auto localNullspace_coarse = coarseNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
+    auto localNullspace_nodal  = coarseNodalNullspace->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto localNullspace_coarse = coarseNullspace->getLocalViewDevice(Tpetra::Access::ReadWrite);
     Kokkos::parallel_for(
         solverName_ + "::buildProlongator_nullspace_" + typeStr,
         range_type(0, coarseNodalNullspace->getLocalLength()),
@@ -2007,7 +2013,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     } else if (spaceNumber >= 1) {
       size_t dim                 = dim_;
       coarseNullspace            = MultiVectorFactory::Build(projection->getDomainMap(), dim);
-      auto localNullspace_coarse = coarseNullspace->getLocalViewDevice(Xpetra::Access::ReadWrite);
+      auto localNullspace_coarse = coarseNullspace->getLocalViewDevice(Tpetra::Access::ReadWrite);
       Kokkos::parallel_for(
           solverName_ + "::buildProlongator_nullspace_" + typeStr,
           range_type(0, coarseNullspace->getLocalLength() / dim),

@@ -206,7 +206,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(NotayAggregation, IntermediateProlongator2D, S
   RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
   std::vector<unsigned> aggStat(numRows, MueLu::READY);
   LO numUnaggregatedNodes = numRows, numDirichletNodes = 0;
-  typename Matrix::local_matrix_type intermediateP;
+  typename Matrix::local_matrix_device_type intermediateP;
 
   Array<LO> orderingVector(numRows);
   for (LO i = 0; i < numRows; i++) {
@@ -266,7 +266,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(NotayAggregation, CoarseLocalMatrix2D, Scalar,
   RCP<NotayAggregationFactory> NAF = rcp(new NotayAggregationFactory());
   std::vector<unsigned> aggStat(numRows, MueLu::READY);
   LO numUnaggregatedNodes = numRows, numDirichletNodes = 0;
-  typename Matrix::local_matrix_type intermediateP;
+  typename Matrix::local_matrix_device_type intermediateP;
 
   Array<LO> orderingVector(numRows);
   for (LO i = 0; i < numRows; i++) {
@@ -284,7 +284,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(NotayAggregation, CoarseLocalMatrix2D, Scalar,
 
   TEST_EQUALITY(numUnaggregatedNodes, 0);
 
-  typename Matrix::local_matrix_type coarseA = A->getLocalMatrixDevice();
+  typename Matrix::local_matrix_device_type coarseA = A->getLocalMatrixDevice();
   NAF->BuildOnRankLocalMatrix(A->getLocalMatrixDevice(), coarseA);
   NAF->BuildIntermediateProlongator(A->getLocalNumRows(), numDirichletNodes,
                                     aggregates->GetNumAggregates(),

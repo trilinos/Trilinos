@@ -77,8 +77,8 @@ void PreserveDirichletAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::
   const int myRank  = graph.GetComm()->getRank();
 
   // 3) the aggregates
-  auto vertex2AggId = aggregates.GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadWrite);
-  auto procWinner   = aggregates.GetProcWinner()->getLocalViewDevice(Xpetra::Access::ReadWrite);
+  auto vertex2AggId = aggregates.GetVertex2AggId()->getLocalViewDevice(Tpetra::Access::ReadWrite);
+  auto procWinner   = aggregates.GetProcWinner()->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
   // A view is needed to count on the fly the current number of local aggregates
   Kokkos::View<LO, device_type> aggCount("aggCount");

@@ -58,6 +58,7 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
 #endif
 
 #if defined(KOKKOS_ENABLE_HIP)
+  // TODO: CHECK
   template <typename DiagType, typename ViewTypeA, typename ViewTypeB>
   inline static int rocblas_invoke(rocblas_handle &handle, const DiagType diagA, const ViewTypeA &A,
                                    const ViewTypeB &B) {
@@ -90,8 +91,8 @@ template <typename ArgUplo, typename ArgTransA> struct Trsv<ArgUplo, ArgTransA, 
     static_assert(ViewTypeB::rank == 2, "B is not rank 2 view.");
 
     static_assert(std::is_same<value_type, value_type_b>::value, "A and B do not have the same value type.");
-
     static_assert(std::is_same<memory_space, memory_space_b>::value, "A and B do not have the same memory space.");
+
     int r_val(0);
     if (std::is_same<memory_space, Kokkos::HostSpace>::value)
       r_val = blas_invoke(diagA, A, B);

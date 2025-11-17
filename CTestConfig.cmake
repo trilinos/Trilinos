@@ -20,9 +20,4 @@ IF (CTEST_DROP_METHOD STREQUAL "https")
   SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_LOCATION "/submit.php?project=Trilinos")
   SET_DEFAULT_AND_FROM_ENV(CTEST_TRIGGER_SITE "")
   SET_DEFAULT_AND_FROM_ENV(CTEST_DROP_SITE_CDASH TRUE)
-  # Secondary submit to development CDash site
-  SET_DEFAULT_AND_FROM_ENV(TRIBITS_2ND_CTEST_DROP_SITE
-    "trilinos-cdash-qual.sandia.gov")
-  SET_DEFAULT_AND_FROM_ENV(TRIBITS_2ND_CTEST_DROP_LOCATION
-    "/submit.php?project=Trilinos")
 ENDIF()

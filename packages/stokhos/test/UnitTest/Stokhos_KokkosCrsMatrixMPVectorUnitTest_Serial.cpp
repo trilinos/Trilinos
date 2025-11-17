@@ -25,7 +25,7 @@ bool test_host_embedded_vector(Ordinal num_hyper_threads,
                                Ordinal num_cores,
                                Teuchos::FancyOStream& out) {
   const Ordinal lVectorSize = NumPerThread * ThreadsPerVector;
-  typedef typename Storage::template apply_N<VectorSize>::type storage_type;
+  typedef typename Storage::template apply_N<lVectorSize>::type storage_type;
   typedef Sacado::MP::Vector<storage_type> Vector;
 
   const Ordinal nGrid = 5;

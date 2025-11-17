@@ -113,6 +113,14 @@ Teuchos::ParameterList Ifpack_GetValidParameters()
   List.set("fact: sparskit: mbloc", (int)(-1));
   List.set("fact: sparskit: type", ("ILUT"));
 
+  // Ifpack_Chebyshev.cpp
+  List.set("chebyshev: ratio eigenvalue", (double)30.0);
+  List.set("chebyshev: min eigenvalue", (double)0.0);
+  List.set("chebyshev: max eigenvalue", (double)-1.0);
+  List.set("chebyshev: degree", (int)1);
+  List.set("chebyshev: min diagonal value", (double)0.0);
+  List.set("chebyshev: zero starting solution", (bool)true);
+
   // Additive Schwarz preconditioner
   List.set("schwarz: compute condest", true);
   List.set("schwarz: combine mode", "Zero"); // use std::string mode for this

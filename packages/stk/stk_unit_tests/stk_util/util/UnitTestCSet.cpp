@@ -34,93 +34,12 @@
 
 #include "gtest/gtest.h"
 #include "stk_util/util/CSet.hpp"  // for CSet, stk
+#include "stk_unit_test_utils/ObjectLifetimeSpy.hpp"
 
 
 namespace {
 
-static int g_objectLifetimeSpy_numConstructions;
-static int g_objectLifetimeSpy_numCopyConstructions;
-static int g_objectLifetimeSpy_numMoveConstructions;
-static int g_objectLifetimeSpy_numCopyAssignments;
-static int g_objectLifetimeSpy_numMoveAssignments;
-static int g_objectLifetimeSpy_numDestructions;
-
-int objectLifetimeSpy_getNumConstructions() {
-  return g_objectLifetimeSpy_numConstructions;
-}
-
-int objectLifetimeSpy_getNumCopyConstructions() {
-  return g_objectLifetimeSpy_numCopyConstructions;
-}
-
-int objectLifetimeSpy_getNumMoveConstructions() {
-  return g_objectLifetimeSpy_numMoveConstructions;
-}
-
-int objectLifetimeSpy_getNumCopyAssignments() {
-  return g_objectLifetimeSpy_numCopyAssignments;
-}
-
-int objectLifetimeSpy_getNumMoveAssignments() {
-  return g_objectLifetimeSpy_numMoveAssignments;
-}
-
-int objectLifetimeSpy_getNumDestructions() {
-  return g_objectLifetimeSpy_numDestructions;
-}
-
-
-class ObjectLifetimeSpy
-{
-public:
-  explicit ObjectLifetimeSpy(int i = 0)
-    : m_i(i)
-  {
-    ++g_objectLifetimeSpy_numConstructions;
-  }
-
-  virtual ~ObjectLifetimeSpy()
-  {
-    ++g_objectLifetimeSpy_numDestructions;
-  }
-
-  ObjectLifetimeSpy(const ObjectLifetimeSpy & rhs)
-  {
-    ++g_objectLifetimeSpy_numCopyConstructions;
-    m_i = rhs.m_i;
-  }
-
-  ObjectLifetimeSpy(ObjectLifetimeSpy && rhs) noexcept
-  {
-    ++g_objectLifetimeSpy_numMoveConstructions;
-    m_i = rhs.m_i;
-    rhs.m_i = 0;
-  }
-
-  ObjectLifetimeSpy & operator=(const ObjectLifetimeSpy & rhs)
-  {
-    ++g_objectLifetimeSpy_numCopyAssignments;
-    m_i = rhs.m_i;
-    return *this;
-  }
-
-  ObjectLifetimeSpy & operator=(ObjectLifetimeSpy && rhs)
-  {
-    ++g_objectLifetimeSpy_numMoveAssignments;
-    m_i = rhs.m_i;
-    rhs.m_i = 0;
-    return *this;
-  }
-
-  int value() const
-  {
-    return m_i;
-  }
-
-private:
-  int m_i;
-};
-
+using namespace stk::unit_test_util;
 
 class ObjectLifetimeSpyA : public ObjectLifetimeSpy
 {
@@ -162,15 +81,12 @@ class TestCSet : public ::testing::Test
 {
  protected:
   virtual void SetUp() override {
-    g_objectLifetimeSpy_numConstructions = 0;
-    g_objectLifetimeSpy_numCopyConstructions = 0;
-    g_objectLifetimeSpy_numMoveConstructions = 0;
-    g_objectLifetimeSpy_numCopyAssignments = 0;
-    g_objectLifetimeSpy_numMoveAssignments = 0;
-    g_objectLifetimeSpy_numDestructions = 0;
+    objectLifetimeSpy_clearCounts();
   }
 
-  virtual void TearDown() override {}
+  virtual void TearDown() override {
+    EXPECT_TRUE(objectLifetimeSpy_checkBalancedConstructionsDestructions());
+  }
 };
 
 

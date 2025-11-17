@@ -8,6 +8,7 @@
 // @HEADER
 
 #include "Sacado.hpp"
+#include <iostream>
 
 //
 // A simple example showing how to use Sacado with Kokkos
