@@ -53,20 +53,23 @@ repartition_parameters() {
   return pl;
 }
 
+template <typename Scalar>
 struct Point {
-  double x, y;
+  Scalar x, y;
 };
 
-double cross_product(const Point& p1, const Point& p2, const Point& p3) {
+template <typename Scalar>
+Scalar cross_product(const Point<Scalar>& p1, const Point<Scalar>& p2, const Point<Scalar>& p3) {
   return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
 }
 
-std::vector<Point> compute_convex_hull(std::vector<Point>& points) {
-  std::sort(points.begin(), points.end(), [](const Point& a, const Point& b) {
+template <typename Scalar>
+std::vector<Point<Scalar>> compute_convex_hull(std::vector<Point<Scalar>>& points) {
+  std::sort(points.begin(), points.end(), [](const Point<Scalar>& a, const Point<Scalar>& b) {
     return a.x < b.x || (a.x == b.x && a.y < b.y);
   });
 
-  std::vector<Point> lowerHull;
+  std::vector<Point<Scalar>> lowerHull;
   for (const auto& p : points) {
     while (lowerHull.size() >= 2 && cross_product(lowerHull[lowerHull.size() - 2], lowerHull.back(), p) <= 0) {
       lowerHull.pop_back();
@@ -74,7 +77,7 @@ std::vector<Point> compute_convex_hull(std::vector<Point>& points) {
     lowerHull.push_back(p);
   }
 
-  std::vector<Point> upperHull;
+  std::vector<Point<Scalar>> upperHull;
   for (auto it = points.rbegin(); it != points.rend(); ++it) {
     while (upperHull.size() >= 2 && cross_product(upperHull[upperHull.size() - 2], upperHull.back(), *it) <= 0) {
       upperHull.pop_back();
@@ -89,11 +92,12 @@ std::vector<Point> compute_convex_hull(std::vector<Point>& points) {
   return lowerHull;
 }
 
-bool segments_intersect(const Point& p1, const Point& p2, const Point& p3, const Point& p4) {
-  double d1 = cross_product(p3, p4, p1);
-  double d2 = cross_product(p3, p4, p2);
-  double d3 = cross_product(p1, p2, p3);
-  double d4 = cross_product(p1, p2, p4);
+template <typename Scalar>
+bool segments_intersect(const Point<Scalar>& p1, const Point<Scalar>& p2, const Point<Scalar>& p3, const Point<Scalar>& p4) {
+  const auto d1 = cross_product(p3, p4, p1);
+  const auto d2 = cross_product(p3, p4, p2);
+  const auto d3 = cross_product(p1, p2, p3);
+  const auto d4 = cross_product(p1, p2, p4);
 
   // points on opposite sides of the segment
   if ((d1 * d2 < 0) && (d3 * d4 < 0)) {
@@ -121,13 +125,14 @@ bool segments_intersect(const Point& p1, const Point& p2, const Point& p3, const
   return false;
 }
 
-bool convex_hulls_intersect(const std::vector<Point>& hull1, const std::vector<Point>& hull2) {
+template <typename Scalar>
+bool convex_hulls_intersect(const std::vector<Point<Scalar>>& hull1, const std::vector<Point<Scalar>>& hull2) {
   for (size_t i = 0; i < hull1.size(); ++i) {
     for (size_t j = 0; j < hull2.size(); ++j) {
-      Point p1 = hull1[i];
-      Point p2 = hull1[(i + 1) % hull1.size()];
-      Point p3 = hull2[j];
-      Point p4 = hull2[(j + 1) % hull2.size()];
+      const auto& p1 = hull1[i];
+      const auto& p2 = hull1[(i + 1) % hull1.size()];
+      const auto& p3 = hull2[j];
+      const auto& p4 = hull2[(j + 1) % hull2.size()];
 
       if (segments_intersect(p1, p2, p3, p4)) {
         return true;
@@ -139,6 +144,9 @@ bool convex_hulls_intersect(const std::vector<Point>& hull1, const std::vector<P
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Zoltan2Repartition, DeterminePartition, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
+  using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
+  using RealValuedMultiVector = typename Xpetra::MultiVector<real_type, LO, GO, NO>;
+
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
@@ -186,7 +194,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Zoltan2Repartition, DeterminePartition, Scalar
 
   Teuchos::ParameterList XpetraList;
   auto newMatrix  = MatrixFactory::Build(A, *importer, *importer, targetMap, targetMap, rcp(&XpetraList, false));
-  auto distCoords = MultiVectorFactory::Build(newMap, coords->getNumVectors());
+  auto distCoords = Xpetra::MultiVectorFactory<real_type, LO, GO>::Build(newMap, coords->getNumVectors());
   distCoords->doImport(*coords, *importer, Xpetra::INSERT);
 
   TEST_EQUALITY(A->getGlobalNumRows(), numGlobalElements);
@@ -200,11 +208,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Zoltan2Repartition, DeterminePartition, Scalar
   TEST_EQUALITY(distCoords->getGlobalLength(), numGlobalElements);
 
   // gather coordinates on all procs so we can check the quality of the repartition
-  std::vector<double> globalCoords_x(numGlobalElements);
-  std::vector<double> globalCoords_y(numGlobalElements);
+  std::vector<real_type> globalCoords_x(numGlobalElements);
+  std::vector<real_type> globalCoords_y(numGlobalElements);
   {
-    std::vector<double> localCoords_x(expectedNumLocalRows);
-    std::vector<double> localCoords_y(expectedNumLocalRows);
+    std::vector<real_type> localCoords_x(expectedNumLocalRows);
+    std::vector<real_type> localCoords_y(expectedNumLocalRows);
 
     auto distCoordsView = distCoords->getLocalViewHost(Tpetra::Access::ReadOnly);
     for (auto i = 0U; i < distCoordsView.extent(0); i++) {
@@ -212,19 +220,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Zoltan2Repartition, DeterminePartition, Scalar
       localCoords_y[i] = distCoordsView(i, 1);
     }
 
-    Teuchos::gatherAll<int, double>(*comm, expectedNumLocalRows, localCoords_x.data(), numGlobalElements, globalCoords_x.data());
-    Teuchos::gatherAll<int, double>(*comm, expectedNumLocalRows, localCoords_y.data(), numGlobalElements, globalCoords_y.data());
+    Teuchos::gatherAll<int, real_type>(*comm, expectedNumLocalRows, localCoords_x.data(), numGlobalElements, globalCoords_x.data());
+    Teuchos::gatherAll<int, real_type>(*comm, expectedNumLocalRows, localCoords_y.data(), numGlobalElements, globalCoords_y.data());
   }
 
   int numHullsIntersectLocal = 0;
   if (myRank == 0) {
-    std::vector<std::vector<Point>> processorLocalCoords;
+    std::vector<std::vector<Point<real_type>>> processorLocalCoords;
     processorLocalCoords.resize(numProcs);
     for (int rank = 0; rank < numProcs; ++rank) {
       processorLocalCoords[rank].resize(expectedNumLocalRows);
       for (auto i = 0U; i < expectedNumLocalRows; i++) {
         const auto gRow               = expectedNumLocalRows * rank + i;
-        processorLocalCoords[rank][i] = Point{globalCoords_x[gRow], globalCoords_y[gRow]};
+        processorLocalCoords[rank][i] = Point<real_type>{globalCoords_x[gRow], globalCoords_y[gRow]};
       }
     }
 
