@@ -12,7 +12,7 @@
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
-//#include <Xpetra_IO.hpp>
+// #include <Xpetra_IO.hpp>
 
 #include "MueLu_EdgeProlongatorPatternFactory_decl.hpp"
 
@@ -67,50 +67,45 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
   RCP<Matrix> temp2 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*temp1, false, *absDc, true, GetOStream(Statistics2), true, true);
 
   RCP<Matrix> filtered;
-  filtered = MatrixFactory::Build(temp2->getRowMap(), temp2->getColMap(), temp2->getLocalMaxNumRowEntries());
-  ArrayView<const LO> inds2;
-  ArrayView<const SC> vals2;
+  {
+#if KOKKOS_VERSION >= 40799
+    using ATS           = KokkosKernels::ArithTraits<Scalar>;
+    using magnitudeType = ATS::magnitudeType;
+    using magATS        = KokkosKernels::ArithTraits<magnitudeType>;
+#else
+    using ATS           = Kokkos::ArithTraits<Scalar>;
+    using magnitudeType = ATS::magnitudeType;
+    using magATS        = Kokkos::ArithTraits<magnitudeType>;
+#endif
+    auto eps = magATS::epsilon();
 
-  RCP<MultiVector> oneVec = MultiVectorFactory::Build(absDc->getDomainMap(),1);
-  oneVec->putScalar(one );
-  RCP<MultiVector> singleParent = MultiVectorFactory::Build(absDc->getRowMap(),1);
-  absDc->apply(*oneVec,*singleParent,Teuchos::NO_TRANS);  // I think we need ghosted version
-  Teuchos::ArrayRCP<SC> singleParentData = singleParent->getDataNonConst(0);
+    RCP<MultiVector> oneVec = MultiVectorFactory::Build(absDc->getDomainMap(), 1);
+    oneVec->putScalar(one);
+    RCP<MultiVector> singleParent = MultiVectorFactory::Build(absDc->getRowMap(), 1);
+    absDc->apply(*oneVec, *singleParent, Teuchos::NO_TRANS);
+    // ghost singleParent
+    RCP<MultiVector> singleParentGhosted;
+    auto importer = absDc->getCrsGraph()->getImporter();
+    if (importer.is_null()) {
+      singleParentGhosted = singleParent;
+    } else {
+      singleParentGhosted = MultiVectorFactory::Build(absDc->getColMap(), 1);
+      singleParentGhosted->doImport(*singleParent, *importer, Xpetra::INSERT);
+    }
 
-  Array<LO> inds;
-  Array<SC> vals;
+    auto lclSingleParent = singleParentGhosted->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
-  size_t numRows  = temp2->getRowMap()->getLocalNumElements();
-
-  for (LO row = 0; row < (LO) numRows; row++) {
-     temp2->getLocalRowView(row, inds2, vals2);
-      size_t nnz = inds2.size();
-      if (nnz == 0)
-        continue;
-
-      inds.resize(inds2.size());
-      vals.resize(vals2.size());
-
-      size_t numInds = 0;
-      for (size_t j = 0; j < nnz; j++) {
-        if ( (vals2[j] == 2.0) || (   (singleParentData[inds2[j]] == 1.0) && (vals2[j] == 1.0)  ) ) {
-          inds[numInds] = inds2[j];
-          vals[numInds] = vals2[j];
-          numInds++;
-        }
-      }
-      if (numInds == 0) continue;
-      inds.resize(numInds);
-      vals.resize(numInds);
-
-      // Because we used a column map in the construction of the matrix
-      // we can just use insertLocalValues here instead of insertGlobalValues
-      filtered->insertLocalValues(row, inds, vals);
+    // Filter matrix using criterion
+    filtered = Xpetra::applyFilter_LID(
+        temp2,
+        KOKKOS_LAMBDA(const LocalOrdinal row,
+                      const LocalOrdinal col,
+                      const Matrix::impl_scalar_type val) {
+          return ((ATS::magnitude(val - 2.0) < eps) || ((lclSingleParent(col, 0) == 1.0) && (ATS::magnitude(val - 1.0) < eps)));
+        });
   }
-  RCP<ParameterList> fillCompleteParams(new ParameterList);
-  fillCompleteParams->set("No Nonlocal Changes", true);
-  filtered->fillComplete(temp2->getDomainMap(), temp2->getRangeMap(), fillCompleteParams);
-//  Xpetra::IO<SC, LO, GO, NO>::Write("pattern.code", *filtered);
+
+  // Xpetra::IO<SC, LO, GO, NO>::Write("pattern.code", *filtered);
 
   Set(coarseLevel, "Ppattern", filtered->getCrsGraph());
 }
