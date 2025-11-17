@@ -194,7 +194,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Zoltan2Repartition, DeterminePartition, Scalar
 
   Teuchos::ParameterList XpetraList;
   auto newMatrix  = MatrixFactory::Build(A, *importer, *importer, targetMap, targetMap, rcp(&XpetraList, false));
-  auto distCoords = Xpetra::MultiVectorFactory<real_type, LO, GO>::Build(newMap, coords->getNumVectors());
+  auto distCoords = Xpetra::MultiVectorFactory<real_type, LO, GO, NO>::Build(newMap, coords->getNumVectors());
   distCoords->doImport(*coords, *importer, Xpetra::INSERT);
 
   TEST_EQUALITY(A->getGlobalNumRows(), numGlobalElements);
