@@ -52,7 +52,7 @@ public:
   virtual void update_host_bucket_pointers(Ordinal fieldOrdinal) = 0;
   virtual void swap_field_data(Ordinal fieldOrdinal1, Ordinal fieldOrdinal2) = 0;
   virtual void clear_bucket_is_modified(Ordinal fieldOrdinal) = 0;
-  virtual std::any get_device_bucket_is_modified(Ordinal fieldOrdinal, int& fieldIndex) = 0;
+  virtual std::any get_device_bucket_is_modified(Ordinal fieldOrdinal, int& fieldRankedOrdinal) = 0;
   virtual size_t get_num_bytes_allocated_on_field(const FieldBase& field) const = 0;
   virtual bool has_unified_device_storage(Ordinal fieldOrdinal) const = 0;
 

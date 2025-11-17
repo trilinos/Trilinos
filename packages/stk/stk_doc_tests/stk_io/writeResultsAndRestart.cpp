@@ -131,9 +131,9 @@ TEST(StkMeshIoBrokerHowTo, writeResultsAndRestart)
     stk::mesh::FieldBase *statedFieldNp1 = field.field_state(stk::mesh::StateNP1);
     stk::mesh::FieldBase *statedFieldN   = field.field_state(stk::mesh::StateN);
     stk::mesh::FieldBase *statedFieldNm1 = field.field_state(stk::mesh::StateNM1);
-    auto fieldNp1Data = statedFieldNp1->data<double,stk::mesh::ReadWrite>();
-    auto fieldNData = statedFieldN->data<double,stk::mesh::ReadWrite>();
-    auto fieldNm1Data = statedFieldNm1->data<double,stk::mesh::ReadWrite>();
+    auto fieldNp1Data = statedFieldNp1->data<double, stk::mesh::ReadWrite>();
+    auto fieldNData = statedFieldN->data<double, stk::mesh::ReadWrite>();
+    auto fieldNm1Data = statedFieldNm1->data<double, stk::mesh::ReadWrite>();
 
     // Iterate the application's execute loop five times and output
     // field data each iteration.

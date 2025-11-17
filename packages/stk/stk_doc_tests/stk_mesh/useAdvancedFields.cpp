@@ -99,7 +99,7 @@ TEST(stkMeshHowTo, useAdvancedFields)
   EXPECT_EQ(tensorExtent1PerTet, numCopies);
   EXPECT_EQ(tensorExtent1PerHex, numCopies);
 
-  auto tensorFieldData = tensorField.data<stk::mesh::ReadOnly>();
+  auto tensorFieldData = tensorField.data();
   auto tensorDataValue = tensorFieldData.entity_values(hexElem);
   for (stk::mesh::CopyIdx copy : tensorDataValue.copies()) {
     for (stk::mesh::ComponentIdx i : tensorDataValue.components()) {
@@ -123,7 +123,7 @@ TEST(stkMeshHowTo, useAdvancedFields)
   EXPECT_EQ(vectorExtent1PerTet, 1);
   EXPECT_EQ(vectorExtent1PerHex, numCopies);
 
-  auto variableSizeFieldData = variableSizeField.data<stk::mesh::ReadOnly>();
+  auto variableSizeFieldData = variableSizeField.data();
   auto vectorTetData = variableSizeFieldData.entity_values(tetElem);
   for (stk::mesh::CopyIdx copy : vectorTetData.copies()) {
     for (stk::mesh::ComponentIdx i : vectorTetData.components()) {

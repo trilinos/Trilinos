@@ -139,9 +139,9 @@ public:
 
   void testHostVectorFieldSum(unsigned NUM_ITERS)
   {
-    auto dispFieldData  = dispField->data<stk::mesh::ReadOnly>();
-    auto velFieldData   = velField->data<stk::mesh::ReadOnly>();
-    auto accFieldData   = accField->data<stk::mesh::ReadOnly>();
+    auto dispFieldData  = dispField->data();
+    auto velFieldData   = velField->data();
+    auto accFieldData   = accField->data();
     auto forceFieldData = forceField->data<stk::mesh::ReadWrite>();
 
     for (unsigned i = 0; i < NUM_ITERS; ++i) {
@@ -172,7 +172,7 @@ public:
       expectedValues[i] = alpha * initial_value[i] + beta * initial_value[i] + gamma * initial_value[i];
     }
 
-    auto forceFieldData = forceField->data<stk::mesh::ReadOnly>();
+    auto forceFieldData = forceField->data();
     const stk::mesh::BucketVector & buckets = get_bulk().get_buckets(stk::topology::NODE_RANK,
                                                                      get_meta().locally_owned_part());
     for (stk::mesh::Bucket* bucket : buckets) {

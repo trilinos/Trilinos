@@ -186,7 +186,7 @@ public:
         stk::io::put_io_part_attribute(block1);
         stk::io::put_io_part_attribute(skinPart);
 
-        stk::mesh::FieldData<double> coordData = coordField->data();
+        stk::mesh::FieldData<double> coordData = coordField->data<stk::mesh::ReadWrite>();
         for(size_t i = 0; i < twoElemTwoSharedSideCoordinates.size(); i++)
             set_node_coords(coordData, i+1, twoElemTwoSharedSideCoordinates[i]);
     }

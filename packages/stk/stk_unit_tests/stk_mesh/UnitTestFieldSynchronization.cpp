@@ -159,7 +159,7 @@ TEST_F(FieldDataSynchronization, simpleHostUsage)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
   build_two_element_mesh_with_nodal_field();
 
-  stk::mesh::FieldData<int> hostFieldData = m_field->data();
+  stk::mesh::FieldData<int> hostFieldData = m_field->data<stk::mesh::ReadWrite>();
   set_field_values_on_host(hostFieldData, 1);
   check_field_values_on_host(hostFieldData, 1);
 }
@@ -169,10 +169,10 @@ TEST_F(FieldDataSynchronization, simpleHostUsage_twoOverlappingFieldData)
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
   build_two_element_mesh_with_nodal_field();
 
-  stk::mesh::FieldData<int> hostFieldData = m_field->data();
+  stk::mesh::FieldData<int> hostFieldData = m_field->data<stk::mesh::ReadWrite>();
   set_field_values_on_host(hostFieldData, 1);
 
-  stk::mesh::ConstFieldData<int> constHostFieldData = m_field->data<stk::mesh::ReadOnly>();
+  stk::mesh::ConstFieldData<int> constHostFieldData = m_field->data();
   check_field_values_on_host(constHostFieldData, 1);
 }
 
@@ -1475,6 +1475,34 @@ TEST_F(FieldDataSynchronization, writeOnDeviceRemovingUnsynchronizedFromMoveAssi
 #else
     EXPECT_NO_THROW((m_field->data<stk::mesh::ReadOnly, stk::ngp::HostSpace>()));
 #endif
+}
+
+TEST_F(FieldDataSynchronization, interleavedOldAndNewDeviceAccess_properlySyncsToDevice)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+  build_two_element_mesh_with_nodal_field();
+
+  {
+    // Initial host values implicitly synced to device during construction
+    auto deviceFieldData = m_field->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+  }
+
+  {
+    // Set values on host and automatically mark as modified
+    auto hostFieldData = m_field->data<stk::mesh::ReadWrite, stk::ngp::HostSpace>();
+    set_field_values_on_host(hostFieldData, 1);
+  }
+
+  {
+    // This needs to grab a handle to device data without messing with the modify/sync state
+    auto ngpField = stk::mesh::get_updated_ngp_field<int>(*m_field);
+  }
+
+  {
+    // Access data on device, which should automatically sync the modified host values
+    auto deviceFieldData = m_field->data<stk::mesh::ReadOnly, stk::ngp::DeviceSpace>();
+    check_field_values_on_device(deviceFieldData, 1);
+  }
 }
 
 }

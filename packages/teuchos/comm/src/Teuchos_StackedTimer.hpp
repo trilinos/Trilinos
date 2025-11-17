@@ -496,12 +496,13 @@ public:
    * Start the base level timer only
    */
   void startBaseTimer(const bool push_kokkos_profiling_region = true) {
-    timer_.BaseTimer::start();
 #ifdef HAVE_TEUCHOSCORE_KOKKOS
+    // Fence before starting timer to ignore async kernels started before this timer starts
     if (Behavior::fenceTimers()) {
       Kokkos::fence("timer_fence_begin_"+timer_.get_name());
     }
 #endif
+    timer_.BaseTimer::start();
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
     if (push_kokkos_profiling_region) {
       ::Kokkos::Tools::pushRegion(timer_.get_name());
@@ -513,8 +514,8 @@ public:
    * Stop the base level timer only
    */
   void stopBaseTimer(const bool pop_kokkos_profiling_region = true) {
-    timer_.BaseTimer::stop();
 #ifdef HAVE_TEUCHOSCORE_KOKKOS
+    // Fence before stopping the timer to include async kokkos kernels launched within this timer
     if (Behavior::fenceTimers()) {
       Kokkos::fence("timer_fence_end_"+timer_.get_name());
     }
@@ -524,6 +525,7 @@ public:
       ::Kokkos::Tools::popRegion();
     }
 #endif
+    timer_.BaseTimer::stop();
   }
 
   /**
@@ -537,12 +539,13 @@ public:
       if (top_ == nullptr) {
         top_ = timer_.start(name.c_str());
       } else {
-        top_ = top_->start(name.c_str());
 #ifdef HAVE_TEUCHOSCORE_KOKKOS
+        // Fence before starting timer to ignore async kernels started before this timer starts
         if (Behavior::fenceTimers()) {
           Kokkos::fence("timer_fence_begin_"+name);
         }
 #endif
+        top_ = top_->start(name.c_str());
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
         if (push_kokkos_profiling_region) {
           ::Kokkos::Tools::pushRegion(name);
@@ -580,8 +583,8 @@ public:
             const bool pop_kokkos_profiling_region = true) {
     if (enable_timers_) {
       if (top_) {
-        top_ = top_->stop(name);
 #ifdef HAVE_TEUCHOSCORE_KOKKOS
+        // Fence before stopping the timer to include async kokkos kernels launched within this timer
         if (Behavior::fenceTimers()) {
           Kokkos::fence("timer_fence_end_"+name);
         }
@@ -591,6 +594,7 @@ public:
           ::Kokkos::Tools::popRegion();
         }
 #endif
+        top_ = top_->stop(name);
       } else {
         timer_.BaseTimer::stop();
       }

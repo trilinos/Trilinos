@@ -142,7 +142,7 @@ TEST(StkMeshIoBrokerHowTo, interpolateOutsideRange)
       if (time >= 2.0)
         expected_value = 2.0;
 
-      auto temperatureData = temperature.data<stk::mesh::ReadOnly>();
+      auto temperatureData = temperature.data();
       stk::mesh::for_each_entity_run(stkIo.bulk_data(), stk::topology::NODE_RANK,
         [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
           auto nodeTemperatureData = temperatureData.entity_values(node);

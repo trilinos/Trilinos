@@ -40,7 +40,7 @@ void change_position_of_node_1(stk::mesh::BulkData& bulk)
 {
   stk::mesh::Entity node1 = bulk.get_entity(stk::topology::NODE_RANK, 1);
   const stk::mesh::FieldBase* coordField = bulk.mesh_meta_data().coordinate_field();
-  auto coordFieldData = coordField->data<double>();
+  auto coordFieldData = coordField->data<double, stk::mesh::ReadWrite>();
   auto coordData = coordFieldData.entity_values(node1);
   coordData(0_comp) = 0.25;
   coordData(1_comp) = 0.0;

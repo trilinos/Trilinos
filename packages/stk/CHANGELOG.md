@@ -1,5 +1,12 @@
 # CHANGELOG
 
+5.27.2-02    (STK_VERSION 5270202) 11/14/25
+  stk_util: deprecate STK_FUNCTION/STK_INLINE_FUNCTION; prefer direct usage
+            of KOKKOS_FUNCTION/KOKKOS_INLINE_FUNCTION
+  stk_mesh: Change default access tag for Field::data<>() to ReadOnly.
+            Also misc bug fixes related to shell-edge connectivity,
+            multi-state field initialization, etc.
+
 5.27.2-01    (STK_VERSION 5270201) 11/05/25
   stk_doc_tests: fix build error when Seacas/Ioss is on but MPI is off
   stk_mesh: add GPU-compatible APIs for parallel_sum and friends.

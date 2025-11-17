@@ -36,7 +36,7 @@ void set_field(std::shared_ptr<stk::mesh::BulkData> bulkDataPtr, stk::mesh::Fiel
   stk::mesh::Selector selector(field);
   const stk::mesh::BucketVector& buckets = bulkDataPtr->get_buckets(stk::topology::NODE_RANK, selector);
 
-  auto coordFieldData = coordField.data<double, stk::mesh::ReadOnly>();
+  auto coordFieldData = coordField.data<double>();
   auto fieldData = field.data<stk::mesh::OverwriteAll>();
   for (stk::mesh::Bucket* bucket : buckets)
     for (stk::mesh::Entity node : *bucket)
@@ -77,8 +77,8 @@ void check_field(std::shared_ptr<stk::mesh::BulkData> bulkDataPtr, stk::mesh::Fi
   stk::mesh::Selector selector(field & (meshMetaDataPtr->locally_owned_part() | meshMetaDataPtr->globally_shared_part()));
   const stk::mesh::BucketVector& buckets = bulkDataPtr->get_buckets(stk::topology::NODE_RANK, selector);
 
-  auto coordFieldData = coordField.data<double, stk::mesh::ReadOnly>();
-  auto fieldData      = field.data<stk::mesh::ReadOnly>();
+  auto coordFieldData = coordField.data<double>();
+  auto fieldData      = field.data();
   for (stk::mesh::Bucket* bucket : buckets)
     for (stk::mesh::Entity node : *bucket)
     {

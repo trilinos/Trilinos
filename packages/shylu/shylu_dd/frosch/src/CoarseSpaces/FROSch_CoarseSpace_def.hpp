@@ -202,7 +202,7 @@ namespace FROSch {
 
             auto repeatedLocalMap = repeatedMap->getLocalMap();
             auto rowLocalMap = rowMap->getLocalMap();
-            auto AssembledBasisView = AssembledBasis_->getLocalViewDevice(Access::ReadOnly);
+            auto AssembledBasisView = AssembledBasis_->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
             // count number of nonzeros per row
             UN numLocalRows = rowMap->getLocalNumElements();

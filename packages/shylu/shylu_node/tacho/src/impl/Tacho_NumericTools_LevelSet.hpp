@@ -197,6 +197,8 @@ private:
   colind_view colindL;
   nzvals_view nzvalsL;
 
+  nzvals_view nzvalsD;
+
   // common for host and cuda
   int _status;
 
@@ -1964,9 +1966,9 @@ public:
     const ordinal_type nrhs = 1;
     Kokkos::resize(_w_vec, m, nrhs);
 
+    const value_type one(1);
 #if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
      defined(KOKKOS_ENABLE_HIP)
-    const value_type one(1);
     const value_type zero(0);
 
     int ldw = _w_vec.stride(1);
@@ -2032,6 +2034,7 @@ public:
     size_t nnzU = 0;
     size_t nnzL = 0;
     typedef TeamFunctor_ExtractCrs<supernode_info_type> functor_type;
+    bool unit_diag = (this->getSolutionMethod() == 0 ? true : false);
     for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
       const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
 
@@ -2119,6 +2122,12 @@ public:
       Kokkos::resize(colindL, nnzL);
       Kokkos::resize(nzvalsL, nnzL);
     }
+    if (unit_diag) {
+      // Initialized to be I, then updated with diagonal values during numeric
+      //  The location of the updated values should be the same / symbolic
+      Kokkos::resize(nzvalsD, _team_serial_level_cut*m);
+      Kokkos::deep_copy(nzvalsD, one);
+    }
 
     // load nonzero val/ind
     ptr = 0;
@@ -2146,6 +2155,11 @@ public:
       extractor_crs.setRange(pbeg, pend);
       extractor_crs.setRowPtr(s0.rowptrU);
       extractor_crs.setCrsView(s0.colindU, s0.nzvalsU);
+      if (unit_diag) {
+        auto d_nzvalsD = Kokkos::subview(nzvalsD, range_type(lvl*m, (lvl+1)*m));
+        s0.nzvalsD = d_nzvalsD.data();
+        extractor_crs.withUnitDiag(s0.nzvalsD);
+      }
       {
         using team_policy_type = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
                                                     typename functor_type::ExtractValTag>;
@@ -3048,7 +3062,22 @@ public:
     else if (variant == 2)
       solveNoPivotLDLLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
+      // apply L^{-1}
       solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
+      {
+        // apply D^{-1}
+        const ordinal_type nrhs = t.extent(1);
+        auto matY = (lvl == 0 ? t : ((nlvls-1-lvl)%2 == 0 ? _w_vec : t));
+        auto &s0 = _h_supernodes(_h_level_sids(pbeg));
+        const UnmanagedViewType<nzvals_view> matD(s0.nzvalsD, _m);
+
+        using policy_type = Kokkos::RangePolicy<exec_space>;
+        const auto policy = policy_type(0, _m);
+        Kokkos::parallel_for(
+            policy, KOKKOS_LAMBDA(const ordinal_type &i) {
+              for (ordinal_type j = 0; j < nrhs; j++) matY(i,j) = matY(i, j) / matD(i); 
+            });
+      }
     } else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveNoPivotLDLLowerOnDevice, algorithm variant is not supported");

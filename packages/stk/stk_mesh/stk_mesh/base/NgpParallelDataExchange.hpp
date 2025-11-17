@@ -56,7 +56,7 @@ EntityRankViewType<typename NgpSpace::mem_space> assemble_rank_per_field(const s
 {
   auto rankPerField = EntityRankViewType<typename NgpSpace::mem_space>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "fieldRanksOnDevice"), fields.size());
   auto rankPerFieldHost = Kokkos::create_mirror_view(rankPerField);
-  for(auto fieldIdx = 0; fieldIdx < fields.size(); ++fieldIdx) {
+  for(size_t fieldIdx = 0; fieldIdx < fields.size(); ++fieldIdx) {
     rankPerFieldHost(fieldIdx) = fields[fieldIdx]->entity_rank();
   }
   Kokkos::deep_copy(rankPerField, rankPerFieldHost);
@@ -196,6 +196,9 @@ void fill_device_send_data(const SendDataType& deviceSendData,
     Kokkos::parallel_for(stk::ngp::RangePolicy<typename NgpSpace::exec_space>(0, hostSharedCommMap.extent(0)),
       KOKKOS_LAMBDA(size_t idx) {
         auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iproc, includeGhosts);
+        if (idx >= deviceSharedCommMap.extent(0)) {
+          return;
+        }
         auto fastMeshIdx = deviceSharedCommMap(idx);
 
         int sendBufferStartIdx = deviceMeshIndicesOffsets(baseProcOffset + meshIndicesCounter + idx);
@@ -235,6 +238,9 @@ void unpack_device_recv_data(const FieldDataType& fieldDataOnDevice,
     Kokkos::parallel_for(stk::ngp::RangePolicy<typename NgpSpace::exec_space>(0, hostSharedCommMap.extent(0)),
       KOKKOS_LAMBDA(size_t index) {
         auto deviceSharedCommMap = ngpMesh.volatile_fast_shared_comm_map(fieldRank, iproc, includeGhosts);
+        if (index >= deviceSharedCommMap.extent(0)) {
+          return;
+        }
         auto fastMeshIndex = deviceSharedCommMap(index);
 
         int recvBufferStartIdx = deviceMeshIndicesOffsets(baseProcOffset + meshIndicesCounter + index);

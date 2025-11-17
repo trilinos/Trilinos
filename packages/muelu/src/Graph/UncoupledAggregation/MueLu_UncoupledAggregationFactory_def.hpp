@@ -394,8 +394,8 @@ void UncoupledAggregationFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level
             });
       }
 
-      auto vertex2AggId = aggregates->GetVertex2AggId()->getLocalViewDevice(Xpetra::Access::ReadWrite);
-      auto procWinner   = aggregates->GetProcWinner()->getLocalViewDevice(Xpetra::Access::OverwriteAll);
+      auto vertex2AggId = aggregates->GetVertex2AggId()->getLocalViewDevice(Tpetra::Access::ReadWrite);
+      auto procWinner   = aggregates->GetProcWinner()->getLocalViewDevice(Tpetra::Access::OverwriteAll);
       int rank          = comm->getRank();
       Kokkos::parallel_for(
           Kokkos::RangePolicy<exec_space>(0, numRows),

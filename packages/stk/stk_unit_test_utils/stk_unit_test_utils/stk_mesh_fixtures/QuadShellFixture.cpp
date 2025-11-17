@@ -233,7 +233,7 @@ void QuadShellFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this
         unsigned nx = 0, ny = 0;
         node_x_y(elem_nodes[i], nx, ny);
 
-        auto data = m_coord_field->data().entity_values(node);
+        auto data = m_coord_field->data<stk::mesh::ReadWrite>().entity_values(node);
         std::array<double, 3> data_array{data(0_comp), data(1_comp), data(2_comp)};
         coordMap.getNodeCoordinates(data_array.data(), nx, ny, 0);
 

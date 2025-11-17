@@ -17,7 +17,7 @@
 
 #include "Galeri_VectorTraits.hpp"
 #include "Galeri_Exception.h"
-#include "Xpetra_Access.hpp"
+#include "Tpetra_Access.hpp"
 
 #include <iostream>
 namespace Galeri {
@@ -95,10 +95,7 @@ class Utils {
         dim = 3;
       coordinates = VectorTraits<Map, RealValuedMultiVector>::Build(map, dim, false);
       typename RealValuedMultiVector::dual_view_type::t_dev_um lclCoords;
-      if constexpr (std::is_same_v<Map, tpetra_map>)
-        lclCoords = coordinates->getLocalViewDevice(::Tpetra::Access::OverwriteAll);
-      else
-        lclCoords = coordinates->getLocalViewDevice(::Xpetra::Access::OverwriteAll);
+      lclCoords   = coordinates->getLocalViewDevice(::Tpetra::Access::OverwriteAll);
       auto lclMap = map->getLocalMap();
       if (coordType == "1D") {
         delta_x = lx / Teuchos::as<real_type>(nx - 1);

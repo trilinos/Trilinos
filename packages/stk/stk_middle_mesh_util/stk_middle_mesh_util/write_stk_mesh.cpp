@@ -106,7 +106,7 @@ void StkMeshWriter::write_gid_field(std::shared_ptr<nonconformal::impl::Nonconfo
   auto& meshInElsToMesh1Els          = *(nonconformalAbstract->get_mesh1_classification());
   auto& meshInElsToMesh2Els          = *(nonconformalAbstract->get_mesh2_classification());
 
-  auto m_gidFieldData = m_gidField->data();
+  auto m_gidFieldData = m_gidField->data<stk::mesh::ReadWrite>();
   int entityIdx = 0;
   for (auto& el : meshIn->get_elements())
     if (el)

@@ -82,28 +82,28 @@ void Jacobi(
 
 #if defined(HAVE_MUELU_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
 template <>
-void Jacobi<double, int, int, EpetraNode>(double omega,
-                                          const Xpetra::Vector<double, int, int, EpetraNode>& Dinv,
-                                          const Xpetra::Matrix<double, int, int, EpetraNode>& A,
-                                          const Xpetra::Matrix<double, int, int, EpetraNode>& B,
-                                          Xpetra::Matrix<double, int, int, EpetraNode>& C,
-                                          bool call_FillComplete_on_result,
-                                          bool doOptimizeStorage,
-                                          const std::string& label,
-                                          const Teuchos::RCP<Teuchos::ParameterList>& params);
+void Jacobi<double, int, int, Xpetra::EpetraNode>(double omega,
+                                                  const Xpetra::Vector<double, int, int, Xpetra::EpetraNode>& Dinv,
+                                                  const Xpetra::Matrix<double, int, int, Xpetra::EpetraNode>& A,
+                                                  const Xpetra::Matrix<double, int, int, Xpetra::EpetraNode>& B,
+                                                  Xpetra::Matrix<double, int, int, Xpetra::EpetraNode>& C,
+                                                  bool call_FillComplete_on_result,
+                                                  bool doOptimizeStorage,
+                                                  const std::string& label,
+                                                  const Teuchos::RCP<Teuchos::ParameterList>& params);
 #endif
 
 #if defined(HAVE_MUELU_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
 template <>
-void Jacobi<double, int, long long, EpetraNode>(double omega,
-                                                const Xpetra::Vector<double, int, long long, EpetraNode>& Dinv,
-                                                const Xpetra::Matrix<double, int, long long, EpetraNode>& A,
-                                                const Xpetra::Matrix<double, int, long long, EpetraNode>& B,
-                                                Xpetra::Matrix<double, int, long long, EpetraNode>& C,
-                                                bool call_FillComplete_on_result,
-                                                bool doOptimizeStorage,
-                                                const std::string& label,
-                                                const Teuchos::RCP<Teuchos::ParameterList>& params);
+void Jacobi<double, int, long long, Xpetra::EpetraNode>(double omega,
+                                                        const Xpetra::Vector<double, int, long long, Xpetra::EpetraNode>& Dinv,
+                                                        const Xpetra::Matrix<double, int, long long, Xpetra::EpetraNode>& A,
+                                                        const Xpetra::Matrix<double, int, long long, Xpetra::EpetraNode>& B,
+                                                        Xpetra::Matrix<double, int, long long, Xpetra::EpetraNode>& C,
+                                                        bool call_FillComplete_on_result,
+                                                        bool doOptimizeStorage,
+                                                        const std::string& label,
+                                                        const Teuchos::RCP<Teuchos::ParameterList>& params);
 #endif
 
 /*!

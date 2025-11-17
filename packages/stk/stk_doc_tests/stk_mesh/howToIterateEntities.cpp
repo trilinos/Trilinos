@@ -77,7 +77,7 @@ TEST(StkMeshHowTo, iterateSidesetNodes_BucketLoop_ContiguousFieldDataWithinBucke
 
   const stk::mesh::BucketVector &boundaryNodeBuckets = stkMesh->get_buckets(stk::topology::NODE_RANK, boundaryNodesSelector);
 
-  stk::mesh::FieldData<double> temperatureData = temperatureField.data();
+  stk::mesh::FieldData<double> temperatureData = temperatureField.data<stk::mesh::ReadWrite>();
   constexpr double prescribedTemperatureValue = 2.0;
   for (size_t bucketIndex = 0; bucketIndex < boundaryNodeBuckets.size(); ++bucketIndex) {
     const stk::mesh::Bucket &nodeBucket = *boundaryNodeBuckets[bucketIndex];
@@ -112,7 +112,7 @@ TEST(StkMeshHowTo, iterateSidesetNodes_ForEachEntity_FieldDataAccess)
   stk::mesh::Selector boundaryNodesSelector(boundaryConditionPart);
 
   constexpr double prescribedTemperatureValue = 2.0;
-  stk::mesh::FieldData<double> temperatureData = temperatureField.data();
+  stk::mesh::FieldData<double> temperatureData = temperatureField.data<stk::mesh::ReadWrite>();
 
   stk::mesh::for_each_entity_run(*stkMesh, stk::topology::NODE_RANK, boundaryNodesSelector,
     [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {

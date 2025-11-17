@@ -44,6 +44,9 @@ RegistrationResult registerEnvironmentVariable(const std::string &variableName);
 /// environment.
 void registerAllPrefixedVariables(const std::string &prefix);
 
+/// Register an environment variable prefix that should be tracked.
+RegistrationResult registerEnvironmentVariablePrefix(const std::string &prefix);
+
 /// Register a command.
 RegistrationResult
 registerCommand(const std::string &commandLabel,

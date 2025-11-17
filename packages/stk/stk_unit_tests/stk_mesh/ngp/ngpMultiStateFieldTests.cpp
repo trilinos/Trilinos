@@ -159,7 +159,7 @@ public:
   {
     const stk::mesh::BucketVector& buckets = bulk.get_buckets(hostField.entity_rank(), hostField);
 
-    auto hostFieldData = hostField.template data<stk::mesh::ReadOnly>();
+    auto hostFieldData = hostField.data();
     for (const stk::mesh::Bucket* bucket : buckets) {
       for (const stk::mesh::Entity& entity : *bucket) {
         auto value = hostFieldData.entity_values(entity);

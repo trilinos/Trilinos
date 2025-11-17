@@ -336,7 +336,7 @@ public:
     stk::mesh::EntityVector elems;
     stk::mesh::get_selected_entities(stk::mesh::Selector(*field), get_bulk().buckets(stk::topology::ELEM_RANK), elems);
     unsigned multiplier = m_multiplier * scale;
-    auto fieldData = field->template data<stk::mesh::ReadOnly>();
+    auto fieldData = field->template data<>();
 
     for(auto elem : elems) {
       auto fieldValues = fieldData.entity_values(elem);
@@ -367,7 +367,7 @@ public:
   {
     stk::mesh::EntityVector elements;
     stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, selector, elements);
-    auto fieldData = stkIntField.data();
+    auto fieldData = stkIntField.data<stk::mesh::ReadWrite>();
 
     for(stk::mesh::Entity elem : elements) {
       auto fieldValues = fieldData.entity_values(elem);
@@ -396,7 +396,7 @@ private:
   template<typename FieldType, typename Func>
   void check_result_on_host(FieldType field, stk::mesh::EntityVector elems, Func&& testValues)
   {
-    auto fieldData = field->template data<stk::mesh::ReadOnly>();
+    auto fieldData = field->data();
     for(auto elem : elems) {
       auto fieldValues = fieldData.entity_values(elem);
       for (stk::mesh::ComponentIdx component : fieldValues.components()) {
