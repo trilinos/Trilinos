@@ -9,7 +9,7 @@
 
 #include "MueLu_config.hpp"
 
-#ifdef HAVE_MUELU_ZOLTAN2
+#if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
 
 #include <vector>
 #include <Teuchos_UnitTestHarness.hpp>
