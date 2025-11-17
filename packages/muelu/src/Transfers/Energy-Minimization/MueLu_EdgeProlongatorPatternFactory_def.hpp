@@ -70,11 +70,11 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
   {
 #if KOKKOS_VERSION >= 40799
     using ATS           = KokkosKernels::ArithTraits<Scalar>;
-    using magnitudeType = ATS::magnitudeType;
+    using magnitudeType = typename ATS::magnitudeType;
     using magATS        = KokkosKernels::ArithTraits<magnitudeType>;
 #else
     using ATS           = Kokkos::ArithTraits<Scalar>;
-    using magnitudeType = ATS::magnitudeType;
+    using magnitudeType = typename ATS::magnitudeType;
     using magATS        = Kokkos::ArithTraits<magnitudeType>;
 #endif
     auto eps = magATS::epsilon();

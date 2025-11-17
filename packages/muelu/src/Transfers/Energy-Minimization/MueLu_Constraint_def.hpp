@@ -59,7 +59,11 @@ class MinSpmMV {
   LocalVector lhs;
   LocalVector rhs;
 
+#if KOKKOS_VERSION >= 40799
+  const local_ordinal_type MAX_VAL = KokkosKernels::ArithTraits<local_ordinal_type>::max();
+#else
   const local_ordinal_type MAX_VAL = Kokkos::ArithTraits<local_ordinal_type>::max();
+#endif
 
  public:
   MinSpmMV(LocalGraph lclGraph_, LocalVector lhs_, LocalVector rhs_)
@@ -99,7 +103,11 @@ class MinSpmMVT {
   LocalVector lhs;
   LocalVector rhs;
 
+#if KOKKOS_VERSION >= 40799
+  const local_ordinal_type MAX_VAL = KokkosKernels::ArithTraits<local_ordinal_type>::max();
+#else
   const local_ordinal_type MAX_VAL = Kokkos::ArithTraits<local_ordinal_type>::max();
+#endif
 
  public:
   MinSpmMVT(LocalGraph lclGraph_, LocalVector lhs_, LocalVector rhs_)
@@ -217,8 +225,15 @@ class BlockInverseFunctor {
   using local_graph_type  = typename CrsGraph::local_graph_type;
   using local_matrix_type = typename CrsMatrix::local_matrix_type;
   using scalar_type       = typename local_matrix_type::value_type;
-  using ATS               = Kokkos::ArithTraits<scalar_type>;
-  using magnitude_type    = typename ATS::magnitudeType;
+#if KOKKOS_VERSION >= 40799
+  using ATS            = KokkosKernels::ArithTraits<scalar_type>;
+  using magnitude_type = typename ATS::magnitudeType;
+  using magATS         = KokkosKernels::ArithTraits<magnitude_type>;
+#else
+  using ATS                        = Kokkos::ArithTraits<scalar_type>;
+  using magnitude_type             = typename ATS::magnitudeType;
+  using magATS                     = Kokkos::ArithTraits<magnitude_type>;
+#endif
 
   using shared_matrix = Kokkos::View<scalar_type**, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
   using shared_vector = Kokkos::View<scalar_type*, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
@@ -234,8 +249,9 @@ class BlockInverseFunctor {
   class TagApply {};
 
  private:
-  const scalar_type zero = ATS::zero();
-  const scalar_type one  = ATS::one();
+  const scalar_type zero        = ATS::zero();
+  const magnitude_type mag_zero = magATS::zero();
+  const scalar_type one         = ATS::one();
 
   local_matrix_type A;
   local_graph_type blocks;
@@ -280,7 +296,7 @@ class BlockInverseFunctor {
     KokkosBlas::TeamGemv<member_type, KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::Gemv::Unblocked>::invoke(thread, one, lclA, lclConst, zero, lclAConst);
     thread.team_barrier();
 
-    magnitude_type norm2 = zero;
+    magnitude_type norm2 = mag_zero;
     for (LocalOrdinal i = 0; i < blockSize; ++i) {
       norm2 += ATS::magnitude(lclAConst(i) * lclAConst(i));
     }
