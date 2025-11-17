@@ -99,12 +99,6 @@ def main(argv):
   launch_cmd = get_launch_cmd(ds.system_name)
   driver_args = get_driver_args(ds.system_name)
 
-  # Specify, and override the driver script for ATDM ATS2 builds. Note that
-  # args.build_name is a required argument so it will be valid by the time it
-  # reaches this check.
-  if args.build_name.startswith("ats2_cuda"):
-      args.driver = "./Trilinos/packages/framework/pr_tools/PullRequestLinuxCudaVortexDriver.sh"
-
   cmd = launch_env + launch_cmd + args.driver + driver_args
 
   if args.build_name.startswith("rhel8"):
