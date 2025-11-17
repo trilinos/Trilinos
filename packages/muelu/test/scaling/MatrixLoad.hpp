@@ -40,9 +40,7 @@ RepartitionMap(
     Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> >& coordinates,
     Teuchos::RCP<Teuchos::ParameterList> repartitionParams) {
 #include <MueLu_UseShortNames.hpp>
-  auto comm           = A->getRowMap()->getComm();
-  auto lib            = A->getRowMap()->lib();
-  const auto numRanks = comm->getSize();
+  auto comm = A->getRowMap()->getComm();
   if (!repartitionParams) {
     if (comm->getRank() == 0)
       std::cout << "Not repartitioning because no repartitioningParams were specified." << std::endl;
@@ -50,6 +48,8 @@ RepartitionMap(
   }
 
 #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
+  auto lib            = A->getRowMap()->lib();
+  const auto numRanks = comm->getSize();
   if (comm->getRank() == 0)
     std::cout << "Redistributing matrix using Zoltan2." << std::endl;
 
