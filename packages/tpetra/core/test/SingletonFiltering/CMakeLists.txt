@@ -53,7 +53,4 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(SingletonFilteringFileCopies
     SF2_Matrix_Reduced.mm
     SF2_LHS_Reduced.mm
     SF2_RHS_Reduced.mm
-  EXEDEPS
-    SingletonFiltering
-    SingletonFiltering_Parallel
   )
