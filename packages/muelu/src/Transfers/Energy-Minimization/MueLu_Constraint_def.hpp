@@ -15,7 +15,6 @@
 #include <Xpetra_Matrix.hpp>
 #include "KokkosBatched_Copy_Internal.hpp"
 #include "Teuchos_Assert.hpp"
-#include "Xpetra_Access.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 
@@ -606,7 +605,7 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AssignMatrixEntriesT
                                                                                         MultiVector& vecP) const {
   auto lclMat     = P.getLocalMatrixDevice();
   auto lclPattern = pattern->getLocalGraphDevice();
-  auto lclVec     = vecP.getLocalViewDevice(Xpetra::Access::OverwriteAll);
+  auto lclVec     = vecP.getLocalViewDevice(Tpetra::Access::OverwriteAll);
   TEUCHOS_ASSERT(lclPattern.entries.extent(0) == lclVec.extent(0));
   Kokkos::deep_copy(lclVec, 0.);
 
@@ -643,7 +642,7 @@ RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Constraint<Scalar
   RCP<Matrix> P = MatrixFactory::Build(Ppattern);
   {
     auto lclMat = P->getLocalMatrixDevice();
-    auto lclVec = vecP.getLocalViewDevice(Xpetra::Access::ReadOnly);
+    auto lclVec = vecP.getLocalViewDevice(Tpetra::Access::ReadOnly);
     TEUCHOS_ASSERT(lclMat.values.extent(0) == lclVec.extent(0));
     Kokkos::deep_copy(lclMat.values, Kokkos::subview(lclVec, Kokkos::ALL(), 0));
   }

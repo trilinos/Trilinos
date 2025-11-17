@@ -23,7 +23,6 @@
 
 #include "MueLu_DenseConstraint_decl.hpp"
 #include "Serial/Kokkos_Serial_Parallel_Range.hpp"
-#include "Xpetra_Access.hpp"
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 
@@ -89,7 +88,7 @@ void DenseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
     auto lclPattern     = Ppattern->getLocalGraphDevice();
     auto pattern_rowptr = lclPattern.row_map;
 
-    auto lclNullspace = ghostedBc->getLocalViewDevice(Xpetra::Access::ReadOnly);
+    auto lclNullspace = ghostedBc->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
     lno_view_t rowptr(Kokkos::ViewAllocateWithoutInitializing("constraint_rowptr"), numConstraints + 1);
     LocalOrdinal nnz = NSDim * lclPattern.entries.extent(0);

@@ -37,7 +37,7 @@ void FlatOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   {
     auto lclMat = tempMat_->getLocalMatrixDevice();
-    auto lclVec = X.getLocalViewDevice(Xpetra::Access::ReadOnly);
+    auto lclVec = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
     TEUCHOS_ASSERT(lclMat.values.extent(0) == lclVec.extent(0));
     Kokkos::deep_copy(lclMat.values, Kokkos::subview(lclVec, Kokkos::ALL(), 0));
   }

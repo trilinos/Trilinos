@@ -18,7 +18,6 @@
 #include <Xpetra_MatrixMatrix.hpp>
 #include "Teuchos_ScalarTraitsDecl.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
-#include "Xpetra_Access.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 
 #include "MueLu_Exceptions.hpp"
