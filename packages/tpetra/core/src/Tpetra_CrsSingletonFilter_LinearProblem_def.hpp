@@ -1530,11 +1530,11 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
         }
       }
     } else {
-      using functor_type    = ComputeFullSolutionFunctor<vector_view_type_int, vector_view_type_scalar,
+      using functor_type = ComputeFullSolutionFunctor<vector_view_type_int, vector_view_type_scalar,
                                                       local_multivector_type, const_local_multivector_type>;
-      auto localB           = tempB_->getLocalViewDevice(Tpetra::Access::ReadOnly);
-      auto localRHS         = FullRHS->getLocalViewDevice(Tpetra::Access::ReadOnly);
-      auto localX           = tempExportX_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+      auto localB        = tempB_->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto localRHS      = FullRHS->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto localX        = tempExportX_->getLocalViewDevice(Tpetra::Access::ReadWrite);
 
       functor_type functor(ColSingletonRowLIDs_, ColSingletonColLIDs_, ColSingletonPivots_, localX, localRHS, localB);
       Kokkos::parallel_for(
