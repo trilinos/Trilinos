@@ -100,7 +100,7 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
         temp2,
         KOKKOS_LAMBDA(const LocalOrdinal row,
                       const LocalOrdinal col,
-                      const Matrix::impl_scalar_type val) {
+                      const typename Matrix::impl_scalar_type val) {
           return ((ATS::magnitude(val - 2.0) < eps) || ((lclSingleParent(col, 0) == 1.0) && (ATS::magnitude(val - 1.0) < eps)));
         });
   }
