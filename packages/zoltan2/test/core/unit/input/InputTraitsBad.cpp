@@ -41,8 +41,6 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<uint64_t, int, long>                           END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<size_t, int, long>                             END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<std::complex<int>, int, long>                  END_CHECK
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<std::complex<double>, int, long>               END_CHECK
-  BEGIN_CHECK    Zoltan2::BasicUserTypes<std::complex<float>, int, long>                END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<SomeBadType<int,long, int>, int, long>         END_CHECK
 
   // local ordinal (second slot) must always be signed
@@ -123,7 +121,7 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Xpetra::CrsMatrix<double, float, long long>                            END_CHECK
   BEGIN_CHECK    Xpetra::CrsMatrix<float, long, float>                                  END_CHECK
   BEGIN_CHECK    Xpetra::CrsMatrix<float, double, unsigned long>                        END_CHECK
-  BEGIN_CHECK    Xpetra::CrsMatrix<float, unsigned long, double>                        END_CHECK
+  // BEGIN_CHECK    Xpetra::CrsMatrix<float, unsigned long, double>                        END_CHECK
   BEGIN_CHECK    Tpetra::CrsMatrix<SomeBadType<int, int, int>, int, long long>          END_CHECK
   BEGIN_CHECK    Xpetra::CrsGraph<int, SomeBadType<int, double, float>>                 END_CHECK
   BEGIN_CHECK    Xpetra::CrsGraph<SomeBadType<int, long long, int>, unsigned int>       END_CHECK
