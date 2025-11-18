@@ -5121,10 +5121,11 @@ int applyInverseJacobi(  // importer
   return sweep;
 }
 
-// Implementation of fused block Jacobi for a specific block size,
-// or (if B == 0) for a general block size.
-template <typename MatrixType, int B>
-int applyFusedBlockJacobi_Impl(
+///
+/// top level apply interface (fused block Jacobi)
+///
+template <typename MatrixType>
+int applyFusedBlockJacobi(
     const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_import_type> &tpetra_importer,
     const Teuchos::RCP<AsyncableImport<MatrixType>> &async_importer,
     const bool overlap_communication_and_computation,
@@ -5150,6 +5151,8 @@ int applyFusedBlockJacobi_Impl(
   using magnitude_type                  = typename impl_type::magnitude_type;
   using impl_scalar_type_1d_view        = typename impl_type::impl_scalar_type_1d_view;
   using impl_scalar_type_2d_view_tpetra = typename impl_type::impl_scalar_type_2d_view_tpetra;
+
+  IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyFusedBlockJacobi", ApplyFusedBlockJacobi);
 
   // the tpetra importer and async importer can't both be active
   TEUCHOS_TEST_FOR_EXCEPT_MSG(!tpetra_importer.is_null() && !async_importer.is_null(),
@@ -5198,13 +5201,8 @@ int applyFusedBlockJacobi_Impl(
   if (W.extent(0) != size_t(num_blockrows))
     W = impl_scalar_type_1d_view(do_not_initialize_tag("W"), num_blockrows);
 
-  // Create the required functors upfront (this is inexpensive - all shallow copies)
-  BlockHelperDetails::ComputeResidualAndSolve_SolveOnly<MatrixType, B>
-      functor_solve_only(amd, btdm.d_inv, W, blocksize, damping_factor);
-  BlockHelperDetails::ComputeResidualAndSolve_1Pass<MatrixType, B>
-      functor_1pass(amd, btdm.d_inv, W, blocksize, damping_factor);
-  BlockHelperDetails::ComputeResidualAndSolve_2Pass<MatrixType, B>
-      functor_2pass(amd, btdm.d_inv, W, blocksize, damping_factor);
+  BlockHelperDetails::ComputeResidualAndSolve<MatrixType>
+      residualAndSolve(amd, btdm.d_inv, W, blocksize, damping_factor);
 
   // norm manager workspace resize
   if (is_norm_manager_active)
@@ -5221,7 +5219,7 @@ int applyFusedBlockJacobi_Impl(
   for (; sweep < max_num_sweeps; ++sweep) {
     if (is_y_zero) {
       // If y is initially zero, then we are just computing y := damping_factor * Dinv * x
-      functor_solve_only.run(XX, y_buffers[1 - current_y]);
+      residualAndSolve.run_y_zero(XX, y_buffers[1 - current_y]);
     } else {
       // real use case does not use overlap comp and comm
       if (overlap_communication_and_computation || !is_async_importer_active) {
@@ -5229,11 +5227,11 @@ int applyFusedBlockJacobi_Impl(
         if (two_pass_residual) {
           // Pass 1 computes owned residual and stores into new y buffer,
           // but doesn't apply Dinv or produce a norm yet
-          functor_2pass.run_pass1(XX, y_buffers[current_y], y_buffers[1 - current_y]);
+          residualAndSolve.run_pass1_of_2(XX, y_buffers[current_y], y_buffers[1 - current_y]);
         } else {
           // This case happens if running with single rank.
           // There are no remote columns, so residual and solve can happen in one step.
-          functor_1pass.run(XX, y_buffers[current_y], remote_multivector, y_buffers[1 - current_y]);
+          residualAndSolve.run_single_pass(XX, y_buffers[current_y], remote_multivector, y_buffers[1 - current_y]);
         }
         if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) {
           if (is_async_importer_active) async_importer->cancel();
@@ -5242,14 +5240,14 @@ int applyFusedBlockJacobi_Impl(
         if (is_async_importer_active) {
           async_importer->syncRecv();
           // Stage 2 finishes computing the residual, then applies Dinv and computes norm.
-          functor_2pass.run_pass2(y_buffers[current_y], remote_multivector, y_buffers[1 - current_y]);
+          residualAndSolve.run_pass2_of_2(y_buffers[current_y], remote_multivector, y_buffers[1 - current_y]);
         }
       } else {
         if (is_async_importer_active)
           async_importer->syncExchange(y_buffers[current_y]);
         if (is_norm_manager_active && norm_manager.checkDone(sweep, tolerance)) break;
         // Full residual, Dinv apply, and norm in one kernel
-        functor_1pass.run(XX, y_buffers[current_y], remote_multivector, y_buffers[1 - current_y]);
+        residualAndSolve.run_single_pass(XX, y_buffers[current_y], remote_multivector, y_buffers[1 - current_y]);
       }
     }
 
@@ -5274,58 +5272,6 @@ int applyFusedBlockJacobi_Impl(
 
   // sqrt the norms for the caller's use.
   if (is_norm_manager_active) norm_manager.finalize();
-  return sweep;
-}
-
-///
-/// top level apply interface (fused block Jacobi)
-///
-template <typename MatrixType>
-int applyFusedBlockJacobi(
-    const Teuchos::RCP<const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_import_type> &tpetra_importer,
-    const Teuchos::RCP<AsyncableImport<MatrixType>> &async_importer,
-    const bool overlap_communication_and_computation,
-    // tpetra interface
-    const typename BlockHelperDetails::ImplType<MatrixType>::tpetra_multivector_type &X,   // tpetra interface
-    /* */ typename BlockHelperDetails::ImplType<MatrixType>::tpetra_multivector_type &Y,   // tpetra interface
-    /* */ typename BlockHelperDetails::ImplType<MatrixType>::impl_scalar_type_1d_view &W,  // temporary tpetra interface (diff)
-    // local object interface
-    const BlockHelperDetails::PartInterface<MatrixType> &interf,                              // mesh interface
-    const BlockTridiags<MatrixType> &btdm,                                                    // packed block tridiagonal matrices
-    const BlockHelperDetails::AmD<MatrixType> &amd,                                           // R = A - D
-    /* */ typename BlockHelperDetails::ImplType<MatrixType>::impl_scalar_type_1d_view &work,  // workspace
-    /* */ BlockHelperDetails::NormManager<MatrixType> &norm_manager,
-    // preconditioner parameters
-    const typename BlockHelperDetails::ImplType<MatrixType>::impl_scalar_type &damping_factor,
-    /* */ bool is_y_zero,
-    const int max_num_sweeps,
-    const typename BlockHelperDetails::ImplType<MatrixType>::magnitude_type tol,
-    const int check_tol_every) {
-  IFPACK2_BLOCKHELPER_TIMER("BlockTriDi::ApplyFusedBlockJacobi", ApplyFusedBlockJacobi);
-  int blocksize = btdm.d_inv.extent(1);
-  int sweep     = 0;
-#define BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(B)                               \
-  {                                                                             \
-    sweep = applyFusedBlockJacobi_Impl<MatrixType, B>(                          \
-        tpetra_importer, async_importer, overlap_communication_and_computation, \
-        X, Y, W, interf, btdm, amd, work,                                       \
-        norm_manager, damping_factor, is_y_zero,                                \
-        max_num_sweeps, tol, check_tol_every);                                  \
-  }                                                                             \
-  break
-  switch (blocksize) {
-    case 3: BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(3);
-    case 5: BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(5);
-    case 7: BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(7);
-    case 9: BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(9);
-    case 10: BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(10);
-    case 11: BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(11);
-    case 16: BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(16);
-    case 17: BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(17);
-    case 18: BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(18);
-    default: BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI(0);
-  }
-#undef BLOCKTRIDICONTAINER_APPLY_FUSED_JACOBI
 
   return sweep;
 }
