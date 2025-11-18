@@ -15,10 +15,10 @@ permissions:
   contents: read
 
 jobs:
-  gcc10-openmpi416:
+  develop-gcc-openmpi:
     permissions:
       contents: read  # for actions/checkout to fetch code
-    runs-on: [self-hosted, gcc-10.4.0_openmpi-4.1.6]
+    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6]
     steps:
       - name: Clone Trilinos
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
