@@ -452,8 +452,13 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   typename block_vector_type::host_mirror_type hy = Kokkos::create_mirror_view( y );
 
   // View the block vector as an array of the embedded intrinsic type.
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typename block_vector_type::host_mirror_type::array_type hax = hx ;
   typename block_vector_type::host_mirror_type::array_type hay = hy ;
+#else
+  auto hax = Stokhos::reinterpret_as_unmanaged_scalar_view(hx);
+  auto hay = Stokhos::reinterpret_as_unmanaged_scalar_view(hy);
+#endif
 
   for (ordinal_type iRowFEM=0; iRowFEM<fem_length; ++iRowFEM) {
     for (ordinal_type iRowStoch=0; iRowStoch<stoch_length; ++iRowStoch) {
@@ -486,7 +491,11 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   typename matrix_values_type::host_mirror_type hM =
     Kokkos::create_mirror_view( matrix.values );
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typename matrix_values_type::host_mirror_type::array_type haM = hM ;
+#else
+  auto haM = Stokhos::reinterpret_as_unmanaged_scalar_view(hM) ;
+#endif
 
   for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
     const ordinal_type row_size = fem_graph[iRowFEM].size();
@@ -512,7 +521,12 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   //------------------------------
   // generate correct answer
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typedef typename block_vector_type::array_type array_type;
+#else
+  typedef Stokhos::scalar_view_t<block_vector_type> array_type;
+#endif
+
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
   array_type ay_expected =
     array_type("ay_expected", fem_length, stoch_length);
@@ -541,7 +555,12 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   //------------------------------
   // check
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typename block_vector_type::array_type ay = y;
+#else
+  array_type ay = Stokhos::reinterpret_as_unmanaged_scalar_view(y);
+#endif
+
   scalar_type rel_tol = ScalarTol<scalar_type>::tol();
   scalar_type abs_tol = ScalarTol<scalar_type>::tol();
   bool success = compare_rank_2_views(ay, ay_expected, rel_tol, abs_tol, out);
@@ -586,11 +605,17 @@ typedef Stokhos_MV_Multiply_Op<Stokhos::DefaultMultiply> DefaultMultiply;
   typedef Sacado::MP::Vector<STORAGE> MP_Vector_ ## STORAGE;            \
   CRSMATRIX_MP_VECTOR_TESTS_MATRIXSCALAR( MP_Vector_ ## STORAGE )
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
 #define CRSMATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
   typedef Stokhos::StaticFixedStorage<ORDINAL,SCALAR,VectorSize,DEVICE> SFS; \
   typedef Stokhos::DynamicStorage<ORDINAL,SCALAR,DEVICE> DS;            \
   CRSMATRIX_MP_VECTOR_TESTS_STORAGE( SFS )                              \
   CRSMATRIX_MP_VECTOR_TESTS_STORAGE( DS )
+#else
+#define CRSMATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_DEVICE( ORDINAL, SCALAR, DEVICE ) \
+  typedef Stokhos::StaticFixedStorage<ORDINAL,SCALAR,VectorSize,DEVICE> SFS; \
+  CRSMATRIX_MP_VECTOR_TESTS_STORAGE( SFS )
+#endif
 
 #define CRSMATRIX_MP_VECTOR_TESTS_DEVICE( DEVICE ) \
   CRSMATRIX_MP_VECTOR_TESTS_ORDINAL_SCALAR_DEVICE( int, double, DEVICE )
