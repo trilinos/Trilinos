@@ -129,6 +129,17 @@ class RepartitionFactory : public SingleLevelFactoryBase {
 
 };  // class RepartitionFactory
 
+template <class Scalar        = DefaultScalar,
+          class LocalOrdinal  = DefaultLocalOrdinal,
+          class GlobalOrdinal = DefaultGlobalOrdinal,
+          class Node          = DefaultNode>
+struct RepartitionUtilities {
+#undef MUELU_REPARTITIONFACTORY_SHORT
+#include "MueLu_UseShortNames.hpp"
+
+  std::tuple<Array<GO>, GO> static ConstructGIDs(RCP<GOVector> decomposition);
+};
+
 }  // namespace MueLu
 
 #define MUELU_REPARTITIONFACTORY_SHORT
