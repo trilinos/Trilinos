@@ -419,7 +419,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint_QuadsWithDir, 
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   testMaxwellConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>(/*inputDir=*/"emin_matrices/quads/withDir/",
-                                                                   /*global_num_fine_edges=*/1385,
+                                                                   /*global_num_fine_edges=*/1485,
                                                                    /*global_num_coarse_edges=*/171,
                                                                    /*global_num_fine_nodes=*/756,
                                                                    /*global_num_coarse_nodes=*/90,
