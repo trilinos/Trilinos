@@ -233,14 +233,16 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
     comm->barrier();
   }
 
+  RCP<Import> importer = Teuchos::null;
+  auto initialMap      = map;
   if (!repartitionParams.is_null()) {
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1d - Rebalance problem")));
     auto newMap         = RepartitionMap(A, coordinates, repartitionParams);
     if (!newMap.is_null()) {
       map = newMap;
 
-      RCP<Import> importer = ImportFactory::Build(A->getRowMap(), map);
-      auto targetMap       = importer->getTargetMap();
+      importer       = ImportFactory::Build(A->getRowMap(), map);
+      auto targetMap = importer->getTargetMap();
 
       Teuchos::ParameterList XpetraList;
       auto newMatrix = MatrixFactory::Build(A, *importer, *importer, targetMap, targetMap, rcp(&XpetraList, false));
@@ -263,13 +265,23 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
 
   if (!nullFile.empty()) {
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1e - Read nullspace")));
-    nullspace           = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVector(nullFile, map);
+    nullspace           = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVector(nullFile, initialMap);
+    if (importer) {
+      auto newNullspace = MultiVectorFactory::Build(map, nullspace->getNumVectors());
+      newNullspace->doImport(*nullspace, *importer, Xpetra::INSERT);
+      nullspace.swap(newNullspace);
+    }
     comm->barrier();
   }
 
   if (!materialFile.empty()) {
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1f - Read material")));
-    material            = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVector(materialFile, map);
+    material            = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVector(materialFile, initialMap);
+    if (importer) {
+      auto newMaterial = MultiVectorFactory::Build(map, material->getNumVectors());
+      newMaterial->doImport(*material, *importer, Xpetra::INSERT);
+      material.swap(newMaterial);
+    }
     comm->barrier();
   }
 
@@ -295,7 +307,12 @@ void MatrixLoad(Teuchos::RCP<const Teuchos::Comm<int> >& comm, Xpetra::Underlyin
   } else {
     // read in B
     RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1h - Read RHS")));
-    B                   = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVector(rhsFile, map);
+    B                   = Xpetra::IO<SC, LO, GO, Node>::ReadMultiVector(rhsFile, initialMap);
+    if (importer) {
+      auto newB = MultiVectorFactory::Build(map, B->getNumVectors());
+      newB->doImport(*B, *importer, Xpetra::INSERT);
+      B.swap(newB);
+    }
     comm->barrier();
   }
   galeriStream << "Galeri complete.\n========================================================" << std::endl;
