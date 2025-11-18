@@ -765,7 +765,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         TEUCHOS_TEST_FOR_EXCEPTION(useMaxAbsDiagonalScaling != useMaxAbsDiagonalScalingCheby,
                                    Exceptions::RuntimeError, "'chebyshev: use rowsumabs diagonal scaling' (" << std::boolalpha << useMaxAbsDiagonalScalingCheby << ") must match 'sa: use rowsumabs diagonal scaling' (" << std::boolalpha << useMaxAbsDiagonalScaling << ")\n");
       } else {
-        smootherParams.set("chebyshev: use rowsumabs diagonal scaling", useMaxAbsDiagonalScaling);
+        if (useMaxAbsDiagonalScaling)
+          smootherParams.set("chebyshev: use rowsumabs diagonal scaling", useMaxAbsDiagonalScaling);
       }
     };
 
