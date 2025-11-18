@@ -331,7 +331,7 @@ jobs:
 
   cuda12:
     needs: pre-checks
-    runs-on: [self-hosted, cuda-12.4.1-gcc-10.4.0-openmpi-4.1.6, 20250723, gpu:A100]
+    runs-on: [self-hosted, cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6, 20250723, gpu:A100]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -530,7 +530,7 @@ jobs:
 
   cuda12-uvm:
     needs: pre-checks
-    runs-on: [self-hosted, cuda-12.4.1-gcc-10.4.0-openmpi-4.1.6, 20250723]
+    runs-on: [self-hosted, cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6, 20250723]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
