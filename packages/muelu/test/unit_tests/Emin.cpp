@@ -407,7 +407,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint_Quads, Scalar,
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   testMaxwellConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>(/*inputDir=*/"emin_matrices/quads/",
                                                                    /*global_num_fine_edges=*/1512,
-                                                                   /*global_num_coarse_edges=*/183,
+                                                                   /*global_num_coarse_edges=*/180,
                                                                    /*global_num_fine_nodes=*/784,
                                                                    /*global_num_coarse_nodes=*/100,
                                                                    /*readWriteForTesting=*/true,
@@ -420,7 +420,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint_QuadsWithDir, 
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   testMaxwellConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>(/*inputDir=*/"emin_matrices/quads/withDir/",
                                                                    /*global_num_fine_edges=*/1385,
-                                                                   /*global_num_coarse_edges=*/181,
+                                                                   /*global_num_coarse_edges=*/171,
                                                                    /*global_num_fine_nodes=*/756,
                                                                    /*global_num_coarse_nodes=*/90,
                                                                    /*readWriteForTesting=*/true,
@@ -433,7 +433,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint_Tets, Scalar, 
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   testMaxwellConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>(/*inputDir=*/"emin_matrices/tets/",
                                                                    /*global_num_fine_edges=*/5859,
-                                                                   /*global_num_coarse_edges=*/330,
+                                                                   /*global_num_coarse_edges=*/279,
                                                                    /*global_num_fine_nodes=*/1000,
                                                                    /*global_num_coarse_nodes=*/64,
                                                                    /*readWriteForTesting=*/true,
@@ -446,9 +446,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint_TetsWithDir, S
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   testMaxwellConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>(/*inputDir=*/"emin_matrices/tets/withDir/",
                                                                    /*global_num_fine_edges=*/5850,
-                                                                   /*global_num_coarse_edges=*/329,
+                                                                   /*global_num_coarse_edges=*/342,
                                                                    /*global_num_fine_nodes=*/990,
-                                                                   /*global_num_coarse_nodes=*/61,
+                                                                   /*global_num_coarse_nodes=*/62,
                                                                    /*readWriteForTesting=*/true,
                                                                    out, success);
 }
@@ -459,7 +459,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint_Hexes, Scalar,
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   testMaxwellConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>(/*inputDir=*/"emin_matrices/hexes/",
                                                                    /*global_num_fine_edges=*/2700,
-                                                                   /*global_num_coarse_edges=*/223,
+                                                                   /*global_num_coarse_edges=*/144,
                                                                    /*global_num_fine_nodes=*/1000,
                                                                    /*global_num_coarse_nodes=*/64,
                                                                    /*readWriteForTesting=*/true,
@@ -472,7 +472,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint_HexesWithDir, 
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   testMaxwellConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>(/*inputDir=*/"emin_matrices/hexes/withDir/",
                                                                    /*global_num_fine_edges=*/2691,
-                                                                   /*global_num_coarse_edges=*/212,
+                                                                   /*global_num_coarse_edges=*/155,
                                                                    /*global_num_fine_nodes=*/990,
                                                                    /*global_num_coarse_nodes=*/60,
                                                                    /*readWriteForTesting=*/true,
@@ -520,7 +520,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   LocalOrdinal local_num_fine_nodes   = 25;
   LocalOrdinal local_num_coarse_nodes = 4;
   std::string inputDir                = "";
-  std::string dataDir                 = "/scratch/rstumin/hcurldata/";
+  std::string dataDir                 = "/gpfs/rstumin/hcurldata/";
   // #define HexesWithDir
   // #define GrindEmin
   // #define UseExternalP0
@@ -554,7 +554,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   inputDir                = dataDir + "quads/";
   global_num_fine_edges   = 1512;
   local_num_fine_edges    = global_num_fine_edges;
-  global_num_coarse_edges = 183;
+  global_num_coarse_edges = 180;
   local_num_coarse_edges  = global_num_coarse_edges;
   global_num_fine_nodes   = 784;
   local_num_fine_nodes    = global_num_fine_nodes;
@@ -565,7 +565,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   inputDir                = dataDir + "quads/withDir/";
   global_num_fine_edges   = 1485;
   local_num_fine_edges    = global_num_fine_edges;
-  global_num_coarse_edges = 181;
+  global_num_coarse_edges = 171;
   local_num_coarse_edges  = global_num_coarse_edges;
   global_num_fine_nodes   = 756;
   local_num_fine_nodes    = global_num_fine_nodes;
@@ -576,7 +576,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   inputDir                = dataDir + "tets/";
   global_num_fine_edges   = 5859;
   local_num_fine_edges    = global_num_fine_edges;
-  global_num_coarse_edges = 330;
+  global_num_coarse_edges = 279;
   local_num_coarse_edges  = global_num_coarse_edges;
   global_num_fine_nodes   = 1000;
   local_num_fine_nodes    = global_num_fine_nodes;
@@ -587,18 +587,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   inputDir                = dataDir + "tets/withDir/";
   global_num_fine_edges   = 5850;
   local_num_fine_edges    = global_num_fine_edges;
-  global_num_coarse_edges = 329;
+  global_num_coarse_edges = 342;
   local_num_coarse_edges  = global_num_coarse_edges;
   global_num_fine_nodes   = 990;
   local_num_fine_nodes    = global_num_fine_nodes;
-  global_num_coarse_nodes = 61;
+  global_num_coarse_nodes = 62;
   local_num_coarse_nodes  = global_num_coarse_nodes;
 #endif
 #ifdef Hexes
   inputDir                = dataDir + "hexes/";
   global_num_fine_edges   = 2700;
   local_num_fine_edges    = global_num_fine_edges;
-  global_num_coarse_edges = 223;
+  global_num_coarse_edges = 144;
   local_num_coarse_edges  = global_num_coarse_edges;
   global_num_fine_nodes   = 1000;
   local_num_fine_nodes    = global_num_fine_nodes;
@@ -609,7 +609,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint, Scalar, Local
   inputDir                = dataDir + "hexes/withDir/";
   global_num_fine_edges   = 2691;
   local_num_fine_edges    = global_num_fine_edges;
-  global_num_coarse_edges = 212;
+  global_num_coarse_edges = 155;
   local_num_coarse_edges  = global_num_coarse_edges;
   global_num_fine_nodes   = 990;
   local_num_fine_nodes    = global_num_fine_nodes;
