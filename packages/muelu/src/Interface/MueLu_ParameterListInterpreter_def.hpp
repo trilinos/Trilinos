@@ -755,6 +755,21 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     std::string preSmootherType, postSmootherType;
     ParameterList preSmootherParams, postSmootherParams;
 
+    auto setChebyshevSettings = [&](const std::string& smootherType, Teuchos::ParameterList& smootherParams) {
+      auto upperCaseSmootherType = smootherType;
+      std::transform(smootherType.begin(), smootherType.end(), upperCaseSmootherType.begin(), ::toupper);
+      if (upperCaseSmootherType != "CHEBYSHEV") return;
+
+      if (smootherParams.isParameter("chebyshev: use rowsumabs diagonal scaling")) {
+        bool useMaxAbsDiagonalScalingCheby = smootherParams.get<bool>("chebyshev: use rowsumabs diagonal scaling");
+        TEUCHOS_TEST_FOR_EXCEPTION(useMaxAbsDiagonalScaling != useMaxAbsDiagonalScalingCheby,
+                                   Exceptions::RuntimeError, "'chebyshev: use rowsumabs diagonal scaling' (" << std::boolalpha << useMaxAbsDiagonalScalingCheby << ") must match 'sa: use rowsumabs diagonal scaling' (" << std::boolalpha << useMaxAbsDiagonalScaling << ")\n");
+      } else {
+        if (useMaxAbsDiagonalScaling)
+          smootherParams.set("chebyshev: use rowsumabs diagonal scaling", useMaxAbsDiagonalScaling);
+      }
+    };
+
     if (paramList.isParameter("smoother: overlap"))
       overlap = paramList.get<int>("smoother: overlap");
 
@@ -777,8 +792,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       else if (preSmootherType == "RELAXATION")
         preSmootherParams = defaultSmootherParams;
 
-      if (preSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
-        preSmootherParams.set("chebyshev: use rowsumabs diagonal scaling", true);
+      setChebyshevSettings(preSmootherType, preSmootherParams);
 
 #ifdef HAVE_MUELU_INTREPID2
       // Propagate P-coarsening for Topo smoothing
@@ -824,8 +838,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (paramList.isParameter("smoother: post overlap"))
         overlap = paramList.get<int>("smoother: post overlap");
 
-      if (postSmootherType == "CHEBYSHEV" && useMaxAbsDiagonalScaling)
-        postSmootherParams.set("chebyshev: use rowsumabs diagonal scaling", true);
+      setChebyshevSettings(postSmootherType, postSmootherParams);
 
       if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
         postSmoother = preSmoother;
