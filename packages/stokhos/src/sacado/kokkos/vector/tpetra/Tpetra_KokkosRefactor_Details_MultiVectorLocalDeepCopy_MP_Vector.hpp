@@ -13,6 +13,7 @@
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
 namespace Tpetra {
 namespace Details {
 
@@ -56,5 +57,6 @@ namespace Details {
 
 } // Details namespace
 } // Tpetra namespace
+#endif // KOKKOS_ENABLE_IMPL_VIEW_LEGACY
 
 #endif // TPETRA_KOKKOS_REFACTOR_DETAILS_MULTI_VECTOR_LOCAL_DEEP_COPY_MP_VECTOR_HPP

@@ -9,6 +9,7 @@
 
 #include <iostream>
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
 // Tests
 #include "TestAssembly.hpp"
 
@@ -62,10 +63,12 @@ void mainCuda(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   performance_test_driver<Storage,entry_min,entry_max,entry_step,Method>(
     comm, use_print, use_trials, use_nodes, check, dev_config);
 }
+#endif
 
 int main(int argc, char *argv[])
 {
   bool success = true;
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   bool verbose = false;
   try {
 
@@ -269,6 +272,7 @@ int main(int argc, char *argv[])
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+#endif
 
   if (success)
     return 0;
