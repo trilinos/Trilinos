@@ -73,6 +73,10 @@ MueLu
   - Clean up of timer usage in MueLu, make timer fencing a configurable option
     https://github.com/trilinos/Trilinos/pull/14253
 
+  - MueLu scaling driver can rebalance initial user matrix
+    github.com/trilinos/Trilinos/pull/14690
+    github.com/trilinos/Trilinos/pull/14698
+
 
 NOX
 
