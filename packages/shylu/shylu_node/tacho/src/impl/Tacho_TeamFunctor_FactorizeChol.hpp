@@ -82,13 +82,12 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using GemmAlgoType = typename GemmAlgorithm_Team::type;
 
-    int err = 0;
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
       value_type *aptr = s.u_buf;
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
-      err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
       member.team_barrier();
 
       if (n_m > 0) {
@@ -122,7 +121,6 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using GemmAlgoType = typename GemmAlgorithm_Team::type;
 
-    int err = 0;
     const value_type one(1), minus_one(-1), zero(0);
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
@@ -131,7 +129,7 @@ public:
       aptr += m * m;
 
       // Factor diagonal block
-      err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
       member.team_barrier();
 
       if (n_m > 0) {
@@ -196,7 +194,6 @@ public:
     using TrsmAlgoType = typename TrsmAlgorithm_Team::type;
     using HerkAlgoType = typename HerkAlgorithm_Team::type;
 
-    int err = 0;
     const value_type one(1), minus_one(-1), zero(0);
     const ordinal_type m = s.m, n = s.n, n_m = n - m;
     if (m > 0) {
@@ -204,7 +201,7 @@ public:
       UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
       aptr += m * m;
       // Factor diagonal block
-      err = LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
+      LDL_nopiv<Uplo::Upper, CholAlgoType>::invoke(member, ATL);
       member.team_barrier();
 
       if (n_m > 0) {
