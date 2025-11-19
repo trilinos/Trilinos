@@ -445,10 +445,11 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
 
       NodalP_ones = Utilities::ReplaceNonZerosWithOnes(NodalP);
       TEUCHOS_TEST_FOR_EXCEPTION(NodalP_ones.is_null(), Exceptions::RuntimeError, "Applying ones to prolongator failed");
-      EdgeL->Set("PnodalEmin", NodalP_ones);
-      // } else {
-      //   EdgeL->Set("Pnodal", NodalP);
-      // }
+      if (parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "emin reitzinger") {
+        EdgeL->Set("PnodalEmin", NodalP_ones);
+      } else {
+        EdgeL->Set("Pnodal", NodalP_ones);
+      }
 
       // Get the importer if we have one (for repartitioning)
       RCP<const Import> importer;

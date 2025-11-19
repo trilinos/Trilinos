@@ -85,11 +85,11 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
     absDc->apply(*oneVec, *singleParent, Teuchos::NO_TRANS);
     // ghost singleParent
     RCP<MultiVector> singleParentGhosted;
-    auto importer = absDc->getCrsGraph()->getImporter();
+    auto importer = temp2->getCrsGraph()->getImporter();
     if (importer.is_null()) {
       singleParentGhosted = singleParent;
     } else {
-      singleParentGhosted = MultiVectorFactory::Build(absDc->getColMap(), 1);
+      singleParentGhosted = MultiVectorFactory::Build(importer->getTargetMap(), 1);
       singleParentGhosted->doImport(*singleParent, *importer, Xpetra::INSERT);
     }
 
