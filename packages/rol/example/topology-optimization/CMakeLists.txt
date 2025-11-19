@@ -1,7 +1,7 @@
 
 ROL_ADD_EXECUTABLE(
   example_02
-  SOURCES example_02.cpp 
+  SOURCES example_02.cpp
   ADD_DIR_TO_NAME
 )
 
@@ -24,7 +24,6 @@ if( ${lower_build_type} STREQUAL "release" )
     SOURCES example_01.cpp
     ARGS PrintItAll
     NUM_MPI_PROCS 1
-    CATEGORIES CONTINUOUS
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
   )
@@ -33,7 +32,7 @@ else()
 
   ROL_ADD_EXECUTABLE(
     example_01
-    SOURCES example_01.cpp 
+    SOURCES example_01.cpp
     ADD_DIR_TO_NAME
   )
 
