@@ -121,8 +121,13 @@ bool compareCrsMatrices(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LO, G
                         const Teuchos::RCP<const Teuchos::Comm<int>>& Comm,
                         Teuchos::FancyOStream& out,
                         double relativeTolerance = 1e-12) {
+#if KOKKOS_VERSION >= 40799
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+  using mag_type         = typename KokkosKernels::ArithTraits<impl_scalar_type>::mag_type;
+#else
   using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
   using mag_type         = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
+#endif
 
   bool comparePass = true;
 
@@ -229,8 +234,13 @@ bool compareMultiVectors(const Teuchos::RCP<const Tpetra::MultiVector<Scalar, LO
                          const Teuchos::RCP<const Teuchos::Comm<int>>& Comm,
                          Teuchos::FancyOStream& out,
                          double relativeTolerance = 1e-12) {
+#if KOKKOS_VERSION >= 40799
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+  using mag_type         = typename KokkosKernels::ArithTraits<impl_scalar_type>::mag_type;
+#else
   using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
   using mag_type         = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
+#endif
 
   bool comparePass = true;
 
