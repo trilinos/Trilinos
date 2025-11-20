@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<meshmgr.getNumCells(); ++i) {
       valval += feIntegral(i);
     }
-    if (std::abs(valval - static_cast<RealT>(1)/static_cast<RealT>(9)) > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
+    if (std::abs(valval - static_cast<RealT>(4)/static_cast<RealT>(9)) > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag = -1;
     }
     // curls
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<meshmgr.getNumCells(); ++i) {
       curlcurl += feIntegral(i);
     }
-    if (std::abs(curlcurl - static_cast<RealT>(2)/static_cast<RealT>(3)) > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
+    if (std::abs(curlcurl - static_cast<RealT>(8)/static_cast<RealT>(3)) > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag = -1;
     }
     *outStream << std::setprecision(14) << "\nvalvalIntegral=" << valval << "  "
