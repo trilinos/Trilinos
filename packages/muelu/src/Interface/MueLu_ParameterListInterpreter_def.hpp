@@ -705,9 +705,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                    FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
   MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
   MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
-  bool useMaxAbsDiagonalScaling = false;
-  if (defaultList.isParameter("sa: use rowsumabs diagonal scaling"))
-    useMaxAbsDiagonalScaling = defaultList.get<bool>("sa: use rowsumabs diagonal scaling");
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use rowsumabs diagonal scaling", bool, useMaxAbsDiagonalScaling);
 
   // === Smoothing ===
   // FIXME: should custom smoother check default list too?
