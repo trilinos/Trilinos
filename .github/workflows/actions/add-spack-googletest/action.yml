@@ -1,0 +1,23 @@
+name: "Add Googletest via Spack"
+description: |
+  Checks to see if Googletest is installed in a Spack environment
+  and adds/installs it if not. Then adds an environment module
+  and adds a load of said module to the .bashrc.
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Add Googletest"
+      shell: bash -l {0}
+      run: |
+          spack find -I googletest
+          have_gtest=$?
+          if [ -z "$have_gtest" ]
+          then
+            echo "REMARK: Googletest already installed; can remove this temporary step now"
+          else
+            spack add googletest
+            spack install googletest
+            spack module tcl refresh -y googletest
+            echo -e "\nmodule load googletest" >> /home/runner/.bashrc
+          fi
