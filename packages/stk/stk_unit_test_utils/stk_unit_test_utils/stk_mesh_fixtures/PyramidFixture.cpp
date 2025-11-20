@@ -237,7 +237,7 @@ void PyramidFixture::generate_mesh(std::vector<size_t> & hex_range_on_this_proce
            size_t nx = 0, ny = 0, nz = 0;
            node_x_y_z(pyramid_nodes[i], nx, ny, nz);
 
-           auto data = m_coord_field->data().entity_values(node);
+           auto data = m_coord_field->data<stk::mesh::ReadWrite>().entity_values(node);
 
            std::array<double, 3> data_array{data(0_comp), data(1_comp), data(2_comp)};
            coordMap.getNodeCoordinates(data_array.data(), nx, ny, nz);

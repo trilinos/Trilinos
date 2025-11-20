@@ -366,7 +366,7 @@ TEST_F(TestCommBufferWithMesh, pack_layout_right_entity_values)
   const stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
   const stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
 
-  auto fieldDataPack = fieldPack->data<stk::mesh::ReadOnly>();
+  auto fieldDataPack = fieldPack->data();
   auto entityValuesPack1 = fieldDataPack.entity_values(elem1);
   auto entityValuesPack2 = fieldDataPack.entity_values(elem2);
 
@@ -397,7 +397,7 @@ TEST_F(TestCommBufferWithMesh, pack_layout_left_entity_values)
   const stk::mesh::Entity elem1 = get_bulk().get_entity(stk::topology::ELEM_RANK, 1);
   const stk::mesh::Entity elem2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
 
-  auto fieldDataPack = fieldPack->data<stk::mesh::ReadOnly>();
+  auto fieldDataPack = fieldPack->data();
   auto entityValuesPack1 = fieldDataPack.entity_values(elem1);
   auto entityValuesPack2 = fieldDataPack.entity_values(elem2);
 

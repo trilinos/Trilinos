@@ -14,6 +14,7 @@
 #include "Amesos2_Factory.hpp"
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Stokhos_Tpetra_Utilities_MP_Vector.hpp"
+#include "KokkosExp_View_MP_Vector_Contiguous.hpp"
 
 namespace Amesos2 {
 

@@ -216,7 +216,7 @@ void TriFixtureImpl<DIM>::generate_mesh(std::vector<size_t> & quad_range_on_this
           size_t nx = 0, ny = 0;
           node_x_y(tri_nodes[i], nx, ny);
 
-          auto data = m_coord_field->data().entity_values(node);
+          auto data = m_coord_field->data<stk::mesh::ReadWrite>().entity_values(node);
 
           // The CoordinateMappings are used for 2D and 3D so make sure we give it enough space to write to.
           std::array<double, 3> temp;

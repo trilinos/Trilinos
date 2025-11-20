@@ -255,7 +255,7 @@ void check_test_partition_invariant(SelectorFixture& fix,
                                     const stk::mesh::impl::Partition &partition)
 {
   const std::vector<unsigned> &partition_key = partition.get_legacy_partition_id();
-  auto fieldData = fix.m_fieldABC->data<stk::mesh::ReadOnly>();
+  auto fieldData = fix.m_fieldABC->data();
   for (const stk::mesh::Bucket* bptr : partition) {
     const stk::mesh::Bucket& bkt = *bptr;
     EXPECT_EQ(&partition, bkt.getPartition() );

@@ -4891,7 +4891,7 @@ void batch_create_child_nodes_new(BulkData & mesh, std::vector< ChildNodeRequest
 void set_coords_on_new_node(stk::mesh::MetaData& meta, stk::mesh::Entity nodeA, stk::mesh::Entity nodeB, stk::mesh::Entity new_node)
 {
   const stk::mesh::FieldBase * coord = meta.coordinate_field();
-  auto coordData = coord->data<double,stk::mesh::ReadWrite>();
+  auto coordData = coord->data<double, stk::mesh::ReadWrite>();
 
   double x = 0, y = 0, z = 0;
 
@@ -5350,7 +5350,7 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   // check that all nodes of block_1 have the correct value
   std::vector<stk::mesh::Entity> block_1_nodes;
   stk::mesh::get_selected_entities(stk::mesh::Selector(block_1), mesh.buckets( stk::topology::NODE_RANK ), block_1_nodes);
-  auto oneFieldData = oneField.data<stk::mesh::ReadOnly>();
+  auto oneFieldData = oneField.data();
   for(size_t n=0; n<block_1_nodes.size(); ++n)
   {
     EXPECT_TRUE(oneField.defined_on(block_1_nodes[n]));
@@ -5382,7 +5382,7 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
 
   // check that all nodes of block_1 have the correct value
   stk::mesh::get_selected_entities(stk::mesh::Selector(block_1), mesh.buckets( stk::topology::NODE_RANK ), block_1_nodes);
-  oneFieldData = oneField.data<stk::mesh::ReadOnly>();
+  oneFieldData = oneField.data();
   for(size_t n=0; n<block_1_nodes.size(); ++n)
   {
     EXPECT_TRUE(oneField.defined_on(block_1_nodes[n]));

@@ -64,7 +64,7 @@ TEST_F(ParallelHowTo, communicateFieldDataForSharedAndAura)
 
   stk::io::fill_mesh("generated:8x8x8", get_bulk());
 
-  auto fieldData = field.data();
+  auto fieldData = field.data<stk::mesh::ReadWrite>();
 
   stk::mesh::Selector notOwned = !get_meta().locally_owned_part();
   stk::mesh::for_each_entity_run(get_bulk(), stk::topology::NODE_RANK, notOwned,
@@ -88,7 +88,7 @@ void expect_nodal_field_has_value(const stk::mesh::Selector& selector,
                                   const stk::mesh::Field<double> &field,
                                   const double value)
 {
-  auto fieldData = field.data<stk::mesh::ReadOnly>();
+  auto fieldData = field.data();
   stk::mesh::for_each_entity_run(field.get_mesh(), stk::topology::NODE_RANK, selector,
     [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity node) {
       auto entityValues = fieldData.entity_values(node);

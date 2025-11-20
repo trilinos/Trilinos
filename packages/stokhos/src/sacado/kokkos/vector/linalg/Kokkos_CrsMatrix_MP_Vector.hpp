@@ -542,7 +542,11 @@ spmv(
   typedef Kokkos::View< OutputType, OutputP... > OutputVectorType;
   typedef Kokkos::View< InputType, InputP... > InputVectorType;
   using input_vector_type = const_type_t<InputVectorType>;
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typedef typename InputVectorType::array_type::non_const_value_type value_type;
+#else
+  typedef std::remove_const_t<typename InputVectorType::element_type::value_type> value_type;
+#endif
 
 #if KOKKOSKERNELS_VERSION >= 40199
   if(space != ExecutionSpace()) {
@@ -675,7 +679,11 @@ spmv(
     typedef Kokkos::View< OutputType, OutputP... > OutputVectorType;
     typedef Kokkos::View< InputType, InputP... > InputVectorType;
     using input_vector_type = const_type_t<InputVectorType>;
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
     typedef typename InputVectorType::array_type::non_const_value_type value_type;
+#else
+    typedef std::remove_const_t<typename InputVectorType::element_type::value_type> value_type;
+#endif
 
     if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
       Kokkos::Impl::raise_error(

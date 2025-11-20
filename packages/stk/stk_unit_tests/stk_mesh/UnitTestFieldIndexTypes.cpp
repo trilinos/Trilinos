@@ -262,47 +262,47 @@ TYPED_TEST(TestFieldIndexTypes, incrementAndDecrementOperators)
   using IndexType = TypeParam;
 
   IndexType index(0);
-  EXPECT_EQ(static_cast<int>(index), 0);
+  EXPECT_EQ(index(), 0);
 
   EXPECT_EQ(static_cast<int>(++index), 1);
   EXPECT_EQ(static_cast<int>(index++), 1);
-  EXPECT_EQ(static_cast<int>(index), 2);
+  EXPECT_EQ(index(), 2);
 
   EXPECT_EQ(static_cast<int>(--index), 1);
   EXPECT_EQ(static_cast<int>(index--), 1);
-  EXPECT_EQ(static_cast<int>(index), 0);
+  EXPECT_EQ(index(), 0);
 
   index += 5;
-  EXPECT_EQ(static_cast<int>(index), 5);
+  EXPECT_EQ(index(), 5);
   index -= 5;
-  EXPECT_EQ(static_cast<int>(index), 0);
+  EXPECT_EQ(index(), 0);
 
   index += 50u;
-  EXPECT_EQ(static_cast<int>(index), 50);
+  EXPECT_EQ(index(), 50);
   index -= 50u;
-  EXPECT_EQ(static_cast<int>(index), 0);
+  EXPECT_EQ(index(), 0);
 
   index += 500l;
-  EXPECT_EQ(static_cast<int>(index), 500);
+  EXPECT_EQ(index(), 500);
   index -= 500l;
-  EXPECT_EQ(static_cast<int>(index), 0);
+  EXPECT_EQ(index(), 0);
 
   index += 5000lu;
-  EXPECT_EQ(static_cast<int>(index), 5000);
+  EXPECT_EQ(index(), 5000);
   index -= 5000lu;
-  EXPECT_EQ(static_cast<int>(index), 0);
+  EXPECT_EQ(index(), 0);
 
   IndexType indexDelta(12);
   index += indexDelta;
-  EXPECT_EQ(static_cast<int>(index), 12);
+  EXPECT_EQ(index(), 12);
   index -= indexDelta;
-  EXPECT_EQ(static_cast<int>(index), 0);
+  EXPECT_EQ(index(), 0);
 
   enum { DUMMY_VALUE = 3 };  // Needed for Kokkos support
   index += DUMMY_VALUE;
-  EXPECT_EQ(static_cast<int>(index), 3);
+  EXPECT_EQ(index(), 3);
   index -= DUMMY_VALUE;
-  EXPECT_EQ(static_cast<int>(index), 0);
+  EXPECT_EQ(index(), 0);
 }
 
 TYPED_TEST(TestFieldIndexTypes, copyAndMoveConstructorsAndAssignment)
@@ -312,31 +312,31 @@ TYPED_TEST(TestFieldIndexTypes, copyAndMoveConstructorsAndAssignment)
   IndexType base(5);
 
   IndexType copyConstructed = base;
-  EXPECT_EQ(static_cast<int>(copyConstructed), 5);
+  EXPECT_EQ(copyConstructed(), 5);
 
   IndexType moveConstructed = IndexType(10);
-  EXPECT_EQ(static_cast<int>(moveConstructed), 10);
+  EXPECT_EQ(moveConstructed(), 10);
 
   IndexType copyAssigned(0);
   copyAssigned = base;
-  EXPECT_EQ(static_cast<int>(copyAssigned), 5);
+  EXPECT_EQ(copyAssigned(), 5);
 
   IndexType moveAssigned(0);
   moveAssigned = IndexType(10);
-  EXPECT_EQ(static_cast<int>(moveAssigned), 10);
+  EXPECT_EQ(moveAssigned(), 10);
 
   IndexType assigned(0);
   assigned = 10;
-  EXPECT_EQ(static_cast<int>(assigned), 10);
+  EXPECT_EQ(assigned(), 10);
 
   assigned = 20u;
-  EXPECT_EQ(static_cast<int>(assigned), 20);
+  EXPECT_EQ(assigned(), 20);
 
   assigned = 30l;
-  EXPECT_EQ(static_cast<int>(assigned), 30);
+  EXPECT_EQ(assigned(), 30);
 
   assigned = 40lu;
-  EXPECT_EQ(static_cast<int>(assigned), 40);
+  EXPECT_EQ(assigned(), 40);
 }
 
 TYPED_TEST(TestFieldIndexTypes, arithmeticOperators)
@@ -346,45 +346,43 @@ TYPED_TEST(TestFieldIndexTypes, arithmeticOperators)
   IndexType value(1);
   IndexType rhs(12);
 
-  EXPECT_EQ(static_cast<int>(1), 1);
-
   value = value + rhs;
-  EXPECT_EQ(static_cast<int>(value), 13);
+  EXPECT_EQ(value(), 13);
 
   value = value - rhs;
-  EXPECT_EQ(static_cast<int>(value), 1);
+  EXPECT_EQ(value(), 1);
 
   value = value * rhs;
-  EXPECT_EQ(static_cast<int>(value), 12);
+  EXPECT_EQ(value(), 12);
 
   value = value / rhs;
-  EXPECT_EQ(static_cast<int>(value), 1);
+  EXPECT_EQ(value(), 1);
 
 
   value = value + 20;
-  EXPECT_EQ(static_cast<int>(value), 21);
+  EXPECT_EQ(value(), 21);
 
   value = value - 20;
-  EXPECT_EQ(static_cast<int>(value), 1);
+  EXPECT_EQ(value(), 1);
 
   value = value * 20;
-  EXPECT_EQ(static_cast<int>(value), 20);
+  EXPECT_EQ(value(), 20);
 
   value = value / 20;
-  EXPECT_EQ(static_cast<int>(value), 1);
+  EXPECT_EQ(value(), 1);
 
 
   value = 20 + value;
-  EXPECT_EQ(static_cast<int>(value), 21);
+  EXPECT_EQ(value(), 21);
 
   value = 22 - value;
-  EXPECT_EQ(static_cast<int>(value), 1);
+  EXPECT_EQ(value(), 1);
 
   value = 20 * value;
-  EXPECT_EQ(static_cast<int>(value), 20);
+  EXPECT_EQ(value(), 20);
 
   value = 20 / value;
-  EXPECT_EQ(static_cast<int>(value), 1);
+  EXPECT_EQ(value(), 1);
 }
 
 TYPED_TEST(TestFieldIndexTypesInterop, arithmeticOperators)
@@ -509,26 +507,26 @@ TYPED_TEST(TestFieldIndexTypes, traditionalForLooping)
 
   int counter = 0;
   for (IndexType index = lowerBound; index < upperBound; ++index) {
-    counter += static_cast<int>(index);
+    counter += index();
   }
   EXPECT_EQ(counter, 45);
 
   counter = 0;
   for (IndexType index = lowerBound; index < 10; ++index) {
-    counter += static_cast<int>(index);
+    counter += index();
   }
   EXPECT_EQ(counter, 45);
 
 
   counter = 0;
   for (IndexType index = upperBound-1; index > lowerBound-1; --index) {
-    counter += static_cast<int>(index);
+    counter += index();
   }
   EXPECT_EQ(counter, 45);
 
   counter = 0;
   for (IndexType index = upperBound-1; index > -1; --index) {
-    counter += static_cast<int>(index);
+    counter += index();
   }
   EXPECT_EQ(counter, 45);
 }
@@ -570,7 +568,7 @@ TEST(FieldIndexTypes, rangeBasedForLooping_component) {
 
   int counter = 0;
   for (stk::mesh::ComponentIdx index : thingy.components()) {
-    counter += static_cast<int>(index);
+    counter += index();
   }
   EXPECT_EQ(counter, 45);
 }
@@ -580,7 +578,7 @@ TEST(FieldIndexTypes, rangeBasedForLooping_copy) {
 
   int counter = 0;
   for (stk::mesh::CopyIdx index : thingy.copies()) {
-    counter += static_cast<int>(index);
+    counter += index();
   }
   EXPECT_EQ(counter, 45);
 }
@@ -590,7 +588,7 @@ TEST(FieldIndexTypes, rangeBasedForLooping_scalar) {
 
   int counter = 0;
   for (stk::mesh::ScalarIdx index : thingy.scalars()) {
-    counter += static_cast<int>(index);
+    counter += index();
   }
   EXPECT_EQ(counter, 45);
 }
@@ -600,7 +598,7 @@ TEST(FieldIndexTypes, rangeBasedForLooping_entity) {
 
   int counter = 0;
   for (stk::mesh::EntityIdx index : thingy.entities()) {
-    counter += static_cast<int>(index);
+    counter += index();
   }
   EXPECT_EQ(counter, 45);
 }
@@ -610,7 +608,7 @@ TEST(FieldIndexTypes, rangeBasedForLooping_byte) {
 
   int counter = 0;
   for (stk::mesh::ByteIdx index : thingy.bytes()) {
-    counter += static_cast<int>(index);
+    counter += index();
   }
   EXPECT_EQ(counter, 45);
 }
@@ -621,13 +619,13 @@ TEST(FieldIndexTypes, iteratorLooping_component) {
 
   int counter = 0;
   for (stk::mesh::ComponentIdxIterator iter = thingy.components().begin(); iter != thingy.components().end(); ++iter) {
-    counter += static_cast<int>(*iter);
+    counter += (*iter)();
   }
   EXPECT_EQ(counter, 45);
 
   counter = 0;
   for (stk::mesh::ComponentIdxIterator iter = thingy.components().rbegin(); iter != thingy.components().rend(); --iter) {
-    counter += static_cast<int>(*iter);
+    counter += (*iter)();
   }
   EXPECT_EQ(counter, 45);
 }
@@ -637,13 +635,13 @@ TEST(FieldIndexTypes, iteratorLooping_copy) {
 
   int counter = 0;
   for (stk::mesh::CopyIdxIterator iter = thingy.copies().begin(); iter != thingy.copies().end(); ++iter) {
-    counter += static_cast<int>(*iter);
+    counter += (*iter)();
   }
   EXPECT_EQ(counter, 45);
 
   counter = 0;
   for (stk::mesh::CopyIdxIterator iter = thingy.copies().rbegin(); iter != thingy.copies().rend(); --iter) {
-    counter += static_cast<int>(*iter);
+    counter += (*iter)();
   }
   EXPECT_EQ(counter, 45);
 }
@@ -653,13 +651,13 @@ TEST(FieldIndexTypes, iteratorLooping_scalar) {
 
   int counter = 0;
   for (stk::mesh::ScalarIdxIterator iter = thingy.scalars().begin(); iter != thingy.scalars().end(); ++iter) {
-    counter += static_cast<int>(*iter);
+    counter += (*iter)();
   }
   EXPECT_EQ(counter, 45);
 
   counter = 0;
   for (stk::mesh::ScalarIdxIterator iter = thingy.scalars().rbegin(); iter != thingy.scalars().rend(); --iter) {
-    counter += static_cast<int>(*iter);
+    counter += (*iter)();
   }
   EXPECT_EQ(counter, 45);
 }
@@ -669,13 +667,13 @@ TEST(FieldIndexTypes, iteratorLooping_entity) {
 
   int counter = 0;
   for (stk::mesh::EntityIdxIterator iter = thingy.entities().begin(); iter != thingy.entities().end(); ++iter) {
-    counter += static_cast<int>(*iter);
+    counter += (*iter)();
   }
   EXPECT_EQ(counter, 45);
 
   counter = 0;
   for (stk::mesh::EntityIdxIterator iter = thingy.entities().rbegin(); iter != thingy.entities().rend(); --iter) {
-    counter += static_cast<int>(*iter);
+    counter += (*iter)();
   }
   EXPECT_EQ(counter, 45);
 }
@@ -685,13 +683,13 @@ TEST(FieldIndexTypes, iteratorLooping_byte) {
 
   int counter = 0;
   for (stk::mesh::ByteIdxIterator iter = thingy.bytes().begin(); iter != thingy.bytes().end(); ++iter) {
-    counter += static_cast<int>(*iter);
+    counter += (*iter)();
   }
   EXPECT_EQ(counter, 45);
 
   counter = 0;
   for (stk::mesh::ByteIdxIterator iter = thingy.bytes().rbegin(); iter != thingy.bytes().rend(); --iter) {
-    counter += static_cast<int>(*iter);
+    counter += (*iter)();
   }
   EXPECT_EQ(counter, 45);
 }

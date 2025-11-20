@@ -1055,7 +1055,7 @@ void putCoordinatesOnElement(stk::mesh::BulkData& bulk, stk::mesh::Entity elemen
   const stk::mesh::Entity* nodes = bulk.begin_nodes(element);
   unsigned numNodes = bulk.num_nodes(element);
 
-  auto coordFieldData = coordField.data();
+  auto coordFieldData = coordField.data<stk::mesh::ReadWrite>();
   for(size_t j = 0; j < numNodes; j++)
   {
     auto coordsXyzForNode = coordFieldData.entity_values(nodes[j]);

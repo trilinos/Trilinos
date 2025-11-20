@@ -68,7 +68,7 @@ TEST(StkIoHowTo, WriteRestartWithFaceBlock)
     stk::mesh::EntityVector faces;
     stk::mesh::get_entities(*bulk, stk::topology::FACE_RANK, faces);
 
-    auto faceFieldData = faceField.data<stk::mesh::ReadOnly>();
+    auto faceFieldData = faceField.data();
 
     for(auto face : faces) {
       auto data = faceFieldData.entity_values(face);

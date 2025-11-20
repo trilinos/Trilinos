@@ -139,7 +139,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_entityBytes)
     }
   }
 
-  auto fieldData = m_field->data<stk::mesh::ReadOnly>();
+  auto fieldData = m_field->data();
   auto constFieldDataBytes = m_field->data_bytes<const std::byte>();
 
   for (stk::mesh::Bucket* bucket : buckets) {
@@ -152,7 +152,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_entityBytes)
       auto entityValues = fieldData.entity_values(elem);
       for (stk::mesh::CopyIdx copy : entityValues.copies()) {
         for (stk::mesh::ComponentIdx component : entityValues.components()) {
-          EXPECT_EQ(entityValues(copy, component), expectedValue[3*static_cast<int>(copy) + component]);
+          EXPECT_EQ(entityValues(copy, component), expectedValue[3*copy() + component()]);
         }
       }
 
@@ -190,7 +190,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_entityBytes_traditiona
     }
   }
 
-  auto fieldData = m_field->data<stk::mesh::ReadOnly>();
+  auto fieldData = m_field->data();
   auto constFieldDataBytes = m_field->data_bytes<const std::byte>();
 
   for (stk::mesh::Bucket* bucket : buckets) {
@@ -203,7 +203,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_entityBytes_traditiona
       auto entityValues = fieldData.entity_values(elem);
       for (stk::mesh::CopyIdx copy(0); copy < entityValues.num_copies(); ++copy) {
         for (stk::mesh::ComponentIdx component(0); component < entityValues.num_components(); ++component) {
-          EXPECT_EQ(entityValues(copy, component), expectedValue[3*static_cast<int>(copy) + component]);
+          EXPECT_EQ(entityValues(copy, component), expectedValue[3*copy() + component()]);
         }
       }
 
@@ -241,7 +241,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes)
     }
   }
 
-  auto constFieldData = m_field->data<stk::mesh::ReadOnly>();
+  auto constFieldData = m_field->data();
   auto constFieldDataBytes = m_field->data_bytes<const std::byte>();
 
   for (stk::mesh::Bucket* bucket : buckets) {
@@ -256,7 +256,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes)
 
       for (stk::mesh::CopyIdx copy : constBucketValues.copies()) {
         for (stk::mesh::ComponentIdx component : constBucketValues.components()) {
-          EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*static_cast<int>(copy) + component]);
+          EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*copy() + component()]);
         }
       }
 
@@ -293,7 +293,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes_traditiona
     }
   }
 
-  auto constFieldData = m_field->data<stk::mesh::ReadOnly>();
+  auto constFieldData = m_field->data();
   auto constFieldDataBytes = m_field->data_bytes<const std::byte>();
 
   for (stk::mesh::Bucket* bucket : buckets) {
@@ -308,7 +308,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes_traditiona
 
       for (stk::mesh::CopyIdx copy(0); copy < constBucketValues.num_copies(); ++copy) {
         for (stk::mesh::ComponentIdx component(0); component < constBucketValues.num_components(); ++component) {
-          EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*static_cast<int>(copy) + component]);
+          EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*copy() + component()]);
         }
       }
 
@@ -345,7 +345,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes_fieldBytes
     }
   }
 
-  auto constFieldData = m_field->data<stk::mesh::ReadOnly>();
+  auto constFieldData = m_field->data();
   auto constFieldDataBytes = m_field->data_bytes<const std::byte>();
 
   for (stk::mesh::Bucket* bucket : buckets) {
@@ -360,7 +360,7 @@ TEST_F(FieldDataBytesAccess, host_multiCopyMultiComponent_bucketBytes_fieldBytes
 
       for (stk::mesh::CopyIdx copy : constBucketValues.copies()) {
         for (stk::mesh::ComponentIdx component : constBucketValues.components()) {
-          EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*static_cast<int>(copy) + component]);
+          EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*copy() + component()]);
         }
       }
 
@@ -405,8 +405,7 @@ void test_device_entity_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
       const int numComponents = constFieldValues.num_components();
       for (stk::mesh::CopyIdx copy : constFieldValues.copies()) {
         for (stk::mesh::ComponentIdx component : constFieldValues.components()) {
-          NGP_EXPECT_EQ(constFieldValues(copy, component),
-                        expectedValue[static_cast<int>(copy)*numComponents + component]);
+          NGP_EXPECT_EQ(constFieldValues(copy, component), expectedValue[copy()*numComponents + component()]);
         }
       }
 
@@ -463,8 +462,7 @@ void test_device_entity_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
       const int numComponents = constFieldValues.num_components();
       for (stk::mesh::CopyIdx copy(0); copy < constFieldValues.num_copies(); ++copy) {
         for (stk::mesh::ComponentIdx component(0); component < constFieldValues.num_components(); ++component) {
-          NGP_EXPECT_EQ(constFieldValues(copy, component),
-                        expectedValue[static_cast<int>(copy)*numComponents + component]);
+          NGP_EXPECT_EQ(constFieldValues(copy, component), expectedValue[copy()*numComponents + component()]);
         }
       }
 
@@ -542,8 +540,7 @@ void test_device_bucket_bytes(stk::mesh::BulkData& bulk, stk::mesh::Field<int>& 
           const int numComponents = bucketValues.num_components();
           for (stk::mesh::CopyIdx copy : bucketValues.copies()) {
             for (stk::mesh::ComponentIdx component : bucketValues.components()) {
-              NGP_EXPECT_EQ(bucketValues(elem, copy, component),
-                            expectedValue[static_cast<int>(copy)*numComponents + component]);
+              NGP_EXPECT_EQ(bucketValues(elem, copy, component), expectedValue[copy()*numComponents + component()]);
             }
           }
 
@@ -622,8 +619,7 @@ void test_device_bucket_bytes_traditional_for_loop(stk::mesh::BulkData& bulk, st
           const int numComponents = bucketValues.num_components();
           for (stk::mesh::CopyIdx copy(0); copy < bucketValues.num_copies(); ++copy) {
             for (stk::mesh::ComponentIdx component(0); component < bucketValues.num_components(); ++component) {
-              NGP_EXPECT_EQ(bucketValues(elem, copy, component),
-                            expectedValue[static_cast<int>(copy)*numComponents + component]);
+              NGP_EXPECT_EQ(bucketValues(elem, copy, component), expectedValue[copy()*numComponents + component()]);
             }
           }
 
@@ -689,8 +685,7 @@ void test_host_to_device_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
         const int numComponents = constFieldValues.num_components();
         for (stk::mesh::CopyIdx copy : constFieldValues.copies()) {
           for (stk::mesh::ComponentIdx component : constFieldValues.components()) {
-            NGP_EXPECT_EQ(constFieldValues(copy, component),
-                          expectedValue[static_cast<int>(copy)*numComponents + component]);
+            NGP_EXPECT_EQ(constFieldValues(copy, component), expectedValue[copy()*numComponents + component()]);
           }
         }
 
@@ -787,8 +782,7 @@ void test_host_to_device_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
         const int numComponents = constFieldValues.num_components();
         for (stk::mesh::CopyIdx copy : constFieldValues.copies()) {
           for (stk::mesh::ComponentIdx component : constFieldValues.components()) {
-            NGP_EXPECT_EQ(constFieldValues(copy, component),
-                          expectedValue[static_cast<int>(copy)*numComponents + component]);
+            NGP_EXPECT_EQ(constFieldValues(copy, component), expectedValue[copy()*numComponents + component()]);
           }
         }
 
@@ -874,8 +868,7 @@ void test_host_to_device_entity_bytes_pointer_and_stride(stk::mesh::BulkData& bu
         const int numComponents = constFieldValues.num_components();
         for (stk::mesh::CopyIdx copy : constFieldValues.copies()) {
           for (stk::mesh::ComponentIdx component : constFieldValues.components()) {
-            NGP_EXPECT_EQ(constFieldValues(copy, component),
-                          expectedValue[static_cast<int>(copy)*numComponents + component]);
+            NGP_EXPECT_EQ(constFieldValues(copy, component), expectedValue[copy()*numComponents + component()]);
           }
         }
 
@@ -988,8 +981,7 @@ void test_host_to_device_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
             const int numComponents = bucketValues.num_components();
             for (stk::mesh::CopyIdx copy : bucketValues.copies()) {
               for (stk::mesh::ComponentIdx component : bucketValues.components()) {
-                NGP_EXPECT_EQ(bucketValues(elem, copy, component),
-                              expectedValue[static_cast<int>(copy)*numComponents + component]);
+                NGP_EXPECT_EQ(bucketValues(elem, copy, component), expectedValue[copy()*numComponents + component()]);
               }
             }
 
@@ -1106,8 +1098,7 @@ void test_host_to_device_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
             const int numComponents = bucketValues.num_components();
             for (stk::mesh::CopyIdx copy : bucketValues.copies()) {
               for (stk::mesh::ComponentIdx component : bucketValues.components()) {
-                NGP_EXPECT_EQ(bucketValues(elem, copy, component),
-                              expectedValue[static_cast<int>(copy)*numComponents + component]);
+                NGP_EXPECT_EQ(bucketValues(elem, copy, component), expectedValue[copy()*numComponents + component()]);
               }
             }
 
@@ -1206,8 +1197,7 @@ void test_host_to_device_bucket_bytes_pointer_and_stride(stk::mesh::BulkData& bu
             const int numComponents = bucketValues.num_components();
             for (stk::mesh::CopyIdx copy : bucketValues.copies()) {
               for (stk::mesh::ComponentIdx component : bucketValues.components()) {
-                NGP_EXPECT_EQ(bucketValues(elem, copy, component),
-                              expectedValue[static_cast<int>(copy)*numComponents + component]);
+                NGP_EXPECT_EQ(bucketValues(elem, copy, component), expectedValue[copy()*numComponents + component()]);
               }
             }
 
@@ -1296,7 +1286,7 @@ void test_device_to_host_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly>();
+    auto constFieldData = field.data();
     auto constFieldDataBytes = field.template data_bytes<const std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
@@ -1310,7 +1300,7 @@ void test_device_to_host_entity_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
         auto entityValues = constFieldData.entity_values(elem);
         for (stk::mesh::CopyIdx copy : entityValues.copies()) {
           for (stk::mesh::ComponentIdx component : entityValues.components()) {
-            EXPECT_EQ(entityValues(copy, component), expectedValue[3*static_cast<int>(copy) + component]);
+            EXPECT_EQ(entityValues(copy, component), expectedValue[3*copy() + component()]);
           }
         }
 
@@ -1385,7 +1375,7 @@ void test_device_to_host_entity_bytes_pointer_and_stride(stk::mesh::BulkData& bu
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly>();
+    auto constFieldData = field.data();
     auto constFieldDataBytes = field.template data_bytes<const std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
@@ -1488,7 +1478,7 @@ void test_device_to_host_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly>();
+    auto constFieldData = field.data();
     auto constFieldDataBytes = field.template data_bytes<const std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
@@ -1502,7 +1492,7 @@ void test_device_to_host_entity_bytes_forced_layout(stk::mesh::BulkData& bulk, F
         auto entityValues = constFieldData.entity_values(elem);
         for (stk::mesh::CopyIdx copy : entityValues.copies()) {
           for (stk::mesh::ComponentIdx component : entityValues.components()) {
-            EXPECT_EQ(entityValues(copy, component), expectedValue[3*static_cast<int>(copy) + component]);
+            EXPECT_EQ(entityValues(copy, component), expectedValue[3*copy() + component()]);
           }
         }
 
@@ -1586,7 +1576,7 @@ void test_device_to_host_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly>();
+    auto constFieldData = field.data();
     auto constFieldDataBytes = field.template data_bytes<const std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
@@ -1602,7 +1592,7 @@ void test_device_to_host_bucket_bytes(stk::mesh::BulkData& bulk, FieldType& fiel
 
         for (stk::mesh::CopyIdx copy : constBucketValues.copies()) {
           for (stk::mesh::ComponentIdx component : constBucketValues.components()) {
-            EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*static_cast<int>(copy) + component]);
+            EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*copy() + component()]);
           }
         }
 
@@ -1689,7 +1679,7 @@ void test_device_to_host_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly>();
+    auto constFieldData = field.data();
     auto constFieldDataBytes = field.template data_bytes<const std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
@@ -1706,7 +1696,7 @@ void test_device_to_host_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
 
           for (stk::mesh::CopyIdx copy : constBucketValues.copies()) {
             for (stk::mesh::ComponentIdx component : constBucketValues.components()) {
-              EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*static_cast<int>(copy) + component]);
+              EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*copy() + component()]);
             }
           }
 
@@ -1727,7 +1717,7 @@ void test_device_to_host_bucket_bytes_forced_layout(stk::mesh::BulkData& bulk, F
 
           for (stk::mesh::CopyIdx copy : constBucketValues.copies()) {
             for (stk::mesh::ComponentIdx component : constBucketValues.components()) {
-              EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*static_cast<int>(copy) + component]);
+              EXPECT_EQ(constBucketValues(elem, copy, component), expectedValue[3*copy() + component()]);
             }
           }
 
@@ -1803,7 +1793,7 @@ void test_device_to_host_bucket_bytes_pointer_and_stride(stk::mesh::BulkData& bu
   }
 
   {
-    auto constFieldData = field.template data<stk::mesh::ReadOnly>();
+    auto constFieldData = field.data();
     auto constFieldDataBytes = field.template data_bytes<const std::byte>();
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 

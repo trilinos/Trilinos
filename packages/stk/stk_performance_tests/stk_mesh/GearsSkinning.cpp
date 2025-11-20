@@ -137,8 +137,8 @@ void separate_wedge(
       fixture.bulk_data.copy_entity_fields( old_node, new_node);
     }
 
-    auto newCoordsData = fixture.displacement_field->field_of_state(stk::mesh::StateNew).data<stk::mesh::ReadOnly>();
-    auto oldCoordsData = fixture.displacement_field->field_of_state(stk::mesh::StateOld).data<stk::mesh::ReadOnly>();
+    auto newCoordsData = fixture.displacement_field->field_of_state(stk::mesh::StateNew).data();
+    auto oldCoordsData = fixture.displacement_field->field_of_state(stk::mesh::StateOld).data();
 
     // Compute the velocities of the nodes by taking the average of the
     // differences in the displacements in the last time step. Note that we need
@@ -234,8 +234,8 @@ void move_detached_wedges(stk::mesh::fixtures::GearsFixture & fixture, Cartesian
 
   stk::mesh::BucketVector const& node_buckets = fixture.bulk_data.get_buckets(NODE_RANK, select_detached_wedges);
 
-  auto velocityData = velocity_field.data<stk::mesh::ReadOnly>();
-  auto oldCoordData = fixture.displacement_field->field_of_state(stk::mesh::StateOld).data<stk::mesh::ReadOnly>();
+  auto velocityData = velocity_field.data();
+  auto oldCoordData = fixture.displacement_field->field_of_state(stk::mesh::StateOld).data();
   auto newCoordData = fixture.displacement_field->field_of_state(stk::mesh::StateNew).data<stk::mesh::ReadWrite>();
 
   for (stk::mesh::Bucket* bucket : node_buckets) {
@@ -429,7 +429,7 @@ TEST( gears_skinning, gears_skinning )
     }
 
     auto faceDispData = displacement.data<stk::mesh::ReadWrite>();
-    auto nodeDispData = fixture.displacement_field->data<stk::mesh::ReadOnly>();
+    auto nodeDispData = fixture.displacement_field->data();
 
     // update a face field
     stk::mesh::BucketVector const& face_buckets = fixture.bulk_data.get_buckets(stk::topology::FACE_RANK, surface_select);

@@ -28,8 +28,201 @@
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_MP_Vector_Utils.hpp"
 
+#ifndef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+#include "Sacado.hpp"
+#include "Kokkos_DualView.hpp"
 //----------------------------------------------------------------------------
 
+namespace Stokhos {
+
+template<class T>
+struct is_mp_vector {
+  static constexpr bool value = false;
+};
+
+template<class I, class T, int N, class Exec>
+struct is_mp_vector<Sacado::MP::Vector<Stokhos::StaticFixedStorage<I, T, N, Exec>>> {
+  static constexpr bool value = true;
+};
+
+template<class I, class T, int N, class Exec>
+struct is_mp_vector<const Sacado::MP::Vector<Stokhos::StaticFixedStorage<I, T, N, Exec>>> {
+  static constexpr bool value = true;
+};
+
+template<class T>
+static constexpr bool is_mp_vector_v = is_mp_vector<T>::value;
+
+}
+
+namespace Kokkos {
+
+template<class DataType, class ... Args>
+struct is_view_mp_vector<Kokkos::View<DataType, Args...>> {
+  static constexpr bool value = Stokhos::is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>;
+};
+template <typename T, typename ... P>
+requires(is_view_mp_vector< View<T,P...> >::value)
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned dimension_scalar(const View<T,P...>& view) {
+  return typename View<T,P...>::value_type().size();
+}
+
+}
+
+
+namespace Stokhos {
+
+template<class DataType, class ... Args>
+requires(!is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+KOKKOS_FUNCTION
+auto reinterpret_as_unmanaged_scalar_view(const Kokkos::View<DataType, Args...>& view) {
+  return view;
+}
+
+template<class DataType, class ... Args>
+requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+KOKKOS_FUNCTION
+auto reinterpret_as_unmanaged_scalar_view(const Kokkos::View<DataType, Args...>& view) {
+  using view_t = Kokkos::View<DataType, Args...>;
+  using scalar_t = typename view_t::value_type::value_type;
+  constexpr bool is_layout_right = std::is_same_v<typename view_t::layout_type, Kokkos::LayoutRight> ||
+                                   std::is_same_v<typename view_t::layout_type, Kokkos::Experimental::layout_right_padded<Kokkos::dynamic_extent>>;
+  if constexpr (view_t::rank() == 0) {
+    return Kokkos::View<scalar_t*, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view));
+  } else
+  if constexpr (view_t::rank() == 1) {
+    if constexpr (is_layout_right) {
+      return Kokkos::View<scalar_t**, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.extent(0), Kokkos::dimension_scalar(view));
+    } else {
+      return Kokkos::View<scalar_t**, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view), view.extent(0));
+    }
+  } else
+  if constexpr (view_t::rank() == 2) {
+    if constexpr (is_layout_right) {
+      return Kokkos::View<scalar_t***, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.extent(0), view.extent(1), Kokkos::dimension_scalar(view));
+    } else {
+      return Kokkos::View<scalar_t***, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view), view.extent(0), view.extent(1));
+    }
+  } else
+  if constexpr (view_t::rank() == 3) {
+    if constexpr (is_layout_right) {
+      return Kokkos::View<scalar_t****, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.extent(0), view.extent(1), view.extent(2), Kokkos::dimension_scalar(view));
+    } else {
+      return Kokkos::View<scalar_t****, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view), view.extent(0), view.extent(1), view.extent(2));
+    }
+  } else
+  if constexpr (view_t::rank() == 4) {
+    if constexpr (is_layout_right) {
+      return Kokkos::View<scalar_t****, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.extent(0), view.extent(1), view.extent(2), view.extent(3), Kokkos::dimension_scalar(view));
+    } else {
+      return Kokkos::View<scalar_t****, Args...>(reinterpret_cast<scalar_t*>(view.data()), Kokkos::dimension_scalar(view), view.extent(0), view.extent(1), view.extent(2), view.extent(3));
+    }
+  }
+}
+
+template<class DataType, class ... Args>
+requires(!is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+KOKKOS_FUNCTION
+auto reinterpret_as_unmanaged_scalar_flat_view(const Kokkos::View<DataType, Args...>& view) {
+  return view;
+}
+
+template<class DataType, class ... Args>
+requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+KOKKOS_FUNCTION
+auto reinterpret_as_unmanaged_scalar_flat_view(const Kokkos::View<DataType, Args...>& view) {
+  using view_t = Kokkos::View<DataType, Args...>;
+  using value_type = typename view_t::value_type::value_type;
+  using scalar_t = std::conditional_t<std::is_const_v<typename view_t::value_type>, const value_type, value_type>;
+  return Kokkos::View<scalar_t*, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.mapping().required_span_size() * Kokkos::dimension_scalar(view));
+}
+
+template<class T>
+using scalar_view_t = decltype(reinterpret_as_unmanaged_scalar_view(std::declval<T>()));
+
+template<class T>
+using scalar_flat_view_t = decltype(reinterpret_as_unmanaged_scalar_flat_view(std::declval<T>()));
+
+namespace {
+template<class DataType, class ... Args>
+struct DualViewModifiedFlagsAccessor: public Kokkos::DualView<DataType, Args...> {
+  using base_t = Kokkos::DualView<DataType, Args...>;
+  using base_t::base_t;
+  auto get_modified_flags() const { return base_t::modified_flags; }
+  DualViewModifiedFlagsAccessor(
+    typename base_t::t_modified_flags mod_flags,
+    typename base_t::t_dev dev,
+    typename base_t::t_host host):base_t(dev, host) {
+    base_t::modified_flags = mod_flags;
+  }
+  DualViewModifiedFlagsAccessor(base_t dv):base_t(dv) {}
+};
+}
+
+// DualView reinterpretation for creating flat Tpetra MV
+template<class DataType, class ... Args>
+requires(!is_mp_vector_v<typename Kokkos::DualView<DataType, Args...>::value_type>)
+KOKKOS_FUNCTION
+auto reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(const Kokkos::DualView<DataType, Args...>& view) {
+  return view;
+}
+
+template<class DataType, class ... Args>
+requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+KOKKOS_FUNCTION
+auto reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(const Kokkos::DualView<DataType, Args...>& view) {
+  static_assert(Kokkos::DualView<DataType, Args...>::t_dev::rank() == 2);
+
+  using view_t = Kokkos::DualView<DataType, Args...>;
+  using scalar_t = typename view_t::value_type::value_type;
+  using view_scalar_t = Kokkos::DualView<scalar_t**, Args...>;
+
+  auto view_dev = view.view_device();
+  auto view_host = view.view_host();
+  DualViewModifiedFlagsAccessor<DataType, Args...> view_access(view);
+  printf("Sacado::dimension_scalar: %i %i\n", (int)Sacado::dimension_scalar(view), (int)typename Kokkos::View<DataType, Args...>::value_type().size());
+  int dim_scalar = typename Kokkos::View<DataType, Args...>::value_type().size();
+  constexpr bool is_layout_left = std::is_same_v<typename Kokkos::DualView<DataType, Args...>::t_dev::layout_type, Kokkos::LayoutLeft> ||
+    std::is_same_v<typename Kokkos::DualView<DataType, Args...>::t_dev::layout_type, Kokkos::Experimental::layout_left_padded<Kokkos::dynamic_extent>>;
+  if constexpr (is_layout_left) {
+  DualViewModifiedFlagsAccessor<scalar_t**, Args...> view_scalar(
+    view_access.get_modified_flags(),
+    typename view_scalar_t::t_dev(reinterpret_cast<scalar_t*>(view_dev.data()),
+                         view_dev.extent(0) * dim_scalar, view_dev.extent(1)),
+    typename view_scalar_t::t_host(reinterpret_cast<scalar_t*>(view_host.data()),
+                         view_dev.extent(0) * dim_scalar, view_dev.extent(1))
+  );
+
+  return view_scalar_t(view_scalar);
+  } else {
+  DualViewModifiedFlagsAccessor<scalar_t**, Args...> view_scalar(
+    view_access.get_modified_flags(),
+    typename view_scalar_t::t_dev(reinterpret_cast<scalar_t*>(view_dev.data()),
+                         view_dev.extent(0), dim_scalar * view_dev.extent(1)),
+    typename view_scalar_t::t_host(reinterpret_cast<scalar_t*>(view_host.data()),
+                         view_dev.extent(0), dim_scalar * view_dev.extent(1))
+  );
+
+  return view_scalar_t(view_scalar);
+  }
+}
+
+}
+
+namespace Kokkos {
+
+template <typename D, typename ... P>
+struct FlatArrayType< View<D,P...>,
+                      typename std::enable_if< is_view_mp_vector< View<D,P...> >::value >::type > {
+  typedef View<D,P...> view_type;
+  typedef typename view_type::value_type::value_type flat_value_type;
+  using type = Stokhos::scalar_flat_view_t<view_type>;
+};
+
+}
+
+#else // KOKKOS_ENABLE_IMPL_VIEW_LEGACY
 namespace Kokkos {
 namespace Experimental {
 namespace Impl {
@@ -1847,6 +2040,7 @@ public:
 
 } // namespace Impl
 } // namespace Kokkos
+#endif
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

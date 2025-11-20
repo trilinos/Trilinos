@@ -173,7 +173,7 @@ protected:
   {
     int numGlobalElements = get_bulk().parallel_size()*numLocalElements;
 
-    auto particleCountFieldData = m_particleCountField->data();
+    auto particleCountFieldData = m_particleCountField->data<stk::mesh::ReadWrite>();
     for (int elementId=1; elementId<=numGlobalElements; ++elementId) {
       stk::mesh::Entity element = get_bulk().get_entity(stk::mesh::EntityKey(stk::topology::ELEM_RANK,elementId));
       if (get_bulk().is_valid(element) && get_bulk().bucket(element).owned()) {
@@ -191,7 +191,7 @@ protected:
 
   void update_vertex_weight(stk::mesh::Entity elem)
   {
-    auto particleCountFieldData = m_particleCountField->data();
+    auto particleCountFieldData = m_particleCountField->data<stk::mesh::ReadWrite>();
     EXPECT_TRUE(m_particleCountField->defined_on(elem));
     auto weight = particleCountFieldData.entity_values(elem);
     weight() = static_cast<double> (m_particleManager.count_particles_in_element(elem));
@@ -232,7 +232,7 @@ protected:
   double get_total_weight_for_these_elements(const stk::mesh::EntityVector & solidElements)
   {
     double totalWeightTheseElements = 0.0;
-    auto particleCountFieldData = m_particleCountField->data<stk::mesh::ReadOnly>();
+    auto particleCountFieldData = m_particleCountField->data();
     for (const stk::mesh::Entity element : solidElements) {
       auto weight = particleCountFieldData.entity_values(element);
       totalWeightTheseElements += (weight());

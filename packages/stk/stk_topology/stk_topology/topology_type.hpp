@@ -52,7 +52,7 @@ namespace stk {
 template <topology::topology_t Topology>
 struct topology::topology_type
 {
-  STK_FUNCTION topology_type() {}
+  KOKKOS_FUNCTION topology_type() {}
 
   typedef topology_detail::topology_data<Topology> data;
   typedef topology_type<Topology>         type;
@@ -83,7 +83,7 @@ struct topology::topology_type
   static std::string name() { return topology(Topology).name(); }
 
   /// is the current topology defined on the given spatial dimension
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static bool defined_on_spatial_dimension(unsigned spatial_dimension)
   {
     switch(spatial_dimension)
@@ -96,13 +96,13 @@ struct topology::topology_type
     return false;
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static unsigned num_side_ranks()
   {
     return topology_detail::num_side_ranks_<data>();
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static rank_t side_topology_rank(unsigned side_ordinal = 0)
   {
     switch (side_ordinal)
@@ -130,7 +130,7 @@ struct topology::topology_type
   }
 
   /// the topology of the edge at the given ordinal
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static topology edge_topology(unsigned edge_ordinal = 0)
   {
     switch (edge_ordinal)
@@ -154,7 +154,7 @@ struct topology::topology_type
   }
 
   /// the topology of the face at the given ordinal
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static topology face_topology(unsigned face_ordinal = 0)
   {
     switch (face_ordinal)
@@ -173,7 +173,7 @@ struct topology::topology_type
 
   /// node ordinals that make up the given edge
   template <typename OrdinalOutputIterator>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static void edge_node_ordinals(unsigned edge_ordinal, OrdinalOutputIterator output_ordinals)
   {
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
@@ -200,7 +200,7 @@ struct topology::topology_type
 
   /// the node ordinals that make up the given face
   template <typename OrdinalOutputIterator>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static void face_node_ordinals(unsigned face_ordinal, OrdinalOutputIterator output_ordinals)
   {
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
@@ -221,7 +221,7 @@ struct topology::topology_type
 
   /// the node ordinals of the topology in the given permutation order
   template <typename OrdinalOutputIterator>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static void permutation_node_ordinals(unsigned permutation_ordinal, OrdinalOutputIterator output_ordinals)
   {
     topology_detail::fill_ordinal_container<OrdinalOutputIterator> f(output_ordinals);
@@ -260,7 +260,7 @@ struct topology::topology_type
 
   /// node that make up the given edge
   template <typename NodeArray, typename NodeOutputIterator>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static void edge_nodes(const NodeArray & nodes, unsigned edge_ordinal, NodeOutputIterator output_nodes)
   {
     topology_detail::fill_node_container<NodeArray, NodeOutputIterator> f(nodes, output_nodes);
@@ -287,7 +287,7 @@ struct topology::topology_type
 
   /// node that make up the given face
   template <typename NodeArray, typename NodeOutputIterator>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static void face_nodes(const NodeArray & nodes, unsigned face_ordinal, NodeOutputIterator output_nodes)
   {
     topology_detail::fill_node_container<NodeArray, NodeOutputIterator> f(nodes, output_nodes);
@@ -308,7 +308,7 @@ struct topology::topology_type
 
   /// node that make up the given permutation
   template <typename NodeArray, typename NodeOutputIterator>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static void permutation_nodes(const NodeArray & nodes, unsigned permutation_ordinal, NodeOutputIterator output_nodes)
   {
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
@@ -347,7 +347,7 @@ struct topology::topology_type
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
   template <typename OrdinalOutputIterator>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals)
   {
     switch(sub_rank)
@@ -361,7 +361,7 @@ struct topology::topology_type
 
   /// fill the output nodes with the nodes that make up the given sub topology
   template <typename NodeArray, typename NodeOutputIterator>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes)
   {
     switch(sub_rank)
@@ -376,32 +376,32 @@ struct topology::topology_type
   /// do the two arrays defined equivalent entities (same nodes, but maybe a different permutation)
   /// return a struct containing a bool and permutation number from a to b
   template <typename NodeArrayA, typename NodeArrayB>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static EquivalentPermutation is_equivalent(const NodeArrayA & a, const NodeArrayB & b)
   {
     return topology_detail::is_equivalent_helper(type(), a, b, a[0]);
   }
 
   template <typename NodeArray>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static unsigned lexicographical_smallest_permutation( const NodeArray & nodes, bool only_positive_permutations = false)
   {
     return topology_detail::lexicographical_smallest_permutation_helper( type(), nodes, only_positive_permutations, nodes[0]);
   }
 
   template <typename NodeArray>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static unsigned lexicographical_smallest_permutation_preserve_polarity( const NodeArray & nodes, const NodeArray & element_nodes)
   {
     return topology_detail::lexicographical_smallest_permutation_preserve_polarity_helper( type(), nodes, element_nodes, nodes[0]);
   }
 
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   operator topology_t() const
   { return Topology; }
 
   template <typename SideRankOutputIterator>
-  STK_FUNCTION
+  KOKKOS_FUNCTION
   static void side_ranks(SideRankOutputIterator output_ranks)
   {
     topology_detail::side_ranks_<data>(output_ranks);

@@ -84,7 +84,7 @@ tpetraToEpetraComm(const Teuchos::Comm<int>& tpetraComm) {
   std::unique_ptr<Epetra_SerialComm> retComm(new Epetra_SerialComm);
 #endif
 
-  return std::move(retComm);
+  return retComm;
 }
 
 // Given a Tpetra::Map map_t, and comm_e, the result of

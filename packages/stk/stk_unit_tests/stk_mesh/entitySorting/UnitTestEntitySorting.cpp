@@ -18,7 +18,7 @@ public:
   EntityLessCoords(const stk::mesh::BulkData& bulk)
     :mesh(bulk),
     coordsBase(bulk.mesh_meta_data().coordinate_field()),
-    coordFieldData(coordsBase->data<double,stk::mesh::ReadOnly>())
+    coordFieldData(coordsBase->data<double>())
   { }
 
   bool operator()(stk::mesh::Entity a, stk::mesh::Entity b)

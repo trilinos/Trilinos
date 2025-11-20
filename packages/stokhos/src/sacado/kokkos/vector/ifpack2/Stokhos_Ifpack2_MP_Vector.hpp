@@ -38,8 +38,13 @@ struct LocalReciprocalThreshold<
         "LocalReciprocalThreshold not implemented for non-constant minVal");
     }
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
     typedef typename Kokkos::FlatArrayType<XV>::type Flat_XV;
     Flat_XV flat_X = X;
+#else
+    using Flat_XV = Stokhos::scalar_flat_view_t<XV>;
+    Flat_XV flat_X = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(X);
+#endif
     LocalReciprocalThreshold< Flat_XV, SizeType >::compute( flat_X,
                                                             minVal.coeff(0) );
   }

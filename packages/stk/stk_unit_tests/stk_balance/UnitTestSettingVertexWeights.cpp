@@ -87,7 +87,7 @@ private:
 
   void set_vertex_weight_for_local_element(const std::vector<double> &vector_of_data, stk::mesh::Entity element)
   {
-    auto vertexWeightFieldData = vertexWeightField->data();
+    auto vertexWeightFieldData = vertexWeightField->data<stk::mesh::ReadWrite>();
     auto vertex_weight = vertexWeightFieldData.entity_values(element);
     unsigned id = get_bulk().identifier(element);
     vertex_weight() = vector_of_data[id-1];

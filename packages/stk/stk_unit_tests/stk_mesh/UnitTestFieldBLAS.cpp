@@ -213,9 +213,9 @@ void checkScalarFields(BLASFixtureScalar<T, Layout1, Layout2, Layout3>& fixture,
                        T val1, T val2, T val3, stk::mesh::Selector selector, double tol=1.0e-5)
 {
   const stk::mesh::BucketVector& buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(), selector);
-  auto field1Data = fixture.field1->template data<stk::mesh::ReadOnly>();
-  auto field2Data = fixture.field2->template data<stk::mesh::ReadOnly>();
-  auto field3Data = fixture.field3->template data<stk::mesh::ReadOnly>();
+  auto field1Data = fixture.field1->template data<>();
+  auto field2Data = fixture.field2->template data<>();
+  auto field3Data = fixture.field3->template data<>();
   for (stk::mesh::Bucket* bucket : buckets) {
     auto field1Values = field1Data.bucket_values(*bucket);
     auto field2Values = field2Data.bucket_values(*bucket);
@@ -234,9 +234,9 @@ void checkScalarFields(BLASFixtureScalar<std::complex<T>, Layout1, Layout2, Layo
                        stk::mesh::Selector selector, double tol=1.0e-5)
 {
   const stk::mesh::BucketVector& buckets = fixture.bulk->get_buckets(fixture.field1->entity_rank(), selector);
-  auto field1Data = fixture.field1->template data<stk::mesh::ReadOnly>();
-  auto field2Data = fixture.field2->template data<stk::mesh::ReadOnly>();
-  auto field3Data = fixture.field3->template data<stk::mesh::ReadOnly>();
+  auto field1Data = fixture.field1->template data<>();
+  auto field2Data = fixture.field2->template data<>();
+  auto field3Data = fixture.field3->template data<>();
   for (stk::mesh::Bucket* bucket : buckets) {
     auto field1Values = field1Data.bucket_values(*bucket);
     auto field2Values = field2Data.bucket_values(*bucket);
@@ -400,7 +400,7 @@ void checkVectorField(const stk::mesh::Field<T, Layout>& field, const std::array
   const stk::mesh::BucketVector& buckets = field.get_mesh().get_buckets(field.entity_rank(),
                                                                         stk::mesh::selectField(field) &
                                                                         field.get_mesh().mesh_meta_data().locally_owned_part());
-  auto fieldData = field.template data<stk::mesh::ReadOnly>();
+  auto fieldData = field.template data<>();
   for (stk::mesh::Bucket* bucket : buckets) {
     auto fieldValues = fieldData.bucket_values(*bucket);
     for (stk::mesh::EntityIdx entity : bucket->entities()) {
@@ -419,7 +419,7 @@ void checkVectorField(const stk::mesh::Field<std::complex<T>, Layout>& field,
   const stk::mesh::BucketVector& buckets = field.get_mesh().get_buckets(field.entity_rank(),
                                                                         stk::mesh::selectField(field) &
                                                                         field.get_mesh().mesh_meta_data().locally_owned_part());
-  auto fieldData = field.template data<stk::mesh::ReadOnly>();
+  auto fieldData = field.template data<>();
   for (stk::mesh::Bucket* bucket : buckets) {
     auto fieldValues = fieldData.bucket_values(*bucket);
     for (stk::mesh::EntityIdx entity : bucket->entities()) {

@@ -406,6 +406,9 @@ void ElemElemGraph::add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &m
                 stk::topology otherElemTopology = otherElem.get_element_topology();
                 bool areBothShells = elemTopology.is_shell() && otherElemTopology.is_shell();
 
+                bool oneIsShell =  elemTopology.is_shell() ||  otherElemTopology.is_shell();
+                bool oneIsSolid = !elemTopology.is_shell() || !otherElemTopology.is_shell();
+
                 if(areBothShells) {
                   m_hasShellFaceFaceConfiguration.set_if_not_already_set(otherElemLocalId, false);
                 }
@@ -428,8 +431,13 @@ void ElemElemGraph::add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &m
                     isCoincidentConnection = false;
                   }
                 } else {
-                    isCoincidentConnection =  impl::is_coincident_connection(     elemTopology,      sideIndex,      perm,
-                                                                             otherElemTopology, otherSideIndex, otherPerm);
+                    if(oneIsShell && oneIsSolid) {
+                      // In situations like shell <-> beam connections
+                      isCoincidentConnection = false;
+                    } else {
+                      isCoincidentConnection =  impl::is_coincident_connection(     elemTopology,      sideIndex,      perm,
+                                                                               otherElemTopology, otherSideIndex, otherPerm);
+                    }
                 }
 
                 if(isCoincidentConnection)

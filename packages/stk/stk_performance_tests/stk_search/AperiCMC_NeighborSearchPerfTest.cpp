@@ -381,7 +381,7 @@ public:
     }
 
     const stk::mesh::BucketVector& nodeBuckets = m_bulkData->get_buckets(stk::topology::NODE_RANK, m_owned_selector);
-    auto numNeighborsData = m_numNeighborsField->data<stk::mesh::ReadOnly>();
+    auto numNeighborsData = m_numNeighborsField->data();
     for(const stk::mesh::Bucket* bptr : nodeBuckets) {
       for(stk::mesh::Entity node : *bptr) {
         auto numNeighbors = numNeighborsData.entity_values(node);

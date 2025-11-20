@@ -124,6 +124,7 @@ IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVE
       rap.xml
       recurMG.xml
       regularOverLap.dat
+      repart.xml
       sa_enforce_constraints.xml
       sa_with_Ifpack2_line_detection.xml
       sa_with_ilu.xml
@@ -614,6 +615,16 @@ IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         PASS_REGULAR_EXPRESSION "Belos converged"
       )
     ENDIF()
+
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME "DriverRebalanceInitialSystem"
+      ARGS "--linAlgebra=Tpetra --belosType=\"Pseudoblock GMRES\" --tol=1e-8 --xml=scaling.xml --matrix=aux2.mat --coords=coords2.mat --repartXML=repart.xml --its=9"
+      NUM_MPI_PROCS 3
+      COMM mpi # HAVE_MPI required
+      PASS_REGULAR_EXPRESSION "Belos converged"
+    )
+
   ENDIF()
 
   MUELU_ADD_SERIAL_AND_MPI_TEST(

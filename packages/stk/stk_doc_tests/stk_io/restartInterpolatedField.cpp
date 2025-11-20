@@ -183,7 +183,7 @@ TEST(StkMeshIoBrokerHowTo, restartInterpolatedField)
     //+ Switch active mesh to "initial condition" database
     stkIo.set_active_mesh(ic);
 
-    auto temperatureData = temperature.data<stk::mesh::ReadOnly>();
+    auto temperatureData = temperature.data();
     double delta_time = 1.0 / 4.0;
     while (time <= 9.0) {
       //+ Read the field values from the database and verify that they

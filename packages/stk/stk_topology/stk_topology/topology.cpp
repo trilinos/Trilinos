@@ -33,7 +33,7 @@
 // 
 
 #include "stk_topology/topology.hpp"
-#include "stk_util/stk_kokkos_macros.h"  // for STK_FUNCTION
+#include "stk_util/stk_kokkos_macros.h"  // for KOKKOS_FUNCTION
 #include <iomanip>                       // for operator<<, setw
 #include <sstream>                       // for operator<<, ostream, basic_ostream, endl, basic_...
 #include <string>                        // for operator<<, string
@@ -62,7 +62,7 @@ std::string topology::name() const
   return oss.str();
 }
 
-STK_FUNCTION
+KOKKOS_FUNCTION
 const char * topology::char_name() const
 {
   switch (m_value)

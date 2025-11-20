@@ -71,7 +71,7 @@ protected:
 
   void verify_result(const stk::mesh::Field<double>& field, double expectedResult)
   {
-    auto fieldData = field.data<stk::mesh::ReadOnly>();
+    auto fieldData = field.data();
     stk::mesh::BucketVector buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
@@ -86,7 +86,7 @@ protected:
 
   void verify_result(const stk::mesh::Field<double>& field, const std::array<double, 3>& expectedResult)
   {
-    auto fieldData = field.data<stk::mesh::ReadOnly>();
+    auto fieldData = field.data();
     stk::mesh::BucketVector buckets = get_bulk().buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
@@ -521,7 +521,7 @@ TEST_F(FieldBLAS, field_eamax)
   for (int run = 0; run < NUM_RUNS; ++run) {
     stk::mesh::field_fill_component(initX.data(), fieldX);
     stk::mesh::Entity targetEntity = (*get_bulk().buckets(stk::topology::ELEM_RANK).front())[42];  // Random Entity in first Bucket
-    auto dataX = fieldX.data();
+    auto dataX = fieldX.data<stk::mesh::ReadWrite>();
     auto entityValues = dataX.entity_values(targetEntity);
     entityValues(1_comp) = maxValue;
 
@@ -587,7 +587,7 @@ TEST_F(FieldBLAS, field_eamin)
   for (int run = 0; run < NUM_RUNS; ++run) {
     stk::mesh::field_fill_component(initX.data(), fieldX);
     stk::mesh::Entity targetEntity = (*get_bulk().buckets(stk::topology::ELEM_RANK).front())[42];  // Random Entity in first Bucket
-    auto dataX = fieldX.data();
+    auto dataX = fieldX.data<stk::mesh::ReadWrite>();
     auto entityValues = dataX.entity_values(targetEntity);
     entityValues(1_comp) = minValue;
 

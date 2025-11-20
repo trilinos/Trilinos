@@ -251,7 +251,7 @@ public:
   {
     for(auto field : fields) {
       auto ngpField = stk::mesh::get_updated_ngp_field<int>(*field);
-      auto fieldData = field->data<int, stk::mesh::ReadOnly>();
+      auto fieldData = field->data<int>();
 
       stk::mesh::EntityVector elems;
       stk::mesh::get_selected_entities(stk::mesh::Selector(*field), get_bulk().buckets(stk::topology::ELEM_RANK), elems);

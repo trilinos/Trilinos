@@ -74,7 +74,7 @@ TEST(StkMeshHowTo, iterateElemNodeConnectivity_ForEachEntityWithNodes)
 
   stk::mesh::Selector all = stkMesh->mesh_meta_data().universal_part();
 
-  auto coordFieldData = coord_field.data<stk::mesh::ReadOnly>();
+  auto coordFieldData = coord_field.data();
   stk::mesh::for_each_entity_run_with_nodes(*stkMesh, stk::topology::ELEM_RANK, all,
     [&](stk::mesh::Entity /*elem*/, const stk::mesh::Entity* nodes, size_t numNodesPerEntity) {
       EXPECT_EQ(numNodesPerEntity, nodesPerHex);
@@ -113,7 +113,7 @@ TEST(StkMeshHowTo, iterateConnectivity_General_BulkData)
     {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN},
     {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN} };
 
-  auto coordFieldData = coord_field.data<stk::mesh::ReadOnly>();
+  auto coordFieldData = coord_field.data();
   stk::mesh::for_each_entity_run(*stkMesh, stk::topology::ELEM_RANK,
     [&](const stk::mesh::BulkData& /*bulk*/, stk::mesh::Entity elem) {
       const stk::mesh::ConnectedEntities nodes = stkMesh->get_connected_entities(elem, stk::topology::NODE_RANK);
@@ -156,7 +156,7 @@ TEST(StkMeshHowTo, iterateConnectivity_Buckets)
     {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN},
     {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN}, {NAN,NAN,NAN} };
 
-  auto coordFieldData = coord_field.data<stk::mesh::ReadOnly>();
+  auto coordFieldData = coord_field.data();
   for (size_t bucketIndex = 0; bucketIndex < elementBuckets.size(); ++bucketIndex) {
     const stk::mesh::Bucket &elemBucket = *elementBuckets[bucketIndex];
 

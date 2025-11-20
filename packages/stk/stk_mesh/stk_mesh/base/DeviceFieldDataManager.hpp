@@ -89,7 +89,8 @@ public:
   DeviceFieldDataManager(const BulkData& bulk)
     : DeviceFieldDataManagerBase(),
       m_bulk(bulk),
-      m_synchronizedCount(0)
+      m_synchronizedCount(0),
+      m_totalNumFields(0)
   {}
 
   virtual ~DeviceFieldDataManager() override = default;
@@ -128,11 +129,10 @@ private:
   FieldDataAllocator<std::byte> m_fieldDataAllocator;
   const BulkData& m_bulk;
   int m_synchronizedCount;
+  int m_totalNumFields;
   BucketRawDataArrayType m_bucketRawData[stk::topology::NUM_RANKS];
   DeviceFieldMetaDataCollectionType m_deviceFieldMetaData;
   HostFieldMetaDataCollectionType m_hostFieldMetaData;
-  std::vector<size_t> m_numBytesAllocatedPerField;
-  std::vector<int> m_fieldOrdinalToRankIndex;
   BucketCapacityType m_bucketCapacity[stk::topology::NUM_RANKS];
   DeviceBucketsModifiedCollectionType m_deviceBucketIsModified[stk::topology::NUM_RANKS];
   HostBucketsModifiedCollectionType m_hostBucketIsModified[stk::topology::NUM_RANKS];
@@ -155,7 +155,7 @@ bool DeviceFieldDataManager<Space>::update_all_bucket_allocations()
 
   const MetaData& meta = m_bulk.mesh_meta_data();
   const FieldVector allFields = meta.get_fields();
-  const int oldNumAllFields = m_fieldOrdinalToRankIndex.size();
+  const int oldNumAllFields = m_totalNumFields;
   const int newNumAllFields = allFields.size();
   FieldArrayType oldFields {};
   FieldArrayType newFields {};
@@ -276,12 +276,12 @@ void DeviceFieldDataManager<Space>::clear_bucket_is_modified(Ordinal fieldOrdina
 {
   const MetaData& meta = m_bulk.mesh_meta_data();
   const FieldBase& fieldBase = *meta.get_fields()[fieldOrdinal];
+  const unsigned fieldRankedOrdinal = fieldBase.field_ranked_ordinal();
   const EntityRank rank = fieldBase.entity_rank();
 
-  const int fieldIndex = m_fieldOrdinalToRankIndex[fieldOrdinal];
   auto& hostBucketIsModified = m_hostBucketIsModified[rank];
   for (int bucketId = 0; bucketId < static_cast<int>(hostBucketIsModified.extent(1)); ++bucketId) {
-    hostBucketIsModified(fieldIndex, bucketId) = 0;
+    hostBucketIsModified(fieldRankedOrdinal, bucketId) = 0;
   }
 }
 
@@ -334,13 +334,13 @@ DeviceFieldDataManager<Space>::set_device_field_meta_data(FieldDataBase& fieldDa
 
 template <typename Space>
 std::any
-DeviceFieldDataManager<Space>::get_device_bucket_is_modified(Ordinal fieldOrdinal, int& fieldIndex)
+DeviceFieldDataManager<Space>::get_device_bucket_is_modified(Ordinal fieldOrdinal, int& fieldRankedOrdinal)
 {
   const MetaData& meta = m_bulk.mesh_meta_data();
   const FieldBase& fieldBase = *meta.get_fields()[fieldOrdinal];
   const EntityRank rank = fieldBase.entity_rank();
 
-  fieldIndex = m_fieldOrdinalToRankIndex[fieldOrdinal];
+  fieldRankedOrdinal = fieldBase.field_ranked_ordinal();
 
   return std::any(m_deviceBucketIsModified[rank]);
 }
@@ -440,14 +440,7 @@ void DeviceFieldDataManager<Space>::resize_field_arrays(int oldNumAllFields, int
     Kokkos::resize(Kokkos::view_alloc(Kokkos::SequentialHostInit), m_hostFieldMetaData, newNumAllFields);
   }
 
-  const FieldVector allFields = m_bulk.mesh_meta_data().get_fields();
-  std::array<int, stk::topology::NUM_RANKS> rankIndex {};
-  m_fieldOrdinalToRankIndex.resize(newNumAllFields);
-  for (int fieldIndex = 0; fieldIndex < static_cast<int>(allFields.size()); ++fieldIndex) {
-    const FieldBase* field = allFields[fieldIndex];
-    const EntityRank rank = field->entity_rank();
-    m_fieldOrdinalToRankIndex[fieldIndex] = rankIndex[rank]++;
-  }
+  m_totalNumFields = newNumAllFields;
 }
 
 template <typename Space>
@@ -569,7 +562,7 @@ void DeviceFieldDataManager<Space>::shift_field_and_bucket_data(EntityRank rank,
 
   for (const FieldBase* field : fieldsOfRank) {
     const int fieldOrdinal = field->mesh_meta_data_ordinal();
-    const int fieldRankIndex = m_fieldOrdinalToRankIndex[fieldOrdinal];
+    const int fieldRankedOrdinal = field->field_ranked_ordinal();
 
     const HostFieldMetaDataArrayType<mem_space>& oldHostFieldMetaData = m_hostFieldMetaData[fieldOrdinal];
     HostFieldMetaDataArrayType<mem_space> newHostFieldMetaData("hostFieldMetaData" + std::to_string(fieldOrdinal),
@@ -577,7 +570,7 @@ void DeviceFieldDataManager<Space>::shift_field_and_bucket_data(EntityRank rank,
 
     for (const BucketShift& shift : bucketShiftList) {
       newHostFieldMetaData[shift.newIndex] = oldHostFieldMetaData[shift.oldIndex];
-      newBucketsModified(fieldRankIndex, shift.newIndex) = oldBucketsModified(fieldRankIndex, shift.oldIndex);
+      newBucketsModified(fieldRankedOrdinal, shift.newIndex) = oldBucketsModified(fieldRankedOrdinal, shift.oldIndex);
     }
 
     m_hostFieldMetaData[fieldOrdinal] = newHostFieldMetaData;
