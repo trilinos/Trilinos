@@ -679,6 +679,8 @@ class CutDropFunctor {
     size_t keepStart = 0;
     size_t dropStart = nnz;
     // find index where dropping starts
+
+    bool nonFiniteValueEncountered = false;
     for (size_t i = 1; i < nnz; ++i) {
       auto const& x = row_permutation(i - 1);
       auto const& y = row_permutation(i);
@@ -693,6 +695,17 @@ class CutDropFunctor {
           dropStart = i;
         }
       }
+
+      nonFiniteValueEncountered |= !is_finite_type_safe(x_aij);
+      nonFiniteValueEncountered |= !is_finite_type_safe(y_aij);
+    }
+
+    if (nonFiniteValueEncountered) {
+      const char* message =
+          "Error encountered in MueLu::CutDrop::CutDropFunctor::operator():\n"
+          "Non-finite values encountered in strength-of-connection measure.\n"
+          "A potential fix is to enable rebalancing and/or perform an initial rebalance.\n";
+      Kokkos::abort(message);
     }
 
     // drop everything to the right of where values stop passing threshold

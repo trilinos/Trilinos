@@ -36,6 +36,15 @@ enum DecisionType : char {
   BOUNDARY  = 3   // entry is a boundary
 };
 
+template <typename T>
+KOKKOS_INLINE_FUNCTION bool is_finite_type_safe(T value) {
+  if constexpr (std::is_floating_point_v<T>) {
+    return Kokkos::isfinite(value);
+  } else {
+    return true;
+  }
+}
+
 namespace Misc {
 
 template <class local_ordinal_type>
