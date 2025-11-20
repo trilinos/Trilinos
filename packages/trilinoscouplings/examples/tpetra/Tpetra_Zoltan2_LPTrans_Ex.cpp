@@ -128,14 +128,14 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
   rebalanceTransform.fwd();
 
   Teuchos::RCP<Matrix_t> rebalancedMatrix = Teuchos::rcp<Matrix_t>( dynamic_cast<Matrix_t *>(transformedLP->getMatrix().get()), false );
-  Teuchos::RCP<MultiV_t> rebalancedLhs    = Teuchos::rcp<MultiV_t>( transformedLP->getLHS().get(), false );
-  Teuchos::RCP<MultiV_t> rebalancedRhs    = Teuchos::rcp<MultiV_t>( transformedLP->getRHS().get(), false );
+  Teuchos::RCP<MultiV_t> rebalancedLhs    = transformedLP->getLHS();
+  Teuchos::RCP<MultiV_t> rebalancedRhs    = transformedLP->getRHS();
 
   // ****************************************************************
   // Step 5/10: compare the matrix balancing among MPI nodes, before
   //            and after the redistribution.
   // ****************************************************************
-  bool allOk1(true);
+  bool localOk1(true);
   {
     LocalId_t originalLocalNumRows   = originalMatrix->getLocalNumRows();
     LocalId_t rebalancedLocalNumRows = rebalancedMatrix->getLocalNumRows();
@@ -195,20 +195,28 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
       // Ok
     }
     else {
-      allOk1 = false;
+      localOk1 = false;
     }
   }
+  comm->barrier();
 
-  if (localProc == 0) {
-    std::cout << "allOk1 = " << allOk1 << std::endl;
-    std::cout.flush();
+  bool globalOk1(false); // Yes, initialize it to 'false'
+  {
+    int tmp(localOk1);
+    int aux(globalOk1);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &tmp, &aux);
+    globalOk1 = aux;
+    if (localProc == 0) {
+      std::cout << "globalOk1 = " << std::boolalpha << globalOk1 << std::endl;
+      std::cout.flush();
+    }
   }
   comm->barrier();
 
   // ****************************************************************
   // Step 6/10: compare matrix norms (before and after redistribution)
   // ****************************************************************
-  bool allOk2(true);
+  bool localOk2(true);
   {
     Scalar_t originalFrobNorm  ( originalMatrix->getFrobeniusNorm()   );
     Scalar_t rebalancedFrobNorm( rebalancedMatrix->getFrobeniusNorm() );
@@ -224,29 +232,37 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
                 << std::endl;
       std::cout.flush();
     }
-    allOk2 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
+    localOk2 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
   }
+  comm->barrier();
 
-  if (localProc == 0) {
-    std::cout << "allOk2 = " << allOk2 << std::endl;
-    std::cout.flush();
+  bool globalOk2(false); // Yes, initialize it to 'false'
+  {
+    int tmp(localOk2);
+    int aux(globalOk2);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &tmp, &aux);
+    globalOk2 = aux;
+    if (localProc == 0) {
+      std::cout << "globalOk2 = " << globalOk2 << std::endl;
+      std::cout.flush();
+    }
   }
   comm->barrier();
 
   // ****************************************************************
   // Step 7/10: compare lhs norms (before and after redistribution)
   // ****************************************************************
-  bool allOk3(true);
+  bool localOk3(true);
   {
     std::vector<Scalar_t> originalLhsNorms2_vec( numVectors );
-    Teuchos::ArrayView<Scalar_t> originalLhsNorms2_array( originalLhsNorms2_vec.data(), originalLhsNorms2_vec.size() );
+    Teuchos::ArrayView<Scalar_t> originalLhsNorms2_array = Teuchos::arrayViewFromVector( originalLhsNorms2_vec );
     originalLhs->norm2(originalLhsNorms2_array);
 
     std::vector<Scalar_t> rebalancedLhsNorms2_vec( numVectors );
-    Teuchos::ArrayView<Scalar_t> rebalancedLhsNorms2_array( rebalancedLhsNorms2_vec.data(), rebalancedLhsNorms2_vec.size() );
+    Teuchos::ArrayView<Scalar_t> rebalancedLhsNorms2_array = Teuchos::arrayViewFromVector( rebalancedLhsNorms2_vec );
     rebalancedLhs->norm2(rebalancedLhsNorms2_array);
 
-    for (size_t v(0); (v < numVectors) && allOk3; ++v) {
+    for (size_t v(0); (v < numVectors) && localOk3; ++v) {
       Scalar_t originalNorm2   = originalLhsNorms2_array[v];
       Scalar_t rebalancedNorm2 = rebalancedLhsNorms2_array[v];
 
@@ -261,30 +277,38 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
                   << std::endl;
         std::cout.flush();
       }
-      allOk3 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
+      localOk3 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
     }
   }
+  comm->barrier();
 
-  if (localProc == 0) {
-    std::cout << "allOk3 = " << allOk3 << std::endl;
-    std::cout.flush();
+  bool globalOk3(false); // Yes, initialize it to 'false'
+  {
+    int tmp(localOk3);
+    int aux(globalOk3);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &tmp, &aux);
+    globalOk3 = aux;
+    if (localProc == 0) {
+      std::cout << "globalOk3 = " << globalOk3 << std::endl;
+      std::cout.flush();
+    }
   }
   comm->barrier();
 
   // ****************************************************************
   // Step 8/10: compare rhs norms (before and after redistribution)
   // ****************************************************************
-  bool allOk4(true);
+  bool localOk4(true);
   {
     std::vector<Scalar_t> originalRhsNorms2_vec( numVectors );
-    Teuchos::ArrayView<Scalar_t> originalRhsNorms2_array( originalRhsNorms2_vec.data(), originalRhsNorms2_vec.size() );
+    Teuchos::ArrayView<Scalar_t> originalRhsNorms2_array = Teuchos::arrayViewFromVector( originalRhsNorms2_vec );
     originalRhs->norm2(originalRhsNorms2_array);
 
     std::vector<Scalar_t> rebalancedRhsNorms2_vec( numVectors );
-    Teuchos::ArrayView<Scalar_t> rebalancedRhsNorms2_array( rebalancedRhsNorms2_vec.data(), rebalancedRhsNorms2_vec.size() );
+    Teuchos::ArrayView<Scalar_t> rebalancedRhsNorms2_array = Teuchos::arrayViewFromVector( rebalancedRhsNorms2_vec );
     rebalancedRhs->norm2(rebalancedRhsNorms2_array);
 
-    for (size_t v(0); (v < numVectors) && allOk4; ++v) {
+    for (size_t v(0); (v < numVectors) && localOk4; ++v) {
       Scalar_t originalNorm2   = originalRhsNorms2_array[v];
       Scalar_t rebalancedNorm2 = rebalancedRhsNorms2_array[v];
 
@@ -299,36 +323,44 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
                   << std::endl;
         std::cout.flush();
       }
-      allOk4 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
+      localOk4 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
     }
   }
+  comm->barrier();
 
-  if (localProc == 0) {
-    std::cout << "allOk4 = " << allOk4 << std::endl;
-    std::cout.flush();
+  bool globalOk4(false); // Yes, initialize it to 'false'
+  {
+    int tmp(localOk4);
+    int aux(globalOk4);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &tmp, &aux);
+    globalOk4 = aux;
+    if (localProc == 0) {
+      std::cout << "globalOk4 = " << globalOk4 << std::endl;
+      std::cout.flush();
+    }
   }
   comm->barrier();
 
   // ****************************************************************
   // Step 9/10: compare mat * lhs norms (before and after redistribution)
   // ****************************************************************
-  bool allOk5(true);
+  bool localOk5(true);
   {
     std::vector<Scalar_t> originalMatLhsNorms2_vec( numVectors );
-    Teuchos::ArrayView<Scalar_t> originalMatLhsNorms2_array( originalMatLhsNorms2_vec.data(), originalMatLhsNorms2_vec.size() );
+    Teuchos::ArrayView<Scalar_t> originalMatLhsNorms2_array = Teuchos::arrayViewFromVector( originalMatLhsNorms2_vec );
 
     Teuchos::RCP<MultiV_t> originalMatLhs = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( originalMatrix->getRangeMap(), numVectors );
     originalMatrix->apply(*originalLhs, *originalMatLhs);
     originalMatLhs->norm2(originalMatLhsNorms2_array);
 
     std::vector<Scalar_t> rebalancedMatLhsNorms2_vec( numVectors );
-    Teuchos::ArrayView<Scalar_t> rebalancedMatLhsNorms2_array( rebalancedMatLhsNorms2_vec.data(), rebalancedMatLhsNorms2_vec.size() );
+    Teuchos::ArrayView<Scalar_t> rebalancedMatLhsNorms2_array = Teuchos::arrayViewFromVector( rebalancedMatLhsNorms2_vec );
 
     Teuchos::RCP<MultiV_t> rebalancedMatLhs = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( rebalancedMatrix->getRangeMap(), numVectors );
     rebalancedMatrix->apply(*rebalancedLhs, *rebalancedMatLhs);
     rebalancedMatLhs->norm2(rebalancedMatLhsNorms2_array);
 
-    for (size_t v(0); (v < numVectors) && allOk5; ++v) {
+    for (size_t v(0); (v < numVectors) && localOk5; ++v) {
       Scalar_t originalNorm2   = originalMatLhsNorms2_array[v];
       Scalar_t rebalancedNorm2 = rebalancedMatLhsNorms2_array[v];
 
@@ -343,23 +375,31 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
                   << std::endl;
         std::cout.flush();
       }
-      allOk5 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
+      localOk5 = ( std::fabs(relativeDiff) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
     }
   }
+  comm->barrier();
 
-  if (localProc == 0) {
-    std::cout << "allOk5 = " << allOk5 << std::endl;
-    std::cout.flush();
+  bool globalOk5(false); // Yes, initialize it to 'false'
+  {
+    int tmp(localOk5);
+    int aux(globalOk5);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &tmp, &aux);
+    globalOk5 = aux;
+    if (localProc == 0) {
+      std::cout << "globalOk5 = " << globalOk5 << std::endl;
+      std::cout.flush();
+    }
   }
   comm->barrier();
 
   // ****************************************************************
   // Step 10/10: check that rebalancedRhs == rebalanceMat * rebalancedLhs
   // ****************************************************************
-  bool allOk6(true);
+  bool localOk6(true);
   {
     std::vector<Scalar_t> rebalancedRhsNorms2_vec( numVectors );
-    Teuchos::ArrayView<Scalar_t> rebalancedRhsNorms2_array( rebalancedRhsNorms2_vec.data(), rebalancedRhsNorms2_vec.size() );
+    Teuchos::ArrayView<Scalar_t> rebalancedRhsNorms2_array = Teuchos::arrayViewFromVector( rebalancedRhsNorms2_vec );
     rebalancedRhs->norm2(rebalancedRhsNorms2_array);
 
     Teuchos::RCP<MultiV_t> rebalancedMatLhs = Tpetra::createMultiVector<Scalar_t,LocalId_t,GlobalId_t>( rebalancedMatrix->getRangeMap(), numVectors );
@@ -368,10 +408,10 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
     diff.update(-1., *rebalancedMatLhs, 1.); // diff = 1. * diff - 1. * rebalancedMatLhs
 
     std::vector<Scalar_t> diffNorms2_vec( numVectors );
-    Teuchos::ArrayView<Scalar_t> diffNorms2_array( diffNorms2_vec.data(), diffNorms2_vec.size() );
+    Teuchos::ArrayView<Scalar_t> diffNorms2_array = Teuchos::arrayViewFromVector( diffNorms2_vec );
     diff.norm2(diffNorms2_array);
 
-    for (size_t v(0); (v < numVectors) && allOk6; ++v) {
+    for (size_t v(0); (v < numVectors) && localOk6; ++v) {
       Scalar_t diffNorm2       = diffNorms2_array[v];
       Scalar_t rebalancedNorm2 = rebalancedRhsNorms2_array[v];
 
@@ -386,17 +426,25 @@ bool runExample(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
                   << std::endl;
         std::cout.flush();
       }
-      allOk6 = ( std::fabs(ratio) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
+      localOk6 = ( std::fabs(ratio) < 10. * Teuchos::ScalarTraits<Scalar_t>::eps() );
     }
-  }
-
-  if (localProc == 0) {
-    std::cout << "allOk6 = " << allOk6 << std::endl;
-    std::cout.flush();
   }
   comm->barrier();
 
-  return (allOk1 && allOk2 && allOk3 && allOk4 && allOk5 && allOk6);
+  bool globalOk6(false); // Yes, initialize it to 'false'
+  {
+    int tmp(localOk6);
+    int aux(globalOk6);
+    Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &tmp, &aux);
+    globalOk6 = aux;
+    if (localProc == 0) {
+      std::cout << "globalOk6 = " << globalOk6 << std::endl;
+      std::cout.flush();
+    }
+  }
+  comm->barrier();
+
+  return (globalOk1 && globalOk2 && globalOk3 && globalOk4 && globalOk5 && globalOk6);
 }
 
 int main(int argc, char** argv) {
