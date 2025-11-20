@@ -1,5 +1,5 @@
 
-IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
+IF(${PROJECT_NAME}_ENABLE_Intrepid AND
    ${PROJECT_NAME}_ENABLE_Epetra )
 
   ROL_ADD_EXECUTABLE_AND_TEST(
@@ -84,6 +84,78 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
 
   ROL_COPY_FILES_TO_BINARY_DIR(
     TestDataCopy
+    SOURCE_FILES
+      input_01.xml input_02.xml input_03.xml input_04.xml input_05.xml input_07.xml input_08.xml input_09.xml cube.txt L-cubes.txt
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+    DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+  )
+
+ENDIF()
+
+IF(${PROJECT_NAME}_ENABLE_Intrepid2)
+
+  ROL_ADD_EXECUTABLE_AND_TEST(
+    test_03_Kokkos
+    SOURCES test_03K.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    NUM_TOTAL_CORES_USED 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  ROL_ADD_EXECUTABLE_AND_TEST(
+    test_04_Kokkos
+    SOURCES test_04K.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    NUM_TOTAL_CORES_USED 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  # ROL_ADD_EXECUTABLE_AND_TEST(
+  #   test_05_Kokkos
+  #   SOURCES test_05K.cpp
+  #   ARGS PrintItAll
+  #   NUM_MPI_PROCS 1
+  #   NUM_TOTAL_CORES_USED 1
+  #   PASS_REGULAR_EXPRESSION "TEST PASSED"
+  #   ADD_DIR_TO_NAME
+  # )
+
+  ROL_ADD_EXECUTABLE_AND_TEST(
+    test_07_Kokkos
+    SOURCES test_07K.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    NUM_TOTAL_CORES_USED 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  ROL_ADD_EXECUTABLE_AND_TEST(
+    test_08_Kokkos
+    SOURCES test_08K.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    NUM_TOTAL_CORES_USED 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  ROL_ADD_EXECUTABLE_AND_TEST(
+    test_09_Kokkos
+    SOURCES test_09K.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    NUM_TOTAL_CORES_USED 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+
+  ROL_COPY_FILES_TO_BINARY_DIR(
+    TestDataCopyK
     SOURCE_FILES
       input_01.xml input_02.xml input_03.xml input_04.xml input_05.xml input_07.xml input_08.xml input_09.xml cube.txt L-cubes.txt
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"

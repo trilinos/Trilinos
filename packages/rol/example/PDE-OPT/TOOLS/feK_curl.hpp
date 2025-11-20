@@ -81,7 +81,7 @@ public:
     cellTopo_ = ROL::makePtr<shards::CellTopology>(basis_->getBaseCellTopology());
 
     // Compute dimensions of multidimensional array members.
-    c_  = cellNodes_->extent_int(0);
+    c_  = cellNodes_.extent_int(0);
     f_  = basis_->getCardinality();
     p_  = cubature_->getNumPoints();
     d_  = cellTopo_->getDimension();
@@ -126,7 +126,7 @@ public:
     fst::computeCellMeasure(cellWeightedMeasure_, cellJacDet_, cubWeights_);
 
     // Transform reference values into physical space.
-    fst::HCURLtransformVALUE(valPhysical_, valReference_);
+    fst::HCURLtransformVALUE(valPhysical_, cellJacInv_, valReference_);
 
     // Multiply with weighted measure to get weighted values in physical space.
     fst::multiplyMeasure(valPhysicalWeighted_, cellWeightedMeasure_, valPhysical_);
@@ -135,7 +135,7 @@ public:
     fst::HCURLtransformCURL(curlPhysical_, cellJac_, cellJacDet_, curlReference_);
 
     // Multiply with weighted measure to get weighted curls in physical space.
-    fst::multiplyMeasure::multiplyMeasure(curlPhysicalWeighted_, cellWeightedMeasure_, curlPhysical_);
+    fst::multiplyMeasure(curlPhysicalWeighted_, cellWeightedMeasure_, curlPhysical_);
 
     // Compute curl-curl matrices.
     fst::integrate(curlcurlMats_, curlPhysical_, curlPhysicalWeighted_);
@@ -307,7 +307,7 @@ public:
       f2Weighted = scalar_view("f2Weighted", f2.extent(0), f2.extent(1));
     }
     fst::scalarMultiplyDataData(f2Weighted, cellWeightedMeasure_, f2);  // multiply with weighted measure
-                                                              
+
     fst::integrate(integral, f1, f2Weighted, sumInto);                  // compute integral of f1*f2
   }
 

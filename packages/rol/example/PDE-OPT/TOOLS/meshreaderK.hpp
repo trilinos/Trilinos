@@ -499,7 +499,7 @@ public:
 
   ROL::Ptr<std::vector<std::vector<std::vector<int> > > > getSideSets (
       const bool verbose = false,
-      std::ostream & outStream = std::cout) const {
+      std::ostream & outStream = std::cout) const override {
     if (verbose) {
       for (int i=0; i<numSideSets_; ++i) {
         outStream << "\nSideset " << i << std::endl;
