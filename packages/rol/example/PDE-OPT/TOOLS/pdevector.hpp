@@ -927,7 +927,7 @@ public:
         e1 = vec1_->basis(i);
       }
       else {
-        e1->zero();
+        e1 = vec1_->clone(); e1->zero();
       }
       e = ROL::makePtr<PDE_OptVector>(
         ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real> >(e1));
@@ -939,7 +939,7 @@ public:
         e2 = vec2_->basis(i);
       }
       else {
-        e2->zero();
+        e2 = vec2_->clone(); e2->zero();
       }
       e = ROL::makePtr<PDE_OptVector>(
         ROL::dynamicPtrCast<ROL::StdVector<Real> >(e2));

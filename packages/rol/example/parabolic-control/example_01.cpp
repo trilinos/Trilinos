@@ -8,7 +8,7 @@
 // @HEADER
 
 /*! \file  example_02.cpp
-    \brief Shows how to solve a linear-quadratic parabolic control problem 
+    \brief Shows how to solve a linear-quadratic parabolic control problem
            with bound constraints.
 */
 
@@ -18,9 +18,8 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
+#include "ROL_LAPACK.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -49,18 +48,18 @@ private:
   Real dt_;
 
   ROL::Ptr<const vector> getVector( const V& x ) {
-    
-    return dynamic_cast<const SV&>(x).getVector(); 
+
+    return dynamic_cast<const SV&>(x).getVector();
   }
 
   ROL::Ptr<vector> getVector( V& x ) {
-    
-    return dynamic_cast<SV&>(x).getVector();  
+
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
 
-  Objective_PoissonControl(std::vector<Real> &u0, Real alpha = 1.e-4, uint nx = 128, uint nt = 100, Real T = 1) 
+  Objective_PoissonControl(std::vector<Real> &u0, Real alpha = 1.e-4, uint nx = 128, uint nt = 100, Real T = 1)
     : u0_(u0), alpha_(alpha), nx_(nx), nt_(nt), T_(T) {
     dx_ = 1.0/((Real)nx-1.0);
     dt_ = T/((Real)nt-1);
@@ -88,7 +87,7 @@ public:
     d[nx_-1] = dx_/3.0 + dt_/dx_;
     std::vector<Real> o(nx_-1,dx_/6.0 - dt_/dx_);
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int ldb  = nx_;
     int nhrs = 1;
@@ -117,7 +116,7 @@ public:
     d[nx_-1] = dx_/3.0 + dt_/dx_;
     std::vector<Real> o(nx_-1,dx_/6.0 - dt_/dx_);
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int ldb  = nx_;
     int nhrs = 1;
@@ -153,7 +152,7 @@ public:
     d[nx_-1] = dx_/3.0 + dt_/dx_;
     std::vector<Real> o(nx_-1,dx_/6.0 - dt_/dx_);
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int ldb  = nx_;
     int nhrs = 1;
@@ -187,7 +186,7 @@ public:
     d[nx_-1] = dx_/3.0 + dt_/dx_;
     std::vector<Real> o(nx_-1,dx_/6.0 - dt_/dx_);
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int ldb  = nx_;
     int nhrs = 1;
@@ -225,7 +224,7 @@ public:
 
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> zp = getVector(z);
 
     // SOLVE STATE EQUATION
@@ -266,7 +265,7 @@ public:
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> zp = getVector(z);
     ROL::Ptr<vector> gp = getVector(g);
 
@@ -285,7 +284,7 @@ public:
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> vp = getVector(v);
     ROL::Ptr<vector> hvp = getVector(hv);
 
@@ -313,7 +312,7 @@ int main(int argc, char *argv[]) {
 
   typedef typename vector::size_type luint;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -409,7 +408,7 @@ int main(int argc, char *argv[]) {
       file_tr << (*y_ptr)[i] << "\n";
     }
     file_tr.close();
-   
+
     ROL::Ptr<V> diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);

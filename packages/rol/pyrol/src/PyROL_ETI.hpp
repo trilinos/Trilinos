@@ -20,15 +20,17 @@
 #include <ROL_Objective.hpp>
 #include <ROL_Objective_SimOpt.hpp>
 #include <ROL_OED_Factory.hpp>
+#include <ROL_PrimalDualRisk.hpp>
 #include <ROL_Problem.hpp>
 #include <ROL_ReducedDynamicObjective.hpp>
 #include <ROL_Reduced_Objective_SimOpt.hpp>
-#include <ROL_RiskNeutralObjective.hpp>
 #include <ROL_SampleGenerator.hpp>
 #include <ROL_SerialConstraint.hpp>
 #include <ROL_SerialObjective.hpp>
 #include <ROL_SimConstraint.hpp>
 #include <ROL_Solver.hpp>
+#include <ROL_StochasticProblem.hpp>
+#include <ROL_UserInputGenerator.hpp>
 #include <ROL_ValidateFunction.hpp>
 #include <ROL_Vector.hpp>
 #include <ROL_Vector_SimOpt.hpp>
@@ -65,8 +67,11 @@
 
 #define BINDER_ROL_STOCHASTIC(SCALAR) \
   BINDER_ETI_ABSTRACT(MonteCarloGenerator<SCALAR>) \
+  BINDER_ETI_ABSTRACT(PrimalDualRisk<SCALAR>) \
   BINDER_ETI_ABSTRACT(RiskNeutralObjective<SCALAR>) \
-  BINDER_ETI_ABSTRACT(SampleGenerator<SCALAR>)
+  BINDER_ETI_ABSTRACT(SampleGenerator<SCALAR>) \
+  BINDER_ETI_ABSTRACT(StochasticProblem<SCALAR>) \
+  BINDER_ETI_ABSTRACT(UserInputGenerator<SCALAR>)
 
 #define BINDER_ROL_OED(SCALAR) \
   BINDER_ETI_ABSTRACT(Factory<SCALAR>)
@@ -85,7 +90,6 @@ namespace details {
 namespace OED {
   BINDER_ROL_OED(double)
 }
-
 
 }
 

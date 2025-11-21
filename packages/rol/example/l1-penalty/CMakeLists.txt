@@ -1,7 +1,7 @@
 tribits_include_directories(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/vector)
 tribits_include_directories(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/teuchos/src/function)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+ROL_ADD_EXECUTABLE_AND_TEST(
   example_01
   SOURCES example_01.cpp
   ARGS PrintItAll
@@ -10,7 +10,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
 )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(
+ROL_COPY_FILES_TO_BINARY_DIR(
   L1PenaltyDataCopy
   SOURCE_FILES
     input.xml

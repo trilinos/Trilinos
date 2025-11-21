@@ -25,8 +25,7 @@
 #include "ROL_ParameterList.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -346,7 +345,7 @@ private:
       std::vector<Real> Du(du);
       std::vector<Real> D(d);
       // Perform LDL factorization
-      Teuchos::LAPACK<int,Real> lp;
+      ROL::LAPACK<int,Real> lp;
       std::vector<Real> Du2(nx_-2,0.0);
       std::vector<int> ipiv(nx_,0);
       int info;

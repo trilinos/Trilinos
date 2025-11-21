@@ -16,7 +16,7 @@
 #include "ROL_ScaledThyraVector.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_VectorSpaceBase_decl.hpp"
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   
   
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  ROL::GlobalMPISession mpiSession(&argc, &argv,0);
 
   int iprint = argc - 1;
   ROL::nullstream bhs; // outputs nothing

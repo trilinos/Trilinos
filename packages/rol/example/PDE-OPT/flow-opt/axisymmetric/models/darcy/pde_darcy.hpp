@@ -370,7 +370,7 @@ public:
     hess = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fc, f);
     // Apply Dirichlet conditions
     ROL::Ptr<Intrepid::FieldContainer<Real>> l0_coeff;
-    l0_coeff = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    l0_coeff = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
     *l0_coeff = *l_coeff;
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
@@ -444,7 +444,7 @@ public:
     hess = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, fc);
     // Apply Dirichlet conditions
     ROL::Ptr<Intrepid::FieldContainer<Real>> l0_coeff;
-    l0_coeff = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    l0_coeff = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
     *l0_coeff = *l_coeff;
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
@@ -501,6 +501,7 @@ public:
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) override {
     // Retrieve dimensions.
     const int c  = fePrs_->gradN()->dimension(0);
+    const int f  = fePrs_->gradN()->dimension(1);
     const int fc = feCtrl_->gradN()->dimension(1);
     const int p  = fePrs_->gradN()->dimension(2);
     const int d  = fePrs_->gradN()->dimension(3);
@@ -508,7 +509,7 @@ public:
     hess = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fc, fc);
     // Apply Dirichlet conditions
     ROL::Ptr<Intrepid::FieldContainer<Real>> l0_coeff;
-    l0_coeff = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    l0_coeff = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
     *l0_coeff = *l_coeff;
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {

@@ -16,7 +16,7 @@
 #include "ROL_StdVector.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "Tpetra_Core.hpp"
 
@@ -34,7 +34,7 @@ typedef ROL::Ptr<Vec> VP;
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  ROL::GlobalMPISession mpiSession(&argc, &argv,0);
   ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   int iprint = argc - 1;

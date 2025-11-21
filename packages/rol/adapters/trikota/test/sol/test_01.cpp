@@ -23,7 +23,7 @@ Real random(const ROL::Ptr<const Teuchos::Comm<int> > &comm) {
 
 int main(int argc, char* argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int> > comm
     = Teuchos::DefaultComm<int>::getComm();
 

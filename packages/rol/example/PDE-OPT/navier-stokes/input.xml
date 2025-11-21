@@ -28,7 +28,7 @@
     <Parameter name="Step width"         type="double"  value="1.0" />
     <Parameter name="Step height"        type="double"  value="0.5" />
     <Parameter name="Observation width"  type="double"  value="3.0" />
-    <Parameter name="Refinement level"   type="int"     value="2"   />
+    <Parameter name="Refinement level"   type="int"     value="1"   />
     <Parameter name="Partition type"     type="int"     value="1"    />
   </ParameterList>
 
@@ -152,7 +152,7 @@
   <!-- ===========  STEP SUBLIST  =========== -->
   <ParameterList name="Step">
     <Parameter name="Type" type="string" value="Fletcher"/>
-    
+
     <!-- ===========  LINE SEARCH  =========== -->
     <ParameterList name="Line Search">
       <Parameter name="Function Evaluation Limit"      type="int"    value="20"    />
@@ -164,7 +164,7 @@
 
       <!-- ===========  DESCENT ALGORITHM SPECIFICATION  =========== -->
       <ParameterList name="Descent Method">
-        <Parameter name="Type"              type="string" value="Newton-Krylov"    /> 
+        <Parameter name="Type"              type="string" value="Newton-Krylov"    />
         <Parameter name="Nonlinear CG Type" type="string" value="Hestenes-Stiefel" />
       </ParameterList>
 

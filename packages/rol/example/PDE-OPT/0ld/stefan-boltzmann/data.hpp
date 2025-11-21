@@ -15,7 +15,7 @@
 #ifndef ROL_PDEOPT_STEFANBOLTZMANN_DATA_H
 #define ROL_PDEOPT_STEFANBOLTZMANN_DATA_H
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 #include "Tpetra_MultiVector.hpp"

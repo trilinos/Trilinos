@@ -23,7 +23,7 @@
    min_{x,r,s} f(x) + gamma * sum(r + s) 
    subject to  c(x,r,s) = g(x) - (r - s) = 0          
                r,s >= 0
-Teuchos::GlobalMPISession::GlobalMPISession
+ROL::GlobalMPISession::GlobalMPISession
 */
 
 namespace ROL {

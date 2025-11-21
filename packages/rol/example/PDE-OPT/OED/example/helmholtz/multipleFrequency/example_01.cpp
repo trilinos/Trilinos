@@ -13,8 +13,7 @@
 
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_Time.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"
@@ -107,7 +106,7 @@ int main(int argc, char *argv[]) {
   using RealT = double;
 
   /*** Initialize communicator. ***/
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int>> dcomm, ocomm;
 #ifdef HAVE_MPI
   OED_SplitComm<int,Teuchos::MpiComm<int>> splitcomm(1);

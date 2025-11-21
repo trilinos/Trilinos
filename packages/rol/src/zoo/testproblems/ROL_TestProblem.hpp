@@ -16,6 +16,8 @@
 #define ROL_TESTPROBLEMS_HPP
 
 #include "ROL_OptimizationProblem.hpp"
+#include "ROL_Bounds.hpp"
+#include "ROL_RandomVector.hpp"
 
 namespace ROL {
 

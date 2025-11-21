@@ -21,8 +21,7 @@
 
 #include "ROL_TestProblem.hpp"
 #include "ROL_StdVector.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_SerialDenseSolver.hpp"
+#include "ROL_LinearAlgebra.hpp"
 
 namespace ROL {
 namespace ZOO {

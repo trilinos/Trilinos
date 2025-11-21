@@ -1,0 +1,189 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+/*! \file  example_01.cpp
+    \brief Shows how to solve the Poisson topology optimization problem.
+*/
+
+#include "Teuchos_Comm.hpp"
+#include "ROL_Stream.hpp"
+#include "ROL_GlobalMPISession.hpp"
+
+#include "Tpetra_Core.hpp"
+#include "Tpetra_Version.hpp"
+
+#include <iostream>
+#include <algorithm>
+
+#include "ROL_Solver.hpp"
+#include "ROL_Bounds.hpp"
+
+#include "../../TOOLS/pdevectorK.hpp"
+
+#include "pde_poisson_topOptK.hpp"
+#include "mesh_poisson_topOptK.hpp"
+#include "../src/filtered_compliance_robjK.hpp"
+#include "../src/volume_conK.hpp"
+#include "../src/obj_volumeK.hpp"
+#include "../src/pde_filterK.hpp"
+
+using RealT = double;
+using DeviceT = Kokkos::HostSpace;
+
+int main(int argc, char *argv[]) {
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
+
+  /*** Initialize communicator. ***/
+  ROL::GlobalMPISession mpiSession (&argc, &argv, &bhs);
+  Kokkos::ScopeGuard kokkosScope (argc, argv);
+  ROL::Ptr<const Teuchos::Comm<int>> comm
+    = Tpetra::getDefaultComm();
+  const int myRank = comm->getRank();
+  if ((iprint > 0) && (myRank == 0)) {
+    outStream = ROL::makePtrFromRef(std::cout);
+  }
+  else {
+    outStream = ROL::makePtrFromRef(bhs);
+  }
+  int errorFlag  = 0;
+
+  // *** Example body.
+  try {
+    RealT tol(1.e-8);
+
+    /*** Read in XML input ***/
+    std::string filename = "input_ex01.xml";
+    auto parlist = ROL::getParametersFromXmlFile(filename);
+
+    // Retrieve parameters.
+    const RealT volFraction  = parlist->sublist("Problem").get("Volume Fraction", 0.4);
+    const RealT initDens     = parlist->sublist("Problem").get("Initial Density",volFraction);
+    const bool useFilter     = parlist->sublist("Problem").get("Use Filter", true);
+    const bool normalizeObj  = parlist->sublist("Problem").get("Normalize Compliance", true);
+    const bool volEq         = parlist->sublist("Problem").get("Use Volume Equality Constraint",true);
+
+    /*** Initialize main data structure. ***/
+    auto meshMgr = ROL::makePtr<MeshManager_Poisson_TopOpt<RealT,DeviceT>>(*parlist);
+
+    // Initialize PDE describe Poisson's equation
+    auto pde = ROL::makePtr<PDE_Poisson_TopOpt<RealT,DeviceT>>(*parlist);
+
+    // Initialize the filter PDE.
+    ROL::Ptr<PDE<RealT,DeviceT>> pdeFilter = pde;
+
+    // Initialize "filtered" of "unfiltered" constraint.
+    ROL::Ptr<ROL::Objective<RealT>> robj;
+    ROL::Ptr<Assembler<RealT,DeviceT>> assembler, assemblerFilter;
+    if (useFilter) {
+      pdeFilter = ROL::makePtr<PDE_Filter<RealT,DeviceT>>(*parlist);
+      pde->setDensityFields(pdeFilter->getFields());
+      robj = ROL::makePtr<TopOptFilteredComplianceObjective<RealT,DeviceT>>(
+             pde,pdeFilter,meshMgr,comm,*parlist,*outStream);
+      assembler = ROL::dynamicPtrCast<TopOptFilteredComplianceObjective<RealT,DeviceT>>(robj)->getAssembler();
+      assemblerFilter = ROL::dynamicPtrCast<TopOptFilteredComplianceObjective<RealT,DeviceT>>(robj)->getFilterAssembler();
+    }
+    else {
+      robj = ROL::makePtr<TopOptComplianceObjective<RealT,DeviceT>>(
+             pde,meshMgr,comm,*parlist,*outStream);
+      assembler = ROL::dynamicPtrCast<TopOptComplianceObjective<RealT,DeviceT>>(robj)->getAssembler();
+      assemblerFilter = assembler;
+    }
+
+    // Create vectors
+    auto u_ptr = assembler->createStateVector();         u_ptr->putScalar(0.0);
+    auto p_ptr = assembler->createStateVector();         p_ptr->putScalar(0.0);
+    auto r_ptr = assembler->createResidualVector();      r_ptr->putScalar(0.0);
+    auto z_ptr = assemblerFilter->createControlVector(); z_ptr->putScalar(1.0);
+    auto up = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler,*parlist);
+    auto pp = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler,*parlist);
+    auto rp = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler,*parlist);
+    auto zp = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pdeFilter,assemblerFilter,*parlist);
+
+    // Build volume objective function.
+    ROL::Ptr<QoI<RealT,DeviceT>> qoi_vol;
+    if (useFilter)
+      qoi_vol = ROL::makePtr<QoI_Volume_TopoOpt<RealT,DeviceT>>(
+                  ROL::dynamicPtrCast<PDE_Filter<RealT,DeviceT>>(pdeFilter)->getDensityFE(),
+                  volFraction);
+    else
+      qoi_vol = ROL::makePtr<QoI_Volume_TopoOpt<RealT,DeviceT>>(pde->getDensityFE(), volFraction);
+    ROL::Ptr<ROL::Constraint<RealT>> con_vol = ROL::makePtr<TopOptVolumeConstraint<RealT,DeviceT>>(qoi_vol,assemblerFilter,zp);
+    ROL::Ptr<ROL::Vector<RealT>> imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
+    ROL::Ptr<ROL::Vector<RealT>> ilp  = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
+    ROL::Ptr<ROL::Vector<RealT>> iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
+    zp->zero(); con_vol->value(*ilp,*zp,tol);
+    ROL::Ptr<ROL::BoundConstraint<RealT>> ibnd = ROL::makePtr<ROL::Bounds<RealT>>(ilp,iup);
+
+    // Define bound constraint
+    auto zlo = zp->clone(); zlo->setScalar(0.0);
+    auto zhi = zp->clone(); zhi->setScalar(1.0);
+    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlo,zhi);
+
+    // Normalize compliance objective function
+    zp->setScalar(initDens);
+    RealT cs(1);
+    if (normalizeObj) {
+      if (useFilter)
+        cs = ROL::dynamicPtrCast<TopOptFilteredComplianceObjective<RealT,DeviceT>>(robj)->normalize(*zp,tol);
+      else
+        cs = ROL::dynamicPtrCast<TopOptComplianceObjective<RealT,DeviceT>>(robj)->normalize(*zp,tol);
+    }
+    *outStream << std::endl;
+    *outStream << "Problem Data"          << std::endl;
+    *outStream << "  SIMP Power:        "
+               << parlist->sublist("Problem").get("SIMP Power",3.0) << std::endl;
+    *outStream << "  Use Filter:        " << useFilter << std::endl;
+    *outStream << "  Volume Fraction:   " << volFraction << std::endl;
+    *outStream << "  Initial Density:   " << initDens    << std::endl;
+    *outStream << "  Use Equality:      " << volEq       << std::endl;
+    *outStream << "  Compliance Scale:  " << cs          << std::endl;
+    *outStream << std::endl;
+
+    // Initialize optimization problem.
+    auto opt = ROL::makePtr<ROL::Problem<RealT>>(robj,zp);
+    opt->addBoundConstraint(bnd);
+    if (volEq) opt->addLinearConstraint("Volume",con_vol,imul);
+    else       opt->addLinearConstraint("Volume",con_vol,imul,ibnd);
+    opt->setProjectionAlgorithm(*parlist);
+    opt->finalize(false,true,*outStream);
+
+    // Run derivative checks
+    bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
+    if ( checkDeriv ) opt->check(true,*outStream);
+
+    // Solve optimization problem
+    ROL::Solver<RealT> solver(opt,*parlist);
+    Teuchos::Time algoTimer("Algorithm Time", true);
+    solver.solve(*outStream);
+    algoTimer.stop();
+    *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
+
+    // Output.
+    ROL::dynamicPtrCast<TopOptFilteredComplianceObjective<RealT,DeviceT>>(robj)->summarize(*outStream);
+    ROL::staticPtrCast<TopOptVolumeConstraint<RealT,DeviceT>>(con_vol)->summarize(*outStream);
+    ROL::dynamicPtrCast<TopOptFilteredComplianceObjective<RealT,DeviceT>>(robj)->printToFile(*zp,*outStream);
+
+    // Get a summary from the time monitor.
+    Teuchos::TimeMonitor::summarize();
+  }
+  catch (std::logic_error& err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+
+  return 0;
+}

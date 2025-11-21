@@ -29,13 +29,9 @@ namespace TPMultiVector {
 
 
   // Locally define a Kokkos wrapper functor for UnaryFunction
-  template <class Real,
-          class LO=Tpetra::Map<>::local_ordinal_type,
-          class GO=Tpetra::Map<>::global_ordinal_type,
-          class Node=Tpetra::Map<>::node_type >
+template <class Real,
+          class ViewType>
   struct unaryFunc {
-    typedef typename Tpetra::MultiVector<Real,LO,GO,Node>::dual_view_type::t_dev ViewType;
-    typedef typename ViewType::execution_space execution_space;
     ViewType X_;
     const Elementwise::UnaryFunction<Real>* const f_;
 
@@ -53,13 +49,9 @@ namespace TPMultiVector {
 
   // Locally define a Kokkos wrapper functor for BinaryFunction
   template <class Real,
-            class LO=Tpetra::Map<>::local_ordinal_type,
-            class GO=Tpetra::Map<>::global_ordinal_type,
-            class Node=Tpetra::Map<>::node_type >
+            class ViewType,
+            class ConstViewType>
    struct binaryFunc {
-    typedef typename Tpetra::MultiVector<Real,LO,GO,Node>::dual_view_type::t_dev ViewType;
-    typedef typename Tpetra::MultiVector<const Real,LO,GO,Node>::dual_view_type::t_dev ConstViewType;
-    typedef typename ViewType::execution_space execution_space;
     ViewType X_;
     ConstViewType Y_;
     const Elementwise::BinaryFunction<Real>* const f_;
@@ -78,12 +70,8 @@ namespace TPMultiVector {
 
   // Locally define a Kokkos wrapper functor for ReductionOp
   template <class Real,
-            class LO=Tpetra::Map<>::local_ordinal_type,
-            class GO=Tpetra::Map<>::global_ordinal_type,
-            class Node=Tpetra::Map<>::node_type >
+            class ConstViewType>
   struct reduceFunc {
-    typedef typename Tpetra::MultiVector<const Real,LO,GO,Node>::dual_view_type::t_dev ConstViewType;
-    typedef typename ConstViewType::execution_space execution_space;
     ConstViewType X_;
     const Elementwise::ReductionOp<Real>* const r_;
 
@@ -257,12 +245,12 @@ private:
   typedef typename Tpetra::MultiVector<const Real,LO,GO,Node>::dual_view_type::t_dev ConstViewType;
 public:
   void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
-    ViewType v_lcl =  tpetra_vec_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+    auto v_lcl =  tpetra_vec_->getLocalViewHost(Tpetra::Access::ReadWrite);
 
     int lclDim = tpetra_vec_->getLocalLength();
-    TPMultiVector::unaryFunc<Real,LO,GO,Node> func(v_lcl, &f);
+    TPMultiVector::unaryFunc<Real, decltype(v_lcl)> func(v_lcl, &f);
 
-    Kokkos::parallel_for(lclDim,func);
+    Kokkos::parallel_for(Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, lclDim),func);
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
@@ -274,27 +262,27 @@ public:
    const TpetraMultiVector &ex = dynamic_cast<const TpetraMultiVector&>(x);
    Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > xp = ex.getVector();
 
-    ViewType v_lcl = tpetra_vec_->getLocalViewDevice(Tpetra::Access::ReadWrite);
-    ConstViewType x_lcl = xp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto v_lcl = tpetra_vec_->getLocalViewHost(Tpetra::Access::ReadWrite);
+    auto x_lcl = xp->getLocalViewHost(Tpetra::Access::ReadOnly);
 
     int lclDim = tpetra_vec_->getLocalLength();
 
-    TPMultiVector::binaryFunc<Real,LO,GO,Node> func(v_lcl,x_lcl,&f);
+    TPMultiVector::binaryFunc<Real, decltype(v_lcl), decltype(x_lcl)> func(v_lcl,x_lcl,&f);
 
-    Kokkos::parallel_for(lclDim,func);
+    Kokkos::parallel_for(Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, lclDim),func);
 
   }
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
-    ConstViewType v_lcl = tpetra_vec_->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto v_lcl = tpetra_vec_->getLocalViewHost(Tpetra::Access::ReadOnly);
 
     int lclDim = tpetra_vec_->getLocalLength();
-    TPMultiVector::reduceFunc<Real,LO,GO,Node> func(v_lcl, &r);
+    TPMultiVector::reduceFunc<Real, decltype(v_lcl)> func(v_lcl, &r);
 
     Real lclValue;
 
     // Reduce for this MPI process
-    Kokkos::parallel_reduce(lclDim,func,lclValue);
+    Kokkos::parallel_reduce(Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace>(0, lclDim), func,lclValue);
 
     Real gblValue;
 

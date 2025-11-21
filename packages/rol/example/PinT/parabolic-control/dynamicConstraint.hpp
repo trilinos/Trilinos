@@ -25,7 +25,7 @@
 #include "ROL_ParameterList.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_DynamicConstraint.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_LAPACK.hpp"
 
 template<class Real>
 class Constraint_ParabolicControl : public ROL::DynamicConstraint<Real> {
@@ -299,7 +299,7 @@ private:
               const std::vector<Real> &r) const {
     u.assign(r.begin(),r.end());
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int nx = static_cast<int>(nx_);
     int info;
     int ldb  = nx;

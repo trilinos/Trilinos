@@ -33,7 +33,7 @@
 #include "ROL_ChainRuleObjective.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_SimpleEqConstrained.hpp"
 #include "ROL_Zakharov.hpp"
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   using ObjectiveT   = ROL::ZOO::Objective_Zakharov<RealT>;
   using ConstraintT  = ROL::ZOO::EqualityConstraint_SimpleEqConstrained<RealT>;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;

@@ -30,7 +30,7 @@
 
 #include "example_parabolic_modeleval.hpp"
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
 
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
   using RealT = double;
   using luint  = std::vector<RealT>::size_type;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   ROL::Ptr<std::ostream> outStream = ROL::makeStreamPtr( std::cout, argc > 1 );
