@@ -155,7 +155,7 @@ namespace Amesos2 {
       std::cout << " * Time : " << this->timers_.symFactTime_.totalElapsedTime() << std::endl;
     }
 
-    // Pardiso only lets you retrieve the total number of factor
+    // CSS only lets you retrieve the total number of factor
     // non-zeros, not for each individually.  We should document how
     // such a situation is reported.
     this->setNnzLU(iparm_[17]);
@@ -338,11 +338,11 @@ namespace Amesos2 {
     }
 
     // Check input matrix is sorted
-    if( parameterList->isParameter("IPARM(28)") )
+    if( parameterList->isParameter("IPARM(27)") )
     {
-      RCP<const ParameterEntryValidator> report_validator = valid_params->getEntry("IPARM(28)").validator();
-      parameterList->getEntry("IPARM(28)").setValidator(report_validator);
-      iparm_[27] = getIntegralValue<int>(*parameterList, "IPARM(28)");
+      RCP<const ParameterEntryValidator> report_validator = valid_params->getEntry("IPARM(27)").validator();
+      parameterList->getEntry("IPARM(27)").setValidator(report_validator);
+      iparm_[26] = getIntegralValue<int>(*parameterList, "IPARM(27)");
     }
    
     if( parameterList->isParameter("IsContiguous") ){
@@ -612,12 +612,12 @@ CssMKL<Matrix,Vector>::set_css_mkl_matrix_type(int_t mtype)
     case 11:
       TEUCHOS_TEST_FOR_EXCEPTION( complex_,
                           std::invalid_argument,
-                          "Cannot set a real Pardiso matrix type with scalar type complex" );
+                          "Cannot set a real CSS matrix type with scalar type complex" );
       mtype_ = 11; break;
     case 13:
       TEUCHOS_TEST_FOR_EXCEPTION( !complex_,
                           std::invalid_argument,
-                          "Cannot set a complex Pardiso matrix type with non-complex scalars" );
+                          "Cannot set a complex CSS matrix type with non-complex scalars" );
       mtype_ = 13; break;
     default:
       TEUCHOS_TEST_FOR_EXCEPTION( true,
