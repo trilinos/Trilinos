@@ -86,6 +86,21 @@ Two-stage Gauss-Seidel
      primaryClass={math.NA},
      url={https://arxiv.org/abs/2104.01196}}
 
+Graph Coloring
+--------------
+
+::
+
+   @INPROCEEDINGS{deveci2016parallelgraphcoloring,
+     author={Deveci, Mehmet and Boman, Erik G and Devine, Karen D. and Rajamanickam, Sivasankaran},
+     booktitle={2016 IEEE International Parallel and Distributed Processing Symposium (IPDPS)}, 
+     title={Parallel Graph Coloring for Manycore Architectures}, 
+     year={2016},
+     volume={},
+     number={},
+     pages={892-901},
+     doi={10.1109/IPDPS.2016.54}}
+
 Distance-2 Maximal Independent Set and Graph Coarsening
 -------------------------------------------------------
 

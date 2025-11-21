@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <Kokkos_Core.hpp>
 #include <iostream>
@@ -121,14 +108,14 @@ class SPILUKHandle {
         vector_size(-1) {}
 
   void reset_handle(const size_type nrows_, const size_type nnzL_, const size_type nnzU_,
-                    const size_type block_size_ = Kokkos::ArithTraits<size_type>::max()) {
+                    const size_type block_size_ = KokkosKernels::ArithTraits<size_type>::max()) {
     set_nrows(nrows_);
     set_num_levels(0);
     set_nnzL(nnzL_);
     set_nnzU(nnzU_);
     // user likely does not want to reset block size to 0, so set default
     // to size_type::max
-    if (block_size_ != Kokkos::ArithTraits<size_type>::max()) {
+    if (block_size_ != KokkosKernels::ArithTraits<size_type>::max()) {
       set_block_size(block_size_);
     }
     set_level_maxrows(0);

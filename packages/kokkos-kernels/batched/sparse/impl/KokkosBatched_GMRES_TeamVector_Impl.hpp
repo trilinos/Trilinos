@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_GMRES_TEAMVECTOR_IMPL_HPP
 #define KOKKOSBATCHED_GMRES_TEAMVECTOR_IMPL_HPP
 
@@ -48,8 +35,8 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
                                                                const ArnoldiViewType& ArnoldiView,
                                                                const TMPViewType& TMPView) {
   typedef int OrdinalType;
-  typedef typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
-  typedef Kokkos::ArithTraits<MagnitudeType> ATM;
+  typedef typename KokkosKernels::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
+  typedef KokkosKernels::ArithTraits<MagnitudeType> ATM;
 
   using TeamVectorCopy1D = TeamVectorCopy<MemberType, Trans::NoTranspose, 1>;
 
@@ -219,7 +206,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorGMRES<MemberType>::invoke(const MemberType&
         G(l, j + 1) = 0.;
       }
 
-      auto res_norm = Kokkos::ArithTraits<double>::abs(G(l, j + 1)) / G(l, 0);
+      auto res_norm = KokkosKernels::ArithTraits<double>::abs(G(l, j + 1)) / G(l, 0);
 
       handle.set_norm(member.league_rank(), l, j + 1, res_norm);
 

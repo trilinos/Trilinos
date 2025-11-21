@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS3_TRMM_PERF_TEST_H_
 #define KOKKOSBLAS3_TRMM_PERF_TEST_H_
 
@@ -55,7 +42,7 @@ void (*do_trmm_invoke[LOOP_N][TEST_N])(options_t) = {{do_trmm_serial_blas, do_tr
  * LHS giving us this flop count: flops = columns_LHS * (columns_LHS + 1) flops
  * = (flops / 2) * 2 flops = flops * rows_LHS
  */
-static inline int __trmm_impl_flop_count(char side, int b_m, int b_n, int /*a_m*/, int /*a_n*/) {
+static inline int trmm_impl_flop_count(char side, int b_m, int b_n, int /*a_m*/, int /*a_n*/) {
   int flops;
 
   if (side == 'L' || side == 'l') {
@@ -78,7 +65,7 @@ static inline int __trmm_impl_flop_count(char side, int b_m, int b_n, int /*a_m*
 
 // Flop count formula from lapack working note 41:
 // http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
-static inline double __trmm_flop_count(char side, double b_m, double b_n, double /*a_m*/, double /*a_n*/) {
+static inline double trmm_flop_count(char side, double b_m, double b_n, double /*a_m*/, double /*a_n*/) {
   double flops;
 
   if (side == 'L' || side == 'l') {
@@ -114,10 +101,10 @@ static std::string trmm_csv_header_str =
     "average_time(s),min_achieved_bandwidth(GB/s),max_achieved_bandwidth(GB/s)";
 
 /*************************** Internal helper fns **************************/
-static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args, double time_in_seconds) {
-  double flops = trmm_args.A.extent(0) * __trmm_flop_count(trmm_args.side, trmm_args.B.extent(1), trmm_args.B.extent(2),
-                                                           trmm_args.A.extent(1), trmm_args.A.extent(2));
-  double gflops       = flops / 1e9;
+static void trmm_output_csv_row(options_t options, trmm_args_t trmm_args, double time_in_seconds) {
+  double flops  = trmm_args.A.extent(0) * trmm_flop_count(trmm_args.side, trmm_args.B.extent(1), trmm_args.B.extent(2),
+                                                          trmm_args.A.extent(1), trmm_args.A.extent(2));
+  double gflops = flops / 1e9;
   double average_time = time_in_seconds / options.n;
   double gbytes_in_matrix =
       (trmm_args.B.extent(0) * trmm_args.B.extent(1) * trmm_args.B.extent(2) * sizeof(KokkosKernels::default_scalar)) /
@@ -150,7 +137,7 @@ static void __trmm_output_csv_row(options_t options, trmm_args_t trmm_args, doub
 }
 
 #ifdef PERF_TEST_DEBUG
-static void __print_trmm_perf_test_options(options_t options) {
+static void print_trmm_perf_test_options(options_t options) {
   printf("options.test      = %s\n", test_e_str[options.test].c_str());
   printf("options.loop      = %s\n", loop_e_str[options.loop].c_str());
   printf("options.start     = %dx%d,%dx%d\n", options.start.a.m, options.start.a.n, options.start.b.m,
@@ -168,14 +155,14 @@ static void __print_trmm_perf_test_options(options_t options) {
   return;
 }
 #else
-static void __print_trmm_perf_test_options(options_t /*options*/) { return; }
+static void print_trmm_perf_test_options(options_t /*options*/) { return; }
 #endif  // PERF_TEST_DEBUG
 
 /*************************** Internal templated fns **************************/
 // Need to take subviews on the device
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
 template <class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
+void do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -204,12 +191,12 @@ void __do_trmm_serial_blas(options_t options, trmm_args_t trmm_args) {
     // Fence after submitting each batch operation
     Kokkos::fence();
   }
-  __trmm_output_csv_row(options, trmm_args, timer.seconds());
+  trmm_output_csv_row(options, trmm_args, timer.seconds());
   return;
 }
 #else
 template <class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_serial_blas(options_t /*options*/, trmm_args_t /*trmm_args*/) {
+void do_trmm_serial_blas(options_t /*options*/, trmm_args_t /*trmm_args*/) {
   std::cerr << std::string(__func__)
             << " disabled since KOKKOS_ENABLE_CUDA or "
                "KOKKOS_ENABLE_OPENMPTARGET is defined."
@@ -221,7 +208,7 @@ void __do_trmm_serial_blas(options_t /*options*/, trmm_args_t /*trmm_args*/) {
 // Need to take subviews on the device
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
 template <class side, class uplo, class trans, class diag>
-void __do_trmm_serial_batched_template(options_t options, trmm_args_t trmm_args) {
+void do_trmm_serial_batched_template(options_t options, trmm_args_t trmm_args) {
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -249,11 +236,11 @@ void __do_trmm_serial_batched_template(options_t options, trmm_args_t trmm_args)
     // Fence after submitting each batch operation
     Kokkos::fence();
   }
-  __trmm_output_csv_row(options, trmm_args, timer.seconds());
+  trmm_output_csv_row(options, trmm_args, timer.seconds());
 }
 #else
 template <class side, class uplo, class trans, class diag>
-void __do_trmm_serial_batched_template(options_t /*options*/, trmm_args_t /*trmm_args*/) {
+void do_trmm_serial_batched_template(options_t /*options*/, trmm_args_t /*trmm_args*/) {
   std::cerr << std::string(__func__)
             << " disabled since KOKKOS_ENABLE_CUDA or "
                "KOKKOS_ENABLE_OPENMPTARGET is defined."
@@ -262,8 +249,8 @@ void __do_trmm_serial_batched_template(options_t /*options*/, trmm_args_t /*trmm
 #endif  // !KOKKOS_ENABLE_CUDA && !KOKKOS_ENABLE_OPENMPTARGET
 
 template <class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args) {
-  char __side = tolower(trmm_args.side), __uplo = tolower(trmm_args.uplo), __trans = tolower(trmm_args.trans);
+void do_trmm_serial_batched(options_t options, trmm_args_t trmm_args) {
+  char side = tolower(trmm_args.side), uplo = tolower(trmm_args.uplo), trans = tolower(trmm_args.trans);
   //__diag = tolower(diag[0]);
 
   using KokkosBatched::Diag;
@@ -274,67 +261,67 @@ void __do_trmm_serial_batched(options_t options, trmm_args_t trmm_args) {
   STATUS;
 
   //// Lower non-transpose ////
-  if (__side == 'l' && __uplo == 'l' && __trans == 'n') {
+  if (side == 'l' && uplo == 'l' && trans == 'n') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit>(options, trmm_args);
   }
-  if (__side == 'r' && __uplo == 'l' && __trans == 'n') {
+  if (side == 'r' && uplo == 'l' && trans == 'n') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Right, Uplo::Lower, Trans::NoTranspose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Right, Uplo::Lower, Trans::NoTranspose, Diag::Unit>(options, trmm_args);
   }
   //// Lower transpose /////
   // Transpose A by simply swapping the dimensions (extent) and stride
   // parameters
-  if (__side == 'l' && __uplo == 'l' && __trans == 't') {
+  if (side == 'l' && uplo == 'l' && trans == 't') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Left, Uplo::Lower, Trans::Transpose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Left, Uplo::Lower, Trans::Transpose, Diag::Unit>(options, trmm_args);
   }
-  if (__side == 'r' && __uplo == 'l' && __trans == 't') {
+  if (side == 'r' && uplo == 'l' && trans == 't') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Right, Uplo::Lower, Trans::Transpose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Right, Uplo::Lower, Trans::Transpose, Diag::Unit>(options, trmm_args);
   }
   //// Lower conjugate-transpose ////
   // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride
   // parameters
-  if (__side == 'l' && __uplo == 'l' && __trans == 'c') {
+  if (side == 'l' && uplo == 'l' && trans == 'c') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Left, Uplo::Lower, Trans::ConjTranspose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Left, Uplo::Lower, Trans::ConjTranspose, Diag::Unit>(options, trmm_args);
   }
-  if (__side == 'r' && __uplo == 'l' && __trans == 'c') {
+  if (side == 'r' && uplo == 'l' && trans == 'c') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Right, Uplo::Lower, Trans::ConjTranspose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Right, Uplo::Lower, Trans::ConjTranspose, Diag::Unit>(options, trmm_args);
   }
   //// Upper non-transpose ////
-  if (__side == 'l' && __uplo == 'u' && __trans == 'n') {
+  if (side == 'l' && uplo == 'u' && trans == 'n') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::Unit>(options, trmm_args);
   }
-  if (__side == 'r' && __uplo == 'u' && __trans == 'n') {
+  if (side == 'r' && uplo == 'u' && trans == 'n') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::Unit>(options, trmm_args);
   }
   //// Upper transpose
   // Transpose A by simply swapping the dimensions (extent) and stride
   // parameters
-  if (__side == 'l' && __uplo == 'u' && __trans == 't') {
+  if (side == 'l' && uplo == 'u' && trans == 't') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Left, Uplo::Upper, Trans::Transpose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Left, Uplo::Upper, Trans::Transpose, Diag::Unit>(options, trmm_args);
   }
-  if (__side == 'r' && __uplo == 'u' && __trans == 't') {
+  if (side == 'r' && uplo == 'u' && trans == 't') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Right, Uplo::Upper, Trans::Transpose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Right, Uplo::Upper, Trans::Transpose, Diag::Unit>(options, trmm_args);
   }
 
   //// Upper conjugate-transpose ////
   // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride
   // parameters
-  if (__side == 'l' && __uplo == 'u' && __trans == 'c') {
+  if (side == 'l' && uplo == 'u' && trans == 'c') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Left, Uplo::Upper, Trans::ConjTranspose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Left, Uplo::Upper, Trans::ConjTranspose, Diag::Unit>(options, trmm_args);
   }
-  if (__side == 'r' && __uplo == 'u' && __trans == 'c') {
+  if (side == 'r' && uplo == 'u' && trans == 'c') {
     STATUS;
-    __do_trmm_serial_batched_template<Side::Right, Uplo::Upper, Trans::ConjTranspose, Diag::Unit>(options, trmm_args);
+    do_trmm_serial_batched_template<Side::Right, Uplo::Upper, Trans::ConjTranspose, Diag::Unit>(options, trmm_args);
   }
 
   return;
@@ -359,7 +346,7 @@ struct parallel_blas_trmm {
 #endif  // !KOKKOSKERNELS_ENABLE_DEVICE
 
 template <class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
+void do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
 // TODO: Note why this is disabled on CUDA, OPENMPTARGET and HIP
 #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_OPENMPTARGET)
   uint32_t warm_up_n = options.warm_up_n;
@@ -385,13 +372,13 @@ void __do_trmm_parallel_blas(options_t options, trmm_args_t trmm_args) {
     // Fence after each batch operation
     Kokkos::fence();
   }
-  __trmm_output_csv_row(options, trmm_args, timer.seconds());
+  trmm_output_csv_row(options, trmm_args, timer.seconds());
 #else
   std::cerr << std::string(__func__)
             << " disabled since KOKKOS_ENABLE_CUDA, KOKKOS_ENABLE_HIP "
                "or KOKKOS_ENABLE_OPENMPTARGET is defined."
             << std::endl;
-  __trmm_output_csv_row(options, trmm_args, -1);
+  trmm_output_csv_row(options, trmm_args, -1);
 #endif  // !KOKKOS_ENABLE_DEVICE
   return;
 }
@@ -412,7 +399,7 @@ struct parallel_batched_trmm {
 };
 
 template <class side, class uplo, class trans, class diag, class device_type>
-void __do_trmm_parallel_batched_template(options_t options, trmm_args_t trmm_args) {
+void do_trmm_parallel_batched_template(options_t options, trmm_args_t trmm_args) {
   uint32_t warm_up_n = options.warm_up_n;
   uint32_t n         = options.n;
   Kokkos::Timer timer;
@@ -437,14 +424,14 @@ void __do_trmm_parallel_batched_template(options_t options, trmm_args_t trmm_arg
     // Fence after each batch operation
     Kokkos::fence();
   }
-  __trmm_output_csv_row(options, trmm_args, timer.seconds());
+  trmm_output_csv_row(options, trmm_args, timer.seconds());
 
   return;
 }
 
 template <class scalar_type, class vta, class vtb, class device_type>
-void __do_trmm_parallel_batched(options_t options, trmm_args_t trmm_args) {
-  char __side = tolower(trmm_args.side), __uplo = tolower(trmm_args.uplo), __trans = tolower(trmm_args.trans);
+void do_trmm_parallel_batched(options_t options, trmm_args_t trmm_args) {
+  char side = tolower(trmm_args.side), uplo = tolower(trmm_args.uplo), trans = tolower(trmm_args.trans);
   //__diag = tolower(diag[0]);
 
   using KokkosBatched::Diag;
@@ -455,78 +442,78 @@ void __do_trmm_parallel_batched(options_t options, trmm_args_t trmm_args) {
   STATUS;
 
   //// Lower non-transpose ////
-  if (__side == 'l' && __uplo == 'l' && __trans == 'n') {
+  if (side == 'l' && uplo == 'l' && trans == 'n') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, device_type>(
-        options, trmm_args);
+    do_trmm_parallel_batched_template<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, device_type>(options,
+                                                                                                            trmm_args);
   }
-  if (__side == 'r' && __uplo == 'l' && __trans == 'n') {
+  if (side == 'r' && uplo == 'l' && trans == 'n') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right, Uplo::Lower, Trans::NoTranspose, Diag::Unit, device_type>(
-        options, trmm_args);
+    do_trmm_parallel_batched_template<Side::Right, Uplo::Lower, Trans::NoTranspose, Diag::Unit, device_type>(options,
+                                                                                                             trmm_args);
   }
   //// Lower transpose /////
   // Transpose A by simply swapping the dimensions (extent) and stride
   // parameters
-  if (__side == 'l' && __uplo == 'l' && __trans == 't') {
+  if (side == 'l' && uplo == 'l' && trans == 't') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left, Uplo::Lower, Trans::Transpose, Diag::Unit, device_type>(options,
-                                                                                                            trmm_args);
+    do_trmm_parallel_batched_template<Side::Left, Uplo::Lower, Trans::Transpose, Diag::Unit, device_type>(options,
+                                                                                                          trmm_args);
   }
-  if (__side == 'r' && __uplo == 'l' && __trans == 't') {
+  if (side == 'r' && uplo == 'l' && trans == 't') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right, Uplo::Lower, Trans::Transpose, Diag::Unit, device_type>(options,
-                                                                                                             trmm_args);
+    do_trmm_parallel_batched_template<Side::Right, Uplo::Lower, Trans::Transpose, Diag::Unit, device_type>(options,
+                                                                                                           trmm_args);
   }
   //// Lower conjugate-transpose ////
   // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride
   // parameters
-  if (__side == 'l' && __uplo == 'l' && __trans == 'c') {
+  if (side == 'l' && uplo == 'l' && trans == 'c') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left, Uplo::Lower, Trans::ConjTranspose, Diag::Unit, device_type>(
+    do_trmm_parallel_batched_template<Side::Left, Uplo::Lower, Trans::ConjTranspose, Diag::Unit, device_type>(
         options, trmm_args);
   }
-  if (__side == 'r' && __uplo == 'l' && __trans == 'c') {
+  if (side == 'r' && uplo == 'l' && trans == 'c') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right, Uplo::Lower, Trans::ConjTranspose, Diag::Unit, device_type>(
+    do_trmm_parallel_batched_template<Side::Right, Uplo::Lower, Trans::ConjTranspose, Diag::Unit, device_type>(
         options, trmm_args);
   }
   //// Upper non-transpose ////
-  if (__side == 'l' && __uplo == 'u' && __trans == 'n') {
+  if (side == 'l' && uplo == 'u' && trans == 'n') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::Unit, device_type>(
-        options, trmm_args);
+    do_trmm_parallel_batched_template<Side::Left, Uplo::Upper, Trans::NoTranspose, Diag::Unit, device_type>(options,
+                                                                                                            trmm_args);
   }
-  if (__side == 'r' && __uplo == 'u' && __trans == 'n') {
+  if (side == 'r' && uplo == 'u' && trans == 'n') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::Unit, device_type>(
-        options, trmm_args);
+    do_trmm_parallel_batched_template<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::Unit, device_type>(options,
+                                                                                                             trmm_args);
   }
   //// Upper transpose
   // Transpose A by simply swapping the dimensions (extent) and stride
   // parameters
-  if (__side == 'l' && __uplo == 'u' && __trans == 't') {
+  if (side == 'l' && uplo == 'u' && trans == 't') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left, Uplo::Upper, Trans::Transpose, Diag::Unit, device_type>(options,
-                                                                                                            trmm_args);
+    do_trmm_parallel_batched_template<Side::Left, Uplo::Upper, Trans::Transpose, Diag::Unit, device_type>(options,
+                                                                                                          trmm_args);
   }
-  if (__side == 'r' && __uplo == 'u' && __trans == 't') {
+  if (side == 'r' && uplo == 'u' && trans == 't') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right, Uplo::Upper, Trans::Transpose, Diag::Unit, device_type>(options,
-                                                                                                             trmm_args);
+    do_trmm_parallel_batched_template<Side::Right, Uplo::Upper, Trans::Transpose, Diag::Unit, device_type>(options,
+                                                                                                           trmm_args);
   }
 
   //// Upper conjugate-transpose ////
   // Conjugate-Transpose A by simply swapping the dimensions (extent) and stride
   // parameters
-  if (__side == 'l' && __uplo == 'u' && __trans == 'c') {
+  if (side == 'l' && uplo == 'u' && trans == 'c') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Left, Uplo::Upper, Trans::ConjTranspose, Diag::Unit, device_type>(
+    do_trmm_parallel_batched_template<Side::Left, Uplo::Upper, Trans::ConjTranspose, Diag::Unit, device_type>(
         options, trmm_args);
   }
-  if (__side == 'r' && __uplo == 'u' && __trans == 'c') {
+  if (side == 'r' && uplo == 'u' && trans == 'c') {
     STATUS;
-    __do_trmm_parallel_batched_template<Side::Right, Uplo::Upper, Trans::ConjTranspose, Diag::Unit, device_type>(
+    do_trmm_parallel_batched_template<Side::Right, Uplo::Upper, Trans::ConjTranspose, Diag::Unit, device_type>(
         options, trmm_args);
   }
 
@@ -535,14 +522,14 @@ void __do_trmm_parallel_batched(options_t options, trmm_args_t trmm_args) {
 
 /*************************** Internal setup fns **************************/
 template <class scalar_type, class vta, class vtb, class device_type>
-trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
+trmm_args_t do_setup(options_t options, matrix_dims_t dim) {
   using execution_space = typename device_type::execution_space;
 
   trmm_args_t trmm_args;
   uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
   decltype(dim.a.m) min_dim = dim.a.m < dim.a.n ? dim.a.m : dim.a.n;
-  typename vta::HostMirror host_A;
+  typename vta::host_mirror_type host_A;
   STATUS;
 
   trmm_args.side  = options.blas_args.trmm.trmm_args.c_str()[0];
@@ -606,12 +593,12 @@ trmm_args_t __do_setup(options_t options, matrix_dims_t dim) {
 }
 
 /*************************** Interal run helper fns **************************/
-void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trmm_args_t)) {
+void do_loop_and_invoke(options_t options, void (*fn)(options_t, trmm_args_t)) {
   matrix_dims_t cur_dims;
   trmm_args_t trmm_args;
   STATUS;
 
-  __print_trmm_perf_test_options(options);
+  print_trmm_perf_test_options(options);
   std::cout << "SCALAR:" << typeid(KokkosKernels::default_scalar).name()
             << ", LAYOUT:" << typeid(KokkosKernels::default_layout).name()
             << ", DEVICE:" << typeid(KokkosKernels::default_device).name() << std::endl;
@@ -622,7 +609,7 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trmm_args_t))
                                  cur_dims.b.m <= options.stop.b.m && cur_dims.b.n <= options.stop.b.n;
        cur_dims.a.m += options.step, cur_dims.a.n += options.step, cur_dims.b.m += options.step,
       cur_dims.b.n += options.step) {
-    trmm_args = __do_setup<KokkosKernels::default_scalar, view_type_3d, view_type_3d, KokkosKernels::default_device>(
+    trmm_args = do_setup<KokkosKernels::default_scalar, view_type_3d, view_type_3d, KokkosKernels::default_device>(
         options, cur_dims);
     fn(options, trmm_args);
   }
@@ -632,30 +619,32 @@ void __do_loop_and_invoke(options_t options, void (*fn)(options_t, trmm_args_t))
 /*************************** External fns **************************/
 void do_trmm_serial_blas(options_t options) {
   STATUS;
-  __do_loop_and_invoke(
+  do_loop_and_invoke(
       options,
-      __do_trmm_serial_blas<KokkosKernels::default_scalar, view_type_3d, view_type_3d, KokkosKernels::default_device>);
+      do_trmm_serial_blas<KokkosKernels::default_scalar, view_type_3d, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
 void do_trmm_serial_batched(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trmm_serial_batched<KokkosKernels::default_scalar, view_type_3d, view_type_3d,
-                                                         KokkosKernels::default_device>);
+  do_loop_and_invoke(
+      options,
+      do_trmm_serial_batched<KokkosKernels::default_scalar, view_type_3d, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
 void do_trmm_parallel_blas(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trmm_parallel_blas<KokkosKernels::default_scalar, view_type_3d, view_type_3d,
-                                                        KokkosKernels::default_device>);
+  do_loop_and_invoke(
+      options,
+      do_trmm_parallel_blas<KokkosKernels::default_scalar, view_type_3d, view_type_3d, KokkosKernels::default_device>);
   return;
 }
 
 void do_trmm_parallel_batched(options_t options) {
   STATUS;
-  __do_loop_and_invoke(options, __do_trmm_parallel_batched<KokkosKernels::default_scalar, view_type_3d, view_type_3d,
-                                                           KokkosKernels::default_device>);
+  do_loop_and_invoke(options, do_trmm_parallel_batched<KokkosKernels::default_scalar, view_type_3d, view_type_3d,
+                                                       KokkosKernels::default_device>);
   return;
 }
 

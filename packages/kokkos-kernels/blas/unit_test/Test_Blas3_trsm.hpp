@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -55,7 +42,7 @@ struct trsm_VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::ArithTraits<ScalarC> APT;
+  typedef KokkosKernels::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -99,7 +86,7 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans, const
                     typename ViewTypeA::value_type alpha) {
   using execution_space = typename ViewTypeA::device_type::execution_space;
   using ScalarA         = typename ViewTypeA::value_type;
-  using APT             = Kokkos::ArithTraits<ScalarA>;
+  using APT             = KokkosKernels::ArithTraits<ScalarA>;
   using mag_type        = typename APT::mag_type;
 
   double machine_eps = APT::epsilon();
@@ -114,9 +101,9 @@ void impl_test_trsm(const char* side, const char* uplo, const char* trans, const
   ViewTypeB B("B", M, N);
   ViewTypeB X0("X0", M, N);
 
-  typename ViewTypeA::HostMirror h_A  = Kokkos::create_mirror_view(A);
-  typename ViewTypeB::HostMirror h_B  = Kokkos::create_mirror_view(B);
-  typename ViewTypeB::HostMirror h_X0 = Kokkos::create_mirror_view(X0);
+  typename ViewTypeA::host_mirror_type h_A  = Kokkos::create_mirror_view(A);
+  typename ViewTypeB::host_mirror_type h_B  = Kokkos::create_mirror_view(B);
+  typename ViewTypeB::host_mirror_type h_X0 = Kokkos::create_mirror_view(X0);
 
   uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(seed);
