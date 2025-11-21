@@ -24,6 +24,14 @@
 // needs to be in the global namespace
 extern char **environ;
 #endif
+#if defined(_WIN32)
+#include <stdio.h>
+FILE *popen(const char *command, const char *mode)
+{ return _popen(command, mode); }
+
+int pclose(FILE *stream)
+{ return _pclose(stream);}
+#endif
 
 namespace Teuchos::SystemInformation {
 
@@ -213,7 +221,7 @@ void initializeCollection() {
 
 #if !defined(__GNUC__) || (__GNUC__ >= 10)
   try {
-    const std::string executable = std::filesystem::canonical("/proc/self/exe");
+    const std::string executable = std::filesystem::canonical("/proc/self/exe").string();
     if (!executable.empty()) {
       registerCommand("ldd", "ldd " + executable, "ldd");
     }
