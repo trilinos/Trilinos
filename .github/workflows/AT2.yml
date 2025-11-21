@@ -75,6 +75,8 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
+      - name: Add Googletest
+        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -174,6 +176,8 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
+      - name: Add Googletest
+        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -273,6 +277,8 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
+      - name: Add Googletest
+        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -372,6 +378,8 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
+      - name: Add Googletest
+        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -472,6 +480,8 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
+      - name: Add Googletest
+        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -567,6 +577,8 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
+      - name: Add Googletest
+        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -666,6 +678,8 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
+      - name: Add Googletest
+        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -762,6 +776,8 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
+      - name: Add Googletest
+        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
