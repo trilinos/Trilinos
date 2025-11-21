@@ -1,5 +1,5 @@
 SET(LIB_REQUIRED_DEP_PACKAGES)
-SET(LIB_OPTIONAL_DEP_PACKAGES Amesos AztecOO Belos EpetraExt Ifpack Isorropia ML MueLu NOX Stokhos Zoltan Zoltan2Core)
+SET(LIB_OPTIONAL_DEP_PACKAGES Amesos AztecOO Belos EpetraExt Ifpack Isorropia ML MueLu NOX Stokhos Tpetra Zoltan Zoltan2Core)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES Amesos Amesos2 AvatarT AztecOO Epetra EpetraExt Ifpack Ifpack2 Intrepid Intrepid2 Isorropia Kokkos KokkosKernels ML MueLu MueLu Pamgen SEACASExodus SEACASNemesis Sacado STKIO STKMesh Stokhos Stratimikos Teko TeuchosKokkosComm TeuchosKokkosCompat Tpetra Zoltan Zoltan2Core)
 SET(LIB_REQUIRED_DEP_TPLS)

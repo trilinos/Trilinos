@@ -189,7 +189,8 @@ struct InputTraits {
 
 #define Z2_STYPES(s) ( Z2_ISSAME(s,float) || \
   Z2_ISSAME(s,double) || Z2_ISSAME(s,int) || Z2_ISSAME(s,long) || \
-  Z2_ISSAME(s,long long) || Z2_ISSAME(s, int64_t) || Z2_ISSAME(s, int32_t))
+  Z2_ISSAME(s,long long) || Z2_ISSAME(s, int64_t) || Z2_ISSAME(s, int32_t) || \
+  Z2_ISSAME(s,std::complex<double>) || Z2_ISSAME(s,std::complex<float>) )
 
 #define Z2_LTYPES(l) ( Z2_ISSAME(l,int) ||  \
   Z2_ISSAME(l,long) || Z2_ISSAME(l,long long) || Z2_ISSAME(l,ssize_t) )
@@ -241,6 +242,7 @@ template <typename Scalar,
 struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef Scalar        scalar_t;
+  typedef typename Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -258,6 +260,7 @@ template <typename Scalar,
 struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef Scalar        scalar_t;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -273,6 +276,7 @@ template < >
 struct InputTraits<Epetra_CrsMatrix>
 {
   typedef double scalar_t;
+  typedef double impl_scalar_t;
   typedef int lno_t;
   typedef int gno_t;
   typedef size_t offset_t;
@@ -289,6 +293,7 @@ template <typename Scalar,
 struct InputTraits<Xpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef Scalar        scalar_t;
+  typedef typename Xpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -306,6 +311,7 @@ template <typename Scalar,
 struct InputTraits<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef Scalar        scalar_t;
+  typedef typename Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -322,6 +328,7 @@ template <typename LocalOrdinal,
 struct InputTraits<Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef default_scalar_t scalar_t;
+  typedef default_scalar_t impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -336,6 +343,7 @@ template <typename LocalOrdinal,
 struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef default_scalar_t scalar_t;
+  typedef default_scalar_t impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -352,6 +360,7 @@ template <typename LocalOrdinal,
 struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef default_scalar_t scalar_t;
+  typedef default_scalar_t impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -367,6 +376,7 @@ template < >
 struct InputTraits<Epetra_CrsGraph>
 {
   typedef double scalar_t;
+  typedef double impl_scalar_t;
   typedef int   lno_t;
   typedef int   gno_t;
   typedef size_t offset_t;
@@ -383,6 +393,7 @@ template <typename Scalar,
 struct InputTraits<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef Scalar        scalar_t;
+  typedef typename Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -403,6 +414,7 @@ template <typename Scalar,
 struct InputTraits<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef Scalar        scalar_t;
+  typedef typename Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -418,6 +430,7 @@ template < >
 struct InputTraits<Epetra_Vector>
 {
   typedef double scalar_t;
+  typedef double impl_scalar_t;
   typedef int   lno_t;
   typedef int   gno_t;
   typedef size_t offset_t;
@@ -434,6 +447,7 @@ template <typename Scalar,
 struct InputTraits<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef Scalar        scalar_t;
+  typedef typename Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -451,6 +465,7 @@ template <typename Scalar,
 struct InputTraits<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 {
   typedef Scalar        scalar_t;
+  typedef typename Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::impl_scalar_type impl_scalar_t;
   typedef LocalOrdinal  lno_t;
   typedef GlobalOrdinal gno_t;
   typedef size_t offset_t;
@@ -466,6 +481,7 @@ template < >
 struct InputTraits<Epetra_MultiVector>
 {
   typedef double scalar_t;
+  typedef double impl_scalar_t;
   typedef int   lno_t;
   typedef int   gno_t;
   typedef size_t offset_t;

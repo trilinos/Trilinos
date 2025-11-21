@@ -20,6 +20,11 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_Vector.hpp"
+#if KOKKOS_VERSION >= 40799
+#include <KokkosKernels_ArithTraits.hpp>
+#else
+#include <Kokkos_ArithTraits.hpp>
+#endif
 
 namespace Xpetra {
 
@@ -33,6 +38,12 @@ class RowMatrix : virtual public Operator<Scalar, LocalOrdinal, GlobalOrdinal, N
   typedef LocalOrdinal local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node node_type;
+
+#if KOKKOS_VERSION >= 40799
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
+  using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
 
   //! @name Constructor/Destructor Methods
   //@{
