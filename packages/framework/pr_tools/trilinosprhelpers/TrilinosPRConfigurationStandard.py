@@ -68,6 +68,9 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
         if "BUILD_NUMBER" in os.environ:
             print("Running under Jenkins, keeping output less verbose to avoid space issues")
             verbosity_flag = "-V"
+        elif "GITHUB_ACTION" in os.environ:
+            print("Running as Github Action, keeping output less verbose to avoid making the logs unreadable")
+            verbosity_flag = "-V"
 
         cmd = ['ctest',
                verbosity_flag,
@@ -88,6 +91,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                f"-DCTEST_DROP_SITE:STRING={self.arg_ctest_drop_site}",
                 "-DUSE_EXPLICIT_TRILINOS_CACHEFILE:BOOL=" + ("ON" if self.arg_use_explicit_cachefile else "OFF"),
                 "-DSKIP_RUN_TESTS:BOOL=" + ("ON" if self.arg_skip_run_tests else "OFF"),
+                "--output-on-failure",
              ]
 
         if self.arg_extra_configure_args:
