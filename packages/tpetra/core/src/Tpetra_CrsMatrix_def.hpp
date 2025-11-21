@@ -8930,7 +8930,11 @@ void copyAndPermuteStaticGraphNew(
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
 
+#if KOKKOS_VERSION >= 40799
+  using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
+#else
   using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
+#endif
 
   using crs_matrix_type = CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
