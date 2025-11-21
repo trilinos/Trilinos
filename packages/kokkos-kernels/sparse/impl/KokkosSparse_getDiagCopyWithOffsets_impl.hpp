@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_HPP_
 #define KOKKOSSPARSE_IMPL_GETDIAGCOPYWITHOFFSETS_HPP_
@@ -21,7 +8,7 @@
 #include "KokkosSparse_OrdinalTraits.hpp"
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosSparse {
 namespace Impl {
@@ -66,7 +53,7 @@ struct CrsMatrixGetDiagCopyWithOffsetsFunctor {
   /// \param lclRow [in] The current (local) row of the sparse matrix.
   KOKKOS_INLINE_FUNCTION void operator()(const LO& lclRow) const {
     const offset_type INV  = KokkosSparse::OrdinalTraits<offset_type>::invalid();
-    const scalar_type ZERO = Kokkos::ArithTraits<scalar_type>::zero();
+    const scalar_type ZERO = KokkosKernels::ArithTraits<scalar_type>::zero();
 
     // If the row lacks a stored diagonal entry, then its value is zero.
     D_(lclRow)               = ZERO;

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_SPMV_IMPL_MERGE_HPP
 #define KOKKOSSPARSE_SPMV_IMPL_MERGE_HPP
@@ -59,7 +46,7 @@ struct SpmvMergeHierarchical {
 
   using DSR = typename KokkosSparse::Impl::MergeMatrixDiagonal<um_row_map_type, iota_type>::position_type;
 
-  using KAT = Kokkos::ArithTraits<A_value_type>;
+  using KAT = KokkosKernels::ArithTraits<A_value_type>;
 
   // results of a lower-bound and upper-bound diagonal search
   struct Chunk {

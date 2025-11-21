@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_QR_WITH_COLUMNPIVOTING_TEAMVECTOR_INTERNAL_HPP
 #define KOKKOSBATCHED_QR_WITH_COLUMNPIVOTING_TEAMVECTOR_INTERNAL_HPP
 
@@ -40,7 +27,7 @@ struct TeamVectorUpdateColumnNormsInternal {
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const int n, const ValueType *KOKKOS_RESTRICT a,
                                            const int as0,
                                            /* */ ValueType *KOKKOS_RESTRICT norm, const int ns0) {
-    using ats = Kokkos::ArithTraits<ValueType>;
+    using ats = KokkosKernels::ArithTraits<ValueType>;
     Kokkos::parallel_for(Kokkos::TeamVectorRange(member, n), [&](const int &j) {
       const int idx_a = j * as0, idx_n = j * ns0;
       norm[idx_n] -= ats::conj(a[idx_a]) * a[idx_a];
@@ -61,7 +48,7 @@ struct TeamVectorQR_WithColumnPivotingInternal {
                                            /* */ int &matrix_rank) {
     using value_type = ValueType;
     using int_type   = IntType;
-    using ats        = Kokkos::ArithTraits<value_type>;
+    using ats        = KokkosKernels::ArithTraits<value_type>;
 
     /// Given a matrix A, it computes QR decomposition of the matrix
     ///  - t is to store tau and w is for workspace

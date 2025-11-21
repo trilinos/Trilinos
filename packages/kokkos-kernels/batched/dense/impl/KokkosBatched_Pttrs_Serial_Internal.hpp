@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_PTTRS_SERIAL_INTERNAL_HPP_
 #define KOKKOSBATCHED_PTTRS_SERIAL_INTERNAL_HPP_
 
@@ -35,10 +22,10 @@ template <typename RealType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int SerialPttrsInternal<ArgUplo, AlgoType>::invoke(
     const int n, const RealType *KOKKOS_RESTRICT d, const int ds0, const ValueType *KOKKOS_RESTRICT e, const int es0,
     ValueType *KOKKOS_RESTRICT b, const int bs0) {
-  using MayBeOpConj =
-      std::conditional_t<Kokkos::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpConj, KokkosBlas::Impl::OpID>;
-  using OpUpper = std::conditional_t<std::is_same_v<ArgUplo, Uplo::Upper>, MayBeOpConj, KokkosBlas::Impl::OpID>;
-  using OpLower = std::conditional_t<std::is_same_v<ArgUplo, Uplo::Lower>, MayBeOpConj, KokkosBlas::Impl::OpID>;
+  using MayBeOpConj = std::conditional_t<KokkosKernels::ArithTraits<ValueType>::is_complex, KokkosBlas::Impl::OpConj,
+                                         KokkosBlas::Impl::OpID>;
+  using OpUpper     = std::conditional_t<std::is_same_v<ArgUplo, Uplo::Upper>, MayBeOpConj, KokkosBlas::Impl::OpID>;
+  using OpLower     = std::conditional_t<std::is_same_v<ArgUplo, Uplo::Lower>, MayBeOpConj, KokkosBlas::Impl::OpID>;
 
   OpUpper op_upper;
   OpLower op_lower;
