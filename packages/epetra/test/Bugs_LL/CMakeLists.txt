@@ -1,6 +1,0 @@
-ADD_SUBDIRECTORY(Bug_5791_StaticProfile_LL)
-ADD_SUBDIRECTORY(Bug_5794_IndexBase_LL)
-ADD_SUBDIRECTORY(Bug_5797_Sort_MakeColMap_LL)
-ADD_SUBDIRECTORY(Bug_5988_FECrs_buildNonlocalGraph_LL)
-ADD_SUBDIRECTORY(Bug_6079_DistObject_CombineMode_flags_LL)
-
