@@ -62,7 +62,9 @@ class MapTransferFactory : public TwoLevelFactoryBase {
   //! Input
   //@{
 
-  RCP<const ParameterList> GetValidParameterList() const override;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   void DeclareInput(Level& fineLevel, Level& coarseLevel) const override;
 

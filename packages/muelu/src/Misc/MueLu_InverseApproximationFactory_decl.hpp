@@ -76,7 +76,9 @@ class InverseApproximationFactory : public SingleLevelFactoryBase {
 
   void DeclareInput(Level& currentLevel) const;
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 
