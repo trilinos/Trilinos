@@ -33,6 +33,7 @@
 #include <MueLu_Utilities.hpp>
 #include <MueLu_ParameterListInterpreter.hpp>
 #include "MueLu_RepartitionFactory_decl.hpp"
+#include "MueLu_RepartitionUtilities.hpp"
 
 #include "MueLu_Zoltan2Interface.hpp"
 
