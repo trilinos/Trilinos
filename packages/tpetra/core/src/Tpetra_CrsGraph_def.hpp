@@ -13,6 +13,10 @@
 /// \file Tpetra_CrsGraph_def.hpp
 /// \brief Definition of the Tpetra::CrsGraph class
 
+#ifdef KOKKOS_ENABLE_SYCL
+#include <sycl/sycl.hpp>
+#endif
+
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
@@ -7202,11 +7206,19 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesDevice(
 #undef CRSGRAPH_INNER_ABORT
 #endif
 
+#ifdef KOKKOS_ENABLE_SYCL
+#define CRSGRAPH_INNER_ABORT(lin)                                                      \
+  do {                                                                                 \
+    sycl::ext::oneapi::experimental::printf("ERROR: Tpetra_CrsGraph_def.hpp:%d", lin); \
+    Kokkos::abort("error");                                                            \
+  } while (0)
+#else
 #define CRSGRAPH_INNER_ABORT(lin)                     \
   do {                                                \
     printf("ERROR: Tpetra_CrsGraph_def.hpp:%d", lin); \
     Kokkos::abort("error");                           \
   } while (0)
+#endif
 
   Kokkos::parallel_for(
       "Tpetra_CrsGraph::copyAndPermuteNew",
