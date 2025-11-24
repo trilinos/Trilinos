@@ -106,6 +106,7 @@ constexpr const std::string_view TIME_KOKKOS_DEEP_COPY_VERBOSE2 =
 constexpr const std::string_view TIME_KOKKOS_FENCE = "TPETRA_TIME_KOKKOS_FENCE";
 constexpr const std::string_view TIME_KOKKOS_FUNCTIONS =
     "TPETRA_TIME_KOKKOS_FUNCTIONS";
+constexpr const std::string_view USE_NEW_COPY_AND_PERMUTE = "TPETRA_USE_NEW_COPY_AND_PERMUTE";
 
 // construct an std::array of string_view with any number of provided
 // string_views
@@ -124,7 +125,8 @@ constexpr const auto RECOGNIZED_VARS = make_array(
     HIERARCHICAL_UNPACK, SKIP_COPY_AND_PERMUTE, FUSED_RESIDUAL, OVERLAP,
     DEFAULT_SEND_TYPE, GRANULAR_TRANSFERS,
     SPACES_ID_WARN_LIMIT, TIME_KOKKOS_DEEP_COPY, TIME_KOKKOS_DEEP_COPY_VERBOSE1,
-    TIME_KOKKOS_DEEP_COPY_VERBOSE2, TIME_KOKKOS_FENCE, TIME_KOKKOS_FUNCTIONS);
+    TIME_KOKKOS_DEEP_COPY_VERBOSE2, TIME_KOKKOS_FENCE, TIME_KOKKOS_FUNCTIONS,
+    USE_NEW_COPY_AND_PERMUTE);
 
 std::map<std::string, std::map<std::string, bool> > namedVariableMap_;
 bool verboseDisabled_ = false;
@@ -541,6 +543,16 @@ bool Behavior::timeKokkosFunctions() {
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, BehaviorDetails::TIME_KOKKOS_FUNCTIONS,
+      defaultValue);
+}
+
+bool Behavior::useNewCopyAndPermute() {
+  constexpr bool defaultValue(false);
+
+  static bool value_       = defaultValue;
+  static bool initialized_ = false;
+  return Teuchos::idempotentlyGetEnvironmentVariable(
+      value_, initialized_, BehaviorDetails::USE_NEW_COPY_AND_PERMUTE,
       defaultValue);
 }
 

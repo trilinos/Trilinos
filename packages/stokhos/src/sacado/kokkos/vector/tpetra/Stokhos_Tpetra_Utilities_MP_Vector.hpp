@@ -15,6 +15,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "KokkosExp_View_MP_Vector_Contiguous.hpp"
 
 namespace Stokhos {
 
@@ -146,7 +147,15 @@ namespace Stokhos {
     using FlatVector = Tpetra::MultiVector<BaseScalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     // Create flattenend view using reshaping conversion copy constructor
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
     typename FlatVector::wrapped_dual_view_type flat_vals(vec.getWrappedDualView());
+#else
+    using flat_dual_view_t = typename FlatVector::wrapped_dual_view_type::DVT;
+    auto w_d_v = vec.getWrappedDualView();
+    typename FlatVector::wrapped_dual_view_type flat_vals(//vec.getWrappedDualView()
+      flat_dual_view_t(Stokhos::reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(w_d_v.implGetDualView())),
+      flat_dual_view_t(Stokhos::reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(w_d_v.implGetOriginalDualView())));
+#endif
 
     // Create flat vector
     return Teuchos::make_rcp<FlatVector>(flat_map, flat_vals);

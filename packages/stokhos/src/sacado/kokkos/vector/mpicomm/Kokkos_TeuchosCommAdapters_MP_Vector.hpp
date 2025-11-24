@@ -16,6 +16,9 @@
 #include "Sacado_MP_Vector.hpp"
 #include "Kokkos_View_MP_Vector.hpp"
 #include "Kokkos_TeuchosCommAdapters.hpp"
+#ifndef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+#include "Sacado_Fad_Kokkos_View_Support.hpp"
+#endif
 
 //----------------------------------------------------------------------------
 // Overloads of Teuchos Comm View functions for Sacado::MP::Vector scalar type
@@ -35,7 +38,11 @@ send (const Kokkos::View<D,P...>& sendBuffer,
   typedef Kokkos::View<D,P...> view_type;
   typedef typename Kokkos::FlatArrayType<view_type>::type flat_array_type;
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   flat_array_type array = sendBuffer;
+#else
+  flat_array_type array = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(sendBuffer);
+#endif
   Ordinal array_count = count * Kokkos::dimension_scalar(sendBuffer);
   send(array, array_count, destRank, tag, comm);
 }
@@ -52,7 +59,11 @@ ssend (const Kokkos::View<D,P...>& sendBuffer,
   typedef Kokkos::View<D,P...> view_type;
   typedef typename Kokkos::FlatArrayType<view_type>::type flat_array_type;
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   flat_array_type array = sendBuffer;
+#else
+  flat_array_type array = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(sendBuffer);
+#endif
   Ordinal array_count = count * Kokkos::dimension_scalar(sendBuffer);
   ssend(array, array_count, destRank, tag, comm);
 }
@@ -69,7 +80,11 @@ readySend (const Kokkos::View<D,P...>& sendBuffer,
   typedef Kokkos::View<D,P...> view_type;
   typedef typename Kokkos::FlatArrayType<view_type>::type flat_array_type;
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   flat_array_type array = sendBuffer;
+#else
+  flat_array_type array = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(sendBuffer);
+#endif
   Ordinal array_count = count * Kokkos::dimension_scalar(sendBuffer);
   readySend(array, array_count, destRank, tag, comm);
 }
@@ -85,7 +100,11 @@ isend (const Kokkos::View<D,P...>& sendBuffer,
   typedef Kokkos::View<D,P...> view_type;
   typedef typename Kokkos::FlatArrayType<view_type>::type flat_array_type;
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   flat_array_type array = sendBuffer;
+#else
+  flat_array_type array = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(sendBuffer);
+#endif
   return isend(array, destRank, tag, comm);
 }
 
@@ -100,7 +119,11 @@ ireceive (const Kokkos::View<D,P...>& recvBuffer,
   typedef Kokkos::View<D,P...> view_type;
   typedef typename Kokkos::FlatArrayType<view_type>::type flat_array_type;
 
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   flat_array_type array = recvBuffer;
+#else
+  flat_array_type array = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(recvBuffer);
+#endif
   return ireceive(array, sourceRank, tag, comm);
 }
 
