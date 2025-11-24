@@ -7172,15 +7172,11 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesDevice(
   using LO             = LocalOrdinal;
   using GO             = GlobalOrdinal;
   typedef typename crs_graph_type::global_inds_device_view_type::non_const_value_type global_inds_device_value_t;
-  typedef typename crs_graph_type::local_graph_device_type k_local_graph_device_type;
   typedef typename Node::execution_space exec_space;
   typedef Kokkos::RangePolicy<exec_space, LO> range_type;
 
   const LocalOrdinal LINV  = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
   const GlobalOrdinal GINV = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
-
-  const k_local_graph_device_type& srcGraphDevice = srcCrsGraph.getLocalGraphDevice();
-  const k_local_graph_device_type& tgtGraphDevice = tgtCrsGraph.getLocalGraphDevice();
 
   using local_map_type          = typename crs_graph_type::map_type::local_map_type;
   local_map_type srcRowMapLocal = srcCrsGraph.getRowMap()->getLocalMap();
