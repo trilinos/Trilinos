@@ -1,0 +1,40 @@
+// @HEADER
+// *****************************************************************************
+//           Trilinos: An Object-Oriented Solver Framework
+//
+// Copyright 2001-2024 NTESS and the Trilinos contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#ifndef TRILINOSCOUPLINGS_ETIHELPERMACROS_H_
+#define TRILINOSCOUPLINGS_ETIHELPERMACROS_H_
+
+#include <TrilinosCouplings_config.h>
+#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_CrsGraph.hpp>
+
+@TRILINOSCOUPLINGS_ETIMACRO_SL@
+
+@TRILINOSCOUPLINGS_ETIMACRO_SL_REAL@
+
+@TRILINOSCOUPLINGS_ETIMACRO_L@
+
+@TRILINOSCOUPLINGS_ETIMACRO_SLG@
+
+@TRILINOSCOUPLINGS_ETIMACRO_SLG_REAL@
+
+@TRILINOSCOUPLINGS_ETIMACRO_LG@
+
+@TRILINOSCOUPLINGS_ETIMACRO_SLGN@
+
+@TRILINOSCOUPLINGS_ETIMACRO_SLGN_REAL@
+
+@TRILINOSCOUPLINGS_ETIMACRO_LGN@
+
+@TRILINOSCOUPLINGS_ETIMACRO_N@
+
+@TRILINOSCOUPLINGS_ETI_TYPEDEFS@
+
+#endif // TRILINOSCOUPLINGS_ETIHELPERMACROS_H_
