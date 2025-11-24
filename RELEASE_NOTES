@@ -178,6 +178,12 @@ Tpetra
     applying a filter to the entries of another matrix.
     https://github.com/trilinos/Trilinos/pull/14583
 
+  - Several Epetra matrix transforms have been transitioned to Tpetra
+    - SingletonFiltering: condenses out singleton rows and columns.
+    - SolverMap: checks for missing indices wrt the local rows.
+    - Reindex: reindex based on row map.
+    - Rebalance: rebalance the distribution of linear problem contents (matrix, lhs, and rhs) among MPI nodes.
+
 
 Thyra:
 
