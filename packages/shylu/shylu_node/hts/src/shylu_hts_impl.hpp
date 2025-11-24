@@ -365,7 +365,6 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
       ~Thread();
     };
     Array<Thread> t_;
-    mutable int done_ctr_;
     void inv_init_metadata(const InitInfo& in);
     void inv_init_memory();
     void inv_reinit_numeric();

@@ -81,11 +81,10 @@ int main(int argc, char *argv[])
 #endif
     CLP.parse( argc, argv );
 
-    typedef int Ordinal;
-    typedef double Scalar;
-
 #ifdef KOKKOS_ENABLE_THREADS
     if (threads) {
+      typedef int Ordinal;
+      typedef double Scalar;
       typedef Kokkos::Threads Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
@@ -109,6 +108,8 @@ int main(int argc, char *argv[])
 
 #ifdef KOKKOS_ENABLE_OPENMP
     if (openmp) {
+      typedef int Ordinal;
+      typedef double Scalar;
       typedef Kokkos::OpenMP Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 
@@ -132,6 +133,8 @@ int main(int argc, char *argv[])
 
 #ifdef KOKKOS_ENABLE_CUDA
     if (cuda) {
+      typedef int Ordinal;
+      typedef double Scalar;
       typedef Kokkos::Cuda Device;
       typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
 

@@ -59,8 +59,8 @@ set(upcoming_warnings
     dangling-pointer=2  # -Wall
     # deprecated-copy  # -Wextra, lots of warnings
     implicit-fallthrough=3  # -Wextra
-    maybe-uninitialized
-    mismatched-new-delete
+    maybe-uninitialized  # -Wall
+    mismatched-new-delete  # -Wall
     pessimizing-move  # -Wall
     redundant-move  # -Wextra
     restrict
