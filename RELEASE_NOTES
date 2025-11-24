@@ -4,11 +4,17 @@
 #                                                                             #
 ###############################################################################
 
+Belos:
+
+  - Added LSQR example
+    https://github.com/trilinos/Trilinos/pull/14486
+
+
 Compadre
 
   - Update from version 1.5.9 to 1.6.4
     https://github.com/sandialabs/compadre/wiki/Changelog
-    
+
 
 Framework:
 
@@ -33,10 +39,6 @@ Framework:
       clang@11.0.1
       oneapi@2024.1
 
-Belos:
-
-  - Added LSQR example
-    https://github.com/trilinos/Trilinos/pull/14486
 
 Galeri:
 
