@@ -14,7 +14,7 @@
 #include "ROL_Types.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Intrepid_HCURL_HEX_I1_FEM.hpp"
@@ -28,7 +28,7 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;

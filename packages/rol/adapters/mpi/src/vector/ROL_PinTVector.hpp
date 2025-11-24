@@ -590,7 +590,7 @@ public:
   */
   virtual void plus( const Vector<Real> &x ) override
   {
-    typedef PinTVector<Real> lPinTVector; 
+    typedef PinTVector<Real> lPinTVector;
     const lPinTVector &xs = dynamic_cast<const lPinTVector&>(x);
 
     stepVectors_->plus(*xs.stepVectors_);
@@ -621,7 +621,7 @@ public:
   virtual Real dot( const Vector<Real> &x ) const override
   {
     // this is probably very inefficient way to do this... oh well!
-    typedef PinTVector<Real> lPinTVector; 
+    typedef PinTVector<Real> lPinTVector;
     const lPinTVector &xs = dynamic_cast<const lPinTVector&>(x);
 
     // this won't work for Real!=double...oh well!
@@ -698,7 +698,7 @@ public:
              ---
   */
   virtual void set( const Vector<Real> &x ) override {
-    typedef PinTVector<Real> lPinTVector; 
+    typedef PinTVector<Real> lPinTVector;
     const lPinTVector &xs = dynamic_cast<const lPinTVector&>(x);
 
     stepVectors_->set(*xs.stepVectors_);
@@ -716,7 +716,7 @@ public:
              ---
   */
   virtual void axpy( const Real alpha, const Vector<Real> &x ) override {
-    typedef PinTVector<Real> lPinTVector; 
+    typedef PinTVector<Real> lPinTVector;
     const lPinTVector &xs = dynamic_cast<const lPinTVector&>(x);
 
     stepVectors_->axpy(alpha,*xs.stepVectors_);

@@ -19,7 +19,7 @@
 
 #include <cmath>
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_ComplexStdVector.hpp"
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
   using namespace  ROL;
   using RealT     = double;              
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;

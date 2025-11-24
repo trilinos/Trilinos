@@ -12,7 +12,7 @@
 #include <random>
 #include <utility>
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
@@ -57,9 +57,9 @@ int main( int argc, char* argv[] )
   using ROL::makePtr;
   using ROL::makePtrFromRef;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
-  int myRank = Teuchos::GlobalMPISession::getRank();
-//  int numProcs = Teuchos::GlobalMPISession::getNProc();
+  ROL::GlobalMPISession mpiSession(&argc, &argv);  
+  int myRank = ROL::GlobalMPISession::getRank();
+//  int numProcs = ROL::GlobalMPISession::getNProc();
 
 //  int iprint     = argc - 1;
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 && myRank==0 );

@@ -19,7 +19,7 @@
 #include "ROL_DiagonalOperator.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 typedef double RealT;
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::RieszDualVector<RealT>    DualVector;
 
   
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  ROL::GlobalMPISession mpiSession(&argc, &argv,0);
 
   int iprint = argc - 1;
   ROL::nullstream bhs; // outputs nothing

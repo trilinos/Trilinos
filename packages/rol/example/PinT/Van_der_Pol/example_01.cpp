@@ -9,7 +9,7 @@
 
 #include <iomanip>
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_Stream.hpp"
 #include "ROL_DynamicConstraintCheck.hpp"
@@ -33,7 +33,7 @@ int main( int argc, char* argv[] ) {
   using PV        = PartitionedVector<RealT>;
   using size_type = typename PV::size_type;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
+  ROL::GlobalMPISession mpiSession(&argc, &argv);  
 
   auto outStream = makeStreamPtr( std::cout, argc > 1 );    
   int  errorFlag = 0;

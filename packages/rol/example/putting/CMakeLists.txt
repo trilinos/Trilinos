@@ -1,11 +1,11 @@
 
-TRIBITS_ADD_EXECUTABLE(
+ROL_ADD_EXECUTABLE(
   example_01
   SOURCES example_01.cpp
   ADD_DIR_TO_NAME
 )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(
+ROL_COPY_FILES_TO_BINARY_DIR(
   PuttingControlDataCopy
   SOURCE_FILES
     input.xml plot_trajectory.m

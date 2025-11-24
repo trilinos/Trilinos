@@ -1,6 +1,6 @@
 
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+ROL_ADD_EXECUTABLE_AND_TEST(
     example_01
     SOURCES example_01.cpp
     ARGS PrintItAll
@@ -9,7 +9,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ADD_DIR_TO_NAME
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+ROL_ADD_EXECUTABLE_AND_TEST(
     example_02
     SOURCES example_02.cpp 
     ARGS "default" "exactsolve" 
@@ -19,7 +19,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  ROL_COPY_FILES_TO_BINARY_DIR(
     GrossPitaevskiiDataCopy
     SOURCE_FILES
      parameters.xml

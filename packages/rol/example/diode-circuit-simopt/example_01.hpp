@@ -7,9 +7,7 @@
 #include "ROL_ConstraintStatusTest.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include <iostream>
 #include <algorithm>

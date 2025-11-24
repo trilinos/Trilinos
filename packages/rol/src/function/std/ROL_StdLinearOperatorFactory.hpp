@@ -38,7 +38,7 @@ class StdLinearOperatorFactory {
 private:
 
 
-  Teuchos::BLAS<int,Real>     blas_;
+  ROL::BLAS<int,Real>     blas_;
   ROL::LAPACK<int,Real>   lapack_;
 
   // Fill x with uniformly-distributed random values from [lower,upper]

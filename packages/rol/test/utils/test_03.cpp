@@ -11,7 +11,7 @@
     \brief Test of FiniteDifference class for performing derivative checks
 */
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_ValidateFunction.hpp"
 
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   using std::cref;
   using namespace std::placeholders;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint     = argc - 1;
   Ptr<std::ostream> os;

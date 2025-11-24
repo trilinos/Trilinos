@@ -16,8 +16,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Stream.hpp"
 
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include <iostream>
 
@@ -149,7 +148,7 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -163,13 +162,13 @@ int main(int argc, char *argv[]) {
   int errorFlag  = 0;
 
   // *** Example body.
- 
+
   try {
 
     // Set up problem data
-    int   dim   = 10; // Set problem dimension. 
-    RealT vol   = 2;  // Set desired volume. 
-    RealT alpha = 1;  // Set quadratic penalty. 
+    int   dim   = 10; // Set problem dimension.
+    RealT vol   = 2;  // Set desired volume.
+    RealT alpha = 1;  // Set quadratic penalty.
     ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::Ptr<std::vector<RealT> > d_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);

@@ -17,7 +17,7 @@
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -26,15 +26,13 @@
 
 int main(int argc, char *argv[]) {
 
-  using namespace Teuchos;
-
   typedef double RealT;
 
   typedef std::vector<RealT>      vec;
   typedef ROL::Vector<RealT>      V;
   typedef ROL::StdVector<RealT>   SV;
 
-  GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
  
   int iprint = argc - 1;
   ROL::Ptr<std::ostream>  outStream;

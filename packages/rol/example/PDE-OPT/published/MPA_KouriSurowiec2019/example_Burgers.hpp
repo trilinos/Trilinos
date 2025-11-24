@@ -9,7 +9,7 @@
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_Comm.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Version.hpp"

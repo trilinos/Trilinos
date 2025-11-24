@@ -23,6 +23,48 @@
 namespace ROL {
 
 template<class Real>
+class VectorArray {
+private:
+  std::vector<Ptr<Vector<Real>>> data_;
+  unsigned size_;
+
+public:
+  VectorArray() : size_(0u) {}
+
+  void allocate(const Vector<Real> &x, unsigned numVec) {
+    data_.clear();
+    for (unsigned i = 0u; i < numVec; ++i)
+      data_.push_back(x.clone());
+    size_ = numVec;
+  }
+
+  const Ptr<Vector<Real>> get(const Vector<Real> &x, unsigned ind) {
+    if (ind < size_) {
+      return data_[ind];
+    }
+    else if (ind == size_) {
+      data_.push_back(x.clone());
+      size_++;
+      return data_[ind];
+    }
+    else {
+      throw Exception::NotImplemented(">>> GMRES : Index out of range!");
+      return nullPtr;
+    }
+  }
+
+  const Ptr<Vector<Real>> get(unsigned ind) {
+    if (size_ > 0u) {
+      return get(*data_[0],ind);
+    }
+    else {
+      throw Exception::NotImplemented(">>> GMRES : No vectors allocated!");
+      return nullPtr;
+    }
+  }
+};
+
+template<class Real>
 class GMRES : public Krylov<Real> {
 
   typedef LA::Matrix<Real> SDMatrix;
@@ -30,30 +72,31 @@ class GMRES : public Krylov<Real> {
 
 private:
 
-  ROL::Ptr<Vector<Real> > r_;
-  ROL::Ptr<Vector<Real> > z_;
-  ROL::Ptr<Vector<Real> > w_;
+  Ptr<Vector<Real>> r_;
+  Ptr<Vector<Real>> z_;
+  Ptr<Vector<Real>> w_;
 
-  ROL::Ptr<SDMatrix> H_;      // quasi-Hessenberg matrix
-  ROL::Ptr<SDVector> cs_;     // Givens Rotations cosine components
-  ROL::Ptr<SDVector> sn_;     // Givens Rotations sine components
-  ROL::Ptr<SDVector> s_;
-  ROL::Ptr<SDVector> y_;
-  ROL::Ptr<SDVector> cnorm_;
+  Ptr<SDMatrix> H_;      // quasi-Hessenberg matrix
+  Ptr<SDVector> cs_;     // Givens Rotations cosine components
+  Ptr<SDVector> sn_;     // Givens Rotations sine components
+  Ptr<SDVector> s_;
+  Ptr<SDVector> y_;
+  Ptr<SDVector> cnorm_;
 
-  ROL::Ptr<std::vector<Real> > res_;
+  Ptr<std::vector<Real>> res_;
+  Ptr<VectorArray<Real>> V_, Z_;
 
   bool isInitialized_;
   bool useInexact_;
   bool useInitialGuess_;    // If false, inital x will be ignored and zero vec used
   bool printIters_;
-  ROL::Ptr<std::ostream> outStream_;
+  Ptr<std::ostream> outStream_;
 
-  ROL::LAPACK<int,Real> lapack_;
+  LAPACK<int,Real> lapack_;
 
 public:
 
-  GMRES( ROL::ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false), printIters_(false) {
+  GMRES( ParameterList &parlist ) : Krylov<Real>(parlist), isInitialized_(false), printIters_(false) {
 
     using std::vector;
 
@@ -66,14 +109,16 @@ public:
     useInitialGuess_ = kList.get("Use Initial Guess",false);
     int maxit = Krylov<Real>::getMaximumIteration();
 
-    H_     = ROL::makePtr<SDMatrix>( maxit+1, maxit );
-    cs_    = ROL::makePtr<SDVector>( maxit );
-    sn_    = ROL::makePtr<SDVector>( maxit );
-    s_     = ROL::makePtr<SDVector>( maxit+1 );
-    y_     = ROL::makePtr<SDVector>( maxit+1 );
-    cnorm_ = ROL::makePtr<SDVector>( maxit );
-    res_   = ROL::makePtr<std::vector<Real>>(maxit+1,zero);
+    H_     = makePtr<SDMatrix>( maxit+1, maxit );
+    cs_    = makePtr<SDVector>( maxit );
+    sn_    = makePtr<SDVector>( maxit );
+    s_     = makePtr<SDVector>( maxit+1 );
+    y_     = makePtr<SDVector>( maxit+1 );
+    cnorm_ = makePtr<SDVector>( maxit );
+    res_   = makePtr<std::vector<Real>>(maxit+1,zero);
 
+    V_ = makePtr<VectorArray<Real>>();
+    Z_ = makePtr<VectorArray<Real>>();
   }
 
   Real run( Vector<Real> &x, LinearOperator<Real> &A, const Vector<Real> &b,
@@ -91,6 +136,9 @@ public:
       r_  = b.clone();
       w_  = b.clone();
       z_  = x.clone();
+
+      V_->allocate(b,std::min(20u,static_cast<unsigned>(maxit))+1u);
+      Z_->allocate(x,std::min(20u,static_cast<unsigned>(maxit)));
 
       isInitialized_ = true;
     }
@@ -112,14 +160,10 @@ public:
 
     Real temp  = 0;
 
-    std::vector<ROL::Ptr<Vector<Real > > > V;
-    std::vector<ROL::Ptr<Vector<Real > > > Z;
-
     (*res_)[0] = r_->norm();
 
-    if (printIters_) {
+    if (printIters_)
       *outStream_ << "GMRES Iteration " << 0 << ", Residual = " << (*res_)[0] << "\n";
-    }
 
     // This should be a tolerance check
     Real rtol = std::min(absTol,relTol*(*res_)[0]);
@@ -129,42 +173,36 @@ public:
       return (*res_)[0];
     }
 
-    V.push_back(b.clone());
-    (V[0])->set(*r_);
-    (V[0])->scale(one/(*res_)[0]);
+    V_->get(0)->set(*r_);
+    V_->get(0)->scale(one/(*res_)[0]);
 
     (*s_)(0) = (*res_)[0];
 
     for( iter=0; iter<maxit; ++iter ) {
 
-      if( useInexact_ ) {
-        itol = rtol/(maxit*(*res_)[iter]);
-      }
-
-      Z.push_back(x.clone());
+      if( useInexact_ ) itol = rtol/(maxit*(*res_)[iter]);
 
       // Apply right preconditioner
-      M.applyInverse(*(Z[iter]),*(V[iter]),itol);
+      M.applyInverse(*(Z_->get(iter)),*(V_->get(iter)),itol);
 
       // Apply operator
-      A.apply(*w_,*(Z[iter]),itol);
+      A.apply(*w_,*(Z_->get(iter)),itol);
 
       // Evaluate coefficients and orthogonalize using Gram-Schmidt
       for( int k=0; k<=iter; ++k ) {
-        (*H_)(k,iter) = w_->dot(*(V[k]));
-        w_->axpy( -(*H_)(k,iter), *(V[k]) );
+        (*H_)(k,iter) = w_->dot(*(V_->get(k)));
+        w_->axpy( -(*H_)(k,iter), *(V_->get(k)) );
       }
 
       (*H_)(iter+1,iter) = w_->norm();
 
-      V.push_back( b.clone() );
-      (V[iter+1])->set(*w_);
-      (V[iter+1])->scale(one/((*H_)(iter+1,iter)));
+      (V_->get(iter+1))->set(*w_);
+      (V_->get(iter+1))->scale(one/((*H_)(iter+1,iter)));
 
       // Apply Givens rotations
       for( int k=0; k<=iter-1; ++k ) {
         temp            =  (*cs_)(k)*(*H_)(k,iter) + (*sn_)(k)*(*H_)(k+1,iter);
-        (*H_)(k+1,iter) = -(*sn_)(k)*(*H_)(k,iter) + (*cs_)(k)*(*H_)(k+1,iter); 
+        (*H_)(k+1,iter) = -(*sn_)(k)*(*H_)(k,iter) + (*cs_)(k)*(*H_)(k+1,iter);
         (*H_)(k,iter)   = temp;
       }
 
@@ -209,7 +247,7 @@ public:
       z_->zero();
 
       for( int k=0; k<=iter;++k ) {
-        z_->axpy((*y_)(k),*(Z[k]));
+        z_->axpy((*y_)(k),*(Z_->get(k)));
       }
 
       if( (*res_)[iter+1] <= rtol ) {
