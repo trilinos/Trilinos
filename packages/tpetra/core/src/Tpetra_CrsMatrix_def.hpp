@@ -8997,9 +8997,6 @@ void copyAndPermuteStaticGraphNew(
   };
 
   if (sourceIsLocallyIndexed) {
-    const k_local_matrix_device_type& srcMatDevice = srcMatCrs.getLocalMatrixDevice();
-    const k_local_matrix_device_type& tgtMatDevice = tgtMatCrs.getLocalMatrixDevice();
-
     typename crs_matrix_type::row_ptrs_device_view_type tgtLocalRowPtrsDevice   = tgtMatCrs.getLocalRowPtrsDevice();
     typename crs_matrix_type::local_inds_device_view_type tgtLocalColIndsDevice = tgtMatCrs.getLocalIndicesDevice();
     typename crs_matrix_type::row_ptrs_host_view_type srcLocalRowPtrsHost       = srcMatCrs.getLocalRowPtrsHost();
