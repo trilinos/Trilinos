@@ -17,6 +17,21 @@ Framework:
   - Trilinos now uses pre-commit to run clang-format and cmake-format.
     https://github.com/trilinos/Trilinos/pull/14478
 
+  - Built-in TPL detection improvements to help ensure simpler out-of-the-box
+    configurations on different Linux distributions.
+
+  - New compiler/MPI support via GitHub Actions CI:
+      gcc@14
+      gcc@10.4.0+openmpi@4.1.6
+      cuda@12.4.1+gcc@10.4.0+openmpi@4.1.6
+      oneapi@2024.2+gcc@11.4
+      clang@19.1+openmpi@4.1.6
+
+  - Removed support for some older compilers:
+      gcc@8.3.0
+      gcc@10.3.0
+      clang@11.0.1
+      oneapi@2024.1
 
 Belos:
 
