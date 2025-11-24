@@ -1425,6 +1425,15 @@ Only used when tentative: calculate qr is set to false.</description>
     </parameter>
 
     <parameter>
+      <name>sa: keep tentative prolongator</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Keep the tentative prolongator instead of dropping it once it has been smoothed.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>replicate: npdes</name>
       <type>int</type>
       <default>1</default>
@@ -1652,6 +1661,22 @@ Only used when tentative: calculate qr is set to false.</description>
       <default>true</default>
       <ConvectionDiffusion>true</ConvectionDiffusion>
       <description>Matrix to use for smoothing for energy minimization. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>emin: constraint type</name>
+      <type>string</type>
+      <default>nullspace</default>
+      <description>Type of constraint to enforce. Valid values are "nullspace" and "maxwell".</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>emin: least squares solver type</name>
+      <type>string</type>
+      <default>direct</default>
+      <description>Type of solver to use for least squares problem. Valid values are "direct" and "Belos". "Belos" only works for nullspace constraints.</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 

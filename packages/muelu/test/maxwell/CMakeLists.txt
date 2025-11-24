@@ -54,6 +54,7 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
       ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger.xml"
       ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml"
       ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml --ensure-kn"
+      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_ReitzingerEmin.xml"
       COMM serial mpi
       NUM_MPI_PROCS 4
     )
@@ -188,6 +189,7 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
       Maxwell_ML_MueLu.xml
       Maxwell_Reitzinger.xml
       Maxwell_Reitzinger_repart.xml
+      Maxwell_ReitzingerEmin.xml
       S.mat
       Stratimikos.xml
       Stratimikos_Maxwell1.xml

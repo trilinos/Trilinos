@@ -1,0 +1,48 @@
+<ParameterList name="MueLu">
+
+  <Parameter name="use kokkos refactor" type="bool" value="false"/>
+  <Parameter name="maxwell1: mode" type="string" value="standard"/>
+
+  <ParameterList name="maxwell1: 11list">
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
+    <Parameter name="multigrid algorithm" type="string"               value="emin reitzinger"/>
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="coarse: type" type="string" value="Klu"/>
+    <Parameter name="smoother: type" type="string" value="HIPTMAIR"/>
+    <ParameterList name="smoother: params">
+      <Parameter name="hiptmair: smoother type 1" type="string" value="RELAXATION"/>
+      <Parameter name="hiptmair: smoother type 2" type="string" value="RELAXATION"/>
+      <ParameterList name="hiptmair: smoother list 1">
+        <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: use l1" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="hiptmair: smoother list 2">
+        <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: use l1" type="bool" value="true"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="export data">
+      <Parameter name="A" type="string" value="{0,1,2}"/>
+      <Parameter name="P" type="string" value="{0,1,2}"/>
+    </ParameterList>
+  </ParameterList>
+
+
+  <ParameterList name="maxwell1: 22list">
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
+    <Parameter name="multigrid algorithm" type="string"  value="sa"/>
+    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
+    <Parameter name="coarse: max size" type="int" value="50"/>
+    <Parameter name="smoother: type" type="string" value="none"/>
+    <Parameter name="coarse: type" type="string" value="none"/>
+
+    <!-- Currently needed but we should fix this -->
+    <Parameter name="tentative: constant column sums" type="bool" value="false"/>
+    <Parameter name="tentative: calculate qr" type="bool" value="false"/>
+    <Parameter name="sa: keep tentative prolongator" type="bool" value="true"/>
+
+  </ParameterList>
+</ParameterList>
