@@ -8939,7 +8939,6 @@ void copyAndPermuteStaticGraphNew(
   using crs_matrix_type = CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
   typedef typename crs_matrix_type::local_inds_device_view_type::non_const_value_type local_inds_device_value_t;
-  typedef typename crs_matrix_type::local_matrix_device_type k_local_matrix_device_type;
 
   typedef typename Node::execution_space exec_space;
   typedef Kokkos::RangePolicy<exec_space, LO> range_type;
