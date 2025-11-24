@@ -622,7 +622,7 @@ class WrappedDualView {
       if constexpr (!deviceMemoryIsHostAccessible) {
         return true;
       } else {
-        return dualView.h_view.data() != dualView.d_view.data();
+        return dualView.view_host().data() != dualView.view_device().data();
       }
     }
   }

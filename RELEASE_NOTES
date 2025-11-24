@@ -1,7 +1,212 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 16.2 Release Notes                       November 24, 2025 #
+#                                                                             #
+###############################################################################
+
+Belos:
+
+  - Added LSQR example
+    https://github.com/trilinos/Trilinos/pull/14486
+
+
+Compadre
+
+  - Update from version 1.5.9 to 1.6.4
+    https://github.com/sandialabs/compadre/wiki/Changelog
+
+
+Framework:
+
+  - Shadow warnings have been promoted to errors.
+
+  - Trilinos now uses pre-commit to run clang-format and cmake-format.
+    https://github.com/trilinos/Trilinos/pull/14478
+
+  - Built-in TPL detection improvements to help ensure simpler out-of-the-box
+    configurations on different Linux distributions.
+
+  - New compiler/MPI support via GitHub Actions CI:
+      gcc@14
+      gcc@10.4.0+openmpi@4.1.6
+      cuda@12.4.1+gcc@10.4.0+openmpi@4.1.6
+      oneapi@2024.2+gcc@11.4
+      clang@19.1+openmpi@4.1.6
+
+  - Removed support for some older compilers:
+      gcc@8.3.0
+      gcc@10.3.0
+      clang@11.0.1
+      oneapi@2024.1
+
+
+Galeri:
+
+  - The assembly of example problems was rewritten with Kokkos primitives.
+    https://github.com/trilinos/Trilinos/pull/14120
+  - Added recirculant example
+    https://github.com/trilinos/Trilinos/pull/14028
+
+
+Ifpack2:
+
+  - Improve Chebyshev performance on GPU
+    https://github.com/trilinos/Trilinos/pull/14124
+    
+  - Added heuristic to Chebyshev to select performant kernel based on architecture
+    https://github.com/trilinos/Trilinos/pull/14154
+    
+  - Add support for streams in RBILUK
+    https://github.com/trilinos/Trilinos/pull/14127
+    
+  - Use empirical models for choosing the number of sublines in block tridi (with Schur line splitting).
+    https://github.com/trilinos/Trilinos/pull/14246
+  
+
+MueLu
+
+  - New parameters for dropping algorithms were introduced that better
+    map to the growing number of available schemes. Old parameters
+    are still valid but will eventually be phased out.
+    https://github.com/trilinos/Trilinos/pull/14113
+    https://github.com/trilinos/Trilinos/pull/14093
+
+  - The MueLu tutorial has been modernized and is now available at
+    https://muelu.github.io/
+    https://github.com/trilinos/Trilinos/pull/14357
+
+  - A new distributed lumping scheme
+    https://github.com/trilinos/Trilinos/pull/14351
+
+  - New "combined" max levels option for problems with multiple hierarchies (due to subblocks)
+    https://github.com/trilinos/Trilinos/pull/14387
+
+  - New Stratimikos example for demonstrating how to assemble matrix 
+    https://github.com/trilinos/Trilinos/pull/14339
+
+  - New hands-on material for ATPESC 2025
+    https://github.com/trilinos/Trilinos/pull/14461
+
+  - Clean up of timer usage in MueLu, make timer fencing a configurable option
+    https://github.com/trilinos/Trilinos/pull/14253
+
+  - MueLu scaling driver can rebalance initial user matrix
+    github.com/trilinos/Trilinos/pull/14690
+    github.com/trilinos/Trilinos/pull/14698
+
+
+NOX
+
+  - Nox wrappers for Tpetra MultiVector
+    https://github.com/trilinos/Trilinos/pull/14252
+
+
+Panzer
+
+  - Caching of connectivity information
+    https://github.com/trilinos/Trilinos/pull/14042
+
+
+ROL
+
+  - ROL is now gets snapshotted from
+    https://github.com/sandialabs/rol
+    into Trilinos.
+    
+
+ShyLU:
+
+  - ShyLU-Basker: Threaded sparse-triangular solver
+    https://github.com/trilinos/Trilinos/pull/14065
+
+  - Tacho: No-pivoted LDLt factorization
+    https://github.com/trilinos/Trilinos/pull/14537
+    https://github.com/trilinos/Trilinos/pull/14640
+
+  - Tacho: Uniform symbolic factorization interfce to fall-back from Chol to LU or LDLt
+    https://github.com/trilinos/Trilinos/pull/14603
+
+
+SEACAS
+
+  - Update to v2025-10-14. See:
+    https://github.com/sandialabs/seacas/releases
+
+
+STK
+
+  - See:
+    https://github.com/trilinos/Trilinos/blob/master/packages/stk/CHANGELOG.md
+
+
+Teko:
+
+  - The conversion between Teko blocked operators and Tpetra matrices
+    has been significantly improved.
+    https://github.com/trilinos/Trilinos/pull/14476
+
+
+Teuchos
+
+  - MPI communication routines are wrapped in Kokkos Profiling regions.
+    https://github.com/trilinos/Trilinos/pull/14363
+
+  - The CommandLineProcessor can now be used to harvest information
+    about the runtime environment by passing --print-system-info
+    https://github.com/trilinos/Trilinos/pull/14494
+
+
+Tpetra
+
+  - The new "Ialltofewv" communication option obtains speedups for
+    many-to-few communication.  
+    https://github.com/trilinos/Trilinos/pull/14146
+
+  - Tpetra can now leverage communication routines from MPI Advance.
+    https://github.com/trilinos/Trilinos/pull/14169
+
+  - A reordering of steps during data transfer that should avoid
+    unexpected messages can be used by setting the environment
+    variable TPETRA_GRANULAR_TRANSFERS=ON.
+    https://github.com/trilinos/Trilinos/pull/13947
+
+  - The Tpetra assembly examples were updated to better showcase
+    current Kokkos practices.
+    https://github.com/trilinos/Trilinos/pull/14430
+
+  - Helper routines for the common use case of generating matrices by
+    applying a filter to the entries of another matrix.
+    https://github.com/trilinos/Trilinos/pull/14583
+
+  - Several Epetra matrix transforms have been transitioned to Tpetra
+    - SingletonFiltering: condenses out singleton rows and columns.
+    - SolverMap: checks for missing indices wrt the local rows.
+    - Reindex: reindex based on row map.
+    - Rebalance: rebalance the distribution of linear problem contents (matrix, lhs, and rhs) among MPI nodes.
+
+
+Thyra:
+
+  - Solver/preconditioner routines can now directly be used with
+    Tpetra objects without having to wrap them to Thyra.
+    https://github.com/trilinos/Trilinos/pull/14459
+
+
+Zoltan
+
+  - Additional Hilbert Space filling curves
+    https://github.com/trilinos/Trilinos/pull/13880
+
+
+Zoltan2
+
+  - Reverse Cuthill-McKee can now symmetrize the input matrix.
+    https://github.com/trilinos/Trilinos/pull/14584
+    
 
 ###############################################################################
 #                                                                             #
-# Trilinos Release 16.1 Release Notes                               TBD, 2024 #
+# Trilinos Release 16.1 Release Notes                          March 20, 2025 #
 #                                                                             #
 ###############################################################################
 
