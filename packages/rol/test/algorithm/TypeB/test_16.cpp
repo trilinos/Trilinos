@@ -17,7 +17,7 @@
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_TypeB_ColemanLiAlgorithm.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include <iostream>
 #include <unordered_map>
@@ -28,7 +28,7 @@ typedef double RealT;
 int main(int argc, char *argv[]) {
   //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;

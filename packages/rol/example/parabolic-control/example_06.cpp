@@ -43,9 +43,8 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
+#include "ROL_LAPACK.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -311,7 +310,7 @@ private:
               const std::vector<Real> &r) {
     u.assign(r.begin(),r.end());
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int nx = static_cast<int>(nx_);
     int info;
     int ldb  = nx;
@@ -929,7 +928,7 @@ int main(int argc, char *argv[]) {
 
     
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;

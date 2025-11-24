@@ -8,7 +8,7 @@
 // @HEADER
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
 #include "ROL_PinTVector.hpp"
@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
   typedef ROL::Ptr<MV> MVP;
   typedef ROL::Ptr<ROL::Vector<RealT>> PtrVector;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.

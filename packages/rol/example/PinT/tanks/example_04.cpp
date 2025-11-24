@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
 #include "ROL_ReducedDynamicObjective.hpp"
@@ -24,7 +24,7 @@ int main( int argc, char* argv[] ) {
   using RealT     = double;
   using size_type = std::vector<RealT>::size_type;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );

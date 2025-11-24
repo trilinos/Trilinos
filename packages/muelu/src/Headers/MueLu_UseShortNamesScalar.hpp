@@ -296,6 +296,9 @@ using RepartitionBlockDiagonalFactory [[maybe_unused]] = MueLu::RepartitionBlock
 #ifdef MUELU_REPARTITIONHEURISTICFACTORY_SHORT
 using RepartitionHeuristicFactory [[maybe_unused]] = MueLu::RepartitionHeuristicFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
+#ifdef MUELU_REPARTITIONUTILITIES_SHORT
+using RepartitionUtilities [[maybe_unused]] = MueLu::RepartitionUtilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
 #ifdef MUELU_REPLICATEPFACTORY_SHORT
 using ReplicatePFactory [[maybe_unused]] = MueLu::ReplicatePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif

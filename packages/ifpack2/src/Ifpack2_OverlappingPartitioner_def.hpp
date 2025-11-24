@@ -16,6 +16,7 @@
 #include "Ifpack2_OverlappingPartitioner_decl.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Tpetra_Util.hpp"
 
 namespace Ifpack2 {
 

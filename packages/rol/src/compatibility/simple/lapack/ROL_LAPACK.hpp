@@ -67,6 +67,11 @@ functions that include the macro:
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,  DGEEV )
 #define DGELS_F77   F77_BLAS_MANGLE(dgels,  DGELS )
 #define DGELSS_F77  F77_BLAS_MANGLE(dgelss, DGELSS)
+#define DGESVD_F77  F77_BLAS_MANGLE(dgesvd, DGESVD)
+#define DGGEV_F77   F77_BLAS_MANGLE(dggev,  DGGEV)
+#define DPOTRF_F77  F77_BLAS_MANGLE(dpotrf, DPOTRF)
+#define DPOTRS_F77  F77_BLAS_MANGLE(dpotrs, DPOTRS)
+#define DPORFS_F77  F77_BLAS_MANGLE(dporfs, DPORFS)
 #define DLATRS_F77  F77_BLAS_MANGLE(dlatrs, DLATRS)
 #define DGTTRS_F77  F77_BLAS_MANGLE(dgttrs, DGTTRS)
 #define DGTTRF_F77  F77_BLAS_MANGLE(dgttrf, DGTTRF)
@@ -79,11 +84,16 @@ functions that include the macro:
 #define DPTTRS_F77  F77_BLAS_MANGLE(dpttrs, DPTTRS)
 #define DPTTRF_F77  F77_BLAS_MANGLE(dpttrf, DPTTRF)
 
-namespace ROL { 
+namespace ROL {
   extern "C" {
     void PREFIX DGEEV_F77(ROL_fcd, ROL_fcd, const int* n, double* a, const int* lda, double* wr, double* wi, double* vl, const int* ldvl, double* vr, const int* ldvr, double* work, const int* lwork, int* info);
     void PREFIX DGELS_F77(ROL_fcd ch, const int* m, const int* n, const int* nrhs, double* a, const int* lda, double* b, const int* ldb, double* work, const int* lwork, int* info);
     void PREFIX DGELSS_F77(const int* m, const int* n, const int* nrhs, double* a, const int* lda, double* b, const int* ldb, double* s, const double* rcond, int* rank, double* work, const int* lwork, int* info);
+    void PREFIX DGESVD_F77(ROL_fcd, ROL_fcd, const int* m, const int* n, double* a, const int* lda, double* s, double* u, const int* ldu, double* v, const int* ldv, double* work, const int* lwork, int* info);
+    void PREFIX DGGEV_F77(ROL_fcd, ROL_fcd, const int *n, double *A, const int *lda, double *B, const int *ldb, double *alphar, double *alphai, double *beta, double *vl, const int *ldvl, double *vr, const int *ldvr, double *work, const int *lwork, int *info);
+    void PREFIX DPOTRF_F77(ROL_fcd, const int* n, double* a, const int* lda, int* info);
+    void PREFIX DPOTRS_F77(ROL_fcd, const int* n, const int* nrhs, const double* a, const int* lda, double*x , const int* ldx, int* info);
+    void PREFIX DPORFS_F77(ROL_fcd, const int* n, const int* nrhs, const double* a, const int* lda, const double* af, const int* ldaf, const double* b, const int* ldb, double* x, const int* ldx, double* ferr, double* berr, double* work, int* iwork, int* info);
     void PREFIX DLATRS_F77(ROL_fcd UPLO, ROL_fcd TRANS, ROL_fcd DIAG, ROL_fcd NORMIN, const int* N, double* A, const int* LDA, double* X, double* SCALE, double* CNORM, int* INFO);
     void PREFIX DGTTRS_F77(ROL_fcd, const int* n, const int* nrhs, const double* dl, const double* d, const double* du, const double* du2, const int* ipiv, double* x , const int* ldx, int* info);
     void PREFIX DGTTRF_F77(const int* n, double* dl, double* d, double* du, double* du2, int* ipiv, int* info);
@@ -99,7 +109,7 @@ namespace ROL {
   }
 
   template<typename Index, typename Real>
-  struct LAPACK { 
+  struct LAPACK {
     /// \brief Computes for an \c n by \c n real nonsymmetric matrix \c A, the eigenvalues and, optionally, the left and/or right eigenvectors.
     ///
     /// Real and imaginary parts of the eigenvalues are returned in
@@ -112,6 +122,21 @@ namespace ROL {
 
     void GELSS(const Index& m, const Index& n, const Index& nrhs, Real* A, const Index& lda, Real* B, const Index& ldb, Real* S, const Real& rcond, Index* rank, Real* WORK, const Index& lwork, Index* info) const;
 
+    void GESVD(const char& JOBU, const char& JOBVT, const Index& m, const Index& n, Real* A, const Index& lda, Real* S, Real* U, const Index& ldu, Real* V, const Index& ldv, Real* WORK, const Index& lwork, Real* /* RWORK */, Index* info) const;
+
+    /*! Computes for a pair of \c n by \c n nonsymmetric matrices (\c A,\c B) the generalized eigenvalues, and optionally, the left and/or right generalized eigenvectors.
+       \note (This is the function is only defined for \c Real = \c float or \c double.)
+    */
+    void GGEV(const char& JOBVL, const char& JOBVR, const Index& n, Real* A, const Index& lda, Real* B, const Index& ldb, Real *ALPHAR, Real *ALPHAI, Real* BETA, Real* VL, const Index& ldvl, Real* VR, const Index& ldvr, Real* WORK, const Index& lwork, Index* info) const;
+
+    //! Computes Cholesky factorization of a real symmetric positive definite matrix \c A.
+    void POTRF(const char& UPLO, const Index& n, Real* A, const Index& lda, Index* info) const;
+
+    //! Solves a system of linear equations \c A*X=B, where \c A is a symmetric positive definite matrix factored by POTRF and the \c nrhs solutions are returned in \c B.
+    void POTRS(const char& UPLO, const Index& n, const Index& nrhs, const Real* A, const Index& lda, Real* B, const Index& ldb, Index* info) const;
+
+    //! Improves the computed solution to a system of linear equations when the coefficient matrix is symmetric positive definite, and provides error bounds and backward error estimates for the solution.
+    void PORFS(const char& UPLO, const Index& n, const Index& nrhs, const Real* A, const Index& lda, const Real* AF, const Index& ldaf, const Real* B, const Index& ldb, Real* X, const Index& ldx, Real* FERR, Real* BERR, Real* WORK, Index* IWORK, Index* info) const;
 
     /// \brief Robustly solve a possibly singular triangular linear system.
     ///
@@ -165,7 +190,7 @@ namespace ROL {
   };
 
   template<>
-  struct LAPACK<int, double> { 
+  struct LAPACK<int, double> {
 
     void LATRS (const char& UPLO, const char& TRANS, const char& DIAG, const char& NORMIN,
                 const int& N, double* A, const int& LDA, double* X, double* SCALE, double* CNORM,
@@ -176,7 +201,7 @@ namespace ROL {
 
     void GTTRS(const char& TRANS, const int& n, const int& nrhs, const double* dl, const double* d,
                const double* du, const double* du2, const int* IPIV, double* B, const int& ldb, int* info) const {
-      DGTTRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, dl, d, du, du2, IPIV, B, &ldb, info); 
+      DGTTRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, dl, d, du, du2, IPIV, B, &ldb, info);
     }
 
     void GTTRF(const int& n, double* dl, double* d, double* du, double* du2, int* IPIV, int* info) const {
@@ -187,31 +212,31 @@ namespace ROL {
       DSTEQR_F77(CHAR_MACRO(COMPZ), &n, D, E, Z, &ldz, WORK, info);
     }
 
-    void TRTRS(const char& UPLO, const char& TRANS, const char& DIAG, const int& n, const int& nrhs, const double* A, const int& lda, double* B, const int& ldb, int* info) const { 
+    void TRTRS(const char& UPLO, const char& TRANS, const char& DIAG, const int& n, const int& nrhs, const double* A, const int& lda, double* B, const int& ldb, int* info) const {
       DTRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &n, &nrhs, A, &lda, B, &ldb, info);
     }
 
     void GETRF(const int& m, const int& n, double* A, const int& lda, int* IPIV, int* info) const {
-      DGETRF_F77(&m, &n, A, &lda, IPIV, info); 
+      DGETRF_F77(&m, &n, A, &lda, IPIV, info);
     }
- 
+
     void GETRI(const int& n, double* A, const int& lda, const int* IPIV, double* WORK, const int& lwork, int* info) const {
-      DGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info); 
+      DGETRI_F77(&n, A, &lda, IPIV, WORK, &lwork, info);
     }
 
     void GETRS(const char& TRANS, const int& n, const int& nrhs, const double* A, const int& lda, const int* IPIV, double* B, const int& ldb, int* info) const {
-      DGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info); 
+      DGETRS_F77(CHAR_MACRO(TRANS), &n, &nrhs, A, &lda, IPIV, B, &ldb, info);
     }
 
     void GEQRF( const int& m, const int& n, double* A, const int& lda, double* TAU, double* WORK, const int& lwork, int* info) const {
-      DGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info); 
+      DGEQRF_F77(&m, &n, A, &lda, TAU, WORK, &lwork, info);
     }
 
     void ORGQR(const int& m, const int& n, const int& k, double* A, const int& lda, const double* TAU, double* WORK, const int& lwork, int* info) const {
       DORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
     }
 
-    void PTTRS(const int& n, const int& nrhs, const double* d, const double* e, double* B, const int& ldb, int* info) const { 
+    void PTTRS(const int& n, const int& nrhs, const double* d, const double* e, double* B, const int& ldb, int* info) const {
       DPTTRS_F77(&n,&nrhs,d,e,B,&ldb,info);
     }
 
@@ -219,16 +244,36 @@ namespace ROL {
       DGEEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, WR, WI, VL, &ldvl, VR, &ldvr, WORK, &lwork, info);
     }
 
-    void GELS(const char& TRANS, const int& m, const int& n, const int& nrhs, double* A, const int& lda, double* B, const int& ldb, double* WORK, const int& lwork, int* info) const { 
-      DGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, info); 
+    void GELS(const char& TRANS, const int& m, const int& n, const int& nrhs, double* A, const int& lda, double* B, const int& ldb, double* WORK, const int& lwork, int* info) const {
+      DGELS_F77(CHAR_MACRO(TRANS), &m, &n, &nrhs, A, &lda, B, &ldb, WORK, &lwork, info);
     }
 
-    void GELSS(const int& m, const int& n, const int& nrhs, double* A, const int& lda, double* B, const int& ldb, double* S, const double& rcond, int* rank, double* WORK, const int& lwork, int* info) const { 
-      DGELSS_F77(&m, &n, &nrhs, A, &lda, B, &ldb, S, &rcond, rank, WORK, &lwork, info); 
+    void GELSS(const int& m, const int& n, const int& nrhs, double* A, const int& lda, double* B, const int& ldb, double* S, const double& rcond, int* rank, double* WORK, const int& lwork, int* info) const {
+      DGELSS_F77(&m, &n, &nrhs, A, &lda, B, &ldb, S, &rcond, rank, WORK, &lwork, info);
+    }
+
+    void GESVD(const char& JOBU, const char& JOBVT, const int& m, const int& n, double* A, const int& lda, double* S, double* U, const int& ldu, double* V, const int& ldv, double* WORK, const int& lwork, double* /* RWORK */, int* info) const {
+      DGESVD_F77(CHAR_MACRO(JOBU), CHAR_MACRO(JOBVT), &m, &n, A, &lda, S, U, &ldu, V, &ldv, WORK, &lwork, info);
+    }
+
+    void GGEV(const char& JOBVL, const char& JOBVR, const int& n, double* A, const int& lda, double* B, const int& ldb, double* ALPHAR, double* ALPHAI, double* BETA, double* VL, const int& ldvl, double* VR, const int& ldvr, double* WORK, const int& lwork, int* info) const {
+      DGGEV_F77(CHAR_MACRO(JOBVL), CHAR_MACRO(JOBVR), &n, A, &lda, B, &ldb, ALPHAR, ALPHAI, BETA, VL, &ldvl, VR, &ldvr, WORK, &lwork, info);
+    }
+
+    void POTRF(const char& UPLO, const int& n, double* A, const int& lda, int* info) const {
+      DPOTRF_F77(CHAR_MACRO(UPLO), &n, A, &lda, info);
+    }
+
+    void POTRS(const char& UPLO, const int& n, const int& nrhs, const double* A, const int& lda, double* B, const int& ldb, int* info) const {
+      DPOTRS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, B, &ldb, info);
+    }
+
+    void PORFS(const char& UPLO, const int& n, const int& nrhs, const double* A, const int& lda, const double* AF, const int& ldaf, const double* B, const int& ldb, double* X, const int& ldx, double* FERR, double* BERR, double* WORK, int* IWORK, int* info) const {
+      DPORFS_F77(CHAR_MACRO(UPLO), &n, &nrhs, A, &lda, AF, &ldaf, B, &ldb, X, &ldx, FERR, BERR, WORK, IWORK, info);
     }
 
     void PTTRF(const int& n, double* d, double* e, int* info) const {
-      DPTTRF_F77(&n,d,e,info); 
+      DPTTRF_F77(&n,d,e,info);
     }
   };
 

@@ -8,7 +8,7 @@
 // @HEADER
 
 /*! \file  example_02.cpp
-    \brief Shows how to solve a linear-quadratic parabolic control problem 
+    \brief Shows how to solve a linear-quadratic parabolic control problem
            with bound constraints.
 */
 
@@ -18,9 +18,8 @@
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_GlobalMPISession.hpp"
+#include "ROL_LAPACK.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -37,7 +36,7 @@ class Objective_ParabolicControl : public ROL::Objective<Real> {
   typedef ROL::Vector<Real>    V;
   typedef ROL::StdVector<Real> SV;
 
-  typedef typename vector::size_type  uint;  
+  typedef typename vector::size_type  uint;
 
 private:
   std::vector<Real> u0_;
@@ -53,12 +52,12 @@ private:
 /***************************************************************/
 
   ROL::Ptr<const vector> getVector( const V& x ) {
-     
+
     return dynamic_cast<const SV&>(x).getVector();
   }
 
   ROL::Ptr<vector> getVector( V& x ) {
-    
+
     return dynamic_cast<SV&>(x).getVector();
   }
 
@@ -87,7 +86,7 @@ private:
     o.resize(nx_-1,dx_/6.0 - dt_/dx_);
   }
 
-  void compute_residual(std::vector<Real> &r, 
+  void compute_residual(std::vector<Real> &r,
                   const std::vector<Real> &up, const std::vector<Real> &u, const Real z) {
     r.clear();
     r.resize(nx_,0.0);
@@ -123,11 +122,11 @@ private:
     }
   }
 
-  void linear_solve(std::vector<Real> &u, std::vector<Real> &d, std::vector<Real> &o, 
+  void linear_solve(std::vector<Real> &u, std::vector<Real> &d, std::vector<Real> &o,
               const std::vector<Real> &r) {
     u.assign(r.begin(),r.end());
     // Perform LDL factorization
-    Teuchos::LAPACK<int,Real> lp;
+    ROL::LAPACK<int,Real> lp;
     int info;
     int nx   = static_cast<int>(nx_);
     int ldb  = nx;
@@ -165,13 +164,13 @@ private:
       utmp.assign(u.begin(),u.end());
       update(utmp,s,-alpha);
       compute_residual(r,up,utmp,z);
-      rnorm = compute_norm(r); 
+      rnorm = compute_norm(r);
       while ( rnorm > (1.0-1.e-4*alpha)*tmp && alpha > std::sqrt(ROL::ROL_EPSILON<Real>()) ) {
         alpha /= 2.0;
         utmp.assign(u.begin(),u.end());
         update(utmp,s,-alpha);
         compute_residual(r,up,utmp,z);
-        rnorm = compute_norm(r); 
+        rnorm = compute_norm(r);
       }
       // Update iterate
       u.assign(utmp.begin(),utmp.end());
@@ -186,7 +185,7 @@ private:
 
 public:
 
-  Objective_ParabolicControl(Real alpha = 1.e-4, uint nx = 128, uint nt = 100, Real T = 1) 
+  Objective_ParabolicControl(Real alpha = 1.e-4, uint nx = 128, uint nt = 100, Real T = 1)
     : alpha_(alpha), nx_(nx), nt_(nt), T_(T) {
     u0_.resize(nx_,0.0);
     dx_ = 1.0/((Real)nx-1.0);
@@ -231,7 +230,7 @@ public:
       }
       else {
         apply_mass(r,P[t]);
-      } 
+      }
       // Solve solve adjoint system at current time step
       linear_solve(p,d,o,r);
       // Update State Storage
@@ -239,7 +238,7 @@ public:
     }
   }
 
-  void solve_state_sensitivity(std::vector<std::vector<Real> > &pV, 
+  void solve_state_sensitivity(std::vector<std::vector<Real> > &pV,
                          const std::vector<std::vector<Real> > &U, const std::vector<Real> &z) {
     // Initialize State Storage
     pV.clear();
@@ -268,7 +267,7 @@ public:
     }
   }
 
-  void solve_adjoint_sensitivity(std::vector<std::vector<Real> > &Q, 
+  void solve_adjoint_sensitivity(std::vector<std::vector<Real> > &Q,
                            const std::vector<std::vector<Real> > &U, const std::vector<std::vector<Real> > &P,
                            const std::vector<std::vector<Real> > &pV, const std::vector<Real> &z) {
     // Initialize State Storage
@@ -314,7 +313,7 @@ public:
 
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> zp = getVector(z);
 
     // SOLVE STATE EQUATION
@@ -355,7 +354,7 @@ public:
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> zp = getVector(z);
     ROL::Ptr<vector> gp = getVector(g);
 
@@ -373,7 +372,7 @@ public:
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
 
-    
+
     ROL::Ptr<const vector> zp = getVector(z);
     ROL::Ptr<const vector> vp = getVector(v);
     ROL::Ptr<vector> hvp = getVector(hv);
@@ -405,10 +404,10 @@ int main(int argc, char *argv[]) {
   typedef std::vector<RealT>         vector;
   typedef typename vector::size_type luint;
 
-    
-  
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -504,7 +503,7 @@ int main(int argc, char *argv[]) {
       file_tr << (*y_ptr)[i] << "\n";
     }
     file_tr.close();
-   
+
     ROL::Ptr<ROL::Vector<RealT> > diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);

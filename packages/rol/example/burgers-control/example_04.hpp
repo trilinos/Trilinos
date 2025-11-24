@@ -18,7 +18,7 @@
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
 
-#include "Teuchos_LAPACK.hpp"
+#include "ROL_LAPACK.hpp"
 
 template<class Real>
 class L2VectorPrimal;
@@ -78,7 +78,7 @@ private:
     else {
       u.assign(r.begin(),r.end());
       // Perform LDL factorization
-      Teuchos::LAPACK<int,Real> lp;
+      ROL::LAPACK<int,Real> lp;
       std::vector<Real> du2(r.size()-2,0.0);
       std::vector<int> ipiv(r.size(),0);
       int info;

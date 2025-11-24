@@ -20,7 +20,7 @@
 #include "ROL_OED_Factory.hpp"
 #include "ROL_OED_StdMomentOperator.hpp"
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include <iostream>
 
@@ -94,7 +94,7 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -175,7 +175,9 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Problem<RealT>> problem = factory->get(*parlist,sampler);
     problem->setProjectionAlgorithm(*parlist);
     problem->finalize(false,true,*outStream);
-    problem->check(true,*outStream);
+    ROL::Ptr<ROL::Vector<RealT>> test = factory->getDesign()->clone();
+    test->randomize(1,2);
+    problem->check(true,*outStream,test,0.1);
 
     // Setup ROL solver
     std::clock_t timer = std::clock();

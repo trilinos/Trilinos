@@ -18,9 +18,17 @@ def getWrapper(classname):
 
 defaultScalarType = getDefaultScalarType()
 
-supported_objects = {"Bounds", "Constraint", "LinearOperator",
-                     "LinearConstraint", "Objective", "Problem", "Solver",
-                     "Vector", "getCout", "getParametersFromXmlFile"}
+supported_objects = {"Bounds",
+                     "Constraint",
+                     "getCout", 
+                     "getParametersFromXmlFile", 
+                     "getParametersFromYamlFile",
+                     "LinearConstraint", 
+                     "LinearOperator",
+                     "Objective", 
+                     "Problem", 
+                     "Solver",
+                     "Vector"}
 
 unsupported = importlib.import_module('.unsupported', 'pyrol')
 

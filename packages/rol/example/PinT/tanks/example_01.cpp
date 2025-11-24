@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
 #include "ROL_SerialConstraint.hpp"
@@ -34,7 +34,7 @@ int main( int argc, char* argv[] ) {
   using State             = Tanks::StateVector<RealT>;
   using Control           = Tanks::ControlVector<RealT>;
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);  
+  ROL::GlobalMPISession mpiSession(&argc, &argv);  
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 );

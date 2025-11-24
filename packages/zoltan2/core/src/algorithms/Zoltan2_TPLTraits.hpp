@@ -243,7 +243,13 @@ struct TPL_Traits<first_t, ZOLTAN_ID_PTR> {
     case 1:
       a = static_cast<first_t>(b[0]);
       break;
+    case 2:
+      a = static_cast<first_t>(b[0]);
+      if constexpr (sizeof(first_t) > sizeof(ZOLTAN_ID_TYPE))
+        a += static_cast<first_t>(b[1]) << (8*sizeof(ZOLTAN_ID_TYPE));
+      break;
     default:
+      // CAG: This code path is pretty suspicous and caused issues when used for NUM_ID == 2.
       first_t *tmp = (first_t *) b;
       a = *tmp;
     }

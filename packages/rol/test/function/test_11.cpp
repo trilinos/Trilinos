@@ -17,7 +17,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_RandomVector.hpp"
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 //#include <fenv.h>
 
 typedef double RealT;
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
   typedef ROL::Objective<RealT>       OBJ;
   typedef ROL::BoundConstraint<RealT> CON; 
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;

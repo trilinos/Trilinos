@@ -11,9 +11,9 @@
     \brief Test creating a LineSearch using an externally provided 
            scalar minimization function. 
 */
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_BisectionScalarMinimization.hpp"
@@ -27,7 +27,7 @@ typedef double RealT;
 
 int main(int argc, char *argv[] ) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
 
    
   using namespace ROL;

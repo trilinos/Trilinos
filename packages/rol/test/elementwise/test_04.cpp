@@ -16,7 +16,7 @@
 #include "ROL_BarrierFunctions.hpp"
 
 #include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
+#include "ROL_GlobalMPISession.hpp"
 #include "ROL_ParameterList.hpp"
 
 int main( int argc, char *argv[] ) {
