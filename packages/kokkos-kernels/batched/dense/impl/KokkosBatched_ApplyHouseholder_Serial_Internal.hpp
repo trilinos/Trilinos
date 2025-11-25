@@ -4,6 +4,7 @@
 #define KOKKOSBATCHED_APPLY_HOUSEHOLDER_SERIAL_INTERNAL_HPP
 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
+/// \author Luc Berger-Vergiat (lberge@sandia.gov)
 
 #include "KokkosBatched_Util.hpp"
 
@@ -15,6 +16,7 @@ namespace KokkosBatched {
 ///
 /// this impl follows the flame interface of householder transformation
 ///
+template <typename ArgTrans>
 struct SerialApplyLeftHouseholderInternal {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION static int invoke(const int m, const int n, const ValueType* tau,
@@ -23,6 +25,7 @@ struct SerialApplyLeftHouseholderInternal {
                                            /* */ ValueType* A2, const int as0, const int as1,
                                            /* */ ValueType* w1t) {
     using value_type = ValueType;
+    using KAT        = KokkosKernels::ArithTraits<value_type>;
 
     /// u2  m x 1
     /// a1t 1 x n
@@ -30,7 +33,8 @@ struct SerialApplyLeftHouseholderInternal {
 
     // apply a single householder transform H from the left to a row vector a1t
     // and a matrix A2
-    const value_type inv_tau = value_type(1) / (*tau);
+    const value_type inv_tau =
+        std::is_same_v<Trans::Transpose, ArgTrans> ? KAT::one() / KAT::conj(*tau) : KAT::one() / *tau;
 
     // compute the followings:
     // a1t -=    inv(tau)(a1t + u2'A2)
@@ -40,8 +44,7 @@ struct SerialApplyLeftHouseholderInternal {
     // w1t /= tau
     for (int j = 0; j < n; ++j) {
       value_type tmp = a1t[j * a1ts];
-      for (int i = 0; i < m; ++i)
-        tmp += KokkosKernels::ArithTraits<value_type>::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
+      for (int i = 0; i < m; ++i) tmp += KAT::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
       w1t[j] = tmp * inv_tau;  // /= (*tau);
     }
 
@@ -64,13 +67,14 @@ struct SerialApplyRightHouseholderInternal {
                                            /* */ ValueType* A2, const int as0, const int as1,
                                            /* */ ValueType* w1) {
     using value_type = ValueType;
+    using KAT        = KokkosKernels::ArithTraits<value_type>;
     /// u2 n x 1
     /// a1 m x 1
     /// A2 m x n
 
-    // apply a single householder transform H from the left to a row vector a1t
+    // apply a single householder transform H from the right to a row vector a1t
     // and a matrix A2
-    const value_type inv_tau = value_type(1) / (*tau);
+    const value_type inv_tau = KAT::one() / *tau;
 
     // compute the followings:
     // a1 -= inv(tau)(a1 + A2 u2)
@@ -89,8 +93,7 @@ struct SerialApplyRightHouseholderInternal {
 
     // A2 -= w1 * u2' (ger with conjugate)
     for (int j = 0; j < n; ++j)
-      for (int i = 0; i < m; ++i)
-        A2[i * as0 + j * as1] -= w1[i] * KokkosKernels::ArithTraits<ValueType>::conj(u2[j * u2s]);
+      for (int i = 0; i < m; ++i) A2[i * as0 + j * as1] -= w1[i] * KAT::conj(u2[j * u2s]);
 
     return 0;
   }
