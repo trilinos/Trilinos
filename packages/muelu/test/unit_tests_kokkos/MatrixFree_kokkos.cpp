@@ -30,10 +30,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, Constructor, Scal
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
   out << "version: " << MueLu::Version() << std::endl;
 
   RCP<MatrixFreeTentativePFactory> MFtentPFact = rcp(new MatrixFreeTentativePFactory);
@@ -48,11 +44,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentative, Sc
   using STS            = Teuchos::ScalarTraits<Scalar>;
   using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using TMT            = Teuchos::ScalarTraits<magnitude_type>;
-
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -139,11 +130,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentativeVect
   using STS            = Teuchos::ScalarTraits<Scalar>;
   using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using TMT            = Teuchos::ScalarTraits<magnitude_type>;
-
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
 
   out << "version: " << MueLu::Version() << std::endl;
   out << "Test when nullspace isn't supplied by user" << std::endl;
@@ -232,11 +218,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MakeTentativeUsin
   using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using TMT            = Teuchos::ScalarTraits<magnitude_type>;
 
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
-
   out << "version: " << MueLu::Version() << std::endl;
   out << "Test when nullspace isn't supplied by user" << std::endl;
 
@@ -313,11 +294,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MatrixFreeTentativePFactory, MatrixVsMatrixFre
   using STS            = Teuchos::ScalarTraits<Scalar>;
   using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
   using TMT            = Teuchos::ScalarTraits<magnitude_type>;
-
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 

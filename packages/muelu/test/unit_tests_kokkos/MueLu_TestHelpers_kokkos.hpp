@@ -801,15 +801,6 @@ class TestFactory {
   }
 
 #if 0
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-      static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {
-        Teuchos::ParameterList  ifpackList;
-        ifpackList.set("relaxation: type", type);
-        ifpackList.set("relaxation: sweeps", (LO) sweeps);
-        ifpackList.set("relaxation: damping factor", (SC) 1.0);
-        return rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
-      }
-#endif
 #endif
 
   // Create a matrix as specified by parameter list options
@@ -937,51 +928,6 @@ class TpetraTestFactory {
 
 // TAW: 3/14/2016: If both Epetra and Tpetra are enabled we need partial specializations
 //                 on GO=int/long long as well as NO=EpetraNode to disable BuildBlockMatrix
-#ifdef HAVE_MUELU_EPETRA
-// partial specializations (GO=int not enabled with Tpetra)
-#if !defined(HAVE_TPETRA_INST_INT_INT)
-template <class Scalar, class LocalOrdinal, class Node>
-class TpetraTestFactory<Scalar, LocalOrdinal, int, Node> {
-  typedef int GlobalOrdinal;
-#include "MueLu_UseShortNames.hpp"
- public:
-  static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
-
- private:
-  TpetraTestFactory() {}  // static class
-};                        // class TpetraTestFactory
-#endif
-
-// partial specializations (GO=long long not enabled with Tpetra)
-#if !defined(HAVE_TPETRA_INST_INT_LONG_LONG)
-template <class Scalar, class LocalOrdinal, class Node>
-class TpetraTestFactory<Scalar, LocalOrdinal, long long, Node> {
-  typedef long long GlobalOrdinal;
-#include "MueLu_UseShortNames.hpp"
- public:
-  static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
-
- private:
-  TpetraTestFactory() {}  // static class
-};                        // class TpetraTestFactory
-#endif
-
-// partial specializations (NO=EpetraNode not enabled with Tpetra)
-#if ((defined(EPETRA_HAVE_OMP) && !(defined(HAVE_TPETRA_INST_OPENMP))) || \
-     (!defined(EPETRA_HAVE_OMP) && !(defined(HAVE_TPETRA_INST_SERIAL))))
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-class TpetraTestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Xpetra::EpetraNode> {
-  typedef Xpetra::EpetraNode Node;
-#include "MueLu_UseShortNames.hpp"
- public:
-  static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList& matrixList, Xpetra::UnderlyingLib lib) { return Teuchos::null; }
-
- private:
-  TpetraTestFactory() {}  // static class
-};                        // class TpetraTestFactory
-#endif
-#endif  // endif HAVE_MUELU_EPETRA
 
 //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
 ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string& filter);
@@ -991,20 +937,12 @@ ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string&
 }  // namespace MueLuTests
 
 // Macro to skip a test when UnderlyingLib==Epetra or Tpetra
-#define MUELU_TEST_ONLY_FOR(UnderlyingLib)                                                                                               \
-  if (TestHelpers_kokkos::Parameters::getLib() != UnderlyingLib) {                                                                       \
-    out << "Skipping test for " << ((TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) ? "Epetra" : "Tpetra") << std::endl; \
-    return;                                                                                                                              \
+#define MUELU_TEST_ONLY_FOR(UnderlyingLib)                         \
+  if (TestHelpers_kokkos::Parameters::getLib() != UnderlyingLib) { \
+    out << "Skipping test for "                                    \
+        << "Tpetra" << std::endl;                                  \
+    return;                                                        \
   }
-
-// Macro to skip a test when Epetra is used with Ordinal != int
-#define MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal) \
-  if (!(TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra && (Teuchos::OrdinalTraits<LocalOrdinal>::name() != string("int") || Teuchos::OrdinalTraits<GlobalOrdinal>::name() != string("int"))))
-
-// Macro to skip a test when Epetra is used with Scalar != double or Ordinal != int
-#define MUELU_TEST_EPETRA_ONLY_FOR_DOUBLE_AND_INT(Scalar, LocalOrdinal, GlobalOrdinal)                                               \
-  if (!(TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra && Teuchos::ScalarTraits<Scalar>::name() != string("double"))) \
-  MUELU_TEST_EPETRA_ONLY_FOR_INT(LocalOrdinal, GlobalOrdinal)
 
 //! Namespace for MueLu test classes
 namespace MueLuTests {

@@ -102,5 +102,3 @@ using StridedMapFactory [[maybe_unused]] = Xpetra::StridedMapFactory<LocalOrdina
 using LO [[maybe_unused]] = LocalOrdinal;
 using GO [[maybe_unused]] = GlobalOrdinal;
 using NO [[maybe_unused]] = Node;
-
-// TODO: do the same for Epetra object (problem of namespace)

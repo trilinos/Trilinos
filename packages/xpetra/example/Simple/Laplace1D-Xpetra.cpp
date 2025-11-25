@@ -19,8 +19,6 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsMatrixFactory.hpp>
 
-#ifdef HAVE_XPETRA_TPETRA
-
 #include <TpetraCore_config.h>
 
 #if ((defined(HAVE_TPETRA_INST_OPENMP) || defined(HAVE_TPETRA_INST_SERIAL)) &&         \
@@ -93,9 +91,3 @@ int main(int argc, char *argv[]) {
   return EXIT_SUCCESS;
 }
 #endif  // Tpetra instantiated on SC=double, GO=int/long long and Node=Serial/OpenMP
-#else
-int main(int argc, char *argv[]) {
-  std::cout << "Xpetra has been compiled without Tpetra support. Skip example." << std::endl;
-  return EXIT_SUCCESS;
-}
-#endif  // HAVE_XPETRA_TPETRA
