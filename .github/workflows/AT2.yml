@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 # actions: write needed by skip-duplicate-actions (handled below as per OpenSSF scorecard)
-permissions: 
+permissions:
   contents: read
 
 jobs:
@@ -35,6 +35,9 @@ jobs:
   gcc10-openmpi4:
     needs: pre-checks
     runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6, 20251023]
+    env:
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-10.4.0-openmpi-4.1.6:20251023
+      GENCONFIG_BUILD_NAME: rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -89,10 +92,12 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-          export GENCONFIG_BUILD_NAME=rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+              exit 1
+          fi
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -134,6 +139,9 @@ jobs:
   clang19-openmpi4:
     needs: pre-checks
     runs-on: [self-hosted, clang-19.1.6-openmpi-4.1.6, 20250723]
+    env:
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-clang-19.1.6-openmpi-4.1.6:20250723
+      GENCONFIG_BUILD_NAME: rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -188,10 +196,12 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-          export GENCONFIG_BUILD_NAME=rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+              exit 1
+          fi
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -233,6 +243,9 @@ jobs:
   cuda12:
     needs: pre-checks
     runs-on: [self-hosted, cuda-12.4.1-gcc-10.4.0-openmpi-4.1.6, 20250723, gpu:A100]
+    env:
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-10.4.0-openmpi-4.1.6:20250723
+      GENCONFIG_BUILD_NAME: rhel_cuda-12-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -286,10 +299,13 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-          export GENCONFIG_BUILD_NAME=rhel_cuda-12-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+              exit 1
+          fi
+
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -332,6 +348,9 @@ jobs:
   gcc14:
     needs: pre-checks
     runs-on: [self-hosted, gcc-14, 20250724]
+    env:
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi10-gcc-14:20250724
+      GENCONFIG_BUILD_NAME: rhel_gcc_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -386,11 +405,13 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-          export GENCONFIG_BUILD_NAME=rhel_gcc_release-debug_shared_no-kokkos-arch_no-asan_no-complex_no-fpic_no-mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
 
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+              exit 1
+          fi
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -432,6 +453,9 @@ jobs:
   cuda12-uvm:
     needs: pre-checks
     runs-on: [self-hosted, cuda-12.4.1-gcc-10.4.0-openmpi-4.1.6, 20250723]
+    env:
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-cuda-12.4.1-gcc-10.4.0-openmpi-4.1.6:20250723
+      GENCONFIG_BUILD_NAME: rhel_cuda-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -485,10 +509,13 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-          export GENCONFIG_BUILD_NAME=rhel_cuda-gcc-openmpi_release_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_uvm_deprecated-on_no-package-enables
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+              exit 1
+          fi
+
           type python
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -530,6 +557,9 @@ jobs:
   oneapi2024:
     needs: pre-checks
     runs-on: [self-hosted, oneapi-2024.2, 20251007]
+    env:
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi9-oneapi-2024.2:20251007
+      GENCONFIG_BUILD_NAME: rhel_oneapi-intelmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -581,10 +611,12 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-          export GENCONFIG_BUILD_NAME=rhel_oneapi-intelmpi_release-debug_shared_no-kokkos-arch_no-asan_no-complex_fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+              exit 1
+          fi
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
@@ -626,6 +658,9 @@ jobs:
   openmp:
     needs: pre-checks
     runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6, 20251023]
+    env:
+      IMAGE: registry-ex.sandia.gov/trilinos-project/trilinos-containers/production/ubi8-gcc-10.4.0-openmpi-4.1.6:20251023
+      GENCONFIG_BUILD_NAME: rhel8_gcc-openmpi-openmp_release-debug_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -680,10 +715,12 @@ jobs:
           export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
           export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
-          export GENCONFIG_BUILD_NAME=rhel8_gcc-openmpi-openmp_release-debug_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
           printf "\n\n\n"
 
           echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+          if [ "${IMAGE}" ~= "${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}" ] ; then
+              exit 1
+          fi
 
           python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
             --target-branch-name ${{ github.event.pull_request.base.ref }} \
