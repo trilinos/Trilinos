@@ -24,6 +24,8 @@ macro(enable_errors errors)
     endforeach()
 endmacro()
 
+message(STATUS "Adding '-std=c99' to C compiler flags for Zoltan")
+set(Zoltan_C_FLAGS "-std=c99 ${Zoltan_C_FLAGS} ${CMAKE_C_FLAGS}")
 
 IF (CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
   IF(WIN32)
@@ -196,7 +198,6 @@ function(filter_valid_warnings_as_errors warnings output)
     endforeach()
     set(${output} ${valid_warnings} PARENT_SCOPE)
 endfunction()
-
 
 if("${Trilinos_WARNINGS_MODE}" STREQUAL "WARN")
     filter_valid_warnings("${upcoming_warnings}" upcoming_warnings)
