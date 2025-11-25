@@ -56,8 +56,8 @@ struct SerialQR_Internal {
       SerialLeftHouseholderInternal::invoke(m_A22, A_part3x3.A11, A_part3x3.A21, as0, tau);
 
       // left apply householder to A22
-      SerialApplyLeftHouseholderInternal::invoke(m_A22, n_A22, tau, A_part3x3.A21, as0, A_part3x3.A12, as1,
-                                                 A_part3x3.A22, as0, as1, w);
+      SerialApplyLeftHouseholderInternal<Trans::Transpose>::invoke(m_A22, n_A22, tau, A_part3x3.A21, as0, A_part3x3.A12,
+                                                                   as1, A_part3x3.A22, as0, as1, w);
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);

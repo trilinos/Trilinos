@@ -16,6 +16,7 @@
 template <class MatricesType, class TauViewType, class TmpViewType, class ErrorViewType>
 struct qrFunctor {
   using Scalar = typename MatricesType::value_type;
+  using KAT    = KokkosKernels::ArithTraits<Scalar>;
 
   MatricesType As;
   TauViewType taus;
@@ -41,8 +42,8 @@ struct qrFunctor {
     auto I   = Kokkos::subview(Is, matIdx, Kokkos::ALL, Kokkos::ALL);
     auto B   = Kokkos::subview(Bs, matIdx, Kokkos::ALL, Kokkos::ALL);
 
-    const Scalar SC_one = KokkosKernels::ArithTraits<Scalar>::one();
-    const Scalar tol    = KokkosKernels::ArithTraits<Scalar>::eps() * max_rows_cols * max_rows_cols * max_val;
+    const Scalar SC_one              = KAT::one();
+    const typename KAT::mag_type tol = KAT::eps() * max_rows_cols * max_rows_cols * Kokkos::abs(max_val);
 
     int error_lcl = 0;
 
@@ -86,7 +87,7 @@ struct qrFunctor {
     // which should be the identity matrix
     for (int rowIdx = 0; rowIdx < I.extent_int(0); ++rowIdx) {
       for (int colIdx = 0; colIdx < I.extent_int(1); ++colIdx) {
-        if (Kokkos::abs(Q(rowIdx, colIdx) - Qt(colIdx, rowIdx)) > tol) {
+        if (Kokkos::abs(Q(rowIdx, colIdx) - KAT::conj(Qt(colIdx, rowIdx))) > tol) {
           ++error_lcl;
         }
         if (rowIdx == colIdx) {
@@ -108,14 +109,14 @@ struct qrFunctor {
       }
     }
 
-    // Call ApplyQ on Q
+    // Call ApplyQ on Q from the right side
     for (int idx = 0; idx < w.extent_int(0); ++idx) {
       w(idx) = 0.0;
     }
     KokkosBatched::SerialApplyQ<Side::Right, Trans::NoTranspose, Algo::ApplyQ::Unblocked>::invoke(A, tau, Q, w);
     for (int rowIdx = 0; rowIdx < I.extent_int(0); ++rowIdx) {
       for (int colIdx = 0; colIdx < I.extent_int(1); ++colIdx) {
-        if (Kokkos::abs(Q(rowIdx, colIdx) - Qt(colIdx, rowIdx)) > tol) {
+        if (Kokkos::abs(Q(rowIdx, colIdx) - KAT::conj(Qt(colIdx, rowIdx))) > tol) {
           ++error_lcl;
         }
       }
@@ -127,6 +128,7 @@ struct qrFunctor {
       w(idx) = 0.0;
     }
     KokkosBatched::SerialApplyQ<Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, tau, B, w);
+
     for (int rowIdx = 0; rowIdx < B.extent_int(0); ++rowIdx) {
       for (int colIdx = 0; colIdx < B.extent_int(1); ++colIdx) {
         if (rowIdx <= colIdx) {
@@ -451,6 +453,184 @@ void test_QR_rectangular() {
 }
 
 template <class Device, class Scalar, class AlgoTagType>
+void test_QR_rectangular_cplx() {
+  // Analytical test with a complex rectangular matrix
+  //     [3+3i,  15]        [-0.60, -0.64,  0.48]        [-6, (-22 + 21i) / 3]
+  // A = [4+i,    0]    Q = [-0.80, -0.48, -0.36]    R = [ 0, sqrt(170**2 + 68**2 + 80**2 + 54**2) / 18]
+  //     [0+i, -3-i]        [ 0.00, -0.60, -0.80]        [ 0,           0]
+  //
+  // Expected outputs:
+  //      [           -6,  (-22 + 21i) / 3]
+  //  A = [(13 - i) / 13,  norm_y]
+  //      [(1 + 3i) / 30,  (-80 - 54i) / (-170 - 18*norm_y +68i)]
+  //
+  // tau = [(3 + i)/2, norm_y / (norm_y - (-170 + 68i) / 18)]
+  //
+  // with norm_y = sqrt(170**2 + 68**2 + 80**2 + 54**2) / 18
+
+  using KAT      = KokkosKernels::ArithTraits<Scalar>;
+  using mag_type = typename KAT::mag_type;
+
+  using MatrixViewType    = Kokkos::View<Scalar**>;
+  using ColVectorViewType = Kokkos::View<Scalar*>;
+  using ColWorkViewType   = Kokkos::View<Scalar*>;
+
+  const mag_type tol = 10 * KAT::eps();
+  constexpr int m = 3, n = 2;
+
+  MatrixViewType A("A", m, n), B("B", m, n), Q("Q", m, m);
+  ColVectorViewType t("t", n);
+  ColWorkViewType w("w", Kokkos::max(m, n));
+
+  auto A_h  = Kokkos::create_mirror_view(A);
+  A_h(0, 0) = Scalar(3, 3);
+  A_h(0, 1) = Scalar(15, 0);
+  A_h(1, 0) = Scalar(4, 1);
+  A_h(1, 1) = Scalar(0, 0);
+  A_h(2, 0) = Scalar(0, 1);
+  A_h(2, 1) = Scalar(-3, -1);
+
+  Kokkos::deep_copy(A, A_h);
+  Kokkos::deep_copy(B, A_h);
+
+  Kokkos::parallel_for(
+      "serialQR", 1, KOKKOS_LAMBDA(int) {
+        // compute the QR factorization of A and store the results in A and t
+        // (tau) - see the lapack dgeqp3(...) documentation:
+        // www.netlib.org/lapack/explore-html-3.6.1/dd/d9a/group__double_g_ecomputational_ga1b0500f49e03d2771b797c6e88adabbb.html
+        KokkosBatched::SerialQR<AlgoTagType>::invoke(A, t, w);
+      });
+
+  Kokkos::fence();
+  Kokkos::deep_copy(A_h, A);
+  auto tau_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, t);
+
+  const mag_type norm_y = Kokkos::sqrt(170 * 170 + 68 * 68 + 80 * 80 + 54 * 54) / 18;
+
+  Test::EXPECT_NEAR_KK_REL(A_h(0, 0), Scalar(-6, 0), tol);
+  Test::EXPECT_NEAR_KK_REL(A_h(0, 1), Scalar(-22. / 3, 21. / 3), tol);
+  Test::EXPECT_NEAR_KK_REL(A_h(1, 0), Scalar(13, -1) / 30, tol);
+  Test::EXPECT_NEAR_KK_REL(A_h(1, 1), norm_y, tol);
+  Test::EXPECT_NEAR_KK_REL(A_h(2, 0), Scalar(1, 3) / 30, tol);
+  Test::EXPECT_NEAR_KK_REL(A_h(2, 1), Scalar(-80, -54) / Scalar(-170 - 18 * norm_y, 68), tol);
+
+  Test::EXPECT_NEAR_KK_REL(tau_h(0), KAT::one() / Scalar(3. / 2., 1. / 2.), tol);
+  Test::EXPECT_NEAR_KK_REL(tau_h(1), norm_y / (norm_y - Scalar(-170, 68) / 18), tol);
+
+  Kokkos::parallel_for(
+      "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
+        KokkosBatched::SerialApplyQ<Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, t, B, w);
+      });
+  auto B_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, B);
+
+  Test::EXPECT_NEAR_KK_REL(Scalar(-6, 0), B_h(0, 0), tol);
+  Test::EXPECT_NEAR_KK_REL(Scalar(-22, 21) / 3, B_h(0, 1), tol);
+  Test::EXPECT_NEAR_KK(Scalar(0, 0), B_h(1, 0), tol);
+  Test::EXPECT_NEAR_KK_REL(Scalar(norm_y, 0), B_h(1, 1), tol);
+  Test::EXPECT_NEAR_KK(Scalar(0, 0), B_h(2, 0), tol);
+  Test::EXPECT_NEAR_KK(Scalar(0, 0), B_h(2, 1), tol);
+
+  Kokkos::parallel_for(
+      "serialFormQ", 1, KOKKOS_LAMBDA(int) {
+        KokkosBatched::SerialQR_FormQ_Internal::invoke(m, n, A.data(), A.stride(0), A.stride(1), t.data(), t.stride(0),
+                                                       Q.data(), Q.stride(0), Q.stride(1), w.data(), w.stride(0));
+      });
+  auto Q_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, Q);
+
+  Test::EXPECT_NEAR_KK_REL(Scalar(-0.5, -0.5), Q_h(0, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
+  Test::EXPECT_NEAR_KK_REL(Scalar(-2.0 / 3.0, -1.0 / 6.0), Q_h(1, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
+  Test::EXPECT_NEAR_KK_REL(Scalar(0.0, -1.0 / 6.0), Q_h(2, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+
+  // Kokkos::deep_copy(Q_h, 0.0);
+  // Q_h(0, 0) = 1.0;
+  // Q_h(1, 1) = 1.0;
+  // Q_h(2, 2) = 1.0;
+  // Kokkos::deep_copy(Q, Q_h);
+  // Kokkos::deep_copy(w, 0.0);
+  // Kokkos::parallel_for(
+  //     "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
+  //       KokkosBatched::SerialApplyQ<Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, t, Q, w);
+  //     });
+  // Kokkos::deep_copy(Q_h, Q);
+
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(1, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(2, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(0, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(2, 1), tol);
+  // Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(1, 2), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+
+  Kokkos::deep_copy(Q_h, 0.0);
+  Q_h(0, 0) = 1.0;
+  Q_h(1, 1) = 1.0;
+  Q_h(2, 2) = 1.0;
+  Kokkos::deep_copy(Q, Q_h);
+  Kokkos::deep_copy(w, 0.0);
+  Kokkos::parallel_for(
+      "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
+        KokkosBatched::SerialApplyQ<Side::Left, Trans::NoTranspose, Algo::ApplyQ::Unblocked>::invoke(A, t, Q, w);
+      });
+  Kokkos::deep_copy(Q_h, Q);
+
+  Test::EXPECT_NEAR_KK_REL(Scalar(-0.5, -0.5), Q_h(0, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
+  Test::EXPECT_NEAR_KK_REL(Scalar(-2.0 / 3.0, -1.0 / 6.0), Q_h(1, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
+  Test::EXPECT_NEAR_KK_REL(Scalar(0.0, -1.0 / 6.0), Q_h(2, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+
+  Kokkos::parallel_for(
+      "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
+        KokkosBatched::SerialApplyQ<Side::Left, Trans::Transpose, Algo::ApplyQ::Unblocked>::invoke(A, t, Q, w);
+      });
+  Kokkos::deep_copy(Q_h, Q);
+
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(0, 0), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(1, 1), tol);
+  Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(1.0), Q_h(2, 2), tol);
+
+  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 1), tol);
+  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(0, 2), tol);
+  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 0), tol);
+  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(1, 2), tol);
+  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
+  Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 1), tol);
+
+  // Kokkos::deep_copy(Q_h, 0);
+  // Q_h(0, 0) = 1.0;
+  // Q_h(1, 1) = 1.0;
+  // Q_h(2, 2) = 1.0;
+  // Kokkos::deep_copy(Q, Q_h);
+  // Kokkos::parallel_for(
+  //     "serialApplyQ", 1, KOKKOS_LAMBDA(int) {
+  //       KokkosBatched::SerialApplyQ<Side::Right, Trans::NoTranspose, Algo::ApplyQ::Unblocked>::invoke(A, t, Q, w);
+  //     });
+  // Kokkos::deep_copy(Q_h, Q);
+
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(0, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.64), Q_h(0, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.48), Q_h(0, 2), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.80), Q_h(1, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.48), Q_h(1, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.36), Q_h(1, 2), tol);
+  // Test::EXPECT_NEAR_KK(static_cast<Scalar>(0.), Q_h(2, 0), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(-0.60), Q_h(2, 1), tol);
+  // Test::EXPECT_NEAR_KK_REL(static_cast<Scalar>(0.80), Q_h(2, 2), tol);
+}
+
+template <class Device, class Scalar, class AlgoTagType>
 void test_QR_batch(const int numMat, const int numRows, const int numCols) {
   // Generate a batch of matrices
   // Compute QR factorization
@@ -459,10 +639,12 @@ void test_QR_batch(const int numMat, const int numRows, const int numCols) {
   // Check that Q*R = A
 
   using ExecutionSpace = typename Device::execution_space;
+  using size_type      = typename Kokkos::View<Scalar*, ExecutionSpace>::size_type;
 
   {
     Kokkos::View<Scalar**, ExecutionSpace> tau("tau", numMat, numCols);
-    Kokkos::View<Scalar*, ExecutionSpace> tmp("work buffer", numMat * Kokkos::max(numRows, numCols));
+    Kokkos::View<Scalar*, ExecutionSpace> tmp("work buffer",
+                                              static_cast<size_type>(numMat) * Kokkos::max(numRows, numCols));
     Kokkos::View<Scalar***, ExecutionSpace> As("A matrices", numMat, numRows, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> Bs("B matrices", numMat, numRows, numCols);
     Kokkos::View<Scalar***, ExecutionSpace> Qs("Q matrices", numMat, numRows, numRows);
@@ -541,44 +723,42 @@ TEST_F(TestCategory, serial_qr_batch_double) {
 }
 #endif
 
-// #if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
-// TEST_F(TestCategory, serial_qr_square_analytic_scomplex) {
-//   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
-//   test_QR_square<TestDevice, Kokkos::complex<float>, AlgoTagType>();
-// }
-// TEST_F(TestCategory, serial_qr_rectangular_analytic_scomplex) {
-//   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
-//   test_QR_rectangular<TestDevice, Kokkos::complex<float>, AlgoTagType>();
-// }
-// TEST_F(TestCategory, serial_qr_batch_scomplex) {
-//   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
-//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(314, 36);
-//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(10, 42, 36);
-//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(100, 42, 36);
-//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(200, 42, 36);
-//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(250, 42, 36);
-//   test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(300, 42, 36);
-// }
-// #endif
+#if defined(KOKKOSKERNELS_INST_COMPLEX_FLOAT)
+TEST_F(TestCategory, serial_qr_square_analytic_scomplex) {
+  typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
+  test_QR_square<TestDevice, Kokkos::complex<float>, AlgoTagType>();
+}
+TEST_F(TestCategory, serial_qr_rectangular_analytic_scomplex) {
+  typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
+  test_QR_rectangular<TestDevice, Kokkos::complex<float>, AlgoTagType>();
+}
+TEST_F(TestCategory, serial_qr_batch_scomplex) {
+  typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
+  test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(314, 36);
+  test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(10, 42, 36);
+  test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(100, 42, 36);
+  test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(200, 42, 36);
+  test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(250, 42, 36);
+  test_QR_batch<TestDevice, Kokkos::complex<float>, AlgoTagType>(300, 42, 36);
+}
+#endif
 
-// These algorithms are not implemented correctly for complex numbers
-// we can look at this in a second step...
-// #if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-// TEST_F(TestCategory, serial_qr_square_analytic_dcomplex) {
-//   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
-//   test_QR_square<TestDevice, Kokkos::complex<double>, AlgoTagType>();
-// }
-// TEST_F(TestCategory, serial_qr_rectangular_analytic_dcomplex) {
-//   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
-//   test_QR_rectangular<TestDevice, Kokkos::complex<double>, AlgoTagType>();
-// }
-// TEST_F(TestCategory, serial_qr_batch_dcomplex) {
-//   typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
-//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(314, 36);
-//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(10, 42, 36);
-//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(100, 42, 36);
-//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(200, 42, 36);
-//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(250, 42, 36);
-//   test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(300, 42, 36);
-// }
-// #endif
+#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
+TEST_F(TestCategory, serial_qr_square_analytic_dcomplex) {
+  typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
+  test_QR_square<TestDevice, Kokkos::complex<double>, AlgoTagType>();
+}
+TEST_F(TestCategory, serial_qr_rectangular_analytic_dcomplex) {
+  using AlgoTagType = KokkosBlas::Algo::QR::Unblocked;
+  test_QR_rectangular_cplx<TestDevice, Kokkos::complex<double>, AlgoTagType>();
+}
+TEST_F(TestCategory, serial_qr_batch_dcomplex) {
+  typedef KokkosBlas::Algo::QR::Unblocked AlgoTagType;
+  test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(314, 36);
+  test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(1, 4, 3);
+  test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(100, 42, 36);
+  test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(200, 42, 36);
+  test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(250, 42, 36);
+  test_QR_batch<TestDevice, Kokkos::complex<double>, AlgoTagType>(300, 42, 36);
+}
+#endif
