@@ -164,3 +164,6 @@ rsync.*
 # clangd server stuff
 .cache/
 compile_commands.json
+
+# virtual environment used for PR reproducer script
+/commonTools/pr_reproducer/.pr_reproducer_venv/

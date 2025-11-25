@@ -8,6 +8,8 @@
 // *****************************************************************************
 // @HEADER
 
+THIS WILL DEFINITELY NOT COMPILE!
+
 #ifndef ROL_VECTOR_H
 #define ROL_VECTOR_H
 
