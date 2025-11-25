@@ -152,9 +152,9 @@ int main(int argc, char* argv[]) {
     Kokkos::View<double**>  b_flat = b;
     Kokkos::View<double**>  c_flat = c2;
 #else
-    Kokkos::View<double***> A_flat(A.data_handle(), A.extent(0), A.extent(1), A.accessor().fad_size() + 1);
-    Kokkos::View<double**> b_flat(b.data_handle(), b.extent(0), b.accessor().fad_size() + 1);
-    Kokkos::View<double**> c_flat(c2.data_handle(), c2.extent(0), c2.accessor().fad_size() + 1);
+    Kokkos::View<double***> A_flat(A.data(), A.extent(0), A.extent(1), A.accessor().fad_size() + 1);
+    Kokkos::View<double**> b_flat(b.data(), b.extent(0), b.accessor().fad_size() + 1);
+    Kokkos::View<double**> c_flat(c2.data(), c2.extent(0), c2.accessor().fad_size() + 1);
 #endif
     run_mat_vec_deriv(A_flat, b_flat, c_flat);
 
