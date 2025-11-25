@@ -50,6 +50,7 @@
 #include "Test_Batched_SerialLacgv.hpp"
 #include "Test_Batched_SerialGbtrf.hpp"
 #include "Test_Batched_SerialGbtrs.hpp"
+#include "Test_Batched_SerialHouseholder.hpp"
 
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"

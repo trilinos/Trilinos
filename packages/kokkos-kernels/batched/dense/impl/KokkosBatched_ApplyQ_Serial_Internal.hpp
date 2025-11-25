@@ -59,8 +59,8 @@ struct SerialApplyQ_LeftForwardInternal {
       const int m_A2 = m - m_A0 - 1;
       /// -----------------------------------------------------
       // left apply householder to partitioned B1 and B2
-      SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1, B_part3x1.A2, bs0,
-                                                 bs1, w);
+      SerialApplyLeftHouseholderInternal<Trans::NoTranspose>::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1,
+                                                                     bs1, B_part3x1.A2, bs0, bs1, w);
 
       /// -----------------------------------------------------
       A_part2x2.mergeToABR(A_part3x3);
@@ -113,8 +113,8 @@ struct SerialApplyQ_LeftBackwardInternal {
       const int m_A2 = m - m_A0 - 1;
       /// -----------------------------------------------------
       // left apply householder to partitioned B1 and B2
-      SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1, B_part3x1.A2, bs0,
-                                                 bs1, w);
+      SerialApplyLeftHouseholderInternal<Trans::Transpose>::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1,
+                                                                   B_part3x1.A2, bs0, bs1, w);
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);

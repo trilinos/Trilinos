@@ -25,7 +25,7 @@ struct SerialHouseholder {
 ///
 
 // level 1 operation
-template <typename MemberType, typename ArgSide>
+template <typename ArgSide>
 struct TeamVectorHouseholder {
   template <typename MemberType, typename aViewType, typename tauViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const aViewType &a, const tauViewType &tau);
