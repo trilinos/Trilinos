@@ -6,9 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-/*
-  Direct translation of parts of Galeri to use Tpetra or Xpetra rather than Epetra. Epetra also supported.
-*/
 
 #ifndef GALERI_XPETRAMATRIXTRAITS_HPP
 #define GALERI_XPETRAMATRIXTRAITS_HPP
@@ -34,7 +31,6 @@ namespace Xpetra {
 /* These traits work for the following couples of (Map,Matrix):
    - Map = Tpetra::Map<...>,       and Matrix = Tpetra::CrsMatrix<...>
    - Map = Xpetra::TpetraMap<...> and Matrix = Xpetra::TpetraCrsMatrix<...>
-   - Map = Xpetra::EpetraMap,     and Matrix = Xpetra::EpetraCrsMatrix
 */
 template <class Map, class Matrix>
 class MatrixTraits {
@@ -59,7 +55,7 @@ class MatrixTraits<::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>, ::Xpetra::C
 
  public:
   static Teuchos::RCP<::Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Build(const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> &rowMap, size_t maxNumEntriesPerRow)
-  // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix or Xpetra::EpetraCrsMatrix).
+  // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix).
   { return ::Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, maxNumEntriesPerRow); };
   static Teuchos::RCP<::Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Build(local_matrix_type &lclMatrix, const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> &rowMap, const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> &colMap, const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> &domainMap, const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> &rangeMap) {
     auto crs = ::Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclMatrix, rowMap, colMap, domainMap, rangeMap);
@@ -75,7 +71,7 @@ class MatrixTraits<::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>, ::Xpetra::M
 
  public:
   static Teuchos::RCP<::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Build(const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> &rowMap, size_t maxNumEntriesPerRow)
-  // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix or Xpetra::EpetraCrsMatrix).
+  // Use the CrsMatrixFactory to decide what kind of matrix to create (Xpetra::TpetraCrsMatrix).
   { return ::Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rowMap, maxNumEntriesPerRow); };
   static Teuchos::RCP<::Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Build(local_matrix_type &lclMatrix, const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> &rowMap, const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> &colMap, const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> &domainMap, const Teuchos::RCP<const ::Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> &rangeMap) { return ::Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclMatrix, rowMap, colMap, domainMap, rangeMap); }
 };
