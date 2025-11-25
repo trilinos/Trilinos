@@ -1,6 +1,0 @@
-#!/bin/sh
-\rm -f .get_field1
-grep -i "$1" "$2" | sed "s/$1//" | sed "s/ *//" | sed "s/	*//" > .get_field1
-#wc .get_field1
-more .get_field1
-rm .get_field1

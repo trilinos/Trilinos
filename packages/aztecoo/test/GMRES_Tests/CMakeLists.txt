@@ -1,5 +1,0 @@
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  GMRES
-  SOURCES cxx_main.cpp
-  PASS_REGULAR_EXPRESSION "All tests passed"
-  )

@@ -1,2 +1,0 @@
-\rm -r lib/DSuperLU/$1
-\rm -r $1
