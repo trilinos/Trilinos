@@ -45,8 +45,6 @@ std::string zoltanTestDirectory(".");
 // If Tpetra is compiled with explicit instantiation,
 // we have to choose data types that are compiled into Tpetra.
 //
-// Epetra uses (scalar/lno/gno) == (double/int/int) data types.  If we
-// are using these data types, we can test Epetra user input.
 
 // TODO:  KDD 8/13/14
 // Global definitions of types gno_t, lno_t, zgid_t and
@@ -75,20 +73,8 @@ using Teuchos::compareArrays;
 
 #ifdef HAVE_TPETRA_DOUBLE
 typedef double zscalar_t;
-#define HAVE_EPETRA_SCALAR_TYPE
 #else
 typedef float zscalar_t;
-#endif
-
-#if defined HAVE_TPETRA_INT_INT
-#if defined HAVE_EPETRA_SCALAR_TYPE
-#define HAVE_EPETRA_DATA_TYPES
-#endif
-#endif
-
-#ifndef HAVE_ZOLTAN2_EPETRA
-#undef HAVE_EPETRA_SCALAR_TYPE
-#undef HAVE_EPETRA_DATA_TYPES
 #endif
 
 //////////////////////////////////////////////////////////////////////////
