@@ -4,12 +4,14 @@
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.01...5.0.0)
 
 ### Enhancements and updates:
+- Improve performance of par_ilut and improve benchmark [\#2846](https://github.com/kokkos/kokkos-kernels/pull/2846)
 - Prefer bit manipulation functions from Kokkos Core [\#2786](https://github.com/kokkos/kokkos-kernels/pull/2786)
 - Common - ArithTraits: moving from Kokkos to KokkosKernels [\#2771](https://github.com/kokkos/kokkos-kernels/pull/2771)
 - Update headers in preparation for the 5.0 release [\#2795](https://github.com/kokkos/kokkos-kernels/pull/2795)
 - Add a member function to BsrMatrix to convert to Crs [\#2809](https://github.com/kokkos/kokkos-kernels/pull/2809)
 
 ### Bug Fixes:
+- Batched - QR: fixes for complex scalars [\#2590](https://github.com/kokkos/kokkos-kernels/pull/2590)
 - Kokkos Batched InnerTrsm: Allocate in inner scope to avoid warnings with Sacado types [\#2810](https://github.com/kokkos/kokkos-kernels/pull/2810)
 - Define Fortran interface macros for LAPACK [\#2802](https://github.com/kokkos/kokkos-kernels/pull/2802)
 - Fixed blas includes [\#2776](https://github.com/kokkos/kokkos-kernels/pull/2776)
