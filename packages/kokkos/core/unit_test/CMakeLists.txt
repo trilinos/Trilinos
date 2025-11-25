@@ -354,7 +354,7 @@ foreach(Tag Threads;Serial;OpenMP;Cuda;HPX;OpenMPTarget;OpenACC;HIP;SYCL)
     # ViewSupport should eventually contain the new implementation
     # detail tests for the mdspan based View
     if(Kokkos_ENABLE_IMPL_MDSPAN)
-      set(BV_TestNames BasicView ReferenceCountedAccessor ReferenceCountedDataHandle)
+      set(BV_TestNames BasicView ReferenceCountedAccessor ReferenceCountedDataHandle AllocationAndSpanSize)
       if(NOT Kokkos_ENABLE_IMPL_VIEW_LEGACY AND NOT Kokkos_ENABLE_OPENACC)
         list(APPEND BV_TestNames ViewCustomizationAccessorArg ViewCustomizationAllocationType
              ViewCustomizationAccessorFromMapping
