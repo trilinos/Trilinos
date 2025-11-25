@@ -14,8 +14,8 @@ namespace KokkosBatched {
 /// TeamVector Impl
 /// ===============
 
-template <typename MemberType>
-template <typename aViewType, typename tauViewType>
+template <>
+template <typename MemberType, typename aViewType, typename tauViewType>
 KOKKOS_INLINE_FUNCTION int TeamVectorHouseholder<Side::Left>::invoke(const MemberType &member, const aViewType &a,
                                                                      const tauViewType &tau) {
   return TeamVectorLeftHouseholderInternal::invoke(member, a.extent(0) - 1, a.data(), a.data() + a.stride(0),

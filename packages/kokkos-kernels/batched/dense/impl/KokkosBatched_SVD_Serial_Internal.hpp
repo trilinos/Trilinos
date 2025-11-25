@@ -161,7 +161,7 @@ struct SerialSVDInternal {
       KokkosBatched::SerialLeftHouseholderInternal::invoke<value_type>(m - i - 1, &SVDIND(A, i, i),
                                                                        &SVDIND(A, i + 1, i), As0, &tau);
       if (n - i > 1) {
-        KokkosBatched::SerialApplyLeftHouseholderInternal::invoke<value_type>(
+        KokkosBatched::SerialApplyLeftHouseholderInternal<Trans::NoTranspose>::invoke<value_type>(
             m - i - 1, n - i - 1, &tau, &SVDIND(A, i + 1, i), As0, &SVDIND(A, i, i + 1), As1, &SVDIND(A, i + 1, i + 1),
             As0, As1, work);
       }
@@ -183,7 +183,7 @@ struct SerialSVDInternal {
               &SVDIND(A, i + 1, i + 2), As0, As1, work);
         }
         if (Vt) {
-          KokkosBatched::SerialApplyLeftHouseholderInternal::invoke<value_type>(
+          KokkosBatched::SerialApplyLeftHouseholderInternal<Trans::NoTranspose>::invoke<value_type>(
               n - i - 2, n, &tau, &SVDIND(A, i, i + 2), As1, &SVDIND(Vt, i + 1, 0), Vts1, &SVDIND(Vt, i + 2, 0), Vts0,
               Vts1, work);
         }
