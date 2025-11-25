@@ -42,7 +42,7 @@ enum BaseAdapterType {
     Adapters provide access from Zoltan2 to the user's data.  The
     methods in the interface must be defined by users.  Many built-in
     adapters are already defined for common data structures, such as
-    Tpetra and Epetra objects and C-language pointers to arrays.
+    Tpetra objects and C-language pointers to arrays.
 
  */
 

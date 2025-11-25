@@ -23,7 +23,7 @@ namespace Zoltan2 {
 
     Adapter objects provide access for Zoltan2 to the user's data.
     Many built-in adapters are already defined for common data structures,
-    such as Tpetra and Epetra objects and C-language pointers to arrays.
+    such as Tpetra objects and C-language pointers to arrays.
 
     Data types:
     \li \c scalar_t weights and vector element values

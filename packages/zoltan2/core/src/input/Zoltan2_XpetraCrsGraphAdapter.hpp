@@ -32,7 +32,6 @@ namespace Zoltan2 {
     The template parameter is the user's input object:
      \li Tpetra::CrsGraph
      \li Xpetra::CrsGraph
-     \li Epetra_CrsGraph
 
     The \c scalar_t type, representing use data such as matrix values, is
     used by Zoltan2 for weights, coordinates, part sizes and
@@ -64,7 +63,7 @@ public:
 #endif
 
   /*! \brief Constructor for graph with no weights or coordinates.
-   *  \param ingraph the Epetra_CrsGraph, Tpetra::CrsGraph or Xpetra::CrsGraph
+   *  \param ingraph the Tpetra::CrsGraph or Xpetra::CrsGraph
    *  \param numVtxWeights  the number of weights per vertex (default = 0)
    *  \param numEdgeWeights the number of weights per edge  (default = 0)
    *

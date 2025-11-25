@@ -564,7 +564,6 @@ EXPAND_AS_DEFINED      =
 
 TAGFILES = \
   $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=../$(TRILINOS_HOME)/packages/teuchos/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=../$(TRILINOS_HOME)/packages/epetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=../$(TRILINOS_HOME)/packages/tpetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/kokkos.tag=../$(TRILINOS_HOME)/packages/kokkos/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/xpetra.tag=../$(TRILINOS_HOME)/packages/xpetra/doc/html

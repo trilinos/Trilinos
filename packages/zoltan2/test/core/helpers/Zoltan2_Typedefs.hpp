@@ -140,15 +140,9 @@ namespace Zoltan2_TestingFramework {
   typedef Zoltan2::XpetraCrsGraphAdapter<xcrsGraph_t, tMVector_t>    xCG_xCG_t;
   typedef Zoltan2::XpetraCrsMatrixAdapter<xcrsMatrix_t, tMVector_t>  xCM_xCM_t;
 
-#ifdef HAVE_EPETRA_DATA_TYPES
-  typedef Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>         xMV_eMV_t;
-  typedef Zoltan2::XpetraCrsGraphAdapter<Epetra_CrsGraph, tMVector_t>   xCG_eCG_t;
-  typedef Zoltan2::XpetraCrsMatrixAdapter<Epetra_CrsMatrix, tMVector_t> xCM_eCM_t;
-#else // temp compiler issues - dummy place holders
   typedef Zoltan2::BasicVectorAdapter<tMVector_t> xMV_eMV_t;
   typedef Zoltan2::BasicVectorAdapter<tMVector_t> xCG_eCG_t;
   typedef Zoltan2::BasicVectorAdapter<tMVector_t> xCM_eCM_t;
-#endif
 
   typedef Zoltan2::BasicVectorAdapter<tMVector_t>         basic_vector_adapter;
 
