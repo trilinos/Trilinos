@@ -59,7 +59,11 @@ set(upcoming_warnings
     dangling-pointer=2  # -Wall
     # deprecated-copy  # -Wextra, lots of warnings
     implicit-fallthrough=3  # -Wextra
+    maybe-uninitialized
+    mismatched-new-delete
     pessimizing-move  # -Wall
+    redundant-move  # -Wextra
+    restrict
     #unused-parameter  # -Wextra, lots of warnings
     ${Trilinos_ADDITIONAL_WARNINGS}
 )
@@ -110,11 +114,9 @@ set(promoted_warnings
     int-to-pointer-cast
     logical-not-parentheses
     main
-    maybe-uninitialized
     memset-elt-size
     memset-transposed-args
     misleading-indentation
-    mismatched-new-delete
     mismatched-dealloc
     missing-attributes
     missing-field-initializers  # -Wextra
@@ -128,9 +130,7 @@ set(promoted_warnings
     parentheses
     pointer-sign
     range-loop-construct
-    redundant-move  # -Wextra
     reorder
-    restrict
     return-type
     self-move
     sequence-point

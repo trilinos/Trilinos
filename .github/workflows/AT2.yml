@@ -131,6 +131,105 @@ jobs:
         if: ${{ !cancelled() }}
         uses: ./.github/workflows/actions/summary
 
+  gcc12-openmpi4:
+    needs: pre-checks
+    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20251023]
+    if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
+    steps:
+      - name: env
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          env
+      - name: module list
+        shell: bash
+        run: |
+          bash -l -c "module list"
+          printenv PATH
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
+        with:
+          access_token: ${{ github.token }}
+      - name: make dirs
+        working-directory: /
+        run: |
+          mkdir -p /home/Trilinos/src/Trilinos
+          mkdir -p /home/Trilinos/build
+      - name: Clone trilinos
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+      - name: Repo status
+        run: |
+          git fetch --all
+          pwd
+          ls -lhat
+          git status
+          git branch -vv
+          git branch -a
+      - name: Output ccache stats
+        run: |
+          bash -l -c "ccache --show-stats --verbose"
+      - name: get dependencies
+        working-directory: ./packages/framework
+        run: |
+          bash -l -c "./get_dependencies.sh"
+      - name: PullRequestLinuxDriverTest.py
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          # Set up python-is-python3 hackery
+          mkdir bin
+          pushd bin
+          ln -s $(type -p python3) python
+          export PATH=$(pwd):${PATH}
+          popd
+
+          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
+          export GENCONFIG_BUILD_NAME=rhel8_gcc-openmpi_debug_shared_no-kokkos-arch_no-asan_complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_no-package-enables
+          printf "\n\n\n"
+
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+
+          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
+            --target-branch-name ${{ github.event.pull_request.base.ref }} \
+            --genconfig-build-name ${GENCONFIG_BUILD_NAME} \
+            --pullrequest-number ${{ github.event.pull_request.number }} \
+            --pullrequest-env-config-file ${GITHUB_WORKSPACE}/packages/framework/pr_tools/trilinos_pr.ini \
+            --pullrequest-gen-config-file ${GITHUB_WORKSPACE}/packages/framework/GenConfig/src/gen-config.ini \
+            --workspace-dir /home/runner/_work/Trilinos \
+            --source-dir ${GITHUB_WORKSPACE} \
+            --build-dir /home/Trilinos/build \
+            --dashboard-build-name=PR-${{ github.event.pull_request.number }}_${AT2_IMAGE}_debug_shared \
+            --ctest-driver /home/runner/_work/Trilinos/Trilinos/cmake/SimpleTesting/cmake/ctest-driver.cmake \
+            --ctest-drop-site sems-cdash-son.sandia.gov/cdash \
+            --filename-subprojects ./package_subproject_list.cmake \
+            --filename-packageenables ./packageEnables.cmake \
+            --max-cores-allowed=29 \
+            --num-concurrent-tests=16
+      - name: Copy artifacts
+        if: success() || failure()
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          cp ./packageEnables.cmake /home/runner/artifacts/
+          cp ./configure_command.txt /home/runner/artifacts/
+          cp ./genconfig_build_name.txt /home/runner/artifacts/
+      - name: Upload artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        env:
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
+        with:
+          name: ${{ github.job }}-artifacts
+          path: /home/runner/artifacts/*
+          retention-days: 90
+      - name: Write Summary
+        if: ${{ !cancelled() }}
+        uses: ./.github/workflows/actions/summary
+
   clang19-openmpi4:
     needs: pre-checks
     runs-on: [self-hosted, clang-19.1.6-openmpi-4.1.6, 20250723]
@@ -625,7 +724,7 @@ jobs:
 
   openmp:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-10.4.0-openmpi-4.1.6, 20251023]
+    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20251023]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
