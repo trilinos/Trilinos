@@ -475,7 +475,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
     GetOStream(Runtime0) << solverName_ + "::compute(): nuking BC columns of Dk_1" << std::endl;
 
     Dk_1_->resumeFill();
-    Scalar replaceWith = (Dk_1_->getRowMap()->lib() == Xpetra::UseEpetra) ? Teuchos::ScalarTraits<SC>::eps() : Teuchos::ScalarTraits<SC>::zero();
+    Scalar replaceWith = Teuchos::ScalarTraits<SC>::zero();
     Utilities::ZeroDirichletCols(Dk_1_, BCcols22_, replaceWith);
     Dk_1_->fillComplete(Dk_1_->getDomainMap(), Dk_1_->getRangeMap());
   }
@@ -535,7 +535,7 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
     GetOStream(Runtime0) << solverName_ + "::compute(): nuking BC rows of Dk_1" << std::endl;
 
     Dk_1_->resumeFill();
-    Scalar replaceWith = (Dk_1_->getRowMap()->lib() == Xpetra::UseEpetra) ? Teuchos::ScalarTraits<SC>::eps() : Teuchos::ScalarTraits<SC>::zero();
+    Scalar replaceWith = Teuchos::ScalarTraits<SC>::zero();
     Utilities::ZeroDirichletRows(Dk_1_, BCrows11_, replaceWith);
     Dk_1_->fillComplete(Dk_1_->getDomainMap(), Dk_1_->getRangeMap());
     dump(Dk_1_, "Dk_1_nuked.m");
@@ -560,7 +560,6 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
       toCrsMatrix(Dk_1_)->replaceDomainMapAndImporter(Importer22_->getTargetMap(), ImporterD);
     }
 
-#ifdef HAVE_MUELU_TPETRA
     if ((!Dk_1_T_.is_null()) &&
         (!R11_.is_null()) &&
         (!toCrsMatrix(Dk_1_T_)->getCrsGraph()->getImporter().is_null()) &&
@@ -569,7 +568,6 @@ void RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) 
         (R11_->getColMap()->lib() == Xpetra::UseTpetra))
       Dk_1_T_R11_colMapsMatch_ = Dk_1_T_->getColMap()->isSameAs(*R11_->getColMap());
     else
-#endif
       Dk_1_T_R11_colMapsMatch_ = false;
     if (Dk_1_T_R11_colMapsMatch_)
       GetOStream(Runtime0) << solverName_ + "::compute(): Dk_1_T and R11 have matching colMaps" << std::endl;

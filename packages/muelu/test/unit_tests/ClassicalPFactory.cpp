@@ -68,10 +68,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ClassicalPFactory, BuildP_Direct, Scalar, Loca
 #ifndef HAVE_MUELU_ZOLTAN2
   if (A->getRowMap()->getComm()->getSize() > 1)
     return;
-#else
-  if ((A->getRowMap()->lib() == Xpetra::UseEpetra) &&
-      (A->getRowMap()->getComm()->getSize() > 1))
-    return;
 #endif
 
   Teuchos::ParameterList galeriList;
@@ -145,10 +141,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ClassicalPFactory, BuildP_ClassicalModified, S
   // This test only works in parallel if we have Zoltan2 & Tpetra
 #ifndef HAVE_MUELU_ZOLTAN2
   if (A->getRowMap()->getComm()->getSize() > 1)
-    return;
-#else
-  if ((A->getRowMap()->lib() == Xpetra::UseEpetra) &&
-      (A->getRowMap()->getComm()->getSize() > 1))
     return;
 #endif
 
@@ -224,10 +216,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ClassicalPFactory, BuildP_Ext, Scalar, LocalOr
   // This test only works in parallel if we have Zoltan2 & Tpetra
 #ifndef HAVE_MUELU_ZOLTAN2
   if (A->getRowMap()->getComm()->getSize() > 1)
-    return;
-#else
-  if ((A->getRowMap()->lib() == Xpetra::UseEpetra) &&
-      (A->getRowMap()->getComm()->getSize() > 1))
     return;
 #endif
 

@@ -73,7 +73,6 @@ CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CrsMatrixWrap(const RC
   CreateDefaultView();
 }
 
-#ifdef HAVE_XPETRA_TPETRA
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map> &colMap, const local_matrix_type &lclMatrix, const Teuchos::RCP<Teuchos::ParameterList> &params)
   : finalDefaultView_(false) {
@@ -95,11 +94,6 @@ CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CrsMatrixWrap(const lo
   // Default view
   CreateDefaultView();
 }
-#else
-#ifdef __GNUC__
-#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
-#endif
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CrsMatrixWrap(RCP<CrsMatrix> matrix)
@@ -406,7 +400,6 @@ void CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setObjectLabel(co
   matrixData_->setObjectLabel(objectLabel);
 }
 
-#ifdef HAVE_XPETRA_TPETRA
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 #if KOKKOS_VERSION >= 40799
 typename Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::host_mirror_type
@@ -421,11 +414,6 @@ typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_mat
 CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalMatrixDevice() const {
   return matrixData_->getLocalMatrixDevice();
 }
-#else
-#ifdef __GNUC__
-#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
-#endif
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::hasCrsGraph() const { return true; }

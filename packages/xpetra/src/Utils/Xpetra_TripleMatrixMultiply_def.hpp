@@ -34,10 +34,7 @@ void TripleMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MultiplyRA
 
   bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
 
-  if (Ac.getRowMap()->lib() == Xpetra::UseEpetra) {
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
-  } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
+  if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
     using helpers = Xpetra::Helpers<SC, LO, GO, NO>;
     if (helpers::isTpetraCrs(R) && helpers::isTpetraCrs(A) && helpers::isTpetraCrs(P)) {
       // All matrices are Crs
@@ -85,9 +82,6 @@ void TripleMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MultiplyRA
       // Mix and match
       TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "Mix-and-match Crs/BlockCrs Multiply not currently supported");
     }
-#else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
   }
 
   if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {

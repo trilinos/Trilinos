@@ -94,123 +94,6 @@ struct EpetraSolvers_Wrapper {
   }
 };
 
-#if defined(HAVE_MUELU_EPETRA)
-template <class GlobalOrdinal>
-struct EpetraSolvers_Wrapper<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> {
-  static void Generate_ML_MaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& SM,
-                                                Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& D0,
-                                                Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& Kn,
-                                                Teuchos::RCP<Xpetra::MultiVector<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& nullspace,
-                                                Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& coords,
-                                                Teuchos::ParameterList& mueluList,
-                                                Teuchos::RCP<Xpetra::Operator<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& mlopX) {
-#if defined(HAVE_MUELU_ML)
-    typedef double SC;
-    typedef int LO;
-    typedef GlobalOrdinal GO;
-    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode NO;
-    typedef typename Teuchos::ScalarTraits<SC>::coordinateType coordinate_type;
-    typedef typename Xpetra::Matrix<SC, LO, GO, NO> Matrix;
-
-    RCP<const Epetra_CrsMatrix> epetraSM = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(SM);
-    RCP<const Epetra_CrsMatrix> epetraD0 = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(D0);
-    if (!coords.is_null()) {
-      RCP<const Epetra_MultiVector> epetraCoord = MueLu::Utilities<coordinate_type, LO, GO, NO>::MV2EpetraMV(coords);
-      if (epetraCoord->NumVectors() > 0) mueluList.set("x-coordinates", (*epetraCoord)[0]);
-      if (epetraCoord->NumVectors() > 1) mueluList.set("y-coordinates", (*epetraCoord)[1]);
-      if (epetraCoord->NumVectors() > 2) mueluList.set("z-coordinates", (*epetraCoord)[2]);
-    }
-    if (!nullspace.is_null()) {
-      RCP<const Epetra_MultiVector> epetraNullspace = MueLu::Utilities<SC, LO, GO, NO>::MV2EpetraMV(nullspace);
-      mueluList.set("null space: dimension", epetraNullspace->NumVectors());
-      mueluList.set("null space: vectors", (*epetraNullspace)[0]);
-      mueluList.set("null space: type", "pre-computed");
-    }
-    RCP<const Epetra_CrsMatrix> epetraKn;
-    if (Kn.is_null()) {
-      RCP<Matrix> temp = Xpetra::MatrixFactory<SC, LO, GO, NO>::Build(SM->getRangeMap());
-      Xpetra::MatrixMatrix<SC, LO, GO, NO>::Multiply(*SM, false, *D0, false, *temp, true, true);
-      RCP<Matrix> Kn2 = Xpetra::MatrixFactory<SC, LO, GO, NO>::Build(D0->getDomainMap());
-      Xpetra::MatrixMatrix<SC, LO, GO, NO>::Multiply(*D0, true, *temp, false, *Kn2, true, true);
-      epetraKn = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(Kn2);
-    } else
-      epetraKn = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(Kn);
-
-    RCP<Epetra_Operator> mlop = rcp<Epetra_Operator>(new ML_Epetra::MultiLevelPreconditioner(*epetraSM, *epetraD0, *epetraKn, mueluList, true));
-#if defined(HAVE_MUELU_BELOS)
-    // NOTE: Belos needs the Apply() and AppleInverse() routines of ML swapped.  So...
-    mlop = rcp<Belos::EpetraPrecOp>(new Belos::EpetraPrecOp(mlop));
-#endif
-
-    mlopX = rcp(new Xpetra::EpetraOperator<GO, NO>(mlop));
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-                               "Need ML & Epetra support");
-#endif
-  }
-
-  static void Generate_ML_RefMaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& SM,
-                                                   Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& D0,
-                                                   Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& Ms,
-                                                   Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& M0inv,
-                                                   Teuchos::RCP<Xpetra::Matrix<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& M1,
-                                                   Teuchos::RCP<Xpetra::MultiVector<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& nullspace,
-                                                   Teuchos::RCP<Xpetra::MultiVector<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& node_material,
-                                                   Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<double>::coordinateType, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& coords,
-                                                   Teuchos::ParameterList& mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<double, int, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode> >& mlopX) {
-#if defined(HAVE_MUELU_ML)
-    typedef double SC;
-    typedef int LO;
-    typedef GlobalOrdinal GO;
-    typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode NO;
-    typedef typename Teuchos::ScalarTraits<SC>::coordinateType coordinate_type;
-
-    RCP<const Epetra_CrsMatrix> epetraSM    = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(SM);
-    RCP<const Epetra_CrsMatrix> epetraD0    = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(D0);
-    RCP<const Epetra_CrsMatrix> epetraM0inv = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(M0inv);
-    RCP<const Epetra_CrsMatrix> epetraMs;
-    RCP<const Epetra_CrsMatrix> epetraM1 = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(M1);
-    if (!Ms.is_null())
-      epetraMs = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(Ms);
-    else
-      epetraMs = epetraM1;
-    mueluList.set("D0", epetraD0);
-    mueluList.set("Ms", epetraMs);
-    mueluList.set("M0inv", epetraM0inv);
-    mueluList.set("M1", epetraM1);
-    if (!coords.is_null()) {
-      RCP<const Epetra_MultiVector> epetraCoord = MueLu::Utilities<coordinate_type, LO, GO, NO>::MV2EpetraMV(coords);
-      if (epetraCoord->NumVectors() > 0) mueluList.sublist("refmaxwell: 11list").set("x-coordinates", (*epetraCoord)[0]);
-      if (epetraCoord->NumVectors() > 1) mueluList.sublist("refmaxwell: 11list").set("y-coordinates", (*epetraCoord)[1]);
-      if (epetraCoord->NumVectors() > 2) mueluList.sublist("refmaxwell: 11list").set("z-coordinates", (*epetraCoord)[2]);
-    }
-    if (!node_material.is_null()) {
-      RCP<const Epetra_MultiVector> epetraMaterial = MueLu::Utilities<coordinate_type, LO, GO, NO>::MV2EpetraMV(node_material);
-      mueluList.sublist("refmaxwell: 11list").set("material coordinates", (*epetraMaterial)[0]);
-    }
-    if (!nullspace.is_null()) {
-      RCP<const Epetra_MultiVector> epetraNullspace = MueLu::Utilities<SC, LO, GO, NO>::MV2EpetraMV(nullspace);
-      mueluList.sublist("refmaxwell: 11list").set("null space: dimension", epetraNullspace->NumVectors());
-      mueluList.sublist("refmaxwell: 11list").set("null space: vectors", (*epetraNullspace)[0]);
-      mueluList.sublist("refmaxwell: 11list").set("null space: type", "pre-computed");
-    }
-
-    RCP<Epetra_Operator> mlop = rcp<Epetra_Operator>(new ML_Epetra::RefMaxwellPreconditioner(*epetraSM, mueluList, true));
-#if defined(HAVE_MUELU_BELOS)
-    // NOTE: Belos needs the Apply() and AppleInverse() routines of ML swapped.  So...
-    mlop = rcp<Belos::EpetraPrecOp>(new Belos::EpetraPrecOp(mlop));
-#endif
-
-    mlopX = rcp(new Xpetra::EpetraOperator<GO, NO>(mlop));
-#else
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
-                               "Need ML & Epetra support");
-#endif
-  }
-};
-#endif  // HAVE_MUELU_EPETRA
-
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool SetupSolve(std::map<std::string, void*> inputs) {
 #include <MueLu_UseShortNames.hpp>
@@ -260,21 +143,7 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
         preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, material, params));
       else
         preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, params, GmhdA_Matrix));
-
     }
-#ifdef HAVE_MUELU_EPETRA
-    else if (precType == "ML-RefMaxwell") {
-      Xpetra::UnderlyingLib lib = *static_cast<Xpetra::UnderlyingLib*>(inputs["lib"]);
-      TEUCHOS_ASSERT(lib == Xpetra::UseEpetra);
-      EpetraSolvers_Wrapper<SC, LO, GO, NO>::Generate_ML_RefMaxwellPreconditioner(SM_Matrix, D0_Matrix, Ms_Matrix, M0inv_Matrix,
-                                                                                  M1_Matrix, nullspace, material, coords, params, preconditioner);
-    } else if (precType == "ML-Maxwell") {
-      Xpetra::UnderlyingLib lib = *static_cast<Xpetra::UnderlyingLib*>(inputs["lib"]);
-      TEUCHOS_ASSERT(lib == Xpetra::UseEpetra);
-      EpetraSolvers_Wrapper<SC, LO, GO, NO>::Generate_ML_MaxwellPreconditioner(SM_Matrix, D0_Matrix, Kn_Matrix,
-                                                                               nullspace, coords, params, preconditioner);
-    }
-#endif
 
     {
       // A test to make sure we can wrap this guy as a MueLu::TpetraOperator
@@ -398,15 +267,8 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
           sublist->set(*key_it, Kn_Matrix);
         else if (value == "Coordinates")
           sublist->set(*key_it, coords);
-          // else if (*key_it == "Nullspace")
-          //     sublist->set(*key_it, Nullspace);
-#ifdef HAVE_MUELU_EPETRA
-        else if (value == "eD0") {
-          auto eD0 = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix(), true)->getEpetra_CrsMatrix();
-          sublist->set(*key_it, eD0);
-        } else if (value == "eCoordinates")
-          sublist->set(*key_it, Teuchos::rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal, Node> >(coords, true)->getEpetra_MultiVector());
-#endif
+        // else if (*key_it == "Nullspace")
+        //     sublist->set(*key_it, Nullspace);
         else if (value == "tD0") {
           auto tD0 = toTpetra(D0_Matrix);
           sublist->set(*key_it, tD0);

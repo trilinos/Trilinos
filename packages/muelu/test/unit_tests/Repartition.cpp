@@ -867,12 +867,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, CoordinateMap, Scalar, LocalOrdin
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
-#if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#endif
 
   out << "version: " << MueLu::Version() << std::endl;
   out << "Tests that repartitioning is invariant to map specified in coordinates." << std::endl;
@@ -977,12 +971,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Repartition, NodePartition, Scalar, LocalOrdin
   MUELU_TESTING_SET_OSTREAM;
 
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
-#endif
-#if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
-#endif
 
   out << "version: " << MueLu::Version() << std::endl;
   out << "Tests that node repartitioning works " << std::endl;

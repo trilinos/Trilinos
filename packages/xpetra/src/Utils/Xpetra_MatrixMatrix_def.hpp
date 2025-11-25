@@ -21,17 +21,6 @@
 #include "Xpetra_StridedMapFactory.hpp"
 #include "Xpetra_StridedMap.hpp"
 
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraCrsMatrix_fwd.hpp>
-#endif
-
-#ifdef HAVE_XPETRA_EPETRAEXT
-#include <EpetraExt_MatrixMatrix.h>
-#include <EpetraExt_RowMatrixOut.h>
-#include <Epetra_RowMatrixTransposer.h>
-#endif  // HAVE_XPETRA_EPETRAEXT
-
-#ifdef HAVE_XPETRA_TPETRA
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <MatrixMarket_Tpetra.hpp>
@@ -40,7 +29,6 @@
 #include <Tpetra_BlockCrsMatrix_Helpers.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraVector.hpp>
-#endif  // HAVE_XPETRA_TPETRA
 
 #include "Xpetra_MatrixMatrix_decl.hpp"
 
@@ -64,15 +52,7 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(const Mat
 
   bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
 
-  if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
-#else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra::MatrixMatrix::Multiply requires EpetraExt to be compiled."));
-
-#endif
-  } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
+  if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
     using helpers = Xpetra::Helpers<SC, LO, GO, NO>;
     if (helpers::isTpetraCrs(A) && helpers::isTpetraCrs(B) && helpers::isTpetraCrs(C)) {
       // All matrices are Crs
@@ -119,9 +99,6 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(const Mat
       // Mix and match
       TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError, "Mix-and-match Crs/BlockCrs Multiply not currently supported");
     }
-#else
-    throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
-#endif
   }
 
   if (call_FillComplete_on_result && !haveMultiplyDoFillComplete) {
@@ -192,16 +169,6 @@ RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MatrixMatrix<Scal
                                                                                                                                  const RCP<ParameterList>& params) {
   return Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage, label, params);
 }
-
-#ifdef HAVE_XPETRA_EPETRAEXT
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Epetra_CrsMatrix> MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MLTwoMatrixMultiply(const Epetra_CrsMatrix& epA,
-                                                                                                   const Epetra_CrsMatrix& epB,
-                                                                                                   Teuchos::FancyOStream& fos) {
-  throw(Xpetra::Exceptions::RuntimeError("MLTwoMatrixMultiply only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
-  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
-}
-#endif  // ifdef HAVE_XPETRA_EPETRAEXT
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixMultiplyBlock(const BlockedCrsMatrix& A, bool transposeA,
@@ -322,17 +289,11 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(const
   if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
     throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
 
-  if (A.getRowMap()->lib() == Xpetra::UseEpetra) {
-    throw Exceptions::RuntimeError("TwoMatrixAdd for Epetra matrices needs <double,int,int> for Scalar, LocalOrdinal and GlobalOrdinal.");
-  } else if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
+  if (A.getRowMap()->lib() == Xpetra::UseTpetra) {
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(A);
     Tpetra::CrsMatrix<SC, LO, GO, NO>& tpB       = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(B);
 
     Tpetra::MatrixMatrix::Add(tpA, transposeA, alpha, tpB, beta);
-#else
-    throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
-#endif
   }
 }  // MatrixMatrix::TwoMatrixAdd()
 
@@ -354,18 +315,12 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(const
   if (rcpBopA == Teuchos::null && rcpBopB == Teuchos::null) {
     if (!(A.getRowMap()->isSameAs(*(B.getRowMap()))))
       throw Exceptions::Incompatible("TwoMatrixAdd: matrix row maps are not the same.");
-    if (lib == Xpetra::UseEpetra) {
-      throw Exceptions::RuntimeError("MatrixMatrix::Add for Epetra only available with Scalar = double, LO = GO = int.");
-    } else if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
+    if (lib == Xpetra::UseTpetra) {
       using tcrs_matrix_type      = Tpetra::CrsMatrix<SC, LO, GO, NO>;
       using helpers               = Xpetra::Helpers<SC, LO, GO, NO>;
       const tcrs_matrix_type& tpA = helpers::Op2TpetraCrs(A);
       const tcrs_matrix_type& tpB = helpers::Op2TpetraCrs(B);
       C                           = helpers::tpetraAdd(tpA, transposeA, alpha, tpB, transposeB, beta);
-#else
-      throw Exceptions::RuntimeError("Xpetra must be compiled with Tpetra.");
-#endif
     }
     ///////////////////////// EXPERIMENTAL
     if (A.IsView("stridedMaps")) C->CreateView("stridedMaps", rcpFromRef(A));

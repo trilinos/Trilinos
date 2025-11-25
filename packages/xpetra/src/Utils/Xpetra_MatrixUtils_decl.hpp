@@ -24,12 +24,10 @@
 #include "Xpetra_MatrixMatrix.hpp"
 #include "Xpetra_Helpers.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraMultiVector.hpp"
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <Tpetra_Details_extractBlockDiagonal.hpp>
 #include <Tpetra_Details_scaleBlockDiagonal.hpp>
-#endif
 
 namespace Xpetra {
 

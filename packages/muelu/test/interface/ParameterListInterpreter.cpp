@@ -18,9 +18,7 @@
 
 #include <MueLu.hpp>
 
-#if defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h>  // needed for check whether KLU2 is available
-#endif
 
 #include <MueLu_Exceptions.hpp>
 #include <MueLu_TestHelpers.hpp>
@@ -115,14 +113,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       dirList.push_back(prefix + "FactoryParameterListInterpreter/");
     }
   }
-#if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
-  // The ML interpreter have internal ifdef, which means that the resulting
-  // output would depend on configuration (reguarl interpreter does not have
-  // that). Therefore, we need to stabilize the configuration here.
-  // In addition, we run ML parameter list tests only if KLU is available
-  dirList.push_back(prefix + "MLParameterListInterpreter/");
-  dirList.push_back(prefix + "MLParameterListInterpreter2/");
-#endif
   int numLists = dirList.size();
 
   bool failed  = false;
@@ -174,7 +164,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       if (myRank == 0)
         std::cout << "Testing: " << xmlFile << std::endl;
 
-      baseFile             = baseFile + (lib == Xpetra::UseEpetra ? "_epetra" : "_tpetra");
+      baseFile             = baseFile + "_tpetra";
       std::string goldFile = baseFile + ".gold";
       std::ifstream f(goldFile.c_str());
       if (!f.good()) {

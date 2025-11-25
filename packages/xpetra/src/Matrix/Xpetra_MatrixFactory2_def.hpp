@@ -27,17 +27,9 @@ RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MatrixFactory2<Sc
 
   UnderlyingLib lib = A->getRowMap()->lib();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(lib != UseEpetra && lib != UseTpetra, Exceptions::RuntimeError,
-                             "Not Epetra or Tpetra matrix");
+  TEUCHOS_TEST_FOR_EXCEPTION(lib != UseTpetra, Exceptions::RuntimeError,
+                             "Not Tpetra matrix");
 
-#ifdef HAVE_XPETRA_EPETRA
-  if (lib == UseEpetra) {
-    // NOTE: The proper Epetra conversion in Xpetra_MatrixFactory.cpp
-    throw Exceptions::RuntimeError("Xpetra::BuildCopy(): matrix templates are incompatible with Epetra");
-  }
-#endif
-
-#ifdef HAVE_XPETRA_TPETRA
   if (lib == UseTpetra) {
     // Underlying matrix is Tpetra
     RCP<const TpetraCrsMatrix> oldTCrsOp = Teuchos::rcp_dynamic_cast<const TpetraCrsMatrix>(oldCrsOp);
@@ -53,7 +45,6 @@ RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MatrixFactory2<Sc
       throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::TpetraCrsMatrix failed");
     }
   }
-#endif
 
   return Teuchos::null;
 }

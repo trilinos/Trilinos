@@ -1370,21 +1370,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(BlockedMultiVector, BlockedVectorDeepCopy, M, 
 //
 // INSTANTIATIONS
 //
-#ifdef HAVE_XPETRA_TPETRA
 
 #define XPETRA_TPETRA_TYPES(S, LO, GO, N)                     \
   typedef typename Xpetra::TpetraMap<LO, GO, N> M##LO##GO##N; \
   typedef typename Xpetra::TpetraMultiVector<S, LO, GO, N> MV##S##LO##GO##N;
-
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-
-#define XPETRA_EPETRA_TYPES(S, LO, GO, N)                  \
-  typedef typename Xpetra::EpetraMapT<GO, N> M##LO##GO##N; \
-  typedef typename Xpetra::EpetraMultiVectorT<GO, N> MV##S##LO##GO##N;
-
-#endif
 
 #define XP_BLOCKEDMULTIVECTOR_INSTANT(S, LO, GO, N)                                                                                  \
   TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(BlockedMultiVector, Constructor, M##LO##GO##N, MV##S##LO##GO##N, S, LO, GO, N)                \
@@ -1413,11 +1402,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(BlockedMultiVector, BlockedVectorDeepCopy, M, 
 // List of tests which run only with Tpetra
 #define XP_TPETRA_BLOCKEDMULTIVECTOR_INSTANT(S, LO, GO, N)
 
-// List of tests which run only with Epetra
-#define XP_EPETRA_BLOCKEDMULTIVECTOR_INSTANT(S, LO, GO, N)
-
-#if defined(HAVE_XPETRA_TPETRA)
-
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
 
@@ -1425,26 +1409,5 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XPETRA_TPETRA_TYPES)
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XP_TPETRA_BLOCKEDMULTIVECTOR_INSTANT)
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XP_BLOCKEDMULTIVECTOR_INSTANT)
-
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA)
-
-#include "Xpetra_Map.hpp"  // defines EpetraNode
-typedef Xpetra::EpetraNode EpetraNode;
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-XPETRA_EPETRA_TYPES(double, int, int, EpetraNode)
-XP_EPETRA_BLOCKEDMULTIVECTOR_INSTANT(double, int, int, EpetraNode)
-XP_BLOCKEDMULTIVECTOR_INSTANT(double, int, int, EpetraNode)
-#endif
-// EpetraExt routines are not working with 64 bit
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long LongLong;
-XPETRA_EPETRA_TYPES(double, int, LongLong, EpetraNode)
-XP_EPETRA_BLOCKEDMULTIVECTOR_INSTANT(double, int, LongLong, EpetraNode)
-XP_EPETRA_BLOCKEDMULTIVECTOR_INSTANT(double, int, LongLong, EpetraNode)
-#endif
-
-#endif
 
 }  // namespace XpetraBlockMatrixTests

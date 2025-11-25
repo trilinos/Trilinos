@@ -295,13 +295,6 @@ template <>
 RCP<Hierarchy_double> getDatapackHierarchy<double>(MuemexSystem* dp) {
   RCP<MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier;
   switch (dp->type) {
-#ifdef HAVE_MUELU_EPETRA
-    case EPETRA: {
-      EpetraSystem* pack = (EpetraSystem*)dp;
-      hier               = pack->getHierarchy();
-      break;
-    }
-#endif
     case TPETRA: {
       TpetraSystem<double>* pack = (TpetraSystem<double>*)dp;
       hier                       = pack->getHierarchy();
@@ -324,13 +317,7 @@ RCP<Hierarchy_complex> getDatapackHierarchy<complex_t>(MuemexSystem* dp) {
 template <typename Scalar, typename T>
 void setHierarchyData(MuemexSystem* problem, int levelID, T& data, string& dataName) {
   RCP<Level> level;
-#ifdef HAVE_MUELU_EPETRA
-  if (problem->type == EPETRA) {
-    RCP<Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = ((EpetraSystem*)problem)->getHierarchy();
-    level                                                             = hier->GetLevel(levelID);
-  } else
-#endif
-      if (problem->type == TPETRA) {
+  if (problem->type == TPETRA) {
     RCP<Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = ((TpetraSystem<double>*)problem)->getHierarchy();
     level                                                             = hier->GetLevel(levelID);
   } else if (problem->type == TPETRA_COMPLEX) {
@@ -379,9 +366,6 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
       // Otherwise would break getting A and P when 'keep' is off
       needFMB = false;
     switch (this->type) {
-#ifdef HAVE_MUELU_EPETRA
-      case EPETRA:
-#endif
       case TPETRA: {
         RCP<OpenHierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = rcp_static_cast<OpenHierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(getDatapackHierarchy<double>(this));
         level                                                                 = hier->GetLevel(levelID);
@@ -499,124 +483,6 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
   }
   return output;
 }
-
-#ifdef HAVE_MUELU_EPETRA
-// EpetraSystem impl
-
-EpetraSystem::EpetraSystem()
-  : MuemexSystem(EPETRA) {}
-EpetraSystem::~EpetraSystem() {}
-
-int EpetraSystem::status() {
-  mexPrintf("**** Problem ID %d [MueLu_Epetra] ****\n", id);
-  if (!A.is_null())
-    mexPrintf("Matrix: %dx%d w/ %d nnz\n", A->NumGlobalRows(), A->NumGlobalCols(), A->NumMyNonzeros());
-  mexPrintf("Operator Complexity: %f\n", operatorComplexity);
-  if (!List.is_null()) {
-    mexPrintf("Parameter List:\n");
-    List->print();
-  }
-  mexPrintf("\n");
-  return IS_TRUE;
-} /*end status*/
-
-int EpetraSystem::setup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords) {
-  bool success = false;
-  try {
-    /* Matrix Fill */
-    A = loadDataFromMatlab<RCP<Epetra_CrsMatrix>>(matlabA);
-    if (haveCoords) {
-      // Create 'user data' sublist if it doesn't already exist
-      auto userData = Teuchos::sublist(List, "user data");
-      userData->set("Coordinates", loadDataFromMatlab<RCP<Epetra_MultiVector>>(matlabCoords));
-    }
-    prec = MueLu::CreateEpetraPreconditioner(A, *List);
-    // underlying the Epetra_Operator prec is a MueLu::EpetraOperator
-    RCP<MueLu::EpetraOperator> meo = rcp_static_cast<MueLu::EpetraOperator, Epetra_Operator>(prec);
-    operatorComplexity             = meo->GetHierarchy()->GetOperatorComplexity();
-    success                        = true;
-  } catch (exception& e) {
-    mexPrintf("Error occurred while setting up epetra problem:\n");
-    cout << e.what() << endl;
-  }
-  return success ? IS_TRUE : IS_FALSE;
-} /*end setup*/
-
-/* EpetraSystem::solve - Given two Teuchos lists, one in the EpetraSystem, and one of
-   solve-time options, this routine calls the relevant solver and returns the solution.
-   TPL     - Teuchos list of solve-time options [I]
-   A       - The matrix to solve with (may not be the one the preconditioned was used for)
-   b       - RHS vector [I]
-   x       - solution vector [O]
-   iters   - number of iterations taken [O]
-   Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
-*/
-mxArray* EpetraSystem::solve(RCP<ParameterList> TPL, RCP<Epetra_CrsMatrix> matrix, const mxArray* b, int& iters) {
-  mxArray* output;
-  try {
-    // Set up X and B
-    Epetra_Map map              = matrix->DomainMap();
-    RCP<Epetra_MultiVector> rhs = loadDataFromMatlab<RCP<Epetra_MultiVector>>(b);
-    RCP<Epetra_MultiVector> lhs = rcp(new Epetra_MultiVector(map, rhs->NumVectors(), true));
-    // Default params
-    TPL->get("Output Frequency", 1);
-    TPL->get("Output Style", Belos::Brief);
-#ifdef VERBOSE_OUTPUT
-    TPL->get("Verbosity", Belos::Errors | Belos::Warnings | Belos::Debug | Belos::FinalSummary | Belos::IterationDetails | Belos::OrthoDetails | Belos::TimingDetails | Belos::StatusTestDetails);
-#else
-    TPL->get("Verbosity", Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::Warnings + Belos::StatusTestDetails);
-#endif
-    RCP<Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>> problem = rcp(new Belos::LinearProblem<double, Epetra_MultiVector, Epetra_Operator>(matrix, lhs, rhs));
-    RCP<Belos::EpetraPrecOp> epo                                                   = rcp(new Belos::EpetraPrecOp(prec));
-    problem->setRightPrec(epo);
-    bool set = problem->setProblem();
-    TEUCHOS_TEST_FOR_EXCEPTION(!set, runtime_error, "Linear Problem failed to set up correctly!");
-    Belos::SolverFactory<double, Epetra_MultiVector, Epetra_Operator> factory;
-    // Get the solver name from the parameter list, default to PseudoBlockGmres if none specified by user
-    string solverName                                                             = TPL->get("solver", "GMRES");
-    RCP<Belos::SolverManager<double, Epetra_MultiVector, Epetra_Operator>> solver = factory.create(solverName, TPL);
-    solver->setProblem(problem);
-    Belos::ReturnType ret = solver->solve();
-    if (ret == Belos::Converged) {
-      mexPrintf("Success, Belos converged!\n");
-      iters  = solver->getNumIters();
-      output = saveDataToMatlab(lhs);
-    } else {
-      mexPrintf("Belos failed to converge.\n");
-      iters  = 0;
-      output = mxCreateDoubleScalar(0);
-    }
-    output = saveDataToMatlab(lhs);
-  } catch (exception& e) {
-    mexPrintf("Error occurred during Belos solve:\n");
-    cout << e.what() << endl;
-    output = mxCreateDoubleScalar(0);
-  }
-  return output;
-}
-
-mxArray* EpetraSystem::apply(const mxArray* r) {
-  RCP<Epetra_MultiVector> rhs = loadDataFromMatlab<RCP<Epetra_MultiVector>>(r);
-  Epetra_SerialComm Comm;
-  Epetra_Map map(rhs->GlobalLength(), 0, Comm);
-  RCP<Epetra_MultiVector> lhs = rcp(new Epetra_MultiVector(map, rhs->NumVectors(), true));
-  try {
-    this->prec->Apply(*rhs, *lhs);
-  } catch (exception& e) {
-    mexPrintf("Error occurred while applying MueLu-Epetra preconditioner:\n");
-    cout << e.what() << endl;
-  }
-  return saveDataToMatlab(lhs);
-}
-
-RCP<Hierarchy_double> EpetraSystem::getHierarchy() {
-  RCP<MueLu::EpetraOperator> meo                                           = rcp_static_cast<MueLu::EpetraOperator, Epetra_Operator>(prec);
-  RCP<MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = meo->GetHierarchy();
-  if (hier.is_null())
-    throw runtime_error("Hierarchy from Epetra problem was null.");
-  return hier;
-}
-#endif
 
 // tpetra_double_data_pack implementation
 
@@ -1047,12 +913,7 @@ void parse_list_item(RCP<ParameterList> List, char* option_name, const mxArray* 
       opt_str  = opt_char;
       List->set(option_name, opt_str);
       if (strcmp(option_name, MUEMEX_INTERFACE) == 0) {
-#ifdef HAVE_MUELU_EPETRA
-        if (strcmp(opt_str.c_str(), "epetra") == 0)
-          useEpetra = true;
-        else
-#endif
-            if (strcmp(opt_str.c_str(), "tpetra") == 0)
+        if (strcmp(opt_str.c_str(), "tpetra") == 0)
           useEpetra = false;
       }
       mxFree(opt_char);
@@ -1266,21 +1127,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         }
         intf = List->get(MUEMEX_INTERFACE, "tpetra");
         List->remove(MUEMEX_INTERFACE);  // no longer need this parameter
-#ifdef HAVE_MUELU_EPETRA
-        if (intf == "epetra") {
-          if (mxIsComplex(prhs[1])) {
-            mexPrintf("Error: Attempting to use complex-valued matrix with Epetra, which is unsupported.\n");
-            mexPrintf("Use Tpetra with complex matrices instead.\n");
-            throw runtime_error("Tried to use complex matrix with Epetra");
-          }
-          RCP<EpetraSystem> dp = rcp(new EpetraSystem());
-          dp->List             = List;
-          dp->setup(prhs[1], haveCoords, haveCoords ? prhs[2] : (mxArray*)NULL);
-          oc = dp->operatorComplexity;
-          D  = rcp_implicit_cast<MuemexSystem>(dp);
-        } else
-#endif
-            if (intf == "tpetra") {
+        if (intf == "tpetra") {
           // infer scalar type from prhs (can be double or complex<double>)
           if (mxIsComplex(prhs[1])) {
 #ifdef HAVE_COMPLEX_SCALARS
@@ -1368,18 +1215,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         // get pointer to MATLAB array that will be "B" or "rhs" multivector
         const mxArray* rhs = reuse ? prhs[2] : prhs[3];
         switch (dp->type) {
-#ifdef HAVE_MUELU_EPETRA
-          case EPETRA: {
-            RCP<EpetraSystem> esys = rcp_static_cast<EpetraSystem, MuemexSystem>(dp);
-            RCP<Epetra_CrsMatrix> matrix;
-            if (reuse)
-              matrix = esys->GetMatrix();
-            else
-              matrix = loadDataFromMatlab<RCP<Epetra_CrsMatrix>>(prhs[2]);
-            plhs[0] = esys->solve(List, matrix, rhs, iters);
-            break;
-          }
-#endif
           case TPETRA: {
             RCP<TpetraSystem<double>> tsys = rcp_static_cast<TpetraSystem<double>, MuemexSystem>(dp);
             RCP<Tpetra_CrsMatrix_double> matrix;
@@ -1427,13 +1262,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
         // get pointer to MATLAB array that will be "B" or "rhs" multivector
         const mxArray* rhs = prhs[2];
         switch (dp->type) {
-#ifdef HAVE_MUELU_EPETRA
-          case EPETRA: {
-            RCP<EpetraSystem> esys = rcp_static_cast<EpetraSystem, MuemexSystem>(dp);
-            plhs[0]                = esys->apply(rhs);
-            break;
-          }
-#endif
           case TPETRA: {
             RCP<TpetraSystem<double>> tsys = rcp_static_cast<TpetraSystem<double>, MuemexSystem>(dp);
             plhs[0]                        = tsys->apply(rhs);

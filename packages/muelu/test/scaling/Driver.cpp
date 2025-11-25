@@ -557,7 +557,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
             filename += "_" + rerunFileSuffix;
           if (numReruns > 1)
             filename += "_run" + MueLu::toString(rerunCount);
-          filename += (lib == Xpetra::UseEpetra ? ".epetra" : ".tpetra");
+          filename += ".tpetra";
 
           savedOut  = dup(STDOUT_FILENO);
           openedOut = fopen(filename.c_str(), "w");
@@ -593,9 +593,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
       // Loop over the setup/solve pairs
       // =========================================================================
       for (int l = 0; l < numLoops; l++) {
-#ifdef HAVE_MUELU_TPETRA
         Tpetra::Details::ProfilingRegion("MueLu Setup/Solve");
-#endif
 
         // Use Kokkos tuning, if requested.  We use the PL-based interface here
         if (kokkosTuning) {

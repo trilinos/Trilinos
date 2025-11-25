@@ -50,10 +50,6 @@ bool MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
   if (Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isTpetra(fwdOp)) return true;
 
-#ifdef HAVE_MUELU_EPETRA
-  if (Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isEpetra(fwdOp)) return true;
-#endif
-
   return false;
 }
 
@@ -97,9 +93,8 @@ void MueLuMaxwell1PreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(fwdOp));
 
   // Check whether it is Epetra/Tpetra
-  bool bIsEpetra = XpThyUtils::isEpetra(fwdOp);
   bool bIsTpetra = XpThyUtils::isTpetra(fwdOp);
-  TEUCHOS_TEST_FOR_EXCEPT((bIsEpetra == true && bIsTpetra == true));
+  TEUCHOS_TEST_FOR_EXCEPT((bIsTpetra == false));
 
   // wrap the forward operator as an Xpetra::Matrix that MueLu can work with
   // MueLu needs a non-const object as input

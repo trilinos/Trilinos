@@ -22,10 +22,6 @@
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
-#if defined(HAVE_MUELU_ML)
-#include <ml_MultiLevelPreconditioner.h>
-#endif
-
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
 

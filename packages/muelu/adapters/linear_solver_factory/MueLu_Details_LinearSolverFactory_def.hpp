@@ -19,11 +19,6 @@
 #include "Trilinos_Details_LinearSolverFactory.hpp"
 #include <type_traits>
 
-#ifdef HAVE_MUELU_EPETRA
-#include "Epetra_CrsMatrix.h"
-#include "MueLu_CreateEpetraPreconditioner.hpp"
-#endif  // HAVE_MUELU_EPETRA
-
 #include "Tpetra_Operator.hpp"
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 
