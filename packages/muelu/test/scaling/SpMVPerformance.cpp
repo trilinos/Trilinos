@@ -104,7 +104,6 @@ class SpMVMeasurement : public Measurement {
 };
 
 std::string systemName(const Xpetra::UnderlyingLib& lib) {
-  if (lib == Xpetra::UseEpetra) return "Epetra";
   if (lib == Xpetra::UseTpetra) return "Tpetra";
   return "Unknown";
 }

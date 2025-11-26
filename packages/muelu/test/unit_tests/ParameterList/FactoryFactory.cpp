@@ -14,12 +14,7 @@
 
 #include <MueLu_ConfigDefs.hpp>
 
-#if defined(HAVE_MUELU_AMESOS)
-#include <Amesos_config.h>
-#endif
-#if defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h>
-#endif
 
 #include <MueLu_TestHelpers.hpp>
 
@@ -84,13 +79,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FactoryFactory, BuildFactory, Scalar, LocalOrd
       out << "type = " << type << std::endl;
 
       if (type == "klu") {
-        if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_AMESOS) and defined(HAVE_AMESOS_KLU)
-          RUN;
-#else
-          TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
-#endif
-        } else if (lib == Xpetra::UseTpetra) {
+        if (lib == Xpetra::UseTpetra) {
           // Klu defaults to SuperLu in Amesos2Smoother
           // Therefore, we need to check against SuperLU
 #if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLU)
@@ -100,13 +89,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FactoryFactory, BuildFactory, Scalar, LocalOrd
 #endif
         }
       } else if (type == "superlu") {
-        if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_AMESOS) and defined(HAVE_AMESOS_SUPERLU)
-          RUN;
-#else
-          TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
-#endif
-        } else if (lib == Xpetra::UseTpetra) {
+        if (lib == Xpetra::UseTpetra) {
 #if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLU)
           RUN;
 #else
@@ -114,14 +97,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FactoryFactory, BuildFactory, Scalar, LocalOrd
 #endif
         }
       } else if (type == "superlu_dist" || type == "superludist") {
-        if (lib == Xpetra::UseEpetra) {
-          out << "Epetra" << std::endl;
-#if defined(HAVE_MUELU_AMESOS) and defined(HAVE_AMESOS_SUPERLUDIST)
-          RUN;
-#else
-          TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
-#endif
-        } else if (lib == Xpetra::UseTpetra) {
+        if (lib == Xpetra::UseTpetra) {
           out << "Tpetra" << std::endl;
 #if defined(HAVE_MUELU_AMESOS2) and defined(HAVE_AMESOS2_SUPERLUDIST)
           out << "Can run superlu_dist" << std::endl;
@@ -132,18 +108,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(FactoryFactory, BuildFactory, Scalar, LocalOrd
 #endif
         }
       } else if (type == "relaxation") {
-        if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_MUELU_IFPACK)
+        if (lib == Xpetra::UseTpetra) {
           RUN;
-#else
-          TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
-#endif
-        } else if (lib == Xpetra::UseTpetra) {
-#if defined(HAVE_MUELU_IFPACK2)
-          RUN;
-#else
-          TEST_THROW(RUN, MueLu::Exceptions::RuntimeError);
-#endif
         }
       } else {
         RUN;

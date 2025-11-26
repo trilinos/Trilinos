@@ -142,7 +142,6 @@ namespace FROSch {
             if (useForCoarseSpace) {
                 InterfaceCoarseSpaces_[blockId].reset(new CoarseSpace<SC,LO,GO,NO>(this->MpiComm_,this->SerialComm_));
 
-                //Epetra_SerialComm serialComm;
                 XMapPtr serialGammaMap = MapFactory<LO,GO,NO>::Build(dofsMap->lib(),dofsMap->getLocalNumElements(),0,this->SerialComm_);
                 mVPhiGamma = MultiVectorFactory<LO,GO,NO>::Build(serialGammaMap,dofsMap->getLocalNumElements());
             }
@@ -227,7 +226,7 @@ namespace FROSch {
 
             // Count entities
             GO numEntitiesGlobal = interior->getEntityMap()->getMaxAllGlobalIndex();
-            if (interior->getEntityMap()->lib()==UseEpetra || interior->getEntityMap()->getGlobalNumElements()>0) {
+            if (interior->getEntityMap()->getGlobalNumElements()>0) {
                 numEntitiesGlobal += 1;
             }
 
@@ -481,7 +480,6 @@ namespace FROSch {
         if (numMVRows > 0 && numCols > 0) {
 
             XMatrixPtr phiGamma;
-#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
             if (rowMap->lib() == UseTpetra)
             {
                 using crsmat_type  = typename Matrix<SC,LO,GO,NO>::local_matrix_type;
@@ -529,7 +527,7 @@ namespace FROSch {
                 Kokkos::fence();
 
                 // make it into offsets
-                KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
+                KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<execution_space>
                     (1+numRows, Rowptr);
                 Kokkos::fence();
 
@@ -556,7 +554,6 @@ namespace FROSch {
                 phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(crsmat, rowMap, basisMap, basisMapUnique, rangeMap,
                                                              params);
             } else
-#endif
             {
                 // Array for scaling the columns of PhiGamma (1/norm(PhiGamma(:,i)))
                 SCVec scale(numCols, 0.0);
@@ -654,7 +651,7 @@ namespace FROSch {
         FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
         // Statistics on linear dependencies
         GO global = AssembledInterfaceCoarseSpace_->getBasisMap()->getMaxAllGlobalIndex();
-        if (AssembledInterfaceCoarseSpace_->getBasisMap()->lib()==UseEpetra || AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalNumElements()>0) {
+        if (AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalNumElements()>0) {
             global += 1;
         }
         LOVec localVec(3);
@@ -852,7 +849,6 @@ namespace FROSch {
                 }
             }
 
-            #if defined(HAVE_XPETRA_TPETRA)
             if (mVPhi->getMap()->lib() == UseTpetra) {
                 using XMap2            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
                 using execution_space = typename XMap2::local_map_type::execution_space;
@@ -893,7 +889,6 @@ namespace FROSch {
                 }
                 Kokkos::fence();
             } else
-            #endif
             {
                 for (UN j=0; j<numLocalBlockColumns[i]; j++) {
                     ConstSCVecPtr mVPhiIData = mVPhiI->getData(itmp);

@@ -133,7 +133,7 @@ int main(int narg, char *arg[])
   bool aok = true;
 
   // Create object that can give us test Tpetra, Xpetra
-  // and Epetra matrices for testing.
+  // matrices for testing.
 
   RCP<UserInputForTests> uinput;
   Teuchos::ParameterList params;
@@ -299,88 +299,6 @@ int main(int narg, char *arg[])
       printFailureCode(*comm, fail);
     }
   }
-
-#ifdef HAVE_EPETRA_DATA_TYPES
-  /////////////////////////////////////////////////////////////
-  // User object is Epetra_CrsMatrix
-  typedef Epetra_CrsMatrix ematrix_t;
-  if (!gfail){
-    if (rank==0)
-      std::cout << "Input adapter for Epetra_CrsMatrix" << std::endl;
-
-    RCP<ematrix_t> eM = uinput->getUIEpetraCrsMatrix();
-    RCP<const ematrix_t> ceM = rcp_const_cast<const ematrix_t>(eM);
-    RCP<Zoltan2::XpetraCrsMatrixAdapter<ematrix_t> > eMInput;
-
-    bool goodAdapter = true;
-    try {
-      eMInput =
-        rcp(new Zoltan2::XpetraCrsMatrixAdapter<ematrix_t>(ceM));
-    }
-    catch (std::exception &e){
-      if (std::is_same<znode_t, Xpetra::EpetraNode>::value) {
-        aok = false;
-        goodAdapter = false;
-        std::cout << e.what() << std::endl;
-      }
-      else {
-        // We expect an error from Xpetra when znode_t != Xpetra::EpetraNode
-        // Ignore it, but skip tests using this matrix adapter.
-        std::cout << "Node type is not supported by Xpetra's Epetra interface;"
-                  << " Skipping this test." << std::endl;
-        std::cout << "FYI:  Here's the exception message: " << std::endl
-                  << e.what() << std::endl;
-        goodAdapter = false;
-      }
-    }
-    TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 5 ", 1);
-
-    if (goodAdapter) {
-      fail = verifyInputAdapter<ematrix_t>(*eMInput, *tM);
-
-      gfail = globalFail(*comm, fail);
-
-      if (!gfail){
-        ematrix_t *mMigrate =NULL;
-        try{
-          eMInput->applyPartitioningSolution(*eM, mMigrate, solution);
-        }
-        catch (std::exception &e){
-          std::cout << "Error caught:  " << e.what() << std::endl;
-          fail = 11;
-        }
-
-        gfail = globalFail(*comm, fail);
-
-        if (!gfail){
-          RCP<const ematrix_t> cnewM(mMigrate, true);
-          RCP<Zoltan2::XpetraCrsMatrixAdapter<ematrix_t> > newInput;
-          try{
-            newInput =
-              rcp(new Zoltan2::XpetraCrsMatrixAdapter<ematrix_t>(cnewM));
-          }
-          catch (std::exception &e){
-            aok = false;
-            std::cout << e.what() << std::endl;
-          }
-          TEST_FAIL_AND_EXIT(*comm, aok, "XpetraCrsMatrixAdapter 6 ", 1);
-
-          if (rank==0){
-            std::cout <<
-             "Input adapter for Epetra_CrsMatrix migrated to proc 0" <<
-             std::endl;
-          }
-          fail = verifyInputAdapter<ematrix_t>(*newInput, *newM);
-          if (fail) fail += 100;
-          gfail = globalFail(*comm, fail);
-        }
-      }
-      if (gfail){
-        printFailureCode(*comm, fail);
-      }
-    }
-  }
-#endif
 
   /////////////////////////////////////////////////////////////
   // DONE

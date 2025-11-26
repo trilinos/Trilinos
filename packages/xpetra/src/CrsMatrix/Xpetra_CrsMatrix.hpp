@@ -19,10 +19,8 @@
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_Vector.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include <KokkosSparse_StaticCrsGraph.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#endif
 
 namespace Xpetra {
 
@@ -272,7 +270,6 @@ class CrsMatrix
 
   //! @name Xpetra-specific routines
   //@{
-#ifdef HAVE_XPETRA_TPETRA
 #if KOKKOS_VERSION >= 40799
   using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
 #else
@@ -316,11 +313,6 @@ class CrsMatrix
   virtual void setAllValues(const typename local_matrix_type::row_map_type &ptr,
                             const typename local_graph_type::entries_type::non_const_type &ind,
                             const typename local_matrix_type::values_type &val) = 0;
-#else
-#ifdef __GNUC__
-#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
-#endif
 
   //@}
 

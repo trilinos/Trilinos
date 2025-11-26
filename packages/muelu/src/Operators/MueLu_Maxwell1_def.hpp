@@ -368,11 +368,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   // Apply boundary conditions to D0 (if needed)
   if (!reuse) {
     D0_Matrix_->resumeFill();
-    Scalar replaceWith;
-    if (D0_Matrix_->getRowMap()->lib() == Xpetra::UseEpetra)
-      replaceWith = Teuchos::ScalarTraits<SC>::eps();
-    else
-      replaceWith = Teuchos::ScalarTraits<SC>::zero();
+    Scalar replaceWith = Teuchos::ScalarTraits<SC>::zero();
 
     if (applyBCsTo22_) {
       GetOStream(Runtime0) << "Maxwell1::compute(): nuking BC rows/cols of D0" << std::endl;
