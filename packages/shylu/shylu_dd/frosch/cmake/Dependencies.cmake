@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Amesos2 Teuchos Tpetra Xpetra)
+SET(LIB_REQUIRED_DEP_PACKAGES Amesos2 Teuchos Tpetra Xpetra Kokkos KokkosKernels)
 SET(LIB_OPTIONAL_DEP_PACKAGES Belos Ifpack2 MueLu Stratimikos Thyra Zoltan2)
 SET(TEST_REQUIRED_DEP_PACKAGES Galeri)
 SET(TEST_OPTIONAL_DEP_PACKAGES Belos Thyra)
