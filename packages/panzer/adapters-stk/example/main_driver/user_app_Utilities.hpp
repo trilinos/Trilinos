@@ -62,7 +62,7 @@ namespace user_app {
   buildModelEvaluator(const Teuchos::RCP<Teuchos::ParameterList>& input_params,
                       const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 
-  Teuchos::RCP<Tempus::IntegratorBasic<double>>
+  Teuchos::RCP<Tempus::IntegratorForwardSensitivity<double>>
   buildTimeIntegrator(const Teuchos::RCP<Teuchos::ParameterList>& input_params,
                       const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
                       Teuchos::RCP<Thyra::ModelEvaluator<double>> me,
