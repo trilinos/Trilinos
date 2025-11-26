@@ -20,8 +20,8 @@ namespace Piro {
  * using matrix-free directional derivatives.
  *
  * This class wraps a model evaluator supporting residual calculation
- * and adds support for the W matrix that implements a Thyra-based version of
- * NOX_Epetra_MatrixFree conforming to the Thyra::LinerarOp interface.
+ * and adds support for the W matrix that implements a MatrixFree 
+ * operator conforming to the Thyra::LinerarOp interface.
  *
  * This class supports time-dependent problems (characterized by x_dot != null)
  * and uses the input values of the alpha and beta coefficients.
