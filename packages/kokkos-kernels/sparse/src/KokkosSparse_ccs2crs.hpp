@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosSparse_CcsMatrix.hpp"
@@ -35,33 +22,30 @@ class Ccs2Crs {
   using CrsRowMapViewType = typename CrsType::row_map_type::non_const_type;
   using CrsColIdViewType  = typename CrsType::index_type;
 
-  OrdinalType __nrows;
-  OrdinalType __ncols;
-  SizeType __nnz;
-  ValViewType __vals;
-  ColMapViewType __col_map;
-  RowIdViewType __row_ids;
+  OrdinalType nrows_;
+  OrdinalType ncols_;
+  SizeType nnz_;
+  ValViewType vals_;
+  ColMapViewType col_map_;
 
-  RowIdViewType __crs_row_cnt;
-
-  CrsValsViewType __crs_vals;
-  CrsRowMapViewType __crs_row_map;
-  CrsColIdViewType __crs_col_ids;
+  CrsValsViewType crs_vals_;
+  CrsRowMapViewType crs_row_map_;
+  CrsColIdViewType crs_col_ids_;
 
  public:
   Ccs2Crs(OrdinalType nrows, OrdinalType ncols, SizeType nnz, ValViewType vals, ColMapViewType col_map,
           RowIdViewType row_ids)
-      : __nrows(nrows), __ncols(ncols), __nnz(nnz), __vals(vals), __col_map(col_map), __row_ids(row_ids) {
-    __crs_vals    = CrsValsViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_vals"), nnz);
-    __crs_row_map = CrsRowMapViewType(Kokkos::view_alloc("__crs_row_map"), nrows + 1);
-    __crs_col_ids = CrsColIdViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "__crs_col_ids"), nnz);
+      : nrows_(nrows), ncols_(ncols), nnz_(nnz), vals_(vals), col_map_(col_map) {
+    crs_vals_    = CrsValsViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "crs_vals_"), nnz);
+    crs_row_map_ = CrsRowMapViewType(Kokkos::view_alloc("crs_row_map_"), nrows + 1);
+    crs_col_ids_ = CrsColIdViewType(Kokkos::view_alloc(Kokkos::WithoutInitializing, "crs_col_ids_"), nnz);
 
     KokkosSparse::Impl::transpose_matrix<ColMapViewType, RowIdViewType, ValViewType, CrsRowMapViewType,
                                          CrsColIdViewType, CrsValsViewType, CrsRowMapViewType, CrsET>(
-        __ncols, __nrows, __col_map, __row_ids, __vals, __crs_row_map, __crs_col_ids, __crs_vals);
+        ncols_, nrows_, col_map_, row_ids, vals_, crs_row_map_, crs_col_ids_, crs_vals_);
   }
 
-  CrsType get_crsMat() { return CrsType("ccs2crs", __nrows, __ncols, __nnz, __crs_vals, __crs_row_map, __crs_col_ids); }
+  CrsType get_crsMat() { return CrsType("ccs2crs", nrows_, ncols_, nnz_, crs_vals_, crs_row_map_, crs_col_ids_); }
 };
 }  // namespace Impl
 // clang-format off

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file Test_Common_Transpose.hpp
 
@@ -157,9 +144,9 @@ void testTransposeBsrRef() {
     const scalar_t valuesPtr[]   = {0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 1.3, 2.0, 2.1, 2.2, 2.3, 3.0, 3.1,
                                     3.2, 3.3, 4.0, 4.1, 4.2, 4.3, 5.0, 5.1, 5.2, 5.3, 6.0, 6.1, 6.2, 6.3};
 
-    typename rowmap_t::HostMirror::const_type row_map_h(row_mapPtr, numRows + 1);
-    typename entries_t::HostMirror::const_type entries_h(entriesPtr, nnz);
-    typename values_t::HostMirror::const_type values_h(valuesPtr, nnz * block_size * block_size);
+    typename rowmap_t::host_mirror_type::const_type row_map_h(row_mapPtr, numRows + 1);
+    typename entries_t::host_mirror_type::const_type entries_h(entriesPtr, nnz);
+    typename values_t::host_mirror_type::const_type values_h(valuesPtr, nnz * block_size * block_size);
 
     Kokkos::deep_copy(row_map, row_map_h);
     Kokkos::deep_copy(entries, entries_h);
@@ -180,9 +167,9 @@ void testTransposeBsrRef() {
     const scalar_t valuesPtr[]   = {3.0, 3.2, 3.1, 3.3, 2.0, 2.2, 2.1, 2.3, 4.0, 4.2, 4.1, 4.3, 5.0, 5.2,
                                     5.1, 5.3, 0.0, 0.2, 0.1, 0.3, 1.0, 1.2, 1.1, 1.3, 6.0, 6.2, 6.1, 6.3};
 
-    typename rowmap_t::HostMirror::const_type row_map_h(row_mapPtr, numRows + 1);
-    typename entries_t::HostMirror::const_type entries_h(entriesPtr, nnz);
-    typename values_t::HostMirror::const_type values_h(valuesPtr, nnz * block_size * block_size);
+    typename rowmap_t::host_mirror_type::const_type row_map_h(row_mapPtr, numRows + 1);
+    typename entries_t::host_mirror_type::const_type entries_h(entriesPtr, nnz);
+    typename values_t::host_mirror_type::const_type values_h(valuesPtr, nnz * block_size * block_size);
 
     Kokkos::deep_copy(row_map, row_map_h);
     Kokkos::deep_copy(entries, entries_h);

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef TEST_BATCHED_DENSE_HELPER_HPP
 #define TEST_BATCHED_DENSE_HELPER_HPP
 
@@ -22,7 +9,7 @@ namespace KokkosBatched {
 template <typename MatrixViewType, typename VectorViewType>
 void create_tridiagonal_batched_matrices(const MatrixViewType& A, const VectorViewType& B) {
   Kokkos::Random_XorShift64_Pool<typename VectorViewType::device_type::execution_space> random(13718);
-  Kokkos::fill_random(B, random, Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+  Kokkos::fill_random(B, random, 1);
 
   auto A_host = Kokkos::create_mirror_view(A);
 
@@ -174,11 +161,11 @@ void random_to_pds(InViewType& in, OutViewType& out) {
       for (int i2 = i1; i2 < BlkSize; i2++) {
         if (i1 == i2) {
           // Diagonal elements must be real
-          h_out(i0, i1, i2) = Kokkos::ArithTraits<value_type>::real(h_in(i0, i1, i2));
+          h_out(i0, i1, i2) = KokkosKernels::ArithTraits<value_type>::real(h_in(i0, i1, i2));
         } else {
           // Off-diagonal elements are complex and Hermitian
           h_out(i0, i1, i2) = h_in(i0, i1, i2);
-          h_out(i0, i2, i1) = Kokkos::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
+          h_out(i0, i2, i1) = KokkosKernels::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
         }
       }
     }
@@ -250,7 +237,7 @@ void create_banded_pds_matrix(InViewType& in, OutViewType& out, int k = 1, bool 
         for (int i1 = 0; i1 < BlkSize; i1++) {
           for (int i2 = i1; i2 < Kokkos::min(i1 + k + 1, BlkSize); i2++) {
             h_out(i0, i1, i2) = h_in(i0, i1, i2);
-            h_out(i0, i2, i1) = Kokkos::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
+            h_out(i0, i2, i1) = KokkosKernels::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
           }
         }
       }
@@ -259,7 +246,7 @@ void create_banded_pds_matrix(InViewType& in, OutViewType& out, int k = 1, bool 
         for (int i1 = 0; i1 < BlkSize; i1++) {
           for (int i2 = Kokkos::max(0, i1 - k); i2 <= i1; i2++) {
             h_out(i0, i1, i2) = h_in(i0, i1, i2);
-            h_out(i0, i2, i1) = Kokkos::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
+            h_out(i0, i2, i1) = KokkosKernels::ArithTraits<value_type>::conj(h_in(i0, i1, i2));
           }
         }
       }

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS1_ROTG_HPP_
 #define KOKKOSBLAS1_ROTG_HPP_
@@ -42,12 +29,12 @@ void rotg(execution_space const& space, SViewType const& a, SViewType const& b, 
           SViewType const& s) {
   static_assert(SViewType::rank == 0, "rotg: the inputs need to be rank 0 views");
   static_assert(MViewType::rank == 0, "rotg: the inputs need to be rank 0 views");
-  static_assert(!Kokkos::ArithTraits<typename MViewType::value_type>::is_complex);
+  static_assert(!KokkosKernels::ArithTraits<typename MViewType::value_type>::is_complex);
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename SViewType::memory_space>::accessible,
                 "rotg: execution_space cannot access data in SViewType");
   static_assert(Kokkos::SpaceAccessibility<execution_space, typename MViewType::memory_space>::accessible,
                 "rotg: execution_space cannot access data in MViewType");
-  static_assert(!Kokkos::ArithTraits<typename MViewType::value_type>::is_complex,
+  static_assert(!KokkosKernels::ArithTraits<typename MViewType::value_type>::is_complex,
                 "rotg: MViewType cannot hold complex values.");
 
   using SView_Internal = Kokkos::View<

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSSPARSE_SPGEMM_NUMERIC_HPP
 #define KOKKOSSPARSE_SPGEMM_NUMERIC_HPP
 
@@ -241,21 +228,6 @@ void spgemm_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t
   }
 }
 
-namespace Experimental {
-
-template <typename KernelHandle, typename alno_row_view_t_, typename alno_nnz_view_t_, typename ascalar_nnz_view_t_,
-          typename blno_row_view_t_, typename blno_nnz_view_t_, typename bscalar_nnz_view_t_, typename clno_row_view_t_,
-          typename clno_nnz_view_t_, typename cscalar_nnz_view_t_>
-[[deprecated("spgemm_numeric was promoted out of Experimental, please use KokkosSparse::spgemm_numeric instead.")]] void
-spgemm_numeric(KernelHandle *handle, typename KernelHandle::const_nnz_lno_t m, typename KernelHandle::const_nnz_lno_t n,
-               typename KernelHandle::const_nnz_lno_t k, alno_row_view_t_ row_mapA, alno_nnz_view_t_ entriesA,
-               ascalar_nnz_view_t_ valuesA, bool transposeA, blno_row_view_t_ row_mapB, blno_nnz_view_t_ entriesB,
-               bscalar_nnz_view_t_ valuesB, bool transposeB, clno_row_view_t_ row_mapC, clno_nnz_view_t_ &entriesC,
-               cscalar_nnz_view_t_ &valuesC, typename KernelHandle::const_nnz_lno_t block_dim = 1) {
-  KokkosSparse::spgemm_numeric(handle, m, n, k, row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB,
-                               transposeB, row_mapC, entriesC, valuesC, block_dim);
-}
-}  // namespace Experimental
 }  // namespace KokkosSparse
 
 #endif
