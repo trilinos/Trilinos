@@ -104,9 +104,6 @@
 
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_GeometricInterpolationPFactory_kokkos.hpp"
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-#include "MueLu_SaPFactory_kokkos.hpp"
-#endif
 #include "MueLu_SemiCoarsenPFactory_kokkos.hpp"
 #include "MueLu_StructuredAggregationFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
@@ -210,9 +207,6 @@ RCP<const FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   if (factoryName == "ZeroSubBlockAFactory") return Build2<ZeroSubBlockAFactory>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "CoalesceDropFactory_kokkos") return Build2<CoalesceDropFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
-#ifdef HAVE_MUELU_DEPRECATED_CODE
-  if (factoryName == "SaPFactory_kokkos") return Build2<SaPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
-#endif
   if (factoryName == "SemiCoarsenPFactory_kokkos") return Build2<SemiCoarsenPFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "StructuredAggregationFactory_kokkos") return Build2<StructuredAggregationFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);
   if (factoryName == "TentativePFactory_kokkos") return Build2<TentativePFactory_kokkos>(paramList, factoryMapIn, factoryManagersIn);

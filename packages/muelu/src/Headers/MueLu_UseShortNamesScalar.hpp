@@ -308,9 +308,6 @@ using RigidBodyModeFactory [[maybe_unused]] = MueLu::RigidBodyModeFactory<Scalar
 #ifdef MUELU_SAPFACTORY_SHORT
 using SaPFactory [[maybe_unused]] = MueLu::SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_SAPFACTORY_KOKKOS_SHORT
-using SaPFactory_kokkos [[maybe_unused]] = MueLu::SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_SCALEDNULLSPACEFACTORY_SHORT
 using ScaledNullspaceFactory [[maybe_unused]] = MueLu::ScaledNullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
