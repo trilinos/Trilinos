@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include "KokkosKernels_TestUtils.hpp"
@@ -410,7 +397,7 @@ void test_simple_systems() {
 
     scalar_type init_vals[2] = {0.0, 1.0};
     scalar_type solutions[2] = {
-        Kokkos::ArithTraits<scalar_type>::one() /
+        KokkosKernels::ArithTraits<scalar_type>::one() /
             Kokkos::sqrt(static_cast<scalar_type>(4 + Kokkos::sqrt(static_cast<scalar_type>(12.0)) / 2)),
         Kokkos::sqrt(static_cast<scalar_type>((4 + Kokkos::sqrt(static_cast<scalar_type>(12.0))) / 2))};
     run_newton_test<system_type, Device, scalar_type>(mySys, params, init_vals, solutions);

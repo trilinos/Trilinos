@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS1_ROTM_HPP_
 #define KOKKOSBLAS1_ROTM_HPP_
@@ -51,9 +38,9 @@ void rotm(execution_space const& space, VectorView const& X, VectorView const& Y
                 "from execution_space template parameter");
   static_assert(std::is_same<typename VectorView::non_const_value_type, typename VectorView::value_type>::value,
                 "rotm: VectorView template parameter needs to store non-const values");
-  static_assert(!Kokkos::ArithTraits<typename VectorView::value_type>::is_complex,
+  static_assert(!KokkosKernels::ArithTraits<typename VectorView::value_type>::is_complex,
                 "rotm: VectorView template parameter cannot use complex value_type");
-  static_assert(!Kokkos::ArithTraits<typename ParamView::value_type>::is_complex,
+  static_assert(!KokkosKernels::ArithTraits<typename ParamView::value_type>::is_complex,
                 "rotm: ParamView template parameter cannot use complex value_type");
 
   using VectorView_Internal = Kokkos::View<typename VectorView::non_const_value_type*,

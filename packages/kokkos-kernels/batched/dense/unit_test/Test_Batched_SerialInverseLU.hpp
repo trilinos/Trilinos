@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Vinh Dang (vqdang@sandia.gov)
 
 #include "gtest/gtest.h"
@@ -137,7 +124,7 @@ struct Functor_TestBatchedSerialInverseLU {
 template <typename DeviceType, typename AViewType, typename WViewType, typename AlgoTagType>
 void impl_test_batched_inverselu(const int N, const int BlkSize) {
   typedef typename AViewType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   AViewType a0("a0", N, BlkSize, BlkSize);
@@ -166,7 +153,7 @@ void impl_test_batched_inverselu(const int N, const int BlkSize) {
   Kokkos::fence();
 
   /// for comparison send it to host
-  typename AViewType::HostMirror c0_host = Kokkos::create_mirror_view(c0);
+  typename AViewType::host_mirror_type c0_host = Kokkos::create_mirror_view(c0);
 
   Kokkos::deep_copy(c0_host, c0);
 

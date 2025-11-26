@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_GIVENS_SERIAL_INTERNAL_HPP
 #define KOKKOSBATCHED_GIVENS_SERIAL_INTERNAL_HPP
 
@@ -53,11 +40,12 @@ struct SerialGivensInternal {
     } else {
       // here we do not care overflow caused by the division although it is
       // probable....
-      r  = Kokkos::ArithTraits<value_type>::sqrt(chi1 * chi1 + chi2 * chi2);
+      r  = KokkosKernels::ArithTraits<value_type>::sqrt(chi1 * chi1 + chi2 * chi2);
       cs = chi1 / r;
       sn = chi2 / r;
 
-      if (Kokkos::ArithTraits<value_type>::abs(chi1) > Kokkos::ArithTraits<value_type>::abs(chi2) && cs < zero) {
+      if (KokkosKernels::ArithTraits<value_type>::abs(chi1) > KokkosKernels::ArithTraits<value_type>::abs(chi2) &&
+          cs < zero) {
         cs = -cs;
         sn = -sn;
         r  = -r;

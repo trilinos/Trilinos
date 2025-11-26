@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -50,9 +37,9 @@ void run_test_mdf() {
                                        -1, 4,  -1, -1, -1, -1, 4,  -1, -1, -1, -1, 4,  -1, -1, -1, -1,
                                        4,  -1, -1, 4,  -1, -1, -1, 4,  -1, -1, -1, 4,  -1, -1, -1, 4};
 
-    typename row_map_type::HostMirror::const_type row_map_host(row_mapRaw, numRows + 1);
-    typename col_ind_type::HostMirror::const_type col_ind_host(col_indRaw, numNonZeros);
-    typename values_type::HostMirror::const_type values_host(values_Raw, numNonZeros);
+    typename row_map_type::host_mirror_type::const_type row_map_host(row_mapRaw, numRows + 1);
+    typename col_ind_type::host_mirror_type::const_type col_ind_host(col_indRaw, numNonZeros);
+    typename values_type::host_mirror_type::const_type values_host(values_Raw, numNonZeros);
 
     Kokkos::deep_copy(row_map, row_map_host);
     Kokkos::deep_copy(col_ind, col_ind_host);
@@ -68,8 +55,8 @@ void run_test_mdf() {
 
   col_ind_type permutation = handle.get_permutation();
 
-  bool success                                    = true;
-  typename col_ind_type::HostMirror permutation_h = Kokkos::create_mirror(permutation);
+  bool success                                          = true;
+  typename col_ind_type::host_mirror_type permutation_h = Kokkos::create_mirror(permutation);
   Kokkos::deep_copy(permutation_h, permutation);
   const ordinal_type permutation_ref[] = {0, 3, 12, 15, 1, 2, 4, 8, 7, 11, 13, 14, 5, 6, 9, 10};
   printf("MDF ordering: { ");
@@ -116,7 +103,7 @@ void run_test_mdf() {
     }
     for (int idx = 0; idx < 40; ++idx) {
       EXPECT_TRUE(entries_U_ref[idx] == entries_U(idx)) << "entries_U(" << idx << ") is wrong!";
-      EXPECT_NEAR_KK(values_U_ref[idx], values_U(idx), 10 * Kokkos::ArithTraits<scalar_type>::eps(),
+      EXPECT_NEAR_KK(values_U_ref[idx], values_U(idx), 10 * KokkosKernels::ArithTraits<scalar_type>::eps(),
                      "An entry in U.values is wrong!");
     }
 
@@ -143,7 +130,7 @@ void run_test_mdf() {
       EXPECT_TRUE(entries_L_ref[idx] == entries_L(idx))
           << "entries_L(" << idx << ")=" << entries_L(idx) << " is wrong, entries_L_ref[" << idx
           << "]=" << entries_L_ref[idx] << "!";
-      EXPECT_NEAR_KK(values_L_ref[idx], values_L(idx), 10 * Kokkos::ArithTraits<scalar_type>::eps(),
+      EXPECT_NEAR_KK(values_L_ref[idx], values_L(idx), 10 * KokkosKernels::ArithTraits<scalar_type>::eps(),
                      "An entry in L.values is wrong!");
     }
   }

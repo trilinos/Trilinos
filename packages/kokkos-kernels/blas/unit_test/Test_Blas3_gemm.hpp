@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -34,7 +21,7 @@ struct gemm_VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::ArithTraits<ScalarC> APT;
+  typedef KokkosKernels::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -128,7 +115,7 @@ struct DiffGEMM {
   ViewTypeC C, C2;
 
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::ArithTraits<ScalarC> APT;
+  typedef KokkosKernels::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
 
   KOKKOS_INLINE_FUNCTION
@@ -160,7 +147,7 @@ void impl_test_gemm(const char* TA, const char* TB, int M, int N, int K, typenam
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::ArithTraits<ScalarC> APT;
+  typedef KokkosKernels::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
 
   double machine_eps = APT::epsilon();
@@ -239,7 +226,7 @@ void impl_test_stream_gemm_psge2(const int M, const int N, const int K, const Sc
   using ViewTypeB       = Kokkos::View<Scalar**, Layout, Device>;
   using ViewTypeC       = Kokkos::View<Scalar**, Layout, Device>;
   using ScalarC         = typename ViewTypeC::value_type;
-  using APT             = Kokkos::ArithTraits<ScalarC>;
+  using APT             = KokkosKernels::ArithTraits<ScalarC>;
   using mag_type        = typename APT::mag_type;
 
   const char tA[]          = {"N"};
@@ -365,9 +352,9 @@ void test_gemm_mixed_scalars() {
   Matrix1 C("C", dim2, dim1);
   Matrix2 D("D", dim2, dim1);
 
-  Kokkos::deep_copy(A, Kokkos::ArithTraits<scalar1>::one());
-  Kokkos::deep_copy(B, Kokkos::ArithTraits<scalar1>::one());
-  Kokkos::deep_copy(C, Kokkos::ArithTraits<scalar1>::one());
+  Kokkos::deep_copy(A, KokkosKernels::ArithTraits<scalar1>::one());
+  Kokkos::deep_copy(B, KokkosKernels::ArithTraits<scalar1>::one());
+  Kokkos::deep_copy(C, KokkosKernels::ArithTraits<scalar1>::one());
 
   KokkosBlas::gemm(TestDevice(), "N", "N", 1.0, D, A, 0.0, C);
   KokkosBlas::gemm(TestDevice(), "N", "T", 1.0, C, D, 0.0, B);
