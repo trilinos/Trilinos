@@ -54,7 +54,6 @@ class InvertMassMatrixDecorator
   Teuchos::ArrayView<const std::string> get_g_names(int j) const;
 
   /** \brief . */
-  //Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
   Teuchos::RCP< Thyra::LinearOpBase< Scalar > > create_W_op () const;
@@ -85,10 +84,6 @@ class InvertMassMatrixDecorator
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_multiplier_space() const;
-  /** \brief . */
-  //Teuchos::RCP<const Epetra_Vector> get_x_init() const;
-  /** \brief . */
-  //Teuchos::RCP<const Epetra_Vector> get_x_dot_init() const;
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
 
