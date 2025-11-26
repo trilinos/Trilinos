@@ -88,7 +88,6 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_SOLVER(BelosSolverTpetraTime,"BelosSolverTpetra::BelosSolverTpetra");
         FROSCH_ASSERT(!this->K_.is_null(),"FROSch::BelosSolverTpetra: K_ is null.");
-        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseTpetra,"FROSch::BelosSolverTpetra: Not compatible with Epetra.")
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());

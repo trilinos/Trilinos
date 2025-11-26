@@ -35,9 +35,6 @@
 #include <Thyra_TpetraThyraWrappers.hpp>
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_VectorStdOps.hpp>
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Thyra_EpetraLinearOp.hpp>
-#endif
 #include <Thyra_VectorSpaceBase_def.hpp>
 #include <Thyra_VectorSpaceBase_decl.hpp>
 
@@ -49,9 +46,6 @@
 // Xpetra include
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#endif
 #include <Xpetra_Parameters.hpp>
 
 // FROSCH thyra includes
@@ -97,8 +91,6 @@ int main(int argc, char *argv[])
     My_CLP.setOption("ORD",&DOFOrdering,"Dofs ordering (NodeWise=0, DimensionWise=1, Custom=2).");
     string xmlFile = "ParameterList.xml";
     My_CLP.setOption("PLIST",&xmlFile,"File name of the parameter list.");
-    bool useepetra = false;
-    My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
 
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
@@ -128,11 +120,6 @@ int main(int argc, char *argv[])
     }
 
     UnderlyingLib xpetraLib = UseTpetra;
-    if (useepetra) {
-        xpetraLib = UseEpetra;
-    } else {
-        xpetraLib = UseTpetra;
-    }
 
     RCP<const Comm<int> > Comm = CommWorld->split(color,CommWorld->getRank());
 

@@ -306,62 +306,6 @@ namespace FROSch {
                                                         ArrayRCP<RCP<const Map<LO,GO,NO> > > dofsMaps,
                                                         RCP<const MultiVector<SC,LO,GO,NO> > nodeList = null);
 
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-    template <class SC,class LO,class GO,class NO>
-    struct ConvertToXpetra {
-
-    public:
-
-        static RCP<Map<LO,GO,NO> > ConvertMap(UnderlyingLib lib,
-                                              const Epetra_BlockMap &map,
-                                              RCP<const Comm<int> > comm);
-
-        static RCP<Matrix<SC,LO,GO,NO> > ConvertMatrix(UnderlyingLib lib,
-                                                       Epetra_CrsMatrix &matrix,
-                                                       RCP<const Comm<int> > comm);
-
-        static RCP<MultiVector<SC,LO,GO,NO> > ConvertMultiVector(UnderlyingLib lib,
-                                                                 Epetra_MultiVector &vector,
-                                                                 RCP<const Comm<int> > comm);
-    };
-
-    template <class SC,class LO,class NO>
-    struct ConvertToXpetra<SC,LO,int,NO> {
-
-    public:
-
-        static RCP<Map<LO,int,NO> > ConvertMap(UnderlyingLib lib,
-                                               const Epetra_BlockMap &map,
-                                               RCP<const Comm<int> > comm);
-
-        static RCP<Matrix<SC,LO,int,NO> > ConvertMatrix(UnderlyingLib lib,
-                                                        Epetra_CrsMatrix &matrix,
-                                                        RCP<const Comm<int> > comm);
-
-        static RCP<MultiVector<SC,LO,int,NO> > ConvertMultiVector(UnderlyingLib lib,
-                                                                  Epetra_MultiVector &vector,
-                                                                  RCP<const Comm<int> > comm);
-    };
-
-    template <class SC,class LO,class NO>
-    struct ConvertToXpetra<SC,LO,long long,NO> {
-
-    public:
-
-        static RCP<Map<LO,long long,NO> > ConvertMap(UnderlyingLib lib,
-                                                     const Epetra_BlockMap &map,
-                                                     RCP<const Comm<int> > comm);
-
-        static RCP<Matrix<SC,LO,long long,NO> > ConvertMatrix(UnderlyingLib lib,
-                                                              Epetra_CrsMatrix &matrix,
-                                                              RCP<const Comm<int> > comm);
-
-        static RCP<MultiVector<SC,LO,long long,NO> > ConvertMultiVector(UnderlyingLib lib,
-                                                                        Epetra_MultiVector &vector,
-                                                                        RCP<const Comm<int> > comm);
-    };
-#endif
-
     template <class Type>
     RCP<Type> ExtractPtrFromParameterList(ParameterList& paramList,
                                           string namePtr="Ptr");
@@ -369,20 +313,6 @@ namespace FROSch {
     template <class Type>
     ArrayRCP<Type> ExtractVectorFromParameterList(ParameterList& paramList,
                                                   string nameVector="Vector");
-
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-    template <class LO,class GO,class NO>
-    RCP<Epetra_Map> ConvertToEpetra(const Map<LO,GO,NO> &map,
-                                    RCP<Epetra_Comm> epetraComm);
-
-    template <class SC,class LO,class GO,class NO>
-    RCP<Epetra_MultiVector> ConvertToEpetra(const MultiVector<SC,LO,GO,NO> &vector,
-                                            RCP<Epetra_Comm> epetraComm);
-
-    template <class SC,class LO,class GO,class NO>
-    RCP<Epetra_CrsMatrix> ConvertToEpetra(const Matrix<SC,LO,GO,NO> &matrix,
-                                          RCP<Epetra_Comm> epetraComm);
-#endif
 
     template <class LO>
     Array<LO> GetIndicesFromString(string string);

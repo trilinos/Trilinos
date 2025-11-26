@@ -107,7 +107,7 @@ namespace FROSch {
             LOVec maxVec(1);
             if (UseVolumes_) {
                 globalVec[0] = Volumes_->getEntityMap()->getMaxAllGlobalIndex();
-                if (DDInterface_->getNodesMap()->lib()==UseEpetra || Volumes_->getEntityMap()->getGlobalNumElements()>0) {
+                if (Volumes_->getEntityMap()->getGlobalNumElements()>0) {
                     globalVec[0] += 1;
                 }
                 if (globalVec[0]<0) globalVec[0] = 0;

@@ -15,11 +15,6 @@
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
 
 //Thyra
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOpBase.hpp"
-#endif
 #include "Thyra_SpmdMultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
@@ -46,22 +41,9 @@
 //Xpetra
 #include "Xpetra_MapExtractor.hpp"
 #include <Xpetra_CrsMatrixWrap.hpp>
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#endif
 #include <Xpetra_Parameters.hpp>
 #include "Xpetra_Operator.hpp"
 #include "Xpetra_ThyraUtils.hpp"
-
-//Epetra
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Epetra_MpiComm.h>
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_RowMatrix.h"
-#endif
 
 
 namespace Thyra {
@@ -89,14 +71,12 @@ namespace Thyra {
         void initialize(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
                         const RCP<const VectorSpaceBase<SC> > &domainSpace,
                         const RCP<Operator<SC,LO,GO,NO> > &xpetraOperator,
-                        bool bIsEpetra,
                         bool bIsTpetra);
 
         /** \brief Initialize. */
         void constInitialize(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
                              const RCP<const VectorSpaceBase<SC> > &domainSpace,
                              const RCP<const Operator<SC,LO,GO,NO> > &xpetraOperator,
-                             bool bIsEpetra,
                              bool bIsTpetra);
 
         /** \brief Get embedded non-const Operator. */
@@ -145,7 +125,6 @@ namespace Thyra {
         domainSpace_;
 
 
-        bool bIsEpetra_;
         bool bIsTpetra_;
         ConstNonconstObjectContainer<Operator<SC,LO,GO,NO> >
         xpetraOperator_;
@@ -154,7 +133,6 @@ namespace Thyra {
         void initializeImpl(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
                             const RCP<const VectorSpaceBase<SC> > &domainSpace,
                             const RCP<XpetraOperator_t> &xpetraOperator,
-                            bool bIsEpetra,
                             bool bIsTpetra);
     };
 
@@ -167,12 +145,11 @@ namespace Thyra {
     RCP<FROSchLinearOp<SC,LO,GO,NO> > fROSchLinearOp(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
                                                                                    const RCP<const VectorSpaceBase<SC> > &domainSpace,
                                                                                    const RCP<Operator<SC,LO,GO,NO> > &xpetraOperator,
-                                                                                   bool bIsEpetra,
                                                                                    bool bIsTpetra)
     {
         const RCP<FROSchLinearOp<SC,LO,GO,NO> > op =
         rcp(new FROSchLinearOp<SC,LO,GO,NO>);
-        op->initialize(rangeSpace,domainSpace,xpetraOperator,bIsEpetra,bIsTpetra);
+        op->initialize(rangeSpace,domainSpace,xpetraOperator,bIsTpetra);
         return op;
     }
 
@@ -185,12 +162,11 @@ namespace Thyra {
     RCP<const FROSchLinearOp<SC,LO,GO,NO> > constFROSchLinearOp(const RCP<const VectorSpaceBase<SC> > &rangeSpace,
                                                                                               const RCP<const VectorSpaceBase<SC> > &domainSpace,
                                                                                               const RCP<const Operator<SC,LO,GO,NO> > &xpetraOperator,
-                                                                                              bool bIsEpetra,
                                                                                               bool bIsTpetra)
     {
         const RCP<FROSchLinearOp<SC,LO,GO,NO> > op =
         rcp(new FROSchLinearOp<SC,LO,GO,NO>);
-        op->constInitialize(rangeSpace, domainSpace, xpetraOperator,bIsEpetra,bIsTpetra);
+        op->constInitialize(rangeSpace, domainSpace, xpetraOperator,bIsTpetra);
         return op;
     }
 
