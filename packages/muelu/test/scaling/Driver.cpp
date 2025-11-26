@@ -7,6 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
+YOU SHALL NOT COMPILE!
+
 #include <cstddef>
 #include <cstdio>
 #include <iomanip>
