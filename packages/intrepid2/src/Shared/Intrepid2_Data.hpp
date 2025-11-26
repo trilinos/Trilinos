@@ -1704,7 +1704,7 @@ public:
       for (int d=0; d<rank; d++)
       {
         startingOrdinals[d] = 0;
-        extents[d] = getDataExtent(d);
+        extents[d] = getDataExtent(_activeDims[d]);
       }
       auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<rank>>(startingOrdinals,extents);
       return policy;
@@ -1722,7 +1722,7 @@ public:
       for (int d=0; d<6; d++)
       {
         startingOrdinals[d] = 0;
-        extents[d] = getDataExtent(d);
+        extents[d] = getDataExtent(_activeDims[d]);
       }
       auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<6>>(startingOrdinals,extents);
       return policy;
@@ -1734,7 +1734,7 @@ public:
     dataExtentRangePolicy()
     {
       using ExecutionSpace = typename DeviceType::execution_space;
-      Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,getDataExtent(0));
+      Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,getUnderlyingViewExtent(0));
       return policy;
     }
     
