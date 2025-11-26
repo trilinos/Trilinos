@@ -23,7 +23,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MergedBlockedMatrixFactory() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<RCP<const FactoryBase> >("A", MueLu::NoFactory::getRCP() /*Teuchos::null*/, "Generating factory of the matrix A used for building SchurComplement (must be a 2x2 blocked operator, default = MueLu::NoFactory::getRCP())");

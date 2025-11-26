@@ -43,7 +43,9 @@ class GeometricInterpolationPFactory : public PFactory {
   virtual ~GeometricInterpolationPFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{
