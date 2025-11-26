@@ -24,10 +24,6 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#endif
-
 #include "FROSch_Tools_def.hpp"
 
 
@@ -54,9 +50,6 @@ int main(int argc, char *argv[])
 
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
 
-    bool useepetra = true;
-    My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
-
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
@@ -69,11 +62,6 @@ int main(int argc, char *argv[])
     TimeMonitor::setStackedTimer(stackedTimer);
 
     UnderlyingLib xpetraLib = UseTpetra;
-    if (useepetra) {
-        xpetraLib = UseEpetra;
-    } else {
-        xpetraLib = UseTpetra;
-    }
 
     assert(CommWorld->getSize()==8);
 

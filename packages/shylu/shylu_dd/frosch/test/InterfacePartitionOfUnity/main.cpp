@@ -57,8 +57,6 @@ int main(int argc, char *argv[])
     My_CLP.setOption("M",&M,"H / h.");
     int Dimension = 3;
     My_CLP.setOption("DIM",&Dimension,"Dimension.");
-    bool useepetra = true;
-    My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
 
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
@@ -88,11 +86,6 @@ int main(int argc, char *argv[])
     }
 
     UnderlyingLib xpetraLib = UseTpetra;
-    if (useepetra) {
-        xpetraLib = UseEpetra;
-    } else {
-        xpetraLib = UseTpetra;
-    }
 
     RCP<const Comm<int> > comm = CommWorld->split(color,CommWorld->getRank());
 

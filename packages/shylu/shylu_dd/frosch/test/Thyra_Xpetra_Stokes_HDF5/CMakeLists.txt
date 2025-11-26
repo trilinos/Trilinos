@@ -13,30 +13,11 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(ThyraXpetraPrecBlockCopyFiles
 ####################################
 # TwoLevelBlockPreconditioner_GDSW #
 ####################################
-## Epetra
-IF(Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
-TRIBITS_ADD_TEST(
-thyra_xpetra_stokes_hdf5
-NAME test_thyra_xpetra_stokes_hdf5_TLBP_GDSW_O0_EPETRA
-ARGS "--O=0 --PLIST=ParameterList_TwoLevelBlockPreconditioner_GDSW.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 4
-)
-
-TRIBITS_ADD_TEST(
-thyra_xpetra_stokes_hdf5
-NAME test_thyra_xpetra_stokes_hdf5_TLBP_GDSW_O1_EPETRA
-ARGS "--O=1 --PLIST=ParameterList_TwoLevelBlockPreconditioner_GDSW.xml --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 4
-)
-ENDIF()
-
 ## Tpetra
 TRIBITS_ADD_TEST(
 thyra_xpetra_stokes_hdf5
 NAME test_thyra_xpetra_stokes_hdf5_TLBP_GDSW_O0_TPETRA
-ARGS "--O=0 --PLIST=ParameterList_TwoLevelBlockPreconditioner_GDSW.xml --USETPETRA"
+ARGS "--O=0 --PLIST=ParameterList_TwoLevelBlockPreconditioner_GDSW.xml"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -44,7 +25,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_stokes_hdf5
 NAME test_thyra_xpetra_stokes_hdf5_TLBP_GDSW_O1_TPETRA
-ARGS "--O=1 --PLIST=ParameterList_TwoLevelBlockPreconditioner_GDSW.xml --USETPETRA"
+ARGS "--O=1 --PLIST=ParameterList_TwoLevelBlockPreconditioner_GDSW.xml"
 COMM mpi
 NUM_MPI_PROCS 4
 )

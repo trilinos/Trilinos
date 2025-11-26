@@ -27,41 +27,18 @@ namespace FROSch {
                                                                                      string description)
     {
         const string solverType = parameterList->get("SolverType","Amesos2");
-        if (!solverType.compare("Amesos")) {
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
-            FROSCH_ASSERT(k->getRowMap()->lib()==UseEpetra,"FROSch::SolverFactory: Amesos is not compatible with Tpetra.");
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-            return AmesosSolverEpetraPtr(new AmesosSolverEpetra<SC,LO,GO,NO>(k,parameterList,description));
-#else
-            ThrowErrorMissingPackage("FROSch::SolverFactory","Epetra");
-#endif
-#else
-            ThrowErrorMissingPackage("FROSch::SolverFactory","Amesos");
-#endif
-        } else if (!solverType.compare("Amesos2")) {
-            if (k->getRowMap()->lib()==UseEpetra) {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                return Amesos2SolverEpetraPtr(new Amesos2SolverEpetra<SC,LO,GO,NO>(k,parameterList,description));
-#else
-                ThrowErrorMissingPackage("FROSch::SolverFactory","Epetra");
-#endif
-            } else if (k->getRowMap()->lib()==UseTpetra) {
+        if (!solverType.compare("Amesos2")) {
+            if (k->getRowMap()->lib()==UseTpetra) {
                 return Amesos2SolverTpetraPtr(new Amesos2SolverTpetra<SC,LO,GO,NO>(k,parameterList,description));
             } else {
-                FROSCH_ASSERT(false, "FROSch::SolverFactory: This can't happen. Either use Epetra or Tetra linear algebra stack.");
+                FROSCH_ASSERT(false, "FROSch::SolverFactory: This can't happen. Use Tpetra linear algebra stack.");
             }
         } else if (!solverType.compare("Belos")) {
 #ifdef HAVE_SHYLU_DDFROSCH_BELOS
-            if (k->getRowMap()->lib()==UseEpetra) {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-                return BelosSolverEpetraPtr(new BelosSolverEpetra<SC,LO,GO,NO>(k,parameterList,description));
-#else
-                ThrowErrorMissingPackage("FROSch::SolverFactory","Epetra");
-#endif
-            } else if (k->getRowMap()->lib()==UseTpetra) {
+            if (k->getRowMap()->lib()==UseTpetra) {
                 return BelosSolverTpetraPtr(new BelosSolverTpetra<SC,LO,GO,NO>(k,parameterList,description));
             } else {
-                FROSCH_ASSERT(false, "FROSch::SolverFactory: This can't happen. Either use Epetra or Tetra linear algebra stack.");
+                FROSCH_ASSERT(false, "FROSch::SolverFactory: This can't happen. Use Tpetra linear algebra stack.");
             }
 #else
             ThrowErrorMissingPackage("FROSch::SolverFactory","Belos");
@@ -70,7 +47,6 @@ namespace FROSch {
             return FROSchPreconditionerPtr(new FROSchPreconditioner<SC,LO,GO,NO>(k,parameterList,description));
         } else if (!solverType.compare("Ifpack2")) {
 #ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
-            FROSCH_ASSERT(k->getRowMap()->lib()==UseTpetra,"FROSch::SolverFactory: Ifpack2 is not compatible with Epetra.");
             return Ifpack2PreconditionerTpetraPtr(new Ifpack2PreconditionerTpetra<SC,LO,GO,NO>(k,parameterList,description));
 #else
             ThrowErrorMissingPackage("FROSch::SolverFactory","Ifpack2");

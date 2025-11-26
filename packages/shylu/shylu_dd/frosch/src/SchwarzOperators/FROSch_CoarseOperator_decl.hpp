@@ -17,12 +17,6 @@
 
 // TODO: Member sortieren!?
 
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRAEXT
-#include "EpetraExt_OperatorOut.h"
-#include "EpetraExt_VectorOut.h"
-#include "EpetraExt_RowMatrixOut.h"
-#endif
-
 #ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>

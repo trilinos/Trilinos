@@ -141,7 +141,7 @@ namespace FROSch {
             FROSCH_DETAILTIMER_START_LEVELID(printStatisticsTime,"print statistics");
 
             global = this->OverlappingMap_->getMaxAllGlobalIndex();
-            if (this->OverlappingMap_->lib()==UseEpetra || this->OverlappingMap_->getGlobalNumElements()>0) {
+            if (this->OverlappingMap_->getGlobalNumElements()>0) {
                 global += 1;
             }
 
