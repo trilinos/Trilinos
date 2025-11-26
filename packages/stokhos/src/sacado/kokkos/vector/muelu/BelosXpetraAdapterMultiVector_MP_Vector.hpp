@@ -14,8 +14,6 @@
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Belos_TpetraAdapter_MP_Vector.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
-
 namespace Belos { // should be moved to Belos or Xpetra?
 
   using Teuchos::RCP;
@@ -261,7 +259,5 @@ namespace Belos { // should be moved to Belos or Xpetra?
   };
 
 } // end of Belos namespace
-
-#endif
 
 #endif
