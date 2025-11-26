@@ -74,7 +74,7 @@ class MassSpringDamperModel
   ~MassSpringDamperModel();
 
 
-  /** \name Overridden from EpetraExt::ModelEvaluator . */
+  /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
   //@{
 
   /** \brief . */

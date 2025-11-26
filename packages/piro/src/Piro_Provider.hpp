@@ -98,9 +98,6 @@ makeSharingProviderFunctor(const Teuchos::RCP<T> &instance)
  *
  *  It is essentially a thin wrapper around <tt>Teuchos::RCP<ProviderBase<T>></tt>
  *  that preserves its core functionality including sharing and reference counting.
- *
- *  The solver factory Piro::Epetra::SolverFactory uses \link Provider Providers\endlink
- *  as sources of auxiliary objects for the different %Piro solvers.
  */
 template <typename T>
 class Provider {

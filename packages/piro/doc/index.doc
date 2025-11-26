@@ -44,13 +44,11 @@ located near present day Socorro, New Mexico.
 
 %Piro attempts to unify the usage of the nonlinear analysis
 capabilities in Trilinos. It requires that the application
-code present itself using the ModelEvaluator interface
-abstraction (either the Thyra or EpetraExt version).
+code present itself using the ModelEvaluator interface.
 The different \link Piro_solver_grp Piro solvers\endlink can be constructed using just an instance of
-<tt>Thyra::ModelEvaluator</tt> (or <tt>EpetraExt::ModelEvaluator</tt>)
+<tt>Thyra::ModelEvaluator</tt>
 and a <tt>Teuchos::ParameterList</tt>,
-either directly or via a \link Piro::SolverFactory factory\endlink for Thyra-based models
-(and the Epetra \link Piro::Epetra::SolverFactory counterpart\endlink) for added flexibility.
+either directly or via a \link Piro::SolverFactory factory\endlink.
 Once created, the resulting solved models can be evaluated with a single <tt>evalModel</tt> call,
 or alternatively via the \link Piro_solve_driver_grp forward solve routines\endlink included in %Piro.
 
@@ -65,9 +63,7 @@ by %Piro include:
 Each of these solvers not only takes a ModelEvaluator as
 the interface to the application code, but also itself
 inherits from the ModelEvaluator interface. These are
-of the ResponseOnlyModelEvaluator variety (which is
-currently a class in Thyra, but just a useful
-description for EpetraExt). A ResponseOnlyModelEvaluator
+of the ResponseOnlyModelEvaluator variety. A ResponseOnlyModelEvaluator
 takes parameters as inputs and produces
 responses as output (hence the PIRO acronym). In general,
 it may also produce gradients of the response with respect

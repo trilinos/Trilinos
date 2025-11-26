@@ -24,16 +24,9 @@
 #include "Piro_Test_MockObserver.hpp"
 #include "Piro_TempusIntegrator.hpp"
 
-
-#ifdef TEST_USE_EPETRA
-#include "Thyra_EpetraModelEvaluator.hpp"
-#include "MockModelEval_A.hpp"
-#include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
-#else
 #include "MockModelEval_A_Tpetra.hpp"
 #include "Piro_StratimikosUtils.hpp"
 #include "Teuchos_YamlParameterListCoreHelpers.hpp"
-#endif
 
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 
@@ -58,27 +51,6 @@ namespace Thyra {
 
 // Setup support
 
-#ifdef TEST_USE_EPETRA
-const RCP<EpetraExt::ModelEvaluator> epetraModelNew()
-{
-#ifdef HAVE_MPI
-  const MPI_Comm comm = MPI_COMM_WORLD;
-#else /*HAVE_MPI*/
-  const int comm = 0;
-#endif /*HAVE_MPI*/
-  return rcp(new MockModelEval_A(comm));
-}
-const RCP<Thyra::ModelEvaluator<double> > thyraModelNew(const RCP<EpetraExt::ModelEvaluator> &epetraModel)
-{
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory(new Thyra::AmesosLinearOpWithSolveFactory);
-  return epetraModelEvaluator(epetraModel, lowsFactory);
-}
-
-RCP<Thyra::ModelEvaluator<double> > defaultModelNew()
-{
-  return thyraModelNew(epetraModelNew());
-}
-#else
 RCP<Thyra::ModelEvaluator<double> > defaultModelNew()
 {
   auto comm = Tpetra::getDefaultComm();
@@ -97,7 +69,6 @@ RCP<Thyra::ModelEvaluator<double> > defaultModelNew()
 
   return rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(model, lowsFactory));
 }
-#endif
 
 const RCP<TempusSolver<double> > solverNew(
     const RCP<Thyra::ModelEvaluator<double> > &thyraModel,
@@ -372,20 +343,8 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolution)
   const double timeStepSize = 0.05;
 
   const RCP<ParameterList> appParams(new ParameterList("params"));
-#ifdef TEST_USE_EPETRA
-  auto& tempusPL = appParams->sublist("Tempus");
-  tempusPL.set("Integrator Name", "Demo Integrator");
-  tempusPL.sublist("Demo Integrator").set("Integrator Type", "Integrator Basic");
-  tempusPL.sublist("Demo Integrator").set("Stepper Name", "Demo Stepper");
-  tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited");
-  tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20);
-  tempusPL.sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
-  tempusPL.sublist("Demo Stepper").set("Zero Initial Guess", false);
-  tempusPL.sublist("Demo Stepper").set("Solver Name", "Demo Solver");
-  tempusPL.sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-#else
   Teuchos::updateParametersFromYamlFile("input_tempus_be_nox_solver.yaml",appParams.ptr());
-#endif
+
   auto& tsc = appParams->sublist("Tempus").sublist("Demo Integrator").sublist("Time Step Control");
   tsc.set("Initial Time", initialTime);
   tsc.set("Final Time", finalTime);
@@ -425,20 +384,8 @@ TEUCHOS_UNIT_TEST(Piro_TempusSolver, ObserveFinalSolutionNoWrapper)
   const double timeStepSize = 0.05;
 
   const RCP<ParameterList> appParams(new ParameterList("params"));
-#ifdef TEST_USE_EPETRA
-  auto& tempusPL = appParams->sublist("Tempus");
-  tempusPL.set("Integrator Name", "Demo Integrator");
-  tempusPL.sublist("Demo Integrator").set("Integrator Type", "Integrator Basic");
-  tempusPL.sublist("Demo Integrator").set("Stepper Name", "Demo Stepper");
-  tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Type", "Unlimited");
-  tempusPL.sublist("Demo Integrator").sublist("Solution History").set("Storage Limit", 20);
-  tempusPL.sublist("Demo Stepper").set("Stepper Type", "Backward Euler");
-  tempusPL.sublist("Demo Stepper").set("Zero Initial Guess", false);
-  tempusPL.sublist("Demo Stepper").set("Solver Name", "Demo Solver");
-  tempusPL.sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
-#else
   Teuchos::updateParametersFromYamlFile("input_tempus_be_nox_solver.yaml",appParams.ptr());
-#endif
+
   auto& tsc = appParams->sublist("Tempus").sublist("Demo Integrator").sublist("Time Step Control");
   tsc.set("Initial Time", initialTime);
   tsc.set("Final Time", finalTime);

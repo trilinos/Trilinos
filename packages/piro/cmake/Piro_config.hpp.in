@@ -34,10 +34,6 @@
 #cmakedefine HAVE_PIRO_MUELU
 /* DEPRECATED */
 #cmakedefine Piro_ENABLE_MueLu
-#cmakedefine HAVE_PIRO_THYRAEPETRAADAPTERS
-#cmakedefine HAVE_PIRO_THYRAEPETRAEXTADAPTERS
-#cmakedefine HAVE_PIRO_EPETRA
-#cmakedefine HAVE_PIRO_EPETRAEXT
 #cmakedefine HAVE_PIRO_TPETRA
 #cmakedefine HAVE_PIRO_TEKO
 #cmakedefine HAVE_PIRO_STRATIMIKOS

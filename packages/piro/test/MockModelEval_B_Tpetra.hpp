@@ -58,7 +58,7 @@ class MockModelEval_B_Tpetra
   ~MockModelEval_B_Tpetra();
 
 
-  /** \name Overridden from EpetraExt::ModelEvaluator . */
+  /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
   //@{
 
   /** \brief . */
