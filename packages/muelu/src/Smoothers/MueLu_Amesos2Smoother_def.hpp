@@ -295,9 +295,9 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     factorA = A;
   }
 
-  RCP<const Tpetra_CrsMatrix> tA = toTpetra(factorA);
+  RCP<const Epetra_CrsMatrix> tA = Utilities::Op2EpetraCrs(factorA);
 
-  prec_ = Amesos2::create<Tpetra_CrsMatrix, Tpetra_MultiVector>(type_, tA);
+  prec_ = Amesos2::create<Epetra_CrsMatrix, Epetra_MultiVector>(type_, tA);
   TEUCHOS_TEST_FOR_EXCEPTION(prec_ == Teuchos::null, Exceptions::RuntimeError, "Amesos2::create returns Teuchos::null");
   RCP<Teuchos::ParameterList> amesos2_params = Teuchos::rcpFromRef(pL.sublist("Amesos2"));
   amesos2_params->setName("Amesos2");
@@ -317,10 +317,10 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool /* InitialGuessIsZero */) const {
   TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::Amesos2Smoother::Apply(): Setup() has not been called");
 
-  RCP<Tpetra_MultiVector> tX, tB;
+  RCP<Epetra_MultiVector> tX, tB;
   if (!useTransformation_) {
-    tX = toTpetra(Teuchos::rcpFromRef(X));
-    tB = toTpetra(Teuchos::rcpFromRef(const_cast<MultiVector&>(B)));
+    tX = Utilities::MV2NonConstEpetraMV(Teuchos::rcpFromRef(X));
+    tB = Utilities::MV2NonConstEpetraMV(Teuchos::rcpFromRef(const_cast<MultiVector&>(B)));
   } else {
     // Copy data of the original vectors into the transformed ones
     size_t numVectors = X.getNumVectors();
@@ -336,8 +336,8 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVect
       B_data[i] = Bdata[i];
     }
 
-    tX = toTpetra(X_);
-    tB = toTpetra(B_);
+    tX = Utilities::MV2NonConstEpetraMV(X_);
+    tB = Utilities::MV2NonConstEpetraMV(B_);
   }
 
   prec_->setX(tX);
