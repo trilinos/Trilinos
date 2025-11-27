@@ -3161,8 +3161,7 @@ void Assembler<Real,DeviceType>::assembleParamFieldMatrix(ROL::Ptr<Tpetra::Multi
     // assembly on the overlap map
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
-        matOverlap->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
-                                        k,(val[k])[i*numLocalDofs+j]);
+        matOverlap->sumIntoGlobalValue(cellDofs(myCellIds_[i],j), k,(val[k])(i,j));
       }
     }
     // change map
