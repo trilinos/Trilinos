@@ -34,25 +34,11 @@ APPEND_SET(HEADERS
   Piro_StratimikosUtils.hpp
   Piro_ConfigDefs.hpp
   )
-IF(PIRO_HAVE_EPETRA_STACK)
-APPEND_SET(HEADERS
-  Piro_Epetra_MatrixFreeDecorator.hpp
-  Piro_Epetra_InvertMassMatrixDecorator.hpp
-  Piro_Epetra_SolverFactory.hpp
-  )
-ENDIF()
 APPEND_SET(SOURCES
   Piro_ValidPiroParameters.cpp
   Piro_StratimikosUtils.cpp
   Piro_Version.cpp
   )
-IF(PIRO_HAVE_EPETRA_STACK)
-APPEND_SET(SOURCES
-  Piro_Epetra_MatrixFreeDecorator.cpp
-  Piro_Epetra_InvertMassMatrixDecorator.cpp
-  Piro_Epetra_SolverFactory.cpp
-  )
-ENDIF()
 APPEND_SET(HEADERS
   Piro_MatrixFreeDecorator.hpp
   Piro_MatrixFreeDecorator_Def.hpp
@@ -62,9 +48,8 @@ APPEND_SET(HEADERS
   Piro_ROL_ObserverBase.hpp
   )
 #
-# B.2) epetra files
+# B.2) solvers
 #
-# Optional NOX Dependency (which includes LOCA)
 IF (Piro_ENABLE_NOX)
   APPEND_SET(HEADERS
     Piro_SteadyStateSolver.hpp
@@ -79,36 +64,13 @@ IF (Piro_ENABLE_NOX)
     Piro_TrapezoidRuleSolver_Def.hpp
     Piro_TransientDecorator.hpp
   )
-IF(PIRO_HAVE_EPETRA_STACK)
-  APPEND_SET(HEADERS
-    Piro_Epetra_NOXSolver.hpp
-    Piro_Epetra_LOCASolver.hpp
-    Piro_Epetra_LOCAAdaptiveSolver.hpp
-    Piro_Epetra_AdaptiveSolutionManager.hpp
-    Piro_Epetra_VelocityVerletSolver.hpp
-    Piro_Epetra_NewmarkSolver.hpp
-    Piro_Epetra_TrapezoidRuleSolver.hpp
-    Piro_Epetra_SensitivityOperator.hpp
-  )
-ENDIF()
   APPEND_SET(SOURCES
     Piro_NOXSolver.cpp
     Piro_LOCASolver.cpp
     Piro_ObserverToLOCASaveDataStrategyAdapter.cpp
     )
-IF(PIRO_HAVE_EPETRA_STACK)
-  APPEND_SET(SOURCES
-    Piro_Epetra_NOXSolver.cpp
-    Piro_Epetra_LOCASolver.cpp
-    Piro_Epetra_LOCAAdaptiveSolver.cpp
-    Piro_Epetra_AdaptiveSolutionManager.cpp
-    Piro_Epetra_VelocityVerletSolver.cpp
-    Piro_Epetra_NewmarkSolver.cpp
-    Piro_Epetra_TrapezoidRuleSolver.cpp
-    Piro_Epetra_SensitivityOperator.cpp
-    )
 ENDIF()
-ENDIF()
+
 IF (Piro_ENABLE_Tempus)
   APPEND_SET(HEADERS
     Piro_TempusSolver.hpp
@@ -136,21 +98,13 @@ ENDIF()
 #
 
 #
-# B.2) Analysis Tools
+# B.2) drivers
 #
 APPEND_SET(HEADERS
   Piro_PerformSolve.hpp
   Piro_PerformSolve_Def.hpp
   )
 APPEND_SET(SOURCES Piro_PerformSolve.cpp)
-
-IF(PIRO_HAVE_EPETRA_STACK)
-APPEND_SET(HEADERS Piro_Epetra_PerformSolve.hpp)
-APPEND_SET(SOURCES Piro_Epetra_PerformSolve.cpp)
-APPEND_SET(HEADERS Piro_Epetra_PerformAnalysis.hpp)
-APPEND_SET(SOURCES Piro_Epetra_PerformAnalysis.cpp)
-ENDIF()
-
 APPEND_SET(HEADERS Piro_PerformAnalysis.hpp)
 APPEND_SET(SOURCES Piro_PerformAnalysis.cpp)
 

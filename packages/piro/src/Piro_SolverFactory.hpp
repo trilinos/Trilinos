@@ -20,9 +20,7 @@
 
 namespace Piro {
 
-/*! \brief Factory for creating Thyra-based %Piro solvers
- *
- *  Piro::Epetra::SolverFactory is the counterpart for Epetra-based models.
+/*! \brief Factory for creating Thyra-based %Piro solvers.
  */
 class SolverFactory {
 public:
@@ -36,8 +34,6 @@ public:
    *  - Piro::LOCASolver (<tt>"LOCA"</tt>)
    *  - Piro::TrapezoidRuleSolver (<tt>"Trapezoid Rule"</tt>)
    *  - Piro::TempusSolver (<tt>"Tempus"</tt>)
-   *
-   *  For Epetra-based models, additional options are available in Piro::Epetra::SolverFactory.
    */
   template <typename Scalar>
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolverAdaptive(
