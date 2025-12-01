@@ -635,21 +635,6 @@ void Chebyshev<ScalarType, MV>::
         "Ifpack2::Chebyshev: Ifpack2 only supports \"first\", \"textbook\", \"fourth\", and \"opt_fourth\", for \"chebyshev: algorithm\".");
   }
 
-#ifdef IFPACK2_ENABLE_DEPRECATED_CODE
-  // to preserve behavior with previous input decks, only read "chebyshev:textbook algorithm" setting
-  // if a user has not specified "chebyshev: algorithm"
-  if (!plist.isParameter("chebyshev: algorithm")) {
-    if (plist.isParameter("chebyshev: textbook algorithm")) {
-      const bool textbookAlgorithm = plist.get<bool>("chebyshev: textbook algorithm");
-      if (textbookAlgorithm) {
-        chebyshevAlgorithm = "textbook";
-      } else {
-        chebyshevAlgorithm = "first";
-      }
-    }
-  }
-#endif
-
   if (plist.isParameter("chebyshev: compute max residual norm")) {
     computeMaxResNorm = plist.get<bool>("chebyshev: compute max residual norm");
   }
