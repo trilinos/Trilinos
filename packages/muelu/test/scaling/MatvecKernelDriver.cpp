@@ -43,6 +43,11 @@
 #include "cusparse.h"
 #endif
 
+#if defined(HAVE_MUELU_ROCSPARSE)
+#include "hip/hip_runtime_api.h"
+#include "rocsparse/rocsparse.h"
+#endif
+
 #if defined(HAVE_MUELU_HYPRE)
 #include "HYPRE_IJ_mv.h"
 #include "HYPRE_parcsr_ls.h"
@@ -545,6 +550,9 @@ class CuSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosComp
     x          = const_cast<Scalar*>(reinterpret_cast<const Scalar*>(X_lcl.data()));
     y          = reinterpret_cast<Scalar*>(Y_lcl.data());
 
+    Scalar alpha = 1.0;
+    Scalar beta  = 0.0;
+
     /* Get handle to the CUBLAS context */
     cublasCreate(&cublasHandle);
     /* Get handle to the CUSPARSE context */
@@ -557,26 +565,13 @@ class CuSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosComp
 
     CHECK_CUSPARSE(cusparseCreateDnVec(&vecY, m, y, CUDA_R_64F));
     CHECK_CUSPARSE(cusparseCreateDnVec(&vecX, n, x, CUDA_R_64F));
-  }
-
-  ~CuSparse_SpmV_Pack() {
-    CHECK_CUSPARSE(cusparseDestroySpMat(descrA));
-    CHECK_CUSPARSE(cusparseDestroyDnVec(vecX));
-    CHECK_CUSPARSE(cusparseDestroyDnVec(vecY));
-    cusparseDestroy(cusparseHandle);
-    cublasDestroy(cublasHandle);
-  }
-
-  cusparseStatus_t spmv(const Scalar alpha, const Scalar beta) {
-    // compute: y = alpha*Ax + beta*y
 
 #if CUSPARSE_VERSION >= 11201
-    cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
+    alg = CUSPARSE_SPMV_ALG_DEFAULT;
 #else
-    cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
+    alg = CUSPARSE_MV_ALG_DEFAULT;
 #endif
 
-    size_t bufferSize;
     CHECK_CUSPARSE(cusparseSpMV_bufferSize(cusparseHandle,
                                            transA,
                                            &alpha,
@@ -588,8 +583,20 @@ class CuSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosComp
                                            alg,
                                            &bufferSize));
 
-    void* dBuffer = NULL;
     CHECK_CUDA(cudaMalloc(&dBuffer, bufferSize));
+  }
+
+  ~CuSparse_SpmV_Pack() {
+    CHECK_CUDA(cudaFree(dBuffer));
+    CHECK_CUSPARSE(cusparseDestroySpMat(descrA));
+    CHECK_CUSPARSE(cusparseDestroyDnVec(vecX));
+    CHECK_CUSPARSE(cusparseDestroyDnVec(vecY));
+    cusparseDestroy(cusparseHandle);
+    cublasDestroy(cublasHandle);
+  }
+
+  cusparseStatus_t spmv(const Scalar alpha, const Scalar beta) {
+    // compute: y = alpha*Ax + beta*y
 
     cusparseStatus_t rc = cusparseSpMV(cusparseHandle,
                                        transA,
@@ -601,8 +608,6 @@ class CuSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosComp
                                        CUDA_R_64F,
                                        alg,
                                        dBuffer);
-
-    CHECK_CUDA(cudaFree(dBuffer));
     Kokkos::fence();
     return (rc);
   }
@@ -626,9 +631,198 @@ class CuSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosComp
   Scalar* x                  = nullptr;  // aliased
   Scalar* y                  = nullptr;  // aliased
 
+  cusparseSpMVAlg_t alg;
+
+  size_t bufferSize;
+  void* dBuffer;
+
   // handles to the copied data
   cusparse_int_type Arowptr_cusparse;
   cusparse_int_type Acolind_cusparse;
+};
+#endif
+
+// =========================================================================
+// ROCSparse Testing
+// =========================================================================
+#if defined(HAVE_MUELU_ROCSPARSE)
+
+#define CHECK_HIP(func)                                         \
+  {                                                             \
+    hipError_t status = (func);                                 \
+    if (status != hipSuccess) {                                 \
+      printf("HIP API failed at line %d with error: %s (%d)\n", \
+             __LINE__, hipGetErrorString(status), status);      \
+    }                                                           \
+  }
+
+#define CHECK_ROCSPARSE(func)                                    \
+  {                                                              \
+    rocsparse_status status = (func);                            \
+    if (status != rocsparse_status_success) {                    \
+      printf("ROCSPARSE API failed at line %d with error: %d\n", \
+             __LINE__, status);                                  \
+    }                                                            \
+  }
+
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+class RocSparse_SpmV_Pack {
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vector_type;
+
+ public:
+  RocSparse_SpmV_Pack(const crs_matrix_type& A,
+                      const vector_type& X,
+                      vector_type& Y) {}
+
+  ~RocSparse_SpmV_Pack(){};
+
+  rocsparse_status spmv(const Scalar alpha, const Scalar beta) { return rocsparse_status_success; }
+};
+
+template <typename LocalOrdinal, typename GlobalOrdinal>
+class RocSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosHIPWrapperNode> {
+  // typedefs shared among other TPLs
+  typedef double Scalar;
+  typedef typename Tpetra::KokkosCompat::KokkosHIPWrapperNode Node;
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vector_type;
+  typedef typename crs_matrix_type::local_matrix_device_type KCRS;
+  typedef typename KCRS::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename graph_t::entries_type::const_type c_lno_nnz_view_t;
+  typedef typename KCRS::values_type::non_const_type scalar_view_t;
+  typedef typename Node::device_type device_type;
+
+  typedef typename Kokkos::View<int*,
+                                typename lno_nnz_view_t::array_layout,
+                                typename lno_nnz_view_t::device_type>
+      rocsparse_int_type;
+
+ public:
+  RocSparse_SpmV_Pack(const crs_matrix_type& A,
+                      const vector_type& X,
+                      vector_type& Y) {
+    // data access common to other TPLs
+    const KCRS& Amat          = A.getLocalMatrixDevice();
+    c_lno_view_t Arowptr      = Amat.graph.row_map;
+    c_lno_nnz_view_t Acolind  = Amat.graph.entries;
+    const scalar_view_t Avals = Amat.values;
+
+    Arowptr_rocsparse = rocsparse_int_type("Arowptr", Arowptr.extent(0));
+    Acolind_rocsparse = rocsparse_int_type("Acolind", Acolind.extent(0));
+    // copy the ordinals into the local view (type conversion)
+    copy_view(Arowptr, Arowptr_rocsparse);
+    copy_view(Acolind, Acolind_rocsparse);
+
+    m      = static_cast<int>(A.getLocalNumRows());
+    n      = static_cast<int>(A.getLocalNumCols());
+    nnz    = static_cast<int>(Acolind_rocsparse.extent(0));
+    vals   = reinterpret_cast<Scalar*>(Avals.data());
+    cols   = reinterpret_cast<int*>(Acolind_rocsparse.data());
+    rowptr = reinterpret_cast<int*>(Arowptr_rocsparse.data());
+
+    auto X_lcl = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    auto Y_lcl = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
+    x          = const_cast<Scalar*>(reinterpret_cast<const Scalar*>(X_lcl.data()));
+    y          = reinterpret_cast<Scalar*>(Y_lcl.data());
+
+    Scalar alpha = 1.0;
+    Scalar beta  = 0.0;
+
+    /* Get handle to the ROCSPARSE context */
+    rocsparse_create_handle(&rocsparseHandle);
+
+    CHECK_ROCSPARSE(rocsparse_create_csr_descr(&descrA, m, n, nnz,
+                                               rowptr, cols, vals,
+                                               rocsparse_indextype_i32, rocsparse_indextype_i32,
+                                               rocsparse_index_base_zero, rocsparse_datatype_f64_r));
+
+    CHECK_ROCSPARSE(rocsparse_create_dnvec_descr(&vecY, m, y, rocsparse_datatype_f64_r));
+    CHECK_ROCSPARSE(rocsparse_create_dnvec_descr(&vecX, n, x, rocsparse_datatype_f64_r));
+
+    CHECK_ROCSPARSE(rocsparse_spmv(rocsparseHandle,
+                                   transA,
+                                   &alpha,
+                                   descrA,
+                                   vecX,
+                                   &beta,
+                                   vecY,
+                                   rocsparse_datatype_f64_r,
+                                   rocsparse_spmv_alg_csr_stream,
+                                   rocsparse_spmv_stage_buffer_size,
+                                   &bufferSize,
+                                   nullptr));
+
+    CHECK_HIP(hipMalloc(&dBuffer, bufferSize));
+
+    CHECK_ROCSPARSE(rocsparse_spmv(rocsparseHandle,
+                                   transA,
+                                   &alpha,
+                                   descrA,
+                                   vecX,
+                                   &beta,
+                                   vecY,
+                                   rocsparse_datatype_f64_r,
+                                   rocsparse_spmv_alg_csr_stream,
+                                   rocsparse_spmv_stage_preprocess,
+                                   &bufferSize,
+                                   dBuffer));
+  }
+
+  ~RocSparse_SpmV_Pack() {
+    CHECK_HIP(hipFree(dBuffer));
+    CHECK_ROCSPARSE(rocsparse_destroy_spmat_descr(descrA));
+    CHECK_ROCSPARSE(rocsparse_destroy_dnvec_descr(vecX));
+    CHECK_ROCSPARSE(rocsparse_destroy_dnvec_descr(vecY));
+    rocsparse_destroy_handle(rocsparseHandle);
+  }
+
+  rocsparse_status spmv(const Scalar alpha, const Scalar beta) {
+    // compute: y = alpha*Ax + beta*y
+
+    auto rc = (rocsparse_spmv(rocsparseHandle,
+                              transA,
+                              &alpha,
+                              descrA,
+                              vecX,
+                              &beta,
+                              vecY,
+                              rocsparse_datatype_f64_r,
+                              rocsparse_spmv_alg_csr_stream,
+                              rocsparse_spmv_stage_compute,
+                              &bufferSize,
+                              dBuffer));
+    Kokkos::fence();
+    return (rc);
+  }
+
+ private:
+  rocsparse_handle rocsparseHandle = 0;
+  rocsparse_spmat_descr descrA     = 0;
+  rocsparse_dnvec_descr vecX = 0, vecY = 0;
+
+  // rocsparse_operation_none
+  // rocsparse_operation_transpose
+  // rocsparse_operation_conjugate_transpose
+  rocsparse_operation transA = rocsparse_operation_none;
+  int m                      = -1;
+  int n                      = -1;
+  int nnz                    = -1;
+  Scalar* vals               = nullptr;  // aliased
+  int* cols                  = nullptr;  // copied
+  int* rowptr                = nullptr;  // copied
+  Scalar* x                  = nullptr;  // aliased
+  Scalar* y                  = nullptr;  // aliased
+
+  size_t bufferSize;
+  void* dBuffer;
+
+  // handles to the copied data
+  rocsparse_int_type Arowptr_rocsparse;
+  rocsparse_int_type Acolind_rocsparse;
 };
 #endif
 
@@ -758,6 +952,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     bool do_tpetra      = true;
     bool do_kk          = true;
     bool do_cusparse    = true;
+    bool do_rocsparse   = true;
     bool do_magmasparse = true;
     bool do_hypre       = true;
     bool do_petsc       = true;
@@ -769,6 +964,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 #endif
 #if !defined(HAVE_MUELU_CUSPARSE)
     do_cusparse = false;
+#endif
+#if !defined(HAVE_MUELU_ROCSPARSE)
+    do_rocsparse = false;
 #endif
 #if !defined(HAVE_MUELU_MAGMASPARSE)
     do_magmasparse = false;
@@ -784,6 +982,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("tpetra", "notpetra", &do_tpetra, "Evaluate Tpetra");
     clp.setOption("kk", "nokk", &do_kk, "Evaluate KokkosKernels");
     clp.setOption("cusparse", "nocusparse", &do_cusparse, "Evaluate CuSparse");
+    clp.setOption("rocsparse", "norocsparse", &do_rocsparse, "Evaluate RocSparse");
     clp.setOption("magamasparse", "nomagmasparse", &do_magmasparse, "Evaluate MagmaSparse");
     clp.setOption("hypre", "nohypre", &do_hypre, "Evaluate Hypre");
     clp.setOption("petsc", "nopetsc", &do_petsc, "Evaluate Petsc");
@@ -831,6 +1030,15 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     if (!std::is_same<NO, Tpetra::KokkosCompat::KokkosCudaWrapperNode>::value) do_cusparse = false;
 #endif
 
+#if !defined(HAVE_MUELU_ROCSPARSE)
+    if (do_rocsparse) {
+      out << "RocSparse was requested, but this kernel is not available. Disabling..." << endl;
+      do_rocsparse = false;
+    }
+#else
+    if (!std::is_same<NO, Tpetra::KokkosCompat::KokkosHIPWrapperNode>::value) do_rocsparse = false;
+#endif
+
 #if !defined(HAVE_MUELU_MAGMASPARSE)
     if (do_magmasparse) {
       out << "MagmaSparse was requested, but this kernel is not available. Disabling..." << endl;
@@ -857,6 +1065,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
                              TPETRA,
                              KK,
                              CUSPARSE,
+                             ROCSPARSE,
                              MAGMASPARSE,
                              HYPRE,
                              PETSC };
@@ -865,6 +1074,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
         "Tpetra     ",
         "KK         ",
         "CuSparse   ",
+        "RocSparse  ",
         "MagmaSparse",
         "HYPRE",
         "PETSC"};
@@ -878,6 +1088,10 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
 #ifdef HAVE_MUELU_CUSPARSE
     if (do_cusparse) my_experiments.push_back(Experiments::CUSPARSE);  // CuSparse
+#endif
+
+#ifdef HAVE_MUELU_ROCSPARSE
+    if (do_rocsparse) my_experiments.push_back(Experiments::ROCSPARSE);  // RocSparse
 #endif
 
 #ifdef HAVE_MUELU_MAGMASPARSE
@@ -961,6 +1175,11 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     CuSparse_thing_t cusparse_spmv(*At, xt, yt);
 #endif
 
+#if defined(HAVE_MUELU_ROCSPARSE)
+    typedef RocSparse_SpmV_Pack<SC, LO, GO, Node> RocSparse_thing_t;
+    RocSparse_thing_t my_rocsparse_spmv(*At, xt, yt);
+#endif
+
 #if defined(HAVE_MUELU_MAGMASPARSE)
     typedef MagmaSparse_SpmV_Pack<SC, LO, GO, Node> MagmaSparse_thing_t;
     MagmaSparse_thing_t magmasparse_spmv(*At, xt, yt);
@@ -1042,6 +1261,9 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     dummy.resize(1);
     Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> y_norms(dummy.data(), 1);
 
+    int warmup = 10;
+    nrepeat += warmup;
+
     // no need for a barrier, because the randomization process uses a collective.
     if (!my_experiments.empty()) {
       for (int i = 0; i < nrepeat; i++) {
@@ -1061,7 +1283,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 #ifdef HAVE_MUELU_MKL
             // MKL
             case Experiments::MKL: {
-              TimeMonitor t(*TimeMonitor::getNewTimer("MV MKL: Total"));
+              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV MKL: Total") + (i < warmup ? " warmup" : "")));
               auto X_lcl  = xt.getLocalViewDevice(Tpetra::Access::ReadOnly);
               auto Y_lcl  = yt.getLocalViewDevice(Tpetra::Access::OverwriteAll);
               mkl_xdouble = (double*)X_lcl.data();
@@ -1072,12 +1294,12 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
             // KK Algorithms
             case Experiments::KK: {
-              TimeMonitor t(*TimeMonitor::getNewTimer("MV KK: Total"));
+              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV KK: Total") + (i < warmup ? " warmup" : "")));
               MV_KK(Att, xt, yt);
             } break;
             // Tpetra
             case Experiments::TPETRA: {
-              TimeMonitor t(*TimeMonitor::getNewTimer("MV Tpetra: Total"));
+              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV Tpetra: Total") + (i < warmup ? " warmup" : "")));
               MV_Tpetra(*At, xt, yt);
             } break;
 
@@ -1086,8 +1308,18 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
             case Experiments::CUSPARSE: {
               const Scalar alpha = 1.0;
               const Scalar beta  = 0.0;
-              TimeMonitor t(*TimeMonitor::getNewTimer("MV CuSparse: Total"));
+              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV CuSparse: Total") + (i < warmup ? " warmup" : "")));
               cusparse_spmv.spmv(alpha, beta);
+            } break;
+#endif
+
+#ifdef HAVE_MUELU_ROCSPARSE
+            // ROCSPARSE
+            case Experiments::ROCSPARSE: {
+              const Scalar alpha = 1.0;
+              const Scalar beta  = 0.0;
+              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV RocSparse: Total") + (i < warmup ? " warmup" : "")));
+              my_rocsparse_spmv.spmv(alpha, beta);
             } break;
 #endif
 
@@ -1096,7 +1328,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
             case Experiments::MAGMASPARSE: {
               const Scalar alpha = 1.0;
               const Scalar beta  = 0.0;
-              TimeMonitor t(*TimeMonitor::getNewTimer("MV MagmaSparse: Total"));
+              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV MagmaSparse: Total") + (i < warmup ? " warmup" : "")));
               magmasparse_spmv.spmv(alpha, beta);
             } break;
 #endif
@@ -1106,7 +1338,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
             case Experiments::HYPRE: {
               const Scalar alpha = 1.0;
               const Scalar beta  = 0.0;
-              TimeMonitor t(*TimeMonitor::getNewTimer("MV HYPRE: Total"));
+              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV HYPRE: Total") + (i < warmup ? " warmup" : "")));
               hypre_spmv.spmv(alpha, beta);
             } break;
 #endif
@@ -1116,7 +1348,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
             case Experiments::PETSC: {
               const Scalar alpha = 1.0;
               const Scalar beta  = 0.0;
-              TimeMonitor t(*TimeMonitor::getNewTimer("MV Petsc: Total"));
+              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV Petsc: Total") + (i < warmup ? " warmup" : "")));
               petsc_spmv.spmv(alpha, beta);
             } break;
 #endif
@@ -1195,6 +1427,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
                                             "MV KK: Total",
                                             "MV Tpetra: Total",
                                             "MV CuSparse: Total",
+                                            "MV RocSparse: Total",
                                             "MV MagmaSparse: Total",
                                             "MV HYPRE: Total",
                                             "MV Petsc: Total"};
