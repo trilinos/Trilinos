@@ -14,7 +14,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
 
-using namespace ROL;
+namespace ROL {
 
 /** \brief Generic objective wrapper class for class that uses Sacado */
 template<class Real, template<class> class Obj>
@@ -151,5 +151,6 @@ void Sacado_Objective<Real,Obj>::hessVecAD( Vector<ScalarT> &hv, const Vector<Sc
     }
 }
 
+} // namespace ROL
 
 #endif

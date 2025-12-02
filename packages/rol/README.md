@@ -23,6 +23,35 @@ Feature highlights:
 7. Interfaces and algorithms for optimal experimental design
 
 
+## Getting Started
+ROL is a C++ library with a cmake build system.
+There are minimal third-party library requirements consisting of BLAS and LAPACK
+which also require a suitable Fortran compiler on the system.
+On Linux-based systems with an apt package manager,
+the dependencies may be installed with
+```
+apt install cmake gfortran libopenblas-dev liblapack3
+```
+
+Some typical configure scripts may be found in the `.github/workflows/` directory.
+An in-source release build including ROL's examples and tests may be configured
+from within the source directory with
+```
+cmake -D CMAKE_BUILD_TYPE:STRING=RELEASE \
+      -D ENABLE_EXAMPLES:BOOL=ON \
+      -D ENABLE_TESTS:BOOL=ON \
+      -B build \
+      .
+```
+
+After a successful configure, ROL is built by then changing
+to the build directory and running `make`
+```
+cd build
+make
+```
+
+
 ## Copyright and License
 See COPYRIGHT and LICENSE.
 
