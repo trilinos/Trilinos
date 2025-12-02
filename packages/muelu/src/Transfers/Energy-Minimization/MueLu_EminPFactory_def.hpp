@@ -234,8 +234,29 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
       P->CreateView("stridedMaps", P0);
   }
 
-  if (IsPrint(Statistics0))
+  using MagnitudeType                  = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+  MagnitudeType constraintResidualNorm = -Teuchos::ScalarTraits<MagnitudeType>::one();
+#ifdef HAVE_MUELU_DEBUG
+  constraintResidualNorm = X->ResidualNorm(P);
+#endif
+
+  if (IsPrint(Statistics0)) {
+    // Compute constraint residual norm if we are not in a debug build
+    if (constraintResidualNorm < Teuchos::ScalarTraits<MagnitudeType>::zero())
+      constraintResidualNorm = X->ResidualNorm(P);
     GetOStream(Statistics0) << "Energy norm of P: " << ComputeProlongatorEnergyNorm(A, P, GetOStream(Statistics0)) << std::endl;
+    GetOStream(Statistics0) << "Norm of constraint residual: " << constraintResidualNorm << std::endl;
+  }
+
+  // If we compute the residual norm, check that it's satisified
+  if (constraintResidualNorm > Teuchos::ScalarTraits<MagnitudeType>::zero()) {
+    // Set a pretty loose tolerance here.
+    bool checkFailed = constraintResidualNorm > 1e6 * Teuchos::ScalarTraits<MagnitudeType>::eps();
+    if (checkFailed)
+      GetOStream(Runtime0) << "Norm of constraint residual for initial guess: " << X->ResidualNorm(P0) << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(checkFailed,
+                               Exceptions::RuntimeError, "Constraint residual norm \"" << constraintResidualNorm << "\" is too large.");
+  }
 
   // NOTE: EXPERIMENTAL and FRAGILE
   if (!P->IsView("stridedMaps")) {
