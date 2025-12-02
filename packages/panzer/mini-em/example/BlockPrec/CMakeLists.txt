@@ -123,6 +123,17 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
    BlockPrec
+   NAME "MiniEM-BlockPrec_RefMaxwell_Performance_4_newCopyAndPermute"
+   ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --test-name=\"MiniEM 3D RefMaxwell newCopyAndPermute\""
+   COMM mpi
+   NUM_MPI_PROCS 4
+   CATEGORIES PERFORMANCE
+   RUN_SERIAL
+   ENVIRONMENT "TPETRA_USE_NEW_COPY_AND_PERMUTE=ON"
+   )
+
+TRIBITS_ADD_TEST(
+   BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16_barriers"
    ARGS "--stacked-timer --solver=MueLu --numTimeSteps=3 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --barriers"
    COMM mpi
