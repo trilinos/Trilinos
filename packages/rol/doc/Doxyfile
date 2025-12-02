@@ -1021,7 +1021,7 @@ FORMULA_FONTSIZE       = 10
 # there is already a search function so this one should typically
 # be disabled.
 
-SEARCHENGINE           = NO
+SEARCHENGINE           = YES
 
 #---------------------------------------------------------------------------
 # configuration options related to the LaTeX output
@@ -1578,6 +1578,6 @@ MATHJAX_RELPATH        = https://cdn.mathjax.org/mathjax/latest
 # The SEARCHENGINE tag specifies whether or not a search engine should be 
 # used. If set to NO the values of all tags below this one will be ignored.
 
-SEARCHENGINE           = NO
+SEARCHENGINE           = YES
 
 
