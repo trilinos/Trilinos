@@ -22,10 +22,8 @@
 #include "shylubasker_nfactor_blk_inc.hpp"
 #include "shylubasker_nfactor_col_inc.hpp"
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#endif 
 
 #ifdef BASKER_DEBUG
 #include <assert.h>
@@ -46,11 +44,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_nfactor_sep
   {
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                         execution_space;
     typedef Kokkos::TeamPolicy<Exe_Space>     TeamPolicy;
     typedef typename TeamPolicy::member_type  TeamMember;
-    #endif
     
     Basker<Int,Entry,Exe_Space> *basker;
     Int lvl;
@@ -65,47 +61,23 @@ namespace BaskerNS
     }
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const  
-    #endif
     {
-      #ifdef BASKER_KOKKOS
-      //Int kid = (Int)(thread.league_rank()*thread.team_size()+
-      //              thread.team_rank());
       Int kid = basker->t_get_kid(thread);
-
-      //team leader is not using
       Int team_leader = (Int)(thread.league_rank()*thread.team_size());
-      #else
-      Int team_leader = 0; //Note: come back and fix
-      #endif
-
 
       #ifdef HAVE_VTUNE
       __itt_pause();
       #endif
-
-
-      //if(kid ==0 || kid ==1)
       {
-      #ifdef BASKER_KOKKOS
-      basker->t_nfactor_sep(kid, lvl, team_leader, thread);
-      #else
-      basker->t_nfactor_sep(kid, lvl, team_leader);
-      #endif
+        basker->t_nfactor_sep(kid, lvl, team_leader, thread);
       }
-
       #ifdef HAVE_VTUNE
       __itt_resume();
       #endif
-            
     }//end operator ()
   };//end col_factor_funct
 
-   //old using global index for local blk
-  #ifdef BASKER_KOKKOS
   template <class Int, class Entry, class Exe_Space>
   int Basker<Int, Entry,Exe_Space>::t_nfactor_sep
   (
@@ -114,15 +86,6 @@ namespace BaskerNS
    Int team_leader,
    const TeamMember &thread
   )
-  #else
-  template <class Int, class Entry, class Exe_Space>
-  int Basker<Int,Entry,Exe_Space>::t_nfactor_sep
-  (
-   Int kid,
-   Int lvl,
-   Int team_leader
-  )
-  #endif
   {
     #ifdef BASKER_DEBUG_TIME
     double upper_time = 0; 
@@ -308,12 +271,7 @@ namespace BaskerNS
         #ifdef BASKER_ATOMIC_2 //O(dim(S)*p)
         //t_n_col_copy_atomic(kid, team_leader, lvl, l, k);
         #endif
-
-        //#ifdef BASKER_KOKKOS
         //thread.team_barrier();//might have to be added back
-        //#else
-        //t_col_barrier(kid,lvl,l);
-        //#endif
 
         if(kid%((Int)pow((double)2,(double)l+1)) == 0)
         {  
@@ -1030,12 +988,8 @@ namespace BaskerNS
               printf("kid: %d, abs  row_idx: %d x: %f val: %f xj: %f \n",
                   kid, row_idx, X[row_idx], L.val[p], xj); 
 #endif
-#ifdef BASKER_KOKKOS
             Kokkos::atomic_fetch_sub(&(X[L.row_idx[p]]),
                 L.val[p]*xj);
-#else
-            //Note: come back
-#endif         
           }
         }//end for() over all nnz in a column
 

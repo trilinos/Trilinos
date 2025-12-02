@@ -30,12 +30,8 @@
 
 #include <iostream>
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#else
-#include <omp.h>
-#endif
 #include "Teuchos_OrdinalTraits.hpp"
 
 //#define BASKER_TIMER
@@ -48,11 +44,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_sfactor_init_workspace
   {
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                        execution_space;
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
     typedef typename TeamPolicy::member_type TeamMember;
-    #endif
 
     bool flag;
     Basker<Int,Entry,Exe_Space> *basker;
@@ -67,20 +61,10 @@ namespace BaskerNS
     }
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const
-    #endif
     {
-      #ifdef BASKER_KOKKOS
-      //Int kid = (Int)(thread.league_rank()*thread.team_size()+
-      //           thread.team_rank());
       Int kid = basker->t_get_kid(thread);
-      #endif
-
       basker->t_init_workspace(flag, kid);
-
     }//end operator()
   }; //end struct kokkos_sfactor_init_workspace
 
@@ -88,11 +72,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_sfactor_init_factor
   {
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                        execution_space;
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
     typedef typename TeamPolicy::member_type TeamMember;
-    #endif
 
     Basker<Int,Entry,Exe_Space> *basker;
     
@@ -105,17 +87,9 @@ namespace BaskerNS
     }
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const
-    #endif
     {
-      #ifdef BASKER_KOKKOS
-      //Int kid = (Int)(thread.league_rank()*thread.team_size()+
-      //           thread.team_rank());
       Int kid = basker->t_get_kid(thread);
-      #endif
       //printf( " * kokkos_sfactor_init_factor(%d) *\n",int(kid) ); fflush(stdout);
 
       basker->t_init_factor(kid);
@@ -176,7 +150,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   #endif
   if(btf_tabs_offset != 0 && allocate_nd_workspace)
   {
-  #ifdef BASKER_KOKKOS
     #ifdef BASKER_PARALLEL_INIT_FACTOR
     kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
       iF(this);
@@ -187,8 +160,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       this->t_init_factor(p);
     }
     #endif
-  #else
-  #endif
   }
 
   #ifdef BASKER_TIMER 
@@ -197,7 +168,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   //if(btf_tabs_offset != 0)
   {
     //Allocate workspace
-  #ifdef BASKER_KOKKOS
     #ifdef BASKER_PARALLEL_INIT_WORKSPACE
     typedef Kokkos::TeamPolicy<Exe_Space>      TeamPolicy;
     kokkos_sfactor_init_workspace<Int,Entry,Exe_Space>
@@ -209,7 +179,6 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       this->t_init_workspace(setup_flag, p);
     }
     #endif
-  #endif
   }
 
   BASKER_ASSERT(A.nrow > 0, "Basker sfactor assert: A.nrow > 0 failed");

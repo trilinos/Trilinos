@@ -14,14 +14,9 @@
 #include "shylubasker_types.hpp"
 #include "shylubasker_util.hpp"
 
-#ifdef BASKER_KOKKOS
-#include <Kokkos_Core.hpp>
-#include <Kokkos_Timer.hpp>
-#else
-#include <omp.h>
-#endif
+#include "Kokkos_Core.hpp"
+#include "Kokkos_Timer.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-
 
 #include <iostream>
 

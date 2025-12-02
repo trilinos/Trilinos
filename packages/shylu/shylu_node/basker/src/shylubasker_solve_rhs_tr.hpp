@@ -17,12 +17,8 @@
 #include "shylubasker_util.hpp"
 
 /*Kokkos Includes*/
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#else
-#include <omp.h>
-#endif
 
 /*System Includes*/
 #include <iostream>

@@ -98,8 +98,6 @@ namespace BaskerNS {
     int Factor
     (Int nrow, Int ncol, typename std::enable_if< !std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Entry *val)
     {
-      //Int* matching_type_col_ptr = new Int[ncol+1];
-
     #ifdef KOKKOS_ENABLE_OPENMP
     #pragma omp parallel for
     #endif

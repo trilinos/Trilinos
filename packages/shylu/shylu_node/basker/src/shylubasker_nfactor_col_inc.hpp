@@ -17,10 +17,8 @@
 
 #include "shylubasker_nfactor_blk_inc.hpp"
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#endif 
 
 namespace BaskerNS
 {
@@ -28,11 +26,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_nfactor_sep2_inc_lvl
   {
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                         execution_space;
     typedef Kokkos::TeamPolicy<Exe_Space>     TeamPolicy;
     typedef typename TeamPolicy::member_type  TeamMember;
-    #endif
     
     Basker<Int,Entry,Exe_Space> *basker;
     Int lvl;
@@ -48,27 +44,12 @@ namespace BaskerNS
     }
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const  
-    #endif
     {
-      #ifdef BASKER_KOKKOS
       Int kid = basker->t_get_kid(thread);
       Int team_leader = (Int)(thread.league_rank()*thread.team_size());
-      #else
-      Int team_leader = 0; //Note: come back and fix
-      #endif
-      
-      //if(kid < 8)
-      //if(kid > 11 && kid < 16)
 	{
-      #ifdef BASKER_KOKKOS
        basker->t_nfactor_sep2_inc_lvl(kid, lvl, team_leader, thread);
-      #else
-      
-      #endif
 	}
     }//end operator ()
   };//end col_factor_funct

@@ -1252,14 +1252,10 @@ namespace BaskerNS
       find_2D_convert(BTF_A);
 
       //Fill 2D structure
-      #ifdef BASKER_KOKKOS
       BASKER_BOOL keep_zeros = BASKER_FALSE;
       kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE, keep_zeros);
       Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
       Kokkos::fence();
-      #else
-      //Comeback
-      #endif
     }
 
     // Initialize C & B blocks
@@ -1356,7 +1352,6 @@ namespace BaskerNS
       #endif
 
       //Fill 2D structure
-      #ifdef BASKER_KOKKOS
       BASKER_BOOL keep_zeros = BASKER_FALSE;
       BASKER_BOOL alloc      = alloc_BTFA; //BASKER_FALSE;
       #if 1//def BASKER_PARALLEL_INIT_2D
@@ -1367,9 +1362,6 @@ namespace BaskerNS
        for (Int p = 0; p < num_threads; p++) {
          this->t_init_2DA(p, alloc, keep_zeros);
        }
-      #endif
-      #else
-      //Comeback
       #endif
 
       #ifdef BASKER_TIMER_FINE
