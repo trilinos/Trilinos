@@ -902,7 +902,9 @@ namespace BaskerNS
         //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
       return BASKER_ERROR;
     } else {
+      #ifdef KOKKOS_ENABLE_OPENMP
       #pragma omp parallel for
+      #endif
       for( Int i = 0; i < nnz; ++i ) {
         A.val(i) = val[ vals_perm_composition(i) ];
         if ( btfd_nnz != 0 ) {
@@ -2080,7 +2082,11 @@ namespace BaskerNS
 
     //Next test if Kokkos has that many threads!
     //This is a common mistake in mpi-based apps
+    #ifdef KOKKOS_ENABLE_OPENMP
     check_value = Kokkos::OpenMP::impl_max_hardware_threads();
+    #else
+    check_value = 1;
+    #endif
     if(nthreads > check_value)
     {
       if(Options.verbose == BASKER_TRUE) {
