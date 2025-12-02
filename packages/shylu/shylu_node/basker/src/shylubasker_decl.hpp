@@ -21,11 +21,7 @@
 #include "shylubasker_scalar_traits.hpp"
 
 //Kokkos Includes
-#ifdef BASKER_KOKKOS
 #include "Kokkos_Core.hpp"
-#else
-#include <omp.h>
-#endif
 
 //System Includes
 #include <iostream>
@@ -40,11 +36,9 @@ namespace BaskerNS
     static_assert(std::is_same_v<Exe_Space, Kokkos::DefaultHostExecutionSpace>,
                   "ShyLU-Basker: invalid device execution space provided as template parameter - only the host backend is supported");
 
-    #ifdef BASKER_KOKKOS
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
     typedef Kokkos::RangePolicy<Exe_Space>   RangePolicy;
     typedef typename TeamPolicy::member_type TeamMember;
-    #endif
 
     typedef Basker_ScalarTraits<Entry>        EntryOP;
 
@@ -154,18 +148,10 @@ namespace BaskerNS
                     BASKER_BOOL keep_zeros = BASKER_TRUE);
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     int t_nfactor_sep(Int kid, Int lvl, Int team_leader, const TeamMember &thread);
-    #else
-    int t_nfactor_sep(Int kid, Int lvl, Int team_leader);
-    #endif
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     int t_nfactor_sep_old(Int kid, Int lvl, Int team_leader, const TeamMember &thread);
-    #else
-    int t_nfactor_sep_old(Int kid, Int lvl, Int team_leader);
-    #endif
 
     int t_nfactor_sep2(const Int kid, const Int lvl, const Int team_leader, const TeamMember &thread);
 

@@ -29,12 +29,8 @@
 #include "shylubasker_solve_rhs_tr.hpp"
 
 /*Kokkos Includes*/
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#else
-#include <omp.h>
-#endif
 
 /*System Includes*/
 #include <iostream>
@@ -976,9 +972,7 @@ namespace BaskerNS
         //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
       return BASKER_ERROR;
     } else {
-    #ifdef KOKKOS_ENABLE_OPENMP
-    #pragma omp parallel for
-    #endif
+      #pragma omp parallel for
       for( Int i = 0; i < nnz; ++i ) {
         A.val(i) = val[ vals_perm_composition(i) ];
         if ( btfd_nnz != 0 ) {
@@ -1593,9 +1587,7 @@ namespace BaskerNS
 
           // ----------------------------------------------------------------------------------------------
           // Allocate & Initialize blocks
-          #ifdef BASKER_KOKKOS
           matrix_to_views_2D(BTF_A);
-          #endif
           if(Options.verbose == BASKER_TRUE) {
             std::cout<< "   + Basker Factor: Time to convert a big block A into views: " << nd_mwm_amd_timer.seconds() << std::endl;
           }
@@ -1630,7 +1622,6 @@ namespace BaskerNS
         }
 
 
-        #ifdef BASKER_KOKKOS
         // ----------------------------------------------------------------------------------------------
         // Allocate & Initialize blocks
         #ifdef BASKER_PARALLEL_INIT_FACTOR
@@ -1648,7 +1639,6 @@ namespace BaskerNS
           iWS(flag, this);
         Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
         Kokkos::fence();*/
-        #endif
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time for init factors after ND on a big block A: " << nd_nd_timer.seconds() << std::endl;
         }
@@ -1945,7 +1935,6 @@ namespace BaskerNS
     bool doSymbolic_ND = (Options.blk_matching != 0 || Options.static_delayed_pivot != 0);
     if (btf_tabs_offset != 0) {
       bool flag = true;
-      #ifdef BASKER_KOKKOS
       Kokkos::Timer nd_setup1_timer;
       /*kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
         iF(this);
@@ -1972,7 +1961,6 @@ namespace BaskerNS
       if(Options.verbose == BASKER_TRUE) {
         std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup2_timer.seconds() << std::endl;
       }
-      #endif
     }
     bool copy_BTFA = (Options.blk_matching == 0 || Options.static_delayed_pivot != 0);
     bool alloc_BTFA = (Options.static_delayed_pivot != 0);
@@ -2162,11 +2150,7 @@ namespace BaskerNS
 
     //Next test if Kokkos has that many threads!
     //This is a common mistake in mpi-based apps
-    #ifdef KOKKOS_ENABLE_OPENMP
     check_value = Kokkos::OpenMP::impl_max_hardware_threads();
-    #else
-    check_value = 1;
-    #endif
     if(nthreads > check_value)
     {
       if(Options.verbose == BASKER_TRUE) {

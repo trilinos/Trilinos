@@ -43,26 +43,19 @@ namespace BaskerNS
     
     //if(btf_tabs_offset != 0)
      {
-     #ifdef BASKER_KOKKOS
      kokkos_sfactor_init_factor<Int,Entry,Exe_Space> iF(this);
      Kokkos::parallel_for(TeamPolicy(num_threads,1), iF);
      Kokkos::fence();
-     #else
-     #endif     
      }
 
      //if(btf_tabs_offset != 0)
      {
      //printf("before allow workspace\n");
      //Allocate workspace
-     #ifdef BASKER_KOKKOS
      bool flag = true;
      kokkos_sfactor_init_workspace<Int,Entry,Exe_Space> iWS(flag, this);
      Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
      Kokkos::fence();
-     #else
-     
-     #endif
      }
      
      
@@ -153,7 +146,7 @@ namespace BaskerNS
             Int my_new_row = 
               S(lvl+1)(ppp) - S(0)(my_row_leader);
 
-            U_row = S(lvl+1)(ppp)%LU_size(U_col);	 
+            U_row = S(lvl+1)(ppp)%LU_size(U_col); 
             if((S(lvl+1)(ppp) > 14) &&
                (S(lvl+1)(ppp) > LU_size(U_col)) 
               )
