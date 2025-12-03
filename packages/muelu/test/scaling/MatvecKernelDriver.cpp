@@ -38,6 +38,8 @@
 #include "KokkosSparse_spmv.hpp"
 #include "Kokkos_Core.hpp"
 
+#include <chrono>
+
 #if defined(HAVE_MUELU_CUSPARSE)
 #include "cublas_v2.h"
 #include "cusparse.h"
@@ -227,9 +229,11 @@ class Petsc_SpmV_Pack {
     MatDestroy(&A_p);
   }
 
+  template <bool do_fence>
   bool spmv(const Scalar alpha, const Scalar beta) {
     int rv = MatMult(A_p, x_p, y_p);
-    Kokkos::fence();
+    if (do_fence)
+      Kokkos::fence();
     return (rv != 0);
   }
 
@@ -316,9 +320,11 @@ class HYPRE_SpmV_Pack {
     HYPRE_IJVectorDestroy(y_ij);
   }
 
+  template <bool do_fence>
   bool spmv(const Scalar alpha, const Scalar beta) {
     int rv = HYPRE_ParCSRMatrixMatvec(alpha, parcsr_matrix, x_par, beta, y_par);
-    Kokkos::fence();
+    if (do_fence)
+      Kokkos::fence();
     return (rv != 0);
   }
 
@@ -352,6 +358,7 @@ class MagmaSparse_SpmV_Pack {
 
   ~MagmaSparse_SpmV_Pack(){};
 
+  template <bool do_fence>
   bool spmv(const Scalar alpha, const Scalar beta) { return (true); }
 };
 
@@ -437,9 +444,11 @@ class MagmaSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosC
     magma_finalize();
   };
 
+  template <bool do_fence>
   bool spmv(const Scalar alpha, const Scalar beta) {
     magma_d_spmv(1.0, magma_dev_Acrs, magma_dev_x, 0.0, magma_dev_y, queue);
-    Kokkos::fence();
+    if (do_fence)
+      Kokkos::fence();
   }
 
  private:
@@ -498,6 +507,7 @@ class CuSparse_SpmV_Pack {
 
   ~CuSparse_SpmV_Pack(){};
 
+  template <bool do_fence>
   cusparseStatus_t spmv(const Scalar alpha, const Scalar beta) { return CUSPARSE_STATUS_SUCCESS; }
 };
 
@@ -595,6 +605,7 @@ class CuSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosComp
     cublasDestroy(cublasHandle);
   }
 
+  template <bool do_fence>
   cusparseStatus_t spmv(const Scalar alpha, const Scalar beta) {
     // compute: y = alpha*Ax + beta*y
 
@@ -608,7 +619,8 @@ class CuSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosComp
                                        CUDA_R_64F,
                                        alg,
                                        dBuffer);
-    Kokkos::fence();
+    if (do_fence)
+      CHECK_CUDA(cudaDeviceSynchronize());
     return (rc);
   }
 
@@ -677,6 +689,7 @@ class RocSparse_SpmV_Pack {
 
   ~RocSparse_SpmV_Pack(){};
 
+  template <bool do_fence>
   rocsparse_status spmv(const Scalar alpha, const Scalar beta) { return rocsparse_status_success; }
 };
 
@@ -780,6 +793,7 @@ class RocSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCom
     rocsparse_destroy_handle(rocsparseHandle);
   }
 
+  template <bool do_fence>
   rocsparse_status spmv(const Scalar alpha, const Scalar beta) {
     // compute: y = alpha*Ax + beta*y
 
@@ -795,7 +809,8 @@ class RocSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCom
                               rocsparse_spmv_stage_compute,
                               &bufferSize,
                               dBuffer));
-    Kokkos::fence();
+    if (do_fence)
+      CHECK_HIP(hipDeviceSynchronize());
     return (rc);
   }
 
@@ -853,11 +868,13 @@ std::string mkl_error(sparse_status_t code) {
 
 struct matrix_descr mkl_descr;
 
+template <bool do_fence>
 void MV_MKL(sparse_matrix_t& AMKL, double* x, double* y) {
   // sparse_status_t mkl_sparse_d_mv (sparse_operation_t operation, double alpha, const sparse_matrix_t A, struct matrix_descr descr, const double *x, double beta, double *y);
 
   mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1.0, AMKL, mkl_descr, x, 0.0, y);
-  Kokkos::fence();
+  if (do_fence)
+    Kokkos::fence();
 }
 
 #endif
@@ -865,20 +882,22 @@ void MV_MKL(sparse_matrix_t& AMKL, double* x, double* y) {
 // =========================================================================
 // Tpetra Kernel Testing
 // =========================================================================
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <bool do_fence, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_Tpetra(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y) {
   A.apply(x, y);
-  Kokkos::fence();
+  if (do_fence)
+    Kokkos::fence();
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <bool do_fence, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_KK(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y) {
   typedef typename Node::device_type device_type;
   const auto& AK = A.getLocalMatrixDevice();
   auto X_lcl     = x.getLocalViewDevice(Tpetra::Access::ReadOnly);
   auto Y_lcl     = y.getLocalViewDevice(Tpetra::Access::OverwriteAll);
   KokkosSparse::spmv(KokkosSparse::NoTranspose, Teuchos::ScalarTraits<Scalar>::one(), AK, X_lcl, Teuchos::ScalarTraits<Scalar>::zero(), Y_lcl);
-  Kokkos::fence();
+  if (do_fence)
+    Kokkos::fence();
 }
 
 // =========================================================================
@@ -946,6 +965,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     clp.setOption("watchr-problem-name", &watchrProblemName, "Problem name for Watchr plot headers");
     bool verboseModel = false;
     clp.setOption("verbosemodel", "noverbosemodel", &verboseModel, "use stacked verbose performance model");
+    bool randomize = true;
+    clp.setOption("randomize", "norandomize", &randomize, "Randomize order of kernel execution. Uses fences between kernel calls.");
 
     // the kernels
     bool do_mkl         = true;
@@ -1255,52 +1276,250 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
 
     // compute the baseline
     vector_type yt_baseline = Xpetra::toTpetra(*y_baseline);
-    if (report_error_norms) MV_Tpetra(*At, xt, yt_baseline);
+    if (report_error_norms) MV_Tpetra<true>(*At, xt, yt_baseline);
     const bool error_check_y = true;
     std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> dummy;
     dummy.resize(1);
     Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> y_norms(dummy.data(), 1);
 
     int warmup = 10;
-    nrepeat += warmup;
 
-    // no need for a barrier, because the randomization process uses a collective.
-    if (!my_experiments.empty()) {
-      for (int i = 0; i < nrepeat; i++) {
-        // randomize the experiments
-        if (comm->getRank() == 0) {
-          std::shuffle(my_experiments.begin(), my_experiments.end(), random_source);
-        }
+    // sync up
+    Kokkos::fence();
+    comm->barrier();
 
-        // Broadcast this ordering to the other processes
-        comm->broadcast(0,
-                        static_cast<int>(sizeof(Experiments::TPETRA) * my_experiments.size()),
-                        reinterpret_cast<char*>(my_experiments.data()));
+    if (randomize) {
+      nrepeat += warmup;
 
-        // loop over the randomized experiments
+      // no need for a barrier, because the randomization process uses a collective.
+      if (!my_experiments.empty()) {
+        for (int i = 0; i < nrepeat; i++) {
+          // randomize the experiments
+          if (comm->getRank() == 0) {
+            std::shuffle(my_experiments.begin(), my_experiments.end(), random_source);
+          }
+
+          // Broadcast this ordering to the other processes
+          comm->broadcast(0,
+                          static_cast<int>(sizeof(Experiments::TPETRA) * my_experiments.size()),
+                          reinterpret_cast<char*>(my_experiments.data()));
+
+          // loop over the randomized experiments
+          for (const auto& experiment_id : my_experiments) {
+            switch (experiment_id) {
+#ifdef HAVE_MUELU_MKL
+                // MKL
+              case Experiments::MKL: {
+                TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV MKL: Total") + (i < warmup ? " warmup" : "")));
+                auto X_lcl  = xt.getLocalViewDevice(Tpetra::Access::ReadOnly);
+                auto Y_lcl  = yt.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+                mkl_xdouble = (double*)X_lcl.data();
+                mkl_ydouble = (double*)Y_lcl.data();
+                MV_MKL<true>(mkl_A, mkl_xdouble, mkl_ydouble);
+              } break;
+#endif
+
+                // KK Algorithms
+              case Experiments::KK: {
+                TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV KK: Total") + (i < warmup ? " warmup" : "")));
+                MV_KK<false>(Att, xt, yt);
+              } break;
+              // Tpetra
+              case Experiments::TPETRA: {
+                TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV Tpetra: Total") + (i < warmup ? " warmup" : "")));
+                MV_Tpetra<true>(*At, xt, yt);
+              } break;
+
+#ifdef HAVE_MUELU_CUSPARSE
+                // CUSPARSE
+              case Experiments::CUSPARSE: {
+                const Scalar alpha = 1.0;
+                const Scalar beta  = 0.0;
+                TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV CuSparse: Total") + (i < warmup ? " warmup" : "")));
+                cusparse_spmv.template spmv<true>(alpha, beta);
+              } break;
+#endif
+
+#ifdef HAVE_MUELU_ROCSPARSE
+                // ROCSPARSE
+              case Experiments::ROCSPARSE: {
+                const Scalar alpha = 1.0;
+                const Scalar beta  = 0.0;
+                TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV RocSparse: Total") + (i < warmup ? " warmup" : "")));
+                my_rocsparse_spmv.template spmv<true>(alpha, beta);
+              } break;
+#endif
+
+#ifdef HAVE_MUELU_MAGMASPARSE
+                // Magma CSR
+              case Experiments::MAGMASPARSE: {
+                const Scalar alpha = 1.0;
+                const Scalar beta  = 0.0;
+                TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV MagmaSparse: Total") + (i < warmup ? " warmup" : "")));
+                magmasparse_spmv.template spmv<true>(alpha, beta);
+              } break;
+#endif
+
+#ifdef HAVE_MUELU_HYPRE
+                // HYPRE
+              case Experiments::HYPRE: {
+                const Scalar alpha = 1.0;
+                const Scalar beta  = 0.0;
+                TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV HYPRE: Total") + (i < warmup ? " warmup" : "")));
+                hypre_spmv.template spmv<true>(alpha, beta);
+              } break;
+#endif
+
+#ifdef HAVE_MUELU_PETSC
+                // PETSc
+              case Experiments::PETSC: {
+                const Scalar alpha = 1.0;
+                const Scalar beta  = 0.0;
+                TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV Petsc: Total") + (i < warmup ? " warmup" : "")));
+                petsc_spmv.template spmv<true>(alpha, beta);
+              } break;
+#endif
+
+              default:
+                std::cerr << "Unknown experiment ID encountered: " << (int)experiment_id << std::endl;
+            }
+            // TODO: add a correctness check
+            //  For now, all things alias x/y, so we can test yt (flakey and scary, but you only live once)
+            if (error_check_y && report_error_norms) {
+              // compute ||y||_2
+              y_norms[0] = -1;
+              y->norm2(y_norms);
+              const auto y_norm2 = y_norms[0];
+
+              y_norms[0] = -1;
+              yt.norm2(y_norms);
+              const auto y_mv_norm2 = y_norms[0];
+
+              y->update(-Teuchos::ScalarTraits<Scalar>::one(), *y_baseline, Teuchos::ScalarTraits<Scalar>::one());
+
+              y_norms[0] = -1;
+              y->norm2(y_norms);
+              const auto y_err = y_norms[0];
+
+              y->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
+              ;
+
+              y_norms[0] = -1;
+              y_baseline->norm2(y_norms);
+              const auto y_baseline_norm2 = y_norms[0];
+
+              y_norms[0] = -1;
+              yt.norm2(y_norms);
+              const auto y_mv_norm2_next_itr = y_norms[0];
+
+              std::cout << "ExperimentID: " << experiment_id_to_string[(int)experiment_id] << ", ||y-y_hat||_2 = "
+                        << std::setprecision(std::numeric_limits<Scalar>::digits10 + 1)
+                        << std::scientific << y_err
+                        << ", ||y||_2 = " << y_norm2
+                        << ", ||y_baseline||_2 = " << y_baseline_norm2
+                        << ", ||y_ptr|| == ||y_mv||:  " << std::boolalpha << (y_mv_norm2 == y_norm2)
+                        << ", setting y to nan ... ||y||_2 for next iter: " << y_mv_norm2_next_itr
+                        << "\n";
+            }
+
+            // We need to both fence and barrier to make sure the kernels do not overlap
+            Kokkos::fence();
+            comm->barrier();
+          }  // end random exp loop
+        }    // end repeat
+      }      // end ! my_experiments.empty()
+    } else {
+      if (!my_experiments.empty()) {
+        // loop over the experiments without randomization and without fences or barriers between subsequent calls
         for (const auto& experiment_id : my_experiments) {
+          auto start           = std::chrono::system_clock::now();
+          auto end             = std::chrono::system_clock::now();
+          auto elapsed         = start - end;
+          long int time        = 0;
+          long int timeCallMax = 0;
+
           switch (experiment_id) {
 #ifdef HAVE_MUELU_MKL
-            // MKL
+              // MKL
             case Experiments::MKL: {
-              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV MKL: Total") + (i < warmup ? " warmup" : "")));
               auto X_lcl  = xt.getLocalViewDevice(Tpetra::Access::ReadOnly);
               auto Y_lcl  = yt.getLocalViewDevice(Tpetra::Access::OverwriteAll);
               mkl_xdouble = (double*)X_lcl.data();
               mkl_ydouble = (double*)Y_lcl.data();
-              MV_MKL(mkl_A, mkl_xdouble, mkl_ydouble);
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV MKL: Total warmup"));
+                for (int i = 0; i < warmup; i++) {
+                  MV_MKL<true>(mkl_A, mkl_xdouble, mkl_ydouble);
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV MKL: Total"));
+                for (int i = 0; i < nrepeat; i++) {
+                  start = std::chrono::system_clock::now();
+                  MV_MKL<true>(mkl_A, mkl_xdouble, mkl_ydouble);
+                  end     = std::chrono::system_clock::now();
+                  elapsed = end - start;
+                  time += std::chrono::round<std::chrono::microseconds>(elapsed).count();
+                  timeCallMax = std::max(timeCallMax,
+                                         std::chrono::round<std::chrono::microseconds>(elapsed).count());
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
             } break;
 #endif
 
             // KK Algorithms
             case Experiments::KK: {
-              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV KK: Total") + (i < warmup ? " warmup" : "")));
-              MV_KK(Att, xt, yt);
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV KK: Total warmup"));
+                for (int i = 0; i < warmup; i++) {
+                  MV_KK<true>(Att, xt, yt);
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV KK: Total"));
+                for (int i = 0; i < nrepeat; i++) {
+                  start = std::chrono::system_clock::now();
+                  MV_KK<true>(Att, xt, yt);
+                  end     = std::chrono::system_clock::now();
+                  elapsed = end - start;
+                  time += std::chrono::round<std::chrono::microseconds>(elapsed).count();
+                  timeCallMax = std::max(timeCallMax,
+                                         std::chrono::round<std::chrono::microseconds>(elapsed).count());
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
             } break;
             // Tpetra
             case Experiments::TPETRA: {
-              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV Tpetra: Total") + (i < warmup ? " warmup" : "")));
-              MV_Tpetra(*At, xt, yt);
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV Tpetra: Total warmup"));
+                for (int i = 0; i < warmup; i++) {
+                  MV_Tpetra<true>(*At, xt, yt);
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV Tpetra: Total"));
+                for (int i = 0; i < nrepeat; i++) {
+                  start = std::chrono::system_clock::now();
+                  MV_Tpetra<true>(*At, xt, yt);
+                  end     = std::chrono::system_clock::now();
+                  elapsed = end - start;
+                  time += std::chrono::round<std::chrono::microseconds>(elapsed).count();
+                  timeCallMax = std::max(timeCallMax,
+                                         std::chrono::round<std::chrono::microseconds>(elapsed).count());
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
             } break;
 
 #ifdef HAVE_MUELU_CUSPARSE
@@ -1308,99 +1527,199 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
             case Experiments::CUSPARSE: {
               const Scalar alpha = 1.0;
               const Scalar beta  = 0.0;
-              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV CuSparse: Total") + (i < warmup ? " warmup" : "")));
-              cusparse_spmv.spmv(alpha, beta);
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV CuSparse: Total warmup"));
+                for (int i = 0; i < warmup; i++) {
+                  cusparse_spmv.template spmv<true>(alpha, beta);
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV CuSparse: Total"));
+                for (int i = 0; i < nrepeat; i++) {
+                  start = std::chrono::system_clock::now();
+                  cusparse_spmv.template spmv<true>(alpha, beta);
+                  end     = std::chrono::system_clock::now();
+                  elapsed = end - start;
+                  time += std::chrono::round<std::chrono::microseconds>(elapsed).count();
+                  timeCallMax = std::max(timeCallMax,
+                                         std::chrono::round<std::chrono::microseconds>(elapsed).count());
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
             } break;
 #endif
 
 #ifdef HAVE_MUELU_ROCSPARSE
-            // ROCSPARSE
+              // ROCSPARSE
             case Experiments::ROCSPARSE: {
               const Scalar alpha = 1.0;
               const Scalar beta  = 0.0;
-              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV RocSparse: Total") + (i < warmup ? " warmup" : "")));
-              my_rocsparse_spmv.spmv(alpha, beta);
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV RocSparse: Total warmup"));
+                for (int i = 0; i < warmup; i++) {
+                  my_rocsparse_spmv.template spmv<true>(alpha, beta);
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV RocSparse: Total"));
+                for (int i = 0; i < nrepeat; i++) {
+                  start = std::chrono::system_clock::now();
+                  my_rocsparse_spmv.template spmv<true>(alpha, beta);
+                  end     = std::chrono::system_clock::now();
+                  elapsed = end - start;
+                  time += std::chrono::round<std::chrono::microseconds>(elapsed).count();
+                  timeCallMax = std::max(timeCallMax,
+                                         std::chrono::round<std::chrono::microseconds>(elapsed).count());
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
             } break;
 #endif
 
 #ifdef HAVE_MUELU_MAGMASPARSE
-            // Magma CSR
+              // Magma CSR
             case Experiments::MAGMASPARSE: {
               const Scalar alpha = 1.0;
               const Scalar beta  = 0.0;
-              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV MagmaSparse: Total") + (i < warmup ? " warmup" : "")));
-              magmasparse_spmv.spmv(alpha, beta);
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV MagmaSparse: Total warmup"));
+                for (int i = 0; i < warmup; i++) {
+                  magmasparse_spmv.template spmv<true>(alpha, beta);
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV MagmaSparse: Total"));
+                for (int i = 0; i < nrepeat; i++) {
+                  start = std::chrono::system_clock::now();
+                  magmasparse_spmv.template spmv<true>(alpha, beta);
+                  end     = std::chrono::system_clock::now();
+                  elapsed = end - start;
+                  time += std::chrono::round<std::chrono::microseconds>(elapsed).count();
+                  timeCallMax = std::max(timeCallMax,
+                                         std::chrono::round<std::chrono::microseconds>(elapsed).count());
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
             } break;
 #endif
 
 #ifdef HAVE_MUELU_HYPRE
-            // HYPRE
+              // HYPRE
             case Experiments::HYPRE: {
               const Scalar alpha = 1.0;
               const Scalar beta  = 0.0;
-              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV HYPRE: Total") + (i < warmup ? " warmup" : "")));
-              hypre_spmv.spmv(alpha, beta);
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV HYPRE: Total warmup"));
+                for (int i = 0; i < warmup; i++) {
+                  hypre_spmv.template spmv<true>(alpha, beta);
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV HYPRE: Total"));
+                for (int i = 0; i < nrepeat; i++) {
+                  start = std::chrono::system_clock::now();
+                  hypre_spmv.template spmv<true>(alpha, beta);
+                  end     = std::chrono::system_clock::now();
+                  elapsed = end - start;
+                  time += std::chrono::round<std::chrono::microseconds>(elapsed).count();
+                  timeCallMax = std::max(timeCallMax,
+                                         std::chrono::round<std::chrono::microseconds>(elapsed).count());
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
             } break;
 #endif
 
 #ifdef HAVE_MUELU_PETSC
-            // PETSc
+              // PETSc
             case Experiments::PETSC: {
               const Scalar alpha = 1.0;
               const Scalar beta  = 0.0;
-              TimeMonitor t(*TimeMonitor::getNewTimer(std::string("MV Petsc: Total") + (i < warmup ? " warmup" : "")));
-              petsc_spmv.spmv(alpha, beta);
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV Petsc: Total warmup"));
+                for (int i = 0; i < warmup; i++) {
+                  petsc_spmv.template spmv<true>(alpha, beta);
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
+              {
+                TimeMonitor t(*TimeMonitor::getNewTimer("MV Petsc: Total"));
+                for (int i = 0; i < nrepeat; i++) {
+                  start = std::chrono::system_clock::now();
+                  petsc_spmv.template spmv<true>(alpha, beta);
+                  end     = std::chrono::system_clock::now();
+                  elapsed = end - start;
+                  time += std::chrono::round<std::chrono::microseconds>(elapsed).count();
+                  timeCallMax = std::max(timeCallMax,
+                                         std::chrono::round<std::chrono::microseconds>(elapsed).count());
+                }
+                Kokkos::fence();
+                comm->barrier();
+              }
             } break;
 #endif
 
             default:
               std::cerr << "Unknown experiment ID encountered: " << (int)experiment_id << std::endl;
+
+              // TODO: add a correctness check
+              //  For now, all things alias x/y, so we can test yt (flakey and scary, but you only live once)
+              if (error_check_y && report_error_norms) {
+                // compute ||y||_2
+                y_norms[0] = -1;
+                y->norm2(y_norms);
+                const auto y_norm2 = y_norms[0];
+
+                y_norms[0] = -1;
+                yt.norm2(y_norms);
+                const auto y_mv_norm2 = y_norms[0];
+
+                y->update(-Teuchos::ScalarTraits<Scalar>::one(), *y_baseline, Teuchos::ScalarTraits<Scalar>::one());
+
+                y_norms[0] = -1;
+                y->norm2(y_norms);
+                const auto y_err = y_norms[0];
+
+                y->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
+                ;
+
+                y_norms[0] = -1;
+                y_baseline->norm2(y_norms);
+                const auto y_baseline_norm2 = y_norms[0];
+
+                y_norms[0] = -1;
+                yt.norm2(y_norms);
+                const auto y_mv_norm2_next_itr = y_norms[0];
+
+                std::cout << "ExperimentID: " << experiment_id_to_string[(int)experiment_id] << ", ||y-y_hat||_2 = "
+                          << std::setprecision(std::numeric_limits<Scalar>::digits10 + 1)
+                          << std::scientific << y_err
+                          << ", ||y||_2 = " << y_norm2
+                          << ", ||y_baseline||_2 = " << y_baseline_norm2
+                          << ", ||y_ptr|| == ||y_mv||:  " << std::boolalpha << (y_mv_norm2 == y_norm2)
+                          << ", setting y to nan ... ||y||_2 for next iter: " << y_mv_norm2_next_itr
+                          << "\n";
+              }
           }
-          // TODO: add a correctness check
-          //  For now, all things alias x/y, so we can test yt (flakey and scary, but you only live once)
-          if (error_check_y && report_error_norms) {
-            // compute ||y||_2
-            y_norms[0] = -1;
-            y->norm2(y_norms);
-            const auto y_norm2 = y_norms[0];
 
-            y_norms[0] = -1;
-            yt.norm2(y_norms);
-            const auto y_mv_norm2 = y_norms[0];
+          std::cout << "Timings " << experiment_id_to_string[(int)experiment_id] << "Total: " << time << "us, avg: " << (time / nrepeat) << " us, max: " << timeCallMax << " us" << std::endl;
 
-            y->update(-Teuchos::ScalarTraits<Scalar>::one(), *y_baseline, Teuchos::ScalarTraits<Scalar>::one());
-
-            y_norms[0] = -1;
-            y->norm2(y_norms);
-            const auto y_err = y_norms[0];
-
-            y->putScalar(Teuchos::ScalarTraits<Scalar>::nan());
-            ;
-
-            y_norms[0] = -1;
-            y_baseline->norm2(y_norms);
-            const auto y_baseline_norm2 = y_norms[0];
-
-            y_norms[0] = -1;
-            yt.norm2(y_norms);
-            const auto y_mv_norm2_next_itr = y_norms[0];
-
-            std::cout << "ExperimentID: " << experiment_id_to_string[(int)experiment_id] << ", ||y-y_hat||_2 = "
-                      << std::setprecision(std::numeric_limits<Scalar>::digits10 + 1)
-                      << std::scientific << y_err
-                      << ", ||y||_2 = " << y_norm2
-                      << ", ||y_baseline||_2 = " << y_baseline_norm2
-                      << ", ||y_ptr|| == ||y_mv||:  " << std::boolalpha << (y_mv_norm2 == y_norm2)
-                      << ", setting y to nan ... ||y||_2 for next iter: " << y_mv_norm2_next_itr
-                      << "\n";
-          }
-
-          // We need to both fence and barrier to make sure the kernels do not overlap
-          Kokkos::fence();
-          comm->barrier();
         }  // end random exp loop
-      }    // end repeat
-    }      // end ! my_experiments.empty()
+      }    // end ! my_experiments.empty()
+    }
     // restore the IO stream
     std::cout.copyfmt(cout_default_fmt_flags);
 
