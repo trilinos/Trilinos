@@ -112,7 +112,7 @@ namespace Amesos2 {
 
 #ifdef HAVE_AMESOS2_MUMPS
     if(solverName  == "MUMPS" || solverName == "mumps" ||
-       solverName == "amesos2_MUMPS" || solverName == "amesos2_MUMPS")
+       solverName == "amesos2_MUMPS" || solverName == "amesos2_mumps")
       {
         return true;
       }
