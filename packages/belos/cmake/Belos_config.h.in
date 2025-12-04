@@ -1,23 +1,5 @@
-/* Define if want to build with Amesos enabled */
-#cmakedefine HAVE_BELOS_AMESOS
-
-/* Define if want to build with AztecOO enabled */
-#cmakedefine HAVE_BELOS_AZTECOO
-
-/* Define if want to build with IFPACK enabled */
-#cmakedefine HAVE_BELOS_IFPACK
-
-/* Define if want to build with Epetra enabled */
-#cmakedefine HAVE_BELOS_EPETRA
-
-/* Define if want to build with EpetraExt enabled */
-#cmakedefine HAVE_BELOS_EPETRAEXT
-
 /* Define if want to build with KokkosKernels enabled */
 #cmakedefine HAVE_BELOS_KOKKOSKERNELS
-
-/* Define if want to build with ML enabled */
-#cmakedefine HAVE_BELOS_ML
 
 /* Define if want to build with tpetra enabled */
 #cmakedefine HAVE_BELOS_TPETRA
@@ -30,9 +12,6 @@
 
 /* Define if want to build with thyra enabled */
 #cmakedefine HAVE_BELOS_THYRA
-
-/* Define if want to build with triutils enabled */
-#cmakedefine HAVE_BELOS_TRIUTILS
 
 /* Define if want to build belos-examples */
 #cmakedefine HAVE_BELOS_EXAMPLES
