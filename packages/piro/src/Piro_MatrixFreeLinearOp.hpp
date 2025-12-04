@@ -23,8 +23,6 @@ namespace Piro {
  * This class wraps a model evaluator supporting residual calculation,
  * and computes a finite difference approximation of the
  * Jacobian directional derivative at the chosen base point.
- * It is the Thyra-based functional equivalent of Piro::Epetra::MatrixFreeOperator,
- * and implements the Thyra::LinerarOp interface instead of Epetra_Operator.
  *
  * Time-dependent problems (characterized by x_dot != null) are supported.
  * The class uses the input values of the alpha and beta coefficients

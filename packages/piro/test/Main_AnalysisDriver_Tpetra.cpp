@@ -13,7 +13,6 @@
 #include "MockModelEval_A_Tpetra.hpp"
 #include "MockModelEval_B_Tpetra.hpp"
 #include "MockModelEval_B_Tpetra_2_parameters.hpp"
-//#include "ObserveSolution_Epetra.hpp"
 
 #include "Piro_SolverFactory.hpp"
 #include "Piro_ProviderHelpers.hpp"

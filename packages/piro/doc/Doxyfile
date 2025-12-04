@@ -546,14 +546,6 @@ INCLUDE_PATH           =
 
 INCLUDE_FILE_PATTERNS  = 
 
-# The PREDEFINED tag can be used to specify one or more macro names that 
-# are defined before the preprocessor is started (similar to the -D option of 
-# gcc). The argument of the tag is a list of macros of the form: name 
-# or name=definition (no spaces). If the definition and the = are 
-# omitted =1 is assumed. 
-
-PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI
-
 # If the MACRO_EXPANSION and EXPAND_PREDEF_ONLY tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 
 # The macro definition that is found in the sources will be used. 

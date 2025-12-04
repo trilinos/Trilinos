@@ -59,7 +59,7 @@ class MockModelEval_C_Tpetra
   ~MockModelEval_C_Tpetra();
 
 
-  /** \name Overridden from EpetraExt::ModelEvaluator . */
+  /** \name Overridden from Piro::TransientDecorator. */
   //@{
 
   /** \brief . */
