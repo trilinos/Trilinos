@@ -45,6 +45,7 @@ namespace Amesos2 {
     , perm_(this->globalNumRows_)
     , nrhs_(0)
     , is_contiguous_(true)
+    , debug_level_(2)
   {
     // set the default matrix type
     set_pardiso_mkl_matrix_type();
@@ -150,7 +151,19 @@ namespace Amesos2 {
 
       int_t phase = 22;
       void *bdummy, *xdummy;
-
+      if (debug_level_ > 1) {
+        printf("\n == PardisoMKL::numericFactorization_impl ==\n" );
+	using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
+        printf("A=[\n");
+        for (int_t i=0; i<n_; i++) {
+          for (int_t k=rowptr_view_(i); k<rowptr_view_(i+1); k++) {
+            int colid = int(colind_view_(k));
+	    double nzval = VTCT::convert(nzvals_view_(k));
+            printf("%d %d %e\n",i,colid,nzval);
+          }
+        }
+        printf("];\n");
+      }
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
@@ -176,6 +189,18 @@ namespace Amesos2 {
     // Get B data
     const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
     nrhs_ = as<int_t>(X->getGlobalNumVectors());
+    if (debug_level_ > 0) {
+      if (this->root_) printf("\n == Amesos2_PardisoMKL::solve_impl ==\n");
+      if (debug_level_ == 1) {
+        B->description();
+        if (this->root_) printf("\n");
+        X->description();
+      } else {
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        B->describe(*fancy, Teuchos::VERB_EXTREME);
+        X->describe(*fancy, Teuchos::VERB_EXTREME);
+      }
+    }
 
     const size_t val_store_size = as<size_t>(ld_rhs * nrhs_);
     xvals_.resize(val_store_size);
@@ -201,6 +226,18 @@ namespace Amesos2 {
 #endif
 
       const int_t phase = 33;
+      if (debug_level_ > 1) {
+	using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
+        printf("\nB=[\n");
+        for (int_t i=0; i<n_; i++) {
+          for (int_t j=0; j<nrhs_; j++) {
+	    double bij = VTCT::convert(bvals_[i+j*n_]);
+            printf("%e ",bij);
+          }
+	  printf("\n");
+        }
+        printf("];\n");
+      }
 
       function_map::pardiso( pt_,
                              const_cast<int_t*>(&maxfct_),
@@ -217,6 +254,18 @@ namespace Amesos2 {
                              const_cast<int_t*>(&msglvl_),
                              as<void*>(bvals_.getRawPtr()),
                              as<void*>(xvals_.getRawPtr()), &error );
+      if (debug_level_ > 1) {
+	using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
+        printf("\nX=[\n");
+        for (int_t i=0; i<n_; i++) {
+          for (int_t j=0; j<nrhs_; j++) {
+            double xij = VTCT::convert(xvals_[i+j*n_]);
+            printf("%e ",xij);
+          }
+          printf("\n");
+        }
+        printf("];\n\n");
+      }
     }
 
     check_pardiso_mkl_error(Amesos2::SOLVE, error);
@@ -483,6 +532,11 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
+  if (debug_level_ > 0 && current_phase == NUMFACT) {
+    if (this->root_) printf("\n == Amesos2_PardisoMKL::loadA_impl(NumFact) ==\n");
+    Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    this->matrixA_->describe(*fancy, Teuchos::VERB_EXTREME);
+  }
 
   // PardisoMKL does not need matrix data in the pre-ordering phase
   if( current_phase == PREORDERING ) return( false );
@@ -492,7 +546,6 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Kokkos::resize(colind_view_, this->globalNumNonZeros_);
     Kokkos::resize(rowptr_view_, this->globalNumRows_ + 1);
   }
-
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
@@ -602,7 +655,7 @@ const char* PardisoMKL<Matrix,Vector>::name = "PARDISOMKL";
 
 template <class Matrix, class Vector>
 const typename PardisoMKL<Matrix,Vector>::int_t
-PardisoMKL<Matrix,Vector>::msglvl_ = 0;
+PardisoMKL<Matrix,Vector>::msglvl_ = 1;
 
 template <class Matrix, class Vector>
 const typename PardisoMKL<Matrix,Vector>::int_t

@@ -37,6 +37,7 @@ KLU2<Matrix,Vector>::KLU2(
   , transFlag_(0)
   , is_contiguous_(true)
   , use_gather_(true)
+  , debug_level_(2)
 {
   ::KLU2::klu_defaults<klu2_dtype, local_ordinal_type> (&(data_.common_)) ;
   data_.symbolic_ = NULL;
@@ -202,6 +203,18 @@ KLU2<Matrix,Vector>::solve_impl(
 
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
+  if (debug_level_ > 0) {
+    if (this->root_) printf("\n == Amesos2_KLU2::solve_impl ==\n");
+    if (debug_level_ == 1) {
+      B->description();
+      if (this->root_) printf("\n");
+      X->description();
+    } else {
+      Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      B->describe(*fancy, Teuchos::VERB_EXTREME);
+      X->describe(*fancy, Teuchos::VERB_EXTREME);
+    }
+  }
 
   bool bDidAssignX;
   bool bDidAssignB;
@@ -461,6 +474,11 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #endif
 
   if(current_phase == SOLVE)return(false);
+  if (debug_level_ > 0 && current_phase == NUMFACT) {
+    if (this->root_) printf("\n == Amesos2_KLU2::loadA_impl(NumFact) ==\n");
+    Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    this->matrixA_->describe(*fancy, Teuchos::VERB_EXTREME);
+  }
 
   if ( single_proc_optimization() ) {
     // Do nothing in this case - Crs raw pointers will be used

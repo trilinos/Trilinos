@@ -280,6 +280,7 @@ namespace Amesos2 {
 
     bool is_contiguous_;
 
+    int debug_level_;
 };                              // End class PardisoMKL
 
 

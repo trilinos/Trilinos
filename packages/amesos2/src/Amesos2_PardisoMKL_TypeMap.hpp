@@ -60,9 +60,9 @@ namespace Amesos2{
  * template specializations of the Teuchos::ValueTypeConversionTraits
  * class.
  */
-#ifdef HAVE_TEUCHOS_COMPLEX
 namespace Teuchos {
 
+#ifdef HAVE_TEUCHOS_COMPLEX
   template <typename TypeFrom>
   class ValueTypeConversionTraits<Amesos2::PMKL::_MKL_Complex8, TypeFrom>
   {
@@ -152,10 +152,73 @@ namespace Teuchos {
     }
   };
 
-  //@}  End Conversion group
+  // from MKL complex to real
+  template<>
+  class ValueTypeConversionTraits<double, Amesos2::PMKL::_DOUBLE_COMPLEX_t>
+  {
+  public:
+    static double convert( const Amesos2::PMKL::_DOUBLE_COMPLEX_t t )
+    {                           // adapt conversion as necessary
+      double ret = Teuchos::as<double>(t.r);
+      return( ret );
+    }
 
-} // end namespace Teuchos
+    static double safeConvert( const Amesos2::PMKL::_DOUBLE_COMPLEX_t t )
+    {                           // adapt conversion as necessary
+      double ret = Teuchos::as<double>(t.r);
+      return( ret );
+    }
+  };
+
+  template<>
+  class ValueTypeConversionTraits<double, Amesos2::PMKL::_MKL_Complex8>
+  {
+  public:
+    static double convert( const Amesos2::PMKL::_MKL_Complex8 t )
+    {                           // adapt conversion as necessary
+      double ret = Teuchos::as<double>(t.real);
+      return( ret );
+    }
+
+    static double safeConvert( const Amesos2::PMKL::_MKL_Complex8 t )
+    {                           // adapt conversion as necessary
+      double ret = Teuchos::as<double>(t.real);
+      return( ret );
+    }
+  };
 #endif
+
+  template<>
+  class ValueTypeConversionTraits<double, double>
+  {
+  public:
+    static double convert( const double t )
+    {                           // adapt conversion as necessary
+      return( t );
+    }
+
+    static double safeConvert( const double t )
+    {                           // adapt conversion as necessary
+      return( t );
+    }
+  };
+
+  template<>
+  class ValueTypeConversionTraits<double, float>
+  {
+  public:
+    static double convert( const float t )
+    {                           // adapt conversion as necessary
+      return( t );
+    }
+
+    static double safeConvert( const float t )
+    {                           // adapt conversion as necessary
+      return( t );
+    }
+  };
+  //@}  End Conversion group
+} // end namespace Teuchos
 
 namespace Amesos2 {
 
