@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
@@ -201,8 +188,8 @@ int test_bsr_matrix_single_vec(const char fOp[],
     Kokkos::deep_copy(h_ybsr, ybsr);
     double error = 0.0, maxNorm = 0.0;
     for (size_t ir = 0; ir < h_ycrs.extent(0); ++ir) {
-      maxNorm = std::max(maxNorm, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir)));
-      error   = std::max(error, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir) - h_ybsr(ir)));
+      maxNorm = std::max(maxNorm, KokkosKernels::ArithTraits<Scalar>::abs(h_ycrs(ir)));
+      error   = std::max(error, KokkosKernels::ArithTraits<Scalar>::abs(h_ycrs(ir) - h_ybsr(ir)));
     }
 
     double tol = (mat_val.size() / nRow) * std::numeric_limits<double>::epsilon();
@@ -349,8 +336,8 @@ int test_bsr_matrix_vec(const char fOp[], KokkosSparse::CrsMatrix<Scalar, Ordina
     for (int jc = 0; jc < nvec; ++jc) {
       double error = 0.0, maxNorm = 0.0;
       for (size_t ir = 0; ir < h_ycrs.extent(0); ++ir) {
-        maxNorm = std::max(maxNorm, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir, jc)));
-        error   = std::max(error, Kokkos::ArithTraits<Scalar>::abs(h_ycrs(ir, jc) - h_ybsr(ir, jc)));
+        maxNorm = std::max(maxNorm, KokkosKernels::ArithTraits<Scalar>::abs(h_ycrs(ir, jc)));
+        error   = std::max(error, KokkosKernels::ArithTraits<Scalar>::abs(h_ycrs(ir, jc) - h_ybsr(ir, jc)));
       }
       if (error > tol * maxNorm) {
         num_errors += 1;

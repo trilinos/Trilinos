@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // **********************************************************************
 // The tests executed by the code below cover many combinations for
@@ -78,10 +65,10 @@ constexpr bool isRank0() {
 
 template <class tScalarA, class tA, class tX, class tScalarB, class tB, class tY, class Device>
 void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, tY const& y, int N, bool testWithNanY,
-                                         typename Kokkos::ArithTraits<tScalarB>::mag_type const max_val,
-                                         typename Kokkos::ArithTraits<tScalarB>::mag_type const max_error,
-                                         tScalarA const inputValueA = Kokkos::ArithTraits<tScalarA>::zero(),
-                                         tScalarB const inputValueB = Kokkos::ArithTraits<tScalarB>::zero()) {
+                                         typename KokkosKernels::ArithTraits<tScalarB>::mag_type const max_val,
+                                         typename KokkosKernels::ArithTraits<tScalarB>::mag_type const max_error,
+                                         tScalarA const inputValueA = KokkosKernels::ArithTraits<tScalarA>::zero(),
+                                         tScalarB const inputValueB = KokkosKernels::ArithTraits<tScalarB>::zero()) {
   using ScalarTypeX = typename std::remove_const<typename tX::DView::value_type>::type;
   using ScalarTypeY = typename std::remove_const<typename tY::DView::value_type>::type;
 
@@ -98,7 +85,7 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
     ScalarTypeY randStart, randEnd;
     Test::getRandomBounds(max_val, randStart, randEnd);
     if (testWithNanY) {
-      Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarTypeY>::nan());
+      Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarTypeY>::nan());
     } else {
       Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
     }
@@ -106,8 +93,8 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
   tY org_y("Org_Y", N);
   Kokkos::deep_copy(org_y.h_base, y.d_base);
 
-  tScalarA valueA(Kokkos::ArithTraits<tScalarA>::zero());
-  tScalarB valueB(Kokkos::ArithTraits<tScalarB>::zero());
+  tScalarA valueA(KokkosKernels::ArithTraits<tScalarA>::zero());
+  tScalarB valueB(KokkosKernels::ArithTraits<tScalarB>::zero());
 
   if constexpr (std::is_same_v<tA, tScalarA>) {
     valueA = a;
@@ -118,7 +105,7 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -132,7 +119,7 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
     if constexpr (std::is_same_v<typename tA::array_layout, Kokkos::LayoutStride>) {
       valueA = inputValueA;
     } else {
-      typename tA::HostMirror h_a("h_A");
+      typename tA::host_mirror_type h_a("h_A");
       Kokkos::deep_copy(h_a, a);
       valueA = h_a();
     }
@@ -143,7 +130,7 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -163,7 +150,7 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -185,7 +172,7 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
   } else {
     // ********************************************************
     // Tests with 'Y == nan()' are called only for cases where
-    // b == Kokkos::ArithTraits<tScalarB>::zero()
+    // b == KokkosKernels::ArithTraits<tScalarB>::zero()
     // ********************************************************
     for (int i(0); i < N; ++i) {
 #if 0
@@ -204,10 +191,10 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
         // 'nan()' converts to '-1' in case of 'int' => no need to compare
         // ****************************************************************
         if (y.h_view(i) != -1) {
-          EXPECT_NE(y.h_view(i), Kokkos::ArithTraits<ScalarTypeY>::nan());
+          EXPECT_NE(y.h_view(i), KokkosKernels::ArithTraits<ScalarTypeY>::nan());
         }
       } else {
-        EXPECT_NE(y.h_view(i), Kokkos::ArithTraits<ScalarTypeY>::nan());
+        EXPECT_NE(y.h_view(i), KokkosKernels::ArithTraits<ScalarTypeY>::nan());
       }
       EXPECT_NEAR_KK(static_cast<ScalarTypeY>(valueA * x.h_view(i)), y.h_view(i), 4. * max_error);
     }
@@ -217,10 +204,10 @@ void impl_test_axpby_unification_compare(tA const& a, tX const& x, tB const& b, 
 template <class tScalarA, class tA, class tX, class tScalarB, class tB, class tY, class Device>
 void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& b, tY const& y, int N, int K,
                                             bool testWithNanY,
-                                            typename Kokkos::ArithTraits<tScalarB>::mag_type const max_val,
-                                            typename Kokkos::ArithTraits<tScalarB>::mag_type const max_error,
-                                            tScalarA const inputValueA = Kokkos::ArithTraits<tScalarA>::zero(),
-                                            tScalarB const inputValueB = Kokkos::ArithTraits<tScalarB>::zero()) {
+                                            typename KokkosKernels::ArithTraits<tScalarB>::mag_type const max_val,
+                                            typename KokkosKernels::ArithTraits<tScalarB>::mag_type const max_error,
+                                            tScalarA const inputValueA = KokkosKernels::ArithTraits<tScalarA>::zero(),
+                                            tScalarB const inputValueB = KokkosKernels::ArithTraits<tScalarB>::zero()) {
   using ScalarTypeX = typename std::remove_const<typename tY::DView::value_type>::type;
   using ScalarTypeY = typename std::remove_const<typename tY::DView::value_type>::type;
 
@@ -237,7 +224,7 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
     ScalarTypeY randStart, randEnd;
     Test::getRandomBounds(max_val, randStart, randEnd);
     if (testWithNanY) {
-      Kokkos::deep_copy(y.d_view, Kokkos::ArithTraits<ScalarTypeY>::nan());
+      Kokkos::deep_copy(y.d_view, KokkosKernels::ArithTraits<ScalarTypeY>::nan());
     } else {
       Kokkos::fill_random(y.d_view, rand_pool, randStart, randEnd);
     }
@@ -259,8 +246,8 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
     Kokkos::deep_copy(b.h_base, b.d_base);
   }
 
-  tScalarA valueA(Kokkos::ArithTraits<tScalarA>::zero());
-  tScalarB valueB(Kokkos::ArithTraits<tScalarB>::zero());
+  tScalarA valueA(KokkosKernels::ArithTraits<tScalarA>::zero());
+  tScalarB valueB(KokkosKernels::ArithTraits<tScalarB>::zero());
   if constexpr (std::is_same_v<tA, tScalarA>) {
     valueA = a;
     if constexpr (std::is_same_v<tB, tScalarB>) {
@@ -270,7 +257,7 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -283,7 +270,7 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
     if constexpr (std::is_same_v<typename tA::array_layout, Kokkos::LayoutStride>) {
       valueA = inputValueA;
     } else {
-      typename tA::HostMirror h_a("h_A");
+      typename tA::host_mirror_type h_a("h_A");
       Kokkos::deep_copy(h_a, a);
       valueA = h_a();
     }
@@ -294,7 +281,7 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -312,7 +299,7 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
       if constexpr (std::is_same_v<typename tB::array_layout, Kokkos::LayoutStride>) {
         valueB = inputValueB;
       } else {
-        typename tB::HostMirror h_b("h_B");
+        typename tB::host_mirror_type h_b("h_B");
         Kokkos::deep_copy(h_b, b);
         valueB = h_b();
       }
@@ -328,7 +315,7 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
   if (testWithNanY == false) {
     for (int i(0); i < N; ++i) {
       for (int k(0); k < K; ++k) {
-        ScalarTypeY vanillaValue(Kokkos::ArithTraits<ScalarTypeY>::zero());
+        ScalarTypeY vanillaValue(KokkosKernels::ArithTraits<ScalarTypeY>::zero());
         if constexpr (aIsRank1) {
           (void)valueA;  // Avoid "set but not used" error
           if constexpr (bIsRank1) {
@@ -378,11 +365,11 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
   } else {
     // ********************************************************
     // Tests with 'Y == nan()' are called only for cases where
-    // b == Kokkos::ArithTraits<tScalarB>::zero()
+    // b == KokkosKernels::ArithTraits<tScalarB>::zero()
     // ********************************************************
     for (int i(0); i < N; ++i) {
       for (int k(0); k < K; ++k) {
-        ScalarTypeY vanillaValue(Kokkos::ArithTraits<ScalarTypeY>::zero());
+        ScalarTypeY vanillaValue(KokkosKernels::ArithTraits<ScalarTypeY>::zero());
         if constexpr (aIsRank1) {
           (void)valueA;  // Avoid "set but not used" error
           int a_k(a.h_view.extent(0) == 1 ? 0 : k);
@@ -423,10 +410,10 @@ void impl_test_axpby_mv_unification_compare(tA const& a, tX const& x, tB const& 
           // 'nan()' converts to '-1' in case of 'int' => no need to compare
           // ****************************************************************
           if (y.h_view(i, k) != -1) {
-            EXPECT_NE(y.h_view(i, k), Kokkos::ArithTraits<ScalarTypeY>::nan());
+            EXPECT_NE(y.h_view(i, k), KokkosKernels::ArithTraits<ScalarTypeY>::nan());
           }
         } else {
-          EXPECT_NE(y.h_view(i, k), Kokkos::ArithTraits<ScalarTypeY>::nan());
+          EXPECT_NE(y.h_view(i, k), KokkosKernels::ArithTraits<ScalarTypeY>::nan());
         }
 #if 0
         std::cout << "In impl_test_axpby_mv_unification_compare(2)"
@@ -457,17 +444,17 @@ void impl_test_axpby_unification(int const N) {
 
   using ViewTypeY = Kokkos::View<tScalarY*, tLayoutY, Device>;
 
-  std::array<tScalarA, 4> const valuesA{-1, Kokkos::ArithTraits<tScalarA>::zero(), 1, 3};
-  std::array<tScalarB, 4> const valuesB{-1, Kokkos::ArithTraits<tScalarB>::zero(), 1, 5};
+  std::array<tScalarA, 4> const valuesA{-1, KokkosKernels::ArithTraits<tScalarA>::zero(), 1, 3};
+  std::array<tScalarB, 4> const valuesB{-1, KokkosKernels::ArithTraits<tScalarB>::zero(), 1, 5};
 
   // eps should probably be based on tScalarB since that is the type
   // in which the result is computed.
-  using MagnitudeB         = typename Kokkos::ArithTraits<tScalarB>::mag_type;
-  MagnitudeB const eps     = Kokkos::ArithTraits<tScalarB>::epsilon();
+  using MagnitudeB         = typename KokkosKernels::ArithTraits<tScalarB>::mag_type;
+  MagnitudeB const eps     = KokkosKernels::ArithTraits<tScalarB>::epsilon();
   MagnitudeB const max_val = 10;
   MagnitudeB const max_error =
-      static_cast<MagnitudeB>(Kokkos::ArithTraits<tScalarA>::abs(valuesA[valuesA.size() - 1]) +
-                              Kokkos::ArithTraits<tScalarB>::abs(valuesB[valuesB.size() - 1])) *
+      static_cast<MagnitudeB>(KokkosKernels::ArithTraits<tScalarA>::abs(valuesA[valuesA.size() - 1]) +
+                              KokkosKernels::ArithTraits<tScalarB>::abs(valuesB[valuesB.size() - 1])) *
       max_val * eps;
 
   // ************************************************************
@@ -491,7 +478,7 @@ void impl_test_axpby_unification(int const N) {
         impl_test_axpby_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                             view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, false, max_val,
                                                                                     max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                               view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, true, max_val,
                                                                                       max_error);
@@ -527,7 +514,7 @@ void impl_test_axpby_unification(int const N) {
           impl_test_axpby_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                               view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, false, max_val,
                                                                                       max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                                 ViewTypeBr0, view_stride_adapter<ViewTypeY>, Device>(
                 a, x, b, y, N, true, max_val, max_error);
@@ -558,7 +545,7 @@ void impl_test_axpby_unification(int const N) {
         impl_test_axpby_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                             view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>,
                                             Device>(a, x, b, y, N, false, max_val, max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                               view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>,
                                               Device>(a, x, b, y, N, true, max_val, max_error);
@@ -588,7 +575,7 @@ void impl_test_axpby_unification(int const N) {
         impl_test_axpby_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                             view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(
             a, x, b, y, N, false, max_val, max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                               view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>,
                                               Device>(a, x, b, y, N, true, max_val, max_error);
@@ -621,7 +608,7 @@ void impl_test_axpby_unification(int const N) {
           impl_test_axpby_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                               view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, false, max_val,
                                                                                       max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                 tScalarB, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, true,
                                                                                                   max_val, max_error);
@@ -655,7 +642,7 @@ void impl_test_axpby_unification(int const N) {
           impl_test_axpby_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                               ViewTypeBr0, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, false,
                                                                                                    max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                 ViewTypeBr0, view_stride_adapter<ViewTypeY>, Device>(
                 a, x, b, y, N, true, max_val, max_error);
@@ -689,7 +676,7 @@ void impl_test_axpby_unification(int const N) {
           impl_test_axpby_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                               view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>,
                                               Device>(a, x, b, y, N, false, max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                 view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>,
                                                 Device>(a, x, b, y, N, true, max_val, max_error);
@@ -723,7 +710,7 @@ void impl_test_axpby_unification(int const N) {
           impl_test_axpby_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                               view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>,
                                               Device>(a, x, b, y, N, false, max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                 view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>,
                                                 Device>(a, x, b, y, N, true, max_val, max_error);
@@ -755,7 +742,7 @@ void impl_test_axpby_unification(int const N) {
                                             view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                             view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, false, max_val,
                                                                                     max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1s_1>,
                                               view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                               view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, true, max_val,
@@ -790,7 +777,7 @@ void impl_test_axpby_unification(int const N) {
                                               view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                               view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, false, max_val,
                                                                                       max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1s_1>,
                                                 view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                                 view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, true, max_val,
@@ -823,7 +810,7 @@ void impl_test_axpby_unification(int const N) {
             tScalarA, view_stride_adapter<ViewTypeAr1s_1>, view_stride_adapter<ViewTypeX>, tScalarB,
             view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, false, max_val,
                                                                                          max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1s_1>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, true, max_val,
@@ -855,7 +842,7 @@ void impl_test_axpby_unification(int const N) {
                                             view_stride_adapter<ViewTypeX>, tScalarB, view_stride_adapter<ViewTypeBr1d>,
                                             view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, false, max_val,
                                                                                     max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1s_1>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, true, max_val,
@@ -886,7 +873,7 @@ void impl_test_axpby_unification(int const N) {
         impl_test_axpby_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>,
                                             tScalarB, tScalarB, view_stride_adapter<ViewTypeY>, Device>(
             a, x, b, y, N, false, max_val, max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1d>,
                                               view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                               view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, true, max_val,
@@ -921,7 +908,7 @@ void impl_test_axpby_unification(int const N) {
                                               view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                               view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, false, max_val,
                                                                                       max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1d>,
                                                 view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                                 view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, true, max_val,
@@ -954,7 +941,7 @@ void impl_test_axpby_unification(int const N) {
                                             tScalarB, view_stride_adapter<ViewTypeBr1s_1>,
                                             view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, false, max_val,
                                                                                     max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, true, max_val,
@@ -985,7 +972,7 @@ void impl_test_axpby_unification(int const N) {
         impl_test_axpby_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>,
                                             tScalarB, view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>,
                                             Device>(a, x, b, y, N, false, max_val, max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, true, max_val,
@@ -1022,17 +1009,17 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
 
   using ViewTypeY = Kokkos::View<tScalarY**, tLayoutY, Device>;
 
-  std::array<tScalarA, 4> const valuesA{-1, Kokkos::ArithTraits<tScalarA>::zero(), 1, 3};
-  std::array<tScalarB, 4> const valuesB{-1, Kokkos::ArithTraits<tScalarB>::zero(), 1, 5};
+  std::array<tScalarA, 4> const valuesA{-1, KokkosKernels::ArithTraits<tScalarA>::zero(), 1, 3};
+  std::array<tScalarB, 4> const valuesB{-1, KokkosKernels::ArithTraits<tScalarB>::zero(), 1, 5};
 
   // eps should probably be based on tScalarB since that is the type
   // in which the result is computed.
-  using MagnitudeB         = typename Kokkos::ArithTraits<tScalarB>::mag_type;
-  MagnitudeB const eps     = Kokkos::ArithTraits<tScalarB>::epsilon();
+  using MagnitudeB         = typename KokkosKernels::ArithTraits<tScalarB>::mag_type;
+  MagnitudeB const eps     = KokkosKernels::ArithTraits<tScalarB>::epsilon();
   MagnitudeB const max_val = 10;
   MagnitudeB const max_error =
-      static_cast<MagnitudeB>(Kokkos::ArithTraits<tScalarA>::abs(valuesA[valuesA.size() - 1]) +
-                              Kokkos::ArithTraits<tScalarB>::abs(valuesB[valuesB.size() - 1])) *
+      static_cast<MagnitudeB>(KokkosKernels::ArithTraits<tScalarA>::abs(valuesA[valuesA.size() - 1]) +
+                              KokkosKernels::ArithTraits<tScalarB>::abs(valuesB[valuesB.size() - 1])) *
       max_val * eps;
 
   // ************************************************************
@@ -1056,7 +1043,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
         impl_test_axpby_mv_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                                view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false, max_val,
                                                                                        max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                                  view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
                                                                                          max_val, max_error);
@@ -1089,7 +1076,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           impl_test_axpby_mv_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                                  ViewTypeBr0, view_stride_adapter<ViewTypeY>, Device>(
               a, x, b, y, N, K, false, max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_mv_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                                    ViewTypeBr0, view_stride_adapter<ViewTypeY>, Device>(
                 a, x, b, y, N, K, true, max_val, max_error);
@@ -1120,7 +1107,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
         impl_test_axpby_mv_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                                view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>,
                                                Device>(a, x, b, y, N, K, false, max_val, max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                                  view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>,
                                                  Device>(a, x, b, y, N, K, true, max_val, max_error);
@@ -1185,7 +1172,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
         impl_test_axpby_mv_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                                view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>,
                                                Device>(a, x, b, y, N, K, false, max_val, max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<tScalarA, tScalarA, view_stride_adapter<ViewTypeX>, tScalarB,
                                                  view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>,
                                                  Device>(a, x, b, y, N, K, true, max_val, max_error);
@@ -1253,7 +1240,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           impl_test_axpby_mv_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                  tScalarB, view_stride_adapter<ViewTypeY>, Device>(
               a, x, b, y, N, K, false, max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_mv_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                    tScalarB, view_stride_adapter<ViewTypeY>, Device>(
                 a, x, b, y, N, K, true, max_val, max_error);
@@ -1287,7 +1274,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           impl_test_axpby_mv_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                  ViewTypeBr0, view_stride_adapter<ViewTypeY>, Device>(
               a, x, b, y, N, K, false, max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_mv_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                    ViewTypeBr0, view_stride_adapter<ViewTypeY>, Device>(
                 a, x, b, y, N, K, true, max_val, max_error);
@@ -1321,7 +1308,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           impl_test_axpby_mv_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                  view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>,
                                                  Device>(a, x, b, y, N, K, false, max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_mv_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                    view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>,
                                                    Device>(a, x, b, y, N, K, true, max_val, max_error);
@@ -1394,7 +1381,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
           impl_test_axpby_mv_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                  view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>,
                                                  Device>(a, x, b, y, N, K, false, max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_mv_unification_compare<tScalarA, ViewTypeAr0, view_stride_adapter<ViewTypeX>, tScalarB,
                                                    view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>,
                                                    Device>(a, x, b, y, N, K, true, max_val, max_error);
@@ -1465,7 +1452,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
                                                view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                                view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false, max_val,
                                                                                        max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1s_1>,
                                                  view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                                  view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -1500,7 +1487,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
                                                  view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                                  view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false,
                                                                                          max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_mv_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1s_1>,
                                                    view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                                    view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -1533,7 +1520,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             tScalarA, view_stride_adapter<ViewTypeAr1s_1>, view_stride_adapter<ViewTypeX>, tScalarB,
             view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false,
                                                                                          max_val, max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1s_1>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -1601,7 +1588,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             tScalarA, view_stride_adapter<ViewTypeAr1s_1>, view_stride_adapter<ViewTypeX>, tScalarB,
             view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false, max_val,
                                                                                        max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1s_1>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -1679,7 +1666,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
                                                view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                                view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false, max_val,
                                                                                        max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1s_k>,
                                                  view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                                  view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -1724,7 +1711,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
                                                  view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                                  view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false,
                                                                                          max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_mv_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1s_k>,
                                                    view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                                    view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -1767,7 +1754,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             tScalarA, view_stride_adapter<ViewTypeAr1s_k>, view_stride_adapter<ViewTypeX>, tScalarB,
             view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false,
                                                                                          max_val, max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1s_k>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -1856,7 +1843,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             tScalarA, view_stride_adapter<ViewTypeAr1s_k>, view_stride_adapter<ViewTypeX>, tScalarB,
             view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false, max_val,
                                                                                        max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1s_k>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -1936,7 +1923,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
                                                view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                                view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false, max_val,
                                                                                        max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1d>,
                                                  view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                                  view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -1971,7 +1958,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
                                                  view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                                  view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false,
                                                                                          max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_mv_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1d>,
                                                    view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                                    view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -2004,7 +1991,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>, tScalarB,
             view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false,
                                                                                          max_val, max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -2072,7 +2059,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>, tScalarB,
             view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false, max_val,
                                                                                        max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -2150,7 +2137,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
                                                view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                                view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false, max_val,
                                                                                        max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1d>,
                                                  view_stride_adapter<ViewTypeX>, tScalarB, tScalarB,
                                                  view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -2195,7 +2182,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
                                                  view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                                  view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false,
                                                                                          max_val, max_error);
-          if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+          if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
             impl_test_axpby_mv_unification_compare<tScalarA, view_stride_adapter<ViewTypeAr1d>,
                                                    view_stride_adapter<ViewTypeX>, tScalarB, ViewTypeBr0,
                                                    view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -2238,7 +2225,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>, tScalarB,
             view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false,
                                                                                          max_val, max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1s_1>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,
@@ -2328,7 +2315,7 @@ void impl_test_axpby_mv_unification(int const N, int const K) {
             tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>, tScalarB,
             view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, false, max_val,
                                                                                        max_error);
-        if (valueB == Kokkos::ArithTraits<tScalarB>::zero()) {
+        if (valueB == KokkosKernels::ArithTraits<tScalarB>::zero()) {
           impl_test_axpby_mv_unification_compare<
               tScalarA, view_stride_adapter<ViewTypeAr1d>, view_stride_adapter<ViewTypeX>, tScalarB,
               view_stride_adapter<ViewTypeBr1d>, view_stride_adapter<ViewTypeY>, Device>(a, x, b, y, N, K, true,

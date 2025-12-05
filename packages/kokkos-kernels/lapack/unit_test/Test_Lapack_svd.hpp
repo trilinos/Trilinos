@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <chrono>
 
@@ -27,7 +14,7 @@ namespace Test {
 
 template <class AMatrix, class SVector, class UMatrix, class VMatrix>
 void check_triple_product(const AMatrix& A, const SVector& S, const UMatrix& U, const VMatrix& Vt,
-                          typename Kokkos::ArithTraits<typename AMatrix::non_const_value_type>::mag_type tol) {
+                          typename KokkosKernels::ArithTraits<typename AMatrix::non_const_value_type>::mag_type tol) {
   // After a successful SVD decomposition we have A=U*S*V
   // So using gemm we should be able to compare the above
   // triple product to the original matrix A.
@@ -49,8 +36,8 @@ void check_triple_product(const AMatrix& A, const SVector& S, const UMatrix& U, 
   // Second compute the right side of the product: M = temp*V = U*S*V
   KokkosBlas::gemm("N", "N", 1, temp, Vt, 0, M);
 
-  typename AMatrix::HostMirror A_h = Kokkos::create_mirror_view(A);
-  typename AMatrix::HostMirror M_h = Kokkos::create_mirror_view(M);
+  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
+  typename AMatrix::host_mirror_type M_h = Kokkos::create_mirror_view(M);
   Kokkos::deep_copy(A_h, A);
   Kokkos::deep_copy(M_h, M);
   for (int rowIdx = 0; rowIdx < A.extent_int(0); ++rowIdx) {
@@ -66,7 +53,7 @@ void check_triple_product(const AMatrix& A, const SVector& S, const UMatrix& U, 
 
 template <class Matrix>
 void check_unitary_orthogonal_matrix(
-    const Matrix& M, typename Kokkos::ArithTraits<typename Matrix::non_const_value_type>::mag_type tol) {
+    const Matrix& M, typename KokkosKernels::ArithTraits<typename Matrix::non_const_value_type>::mag_type tol) {
   // After a successful SVD decomposition the matrices
   // U and V are unitary matrices. Thus we can check
   // the property UUt=UtU=I and VVt=VtV=I using gemm.
@@ -74,28 +61,28 @@ void check_unitary_orthogonal_matrix(
 
   Matrix I0("M*Mt", M.extent(0), M.extent(0));
   KokkosBlas::gemm("N", "C", 1, M, M, 0, I0);
-  typename Matrix::HostMirror I0_h = Kokkos::create_mirror_view(I0);
+  typename Matrix::host_mirror_type I0_h = Kokkos::create_mirror_view(I0);
   Kokkos::deep_copy(I0_h, I0);
   for (int rowIdx = 0; rowIdx < M.extent_int(0); ++rowIdx) {
     for (int colIdx = 0; colIdx < M.extent_int(0); ++colIdx) {
       if (rowIdx == colIdx) {
-        EXPECT_NEAR_KK_REL(I0_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::one(), tol);
+        EXPECT_NEAR_KK_REL(I0_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::one(), tol);
       } else {
-        EXPECT_NEAR_KK(I0_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::zero(), tol);
+        EXPECT_NEAR_KK(I0_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::zero(), tol);
       }
     }
   }
 
   Matrix I1("Mt*M", M.extent(1), M.extent(1));
   KokkosBlas::gemm("C", "N", 1, M, M, 0, I1);
-  typename Matrix::HostMirror I1_h = Kokkos::create_mirror_view(I1);
+  typename Matrix::host_mirror_type I1_h = Kokkos::create_mirror_view(I1);
   Kokkos::deep_copy(I1_h, I1);
   for (int rowIdx = 0; rowIdx < M.extent_int(1); ++rowIdx) {
     for (int colIdx = 0; colIdx < M.extent_int(1); ++colIdx) {
       if (rowIdx == colIdx) {
-        EXPECT_NEAR_KK_REL(I1_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::one(), tol);
+        EXPECT_NEAR_KK_REL(I1_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::one(), tol);
       } else {
-        EXPECT_NEAR_KK(I1_h(rowIdx, colIdx), Kokkos::ArithTraits<scalar_type>::zero(), tol);
+        EXPECT_NEAR_KK(I1_h(rowIdx, colIdx), KokkosKernels::ArithTraits<scalar_type>::zero(), tol);
       }
     }
   }
@@ -104,16 +91,16 @@ void check_unitary_orthogonal_matrix(
 template <class AMatrix, class Device>
 int impl_analytic_2x2_svd() {
   using scalar_type = typename AMatrix::value_type;
-  using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+  using mag_type    = typename KokkosKernels::ArithTraits<scalar_type>::mag_type;
   using vector_type = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
-  using KAT_S       = Kokkos::ArithTraits<scalar_type>;
+  using KAT_S       = KokkosKernels::ArithTraits<scalar_type>;
 
   const mag_type eps = KAT_S::eps();
 
   AMatrix A("A", 2, 2), U("U", 2, 2), Vt("Vt", 2, 2), Aref("A ref", 2, 2);
   vector_type S("S", 2);
 
-  typename AMatrix::HostMirror A_h = Kokkos::create_mirror_view(A);
+  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
 
   // A = [3  0]
   //     [4  5]
@@ -129,11 +116,11 @@ int impl_analytic_2x2_svd() {
   KokkosLapack::svd("A", "A", A, S, U, Vt);
   // Don't really need to fence here as we deep_copy right after...
 
-  typename vector_type::HostMirror S_h = Kokkos::create_mirror_view(S);
+  typename vector_type::host_mirror_type S_h = Kokkos::create_mirror_view(S);
   Kokkos::deep_copy(S_h, S);
-  typename AMatrix::HostMirror U_h = Kokkos::create_mirror_view(U);
+  typename AMatrix::host_mirror_type U_h = Kokkos::create_mirror_view(U);
   Kokkos::deep_copy(U_h, U);
-  typename AMatrix::HostMirror Vt_h = Kokkos::create_mirror_view(Vt);
+  typename AMatrix::host_mirror_type Vt_h = Kokkos::create_mirror_view(Vt);
   Kokkos::deep_copy(Vt_h, Vt);
 
   // The singular values for this problem
@@ -203,16 +190,16 @@ int impl_analytic_2x2_svd() {
 template <class AMatrix, class Device>
 int impl_analytic_2x3_svd() {
   using scalar_type = typename AMatrix::value_type;
-  using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+  using mag_type    = typename KokkosKernels::ArithTraits<scalar_type>::mag_type;
   using vector_type = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
-  using KAT_S       = Kokkos::ArithTraits<scalar_type>;
+  using KAT_S       = KokkosKernels::ArithTraits<scalar_type>;
 
   const mag_type tol = 100 * KAT_S::eps();
 
   AMatrix A("A", 2, 3), U("U", 2, 2), Vt("Vt", 3, 3), Aref("A ref", 2, 3);
   vector_type S("S", 2);
 
-  typename AMatrix::HostMirror A_h = Kokkos::create_mirror_view(A);
+  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
 
   // A = [3  2   2]
   //     [2  3  -2]
@@ -246,11 +233,11 @@ int impl_analytic_2x3_svd() {
   }
   // Don't really need to fence here as we deep_copy right after...
 
-  typename vector_type::HostMirror S_h = Kokkos::create_mirror_view(S);
+  typename vector_type::host_mirror_type S_h = Kokkos::create_mirror_view(S);
   Kokkos::deep_copy(S_h, S);
-  typename AMatrix::HostMirror U_h = Kokkos::create_mirror_view(U);
+  typename AMatrix::host_mirror_type U_h = Kokkos::create_mirror_view(U);
   Kokkos::deep_copy(U_h, U);
-  typename AMatrix::HostMirror Vt_h = Kokkos::create_mirror_view(Vt);
+  typename AMatrix::host_mirror_type Vt_h = Kokkos::create_mirror_view(Vt);
   Kokkos::deep_copy(Vt_h, Vt);
 
   // The singular values for this problem
@@ -332,16 +319,16 @@ int impl_analytic_2x3_svd() {
 template <class AMatrix, class Device>
 int impl_analytic_3x2_svd() {
   using scalar_type = typename AMatrix::value_type;
-  using mag_type    = typename Kokkos::ArithTraits<scalar_type>::mag_type;
+  using mag_type    = typename KokkosKernels::ArithTraits<scalar_type>::mag_type;
   using vector_type = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
-  using KAT_S       = Kokkos::ArithTraits<scalar_type>;
+  using KAT_S       = KokkosKernels::ArithTraits<scalar_type>;
 
   const mag_type tol = 100 * KAT_S::eps();
 
   AMatrix A("A", 3, 2), U("U", 3, 3), Vt("Vt", 2, 2), Aref("A ref", 3, 2);
   vector_type S("S", 2);
 
-  typename AMatrix::HostMirror A_h = Kokkos::create_mirror_view(A);
+  typename AMatrix::host_mirror_type A_h = Kokkos::create_mirror_view(A);
 
   // Note this is simply the transpose of the 2x3 matrix in the test above
   // A = [3  2]
@@ -363,11 +350,11 @@ int impl_analytic_3x2_svd() {
   KokkosLapack::svd("A", "A", A, S, U, Vt);
   // Don't really need to fence here as we deep_copy right after...
 
-  typename vector_type::HostMirror S_h = Kokkos::create_mirror_view(S);
+  typename vector_type::host_mirror_type S_h = Kokkos::create_mirror_view(S);
   Kokkos::deep_copy(S_h, S);
-  typename AMatrix::HostMirror U_h = Kokkos::create_mirror_view(U);
+  typename AMatrix::host_mirror_type U_h = Kokkos::create_mirror_view(U);
   Kokkos::deep_copy(U_h, U);
-  typename AMatrix::HostMirror Vt_h = Kokkos::create_mirror_view(Vt);
+  typename AMatrix::host_mirror_type Vt_h = Kokkos::create_mirror_view(Vt);
   Kokkos::deep_copy(Vt_h, Vt);
 
   // The singular values for this problem
@@ -450,7 +437,7 @@ template <class AMatrix, class Device>
 int impl_test_svd(const int m, const int n) {
   using execution_space = typename Device::execution_space;
   using scalar_type     = typename AMatrix::value_type;
-  using KAT_S           = Kokkos::ArithTraits<scalar_type>;
+  using KAT_S           = KokkosKernels::ArithTraits<scalar_type>;
   using mag_type        = typename KAT_S::mag_type;
   using vector_type     = Kokkos::View<mag_type*, typename AMatrix::array_layout, Device>;
 

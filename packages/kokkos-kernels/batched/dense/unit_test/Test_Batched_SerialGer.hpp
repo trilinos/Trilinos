@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -105,7 +92,7 @@ struct Functor_BatchedSerialGer {
 /// \param Nb [in] Batch size of matrices
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType>
 void impl_test_batched_ger_analytical(const std::size_t Nb) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
@@ -285,7 +272,7 @@ void impl_test_batched_ger_analytical(const std::size_t Nb) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename ParamTagType>
 void impl_test_batched_ger(const std::size_t N, const std::size_t BlkSize) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
@@ -354,7 +341,7 @@ void impl_test_batched_ger(const std::size_t N, const std::size_t BlkSize) {
   for (std::size_t ib = 0; ib < N; ib++) {
     for (std::size_t j = 0; j < BlkSize; j++) {
       if (h_y(ib, j) != 0) {
-        auto temp = is_conj ? alpha * Kokkos::ArithTraits<ScalarType>::conj(h_y(ib, j)) : alpha * h_y(ib, j);
+        auto temp = is_conj ? alpha * KokkosKernels::ArithTraits<ScalarType>::conj(h_y(ib, j)) : alpha * h_y(ib, j);
         for (std::size_t i = 0; i < BlkSize; i++) {
           h_A_ref(ib, i, j)  = h_A_ref(ib, i, j) + h_x(ib, i) * temp;
           h_A0_ref(ib, i, j) = h_x(ib, i) * temp;

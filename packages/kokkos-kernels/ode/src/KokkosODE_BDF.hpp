@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSODE_BDF_HPP
 #define KOKKOSODE_BDF_HPP
@@ -159,7 +146,7 @@ template <class ode_type, class mat_type, class vec_type, class scalar_type>
 KOKKOS_FUNCTION void BDFSolve(const ode_type& ode, const scalar_type t_start, const scalar_type t_end,
                               const scalar_type initial_step, const scalar_type max_step, const vec_type& y0,
                               const vec_type& y_new, mat_type& temp, mat_type& temp2) {
-  using KAT = Kokkos::ArithTraits<scalar_type>;
+  using KAT = KokkosKernels::ArithTraits<scalar_type>;
 
   // This needs to go away and be pulled out of temp instead...
   auto rhs    = Kokkos::subview(temp, Kokkos::ALL(), 0);

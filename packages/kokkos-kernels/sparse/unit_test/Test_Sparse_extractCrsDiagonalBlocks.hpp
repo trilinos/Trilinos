@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosSparse_spmv.hpp"
@@ -25,9 +12,9 @@ void run_test_extract_diagonal_blocks(int nrows, int nblocks) {
   using RowMapType     = Kokkos::View<size_type *, device>;
   using EntriesType    = Kokkos::View<lno_t *, device>;
   using ValuesType     = Kokkos::View<scalar_t *, device>;
-  using RowMapType_hm  = typename RowMapType::HostMirror;
-  using EntriesType_hm = typename EntriesType::HostMirror;
-  using ValuesType_hm  = typename ValuesType::HostMirror;
+  using RowMapType_hm  = typename RowMapType::host_mirror_type;
+  using EntriesType_hm = typename EntriesType::host_mirror_type;
+  using ValuesType_hm  = typename ValuesType::host_mirror_type;
   using crsMat_t       = CrsMatrix<scalar_t, lno_t, device, void, size_type>;
 
   crsMat_t A;

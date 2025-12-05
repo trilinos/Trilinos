@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file Test_Common_Sorting.hpp
 /// \brief Tests for radixSort and bitonicSort in KokkoKernels_Sorting.hpp
@@ -25,7 +12,7 @@
 #include <KokkosKernels_Utils.hpp>
 #include <KokkosKernels_Sorting.hpp>
 #include <KokkosKernels_default_types.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <Kokkos_Complex.hpp>
 #include <cstdlib>
 
@@ -74,7 +61,7 @@ are some specializations
 
 template <typename T>
 T getRandom() {
-  return rand() % Kokkos::ArithTraits<T>::max();
+  return rand() % KokkosKernels::ArithTraits<T>::max();
 }
 
 // Generate a uniform double between (-5, 5)
