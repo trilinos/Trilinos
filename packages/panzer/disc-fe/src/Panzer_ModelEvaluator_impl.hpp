@@ -46,6 +46,8 @@
 #include "Thyra_TpetraVector.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "lof/Panzer_LinearObjContainer.hpp"
+#include <Teuchos_RCPDecl.hpp>
 
 // Constructors/Initializers/Accessors
 
@@ -99,6 +101,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 
   x_space_ = tof->getThyraDomainSpace();
   f_space_ = tof->getThyraRangeSpace();
+  x_space_ghosted_ = tof->getGhostedThyraDomainSpace();
 
   //
   // Setup parameters
@@ -148,6 +151,7 @@ ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>
 
   x_space_ = tof->getThyraDomainSpace();
   f_space_ = tof->getThyraRangeSpace();
+  x_space_ghosted_ = tof->getGhostedThyraDomainSpace();
 
   // now that the vector spaces are setup we can allocate the nominal values
   // (i.e. initial conditions)
@@ -598,8 +602,13 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
         int numParams(parameters_[i]->scalar_value.size());
         for (int j(0); j < numParams; ++j)
         {
-          RCP<ROVGED> dxdpContainer = lof_->buildReadOnlyDomainContainer();
-          dxdpContainer->setOwnedVector(dxdpBlock->getNonconstVectorBlock(j));
+          //RCP<ROVGED> dxdpContainer = lof_->buildReadOnlyDomainContainer();
+          auto dxdpContainer = lof_->buildGhostedLinearObjContainer();
+          lof_->initializeGhostedContainer(panzer::LinearObjContainer::X,*dxdpContainer);
+          //dxdpContainer->setOwnedVector(dxdpBlock->getNonconstVectorBlock(j));
+          auto thContainer = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar>>(dxdpContainer);
+          thContainer->set_x_th(rcp_dynamic_cast<Thyra::VectorBase<Scalar>>(dxdpBlock->getNonconstVectorBlock(j)));
+
           string name("X TANGENT GATHER CONTAINER: " +
             (*parameters_[i]->names)[j]);
           ae_inargs.addGlobalEvaluationData(name, dxdpContainer);
@@ -618,9 +627,13 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
           int numParams(parameters_[i]->scalar_value.size());
           for (int j(0); j < numParams; ++j)
           {
-            RCP<ROVGED> dxdotdpContainer = lof_->buildReadOnlyDomainContainer();
-            dxdotdpContainer->setOwnedVector(
-              dxdotdpBlock->getNonconstVectorBlock(j));
+            //RCP<ROVGED> dxdotdpContainer = lof_->buildReadOnlyDomainContainer();
+            //dxdotdpContainer->setOwnedVector(
+            //  dxdotdpBlock->getNonconstVectorBlock(j));
+            auto dxdotdpContainer = lof_->buildGhostedLinearObjContainer();
+            lof_->initializeGhostedContainer(panzer::LinearObjContainer::DxDt,*dxdotdpContainer);
+            auto thContainer = Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar>>(dxdotdpContainer);
+            thContainer->set_dxdt_th(rcp_dynamic_cast<Thyra::VectorBase<Scalar>>(dxdotdpBlock->getNonconstVectorBlock(j)));
             string name("DXDT TANGENT GATHER CONTAINER: " +
               (*parameters_[i]->names)[j]);
             ae_inargs.addGlobalEvaluationData(name, dxdotdpContainer);
@@ -650,21 +663,45 @@ panzer::ModelEvaluator<Scalar>::createOutArgsImpl() const
 
     // add in dg/dx (if appropriate)
     for(std::size_t i=0;i<responses_.size();i++) {
-      typedef panzer::Traits::Jacobian RespEvalT;
+      {
+        typedef panzer::Traits::Jacobian RespEvalT;
 
-      // check dg/dx and add it in if appropriate
-      Teuchos::RCP<panzer::ResponseBase> respJacBase
-          = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
-      if(respJacBase!=Teuchos::null) {
-        // cast is guranteed to succeed because of check in addResponse
-        Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
-           = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
+        // check dg/dx and add it in if appropriate
+        Teuchos::RCP<panzer::ResponseBase> respJacBase
+            = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
+        if(respJacBase!=Teuchos::null) {
+          // cast is guranteed to succeed because of check in addResponse
+          Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
+             = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respJacBase);
 
-        // class must supppot a derivative
-        if(resp->supportsDerivative()) {
-          outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+          // class must supppot a derivative
+          if(resp->supportsDerivative()) {
+            outArgs.setSupports(MEB::OUT_ARG_DgDx,i,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
 
 
+            // TODO BWR this seems incorrect should be tangent type? should be removed?
+            //for(std::size_t p=0;p<parameters_.size();p++) {
+            //  if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
+            //    outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
+            //  if(!parameters_[p]->is_distributed)
+            //    outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_JACOBIAN_FORM));
+            //}
+          }
+        }
+      }
+      // TODO BWR is this needed?
+      {
+        typedef panzer::Traits::Tangent RespEvalT;
+
+        // check dg/dp and add it in if appropriate
+        Teuchos::RCP<panzer::ResponseBase> respTanBase
+            = responseLibrary_->getResponse<RespEvalT>(responses_[i]->name);
+        if(respTanBase!=Teuchos::null) {
+          Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp
+             = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respTanBase);
+
+          // TODO BWR should these match dfdp below?
+          // TODO BWR not sure what to pick here
           for(std::size_t p=0;p<parameters_.size();p++) {
             if(parameters_[p]->is_distributed && parameters_[p]->global_indexer!=Teuchos::null)
               outArgs.setSupports(MEB::OUT_ARG_DgDp,i,p,MEB::DerivativeSupport(MEB::DERIV_MV_GRADIENT_FORM));
@@ -798,7 +835,7 @@ addParameter(const Teuchos::Array<std::string> & names,
 
   // Create vector space for parameter tangent vector
   RCP< Thyra::VectorSpaceBase<double> > tan_space =
-    Thyra::multiVectorProductVectorSpace(x_space_, param->names->size());
+    Thyra::multiVectorProductVectorSpace(x_space_ghosted_, param->names->size());
   tangent_space_.push_back(tan_space);
 
   // The number of model evaluator parameters is the number of model parameters (parameters_.size()) plus a tangent
@@ -1696,6 +1733,8 @@ evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs
 
   for(std::size_t i=0;i<responses_.size();i++) {
     // get "Vector" out of derivative, if its something else, throw an exception
+    if (outArgs.supports(MEB::OUT_ARG_DgDx,i).none())
+      continue;
     MEB::Derivative<Scalar> deriv = outArgs.get_DgDx(i);
     if(deriv.isEmpty())
       continue;
@@ -1755,6 +1794,11 @@ evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     bool is_active = false;
     for(std::size_t i=0;i<responses_.size(); i++) {
 
+      // TODO BWR NEEDED? the check above only sees if there are ANY dgdp to eval
+      // TODO BWR so that can fail if we only want some tangents
+      // TODO BWR need to check this more broadly
+      if (outArgs.supports(MEB::OUT_ARG_DgDp,i,j).none())
+        continue;
       MEB::Derivative<Scalar> deriv = outArgs.get_DgDp(i,j);
       if(deriv.isEmpty())
         continue;
