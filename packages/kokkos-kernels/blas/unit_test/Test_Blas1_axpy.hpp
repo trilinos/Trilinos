@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -25,13 +12,13 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_axpy(int N) {
   using ScalarA    = typename ViewTypeA::value_type;
   using ScalarB    = typename ViewTypeB::value_type;
-  using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
+  using MagnitudeB = typename KokkosKernels::ArithTraits<ScalarB>::mag_type;
 
   ScalarA a                = 3;
   const MagnitudeB max_val = 10;
-  const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
+  const MagnitudeB eps     = KokkosKernels::ArithTraits<ScalarB>::epsilon();
   const MagnitudeB max_error =
-      (static_cast<MagnitudeB>(Kokkos::ArithTraits<ScalarA>::abs(a)) * max_val + max_val) * eps;
+      (static_cast<MagnitudeB>(KokkosKernels::ArithTraits<ScalarA>::abs(a)) * max_val + max_val) * eps;
 
   view_stride_adapter<ViewTypeA> x("X", N);
   view_stride_adapter<ViewTypeB> y("Y", N);
@@ -75,17 +62,17 @@ template <class ViewTypeA, class ViewTypeB, class Device>
 void impl_test_axpy_mv(int N, int K) {
   using ScalarA    = typename ViewTypeA::value_type;
   using ScalarB    = typename ViewTypeB::value_type;
-  using MagnitudeB = typename Kokkos::ArithTraits<ScalarB>::mag_type;
+  using MagnitudeB = typename KokkosKernels::ArithTraits<ScalarB>::mag_type;
 
   view_stride_adapter<ViewTypeA> x("X", N, K);
   view_stride_adapter<ViewTypeB> y("Y", N, K);
   view_stride_adapter<ViewTypeB> org_y("Org_Y", N, K);
 
   ScalarA a                = 3;
-  const MagnitudeB eps     = Kokkos::ArithTraits<ScalarB>::epsilon();
+  const MagnitudeB eps     = KokkosKernels::ArithTraits<ScalarB>::epsilon();
   const MagnitudeB max_val = 10;
   const MagnitudeB max_error =
-      (static_cast<MagnitudeB>(Kokkos::ArithTraits<ScalarA>::abs(a)) * max_val + max_val) * eps;
+      (static_cast<MagnitudeB>(KokkosKernels::ArithTraits<ScalarA>::abs(a)) * max_val + max_val) * eps;
 
   Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 

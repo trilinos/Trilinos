@@ -189,9 +189,9 @@ findRelBlockOffset
   KOKKOS_INLINE_FUNCTION
   ordinal_type findRelBlockOffset(const ordinal_type idx_to_match, bool /*is_sorted*/ = false) const;
 
-Return offset into ``colidx_`` for the requested block idx. If none found, return ``Kokkos::ArithTraits<ordinal_type>::max()``.
+Return offset into ``colidx_`` for the requested block idx. If none found, return ``KokkosKernels::ArithTraits<ordinal_type>::max()``.
 
 Parameters
 ^^^^^^^^^^
 
-:id_to_math: The index to find in the row, if the index is not found ``Kokkos::ArithTraits<ordinal_type>::max()`` is returned.
+:id_to_math: The index to find in the row, if the index is not found ``KokkosKernels::ArithTraits<ordinal_type>::max()`` is returned.

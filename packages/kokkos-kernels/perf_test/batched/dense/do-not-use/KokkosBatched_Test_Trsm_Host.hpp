@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include <iomanip>
@@ -200,7 +187,8 @@ void Trsm(const int NN) {
       double sum = 0;
       for (int i = 0, iend = b.extent(0); i < iend; ++i)
         for (int j = 0, jend = b.extent(1); j < jend; ++j)
-          for (int k = 0, kend = b.extent(2); k < kend; ++k) sum += Kokkos::ArithTraits<value_type>::abs(bmat(i, j, k));
+          for (int k = 0, kend = b.extent(2); k < kend; ++k)
+            sum += KokkosKernels::ArithTraits<value_type>::abs(bmat(i, j, k));
 
       std::cout << std::setw(10) << "MKL TRSM"
                 << " BlkSize = " << std::setw(3) << BlkSize << " NumCols = " << std::setw(3) << NumCols
@@ -309,7 +297,7 @@ void Trsm(const int NN) {
       for (int i = 0, iend = bref.extent(0); i < iend; ++i)
         for (int j = 0, jend = bref.extent(1); j < jend; ++j)
           for (int k = 0, kend = bref.extent(2); k < kend; ++k)
-            diff += Kokkos::ArithTraits<value_type>::abs(bref(i, j, k) - b(i, j, k));
+            diff += KokkosKernels::ArithTraits<value_type>::abs(bref(i, j, k) - b(i, j, k));
 
       std::cout << std::setw(10) << "MKL Batch"
                 << " BlkSize = " << std::setw(3) << BlkSize << " NumCols = " << std::setw(3) << NumCols
@@ -416,7 +404,8 @@ void Trsm(const int NN) {
         for (int i = 0, iend = bref.extent(0); i < iend; ++i)
           for (int j = 0, jend = bref.extent(1); j < jend; ++j)
             for (int k = 0, kend = bref.extent(2); k < kend; ++k)
-              diff += Kokkos::ArithTraits<value_type>::abs(bref(i, j, k) - b(i / VectorLength, j, k)[i % VectorLength]);
+              diff += KokkosKernels::ArithTraits<value_type>::abs(bref(i, j, k) -
+                                                                  b(i / VectorLength, j, k)[i % VectorLength]);
 
         std::cout << std::setw(10) << "MKL Cmpt"
                   << " BlkSize = " << std::setw(3) << BlkSize << " NumCols = " << std::setw(3) << NumCols
@@ -492,7 +481,7 @@ void Trsm(const int NN) {
   //     for (int i=0,iend=bref.extent(0);i<iend;++i)
   //       for (int j=0,jend=bref.extent(1);j<jend;++j)
   //         for (int k=0,kend=bref.extent(2);k<kend;++k)
-  //           diff += Kokkos::ArithTraits<value_type>::abs(bref(i,j,k) -
+  //           diff += KokkosKernels::ArithTraits<value_type>::abs(bref(i,j,k) -
   //           b(i,j,k));
 
   //     std::cout << std::setw(10) << "KK Scalar"
@@ -566,7 +555,8 @@ void Trsm(const int NN) {
       for (int i = 0, iend = bref.extent(0); i < iend; ++i)
         for (int j = 0, jend = bref.extent(1); j < jend; ++j)
           for (int k = 0, kend = bref.extent(2); k < kend; ++k)
-            diff += Kokkos::ArithTraits<value_type>::abs(bref(i, j, k) - b(i / VectorLength, j, k)[i % VectorLength]);
+            diff += KokkosKernels::ArithTraits<value_type>::abs(bref(i, j, k) -
+                                                                b(i / VectorLength, j, k)[i % VectorLength]);
 
       std::cout << std::setw(10) << "KK Vector"
                 << " BlkSize = " << std::setw(3) << BlkSize << " NumCols = " << std::setw(3) << NumCols

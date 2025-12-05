@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file Test_Sparse_SortCrs.hpp
 /// \brief Tests for sort_crs_matrix and sort_crs_graph in
@@ -24,7 +11,7 @@
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosSparse_Utils.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 namespace TestRemoveCrsMatrixZeros {
 
@@ -34,7 +21,7 @@ Matrix removeMatrixZerosReference(const Matrix& A) {
   using Offset     = typename Matrix::non_const_size_type;
   using Ordinal    = typename Matrix::ordinal_type;
   using Scalar     = typename Matrix::value_type;
-  using KAT        = Kokkos::ArithTraits<Scalar>;
+  using KAT        = KokkosKernels::ArithTraits<Scalar>;
   auto rowmapHost  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
   auto entriesHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
   auto valuesHost  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);

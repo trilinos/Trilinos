@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_CG_TEAMVECTOR_IMPL_HPP
 #define KOKKOSBATCHED_CG_TEAMVECTOR_IMPL_HPP
 
@@ -42,7 +29,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& me
                                                             const KrylovHandleType& handle, const TMPViewType& TMPView,
                                                             const TMPNormViewType& TMPNormView) {
   typedef int OrdinalType;
-  typedef typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
+  typedef typename KokkosKernels::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
 
   const size_t maximum_iteration = handle.get_max_iteration();
   const MagnitudeType tolerance  = handle.get_tolerance();
@@ -162,7 +149,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& me
         Kokkos::View<typename VectorViewType::non_const_value_type**, typename VectorViewType::array_layout,
                      typename VectorViewType::execution_space::scratch_memory_space>;
     using ScratchPadNormViewType =
-        Kokkos::View<typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type**,
+        Kokkos::View<typename KokkosKernels::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type**,
                      typename VectorViewType::execution_space::scratch_memory_space>;
 
     const int numMatrices = X.extent(0);
@@ -179,7 +166,7 @@ KOKKOS_INLINE_FUNCTION int TeamVectorCG<MemberType>::invoke(const MemberType& me
     const int last_matrix  = handle.last_index(member.league_rank());
 
     using ScratchPadNormViewType =
-        Kokkos::View<typename Kokkos::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type**,
+        Kokkos::View<typename KokkosKernels::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type**,
                      typename VectorViewType::execution_space::scratch_memory_space>;
 
     const int numMatrices = X.extent(0);

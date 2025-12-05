@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -67,8 +54,8 @@ namespace Test {
 template <class VectorType0, class VectorType1>
 struct fSPMV {
   using value_type = int;
-  using AT         = Kokkos::ArithTraits<typename VectorType1::non_const_value_type>;
-  using ATM        = Kokkos::ArithTraits<typename AT::mag_type>;
+  using AT         = KokkosKernels::ArithTraits<typename VectorType1::non_const_value_type>;
+  using ATM        = KokkosKernels::ArithTraits<typename AT::mag_type>;
   using mag_type   = typename AT::mag_type;
 
   VectorType0 expected_y;
@@ -116,20 +103,20 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
   using size_type = typename size_type_view_t::non_const_value_type;
   using lno_t     = typename lno_view_t::non_const_value_type;
   using scalar_t  = typename scalar_view_t::non_const_value_type;
-  using KAT       = Kokkos::ArithTraits<scalar_t>;
+  using KAT       = KokkosKernels::ArithTraits<scalar_t>;
 
-  typename scalar_view_t::HostMirror h_values = Kokkos::create_mirror_view(input_mat.values);
+  typename scalar_view_t::host_mirror_type h_values = Kokkos::create_mirror_view(input_mat.values);
   Kokkos::deep_copy(h_values, input_mat.values);
 
-  typename lno_view_t::HostMirror h_entries = Kokkos::create_mirror_view(input_mat.graph.entries);
+  typename lno_view_t::host_mirror_type h_entries = Kokkos::create_mirror_view(input_mat.graph.entries);
   Kokkos::deep_copy(h_entries, input_mat.graph.entries);
 
-  typename size_type_view_t::HostMirror h_rowmap = Kokkos::create_mirror_view(input_mat.graph.row_map);
+  typename size_type_view_t::host_mirror_type h_rowmap = Kokkos::create_mirror_view(input_mat.graph.row_map);
   Kokkos::deep_copy(h_rowmap, input_mat.graph.row_map);
   Kokkos::fence();
 
-  typename y_vector_type::HostMirror h_y = Kokkos::create_mirror_view(y);
-  typename x_vector_type::HostMirror h_x = Kokkos::create_mirror_view(x);
+  typename y_vector_type::host_mirror_type h_y = Kokkos::create_mirror_view(y);
+  typename x_vector_type::host_mirror_type h_x = Kokkos::create_mirror_view(x);
 
   KokkosKernels::Impl::safe_device_to_host_deep_copy(x.extent(0), x, h_x);
   KokkosKernels::Impl::safe_device_to_host_deep_copy(y.extent(0), y, h_y);
@@ -169,16 +156,16 @@ template <typename handle_t, typename crsMat_t, typename x_vector_type, typename
 void check_spmv(handle_t *handle, crsMat_t input_mat, x_vector_type x, y_vector_type y,
                 typename y_vector_type::non_const_value_type alpha, typename y_vector_type::non_const_value_type beta,
                 const std::string &mode,
-                typename Kokkos::ArithTraits<typename crsMat_t::value_type>::mag_type max_val) {
+                typename KokkosKernels::ArithTraits<typename crsMat_t::value_type>::mag_type max_val) {
   EXPECT_TRUE(mode.size() == 1);
 
   using ExecSpace        = typename crsMat_t::execution_space;
   using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
   using y_value_type     = typename y_vector_type::non_const_value_type;
-  using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+  using y_value_trait    = KokkosKernels::ArithTraits<y_value_type>;
   using y_value_mag_type = typename y_value_trait::mag_type;
 
-  const y_value_mag_type eps = 10 * Kokkos::ArithTraits<y_value_mag_type>::eps();
+  const y_value_mag_type eps = 10 * KokkosKernels::ArithTraits<y_value_mag_type>::eps();
 
   y_vector_type expected_y("expected_y", y.extent(0));
   Kokkos::deep_copy(expected_y, y);
@@ -208,19 +195,19 @@ template <typename Handle, typename crsMat_t, typename x_vector_type, typename y
 void check_spmv_mv(Handle *handle, crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vector_type expected_y,
                    typename y_vector_type::non_const_value_type alpha,
                    typename y_vector_type::non_const_value_type beta, int numMV, const std::string &mode,
-                   typename Kokkos::ArithTraits<typename crsMat_t::value_type>::mag_type max_val) {
+                   typename KokkosKernels::ArithTraits<typename crsMat_t::value_type>::mag_type max_val) {
   EXPECT_TRUE(mode.size() == 1);
 
   using ExecSpace        = typename crsMat_t::execution_space;
   using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
   using y_value_type     = typename y_vector_type::non_const_value_type;
-  using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+  using y_value_trait    = KokkosKernels::ArithTraits<y_value_type>;
   using y_value_mag_type = typename y_value_trait::mag_type;
 
   // y is the quantity being tested here,
   // so let us use y_value_type to determine
   // the appropriate tolerance precision.
-  const y_value_mag_type eps = 10 * Kokkos::ArithTraits<y_value_mag_type>::eps();
+  const y_value_mag_type eps = 10 * KokkosKernels::ArithTraits<y_value_mag_type>::eps();
 
   Kokkos::deep_copy(expected_y, y);
 
@@ -261,17 +248,17 @@ void check_spmv_struct(const crsMat_t input_mat, const int stencil_type,
                        const Kokkos::View<typename crsMat_t::non_const_ordinal_type *, Kokkos::HostSpace> structure,
                        x_vector_type x, y_vector_type y, typename y_vector_type::non_const_value_type alpha,
                        typename y_vector_type::non_const_value_type beta,
-                       typename Kokkos::ArithTraits<typename crsMat_t::value_type>::mag_type max_val) {
+                       typename KokkosKernels::ArithTraits<typename crsMat_t::value_type>::mag_type max_val) {
   using ExecSpace        = typename crsMat_t::execution_space;
   using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
   using y_value_type     = typename y_vector_type::non_const_value_type;
-  using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+  using y_value_trait    = KokkosKernels::ArithTraits<y_value_type>;
   using y_value_mag_type = typename y_value_trait::mag_type;
 
   // y is the quantity being tested here,
   // so let us use y_value_type to determine
   // the appropriate tolerance precision.
-  const double eps = Kokkos::ArithTraits<y_value_mag_type>::eps();
+  const double eps = KokkosKernels::ArithTraits<y_value_mag_type>::eps();
   const size_t nr  = input_mat.numRows();
   y_vector_type expected_y("expected", nr);
   Kokkos::deep_copy(expected_y, y);
@@ -298,17 +285,17 @@ void check_spmv_mv_struct(const crsMat_t input_mat, const int stencil_type,
                           x_vector_type x, y_vector_type y, y_vector_type expected_y,
                           typename y_vector_type::non_const_value_type alpha,
                           typename y_vector_type::non_const_value_type beta, int numMV,
-                          typename Kokkos::ArithTraits<typename crsMat_t::value_type>::mag_type max_val) {
+                          typename KokkosKernels::ArithTraits<typename crsMat_t::value_type>::mag_type max_val) {
   using ExecSpace        = typename crsMat_t::execution_space;
   using my_exec_space    = Kokkos::RangePolicy<ExecSpace>;
   using y_value_type     = typename y_vector_type::non_const_value_type;
-  using y_value_trait    = Kokkos::ArithTraits<y_value_type>;
+  using y_value_trait    = KokkosKernels::ArithTraits<y_value_type>;
   using y_value_mag_type = typename y_value_trait::mag_type;
 
   // y is the quantity being tested here,
   // so let us use y_value_type to determine
   // the appropriate tolerance precision.
-  const double eps = Kokkos::ArithTraits<y_value_mag_type>::eps();
+  const double eps = KokkosKernels::ArithTraits<y_value_mag_type>::eps();
   Kokkos::deep_copy(expected_y, y);
   Kokkos::fence();
 
@@ -358,7 +345,7 @@ void test_spmv(KokkosSparse::SPMVAlgorithm algo, lno_t numRows, size_type nnz, l
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
   using x_vector_type = scalar_view_t;
   using y_vector_type = scalar_view_t;
-  using mag_t         = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using mag_t         = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   using handle_t      = KokkosSparse::SPMVHandle<Device, crsMat_t, x_vector_type, y_vector_type>;
   using y_policy      = Kokkos::RangePolicy<typename y_vector_type::execution_space>;
 
@@ -461,7 +448,7 @@ void test_spmv_algorithms(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t r
 
 template <typename scalar_t, typename lno_t, typename size_type, typename layout, class Device>
 void test_spmv_mv(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool heavy, int numMV) {
-  using mag_t = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using mag_t = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
   constexpr mag_t max_x   = static_cast<mag_t>(1);
   constexpr mag_t max_y   = static_cast<mag_t>(1);
@@ -544,7 +531,7 @@ void test_spmv_mv_heavy(lno_t numRows, lno_t numCols, size_type nnz, lno_t bandw
   using crsMat_t  = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type>;
   using ViewTypeX = Kokkos::View<scalar_t **, layout_x, Device>;
   using ViewTypeY = Kokkos::View<scalar_t **, layout_y, Device>;
-  using mag_t     = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using mag_t     = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   using handle_t  = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
 
   constexpr mag_t max_x   = static_cast<mag_t>(10);
@@ -611,7 +598,7 @@ void test_spmv_padded_sizealigned(lno_t numRows, lno_t numCols, size_type nnz, l
   using ViewTypeY    = Kokkos::View<scalar_t **, Kokkos::LayoutLeft, Device>;
   using ViewTypeX_1D = Kokkos::View<scalar_t *, Kokkos::LayoutLeft, Device>;
   using ViewTypeY_1D = Kokkos::View<scalar_t *, Kokkos::LayoutLeft, Device>;
-  using mag_t        = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using mag_t        = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   using handle_t     = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX, ViewTypeY>;
   using handle_r1_t  = KokkosSparse::SPMVHandle<Device, crsMat_t, ViewTypeX_1D, ViewTypeY_1D>;
 
@@ -704,7 +691,7 @@ void test_spmv_struct_1D(lno_t nx, lno_t leftBC, lno_t rightBC) {
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
   using x_vector_type = scalar_view_t;
   using y_vector_type = scalar_view_t;
-  using mag_t         = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using mag_t         = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
   constexpr mag_t max_x   = static_cast<mag_t>(1);
   constexpr mag_t max_y   = static_cast<mag_t>(1);
@@ -747,7 +734,7 @@ void test_spmv_struct_2D(lno_t nx, lno_t ny, lno_t horizontalBC, lno_t verticalB
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
   using x_vector_type = scalar_view_t;
   using y_vector_type = scalar_view_t;
-  using mag_t         = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using mag_t         = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
   constexpr mag_t max_x = static_cast<mag_t>(1);
   constexpr mag_t max_y = static_cast<mag_t>(1);
@@ -808,7 +795,7 @@ void test_spmv_struct_3D(lno_t nx, lno_t ny, lno_t nz, lno_t horizontal1BC, lno_
   using scalar_view_t = typename crsMat_t::values_type::non_const_type;
   using x_vector_type = scalar_view_t;
   using y_vector_type = scalar_view_t;
-  using mag_t         = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using mag_t         = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
   constexpr mag_t max_x = static_cast<mag_t>(1);
   constexpr mag_t max_y = static_cast<mag_t>(1);
@@ -876,7 +863,7 @@ void test_spmv_mv_struct_1D(lno_t nx, int numMV) {
   using crsMat_t           = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type>;
   using x_multivector_type = Kokkos::View<scalar_t **, layout, Device>;
   using y_multivector_type = Kokkos::View<scalar_t **, layout, Device>;
-  using mag_t              = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using mag_t              = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
 
   constexpr mag_t max_x = static_cast<mag_t>(1);
   constexpr mag_t max_y = static_cast<mag_t>(1);
@@ -1058,13 +1045,13 @@ void test_spmv_all_interfaces_light() {
   // Using a small matrix, run through the various SpMV interfaces and
   // make sure they produce the correct results.
   using execution_space = typename DeviceType::execution_space;
-  using mag_t           = typename Kokkos::ArithTraits<scalar_t>::mag_type;
+  using mag_t           = typename KokkosKernels::ArithTraits<scalar_t>::mag_type;
   using crsMat_t        = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, DeviceType, void, size_type>;
   Kokkos::Random_XorShift64_Pool<execution_space> rand_pool(13718);
   const lno_t m      = 111;
   const lno_t n      = 99;
   const mag_t maxVal = 10.0;
-  const mag_t eps    = 10.0 * Kokkos::ArithTraits<mag_t>::eps();
+  const mag_t eps    = 10.0 * KokkosKernels::ArithTraits<mag_t>::eps();
   size_type nnz      = 600;
   crsMat_t A         = KokkosSparse::Impl::kk_generate_sparse_matrix<crsMat_t>(m, n, nnz, 2, lno_t(n * 0.7));
   // note: A's values are in range [0, 50)

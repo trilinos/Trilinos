@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_VECTOR_SIMD_MATH_HPP
 #define KOKKOSBATCHED_VECTOR_SIMD_MATH_HPP
 
@@ -30,7 +17,7 @@ namespace KokkosBatched {
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) sqrt(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -45,7 +32,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) sqrt(con
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) cbrt(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -60,7 +47,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) cbrt(con
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) log(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -75,7 +62,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) log(cons
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) log10(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -90,7 +77,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) log10(co
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) exp(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -106,7 +93,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T, l) exp(cons
 template <typename T0, typename T1, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T0, l)
     pow(const Vector<SIMD<T0>, l> &a, const Vector<SIMD<T1>, l> &b) {
-  typedef Kokkos::ArithTraits<T0> ats;
+  typedef KokkosKernels::ArithTraits<T0> ats;
   Vector<SIMD<T0>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -133,7 +120,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_TYPE(T0, l)
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) sin(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -148,7 +135,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) si
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) cos(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -163,7 +150,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) co
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) tan(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -178,7 +165,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) ta
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) sinh(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -193,7 +180,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) si
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) cosh(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -208,7 +195,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) co
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) tanh(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -223,7 +210,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) ta
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) asin(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -238,7 +225,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) as
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) acos(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -253,7 +240,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) ac
 
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) atan(const Vector<SIMD<T>, l> &a) {
-  typedef Kokkos::ArithTraits<T> ats;
+  typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep
@@ -269,7 +256,7 @@ KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l) at
 template <typename T, int l>
 KOKKOS_INLINE_FUNCTION static KOKKOSKERNELS_SIMD_MATH_RETURN_FLOAT_TYPE(T, l)
     atan2(const Vector<SIMD<T>, l> &a, const Vector<SIMD<T>, l> &b) {
-  // typedef Kokkos::ArithTraits<T> ats;
+  // typedef KokkosKernels::ArithTraits<T> ats;
   Vector<SIMD<T>, l> r_val;
 #if defined(KOKKOS_ENABLE_PRAGMA_IVDEP)
 #pragma ivdep

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Brian Kelley (bmkelle@sandia.gov)
 
 #include "KokkosBatched_SVD_Decl.hpp"             //For testing overall kernel
@@ -66,7 +53,7 @@ void verifyOrthogonal(const Mat& X, const double epsilon = -1) {
     Test::EXPECT_NEAR_KK(len, 1.0, tol);
     for (int j = 0; j < i; j++) {
       auto col2 = Kokkos::subview(X, Kokkos::ALL(), j);
-      double d  = Kokkos::ArithTraits<Scalar>::abs(simpleDot(col1, col2));
+      double d  = KokkosKernels::ArithTraits<Scalar>::abs(simpleDot(col1, col2));
       Test::EXPECT_NEAR_KK(d, 0.0, tol);
     }
   }
@@ -75,7 +62,7 @@ void verifyOrthogonal(const Mat& X, const double epsilon = -1) {
 template <typename AView, typename UView, typename VtView, typename SigmaView>
 void verifySVD(const AView& A, const UView& U, const VtView& Vt, const SigmaView& sigma, const double epsilon = -1) {
   using Scalar = typename AView::non_const_value_type;
-  using KAT    = Kokkos::ArithTraits<Scalar>;
+  using KAT    = KokkosKernels::ArithTraits<Scalar>;
   // Check that U/V columns are unit length and orthogonal
   // and that:   U * diag(sigma) * V^T == A
   int m            = A.extent(0);
@@ -112,7 +99,7 @@ struct SerialSVDFunctor_Full {
   SerialSVDFunctor_Full(const Matrix& A_, const Matrix& U_, const Matrix& Vt_, const Vector& sigma_,
                         const Vector& work_)
       : A(A_), U(U_), Vt(Vt_), sigma(sigma_), work(work_) {
-    tol = Kokkos::ArithTraits<double>::zero();
+    tol = KokkosKernels::ArithTraits<double>::zero();
   }
 
   SerialSVDFunctor_Full(const Matrix& A_, const Matrix& U_, const Matrix& Vt_, const Vector& sigma_,
@@ -158,7 +145,7 @@ Matrix randomMatrixWithRank(int m, int n, int rank) {
     Kokkos::fill_random(A, rand_pool, -1.0, 1.0);
   } else {
     // A is rank-deficient, so compute it as a product of two random matrices
-    using MatrixHost = typename Matrix::HostMirror;
+    using MatrixHost = typename Matrix::host_mirror_type;
     auto Ahost       = Kokkos::create_mirror_view(A);
     Kokkos::Random_XorShift64_Pool<Kokkos::DefaultHostExecutionSpace> rand_pool(13318);
     MatrixHost U("U", m, rank);
@@ -197,7 +184,7 @@ void testSerialSVD(int m, int n, int rank) {
   Kokkos::deep_copy(work, -5.0);
   // Make a copy of A (before SVD) for verification, since the original will be
   // overwritten
-  typename Matrix::HostMirror Acopy("Acopy", m, n);
+  typename Matrix::host_mirror_type Acopy("Acopy", m, n);
   Kokkos::deep_copy(Acopy, A);
   // Run the SVD
   Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1),
@@ -236,7 +223,7 @@ void testSerialSVDSingularValuesOnly(int m, int n) {
   Kokkos::deep_copy(work, -5.0);
   // Make a copy of A (before SVD) for verification, since the original will be
   // overwritten
-  typename Matrix::HostMirror Acopy("Acopy", m, n);
+  typename Matrix::host_mirror_type Acopy("Acopy", m, n);
   Kokkos::deep_copy(Acopy, A);
   // Run the SVD (full mode)
   Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1),
@@ -258,7 +245,7 @@ template <typename Scalar, typename Layout>
 void testSerialSVDZeroLastRow(int n) {
   // Generate a bidiagonal matrix
   using Matrix = Kokkos::View<Scalar**, Layout, Kokkos::HostSpace>;
-  using KAT    = Kokkos::ArithTraits<Scalar>;
+  using KAT    = KokkosKernels::ArithTraits<Scalar>;
   Matrix B     = randomMatrixWithRank<Matrix>(n, n);
   // Zero out entries to make B bidiagonal
   for (int i = 0; i < n; i++) {
@@ -306,7 +293,7 @@ template <typename Scalar, typename Layout>
 void testSerialSVDZeroDiagonal(int n, int row) {
   // Generate a bidiagonal matrix
   using Matrix = Kokkos::View<Scalar**, Layout, Kokkos::HostSpace>;
-  using KAT    = Kokkos::ArithTraits<Scalar>;
+  using KAT    = KokkosKernels::ArithTraits<Scalar>;
   int m        = n + 2;  // Make U somewhat bigger to make sure the Givens transforms
                          // are applied correctly
   Matrix B = randomMatrixWithRank<Matrix>(m, n);
@@ -554,7 +541,7 @@ void testSpecialCases() {
     Kokkos::deep_copy(work, -5.0);
     // Make a copy of A (before SVD) for verification, since the original will be
     // overwritten
-    typename Matrix::HostMirror Acopy("Acopy", m, n);
+    typename Matrix::host_mirror_type Acopy("Acopy", m, n);
     Kokkos::deep_copy(Acopy, A);
     // Run the SVD
     if (std::is_same_v<Scalar, double> && i == 6) {
@@ -603,16 +590,16 @@ void testTwoByTwoInternal() {
   int n = 2;
   Matrix A("A", n, n);
   Vector evs("eigen values", n);
-  typename Matrix::HostMirror Ahost = Kokkos::create_mirror_view(A);
-  Ahost(0, 0)                       = 0.00062500000000000012;
-  Ahost(0, 1)                       = 6.7220534694101152e-19;
-  Ahost(1, 0)                       = Ahost(0, 1);
-  Ahost(1, 1)                       = 0.00062499999999999763;
+  typename Matrix::host_mirror_type Ahost = Kokkos::create_mirror_view(A);
+  Ahost(0, 0)                             = 0.00062500000000000012;
+  Ahost(0, 1)                             = 6.7220534694101152e-19;
+  Ahost(1, 0)                             = Ahost(0, 1);
+  Ahost(1, 1)                             = 0.00062499999999999763;
   Kokkos::deep_copy(A, Ahost);
 
   testSymEigen2x2<Matrix, Vector> tester(A, evs);
   Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpace>(0, 1), tester);
-  typename Vector::HostMirror evs_host = Kokkos::create_mirror_view(evs);
+  typename Vector::host_mirror_type evs_host = Kokkos::create_mirror_view(evs);
   Kokkos::deep_copy(evs_host, evs);
   Test::EXPECT_NEAR_KK(evs_host(0), 0.000625, Test::svdEpsilon<Scalar>());
   Test::EXPECT_NEAR_KK(evs_host(1), 0.000625, Test::svdEpsilon<Scalar>());
