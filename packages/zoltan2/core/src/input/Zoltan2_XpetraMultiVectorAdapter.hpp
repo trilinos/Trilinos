@@ -19,9 +19,6 @@
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_PartitioningHelpers.hpp>
 
-#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
-#include <Xpetra_EpetraMultiVector.hpp>
-#endif
 #include <Xpetra_TpetraMultiVector.hpp>
 
 namespace Zoltan2 {
@@ -29,7 +26,6 @@ namespace Zoltan2 {
 /*!  \brief An adapter for Xpetra::MultiVector.
 
     The template parameter is the user's input object:
-    \li \c Epetra_MultiVector
     \li \c Tpetra::MultiVector
     \li \c Xpetra::MultiVector
 
@@ -64,7 +60,7 @@ public:
 
   /*! \brief Constructor
    *
-   *  \param invector  the user's Xpetra, Tpetra or Epetra MultiVector object
+   *  \param invector  the user's Xpetra, Tpetra MultiVector object
    *  \param weights  a list of pointers to arrays of weights.
    *      The number of weights per multivector element is assumed to be
    *      \c weights.size().
@@ -82,7 +78,7 @@ public:
 
   /*! \brief Constructor for case when weights are not being used.
    *
-   *  \param invector  the user's Xpetra, Tpetra or Epetra MultiVector object
+   *  \param invector  the user's Xpetra, Tpetra MultiVector object
    */
 
   XpetraMultiVectorAdapter(const RCP<const User> &invector);
@@ -115,17 +111,8 @@ public:
       ids = Kokkos::create_mirror_view_and_copy(device_type(),
         tvector->getTpetra_MultiVector()->getMap()->getMyGlobalIndices());
     }
-    else if (map_->lib() == Xpetra::UseEpetra) {
-#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
-      // this will call getIDsView to get raw ptr and create a view from it
-      return BaseAdapter<User>::getIDsKokkosView(ids);
-#else
-      throw std::logic_error("Epetra requested, but Trilinos is not "
-                           "built with Epetra");
-#endif
-    }
     else {
-      throw std::logic_error("getIDsKokkosView called but not on Tpetra or Epetra!");
+      throw std::logic_error("getIDsKokkosView called but not on Tpetra!");
     }
   }
 
@@ -265,25 +252,6 @@ template <typename User>
       elements = data.get();
     }
   }
-  else if (map_->lib() == Xpetra::UseEpetra){
-#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
-    typedef Xpetra::EpetraMultiVectorT<gno_t,node_t> xe_mvector_t;
-    const xe_mvector_t *evector =
-      dynamic_cast<const xe_mvector_t *>(vector_.get());
-
-    vecsize = evector->getLocalLength();
-    if (vecsize > 0){
-      ArrayRCP<const double> data = evector->getData(idx);
-
-      // Cast so this will compile when scalar_t is not double,
-      // a case when this code should never execute.
-      elements = reinterpret_cast<const scalar_t *>(data.get());
-    }
-#else
-    throw std::logic_error("Epetra requested, but Trilinos is not "
-                           "built with Epetra");
-#endif
-  }
   else{
     throw std::logic_error("invalid underlying lib");
   }
@@ -306,31 +274,8 @@ template <typename User>
     // Ca try changing the kuberry.xml to use "input adapter" "BasicVector" rather than "XpetraMultiVector"
 
   }
-  else if (map_->lib() == Xpetra::UseEpetra){
-#if defined(HAVE_ZOLTAN2_EPETRA) && defined(HAVE_XPETRA_EPETRA)
-    typedef Xpetra::EpetraMultiVectorT<gno_t,node_t> xe_mvector_t;
-    const xe_mvector_t *evector =
-      dynamic_cast<const xe_mvector_t *>(vector_.get());
-    elements =
-      Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type>
-      ("elements", evector->getLocalLength(), evector->getNumVectors());
-    if(evector->getLocalLength() > 0) {
-      for(size_t idx = 0; idx < evector->getNumVectors(); ++idx) {
-        const scalar_t * ptr;
-        int stride;
-        getEntriesView(ptr, stride, idx);
-        for(size_t n = 0; n < evector->getLocalLength(); ++n) {
-          elements(n, idx) = ptr[n];
-        }
-      }
-    }
-#else
-    throw std::logic_error("Epetra requested, but Trilinos is not "
-                           "built with Epetra");
-#endif
-  }
   else {
-    throw std::logic_error("getEntriesKokkosView called but not using Tpetra or Epetra!");
+    throw std::logic_error("getEntriesKokkosView called but not using Tpetra!");
   }
 }
 

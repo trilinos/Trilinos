@@ -13,7 +13,6 @@
 #include <algorithm>
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_AMESOS2)
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_IO.hpp>
 
@@ -421,5 +420,4 @@ size_t Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmooth
 }
 }  // namespace MueLu
 
-#endif  // HAVE_MUELU_AMESOS2
 #endif  // MUELU_AMESOS2SMOOTHER_DEF_HPP

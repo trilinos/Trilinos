@@ -70,16 +70,11 @@
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
 
 // Xpetra Epetra stack
-#ifdef HAVE_MUELU_EPETRA
-#include "Xpetra_EpetraMultiVector.hpp"
-#endif
 
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
-#if defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
-#endif
 
 // Region MG headers
 #include "SetupRegionUtilities.hpp"

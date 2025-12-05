@@ -6,9 +6,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
-/*
-  Direct translation of parts of Galeri to use Tpetra or Xpetra rather than Epetra. Epetra also supported.
-*/
 
 // TODO: rename variables (camelCase)
 

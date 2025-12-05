@@ -145,11 +145,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, ImplicitTranspose, Scalar, Lo
 
   RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-  if (comm->getSize() > 1 && TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "Skipping ImplicitTranspose test for Epetra and #proc>1" << std::endl;
-    return;
-  }
-
   // build test-specific default factory manager
   RCP<FactoryManager> defManager = rcp(new FactoryManager());
   defManager->SetKokkosRefactor(false);
@@ -238,9 +233,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Factory,
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -348,9 +340,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Easy, Sc
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -426,9 +415,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Easy_Dia
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -515,9 +501,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Low_Stor
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -558,9 +541,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Low_Stor
   Params->set("max levels", 2);
   Teuchos::ParameterList& pLevel0 = Params->sublist("level 0");
   pLevel0.set("Mdiag", Mdiag);
-  if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
-    Params->set("use kokkos refactor", false);
-  }
 
   // Build hierarchy
   Teuchos::ParameterList& userParamList = Params->sublist("user data");
@@ -606,9 +586,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Low_Stor
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -652,9 +629,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Low_Stor
   Params->set("max levels", 2);
   Teuchos::ParameterList& pLevel0 = Params->sublist("level 0");
   pLevel0.set("Mdiag", Mdiag);
-  if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
-    Params->set("use kokkos refactor", false);
-  }
 
   // Build hierarchy
   Teuchos::ParameterList& userParamList = Params->sublist("user data");
@@ -699,9 +673,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Low_Stor
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-#if !defined(HAVE_MUELU_AMESOS2)
-  MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2");
-#endif
   out << "version: " << MueLu::Version() << std::endl;
   typedef Scalar SC;
   typedef GlobalOrdinal GO;
@@ -744,9 +715,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, CreatePreconditioner_Low_Stor
   Params->set("max levels", 4);
   Teuchos::ParameterList& pLevel0 = Params->sublist("level 0");
   pLevel0.set("Mdiag", Mdiag);
-  if (A->getRowMap()->lib() == Xpetra::UseEpetra) {
-    Params->set("use kokkos refactor", false);
-  }
+
   Teuchos::ParameterList& user = Params->sublist("user data");
   user.set("double deltaT", 1.0);
   user.set("double cfl", 1.0);

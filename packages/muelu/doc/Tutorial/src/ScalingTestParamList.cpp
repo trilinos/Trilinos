@@ -211,10 +211,7 @@ int main(int argc, char* argv[]) {
       map = Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm);
     comm->barrier();
 
-    if (lib == Xpetra::UseEpetra) {
-      A = Utils::Read(matrixFile, map);
-
-    } else {
+    {
       // Tpetra matrix reader is still broken, so instead we read in
       // a matrix in a binary format and then redistribute it
       const bool binaryFormat = true;
@@ -307,7 +304,7 @@ int main(int argc, char* argv[]) {
           std::string filename = runList.get<std::string>("filename");
           if (numReruns > 1)
             filename += "_run" + MueLu::toString(rerunCount);
-          filename += (lib == Xpetra::UseEpetra ? ".epetra" : ".tpetra");
+          filename += ".tpetra";
 
           savedOut  = dup(STDOUT_FILENO);
           openedOut = fopen(filename.c_str(), "w");

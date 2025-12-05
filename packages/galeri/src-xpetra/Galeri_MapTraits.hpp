@@ -22,17 +22,9 @@
 
 #ifdef HAVE_GALERI_XPETRA
 #include <Xpetra_MapFactory.hpp>
-#endif
-
-#ifdef HAVE_GALERI_XPETRA
 #include <Xpetra_ConfigDefs.hpp>
 #include <Xpetra_Exceptions.hpp>
-#ifdef HAVE_XPETRA_TPETRA
 #include <Xpetra_TpetraMap.hpp>
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraMap.hpp>
-#endif
 #endif  // HAVE_GALERI_XPETRA
 
 namespace Galeri {
@@ -40,8 +32,6 @@ namespace Galeri {
 namespace Xpetra {
 
 typedef size_t global_size_t;
-
-// TODO: Epetra_Map trait not implemented
 
 template <typename T>
 struct UndefinedMapTraits {
@@ -76,7 +66,6 @@ class MapTraits<GlobalOrdinal, Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> {
 #endif  // HAVE_GALERI_TPETRA
 
 #ifdef HAVE_GALERI_XPETRA
-#ifdef HAVE_XPETRA_TPETRA
 /* Specialized traits for Map = Xpetra::TpetraMap<...> */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 class MapTraits<GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>> {
@@ -87,24 +76,6 @@ class MapTraits<GlobalOrdinal, ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, 
 
   static Teuchos::RCP<::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new ::Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalElements, numLocalElements, indexBase, comm)); }
 };
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-/* Specialized traits for Map = Xpetra::EpetraMap<int,GlobalOrdinal,Node> */
-template <class GlobalOrdinal, class Node>
-class MapTraits<GlobalOrdinal, ::Xpetra::EpetraMapT<GlobalOrdinal, Node>> {
- public:
-  static Teuchos::RCP<::Xpetra::EpetraMapT<GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new ::Xpetra::EpetraMapT<GlobalOrdinal, Node>(numGlobalElements, elementList, indexBase, comm)); }
-
-  static Teuchos::RCP<::Xpetra::EpetraMapT<GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, const typename ::Xpetra::EpetraMapT<GlobalOrdinal, Node>::global_indices_array_device_type &elementList, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) {
-    Teuchos::ArrayView<const int> elementListArrayView(elementList.data(), elementList.extent(0));
-    return Teuchos::rcp(new ::Xpetra::EpetraMapT<GlobalOrdinal, Node>(numGlobalElements, elementListArrayView, indexBase, comm));
-  }
-
-  static Teuchos::RCP<::Xpetra::EpetraMapT<GlobalOrdinal, Node>> Build(global_size_t numGlobalElements, global_size_t numLocalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int>> &comm) { return Teuchos::rcp(new ::Xpetra::EpetraMapT<GlobalOrdinal, Node>(numGlobalElements, numLocalElements, indexBase, comm)); }
-};
-#endif
-
 #endif  // HAVE_GALERI_XPETRA
 
 }  // namespace Xpetra

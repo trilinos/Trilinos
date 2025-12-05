@@ -56,11 +56,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LWGraph_kokkos, CreateLWGraph, Scalar, LocalOr
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
-
   RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
 
   RCP<AmalgamationInfo> amalgInfo;
@@ -81,11 +76,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(LWGraph_kokkos, LocalGraphData, Scalar, LocalO
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
-
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
 
   RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(16);
 

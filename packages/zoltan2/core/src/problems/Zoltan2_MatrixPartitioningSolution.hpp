@@ -237,7 +237,7 @@ private:
   //    this would require an additional communication step to place the ids to the
   //    correct processor.  This would also complicated the case where number of
   //    parts != number of processes.  This is similar to what is needed to build
-  //    row or column epetra/tpetra maps.
+  //    row or column Tpetra maps.
   //
   // However, things are more complicated for 2D Cartesian partitioning (maybe all
   // of partitioning).  In this case, we need to assign matrix nonzeros to both

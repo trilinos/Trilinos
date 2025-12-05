@@ -94,7 +94,6 @@ namespace FROSch {
                 XMapPtr serialMap = MapFactory<LO,GO,NO>::Build(AssembledBasisMap_->lib(),totalSize,0,this->SerialComm_);
 
                 AssembledBasis_ = MultiVectorFactory<SC,LO,GO,NO >::Build(serialMap,AssembledBasisMap_->getLocalNumElements());
-                #if defined(HAVE_XPETRA_TPETRA)
                 if (AssembledBasis_->getMap()->lib() == UseTpetra) {
                     using execution_space = typename XMap::local_map_type::execution_space;
                     // Xpetra wrapper for Tpetra MV
@@ -137,7 +136,6 @@ namespace FROSch {
                     }
                     Kokkos::fence();
                 } else
-                #endif
                 {
                     for (UN i=0; i<UnassembledSubspaceBases_.size(); i++) {
                         if (!UnassembledSubspaceBases_[i].is_null()) {
@@ -185,7 +183,6 @@ namespace FROSch {
         FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"FROSch::CoarseSpace: AssembledBasisMap_.is_null().");
         FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace: AssembledBasis_.is_null().");
 
-#if defined(HAVE_XPETRA_TPETRA)
         if (rowMap->lib() == UseTpetra) {
             UN numRows = AssembledBasis_->getLocalLength();
             UN numCols = AssembledBasis_->getNumVectors();
@@ -276,29 +273,8 @@ namespace FROSch {
                                                                    AssembledBasisMapUnique_, rangeMap,
                                                                    params);
         } else
-#endif
         {
-            if (rowMap->lib()==UseEpetra) {
-                GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_->getLocalNumElements()); // Nonzeroes abhängig von dim/dofs!!!
-                LO iD;
-                SC valueTmp;
-                for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {
-                    GOVec indices;
-                    SCVec values;
-                    for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
-                        valueTmp=AssembledBasis_->getData(j)[i];
-                        if (fabs(valueTmp)>tresholdDropping) {
-                            indices.push_back(AssembledBasisMap_->getGlobalElement(j));
-                            values.push_back(valueTmp);
-                        }
-                    }
-                    iD = repeatedMap->getGlobalElement(i);
-
-                    if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
-                        GlobalBasisMatrix_->insertGlobalValues(iD,indices(),values());
-                    }
-                }
-            } else {
+            {
                 GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_,AssembledBasisMap_->getLocalNumElements()); // Nonzeroes abhängig von dim/dofs!!!
                 LO iD;
                 SC valueTmp;
