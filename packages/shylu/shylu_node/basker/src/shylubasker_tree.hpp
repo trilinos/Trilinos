@@ -1175,115 +1175,6 @@ namespace BaskerNS
   }//end clean_2d
 
 
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::sfactor_copy()
-  {
-    //Reorder A;
-    //Match order
-    if(match_flag == BASKER_TRUE)
-    {
-      permute_row(A,order_match_array);
-    }
-    sort_matrix(A);
-
-    //BTF order
-    if(btf_flag == BASKER_TRUE)
-    {
-      permute_col(A,order_btf_array);
-      permute_row(A,order_btf_array);
-      break_into_parts(A, btf_nblks, btf_tabs);
-    }
-
-    //ND order
-    if(nd_flag == BASKER_TRUE)
-    {
-      if(btf_tabs_offset != 0)
-      {
-        sort_matrix(BTF_A);
-
-        //Permute the A
-        permute_row(BTF_A, part_tree.permtab);
-        permute_col(BTF_A, part_tree.permtab);
-
-        //Permute the B
-        if(btf_nblks > 1)
-        {
-          permute_row(BTF_B, part_tree.permtab);
-        }
-
-        sort_matrix(BTF_A);
-        if(btf_nblks > 1)
-        {
-          sort_matrix(BTF_B);
-          sort_matrix(BTF_C);
-        }
-      }
-    }
-
-    //AMD
-    if(amd_flag == BASKER_TRUE)
-    {
-      if(btf_tabs_offset != 0)
-      {
-        //Permute A
-        permute_col(BTF_A, order_csym_array);
-        sort_matrix(BTF_A);
-        permute_row(BTF_A, order_csym_array);
-        sort_matrix(BTF_A);
-
-        //Permute B
-        if(btf_nblks > 1)
-        {
-          permute_row(BTF_B, order_csym_array);
-          sort_matrix(BTF_B);
-        }
-      }
-    }
-
-    if(btf_tabs_offset != 0)
-    {
-      //=====Move into 2D ND-Structure====/
-      //Find submatices view shapes
-      clean_2d();
-
-      //matrix_to_views_2D(BTF_A);
-      //Find starting point
-      find_2D_convert(BTF_A);
-
-      //Fill 2D structure
-      #ifdef BASKER_KOKKOS
-      BASKER_BOOL keep_zeros = BASKER_FALSE;
-      kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE, keep_zeros);
-      Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
-      Kokkos::fence();
-      #else
-      //Comeback
-      #endif
-    }
-
-    // Initialize C & B blocks
-    {
-      sort_matrix(BTF_C);
-      permute_col(BTF_C, order_c_csym_array);
-      sort_matrix(BTF_C);
-      permute_row(BTF_C, order_c_csym_array);
-      sort_matrix(BTF_C);
-
-      if(btf_tabs_offset != 0)
-      {
-        permute_col(BTF_B, order_c_csym_array);        
-        sort_matrix(BTF_B);
-      }
-    }
-
-    //test
-    //printMTX("A_BTF.mtx", BTF_A);
-
-    return 0;
-  }//sfactor_copy()
-
-
   // NDE: sfactor_copy2 is now only responsible for mapping blocks to 2D blocks
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -1356,7 +1247,6 @@ namespace BaskerNS
       #endif
 
       //Fill 2D structure
-      #ifdef BASKER_KOKKOS
       BASKER_BOOL keep_zeros = BASKER_FALSE;
       BASKER_BOOL alloc      = alloc_BTFA; //BASKER_FALSE;
       #if 1//def BASKER_PARALLEL_INIT_2D
@@ -1367,9 +1257,6 @@ namespace BaskerNS
        for (Int p = 0; p < num_threads; p++) {
          this->t_init_2DA(p, alloc, keep_zeros);
        }
-      #endif
-      #else
-      //Comeback
       #endif
 
       #ifdef BASKER_TIMER_FINE

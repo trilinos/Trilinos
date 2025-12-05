@@ -11,12 +11,7 @@
 #define SHYLUBASKER_VECTOR_HPP
 
 #include "shylubasker_types.hpp"
-
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#else
-#include <omp.h>
-#endif
 
 namespace BaskerNS
 {

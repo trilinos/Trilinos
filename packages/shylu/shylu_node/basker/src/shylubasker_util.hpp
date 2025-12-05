@@ -20,12 +20,8 @@
 #include "shylubasker_types.hpp"
 
 /*Kokkos Includes*/
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#else
-#include <omp.h>
-#endif
 
 /*System Includes*/
 #include <iostream>
@@ -43,11 +39,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_order_init_2D
   {
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                    execution_space;
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
     typedef typename TeamPolicy::member_type  TeamMember;
-    #endif
 
     Basker<Int,Entry,Exe_Space>  *basker;
     BASKER_BOOL                  alloc;
@@ -72,15 +66,9 @@ namespace BaskerNS
       
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const
-    #endif
     {
-      #ifdef BASKER_KOKKOS
       Int kid = (Int)(thread.league_rank()*thread.team_size() + thread.team_rank());
-      #endif
       {
         basker->t_init_2DA(kid, alloc, keep_zeros);
       }
@@ -92,11 +80,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_reset_factor
   {
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                    execution_space;
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
     typedef typename TeamPolicy::member_type  TeamMember;
-    #endif
 
     Basker<Int,Entry,Exe_Space>  *basker;
 
@@ -109,15 +95,9 @@ namespace BaskerNS
     }
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const
-    #endif
     {
-      #ifdef BASKER_KOKKOS
       Int kid = (Int)(thread.league_rank()*thread.team_size() + thread.team_rank());
-      #endif
       {
         if(basker->btf_tabs_offset!=0)
         {
@@ -247,19 +227,11 @@ namespace BaskerNS
     printf("\n===SHOULD NOT BE CALLED\n");
     BASKER_ASSERT(0==1, "init_int_thread");
 
-    #ifdef BASKER_KOKKOS
     Kokkos::parallel_for(
                          TeamPolicy(Exe_Space::thread_pool_size(),1),
                          BASKER_LAMBDA(const TeamMember& thread)
-    #else
-    #pragma omp parallel
-    #endif
     {
-      #ifdef BASKER_KOKKOS
       if(kid == thread.league_rank())
-      #else
-      if(kid == omp_get_thread_num())
-      #endif
       {
         for(Int i=0; i < size; i++)
         {
@@ -267,9 +239,7 @@ namespace BaskerNS
         }
       }
     }
-    #ifdef BASKER_KOKKOS
     );
-    #endif
   }//end init_value int 1d 
 
   
@@ -285,18 +255,10 @@ namespace BaskerNS
     printf("\n===SHOULD NOT BE CALLED===\n");
     BASKER_ASSERT(0==1, "INIT_VALUE_ENTRY_THREADS");
 
-    #ifdef BASKER_KOKKOS
     Kokkos::parallel_for(TeamPolicy(Exe_Space::thread_pool_size(),1),
                          BASKER_LAMBDA(const TeamMember& thread)
-    #else
-    #pragma omp parallel
-    #endif
     {
-      #ifdef BASKER_KOKKOS
       if(kid == thread.league_rank())
-      #else
-      if(kid == omp_get_thread_num())
-      #endif
       {
         for(Int i=0; i < size; i++)
         {
@@ -304,9 +266,7 @@ namespace BaskerNS
         }
       }
     }
-    #ifdef BASKER_KOKKOS
     );
-    #endif
   }//end init_value entry 1d 
 
 

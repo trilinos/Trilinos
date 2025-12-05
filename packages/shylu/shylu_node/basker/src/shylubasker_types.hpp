@@ -16,7 +16,6 @@
 //#define BASKER_DEBUG
 
 //MACRO TURN ON FUCNTIONS
-#define BASKER_KOKKOS         //Use Kokkos
 #define BASKER_ATOMIC         //Use Atomics (OLD)
 #define BASKER_ATOMIC_2       //Use Atomics (OLD)
 #define BASKER_NO_LAMBDA      //Do not use lambda
@@ -129,7 +128,6 @@ enum BASKER_INCOMPLETE_CODE
 
 //Note:  Should see if Kokkos has a fast memory cpy in place of for-loop
 //MACRO ARRAY FUNCTIONS
-#ifdef BASKER_KOKKOS
 //Execution Space
 #include <Kokkos_Core.hpp>
 #define BASKER_EXE_SPACE     Kokkos::DefaultHostExecutionSpace
@@ -383,135 +381,14 @@ enum BASKER_INCOMPLETE_CODE
     Kokkos::resize(a,0);       \
   }
 
-#else // not BASKER_KOKKOS
-
-//Execution Space
-#define BASKER_EXE_SPACE     void*
-//ReMacro Basker Classes
-#define BASKER_SOLVER        Basker<BASKER_INT,BASKER_ENTRY,BASKER_EXE_SPACE>
-#define BASKER_MATRIX        BaskerMatrix<BASKER_INT, BASKER_ENTRY, BASKER_EXE_SPACE>
-#define BASKER_MATRIX_VIEW   BaskerMatrixView<BASKER_INT,BASKER_ENTRY,BASKER_EXE_SPACE>
-#define BASKER_STATS         BaskerStats<BASKER_INT,BASKER_ENTRY,BASKER_EXE_SPACE>
-//ReMacor Basker Structs
-#define BASKER_TREE          basker_tree<BASKER_INT,BASKER_ENTRY,BASKER_EXE_SPACE>
-#define BASKER_SYMBOLIC_TREE basker_symbolic_tree<BASKER_INT,BASKER_ENTRY,BASKER_EXE_SPACE>
-#define BASKER_THREAD        basker_thread<BASKER_INT,BASKER_ENTRY,BASKER_EXE_SPACE>
-//Array Types
-#define INT_1DARRAY          BASKER_INT*
-#define INT_2DARRAY          BASKER_INT**
-#define ENTRY_1DARRAY        BASKER_ENTRY*
-#define ENTRY_2DARRAY        BASKER_ENTRY**
-#define BOOL_1DARRAY         BASKER_BOOL*
-#define BOOL_2DARRAY         BASKER_BOOL**
-#define MATRIX_1DARRAY       BASKER_MATRIX*
-#define MATRIX_2DARRAY       BASKER_MATRIX**
-#define MATRIX_VIEW_1DARRAY  BASKER_MATRIX_VIEW*
-#define MATRIX_VIEW_2DARRAY  BASKER_MATRIX_VIEW**
-#define THREAD_1DARRAY       BASKER_THREAD*
-
-//Macro Memory Calls
-//Malloc
-#define MALLOC_INT_1DARRAY(a,s)          a = new BASKER_INT         [s]
-#define MALLOC_INT_2DARRAY(a,s)          a = new INT_1DARRAY        [s]
-#define MALLOC_ENTRY_1DARRAY(a,s)        a = new BASKER_ENTRY       [s]
-#define MALLOC_ENTRY_2DARRAY(a,s)        a = new ENTRY_1DARRAY      [s]
-#define MALLOC_BOOL_1DARRAY(a,s)         a = new BASKER_BOOL        [s]
-#define MALLOC_BOOL_2DARRAY(a,s)         a = new BOOL_1DARRAY       [s]
-#define MALLOC_MATRIX_1DARRAY(a,s)       a = new BASKER_MATRIX      [s]
-#define MALLOC_MATRIX_2DARRAY(a,s)       a = new MATRIX_1DARRAY     [s]
-#define MALLOC_MATRIX_VIEW_1DARRAY(a,s)  a = new BASKER_MATRIX_VIEW [s]
-#define MALLOC_MATRIX_VIEW_2DARRAY(a,s)  a = new MATRIX_VIEW_1DARRAY[s]
-#define MALLOC_THREAD_1DARRAY(a,s)       a = new BASKER_THREAD      [s]
-//Realloc (dont copy old data)
-#define REALLOC_1DARRAY(a,os,s)              BASKER_NO_OP
-#define REALLOC_2DARRAY(a,os1,os2,s1,s2)     BASKER_NO_OP
-#define REALLOC_INT_1DARRAY(a,os,s)          BASKER_NO_OP
-#define REALLOC_ENTRY_1DARRAY(a,os,s)        BASKER_NO_OP
-//Set functions
-#define SET_INT_1DARRAY(a,b,s)           a = b
-#define SET_ENTRY_1DARRAY(a,b,s)         a = b
-#define SET_ENTRY_1DARRAY(a,b,s)         a = b  
-#define FREE(a)                    delete [] a
-
-#define FREE_INT_1DARRAY(a)      \
-  { \
-    FREE(a); \
-  }
-
-#define FREE_INT_2DARRAY(a,s)                    \
-  { \
-    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
-      FREE(a[MACRO_I]); \
-    FREE(a); \
-  }
-
-#define FREE_ENTRY_1DARRAY(a)    \
-  { \
-    FREE(a); \
-  }
-
-#define FREE_ENTRY_2DARRAY(a,s)                  \
-  { \
-    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
-        FREE(a[MACRO_I]); \
-    FREE(a); \
-  }
-
-#define FREE_BOOL_1DARRAY(a)    \
-  { \
-    FREE(a); \
-  }
-
-#define FREE_BOOL_2DARRAY(a,n)    \
-  { \
-    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
-      FREE(a[MACRO_I]); \
-    FREE(a); \
-  }
-
-#define FREE_MATRIX_1DARRAY(a)  \
-  { \
-    FREE(a); \
-  }
-
-#define FREE_MATRIX_2DARRAY(a,s)  \
-  { \
-    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
-      FREE(a[MARCO_I]); \
-    FREE(a); \
-  }
-
-#define FREE_MATRIX_VIEW_1DARRAY(a) \
-  { \
-    FREE(a); \
-  }
-
-#define FREE_MATRIX_VIEW_2DARRAY(a,s)            \
-  { \
-    for(BASKER_INT MACRO_I = 0; MACRO_I < s; MACRO_I++) \
-      FREE(a[MACRO_I]); \
-    FREE(a); \
-  }
-
-#define FREE_THREAD_1DARRAY(a) \
-  { \
-    FREE(a);  \
-  }
-
-#endif //end ifdef BASKER_KOKKOS
-
 //Inline command
 #define BASKER_INLINE   inline
 #define BASKER_LAMBDA   [&]
 
 //Time Macro
 #ifdef BASKER_TIME
-#ifdef BASKER_KOKKOS
 #define BASKER_TIMER
 #define BASKER_TIMER_FINE
-#else
-#define BASKER_OMP_TIME
-#endif
 #endif
 
 #endif //end basker_types_hpp

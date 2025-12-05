@@ -21,10 +21,8 @@
 #include "shylubasker_nfactor_blk.hpp"
 #include "shylubasker_nfactor_col.hpp"
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#endif 
 
 #ifdef BASKER_DEBUG
 #include <assert.h>
@@ -44,11 +42,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_nfactor_sep2
   {
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                         execution_space;
     typedef Kokkos::TeamPolicy<Exe_Space>     TeamPolicy;
     typedef typename TeamPolicy::member_type  TeamMember;
-    #endif
     
     Basker<Int,Entry,Exe_Space> *basker;
     Int lvl;
@@ -64,35 +60,17 @@ namespace BaskerNS
     }
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const  
-    #endif
     {
-      #ifdef BASKER_KOKKOS
-      //Int kid = (Int)(thread.league_rank()*thread.team_size()+
-      //                thread.team_rank());
       Int kid = basker->t_get_kid(thread);
-
-      //team leader is not using
       Int team_leader = (Int)(thread.league_rank()*thread.team_size());
-      #else
-      Int team_leader = 0; //Note: come back and fix
-      #endif
 
       #ifdef HAVE_VTUNE
       __itt_pause();
       #endif
-
       {
-      #ifdef BASKER_KOKKOS
         basker->t_nfactor_sep2(kid, lvl, team_leader, thread);
-      #else
-      
-      #endif
       }
-
       #ifdef HAVE_VTUNE
       __itt_resume();
       #endif

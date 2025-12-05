@@ -20,11 +20,9 @@ namespace BaskerNS
   class BaskerPointBarrier
   {
   public:
-    #ifdef BASKER_KOKKOS
     typedef Kokkos::TeamPolicy<Exe_Space>   TeamPolicy;
     typedef typename TeamPolicy::member_type TeamMember;
-    #endif
-    
+
     //Outer idx threads, Inner idx task
     Int ** volatile token;
     Int nthreads; 
@@ -169,10 +167,8 @@ namespace BaskerNS
   {
   public:
 
-    #ifdef BASKER_KOKKOS
     typedef  Kokkos::TeamPolicy<Exe_Space>   TeamPolicy;
     typedef typename TeamPolicy::member_type TeamMember;
-    #endif
 
     BaskerBarrier()
     {}
@@ -285,85 +281,6 @@ namespace BaskerNS
       }
     }
   }; //end BaskerBarrier
-
-
-  /*   First attempt
-  template <Int, Entry, Exe_Space>
-  class BaskerBarrier
-  {
-  public:
-
-#ifdef BASKER_KOKKOS
-    typedef  Kokkos::TeampPolicy<Exe_Space>   TeamPolicy;
-    typedef typename TeamPolicy::member_type TeamMember;
-#endif
-
-    BaskerBarrier()
-    {}
-    //Kokkos thread
-    BaskerBarrier(TeamMember &thread)
-    {
-      kokkos_barrier(thread);
-    }
-    //Atomic
-    BaskerBarrier(volatile Int &value, const Int l_size )
-    {
-      atomic_barrier(value,l_size);
-    }
-    BaskerBarrier(TeamMember &thread, 
-        volatile Int &value, const Int l_size)
-    {
-
-
-    }
-    BASKER_INLINE
-      void Barrier(TeamMember &thread)
-      {
-        kokkos_barrier(thread);
-      }
-    BASKER_INLINE
-      void Barrier(volatile Int &value, const Int l_size)
-      {
-        atomic_barrier(value, l_size);
-      }
-    BASKER_INLINE
-      void Barrier(TeamMember &thread,
-          volatile Int &value, const Int l_size)
-      {
-        if(l_size <= thread.team_size())
-        {
-          kokkos_barrier(thread);
-        }
-        else
-        {
-          atomic_barrier(value, l_size);
-        }
-      }//end Barrier()
-
-
-  private:
-    BASKER_INLINE
-      void kokkos_barrier(TeamMember &thread)
-      {
-        thread.team_barrier();
-      }
-    BASKER_INLINE
-      void 
-
-      BASKER_INLINE
-      void atomic_barrier(volatile Int &value, const Int l_size)
-      {
-        //Note: need to comeback and makesure this is the best way
-        Kokkos::atomic_fetch_add(&(value), 1);
-        while(value < l_size)
-        {
-          BASKER_NO_OP;
-        }
-      }
-  }; //end BaskerBarrier
-  */
-
-
 }//end namespace Basker
 
 #endif //end ifndef BASKER_THREADS
