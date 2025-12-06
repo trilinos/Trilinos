@@ -153,13 +153,13 @@ namespace Amesos2 {
       void *bdummy, *xdummy;
       if (debug_level_ > 1) {
         printf("\n == PardisoMKL::numericFactorization_impl ==\n" );
-	using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
+        using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
         printf("A=[\n");
         for (int_t i=0; i<n_; i++) {
           for (int_t k=rowptr_view_(i); k<rowptr_view_(i+1); k++) {
             int colid = int(colind_view_(k));
-	    double nzval = VTCT::convert(nzvals_view_(k));
-            printf("%d %d %e\n",i,colid,nzval);
+            double nzval = VTCT::convert(nzvals_view_(k));
+            printf("%d %d %.16e\n",i,colid,nzval);
           }
         }
         printf("];\n");
@@ -193,12 +193,9 @@ namespace Amesos2 {
       if (this->root_) printf("\n == Amesos2_PardisoMKL::solve_impl ==\n");
       if (debug_level_ == 1) {
         B->description();
-        if (this->root_) printf("\n");
-        X->description();
       } else {
         Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
         B->describe(*fancy, Teuchos::VERB_EXTREME);
-        X->describe(*fancy, Teuchos::VERB_EXTREME);
       }
     }
 
@@ -227,14 +224,14 @@ namespace Amesos2 {
 
       const int_t phase = 33;
       if (debug_level_ > 1) {
-	using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
+        using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
         printf("\nB=[\n");
         for (int_t i=0; i<n_; i++) {
           for (int_t j=0; j<nrhs_; j++) {
-	    double bij = VTCT::convert(bvals_[i+j*n_]);
-            printf("%e ",bij);
+            double bij = VTCT::convert(bvals_[i+j*n_]);
+            printf("%.16e ",bij);
           }
-	  printf("\n");
+          printf("\n");
         }
         printf("];\n");
       }
@@ -255,12 +252,12 @@ namespace Amesos2 {
                              as<void*>(bvals_.getRawPtr()),
                              as<void*>(xvals_.getRawPtr()), &error );
       if (debug_level_ > 1) {
-	using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
+        using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
         printf("\nX=[\n");
         for (int_t i=0; i<n_; i++) {
           for (int_t j=0; j<nrhs_; j++) {
             double xij = VTCT::convert(xvals_[i+j*n_]);
-            printf("%e ",xij);
+            printf("%.16e ",xij);
           }
           printf("\n");
         }
@@ -281,7 +278,15 @@ namespace Amesos2 {
         solver_scalar_type>::do_put(X, xvals_(),
           as<size_t>(ld_rhs),
           (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
-  }
+    }
+    if (debug_level_ > 0) {
+      if (debug_level_ == 1) {
+        X->description();
+      } else {
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        X->describe(*fancy, Teuchos::VERB_EXTREME);
+      }
+    }
 
     return( 0 );
 }

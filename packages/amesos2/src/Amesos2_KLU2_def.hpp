@@ -207,12 +207,9 @@ KLU2<Matrix,Vector>::solve_impl(
     if (this->root_) printf("\n == Amesos2_KLU2::solve_impl ==\n");
     if (debug_level_ == 1) {
       B->description();
-      if (this->root_) printf("\n");
-      X->description();
     } else {
       Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       B->describe(*fancy, Teuchos::VERB_EXTREME);
-      X->describe(*fancy, Teuchos::VERB_EXTREME);
     }
   }
 
@@ -385,6 +382,14 @@ KLU2<Matrix,Vector>::solve_impl(
           as<size_t>(ld_rhs),
           (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
           this->rowIndexBase_);
+    }
+  }
+  if (debug_level_ > 0) {
+    if (debug_level_ == 1) {
+      X->description();
+    } else {
+      Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      X->describe(*fancy, Teuchos::VERB_EXTREME);
     }
   }
   return(ierr);
