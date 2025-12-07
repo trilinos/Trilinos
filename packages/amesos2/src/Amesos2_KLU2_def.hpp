@@ -157,12 +157,41 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
         data_.numeric_ = ::KLU2::klu_factor<klu2_dtype, local_ordinal_type>
           (host_row_ptr_view.data(), host_cols_view.data(), pValues,
            data_.symbolic_, &(data_.common_));
+
+        if (debug_level_ > 1) {
+          using VTCT = Teuchos::ValueTypeConversionTraits<double, scalar_type>;
+          printf("\n == PardisoMKL::numericFactorization_impl ==\n" );
+          int n = this->globalNumCols_;
+          printf("A=[\n");
+          for (int i=0; i<n; i++) {
+            for (int k=host_row_ptr_view(i); k<host_row_ptr_view(i+1); k++) {
+              int colid = int(host_cols_view(k));
+              double nzval = VTCT::convert(host_nzvals_view_(k));
+              printf("%d %d %.16e\n",i,colid,nzval);
+            }
+          }
+          printf("];\n");
+        }
       }
       else {
         klu2_dtype * pValues = function_map::convert_scalar(host_nzvals_view_.data());
         data_.numeric_ = ::KLU2::klu_factor<klu2_dtype, local_ordinal_type>
           (host_col_ptr_view_.data(), host_rows_view_.data(), pValues,
            data_.symbolic_, &(data_.common_));
+        if (debug_level_ > 1) {
+          using VTCT = Teuchos::ValueTypeConversionTraits<double, scalar_type>;
+          printf("\n == PardisoMKL::numericFactorization_impl ==\n" );
+          int n = this->globalNumCols_;
+          printf("A=[\n");
+          for (int i=0; i<n; i++) {
+            for (int k=host_col_ptr_view_(i); k<host_col_ptr_view_(i+1); k++) {
+              int colid = int(host_rows_view_(k));
+              double nzval = VTCT::convert(host_nzvals_view_(k));
+              printf("%d %d %.16e\n",colid,i,nzval);
+            }
+          }
+          printf("];\n");
+        }
       } //end single_process_optim_check = false
 
       // To have a test which confirms a throw, we need MPI to throw on all the
@@ -295,6 +324,19 @@ KLU2<Matrix,Vector>::solve_impl(
     // For this case, Crs matrix raw pointers were used, so the non-transpose default solve
     // is actually the transpose solve as klu_solve expects Ccs matrix pointers
     // Thus, if the transFlag_ is true, the non-transpose solve should be used
+    if (debug_level_ > 1) {
+      using VTCT = Teuchos::ValueTypeConversionTraits<double, scalar_type>;
+      int n = this->globalNumCols_;
+      printf("\n+ B=[\n");
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<nrhs; j++) {
+          double bij = VTCT::convert(pbValues[i+j*n]);
+          printf("%.16e ",bij);
+        }
+        printf("\n");
+      }
+      printf("];\n");
+    }
     if (transFlag_ == 0)
     {
       ::KLU2::klu_tsolve2<klu2_dtype, local_ordinal_type>
@@ -310,6 +352,19 @@ KLU2<Matrix,Vector>::solve_impl(
          (local_ordinal_type)nrhs,
          pbValues, pxValues, &(data_.common_)) ;
     }
+    if (debug_level_ > 1) {
+      using VTCT = Teuchos::ValueTypeConversionTraits<double, scalar_type>;
+      int n = this->globalNumCols_;
+      printf("\n + X=[\n");
+      for (int i=0; i<n; i++) {
+        for (int j=0; j<nrhs; j++) {
+          double xij = VTCT::convert(pxValues[i+j*n]);
+          printf("%.16e ",xij);
+        }
+        printf("\n");
+      }
+      printf("];\n");
+    }
 
     /* All processes should have the same error code */
     // Teuchos::broadcast(*(this->getComm()), 0, &ierr);
@@ -322,6 +377,19 @@ KLU2<Matrix,Vector>::solve_impl(
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
+      if (debug_level_ > 1) {
+        using VTCT = Teuchos::ValueTypeConversionTraits<double, scalar_type>;
+        int n = this->globalNumCols_;
+        printf("\n* B=[\n");
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<nrhs; j++) {
+            double bij = VTCT::convert(pxValues[i+j*n]);
+            printf("%.16e ",bij);
+          }
+          printf("\n");
+        }
+        printf("];\n");
+      }
       if (transFlag_ == 0)
       {
         // For this case, Crs matrix raw pointers were used, so the non-transpose default solve
@@ -361,6 +429,19 @@ KLU2<Matrix,Vector>::solve_impl(
            (local_ordinal_type)nrhs,
            pxValues, &(data_.common_)) ;
         }
+      }
+      if (debug_level_ > 1) {
+        using VTCT = Teuchos::ValueTypeConversionTraits<double, scalar_type>;
+        int n = this->globalNumCols_;
+        printf("\n* X=[\n");
+        for (int i=0; i<n; i++) {
+          for (int j=0; j<nrhs; j++) {
+            double bij = VTCT::convert(pxValues[i+j*n]);
+            printf("%.16e ",bij);
+          }
+          printf("\n");
+        }
+        printf("];\n");
       }
     } // end root_
   } //end else
