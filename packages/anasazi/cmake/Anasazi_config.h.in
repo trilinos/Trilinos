@@ -1,22 +1,7 @@
 /* src/Anasazi_config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if want to build with amesos enabled */
-#cmakedefine HAVE_ANASAZI_AMESOS
-
-/* Define if want to build with aztecoo enabled */
-#cmakedefine HAVE_ANASAZI_AZTECOO
-
-/* Define if want to build with ifpack enabled */
-#cmakedefine HAVE_ANASAZI_IFPACK
-
 /* Define if want to build with belos enabled */
 #cmakedefine HAVE_ANASAZI_BELOS
-
-/* Define if want to build with epetra enabled */
-#cmakedefine HAVE_ANASAZI_EPETRA
-
-/* Define if want to build with epetraext enabled */
-#cmakedefine HAVE_ANASAZI_EPETRAEXT
 
 /* Define if want to build anasazi-experimental */
 #cmakedefine HAVE_ANASAZI_EXPERIMENTAL
@@ -32,9 +17,6 @@
 
 /* Define if want to build with thyra enabled */
 #cmakedefine HAVE_ANASAZI_THYRA
-
-/* Define if want to build with triutils enabled */
-#cmakedefine HAVE_ANASAZI_TRIUTILS
 
 /* Define if want to build anasazi-examples */
 #cmakedefine HAVE_ANASAZI_EXAMPLES
