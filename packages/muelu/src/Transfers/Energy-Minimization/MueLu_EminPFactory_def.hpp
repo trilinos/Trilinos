@@ -127,7 +127,22 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
     A = Utilities::Transpose(*A, true);
   }
 
+  // Get/make constraint operator
+  RCP<Constraint> X;
+  if (coarseLevel.IsAvailable("Constraint0", this)) {
+    // Reuse data
+    X = coarseLevel.Get<RCP<Constraint>>("Constraint0", this);
+    GetOStream(Runtime0) << "Reusing Constraint0" << std::endl;
+
+  } else {
+    // Construct data
+    X = Get<RCP<Constraint>>(coarseLevel, "Constraint");
+  }
+
   // Get/make initial guess
+  // NOTE: the main assumption here that P0 satisfies both constraints:
+  //   - nonzero pattern
+  //   - nullspace preservation
   RCP<Matrix> P0;
   int numIts;
 #ifdef externalSuppliedP0
@@ -145,28 +160,16 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
     GetOStream(Runtime0) << "Reusing P0" << std::endl;
 
   } else {
+    GetOStream(Runtime0) << "Getting P from coarseLevel" << std::endl;
     // Construct data
     P0     = Get<RCP<Matrix>>(coarseLevel, "P");
     numIts = pL.get<int>("emin: num iterations");
   }
-  // NOTE: the main assumption here that P0 satisfies both constraints:
-  //   - nonzero pattern
-  //   - nullspace preservation
 
-  // Get/make constraint operator
-  RCP<Constraint> X;
-  if (coarseLevel.IsAvailable("Constraint0", this)) {
-    // Reuse data
-    X = coarseLevel.Get<RCP<Constraint>>("Constraint0", this);
-    GetOStream(Runtime0) << "Reusing Constraint0" << std::endl;
-
-  } else {
-    // Construct data
-    X = Get<RCP<Constraint>>(coarseLevel, "Constraint");
-  }
-
-  if (IsPrint(Statistics0))
+  if (IsPrint(Statistics0)) {
     GetOStream(Statistics0) << "Energy norm of P0: " << ComputeProlongatorEnergyNorm(A, P0, GetOStream(Statistics0)) << std::endl;
+    GetOStream(Statistics0) << "Constraint residual norm of P0: " << X->ResidualNorm(P0) << std::endl;
+  }
 
   std::string solverType = pL.get<std::string>("emin: iterative method");
   if (solverType == "cg")
@@ -252,8 +255,6 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
   if (constraintResidualNorm > Teuchos::ScalarTraits<MagnitudeType>::zero()) {
     // Set a pretty loose tolerance here.
     bool checkFailed = constraintResidualNorm > 1e6 * Teuchos::ScalarTraits<MagnitudeType>::eps();
-    if (checkFailed)
-      GetOStream(Runtime0) << "Norm of constraint residual for initial guess: " << X->ResidualNorm(P0) << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(checkFailed,
                                Exceptions::RuntimeError, "Constraint residual norm \"" << constraintResidualNorm << "\" is too large.");
   }
