@@ -136,7 +136,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   bool update_communicators = pL.get<bool>("repartition: enable") && pL.get<bool>("repartition: use subcommunicators");
 
   // If these are set correctly we assume that the nodal P contains only ones
-  bool nodal_p_is_all_ones = !pL.get<bool>("tentative: constant column sums") && !pL.get<bool>("tentative: calculate qr");
+  // bool nodal_p_is_all_ones = !pL.get<bool>("tentative: constant column sums") && !pL.get<bool>("tentative: calculate qr");
 
   RCP<Matrix> EdgeMatrix = Get<RCP<Matrix> >(fineLevel, "A");
   RCP<Matrix> D0         = Get<RCP<Matrix> >(fineLevel, "D0");
@@ -148,25 +148,9 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
 
   // Matrix matrix params
   RCP<ParameterList> mm_params = rcp(new ParameterList);
-
   if (pL.isSublist("matrixmatrix: kernel params"))
     mm_params->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
-  // Normalize P
-  if (!nodal_p_is_all_ones) {
-    // The parameters told us the nodal P isn't all ones, so we make a copy that is.
-    GetOStream(Runtime0) << "ReitzingerPFactory::BuildP(): Assuming Pn is not normalized" << std::endl;
-    RCP<Matrix> Pn_old = Pn;
-
-    Pn = Xpetra::MatrixFactory<SC, LO, GO, NO>::Build(Pn->getCrsGraph());
-    Pn->setAllToScalar(Teuchos::ScalarTraits<SC>::one());
-    Pn->fillComplete(Pn->getDomainMap(), Pn->getRangeMap());
-  } else {
-    // The parameters claim P is all ones.
-    GetOStream(Runtime0) << "ReitzingerPFactory::BuildP(): Assuming Pn is normalized" << std::endl;
-  }
-
-#ifdef HAVE_MUELU_DEBUG
   {  // Check that Pn is piecewise constant
 
     auto vec_ones = VectorFactory::Build(Pn->getDomainMap(), false);
@@ -180,16 +164,18 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     bool all_entries_ok = true;
     Kokkos::parallel_reduce(
         lclPn.numRows(), KOKKOS_LAMBDA(const LocalOrdinal rlid, bool& entries_ok) {
+      // rowsums are 1
       entries_ok = entries_ok && (implATS::magnitude(lclRowSums(rlid, 0) - one_impl_scalar) < eps_mag);
 
+      // all nonzero entries are 1
       auto row = lclPn.rowConst(rlid);
       for (LocalOrdinal k = 0; k < row.length; ++k) {
         entries_ok = entries_ok && (implATS::magnitude(row.value(k)-one_impl_scalar) < eps_mag);
+
       } }, Kokkos::LAnd<bool>(all_entries_ok));
 
     TEUCHOS_TEST_FOR_EXCEPTION(!all_entries_ok, std::runtime_error, "The prolongator needs to be piecewise constant and all entries need to be 1.");
   }
-#endif
 
   RCP<Matrix> D0_coarse_m;
   {
