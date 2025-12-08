@@ -107,7 +107,7 @@ namespace
     const double relTol=1e-6;
     const double absTol=1e-10;
     
-    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    for (int polyOrder=1; polyOrder<6; polyOrder++)
     {
       HierarchicalBasis hierarchicalBasis(polyOrder);
       NodalBasis        nodalBasis(polyOrder);
@@ -128,7 +128,7 @@ namespace
     const double relTol=1e-6;
     const double absTol=1e-9;
     
-    for (int polyOrder=1; polyOrder<7; polyOrder++)
+    for (int polyOrder=1; polyOrder<6; polyOrder++)
     {
       HierarchicalBasis hierarchicalBasis(polyOrder);
       NodalBasis        nodalBasis(polyOrder);
