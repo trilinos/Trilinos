@@ -238,6 +238,8 @@ KLU2<Matrix,Vector>::solve_impl(
       B->description();
     } else {
       Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      B->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+      std::cout << std::endl;
       B->describe(*fancy, Teuchos::VERB_EXTREME);
     }
   }
@@ -470,6 +472,8 @@ KLU2<Matrix,Vector>::solve_impl(
       X->description();
     } else {
       Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      X->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+      std::cout << std::endl;
       X->describe(*fancy, Teuchos::VERB_EXTREME);
     }
   }
