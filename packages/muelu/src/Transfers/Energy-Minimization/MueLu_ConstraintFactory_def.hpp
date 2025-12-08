@@ -85,41 +85,30 @@ void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& 
 
     // Construct an initial guess.
     // This is different from the nullspace constraint where we use the tentative prolongator as initial guess.
-    // Instead, we set up an initial prolongator with all ones and project it so that it satisfies the constraint.
+    // Instead, we leverage the least-squares solve to construct a prolongator that satisfies the constraints.
 
     auto X             = sparse_constraint->GetConstraintMatrix();
-    const auto one     = Teuchos::ScalarTraits<Scalar>::one();
-    auto vecPallOnes   = MultiVectorFactory::Build(sparse_constraint->getDomainMap(), 1);
     auto vecPProjected = MultiVectorFactory::Build(sparse_constraint->getDomainMap(), 1);
     auto temp          = MultiVectorFactory::Build(X->getRangeMap(), 1);
-    auto residual      = MultiVectorFactory::Build(X->getRangeMap(), 1);
-
-    // P aka vecPallOnes
-    vecPallOnes->putScalar(one);
+    auto rhs           = MultiVectorFactory::Build(X->getRangeMap(), 1);
 
     // We want
-    //  (P_allOnes+delta) * coarseD0 = fineD0 * Pnodal
-    // so we solve
-    //  delta * coarseD0 = fineD0 * Pnodal - P_allOnes * coarseD0
+    //  P * coarseD0 = fineD0 * Pnodal
     // which is, after vectorization
-    //  X * vec(delta) = vec(fineD0 * Pnodal - P_allOnes * coarseD0) = vec(fineD0 * Pnodal) - X vec(P_allOnes)
+    //  X * vec(P) = vec(fineD0 * Pnodal)
     // A solution of this is given by
-    //  vec(delta) = X^T * (X * X^T)^dagger * [vec(fineD0 * Pnodal) - X vec(P_allOnes)]
-    // and hence we use
-    //  P_corrected = P_allOnes + delta
+    //  vec(P) = X^T * (X * X^T)^dagger * vec(fineD0 * Pnodal)
 
-    // residual = fineD0 * Pnodal - P * coarseD0
+    // rhs = fineD0 * Pnodal
     {
       RCP<Matrix> fineD0_Pnodal;
       fineD0_Pnodal = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*fineD0, false, *Pnodal, false, fineD0_Pnodal, GetOStream(Runtime0), true, true);
-      sparse_constraint->AssignMatrixEntriesToConstraintVector(*fineD0_Pnodal, *residual);
+      sparse_constraint->AssignMatrixEntriesToConstraintVector(*fineD0_Pnodal, *rhs);
     }
-    X->apply(*vecPallOnes, *residual, Teuchos::NO_TRANS, -one, one);
 
-    // vecPProjected = vecPallOnes + X^T (X * X^T)^dagger * residual
-    sparse_constraint->LeastSquaresSolve(*residual, *temp);
+    // vecPProjected = X^T (X * X^T)^dagger * rhs
+    sparse_constraint->LeastSquaresSolve(*rhs, *temp);
     X->apply(*temp, *vecPProjected, Teuchos::TRANS);
-    vecPProjected->update(one, *vecPallOnes, one);
 
     auto P0 = sparse_constraint->GetMatrixWithEntriesFromVector(*vecPProjected);
 
