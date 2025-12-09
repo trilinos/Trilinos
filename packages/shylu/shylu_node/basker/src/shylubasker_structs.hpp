@@ -50,11 +50,6 @@ namespace BaskerNS
     {
       //Note,
       //basker thread is always used in a array so not need.
-      //Added for completeness/OpenMP
-      #ifndef BASKER_KOKKOS
-      FREE_INT_1DARRAY(iws);
-      FREE_ENTRY_1DARRAY(ews);
-      #endif
     }
 
      

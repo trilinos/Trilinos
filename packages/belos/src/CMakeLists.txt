@@ -107,7 +107,6 @@ APPEND_SET(HEADERS
   Belos_Details_LinearSolverFactory.hpp
   Belos_Details_registerLinearSolverFactory.hpp
   Belos_Details_registerSolverFactory.hpp
-  BelosUtils.hpp
   BelosGlobalComm.hpp
   )
 

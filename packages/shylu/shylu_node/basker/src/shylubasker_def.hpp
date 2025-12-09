@@ -29,12 +29,8 @@
 #include "shylubasker_solve_rhs_tr.hpp"
 
 /*Kokkos Includes*/
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#else
-#include <omp.h>
-#endif
 
 /*System Includes*/
 #include <iostream>
@@ -213,76 +209,6 @@ namespace BaskerNS
     matrix_flag = true;
     return 0;
   }//end InitMatrix (int, int , int, int *, int *, entry *)
-
-
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::Order(Int option)
-  {
-    //Option = 0, FAIL NATURAL WITHOUT BOX
-    //Option = 1, BASKER Standard
-    //Option = 2, BTF BASKER
-
-    if(option == 1)
-    {
-      default_order();
-    }
-    else if(option == 2)
-    {
-      btf_order();
-    }
-    else
-    {
-      printf("\n\n ERROR---No Order Selected \n\n");
-      return -1;
-    }
-
-    basker_barrier.init(num_threads, 16, tree.nlvls);
-
-    order_flag = true;
-    return 0;
-  }//end Order()
-
-
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::InitOrder(Int option)
-  {
-    tree_flag = true;
-    return 0;
-  }//end InitOrder
-
-
-  template <class Int, class Entry, class Exe_Space>
-  BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::InitOrder
-  (
-   Int *perm, 
-   Int nblks, 
-   Int parts, 
-   Int *row_tabs, Int *col_tabs,
-   Int *tree_tabs
-  )
-  {
-    /*------------OLD
-    init_tree(perm, nblks, parts, row_tabs, col_tabs, tree_tabs, 0);
-    #ifdef BASKER_2DL
-    matrix_to_views_2D(A);
-    find_2D_convert(A);
-    #else
-    matrix_to_views(A,AV);
-    #endif
-    ----------*/
-
-    user_order(perm,nblks,parts,row_tabs,col_tabs, tree_tabs);
-
-    basker_barrier.init(num_threads, 16, tree.nlvls );
-
-    //printf("done with init order\n");
-
-    tree_flag = true;
-    return 0;
-  }//end InitOrder
 
 
   template <class Int, class Entry, class Exe_Space>
@@ -976,9 +902,9 @@ namespace BaskerNS
         //A.val(i) = val[ i ]; // may need to apply matching or nd order permutation...
       return BASKER_ERROR;
     } else {
-    #ifdef KOKKOS_ENABLE_OPENMP
-    #pragma omp parallel for
-    #endif
+      #ifdef KOKKOS_ENABLE_OPENMP
+      #pragma omp parallel for
+      #endif
       for( Int i = 0; i < nnz; ++i ) {
         A.val(i) = val[ vals_perm_composition(i) ];
         if ( btfd_nnz != 0 ) {
@@ -1593,9 +1519,7 @@ namespace BaskerNS
 
           // ----------------------------------------------------------------------------------------------
           // Allocate & Initialize blocks
-          #ifdef BASKER_KOKKOS
           matrix_to_views_2D(BTF_A);
-          #endif
           if(Options.verbose == BASKER_TRUE) {
             std::cout<< "   + Basker Factor: Time to convert a big block A into views: " << nd_mwm_amd_timer.seconds() << std::endl;
           }
@@ -1630,7 +1554,6 @@ namespace BaskerNS
         }
 
 
-        #ifdef BASKER_KOKKOS
         // ----------------------------------------------------------------------------------------------
         // Allocate & Initialize blocks
         #ifdef BASKER_PARALLEL_INIT_FACTOR
@@ -1648,7 +1571,6 @@ namespace BaskerNS
           iWS(flag, this);
         Kokkos::parallel_for(TeamPolicy(num_threads,1), iWS);
         Kokkos::fence();*/
-        #endif
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time for init factors after ND on a big block A: " << nd_nd_timer.seconds() << std::endl;
         }
@@ -1945,7 +1867,6 @@ namespace BaskerNS
     bool doSymbolic_ND = (Options.blk_matching != 0 || Options.static_delayed_pivot != 0);
     if (btf_tabs_offset != 0) {
       bool flag = true;
-      #ifdef BASKER_KOKKOS
       Kokkos::Timer nd_setup1_timer;
       /*kokkos_sfactor_init_factor<Int,Entry,Exe_Space>
         iF(this);
@@ -1972,7 +1893,6 @@ namespace BaskerNS
       if(Options.verbose == BASKER_TRUE) {
         std::cout<< " > Basker Factor: Time for workspace allocation after ND on a big block A: " << nd_setup2_timer.seconds() << std::endl;
       }
-      #endif
     }
     bool copy_BTFA = (Options.blk_matching == 0 || Options.static_delayed_pivot != 0);
     bool alloc_BTFA = (Options.static_delayed_pivot != 0);

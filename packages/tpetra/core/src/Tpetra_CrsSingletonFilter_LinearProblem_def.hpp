@@ -965,6 +965,8 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Problem->getLHS() == Teuchos::null,
                                         std::runtime_error, "Need a LHS.");
 
+  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+
   // Generate reduced row and column maps
   if (SingletonsDetected()) {
     ReducedMatrixRowMap_ = GenerateReducedMap(FullMatrixRowMap(), RowMapColors_, 0);
@@ -1057,7 +1059,7 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
           GetRow(i, NumEntries, Values, localIndices);  // Get current row
           if (NumEntries == 1) {
             Scalar pivot = Values[0];
-            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(pivot == 0.0, std::runtime_error,
+            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(pivot == zero, std::runtime_error,
                                                   "Encountered zero row, unable to continue.");  // Should improve this comparison to zero.
             LocalOrdinal indX = localIndices[0];
             for (LocalOrdinal j = 0; j < NumVectors; j++) {
@@ -1070,7 +1072,7 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
             for (size_t j = 0; j < NumEntries; j++) {
               if (localIndices[j] == targetCol) {
                 Scalar pivot = Values[j];
-                TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(pivot == 0.0, std::runtime_error,
+                TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(pivot == zero, std::runtime_error,
                                                       "Encountered zero column, unable to continue.");  // Should improve this comparison to zero.
                 ColSingletonPivotLIDs_[ColSingletonCounter] = j;
                 ColSingletonPivots_[ColSingletonCounter]    = pivot;
@@ -1258,6 +1260,8 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(Problem->getLHS() == Teuchos::null,
                                         std::runtime_error, "Need a LHS.");
 
+  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+
   if (SingletonsDetected()) {
     // Create pointer to Full RHS, LHS
     Teuchos::RCP<multivector_type> FullRHS = FullProblem()->getRHS();
@@ -1303,7 +1307,7 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
           GetRow(i, NumEntries, Values, localIndices);  // Get current row
           if (NumEntries == 1) {
             Scalar pivot = Values[0];
-            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(pivot == 0.0, std::runtime_error,
+            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(pivot == zero, std::runtime_error,
                                                   "Encountered zero row, unable to continue.");  // Should improve this comparison to zero.
             LocalOrdinal indX = localIndices[0];
             for (LocalOrdinal j = 0; j < NumVectors; j++) {
@@ -1315,7 +1319,7 @@ void CrsSingletonFilter_LinearProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>
             LocalOrdinal j = ColSingletonPivotLIDs_[ColSingletonCounter];
 
             Scalar pivot = Values[j];
-            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(pivot == 0.0, std::runtime_error,
+            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(pivot == zero, std::runtime_error,
                                                   "Encountered zero column, unable to continue.");  // Should improve this comparison to zero.
             ColSingletonPivots_[ColSingletonCounter] = pivot;
             ColSingletonCounter++;

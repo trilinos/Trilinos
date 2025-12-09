@@ -19,11 +19,7 @@
 #include <iostream>
 #include <stdio.h>
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#else
-#include <omp.h>
-#endif
 
 
 namespace BaskerNS

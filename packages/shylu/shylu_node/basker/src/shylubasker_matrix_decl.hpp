@@ -18,12 +18,7 @@
 #include <limits>
 #include <string>
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#else
-#include <omp.h>
-#endif
-
 
 namespace BaskerNS
 {
