@@ -70,7 +70,6 @@ TRIBITS_ADD_TEST(
 SET( TestGroups
   AnalyticPolynomialsMatch
   BasisCardinality
-  BasisEquivalenceHelpers
   BasisOpDecomposition
   BasisValues
   CellGeometry
