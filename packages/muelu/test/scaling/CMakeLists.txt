@@ -42,6 +42,14 @@ IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVE
 
   INSTALL(TARGETS "${PACKAGE_NAME}_Driver")
 
+  TRIBITS_ADD_TEST(
+    Driver
+    NAME Defaults
+    COMM serial mpi
+    ARGS "--xml=DEFAULTS"
+    PASS_REGULAR_EXPRESSION "Belos converged"
+  )
+
   # Perf Model
   TRIBITS_ADD_TEST(
     Driver
