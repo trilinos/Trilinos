@@ -146,7 +146,7 @@ namespace mini_em {
             throw;
         else if (solver == ML) {
           updateParams("solverML.xml", lin_solver_pl, comm, out);
-        } else if (solver == MUELU) {
+        } else if ((solver == MUELU) || (solver == MAXWELL1_RS) || (solver == MAXWELL1_SA_RS) || (solver == MAXWELL1_EMIN)) {
           if (linAlgebra == linAlgTpetra) {
             updateParams("solverMueLu.xml", lin_solver_pl, comm, out);
 
@@ -201,6 +201,22 @@ namespace mini_em {
         }
       } else
         updateParams(xml, lin_solver_pl, comm, out);
+
+      Teuchos::ParameterList& S_E_list = lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").sublist("S_E Preconditioner");
+      if (solver == MAXWELL1_RS) {
+        S_E_list.set("Type", "MueLuMaxwell1");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");
+      } else if (solver == MAXWELL1_SA_RS) {
+        S_E_list.set("Type", "MueLuMaxwell1");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 22list").set("multigrid algorithm", "sa");
+      } else if (solver == MAXWELL1_EMIN) {
+        S_E_list.set("Type", "MueLuMaxwell1");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 11list").set("multigrid algorithm", "emin reitzinger");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 22list").set("multigrid algorithm", "sa");
+      }
+
     }
 
     return lin_solver_pl;
@@ -343,12 +359,12 @@ namespace mini_em {
           opPostfix = "";
         }
 
-        if (solver == MUELU || solver == ML)
+        if (solver == MUELU || solver == ML || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS || solver == MAXWELL1_EMIN)
           auxFieldOrder += " "+auxNodalField+" "+auxEdgeField;
         else
           auxFieldOrder += " "+auxEdgeField;
 
-        if (solver == MUELU || solver == ML) {
+        if (solver == MUELU || solver == ML || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS|| solver == MAXWELL1_EMIN) {
           // discrete gradient
           auto gradPL = Teuchos::ParameterList();
           gradPL.set("Source", auxNodalField);
@@ -372,7 +388,7 @@ namespace mini_em {
           schurComplementPL.set("Integration Order", 2*polynomialOrder);
           auxPhysicsBlocksPL.sublist("Auxiliary Edge SchurComplement Physics" + opPostfix) = schurComplementPL;
 
-          if (solver == MUELU || solver == ML) {
+          if (solver == MUELU || solver == ML || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS|| solver == MAXWELL1_EMIN) {
             // Projected Schur complement
             auto projectedSchurComplementPL = Teuchos::ParameterList();
             projectedSchurComplementPL.set("Type", "Auxiliary ProjectedSchurComplement");

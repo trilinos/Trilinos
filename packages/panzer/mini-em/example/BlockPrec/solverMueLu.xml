@@ -318,6 +318,69 @@
                   </ParameterList>
                 </ParameterList>
               </ParameterList>
+
+              <ParameterList name="MueLuMaxwell1">
+                <Parameter name="parameterlist: syntax" type="string" value="muelu"/>
+                <Parameter name="use kokkos refactor" type="bool" value="false"/>
+                <Parameter name="verbosity" type="string" value="extreme"/>
+                <Parameter name="maxwell1: use as preconditioner" type="bool" value="true"/>
+                <Parameter name="maxwell1: dump matrices" type="bool" value="false"/>
+
+                <ParameterList name="maxwell1: 11list">
+                  <Parameter name="verbosity" type="string" value="extreme"/>
+                  <Parameter name="number of equations" type="int" value="3"/>
+
+                  <Parameter name="transpose: use implicit" type="bool" value="true"/>
+                  <Parameter name="fuse prolongation and update" type="bool" value="true"/>
+
+                  <!-- "multigrid algorithm" gets set at runtime -->
+                  
+                  <ParameterList name="matvec params">
+                    <Parameter name="Send type" type="string" value="Isend"/>
+                  </ParameterList>
+
+                  <Parameter name="coarse: type" type="string" value="KLU"/>
+
+                  <Parameter name="smoother: type" type="string" value="HIPTMAIR"/>
+                  <ParameterList name="smoother: params">
+                    <Parameter name="hiptmair: smoother type 1" type="string" value="CHEBYSHEV"/>
+                    <Parameter name="hiptmair: smoother type 2" type="string" value="CHEBYSHEV"/>
+                    <ParameterList name="hiptmair: smoother list 1">
+                      <Parameter name="chebyshev: degree" type="int" value="2"/>
+                      <Parameter name="chebyshev: ratio eigenvalue" type="double" value="5.4"/>
+                      <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
+                      <Parameter name="chebyshev: algorithm" type="string" value="opt_fourth"/>
+                    </ParameterList>
+                    <ParameterList name="hiptmair: smoother list 2">
+                      <Parameter name="chebyshev: degree" type="int" value="2"/>
+                      <Parameter name="chebyshev: ratio eigenvalue" type="double" value="7.0"/>
+                      <Parameter name="chebyshev: eigenvalue max iterations" type="int" value="100"/>
+                      <Parameter name="chebyshev: algorithm" type="string" value="opt_fourth"/>
+                    </ParameterList>
+                  </ParameterList>
+                </ParameterList>
+
+                <ParameterList name="maxwell1: 22list">
+                  <Parameter name="verbosity" type="string" value="extreme"/>
+                  <Parameter name="coarse: max size" type="int" value="1000"/>
+
+                  <!-- "multigrid algorithm" gets set at runtime -->
+
+                  <Parameter name="aggregation: drop tol" type="double" value="0.02"/>
+
+                  <Parameter name="repartition: enable" type="bool" value="true"/>
+                  <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+                  <Parameter name="repartition: start level" type="int" value="2"/>
+                  <Parameter name="repartition: target rows per thread" type="int" value="400"/>
+                  <Parameter name="repartition: min rows per thread" type="int" value="1000"/>
+                  <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+                  <Parameter name="repartition: remap parts" type="bool" value="true"/>
+                  <Parameter name="repartition: print partition distribution" type="bool" value="true"/>
+                  <ParameterList name="repartition: params">
+                    <Parameter name="algorithm" type="string" value="multijagged"/>
+                  </ParameterList>
+                </ParameterList>
+              </ParameterList>
             </ParameterList>
             <ParameterList name="Required Parameters">
               <Parameter name="Coordinates" type="string" value="AUXILIARY_NODE"/>
