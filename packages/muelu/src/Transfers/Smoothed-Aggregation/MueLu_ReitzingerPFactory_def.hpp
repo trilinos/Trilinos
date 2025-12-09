@@ -311,6 +311,14 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
           numDirichletEdges);
     }
 
+    if (IsPrint(Statistics0)) {
+      LocalOrdinal numGlobalRegularEdges;
+      LocalOrdinal numGlobalDirichletEdges;
+      MueLu_sumAll(rowMap->getComm(), numRegularEdges, numGlobalRegularEdges);
+      MueLu_sumAll(rowMap->getComm(), numDirichletEdges, numGlobalDirichletEdges);
+      GetOStream(Statistics0) << "regular edges: " << numGlobalRegularEdges << ", Dirichlet edges: " << numGlobalDirichletEdges << std::endl;
+    }
+
     LocalOrdinal numEdges = numRegularEdges + numDirichletEdges;
     rowptr_type rowptr(Kokkos::ViewAllocateWithoutInitializing("rowptr D0H"), numEdges + 1);
     // 2 entries per regular edge, 1 entry per Dirichlet edge
@@ -497,23 +505,18 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     CheckCommutingProperty(const Matrix& Pe, const Matrix& D0_c, const Matrix& D0_f, const Matrix& Pn) const {
   if (IsPrint(Statistics0)) {
     using XMM = Xpetra::MatrixMatrix<SC, LO, GO, NO>;
-    using MT  = typename Teuchos::ScalarTraits<SC>::magnitudeType;
-    SC one    = Teuchos::ScalarTraits<SC>::one();
-    SC zero   = Teuchos::ScalarTraits<SC>::zero();
+    auto one  = Teuchos::ScalarTraits<SC>::one();
 
     RCP<Matrix> dummy;
-    Teuchos::FancyOStream& out0 = GetBlackHole();
-    RCP<Matrix> left            = XMM::Multiply(Pe, false, D0_c, false, dummy, out0);
-    RCP<Matrix> right           = XMM::Multiply(D0_f, false, Pn, false, dummy, out0);
+    RCP<Matrix> left  = XMM::Multiply(Pe, false, D0_c, false, dummy, GetOStream(Runtime0));
+    RCP<Matrix> right = XMM::Multiply(D0_f, false, Pn, false, dummy, GetOStream(Runtime0));
 
-    // We need a non-FC matrix for the add, sadly
-    RCP<CrsMatrix> sum_c  = CrsMatrixFactory::Build(left->getRowMap(), left->getLocalMaxNumRowEntries() + right->getLocalMaxNumRowEntries());
-    RCP<Matrix> summation = rcp(new CrsMatrixWrap(sum_c));
-    XMM::TwoMatrixAdd(*left, false, one, *summation, zero);
-    XMM::TwoMatrixAdd(*right, false, -one, *summation, one);
+    RCP<Matrix> summation;
+    XMM::TwoMatrixAdd(*left, false, one, *right, false, -one, summation, GetOStream(Runtime0));
+    summation->fillComplete(left->getDomainMap(), left->getRangeMap());
 
-    MT norm = summation->getFrobeniusNorm();
-    GetOStream(Statistics0) << "CheckCommutingProperty: ||Pe D0_c - D0_f Pn || = " << norm << std::endl;
+    auto norm = summation->getFrobeniusNorm();
+    GetOStream(Statistics0) << "CheckCommutingProperty: || Pe D0_c - D0_f Pn || = " << norm << std::endl;
   }
 
 }  // end CheckCommutingProperty
