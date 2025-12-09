@@ -851,6 +851,43 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   } else
     D0_Matrix_ = MatrixFactory::BuildCopy(D0_Matrix);
 
+  {
+    // We assume that D0 has entries +-1.
+    // Construction D0 via interpolation can instead give +-0.5
+    // Let's check and scale D0.
+
+    using range_type       = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+    using impl_scalar_type = typename Matrix::impl_scalar_type;
+#if KOKKOS_VERSION >= 40799
+    using impl_ATS = KokkosKernels::ArithTraits<impl_scalar_type>;
+#else
+    using impl_ATS = Kokkos::ArithTraits<impl_scalar_type>;
+#endif
+    using magnitude_type = impl_ATS::magnitudeType;
+    using MinMax         = Kokkos::MinMax<magnitude_type>;
+
+    typename MinMax::value_type result;
+    {
+      auto lclD0 = D0_Matrix_->getLocalMatrixDevice();
+      Kokkos::parallel_reduce(
+          "MueLu::Maxwell1::D0_fixup",
+          range_type(0, lclD0.nnz()),
+          KOKKOS_LAMBDA(const LocalOrdinal k, typename MinMax::value_type& res) {
+            auto val    = impl_ATS::magnitude(lclD0.values(k));
+            res.min_val = Kokkos::min(res.min_val, val);
+            res.max_val = Kokkos::max(res.max_val, val);
+          },
+          MinMax(result));
+    }
+
+    TEUCHOS_ASSERT_EQUALITY(result.min_val, result.max_val);
+
+    if (impl_ATS::magnitude(result.max_val - impl_ATS::one()) > impl_ATS::eps()) {
+      Scalar scaling = impl_ATS::one() / result.max_val;
+      D0_Matrix_->scale(scaling);
+    }
+  }
+
   Kn_Matrix_ = Kn_Matrix;
   Coords_    = Coords;
   Material_  = Material;
