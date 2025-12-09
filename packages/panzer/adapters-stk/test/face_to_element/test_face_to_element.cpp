@@ -51,29 +51,6 @@ namespace core_tests {
     }
   }
 
-#ifndef PANZER_HIDE_DEPRECATED_CODE
-  TEUCHOS_UNIT_TEST(FaceToElement, test_default_communicator)
-  {
-    Teuchos::RCP<const Teuchos::MpiComm<int>> comm_world(new Teuchos::MpiComm< int>(MPI_COMM_WORLD));
-
-    RCP<Teuchos::ParameterList> mesh_pl(new Teuchos::ParameterList("Mesh"));
-    int nx=4, ny=8, nz=-1, bx=1, by=2, bz=-1;
-    setParamList(mesh_pl, nx, ny, nz, bx, by, bz);
-
-    RCP<panzer_stk::STK_MeshFactory> mesh_factory = rcp(new panzer_stk::SquareTriMeshFactory);
-    mesh_factory->setParameterList(mesh_pl);
-
-    RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(*comm_world->getRawMpiComm());
-    mesh_factory->completeMeshConstruction(*mesh,*comm_world->getRawMpiComm());
-    const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
-
-    auto faceToElement = Teuchos::rcp(new panzer::FaceToElement<panzer::LocalOrdinal,panzer::GlobalOrdinal>());
-    faceToElement->initialize(*conn_manager);
-
-    MPI_Barrier(MPI_COMM_WORLD);
-  }
-#endif
-
   TEUCHOS_UNIT_TEST(FaceToElement, test_comm_world)
   {
     Teuchos::RCP<const Teuchos::MpiComm<int>> comm_world(new Teuchos::MpiComm< int>(MPI_COMM_WORLD));

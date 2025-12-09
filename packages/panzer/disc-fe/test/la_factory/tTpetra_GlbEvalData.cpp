@@ -115,11 +115,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
   // test setting an owned vector
   {
     RCP<Tpetra_Vector> ownedVec_tp = rcp(new Tpetra_Vector(ownedMap));
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    auto uv_2d = ownedVec_tp->getLocalView<Kokkos::HostSpace> ();
-#else
     auto uv_2d = ownedVec_tp->getLocalViewHost (Tpetra::Access::OverwriteAll);
-#endif
     auto ownedVec = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
     if(comm->getRank()==0) {
@@ -140,11 +136,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
   // test the owned vector sizing and thyra entries
   { 
     const Tpetra_Vector & ownedVecTp = *ged.getOwnedVector_Tpetra();
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    auto uv_2d = ownedVecTp.getLocalView<Kokkos::HostSpace> ();
-#else
     auto uv_2d = ownedVecTp.getLocalViewHost (Tpetra::Access::ReadOnly);
-#endif
     auto ownedVecTpKv = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
     RCP<const Thyra_Vector>  ownedVecT = ged.getOwnedVector();
@@ -189,11 +181,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, basic)
 
   {
     const Tpetra_Vector & ghostedVecTp = *ged.getGhostedVector_Tpetra();
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    auto uv_2d = ghostedVecTp.getLocalView<Kokkos::HostSpace> ();
-#else
     auto uv_2d = ghostedVecTp.getLocalViewHost (Tpetra::Access::ReadOnly);
-#endif
     auto ghostedVecKv = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
     RCP<Thyra_Vector>  ghostedVecT = ged.getGhostedVector();
@@ -431,11 +419,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
 
   {
     RCP<Tpetra_Vector> ownedVecTp = rcp(new Tpetra_Vector(ownedMap));
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    auto uv_2d = ownedVecTp->getLocalView<Kokkos::HostSpace> ();
-#else
     auto uv_2d = ownedVecTp->getLocalViewHost (Tpetra::Access::OverwriteAll);
-#endif
     auto ownedVec = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
     if(comm->getRank()==0) {
@@ -458,11 +442,7 @@ TEUCHOS_UNIT_TEST(tTpetra_GlbEvalData, filtered_dofs)
   // check values making sure that the constants are there
   {
     const Tpetra_Vector & ghostedVecTp = *ged.getGhostedVector_Tpetra();
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-    auto uv_2d = ghostedVecTp.getLocalView<Kokkos::HostSpace> ();
-#else
     auto uv_2d = ghostedVecTp.getLocalViewHost (Tpetra::Access::ReadOnly);
-#endif
     auto ghostedVecKv = Kokkos::subview (uv_2d, Kokkos::ALL (), 0);
 
     if(comm->getRank()==0) {
