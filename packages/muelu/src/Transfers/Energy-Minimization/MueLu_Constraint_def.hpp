@@ -619,26 +619,37 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AssignMatrixEntriesToVector(const Matrix& P,
                                                                                         const RCP<const CrsGraph>& pattern,
                                                                                         MultiVector& vecP) const {
-  auto lclMat     = P.getLocalMatrixDevice();
-  auto lclPattern = pattern->getLocalGraphDevice();
-  auto lclVec     = vecP.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  auto lclPattern       = pattern->getLocalGraphDevice();
+  auto lclPatternRowMap = pattern->getRowMap()->getLocalMap();
+  auto lclPatternColMap = pattern->getColMap()->getLocalMap();
+
+  auto lclMat       = P.getLocalMatrixDevice();
+  auto lclMatRowMap = P.getRowMap()->getLocalMap();
+  auto lclMatColMap = P.getColMap()->getLocalMap();
+
+  auto lclVec = vecP.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  TEUCHOS_ASSERT(lclPattern.numRows() == (typename decltype(lclPattern)::size_type)lclMat.numRows());
   TEUCHOS_ASSERT(lclPattern.entries.extent(0) == lclVec.extent(0));
   Kokkos::deep_copy(lclVec, 0.);
 
   using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
   Kokkos::parallel_for(
       "MueLu::Constraint::filter", range_type(0, lclPattern.numRows()), KOKKOS_LAMBDA(const size_t i) {
-        auto row_mat = lclMat.rowConst(i);
+        auto grid    = lclPatternRowMap.getGlobalElement(i);
+        auto row_mat = lclMat.rowConst(lclMatRowMap.getLocalElement(grid));
 
         if (row_mat.length == 0)
           return;
 
         for (size_t jj = lclPattern.row_map(i); jj < lclPattern.row_map(i + 1); ++jj) {
-          auto offset     = lclPattern.entries(jj);
+          auto clid_pattern = lclPattern.entries(jj);
+          auto cgid         = lclPatternColMap.getGlobalElement(clid_pattern);
+          auto clid_mat     = lclMatColMap.getLocalElement(cgid);
+          // find column index in lclMat
           LocalOrdinal kk = 0;
-          while ((kk + 1 < row_mat.length) && (row_mat.colidx(kk) != offset))
+          while ((kk + 1 < row_mat.length) && (row_mat.colidx(kk) != clid_mat))
             ++kk;
-          if (row_mat.colidx(kk) == offset) {
+          if (row_mat.colidx(kk) == clid_mat) {
             lclVec(jj, 0) = row_mat.value(kk);
           }
         }
