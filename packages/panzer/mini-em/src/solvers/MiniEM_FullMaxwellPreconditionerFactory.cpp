@@ -293,6 +293,41 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
            invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec_);
          }
        } 
+     } else if (S_E_prec_type_ == "MueLuMaxwell1") {// Maxwell1
+
+       RCP<Teko::InverseFactory> S_E_prec_factory;
+       Teuchos::ParameterList S_E_prec_pl;
+       S_E_prec_factory = invLib.getInverseFactory("S_E Preconditioner");
+       S_E_prec_pl = *S_E_prec_factory->getParameterList();
+
+       // Get coordinates
+       {
+         TEUCHOS_ASSERT(useTpetra)
+         RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Coordinates = S_E_prec_pl.get<RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates");
+         S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Coordinates",Coordinates);
+       }
+
+       {
+         Teko::InverseLibrary myInvLib = invLib;
+         S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("Type",S_E_prec_type_);
+         myInvLib.addInverse("S_E Preconditioner",S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_));
+         S_E_prec_factory = myInvLib.getInverseFactory("S_E Preconditioner");
+       }
+
+       // Are we building a solver or a preconditioner?
+       {
+         Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("MaxwellPreconditioner: Build S_E preconditioner"));
+
+         if (useAsPreconditioner)
+           invS_E = Teko::buildInverse(*S_E_prec_factory,S_E);
+         else {
+           if (S_E_prec_.is_null())
+             S_E_prec_ = Teko::buildInverse(*S_E_prec_factory,S_E);
+           else
+             Teko::rebuildInverse(*S_E_prec_factory,S_E, S_E_prec_);
+           invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec_);
+         }
+       }
      } else {
        if (useAsPreconditioner)
          invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Preconditioner"),S_E);
@@ -473,6 +508,27 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
      describeMatrix("DiscreteGradient",*T,debug);
 
      invLib.addInverse("S_E Preconditioner",S_E_prec_pl);
+
+   } else if (S_E_prec_type_ == "MueLuMaxwell1") { // RefMaxwell based solve
+
+     // S_E solve
+     Teuchos::ParameterList ml_pl = pl.sublist("S_E Solve");
+     invLib.addInverse("S_E Solve",ml_pl);
+
+     // S_E preconditioner
+     Teuchos::ParameterList S_E_prec_pl = pl.sublist("S_E Preconditioner");
+
+     // add discrete gradient
+     auto T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
+     S_E_prec_pl.sublist("Preconditioner Types").sublist(S_E_prec_type_).set("D0",T);
+
+     if (dump) {
+       writeOut("DiscreteGradient.mm",*T);
+     }
+     describeMatrix("DiscreteGradient",*T,debug);
+
+     invLib.addInverse("S_E Preconditioner",S_E_prec_pl);
+
    } else {
      // S_E solve
      if (pl.isParameter("S_E Solve")) {

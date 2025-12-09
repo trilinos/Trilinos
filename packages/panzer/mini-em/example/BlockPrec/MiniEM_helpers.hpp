@@ -47,7 +47,8 @@ namespace mini_em {
     MUELU,
     ML,
     CG,
-    GMRES
+    GMRES,
+    MAXWELL1_EMIN
   };
 
   void getMesh(Teuchos::ParameterList &mesh_pl,

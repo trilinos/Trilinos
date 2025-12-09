@@ -128,8 +128,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     bool matrix_output = false;
     std::string input_file = "maxwell.xml";
     std::string xml = "";
-    solverType solverValues[5] = {AUGMENTATION, MUELU, ML, CG, GMRES};
-    const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
+    solverType solverValues[6] = {AUGMENTATION, MUELU, ML, CG, GMRES, MAXWELL1_EMIN};
+    const char * solverNames[6] = {"Augmentation", "MueLu", "ML", "CG", "GMRES", "Maxwell1-Emin"};
     bool preferTPLs = false;
     bool useBarriers = false;
     bool truncateMueLuHierarchy = false;
@@ -158,7 +158,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
     clp.setOption("inputFile",&input_file,"XML file with the problem definitions");
     clp.setOption("solverFile",&xml,"XML file with the solver params");
-    clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
+    clp.setOption<solverType>("solver",&solver,6,solverValues,solverNames,"Solver that is used");
     clp.setOption("tpl", "no-tpl", &preferTPLs, "Prefer TPL usage over fused kernels");
     clp.setOption("barriers", "no-barriers", &useBarriers, "Use barriers in the solver");
     clp.setOption("truncateMueLuHierarchy", "no-truncateMueLuHierarchy", &truncateMueLuHierarchy, "Truncate the MueLu hierarchy");
@@ -784,10 +784,10 @@ int main(int argc,char * argv[]){
   const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
   linearAlgebraType linAlgebra = linAlgTpetra;
   clp.setOption<linearAlgebraType>("linAlgebra",&linAlgebra,2,linAlgebraValues,linAlgebraNames);
-  solverType solverValues[5] = {AUGMENTATION, MUELU, ML, CG, GMRES};
-  const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
+  solverType solverValues[6] = {AUGMENTATION, MUELU, ML, CG, GMRES, MAXWELL1_EMIN};
+  const char * solverNames[6] = {"Augmentation", "MueLu", "ML", "CG", "GMRES", "Maxwell1-Emin"};
   solverType solver = MUELU;
-  clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
+  clp.setOption<solverType>("solver",&solver,6,solverValues,solverNames,"Solver that is used");
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
   clp.recogniseAllOptions(false);
