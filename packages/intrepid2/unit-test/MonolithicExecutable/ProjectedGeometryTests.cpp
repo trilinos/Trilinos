@@ -58,7 +58,7 @@ namespace
     CellGeometry<PointScalar, spaceDim, DeviceType> flatCellGeometry(origin,extent,cellCount);
     shards::CellTopology cellTopo = flatCellGeometry.cellTopology();
     
-    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,Intrepid2::Parameters::MaxOrder);
+    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,Intrepid2::Parameters::MaxOrder*2);
     auto cubatureWeights = cubature->allocateCubatureWeights();
     TensorPoints<PointScalar,DeviceType> cubaturePoints  = cubature->allocateCubaturePoints();
     cubature->getCubature(cubaturePoints, cubatureWeights);
@@ -111,9 +111,10 @@ namespace
       }, actualArea);
       
       PointScalar error = std::abs(actualArea - exactArea);
-      std::cout << "error for p = " << p << ": " << error << std::endl;
+      out << "error for p = " << p << ": " << error << std::endl;
       
       TEST_COMPARE(error, <, previousError);
+      previousError = error;
     }
   }
 
