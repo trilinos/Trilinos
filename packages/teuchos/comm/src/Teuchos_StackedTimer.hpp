@@ -18,6 +18,10 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_PerformanceMonitorBase.hpp"
 #include "Teuchos_Behavior.hpp"
+#include "TeuchosComm_config.h" // for HAVE_TEUCHOSCOMM_MAGISTRATE
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+#include "checkpoint/checkpoint.h"
+#endif
 #ifdef HAVE_TEUCHOSCORE_KOKKOS
 #include "Kokkos_Core.hpp"
 #endif
@@ -61,6 +65,35 @@ public:
   using Clock = std::chrono::high_resolution_clock;
 
   BaseTimer() : accumulation_(0.0), accumulationSquared_(0.0), count_started_(0), count_updates_(0), running_(false) {}
+
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+  /// For serialization only
+  explicit BaseTimer(magistrate::SERIALIZE_CONSTRUCT_TAG) {}
+
+  /// Macro for serialization only
+  magistrate_virtual_serialize_root()
+
+  /// Serialize object with magistrate
+  template<typename Serializer>
+  void serialize(Serializer& s) {
+
+    // Timers must be stopped when storing data
+    if (s.isPacking()) {
+      TEUCHOS_ASSERT(!running_);
+    }
+
+    // Don't serialize start_time_ or running_, these are only used
+    // when timer is running.
+    s | accumulation_
+      | accumulationSquared_
+      | count_started_
+      | count_updates_;
+
+    if (s.isUnpacking()) {
+      running_ = false;
+    }
+  }
+#endif
 
   /// Start a currently stopped timer
   void start(){
@@ -180,6 +213,12 @@ public:
   struct TimeInfo {
     TimeInfo():time(0.0), stdDev(0.0), count(0), updates(0), running(false){}
     TimeInfo(BaseTimer* t): time(t->accumulation_), stdDev(t->timePerCallStdDev()), count(t->count_started_), updates(t->count_updates_), running(t->running()) {}
+    bool operator ==(const TimeInfo& ti)
+    {return (time == ti.time) &&
+            (stdDev == ti.stdDev) &&
+            (count == ti.count) &&
+            (updates == ti.updates) &&
+            (running == ti.running);}
     double time;
     double stdDev;
     unsigned long count;
@@ -258,7 +297,6 @@ protected:
     {
       if ( start_timer )
         BaseTimer::start();
-
     }
 
     /// Copy constructor
@@ -268,6 +306,37 @@ protected:
       for (unsigned i=0;i<sub_timers_.size();++i)
         sub_timers_[i].parent_ = this;
     }
+
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+    /// For serialization only
+    LevelTimer(magistrate::SERIALIZE_CONSTRUCT_TAG) : parent_(nullptr) {}
+
+    // For serialization
+    magistrate_virtual_serialize_derived_from(Teuchos::BaseTimer)
+
+    /// For checkpointing with magistrate
+    template<typename Serializer>
+    void serialize(Serializer& s) {
+
+      s | level_;
+      s | name_;
+
+      // Manually handle the sub timers vector. The parent pointer
+      // needs to be registered before the object is constructed.
+      size_t sub_timer_size = sub_timers_.size();
+      s | sub_timer_size;
+
+      if (s.isUnpacking()) {
+        sub_timers_.resize(sub_timer_size);
+        for (auto& child : sub_timers_) {
+          child.parent_ = this;
+        }
+      }
+      for (size_t i=0; i < sub_timers_.size(); ++i) {
+        s | sub_timers_[i];
+      }
+    }
+#endif
 
     /**
      * Start a sub timer of a given name, create if doesn't exist
@@ -487,6 +556,26 @@ public:
       verbose_timestamp_levels_ = std::atoi(check_timestamp);
     }
   }
+
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+  explicit StackedTimer(magistrate::SERIALIZE_CONSTRUCT_TAG) {}
+
+  template<typename Serializer>
+  void serialize(Serializer& s) {
+    s | timer_;
+    s | enable_verbose_;
+    s | verbose_timestamp_levels_;
+    s | enable_timers_;
+
+    if (s.isUnpacking()) {
+      // Timer is always stopped before serializing
+      top_ = &timer_;
+      // Can't serialize an ostream pointer so just set to std::cout
+      verbose_ostream_ = Teuchos::rcpFromRef(std::cout);
+      global_mpi_aggregation_called_ = false;
+    }
+  }
+#endif
 
   std::string name() {
     return timer_.get_full_name();

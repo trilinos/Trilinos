@@ -14,12 +14,18 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StackedTimer.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "TeuchosComm_config.h"
 #include <sstream>
 #include <thread> // std::this_thread::sleep_for;
 #include <tuple>
 #include <regex>
 #include <iterator>
 #include <limits>
+#include <map>
+
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+#include <checkpoint/checkpoint.h>
+#endif
 
 #if defined(HAVE_TEUCHOS_KOKKOS_PROFILING) && defined(HAVE_TEUCHOSCORE_KOKKOS)
 #include "Kokkos_Core.hpp"
@@ -725,3 +731,139 @@ TEUCHOS_UNIT_TEST(StackedTimer, DisableTimers)
   TEST_THROW(timer.findTimer("My New Timer@Total Time@Solve"),std::runtime_error);
   TEST_THROW(timer.findTimer("My New Timer@Total Time@Solve@Prec"),std::runtime_error);
 }
+
+TEUCHOS_UNIT_TEST(StackedTimer, TimeInfoComparison)
+{
+  using TI = Teuchos::BaseTimer::TimeInfo;
+  TI t1, t2;
+  t1.time = 10.0; t1.stdDev=1.0; t1.count=3; t1.updates=2; t1.running=true;
+  t2.time = 10.0; t2.stdDev=1.0; t2.count=3; t2.updates=2; t2.running=true;
+  TEST_ASSERT(t1 == t2);
+
+  // Change one param at a time in TimeInfo to make sure a difference
+  // in any one triggers false
+  TI t3; t3.time = 1.0; t3.stdDev=1.0; t3.count=3; t3.updates=2; t3.running=true;
+  TEST_ASSERT(t1 != t3);
+  TI t4; t4.time = 10.0; t4.stdDev=0.5; t4.count=3; t4.updates=2; t4.running=true;
+  TEST_ASSERT(t1 != t4);
+  TI t5; t5.time = 10.0; t5.stdDev=1.0; t5.count=2; t5.updates=2; t5.running=true;
+  TEST_ASSERT(t1 != t5);
+  TI t6; t6.time = 10.0; t6.stdDev=1.0; t6.count=3; t6.updates=1; t6.running=true;
+  TEST_ASSERT(t1 != t6);
+  TI t7; t7.time = 10.0; t7.stdDev=1.0; t7.count=3; t7.updates=2; t7.running=false;
+  TEST_ASSERT(t1 != t7);
+}
+
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+TEUCHOS_UNIT_TEST(StackedTimer, MagistrateCheckpointBaseTimer)
+{
+  Teuchos::BaseTimer t;
+
+  // Timer needs to be stopped for checkpointing
+  t.start();
+  TEST_ASSERT(t.running());
+  TEST_THROW(magistrate::serialize(t),std::logic_error);
+  t.stop();
+  TEST_ASSERT(!t.running());
+
+  const double time = 2.0;
+  t.setAccumulatedTime(time);
+  t.setAccumulatedTimeSquared(time*time);
+  t.overrideNumCallsForUnitTesting(6);
+  t.overrideNumUpdatesForUnitTesting(6);
+
+  const double accumulated_time = t.accumulatedTime();
+  const double time_per_call_std_dev = t.timePerCallStdDev();
+  const auto num_calls = t.numCalls();
+  const auto num_updates = t.numUpdates();
+
+  auto buffer = magistrate::serialize(t);
+
+  auto d_timer = magistrate::deserialize<Teuchos::BaseTimer>(buffer->getBuffer());
+
+  const double tol = 10.0*std::numeric_limits<double>::epsilon();
+  TEST_FLOATING_EQUALITY(d_timer->accumulatedTime(),accumulated_time,tol);
+  TEST_FLOATING_EQUALITY(d_timer->timePerCallStdDev(),time_per_call_std_dev,tol);
+  TEST_EQUALITY(d_timer->numCalls(),num_calls);
+  TEST_EQUALITY(d_timer->numUpdates(),num_updates);
+}
+
+TEUCHOS_UNIT_TEST(StackedTimer, MagistrateCheckpointStackedTimer)
+{
+  std::map<std::string,Teuchos::BaseTimer::TimeInfo> time_info;
+  {
+    Teuchos::StackedTimer timer("Total Time");
+    for (int i=0; i < 10; ++i) {
+      timer.start("Assembly");
+      timer.start("Residual");
+      timer.stop("Residual");
+      timer.start("Jacobian");
+      timer.stop("Jacobian");
+      timer.stop("Assembly");
+    }
+    timer.stopBaseTimer();
+
+    auto total = const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("Total Time"));
+    total->setAccumulatedTime(10.0);
+    auto assembly = const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("Total Time@Assembly"));
+    assembly->setAccumulatedTime(5.0);
+    auto residual = const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("Total Time@Assembly@Residual"));
+    residual->setAccumulatedTime(2.0);
+    auto jacobian = const_cast<Teuchos::BaseTimer*>(timer.findBaseTimer("Total Time@Assembly@Jacobian"));
+    jacobian->setAccumulatedTime(2.9);
+
+    time_info["Total Time"] = timer.findTimer("Total Time");
+    time_info["Assembly"] = timer.findTimer("Total Time@Assembly");
+    time_info["Residual"] = timer.findTimer("Total Time@Assembly@Residual");
+    time_info["Jacobian"] = timer.findTimer("Total Time@Assembly@Jacobian");
+
+    std::cout << "\nTimer Before Serialization:\n" << std::endl;
+    timer.report(std::cout);
+
+    magistrate::serializeToFile(timer, "magistrate_stacked_timer.txt");
+  }
+
+  auto timer = magistrate::deserializeFromFile<Teuchos::StackedTimer>("magistrate_stacked_timer.txt");
+
+  std::cout << "\nTimer After Serialization:\n" << std::endl;
+  timer->report(std::cout);
+
+  TEST_EQUALITY((timer->findTimer("Total Time")).count, 1);
+  TEST_EQUALITY((timer->findTimer("Total Time@Assembly")).count, 10);
+
+  const double tol = 10.0*std::numeric_limits<double>::epsilon();
+  TEST_FLOATING_EQUALITY(timer->findTimer("Total Time@Assembly").time,time_info["Assembly"].time,tol);
+  TEST_EQUALITY(timer->findTimer("Total Time@Assembly").count,time_info["Assembly"].count);
+  TEST_EQUALITY(timer->findTimer("Total Time@Assembly").updates,time_info["Assembly"].updates);
+  TEST_FLOATING_EQUALITY(timer->findTimer("Total Time@Assembly").stdDev,time_info["Assembly"].stdDev,tol);
+  TEST_EQUALITY(timer->findTimer("Total Time@Assembly").running,time_info["Assembly"].running);
+
+  TEST_ASSERT(time_info["Total Time"] == timer->findTimer("Total Time"));
+  TEST_ASSERT(time_info["Assembly"] == timer->findTimer("Total Time@Assembly"));
+  TEST_ASSERT(time_info["Residual"] == timer->findTimer("Total Time@Assembly@Residual"));
+  TEST_ASSERT(time_info["Jacobian"] == timer->findTimer("Total Time@Assembly@Jacobian"));
+
+  // Sanity check
+  TEST_ASSERT(time_info["Total Time"] != timer->findTimer("Total Time@Assembly"));
+
+  // Let's make sure we can use the timer
+  timer->startBaseTimer();
+  for (int i=0; i < 10; ++i) {
+    timer->start("Assembly");
+    timer->start("Residual");
+    timer->stop("Residual");
+    timer->start("Jacobian");
+    timer->stop("Jacobian");
+    timer->stop("Assembly");
+  }
+  timer->stopBaseTimer();
+
+  timer->report(std::cout);
+
+  TEST_ASSERT(timer->findTimer("Total Time").count == 2);
+  TEST_ASSERT(timer->findTimer("Total Time@Assembly").count == 20);
+  TEST_ASSERT(timer->findTimer("Total Time@Assembly@Residual").count == 20);
+  TEST_ASSERT(timer->findTimer("Total Time@Assembly@Jacobian").count == 20);
+}
+
+#endif // HAVE_TEUCHOSCOMM_MAGISTRATE
