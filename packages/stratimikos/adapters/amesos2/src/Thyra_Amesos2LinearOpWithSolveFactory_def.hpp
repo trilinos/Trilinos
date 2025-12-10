@@ -411,7 +411,8 @@ Amesos2LinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
     validParamList->set(ThrowOnPreconditionerInput_name,bool(true));
     Teuchos::setupVerboseObjectSublist(&*validParamList);
 
-    // empty Amesos2_Settings parameter list (not validated)
+    // empty Amesos2_Settings parameter list 
+    // (Stratimikos won't validate, but Amesos2 will when a user actually try to set parameters)
     RCP<Teuchos::ParameterList> amesos2Params = rcp(new ParameterList("Amesos2"));
     validParamList->sublist(Amesos2_Settings_name).setParameters(*amesos2Params);
   }
