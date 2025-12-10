@@ -219,9 +219,13 @@ Fri Aug 15 16:29:47 EDT 1997
 #include <cstring>
 #include <cmath>
 #include <cstdlib>
-using std::free;
-using std::malloc;
-using std::size_t;
+#include <cctype>
+
+namespace Tpetra::HB {
+
+using ::std::free;
+using ::std::malloc;
+using ::std::size_t;
 
 char* substr(const char* S, const int pos, const int len);
 void upcase(char* S);
@@ -1642,16 +1646,17 @@ char* substr(const char* S, const int pos, const int len) {
   return SubS;
 }
 
-#include <cctype>
 void upcase(char* S) {
   /*  Convert S to uppercase     */
   int i, len;
-  len = std::strlen(S);
+  len = ::std::strlen(S);
   for (i = 0; i < len; i++)
-    S[i] = std::toupper(S[i]);
+    S[i] = ::std::toupper(S[i]);
 }
 
 void IOHBTerminate(const char* message) {
-  std::fprintf(stderr, "%s", message);
-  std::exit(1);
+  ::std::fprintf(stderr, "%s", message);
+  ::std::exit(1);
 }
+
+}  // namespace Tpetra::HB

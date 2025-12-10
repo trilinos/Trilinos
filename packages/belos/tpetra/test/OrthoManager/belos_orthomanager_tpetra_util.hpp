@@ -123,9 +123,9 @@ namespace Belos {
               // format) from the file into the tuple (loadedNumRows, numCols, nnz,
               // colptr, rowind, dvals).  The routine allocates memory for
               // colptr, rowind, and dvals using malloc().
-              info = readHB_newmat_double (filename.c_str(), &loadedNumRows,
-                                           &numCols, &nnz, &colptr, &rowind,
-                                           &dvals);
+              info = Tpetra::HB::readHB_newmat_double (filename.c_str(), &loadedNumRows,
+                                                       &numCols, &nnz, &colptr, &rowind,
+                                                       &dvals);
               // Make sure that loadedNumRows has a sensible value,
               // since we'll need to allocate an std::vector with that
               // many elements.

@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     int *colptr,*rowind;
     ST *cvals;
     nnz = -1;
-    info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
+    info = Tpetra::HB::readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
         &colptr,&rowind,&dvals);
     if (info == 0 || nnz < 0) {
       if (MyPID==0) {
