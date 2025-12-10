@@ -1502,6 +1502,11 @@ class basic_simd<std::int32_t, simd_abi::avx2_fixed_size<4>> {
       case 3: return _mm_extract_epi32(m_value, 0x3);
       default: Kokkos::abort("Index out of bound"); break;
     }
+// missing return statement warning with cuda >= 12.9
+#if defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC >= 1290) && \
+    defined(KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK)
+    return value_type{};
+#endif
   }
 
   KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION friend basic_simd operator+(
@@ -1942,6 +1947,10 @@ class basic_simd<std::int64_t, simd_abi::avx2_fixed_size<4>> {
       case 3: return _mm256_extract_epi64(m_value, 0x3);
       default: Kokkos::abort("Index out of bound"); break;
     }
+#if defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC >= 1290) && \
+    defined(KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK)
+    return value_type{};
+#endif
   }
 
   KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION constexpr explicit operator __m256i()
@@ -2175,6 +2184,10 @@ class basic_simd<std::uint64_t, simd_abi::avx2_fixed_size<4>> {
       case 3: return _mm256_extract_epi64(m_value, 0x3);
       default: Kokkos::abort("Index out of bound"); break;
     }
+#if defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC >= 1290) && \
+    defined(KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK)
+    return value_type{};
+#endif
   }
 
   KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION constexpr explicit operator __m256i()
