@@ -721,12 +721,12 @@ void compute_field_dot(const stk::mesh::BulkData& mesh,
     for (unsigned i = 0; i < num_components; ++i)
     {
       DataType multVal = ngpXField.get(entity, i) * ngpYField.get(entity, i);
-      Kokkos::atomic_add(&typeView.d_view(0), multVal);
+      Kokkos::atomic_add(&typeView.view_device()(0), multVal);
     }
   });
 
   typeView.sync_host();
-  returnVal = typeView.h_view(0);
+  returnVal = typeView.view_host()(0);
 
 }
 

@@ -524,7 +524,10 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
 #ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
   typedef typename block_vector_type::array_type array_type;
 #else
-  typedef Stokhos::scalar_view_t<block_vector_type> array_type;
+  // Workaround for NVCC 12.x with x<6 issue. See: https://github.com/kokkos/kokkos/issues/8718
+  // typedef Stokhos::scalar_view_t<block_vector_type> array_type;
+  auto xs = reinterpret_as_unmanaged_scalar_view(x);
+  using array_type = decltype(xs);
 #endif
 
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
@@ -534,7 +537,7 @@ bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
   array_type ay_expected =
     RankTypeSelector<array_type, ordinal_type, array_type::traits::rank_dynamic>::create_view("ay_expected", fem_length, stoch_length);
 #endif
-  typename array_type::host_mirror_type hay_expected =
+  auto hay_expected =
     Kokkos::create_mirror_view(ay_expected);
   for (ordinal_type iRowFEM=0, iEntryFEM=0; iRowFEM<fem_length; ++iRowFEM) {
     const ordinal_type row_size = fem_graph[iRowFEM].size();

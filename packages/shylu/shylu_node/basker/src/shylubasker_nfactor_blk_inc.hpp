@@ -16,10 +16,8 @@
 #include "shylubasker_types.hpp"
 #include "shylubasker_stats.hpp"
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#endif 
 
 namespace BaskerNS
 {
@@ -27,11 +25,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_nfactor_domain_inc_lvl
   {
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                        execution_space;
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
     typedef typename TeamPolicy::member_type TeamMember;
-    #endif
 
     Basker<Int,Entry,Exe_Space> *basker;
 
@@ -42,19 +38,9 @@ namespace BaskerNS
     { basker = _basker;}
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const
-    #endif
     {
-      #ifdef BASKER_KOKKOS
-      //Int kid = (Int)(thread.league_rank()*thread.team_size()+
-      //	      thread.team_rank());
       Int kid = basker->t_get_kid(thread);
-      #endif
-
-
       #ifdef BASKER_DEBUG_NFACTOR_BLK
       printf("\n-----------BLK---Kid: %d -------------\n",
 	     kid);
@@ -71,11 +57,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_nfactor_domain_remalloc_inc_lvl
   {
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                        execution_space;
     typedef Kokkos::TeamPolicy<Exe_Space>    TeamPolicy;
     typedef typename TeamPolicy::member_type TeamMember;
-    #endif
 
     Basker<Int,Entry,Exe_Space> *basker;
     INT_1DARRAY                 thread_start;
@@ -94,19 +78,9 @@ namespace BaskerNS
     }
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const
-    #endif
     {
-      #ifdef BASKER_KOKKOS
-      //Int kid = (Int)(thread.league_rank()*thread.team_size()+
-      //	      thread.team_rank());
       Int kid = basker->t_get_kid(thread);
-      #endif
-
-
       if(thread_start(kid) != BASKER_MAX_IDX)
 	{
 

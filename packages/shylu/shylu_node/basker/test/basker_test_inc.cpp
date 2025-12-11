@@ -15,11 +15,7 @@
 #include "shylubasker_decl.hpp"
 #include "shylubasker_def.hpp"
  
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
-#else
-#include <omp.h>
-#endif
 
 using namespace std;
 
@@ -34,12 +30,8 @@ int main(int argc, char* argv[])
   //typedef int Int;
   using Int   = long;
   using Entry = double;
-  #ifdef BASKER_KOKKOS
   using Exe_Space = Kokkos::DefaultHostExecutionSpace;
-  #else
-  using Exe_Space = void*;
-  #endif
-    
+
   cout << "basker_test: filename, nthreads should be passed as command line args" << endl; 
 
   std::string fname = std::string(argv[1]);
@@ -49,21 +41,11 @@ int main(int argc, char* argv[])
   //std::string fname = "matrix1.mtx";
  
   cout << "basker_test: using " << nthreads << "threads" << endl;
-  #ifdef BASKER_KOKKOS
   Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(nthreads));
-  cout << "---------------USING KOKKOS-------------" << endl;
-  #else
-  //omp_set_num_threads(nthreads);
-  cout << "-------------- USING OMP---------------" << endl;
-  #endif
-
   {
-  #ifdef BASKER_KOKKOS
   cout << "hwloc aval: " << Kokkos::hwloc::available()<<endl;
   cout << "numa count: " << Kokkos::hwloc::get_available_numa_count() << endl;
   cout << "thrd numa:  " << Kokkos::hwloc::get_available_cores_per_numa() << endl;
-  #endif
-
 
   //Read in MTX
   //Note: Adapted from Siva's original bsk_util
@@ -266,8 +248,5 @@ int main(int argc, char* argv[])
   //Kokkos::fence();
 
   }
-  //#ifdef BASKER_KOKKOS
   Kokkos::finalize();
-  //#endif
-
 }

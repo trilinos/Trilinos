@@ -1460,8 +1460,6 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   typedef GlobalOrdinal GO;
   const char tfecfFuncName[] = "insertIndices: ";
 
-  Details::ProfilingRegion regionII("Tpetra::CrsGraph::insertIndices");
-
   size_t oldNumEnt = 0;
   if (debug_) {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(lg != GlobalIndices && lg != LocalIndices, std::invalid_argument,
@@ -1572,8 +1570,6 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   using LO = LocalOrdinal;
   using GO = GlobalOrdinal;
 
-  Details::ProfilingRegion regionIGII("Tpetra::CrsGraph::insertGlobalIndicesImpl");
-
   const char tfecfFuncName[] = "insertGlobalIndicesImpl: ";
   const LO lclRow            = static_cast<LO>(rowInfo.localRow);
 
@@ -1638,8 +1634,6 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   using Kokkos::View;
   using LO = LocalOrdinal;
 
-  Details::ProfilingRegion regionILII("Tpetra::CrsGraph::insertLocallIndicesImpl");
-
   const char tfecfFuncName[] = "insertLocallIndicesImpl: ";
 
   const RowInfo rowInfo = this->getRowInfo(myRow);
@@ -1699,8 +1693,6 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   using GO = GlobalOrdinal;
   using Kokkos::MemoryUnmanaged;
   using Kokkos::View;
-
-  Details::ProfilingRegion regionFGI("Tpetra::CrsGraph::findGlobalIndices");
 
   auto invalidCount = Teuchos::OrdinalTraits<size_t>::invalid();
 
@@ -2165,8 +2157,6 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
                      size_t& numEntries) const {
   using Teuchos::ArrayView;
   const char tfecfFuncName[] = "getGlobalRowCopy: ";
-
-  Details::ProfilingRegion regionGGRC("Tpetra::CrsGraph::getGlobalRowCopy");
 
   // This does the right thing (reports an empty row) if the input
   // row is invalid.
@@ -7172,15 +7162,11 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::insertGlobalIndicesDevice(
   using LO             = LocalOrdinal;
   using GO             = GlobalOrdinal;
   typedef typename crs_graph_type::global_inds_device_view_type::non_const_value_type global_inds_device_value_t;
-  typedef typename crs_graph_type::local_graph_device_type k_local_graph_device_type;
   typedef typename Node::execution_space exec_space;
   typedef Kokkos::RangePolicy<exec_space, LO> range_type;
 
   const LocalOrdinal LINV  = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
   const GlobalOrdinal GINV = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
-
-  const k_local_graph_device_type& srcGraphDevice = srcCrsGraph.getLocalGraphDevice();
-  const k_local_graph_device_type& tgtGraphDevice = tgtCrsGraph.getLocalGraphDevice();
 
   using local_map_type          = typename crs_graph_type::map_type::local_map_type;
   local_map_type srcRowMapLocal = srcCrsGraph.getRowMap()->getLocalMap();

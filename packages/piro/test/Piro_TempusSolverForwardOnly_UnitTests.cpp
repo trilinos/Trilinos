@@ -21,15 +21,9 @@
 #include "Piro_Test_WeakenedModelEvaluator.hpp"
 #include "Piro_Test_MockObserver.hpp"
 
-#ifdef TEST_USE_EPETRA
-  #include "Thyra_EpetraModelEvaluator.hpp"
-  #include "MockModelEval_A.hpp"
-  #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
-#else 
-  #include "MockModelEval_B_Tpetra.hpp"
-  #include "Piro_StratimikosUtils.hpp"
-  #include "Teuchos_YamlParameterListCoreHelpers.hpp"
-#endif
+#include "MockModelEval_B_Tpetra.hpp"
+#include "Piro_StratimikosUtils.hpp"
+#include "Teuchos_YamlParameterListCoreHelpers.hpp"
 
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 
@@ -54,27 +48,6 @@ namespace Thyra {
 
 // Setup support
 
-#ifdef TEST_USE_EPETRA
-const RCP<EpetraExt::ModelEvaluator> epetraModelNew()
-{
-#ifdef HAVE_MPI
-  const MPI_Comm comm = MPI_COMM_WORLD;
-#else /*HAVE_MPI*/
-  const int comm = 0;
-#endif /*HAVE_MPI*/
-  return rcp(new MockModelEval_A(comm));
-}
-const RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModelNew(const RCP<EpetraExt::ModelEvaluator> &epetraModel)
-{
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory(new Thyra::AmesosLinearOpWithSolveFactory);
-  return epetraModelEvaluator(epetraModel, lowsFactory);
-}
-
-RCP<Thyra::ModelEvaluatorDefaultBase<double> > defaultModelNew()
-{
-  return thyraModelNew(epetraModelNew());
-}
-#else
 RCP<Thyra::ModelEvaluatorDefaultBase<double> > defaultModelNew()
 {
   auto comm = Tpetra::getDefaultComm();
@@ -93,7 +66,6 @@ RCP<Thyra::ModelEvaluatorDefaultBase<double> > defaultModelNew()
 
   return rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(model, lowsFactory));
 }
-#endif
 
 const RCP<TempusSolverForwardOnly<double> > solverNew(
     const RCP<Thyra::ModelEvaluatorDefaultBase<double> > &thyraModel,

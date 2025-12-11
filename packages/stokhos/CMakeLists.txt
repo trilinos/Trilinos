@@ -50,7 +50,6 @@ IF(HAVE_STOKHOS_ENSEMBLE_GEMV)
 ENDIF()
 
 SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default OFF)
-SET(Stokhos_ENABLE_PCE_Scalar_Type_Default OFF)
 IF(Stokhos_ENABLE_Sacado)
   SET(Stokhos_ENABLE_Ensemble_Scalar_Type_Default ON)
 ENDIF()
@@ -60,14 +59,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(Stokhos_ENABLE_Ensemble_Scalar_Type
   "Enable use of the ensemble UQ scalar type in stokhos"
   ${Stokhos_ENABLE_Ensemble_Scalar_Type_Default} )
 
-TRIBITS_ADD_OPTION_AND_DEFINE(Stokhos_ENABLE_PCE_Scalar_Type
-  HAVE_STOKHOS_PCE_SCALAR_TYPE
-  "Enable use of the PCE UQ scalar type in stokhos"
-  ${Stokhos_ENABLE_PCE_Scalar_Type_Default}  )
-
 IF(Stokhos_ENABLE_PCE_Scalar_Type)
-  MESSAGE(WARNING "The PCE scalar type is deprecated in Stokhos and no longer tested or maintained. USE AT YOUR OWN RISK.")
+  MESSAGE(WARNING "The Kokkos-based PCE scalar type has been removed from Stokhos and can no longer be enabled.")
 ENDIF()
+SET(Stokhos_ENABLE_PCE_Scalar_Type OFF)
+SET(HAVE_STOKHOS_PCE_SCALAR_TYPE OFF)
 
 IF(Stokhos_ENABLE_Ensemble_Scalar_Type AND NOT Stokhos_ENABLE_Sacado)
   MESSAGE(FATAL_ERROR "Ensemble scalar type cannot be enabled unless Sacado is enabled!")

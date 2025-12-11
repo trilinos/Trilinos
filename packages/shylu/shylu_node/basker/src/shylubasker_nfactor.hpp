@@ -25,12 +25,8 @@
 #include "shylubasker_error_manager.hpp"
 
 /*Kokkos Includes*/
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#else
-#include <omp.h>
-#endif
 
 /*System Includes*/
 #include <iostream>
@@ -45,11 +41,9 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   struct kokkos_nfactor_funct
   {
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                         execution_space;
     typedef Kokkos::TeamPolicy<Exe_Space>     TeamPolicy;
     typedef typename TeamPolicy::member_type  TeamMember;
-    #endif 
     
     Basker<Int,Entry,Exe_Space> *basker;
     
@@ -60,14 +54,8 @@ namespace BaskerNS
     {basker = _basker;}
 
     BASKER_INLINE
-    #ifdef BASKER_KOKKOS
     void operator()(const TeamMember &thread) const
-    #else
-    void operator()(Int kid) const
-    #endif
-    {
-
-    }//end operator()
+    {}//end operator()
 
   };//end basker_nfactor_funct
 
@@ -95,11 +83,9 @@ namespace BaskerNS
     }
     //printf("Switch time: %f \n", tza.seconds());
 
-#ifdef BASKER_KOKKOS
-    Kokkos::Timer timer;
-
     // --------------------------------------------------------------- //
     // ----------------------- Big A block --------------------------- //
+    Kokkos::Timer timer;
     if(btf_tabs_offset != 0)
     {
       //Spit into Domain and Sep
@@ -174,13 +160,6 @@ namespace BaskerNS
         printf("Time DOMAIN: %lf \n\n", timer.seconds());
         timer.reset();
       }
-
-#else// else basker_kokkos
-      #pragma omp parallel
-      {
-
-      }//end omp parallel
-#endif //end basker_kokkos
       //printVec("domperm.csc", gpermi, A.nrow);
       //printf( " End Dom: info = %d (%d, %d)\n",info,BASKER_SUCCESS,BASKER_ERROR );
       //-------------------End--Domian--------------------------//
@@ -189,7 +168,6 @@ namespace BaskerNS
       // -------------------------------------------------------- //
       // ---------------------------Sep-------------------------- //
       if(info == BASKER_SUCCESS) {
-#ifdef BASKER_KOKKOS
         #ifdef BASKER_NO_LAMBDA
         for(Int l=1; l <= tree.nlvls; l++)
         {
@@ -266,13 +244,6 @@ namespace BaskerNS
         #else //ELSE BASKER_NO_LAMBDA
         //Note: to be added
         #endif //end BASKER_NO_LAMBDA
-#else
-
-        #pragma omp parallel
-        {
-
-        }//end omp parallel
-#endif
         //-------------------------End Sep----------------//
       }// info != BASKER_ERROR
       //printf( " End Sep: info = %d (%d, %d)\n",info,BASKER_SUCCESS,BASKER_ERROR );

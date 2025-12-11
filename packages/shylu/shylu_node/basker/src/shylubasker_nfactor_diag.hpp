@@ -17,10 +17,8 @@
 #include "shylubasker_stats.hpp"
 //#include "Teuchos_LAPACK.hpp"
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#endif 
 
 //#define BASKER_TIMER
 //#define BASKER_DEBUG_NFACTOR_DIAG

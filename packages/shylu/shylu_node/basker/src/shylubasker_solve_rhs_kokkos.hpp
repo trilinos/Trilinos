@@ -20,10 +20,8 @@
 #include "shylubasker_matrix_view_decl.hpp"
 #include "shylubasker_types.hpp"
 
-#ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
-#endif 
 
 #include <assert.h>
 
@@ -182,13 +180,10 @@ namespace Basker
   struct lower_solve_funct
   {
     //Kokkos Typedefs
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                                             execution_space ;
     typedef  Kokkos::TeamPolicy<Exe_Space>                        team_policy;
     typedef  typename team_policy::member_type                     team_member;
-    #endif
-    //Basker Typedefs
-      
+
     //Local Reference Variables
     MATRIX_2DARRAY L, U;
     ENTRY_2DARRAY X; //workspace
@@ -217,7 +212,6 @@ namespace Basker
       nlvls = _nlvls;
     }//end lower_solve_funct()
                       
-    //KOKKOS_INLINE_FUNCTION
     BASKER_INLINE
     void operator()(const team_member &thread) const
     {
@@ -269,12 +263,10 @@ namespace Basker
   struct upper_solve_funct
   {
     //Kokkos Typedefs
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                                             execution_space ;
     typedef  Kokkos::TeamPolicy<Exe_Space>                        team_policy;
     typedef  typename team_policy::member_type                     team_member;
-    #endif
-    
+
     //Local Reference Variables
     MATRIX_2DARRAY L, U;
     ENTRY_2DARRAY X; //workspace
@@ -303,7 +295,6 @@ namespace Basker
       nlvls = _nlvls;
     }//end upper_solve_funct()
                       
-    //KOKKOS_INLINE_FUNCTION
     BASKER_INLINE
     void operator()(const team_member &thread) const
     {
@@ -384,12 +375,9 @@ namespace Basker
   struct init_solve_funct
   {
     //Kokkos Typedefs
-    #ifdef BASKER_KOKKOS
     typedef Exe_Space                                             execution_space ;
     typedef  Kokkos::TeamPolicy<Exe_Space>                        team_policy;
     typedef  typename team_policy::member_type                    team_member;
-    #endif
-    //Basker Typedefs
 
     //Local Reference Variables
     MATRIX_2DARRAY U;
@@ -423,11 +411,9 @@ namespace Basker
       nlvls = _nlvls;
     }//end init_solve_funct
                       
-    //KOKKOS_INLINE_FUNCTION
     BASKER_INLINE
     void operator()(const team_member &thread) const
     {
-            //Kokkos stuff
       Int tid = (Int) Exe_Space::hardware_thread_id();
       Int kid = (Int) (thread.league_rank() * thread.team_size()) + thread.team_rank();
       Int team_leader = (Int)(thread.league_rank()*thread.team_size());

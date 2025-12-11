@@ -52,7 +52,10 @@ checkVectorView(const ViewType& v,
 #else
   typedef Stokhos::scalar_view_t<host_view_type> host_array_type;
 #endif
-  typedef typename host_array_type::value_type scalar_type;
+  // FIXME: workaround for CUDA <12.6 etc. issue with ranges
+  // I do not know why this typedef causes an issue in those compilers
+  // https://github.com/kokkos/kokkos/issues/8718
+  // typedef typename host_array_type::value_type scalar_type;
 
   // Copy to host
   host_view_type h_v = Kokkos::create_mirror_view(v);
@@ -63,6 +66,7 @@ checkVectorView(const ViewType& v,
   host_array_type h_a = Stokhos::reinterpret_as_unmanaged_scalar_view(h_v);
 #endif
 
+  using scalar_type = std::remove_reference_t<decltype(h_a(0,0))>;
   size_type num_rows, num_cols;
 
   // For static, layout left, sacado dimension becomes first dimension
@@ -508,7 +512,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Flatten, Storage, Layout )
 #else
   typedef typename Stokhos::scalar_flat_view_t<ViewType> flat_view_type;
 #endif
-  typedef typename flat_view_type::host_mirror_type host_flat_view_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;
@@ -520,7 +523,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Flatten, Storage, Layout )
 #else
   flat_view_type flat_v = Stokhos::reinterpret_as_unmanaged_scalar_flat_view(v);
 #endif
-  host_flat_view_type h_flat_v = Kokkos::create_mirror_view(flat_v);
+  auto h_flat_v = Kokkos::create_mirror_view(flat_v);
   for (size_type i=0; i<num_rows; ++i)
     for (size_type j=0; j<num_cols; ++j)
       h_flat_v(i*num_cols+j) = generate_vector_coefficient<Scalar>(

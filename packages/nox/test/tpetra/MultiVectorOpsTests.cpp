@@ -33,8 +33,19 @@ using nox_tpetra_vector_t = NOX::Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdi
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 using nox_tpetra_multivector_t = NOX::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
+#if KOKKOS_VERSION >= 40799
+template <typename Scalar>
+using magnitude_t = typename KokkosKernels::ArithTraits<Scalar>::magnitudeType;
+
+template <typename S>
+using arith_traits_ns = KokkosKernels::ArithTraits<S>;
+#else
 template <typename Scalar>
 using magnitude_t = typename Kokkos::ArithTraits<Scalar>::magnitudeType;
+
+template <typename S>
+using arith_traits_ns = Kokkos::ArithTraits<S>;
+#endif
 
 //! Function to check solution.
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -50,7 +61,7 @@ bool checkMultiVectors(
 
     TEUCHOS_TEST_EQUALITY(a->getNumVectors(), b->getNumVectors(), out, success);
 
-    b->update(-1 * Kokkos::ArithTraits<Scalar>::one(), *a, Kokkos::ArithTraits<Scalar>::one());
+    b->update(-1 * arith_traits_ns<Scalar>::one(), *a, arith_traits_ns<Scalar>::one());
     const Kokkos::View<magnitude_t<Scalar>*, Kokkos::HostSpace> norms_b("norms b after update", b->getNumVectors());
     b->norm2(norms_b);
     for (size_t idx = 0; idx < norms_b.extent(0); ++idx) {
@@ -105,7 +116,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, ConstructorFromRef, S, 
     const auto map = Teuchos::make_rcp<tpetra_map_t<LO, GO, N>>(numGlobalElements, numLocalElements, 0, comm);
     const auto x = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
 
-    x->putScalar(Kokkos::ArithTraits<S>::one());
+    x->putScalar(arith_traits_ns<S>::one());
 
     // Construct NOX multivector with copy of Tpetra multivector using the flag NOX::DeepCopy and check.
     const nox_tpetra_multivector_t<S, LO, GO, N> x_nox_deep_copy(*x, NOX::DeepCopy);
@@ -116,7 +127,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, ConstructorFromRef, S, 
     TEUCHOS_TEST_ASSERT( ! x_nox_deep_copy.getImplicitWeighting(), out, success);
 
     const Kokkos::View<magnitude_t<S>*, Kokkos::HostSpace> expt("expected norms", numCols);
-    Kokkos::deep_copy(expt, Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements));
+    Kokkos::deep_copy(expt, arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements));
     success = checkMultiVectors(x_nox_deep_copy.getTpetraMultiVector(), x, expt, out, success);
 
     // Construct NOX vector with copy of Tpetra vector using the flag NOX::ShapeCopy and check.
@@ -136,7 +147,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, CopyConstructor, S, LO,
     const auto map = Teuchos::make_rcp<tpetra_map_t<LO, GO, N>>(numGlobalElements, numLocalElements, 0, comm);
     const auto x = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
 
-    x->putScalar(Kokkos::ArithTraits<S>::one());
+    x->putScalar(arith_traits_ns<S>::one());
 
     // Construct NOX vector that wraps the Tpetra multivector.
     const nox_tpetra_multivector_t<S, LO, GO, N> x_nox(x);
@@ -152,7 +163,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, CopyConstructor, S, LO,
     TEUCHOS_TEST_ASSERT( ! x_nox_deep_copy.getImplicitWeighting(), out, success);
 
     const Kokkos::View<magnitude_t<S>*, Kokkos::HostSpace> expt("expected norms", numCols);
-    Kokkos::deep_copy(expt, Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements));
+    Kokkos::deep_copy(expt, arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements));
     success = checkMultiVectors(x_nox_deep_copy.getTpetraMultiVector(), x, expt, out, success);
 
     // Copy construct NOX multivector using the flag NOX::ShapeCopy and check.
@@ -187,8 +198,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, CopyAssignment, S, LO, 
     const auto x = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
     const auto y = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
 
-    x->putScalar(Kokkos::ArithTraits<S>::one());
-    y->putScalar(Kokkos::ArithTraits<S>::zero());
+    x->putScalar(arith_traits_ns<S>::one());
+    y->putScalar(arith_traits_ns<S>::zero());
 
     // Copy x into y through NOX interface.
     const nox_tpetra_multivector_t<S, LO, GO, N> x_nox(x);
@@ -198,7 +209,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, CopyAssignment, S, LO, 
 
     // Check for correct answer.
     const Kokkos::View<magnitude_t<S>*, Kokkos::HostSpace> expt("expected norms", numCols);
-    Kokkos::deep_copy(expt, Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements));
+    Kokkos::deep_copy(expt, arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements));
     success = checkMultiVectors(y_nox.getTpetraMultiVector(), x_nox.getTpetraMultiVector(), expt, out, success);
 }
 
@@ -213,15 +224,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Init, S, LO, GO, N)
     const auto y = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
 
     // Perform operation with Tpetra directly.
-    x->putScalar(2 * Kokkos::ArithTraits<S>::one());
+    x->putScalar(2 * arith_traits_ns<S>::one());
 
     // Perform this operation through NOX interface.
     nox_tpetra_multivector_t<S, LO, GO, N> y_nox(y);
-    y_nox.init(2 * Kokkos::ArithTraits<S>::one());
+    y_nox.init(2 * arith_traits_ns<S>::one());
 
     // Check for correct answer.
     const Kokkos::View<magnitude_t<S>*, Kokkos::HostSpace> expt("expected norms", numCols);
-    Kokkos::deep_copy(expt, Kokkos::ArithTraits<magnitude_t<S>>::squareroot(4 * numGlobalElements));
+    Kokkos::deep_copy(expt, arith_traits_ns<magnitude_t<S>>::squareroot(4 * numGlobalElements));
     success = checkMultiVectors(x, y, expt, out, success);
 }
 
@@ -256,18 +267,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Scale, S, LO, GO, N)
     const auto x = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
     const auto y = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
 
-    x->putScalar(Kokkos::ArithTraits<S>::one());
-    y->putScalar(Kokkos::ArithTraits<S>::one());
+    x->putScalar(arith_traits_ns<S>::one());
+    y->putScalar(arith_traits_ns<S>::one());
 
     // Perform operation with Tpetra directly.
-    x->scale(2 * Kokkos::ArithTraits<S>::one());
+    x->scale(2 * arith_traits_ns<S>::one());
 
     // Perform this operation through NOX interface and check.
     nox_tpetra_multivector_t<S, LO, GO, N> y_nox(y);
-    y_nox.scale(2 * Kokkos::ArithTraits<S>::one());
+    y_nox.scale(2 * arith_traits_ns<S>::one());
 
     const Kokkos::View<magnitude_t<S>*, Kokkos::HostSpace> expt("expected norms", numCols);
-    Kokkos::deep_copy(expt, Kokkos::ArithTraits<magnitude_t<S>>::squareroot(4 * numGlobalElements));
+    Kokkos::deep_copy(expt, arith_traits_ns<magnitude_t<S>>::squareroot(4 * numGlobalElements));
     success = checkMultiVectors(x, y, expt, out, success);
 }
 
@@ -282,21 +293,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Update_1, S, LO, GO, N)
     const auto y = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
     const auto z = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
 
-    x->putScalar(Kokkos::ArithTraits<S>::one());
-    y->putScalar(Kokkos::ArithTraits<S>::one());
-    z->putScalar(Kokkos::ArithTraits<S>::one());
+    x->putScalar(arith_traits_ns<S>::one());
+    y->putScalar(arith_traits_ns<S>::one());
+    z->putScalar(arith_traits_ns<S>::one());
 
     // Perform operation with Tpetra directly.
-    x->update(2 * Kokkos::ArithTraits<S>::one(), *z, Kokkos::ArithTraits<S>::one());
+    x->update(2 * arith_traits_ns<S>::one(), *z, arith_traits_ns<S>::one());
 
     // Perform this operation through NOX interface and check.
           nox_tpetra_multivector_t<S, LO, GO, N> y_nox(y);
     const nox_tpetra_multivector_t<S, LO, GO, N> z_nox(z);
 
-    y_nox.update(2 * Kokkos::ArithTraits<S>::one(), z_nox, Kokkos::ArithTraits<S>::one());
+    y_nox.update(2 * arith_traits_ns<S>::one(), z_nox, arith_traits_ns<S>::one());
 
     const Kokkos::View<magnitude_t<S>*, Kokkos::HostSpace> expt("expected norms", numCols);
-    Kokkos::deep_copy(expt, Kokkos::ArithTraits<magnitude_t<S>>::squareroot(9 * numGlobalElements));
+    Kokkos::deep_copy(expt, arith_traits_ns<magnitude_t<S>>::squareroot(9 * numGlobalElements));
     success = checkMultiVectors(x, y, expt, out, success);
 }
 
@@ -312,23 +323,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Update_2, S, LO, GO, N)
     const auto y = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
     const auto z = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
 
-    w->putScalar(Kokkos::ArithTraits<S>::one());
-    x->putScalar(Kokkos::ArithTraits<S>::one());
-    y->putScalar(Kokkos::ArithTraits<S>::one());
-    z->putScalar(Kokkos::ArithTraits<S>::one());
+    w->putScalar(arith_traits_ns<S>::one());
+    x->putScalar(arith_traits_ns<S>::one());
+    y->putScalar(arith_traits_ns<S>::one());
+    z->putScalar(arith_traits_ns<S>::one());
 
     // Perform operation with Tpetra directly.
-    x->update(2 * Kokkos::ArithTraits<S>::one(), *w, 2 * Kokkos::ArithTraits<S>::one(), *z, Kokkos::ArithTraits<S>::one());
+    x->update(2 * arith_traits_ns<S>::one(), *w, 2 * arith_traits_ns<S>::one(), *z, arith_traits_ns<S>::one());
 
     // Perform this operation through NOX interface and check.
     const nox_tpetra_multivector_t<S, LO, GO, N> w_nox(w);
           nox_tpetra_multivector_t<S, LO, GO, N> y_nox(y);
     const nox_tpetra_multivector_t<S, LO, GO, N> z_nox(z);
 
-    y_nox.update(2 * Kokkos::ArithTraits<S>::one(), w_nox, 2 * Kokkos::ArithTraits<S>::one(), z_nox, Kokkos::ArithTraits<S>::one());
+    y_nox.update(2 * arith_traits_ns<S>::one(), w_nox, 2 * arith_traits_ns<S>::one(), z_nox, arith_traits_ns<S>::one());
 
     const Kokkos::View<magnitude_t<S>*, Kokkos::HostSpace> expt("expected norms", numCols);
-    Kokkos::deep_copy(expt, Kokkos::ArithTraits<magnitude_t<S>>::squareroot(25 * numGlobalElements));
+    Kokkos::deep_copy(expt, arith_traits_ns<magnitude_t<S>>::squareroot(25 * numGlobalElements));
     success = checkMultiVectors(x, y, expt, out, success);
 }
 
@@ -345,9 +356,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Update_3, S, LO, GO, N)
     const auto y = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map,      numCols);
     const auto z = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, otherNumCols);
 
-    x->putScalar(Kokkos::ArithTraits<S>::one());
-    y->putScalar(Kokkos::ArithTraits<S>::one());
-    z->putScalar(Kokkos::ArithTraits<S>::one());
+    x->putScalar(arith_traits_ns<S>::one());
+    y->putScalar(arith_traits_ns<S>::one());
+    z->putScalar(arith_traits_ns<S>::one());
 
     // Create matrix for the update.
     NOX::Abstract::MultiVector::DenseMatrix mat(otherNumCols, numCols);
@@ -363,25 +374,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Update_3, S, LO, GO, N)
     const Teuchos::ArrayView<double> mat_as_array_view(mat.values(), otherNumCols * numCols);
     const auto mat_as_mv = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(localMap, mat_as_array_view, otherNumCols, numCols);
 
-    x->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, Kokkos::ArithTraits<S>::one(), *z, *mat_as_mv, Kokkos::ArithTraits<S>::one());
+    x->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, arith_traits_ns<S>::one(), *z, *mat_as_mv, arith_traits_ns<S>::one());
 
     // Perform this operation through NOX interface and check.
           nox_tpetra_multivector_t<S, LO, GO, N> y_nox(y);
     const nox_tpetra_multivector_t<S, LO, GO, N> z_nox(z);
 
-    y_nox.update(Teuchos::NO_TRANS, Kokkos::ArithTraits<S>::one(), z_nox, mat, Kokkos::ArithTraits<S>::one());
+    y_nox.update(Teuchos::NO_TRANS, arith_traits_ns<S>::one(), z_nox, mat, arith_traits_ns<S>::one());
 
     const Kokkos::View<magnitude_t<S>*, Kokkos::HostSpace> expt("expected norms", numCols);
     for (size_t idx = 0; idx < numCols; ++idx) {
-        expt(idx) = (1 + 5 * idx) * Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements);
+        expt(idx) = (1 + 5 * idx) * arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements);
     }
     success = checkMultiVectors(x, y, expt, out, success);
 
     // Perform this operation over again, this time using the transpose, and check.
     NOX::Abstract::MultiVector::DenseMatrix mat_transpose(mat, Teuchos::TRANS);
 
-    y->putScalar(Kokkos::ArithTraits<S>::one());
-    y_nox.update(Teuchos::TRANS, Kokkos::ArithTraits<S>::one(), z_nox, mat_transpose, Kokkos::ArithTraits<S>::one());
+    y->putScalar(arith_traits_ns<S>::one());
+    y_nox.update(Teuchos::TRANS, arith_traits_ns<S>::one(), z_nox, mat_transpose, arith_traits_ns<S>::one());
     success = checkMultiVectors(x, y, expt, out, success);
 }
 
@@ -398,7 +409,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, OneNorm, S, LO, GO, N)
     const auto map = Teuchos::make_rcp<tpetra_map_t<LO, GO, N>>(numGlobalElements, numLocalElements, 0, comm);
     const auto x = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
 
-    x->putScalar(Kokkos::ArithTraits<S>::one());
+    x->putScalar(arith_traits_ns<S>::one());
 
     // Perform operation with Tpetra directly.
     std::vector<magnitude_t<S>> expt(numCols);
@@ -425,7 +436,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, TwoNorm, S, LO, GO, N)
     const auto map = Teuchos::make_rcp<tpetra_map_t<LO, GO, N>>(numGlobalElements, numLocalElements, 0, comm);
     const auto x = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
 
-    x->putScalar(Kokkos::ArithTraits<S>::one());
+    x->putScalar(arith_traits_ns<S>::one());
 
     // Perform operation with Tpetra directly.
     std::vector<magnitude_t<S>> expt(numCols);
@@ -452,7 +463,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, MaxNorm, S, LO, GO, N)
     const auto map = Teuchos::make_rcp<tpetra_map_t<LO, GO, N>>(numGlobalElements, numLocalElements, 0, comm);
     const auto x = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols);
 
-    x->putScalar(Kokkos::ArithTraits<S>::one());
+    x->putScalar(arith_traits_ns<S>::one());
 
     // Perform operation with Tpetra directly.
     std::vector<magnitude_t<S>> expt(numCols);
@@ -482,9 +493,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, SetBlock, S, LO, GO, N)
     const auto y = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map,      numCols);
     const auto z = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, otherNumCols);
 
-    x->putScalar(    Kokkos::ArithTraits<S>::one());
-    y->putScalar(    Kokkos::ArithTraits<S>::one());
-    z->putScalar(2 * Kokkos::ArithTraits<S>::one());
+    x->putScalar(    arith_traits_ns<S>::one());
+    y->putScalar(    arith_traits_ns<S>::one());
+    z->putScalar(2 * arith_traits_ns<S>::one());
 
     // Perform operation with Tpetra directly.
     x->subViewNonConst(idxs_transformed)->assign(*z);
@@ -499,9 +510,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, SetBlock, S, LO, GO, N)
     for (size_t idx = 0; idx < numCols; ++idx)
     {
         if (idx == 2 || idx == 4) {
-            expt(idx) = 2 * Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements);
+            expt(idx) = 2 * arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements);
         } else {
-            expt(idx) = Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements);
+            expt(idx) = arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements);
         }
     }
     success = checkMultiVectors(x, y, expt, out, success);
@@ -522,9 +533,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Augment, S, LO, GO, N)
     const auto y = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map,      numCols);
     const auto z = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, otherNumCols);
 
-    x->putScalar(    Kokkos::ArithTraits<S>::one());
-    y->putScalar(    Kokkos::ArithTraits<S>::one());
-    z->putScalar(2 * Kokkos::ArithTraits<S>::one());
+    x->putScalar(    arith_traits_ns<S>::one());
+    y->putScalar(    arith_traits_ns<S>::one());
+    z->putScalar(2 * arith_traits_ns<S>::one());
 
     // Perform operation with Tpetra directly.
     const auto x_aug = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, numCols + otherNumCols);
@@ -540,9 +551,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Augment, S, LO, GO, N)
     for (size_t idx = 0; idx < numCols + otherNumCols; ++idx)
     {
         if (idx >= numCols) {
-            expt(idx) = 2 * Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements);
+            expt(idx) = 2 * arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements);
         } else {
-            expt(idx) = Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements);
+            expt(idx) = arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements);
         }
     }
 
@@ -573,8 +584,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, SubCopy, S, LO, GO, N)
     const auto x = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map,      numCols);
     const auto y = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, otherNumCols);
 
-    x->putScalar(Kokkos::ArithTraits<S>::one());
-    y->putScalar(Kokkos::ArithTraits<S>::one());
+    x->putScalar(arith_traits_ns<S>::one());
+    y->putScalar(arith_traits_ns<S>::one());
 
     // Perform this operation through NOX interface and check.
     const nox_tpetra_multivector_t<S, LO, GO, N> x_nox(x);
@@ -586,7 +597,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, SubCopy, S, LO, GO, N)
     TEUCHOS_TEST_EQUALITY(x_sub.strong_count(), 2, out, success);
 
     const Kokkos::View<magnitude_t<S>*, Kokkos::HostSpace> expt("expected norms", numCols);
-    Kokkos::deep_copy(expt, Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements));
+    Kokkos::deep_copy(expt, arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements));
     success = checkMultiVectors(x_sub, y, expt, out, success);
 }
 
@@ -606,9 +617,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, SubView, S, LO, GO, N)
     const auto y = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map,      numCols);
     const auto z = Teuchos::make_rcp<tpetra_multivector_t<S, LO, GO, N>>(map, otherNumCols);
 
-    x->putScalar(    Kokkos::ArithTraits<S>::one());
-    y->putScalar(    Kokkos::ArithTraits<S>::one());
-    z->putScalar(2 * Kokkos::ArithTraits<S>::one());
+    x->putScalar(    arith_traits_ns<S>::one());
+    y->putScalar(    arith_traits_ns<S>::one());
+    z->putScalar(2 * arith_traits_ns<S>::one());
 
     // Perform operation with Tpetra directly.
     x->subViewNonConst(idxs_transformed)->assign(*z);
@@ -616,15 +627,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, SubView, S, LO, GO, N)
     // Perform this operation through NOX interface and check.
     const nox_tpetra_multivector_t<S, LO, GO, N> y_nox(y);
 
-    y_nox.subView(idxs)->scale(2 * Kokkos::ArithTraits<S>::one());
+    y_nox.subView(idxs)->scale(2 * arith_traits_ns<S>::one());
 
     const Kokkos::View<magnitude_t<S>*, Kokkos::HostSpace> expt("expected norms", numCols);
     for (size_t idx = 0; idx < numCols; ++idx)
     {
         if (idx == 2 || idx == 4) {
-            expt(idx) = 2 * Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements);
+            expt(idx) = 2 * arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements);
         } else {
-            expt(idx) = Kokkos::ArithTraits<magnitude_t<S>>::squareroot(numGlobalElements);
+            expt(idx) = arith_traits_ns<magnitude_t<S>>::squareroot(numGlobalElements);
         }
     }
     success = checkMultiVectors(x, y, expt, out, success);
@@ -644,8 +655,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Multiply, S, LO, GO, N)
 
     for (size_t idx = 0; idx <numCols; ++idx)
     {
-        x->getVectorNonConst(idx)->putScalar(    idx * Kokkos::ArithTraits<S>::one());
-        y->getVectorNonConst(idx)->putScalar(2 * idx * Kokkos::ArithTraits<S>::one());
+        x->getVectorNonConst(idx)->putScalar(    idx * arith_traits_ns<S>::one());
+        y->getVectorNonConst(idx)->putScalar(2 * idx * arith_traits_ns<S>::one());
     }
 
     // Perform this operation through NOX interface.
@@ -653,7 +664,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Multiply, S, LO, GO, N)
     const nox_tpetra_multivector_t<S, LO, GO, N> y_nox(y);
 
     NOX::Abstract::MultiVector::DenseMatrix dots_nox(numCols, numCols);
-    x_nox.multiply(Kokkos::ArithTraits<S>::one(), y_nox, dots_nox);
+    x_nox.multiply(arith_traits_ns<S>::one(), y_nox, dots_nox);
 
     // Check for correct answer.
     for (size_t idx = 0; idx < numCols; ++idx)
@@ -662,7 +673,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MultiVectorOps, Multiply, S, LO, GO, N)
         {
             TEUCHOS_TEST_FLOATING_EQUALITY(
                 (dots_nox(idx, jdx)),
-                (2 * jdx * idx * Kokkos::ArithTraits<S>::one() * numGlobalElements),
+                (2 * jdx * idx * arith_traits_ns<S>::one() * numGlobalElements),
                 tol, out, success
             );
         }
