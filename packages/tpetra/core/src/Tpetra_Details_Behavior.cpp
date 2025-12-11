@@ -468,7 +468,7 @@ bool Behavior::overlapCommunicationAndComputation() {
 }
 
 std::string Behavior::defaultSendType() {
-  const std::string defaultValue("Send");
+  const std::string defaultValue("Persistent");
 
   static std::string value_ = defaultValue;
   static bool initialized_  = false;
