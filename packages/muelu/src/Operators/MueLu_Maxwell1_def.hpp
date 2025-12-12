@@ -885,7 +885,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #else
     using impl_ATS = Kokkos::ArithTraits<impl_scalar_type>;
 #endif
-    using magnitude_type = impl_ATS::magnitudeType;
+    using magnitude_type = typename impl_ATS::magnitudeType;
     using MinMax         = Kokkos::MinMax<magnitude_type>;
 
     typename MinMax::value_type result;
