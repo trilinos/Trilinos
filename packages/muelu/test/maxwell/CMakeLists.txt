@@ -50,11 +50,11 @@ IF(${PACKAGE_NAME}_ENABLE_Belos)
     TRIBITS_ADD_TEST(
       Maxwell3D
       NAME "Maxwell3D-Tpetra"
-      ARGS "--linAlgebra=Tpetra --reuse --xml=Maxwell.xml"
-      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger.xml"
-      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml"
-      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml --ensure-kn"
-      ARGS "--linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_ReitzingerEmin.xml"
+      POSTFIX_AND_ARGS_0 "RefMaxwell" --linAlgebra=Tpetra --reuse --xml=Maxwell.xml
+      POSTFIX_AND_ARGS_1 "Maxwell1" --linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger.xml
+      POSTFIX_AND_ARGS_2 "Maxwell1-repart" --linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml
+      POSTFIX_AND_ARGS_3 "Maxwell1-repart-kn" --linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_Reitzinger_repart.xml --ensure-kn
+      POSTFIX_AND_ARGS_4 "Maxwell1-Emin-repart" --linAlgebra=Tpetra --precType=MueLu-Maxwell1 --xml=Maxwell_ReitzingerEmin.xml
       COMM serial mpi
       NUM_MPI_PROCS 4
     )

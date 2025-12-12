@@ -281,6 +281,26 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   if (!Material_.is_null())
     precList22_.sublist("user data").set("Material", Material_);
 
+  /* We do not need to set up any smoothers or coarse solver for the (2,2) hierarchy. */
+  if (!precList22_.isParameter("smoother: type") && !precList22_.isParameter("smoother: pre type") && !precList22_.isParameter("smoother: post type")) {
+    precList22_.set("smoother: type", "none");
+  }
+  if (!precList22_.isParameter("coarse: type")) {
+    precList22_.set("coarse: type", "none");
+  }
+
+  /* The nodal prolongator needs to be piecewise constant for ReitzingerPFactory to work.*/
+  if ((parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") != "emin reitzinger") &&
+      (precList22_.get<std::string>("multigrid algorithm") != "unsmoothed")) {
+    GetOStream(Warnings0) << "\"multigrid algorithm\" is set to \"" << precList22_.get<std::string>("multigrid algorithm") << "\", but it is required to be \"unsmoothed\". Changing it." << std::endl;
+    precList22_.set("multigrid algorithm", "unsmoothed");
+  }
+
+  /* We need both nodal Ptent and P for Emin. */
+  if ((parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "emin reitzinger") &&
+      (!precList22_.isParameter("sa: keep tentative prolongator") || !precList22_.get<bool>("sa: keep tentative prolongator")))
+    precList22_.set("sa: keep tentative prolongator", true);
+
   /* Repartitioning *must* be in sync between hierarchies, which means
      that we need to keep the importers in sync too */
   if (precList22_.isParameter("repartition: enable")) {
@@ -290,10 +310,26 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     // If we're repartitioning (2,2), we need to rebalance for (1,1) to do the right thing,
     // as well as keep the importers
     if (repartition) {
-      // FIXME: We should probably update rather than clobber
-      precList22_.set("repartition: save importer", true);
-      // precList22_.set("repartition: rebalance P and R", false);
-      precList22_.set("repartition: rebalance P and R", true);
+      if (!precList22_.isParameter("repartition: save importer"))
+        precList22_.set("repartition: save importer", true);
+      else if (!precList22_.get<bool>("repartition: save importer")) {
+        GetOStream(Warnings0) << "\"repartition: save importer\" is set to false, but it is required to be true. Changing it." << std::endl;
+        precList22_.set("repartition: save importer", true);
+      }
+
+      if (!precList22_.isParameter("repartition: rebalance P and R"))
+        precList22_.set("repartition: rebalance P and R", true);
+      else if (!precList22_.get<bool>("repartition: rebalance P and R")) {
+        GetOStream(Warnings0) << "\"repartition: rebalance P and R\" is set to false, but it is required to be true. Changing it." << std::endl;
+        precList22_.set("repartition: rebalance P and R", true);
+      }
+
+      if (!precList22_.isParameter("repartition: use subcommunicators"))
+        precList22_.set("repartition: use subcommunicators", true);
+      else if (!precList22_.get<bool>("repartition: use subcommunicators")) {
+        GetOStream(Warnings0) << "\"repartition: use subcommunicators\" is set to false, but it is required to be true. Changing it." << std::endl;
+        precList22_.set("repartition: use subcommunicators", true);
+      }
     }
 
     if (precList22_.isParameter("repartition: use subcommunicators")) {

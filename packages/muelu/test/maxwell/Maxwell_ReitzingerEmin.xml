@@ -1,13 +1,10 @@
 <ParameterList name="MueLu">
 
-  <Parameter name="use kokkos refactor" type="bool" value="false"/>
-  <Parameter name="maxwell1: mode" type="string" value="standard"/>
-
   <ParameterList name="maxwell1: 11list">
-    <Parameter name="use kokkos refactor" type="bool" value="false"/>
-    <Parameter name="multigrid algorithm" type="string"               value="emin reitzinger"/>
-    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+    <Parameter name="multigrid algorithm" type="string" value="emin reitzinger"/>
+
     <Parameter name="coarse: type" type="string" value="Klu"/>
+
     <Parameter name="smoother: type" type="string" value="HIPTMAIR"/>
     <ParameterList name="smoother: params">
       <Parameter name="hiptmair: smoother type 1" type="string" value="RELAXATION"/>
@@ -25,20 +22,18 @@
     </ParameterList>
   </ParameterList>
 
-
   <ParameterList name="maxwell1: 22list">
-    <Parameter name="use kokkos refactor" type="bool" value="false"/>
     <Parameter name="multigrid algorithm" type="string"  value="sa"/>
-    <Parameter name="aggregation: type" type="string" value="uncoupled"/>
-    <Parameter name="aggregation: drop tol" type="double" value="0.0"/>
+    <!-- <Parameter name="multigrid algorithm" type="string"  value="emin"/> -->
+    <Parameter name="aggregation: deterministic" type="bool" value="true"/>
     <Parameter name="coarse: max size" type="int" value="50"/>
-    <Parameter name="smoother: type" type="string" value="none"/>
-    <Parameter name="coarse: type" type="string" value="none"/>
 
-    <!-- Currently needed but we should fix this -->
-    <Parameter name="tentative: constant column sums" type="bool" value="false"/>
-    <Parameter name="tentative: calculate qr" type="bool" value="false"/>
-    <Parameter name="sa: keep tentative prolongator" type="bool" value="true"/>
-
+    <!-- ===========  REPARTITIONING  =========== -->
+    <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
+    <Parameter        name="repartition: partitioner"             type="string"   value="zoltan2"/>
+    <Parameter        name="repartition: start level"             type="int"      value="1"/>
+    <Parameter        name="repartition: min rows per proc"       type="int"      value="20"/> <!-- 20 for 4 procs -->
+    <Parameter        name="repartition: max imbalance"           type="double"   value="1.1"/>
+    <Parameter        name="repartition: remap parts"             type="bool"     value="true"/>
   </ParameterList>
 </ParameterList>
