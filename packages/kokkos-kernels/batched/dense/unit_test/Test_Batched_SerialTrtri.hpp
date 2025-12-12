@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
@@ -62,7 +49,7 @@ struct VanillaGEMM {
   typedef typename ViewTypeA::value_type ScalarA;
   typedef typename ViewTypeB::value_type ScalarB;
   typedef typename ViewTypeC::value_type ScalarC;
-  typedef Kokkos::ArithTraits<ScalarC> APT;
+  typedef KokkosKernels::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -137,7 +124,7 @@ template <typename DeviceType, typename ViewType, typename ScalarType, typename 
 void impl_test_batched_trtri(const int N, const int K) {
   typedef typename ViewType::value_type value_type;
   typedef typename DeviceType::execution_space execution_space;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   ScalarType alpha(1.0);
   ScalarType beta(0.0);
@@ -153,8 +140,8 @@ void impl_test_batched_trtri(const int N, const int K) {
   ViewType A_original("A_original", N, K, K);
   ViewType A_I("A_I", N, K, K);
 
-  typename ViewType::HostMirror I_host = Kokkos::create_mirror_view(A_I);
-  typename ViewType::HostMirror A_host = Kokkos::create_mirror_view(A);
+  typename ViewType::host_mirror_type I_host = Kokkos::create_mirror_view(A_I);
+  typename ViewType::host_mirror_type A_host = Kokkos::create_mirror_view(A);
 
   uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
@@ -310,7 +297,7 @@ int main(int argc, char** argv) {
   {
     using matrix_type = KokkosSparse::CrsMatrix<Scalar, int, Kokkos::DefaultExecutionSpace, void, int>;
     using mv_type     = typename Kokkos::View<Scalar*, Kokkos::LayoutLeft>;
-    using h_mv_type   = typename mv_type::HostMirror;
+    using h_mv_type   = typename mv_type::host_mirror_type;
 
     int leftBC = 1, rightBC = 1, frontBC = 1, backBC = 1, bottomBC = 1, topBC = 1;
 
@@ -394,9 +381,9 @@ int main(int argc, char** argv) {
     }
 
     if (check_errors) {
-      h_y_compare                                                  = Kokkos::create_mirror(y);
-      typename matrix_type::StaticCrsGraphType::HostMirror h_graph = KokkosSparse::create_mirror(A.graph);
-      typename matrix_type::values_type::HostMirror h_values       = Kokkos::create_mirror_view(A.values);
+      h_y_compare                                                        = Kokkos::create_mirror(y);
+      typename matrix_type::StaticCrsGraphType::host_mirror_type h_graph = KokkosSparse::create_mirror(A.graph);
+      typename matrix_type::values_type::host_mirror_type h_values       = Kokkos::create_mirror_view(A.values);
 
       // Error Check Gold Values
       for (int rowIdx = 0; rowIdx < A.numRows(); ++rowIdx) {

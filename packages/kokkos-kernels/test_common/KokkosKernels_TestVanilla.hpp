@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSKERNELS_TESTVANILLA_HPP
 #define KOKKOSKERNELS_TESTVANILLA_HPP
@@ -21,7 +8,7 @@
 
 #include "KokkosKernels_Utils.hpp"
 #include "KokkosKernels_IOUtils.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosBatched_Vector.hpp"
 
 namespace Test {
@@ -39,7 +26,7 @@ struct SharedVanillaGEMM {
   typedef typename ViewTypeC::value_type ScalarC;
   typedef Kokkos::View<ScalarA*, Kokkos::LayoutStride, typename ViewTypeA::device_type> SubviewTypeA;
   typedef Kokkos::View<ScalarB*, Kokkos::LayoutStride, typename ViewTypeB::device_type> SubviewTypeB;
-  typedef Kokkos::ArithTraits<ScalarC> APT;
+  typedef KokkosKernels::ArithTraits<ScalarC> APT;
   typedef typename APT::mag_type mag_type;
   ScalarA alpha;
   ScalarC beta;
@@ -136,7 +123,7 @@ template <class ViewTypeA, class ViewTypeB, class ViewTypeC>
 void vanillaGEMM(typename ViewTypeC::non_const_value_type alpha, const ViewTypeA& A, const ViewTypeB& B,
                  typename ViewTypeC::non_const_value_type beta, const ViewTypeC& C) {
   using value_type = typename ViewTypeC::non_const_value_type;
-  using KAT        = Kokkos::ArithTraits<value_type>;
+  using KAT        = KokkosKernels::ArithTraits<value_type>;
   int m            = A.extent(0);
   int k            = A.extent(1);
   int n            = B.extent(1);
@@ -155,10 +142,10 @@ template <class AlphaType, class ViewTypeA, class ViewTypeX, class BetaType, cla
 KOKKOS_INLINE_FUNCTION void vanillaGEMV(char mode, AlphaType alpha, const ViewTypeA& A, const ViewTypeX& x,
                                         BetaType beta, const ViewTypeY& y) {
   using ScalarY         = typename ViewTypeY::non_const_value_type;
-  using KAT_A           = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
+  using KAT_A           = KokkosKernels::ArithTraits<typename ViewTypeA::non_const_value_type>;
   const bool transposed = mode == 'T' || mode == 'C';
   const bool conjugated = mode == 'C';
-  const bool has_beta   = beta != Kokkos::ArithTraits<BetaType>::zero();
+  const bool has_beta   = beta != KokkosKernels::ArithTraits<BetaType>::zero();
   int M                 = A.extent(transposed ? 1 : 0);
   int N                 = A.extent(transposed ? 0 : 1);
   for (int i = 0; i < M; i++) {

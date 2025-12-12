@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Kim Liegeois (knliege@sandia.gov)
 
 #include "gtest/gtest.h"
@@ -69,9 +56,9 @@ struct Functor_TestBatchedSerialGesv {
 template <typename DeviceType, typename MatrixType, typename VectorType, typename AlgoTagType>
 void impl_test_batched_gesv(const int N, const int BlkSize) {
   typedef typename MatrixType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
-  using MagnitudeType = typename Kokkos::ArithTraits<value_type>::mag_type;
+  using MagnitudeType = typename KokkosKernels::ArithTraits<value_type>::mag_type;
   using NormViewType  = Kokkos::View<MagnitudeType *, Kokkos::LayoutLeft, DeviceType>;
 
   NormViewType sqr_norm_j("sqr_norm_j", N);

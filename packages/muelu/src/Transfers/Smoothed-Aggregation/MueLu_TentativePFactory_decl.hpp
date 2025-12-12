@@ -26,12 +26,9 @@
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TentativePFactory_fwd.hpp"
 
 #include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
@@ -91,26 +88,26 @@ class TentativePFactory : public PFactory {
   //@{
 
   //! Constructor
-  TentativePFactory() {}
+  TentativePFactory();
 
   //! Destructor.
-  virtual ~TentativePFactory() {}
+  ~TentativePFactory() override;
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  RCP<const ParameterList> GetValidParameterList() const override;
 
   //! Input
   //@{
 
-  void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
+  void DeclareInput(Level& fineLevel, Level& coarseLevel) const override;
 
   //@}
 
   //! @name Build methods.
   //@{
 
-  void Build(Level& fineLevel, Level& coarseLevel) const;
-  void BuildP(Level& fineLevel, Level& coarseLevel) const;
+  void Build(Level& fineLevel, Level& coarseLevel) const override;
+  void BuildP(Level& fineLevel, Level& coarseLevel) const override;
 
   //@}
 
