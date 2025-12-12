@@ -1,5 +1,59 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 17.0 Release Notes                        December 8, 2025 #
+#                                                                             #
+###############################################################################
+
+The following previously deprecated packages have been removed:
+
+    Amesos
+    AztecOO
+    Epetra
+    EpetraExt
+    Ifpack
+    Intrepid
+    Isorropia
+    ML
+    NewPackage
+    Pliris
+    PyTrilinos
+    ShyLU_DDCore
+    ThyraEpetraAdapters
+    ThyraEpetraExtAdapters
+    Triutils
+
+The source code for the archived packages can be found in separate repositories
+under the Trilinos organization on Github:
+https://github.com/trilinos
+
+Trilinos now requires a C++20 compatible compiler.
+https://github.com/trilinos/Trilinos/pull/14390
+
+
+Trilinos now requires CMake 3.27 or newer.
+
+
+Kokkos, KokkosKernels:
+
+  - Inclusion of version 5.0.0 of Kokkos and Kokkos Kernels
+    https://github.com/trilinos/Trilinos/pull/14666
+
+
+Tpetra, Ifpack2, MueLu, Stokhos:
+
+  - Previously deprecated code has beeen removed.
+    https://github.com/trilinos/Trilinos/pull/14587
+
+
+Gtest:
+
+  - The in-source Gtest package has been removed. Trilinos packages that rely
+    on Gtest instead use the gtest TPL.
+    https://github.com/trilinos/Trilinos/pull/14719
+    
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 16.2 Release Notes                       November 24, 2025 #
 #                                                                             #
 ###############################################################################
