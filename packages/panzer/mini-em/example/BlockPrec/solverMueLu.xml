@@ -373,8 +373,8 @@
 
                 <ParameterList name="maxwell1: 22list">
                   <Parameter name="verbosity" type="string" value="extreme"/>
-                  <Parameter name="coarse: max size" type="int" value="2500"/>
-                  
+                  <Parameter name="coarse: max size" type="int" value="1000"/>
+
                   <!-- Regular Reitzinger will replace this with "unsmoothed" -->
                   <Parameter name="multigrid algorithm" type="string" value="sa"/>
 
@@ -389,7 +389,7 @@
                   <Parameter name="repartition: enable" type="bool" value="true"/>
                   <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
                   <Parameter name="repartition: start level" type="int" value="2"/>
-                  <Parameter name="repartition: target rows per thread" type="int" value="15000"/>
+                  <Parameter name="repartition: target rows per thread" type="int" value="400"/>
                   <Parameter name="repartition: min rows per thread" type="int" value="1000"/>
                   <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
                   <Parameter name="repartition: remap parts" type="bool" value="true"/>
