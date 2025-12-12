@@ -33,7 +33,6 @@ namespace Zoltan2 {
     The template parameter is the user's input object:
      \li Tpetra::CrsGraph
      \li Tpetra::RowGraph
-     \li Epetra_CrsGraph
 
     The \c scalar_t type, representing use data such as matrix values, is
     used by Zoltan2 for weights, coordinates, part sizes and

@@ -104,18 +104,6 @@ MuemexType getMuemexType(const RCP<Xpetra_Matrix_complex>& data) { return XPETRA
 template <>
 MuemexType getMuemexType<RCP<Xpetra_Matrix_complex> >() { return XPETRA_MATRIX_COMPLEX; }
 
-#ifdef HAVE_MUELU_EPETRA
-template <>
-MuemexType getMuemexType(const RCP<Epetra_CrsMatrix>& data) { return EPETRA_CRSMATRIX; }
-template <>
-MuemexType getMuemexType<RCP<Epetra_CrsMatrix> >() { return EPETRA_CRSMATRIX; }
-
-template <>
-MuemexType getMuemexType(const RCP<Epetra_MultiVector>& data) { return EPETRA_MULTIVECTOR; }
-template <>
-MuemexType getMuemexType<RCP<Epetra_MultiVector> >() { return EPETRA_MULTIVECTOR; }
-#endif
-
 template <>
 MuemexType getMuemexType(const RCP<MAggregates>& data) { return AGGREGATES; }
 template <>
@@ -447,56 +435,6 @@ RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > loadD
   RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > tpetraMV = loadDataFromMatlab<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >(mxa);
   return Xpetra::toXpetra(tpetraMV);
 }
-
-#ifdef HAVE_MUELU_EPETRA
-template <>
-RCP<Epetra_CrsMatrix> loadDataFromMatlab<RCP<Epetra_CrsMatrix> >(const mxArray* mxa) {
-  RCP<Epetra_CrsMatrix> matrix;
-  try {
-    int* colptr;
-    int* rowind;
-    double* vals = mxGetPr(mxa);
-    int nr       = mxGetM(mxa);
-    int nc       = mxGetN(mxa);
-    if (rewrap_ints) {
-      colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
-      rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
-    } else {
-      rowind = (int*)mxGetIr(mxa);
-      colptr = (int*)mxGetJc(mxa);
-    }
-    Epetra_SerialComm Comm;
-    Epetra_Map RangeMap(nr, 0, Comm);
-    Epetra_Map DomainMap(nc, 0, Comm);
-    matrix = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, RangeMap, DomainMap, 0));
-    /* Do the matrix assembly */
-    for (int i = 0; i < nc; i++) {
-      for (int j = colptr[i]; j < colptr[i + 1]; j++) {
-        // global row, # of entries, value array, column indices array
-        matrix->InsertGlobalValues(rowind[j], 1, &vals[j], &i);
-      }
-    }
-    matrix->FillComplete(DomainMap, RangeMap);
-    if (rewrap_ints) {
-      delete[] rowind;
-      delete[] colptr;
-    }
-  } catch (std::exception& e) {
-    mexPrintf("An error occurred while setting up an Epetra matrix:\n");
-    std::cout << e.what() << std::endl;
-  }
-  return matrix;
-}
-
-template <>
-RCP<Epetra_MultiVector> loadDataFromMatlab<RCP<Epetra_MultiVector> >(const mxArray* mxa) {
-  int nr = mxGetM(mxa);
-  int nc = mxGetN(mxa);
-  Epetra_SerialComm Comm;
-  Epetra_BlockMap map(nr * nc, 1, 0, Comm);
-  return rcp(new Epetra_MultiVector(Epetra_DataAccess::Copy, map, mxGetPr(mxa), nr, nc));
-}
-#endif
 
 template <>
 RCP<MAggregates> loadDataFromMatlab<RCP<MAggregates> >(const mxArray* mxa) {
@@ -1009,22 +947,6 @@ mxArray* saveDataToMatlab(RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_Glo
   free(array);
   return output;
 }
-
-#ifdef HAVE_MUELU_EPETRA
-template <>
-mxArray* saveDataToMatlab(RCP<Epetra_CrsMatrix>& data) {
-  RCP<Xpetra_Matrix_double> xmat = EpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(data);
-  return saveDataToMatlab(xmat);
-}
-
-template <>
-mxArray* saveDataToMatlab(RCP<Epetra_MultiVector>& data) {
-  mxArray* output = mxCreateDoubleMatrix(data->GlobalLength(), data->NumVectors(), mxREAL);
-  double* dataPtr = mxGetPr(output);
-  data->ExtractCopy(dataPtr, data->GlobalLength());
-  return output;
-}
-#endif
 
 template <>
 mxArray* saveDataToMatlab(RCP<MAggregates>& data) {

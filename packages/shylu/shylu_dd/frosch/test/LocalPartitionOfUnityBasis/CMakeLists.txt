@@ -10,16 +10,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(LocalPOUCopyFiles
     EXEDEPS localpartitionofunitybasis
 )
 
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
-TRIBITS_ADD_TEST(
-localpartitionofunitybasis
-NAME test_localpartitionofunitybasis_EPETRA
-COMM mpi
-ARGS "--USEEPETRA"
-NUM_MPI_PROCS 1
-)
-ENDIF()
-
 TRIBITS_ADD_TEST(
 localpartitionofunitybasis
 NAME test_localpartitionofunitybasis_TPETRA

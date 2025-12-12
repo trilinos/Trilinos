@@ -99,7 +99,6 @@ namespace FROSch {
 
         ConstXMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
 
-        #if defined(HAVE_XPETRA_TPETRA)
         template<class GOIndView, class ConstSCView, class SCView>
         struct CopyPhiViewFunctor
         {
@@ -243,7 +242,6 @@ namespace FROSch {
                 }
             }
         };
-        #endif
 
     protected:
 

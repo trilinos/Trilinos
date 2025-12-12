@@ -29,11 +29,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation_kokkos, CreateCrsGraphCo
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
 
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
-
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
   typedef typename Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
 
@@ -113,11 +108,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation_kokkos, CreateCrsGraphLi
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
 
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType real_type;
   typedef typename Xpetra::MultiVector<real_type, LO, GO, NO> RealValuedMultiVector;
@@ -202,11 +192,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(StructuredAggregation_kokkos, UncoupledTentati
 #include "MueLu_UseShortNames.hpp"
   MUELU_TESTING_SET_OSTREAM;
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
-
-  if (TestHelpers_kokkos::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
 
   using real_type             = typename Teuchos::ScalarTraits<SC>::coordinateType;
   using RealValuedMultiVector = typename Xpetra::MultiVector<real_type, LO, GO, NO>;

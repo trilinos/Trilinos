@@ -53,11 +53,7 @@ PermutingSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PermutingSmoother(
 
   // create internal smoother
   if (type_ == "ILU") {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
-    s_ = MueLu::GetIfpackSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>(type_, this->GetParameterList(), overlap_);
-#else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::PermutingSmoother requires Epetra and Ifpack.");
-#endif
   } else {
     s_ = Teuchos::rcp(new TrilinosSmoother(type_, this->GetParameterList(), overlap_));
   }

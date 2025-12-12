@@ -28,10 +28,8 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 # include <TpetraCore_ETIHelperMacros.h>
 TPETRA_ETI_MANGLING_TYPEDEFS()
-#endif
 
 namespace Belos {
 namespace Details {
@@ -39,40 +37,7 @@ namespace Xpetra {
 
 void registerSolverFactory() {
 
-// Note the formatting here was taken from the original Xpetra macros but then
-// changed things so we wouldn't have any MueLu references. HAVE_MUELU_EPETRA
-// becomes HAVE_XPETRA_EPETRA for example. That means we have quite a bit of
-// duplication here but would like to test this and submit the proposed design
-// before going further with decisions regarding how to eliminate the duplication.
-
-#if   (defined(HAVE_XPETRA_EPETRA) &&  defined(EPETRA_HAVE_OMP) && (!defined(HAVE_XPETRA_TPETRA) || !defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT)))
-  // Epetra is enabled with OpenMP node, but Tpetra is a) not enabled, or b) is not instantiated on OpenMP, or c) is not instantiated on OpenMP with <double,int,int>
-  typedef Tpetra::KokkosCompat::KokkosOpenMPWrapperNode EpetraNode;
-#elif (defined(HAVE_XPETRA_EPETRA) && !defined(EPETRA_HAVE_OMP) && (!defined(HAVE_XPETRA_TPETRA) || !defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT)))
-  // Epetra is enabled with Serial node, but Tpetra is a) not enabled, or b) is not instantiated on Serial, or c) is not instantiated on Serial with <double,int,int>
-  typedef Tpetra::KokkosCompat::KokkosSerialWrapperNode EpetraNode;
-#endif
-
-
-// Epetra = on, Tpetra = off
-#if defined(HAVE_XPETRA_EPETRA) && !defined(HAVE_XPETRA_TPETRA)
-  #define BELOS_XPETRA_CALL(INSTMACRO) INSTMACRO(double, int, int, EpetraNode)
-#endif
-
-// Epetra = on, Tpetra = on
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_TPETRA)
-#if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
-    (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
-  #define BELOS_XPETRA_CALL(INSTMACRO) INSTMACRO(double, int, int, EpetraNode) TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(INSTMACRO)
-# else
-  #define BELOS_XPETRA_CALL(INSTMACRO) TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(INSTMACRO)
-#endif
-#endif
-
-// Epetra = off, Tpetra = on
-#if !defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_TPETRA)
-  #define BELOS_XPETRA_CALL(INSTMACRO) TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(INSTMACRO)
-#endif
+#define BELOS_XPETRA_CALL(INSTMACRO) TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(INSTMACRO)
 
   #define BELOS_LCL_CALL_FOR_MANAGER(manager,name,SC, LO, GO, NT)              \
     Impl::registerSolverSubclassForTypes<manager<                              \

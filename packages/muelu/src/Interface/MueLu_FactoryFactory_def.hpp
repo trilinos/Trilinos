@@ -231,11 +231,7 @@ RCP<const FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 #endif  // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
   }
   if (factoryName == "IsorropiaInterface") {
-#if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
-    return Build2<IsorropiaInterface>(paramList, factoryMapIn, factoryManagersIn);
-#else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
-#endif  // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
   }
 
   if (factoryName == "NodePartitionInterface") {

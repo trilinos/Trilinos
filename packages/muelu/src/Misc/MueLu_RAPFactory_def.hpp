@@ -102,12 +102,9 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLev
       return;
     }
 
-    bool isEpetra = A->getRowMap()->lib() == Xpetra::UseEpetra;
-    bool isGPU    = Node::is_gpu;
+    bool isGPU = Node::is_gpu;
 
-    if (pL.get<bool>("rap: triple product") == false || isEpetra || isGPU) {
-      if (pL.get<bool>("rap: triple product") && isEpetra)
-        GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for Epetra.\n";
+    if (pL.get<bool>("rap: triple product") == false || isGPU) {
       if (pL.get<bool>("rap: triple product") && isGPU)
         GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for "
                               << Node::execution_space::name() << std::endl;

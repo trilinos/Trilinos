@@ -17,10 +17,6 @@
 
 #include "MueLu_TestHelpers.hpp"
 
-#ifdef HAVE_MUELU_EPETRA
-#include "Epetra_FECrsMatrix.h"
-#endif
-
 #include "MueLu_Utilities_def.hpp"
 
 namespace MueLuTests {
@@ -180,9 +176,7 @@ Build1DPseudoPoissonHigherOrder(GlobalOrdinal nx, int degree,
 
   // Since we're inserting off-proc, we really need to use the Epetra_FECrsMatrix here if we're in Epetra mode
   RCP<Matrix> B;
-  if (lib == Xpetra::UseEpetra) {
-    AllocateEpetraFECrsMatrix(pn_rowmap, pn_colmap, B);
-  } else {
+  {
     // Tpetra is easy
     B = rcp(new CrsMatrixWrap(pn_rowmap, pn_colmap, global_num_elements));
   }

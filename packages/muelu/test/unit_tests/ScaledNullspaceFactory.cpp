@@ -39,11 +39,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(ScaledNullspaceFactory, Test0, Scalar, LocalOr
 
   Teuchos::Array<magnitude_type> results(2);
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
-  // Do not run this test for Epetra
-  if (lib == Xpetra::UseEpetra) {
-    TEST_EQUALITY(1, 1);
-    return;
-  }
 
   // Build a Matrix
   GlobalOrdinal nEle       = 20;

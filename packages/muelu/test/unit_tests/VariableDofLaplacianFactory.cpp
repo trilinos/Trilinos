@@ -103,12 +103,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(VariableDofLaplacianFactory, VarLaplConstructo
 
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
-  // TAW 04/21: test is crashing on 4 procs with Epetra due to an unknown reason in the Epetra_BlockMap constructor (MPI communication)
-  if (comm->getSize() > 2 && lib == Xpetra::UseEpetra) {
-    out << "Skipping test for more than 2 procs when using Epetra" << std::endl;
-    return;
-  }
-
   GlobalOrdinal nx = 6, ny = 6;
 
   // Describes the initial layout of matrix rows across processors.
@@ -205,12 +199,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(VariableDofLaplacianFactory, VarLaplPtent, Sca
   RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
-
-  // TAW 04/21: test is crashing on 4 procs with Epetra due to an unknown reason in the Epetra_BlockMap constructor (MPI communication)
-  if (comm->getSize() > 2 && lib == Xpetra::UseEpetra) {
-    out << "Skipping test for more than 2 procs when using Epetra" << std::endl;
-    return;
-  }
 
   GlobalOrdinal nx = 6, ny = 6;
 
