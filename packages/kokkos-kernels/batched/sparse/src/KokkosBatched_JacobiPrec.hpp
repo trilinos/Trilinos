@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_JACOBIPREC_HPP
 #define KOKKOSBATCHED_JACOBIPREC_HPP
 
@@ -30,7 +17,7 @@ template <class ValuesViewType>
 class JacobiPrec {
  public:
   using ScalarType    = typename ValuesViewType::non_const_value_type;
-  using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+  using MagnitudeType = typename KokkosKernels::ArithTraits<ScalarType>::mag_type;
 
  private:
   ValuesViewType diag_values;
@@ -54,8 +41,8 @@ class JacobiPrec {
 
   template <typename MemberType, typename ArgMode>
   KOKKOS_INLINE_FUNCTION void computeInverse(const MemberType &member) const {
-    auto one     = Kokkos::ArithTraits<MagnitudeType>::one();
-    auto epsilon = Kokkos::ArithTraits<MagnitudeType>::epsilon();
+    auto one     = KokkosKernels::ArithTraits<MagnitudeType>::one();
+    auto epsilon = KokkosKernels::ArithTraits<MagnitudeType>::epsilon();
     int tooSmall = 0;
     if (std::is_same<ArgMode, Mode::Serial>::value) {
       for (int i = 0; i < n_operators; ++i)
@@ -111,8 +98,8 @@ class JacobiPrec {
   }
 
   KOKKOS_INLINE_FUNCTION void computeInverse() const {
-    auto one     = Kokkos::ArithTraits<MagnitudeType>::one();
-    auto epsilon = Kokkos::ArithTraits<MagnitudeType>::epsilon();
+    auto one     = KokkosKernels::ArithTraits<MagnitudeType>::one();
+    auto epsilon = KokkosKernels::ArithTraits<MagnitudeType>::epsilon();
     int tooSmall = 0;
 
     for (int i = 0; i < n_operators; ++i)

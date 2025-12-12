@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS3_TRSM_IMPL_HPP_
 #define KOKKOSBLAS3_TRSM_IMPL_HPP_
@@ -25,7 +12,7 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include "KokkosBlas1_set_impl.hpp"
 #include "KokkosBatched_Trsm_Decl.hpp"
 #include "KokkosBatched_Trsm_Serial_Impl.hpp"
@@ -37,7 +24,7 @@ template <typename ScalarType, typename ValueType>
 int SerialTrsmInternalLeftLowerConj(const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
                                     const ValueType* KOKKOS_RESTRICT A, const int as0, const int as1,
                                     /**/ ValueType* KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
 
   const ScalarType one(1.0), zero(0.0);
 
@@ -70,7 +57,7 @@ template <typename ScalarType, typename ValueType>
 int SerialTrsmInternalLeftUpperConj(const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
                                     const ValueType* KOKKOS_RESTRICT A, const int as0, const int as1,
                                     /**/ ValueType* KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  typedef Kokkos::ArithTraits<ValueType> AT;
+  typedef KokkosKernels::ArithTraits<ValueType> AT;
 
   const ScalarType one(1.0), zero(0.0);
 
