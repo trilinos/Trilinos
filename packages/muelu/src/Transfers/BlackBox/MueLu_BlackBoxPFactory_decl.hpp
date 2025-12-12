@@ -98,7 +98,9 @@ class BlackBoxPFactory : public PFactory {
   virtual ~BlackBoxPFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{

@@ -43,7 +43,9 @@ class RebalanceAcFactory : public TwoLevelFactoryBase {
 
   virtual ~RebalanceAcFactory();
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
   //@}
 
   //! @name Input

@@ -91,7 +91,9 @@ class Zoltan2Interface : public SingleLevelFactoryBase {
   virtual ~Zoltan2Interface() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! @name Input
   //@{
@@ -139,7 +141,7 @@ class Zoltan2Interface<double, int, int, Xpetra::EpetraNode> : public SingleLeve
     zoltanInterface_ = Teuchos::null;
     level_           = Teuchos::null;
   }
-  RCP<const ParameterList> GetValidParameterList() const {
+  RCP<const ParameterList> GetValidParameterListImpl() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Factory of the matrix A");
@@ -193,7 +195,7 @@ class Zoltan2Interface<double, int, int, Xpetra::EpetraNode> : public SingleLeve
  public:
   Zoltan2Interface() { throw Exceptions::RuntimeError("Tpetra does not support <double,int,int,EpetraNode> instantiation"); }
   virtual ~Zoltan2Interface() {}
-  RCP<const ParameterList> GetValidParameterList() const { return Teuchos::null; };
+  RCP<const ParameterList> GetValidParameterListImpl() const { return Teuchos::null; };
   void DeclareInput(Level& level) const {};
   void Build(Level& level) const {};
 };
