@@ -698,7 +698,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, umr_refine_once_with_geometry)
 
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::rcp(new Teuchos::ParameterList);
   pl->set("File Type","Exodus Refinement");
-  pl->set("File Name","meshes/2block_cylinders_30deg.g");
+  pl->set("File Name","meshes/2block_cylinders_30deg.a.g");
   pl->set("Geometry File Name","meshes/2block_cylinders_30deg.stp");
   pl->set("Levels of Uniform Refinement",1);
   TEST_NOTHROW(factory.setParameterList(pl));
