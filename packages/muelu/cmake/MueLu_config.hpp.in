@@ -102,6 +102,8 @@
 
 #cmakedefine HAVE_MUELU_CUSPARSE
 
+#cmakedefine HAVE_MUELU_ROCSPARSE
+
 #cmakedefine HAVE_MUELU_MAGMASPARSE
 
 
