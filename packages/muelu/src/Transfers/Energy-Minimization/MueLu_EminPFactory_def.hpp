@@ -166,9 +166,10 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
     numIts = pL.get<int>("emin: num iterations");
   }
 
-  if (IsPrint(Statistics0)) {
-    GetOStream(Statistics0) << "Energy norm of P0: " << ComputeProlongatorEnergyNorm(A, P0, GetOStream(Statistics0)) << std::endl;
-    GetOStream(Statistics0) << "Constraint residual norm of P0: " << X->ResidualNorm(P0) << std::endl;
+  if (IsPrint(Statistics1)) {
+    SubFactoryMonitor m2(*this, "Statistics", coarseLevel);
+    GetOStream(Statistics1) << "Energy norm of P0: " << ComputeProlongatorEnergyNorm(A, P0, GetOStream(Statistics0)) << std::endl;
+    GetOStream(Statistics1) << "Constraint residual norm of P0: " << X->ResidualNorm(P0) << std::endl;
   }
 
   std::string solverType = pL.get<std::string>("emin: iterative method");
@@ -237,10 +238,11 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
       P->CreateView("stridedMaps", P0);
   }
 
-  if (IsPrint(Statistics0)) {
+  if (IsPrint(Statistics1)) {
+    SubFactoryMonitor m2(*this, "Statistics", coarseLevel);
     // Compute constraint residual norm if we are not in a debug build
-    GetOStream(Statistics0) << "Energy norm of P: " << ComputeProlongatorEnergyNorm(A, P, GetOStream(Statistics0)) << std::endl;
-    GetOStream(Statistics0) << "Norm of constraint residual: " << X->ResidualNorm(P) << std::endl;
+    GetOStream(Statistics1) << "Energy norm of P: " << ComputeProlongatorEnergyNorm(A, P, GetOStream(Statistics0)) << std::endl;
+    GetOStream(Statistics1) << "Norm of constraint residual: " << X->ResidualNorm(P) << std::endl;
   }
 
   // NOTE: EXPERIMENTAL and FRAGILE
