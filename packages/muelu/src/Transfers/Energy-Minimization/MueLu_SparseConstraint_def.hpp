@@ -57,10 +57,36 @@ void SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
   auto Dc       = Dc_;
   auto Ppattern = this->GetPattern();
 
+  auto lib = Ppattern->getRowMap()->lib();
+
+  // If we rebalanced then Dc lives on a smaller communicator than D.
+  // Since we need to perform matrix-matrix multiplications with Dc, we construct a version of it that lives on the same communicator.
+  auto comm = Ppattern->getRowMap()->getComm();
+  if (Dc.is_null() || Dc->getRowMap()->getComm()->getSize() < comm->getSize()) {
+    if (Dc.is_null()) {
+      Kokkos::View<GlobalOrdinal*, typename Node::memory_space> dummy("", 0);
+      auto big_coarse_nodal_map    = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, dummy, 0, comm);
+      auto big_coarse_edge_map     = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, dummy, 0, comm);
+      auto big_coarse_nodal_colmap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, dummy, 0, comm);
+
+      typename Matrix::local_matrix_device_type dummyLocalMatrix;
+      big_Dc_ = MatrixFactory::Build(dummyLocalMatrix, big_coarse_edge_map, big_coarse_nodal_colmap, big_coarse_nodal_map, big_coarse_edge_map);
+
+    } else {
+      auto big_coarse_nodal_map    = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, Dc->getDomainMap()->getMyGlobalIndicesDevice(), 0, comm);
+      auto big_coarse_edge_map     = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, Dc->getRangeMap()->getMyGlobalIndicesDevice(), 0, comm);
+      auto big_coarse_nodal_colmap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, Dc->getColMap()->getMyGlobalIndicesDevice(), 0, comm);
+
+      big_Dc_ = MatrixFactory::Build(Dc->getLocalMatrixDevice(), big_coarse_edge_map, big_coarse_nodal_colmap, big_coarse_nodal_map, big_coarse_edge_map);
+    }
+  } else {
+    big_Dc_ = Dc;
+  }
+
   TEUCHOS_TEST_FOR_EXCEPTION(!D->getRangeMap()->isSameAs(*Ppattern->getRangeMap()),
                              Exceptions::Incompatible,
                              "Maps are incompatible");
-  TEUCHOS_TEST_FOR_EXCEPTION(!Dc->getRangeMap()->isSameAs(*Ppattern->getDomainMap()),
+  TEUCHOS_TEST_FOR_EXCEPTION(!big_Dc_->getRangeMap()->isSameAs(*Ppattern->getDomainMap()),
                              Exceptions::Incompatible,
                              "Maps are incompatible");
 
@@ -72,7 +98,7 @@ void SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
     absP->setAllToScalar(one);
     absP->fillComplete();
 
-    auto absDc = MatrixFactory::BuildCopy(Dc);
+    auto absDc = MatrixFactory::BuildCopy(big_Dc_);
     absDc->setAllToScalar(one);
 
     auto P_Dc = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*absP, false, *absDc, false, this->GetOStream(Statistics2), true, true);
@@ -80,8 +106,6 @@ void SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
   }
   RHS_pattern_ = auxGraph;
 
-  auto lib                                    = Ppattern->getRowMap()->lib();
-  auto comm                                   = Ppattern->getComm();
   GlobalOrdinal indexBase                     = Ppattern->getRowMap()->getIndexBase();
   const size_t numUnknowns                    = Ppattern->getLocalNumEntries();
   const size_t numRows                        = Ppattern->getLocalNumRows();
@@ -93,9 +117,9 @@ void SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
 
   RCP<Matrix> ghostedDc;
   if (!Ppattern->getImporter().is_null())
-    ghostedDc = MatrixFactory::Build(Dc, *Ppattern->getImporter());
+    ghostedDc = MatrixFactory::Build(big_Dc_, *Ppattern->getImporter());
   else
-    ghostedDc = Dc;
+    ghostedDc = big_Dc_;
 
   RCP<Matrix> X;
   {
@@ -180,7 +204,7 @@ SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ResidualNorm(const 
   // P*Dc
   RCP<Matrix> temp;
   temp = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*P, false,
-                                                                                   *Dc_, false,
+                                                                                   *big_Dc_, false,
                                                                                    temp,
                                                                                    this->GetOStream(Runtime0), true, true);
   // D*P_nodal

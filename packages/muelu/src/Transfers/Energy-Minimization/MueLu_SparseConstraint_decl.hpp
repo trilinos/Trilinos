@@ -69,6 +69,7 @@ class SparseConstraint
 
   //! Coarse nullspace
   RCP<Matrix> Dc_;
+  RCP<Matrix> big_Dc_;
 
   //! Pattern for RHS
   RCP<const CrsGraph> RHS_pattern_;

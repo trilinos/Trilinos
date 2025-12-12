@@ -20,6 +20,7 @@
 #include "MueLu_Hierarchy_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"
 #include "MueLu_RebalanceAcFactory_fwd.hpp"
+#include "MueLu_RebalanceTransferFactory_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_SmootherBase_fwd.hpp"
 

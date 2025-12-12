@@ -59,12 +59,35 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
   auto absPn = MatrixFactory::BuildCopy(Pn);
   absPn->setAllToScalar(one);
 
+  RCP<Matrix> absD_absPn = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*absD, false, *absPn, false, GetOStream(Statistics2), true, true);
+  absD_absPn->setAllToScalar(one);
+
+  // If we rebalanced then Dc lives on a smaller communicator than D.
+  // Since we need to perform matrix-matrix multiplications with Dc, we construct a version of it that lives on the same communicator.
+  auto comm = absD_absPn->getRowMap()->getComm();
+  if (Dc.is_null() || Dc->getRowMap()->getComm()->getSize() < comm->getSize()) {
+    auto lib = absD_absPn->getRowMap()->lib();
+    if (Dc.is_null()) {
+      Kokkos::View<GlobalOrdinal*, typename Node::memory_space> dummy("", 0);
+      auto big_coarse_nodal_map    = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, dummy, 0, comm);
+      auto big_coarse_edge_map     = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, dummy, 0, comm);
+      auto big_coarse_nodal_colmap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, dummy, 0, comm);
+
+      typename Matrix::local_matrix_device_type dummyLocalMatrix;
+      Dc = MatrixFactory::Build(dummyLocalMatrix, big_coarse_edge_map, big_coarse_nodal_colmap, big_coarse_nodal_map, big_coarse_edge_map);
+
+    } else {
+      auto big_coarse_nodal_map    = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, Dc->getDomainMap()->getMyGlobalIndicesDevice(), 0, comm);
+      auto big_coarse_edge_map     = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, Dc->getRangeMap()->getMyGlobalIndicesDevice(), 0, comm);
+      auto big_coarse_nodal_colmap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, -1, Dc->getColMap()->getMyGlobalIndicesDevice(), 0, comm);
+
+      Dc = MatrixFactory::Build(Dc->getLocalMatrixDevice(), big_coarse_edge_map, big_coarse_nodal_colmap, big_coarse_nodal_map, big_coarse_edge_map);
+    }
+  }
   auto absDc = MatrixFactory::BuildCopy(Dc);
   absDc->setAllToScalar(one);
 
-  RCP<Matrix> temp1 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*absD, false, *absPn, false, GetOStream(Statistics2), true, true);
-  temp1->setAllToScalar(one);
-  RCP<Matrix> temp2 = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*temp1, false, *absDc, true, GetOStream(Statistics2), true, true);
+  RCP<Matrix> absD_absPn_absDcT = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*absD_absPn, false, *absDc, true, GetOStream(Statistics2), true, true);
 
   RCP<Matrix> filtered;
   {
@@ -85,7 +108,7 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
     absDc->apply(*oneVec, *singleParent, Teuchos::NO_TRANS);
     // ghost singleParent
     RCP<MultiVector> singleParentGhosted;
-    auto importer = temp2->getCrsGraph()->getImporter();
+    auto importer = absD_absPn_absDcT->getCrsGraph()->getImporter();
     if (importer.is_null()) {
       singleParentGhosted = singleParent;
     } else {
@@ -97,7 +120,7 @@ void EdgeProlongatorPatternFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::B
 
     // Filter matrix using criterion
     filtered = Xpetra::applyFilter_LID(
-        temp2,
+        absD_absPn_absDcT,
         KOKKOS_LAMBDA(const LocalOrdinal row,
                       const LocalOrdinal col,
                       const typename Matrix::impl_scalar_type val) {
