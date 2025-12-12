@@ -337,17 +337,14 @@
                 <!-- <Parameter name="transpose: use implicit" type="bool" value="true"/> -->
 
                 <ParameterList name="maxwell1: 11list">
-                  <Parameter name="use kokkos refactor" type="bool" value="false"/>
                   <Parameter name="verbosity" type="string" value="extreme"/>
-                  <Parameter name="coarse: max size" type="int" value="2500"/>
                   <Parameter name="number of equations" type="int" value="3"/>
                   
-                  <Parameter name="multigrid algorithm" type="string" value="emin reitzinger"/>
-
                   <Parameter name="fuse prolongation and update" type="bool" value="true"/>
+
+                  <!-- "multigrid algorithm" gets set at runtime -->
                   
                   <ParameterList name="matvec params">
-                    <!-- <Parameter name="Send type" type="string" value="Send"/> -->
                     <Parameter name="Send type" type="string" value="Isend"/>
                   </ParameterList>
 
@@ -375,12 +372,12 @@
                 </ParameterList>
 
                 <ParameterList name="maxwell1: 22list">
-                  <Parameter name="use kokkos refactor" type="bool" value="false"/>
                   <Parameter name="verbosity" type="string" value="extreme"/>
                   <Parameter name="coarse: max size" type="int" value="2500"/>
+                  
+                  <!-- Regular Reitzinger will replace this with "unsmoothed" -->
                   <Parameter name="multigrid algorithm" type="string" value="sa"/>
 
-                  <Parameter name="aggregation: type" type="string" value="uncoupled"/>
                   <Parameter name="aggregation: drop scheme" type="string" value="distance laplacian"/>
                   <Parameter name="aggregation: distance laplacian algo" type="string" value="scaled cut"/>
                   <Parameter name="aggregation: drop tol" type="double" value="0.35"/>
@@ -388,20 +385,14 @@
                   <!-- Currently needed but we should fix this -->
                   <Parameter name="tentative: constant column sums" type="bool" value="false"/>
                   <Parameter name="tentative: calculate qr" type="bool" value="false"/>
-                  <Parameter name="sa: keep tentative prolongator" type="bool" value="true"/>
 
-                  <Parameter name="coarse: type" type="string" value="none"/>
-                  <Parameter name="smoother: type" type="string" value="none"/>
-                  
                   <Parameter name="repartition: enable" type="bool" value="true"/>
                   <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
                   <Parameter name="repartition: start level" type="int" value="2"/>
                   <Parameter name="repartition: target rows per thread" type="int" value="15000"/>
                   <Parameter name="repartition: min rows per thread" type="int" value="1000"/>
                   <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
-                  <Parameter name="repartition: use subcommunicators" type="bool" value="true"/>
                   <Parameter name="repartition: remap parts" type="bool" value="true"/>
-                  <Parameter name="repartition: rebalance P and R" type="bool" value="true"/>
                   <Parameter name="repartition: print partition distribution" type="bool" value="true"/>
                   <ParameterList name="repartition: params">
                     <Parameter name="algorithm" type="string" value="multijagged"/>

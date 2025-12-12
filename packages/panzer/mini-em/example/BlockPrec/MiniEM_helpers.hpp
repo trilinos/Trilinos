@@ -48,6 +48,7 @@ namespace mini_em {
     ML,
     CG,
     GMRES,
+    MAXWELL1,
     MAXWELL1_EMIN
   };
 
