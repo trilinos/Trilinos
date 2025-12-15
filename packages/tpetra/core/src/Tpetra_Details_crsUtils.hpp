@@ -515,7 +515,6 @@ size_t find_crs_indices_sorted(
   auto invalid_ordinal = Teuchos::OrdinalTraits<ordinal>::invalid();
 
   const size_t start = static_cast<size_t>(row_ptrs[row]);
-  const size_t end   = start + curNumEntries;
   size_t num_found   = 0;
   for (size_t k = 0; k < new_indices.size(); k++) {
     auto idx = std::forward<IndexMap>(map)(new_indices[k]);
@@ -525,7 +524,7 @@ size_t find_crs_indices_sorted(
     // FIXME use kokkos findRelOffset
     auto first  = &cur_indices[start];
     auto first0 = first;
-    auto last   = &cur_indices[end];
+    auto last   = first + curNumEntries * cur_indices.stride(0);
     first       = std::lower_bound(first, last, idx);
     size_t off  = first - first0;
     if (first != last && !(idx < *first)) {
