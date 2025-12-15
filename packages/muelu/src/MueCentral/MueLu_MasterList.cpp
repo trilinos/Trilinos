@@ -264,7 +264,7 @@ namespace MueLu {
   "<Parameter name=\"semicoarsen: piecewise constant\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"semicoarsen: piecewise linear\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"semicoarsen: calculate nonsym restriction\" type=\"bool\" value=\"false\"/>"
-  "<Parameter name=\"semicoarsen: number of levels\" type=\"int\" value=\"3\"/>"
+  "<Parameter name=\"semicoarsen: number of levels\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"linedetection: orientation\" type=\"string\" value=\"vertical\"/>"
   "<Parameter name=\"linedetection: num layers\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"sa: damping factor\" type=\"double\" value=\"1.33\"/>"

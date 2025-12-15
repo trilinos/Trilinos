@@ -39,19 +39,6 @@ FaceToElement()
 {
 }
 
-#ifndef PANZER_HIDE_DEPRECATED_CODE
-/** This constructor is deprecated in favor of FaceToElement(conn, comm)
-  * which explicitly specifies the communicator.  This constructor is
-  * left here for backward compatibility.
-  */
-template <typename LocalOrdinal,typename GlobalOrdinal>
-FaceToElement<LocalOrdinal,GlobalOrdinal>::
-FaceToElement(panzer::ConnManager & conn)
-{
-  initialize(conn);
-}
-#endif
-
 template <typename LocalOrdinal,typename GlobalOrdinal>
 FaceToElement<LocalOrdinal,GlobalOrdinal>::
 FaceToElement(panzer::ConnManager & conn,
@@ -59,21 +46,6 @@ FaceToElement(panzer::ConnManager & conn,
 {
   initialize(conn, comm);
 }
-
-#ifndef PANZER_HIDE_DEPRECATED_CODE
-/** This method is deprecated in favor of initialize(conn, comm) which
-  * explicitly specifies the communicator.  This method is left here
-  * for backward compatibility.
-  */
-template <typename LocalOrdinal,typename GlobalOrdinal>
-void
-FaceToElement<LocalOrdinal,GlobalOrdinal>::
-initialize(panzer::ConnManager & conn)
-{
-  Teuchos::RCP<const Teuchos::Comm<int>> comm_world(new Teuchos::MpiComm< int>(MPI_COMM_WORLD)); // CHECK: ALLOW MPI_COMM_WORLD
-  initialize(conn, comm_world);
-}
-#endif
 
 template <typename LocalOrdinal,typename GlobalOrdinal>
 void

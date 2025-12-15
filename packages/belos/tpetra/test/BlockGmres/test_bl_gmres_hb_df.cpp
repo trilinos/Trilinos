@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
   nnz = -1;
   if (mptestmypid == 0) {
     int dim2;
-    info = readHB_newmat_double(filename.c_str(),&mptestdim,&dim2,&nnz,&colptr,&rowind,&dvals);
+    info = Tpetra::HB::readHB_newmat_double(filename.c_str(),&mptestdim,&dim2,&nnz,&colptr,&rowind,&dvals);
     // find maximum NNZ over all rows
     vector<int> rnnz(mptestdim,0);
     for (int *ri=rowind; ri<rowind+nnz; ++ri) {
