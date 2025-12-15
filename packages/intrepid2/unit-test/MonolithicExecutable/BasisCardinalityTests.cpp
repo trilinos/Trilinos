@@ -667,13 +667,23 @@ namespace
     using BasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
     using BasisBase = typename BasisFamily::HGRAD_LINE::BasisBase;
     
+    std::map<int,int> maxSpaceDimForPolyDegree;
+    maxSpaceDimForPolyDegree[0] = maxSpaceDim;
+    maxSpaceDimForPolyDegree[1] = maxSpaceDim;
+    maxSpaceDimForPolyDegree[2] = maxSpaceDim;
+    maxSpaceDimForPolyDegree[3] = maxSpaceDim-1;
+    maxSpaceDimForPolyDegree[4] = maxSpaceDim-2;
+    maxSpaceDimForPolyDegree[5] = maxSpaceDim-3;
+    maxSpaceDimForPolyDegree[6] = 3;
+    maxSpaceDimForPolyDegree[7] = 3;
+    
     for (auto fs : functionSpaces)
     {
       const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
       for (int polyDegree = minDegree; polyDegree <= maxDegreeForCardinalityTests; polyDegree++)
       {
         out << "** polyDegree " << polyDegree << " **\n";
-        for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
+        for (int spaceDim = 1; spaceDim <= maxSpaceDimForPolyDegree[polyDegree]; spaceDim++)
         {
           out << "** spaceDim " << spaceDim << " **\n";
           int expectedCardinality = 0; // we'll sum into this

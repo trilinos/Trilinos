@@ -267,7 +267,7 @@ main (int argc, char *argv[])
             // format) from the file into the tuple (numRows, numCols, nnz,
             // colptr, rowind, dvals).  The routine allocates memory for
             // colptr, rowind, and dvals using malloc().
-            info = readHB_newmat_double (filename.c_str(), &numRows, &numCols,
+            info = Tpetra::HB::readHB_newmat_double (filename.c_str(), &numRows, &numCols,
                                          &nnz, &colptr, &rowind, &dvals);
             // The Harwell-Boeing routines use info == 0 to signal failure.
             if (info != 0)

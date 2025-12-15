@@ -250,15 +250,45 @@ namespace Intrepid2
       }
     }
     
-    //! operator() for (F,P,D) vector data; throws an exception if this is not a vector-valued container
+    //! operator() for (F,P,D) vector data
     KOKKOS_INLINE_FUNCTION
     Scalar operator()(const int &fieldOrdinal, const int &pointOrdinal, const int &dim) const
     {
-#ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(! vectorData_.isValid(), std::invalid_argument, "VectorData object not initialized!");
-#endif
-      const int &tensorFieldOrdinal = (ordinalFilter_.extent(0) > 0) ? ordinalFilter_(fieldOrdinal) : fieldOrdinal;
-      return vectorData_(tensorFieldOrdinal, pointOrdinal, dim);
+      if (vectorData_.isValid())
+      {
+        const int &tensorFieldOrdinal = (ordinalFilter_.extent(0) > 0) ? ordinalFilter_(fieldOrdinal) : fieldOrdinal;
+        return vectorData_(tensorFieldOrdinal, pointOrdinal, dim);
+      }
+      else
+      {
+        const int &tensorFieldOrdinal = (ordinalFilter_.extent(0) > 0) ? ordinalFilter_(fieldOrdinal) : fieldOrdinal;
+        if (numTensorDataFamilies_ == 1)
+        {
+  #ifdef HAVE_INTREPID2_DEBUG
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(! tensorDataFamilies_[0].isValid(), std::invalid_argument, "TensorData object not initialized!");
+  #endif
+          return tensorDataFamilies_[0](tensorFieldOrdinal, pointOrdinal, dim);
+        }
+        else
+        {
+          int familyForField = -1;
+          int previousFamilyEnd = -1;
+          int fieldAdjustment = 0;
+          // this loop is written in such a way as to avoid branching for CUDA performance
+          for (int family=0; family<numTensorDataFamilies_; family++)
+          {
+            const int familyFieldCount = tensorDataFamilies_[family].extent_int(0);
+            const bool fieldInRange    = (tensorFieldOrdinal > previousFamilyEnd) && (tensorFieldOrdinal <= previousFamilyEnd + familyFieldCount);
+            familyForField = fieldInRange ? family : familyForField;
+            fieldAdjustment = fieldInRange ? previousFamilyEnd + 1 : fieldAdjustment;
+            previousFamilyEnd += familyFieldCount;
+          }
+  #ifdef HAVE_INTREPID2_DEBUG
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE( familyForField == -1, std::invalid_argument, "fieldOrdinal appears to be out of range");
+  #endif
+          return tensorDataFamilies_[familyForField](tensorFieldOrdinal-fieldAdjustment,pointOrdinal,dim);
+        }
+      }
     }
     
     //! operator() for (C,F,P,D) data, which arises in CVFEM; at present unimplemented, and only declared here to allow a generic setJacobian() method in CellTools to compile.

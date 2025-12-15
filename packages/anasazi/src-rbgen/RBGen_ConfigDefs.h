@@ -49,12 +49,6 @@
 
 #include <Anasazi_config.h>
 
-#if defined(HAVE_ANASAZI_MPI) && defined(HAVE_ANASAZI_EPETRA)
-#ifndef EPETRA_MPI
-#define EPETRA_MPI
-#endif
-#endif
-
 #include <cstdlib>
 #include <cstdio>
 #include <string>

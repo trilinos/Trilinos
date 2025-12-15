@@ -71,6 +71,11 @@ int main(int argc, char* argv[])
     Teuchos::ParameterList amesos2LOWSFPL("Amesos2");
 
     amesos2LOWSFPL.set("Solver Type",solverType);
+    if (solverType == "KLU2") {
+      Teuchos::ParameterList & amesos2Params = amesos2LOWSFPL.sublist("Amesos2 Settings");
+      Teuchos::ParameterList & klu2Params = amesos2Params.sublist("KLU2");
+      klu2Params.set("IsContiguous", false);
+    }
 
     success
       = Thyra::test_single_amesos2_tpetra_solver(
