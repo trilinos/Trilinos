@@ -469,12 +469,6 @@ IF (Teuchos_TIMER_KOKKOS_FENCE)
   MESSAGE(STATUS "Will call Kokkos::fence() when a Teuchos timer starts or stops.")
 ENDIF()
 
-ASSERT_DEFINED(${PACKAGE_NAME}Comm_ENABLE_magistrate)
-IF(${PACKAGE_NAME}Comm_ENABLE_magistrate)
-  SET(HAVE_TEUCHOSCOMM_MAGISTRATE "ON" CACHE BOOL "Enable the magistrate library for checkpointing.")
-  MESSAGE(STATUS "Enabling magistrate checkpoint support for StackedTimer")
-ENDIF()
-
 #
 # D) Process the subpackages for Teuchos
 #
