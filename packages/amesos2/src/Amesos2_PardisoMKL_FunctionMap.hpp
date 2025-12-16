@@ -59,7 +59,6 @@ namespace Amesos2 {
 			 PMKL::_INTEGER_t* msglvl, void* b, void* x,
 			 PMKL::_INTEGER_t* error)
     {
-      printf("\n calling PMKL::pardiso:\n");
       PMKL::pardiso(pt, maxfct, mnum, mtype, phase, n, a, ia, ja,
 		    perm, nrhs, iparm, msglvl, b, x, error);
     }
@@ -78,7 +77,6 @@ namespace Amesos2 {
 			 long long int* msglvl, void* b, void* x,
 			 long long int* error)
     {
-      printf("\n calling PMKL::pardiso_64:\n");
       PMKL::pardiso_64(pt, maxfct, mnum, mtype, phase, n, a, ia, ja,
 		       perm, nrhs, iparm, msglvl, b, x, error);
     }

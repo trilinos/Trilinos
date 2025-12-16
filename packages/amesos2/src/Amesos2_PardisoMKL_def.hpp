@@ -45,7 +45,8 @@ namespace Amesos2 {
     , perm_(this->globalNumRows_)
     , nrhs_(0)
     , is_contiguous_(true)
-    , debug_level_(2)
+    , msglvl_(0)
+    , debug_level_(0)
   {
     // set the default matrix type
     set_pardiso_mkl_matrix_type();
@@ -151,19 +152,6 @@ namespace Amesos2 {
 
       int_t phase = 22;
       void *bdummy, *xdummy;
-      if (debug_level_ > 1) {
-        printf("\n == PardisoMKL::numericFactorization_impl ==\n" );
-        using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
-        printf("A=[\n");
-        for (int_t i=0; i<n_; i++) {
-          for (int_t k=rowptr_view_(i); k<rowptr_view_(i+1); k++) {
-            int colid = int(colind_view_(k));
-            double nzval = VTCT::convert(nzvals_view_(k));
-            printf("%d %d %.16e\n",i,colid,nzval);
-          }
-        }
-        printf("];\n");
-      }
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
@@ -225,19 +213,6 @@ namespace Amesos2 {
 #endif
 
       const int_t phase = 33;
-      if (debug_level_ > 1) {
-        using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
-        printf("\nB=[\n");
-        for (int_t i=0; i<n_; i++) {
-          for (int_t j=0; j<nrhs_; j++) {
-            double bij = VTCT::convert(bvals_[i+j*n_]);
-            printf("%.16e ",bij);
-          }
-          printf("\n");
-        }
-        printf("];\n");
-      }
-
       function_map::pardiso( pt_,
                              const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_),
@@ -253,18 +228,6 @@ namespace Amesos2 {
                              const_cast<int_t*>(&msglvl_),
                              as<void*>(bvals_.getRawPtr()),
                              as<void*>(xvals_.getRawPtr()), &error );
-      if (debug_level_ > 1) {
-        using VTCT = Teuchos::ValueTypeConversionTraits<double, solver_scalar_type>;
-        printf("\nX=[\n");
-        for (int_t i=0; i<n_; i++) {
-          for (int_t j=0; j<nrhs_; j++) {
-            double xij = VTCT::convert(xvals_[i+j*n_]);
-            printf("%.16e ",xij);
-          }
-          printf("\n");
-        }
-        printf("];\n\n");
-      }
     }
 
     check_pardiso_mkl_error(Amesos2::SOLVE, error);
@@ -402,6 +365,12 @@ namespace Amesos2 {
     if( parameterList->isParameter("IsContiguous") ){
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
     }
+    if( parameterList->isParameter("MessageLevel") ){
+      msglvl_ = parameterList->get<int>("MessageLevel");
+    }
+    if( parameterList->isParameter("DebugLevel") ){
+      debug_level_ = parameterList->get<int>("DebugLevel");
+    }
   }
 
 
@@ -525,6 +494,8 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
+    pl->set("MessageLevel", 0, "PardisoMKL message level");
+    pl->set("DebugLevel", 0, "Debug message level");
 
     valid_params = pl;
   }
@@ -664,16 +635,11 @@ const char* PardisoMKL<Matrix,Vector>::name = "PARDISOMKL";
 
 template <class Matrix, class Vector>
 const typename PardisoMKL<Matrix,Vector>::int_t
-PardisoMKL<Matrix,Vector>::msglvl_ = 1;
-
-template <class Matrix, class Vector>
-const typename PardisoMKL<Matrix,Vector>::int_t
 PardisoMKL<Matrix,Vector>::maxfct_ = 1;
 
 template <class Matrix, class Vector>
 const typename PardisoMKL<Matrix,Vector>::int_t
 PardisoMKL<Matrix,Vector>::mnum_ = 1;
-
 
 } // end namespace Amesos
 
