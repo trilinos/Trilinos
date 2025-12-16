@@ -61,7 +61,6 @@ struct TypeMap<KLU2,double>
 };
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-
 template <>
 struct TypeMap<KLU2,std::complex<float> >
 {
@@ -89,11 +88,8 @@ struct TypeMap<KLU2,Kokkos::complex<double> >
   typedef std::complex<double> dtype;
   typedef Kokkos::complex<double> type;
 };
-
 #endif  // HAVE_TEUCHOS_COMPLEX
-
 /* \endcond KLU2_type_specializations */
-
 
 } // end namespace Amesos2
 
