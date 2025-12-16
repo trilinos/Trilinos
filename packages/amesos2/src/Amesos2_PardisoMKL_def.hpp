@@ -494,8 +494,8 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
-    pl->set("MessageLevel", 0, "PardisoMKL message level");
-    pl->set("DebugLevel", 0, "Debug message level");
+    pl->set("MessageLevel", 0, "PardisoMKL message level (0 to turn off message, and 1 to turn on message");
+    pl->set("DebugLevel", 0, "Debug message level (0 for no message, and >0 for more message");
 
     valid_params = pl;
   }

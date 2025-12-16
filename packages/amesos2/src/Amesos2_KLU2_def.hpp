@@ -474,7 +474,7 @@ KLU2<Matrix,Vector>::getValidParameters_impl() const
     pl->set("Equil", true, "Whether to equilibrate the system before solve, does nothing now");
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
     pl->set("UseCustomGather", true, "Whether to use new matrix-gather routine");
-    pl->set("DebugLevel", 0, "Debug message level");
+    pl->set("DebugLevel", 0, "Debug message level (0 for no message, and >0 for more message");
 
     setStringToIntegralParameter<int>("Trans", "NOTRANS",
                                       "Solve for the transpose system or not",
