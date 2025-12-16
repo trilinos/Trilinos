@@ -14,7 +14,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StackedTimer.hpp"
 #include "Teuchos_DefaultComm.hpp"
-#include "TeuchosComm_config.h"
 #include <sstream>
 #include <thread> // std::this_thread::sleep_for;
 #include <tuple>
@@ -23,7 +22,7 @@
 #include <limits>
 #include <map>
 
-#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+#ifdef HAVE_TEUCHOS_MAGISTRATE
 #include <checkpoint/checkpoint.h>
 #endif
 
@@ -754,7 +753,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeInfoComparison)
   TEST_ASSERT(t1 != t7);
 }
 
-#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
+#ifdef HAVE_TEUCHOS_MAGISTRATE
 TEUCHOS_UNIT_TEST(StackedTimer, MagistrateCheckpointBaseTimer)
 {
   Teuchos::BaseTimer t;
@@ -866,4 +865,4 @@ TEUCHOS_UNIT_TEST(StackedTimer, MagistrateCheckpointStackedTimer)
   TEST_ASSERT(timer->findTimer("Total Time@Assembly@Jacobian").count == 20);
 }
 
-#endif // HAVE_TEUCHOSCOMM_MAGISTRATE
+#endif // HAVE_TEUCHOS_MAGISTRATE

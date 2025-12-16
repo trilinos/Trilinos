@@ -42,6 +42,10 @@ TRIBITS_ADD_LIBRARY(
   DEFINES -DTEUCHOSCOMM_LIB_EXPORTS_MODE
   )
 
+IF(HAVE_TEUCHOS_MAGISTRATE)
+  TARGET_LINK_LIBRARIES(teuchoscomm PUBLIC ${MAGISTRATE_LIBRARY})
+ENDIF()
+
 #
 # Make a trivial change to this comment if you add / remove a file
 # either to / from this directory, or to / from the 'impl'

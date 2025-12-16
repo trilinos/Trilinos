@@ -5,8 +5,8 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TrilinosFrameworkTests  commonTools/framework           PT
   TrilinosATDMConfigTests cmake/std/atdm                  PT
   Kokkos                packages/kokkos                   PT
-  Teuchos               packages/teuchos                  PT
   KokkosKernels         packages/kokkos-kernels           PT
+  Teuchos               packages/teuchos                  PT
   RTOp                  packages/rtop                     PT
   Sacado                packages/sacado                   PT
   MiniTensor            packages/minitensor               PT
