@@ -230,6 +230,8 @@ private:
 
   bool is_contiguous_;
   bool use_gather_;
+
+  int debug_level_;
 };                              // End class KLU2
 
 

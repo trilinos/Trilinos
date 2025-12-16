@@ -45,6 +45,8 @@ namespace Amesos2 {
     , perm_(this->globalNumRows_)
     , nrhs_(0)
     , is_contiguous_(true)
+    , msglvl_(0)
+    , debug_level_(0)
   {
     // set the default matrix type
     set_pardiso_mkl_matrix_type();
@@ -150,7 +152,6 @@ namespace Amesos2 {
 
       int_t phase = 22;
       void *bdummy, *xdummy;
-
       function_map::pardiso( pt_, const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
                              nzvals_view_.data(), rowptr_view_.data(),
@@ -176,6 +177,17 @@ namespace Amesos2 {
     // Get B data
     const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
     nrhs_ = as<int_t>(X->getGlobalNumVectors());
+    if (debug_level_ > 0) {
+      if (this->root_) std::cout << "\n == Amesos2_PardisoMKL::solve_impl ==" << std::endl;
+      if (debug_level_ == 1) {
+        B->description();
+      } else {
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        B->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+        std::cout << std::endl;
+        B->describe(*fancy, Teuchos::VERB_EXTREME);
+      }
+    }
 
     const size_t val_store_size = as<size_t>(ld_rhs * nrhs_);
     xvals_.resize(val_store_size);
@@ -201,7 +213,6 @@ namespace Amesos2 {
 #endif
 
       const int_t phase = 33;
-
       function_map::pardiso( pt_,
                              const_cast<int_t*>(&maxfct_),
                              const_cast<int_t*>(&mnum_),
@@ -232,7 +243,17 @@ namespace Amesos2 {
         solver_scalar_type>::do_put(X, xvals_(),
           as<size_t>(ld_rhs),
           (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED);
-  }
+    }
+    if (debug_level_ > 0) {
+      if (debug_level_ == 1) {
+        X->description();
+      } else {
+        Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+        X->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+        std::cout << std::endl;
+        X->describe(*fancy, Teuchos::VERB_EXTREME);
+      }
+    }
 
     return( 0 );
 }
@@ -343,6 +364,12 @@ namespace Amesos2 {
     
     if( parameterList->isParameter("IsContiguous") ){
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
+    }
+    if( parameterList->isParameter("MessageLevel") ){
+      msglvl_ = parameterList->get<int>("MessageLevel");
+    }
+    if( parameterList->isParameter("DebugLevel") ){
+      debug_level_ = parameterList->get<int>("DebugLevel");
     }
   }
 
@@ -467,6 +494,8 @@ PardisoMKL<Matrix,Vector>::getValidParameters_impl() const
             anyNumberParameterEntryValidator(preferred_int, accept_int));
 
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
+    pl->set("MessageLevel", 0, "PardisoMKL message level (0 to turn off message, and 1 to turn on message");
+    pl->set("DebugLevel", 0, "Debug message level (0 for no message, and >0 for more message");
 
     valid_params = pl;
   }
@@ -483,6 +512,11 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
+  if (debug_level_ > 0 && current_phase == NUMFACT) {
+    if (this->root_) std::cout << "\n == Amesos2_PardisoMKL::loadA_impl(NumFact) ==" << std::endl;
+    Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    this->matrixA_->describe(*fancy, Teuchos::VERB_EXTREME);
+  }
 
   // PardisoMKL does not need matrix data in the pre-ordering phase
   if( current_phase == PREORDERING ) return( false );
@@ -492,7 +526,6 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     Kokkos::resize(colind_view_, this->globalNumNonZeros_);
     Kokkos::resize(rowptr_view_, this->globalNumRows_ + 1);
   }
-
   {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor mtxRedistTimer( this->timers_.mtxRedistTime_ );
@@ -602,16 +635,11 @@ const char* PardisoMKL<Matrix,Vector>::name = "PARDISOMKL";
 
 template <class Matrix, class Vector>
 const typename PardisoMKL<Matrix,Vector>::int_t
-PardisoMKL<Matrix,Vector>::msglvl_ = 0;
-
-template <class Matrix, class Vector>
-const typename PardisoMKL<Matrix,Vector>::int_t
 PardisoMKL<Matrix,Vector>::maxfct_ = 1;
 
 template <class Matrix, class Vector>
 const typename PardisoMKL<Matrix,Vector>::int_t
 PardisoMKL<Matrix,Vector>::mnum_ = 1;
-
 
 } // end namespace Amesos
 

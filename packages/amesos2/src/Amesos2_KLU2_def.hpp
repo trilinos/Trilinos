@@ -37,6 +37,7 @@ KLU2<Matrix,Vector>::KLU2(
   , transFlag_(0)
   , is_contiguous_(true)
   , use_gather_(true)
+  , debug_level_(0)
 {
   ::KLU2::klu_defaults<klu2_dtype, local_ordinal_type> (&(data_.common_)) ;
   data_.symbolic_ = NULL;
@@ -171,6 +172,19 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
       // is the only error/throw we currently have a unit test for.
       if(data_.numeric_ == nullptr) {
         info = 1;
+        if(debug_level_ > 0) {
+          std::cout << " ** Amesos2::KLU2::numericFactorization failed with status = ";
+          if(data_.common_.status == KLU_OK)
+            std::cout << "KLU_OK **\n";
+          else if (data_.common_.status == KLU_SINGULAR)
+            std::cout << "KLU_SINGULAR **\n";
+          else if (data_.common_.status == KLU_OUT_OF_MEMORY)
+            std::cout << "KLU_OUT_OF_MEMORY **\n";
+          else if (data_.common_.status == KLU_INVALID)
+            std::cout << "KLU_INVALID **\n";
+          else if (data_.common_.status == KLU_TOO_LARGE) 
+            std::cout << "KLU_TOO_LARGE **\n";
+        }
       }
 
       // This is set after numeric factorization complete as pivoting can be used;
@@ -202,6 +216,17 @@ KLU2<Matrix,Vector>::solve_impl(
 
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
+  if (debug_level_ > 0) {
+    if (this->root_) std::cout << "\n == Amesos2_KLU2::solve_impl ==" << std::endl;
+    if (debug_level_ == 1) {
+      B->description();
+    } else {
+      Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      B->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+      std::cout << std::endl;
+      B->describe(*fancy, Teuchos::VERB_EXTREME);
+    }
+  }
 
   bool bDidAssignX;
   bool bDidAssignB;
@@ -374,6 +399,16 @@ KLU2<Matrix,Vector>::solve_impl(
           this->rowIndexBase_);
     }
   }
+  if (debug_level_ > 0) {
+    if (debug_level_ == 1) {
+      X->description();
+    } else {
+      Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      X->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+      std::cout << std::endl;
+      X->describe(*fancy, Teuchos::VERB_EXTREME);
+    }
+  }
   return(ierr);
 }
 
@@ -414,6 +449,10 @@ KLU2<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterLis
   if( parameterList->isParameter("UseCustomGather") ){
     use_gather_ = parameterList->get<bool>("UseCustomGather");
   }
+
+  if( parameterList->isParameter("DebugLevel") ){
+    debug_level_ = parameterList->get<int>("DebugLevel");
+  }
 }
 
 
@@ -435,6 +474,7 @@ KLU2<Matrix,Vector>::getValidParameters_impl() const
     pl->set("Equil", true, "Whether to equilibrate the system before solve, does nothing now");
     pl->set("IsContiguous", true, "Whether GIDs contiguous");
     pl->set("UseCustomGather", true, "Whether to use new matrix-gather routine");
+    pl->set("DebugLevel", 0, "Debug message level (0 for no message, and >0 for more message");
 
     setStringToIntegralParameter<int>("Trans", "NOTRANS",
                                       "Solve for the transpose system or not",
@@ -461,6 +501,11 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 #endif
 
   if(current_phase == SOLVE)return(false);
+  if (debug_level_ > 0 && current_phase == NUMFACT) {
+    if (this->root_) std::cout << "\n == Amesos2_KLU2::loadA_impl(NumFact) ==\n" << std::endl;
+    Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    this->matrixA_->describe(*fancy, Teuchos::VERB_EXTREME);
+  }
 
   if ( single_proc_optimization() ) {
     // Do nothing in this case - Crs raw pointers will be used
