@@ -173,18 +173,17 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
       if(data_.numeric_ == nullptr) {
         info = 1;
         if(debug_level_ > 0) {
-          printf( " ** Amesos2::KLU2::numericFactorization failed with status = " );
+          std::cout << " ** Amesos2::KLU2::numericFactorization failed with status = ";
           if(data_.common_.status == KLU_OK)
-            printf( "KLU_OK" );
+            std::cout << "KLU_OK **\n";
           else if (data_.common_.status == KLU_SINGULAR)
-            printf( "KLU_SINGULAR" );
+            std::cout << "KLU_SINGULAR **\n";
           else if (data_.common_.status == KLU_OUT_OF_MEMORY)
-            printf( "KLU_OUT_OF_MEMORY");
+            std::cout << "KLU_OUT_OF_MEMORY **\n";
           else if (data_.common_.status == KLU_INVALID)
-            printf( "KLU_INVALID");
+            std::cout << "KLU_INVALID **\n";
           else if (data_.common_.status == KLU_TOO_LARGE) 
-            printf( "KLU_TOO_LARGE");
-          printf(" **\n");
+            std::cout << "KLU_TOO_LARGE **\n";
         }
       }
 
@@ -218,7 +217,7 @@ KLU2<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
   if (debug_level_ > 0) {
-    if (this->root_) printf("\n == Amesos2_KLU2::solve_impl ==\n");
+    if (this->root_) std::cout << "\n == Amesos2_KLU2::solve_impl ==" << std::endl;
     if (debug_level_ == 1) {
       B->description();
     } else {
@@ -503,7 +502,7 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   if(current_phase == SOLVE)return(false);
   if (debug_level_ > 0 && current_phase == NUMFACT) {
-    if (this->root_) printf("\n == Amesos2_KLU2::loadA_impl(NumFact) ==\n");
+    if (this->root_) std::cout << "\n == Amesos2_KLU2::loadA_impl(NumFact) ==\n" << std::endl;
     Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     this->matrixA_->describe(*fancy, Teuchos::VERB_EXTREME);
   }

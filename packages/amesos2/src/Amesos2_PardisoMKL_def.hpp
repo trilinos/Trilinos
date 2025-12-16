@@ -178,7 +178,7 @@ namespace Amesos2 {
     const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
     nrhs_ = as<int_t>(X->getGlobalNumVectors());
     if (debug_level_ > 0) {
-      if (this->root_) printf("\n == Amesos2_PardisoMKL::solve_impl ==\n");
+      if (this->root_) std::cout << "\n == Amesos2_PardisoMKL::solve_impl ==" << std::endl;
       if (debug_level_ == 1) {
         B->description();
       } else {
@@ -513,7 +513,7 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
   if (debug_level_ > 0 && current_phase == NUMFACT) {
-    if (this->root_) printf("\n == Amesos2_PardisoMKL::loadA_impl(NumFact) ==\n");
+    if (this->root_) std::cout << "\n == Amesos2_PardisoMKL::loadA_impl(NumFact) ==" << std::endl;
     Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     this->matrixA_->describe(*fancy, Teuchos::VERB_EXTREME);
   }
