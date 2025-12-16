@@ -111,11 +111,9 @@ namespace Amesos2 {
 #endif
 
 #ifdef HAVE_AMESOS2_MUMPS
-    if(solverName  == "MUMPS" || solverName == "mumps" ||
-       solverName == "amesos2_MUMPS" || solverName == "amesos2_MUMPS")
-      {
-        return true;
-      }
+    if(solverName == "mumps" || solverName == "amesos2_mumps") {
+      return true;
+    }
 #endif
 
 #ifdef HAVE_AMESOS2_STRUMPACK

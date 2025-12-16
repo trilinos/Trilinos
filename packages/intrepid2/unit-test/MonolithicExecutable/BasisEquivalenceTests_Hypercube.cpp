@@ -30,9 +30,9 @@ using namespace Intrepid2;
 
 namespace
 {
-  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HGRAD )
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HGRAD_LowD )
   {
-    const int maxSpaceDim = 7; // we only test polyDegree = 1 for spaceDim > 5, due to test performance considerations
+    const int maxSpaceDim = 4; // we only test polyDegree = 1 for spaceDim > 5, due to test performance considerations
     const int maxDegree = 2;
     
     using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
@@ -59,6 +59,90 @@ namespace
         auto nodalBasis        = getHypercubeBasis_HGRAD<NodalBasisFamily>(polyDegree, spaceDim);
         BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*nodalBasis, *hierarchicalBasis, opsToTest, relTol, absTol, out, success);
       }
+    }
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HGRAD_D5 )
+  {
+    const int spaceDim = 5; // we only test polyDegree = 1 for spaceDim > 4, due to test performance considerations
+    const int maxDegree = 1;
+    
+    using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using NodalBasisFamily = NodalBasisFamily<DefaultTestDeviceType>;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-14;
+    const double absTol=1e-14;
+    
+    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HGRAD;
+    
+    const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+    for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
+    {
+      out << "** polyDegree " << polyDegree << " **\n";
+      out << "** spaceDim " << spaceDim << " **\n";
+      auto hierarchicalBasis = getHypercubeBasis_HGRAD<HierarchicalBasisFamily>(polyDegree, spaceDim);
+      auto nodalBasis        = getHypercubeBasis_HGRAD<NodalBasisFamily>(polyDegree, spaceDim);
+      BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*nodalBasis, *hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+  
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HGRAD_D6 )
+  {
+    const int spaceDim = 6; // we only test polyDegree = 1 for spaceDim > 4, due to test performance considerations
+    const int maxDegree = 1;
+    
+    using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using NodalBasisFamily = NodalBasisFamily<DefaultTestDeviceType>;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-14;
+    const double absTol=1e-14;
+    
+    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HGRAD;
+    
+    const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+    for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
+    {
+      out << "** polyDegree " << polyDegree << " **\n";
+      out << "** spaceDim " << spaceDim << " **\n";
+      auto hierarchicalBasis = getHypercubeBasis_HGRAD<HierarchicalBasisFamily>(polyDegree, spaceDim);
+      auto nodalBasis        = getHypercubeBasis_HGRAD<NodalBasisFamily>(polyDegree, spaceDim);
+      BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*nodalBasis, *hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HGRAD_D7 )
+  {
+    const int spaceDim = 7; // we only test polyDegree = 1 for spaceDim > 4, due to test performance considerations
+    const int maxDegree = 1;
+    
+    using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
+    using NodalBasisFamily = NodalBasisFamily<DefaultTestDeviceType>;
+    
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+    
+    // these tolerances are selected such that we have a little leeway for architectural differences
+    // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
+    const double relTol=1e-14;
+    const double absTol=1e-14;
+    
+    Intrepid2::EFunctionSpace fs = FUNCTION_SPACE_HGRAD;
+    
+    const int minDegree = (fs == FUNCTION_SPACE_HVOL) ? 0 : 1;
+    for (int polyDegree = minDegree; polyDegree <= maxDegree; polyDegree++)
+    {
+      out << "** polyDegree " << polyDegree << " **\n";
+      out << "** spaceDim " << spaceDim << " **\n";
+      auto hierarchicalBasis = getHypercubeBasis_HGRAD<HierarchicalBasisFamily>(polyDegree, spaceDim);
+      auto nodalBasis        = getHypercubeBasis_HGRAD<NodalBasisFamily>(polyDegree, spaceDim);
+      BasisEquivalenceHelpers::testBasisEquivalence<DefaultTestDeviceType>(*nodalBasis, *hierarchicalBasis, opsToTest, relTol, absTol, out, success);
     }
   }
 
@@ -159,7 +243,7 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisEquivalence, HypercubeNodalVersusHypercubeHierarchical_HVOL )
   {
-    const int maxSpaceDim = 7; // we only test polyDegree = 0,1 for spaceDim > 5, due to test performance considerations
+    const int maxSpaceDim = 7; // we only test polyDegree = 0,1 for spaceDim > 4, due to test performance considerations
     const int maxDegreeForCardinalityTests = 2;
     
     using HierarchicalBasisFamily = HierarchicalBasisFamily<DefaultTestDeviceType>;
@@ -180,7 +264,7 @@ namespace
       out << "** polyDegree " << polyDegree << " **\n";
       for (int spaceDim = 1; spaceDim <= maxSpaceDim; spaceDim++)
       {
-        if ((polyDegree > 1) && (spaceDim > 5)) continue; // skip this case in the interest of test performance
+        if ((polyDegree > 1) && (spaceDim > 4)) continue; // skip this case in the interest of test performance
         out << "** spaceDim " << spaceDim << " **\n";
         auto hierarchicalBasis = getHypercubeBasis_HVOL<HierarchicalBasisFamily>(polyDegree, spaceDim);
         auto nodalBasis        = getHypercubeBasis_HVOL<NodalBasisFamily>(polyDegree, spaceDim);

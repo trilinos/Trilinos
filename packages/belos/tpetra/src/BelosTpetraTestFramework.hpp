@@ -112,7 +112,7 @@ namespace Belos {
         int *colptr,*rowind;
         nnz = -1;
         if (MyPID == 0) {
-          info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+          info = ::Tpetra::HB::readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
           // find maximum NNZ over all rows
           std::vector<int> rnnz(dim,0);
           for (int *ri=rowind; ri<rowind+nnz; ++ri) {

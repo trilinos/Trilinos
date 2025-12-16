@@ -6,15 +6,101 @@ FILE(GLOB TEST_SOURCES "*.cpp")
 
 TRIBITS_INCLUDE_DIRECTORIES("../../assembly-examples")
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Intrepid2_Tests
+TRIBITS_ADD_EXECUTABLE (
+  Monolithic
+  NOEXESUFFIX
   SOURCES ${TEST_SOURCES}
-  ARGS 
+  )
+
+# Basis Equivalence Tests -- can be expensive; divided according to element types
+
+SET( ElemTypes
+  Line
+  Quad
+  Tri
+  Hexahedron
+  Tet
+  Wedge
+  Pyramid
+  Hypercube
+)
+
+FOREACH( ElemType IN LISTS ElemTypes)
+  TRIBITS_ADD_TEST(
+    Monolithic
+    NOEXESUFFIX
+    NAME BasisEquivalence${ElemType}
+    ARGS "--group=BasisEquivalence* --test=${ElemType}*"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+  )
+ENDFOREACH()
+
+# Projected Geometry -- Linear tests
+TRIBITS_ADD_TEST(
+  Monolithic
+  NOEXESUFFIX
+  NAME ProjectedLinearGeometry
+  ARGS "--group=ProjectedGeometry* --test=Linear*"
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  RUN_SERIAL
+)
+
+# Projected Geometry -- Circular tests, single-cell
+TRIBITS_ADD_TEST(
+  Monolithic
+  NOEXESUFFIX
+  NAME ProjectedCircularGeometry_SingleCell
+  ARGS "--group=ProjectedGeometry* --test=CircularGeometryConvergesInP_SingleCell"
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+)
+
+# Projected Geometry -- Circular tests, multi-cell
+TRIBITS_ADD_TEST(
+  Monolithic
+  NOEXESUFFIX
+  NAME ProjectedCircularGeometry_MultiCell
+  ARGS "--group=ProjectedGeometry* --test=CircularGeometryConvergesInP_MultiCell"
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+)
+
+# other tests are divided such that they can be handled using --group argument alone
+SET( TestGroups
+  AnalyticPolynomialsMatch
+  BasisCardinality
+  BasisOpDecomposition
+  BasisValues
+  CellGeometry
+  CubatureTensor
+  Data
+  DirectSumBasis
+  HostCopyTests.cpp
+  IntegratedJacobi
+  IntegratedLegendre
+  Jacobi
+  Legendre
+  StructuredIntegration
+  SubBasisInclusion
+  TensorBasis
+  TensorTopologyMap
+  TensorViewFunctor
+  TransformedBasisValues
+  VectorData
+  ViewIterator
+)
+
+FOREACH( TestGroup IN LISTS TestGroups )
+  TRIBITS_ADD_TEST(
+    Monolithic
+    NOEXESUFFIX
+    NAME ${TestGroup}
+    ARGS "--group=${TestGroup}*"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
+ENDFOREACH()
 
 # add single-group tests; allows for easier targeted builds and debugging (especially useful under CUDA)
 # since each of these is redundant with Intrepid2_Tests above, we don't build them when all targets are built

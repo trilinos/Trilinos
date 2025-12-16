@@ -206,11 +206,12 @@ subview(const DynRankView<T, LayoutContiguous<LayoutSrc, StrideSrc>, DRVArgs...>
 }
 } // namespace Kokkos
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL)
-namespace Kokkos {
-template <class SrcT, class SrcL, unsigned SrcS, class... SrcArgs>
-void resize(
-    Kokkos::View<SrcT, Kokkos::LayoutContiguous<SrcL, SrcS>, SrcArgs...> &src,
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+namespace Sacado {
+namespace Impl {
+template <class SrcT, class... SrcArgs>
+void resize_view(
+    Kokkos::View<SrcT, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -222,7 +223,7 @@ void resize(
   const size_t new_extents[8] = {n0, n1, n2, n3, n4, n5, n6, n7};
   bool size_mismatch = false;
   using view_t =
-      Kokkos::View<SrcT, Kokkos::LayoutContiguous<SrcL, SrcS>, SrcArgs...>;
+      Kokkos::View<SrcT, SrcArgs...>;
   for (int r = 0; r < (int)src.rank(); r++) {
     if (new_extents[r] != src.extent(r))
       size_mismatch = true;
@@ -286,7 +287,7 @@ void resize(
             int i0 = (ii / (src.extent(4) * src.extent(3) * src.extent(2) *
                             src.extent(1)));
             dst(i0, i1, i2, i3, i4) = src(i0, i1, i2, i3, i4);
-          } else if constexpr (view_t::rank() == 5) {
+          } else if constexpr (view_t::rank() == 6) {
             int i5 = ii % src.extent(5);
             int i4 = (ii / src.extent(5)) % src.extent(4);
             int i3 = (ii / (src.extent(5) * src.extent(4))) % src.extent(3);
@@ -298,11 +299,123 @@ void resize(
             int i0 = (ii / (src.extent(5) * src.extent(4) * src.extent(3) *
                             src.extent(2) * src.extent(1)));
             dst(i0, i1, i2, i3, i4, i5) = src(i0, i1, i2, i3, i4, i5);
+          } else if constexpr (view_t::rank() == 7) {
+            int i6 = ii % src.extent(6);
+            int i5 = (ii / src.extent(6)) % src.extent(5);
+            int i4 = (ii / (src.extent(6) * src.extent(5))) % src.extent(4);
+            int i3 = (ii / (src.extent(6) * src.extent(5) * src.extent(4))) %
+                     src.extent(3);
+            int i2 = (ii / (src.extent(6) * src.extent(5) * src.extent(4) *
+                            src.extent(3))) %
+                     src.extent(2);
+            int i1 = (ii / (src.extent(6) * src.extent(5) * src.extent(4) *
+                            src.extent(3) * src.extent(2))) %
+                     src.extent(1);
+            int i0 = (ii / (src.extent(6) * src.extent(5) * src.extent(4) *
+                            src.extent(3) * src.extent(2) * src.extent(1)));
+
+            dst(i0, i1, i2, i3, i4, i5, i6) = src(i0, i1, i2, i3, i4, i5, i6);
           }
         });
     Kokkos::fence();
     src = dst;
   }
 }
-} // namespace Kokkos
+} // namespace Impl
+} // namespace Sacado
+
+namespace Kokkos {
+
+template <class SrcT, class... SrcArgs>
+void resize(
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...> &src,
+    const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+}
+template <class SrcT, class... SrcArgs>
+void resize(
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>*, SrcArgs...> &src,
+    const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+}
+template <class SrcT, class... SrcArgs>
+void resize(
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>**, SrcArgs...> &src,
+    const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+}
+template <class SrcT, class... SrcArgs>
+void resize(
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>***, SrcArgs...> &src,
+    const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+}
+template <class SrcT, class... SrcArgs>
+void resize(
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>****, SrcArgs...> &src,
+    const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+}
+template <class SrcT, class... SrcArgs>
+void resize(
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>*****, SrcArgs...> &src,
+    const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+}
+template <class SrcT, class... SrcArgs>
+void resize(
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>******, SrcArgs...> &src,
+    const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+    const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+}
+}
 #endif // SACADO_VIEW_CUDA_HIERARCHICAL

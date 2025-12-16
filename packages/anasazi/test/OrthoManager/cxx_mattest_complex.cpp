@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
       double *dvals;
       int *colptr,*rowind;
       nnz = -1;
-      int info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
+      int info = Tpetra::HB::readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
           &colptr,&rowind,&dvals);
       TEUCHOS_TEST_FOR_EXCEPTION(info == 0 || nnz < 0, 
           std::runtime_error,
