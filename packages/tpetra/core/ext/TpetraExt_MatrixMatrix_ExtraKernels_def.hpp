@@ -1047,9 +1047,9 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
 
   if (!Pview.importMatrix.is_null()) {
     const KCRS Imat = Pview.importMatrix->getLocalMatrixDevice();
-    Irowptr          = Imat.graph.row_map;
-    Icolind          = Imat.graph.entries;
-    Ivals            = Imat.values;
+    Irowptr         = Imat.graph.row_map;
+    Icolind         = Imat.graph.entries;
+    Ivals           = Imat.values;
   }
 
   // Classic csr assembly (low memory edition)
@@ -1305,9 +1305,9 @@ static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Sca
 
   if (!Pview.importMatrix.is_null()) {
     const KCRS Imat = Pview.importMatrix->getLocalMatrixDevice();
-    Irowptr          = Imat.graph.row_map;
-    Icolind          = Imat.graph.entries;
-    Ivals            = Imat.values;
+    Irowptr         = Imat.graph.row_map;
+    Icolind         = Imat.graph.entries;
+    Ivals           = Imat.values;
   }
 
   // Get my node / thread info (right from openmp or parameter list)
