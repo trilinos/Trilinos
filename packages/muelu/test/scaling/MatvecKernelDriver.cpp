@@ -376,7 +376,7 @@ class MagmaSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosC
                         const vector_type& X,
                         vector_type& Y) {
     // data access common to other TPLs
-    const KCRS& Amat          = A.getLocalMatrixHost();
+    const KCRS Amat           = A.getLocalMatrixHost();
     c_lno_view_t Arowptr      = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind  = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
@@ -522,7 +522,7 @@ class CuSparse_SpmV_Pack<double, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosComp
                      const vector_type& X,
                      vector_type& Y) {
     // data access common to other TPLs
-    const KCRS& Amat          = A.getLocalMatrixDevice();
+    const KCRS Amat           = A.getLocalMatrixDevice();
     c_lno_view_t Arowptr      = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind  = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
@@ -680,9 +680,9 @@ void MV_Tpetra(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void MV_KK(const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A, const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y) {
   typedef typename Node::device_type device_type;
-  const auto& AK = A.getLocalMatrixDevice();
-  auto X_lcl     = x.getLocalViewDevice(Tpetra::Access::ReadOnly);
-  auto Y_lcl     = y.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  const auto AK = A.getLocalMatrixDevice();
+  auto X_lcl    = x.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto Y_lcl    = y.getLocalViewDevice(Tpetra::Access::OverwriteAll);
   KokkosSparse::spmv(KokkosSparse::NoTranspose, Teuchos::ScalarTraits<Scalar>::one(), AK, X_lcl, Teuchos::ScalarTraits<Scalar>::zero(), Y_lcl);
   Kokkos::fence();
 }
@@ -986,7 +986,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
     typedef typename Node::device_type device_type;
 
     // data access common to other TPLs
-    const KCRS& Amat          = At->getLocalMatrixHost();
+    const KCRS Amat           = At->getLocalMatrixHost();
     c_lno_view_t Arowptr      = Amat.graph.row_map;
     c_lno_nnz_view_t Acolind  = Amat.graph.entries;
     const scalar_view_t Avals = Amat.values;
