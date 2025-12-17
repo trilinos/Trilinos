@@ -86,8 +86,8 @@ void Jacobi_MKL_SPMM(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, N
   RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
   RCP<const vector_type> Du     = Xpetra::toTpetra(D);
 
-  const KCRS &Amat = Au->getLocalMatrixDevice();
-  const KCRS &Bmat = Bu->getLocalMatrixDevice();
+  const KCRS Amat = Au->getLocalMatrixDevice();
+  const KCRS Bmat = Bu->getLocalMatrixDevice();
 
   if (A.getLocalNumRows() != C.getLocalNumRows()) throw std::runtime_error("C is not sized correctly");
 
