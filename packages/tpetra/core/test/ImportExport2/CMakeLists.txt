@@ -24,6 +24,14 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   ImportExport2_UnitTests
+  NAME ImportExport2_UnitTests_Persistent
+  COMM serial mpi
+  ARGS "--distributor-send-type=Persistent --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  ImportExport2_UnitTests
   NAME ImportExport2_UnitTests_Alltoall
   COMM serial mpi
   ARGS "--distributor-send-type=Alltoall --globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
