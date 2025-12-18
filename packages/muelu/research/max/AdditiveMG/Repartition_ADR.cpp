@@ -149,10 +149,6 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
-  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
-    throw std::invalid_argument("This example only supports Tpetra.");
-  }
-
   ParameterList mueluParams;
   Teuchos::updateParametersFromXmlFile(solverOptionsFile, Teuchos::inoutArg(mueluParams));
 

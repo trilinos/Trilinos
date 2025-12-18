@@ -20,12 +20,7 @@
 #include "Xpetra_MatrixFactory2.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
-#ifdef HAVE_XPETRA_TPETRA
 #include "Xpetra_TpetraCrsMatrix.hpp"
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-#include "Xpetra_EpetraCrsMatrix.hpp"
-#endif
 namespace {
 using Xpetra::viewLabel_t;
 
@@ -57,7 +52,6 @@ Teuchos::RCP<const Teuchos::Comm<int> > getDefaultComm() {
 
 ////
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, ViewSwitching, M, MA, Scalar, LO, GO, Node) {
-#ifdef HAVE_XPETRA_TPETRA
   typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
 
@@ -103,7 +97,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, ViewSwitching, M, MA, Scalar, LO, GO, 
 
     op.fillComplete();
   }
-#endif
 }
 
 ////
@@ -112,7 +105,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, StridedMaps_Tpetra, M, MA, Scalar, LO,
   const size_t numLocal                        = 10;
   const size_t INVALID                         = Teuchos::OrdinalTraits<size_t>::invalid();  // TODO: global_size_t instead of size_t
 
-#ifdef HAVE_XPETRA_TPETRA
   typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
   Teuchos::RCP<const Xpetra::Map<LO, GO, Node> > map =
       Xpetra::MapFactory<LO, GO, Node>::createContigMapWithNode(Xpetra::UseTpetra, INVALID, numLocal, comm);
@@ -132,36 +124,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, StridedMaps_Tpetra, M, MA, Scalar, LO,
     int blkSize = op.GetFixedBlockSize();
     TEST_EQUALITY_CONST(blkSize, 2);
   }
-#endif
-}
-
-////
-TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, StridedMaps_Epetra, M, MA, Scalar, LO, GO, Node) {
-#ifdef HAVE_XPETRA_EPETRA
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
-  const size_t numLocal                        = 10;
-  const size_t INVALID                         = Teuchos::OrdinalTraits<size_t>::invalid();
-
-  typedef Xpetra::CrsMatrixWrap<double, int, GO, Xpetra::EpetraNode> EpCrsMatrix;
-
-  Teuchos::RCP<const Xpetra::Map<int, GO, Node> > epmap = Xpetra::MapFactory<int, GO, Node>::createContigMap(Xpetra::UseEpetra, INVALID, numLocal, comm);
-  {
-    Xpetra::EpetraCrsMatrixT<GO, Node> t = Xpetra::EpetraCrsMatrixT<GO, Node>(epmap, numLocal);
-
-    // Test of constructor
-    EpCrsMatrix op(epmap, 1);
-    op.fillComplete();
-
-    TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
-    TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.SwitchToView(op.GetCurrentViewLabel()));
-
-    op.SetFixedBlockSize(2);
-    TEST_EQUALITY(op.IsView("stridedMaps"), true);
-    TEST_EQUALITY(op.IsView("StridedMaps"), false);
-    int blkSize = op.GetFixedBlockSize();
-    TEST_EQUALITY_CONST(blkSize, 2);
-  }
-#endif
 }
 
 ////
@@ -170,7 +132,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, BuildCopy_StridedMaps_Tpetra, M, MA, S
   const size_t numLocal                        = 10;
   const size_t INVALID                         = Teuchos::OrdinalTraits<size_t>::invalid();  // TODO: global_size_t instead of size_t
 
-#ifdef HAVE_XPETRA_TPETRA
   typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
   Teuchos::RCP<const Xpetra::Map<LO, GO, Node> > map =
       Xpetra::MapFactory<LO, GO, Node>::createContigMapWithNode(Xpetra::UseTpetra, INVALID, numLocal, comm);
@@ -186,7 +147,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, BuildCopy_StridedMaps_Tpetra, M, MA, S
     int blkSize = t->GetFixedBlockSize();
     TEST_EQUALITY_CONST(blkSize, 2);
   }
-#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, BlockDiagonalUtils_Tpetra, M, MA, Scalar, LO, GO, Node) {
@@ -199,7 +159,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, BlockDiagonalUtils_Tpetra, M, MA, Scal
   using Teuchos::rcp_const_cast;
   Scalar SC_one = Teuchos::ScalarTraits<Scalar>::one();
 
-#ifdef HAVE_XPETRA_TPETRA
   using MV = Xpetra::MultiVector<Scalar, LO, GO, Node>;
   typedef Xpetra::CrsMatrixWrap<Scalar, LO, GO, Node> CrsMatrixWrap;
   RCP<const Xpetra::Map<LO, GO, Node> > map =
@@ -234,27 +193,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, BlockDiagonalUtils_Tpetra, M, MA, Scal
 
     Xpetra::MatrixUtils<Scalar, LO, GO, Node>::inverseScaleBlockDiagonal(*diag5c, false, *toScale5);
   }
-#endif
 }
 
 //
 // INSTANTIATIONS
 //
-#ifdef HAVE_XPETRA_TPETRA
 
 #define XPETRA_TPETRA_TYPES(S, LO, GO, N)                     \
   typedef typename Xpetra::TpetraMap<LO, GO, N> M##LO##GO##N; \
   typedef typename Xpetra::TpetraCrsMatrix<S, LO, GO, N> MA##S##LO##GO##N;
-
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-
-#define XPETRA_EPETRA_TYPES(S, LO, GO, N)                  \
-  typedef typename Xpetra::EpetraMapT<GO, N> M##LO##GO##N; \
-  typedef typename Xpetra::EpetraCrsMatrixT<GO, N> MA##S##LO##GO##N;
-
-#endif
 
 // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S, LO, GO, N)                                                                             \
@@ -266,15 +213,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(Matrix, BlockDiagonalUtils_Tpetra, M, MA, Scal
 #define XP_TPETRA_MATRIX_INSTANT_NO_COMPLEX(S, LO, GO, N) \
   TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(Matrix, BlockDiagonalUtils_Tpetra, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)
 
-// List of tests which run only with Epetra
-#define XP_EPETRA_MATRIX_INSTANT(S, LO, GO, N) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT(Matrix, StridedMaps_Epetra, M##LO##GO##N, MA##S##LO##GO##N, S, LO, GO, N)
-
-// list of all tests which run both with Epetra and Tpetra
-//#define XP_MATRIX_INSTANT(S,LO,GO,N)
-
-#if defined(HAVE_XPETRA_TPETRA)
-
 #include <TpetraCore_config.h>
 #include <TpetraCore_ETIHelperMacros.h>
 
@@ -285,26 +223,6 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XP_TPETRA_MATRIX_INSTANT)
 
 #if !defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && !defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(XP_TPETRA_MATRIX_INSTANT_NO_COMPLEX)
-#endif
-
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA)
-
-#include "Xpetra_Map.hpp"  // defines EpetraNode
-typedef Xpetra::EpetraNode EpetraNode;
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-XPETRA_EPETRA_TYPES(double, int, int, EpetraNode)
-// XP_MATRIX_INSTANT(double,int,int,EpetraNode)
-XP_EPETRA_MATRIX_INSTANT(double, int, int, EpetraNode)
-#endif
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-typedef long long LongLong;
-XPETRA_EPETRA_TYPES(double, int, LongLong, EpetraNode)
-// XP_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
-XP_EPETRA_MATRIX_INSTANT(double, int, LongLong, EpetraNode)
-#endif
-
 #endif
 
 }  // namespace

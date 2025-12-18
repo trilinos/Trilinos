@@ -20,11 +20,10 @@
 
 #include "Galeri_XpetraMaps.hpp"
 
-#ifndef XPETRA_TEST_USE_LONGLONG_GO
-#define GO int
-#else
-#define GO long long
-#endif
+#include <Tpetra_Map.hpp>
+
+using LO = Tpetra::Map<>::local_ordinal_type;
+using GO = Tpetra::Map<>::global_ordinal_type;
 
 int main(int argc, char *argv[]) {
   using Teuchos::RCP;
@@ -66,7 +65,7 @@ int main(int argc, char *argv[]) {
     galeriList.set("my", (GO)1);
 
     // Creation of the map
-    RCP< ::Xpetra::Map<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>(lib, "Cartesian2D", comm, galeriList);
+    RCP< ::Xpetra::Map<LO, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<LO, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>(lib, "Cartesian2D", comm, galeriList);
 
     // Print out the parameters
     cout << galeriList;
@@ -89,7 +88,7 @@ int main(int argc, char *argv[]) {
     galeriList.set("nz", (GO)2);
 
     // Creation of the map
-    RCP< ::Xpetra::Map<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<int, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>(lib, "Cartesian3D", comm, galeriList);
+    RCP< ::Xpetra::Map<LO, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType> > map = Galeri::Xpetra::CreateMap<LO, GO, Tpetra::KokkosClassic::DefaultNode::DefaultNodeType>(lib, "Cartesian3D", comm, galeriList);
 
     // Print out the parameters
     cout << galeriList;

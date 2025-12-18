@@ -44,9 +44,6 @@ int main(int argc, char *argv[])
 
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
 
-    bool useepetra = true;
-    My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
-
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
@@ -59,11 +56,6 @@ int main(int argc, char *argv[])
     TimeMonitor::setStackedTimer(stackedTimer);
 
     UnderlyingLib xpetraLib = UseTpetra;
-    if (useepetra) {
-        xpetraLib = UseEpetra;
-    } else {
-        xpetraLib = UseTpetra;
-    }
 
     RCP<const Comm<LO> > SerialComm = rcp(new MpiComm<LO>(MPI_COMM_SELF));
 

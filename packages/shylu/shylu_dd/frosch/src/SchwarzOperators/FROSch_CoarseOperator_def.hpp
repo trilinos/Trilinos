@@ -596,7 +596,7 @@ namespace FROSch {
 
             LO numProcsGatheringStep = this->MpiComm_->getSize();
             GO numGlobalIndices = coarseMapUnique->getMaxAllGlobalIndex();
-            if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+            if (coarseMapUnique->getGlobalNumElements()>0) {
                 numGlobalIndices += 1;
             }
             LO numMyRows;
@@ -833,7 +833,7 @@ namespace FROSch {
             GatheringMaps_[gatheringSteps-1] = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),INVALID,uniEle,0,this->MpiComm_);
 
             GO numGlobalIndices = coarseMapUnique->getMaxAllGlobalIndex();
-            if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+            if (coarseMapUnique->getGlobalNumElements()>0) {
                 numGlobalIndices += 1;
             }
             LO numMyRows;
@@ -846,7 +846,7 @@ namespace FROSch {
             //
             // LO numProcsGatheringStep = this->MpiComm_->getSize();
             // GO numGlobalIndices = coarseMapUnique->getMaxAllGlobalIndex();
-            // if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+            // if (coarseMapUnique->getGlobalNumElements()>0) {
             //     numGlobalIndices += 1;
             // }
             // GO numMyRows;
@@ -887,7 +887,7 @@ namespace FROSch {
         const SC ZERO = Teuchos::ScalarTraits<SC>::zero();
 
         global = coarseMapUnique->getMaxAllGlobalIndex();
-        if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+        if (coarseMapUnique->getGlobalNumElements()>0) {
             global += 1;
         }
 
@@ -931,7 +931,7 @@ namespace FROSch {
 
         for (int i=0; i<GatheringMaps_.size(); i++) {
             global = GatheringMaps_[i]->getMaxAllGlobalIndex();
-            if (GatheringMaps_[i]->lib()==UseEpetra || GatheringMaps_[i]->getGlobalNumElements()>0) {
+            if (GatheringMaps_[i]->getGlobalNumElements()>0) {
                 global += 1;
             }
 

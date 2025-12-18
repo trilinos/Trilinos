@@ -14,73 +14,6 @@
 
 namespace Xpetra {
 
-#ifdef HAVE_XPETRA_EPETRA
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const Epetra_CrsMatrix> Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2EpetraCrs(RCP<Matrix> Op) {
-  // Get the underlying Epetra Mtx
-  RCP<const CrsMatrixWrap> crsOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(Op);
-  TEUCHOS_TEST_FOR_EXCEPTION(crsOp == Teuchos::null, Xpetra::Exceptions::BadCast,
-                             "Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-
-  RCP<const CrsMatrix> tmp_CrsMtx                        = crsOp->getCrsMatrix();
-  const RCP<const EpetraCrsMatrixT<GO, NO>>& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrixT<GO, NO>>(tmp_CrsMtx);
-  TEUCHOS_TEST_FOR_EXCEPTION(tmp_ECrsMtx == Teuchos::null, Exceptions::BadCast,
-                             "Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
-
-  return tmp_ECrsMtx->getEpetra_CrsMatrix();
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<Epetra_CrsMatrix> Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(RCP<Matrix> Op) {
-  RCP<Epetra_CrsMatrix> A;
-  // Get the underlying Epetra Mtx
-  RCP<const CrsMatrixWrap> crsOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(Op);
-  TEUCHOS_TEST_FOR_EXCEPTION(crsOp == Teuchos::null, Exceptions::BadCast,
-                             "Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-
-  RCP<const CrsMatrix> tmp_CrsMtx                        = crsOp->getCrsMatrix();
-  const RCP<const EpetraCrsMatrixT<GO, NO>>& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrixT<GO, NO>>(tmp_CrsMtx);
-  TEUCHOS_TEST_FOR_EXCEPTION(tmp_ECrsMtx == Teuchos::null, Exceptions::BadCast, "Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
-
-  return tmp_ECrsMtx->getEpetra_CrsMatrixNonConst();
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-const Epetra_CrsMatrix& Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2EpetraCrs(const Matrix& Op) {
-  // Get the underlying Epetra Mtx
-  try {
-    const CrsMatrixWrap& crsOp                             = dynamic_cast<const CrsMatrixWrap&>(Op);
-    RCP<const CrsMatrix> tmp_CrsMtx                        = crsOp.getCrsMatrix();
-    const RCP<const EpetraCrsMatrixT<GO, NO>>& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrixT<GO, NO>>(tmp_CrsMtx);
-    TEUCHOS_TEST_FOR_EXCEPTION(tmp_ECrsMtx == Teuchos::null, Xpetra::Exceptions::BadCast,
-                               "Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
-
-    return *tmp_ECrsMtx->getEpetra_CrsMatrix();
-
-  } catch (...) {
-    throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
-  }
-}
-
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Epetra_CrsMatrix& Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2NonConstEpetraCrs(const Matrix& Op) {
-  RCP<Epetra_CrsMatrix> A;
-  // Get the underlying Epetra Mtx
-  try {
-    const CrsMatrixWrap& crsOp                             = dynamic_cast<const CrsMatrixWrap&>(Op);
-    RCP<const CrsMatrix> tmp_CrsMtx                        = crsOp.getCrsMatrix();
-    const RCP<const EpetraCrsMatrixT<GO, NO>>& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrixT<GO, NO>>(tmp_CrsMtx);
-    TEUCHOS_TEST_FOR_EXCEPTION(tmp_ECrsMtx == Teuchos::null, Xpetra::Exceptions::BadCast, "Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
-
-    return *Teuchos::rcp_const_cast<Epetra_CrsMatrix>(tmp_ECrsMtx->getEpetra_CrsMatrix());
-
-  } catch (...) {
-    throw(Xpetra::Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed"));
-  }
-}
-#endif  // HAVE_XPETRA_EPETRA
-
-#ifdef HAVE_XPETRA_TPETRA
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Op2TpetraCrs(RCP<Matrix> Op) {
   // Get the underlying Tpetra Mtx
@@ -239,20 +172,7 @@ bool Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isTpetraBlockCrs(const 
     return false;
   }
 }
-#else  // HAVE_XPETRA_TPETRA
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isTpetraCrs(const Matrix& Op) {
-  return false;
-}
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isTpetraBlockCrs(const Matrix& Op) {
-  return false;
-}
-
-#endif  // HAVE_XPETRA_TPETRA
-
-#ifdef HAVE_XPETRA_TPETRA
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::tpetraAdd(
     const tcrs_matrix_type& A, bool transposeA, const typename tcrs_matrix_type::scalar_type alpha,
@@ -309,55 +229,6 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Helpers<
     return rcp(new CrsWrap(rcp_implicit_cast<CrsType>(rcp(new XTCrsType(C)))));
   }
 }
-#endif
-
-#ifdef HAVE_XPETRA_EPETRAEXT
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::epetraExtMult(const Matrix& A, bool transposeA, const Matrix& B, bool transposeB, Matrix& C, bool fillCompleteResult) {
-  Epetra_CrsMatrix& epA = Op2NonConstEpetraCrs(A);
-  Epetra_CrsMatrix& epB = Op2NonConstEpetraCrs(B);
-  Epetra_CrsMatrix& epC = Op2NonConstEpetraCrs(C);
-  // Want a static profile (possibly fill complete) matrix as the result.
-  // But, EpetraExt Multiply needs C to be dynamic profile, so compute the product in a temporary DynamicProfile matrix.
-  const Epetra_Map& Crowmap = epC.RowMap();
-  int errCode               = 0;
-  Epetra_CrsMatrix Ctemp(::Copy, Crowmap, 0, false);
-  if (fillCompleteResult) {
-    errCode = EpetraExt::MatrixMatrix::Multiply(epA, transposeA, epB, transposeB, Ctemp, true);
-    if (!errCode) {
-      epC = Ctemp;
-      C.fillComplete();
-    }
-  } else {
-    errCode = EpetraExt::MatrixMatrix::Multiply(epA, transposeA, epB, transposeB, Ctemp, false);
-    if (!errCode) {
-      int numLocalRows             = Crowmap.NumMyElements();
-      long long* globalElementList = nullptr;
-      Crowmap.MyGlobalElementsPtr(globalElementList);
-      Teuchos::Array<int> entriesPerRow(numLocalRows, 0);
-      for (int i = 0; i < numLocalRows; i++) {
-        entriesPerRow[i] = Ctemp.NumGlobalEntries(globalElementList[i]);
-      }
-      // know how many entries to allocate in epC (which must be static profile)
-      epC = Epetra_CrsMatrix(::Copy, Crowmap, entriesPerRow.data(), true);
-      for (int i = 0; i < numLocalRows; i++) {
-        int gid = globalElementList[i];
-        int numEntries;
-        double* values;
-        int* inds;
-        Ctemp.ExtractGlobalRowView(gid, numEntries, values, inds);
-        epC.InsertGlobalValues(gid, numEntries, values, inds);
-      }
-    }
-  }
-  if (errCode) {
-    std::ostringstream buf;
-    buf << errCode;
-    std::string msg = "EpetraExt::MatrixMatrix::Multiply returned nonzero error code " + buf.str();
-    throw(Exceptions::RuntimeError(msg));
-  }
-}
-#endif
 
 }  // namespace Xpetra
 

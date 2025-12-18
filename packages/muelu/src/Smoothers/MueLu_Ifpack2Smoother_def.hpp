@@ -13,8 +13,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "Xpetra_TpetraRowMatrix.hpp"
 
-#if defined(HAVE_MUELU_IFPACK2)
-
 #include <Teuchos_ParameterList.hpp>
 
 #include <Tpetra_RowMatrix.hpp>
@@ -1064,5 +1062,4 @@ size_t Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNodeSmooth
 
 }  // namespace MueLu
 
-#endif  // HAVE_MUELU_IFPACK2
 #endif  // MUELU_IFPACK2SMOOTHER_DEF_HPP

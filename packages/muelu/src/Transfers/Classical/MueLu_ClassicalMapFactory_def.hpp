@@ -120,10 +120,6 @@ void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
 #endif
 
-  // Switch to MIS if we're in Epetra (and not file)
-  if (coloringAlgo != "file" && graph->GetDomainMap()->lib() == Xpetra::UseEpetra)
-    coloringAlgo = "MIS";
-
   if (coloringAlgo == "file") {
     // Read the CF splitting from disk
     // NOTE: For interoperability reasons, this is dependent on the point_type enum not changing

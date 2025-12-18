@@ -29,70 +29,7 @@
 namespace MueLuTests {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, MatMatMult_EpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
-#include <MueLu_UseShortNames.hpp>
-  MUELU_TESTING_SET_OSTREAM;
-  out << "version: " << MueLu::Version() << std::endl;
-  out << "This test compares the matrix matrix multiply between Tpetra and Epetra" << std::endl;
-
-  MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar, GlobalOrdinal, Node);
-
-  RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
-
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
-
-  // Calculate result = (Op*Op)*X for Epetra
-  GO nx                     = 37 * comm->getSize();
-  GO ny                     = nx;
-  RCP<Matrix> Op            = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(nx, ny, Xpetra::UseEpetra);
-  RCP<Matrix> OpOp          = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Op, false, *Op, false, out);
-  RCP<MultiVector> result   = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
-  RCP<MultiVector> X_epetra = MultiVectorFactory::Build(OpOp->getDomainMap(), 1);
-  Teuchos::Array<magnitude_type> xnorm(1);
-  X_epetra->setSeed(8675309);
-  X_epetra->randomize(true);
-  X_epetra->norm2(xnorm);
-  OpOp->apply(*X_epetra, *result, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
-  Teuchos::Array<magnitude_type> normEpetra(1);
-  result->norm2(normEpetra);
-
-  // aid debugging by calculating Op*(Op*X)
-  RCP<MultiVector> workVec = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
-  RCP<MultiVector> check1  = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
-  Op->apply(*X_epetra, *workVec, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
-  Op->apply(*workVec, *check1, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
-  Teuchos::Array<magnitude_type> normCheck1(1);
-  check1->norm2(normCheck1);
-
-  // Calculate result = (Op*Op)*X for Tpetra
-  Op                        = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build2DPoisson(nx, ny, Xpetra::UseTpetra);
-  OpOp                      = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*Op, false, *Op, false, out);
-  result                    = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
-  RCP<MultiVector> X_tpetra = MultiVectorFactory::Build(OpOp->getDomainMap(), 1);
-  {
-    auto lcl_X_epetra = X_epetra->getLocalViewHost(Tpetra::Access::ReadOnly);
-    auto lcl_X_tpetra = X_tpetra->getLocalViewHost(Tpetra::Access::OverwriteAll);
-    Kokkos::deep_copy(lcl_X_tpetra, lcl_X_epetra);
-  }
-  X_tpetra->norm2(xnorm);
-  OpOp->apply(*X_tpetra, *result, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
-  Teuchos::Array<magnitude_type> normTpetra(1);
-  result->norm2(normTpetra);
-
-  // aid debugging by calculating Op*(Op*X)
-  workVec                 = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
-  RCP<MultiVector> check2 = MultiVectorFactory::Build(OpOp->getRangeMap(), 1);
-  Op->apply(*X_tpetra, *workVec, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
-  Op->apply(*workVec, *check2, Teuchos::NO_TRANS, (Scalar)1.0, (Scalar)0.0);
-  Teuchos::Array<magnitude_type> normCheck2(1);
-  check2->norm2(normCheck2);
-
-  TEST_FLOATING_EQUALITY(normEpetra[0], normTpetra[0], 1e-12);
-  out << "Epetra ||A*(A*x)|| = " << normCheck1[0] << std::endl;
-  out << "Tpetra ||A*(A*x)|| = " << normCheck2[0] << std::endl;
-#else
   out << "Skipping test because some required packages are not enabled (Tpetra, EpetraExt)." << std::endl;
-#endif
 
 }  // EpetraVersusTpetra
 

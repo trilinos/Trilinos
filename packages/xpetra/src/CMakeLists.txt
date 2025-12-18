@@ -84,25 +84,8 @@ SET(HEADERS "")
 
 APPEND_GLOB(SOURCES
   Utils/Xpetra_Utils.cpp
-  Utils/Xpetra_EpetraUtils.cpp
   Platform/Xpetra_DefaultPlatform.cpp
   )
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  APPEND_GLOB(SOURCES
-    Map/Xpetra_EpetraMap.cpp
-    Map/Xpetra_EpetraMapFactory.cpp
-    Import/Xpetra_EpetraImport.cpp
-    Export/Xpetra_EpetraExport.cpp
-    MultiVector/Xpetra_EpetraMultiVector.cpp
-    MultiVector/Xpetra_EpetraIntMultiVector.cpp
-    MultiVector/Xpetra_EpetraMultiVectorFactory.cpp
-    CrsGraph/Xpetra_EpetraCrsGraph.cpp
-    CrsMatrix/Xpetra_EpetraCrsMatrix.cpp
-    Vector/Xpetra_EpetraVector.cpp
-    Vector/Xpetra_EpetraIntVector.cpp
-    Vector/Xpetra_EpetraVectorFactory.cpp
-    )
-ENDIF()
 
 # Create the .hpp file in BUILD/packages/xpetra/src
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${CMAKE_CURRENT_SOURCE_DIR}/BlockedCrsMatrix   NOSIERRABJAM)

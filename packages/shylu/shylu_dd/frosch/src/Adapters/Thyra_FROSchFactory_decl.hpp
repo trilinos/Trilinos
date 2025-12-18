@@ -16,9 +16,6 @@
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include "Thyra_EpetraLinearOp.hpp"
-#endif
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
@@ -38,21 +35,10 @@
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_ThyraUtils.hpp>
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#include <Xpetra_EpetraMap.hpp>
-#endif
 
 //Tpetra
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
 #include <Xpetra_TpetraHalfPrecisionOperator.hpp>
-#endif
-
-//Epetra
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Epetra_Map.h>
-#include <Epetra_MpiComm.h>
-#include <Epetra_config.h>
 #endif
 
 //FROSch
@@ -109,7 +95,7 @@ namespace Thyra {
         using XMultiVectorPtrVecPtr         = ArrayRCP<XMultiVectorPtr>;
         using ConstXMultiVectorPtrVecPtr    = ArrayRCP<ConstXMultiVectorPtr>;
 
-#if defined(HAVE_XPETRA_TPETRA) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
+#if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
         using HalfPrecOp                    = Xpetra::TpetraHalfPrecisionOperator<SC,LO,GO,NO>;
         using HalfSC                        = typename HalfPrecOp::HalfScalar;
         using HalfPrecMatrix                = Matrix<HalfSC,LO,GO,NO>;

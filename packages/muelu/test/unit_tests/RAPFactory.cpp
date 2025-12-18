@@ -137,11 +137,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPFactory, ImplicitTranspose, Scalar, LocalOr
 
   RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
 
-  if (comm->getSize() > 1 && TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "Skipping ImplicitTranspose test for Epetra and #proc>1" << std::endl;
-    return;
-  }
-
   // build test-specific default factory manager
   RCP<FactoryManager> defManager = rcp(new FactoryManager());
   defManager->SetKokkosRefactor(false);

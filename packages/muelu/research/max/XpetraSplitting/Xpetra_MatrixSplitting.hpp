@@ -104,7 +104,7 @@ template <class Scalar        = Operator<>::scalar_type,
           class LocalOrdinal  = Operator<>::local_ordinal_type,
           class GlobalOrdinal = typename Operator<LocalOrdinal>::global_ordinal_type,
           class Node          = typename Operator<LocalOrdinal, GlobalOrdinal>::node_type,
-          UnderlyingLib lib   = Xpetra::UseEpetra,
+          UnderlyingLib lib   = Xpetra::UseTpetra,
           bool collapse       = false>
 class MatrixSplitting : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
@@ -1303,9 +1303,7 @@ class MatrixSplitting : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
       int num_elements = xpetraMap->getGlobalNumElements();
 
       RCP<CrsMatrix> crs_matrix;
-      if (Xpetra::UseEpetra == lib)
-        crs_matrix = rcp(new EpetraCrsMatrix(xpetraMap, num_elements));
-      else if (Xpetra::UseTpetra == lib)
+      if (Xpetra::UseTpetra == lib)
         crs_matrix = rcp(new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(xpetraMap, num_elements));
       else
         std::cerr << " The library to build matrices must be either Epetra or Tpetra \n";

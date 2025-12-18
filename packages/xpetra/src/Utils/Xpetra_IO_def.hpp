@@ -11,25 +11,6 @@
 #include <fstream>
 #include "Xpetra_ConfigDefs.hpp"
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
-#endif
-
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-#include <EpetraExt_MatrixMatrix.h>
-#include <EpetraExt_RowMatrixOut.h>
-#include <EpetraExt_MultiVectorOut.h>
-#include <EpetraExt_CrsMatrixIn.h>
-#include <EpetraExt_MultiVectorIn.h>
-#include <EpetraExt_BlockMapIn.h>
-#include <Xpetra_EpetraUtils.hpp>
-#include <Xpetra_EpetraMultiVector.hpp>
-#include <EpetraExt_BlockMapOut.h>
-#endif
-
-#ifdef HAVE_XPETRA_TPETRA
 #include <MatrixMarket_Tpetra.hpp>
 #include <Tpetra_RowMatrixTransposer.hpp>
 #include <TpetraExt_MatrixMatrix.hpp>
@@ -38,11 +19,6 @@
 #include <Xpetra_TpetraCrsMatrix.hpp>
 #include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #include "Tpetra_Util.hpp"
-#endif
-
-#ifdef HAVE_XPETRA_EPETRA
-#include <Xpetra_EpetraMap.hpp>
-#endif
 
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
@@ -62,17 +38,6 @@
 
 namespace Xpetra {
 
-#ifdef HAVE_XPETRA_EPETRA
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-const Epetra_Map& IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2EpetraMap(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) {
-  RCP<const Xpetra::EpetraMapT<GlobalOrdinal, Node>> xeMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal, Node>>(Teuchos::rcpFromRef(map));
-  if (xeMap == Teuchos::null)
-    throw Exceptions::BadCast("Utils::Map2EpetraMap : Cast from Xpetra::Map to Xpetra::EpetraMap failed");
-  return xeMap->getEpetra_Map();
-}
-#endif
-
-#ifdef HAVE_XPETRA_TPETRA
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2TpetraMap(const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) {
   const RCP<const Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>>& tmp_TMap = Teuchos::rcp_dynamic_cast<const Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>>(rcpFromRef(map));
@@ -80,22 +45,11 @@ const RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, Local
     throw Exceptions::BadCast("Utils::Map2TpetraMap : Cast from Xpetra::Map to Xpetra::TpetraMap failed");
   return tmp_TMap->getTpetra_Map();
 }
-#endif
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fileName, const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& M) {
   RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> tmp_Map = rcpFromRef(M);
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-  const RCP<const Xpetra::EpetraMapT<GlobalOrdinal, Node>>& tmp_EMap = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMapT<GlobalOrdinal, Node>>(tmp_Map);
-  if (tmp_EMap != Teuchos::null) {
-    int rv = EpetraExt::BlockMapToMatrixMarketFile(fileName.c_str(), tmp_EMap->getEpetra_Map());
-    if (rv != 0)
-      throw Exceptions::RuntimeError("EpetraExt::BlockMapToMatrixMarketFile() return value of " + Teuchos::toString(rv));
-    return;
-  }
-#endif  // HAVE_XPETRA_EPETRAEXT
 
-#ifdef HAVE_XPETRA_TPETRA
   const RCP<const Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>>& tmp_TMap =
       Teuchos::rcp_dynamic_cast<const Xpetra::TpetraMap<LocalOrdinal, GlobalOrdinal, Node>>(tmp_Map);
   if (tmp_TMap != Teuchos::null) {
@@ -103,7 +57,6 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fil
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>::writeMapFile(fileName, *TMap);
     return;
   }
-#endif  // HAVE_XPETRA_TPETRA
 
   throw Exceptions::BadCast("Could not cast to EpetraMap or TpetraMap in map writing");
 }
@@ -114,17 +67,7 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fil
   Write(mapfile, *(vec.getMap()));
 
   RCP<const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tmp_Vec = Teuchos::rcpFromRef(vec);
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-  const RCP<const Xpetra::EpetraMultiVectorT<GlobalOrdinal, Node>>& tmp_EVec = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMultiVectorT<GlobalOrdinal, Node>>(tmp_Vec);
-  if (tmp_EVec != Teuchos::null) {
-    int rv = EpetraExt::MultiVectorToMatrixMarketFile(fileName.c_str(), *(tmp_EVec->getEpetra_MultiVector()));
-    if (rv != 0)
-      throw Exceptions::RuntimeError("EpetraExt::RowMatrixToMatrixMarketFile return value of " + Teuchos::toString(rv));
-    return;
-  }
-#endif  // HAVE_XPETRA_EPETRA
 
-#ifdef HAVE_XPETRA_TPETRA
   const RCP<const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& tmp_TVec =
       Teuchos::rcp_dynamic_cast<const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(tmp_Vec);
   if (tmp_TVec != Teuchos::null) {
@@ -132,7 +75,6 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fil
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>::writeDenseFile(fileName, TVec);
     return;
   }
-#endif  // HAVE_XPETRA_TPETRA
 
   throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in multivector writing");
 }
@@ -143,16 +85,13 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::WriteLOMV(const std::string&
   Write(mapfile, *(vec.getMap()));
 
   RCP<const Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> tmp_Vec = Teuchos::rcpFromRef(vec);
-#ifdef HAVE_XPETRA_TPETRA
   const RCP<const Xpetra::TpetraMultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>& tmp_TVec =
       Teuchos::rcp_dynamic_cast<const Xpetra::TpetraMultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>(tmp_Vec);
   if (tmp_TVec != Teuchos::null) {
     RCP<const Tpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> TVec = tmp_TVec->getTpetra_MultiVector();
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>::writeDenseFile(fileName, TVec);
     return;
-  } else
-#endif  // HAVE_XPETRA_TPETRA
-  {
+  } else {
     throw Exceptions::RuntimeError("Xpetra cannot write MV<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> when the underlying library is Epetra.");
   }
 
@@ -165,16 +104,13 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::WriteGOMV(const std::string&
   Write(mapfile, *(vec.getMap()));
 
   RCP<const Xpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> tmp_Vec = Teuchos::rcpFromRef(vec);
-#ifdef HAVE_XPETRA_TPETRA
   const RCP<const Xpetra::TpetraMultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>& tmp_TVec =
       Teuchos::rcp_dynamic_cast<const Xpetra::TpetraMultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>(tmp_Vec);
   if (tmp_TVec != Teuchos::null) {
     RCP<const Tpetra::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> TVec = tmp_TVec->getTpetra_MultiVector();
     Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node>>::writeDenseFile(fileName, TVec);
     return;
-  } else
-#endif  // HAVE_XPETRA_TPETRA
-  {
+  } else {
     throw Exceptions::RuntimeError("Xpetra cannot write MV<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> when the underlying library is Epetra.");
   }
 
@@ -194,18 +130,7 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fil
   const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>& crsOp =
       dynamic_cast<const Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>&>(Op);
   RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> tmp_CrsMtx = crsOp.getCrsMatrix();
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-  const RCP<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal, Node>>& tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GlobalOrdinal, Node>>(tmp_CrsMtx);
-  if (tmp_ECrsMtx != Teuchos::null) {
-    RCP<const Epetra_CrsMatrix> A = tmp_ECrsMtx->getEpetra_CrsMatrix();
-    int rv                        = EpetraExt::RowMatrixToMatrixMarketFile(fileName.c_str(), *A);
-    if (rv != 0)
-      throw Exceptions::RuntimeError("EpetraExt::RowMatrixToMatrixMarketFile return value of " + Teuchos::toString(rv));
-    return;
-  }
-#endif
 
-#ifdef HAVE_XPETRA_TPETRA
   const RCP<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& tmp_TCrsMtx =
       Teuchos::rcp_dynamic_cast<const Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(tmp_CrsMtx);
   if (tmp_TCrsMtx != Teuchos::null) {
@@ -221,8 +146,6 @@ void IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Write(const std::string& fil
     tmp_BlockCrs->getTpetra_BlockCrsMatrix()->describe(ofs, Teuchos::VERB_EXTREME);
     return;
   }
-
-#endif  // HAVE_XPETRA_TPETRA
 
   throw Exceptions::BadCast("Could not cast to EpetraCrsMatrix or TpetraCrsMatrix in matrix writing");
 }
@@ -289,24 +212,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int>>& comm, bool binary) {
   if (binary == false) {
     // Matrix Market file format (ASCII)
-    if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-      Epetra_CrsMatrix* eA;
-      const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(comm);
-      int rv                              = EpetraExt::MatrixMarketFileToCrsMatrix(fileName.c_str(), *epcomm, eA);
-      if (rv != 0)
-        throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + Teuchos::toString(rv));
-
-      RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
-
-      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A =
-          Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA);
-      return A;
-#else
-      throw Exceptions::RuntimeError("Xpetra has not been compiled with Epetra and EpetraExt support.");
-#endif
-    } else if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
+    if (lib == Xpetra::UseTpetra) {
       typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
 
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
@@ -323,9 +229,6 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scala
       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A              = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA2));
 
       return A;
-#else
-      throw Exceptions::RuntimeError("Xpetra has not been compiled with Tpetra support.");
-#endif
     } else {
       throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
     }
@@ -423,35 +326,7 @@ IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(const std::string& filename,
 
   const Xpetra::UnderlyingLib lib = rowMap->lib();
   if (binary == false) {
-    if (lib == Xpetra::UseEpetra) {
-#if defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)
-      Epetra_CrsMatrix* eA;
-      const RCP<const Epetra_Comm> epcomm = Xpetra::toEpetra(rowMap->getComm());
-      const Epetra_Map& epetraRowMap      = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2EpetraMap(*rowMap);
-      const Epetra_Map& epetraDomainMap   = (domainMap.is_null() ? epetraRowMap : Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2EpetraMap(*domainMap));
-      const Epetra_Map& epetraRangeMap    = (rangeMap.is_null() ? epetraRowMap : Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Map2EpetraMap(*rangeMap));
-      int rv;
-      if (colMap.is_null()) {
-        rv = EpetraExt::MatrixMarketFileToCrsMatrix(filename.c_str(), epetraRowMap, epetraRangeMap, epetraDomainMap, eA);
-
-      } else {
-        const Epetra_Map& epetraColMap = Map2EpetraMap(*colMap);
-        rv                             = EpetraExt::MatrixMarketFileToCrsMatrix(filename.c_str(), epetraRowMap, epetraColMap, epetraRangeMap, epetraDomainMap, eA);
-      }
-
-      if (rv != 0)
-        throw Exceptions::RuntimeError("EpetraExt::MatrixMarketFileToCrsMatrix return value of " + Teuchos::toString(rv));
-
-      RCP<Epetra_CrsMatrix> tmpA = rcp(eA);
-      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A =
-          Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA);
-
-      return A;
-#else
-      throw Exceptions::RuntimeError("Xpetra has not been compiled with Epetra and EpetraExt support.");
-#endif
-    } else if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
+    if (lib == Xpetra::UseTpetra) {
       typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
       typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
       typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
@@ -471,9 +346,6 @@ IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(const std::string& filename,
       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A              = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tmpA2));
 
       return A;
-#else
-      throw Exceptions::RuntimeError("Xpetra has not been compiled with Tpetra support.");
-#endif
     } else {
       throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
     }
@@ -614,7 +486,6 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scala
       rowptr[i] = rowptr[i - 1];
     rowptr[0] = 0;
 
-#ifdef HAVE_XPETRA_TPETRA
     if (!sorted) {
       for (LocalOrdinal lclRow = 0; lclRow < m; lclRow++) {
         size_t rowBegin = rowptr[lclRow];
@@ -622,9 +493,6 @@ Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scala
         Tpetra::sort2(&indices[rowBegin], &indices[rowEnd], &values[rowBegin]);
       }
     }
-#else
-    TEUCHOS_ASSERT(sorted);
-#endif
 
     ACrs->setAllValues(rowptrRCP, indicesRCP, valuesRCP);
   }
@@ -640,11 +508,7 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, L
                                                                                                                                    const bool binary) {
   Xpetra::UnderlyingLib lib = map->lib();
 
-  if (lib == Xpetra::UseEpetra) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
-
-  } else if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
+  if (lib == Xpetra::UseTpetra) {
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
     typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
@@ -654,9 +518,6 @@ RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, L
     RCP<multivector_type> TMV = reader_type::readDenseFile(fileName, map->getComm(), temp, false, false, binary);
     RCP<MultiVector> rmv      = Xpetra::toXpetra(TMV);
     return rmv;
-#else
-    throw Exceptions::RuntimeError("Xpetra has not been compiled with Tpetra support.");
-#endif
   } else {
     throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
   }
@@ -671,7 +532,6 @@ RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> IO<Sca
   Xpetra::UnderlyingLib lib = map->lib();
 
   if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
     typedef Tpetra::CrsMatrix<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
     typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
@@ -681,9 +541,6 @@ RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> IO<Sca
     RCP<multivector_type> TMV                                                     = reader_type::readDenseFile(fileName, map->getComm(), temp, false, false, binary);
     RCP<Xpetra::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> rmv = Xpetra::toXpetra(TMV);
     return rmv;
-#else
-    throw Exceptions::RuntimeError("Xpetra has not been compiled with Tpetra support.");
-#endif
   } else {
     throw Exceptions::RuntimeError("Utils::ReadMultiVectorLO : only implemented for Tpetra");
   }
@@ -696,10 +553,7 @@ RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, LocalOrdina
                                                                                                                  Xpetra::UnderlyingLib lib,
                                                                                                                  const RCP<const Teuchos::Comm<int>>& comm,
                                                                                                                  const bool binary) {
-  if (lib == Xpetra::UseEpetra) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, ::Xpetra::Exceptions::BadCast, "Epetra can only be used with Scalar=double and Ordinal=int");
-  } else if (lib == Xpetra::UseTpetra) {
-#ifdef HAVE_XPETRA_TPETRA
+  if (lib == Xpetra::UseTpetra) {
     typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> sparse_matrix_type;
     typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
@@ -708,9 +562,6 @@ RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> IO<Scalar, LocalOrdina
       throw Exceptions::RuntimeError("The Tpetra::Map returned from readSparseFile() is null.");
 
     return Xpetra::toXpetra(tMap);
-#else
-    throw Exceptions::RuntimeError("Xpetra has not been compiled with Tpetra support.");
-#endif
   } else {
     throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
   }

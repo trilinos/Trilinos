@@ -20,9 +20,7 @@
 
 #include "Xpetra_Map.hpp"
 
-#ifdef HAVE_XPETRA_TPETRA
 #include <KokkosSparse_StaticCrsGraph.hpp>
-#endif
 
 namespace Xpetra {
 
@@ -191,7 +189,6 @@ class CrsGraph
 
   //! @name Tpetra-specific routines
   //@{
-#ifdef HAVE_XPETRA_TPETRA
   typedef typename node_type::execution_space execution_space;
   typedef typename node_type::device_type device_type;
   using local_graph_type        = KokkosSparse::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t>;
@@ -218,12 +215,6 @@ class CrsGraph
 
   //! Get offsets of the diagonal entries in the matrix.
   virtual void getLocalDiagOffsets(const Kokkos::View<size_t *, device_type, Kokkos::MemoryUnmanaged> &offsets) const = 0;
-
-#else
-#ifdef __GNUC__
-#warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
-#endif
-#endif
 
   //@}
 

@@ -276,8 +276,7 @@ namespace FROSch {
         RCP<Map<LO,GO,NO> > mapJ = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),INVALID,indJ(),0,k->getRowMap()->getComm());
         RCP<Map<LO,GO,NO> > mapJLocal = MapFactory<LO,GO,NO>::Build(k->getRowMap()->lib(),INVALID,indJ.size(),0,k->getRowMap()->getComm());
         RCP<const Map<LO,GO,NO> > colMap = k->getColMap();
-#if defined(HAVE_XPETRA_TPETRA)
-        if (k->getRowMap()->lib() == UseTpetra) 
+        if (k->getRowMap()->lib() == UseTpetra)
         {
             using crsmat_type  = typename Matrix<SC,LO,GO,NO>::local_matrix_type;
             using graph_type   = typename crsmat_type::StaticCrsGraphType;
@@ -458,7 +457,6 @@ namespace FROSch {
             kJJ = MatrixFactory<SC,LO,GO,NO>::Build(LocalJJ, mapJLocal, mapJLocal, mapJLocal, mapJLocal,
                                                     params);
         } else
-#endif
         {
             kII = MatrixFactory<SC,LO,GO,NO>::Build(mapILocal,min((LO) k->getGlobalMaxNumRowEntries(),(LO) indI.size()));
             kIJ = MatrixFactory<SC,LO,GO,NO>::Build(mapILocal,min((LO) k->getGlobalMaxNumRowEntries(),(LO) indJ.size()));

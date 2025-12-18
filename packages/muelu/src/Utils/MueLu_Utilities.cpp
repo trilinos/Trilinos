@@ -16,10 +16,6 @@
 #endif
 #include <algorithm>
 
-#ifdef HAVE_MUELU_EPETRAEXT
-#include "EpetraExt_Transpose_RowMatrix.h"
-#endif
-
 #ifdef HAVE_MPI
 #include <mpi.h>
 #ifdef _WIN32

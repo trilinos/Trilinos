@@ -116,24 +116,6 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #endif
 
     auto lib = xpetraParameters.GetLib();
-    if (lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-      // TAW: we might want to simplify the following logic block.
-      //      In fact, there are examples/tests which only run with Tpetra
-      //      We might need a feature that allows to run Epetra/Tpetra only
-      //      We still need to make sure that the test compiles (i.e., we
-      //      need some preprocessor flags/macros RUN_WITH_EPETRA and RUN_WITH_TPETRA
-#if defined(HAVE_MUELU_INST_DOUBLE_INT_INT) || defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
-      // Both Epetra and Tpetra (with double, int, int) enabled
-      return MUELU_AUTOMATIC_TEST_ETI_NAME<double, int, int, Xpetra::EpetraNode>(clp, lib, argc, argv);
-#else
-      *out << "Skip running with Epetra since both Epetra and Tpetra are enabled but Tpetra is not instantiated on double, int, int." << std::endl;
-#endif  // end Tpetra instantiated on double, int, int
-#else
-      throw RuntimeError("Epetra is not available");
-#endif
-    }
-
     if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
       auto inst = xpetraParameters.GetInstantiation();

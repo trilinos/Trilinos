@@ -45,7 +45,6 @@ DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DirectSolver(const std:
   // We want DirectSolver to be able to work with both Epetra and Tpetra objects, therefore we try to construct both
   // Amesos and Amesos2 solver prototypes. The construction really depends on configuration options.
   triedEpetra_ = triedTpetra_ = false;
-#if defined(HAVE_MUELU_AMESOS2)
   try {
     sTpetra_ = rcp(new Amesos2Smoother(type_, paramList));
     if (sTpetra_.is_null())
@@ -62,23 +61,6 @@ DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DirectSolver(const std:
     errorTpetra_ = e.what();
   }
   triedTpetra_ = true;
-#endif
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
-  try {
-    // GetAmesosSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
-    sEpetra_ = GetAmesosSmoother<SC, LO, GO, NO>(type_, paramList);
-    if (sEpetra_.is_null())
-      errorEpetra_ = "Unable to construct Amesos direct solver";
-    else if (!sEpetra_->constructionSuccessful()) {
-      errorEpetra_ = sEpetra_->constructionErrorMsg();
-      sEpetra_     = Teuchos::null;
-    }
-  } catch (Exceptions::RuntimeError& e) {
-    // AmesosSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
-    errorEpetra_ = e.what();
-  }
-  triedEpetra_ = true;
-#endif
 #if defined(HAVE_MUELU_BELOS)
   try {
     sBelos_ = rcp(new BelosSmoother(type_, paramList));

@@ -10,7 +10,6 @@
 #ifndef _FROSCH_TPETRAPRECONDITIONER_DEF_HPP
 #define _FROSCH_TPETRAPRECONDITIONER_DEF_HPP
 
-#if defined(HAVE_XPETRA_TPETRA)
 #include <FROSch_TpetraPreconditioner_decl.hpp>
 
 namespace FROSch {
@@ -122,6 +121,5 @@ namespace FROSch {
       return preconditioner_;
     }
 }
-#endif
 
 #endif

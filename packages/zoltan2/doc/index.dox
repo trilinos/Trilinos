@@ -53,7 +53,7 @@ your build directory (typically distinct from the source directory):
 The first statement is the cmake configuration step that configures the build, creates Makefiles, etc.
 The second statement builds the Zoltan2 library and all required libraries.
 Zoltan2 requires several of the other Trilinos packages to be built. 
-(Tpetra, Epetra, Teuchos, Xpetra and the packages that are required for those). The
+(Tpetra, Teuchos, Xpetra and the packages that are required for those). The
 Trilinos framework should automatically enable these required packages during the configuration process
 if Zoltan2 is enabled.
 

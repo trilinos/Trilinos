@@ -142,7 +142,7 @@ RCP<TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> >&
 getTestProblem(Xpetra::UnderlyingLib lib) {
   static Array<RCP<TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node> > > problem_(2);
 
-  int libNum = (Xpetra::UseEpetra) ? 0 : 1;
+  int libNum = 1;
   if (problem_[libNum] == Teuchos::null)
     problem_[libNum] = rcp(new TestProblem<Scalar, LocalOrdinal, GlobalOrdinal, Node>(lib));
 

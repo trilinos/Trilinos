@@ -26,9 +26,6 @@
 // Xpetra include
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_DefaultPlatform.hpp>
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Xpetra_EpetraCrsMatrix.hpp>
-#endif
 #include <Xpetra_Parameters.hpp>
 
 // FROSch thyra includes
@@ -66,8 +63,6 @@ int main(int argc, char *argv[])
     My_CLP.setOption("O",&Overlap,"Overlap.");
     string xmlFile = "ParameterList.xml";
     My_CLP.setOption("PLIST",&xmlFile,"File name of the parameter list.");
-    bool useepetra = false;
-    My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
 
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
@@ -97,11 +92,6 @@ int main(int argc, char *argv[])
     }
 
     UnderlyingLib xpetraLib = UseTpetra;
-    if (useepetra) {
-        xpetraLib = UseEpetra;
-    } else {
-        xpetraLib = UseTpetra;
-    }
 
     RCP<const Comm<int> > Comm = CommWorld->split(color,CommWorld->getRank());
 

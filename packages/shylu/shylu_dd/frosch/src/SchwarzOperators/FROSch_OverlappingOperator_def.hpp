@@ -65,25 +65,7 @@ namespace FROSch {
             YOverlap_->replaceMap(OverlappingMatrix_->getDomainMap());
         }
         // AH 11/28/2018: replaceMap does not update the GlobalNumRows. Therefore, we have to create a new MultiVector on the serial Communicator. In Epetra, we can prevent to copy the MultiVector.
-        if (XTmp_->getMap()->lib() == UseEpetra) {
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-            if (XOverlapTmp_.is_null() || XOverlap_->getNumVectors() != x.getNumVectors()) {
-                XOverlapTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
-            }
-            XOverlapTmp_->doImport(*XTmp_,*Scatter_,INSERT);
-            const RCP<const EpetraMultiVectorT<GO,NO> > xEpetraMultiVectorXOverlapTmp = rcp_dynamic_cast<const EpetraMultiVectorT<GO,NO> >(XOverlapTmp_);
-            RCP<Epetra_MultiVector> epetraMultiVectorXOverlapTmp = xEpetraMultiVectorXOverlapTmp->getEpetra_MultiVector();
-            const RCP<const EpetraMapT<GO,NO> >& xEpetraMap = rcp_dynamic_cast<const EpetraMapT<GO,NO> >(OverlappingMatrix_->getRangeMap());
-            Epetra_BlockMap epetraMap = xEpetraMap->getEpetra_BlockMap();
-            double *A;
-            int MyLDA;
-            epetraMultiVectorXOverlapTmp->ExtractView(&A,&MyLDA);
-            RCP<Epetra_MultiVector> epetraMultiVectorXOverlap(new Epetra_MultiVector(::View,epetraMap,A,MyLDA,x.getNumVectors()));
-            XOverlap_ = RCP<EpetraMultiVectorT<GO,NO> >(new EpetraMultiVectorT<GO,NO>(epetraMultiVectorXOverlap));
-#else
-            FROSCH_ASSERT(false,"HAVE_XPETRA_EPETRA not defined.");
-#endif
-        } else {
+        {
             if (XOverlap_.is_null()) {
                 XOverlap_ = MultiVectorFactory<SC,LO,GO,NO>::Build(OverlappingMap_,x.getNumVectors());
             } else {
@@ -99,7 +81,6 @@ namespace FROSch {
         ConstXMapPtr yMap = y.getMap();
         ConstXMapPtr yOverlapMap = YOverlap_->getMap();
         if (Combine_ == Restricted) {
-#if defined(HAVE_XPETRA_TPETRA)
             if (XTmp_->getMap()->lib() == UseTpetra) {
                 auto yLocalMap = yMap->getLocalMap();
                 auto yLocalOverlapMap = yOverlapMap->getLocalMap();
@@ -129,7 +110,6 @@ namespace FROSch {
                 }
                 Kokkos::fence();
             } else
-#endif
             {
                 GO globID = 0;
                 LO localID = 0;

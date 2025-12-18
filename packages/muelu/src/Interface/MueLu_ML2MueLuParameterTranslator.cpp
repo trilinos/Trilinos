@@ -8,14 +8,6 @@
 // @HEADER
 
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_ML)
-#include <ml_config.h>
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
-#include <ml_ValidateParameters.h>
-#include <ml_MultiLevelPreconditioner.h>  // for default values
-#include <ml_RefMaxwell.h>
-#endif
-#endif
 
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
 using Teuchos::ParameterList;

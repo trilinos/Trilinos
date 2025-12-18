@@ -33,14 +33,7 @@ typedef size_t mwIndex;
 #include "MueLu_AmalgamationInfo_decl.hpp"
 #include "MueLu_Utilities_decl.hpp"
 #include "MueLu_Graph_fwd.hpp"
-#ifdef HAVE_MUELU_EPETRA
-#include "Epetra_MultiVector.h"
-#include "Epetra_CrsMatrix.h"
-#endif
 #include "Tpetra_CrsMatrix_decl.hpp"
-#ifdef HAVE_MUELU_EPETRA
-#include "Xpetra_EpetraCrsMatrix.hpp"
-#endif
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_VectorFactory.hpp"
@@ -66,10 +59,6 @@ enum MuemexType {
   XPETRA_MATRIX_COMPLEX,
   XPETRA_MULTIVECTOR_DOUBLE,
   XPETRA_MULTIVECTOR_COMPLEX,
-#ifdef HAVE_MUELU_EPETRA
-  EPETRA_CRSMATRIX,
-  EPETRA_MULTIVECTOR,
-#endif
   AGGREGATES,
   AMALGAMATION_INFO,
   GRAPH

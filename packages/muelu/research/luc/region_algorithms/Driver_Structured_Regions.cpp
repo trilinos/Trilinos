@@ -64,10 +64,6 @@
 #include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
 
-#ifdef HAVE_MUELU_EPETRA
-#include "Xpetra_EpetraMultiVector.hpp"
-#endif
-
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
