@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -96,7 +83,7 @@ struct Functor_BatchedSerialGemm {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_pttrf(const int N, const int BlkSize) {
-  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using ats            = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
@@ -128,7 +115,7 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
   for (int ib = 0; ib < N; ib++) {
     for (int i = 0; i < BlkSize - 1; i++) {
       // Fill the lower diagonal with conjugate of the upper diagonal
-      h_e_lower(ib, i) = Kokkos::ArithTraits<ScalarType>::conj(h_e_upper(ib, i));
+      h_e_lower(ib, i) = KokkosKernels::ArithTraits<ScalarType>::conj(h_e_upper(ib, i));
     }
   }
 
@@ -209,7 +196,7 @@ void impl_test_batched_pttrf(const int N, const int BlkSize) {
 /// \param BlkSize [in] Block size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_pttrf_quick_return(const int N, const int BlkSize) {
-  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using ats            = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
@@ -276,7 +263,7 @@ void impl_test_batched_pttrf_quick_return(const int N, const int BlkSize) {
 /// \param N [in] Batch size of matrix A
 template <typename DeviceType, typename ScalarType, typename LayoutType, typename AlgoTagType>
 void impl_test_batched_pttrf_analytical(const int N) {
-  using ats            = typename Kokkos::ArithTraits<ScalarType>;
+  using ats            = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType       = typename ats::mag_type;
   using RealView2DType = Kokkos::View<RealType **, LayoutType, DeviceType>;
   using View2DType     = Kokkos::View<ScalarType **, LayoutType, DeviceType>;

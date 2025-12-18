@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "KokkosSparse_csc2csr.hpp"
 #include "KokkosKernels_TestUtils.hpp"
@@ -34,11 +21,11 @@ void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val, bool 
   using ViewTypeVals   = decltype(csc_vals_d);
 
   // Copy to host
-  typename ViewTypeRowIds::HostMirror csc_row_ids = Kokkos::create_mirror_view(csc_row_ids_d);
+  typename ViewTypeRowIds::host_mirror_type csc_row_ids = Kokkos::create_mirror_view(csc_row_ids_d);
   Kokkos::deep_copy(csc_row_ids, csc_row_ids_d);
-  typename ViewTypeColMap::HostMirror csc_col_map = Kokkos::create_mirror_view(csc_col_map_d);
+  typename ViewTypeColMap::host_mirror_type csc_col_map = Kokkos::create_mirror_view(csc_col_map_d);
   Kokkos::deep_copy(csc_col_map, csc_col_map_d);
-  typename ViewTypeVals::HostMirror csc_vals = Kokkos::create_mirror_view(csc_vals_d);
+  typename ViewTypeVals::host_mirror_type csc_vals = Kokkos::create_mirror_view(csc_vals_d);
   Kokkos::deep_copy(csc_vals, csc_vals_d);
 
   auto csr_col_ids_d = csrMat.graph.entries;
@@ -50,11 +37,11 @@ void doCsc2Csr(size_t m, size_t n, ScalarType min_val, ScalarType max_val, bool 
   using ViewTypeCsrVals   = decltype(csr_vals_d);
 
   // Copy to host
-  typename ViewTypeCsrColIds::HostMirror csr_col_ids = Kokkos::create_mirror_view(csr_col_ids_d);
+  typename ViewTypeCsrColIds::host_mirror_type csr_col_ids = Kokkos::create_mirror_view(csr_col_ids_d);
   Kokkos::deep_copy(csr_col_ids, csr_col_ids_d);
-  typename ViewTypeCsrRowMap::HostMirror csr_row_map = Kokkos::create_mirror_view(csr_row_map_d);
+  typename ViewTypeCsrRowMap::host_mirror_type csr_row_map = Kokkos::create_mirror_view(csr_row_map_d);
   Kokkos::deep_copy(csr_row_map, csr_row_map_d);
-  typename ViewTypeCsrVals::HostMirror csr_vals = Kokkos::create_mirror_view(csr_vals_d);
+  typename ViewTypeCsrVals::host_mirror_type csr_vals = Kokkos::create_mirror_view(csr_vals_d);
   Kokkos::deep_copy(csr_vals, csr_vals_d);
 
   Kokkos::fence();

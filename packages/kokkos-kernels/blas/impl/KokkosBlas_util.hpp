@@ -1,23 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSBLAS_UTIL_HPP
 #define KOKKOSBLAS_UTIL_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosBlas {
 namespace Impl {
@@ -31,15 +18,15 @@ struct OpID {
 struct OpConj {
   template <typename ValueType>
   KOKKOS_INLINE_FUNCTION ValueType operator()(ValueType v) const {
-    using KAT = Kokkos::ArithTraits<ValueType>;
+    using KAT = KokkosKernels::ArithTraits<ValueType>;
     return KAT::conj(v);
   }
 };
 
 struct OpReal {
   template <typename ValueType>
-  KOKKOS_INLINE_FUNCTION typename Kokkos::ArithTraits<ValueType>::mag_type operator()(ValueType v) const {
-    using KAT = Kokkos::ArithTraits<ValueType>;
+  KOKKOS_INLINE_FUNCTION typename KokkosKernels::ArithTraits<ValueType>::mag_type operator()(ValueType v) const {
+    using KAT = KokkosKernels::ArithTraits<ValueType>;
     return KAT::real(v);
   }
 };
@@ -244,7 +231,7 @@ struct TakeSqrtFunctor {
   TakeSqrtFunctor(const RV &r_) : r(r_) {}
 
   KOKKOS_INLINE_FUNCTION void operator()(int i) const {
-    r(i) = Kokkos::ArithTraits<typename RV::non_const_value_type>::sqrt(r(i));
+    r(i) = KokkosKernels::ArithTraits<typename RV::non_const_value_type>::sqrt(r(i));
   }
 
   RV r;

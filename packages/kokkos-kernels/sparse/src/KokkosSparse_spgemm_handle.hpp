@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSSPARSE_SPGEMMHANDLE_HPP
 #define KOKKOSSPARSE_SPGEMMHANDLE_HPP
 
@@ -46,15 +33,6 @@ enum SPGEMMAlgorithm {
   SPGEMM_KK_DENSE,
   SPGEMM_KK_MEMORY,
   SPGEMM_KK_LP,  // KKVARIANTS
-  SPGEMM_CUSPARSE [[deprecated("cuSPARSE is now used automatically in all "
-                               "supported SpGEMM calls, if enabled.")]],
-  SPGEMM_MKL [[deprecated("MKL is now used automatically in all supported "
-                          "SpGEMM calls, if enabled.")]],
-  SPGEMM_MKL2PHASE [[deprecated("MKL is now used automatically in all "
-                                "supported SpGEMM calls, if enabled.")]],
-  SPGEMM_ROCSPARSE [[deprecated("rocSPARSE is now used automatically in all "
-                                "supported SpGEMM calls, if enabled.")]],
-
   // TRIANGLE COUNTING SPECIALIZED
   SPGEMM_KK_TRIANGLE_AI,        // SPGEMM_KK_TRIANGLE_DEFAULT, SPGEMM_KK_TRIANGLE_MEM,
                                 // SPGEMM_KK_TRIANGLE_DENSE,
@@ -110,14 +88,16 @@ class SPGEMMHandle {
 
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
-  typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename row_lno_persistent_work_view_t::host_mirror_type row_lno_persistent_work_host_view_t;  // Host view type
 
   typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> scalar_temp_work_view_t;
   typedef typename Kokkos::View<nnz_scalar_t *, HandlePersistentMemorySpace> scalar_persistent_work_view_t;
 
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
-  typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t;  // Host view type
+  typedef
+      typename nnz_lno_persistent_work_view_t::host_mirror_type nnz_lno_persistent_work_host_view_t;  // Host view type
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
   struct rocSparseSpgemmHandleType {
@@ -761,22 +741,6 @@ inline SPGEMMAlgorithm StringToSPGEMMAlgorithm(std::string &name) {
     return SPGEMM_SERIAL;
   else if (name == "SPGEMM_SERIAL")
     return SPGEMM_SERIAL;
-  else if (name == "SPGEMM_CUSPARSE")
-    throw std::runtime_error(
-        "Enum value SPGEMM_CUSPARSE is deprecated. cuSPARSE is automatically "
-        "used in all supported SpGEMM calls.");
-  else if (name == "SPGEMM_MKL")
-    throw std::runtime_error(
-        "Enum value SPGEMM_MKL is deprecated. MKL is automatically used in all "
-        "supported SpGEMM calls.");
-  else if (name == "SPGEMM_MKL2PHASE")
-    throw std::runtime_error(
-        "Enum value SPGEMM_MKL2PHASE is deprecated. MKL is automatically used "
-        "in all supported SpGEMM calls.");
-  else if (name == "SPGEMM_ROCSPARSE")
-    throw std::runtime_error(
-        "Enum value SPGEMM_ROCSPARSE is deprecated. rocSPARSE is automatically "
-        "used in all supported SpGEMM calls.");
   else
     throw std::runtime_error("Invalid SPGEMMAlgorithm name");
 }

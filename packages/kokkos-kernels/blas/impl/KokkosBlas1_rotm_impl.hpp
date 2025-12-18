@@ -1,24 +1,11 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_ROTM_IMPL_HPP_
 #define KOKKOSBLAS1_ROTM_IMPL_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosBlas1_rotm_spec.hpp>
 
 namespace KokkosBlas {
@@ -63,15 +50,15 @@ struct rotm_functor {
 template <class execution_space, class VectorView, class ParamView>
 void Rotm_Invoke(execution_space const& space, VectorView const& X, VectorView const& Y, ParamView const& param) {
   using Scalar = typename VectorView::value_type;
-  static_assert(!Kokkos::ArithTraits<Scalar>::is_complex, "rotm is not defined for complex types!");
+  static_assert(!KokkosKernels::ArithTraits<Scalar>::is_complex, "rotm is not defined for complex types!");
 
-  Scalar const zero = Kokkos::ArithTraits<Scalar>::zero();
-  Scalar const one  = Kokkos::ArithTraits<Scalar>::one();
+  Scalar const zero = KokkosKernels::ArithTraits<Scalar>::zero();
+  Scalar const one  = KokkosKernels::ArithTraits<Scalar>::one();
   Scalar const two  = one + one;
 
   rotm_functor myFunc(X, Y, param);
 
-  typename ParamView::HostMirror param_h = Kokkos::create_mirror_view(param);
+  typename ParamView::host_mirror_type param_h = Kokkos::create_mirror_view(param);
   Kokkos::deep_copy(param_h, param);
   Scalar const flag = param_h(0);
 

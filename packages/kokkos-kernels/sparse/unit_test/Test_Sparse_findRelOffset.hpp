@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // Note: Luc Berger-Vergiat 04/14/21
 //       This test requires the use of UVM
@@ -82,7 +69,7 @@ void generalTest(bool& /*success*/, std::ostream& out) {
     lno_t numEnt                = 7;
     const lno_t indsToSearch[7] = {1, 1, 2, 3, 5, 8, 13};
     nIVT indsToSearch_view("indsToSearch", numEnt);
-    typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
+    typename nIVT::host_mirror_type h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
     for (int i = 0; i < numEnt; ++i) {
       // std::cout << "indsToSearch[i]:" << indsToSearch[i] << std::endl;
       h_indsToSearch_view(i) = indsToSearch[i];
@@ -137,7 +124,7 @@ void generalTest(bool& /*success*/, std::ostream& out) {
     const lno_t indsToSearch[7] = {1, 1, 2, 3, 5, 8, 13};
     nIVT indsToSearch_view("indsToSearch", numEnt);
 
-    typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
+    typename nIVT::host_mirror_type h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
     for (int i = 0; i < numEnt; ++i) h_indsToSearch_view(i) = indsToSearch[i];
     Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
     Kokkos::fence();
@@ -189,7 +176,7 @@ void generalTest(bool& /*success*/, std::ostream& out) {
 
     nIVT indsToSearch_view("indsToSearch", numEnt);
 
-    typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
+    typename nIVT::host_mirror_type h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
     for (int i = 0; i < numEnt; ++i) h_indsToSearch_view(i) = indsToSearch[i];
     Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
     Kokkos::fence();
@@ -243,7 +230,7 @@ void generalTest(bool& /*success*/, std::ostream& out) {
 
     nIVT indsToSearch_view("indsToSearch", numEnt);
 
-    typename nIVT::HostMirror h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
+    typename nIVT::host_mirror_type h_indsToSearch_view = Kokkos::create_mirror_view(indsToSearch_view);
     for (int i = 0; i < numEnt; ++i) h_indsToSearch_view(i) = indsToSearch[i];
     Kokkos::deep_copy(indsToSearch_view, h_indsToSearch_view);
     Kokkos::fence();
@@ -324,7 +311,7 @@ void testLongArray(bool& /*success*/, std::ostream& out) {
 
   typedef Kokkos::View<lno_t*, device_t> lno_view_t;
   lno_view_t indsToSearch("indsToSearch", N);
-  typename lno_view_t::HostMirror h_indsToSearch = Kokkos::create_mirror_view(indsToSearch);
+  typename lno_view_t::host_mirror_type h_indsToSearch = Kokkos::create_mirror_view(indsToSearch);
 
   for (lno_t k = 0; k < n; ++k) {
     h_indsToSearch[2 * k]     = 2 * (n - k);

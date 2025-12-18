@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_PTTRF_SERIAL_INTERNAL_HPP_
 #define KOKKOSBATCHED_PTTRF_SERIAL_INTERNAL_HPP_
 
@@ -50,7 +37,7 @@ KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
   };
 
   auto check_positive_definitiveness = [&](const int i) {
-    return (d[i] <= Kokkos::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
+    return (d[i] <= KokkosKernels::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
   };
 
   // Compute the L*D*L' (or U'*D*U) factorization of A.
@@ -123,7 +110,7 @@ KOKKOS_INLINE_FUNCTION int SerialPttrfInternal<Algo::Pttrf::Unblocked>::invoke(
   };
 
   auto check_positive_definitiveness = [&](const int i) {
-    return (d[i] <= Kokkos::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
+    return (d[i] <= KokkosKernels::ArithTraits<ValueType>::zero()) ? (i + 1) : 0;
   };
 
   // Compute the L*D*L' (or U'*D*U) factorization of A.

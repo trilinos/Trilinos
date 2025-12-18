@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -195,7 +182,7 @@ struct SptrsvTest {
     for (auto alg : algs) {
       // FIXME CUDA+Clang+Complex seems to expose a compiler bug
 #if defined(__clang__) && defined(KOKKOS_ENABLE_CUDA)
-      if (alg == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && Kokkos::ArithTraits<scalar_t>::isComplex &&
+      if (alg == SPTRSVAlgorithm::SEQLVLSCHD_TP1 && KokkosKernels::ArithTraits<scalar_t>::isComplex &&
           std::is_same_v<execution_space, Kokkos::Cuda> && block_size != 0) {
         std::cerr << "Skipping TP1 alg test for blocked mtx. There's a compiler bug "
                   << "for clang+CUDA+complex" << std::endl;

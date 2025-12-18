@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_IMPL_SPILUK_NUMERIC_HPP_
 #define KOKKOSSPARSE_IMPL_SPILUK_NUMERIC_HPP_
@@ -22,7 +9,7 @@
 
 #include <KokkosKernels_config.h>
 #include <KokkosKernels_Error.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_spiluk_handle.hpp>
 #include "KokkosBatched_SetIdentity_Decl.hpp"
 #include "KokkosBatched_SetIdentity_Impl.hpp"
@@ -55,10 +42,8 @@ struct IlukWrap {
   using WorkViewType      = typename IlukHandle::work_view_t;
   using LevelHostViewType = typename IlukHandle::nnz_lno_view_host_t;
   using LevelViewType     = typename IlukHandle::nnz_lno_view_t;
-  using karith            = typename Kokkos::ArithTraits<scalar_t>;
   using team_policy       = typename IlukHandle::TeamPolicy;
   using member_type       = typename team_policy::member_type;
-  using range_policy      = typename IlukHandle::RangePolicy;
 
   static team_policy get_team_policy(const size_type nrows, const int team_size) {
     team_policy rv;

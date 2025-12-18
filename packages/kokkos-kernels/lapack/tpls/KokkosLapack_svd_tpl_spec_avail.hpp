@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSLAPACK_SVD_TPL_SPEC_AVAIL_HPP_
 #define KOKKOSLAPACK_SVD_TPL_SPEC_AVAIL_HPP_
@@ -33,7 +20,7 @@ struct svd_tpl_spec_avail {
       EXECSPACE,                                                                                           \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                         \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                               \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                             \
+      Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                      \
                    Kokkos::Device<EXECSPACE, Kokkos::HostSpace>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<EXECSPACE, Kokkos::HostSpace>,                         \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                               \
@@ -72,8 +59,8 @@ KOKKOSLAPACK_SVD_TPL_SPEC_AVAIL_LAPACK(Kokkos::complex<double>, Kokkos::LayoutLe
   struct svd_tpl_spec_avail<                                                                                           \
       Kokkos::Cuda,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                           \
+      Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                  \
+                   Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::Cuda, MEMSPACE>,                                           \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                         \
@@ -100,8 +87,8 @@ KOKKOSLAPACK_SVD_TPL_SPEC_AVAIL_CUSOLVER(Kokkos::complex<double>, Kokkos::Layout
   struct svd_tpl_spec_avail<                                                                                          \
       Kokkos::HIP,                                                                                                    \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
-      Kokkos::View<Kokkos::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft, Kokkos::Device<Kokkos::HIP, MEMSPACE>, \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
+      Kokkos::View<KokkosKernels::ArithTraits<SCALAR>::mag_type*, Kokkos::LayoutLeft,                                 \
+                   Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                   \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>, Kokkos::MemoryTraits<Kokkos::Unmanaged>>, \
       Kokkos::View<SCALAR**, LAYOUT, Kokkos::Device<Kokkos::HIP, MEMSPACE>,                                           \
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>> {                                                        \

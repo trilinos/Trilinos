@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -81,9 +68,9 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
   lno_t numCols = numRows;
 
   typename lno_view_t::non_const_type xadj("xadj", numRows + 1);
-  typename lno_view_t::non_const_type::HostMirror h_xadj = Kokkos::create_mirror_view(xadj);
+  typename lno_view_t::non_const_type::host_mirror_type h_xadj = Kokkos::create_mirror_view(xadj);
   typename lno_nnz_view_t::non_const_type adj("adj", nnz);
-  typename lno_nnz_view_t::non_const_type::HostMirror h_adj = Kokkos::create_mirror_view(adj);
+  typename lno_nnz_view_t::non_const_type::host_mirror_type h_adj = Kokkos::create_mirror_view(adj);
 
   // Fill up the rowPtr array
   h_xadj(0)  = 0;
@@ -206,8 +193,8 @@ void test_coloring_deterministic(lno_t numRows, size_type nnz) {
 
     EXPECT_TRUE((num_colors == 2));
 
-    size_type num_conflict                            = 0;
-    typename color_view_t::HostMirror h_vector_colors = Kokkos::create_mirror_view(vector_colors);
+    size_type num_conflict                                  = 0;
+    typename color_view_t::host_mirror_type h_vector_colors = Kokkos::create_mirror_view(vector_colors);
     Kokkos::deep_copy(h_vector_colors, vector_colors);
     int exact_colors[18] = {2, 1, 2, 1, 1, 2, 1, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1};
 

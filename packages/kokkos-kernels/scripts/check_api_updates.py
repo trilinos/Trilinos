@@ -1,18 +1,5 @@
-#@HEADER
-# ************************************************************************
-#
-#                        Kokkos v. 4.0
-#       Copyright (2022) National Technology & Engineering
-#               Solutions of Sandia, LLC (NTESS).
-#
-# Under the terms of Contract DE-NA0003525 with NTESS,
-# the U.S. Government retains certain rights in this software.
-#
-# Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-# See https://kokkos.org/LICENSE for license information.
+# SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-#
-#@HEADER
 
 """Check if an API change in Kokkos Kernels might be undocumented
 
@@ -37,6 +24,8 @@ src_directories = ["batched/dense/src",
                    "sparse/src"]
 
 src_doc_mapping = dict([
+                        ('batched/dense/src/KokkosBatched_ApplyHouseholder_Decl.hpp', ['docs/source/API/batched/dense/batched_apply_householder.rst']),
+                        ('batched/dense/src/KokkosBatched_Householder_Decl.hpp', ['docs/source/API/batched/dense/batched_householder.rst']),
                         ('blas/src/KokkosBlas1_abs.hpp', ['blas1_abs.rst']),
                         ('blas/src/KokkosBlas1_axpby.hpp', ['blas1_axpy.rst']),
                         ('blas/src/KokkosBlas1_dot.hpp', ['blas1_dot.rst']),

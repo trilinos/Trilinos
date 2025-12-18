@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSKERNELS_PRINTUTILS_HPP
 #define KOKKOSKERNELS_PRINTUTILS_HPP
@@ -67,7 +54,7 @@ template <typename idx_array_type>
 inline std::enable_if_t<idx_array_type::rank <= 1> kk_print_1Dview(std::ostream& os, idx_array_type view,
                                                                    bool print_all = false, const char* sep = " ",
                                                                    size_t print_size = 40) {
-  typedef typename idx_array_type::HostMirror host_type;
+  typedef typename idx_array_type::host_mirror_type host_type;
   typedef typename idx_array_type::size_type idx;
   host_type host_view = Kokkos::create_mirror_view(view);
   Kokkos::deep_copy(host_view, view);

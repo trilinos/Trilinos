@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <KokkosKernels_config.h>
 #include <iostream>
@@ -63,9 +50,9 @@ crsMat_t create_crs_matrix(char *mtx_bin_file) {
     values_view_t values_view("values_view", ne);
 
     if (KokkosKernels::Impl::is_gpu_exec_space_v<myExecSpace>) {
-      typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view(rowmap_view);
-      typename cols_view_t::HostMirror hc    = Kokkos::create_mirror_view(columns_view);
-      typename values_view_t::HostMirror hv  = Kokkos::create_mirror_view(values_view);
+      typename row_map_view_t::host_mirror_type hr = Kokkos::create_mirror_view(rowmap_view);
+      typename cols_view_t::host_mirror_type hc    = Kokkos::create_mirror_view(columns_view);
+      typename values_view_t::host_mirror_type hv  = Kokkos::create_mirror_view(values_view);
 
       for (INDEX_TYPE i = 0; i <= nv; ++i) {
         hr(i) = xadj[i];
@@ -98,7 +85,7 @@ template <typename scalar_view_t>
 scalar_view_t create_x_vector(INDEX_TYPE nv, SCALAR_TYPE max_value = 1.0) {
   scalar_view_t kok_x("X", nv);
 
-  typename scalar_view_t::HostMirror h_x = Kokkos::create_mirror_view(kok_x);
+  typename scalar_view_t::host_mirror_type h_x = Kokkos::create_mirror_view(kok_x);
 
   for (INDEX_TYPE i = 0; i < nv; ++i) {
     SCALAR_TYPE r = static_cast<SCALAR_TYPE>(rand()) / static_cast<SCALAR_TYPE>(RAND_MAX / max_value);

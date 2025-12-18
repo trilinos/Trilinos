@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_NRMINF_IMPL_HPP_
 #define KOKKOSBLAS1_NRMINF_IMPL_HPP_
 
@@ -38,7 +25,7 @@ struct V_NrmInf_Functor {
   typedef SizeType size_type;
   typedef typename XV::non_const_value_type xvalue_type;
   typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::ArithTraits<typename IPT::mag_type> AT;
+  typedef KokkosKernels::ArithTraits<typename IPT::mag_type> AT;
   typedef typename IPT::mag_type value_type;
 
   typename XV::const_type m_x;
@@ -70,7 +57,7 @@ struct V_NrmInf_Functor {
 ///   View) X, and store the result in the 0-D View r.
 template <class execution_space, class RV, class XV, class SizeType>
 void V_NrmInf_Invoke(const execution_space& space, const RV& r, const XV& X) {
-  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> AT;
+  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> AT;
 
   const SizeType numRows = static_cast<SizeType>(X.extent(0));
 
