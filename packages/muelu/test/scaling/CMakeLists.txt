@@ -518,7 +518,7 @@ IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       TRIBITS_ADD_TEST(
         Driver
         NAME "DriverTpetraSingleReduceCG"
-        ARGS "--linAlgebra=Tpetra --xml=scaling.xml --belosType=\"TPETRA CG SINGLE REDUCE\" --its=14"
+        ARGS "--linAlgebra=Tpetra --xml=scaling.xml --belosType=\"TPETRA CG SINGLE REDUCE\" --its=2"
         NUM_MPI_PROCS 4
         COMM mpi # HAVE_MPI required
         PASS_REGULAR_EXPRESSION "Belos converged"
