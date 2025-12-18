@@ -34,12 +34,12 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include "MockMasterElementProvider.hpp"
+#include "stk_transfer_util/MockMasterElementProvider.hpp"
 // clang-format on
 // #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
-namespace unit_test_util {
+namespace transfer_util {
 
   unsigned MasterElementProvider::num_integration_points(const stk::search::SearchTopology& meTopo) const
   {
@@ -228,7 +228,7 @@ namespace unit_test_util {
   void MasterElementProvider::check_consistent_topology([[maybe_unused]] const stk::search::SearchTopology& meTopo) const
   {
     // Only support Hex8, Quad4 and Line2
-    STK_ThrowAssertMsg(meTopo.get_topology() == stk::topology::HEX_8 ||
+    STK_ThrowRequireMsg(meTopo.get_topology() == stk::topology::HEX_8 ||
                        meTopo.get_topology() == stk::topology::QUAD_4 ||
                        meTopo.get_topology() == stk::topology::LINE_2,
                        "Invalid topology " << meTopo.get_topology());

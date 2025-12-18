@@ -10,6 +10,7 @@
 #ifndef STK_TRANSFER_UTIL_TRANSFERMAINSETTINGS_HPP
 #define STK_TRANSFER_UTIL_TRANSFERMAINSETTINGS_HPP
 
+#include <utility>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <string>
@@ -27,16 +28,16 @@ public:
 
   void set_num_input_processors(unsigned numInputProcs);
   void set_num_output_processors(unsigned numOutputProcs);
-  void set_fromMesh_filename(const std::string& fromMesh);
-  void set_toMesh_filename(const std::string& toMesh);
-  void set_transfer_field(const std::string& fieldName);
+  void set_sendMesh_filename(const std::string& sendMesh);
+  void set_recvMesh_filename(const std::string& recvMesh);
+  void set_transfer_field(const std::pair<std::string, std::string>& fieldName);
   bool set_extrapolate_option(const std::string& policy);
 
   unsigned get_num_input_processors() const;
   unsigned get_num_output_processors() const;
-  std::string get_fromMesh_filename() const;
-  std::string get_toMesh_filename() const;
-  std::vector<std::string> get_transfer_fields() const;
+  const std::string& get_sendMesh_filename() const;
+  const std::string& get_recvMesh_filename() const;
+  const std::vector<std::pair<std::string, std::string>>& get_transfer_fields() const;
   stk::search::ObjectOutsideDomainPolicy get_extrapolate_option() const;
   std::string get_extrapolate_option_string() const;
   std::string get_field_list_string() const;
@@ -44,9 +45,9 @@ public:
 private:
   unsigned m_numInputProcessors;
   unsigned m_numOutputProcessors;
-  std::string m_fromMesh;
-  std::string m_toMesh;
-  std::vector<std::string> m_transferFields;
+  std::string m_sendMesh;
+  std::string m_recvMesh;
+  std::vector<std::pair<std::string, std::string>> m_transferFields;
   stk::search::ObjectOutsideDomainPolicy m_OODP;
 
 };

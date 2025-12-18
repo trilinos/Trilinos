@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
 #include <algorithm>                    // for copy, remove_if
@@ -197,6 +197,13 @@ Partition *BucketRepository::get_partition(const EntityRank arg_entity_rank, con
   return get_partition(arg_entity_rank, parts, ik);
 }
 
+Partition* BucketRepository::get_partition(const EntityRank arg_entity_rank, unsigned ordinal)
+{
+  ensure_data_structures_sized();
+  return m_partitions[arg_entity_rank][ordinal];
+}
+
+
 Partition *BucketRepository::get_partition(
   const EntityRank arg_entity_rank ,
   const OrdinalVector &parts,
@@ -229,7 +236,13 @@ Partition* BucketRepository::create_partition(
   STK_ThrowRequire(partition != nullptr);
 
   m_need_sync_from_partitions[arg_entity_rank] = true;
-  m_partitions[arg_entity_rank].insert( ik , partition );
+  if (ik == m_partitions[arg_entity_rank].end() || *ik != nullptr)
+  {
+    m_partitions[arg_entity_rank].insert( ik , partition );
+  } else
+  {
+    *ik = partition;
+  }
 
   return partition;
 }
@@ -332,8 +345,7 @@ void BucketRepository::sync_from_partitions(EntityRank rank)
 
         if (partition.empty())
         {
-          delete partitions[p_i];
-          partitions[p_i] = 0;
+          deallocate_partition(rank, p_i);
           has_hole = true;
           continue;
         }
@@ -399,6 +411,16 @@ void BucketRepository::deallocate_bucket(Bucket *b)
   m_need_sync_from_partitions[bucket_rank] = true;
   delete b;
 }
+
+void BucketRepository::deallocate_partition(EntityRank entityRank, unsigned ordinal)
+{
+  STK_ThrowAssertMsg(ordinal < m_partitions[entityRank].size(), "out of bound Partition ordinal");
+  STK_ThrowAssertMsg(m_partitions[entityRank][ordinal], "cannot delete already-deleted Partition");
+
+  delete m_partitions[entityRank][ordinal];
+  m_partitions[entityRank][ordinal] = nullptr;
+}
+
 
 void BucketRepository::sync_bucket_ids(EntityRank entity_rank)
 {

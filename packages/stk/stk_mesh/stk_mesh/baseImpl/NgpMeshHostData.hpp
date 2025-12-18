@@ -53,8 +53,6 @@ struct NgpMeshHostDataBase {
 template <typename NgpMemSpace>
 struct NgpMeshHostData : NgpMeshHostDataBase {
 
-  typename EntityKeyViewType<NgpMemSpace>::host_mirror_type hostEntityKeys;
-  typename UnsignedViewType<NgpMemSpace>::host_mirror_type hostEntityLocalIds;
   typename UnsignedViewType<NgpMemSpace>::host_mirror_type hostVolatileFastSharedCommMapOffset[stk::topology::NUM_RANKS];
   typename UnsignedViewType<NgpMemSpace>::host_mirror_type hostVolatileFastSharedCommMapNumShared[stk::topology::NUM_RANKS];
   typename NgpCommMapIndices<NgpMemSpace>::host_mirror_type hostVolatileFastSharedCommMap[stk::topology::NUM_RANKS];

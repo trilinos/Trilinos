@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef stk_mesh_base_FieldBase_hpp
 #define stk_mesh_base_FieldBase_hpp
@@ -54,10 +54,11 @@
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowAssert, etc
 #include <stk_util/util/SimpleArrayOps.hpp>  // for Copy
 #include <stk_util/util/CSet.hpp>
+#include <stk_util/ngp/NgpSpaces.hpp>
 #include <string>                       // for string
 #include <type_traits>
 
-namespace stk::mesh 
+namespace stk::mesh
 {
 
 class BulkData;
@@ -93,12 +94,13 @@ class FieldBase
 {
 public:
   using value_type = void;
+  using InitValsViewType = Kokkos::View<std::byte*, stk::ngp::HostPinnedSpace>;
 
   FieldBase() = delete;
   FieldBase(const FieldBase &) = delete;
   FieldBase & operator=(const FieldBase &) = delete;
 
-  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo) const = 0;
+  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo, const std::string fieldName = "") const = 0;
 
    /** \brief  The \ref stk::mesh::MetaData "meta data manager"
    *          that owns this field
@@ -169,28 +171,35 @@ public:
     return field_state(fstate) != nullptr;
   }
 
-  const std::byte* get_initial_value() const
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after Jan 2026
+  STK_DEPRECATED const std::byte* get_initial_value() const
+  {
+    return m_field_states[0]->m_initial_value.data();
+  }
+
+  STK_DEPRECATED std::byte* get_initial_value() {
+    return m_field_states[0]->m_initial_value.data();
+  }
+#endif
+
+  const InitValsViewType& get_initial_value_bytes() const
   {
     return m_field_states[0]->m_initial_value;
   }
-  
-  std::byte* get_initial_value() {
+
+  InitValsViewType& get_initial_value_bytes()
+  {
     return m_field_states[0]->m_initial_value;
   }
-  
+
   unsigned get_initial_value_num_bytes() const {
-    return m_field_states[0]->m_initial_value_num_bytes;
+    return m_field_states[0]->m_initial_value.extent(0);
   }
 
   virtual ~FieldBase() {
     delete m_hostFieldData;
     delete m_deviceFieldData;
     delete m_ngpField;
-
-    if (state() == StateNone) {
-      delete [] m_initial_value;
-      m_initial_value = nullptr;
-    }
   }
 
   virtual std::ostream& print_data(std::ostream& out, const MeshIndex& /*mi*/) const { return out; }
@@ -240,9 +249,9 @@ public:
   }
 
   bool defined_on(const stk::mesh::Part& part) const;
-  
+
   bool defined_on(const stk::mesh::Bucket& bucket) const;
-  
+
   bool defined_on(const stk::mesh::Entity& entity) const;
 
   void modify_on_host() const;
@@ -313,6 +322,9 @@ protected:
       if (m_deviceFieldData->needs_update()) {
         m_deviceFieldData->update(stk::ngp::ExecSpace(), host_data_layout(), need_sync_to_device());
         increment_num_syncs_to_device();
+      } else if (m_deviceFieldData->need_device_metadata_update())
+      {
+        m_deviceFieldData->update_device_field_metadata();
       }
     }
     else {
@@ -324,6 +336,9 @@ protected:
       if (m_deviceFieldData->needs_update()) {
         m_deviceFieldData->update(stk::ngp::ExecSpace(), host_data_layout(), need_sync_to_device());
         increment_num_syncs_to_device();
+      } else if (m_deviceFieldData->need_device_metadata_update())
+      {
+        m_deviceFieldData->update_device_field_metadata();
       }
       clear_host_sync_state();
     }
@@ -879,12 +894,12 @@ private:
   template<class A>
     const A * declare_attribute_no_delete(const A * a) {
       return m_attribute.template insert_no_delete<A>(a);
-    }   
+    }
 
   template<class A>
     const A * declare_attribute_with_delete(const A * a) {
       return m_attribute.template insert_with_delete<A>(a);
-    }   
+    }
 
   template<class A>
     bool remove_attribute(const A * a) {
@@ -911,7 +926,7 @@ private:
   void increment_num_syncs_to_host() const;
   void increment_num_syncs_to_device() const;
 
-  void set_initial_value(const void* new_initial_value, unsigned num_scalars, unsigned num_bytes);
+  void set_initial_value(const void* new_initial_value, unsigned num_bytes);
 
   void insert_restriction(const char     * arg_method ,
                           const Part       & arg_part ,
@@ -966,8 +981,7 @@ protected:
       m_name(arg_name),
       m_num_states(arg_number_of_states),
       m_restrictions(),
-      m_initial_value(nullptr),
-      m_initial_value_num_bytes(0),
+      m_initial_value("Init-Vals-"+arg_name, 0),
       m_data_traits( arg_traits ),
       m_meta_data(arg_mesh_meta_data),
       m_ordinal(arg_ordinal),
@@ -1000,8 +1014,7 @@ private:
   const unsigned m_num_states;
   FieldBase* m_field_states[ MaximumFieldStates ];
   FieldRestrictionVector m_restrictions;
-  std::byte* m_initial_value;
-  unsigned m_initial_value_num_bytes;
+  InitValsViewType m_initial_value;
   CSet m_attribute;
   const DataTraits& m_data_traits;
   MetaData* const m_meta_data;
@@ -1357,6 +1370,84 @@ void field_data_execute(const FieldBase& fieldBase1, const FieldBase& fieldBase2
   else {
     STK_ThrowErrorMsg("Unsupported host Field data layouts: " << fieldBase1.host_data_layout() << " and " <<
                       fieldBase2.host_data_layout());
+  }
+}
+
+// Helper function for running an algorithm on three FieldBase instances when the host data
+// layout is unknown.  Layout::Auto can be used in this circumstance, but it comes
+// with a ~30% performance penalty.  The run-time query and switch is done here once
+// outside the algorithm, so the cost is negligible.
+//
+//   stk::mesh::field_data_execute<double, double, stk::mesh::ReadOnly, stk::mesh::ReadOnly, stk::mesh::ReadWrite>(field1, field2, field3
+//     [&](auto& fieldData1, auto& fieldData2, auto& fieldData3) {
+//       auto entityValues1 = fieldData1.entity_values(entity);
+//       auto entityValues2 = fieldData2.entity_values(entity);
+//       auto entityValues3 = fieldData3.entity_values(entity);
+//       for (stk::mesh::ComponentIdx component : entityValues.components()) {
+//         entityValues3(component) = entityValues1(component) + entityValues2(component);
+//       }
+//     }
+//   );
+//
+template <typename T1, typename T2, typename T3, FieldAccessTag FieldAccess1, FieldAccessTag FieldAccess2, FieldAccessTag FieldAccess3, typename Alg>
+inline
+void field_data_execute(const FieldBase& fieldBase1, const FieldBase& fieldBase2, const FieldBase& fieldBase3, Alg&& alg)
+{
+  auto fieldLayout1 = fieldBase1.host_data_layout();
+  auto fieldLayout2 = fieldBase2.host_data_layout();
+  auto fieldLayout3 = fieldBase3.host_data_layout();
+
+  if (fieldLayout1 == Layout::Right && fieldLayout2 == Layout::Right && fieldLayout3 == Layout::Right) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Left && fieldLayout2 == Layout::Left && fieldLayout3 == Layout::Left) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Right && fieldLayout2 == Layout::Right && fieldLayout3 == Layout::Left) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Right && fieldLayout2 == Layout::Left && fieldLayout3 == Layout::Right) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Right && fieldLayout2 == Layout::Left && fieldLayout3 == Layout::Left) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Left && fieldLayout2 == Layout::Right && fieldLayout3 == Layout::Right) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Left && fieldLayout2 == Layout::Left && fieldLayout3 == Layout::Right) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Right>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else if (fieldLayout1 == Layout::Left && fieldLayout2 == Layout::Right && fieldLayout3 == Layout::Left) {
+    auto fieldData1 = fieldBase1.data<T1, FieldAccess1, stk::ngp::HostSpace, Layout::Left>();
+    auto fieldData2 = fieldBase2.data<T2, FieldAccess2, stk::ngp::HostSpace, Layout::Right>();
+    auto fieldData3 = fieldBase3.data<T3, FieldAccess3, stk::ngp::HostSpace, Layout::Left>();
+    alg(fieldData1, fieldData2, fieldData3);
+  }
+  else {
+    STK_ThrowErrorMsg("Unsupported Field data layouts detected. " <<
+                      fieldLayout1 << ", " << fieldLayout2 << ", and " << fieldLayout3);
   }
 }
 

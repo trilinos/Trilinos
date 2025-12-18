@@ -67,13 +67,13 @@ class FieldValueSetter
 {
 public:
     virtual ~FieldValueSetter() {}
-    virtual void populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned step, const double time) const = 0;
+    virtual void populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned step, const double time, const double fieldValueScaleFactor = 1.0) const = 0;
 };
 
 class IdAndTimeFieldValueSetter : public FieldValueSetter
 {
 public:
-    virtual void populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned step, const double time) const override;
+    virtual void populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned step, const double time, const double fieldValueScaleFactor = 1.0) const override;
 };
 
 class MeshFromFile
@@ -111,7 +111,7 @@ public:
                                   const stk::mesh::ConnectivityOrdinal expectedOrdinal) const;
   void compare_entity_rank_names(const MeshFromFile& meshA, const MeshFromFile& meshB) const;
   void verify_transient_field_names(const MeshFromFile& mesh, const std::string& fieldBaseName) const;
-  void verify_transient_fields(MeshFromFile& mesh) const;
+  void verify_transient_fields(MeshFromFile& mesh, const double fieldValueScaleFactor = 1) const;
   void verify_decomp(MeshFromFile& mesh, const stk::mesh::EntityIdProcVec& expectedDecomp) const;
 
 private:
@@ -120,7 +120,7 @@ private:
   void verify_global_int(const MeshFromFile& mesh, const std::string& variable, int goldValue) const;
   void verify_global_real_vec(const MeshFromFile& mesh, const std::string& variable, double goldValue) const;
   void verify_transient_field_name(stk::mesh::FieldBase* field, const std::string& fieldName) const;
-  void verify_transient_field_values(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase* field, double timeStep) const;
+  void verify_transient_field_values(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase* field, double timeStep, const double fieldValueScaleFactor = 1) const;
 
   MPI_Comm m_comm;
   const double m_epsilon;
@@ -132,7 +132,8 @@ void generated_mesh_with_transient_data_to_file_in_serial(const std::string &mes
                                                           stk::topology::rank_t fieldRank,
                                                           const std::string& globalVariableName,
                                                           const std::vector<double>& timeSteps,
-                                                          const FieldValueSetter &fieldValueSetter);
+                                                          const FieldValueSetter &fieldValueSetter,
+                                                          const double fieldValueScaleFactor = 1.0);
 
 void read_from_serial_file_and_decompose(const std::string& fileName, stk::mesh::BulkData &mesh,
                                          const std::string &decompositionMethod);

@@ -197,6 +197,7 @@ void parallel_sum_including_ghosts_device_mpi(const NGPMESH& ngpMesh,
 template <typename NgpMesh, typename NgpField, typename MemSpace = stk::ngp::MemSpace>
 void parallel_sum(NgpMesh const& ngpMesh, std::vector<NgpField*> const& ngpFields, bool doFinalSyncBackToDevice = true)
 {
+  Kokkos::Profiling::pushRegion("parallel_sum");
   const stk::mesh::BulkData& bulk = ngpMesh.get_bulk_on_host();
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   const std::vector<stk::mesh::FieldBase *> & allStkFields = meta.get_fields();
@@ -216,6 +217,7 @@ void parallel_sum(NgpMesh const& ngpMesh, std::vector<NgpField*> const& ngpField
   if(doFinalSyncBackToDevice) {
     do_final_sync_to_device(ngpFields);
   }
+  Kokkos::Profiling::popRegion();
 }
 
 template <typename NGPMESH, typename NGPFIELD, typename MemSpace = stk::ngp::MemSpace>

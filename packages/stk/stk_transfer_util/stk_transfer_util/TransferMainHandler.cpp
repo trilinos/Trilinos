@@ -32,6 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "stk_transfer_util/TransferMainHandler.hpp"
+#include "stk_transfer_util/TransferMainIO.hpp"
+#include "stk_transfer_util/TransferMainBroker.hpp"
 #include "stk_transfer_util/LogMessage.hpp"
 
 namespace stk {
@@ -82,8 +84,8 @@ void TransferMainHandler::parse()
 
   if (m_parser.get_parser_status() == TransferParserStatus::SUCCESS) {
     m_settings = m_parser.generate_transfer_settings();
-    m_validator.require_file_exists(m_settings.get_fromMesh_filename(), m_settings.get_num_input_processors());
-    m_validator.require_file_exists(m_settings.get_toMesh_filename(), m_settings.get_num_output_processors());
+    m_validator.require_file_exists(m_settings.get_sendMesh_filename(), m_settings.get_num_input_processors());
+    m_validator.require_file_exists(m_settings.get_recvMesh_filename(), m_settings.get_num_output_processors());
   }
   else if (m_parser.get_parser_status() == TransferParserStatus::PARSE_ONLY) {
     m_exitCode = TransferMainStatus::PARSE_ONLY;
@@ -95,7 +97,7 @@ void TransferMainHandler::parse()
 
 bool TransferMainHandler::is_no_op() const
 {
-  return m_settings.get_fromMesh_filename() == m_settings.get_toMesh_filename();
+  return m_settings.get_sendMesh_filename() == m_settings.get_recvMesh_filename();
 }
 
 void TransferMainHandler::print_no_op_message() const
@@ -105,7 +107,16 @@ void TransferMainHandler::print_no_op_message() const
 
 void TransferMainHandler::transfer()
 {
-  stk::transfer_util::log_message(m_comm, "The stk_transfer executable doesn't have any capabilities yet.");
+  TransferMainIO io(m_comm, m_settings.get_sendMesh_filename(), m_settings.get_recvMesh_filename());
+  io.load_meshes();
+
+  TransferMainBroker broker(m_comm, io.get_sendBulkData(), io.get_recvBulkData(), m_settings);
+  broker.check_fields();
+  broker.check_parts();
+  broker.transfer();
+
+  io.write_transfer_output(broker.get_recv_fields_for_transfer());
+
 }
 
 void TransferMainHandler::print_parse_error(const char* what) const
@@ -126,8 +137,8 @@ void TransferMainHandler::print_running_message() const
 {
   stk::transfer_util::log_message(m_comm, "STK Transfer: STK Version "+stk::version_string());
   stk::transfer_util::log_message(m_comm, "Transfer Information:");
-  stk::transfer_util::log_message(m_comm, "From-mesh: "+ m_settings.get_fromMesh_filename());
-  stk::transfer_util::log_message(m_comm, "To-mesh: "+ m_settings.get_toMesh_filename());
+  stk::transfer_util::log_message(m_comm, "Send-mesh: "+ m_settings.get_sendMesh_filename());
+  stk::transfer_util::log_message(m_comm, "Recv-mesh: "+ m_settings.get_recvMesh_filename());
   stk::transfer_util::log_message(m_comm, "Fields being transferred: "
                                           + (m_settings.get_transfer_fields().size() == 0 ? "all fields" : 
                                              m_settings.get_field_list_string()));

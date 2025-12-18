@@ -57,7 +57,7 @@
 #include <vector>     // for vector, swap
 
 namespace stk {
-namespace unit_test_util {
+namespace transfer_util {
 
 /**
  * A Gauss-Legendre quadrature rule (traditionally

@@ -74,7 +74,7 @@ void testFieldOnNodes(stk::mesh::BulkData &stkMeshBulkData,
   {
     EXPECT_TRUE(stkMeshBulkData.bucket(nodes[i]).member(nodePart));
     auto nodeFieldData = nodeField1Data.entity_values(nodes[i]);
-    EXPECT_EQ(*reinterpret_cast<double*>(nodeField1.get_initial_value()), nodeFieldData(0_comp));
+    EXPECT_EQ(*reinterpret_cast<double*>(nodeField1.get_initial_value_bytes().data()), nodeFieldData(0_comp));
   }
 }
 

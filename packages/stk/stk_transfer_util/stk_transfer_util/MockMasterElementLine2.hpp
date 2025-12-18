@@ -35,7 +35,7 @@
 #ifndef STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_MOCKELEMENTLINE2_HPP_
 #define STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_MOCKELEMENTLINE2_HPP_
 
-#include "MockMasterElement.hpp"
+#include "stk_transfer_util/MockMasterElement.hpp"
 #include <stk_util/util/ReportHandler.hpp>  // for eval_test_condition, STK_...
 
 #include <math.h>  // for sqrt
@@ -57,7 +57,7 @@
 #include <vector>     // for vector, swap
 
 namespace stk {
-namespace unit_test_util {
+namespace transfer_util {
 
 class Line2
 {

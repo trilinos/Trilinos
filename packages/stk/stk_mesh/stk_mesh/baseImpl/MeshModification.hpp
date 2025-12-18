@@ -63,6 +63,7 @@ public:
         m_deleted_entity_cache(bulkData),
         m_sync_state(MODIFIABLE),
         m_synchronizedCount(0),
+        m_lastDeviceSynchronizedCount(0),
         m_did_any_shared_entity_change_parts(false)
     {
       m_entity_states.push_back(Deleted);
@@ -84,7 +85,14 @@ public:
       m_synchronizedCount = syncCount;
     }
 
-    bool modification_begin(const std::string description, bool resetSymGhostInfo);
+    size_t last_device_synchronized_count() const { return m_lastDeviceSynchronizedCount; }
+
+    void set_last_device_synchronized_count(size_t syncCount) const
+    { 
+      m_lastDeviceSynchronizedCount = syncCount;
+    }
+
+    bool modification_begin(const std::string description, bool resetSymGhostInfo, bool isSyncToHost=false);
 
     bool modification_end(modification_optimization opt=MOD_END_SORT);
     bool resolve_node_sharing();
@@ -157,6 +165,7 @@ private:
 
     BulkDataSyncState m_sync_state;
     size_t m_synchronizedCount;
+    mutable size_t m_lastDeviceSynchronizedCount;
     bool m_did_any_shared_entity_change_parts;
 };
 

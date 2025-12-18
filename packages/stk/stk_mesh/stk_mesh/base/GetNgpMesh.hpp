@@ -42,7 +42,7 @@ namespace stk {
 namespace mesh {
 
 template<typename NgpMemSpace = NgpMeshDefaultMemSpace>
-inline NgpMeshT<NgpMemSpace> & get_updated_ngp_mesh(const BulkData & bulk)
+inline NgpMeshT<NgpMemSpace> & get_ngp_mesh(const BulkData & bulk)
 {
   static_assert(std::is_same_v<NgpMeshT<NgpMemSpace>,HostMeshT<NgpMemSpace>> ||
                 Kokkos::SpaceAccessibility<NgpMemSpace,NgpMeshDefaultMemSpace>::accessible,
@@ -56,11 +56,25 @@ inline NgpMeshT<NgpMemSpace> & get_updated_ngp_mesh(const BulkData & bulk)
     ngpMeshBase = new NgpMeshT<NgpMemSpace>(bulk);
     impl::set_ngp_mesh(bulk, ngpMeshBase);
   }
-  else {
-    ngpMeshBase->update_mesh();
-  }
+
   return dynamic_cast<NgpMeshT<NgpMemSpace>&>(*ngpMeshBase);
 }
+
+
+inline NgpMesh & get_ngp_mesh(const BulkData & bulk)
+{
+  return get_ngp_mesh<NgpMeshDefaultMemSpace>(bulk);
+}
+
+template<typename NgpMemSpace = NgpMeshDefaultMemSpace>
+inline NgpMeshT<NgpMemSpace> & get_updated_ngp_mesh(const BulkData & bulk)
+{
+  NgpMeshT<NgpMemSpace>& ngpMesh = get_ngp_mesh<NgpMemSpace>(bulk);
+  ngpMesh.update_mesh();
+
+  return ngpMesh;
+}
+
 
 inline NgpMesh & get_updated_ngp_mesh(const BulkData & bulk)
 {

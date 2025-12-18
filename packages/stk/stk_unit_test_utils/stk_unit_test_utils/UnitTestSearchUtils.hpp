@@ -49,7 +49,7 @@
 #include "stk_search/Sphere.hpp"                      // for Sphere
 #include "stk_topology/topology.hpp"                  // for topology
 #include "stk_unit_test_utils/BuildMesh.hpp"               // for build_mesh
-#include "stk_unit_test_utils/MockMasterElementProvider.hpp"
+#include "stk_transfer_util/MockMasterElementProvider.hpp"
 #include "stk_unit_test_utils/MockSearchMesh.hpp"
 #include "stk_unit_test_utils/TextMesh.hpp"                // for get_full_t...
 #include "stk_util/parallel/Parallel.hpp"             // for ParallelMachine
