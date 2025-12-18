@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <fstream>
 #include <ostream>
@@ -53,13 +40,13 @@ class GraphColorDistance2Handle {
   using color_view_array_layout                  = typename color_view_type::array_layout;
   using color_view_device_type                   = typename color_view_type::device_type;
   using color_view_memory_traits                 = typename color_view_type::memory_traits;
-  using color_host_view_type                     = typename color_view_type::HostMirror;
+  using color_host_view_type                     = typename color_view_type::host_mirror_type;
   using size_type_temp_work_view_type            = typename Kokkos::View<size_type*, HandleTempMemorySpace>;
   using size_type_persistent_work_view_type      = typename Kokkos::View<size_type*, HandlePersistentMemorySpace>;
-  using size_type_persistent_work_host_view_type = typename size_type_persistent_work_view_type::HostMirror;
+  using size_type_persistent_work_host_view_type = typename size_type_persistent_work_view_type::host_mirror_type;
   using nnz_lno_temp_work_view_type              = typename Kokkos::View<nnz_lno_type*, HandleTempMemorySpace>;
   using nnz_lno_persistent_work_view_type        = typename Kokkos::View<nnz_lno_type*, HandlePersistentMemorySpace>;
-  using nnz_lno_persistent_work_host_view_type   = typename nnz_lno_persistent_work_view_type::HostMirror;
+  using nnz_lno_persistent_work_host_view_type   = typename nnz_lno_persistent_work_view_type::host_mirror_type;
   using team_policy_type                         = Kokkos::TeamPolicy<HandleExecSpace>;
   using team_member_type                         = typename team_policy_type::member_type;
   using non_const_1d_size_type_view_type         = typename Kokkos::View<size_t*>;
@@ -307,9 +294,9 @@ class GraphColorDistance2Handle {
   template <typename kokkos_view_type, typename rowmap_type, typename entries_type>
   void dump_graphviz(std::ostream& os, const size_t num_verts, rowmap_type& rowmap, entries_type& entries,
                      kokkos_view_type& colors) const {
-    using h_colors_type  = typename kokkos_view_type::HostMirror;
-    using h_rowmap_type  = typename rowmap_type::HostMirror;
-    using h_entries_type = typename entries_type::HostMirror;
+    using h_colors_type  = typename kokkos_view_type::host_mirror_type;
+    using h_rowmap_type  = typename rowmap_type::host_mirror_type;
+    using h_entries_type = typename entries_type::host_mirror_type;
 
     h_colors_type h_colors = Kokkos::create_mirror_view(colors);
     Kokkos::deep_copy(h_colors, colors);

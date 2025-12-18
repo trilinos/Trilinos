@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_CRSMATRIX_HPP
 #define KOKKOSBATCHED_CRSMATRIX_HPP
 
@@ -30,7 +17,7 @@ template <class ValuesViewType, class IntViewType>
 class CrsMatrix {
  public:
   using ScalarType    = typename ValuesViewType::non_const_value_type;
-  using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+  using MagnitudeType = typename KokkosKernels::ArithTraits<ScalarType>::mag_type;
 
  private:
   ValuesViewType values;
@@ -78,9 +65,9 @@ class CrsMatrix {
 
   template <typename ArgTrans, typename ArgMode, typename MemberType, typename XViewType, typename YViewType>
   KOKKOS_INLINE_FUNCTION void apply(const MemberType &member, const XViewType &X, const YViewType &Y,
-                                    MagnitudeType alpha = Kokkos::ArithTraits<MagnitudeType>::one(),
-                                    MagnitudeType beta  = Kokkos::ArithTraits<MagnitudeType>::zero()) const {
-    if (beta == Kokkos::ArithTraits<MagnitudeType>::zero()) {
+                                    MagnitudeType alpha = KokkosKernels::ArithTraits<MagnitudeType>::one(),
+                                    MagnitudeType beta  = KokkosKernels::ArithTraits<MagnitudeType>::zero()) const {
+    if (beta == KokkosKernels::ArithTraits<MagnitudeType>::zero()) {
       if (member.team_size() == 1 && n_operators == 8)
         KokkosBatched::TeamVectorSpmv<MemberType, ArgTrans, 8>::template invoke<ValuesViewType, IntViewType, XViewType,
                                                                                 YViewType, 0>(
@@ -103,9 +90,9 @@ class CrsMatrix {
 
   template <typename ArgTrans, typename XViewType, typename YViewType>
   KOKKOS_INLINE_FUNCTION void apply(const XViewType &X, const YViewType &Y,
-                                    MagnitudeType alpha = Kokkos::ArithTraits<MagnitudeType>::one(),
-                                    MagnitudeType beta  = Kokkos::ArithTraits<MagnitudeType>::zero()) const {
-    if (beta == Kokkos::ArithTraits<MagnitudeType>::zero())
+                                    MagnitudeType alpha = KokkosKernels::ArithTraits<MagnitudeType>::one(),
+                                    MagnitudeType beta  = KokkosKernels::ArithTraits<MagnitudeType>::zero()) const {
+    if (beta == KokkosKernels::ArithTraits<MagnitudeType>::zero())
       KokkosBatched::SerialSpmv<ArgTrans>::template invoke<ValuesViewType, IntViewType, XViewType, YViewType, 0>(
           alpha, values, row_ptr, colIndices, X, beta, Y);
     else

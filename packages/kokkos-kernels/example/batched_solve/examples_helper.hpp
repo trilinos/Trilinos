@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \brief create_saddle_point_matrices:
 ///
@@ -72,8 +59,8 @@ void create_saddle_point_matrices(const MatrixViewType &A, const VectorViewType 
   MatrixViewType xs("xs", N, n_1, n_dim);
   VectorViewType ys("ys", N, n_1);
 
-  Kokkos::fill_random(xs, random, Kokkos::reduction_identity<typename MatrixViewType::value_type>::prod());
-  Kokkos::fill_random(ys, random, Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+  Kokkos::fill_random(xs, random, 1);
+  Kokkos::fill_random(ys, random, 1);
 
   auto xs_host = Kokkos::create_mirror_view(xs);
   auto ys_host = Kokkos::create_mirror_view(ys);
@@ -121,8 +108,8 @@ void create_tridiagonal_batched_matrices(const int nnz, const int BlkSize, const
                                          const IntView &c, const VectorViewType &D, const VectorViewType &X,
                                          const VectorViewType &B) {
   Kokkos::Random_XorShift64_Pool<typename VectorViewType::device_type::execution_space> random(13718);
-  Kokkos::fill_random(X, random, Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
-  Kokkos::fill_random(B, random, Kokkos::reduction_identity<typename VectorViewType::value_type>::prod());
+  Kokkos::fill_random(X, random, 1);
+  Kokkos::fill_random(B, random, 1);
 
   auto D_host = Kokkos::create_mirror_view(D);
   auto r_host = Kokkos::create_mirror_view(r);

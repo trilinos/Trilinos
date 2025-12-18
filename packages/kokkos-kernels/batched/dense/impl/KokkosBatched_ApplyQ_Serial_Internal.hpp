@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_APPLY_Q_SERIAL_INTERNAL_HPP
 #define KOKKOSBATCHED_APPLY_Q_SERIAL_INTERNAL_HPP
 
@@ -72,8 +59,8 @@ struct SerialApplyQ_LeftForwardInternal {
       const int m_A2 = m - m_A0 - 1;
       /// -----------------------------------------------------
       // left apply householder to partitioned B1 and B2
-      SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1, B_part3x1.A2, bs0,
-                                                 bs1, w);
+      SerialApplyLeftHouseholderInternal<Trans::NoTranspose>::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1,
+                                                                     bs1, B_part3x1.A2, bs0, bs1, w);
 
       /// -----------------------------------------------------
       A_part2x2.mergeToABR(A_part3x3);
@@ -126,8 +113,8 @@ struct SerialApplyQ_LeftBackwardInternal {
       const int m_A2 = m - m_A0 - 1;
       /// -----------------------------------------------------
       // left apply householder to partitioned B1 and B2
-      SerialApplyLeftHouseholderInternal::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1, B_part3x1.A2, bs0,
-                                                 bs1, w);
+      SerialApplyLeftHouseholderInternal<Trans::Transpose>::invoke(m_A2, n, tau, A_part3x3.A21, as0, B_part3x1.A1, bs1,
+                                                                   B_part3x1.A2, bs0, bs1, w);
       /// -----------------------------------------------------
       A_part2x2.mergeToATL(A_part3x3);
       t_part2x1.mergeToAT(t_part3x1);

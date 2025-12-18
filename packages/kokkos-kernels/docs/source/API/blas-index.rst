@@ -130,7 +130,7 @@ All Kokkos Kernels BLAS calls can be made with an execution space instance as th
 BLAS support
 ============
 
-Below are tables summarizing the currently supported function calls and third party libraries in Kokkos Kernels. The tables are updated with each release of the library to reflect recently added support.
+Below are tables summarizing the currently supported function calls and third party libraries in Kokkos Kernels.
 
 BLAS 1
 ------
@@ -146,119 +146,105 @@ BLAS 1
      - cuBLAS
      - rocBLAS
      - oneMKL
-   * - SROTG
+   * - ROTG
      - :doc:`rotg(a, b, c, s) <blas/blas1_rotg>`
      - X
      - X
      - X
      - X
      - X
-   * - SROTMG
+   * - ROTMG
      - rotmg(d1, d2, x1, y1, param)
      - X
      - X
      - X
      - X
      - --
-   * - SROT
+   * - ROT
      - :doc:`rot(X, Y, c, s) <blas/blas1_rot>`
      - X
      - X
      - X
      - X
      - --
-   * - SROTM
+   * - ROTM
      - :doc:`rotm(X, Y, param) <blas/blas1_rotm>`
      - X
      - X
      - X
      - --
      - --
-   * - SSWAP
+   * - SWAP
      - :doc:`swap(X, Y) <blas/blas1_swap>`
      - X
      - X
      - X
      - X
      - --
-   * - SSCAL
+   * - SCAL
      - :doc:`scal(y,a,x) <blas/blas1_scal>`
      - X
      - X
      - X
      - X
      - --
-   * - CSSCAL
+   * - SCAL
      - :doc:`scal(y,a,x) <blas/blas1_scal>`
      - X
      - X
      - X
      - X
      - --
-   * - SCOPY
+   * - COPY
      - `deep_copy(y,x) <https://kokkos.org/kokkos-core-wiki/API/core/view/deep_copy.html>`_
      - X
      - --
      - --
      - --
      - --
-   * - SAXPY
+   * - AXPY
      - :doc:`axpy(a,x,y) <blas/blas1_axpy>`
      - X
      - X
      - X
      - --
      - --
-   * - SDOT*
+   * - DOT*
      - :doc:`dot(x,y) <blas/blas1_dot>`
      - X
      - X
      - X
      - X
      - X
-   * - SDSDOT*
+   * - DOTU
+     - --
+     - --
+     - --
+     - --
+     - --
+     - --
+   * - DOTC*
      - :doc:`dot(x,y) <blas/blas1_dot>`
      - X
      - X
      - X
      - X
      - X
-   * - CDOTU
-     - --
-     - --
-     - --
-     - --
-     - --
-     - --
-   * - CDOTC*
-     - :doc:`dot(x,y) <blas/blas1_dot>`
-     - X
-     - X
-     - X
-     - X
-     - X
-   * - SNRM2
+   * - NRM2
      - :doc:`nrm2(x) <blas/blas1_nrm2>`
      - X
      - X
      - X
      - X
      - X
-   * - SCNRM2
-     - :doc:`nrm2(x) <blas/blas1_nrm2>`
-     - X
-     - X
-     - X
-     - X
-     - X
-   * - SASUM
+   * - ASUM
      - :doc:`nrm1(x) <blas/blas1_nrm1>`
      - X
      - X
      - X
      - X
      - X
-   * - ISAMAX
+   * - IAMAX
      - :doc:`iamax(x) <blas/blas1_iamax>`
      - X
      - X
@@ -280,119 +266,119 @@ BLAS 2
      - cuBLAS
      - rocBLAS
      - oneMKL
-   * - SGEMV
+   * - GEMV
      - :doc:`gemv(trans,a,A,x,b,y) <blas/blas2_gemv>`
      - X
      - X
      - X
      - X
      - X
-   * - SGBMV
+   * - GBMV
      - --
      - --
      - --
      - --
      - --
      - --
-   * - SSYMV
+   * - SYMV
      - --
      - --
      - --
      - --
      - --
      - --
-   * - SSBMV
+   * - SBMV
      - --
      - --
      - --
      - --
      - --
      - --
-   * - SSPMV
+   * - SPMV
      - --
      - --
      - --
      - --
      - --
      - --
-   * - STRMV
+   * - TRMV
      - :doc:`trmm(side,uplo,trans, diag,alpha,A,B) <blas/blas3_trmm>`
      - X
      - X
      - X
      - --
      - --
-   * - STBMV
+   * - TBMV
      - --
      - --
      - --
      - --
      - --
      - --
-   * - STPMV
+   * - TPMV
      - --
      - --
      - --
      - --
      - --
      - --
-   * - STRSV
+   * - TRSV
      - :doc:`trsm(side,uplo,trans,diag,alpha,A,B) <blas/blas3_trsm>`
      - X
      - X
      - X
      - --
      - --
-   * - STBSV
+   * - TBSV
      - --
      - --
      - --
      - --
      - --
      - --
-   * - STPSV
+   * - TPSV
      - --
      - --
      - --
      - --
      - --
      - --
-   * - SGER
+   * - GER
      - :doc:`ger(trans,a,x,y,A) <blas/blas2_ger>`
      - X
      - X
      - X
      - X
      - --
-   * - CGERU
+   * - GERU
      - :doc:`ger(trans,a,x,y,A) <blas/blas2_ger>`
      - X
      - X
      - X
      - X
      - --
-   * - CGERC
+   * - GERC
      - :doc:`ger(trans,a,x,y,A) <blas/blas2_ger>`
      - X
      - X
      - X
      - X
      - --
-   * - SSYR
+   * - SYR
      - :doc:`syr(trans,uplo,a,x,A) <blas/blas2_syr>`
      - X
      - X
      - X
      - X
      - --
-   * - SSPR
+   * - SPR
      - --
      - --
      - --
      - --
      - --
      - --
-   * - SSYR2
+   * - SYR2
      - :doc:`syr2(trans,uplo,a,x,y,A) <blas/blas2_syr2>`
      - X
      - X
@@ -415,63 +401,63 @@ BLAS 3
      - cuBLAS
      - rocBLAS
      - oneMKL
-   * - SGEMM
+   * - GEMM
      - :doc:`gemm(transA,transB,a,A,B,b,C) <blas/blas3_gemm>`
      - X
      - X
      - X
      - X
      - --
-   * - SSYMM
+   * - SYMM
      - --
      - --
      - --
      - --
      - --
      - --
-   * - SSYRK
+   * - SYRK
      - --
      - --
      - --
      - --
      - --
      - --
-   * - SSYRK2
+   * - SYRK2
      - --
      - --
      - --
      - --
      - --
      - --
-   * - CHEMM
+   * - HEMM
      - --
      - --
      - --
      - --
      - --
      - --
-   * - CHERK
+   * - HERK
      - --
      - --
      - --
      - --
      - --
      - --
-   * - CHERK2
+   * - HERK2
      - --
      - --
      - --
      - --
      - --
      - --
-   * - STRMM
+   * - TRMM
      - :doc:`trmm(side, uplo, trans, diag, a, A, B) <blas/blas3_trmm>`
      - X
      - X
      - X
      - --
      - --
-   * - STRSM
+   * - TRSM
      - :doc:`trsm(side, uplo, trans, diag, a, A, B) <blas/blas3_trsm>`
      - X
      - X

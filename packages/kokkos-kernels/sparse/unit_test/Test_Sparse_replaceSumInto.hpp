@@ -1,21 +1,8 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // #include "Teuchos_UnitTestHarness.hpp"
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 #include <gtest/gtest.h>
 #include "KokkosSparse_CrsMatrix.hpp"
 
@@ -44,7 +31,7 @@ class ModifyEvenNumberedRows {
       ordinal_type cols[1];
       value_type vals[1];
 
-      const value_type ONE   = Kokkos::ArithTraits<value_type>::one();
+      const value_type ONE   = KokkosKernels::ArithTraits<value_type>::one();
       const value_type THREE = ONE + ONE + ONE;
 
       cols[0] = lclRow;
@@ -84,12 +71,12 @@ bool checkWhetherEvenNumberedRowsWereModified(const CrsMatrixType& A, const bool
   typedef typename CrsMatrixType::value_type SC;
   typedef typename CrsMatrixType::ordinal_type LO;
 
-  const SC ONE   = Kokkos::ArithTraits<SC>::one();
+  const SC ONE   = KokkosKernels::ArithTraits<SC>::one();
   const SC TWO   = ONE + ONE;
   const SC THREE = ONE + ONE + ONE;
 
-  typename CrsMatrixType::values_type val               = A.values;
-  typename CrsMatrixType::values_type::HostMirror val_h = Kokkos::create_mirror_view(val);
+  typename CrsMatrixType::values_type val                     = A.values;
+  typename CrsMatrixType::values_type::host_mirror_type val_h = Kokkos::create_mirror_view(val);
   Kokkos::deep_copy(val_h, val);
   Kokkos::fence();
   const LO numRows = A.numRows();
@@ -120,7 +107,7 @@ template <class CrsMatrixType>
 void testOneCase(bool& /*success*/,
                  // Teuchos::FancyOStream& out,
                  std::ostream& out, const CrsMatrixType& A, const bool replace, const bool sorted, const bool atomic) {
-  using Kokkos::ArithTraits;
+  using KokkosKernels::ArithTraits;
   typedef typename CrsMatrixType::value_type value_type;
 
   // Teuchos::OSTab tab0 (out);
@@ -154,8 +141,8 @@ void generalTest(bool& success, std::ostream& out)
   typename matrix_type::size_type numEnt = 0;  // to be updated below
   typename matrix_type::row_map_type::non_const_type ptr("ptr", numRows + 1);
   {
-    typename matrix_type::row_map_type::HostMirror ptr_h = Kokkos::create_mirror_view(ptr);
-    ptr_h[0]                                             = 0;
+    typename matrix_type::row_map_type::host_mirror_type ptr_h = Kokkos::create_mirror_view(ptr);
+    ptr_h[0]                                                   = 0;
     for (lno_t lclRow = 0; lclRow < numRows; ++lclRow) {
       ptr_h[lclRow + 1] = ptr_h[lclRow] + 1;  // 1 entry in each row
     }
@@ -165,7 +152,7 @@ void generalTest(bool& success, std::ostream& out)
 
   typename matrix_type::index_type::non_const_type ind("ind", numEnt);
   {
-    typename matrix_type::index_type::HostMirror ind_h = Kokkos::create_mirror_view(ind);
+    typename matrix_type::index_type::host_mirror_type ind_h = Kokkos::create_mirror_view(ind);
     for (lno_t lclRow = 0; lclRow < numRows; ++lclRow) {
       ind_h[lclRow] = lclRow;  // diagonal matrix
     }
@@ -174,7 +161,7 @@ void generalTest(bool& success, std::ostream& out)
 
   typename matrix_type::values_type val("val", numEnt);
   {
-    typename matrix_type::values_type::HostMirror val_h = Kokkos::create_mirror_view(val);
+    typename matrix_type::values_type::host_mirror_type val_h = Kokkos::create_mirror_view(val);
     for (lno_t lclRow = 0; lclRow < numRows; ++lclRow) {
       val_h[lclRow] = 1.0;  // diagonal matrix
     }

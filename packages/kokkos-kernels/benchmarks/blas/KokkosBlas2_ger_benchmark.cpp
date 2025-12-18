@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Random.hpp>
@@ -114,13 +101,13 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   const auto m            = state.range(1);
   const auto n            = state.range(2);
   const auto yIsTranspose = state.range(3);
-  tScalar a(Kokkos::ArithTraits<tScalar>::zero());
+  tScalar a(KokkosKernels::ArithTraits<tScalar>::zero());
 
   if (verbosity > 0) {
     std::cout << "Entering KokkosBlas2_GER()"
               << ": m = " << m << ", n = " << n << ", yIsTranspose = " << yIsTranspose
-              << ", tScalar = " << Kokkos::ArithTraits<tScalar>::name() << ", tLayout = " << typeid(tLayout).name()
-              << std::endl;
+              << ", tScalar = " << KokkosKernels::ArithTraits<tScalar>::name()
+              << ", tLayout = " << typeid(tLayout).name() << std::endl;
   }
 
   using MemSpace = typename tExecSpace::memory_space;
@@ -135,11 +122,11 @@ static void KokkosBlas2_GER(benchmark::State& state) {
   char yMode('t');
   if (!yIsTranspose) yMode = 'H';
 
-  tScalar rangeValue(Kokkos::ArithTraits<tScalar>::zero());
-  if constexpr (Kokkos::ArithTraits<tScalar>::isOrdinal) {
+  tScalar rangeValue(KokkosKernels::ArithTraits<tScalar>::zero());
+  if constexpr (KokkosKernels::ArithTraits<tScalar>::isOrdinal) {
     rangeValue = 10;
     a          = 3;
-  } else if constexpr (Kokkos::ArithTraits<tScalar>::is_complex) {
+  } else if constexpr (KokkosKernels::ArithTraits<tScalar>::is_complex) {
     rangeValue.real() = 10.;
     rangeValue.imag() = 10.;
     a                 = tScalar(2.5, 3.6);

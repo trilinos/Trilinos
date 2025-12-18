@@ -1,23 +1,10 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSKERNELS_SAFECOMPARE_HPP
 #define KOKKOSKERNELS_SAFECOMPARE_HPP
 
-#include "Kokkos_ArithTraits.hpp"
+#include "KokkosKernels_ArithTraits.hpp"
 
 namespace KokkosKernels {
 namespace Impl {
@@ -43,8 +30,8 @@ namespace Impl {
 */
 template <typename T, typename U>
 KOKKOS_INLINE_FUNCTION constexpr bool safe_gt(const T &t, const U &u) {
-  using KT = Kokkos::ArithTraits<T>;
-  using KU = Kokkos::ArithTraits<U>;
+  using KT = KokkosKernels::ArithTraits<T>;
+  using KU = KokkosKernels::ArithTraits<U>;
 
   // both are integer, but only one is signed
   if constexpr (KT::is_integer && KU::is_integer && (KT::is_signed != KU::is_signed)) {

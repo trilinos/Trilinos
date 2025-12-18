@@ -1,24 +1,11 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS1_IMPL_RECIPROCAL_HPP_
 #define KOKKOSBLAS1_IMPL_RECIPROCAL_HPP_
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 
 namespace KokkosBlas {
 namespace Impl {
@@ -31,7 +18,7 @@ namespace Impl {
 template <class RMV, class XMV, class SizeType = typename RMV::size_type>
 struct MV_Reciprocal_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename XMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename XMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -77,7 +64,7 @@ struct MV_Reciprocal_Functor {
 template <class RMV, class SizeType = typename RMV::size_type>
 struct MV_ReciprocalSelf_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RMV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RMV::non_const_value_type> ATS;
 
   const size_type numCols;
   RMV R_;
@@ -116,7 +103,7 @@ struct MV_ReciprocalSelf_Functor {
 template <class RV, class XV, class SizeType = typename RV::size_type>
 struct V_Reciprocal_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename XV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename XV::non_const_value_type> ATS;
 
   RV R_;
   XV X_;
@@ -145,7 +132,7 @@ struct V_Reciprocal_Functor {
 template <class RV, class SizeType = typename RV::size_type>
 struct V_ReciprocalSelf_Functor {
   typedef SizeType size_type;
-  typedef Kokkos::ArithTraits<typename RV::non_const_value_type> ATS;
+  typedef KokkosKernels::ArithTraits<typename RV::non_const_value_type> ATS;
 
   RV R_;
 

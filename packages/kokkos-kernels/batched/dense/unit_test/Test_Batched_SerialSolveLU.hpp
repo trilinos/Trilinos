@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Vinh Dang (vqdang@sandia.gov)
 
 #include "gtest/gtest.h"
@@ -138,7 +125,7 @@ struct Functor_TestBatchedSerialSolveLU {
 template <typename DeviceType, typename ViewType, typename AlgoTagType>
 void impl_test_batched_solvelu(const int N, const int BlkSize) {
   typedef typename ViewType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   /// randomized input testing views
   ViewType a0("a0", N, BlkSize, BlkSize);
@@ -180,9 +167,9 @@ void impl_test_batched_solvelu(const int N, const int BlkSize) {
   // Kokkos::fence();
 
   /// for comparison send it to host
-  typename ViewType::HostMirror x0_host = Kokkos::create_mirror_view(x0);
-  typename ViewType::HostMirror b_host  = Kokkos::create_mirror_view(b);
-  // typename ViewType::HostMirror b_T_host = Kokkos::create_mirror_view(b_T);
+  typename ViewType::host_mirror_type x0_host = Kokkos::create_mirror_view(x0);
+  typename ViewType::host_mirror_type b_host  = Kokkos::create_mirror_view(b);
+  // typename ViewType::host_mirror_type b_T_host = Kokkos::create_mirror_view(b_T);
 
   Kokkos::deep_copy(x0_host, x0);
   Kokkos::deep_copy(b_host, b);

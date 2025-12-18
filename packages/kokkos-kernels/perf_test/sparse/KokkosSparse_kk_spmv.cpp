@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <cstdio>
 
@@ -35,7 +22,7 @@
 using Scalar  = KokkosKernels::default_scalar;
 using Ordinal = KokkosKernels::default_lno_t;
 using Offset  = KokkosKernels::default_size_type;
-using KAT     = Kokkos::ArithTraits<Scalar>;
+using KAT     = KokkosKernels::ArithTraits<Scalar>;
 
 struct SPMVBenchmarking {
   // note: CLI currently only allows square matrices to be randomly generated
@@ -56,7 +43,7 @@ struct SPMVBenchmarking {
   void run() {
     using matrix_type = KokkosSparse::CrsMatrix<Scalar, Ordinal, Kokkos::DefaultExecutionSpace, void, Offset>;
     using mv_type     = Kokkos::View<Scalar**, Layout>;
-    using h_mv_type   = typename mv_type::HostMirror;
+    using h_mv_type   = typename mv_type::host_mirror_type;
 
     srand(17312837);
     matrix_type A;

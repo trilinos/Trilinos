@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Yuuichi Asahi (yuuichi.asahi@cea.fr)
 #include <gtest/gtest.h>
 #include <Kokkos_Core.hpp>
@@ -59,7 +46,7 @@ struct Functor_BatchedSerialLacgv {
 ///        conj(x): [1 - 1j, -3-2j, -2+2j,  0-1j]
 template <typename DeviceType, typename ScalarType, typename LayoutType>
 void impl_test_batched_lacgv_analytical(const std::size_t Nb) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;
@@ -76,7 +63,7 @@ void impl_test_batched_lacgv_analytical(const std::size_t Nb) {
   auto h_x     = Kokkos::create_mirror_view(x);
   auto h_x_ref = Kokkos::create_mirror_view(x_ref);
 
-  constexpr bool is_complex = Kokkos::ArithTraits<ScalarType>::is_complex;
+  constexpr bool is_complex = KokkosKernels::ArithTraits<ScalarType>::is_complex;
 
   for (std::size_t ib = 0; ib < Nb; ib++) {
     if constexpr (is_complex) {
@@ -139,7 +126,7 @@ void impl_test_batched_lacgv_analytical(const std::size_t Nb) {
 /// \param BlkSize [in] Length of vector X
 template <typename DeviceType, typename ScalarType, typename LayoutType>
 void impl_test_batched_lacgv(const std::size_t Nb, const std::size_t BlkSize) {
-  using ats               = typename Kokkos::ArithTraits<ScalarType>;
+  using ats               = typename KokkosKernels::ArithTraits<ScalarType>;
   using RealType          = typename ats::mag_type;
   using View2DType        = Kokkos::View<ScalarType **, LayoutType, DeviceType>;
   using StridedView2DType = Kokkos::View<ScalarType **, Kokkos::LayoutStride, DeviceType>;

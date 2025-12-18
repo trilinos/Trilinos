@@ -1,29 +1,16 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <KokkosBlas1_rotg.hpp>
 
 namespace Test {
 template <class Device, class Scalar>
 void test_rotg_impl(typename Device::execution_space const& space, Scalar const a_in, Scalar const b_in) {
-  using magnitude_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
+  using magnitude_type = typename KokkosKernels::ArithTraits<Scalar>::mag_type;
   using SViewType      = Kokkos::View<Scalar, Device>;
   using MViewType      = Kokkos::View<magnitude_type, Device>;
 
-  // const magnitude_type eps = Kokkos::ArithTraits<Scalar>::eps();
-  // const Scalar zero        = Kokkos::ArithTraits<Scalar>::zero();
+  // const magnitude_type eps = KokkosKernels::ArithTraits<Scalar>::eps();
+  // const Scalar zero        = KokkosKernels::ArithTraits<Scalar>::zero();
 
   // Initialize inputs/outputs
   SViewType a("a");
@@ -44,8 +31,8 @@ void test_rotg_impl(typename Device::execution_space const& space, Scalar const 
 
 template <class Scalar, class Device>
 int test_rotg() {
-  const Scalar zero = Kokkos::ArithTraits<Scalar>::zero();
-  const Scalar one  = Kokkos::ArithTraits<Scalar>::one();
+  const Scalar zero = KokkosKernels::ArithTraits<Scalar>::zero();
+  const Scalar one  = KokkosKernels::ArithTraits<Scalar>::one();
   const Scalar two  = one + one;
 
   typename Device::execution_space space{};

@@ -39,13 +39,13 @@ Type Requirements
 
   - ``Kokkos::SpaceAccessibility<execution_space, typename VectorView::memory_space>::accessible == true``
   - ``std::is_same_v<typename VectorView::non_const_value_type, typename VectorView::value_type> == true``
-  - ``!Kokkos::ArithTraits<typename VectorView::value_type>::is_complex``
+  - ``!KokkosKernels::ArithTraits<typename VectorView::value_type>::is_complex``
 
 - `ParamView` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 1 and compile-time extent 5 that satisfies:
 
   - ``Kokkos::SpaceAccessibility<execution_space, typename ParamView::memory_space>::accessible == true``
   - ``std::is_same_v<typename ParamView::non_const_value_type, typename ParamView::value_type> == true``
-  - ``!Kokkos::ArithTraits<typename ParamView::value_type>::is_complex``
+  - ``!KokkosKernels::ArithTraits<typename ParamView::value_type>::is_complex``
 
 Example
 =======
