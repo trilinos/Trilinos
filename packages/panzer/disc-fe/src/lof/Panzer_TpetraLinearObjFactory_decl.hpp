@@ -152,6 +152,7 @@ public:
 
    //! Get the domain space
    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraDomainSpace() const;
+   virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getGhostedThyraDomainSpace() const;
 
    //! Get the range space
    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > getThyraRangeSpace() const;
@@ -275,6 +276,7 @@ protected:
 
    mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace_;
    mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace_;
+   mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ghostedDomainSpace_;
 };
 
 }

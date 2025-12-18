@@ -141,11 +141,12 @@ int main(int argc, char *argv[])
 
     {
       RCP<ParameterList> tempus_params = parameterList(input_params->sublist("Solution Control",true).sublist("Tempus",true));
-      auto objective = ROL::makePtr<ROL::TransientReducedObjective<double>>(input_params,comm,objective_params,out);
+      auto objective = ROL::makePtr<ROL::TransientReducedObjective<double>>(input_params,tempus_params,comm,objective_params,out);
 
       // Create target -- do forward integration with perturbed parameter values
       RCP<ROL::Vector<double>> p = objective->create_design_vector();
-      p->setScalar(2.0);
+      const double p_target = 2.0;
+      p->setScalar(p_target);
       RCP<ROL::Vector<double>> r = objective->create_response_vector();
       objective->run_tempus(*r, *p);
       objective->set_target(r);
@@ -162,9 +163,15 @@ int main(int argc, char *argv[])
       {
         const ROL::ThyraVector<double>& thyra_p = dyn_cast<const ROL::ThyraVector<double> >(*p);
         ROL::ThyraVector<double>& thyra_r = dyn_cast<ROL::ThyraVector<double> >(*r);
-        *out << "Final Values: p = " << Thyra::get_ele(*(thyra_p.getVector()),0)
+        const double p_final = Thyra::get_ele(*(thyra_p.getVector()),0);
+        *out << "Final Values: p = " << p_final
              << ", g = " << Thyra::get_ele(*(thyra_r.getVector()),0)
              << std::endl;
+        if (fabs(p_target - p_final) / fabs(p_target) > 1e-9) { 
+          status = -1;
+          *out <<"******* Optimization solution does not match expected target! ********" << std::endl;
+          *out <<"\tExpected p = " << p_target << std::endl;
+        }
       }
     }
 
@@ -188,10 +195,22 @@ int main(int argc, char *argv[])
     *out << e.what() << std::endl;
     *out << "************ Caught Exception: End Error Report ************" << std::endl;
     status = -1;
+
+    Teuchos::TimeMonitor::getStackedTimer()->stopBaseTimer();
+    if (true) {
+      Teuchos::StackedTimer::OutputOptions options;
+      options.output_fraction = true;
+      options.output_minmax = false;
+      options.output_histogram = false;
+      options.num_histogram = 5;
+      std::string timing_file_name = "exception_timing.log";
+      std::fstream timing_file{timing_file_name,std::ios::out | std::ios::trunc};
+      Teuchos::TimeMonitor::getStackedTimer()->report(timing_file, Teuchos::DefaultComm<int>::getComm(), options);
+    }
   }
 
   if (status == 0)
-    *out << "panzer::MainDriver run completed." << std::endl;
+    *out << "panzer::MainDriverOpt run completed." << std::endl;
 
   return status;
 }

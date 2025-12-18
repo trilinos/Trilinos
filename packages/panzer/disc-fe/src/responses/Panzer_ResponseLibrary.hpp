@@ -239,6 +239,9 @@ public:
    bool isResidualType() const 
    { return residualType_; }
 
+   template <typename EvalT>
+   void writeGraphvizFiles(const std::string& prefix = "");
+
 protected:
 
    /** Setup up field managers for all responses. Once this method is called
