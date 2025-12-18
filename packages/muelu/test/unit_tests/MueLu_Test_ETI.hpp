@@ -33,6 +33,45 @@
 #error "The macro MUELU_AUTOMATIC_TEST_ETI_NAME was not defined"
 #endif
 
+#if defined(__linux__) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
+#include <fenv.h>
+#elif defined(__APPLE__) && defined(__GNUC__) && defined(__SSE__)
+#include <xmmintrin.h>
+#endif
+
+namespace MueLu_Test {
+
+/** \brief Enable Floating Point Exceptions.
+ *
+ *  This enables/disables float point exceptions, Divide-by-Zero,
+ *  Overflow, and Invalid for Linux platforms with GCC and
+ *  Mac OS with GCC.  Otherwise, floating point exceptions are
+ *  not used.
+ */
+void enableFPE(bool enableFPE) {
+#if defined(__APPLE__) && defined(__GNUC__) && defined(__SSE__)
+  static int eMask = _MM_GET_EXCEPTION_MASK();
+#endif
+
+  if (enableFPE) {
+#if defined(__linux__) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
+    feenableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
+#elif defined(__APPLE__) && defined(__GNUC__) && defined(__SSE__)
+    eMask = _MM_GET_EXCEPTION_MASK();  // Save current eMask so we can disable.
+    _MM_SET_EXCEPTION_MASK(eMask & ~_MM_MASK_DIV_ZERO & ~_MM_MASK_OVERFLOW &
+                           ~_MM_MASK_INVALID);
+#endif
+  } else {
+#if defined(__linux__) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
+    fedisableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
+#elif defined(__APPLE__) && defined(__GNUC__) && defined(__SSE__)
+    _MM_SET_EXCEPTION_MASK(eMask);
+#endif
+  }
+}
+
+}  // namespace MueLu_Test
+
 // This function serves to manage the ETI (or not) for tests that are *not* unit tests.  This
 // allows us to isolate this particular bit of functionality, rather than have it cut-and-paste
 // duplicated over half of the testing tree.  See documentation at
@@ -45,6 +84,8 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   using MueLu::Exceptions::RuntimeError;
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  MueLu_Test::enableFPE(true);
 
   // MPI initialization using Teuchos
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
