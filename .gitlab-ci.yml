@@ -1,0 +1,53 @@
+stages:
+  - sync
+  - build
+
+# The sync job is primarily intended to work asynchronously (there is a scheduled job for it), but we still allow it to run as part of the CI pipeline to better ensure that it does not get broken if modified
+sync:
+  tags:
+    - cpu
+    - x86_64
+    - odyssey
+  stage: sync
+  variables:
+    GIT_STRATEGY: none
+    GITHUB_TOKEN: $GITHUB_TOKEN  # Set this in GitLab CI/CD variables
+    GITLAB_SSH_KEY_BASE64: $GITLAB_SSH_KEY_BASE64  # Set this in GitLab CI/CD variables
+  script:
+    - wget https://raw.githubusercontent.com/spack/spack-infrastructure/refs/heads/main/images/gh-gl-sync/SpackCIBridge.py
+    - wget https://raw.githubusercontent.com/spack/spack-infrastructure/refs/heads/main/images/gh-gl-sync/requirements.txt
+    - pip3 install -r requirements.txt
+    - pip3 install requests==2.32.2
+    - python3 ./SpackCIBridge.py --disable-protected-sync "trilinos/Trilinos" "ssh://git@ssh.gitlab.spack.io/sebrown/trilinos" "https://gitlab.spack.io" "sebrown/trilinos"
+
+gcc:
+  tags:
+    - cpu
+    - x86_64
+    - docker
+  image: ghcr.io/trilinos/production/ubi8-gcc-8.3.0-serial:20250130
+  stage: build
+  script:
+    - mkdir build
+    - pushd build
+    - pr_number=$(echo ${CI_COMMIT_BRANCH} | cut -f 1 -d "_" | sed 's/[^0-9]*//g')
+    - bash -l -c "../commonTools/framework/get-changed-trilinos-packages.sh $(git rev-list -n 1 --parents HEAD~1 | cut -f 2,3 -d ' ') packageEnables.cmake package_subproject_list.cmake"
+    - bash -l -c "cmake -G Ninja -C packageEnables.cmake -DCTEST_BUILD_FLAGS=\"-j12\" -DCTEST_PARALLEL_LEVEL=12 -DCTEST_DROP_SITE=my.cdash.org -DCTEST_BUILD_NAME=${pr_number}_gcc-8.3.0 -DTRIBITS_2ND_CTEST_DROP_SITE="" -DTrilinos_ENABLE_TESTS=ON -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON .."
+    - bash -l -c "ninja dashboard"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+
+rocm:
+  tags:
+    - amd-mi300
+  stage: build
+  image: ecpe4s/trilinos-ci-rocm6.2.1:2024.11.04
+  script:
+    - mkdir build
+    - pushd build
+    - pr_number=$(echo ${CI_COMMIT_BRANCH} | cut -f 1 -d "_" | sed 's/[^0-9]*//g')
+    - bash -l -c "../commonTools/framework/get-changed-trilinos-packages.sh $(git rev-list -n 1 --parents HEAD~1 | cut -f 2,3 -d ' ') packageEnables.cmake package_subproject_list.cmake"
+    - bash -l -c "cmake -G Ninja -C packageEnables.cmake -DCTEST_BUILD_FLAGS=\"-j12\" -DCTEST_PARALLEL_LEVEL=12 -DCTEST_DROP_SITE=my.cdash.org -DCTEST_BUILD_NAME=${pr_number}_rocm-6.2.1 -DTRIBITS_2ND_CTEST_DROP_SITE="" -DCMAKE_CXX_COMPILER=mpicxx -DCMAKE_C_COMPILER=mpicc -DTPL_ENABLE_MPI=ON -DTrilinos_ENABLE_Fortran=OFF -DTrilinos_ENABLE_TESTS=ON -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON -DCMAKE_PREFIX_PATH=\"$(ls -d /usr/local/ci/pkgs/openblas*);$(ls -d /usr/local/ci/pkgs/boost*);/opt/rocm\" -DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_RELOCATABLE_DEVICE_CODE=ON -DKokkos_ARCH_AMD_GFX942=ON -DTpetra_INST_HIP=ON -DTPL_ENABLE_ROCSPARSE=ON -DTPL_ENABLE_ROCBLAS=ON -DTPL_ENABLE_ROCSOLVER=ON -DTPL_ENABLE_Netcdf=OFF .."
+    - bash -l -c "ninja dashboard"
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
