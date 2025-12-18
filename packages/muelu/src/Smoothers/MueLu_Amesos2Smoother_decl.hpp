@@ -120,14 +120,14 @@ class Amesos2Smoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrd
   //@}
 
  private:
-  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_CrsMatrix;
-  typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra_MultiVector;
+  //typedef Epetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Epetra_CrsMatrix;
+  //typedef Epetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Epetra_MultiVector;
 
   //! amesos2-specific key phrase that denote smoother type
   std::string type_;
 
   //! pointer to Amesos2 solver object
-  RCP<Amesos2::Solver<Tpetra_CrsMatrix, Tpetra_MultiVector>> prec_;
+  RCP<Amesos2::Solver<Epetra_CrsMatrix, Epetra_MultiVector>> prec_;
 
   bool useTransformation_;
   RCP<MultiVector> X_, B_;

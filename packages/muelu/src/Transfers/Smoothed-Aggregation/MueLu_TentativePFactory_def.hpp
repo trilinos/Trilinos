@@ -907,6 +907,10 @@ void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                    "MueLu::TentativePFactory::MakeTentative: fine level NS part has a zero column in NS column " << j);
       }
 
+      // TODO: fix things ...
+
+
+
       // Calculate QR decomposition (standard)
       // NOTE: Q is stored in localQR and R is stored in coarseNS
       if (aggSize >= Teuchos::as<LO>(NSDim)) {
