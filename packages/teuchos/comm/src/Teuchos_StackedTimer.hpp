@@ -27,6 +27,7 @@
 #endif
 #include <string>
 #include <vector>
+#include <stack>
 #include <cassert>
 #include <chrono>
 #include <climits>
@@ -920,6 +921,29 @@ public:
    * @return true if the timer exists.
    */
   bool isTimer(const std::string& flat_timer_name);
+
+  /**
+   * Stops all running timers and returns a stack of timer names that
+   * were actively running when this method was called. This function
+   * is used to pause the timers for operations like checkpointing the
+   * timer data. The returned stack can be used to restore the state
+   * of the StackedTimer prior to this call with
+   * startTimers(my_stack).
+   *
+   * @return a stack of timers that were running when this function was called.
+   */
+  std::stack<std::string> stopAllTimers();
+
+  /**
+   * Start a set of timers using a stack of timer labels. Typically
+   * used in conjunction with stopAllTimers() to recover the state of
+   * a StackedTimer after pausing for checkpoint operations. This
+   * assumes the timer is not currently running.
+   *
+   * @param[in] timers_to_start A stack of timers to start.
+   */
+  void startTimers(std::stack<std::string> timers_to_start);
+
 
 protected:
   /// Current level running

@@ -816,16 +816,16 @@ TEUCHOS_UNIT_TEST(StackedTimer, MagistrateCheckpointStackedTimer)
     time_info["Residual"] = timer.findTimer("Total Time@Assembly@Residual");
     time_info["Jacobian"] = timer.findTimer("Total Time@Assembly@Jacobian");
 
-    std::cout << "\nTimer Before Serialization:\n" << std::endl;
-    timer.report(std::cout);
+    out << "\nTimer Before Serialization:\n" << std::endl;
+    timer.report(out);
 
     magistrate::serializeToFile(timer, "magistrate_stacked_timer.txt");
   }
 
   auto timer = magistrate::deserializeFromFile<Teuchos::StackedTimer>("magistrate_stacked_timer.txt");
 
-  std::cout << "\nTimer After Serialization:\n" << std::endl;
-  timer->report(std::cout);
+  out << "\nTimer After Serialization:\n" << std::endl;
+  timer->report(out);
 
   TEST_EQUALITY((timer->findTimer("Total Time")).count, 1);
   TEST_EQUALITY((timer->findTimer("Total Time@Assembly")).count, 10);
@@ -857,12 +857,60 @@ TEUCHOS_UNIT_TEST(StackedTimer, MagistrateCheckpointStackedTimer)
   }
   timer->stopBaseTimer();
 
-  timer->report(std::cout);
+  timer->report(out);
 
   TEST_ASSERT(timer->findTimer("Total Time").count == 2);
   TEST_ASSERT(timer->findTimer("Total Time@Assembly").count == 20);
   TEST_ASSERT(timer->findTimer("Total Time@Assembly@Residual").count == 20);
   TEST_ASSERT(timer->findTimer("Total Time@Assembly@Jacobian").count == 20);
+}
+
+TEUCHOS_UNIT_TEST(StackedTimer, StopTimersForCheckpointing)
+{
+  const std::string filename = "magistrate_test_stop_timers_for_checkpointing.txt";
+
+  Teuchos::StackedTimer timer("Total Time",false);
+  {
+    timer.startBaseTimer();
+    for (int i=0; i < 10; ++i) {
+      timer.start("Assembly");
+      timer.start("Residual");
+      if (i == 5) {
+        auto list_of_running_timers = timer.stopAllTimers();
+
+        out << "\nTimer Before Serialization:\n" << std::endl;
+        timer.report(out);
+        out << std::endl;
+
+        magistrate::serializeToFile(timer, filename);
+        timer.startTimers(list_of_running_timers);
+      }
+      timer.stop("Residual");
+      timer.start("Jacobian");
+      timer.stop("Jacobian");
+      timer.stop("Assembly");
+    }
+    timer.stopBaseTimer();
+  }
+
+  auto dtimer = magistrate::deserializeFromFile<Teuchos::StackedTimer>(filename);
+
+  out << "\nTimer After Serialization:\n" << std::endl;
+  dtimer->report(out);
+  out << std::endl;
+
+  // Check deserialized timer (after 5 iterations)
+  TEST_EQUALITY(dtimer->findTimer("Total Time").count, 1);
+  TEST_EQUALITY(dtimer->findTimer("Total Time@Assembly").count, 6);
+  TEST_EQUALITY(dtimer->findTimer("Total Time@Assembly@Residual").count, 6);
+  TEST_EQUALITY(dtimer->findTimer("Total Time@Assembly@Jacobian").count, 5);
+
+  // Check final timer (after 10 iterations)
+  timer.report(out);
+  TEST_EQUALITY(timer.findTimer("Total Time").count, 2);
+  TEST_EQUALITY(timer.findTimer("Total Time@Assembly").count, 11);
+  TEST_EQUALITY(timer.findTimer("Total Time@Assembly@Residual").count, 11);
+  TEST_EQUALITY(timer.findTimer("Total Time@Assembly@Jacobian").count, 10);
 }
 
 #endif // HAVE_TEUCHOS_MAGISTRATE
