@@ -18,7 +18,7 @@ TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
 # ETI requires that Tpetra is enabled.
-IF( DEFINED ${PROJECT_NAME}_ENABLE_Tpetra AND ${${PACKAGE_NAME}_ENABLE_Tpetra} )
+IF(DEFINED ${PROJECT_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Tpetra)
   TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 ELSE()
   MESSAGE( STATUS "Xpetra: Skipping ETI check because Tpetra is not enabled." )
@@ -199,6 +199,11 @@ ENDIF()
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(research)
 TRIBITS_ADD_TEST_DIRECTORIES(test)
+
+############################################################
+# Add variables to ${Package_NAME}Config.cmake
+############################################################
+tribits_pkg_export_cache_var(${PACKAGE_NAME}_INT_LONG_LONG)
 
 #
 # D) Do standard postprocessing
