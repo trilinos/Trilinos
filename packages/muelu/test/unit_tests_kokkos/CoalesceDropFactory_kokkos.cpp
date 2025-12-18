@@ -1780,12 +1780,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalVecto
       galeriList.set("nz", Teuchos::as<GlobalOrdinal>(n));
 
       // node map
-      auto map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
+      auto nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
 
-      RCP<LOVector> blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(map);
+      RCP<LOVector> blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(nodeMap);
       // domain is split into 2 blocks (upper and lower)
       for (size_t row = 0; row < blocknumber->getLocalLength(); row++) {
-        GO global_row = map->getGlobalElement(row);
+        GO global_row = nodeMap->getGlobalElement(row);
 
         if (global_row < 0.5 * n * n * n) {
           blocknumber->replaceLocalValue(row, zero);
@@ -1795,10 +1795,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalVecto
       }
 
       // dof map
-      map = Xpetra::MapFactory<LO, GO, Node>::Build(map, ndofn);
+      auto dofMap = Xpetra::MapFactory<LO, GO, Node>::Build(nodeMap, ndofn);
 
       RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
-          Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity3D", map, galeriList);
+          Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity3D", dofMap, galeriList);
 
       RCP<Matrix> A = Pr->BuildMatrix();
       A->SetFixedBlockSize(ndofn);
@@ -1809,7 +1809,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalVecto
       runAndCheck(A, blocknumber, ndofn, "block diagonal classical");
       runAndCheck(A, blocknumber, ndofn, "block diagonal colored signed classical");
 
-      auto coordinates                          = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type, LO, GO, Map, RealValuedMultiVector>("3D", map, galeriList);
+      auto coordinates                          = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type, LO, GO, Map, RealValuedMultiVector>("3D", nodeMap, galeriList);
       RCP<RealValuedMultiVector> newcoordinates = Pr->BuildCoords();
 
       for (size_t kkk = 0; kkk < coordinates->getNumVectors(); kkk++) {
@@ -1832,20 +1832,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalVecto
       galeriList.set("ny", Teuchos::as<GlobalOrdinal>(n));
 
       // node map
-      auto map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
+      auto nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
 
-      RCP<LOVector> blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(map);
+      RCP<LOVector> blocknumber = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(nodeMap);
       // 3 non-contiguous blocks
       for (size_t row = 0; row < blocknumber->getLocalLength(); row++) {
-        GO global_row = map->getGlobalElement(row);
+        GO global_row = nodeMap->getGlobalElement(row);
         blocknumber->replaceLocalValue(row, Teuchos::as<LO>(global_row / 4 % 3));
       }
 
       // dof map
-      map = Xpetra::MapFactory<LO, GO, Node>::Build(map, ndofn);
+      auto dofMap = Xpetra::MapFactory<LO, GO, Node>::Build(nodeMap, ndofn);
 
       RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
-          Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
+          Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", dofMap, galeriList);
       RCP<Matrix> A = Pr->BuildMatrix();
       A->SetFixedBlockSize(ndofn);
 
@@ -1855,7 +1855,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, BlockDiagonalVecto
       runAndCheck(A, blocknumber, ndofn, "block diagonal classical");
       // runAndCheck(A, blocknumber, ndofn, "block diagonal colored signed classical");  //CAG: This bugs out on >1 threads with OpenMP. No idea why.
 
-      auto coordinates                          = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type, LO, GO, Map, RealValuedMultiVector>("2D", map, galeriList);
+      auto coordinates                          = Galeri::Xpetra::Utils::CreateCartesianCoordinates<real_type, LO, GO, Map, RealValuedMultiVector>("2D", nodeMap, galeriList);
       RCP<RealValuedMultiVector> newcoordinates = Pr->BuildCoords();
 
       for (size_t kkk = 0; kkk < coordinates->getNumVectors(); kkk++) {
