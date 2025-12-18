@@ -112,7 +112,11 @@ protected:
                              const VERIFIER_FUNCTOR& verifierFunctor)
   {
     const unsigned NUM_RUNS = 5;
+#ifdef STK_ENABLE_GPU
     const int ELEMS_PER_DIM = 100;
+#else
+    const int ELEMS_PER_DIM = 60;
+#endif
 
     batchTimer.initialize_batch_timer();
 
@@ -199,8 +203,13 @@ protected:
                                const VERIFIER_FUNCTOR& verifierFunctor)
   {
     const unsigned NUM_RUNS = 5;
+#ifdef STK_ENABLE_GPU
     const int ELEMS_PER_DIM = 100;
     const int NUM_BLOCKS = 100;
+#else
+    const int ELEMS_PER_DIM = 60;
+    const int NUM_BLOCKS = 60;
+#endif
 
     batchTimer.initialize_batch_timer();
 
@@ -230,9 +239,15 @@ protected:
                               const VERIFIER_FUNCTOR& verifierFunctor)
   {
     const unsigned NUM_RUNS = 5;
+#ifdef STK_ENABLE_GPU
     const int ELEMS_PER_DIM = 100;
     const int NUM_BLOCKS = 100;
     const int USED_BLOCKS = 50;
+#else
+    const int ELEMS_PER_DIM = 60;
+    const int NUM_BLOCKS = 60;
+    const int USED_BLOCKS = 30;
+#endif
 
     batchTimer.initialize_batch_timer();
 
@@ -531,12 +546,7 @@ auto device_verify_averaged_centroids_are_center_of_mesh = [](int elemsPerDim, i
   constexpr int numHostIters = 1;
 #endif
 
-#ifdef STK_ENABLE_GPU
   constexpr int numDeviceIters = 2000;
-#else
-  constexpr int numDeviceIters = 100;
-#endif
-
 
 #ifndef STK_UNIFIED_MEMORY
 

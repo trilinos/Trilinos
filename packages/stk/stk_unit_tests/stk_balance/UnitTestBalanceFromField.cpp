@@ -50,7 +50,7 @@ class IdAndTimeFieldValueSetter : public stk::unit_test_util::FieldValueSetter
 {
 public:
     virtual void populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned /*step*/,
-                                const double time) const override
+                                const double time, const double fieldValueScaleFactor = 1.0) const override
 {
     stk::mesh::EntityRank fieldRank = field->entity_rank();
 
@@ -64,7 +64,7 @@ public:
         auto transientFieldData = transientField->data<double, stk::mesh::ReadWrite>();
         for(size_t i = 0; i < entities.size(); i++)
         {
-            double value = 100.0 * static_cast<double>(bulk.identifier(entities[i])) + time;
+            double value = 100.0 * fieldValueScaleFactor * static_cast<double>(bulk.identifier(entities[i])) + time;
             auto data = transientFieldData.entity_values(entities[i]);
             for(stk::mesh::ComponentIdx component : data.components())
               data(component) = value + static_cast<int>(component);

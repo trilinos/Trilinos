@@ -35,8 +35,8 @@
 #ifndef STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_MOCKELEMENTHEX8_HPP_
 #define STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_MOCKELEMENTHEX8_HPP_
 
-#include "Legendre.hpp"
-#include "MockMasterElement.hpp"
+#include "stk_transfer_util/Legendre.hpp"
+#include "stk_transfer_util/MockMasterElement.hpp"
 
 #include <math.h>  // for sqrt
 #include <stddef.h>
@@ -57,7 +57,7 @@
 #include <vector>     // for vector, swap
 
 namespace stk {
-namespace unit_test_util {
+namespace transfer_util {
 
 class Hex8
 {

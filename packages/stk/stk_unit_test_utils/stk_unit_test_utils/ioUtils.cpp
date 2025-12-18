@@ -162,7 +162,7 @@ TransientVerifier::verify_transient_field_names(const MeshFromFile& mesh, const 
 }
 
 void
-TransientVerifier::verify_transient_fields(MeshFromFile& mesh) const
+TransientVerifier::verify_transient_fields(MeshFromFile& mesh, const double fieldValueScaleFactor) const
 {
   stk::io::StkMeshIoBroker& broker = mesh.broker;
 
@@ -175,7 +175,7 @@ TransientVerifier::verify_transient_fields(MeshFromFile& mesh) const
     EXPECT_EQ(timeSteps[iStep], readTime);
 
     for(stk::mesh::FieldBase* field : transientFields)
-      verify_transient_field_values(*mesh.bulk, field, readTime);
+      verify_transient_field_values(*mesh.bulk, field, readTime, fieldValueScaleFactor);
   }
 }
 
@@ -235,7 +235,7 @@ TransientVerifier::verify_transient_field_name(stk::mesh::FieldBase* field, cons
 }
 
 void
-TransientVerifier::verify_transient_field_values(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase* field, double timeStep) const
+TransientVerifier::verify_transient_field_values(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase* field, double timeStep, const double fieldValueScaleFactor) const
 {
   const stk::mesh::BucketVector & entityBuckets = bulk.get_buckets(field->entity_rank(),bulk.mesh_meta_data().locally_owned_part());
 
@@ -248,7 +248,7 @@ TransientVerifier::verify_transient_field_values(const stk::mesh::BulkData& bulk
           stk::mesh::Entity entity = entityBucket[entityIndex];
 
           for (stk::mesh::ComponentIdx i : bucketValues.components()) {
-            EXPECT_EQ(static_cast<int>(i) + 100*timeStep + static_cast<double>(bulk.identifier(entity)), bucketValues(entityIndex, i));
+            EXPECT_EQ(static_cast<int>(i) + 100*fieldValueScaleFactor*timeStep + static_cast<double>(bulk.identifier(entity)), bucketValues(entityIndex, i));
           }
         }
       }
@@ -262,7 +262,8 @@ void generated_mesh_with_transient_data_to_file_in_serial(const std::string &mes
                                                           stk::topology::rank_t fieldRank,
                                                           const std::string& globalVariableName,
                                                           const std::vector<double>& timeSteps,
-                                                          const FieldValueSetter &fieldValueSetter)
+                                                          const FieldValueSetter &fieldValueSetter,
+                                                          const double fieldValueScaleFactor)
 {
     if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
     {
@@ -270,7 +271,7 @@ void generated_mesh_with_transient_data_to_file_in_serial(const std::string &mes
                                                      fieldRank);
 
         gMesh.setup_mesh(meshSizeSpec, fileName);
-        gMesh.write_mesh_with_field(timeSteps, fieldValueSetter, globalVariableName);
+        gMesh.write_mesh_with_field(timeSteps, fieldValueSetter, globalVariableName, fieldValueScaleFactor);
     }
 }
 
@@ -285,7 +286,7 @@ void read_from_serial_file_and_decompose(const std::string& fileName, stk::mesh:
 }
 
 void IdAndTimeFieldValueSetter::populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field,
-                                               const unsigned /*step*/, const double time) const
+                                               const unsigned /*step*/, const double time, const double fieldValueScaleFactor) const
 {
   stk::mesh::EntityRank fieldRank = field->entity_rank();
 
@@ -299,7 +300,7 @@ void IdAndTimeFieldValueSetter::populate_field(stk::mesh::BulkData &bulk, stk::m
     stk::mesh::field_data_execute<double, stk::mesh::ReadWrite>(*transientField,
       [&](auto& fieldData) {
         for (size_t i = 0; i < entities.size(); ++i) {
-          double value = 100.0 * time + static_cast<double>(bulk.identifier(entities[i]));
+          double value = 100.0 * time * fieldValueScaleFactor + static_cast<double>(bulk.identifier(entities[i]));
           auto data = fieldData.entity_values(entities[i]);
           for (stk::mesh::ComponentIdx j : data.components()) {
             data(j) = value + static_cast<int>(j);

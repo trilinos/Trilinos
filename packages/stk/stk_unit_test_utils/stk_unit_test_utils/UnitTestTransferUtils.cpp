@@ -60,7 +60,7 @@ construct_elem_send_mesh(stk::mesh::BulkData& bulk,
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
 
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::MasterElementProvider>();
+      std::make_shared<stk::transfer_util::MasterElementProvider>();
 
   std::shared_ptr<stk::transfer::InterpolateFieldsInterface> interpolateFields =
       std::make_shared<stk::transfer::MasterElementFieldInterpolator>(bulk, masterElemProvider);
@@ -125,7 +125,7 @@ construct_elem_recv_mesh(stk::mesh::BulkData& bulk,
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::MasterElementProvider>();
+      std::make_shared<stk::transfer_util::MasterElementProvider>();
 
   std::shared_ptr<stk::transfer::spmd::ElementRecvMesh> mesh =
       std::make_shared<stk::transfer::spmd::ElementRecvMesh>(&bulk, coords, fieldSpecs, parts[0]->primary_entity_rank(),
@@ -181,7 +181,7 @@ construct_element_gauss_point_recv_mesh(stk::mesh::BulkData& bulk, const std::ve
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
 
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::MasterElementProvider>(integrationOrder);
+      std::make_shared<stk::transfer_util::MasterElementProvider>(integrationOrder);
 
   std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator =
       std::make_shared<stk::search::MasterElementGaussPointEvaluator>(bulk, coords, masterElemProvider);

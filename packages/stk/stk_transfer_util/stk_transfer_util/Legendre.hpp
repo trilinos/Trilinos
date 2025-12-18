@@ -42,7 +42,7 @@
 // #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
-namespace unit_test_util {
+namespace transfer_util {
 
 double legendre(int order, double x);
 

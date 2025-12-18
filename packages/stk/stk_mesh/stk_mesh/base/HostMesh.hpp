@@ -100,6 +100,12 @@ public:
     m_syncCountWhenUpdated = bulk->synchronized_count();
   }
 
+  bool need_update_bulk_data() const override { return false; }
+
+  void update_bulk_data() override {}
+
+  unsigned synchronized_count() const override { return m_syncCountWhenUpdated; }
+
   KOKKOS_FUNCTION
   unsigned get_spatial_dimension() const
   {
@@ -356,11 +362,15 @@ public:
     bulk->batch_change_entity_parts(hostEntities, hostAddParts, hostRemoveParts);
   }
 
+#ifndef STK_HIDE_DEPRECATED_CODE
+  STK_DEPRECATED_MSG("Use update_bulk_data() instead.")
   void sync_to_host() {}
 
+  STK_DEPRECATED_MSG("Use need_update_bulk_data() instead.")
   bool need_sync_to_host() const override {
     return false;
   }
+#endif
 
   template <typename... EntitiesParams, typename... AddPartParams, typename... RemovePartParams>
   void impl_batch_change_entity_parts(const Kokkos::View<stk::mesh::Entity*, EntitiesParams...>& entities,

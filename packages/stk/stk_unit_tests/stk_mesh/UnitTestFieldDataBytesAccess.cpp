@@ -1151,7 +1151,7 @@ void test_host_to_device_bucket_bytes_pointer_and_stride(stk::mesh::BulkData& bu
     const stk::mesh::BucketVector& buckets = bulk.buckets(stk::topology::ELEM_RANK);
 
     for (stk::mesh::Bucket* bucket : buckets) {
-      auto bucketBytes = fieldDataBytes.bucket_bytes(*bucket);
+      auto bucketBytes = fieldDataBytes.template bucket_bytes<DataLayout>(*bucket);
       for (stk::mesh::EntityIdx elem : bucket->entities()) {
         const int elemId = bulk.identifier((*bucket)[elem]);
         std::array<int, 6> setValue {1*elemId, 10*elemId, 100*elemId,

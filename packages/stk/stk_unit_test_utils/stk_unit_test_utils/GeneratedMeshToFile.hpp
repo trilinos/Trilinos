@@ -89,7 +89,8 @@ public:
 
   void write_mesh_with_field(const std::vector<double>& timeSteps,
                              const FieldValueSetter &fieldValueSetter,
-                             const std::string& globalVariableName);
+                             const std::string& globalVariableName,
+                             const double fieldValueScaleFactor = 1.0);
 
 protected:
   stk::topology::rank_t fieldRank;

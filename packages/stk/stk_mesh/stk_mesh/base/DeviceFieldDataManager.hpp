@@ -76,14 +76,7 @@ class DeviceFieldDataManager : public DeviceFieldDataManagerBase
   using BucketCapacityType = std::vector<size_t>;
   using FieldArrayType = std::array<std::vector<FieldBase*>, stk::topology::NUM_RANKS>;
 
-  struct BucketShift {
-    BucketShift(int _oldIndex, int _newIndex)
-      : oldIndex(_oldIndex),
-        newIndex(_newIndex)
-    {}
-    int oldIndex;
-    int newIndex;
-  };
+  using BucketShift = DeviceFieldDataManagerBase::BucketShift;
 
 public:
   DeviceFieldDataManager(const BulkData& bulk)
@@ -101,6 +94,9 @@ public:
   // during an update step.
   virtual bool update_all_bucket_allocations() override;
   virtual void update_host_bucket_pointers(Ordinal fieldOrdinal) override;
+  virtual void reorder_and_resize_buckets(EntityRank rank, const FieldVector& fields,
+                                          const std::vector<SizeAndCapacity>& newBucketSizes,
+                                          const std::vector<BucketShift>& bucketShifts) override;
   virtual void swap_field_data(Ordinal fieldOrdinal1, Ordinal fieldOrdinal2) override;
   virtual void clear_bucket_is_modified(Ordinal fieldOrdinal) override;
   virtual std::any get_device_bucket_is_modified(Ordinal fieldOrdinal, int& fieldIndex) override;
@@ -109,9 +105,18 @@ public:
 
   virtual void set_device_field_meta_data(FieldDataBase& fieldDataBase) override;
 
+  virtual void add_new_bucket(EntityRank rank,
+                              unsigned bucketSize,
+                              unsigned bucketCapacity,
+                              const PartVector& parts,
+                              bool deviceMeshMod = false) override;
+
+
+  virtual size_t synchronized_count() const override { return m_synchronizedCount; }
+
 private:
   void allocate_bucket(EntityRank rank, const FieldVector& fields, const PartVector& parts,
-                       int bucketId, int size, int capacity);
+                       int bucketId, int size, int capacity, bool deviceMeshMod = false);
   void resize_field_arrays(int oldNumAllFields, int newNumAllFields);
   void resize_field_meta_data_arrays(const FieldVector& fields, int oldNumBuckets, int newNumBuckets);
   void resize_bucket_arrays(EntityRank rank, int oldNumBuckets, int newNumBuckets);
@@ -154,7 +159,7 @@ bool DeviceFieldDataManager<Space>::update_all_bucket_allocations()
   }
 
   const MetaData& meta = m_bulk.mesh_meta_data();
-  const FieldVector allFields = meta.get_fields();
+  const FieldVector& allFields = meta.get_fields();
   const int oldNumAllFields = m_totalNumFields;
   const int newNumAllFields = allFields.size();
   FieldArrayType oldFields {};
@@ -333,6 +338,76 @@ DeviceFieldDataManager<Space>::set_device_field_meta_data(FieldDataBase& fieldDa
 }
 
 template <typename Space>
+void DeviceFieldDataManager<Space>::add_new_bucket(EntityRank rank,
+                                                   unsigned bucketSize,
+                                                   unsigned bucketCapacity,
+                                                   const PartVector& parts,
+                                                   bool deviceMeshMod)
+{
+  const MetaData& meta = m_bulk.mesh_meta_data();
+  const FieldVector& allFieldsOfRank = meta.get_fields(rank);
+  const int oldNumBuckets = m_bucketCapacity[rank].size();
+  const int newNumBuckets = oldNumBuckets+1;
+  const unsigned newBucketId = oldNumBuckets;
+
+  resize_bucket_arrays(rank, oldNumBuckets, newNumBuckets);
+  resize_field_meta_data_arrays(allFieldsOfRank, oldNumBuckets, newNumBuckets);
+  resize_bucket_modified_array(rank, allFieldsOfRank.size(), newNumBuckets);
+
+  allocate_bucket(rank, allFieldsOfRank, parts, newBucketId, bucketSize, bucketCapacity, deviceMeshMod);
+
+  Kokkos::deep_copy(m_deviceBucketIsModified[rank], m_hostBucketIsModified[rank]);
+
+  for (const FieldBase* field : allFieldsOfRank) {
+    unsigned fieldOrdinal = field->mesh_meta_data_ordinal();
+    Kokkos::deep_copy(m_deviceFieldMetaData[fieldOrdinal], m_hostFieldMetaData[fieldOrdinal]);
+  }
+}
+
+template <typename Space>
+void DeviceFieldDataManager<Space>::reorder_and_resize_buckets(EntityRank rank,
+                                                   const FieldVector& fieldOfRank,
+                                                   const std::vector<SizeAndCapacity>& newBucketSizes,
+                                                   const std::vector<BucketShift>& bucketShifts)
+{
+  unsigned numOldBuckets = m_bucketCapacity[rank].size();
+
+  // permute buckets
+  shift_bucket_data(rank, bucketShifts);
+  shift_field_and_bucket_data(rank, fieldOfRank, bucketShifts);
+
+  // resize arrays
+  resize_bucket_modified_array(rank, fieldOfRank.size(), newBucketSizes.size());
+  resize_bucket_arrays(rank, fieldOfRank.size(), newBucketSizes.size());
+  resize_field_meta_data_arrays(fieldOfRank, numOldBuckets, newBucketSizes.size());
+
+  // set new sizes
+  for (size_t bucketId=0; bucketId < newBucketSizes.size(); ++bucketId)
+  {
+    m_bucketCapacity[rank][bucketId] = newBucketSizes[bucketId].capacity;
+  }
+
+  for (FieldBase* field : fieldOfRank)
+  {
+    HostFieldMetaDataArrayType<mem_space>& hostFieldMetaDataArray = m_hostFieldMetaData[field->mesh_meta_data_ordinal()];
+    STK_ThrowAssertMsg(hostFieldMetaDataArray.size() == newBucketSizes.size(), "number of buckets is incorrect");
+    for (unsigned bucketId = 0; bucketId < newBucketSizes.size(); ++bucketId)
+    {
+      DeviceFieldMetaData& bucketMeta = hostFieldMetaDataArray[bucketId];
+      if (bucketMeta.m_numComponentsPerEntity > 0)
+      {
+        hostFieldMetaDataArray[bucketId].m_bucketSize     = newBucketSizes[bucketId].size;
+        hostFieldMetaDataArray[bucketId].m_bucketCapacity = newBucketSizes[bucketId].capacity;
+      }
+    }
+
+    Kokkos::deep_copy(m_deviceFieldMetaData[field->mesh_meta_data_ordinal()], hostFieldMetaDataArray);
+  }
+
+  m_synchronizedCount++;
+}
+
+template <typename Space>
 std::any
 DeviceFieldDataManager<Space>::get_device_bucket_is_modified(Ordinal fieldOrdinal, int& fieldRankedOrdinal)
 {
@@ -371,7 +446,9 @@ inline DeviceFieldLayoutData get_device_field_layout_data(const FieldBase& field
 
 template <typename Space>
 void DeviceFieldDataManager<Space>::allocate_bucket(EntityRank rank, const FieldVector& fields,
-                                                    const PartVector& parts, int bucketId, int size, int capacity)
+                                                    const PartVector& parts,
+                                                    int bucketId, int size, int capacity,
+                                                    bool deviceMeshMod)
 {
   int totalFieldBytesThisBucket = 0;
 
@@ -382,11 +459,10 @@ void DeviceFieldDataManager<Space>::allocate_bucket(EntityRank rank, const Field
     const int fieldOrdinal = field->mesh_meta_data_ordinal();
     DeviceFieldMetaData& fieldMetaData = m_hostFieldMetaData[fieldOrdinal][bucketId];
     const DeviceFieldLayoutData layout = get_device_field_layout_data(*field, rank, parts);
-
     if (layout.numComponents > 0) {
       if (field->has_unified_device_storage()) {
         // Aim this Field at the pre-existing host allocation
-        fieldMetaData.m_data = get_host_bucket_pointer_for_device(*field, bucketId);
+        fieldMetaData.m_data = deviceMeshMod ? nullptr : get_host_bucket_pointer_for_device(*field, bucketId);
         fieldMetaData.m_hostData = fieldMetaData.m_data;
       }
       else {
@@ -398,7 +474,7 @@ void DeviceFieldDataManager<Space>::allocate_bucket(EntityRank rank, const Field
 
         // Temporarily store chunk size in pointer variable; use it to set all pointers later
         fieldMetaData.m_data = reinterpret_cast<std::byte*>(fieldBytesThisBucket);
-        fieldMetaData.m_hostData = get_host_bucket_pointer_for_device(*field, bucketId);
+        fieldMetaData.m_hostData = deviceMeshMod ? nullptr : get_host_bucket_pointer_for_device(*field, bucketId);
       }
 
       fieldMetaData.m_numComponentsPerEntity = layout.numComponents;
@@ -412,7 +488,6 @@ void DeviceFieldDataManager<Space>::allocate_bucket(EntityRank rank, const Field
       fieldMetaData.m_bucketCapacity = capacity;
     }
   }
-
   if (not separateFields.empty()) {
     auto bucketRawData = m_fieldDataAllocator.device_allocate(totalFieldBytesThisBucket);
     fill_field_meta_data_pointers_from_offsets(bucketId, separateFields, bucketRawData, m_hostFieldMetaData);
@@ -607,6 +682,7 @@ void DeviceFieldDataManager<Space>::fill_field_meta_data_pointers_from_offsets(
   uintptr_t pointerOffset = 0;
   for (const FieldBase* field : fields) {
     const int fieldOrdinal = field->mesh_meta_data_ordinal();
+
     const uintptr_t chunkSize = reinterpret_cast<uintptr_t>(hostFieldMetaData[fieldOrdinal][bucketId].m_data);
     hostFieldMetaData[fieldOrdinal][bucketId].m_data = (chunkSize > 0) ? bucketPointer + pointerOffset : nullptr;
     pointerOffset += chunkSize;
@@ -615,4 +691,4 @@ void DeviceFieldDataManager<Space>::fill_field_meta_data_pointers_from_offsets(
 
 }
 
-#endif // DEVICEFIELDDATAMANAGERBASE_HPP
+#endif // STK_MESH_DEVICEFIELDDATAMANAGER_HPP

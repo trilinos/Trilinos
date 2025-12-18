@@ -21,8 +21,8 @@ namespace transfer_util {
 
 struct OptionNames
 {
-  const std::string fromMesh = "from-mesh";
-  const std::string toMesh = "to-mesh";
+  const std::string sendMesh = "send-mesh";
+  const std::string recvMesh = "recv-mesh";
   const std::string fieldList = "field-list";
   const std::string ExtrapolateOption = "extrapolate-option";
 };
@@ -49,8 +49,8 @@ protected:
 
   void set_num_input_processors(TransferMainSettings& settings);
   void set_num_output_processors(TransferMainSettings& settings);
-  void set_toMesh_filename(TransferMainSettings& settings);
-  void set_fromMesh_filename(TransferMainSettings& settings);
+  void set_sendMesh_filename(TransferMainSettings& settings);
+  void set_recvMesh_filename(TransferMainSettings& settings);
   void set_transfer_fields(TransferMainSettings& settings);
   void set_extrapolate_option(TransferMainSettings& settings);
 

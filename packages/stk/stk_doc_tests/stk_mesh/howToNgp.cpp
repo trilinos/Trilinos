@@ -40,7 +40,7 @@ void set_field_on_device(stk::mesh::BulkData &bulk,
 
   ngpMeshField.clear_sync_state();
 
-  stk::mesh::for_each_entity_run(ngpMesh, rank, meshPart,
+  stk::mesh::for_each_entity_run("set-field", ngpMesh, rank, meshPart,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                  {
                                    ngpMeshField(entity, 0) = fieldVal;
@@ -254,7 +254,7 @@ void run_connected_node_test(const stk::mesh::BulkData& bulk)
 
   stk::mesh::Selector allElems = bulk.mesh_meta_data().universal_part();
 
-  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, allElems,
+  stk::mesh::for_each_entity_run("test-connected-nodes", ngpMesh, stk::topology::ELEM_RANK, allElems,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& elemIndex) {
       stk::mesh::Entity elem = ngpMesh.get_entity(stk::topology::ELEM_RANK, elemIndex);
       stk::mesh::EntityId elemId = ngpMesh.identifier(elem);
@@ -759,7 +759,7 @@ unsigned count_num_elems(stk::mesh::NgpMesh ngpMesh,
                          stk::mesh::Part &part)
 {
   Kokkos::View<unsigned *, stk::ngp::MemSpace> numElems("numElems", 1);
-  stk::mesh::for_each_entity_run(ngpMesh, rank, part,
+  stk::mesh::for_each_entity_run("count-elems", ngpMesh, rank, part,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity)
                                  {
                                    unsigned fieldValue = static_cast<unsigned>(ngpField(entity, 0));

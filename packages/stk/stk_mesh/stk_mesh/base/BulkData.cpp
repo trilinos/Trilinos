@@ -32,6 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
 #include <stk_mesh/base/BulkData.hpp>
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<, etc
 #include "stk_mesh/base/EntityCommDatabase.hpp"  // for pack_entity_info, etc
@@ -44,7 +45,6 @@
 #include "stk_mesh/base/Part.hpp"       // for Part, remove, etc
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_mesh/base/Selector.hpp"   // for Selector
-#include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
 #include "stk_mesh/base/DestroyRelations.hpp"
 #include "stk_mesh/base/ForEachEntity.hpp"
 #include "stk_mesh/baseImpl/AuraGhosting.hpp"
@@ -449,6 +449,12 @@ void BulkData::set_automatic_aura_option(AutomaticAuraOption auraOption, bool ap
     }
   }
 }
+
+size_t BulkData::ngp_mesh_synchronized_count() const
+{
+  return get_ngp_mesh()->synchronized_count();
+}
+
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -1736,10 +1742,16 @@ void BulkData::allocate_field_data()
 
 void BulkData::reallocate_field_data(stk::mesh::FieldBase& newField)
 {
+  const FieldVector& allFields = mesh_meta_data().get_fields();
+  for (FieldBase* stkField : allFields) {
+    stkField->synchronize<stk::mesh::ReadOnly, stk::ngp::HostSpace>();
+  }
+
   const EntityRank rank = newField.entity_rank();
-  const std::vector<FieldBase*>& fieldsOfRank = mesh_meta_data().get_fields(rank);
-  const std::vector<Bucket*>& bucketsOfRank = this->buckets(rank);
+  const FieldVector& fieldsOfRank = mesh_meta_data().get_fields(rank);
+  const BucketVector& bucketsOfRank = this->buckets(rank);
   const unsigned totalNumFields = mesh_meta_data().get_fields().size();
+
   m_field_data_manager->reallocate_field_data(rank, bucketsOfRank, newField, fieldsOfRank, totalNumFields);
   for (Bucket * bucket : bucketsOfRank) {
     bucket->mark_for_modification();
@@ -3731,6 +3743,42 @@ bool BulkData::modification_end_for_entity_creation( const std::vector<EntityRan
   return return_value;
 }
 
+void BulkData::modification_end_for_sync_to_host(ModEndOptimizationFlag opt)
+{
+  for (EntityRank rank=stk::topology::BEGIN_RANK; rank <= stk::topology::END_RANK; ++rank)
+  {
+    notifier.notify_local_buckets_changed(rank);
+  }
+
+  notifier.notify_started_modification_end();
+
+  if (opt == ModEndOptimizationFlag::MOD_END_SORT)
+  {
+    m_bucket_repository.internal_default_sort_bucket_entities(should_sort_faces_by_node_ids());
+  }
+
+  m_bucket_repository.internal_modification_end();
+
+  m_meshModification.set_sync_state_synchronized();
+  for (SelectorBucketMap& selectorBucketMap : m_selector_to_buckets_maps)
+  {
+    selectorBucketMap.clear();
+  }
+
+  if (get_maintain_local_ids())
+  {
+    impl::set_local_ids(*this);
+  }
+
+  notify_finished_mod_end();
+
+  if(parallel_size() > 1)
+  {
+    STK_ThrowRequireMsg(false, "parallel mesh sync to host not supported");
+    check_mesh_consistency();
+  }
+}
+
 void BulkData::update_comm_list_based_on_changes_in_comm_map()
 // Resolution of shared and ghost modifications can empty
 // the communication information for entities.
@@ -4036,7 +4084,7 @@ void BulkData::make_ghost_info_symmetric()
         buf.unpack<unsigned>(ghostId);
         int otherProc = -1;
         buf.unpack<int>(otherProc);
- 
+
         if (otherProc != parallel_rank()) {
           EntityCommInfo entityCommInfo(SYMM_INFO+ghostId, otherProc);
 
@@ -4058,6 +4106,7 @@ void BulkData::remove_symmetric_ghost_info()
     }
   }
 }
+
 
 void BulkData::internal_finish_modification_end(ModEndOptimizationFlag opt,
                                                 bool resetSymGhostInfo)
@@ -5502,16 +5551,24 @@ bool BulkData::modification_begin(const std::string description)
   return internal_modification_begin(description);
 }
 
-bool BulkData::internal_modification_begin(const std::string& description, bool resetSymGhostInfo)
+bool BulkData::modification_begin_for_sync_to_host(const std::string description)
+{
+  return internal_modification_begin(description, true, true);
+}
+
+bool BulkData::internal_modification_begin(const std::string& description, bool resetSymGhostInfo, bool isSyncToHost)
 {
   ProfilingBlock block("mod begin:" + description);
-  confirm_host_mesh_is_synchronized_from_device();
-  if(m_meshModification.in_modifiable_state()) {
-    return false;
+  if (!isSyncToHost)
+  {
+    confirm_host_mesh_is_synchronized_from_device();
+    if(m_meshModification.in_modifiable_state()) {
+      return false;
+    }
   }
   notifier.notify_modification_begin();
   m_lastModificationDescription = description;
-  return m_meshModification.modification_begin(description, resetSymGhostInfo);
+  return m_meshModification.modification_begin(description, resetSymGhostInfo, isSyncToHost);
 }
 
 bool BulkData::modification_end(ModEndOptimizationFlag modEndOpt)
@@ -5628,7 +5685,7 @@ void BulkData::mark_entities_as_deleted(stk::mesh::Bucket * bucket)
     }
 }
 
-void 
+void
 BulkData::internal_check_unpopulated_relations([[maybe_unused]] Entity entity, [[maybe_unused]] EntityRank rank) const
 {
 #if !defined(NDEBUG) && !defined(__HIP_DEVICE_COMPILE__)
@@ -5638,7 +5695,7 @@ BulkData::internal_check_unpopulated_relations([[maybe_unused]] Entity entity, [
     const unsigned bucket_ord = mesh_idx.bucket_ordinal;
     STK_ThrowAssertMsg(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank),
                    count_valid_connectivity(entity,rank) << " = count_valid_connectivity("<<entity_key(entity)<<","<<rank<<") != b.num_connectivity("<<bucket_ord<<","<<rank<<") = " << b.num_connectivity(bucket_ord,rank);
-                  );   
+                  );
 
   }
 #endif
@@ -5661,8 +5718,8 @@ BulkData::is_valid_connectivity(Entity entity, EntityRank rank) const
   return true;
 }
 
-void 
-BulkData::copy_entity_fields(Entity src, Entity dst) 
+void
+BulkData::copy_entity_fields(Entity src, Entity dst)
 {
   if (src == dst) return;
 
@@ -5750,11 +5807,19 @@ EntityRank BulkData::get_entity_rank_count() const
 void BulkData::confirm_host_mesh_is_synchronized_from_device(const char * fileName, int lineNumber) const
 {
 #ifdef STK_USE_DEVICE_MESH
-  STK_ThrowRequireMsg((not get_ngp_mesh()) || (not get_ngp_mesh()->need_sync_to_host()),
+  STK_ThrowRequireMsg((not get_ngp_mesh()) || (not get_ngp_mesh()->need_update_bulk_data()),
                       std::string(fileName) + ":" + std::to_string(lineNumber) +
                       " Accessing host-side BulkData or Field data after a device-side mesh modification without "
-                      "calling NgpMesh::sync_to_host()");
+                      "calling NgpMesh::need_update_bulk_data()");
 #endif
+}
+
+namespace impl {
+
+void set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh) {
+  bulk.set_ngp_mesh(ngpMesh);
+  bulk.m_meshModification.set_last_device_synchronized_count(ngpMesh->synchronized_count());
+}
 }
 
 } // namespace mesh

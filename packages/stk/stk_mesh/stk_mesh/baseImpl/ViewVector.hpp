@@ -61,7 +61,7 @@ public:
   KOKKOS_DEFAULTED_FUNCTION ViewVector(const ViewVector& other) = default;
   KOKKOS_DEFAULTED_FUNCTION ViewVector(ViewVector&& other) = default;
   KOKKOS_DEFAULTED_FUNCTION ViewVector& operator=(const ViewVector& rhs) = default;
-  KOKKOS_DEFAULTED_FUNCTION ViewVector& operator=(ViewVector&& rhs) = default;
+  KOKKOS_INLINE_FUNCTION ViewVector& operator=(ViewVector&& rhs);
 
   KOKKOS_INLINE_FUNCTION SizeT size() const;
   KOKKOS_INLINE_FUNCTION SizeT capacity() const;
@@ -183,6 +183,20 @@ KOKKOS_INLINE_FUNCTION ViewVector<T, MemSpace, SizeT>::~ViewVector()
        Kokkos::fence();
     }
   )
+}
+
+//------------------------------------------------------------------------------
+template <typename T, typename MemSpace, typename SizeT>
+KOKKOS_INLINE_FUNCTION
+ViewVector<T, MemSpace, SizeT>& ViewVector<T, MemSpace, SizeT>::operator=(ViewVector&& rhs)
+{
+  if (this != &rhs) {
+    m_buffer = std::move(rhs.m_buffer);
+    m_size = rhs.m_size;
+    rhs.m_size = 0;
+  }
+
+  return *this;
 }
 
 //------------------------------------------------------------------------------

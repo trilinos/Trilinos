@@ -84,7 +84,9 @@ public:
     m_totalFieldSize = totalFieldSize;
   }
 
-  void bounding_boxes(std::vector<BoundingBox> & searchDomain) const
+  bool need_repeat_search() const { return m_bulk->synchronized_count() > m_syncCountAtLastSearch; }
+
+  void bounding_boxes(std::vector<BoundingBox> & searchDomain)
   {
     stk::mesh::Selector ownedSelector = m_meta.locally_owned_part() & *m_part;
     const auto elements = stk::mesh::get_entities(*m_bulk, stk::topology::ELEM_RANK,
@@ -95,6 +97,8 @@ public:
       EntityProc entityProc(m_bulk->entity_key(element), procInSearchComm);
       searchDomain.emplace_back(get_box(element), entityProc);
     }
+
+    m_syncCountAtLastSearch = m_bulk->synchronized_count();
   }
 
   void update_values()
@@ -158,6 +162,7 @@ private:
   stk::mesh::Part* m_part;
   std::vector<stk::mesh::Field<double>*> m_fields;
   unsigned m_totalFieldSize;
+  size_t m_syncCountAtLastSearch = std::numeric_limits<size_t>::max();
 };
 //END_send_adapter
 
@@ -170,6 +175,7 @@ public:
   using EntityProcVec = std::vector<EntityProc>;
   using BoundingBox = std::pair<stk::search::Box<double>, EntityProc>;
 
+  bool need_repeat_search() const { return false; }
   void bounding_boxes(std::vector<BoundingBox> & ) const {}
   void update_values() {}
 };
@@ -203,7 +209,9 @@ public:
     m_totalFieldSize = totalFieldSize;
   }
 
-  void bounding_boxes(std::vector<BoundingBox> & searchRange) const
+  bool need_repeat_search() const { return m_bulk->synchronized_count() > m_syncCountAtLastSearch; }
+
+  void bounding_boxes(std::vector<BoundingBox> & searchRange)
   {
     stk::mesh::Selector ownedSelector = m_meta.locally_owned_part() & *m_part;
     const auto nodes = stk::mesh::get_entities(*m_bulk, stk::topology::NODE_RANK,
@@ -216,6 +224,8 @@ public:
       searchRange.emplace_back(stk::search::Sphere<double>(get_location(node), radius),
                                entityProc);
     }
+
+    m_syncCountAtLastSearch = m_bulk->synchronized_count();
   }
 
   void get_to_points_coordinates(const EntityProcVec & toEntityKeys,
@@ -266,6 +276,7 @@ private:
   stk::mesh::Part * m_part;
   std::vector<stk::mesh::Field<double>*> m_fields;
   unsigned m_totalFieldSize;
+  size_t m_syncCountAtLastSearch = std::numeric_limits<size_t>::max();
 };
 //END_recv_adapter
 
@@ -283,6 +294,7 @@ public:
   using ToPointsDistance = double;
   using ToPointsDistanceContainer = std::vector<ToPointsDistance>;
 
+  bool need_repeat_search() const { return false; }
   void bounding_boxes(std::vector<BoundingBox> & ) const {}
   void get_to_points_coordinates(const EntityProcVec & , ToPointsContainer & ) {}
   void update_values() {}
@@ -309,6 +321,7 @@ public:
       const typename MeshB::ToPointsContainer & /*pointsToInterpolateTo*/,
       typename MeshB::ToPointsDistanceContainer & distanceToInterpolationPoints)
   {
+    m_parametricCoords.clear();
     for (unsigned i = 0; i < elemsToInterpolateFrom.size(); ++i) {
       m_parametricCoords.push_back({0, 0, 0});
       distanceToInterpolationPoints.push_back(0.0);
@@ -317,6 +330,7 @@ public:
 
   void mask_parametric_coords(const std::vector<int> & filterMaskFrom, int /*fromCount*/)
   {
+    m_maskedParametricCoords.clear();
     for (unsigned i = 0; i < filterMaskFrom.size(); ++i) {
       if (filterMaskFrom[i]) {
         m_maskedParametricCoords.push_back(m_parametricCoords[i]);
@@ -388,6 +402,7 @@ public:
       const typename MeshB::ToPointsContainer & /*pointsToInterpolateTo*/,
       typename MeshB::ToPointsDistanceContainer & distanceToInterpolationPoints)
   {
+    m_maskedParametricCoords.clear();
     for (unsigned i = 0; i < elemsToInterpolateFrom.size(); ++i) {
       m_parametricCoords.push_back({0, 0, 0});
       distanceToInterpolationPoints.push_back(0.0);
@@ -396,6 +411,7 @@ public:
 
   void mask_parametric_coords(const std::vector<int> & filterMaskFrom, int /*fromCount*/)
   {
+    m_maskedParametricCoords.clear();
     for (unsigned i = 0; i < filterMaskFrom.size(); ++i) {
       if (filterMaskFrom[i]) {
         m_maskedParametricCoords.push_back(m_parametricCoords[i]);

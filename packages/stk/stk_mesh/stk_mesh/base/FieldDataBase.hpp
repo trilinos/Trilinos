@@ -81,6 +81,9 @@ protected:
   virtual void update_host_bucket_pointers() = 0;
   virtual void incomplete_swap_field_data(FieldDataBase& other) = 0;
 
+  virtual bool need_device_metadata_update() = 0;
+  virtual void update_device_field_metadata() = 0;
+
   virtual void sync_to_host(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout) = 0;
   virtual void sync_to_device(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout) = 0;
   virtual void update(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout, bool needsSync) = 0;

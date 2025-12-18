@@ -34,7 +34,7 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include "Legendre.hpp"
+#include "stk_transfer_util/Legendre.hpp"
 
 #include <cmath>
 #include <algorithm>
@@ -43,7 +43,7 @@
 // #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
-namespace unit_test_util {
+namespace transfer_util {
 
 double legendre(int order, double x) {
   if (order == 0) return 1.0;

@@ -82,7 +82,7 @@ TEST(StkNgpField, multiStateRotation)
 
   Kokkos::Profiling::pushRegion("get_updated_ngp_mesh");
   stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(*bulkPtr);
-  EXPECT_FALSE(ngpMesh.need_sync_to_host());
+  EXPECT_FALSE(ngpMesh.need_update_bulk_data());
   Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("initialize fields");
