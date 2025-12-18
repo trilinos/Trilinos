@@ -323,6 +323,18 @@ IF (Stokhos_ENABLE_EpetraExt)
 
 ENDIF()
 
+IF (Stokhos_ENABLE_Tpetra)
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TpetraSparse3TensorUtilsUnitTest
+    SOURCES Stokhos_Tpetra_Sparse3TensorUtilsUnitTest.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    )
+
+ENDIF()
+
 IF(Stokhos_ENABLE_Sacado)
 
   TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/../sacado/test/utils)
