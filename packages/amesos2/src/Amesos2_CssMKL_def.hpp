@@ -135,6 +135,22 @@ namespace Amesos2 {
       for (int i=0; i < 64; i++) std::cout << " * IPARM[" << i << "] = " << iparm_[i] << std::endl;
     }
     int_t error = 0;
+    if (css_initialized_)
+    {
+      int_t phase = -1;         // release all internal solver memory
+      void *bdummy, *xdummy;
+      const MPI_Fint CssComm = CssComm_;
+      function_map::cluster_sparse_solver( pt_, const_cast<int_t*>(&maxfct_),
+                             const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
+                             nzvals_view_.data(), rowptr_view_.data(),
+                             colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
+                             const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &CssComm, &error );
+      css_initialized_ = false;
+      if (msglvl_ > 0 && error != 0 && this->matrixA_->getComm()->getRank() == 0) {
+        std::cout << " CssMKL::symbolicFactorization: clean-up failed with " << error << std::endl;
+      }
+    }
+    error = 0;
     {
 #ifdef HAVE_AMESOS2_TIMERS
       Teuchos::TimeMonitor symbFactTimer( this->timers_.symFactTime_ );
