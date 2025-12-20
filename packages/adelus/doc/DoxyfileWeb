@@ -40,10 +40,10 @@
 #
 ############################################################################
 
-PROJECT_NAME           = Pliris
+PROJECT_NAME           = Adelus
 
 INPUT                  = ../src index_my.doc
 
 IMAGE_PATH             = .
 
-GENERATE_TAGFILE       = ../../common/tag_files/pliris.tag
+GENERATE_TAGFILE       = ../../common/tag_files/adelus.tag
