@@ -44,7 +44,6 @@ printf "Using build-type: ${build_type}\n";
 printf "CUDA: ${cuda_on_or_off}\n";
 printf "Putting output and logs here: ${output_dir}\n";
 
-bake_log=${output_dir}/bake-stk_balance.out.$date_suffix
 stk_config_log=${output_dir}/stk-config.out.$date_suffix
 stk_make_log=${output_dir}/stk-make.out.$date_suffix
 stk_install_log=${output_dir}/stk-install.out.$date_suffix

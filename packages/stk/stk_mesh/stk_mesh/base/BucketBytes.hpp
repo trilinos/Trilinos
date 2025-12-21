@@ -83,7 +83,7 @@ public:
   }
 
 
-  KOKKOS_INLINE_FUNCTION T* pointer(EntityIdx entity) const { return m_bytePtr[entity*m_numBytesPerScalar]; }
+  KOKKOS_INLINE_FUNCTION T* pointer(EntityIdx entity) const { return m_bytePtr + entity*m_numBytesPerScalar; }
   KOKKOS_INLINE_FUNCTION int bytes_per_scalar() const { return m_numBytesPerScalar; }
   KOKKOS_INLINE_FUNCTION int scalar_byte_stride() const { return m_scalarByteStride; }
 
@@ -202,7 +202,7 @@ public:
   }
 
 
-  inline T* pointer(EntityIdx entity) const { return m_bytePtr[entity*m_numBytesPerScalar]; }
+  inline T* pointer(EntityIdx entity) const { return m_bytePtr + entity*m_numBytesPerScalar; }
   inline int bytes_per_scalar() const { return m_numBytesPerScalar; }
   inline int scalar_byte_stride() const { return m_scalarByteStride; }
 
@@ -250,7 +250,7 @@ public:
   }
 
 
-  inline T* pointer(EntityIdx entity) const { return m_bytePtr[entity*m_numBytesPerEntity]; }
+  inline T* pointer(EntityIdx entity) const { return m_bytePtr + entity*m_numBytesPerEntity; }
   inline int bytes_per_scalar() const { return m_numBytesPerScalar; }
   inline int scalar_byte_stride() const { return m_numBytesPerScalar; }
 

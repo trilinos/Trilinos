@@ -35,7 +35,7 @@
 #ifndef STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_MOCKELEMENTQUAD4_HPP_
 #define STK_STK_UNIT_TEST_UTILS_STK_UNIT_TEST_UTILS_MOCKELEMENTQUAD4_HPP_
 
-#include "MockMasterElement.hpp"
+#include "stk_transfer_util/MockMasterElement.hpp"
 
 #include <math.h>  // for sqrt
 #include <stddef.h>
@@ -56,7 +56,7 @@
 #include <vector>     // for vector, swap
 
 namespace stk {
-namespace unit_test_util {
+namespace transfer_util {
 
 class Quad4
 {

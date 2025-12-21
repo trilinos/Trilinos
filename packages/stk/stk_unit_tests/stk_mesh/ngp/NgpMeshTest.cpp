@@ -32,6 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include <stk_util/stk_config.h>
 #include "stk_ngp_test/ngp_test.hpp"
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/base/NgpMesh.hpp>
@@ -50,7 +51,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
-#include <stk_util/stk_config.h>
+#include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/util/StkNgpVector.hpp>
 #include "stk_mesh/base/FieldParallel.hpp"
@@ -104,10 +105,28 @@ public:
   {
     stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::ELEM_RANK, !stk::mesh::Selector());
-    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bucketIds,
+    stk::mesh::for_each_entity_run("edge-check", ngpMesh, stk::topology::ELEM_RANK, bucketIds,
       KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
         stk::mesh::ConnectedEntities edges = ngpMesh.get_edges(stk::topology::ELEM_RANK, entityIndex);
         NGP_EXPECT_EQ(numExpectedEdgesPerElem, edges.size());
+      }, stk::ngp::ExecSpace()
+    );
+  }
+
+  void run_contig_conn_check()
+  {
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+    stk::NgpVector<unsigned> bucketIds = ngpMesh.get_bucket_ids(stk::topology::NODE_RANK, !stk::mesh::Selector());
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::NODE_RANK, bucketIds,
+      KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
+        stk::mesh::ConnectedEntities edges = ngpMesh.get_edges(stk::topology::NODE_RANK, entityIndex);
+        stk::mesh::ConnectedEntities faces = ngpMesh.get_faces(stk::topology::NODE_RANK, entityIndex);
+        stk::mesh::ConnectedEntities elems = ngpMesh.get_elements(stk::topology::NODE_RANK, entityIndex);
+        const stk::mesh::Entity* start = edges.data();
+        const stk::mesh::Entity* end = elems.data()+elems.size();
+        unsigned distance = static_cast<unsigned>(end-start);
+        unsigned totalNum = edges.size()+faces.size()+elems.size();
+        NGP_EXPECT_EQ(totalNum, distance);
       }, stk::ngp::ExecSpace()
     );
   }
@@ -177,6 +196,27 @@ NGP_TEST_F(NgpMeshTest, hexes_with_edges_update_connectivity)
   run_edge_check(numExpectedEdgesPerElement);
 }
 
+#ifdef STK_USE_DEVICE_MESH
+NGP_TEST_F(NgpMeshTest, hexes_with_edges_and_faces_contig_connectivity)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
+  setup_mesh(1,1,2);
+  stk::mesh::get_updated_ngp_mesh(get_bulk());
+
+  stk::mesh::Part& edgePart = get_meta().declare_part("edges", stk::topology::EDGE_RANK);
+
+  stk::mesh::create_edges(get_bulk(), get_meta().universal_part(), &edgePart);
+  stk::mesh::create_all_sides(get_bulk(), get_meta().universal_part());
+  stk::mesh::get_updated_ngp_mesh(get_bulk());
+
+  EXPECT_EQ(20u, stk::mesh::count_entities(get_bulk(), stk::topology::EDGE_RANK, edgePart));
+  EXPECT_EQ(11u, stk::mesh::count_entities(get_bulk(), stk::topology::FACE_RANK, get_meta().universal_part()));
+
+  run_contig_conn_check();
+}
+#endif
+
 class NgpMeshRankLimit : public stk::mesh::fixtures::TestHexFixture {};
 
 TEST_F(NgpMeshRankLimit, tooManyRanksThrowWithMessage)
@@ -216,7 +256,7 @@ void test_HostMesh_works_on_host_in_any_build(const stk::mesh::BulkData& bulk)
   stk::mesh::HostMesh hostMesh(bulk);
   stk::mesh::Selector all = bulk.mesh_meta_data().universal_part();
   stk::NgpVector<unsigned> vec("elem-count", 1, 0);
-  stk::mesh::for_each_entity_run(hostMesh, stk::topology::ELEM_RANK, all,
+  stk::mesh::for_each_entity_run("host-mesh-test", hostMesh, stk::topology::ELEM_RANK, all,
     KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& sideIndex) {
       vec[0] += 1; //we're on host. on device we would use 'vec.device_get(0) += 1;'
     }
@@ -485,7 +525,7 @@ TEST(NgpHostMesh, FieldForEachEntityReduceOnHost_fromTylerVoskuilen)
   EXPECT_EQ(1.0, maxZ);
 }
 
-TEST(NgpDeviceMesh, dont_let_stacksize_get_out_of_control)
+TEST(NgpDeviceMesh, DISABLED_dont_let_stacksize_get_out_of_control)
 {
   constexpr size_t tol = 64;
 

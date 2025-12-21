@@ -60,6 +60,7 @@ public:
                                                                int line = STK_DEVICE_LINE) const;
 
 protected:
+  friend FieldBase;
   template <typename MemSpace_> friend class DeviceFieldDataManager;
   friend sierra::Fmwk::Region;
 
@@ -70,6 +71,9 @@ protected:
   virtual void swap_field_data(FieldDataBase& other) override;
   virtual void update_host_bucket_pointers() override;
   virtual void incomplete_swap_field_data(FieldDataBase& other) override;
+
+  virtual bool need_device_metadata_update() override;
+  virtual void update_device_field_metadata() override {}
 
   virtual void sync_to_host(const stk::ngp::ExecSpace&, Layout) override {}
   virtual void sync_to_device(const stk::ngp::ExecSpace&, Layout) override {}
@@ -105,6 +109,7 @@ protected:
   int m_bytesPerScalar;
   int m_fieldDataSynchronizedCount;
   unsigned m_localFieldMetaDataModCount;
+  unsigned m_deviceMeshSyncCountAtLastSync;
 };
 
 
@@ -200,6 +205,9 @@ protected:
   virtual void update_host_bucket_pointers() override {}
   virtual void incomplete_swap_field_data(FieldDataBase&) override {}
 
+  virtual bool need_device_metadata_update() override { return false; }
+  virtual void update_device_field_metadata() override {}
+
   virtual void sync_to_host(const stk::ngp::ExecSpace&, Layout) override {}
   virtual void sync_to_device(const stk::ngp::ExecSpace&, Layout) override {}
   virtual void update(const stk::ngp::ExecSpace&, Layout, bool) override {}
@@ -251,7 +259,8 @@ ConstFieldDataBytes<Space>::ConstFieldDataBytes()
     m_hostBulk(nullptr),
     m_bytesPerScalar(0),
     m_fieldDataSynchronizedCount(0),
-    m_localFieldMetaDataModCount(0)
+    m_localFieldMetaDataModCount(0),
+    m_deviceMeshSyncCountAtLastSync(0)
 {
 }
 
@@ -266,7 +275,8 @@ ConstFieldDataBytes<Space>::ConstFieldDataBytes(ConstFieldDataBytes<stk::ngp::Ho
     m_hostBulk(nullptr),
     m_bytesPerScalar(hostFieldBytes->data_traits().alignment_of),
     m_fieldDataSynchronizedCount(0),
-    m_localFieldMetaDataModCount(0)
+    m_localFieldMetaDataModCount(0),
+    m_deviceMeshSyncCountAtLastSync(0)
 {
   const std::string fieldName(hostFieldBytes->field_name());
   m_fieldName = DeviceStringType(Kokkos::view_alloc(Kokkos::WithoutInitializing, fieldName), fieldName.size()+1);
@@ -293,7 +303,8 @@ ConstFieldDataBytes<Space>::ConstFieldDataBytes(const ConstFieldDataBytes& other
     m_hostBulk(other.m_hostBulk),
     m_bytesPerScalar(other.m_bytesPerScalar),
     m_fieldDataSynchronizedCount(other.m_fieldDataSynchronizedCount),
-    m_localFieldMetaDataModCount(other.m_localFieldMetaDataModCount)
+    m_localFieldMetaDataModCount(other.m_localFieldMetaDataModCount),
+    m_deviceMeshSyncCountAtLastSync(other.m_deviceMeshSyncCountAtLastSync)
 {
 }
 
@@ -523,6 +534,15 @@ ConstFieldDataBytes<Space>::incomplete_swap_field_data(FieldDataBase& other)
   deviceFieldDataManager->set_device_field_meta_data(*this);
   deviceFieldDataManager->set_device_field_meta_data(other);
 }
+
+template <typename Space>
+bool
+ConstFieldDataBytes<Space>::need_device_metadata_update()
+{
+  DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<Space>(this->mesh());
+  return deviceFieldDataManager->synchronized_count() > m_deviceMeshSyncCountAtLastSync;
+}
+
 
 #if !defined(NDEBUG) || defined(STK_FIELD_BOUNDS_CHECK)
 //------------------------------------------------------------------------------

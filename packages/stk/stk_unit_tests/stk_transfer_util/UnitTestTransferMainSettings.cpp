@@ -43,8 +43,8 @@ TEST(TransferMainSettings, defaultSettings)
 
   EXPECT_EQ(settings.get_num_input_processors(), 1u); 
   EXPECT_EQ(settings.get_num_output_processors(), 1u); 
-  EXPECT_EQ(settings.get_fromMesh_filename(), "");
-  EXPECT_EQ(settings.get_toMesh_filename(), "");
+  EXPECT_EQ(settings.get_sendMesh_filename(), "");
+  EXPECT_EQ(settings.get_recvMesh_filename(), "");
   EXPECT_EQ(settings.get_transfer_fields().size(), 0u);
 
   auto settingsOODP = settings.get_extrapolate_option();
@@ -58,24 +58,24 @@ TEST(TransferMainSettings, filenames)
 {
   stk::transfer_util::TransferMainSettings settings;
  
-  EXPECT_EQ(settings.get_fromMesh_filename(), "");
-  EXPECT_EQ(settings.get_toMesh_filename(), "");
+  EXPECT_EQ(settings.get_sendMesh_filename(), "");
+  EXPECT_EQ(settings.get_recvMesh_filename(), "");
   
-  settings.set_fromMesh_filename("source.g");
+  settings.set_sendMesh_filename("source.g");
 
-  EXPECT_EQ(settings.get_fromMesh_filename(), "source.g");
-  EXPECT_EQ(settings.get_toMesh_filename(), "");
+  EXPECT_EQ(settings.get_sendMesh_filename(), "source.g");
+  EXPECT_EQ(settings.get_recvMesh_filename(), "");
 
-  settings.set_toMesh_filename("target.g");
+  settings.set_recvMesh_filename("target.g");
 
-  EXPECT_EQ(settings.get_fromMesh_filename(), "source.g");
-  EXPECT_EQ(settings.get_toMesh_filename(), "target.g");
+  EXPECT_EQ(settings.get_sendMesh_filename(), "source.g");
+  EXPECT_EQ(settings.get_recvMesh_filename(), "target.g");
 
-  settings.set_fromMesh_filename("changed_source.g");
-  settings.set_toMesh_filename("changed_target.g");
+  settings.set_sendMesh_filename("changed_source.g");
+  settings.set_recvMesh_filename("changed_target.g");
 
-  EXPECT_EQ(settings.get_fromMesh_filename(), "changed_source.g");
-  EXPECT_EQ(settings.get_toMesh_filename(), "changed_target.g");
+  EXPECT_EQ(settings.get_sendMesh_filename(), "changed_source.g");
+  EXPECT_EQ(settings.get_recvMesh_filename(), "changed_target.g");
 }
 
 TEST(TransferMainSettings, processorCounts)
@@ -98,15 +98,16 @@ TEST(TransferMainSettings, fields)
   
   EXPECT_EQ(settings.get_transfer_fields().size(), 0u);
    
-  std::vector<std::string> fieldList = {"field_1", "field_2", "field_3"};
-  for (std::string field : fieldList) {
+  std::vector<std::pair<std::string, std::string>> fieldList = {{"send_field_1", "recv_field_1"},
+                                                               {"send_field_2","recv_field_2"}};
+  for (auto field : fieldList) {
     settings.set_transfer_field(field);
   }
 
-  std::vector<std::string> setFields = settings.get_transfer_fields();
+  std::vector<std::pair<std::string,std::string>> setFields = settings.get_transfer_fields();
   EXPECT_EQ(setFields, fieldList);
 
-  std::string fieldListString = "field_1, field_2, field_3";
+  std::string fieldListString = "send_field_1:recv_field_1, send_field_2:recv_field_2";
   EXPECT_EQ(settings.get_field_list_string(), fieldListString);
 }
 

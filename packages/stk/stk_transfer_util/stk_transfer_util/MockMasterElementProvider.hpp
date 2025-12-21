@@ -37,10 +37,10 @@
 
 // #######################  Start Clang Header Tool Managed Headers ########################
 // clang-format off
-#include "Legendre.hpp"
-#include "MockMasterElementLine2.hpp"
-#include "MockMasterElementQuad4.hpp"
-#include "MockMasterElementHex8.hpp"
+#include "stk_transfer_util/Legendre.hpp"
+#include "stk_transfer_util/MockMasterElementLine2.hpp"
+#include "stk_transfer_util/MockMasterElementQuad4.hpp"
+#include "stk_transfer_util/MockMasterElementHex8.hpp"
 #include "stk_search/Box.hpp"                         // for Box
 #include "stk_search/Point.hpp"                       // for Point
 #include "stk_search/Sphere.hpp"                      // for Sphere
@@ -62,7 +62,7 @@
 // #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk {
-namespace unit_test_util {
+namespace transfer_util {
 
 class MasterElementProvider : public stk::search::MasterElementProviderInterface {
  public:

@@ -663,9 +663,9 @@ struct AddKernels {
   /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
   /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
   static void convertToGlobalAndAdd(
-      const KCRS& A,
+      const KCRS A,
       const impl_scalar_type scalarA,
-      const KCRS& B,
+      const KCRS B,
       const impl_scalar_type scalarB,
       const local_map_type& AcolMap,
       const local_map_type& BcolMap,

@@ -46,6 +46,7 @@
 #include "stk_mesh/base/GetNgpMesh.hpp"
 #include "stk_mesh/base/Types.hpp"
 #include "stk_util/parallel/CouplingVersions.hpp"
+#include "stk_util/parallel/DeviceAwareMPI.hpp"
 #include "stk_util/parallel/MPITag.hpp"
 
 namespace stk::mesh {
@@ -85,21 +86,10 @@ void ngp_parallel_data_excahnge_sym_pack_unpack(MPI_Comm mpi_communicator,
   const auto num_comm_procs = comm_procs.size();
   const auto totalMeshIndicesOffsets = impl::compute_total_mesh_indices_offsets<NgpSpace>(mesh, fieldRanks, includeGhosts);
 
-  Kokkos::Profiling::pushRegion("NGP MPI bookkeeping setup - all message sizing");
-
-  const auto messageSizes = impl::compute_message_sizes<NgpSpace>(mesh, fields, comm_procs, fieldRanks, includeGhosts);
-  const auto totalMsgSizeForAllProcs = std::accumulate(std::cbegin(messageSizes), std::cend(messageSizes), 0UL);
-
-  Kokkos::Profiling::popRegion();
-
-  Kokkos::Profiling::pushRegion("NGP MPI bookkeeping setup - allocation");
+  Kokkos::Profiling::pushRegion("NGP MPI bookkeeping setup - offsets allocation");
 
   auto& hostBufferOffsets = ngpMesh.get_ngp_parallel_sum_host_buffer_offsets();
-  Kokkos::resize(Kokkos::WithoutInitializing, hostBufferOffsets, messageSizes.size() + 1);
-
-  using BufferView = Kokkos::View<Scalar*, typename NgpSpace::mem_space>;
-  auto deviceSendData = BufferView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceSendData"), totalMsgSizeForAllProcs);
-  auto deviceRecvData = BufferView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceRecvData"), totalMsgSizeForAllProcs);
+  Kokkos::resize(Kokkos::WithoutInitializing, hostBufferOffsets, comm_procs.size() + 1);
 
   auto& deviceMeshIndicesOffsets = ngpMesh.get_ngp_parallel_sum_device_mesh_indices_offsets();
   auto& hostMeshIndicesOffsets = ngpMesh.get_ngp_parallel_sum_host_mesh_indices_offsets();
@@ -124,16 +114,25 @@ void ngp_parallel_data_excahnge_sym_pack_unpack(MPI_Comm mpi_communicator,
                                            fields,
                                            comm_procs,
                                            fieldRanks,
-                                           messageSizes,
                                            includeGhosts);
   Kokkos::deep_copy(deviceMeshIndicesOffsets, hostMeshIndicesOffsets);
 
   Kokkos::Profiling::popRegion();
   Kokkos::Profiling::popRegion();
 
+  Kokkos::Profiling::pushRegion("NGP MPI bookkeeping setup - buffer allocation");
+
   std::vector<MPI_Request> sendRequests(num_comm_procs);
   std::vector<MPI_Request> recvRequests(num_comm_procs);
   std::vector<MPI_Status> statuses(num_comm_procs);
+
+  using BufferView = Kokkos::View<Scalar*, typename NgpSpace::mem_space>;
+  using BufferHostView = typename BufferView::HostMirror;
+  const auto totalMsgSizeForAllProcs = hostBufferOffsets(num_comm_procs);
+  auto deviceSendData = BufferView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceSendData"), totalMsgSizeForAllProcs);
+  auto deviceRecvData = BufferView(Kokkos::view_alloc(Kokkos::WithoutInitializing, "deviceRecvData"), totalMsgSizeForAllProcs);
+
+  Kokkos::Profiling::popRegion();
 
   Kokkos::Profiling::pushRegion("NGP MPI - message pack");
 
@@ -160,13 +159,30 @@ void ngp_parallel_data_excahnge_sym_pack_unpack(MPI_Comm mpi_communicator,
 
   Kokkos::Profiling::pushRegion("NGP MPI - message send/recv (non-blocking)");
 
-  for (size_t proc = 0; proc < num_comm_procs; ++proc) {
-    int iproc = comm_procs[proc];
-    const size_t dataBegin = hostBufferOffsets[proc];
-    const size_t dataEnd = hostBufferOffsets[proc + 1];
-    int bufSize = (dataEnd-dataBegin);
-    MPI_Irecv((deviceRecvData.data() + dataBegin), bufSize, sierra::MPI::Datatype<Scalar>::type(), iproc, msgTag, mpi_communicator, &recvRequests[proc]);
-    MPI_Isend((deviceSendData.data() + dataBegin), bufSize, sierra::MPI::Datatype<Scalar>::type(), iproc, msgTag, mpi_communicator, &sendRequests[proc]);
+  auto hostRecvData = BufferHostView("deviceRecvDataHost", 0);
+  auto hostSendData = BufferHostView("deviceSendDataHost", 0);
+  if (use_device_aware_mpi()) {
+    for (size_t proc = 0; proc < num_comm_procs; ++proc) {
+      int iproc = comm_procs[proc];
+      const size_t dataBegin = hostBufferOffsets[proc];
+      const size_t dataEnd = hostBufferOffsets[proc + 1];
+      int bufSize = (dataEnd-dataBegin);
+      MPI_Irecv((deviceRecvData.data() + dataBegin), bufSize, sierra::MPI::Datatype<Scalar>::type(), iproc, msgTag, mpi_communicator, &recvRequests[proc]);
+      MPI_Isend((deviceSendData.data() + dataBegin), bufSize, sierra::MPI::Datatype<Scalar>::type(), iproc, msgTag, mpi_communicator, &sendRequests[proc]);
+    }
+  }
+  else {
+    Kokkos::resize(hostRecvData, totalMsgSizeForAllProcs);
+    Kokkos::resize(hostSendData, totalMsgSizeForAllProcs);
+    Kokkos::deep_copy(hostSendData, deviceSendData);
+    for (size_t proc = 0; proc < num_comm_procs; ++proc) {
+      int iproc = comm_procs[proc];
+      const size_t dataBegin = hostBufferOffsets[proc];
+      const size_t dataEnd = hostBufferOffsets[proc + 1];
+      int bufSize = (dataEnd-dataBegin);
+      MPI_Irecv((hostRecvData.data() + dataBegin), bufSize, sierra::MPI::Datatype<Scalar>::type(), iproc, msgTag, mpi_communicator, &recvRequests[proc]);
+      MPI_Isend((hostSendData.data() + dataBegin), bufSize, sierra::MPI::Datatype<Scalar>::type(), iproc, msgTag, mpi_communicator, &sendRequests[proc]);
+    }
   }
 
   Kokkos::Profiling::popRegion();
@@ -180,6 +196,13 @@ void ngp_parallel_data_excahnge_sym_pack_unpack(MPI_Comm mpi_communicator,
     }
     else {
       MPI_Waitany(static_cast<int>(num_comm_procs), recvRequests.data(), &idx, MPI_STATUS_IGNORE);
+    }
+
+    if (!use_device_aware_mpi()) {
+      const size_t dataBegin = hostBufferOffsets[proc];
+      const size_t dataEnd = hostBufferOffsets[proc + 1];
+      auto dataRange = Kokkos::pair{dataBegin, dataEnd};
+      Kokkos::deep_copy(Kokkos::subview(deviceRecvData, dataRange), Kokkos::subview(hostRecvData, dataRange));
     }
 
     Kokkos::Profiling::popRegion();

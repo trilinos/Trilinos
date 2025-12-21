@@ -315,7 +315,7 @@ TEST(MockSearchTest, gaussPointEvaluator)
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::MasterElementProvider>(0);
+      std::make_shared<stk::transfer_util::MasterElementProvider>(0);
   std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator =
       std::make_shared<stk::search::MasterElementGaussPointEvaluator>(*bulk, coords, masterElemProvider);
 
@@ -381,7 +381,7 @@ TEST(MockSearchTest, findParametricCoordinates)
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::MasterElementProvider>(0);
+      std::make_shared<stk::transfer_util::MasterElementProvider>(0);
   std::shared_ptr<stk::search::MasterElementParametricCoordsFinder> paramCoordsFinder =
       std::make_shared<stk::search::MasterElementParametricCoordsFinder>(*bulk, coords, masterElemProvider, parametricTolerance);
 

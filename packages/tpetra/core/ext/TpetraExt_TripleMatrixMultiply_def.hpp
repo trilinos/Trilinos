@@ -1173,10 +1173,10 @@ void KernelWrappers3<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
                                                          PIcol2Accol_dev);
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS& Amat = Aview.origMatrix->getLocalMatrixHost();
-  const KCRS& Pmat = Pview.origMatrix->getLocalMatrixHost();
-  const KCRS& Rmat = Rview.origMatrix->getLocalMatrixHost();
-  const KCRS& Cmat = Ac.getLocalMatrixHost();
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS Pmat = Pview.origMatrix->getLocalMatrixHost();
+  const KCRS Rmat = Rview.origMatrix->getLocalMatrixHost();
+  const KCRS Cmat = Ac.getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Prowptr = Pmat.graph.row_map, Rrowptr = Rmat.graph.row_map, Crowptr = Cmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Pcolind = Pmat.graph.entries, Rcolind = Rmat.graph.entries, Ccolind = Cmat.graph.entries;

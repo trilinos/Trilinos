@@ -1,5 +1,22 @@
 # CHANGELOG
 
+5.27.3    (STK_VERSION 5270300) 12/16/25
+  stk_mesh: initial GPU Mesh mod: NgpMesh::batch_change_entity_parts
+            and NgpMesh::update_bulk_data
+  stk_mesh: Fixed behavior of multi-state field rotation. Now gives
+            correct behavior even for persistent copies of NgpField
+            and FieldData instances.
+  stk_mesh: Field-BLAS: deprecate field_eamin and field_eamax
+  stk_util: For MPI operations that use device-aware MPI, such as the
+            stk-mesh parallel_sum and friends, an environment variable
+            allows users to explicitly override and use host MPI:
+            $ export STK_USE_HOST_MPI_OVERRIDE=true
+  all tests: fixes related to googletest being removed from Trilinos
+            Users need to separately install googletest
+            Use -DGTest_DIR=/path/to/googletest-installation
+            Also use -DTPL_ENABLE_gtest
+  all:      Requiring/using c++20
+
 5.27.2-02    (STK_VERSION 5270202) 11/14/25
   stk_util: deprecate STK_FUNCTION/STK_INLINE_FUNCTION; prefer direct usage
             of KOKKOS_FUNCTION/KOKKOS_INLINE_FUNCTION

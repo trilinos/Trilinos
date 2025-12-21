@@ -504,41 +504,6 @@ TEST_F(FieldBLAS, field_amax)
 }
 
 //------------------------------------------------------------------------------
-// field_eamax: Entity(loc:global_max( max_i( abs(x[i]) ) ))
-//
-TEST_F(FieldBLAS, field_eamax)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-  const int NUM_ITERS = 500;
-
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  stk::mesh::Field<double>& fieldX = declare_element_vector_field("fieldX");
-  stk::io::fill_mesh("generated:100x100x100", get_bulk());
-
-  const std::array<double, 3> initX { -1.0, -2.0, -3.0 };
-  const double maxValue = -3.05;
-
-  for (int run = 0; run < NUM_RUNS; ++run) {
-    stk::mesh::field_fill_component(initX.data(), fieldX);
-    stk::mesh::Entity targetEntity = (*get_bulk().buckets(stk::topology::ELEM_RANK).front())[42];  // Random Entity in first Bucket
-    auto dataX = fieldX.data<stk::mesh::ReadWrite>();
-    auto entityValues = dataX.entity_values(targetEntity);
-    entityValues(1_comp) = maxValue;
-
-    batchTimer.start_batch_timer();
-    stk::mesh::Entity result;
-    for (int iter = 0; iter < NUM_ITERS; ++iter) {
-      result = stk::mesh::field_eamax(fieldX);
-    }
-    batchTimer.stop_batch_timer();
-
-    EXPECT_EQ(result, targetEntity);
-  }
-
-  batchTimer.print_batch_timing(NUM_ITERS);
-}
-
-//------------------------------------------------------------------------------
 // field_amin: global_min( min( abs(x[i]) ) )
 //
 TEST_F(FieldBLAS, field_amin)
@@ -568,42 +533,5 @@ TEST_F(FieldBLAS, field_amin)
 
   batchTimer.print_batch_timing(NUM_ITERS);
 }
-
-//------------------------------------------------------------------------------
-// field_eamin: Entity(loc:global_min( min_i( abs(x[i]) ) ))
-//
-TEST_F(FieldBLAS, field_eamin)
-{
-  if (get_parallel_size() != 1) GTEST_SKIP();
-  const int NUM_ITERS = 500;
-
-  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-  stk::mesh::Field<double>& fieldX = declare_element_vector_field("fieldX");
-  stk::io::fill_mesh("generated:100x100x100", get_bulk());
-
-  const std::array<double, 3> initX { -1.0, -2.0, -3.0 };
-  const double minValue = -0.05;
-
-  for (int run = 0; run < NUM_RUNS; ++run) {
-    stk::mesh::field_fill_component(initX.data(), fieldX);
-    stk::mesh::Entity targetEntity = (*get_bulk().buckets(stk::topology::ELEM_RANK).front())[42];  // Random Entity in first Bucket
-    auto dataX = fieldX.data<stk::mesh::ReadWrite>();
-    auto entityValues = dataX.entity_values(targetEntity);
-    entityValues(1_comp) = minValue;
-
-    batchTimer.start_batch_timer();
-    stk::mesh::Entity result;
-    for (int iter = 0; iter < NUM_ITERS; ++iter) {
-      result = stk::mesh::field_eamin(fieldX);
-    }
-    batchTimer.stop_batch_timer();
-
-    EXPECT_EQ(result, targetEntity);
-  }
-
-  batchTimer.print_batch_timing(NUM_ITERS);
-}
-
-
 
 }

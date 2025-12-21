@@ -66,6 +66,27 @@ TEST(DeviceAwareMPI, falseIfOpenMpiButNoCuda)
 #endif
 }
 
+TEST(DeviceAwareMPI, UseSameAsHaveIfOverrideUnset)
+{
+  unsetenv("STK_USE_HOST_MPI_OVERRIDE");
+  EXPECT_EQ(stk::use_device_aware_mpi(), stk::have_device_aware_mpi());
+}
+
+TEST(DeviceAwareMPI, UseSameAsHaveIfOverrideFalse)
+{
+  unsetenv("STK_USE_HOST_MPI_OVERRIDE");
+  setenv("STK_USE_HOST_MPI_OVERRIDE", "false", 1);
+  EXPECT_EQ(stk::use_device_aware_mpi(), stk::have_device_aware_mpi());
+  unsetenv("STK_USE_HOST_MPI_OVERRIDE");
+}
+
+TEST(DeviceAwareMPI, UseFalseIfOverrideFalse)
+{
+  unsetenv("STK_USE_HOST_MPI_OVERRIDE");
+  setenv("STK_USE_HOST_MPI_OVERRIDE", "true", 1);
+  EXPECT_FALSE(stk::use_device_aware_mpi());
+  unsetenv("STK_USE_HOST_MPI_OVERRIDE");
+}
 TEST(DeviceAwareMPI, falseIfIntelMpi)
 {
 #if defined(I_MPI_VERSION)

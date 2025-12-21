@@ -31,7 +31,7 @@ printf "calling cmake from run_cmake_stk_standalone_serial, stk_src_dir='${stk_s
 cmake \
 -DCMAKE_INSTALL_PREFIX=${stk_install_dir} \
 -DCMAKE_BUILD_TYPE=${build_type} \
--DCMAKE_CXX_STANDARD:STRING=17 \
+-DCMAKE_CXX_STANDARD:STRING=20 \
 -DCMAKE_CXX_COMPILER=${OMPI_CXX} \
 -DCMAKE_CXX_FLAGS:STRING="${cmake_cxx_flags}" \
 -DSTK_ENABLE_ALL=ON \
@@ -41,6 +41,7 @@ cmake \
 -DSTK_ENABLE_STKMiddle_mesh_util=OFF \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DKokkos_DIR=/fgs/william/kokkos/install/lib64/cmake/Kokkos \
--DGTest_DIR=/fgs/william/googletest/install/lib64/cmake/GTest \
+-DTPL_ENABLE_gtest=ON \
+-DGTest_DIR=/fgs/william/googletest/install_gcc-12.3.0/lib64/cmake/GTest \
 ${stk_src_dir}/
 

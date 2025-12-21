@@ -114,9 +114,9 @@ void MM2_MKL(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> &A,
   RCP<const crs_matrix_type> Cu  = toTpetra(rcp(&C, false));
   RCP<crs_matrix_type> Cnc       = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
-  const KCRS &Amat  = Au->getLocalMatrixDevice();
-  const KCRS &B1mat = B1u->getLocalMatrixDevice();
-  const KCRS &B2mat = B2u->getLocalMatrixDevice();
+  const KCRS Amat  = Au->getLocalMatrixDevice();
+  const KCRS B1mat = B1u->getLocalMatrixDevice();
+  const KCRS B2mat = B2u->getLocalMatrixDevice();
 
   if (A.getLocalNumRows() != C.getLocalNumRows()) throw std::runtime_error("C is not sized correctly");
 

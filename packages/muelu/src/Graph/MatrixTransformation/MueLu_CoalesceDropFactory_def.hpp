@@ -715,9 +715,11 @@ void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
                     },
                     rownnz, rowDropped);
 
-                globalnnz += rownnz;
-                totalDropped += rowDropped;
-                rownnzView(row) = rownnz;
+                Kokkos::single(Kokkos::PerTeam(teamMember), [&]() {
+                  globalnnz += rownnz;
+                  totalDropped += rowDropped;
+                  rownnzView(row) = rownnz;
+                });
               },
               realnnz, numDropped);
 
