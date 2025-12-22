@@ -215,7 +215,7 @@ struct Zoltan2Utilities {
   using RealValuedMultiVector = typename Xpetra::MultiVector<real_type, LO, GO, NO>;
 
   static RCP<GOVector>
-  ComputeDecomposition(int numPartitions, RCP<Matrix>& A, RCP<RealValuedMultiVector> coords, Teuchos::ParameterList& Zoltan2Params, std::string debuggingFile = "");
+  ComputeDecomposition(int numPartitions, RCP<const Matrix>& A, RCP<const RealValuedMultiVector> coords, Teuchos::ParameterList& Zoltan2Params, std::string debuggingFile = "");
 };
 
 }  // namespace MueLu
