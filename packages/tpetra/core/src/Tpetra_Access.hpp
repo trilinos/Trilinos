@@ -18,11 +18,11 @@ struct OverwriteAllStruct {};
 struct ReadWriteStruct {};
 
 // Tag indicating intent to read up-to-date data, but not modify.
-constexpr struct ReadOnlyStruct ReadOnly = ReadOnlyStruct();
+inline constexpr struct ReadOnlyStruct ReadOnly = ReadOnlyStruct();
 // Tag indicating intent to completely overwrite existing data.
-constexpr struct OverwriteAllStruct OverwriteAll = OverwriteAllStruct();
+inline constexpr struct OverwriteAllStruct OverwriteAll = OverwriteAllStruct();
 // Tag indicating intent to both read up-to-date data and modify it.
-constexpr struct ReadWriteStruct ReadWrite = ReadWriteStruct();
+inline constexpr struct ReadWriteStruct ReadWrite = ReadWriteStruct();
 }  // namespace Access
 }  // namespace Tpetra
 
