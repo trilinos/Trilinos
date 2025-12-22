@@ -209,6 +209,113 @@ subview(const DynRankView<T, LayoutContiguous<LayoutSrc, StrideSrc>, DRVArgs...>
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
 namespace Sacado {
 namespace Impl {
+
+// Using functor since we had some compiler issues with NVCC 12.8 using a lambda
+template <class Dst, class SrcT, class ExecSpace>
+struct DeepCopyViewScalar {
+  using view_t = Dst;
+  Dst dst;
+  SrcT src;
+  size_t total_extent;
+
+KOKKOS_FUNCTION
+void operator() (const typename Kokkos::TeamPolicy<ExecSpace>::member_type &team) const {
+  size_t ii = team.league_rank() * team.team_size() + team.team_rank();
+  if (ii >= total_extent)
+    return;
+
+  if constexpr (view_t::rank() == 0)
+    dst() == src;
+  else if constexpr (view_t::rank() == 1) {
+    dst(ii) == src;
+  } else if constexpr (view_t::rank() == 2) {
+    int i1 = ii % dst.extent(1);
+    int i0 = ii / dst.extent(1);
+    dst(i0, i1) = src;
+  } else if constexpr (view_t::rank() == 3) {
+    int i2 = ii % dst.extent(2);
+    int i1 = (ii / dst.extent(2)) % dst.extent(1);
+    int i0 = ii / (dst.extent(2) * dst.extent(1));
+    dst(i0, i1, i2) = src;
+  } else if constexpr (view_t::rank() == 4) {
+    int i3 = ii % dst.extent(3);
+    int i2 = (ii / dst.extent(3)) % dst.extent(2);
+    int i1 = (ii / (dst.extent(3) * dst.extent(2))) % dst.extent(1);
+    int i0 = (ii / (dst.extent(3) * dst.extent(2) * dst.extent(1)));
+    dst(i0, i1, i2, i3) = src;
+  } else if constexpr (view_t::rank() == 5) {
+    int i4 = ii % dst.extent(4);
+    int i3 = (ii / dst.extent(4)) % dst.extent(3);
+    int i2 = (ii / (dst.extent(4) * dst.extent(3))) % dst.extent(2);
+    int i1 = (ii / (dst.extent(4) * dst.extent(3) * dst.extent(2))) %
+             dst.extent(1);
+    int i0 = (ii / (dst.extent(4) * dst.extent(3) * dst.extent(2) *
+                    dst.extent(1)));
+    dst(i0, i1, i2, i3, i4) = src;
+  } else if constexpr (view_t::rank() == 6) {
+    int i5 = ii % dst.extent(5);
+    int i4 = (ii / dst.extent(5)) % dst.extent(4);
+    int i3 = (ii / (dst.extent(5) * dst.extent(4))) % dst.extent(3);
+    int i2 = (ii / (dst.extent(5) * dst.extent(4) * dst.extent(3))) %
+             dst.extent(2);
+    int i1 = (ii / (dst.extent(5) * dst.extent(4) * dst.extent(3) *
+                    dst.extent(2))) %
+             dst.extent(1);
+    int i0 = (ii / (dst.extent(5) * dst.extent(4) * dst.extent(3) *
+                    dst.extent(2) * dst.extent(1)));
+    dst(i0, i1, i2, i3, i4, i5) = src;
+  } else if constexpr (view_t::rank() == 7) {
+    int i6 = ii % dst.extent(6);
+    int i5 = (ii / dst.extent(6)) % dst.extent(5);
+    int i4 = (ii / (dst.extent(6) * dst.extent(5))) % dst.extent(4);
+    int i3 = (ii / (dst.extent(6) * dst.extent(5) * dst.extent(4))) %
+             dst.extent(3);
+    int i2 = (ii / (dst.extent(6) * dst.extent(5) * dst.extent(4) *
+                    dst.extent(3))) %
+             dst.extent(2);
+    int i1 = (ii / (dst.extent(6) * dst.extent(5) * dst.extent(4) *
+                    dst.extent(3) * dst.extent(2))) %
+             dst.extent(1);
+    int i0 = (ii / (dst.extent(6) * dst.extent(5) * dst.extent(4) *
+                    dst.extent(3) * dst.extent(2) * dst.extent(1)));
+
+    dst(i0, i1, i2, i3, i4, i5, i6) = src;
+  }
+}
+};
+
+template <class... DstArgs, class SrcT>
+void deep_copy_view(const Kokkos::View<DstArgs...> &dst, const SrcT& src) {
+  using view_t =
+      Kokkos::View<DstArgs...>;
+  using exec_space = typename view_t::execution_space;
+
+    size_t total_extent = 1;
+    for (size_t r = 0; r < view_t::rank(); r++)
+      total_extent *= dst.extent(r);
+    // It looks like SFAD only works with 64 wide vector in HIP
+#ifdef KOKKOS_ENABLE_HIP
+    size_t vector_size = 64;
+#else
+    size_t vector_size = 32;
+#endif
+
+    // Just arbitraryly using team_size = 1 for low concurrency backends (i.e.
+    // CPUs)
+    size_t team_size =
+        exec_space().concurrency() > 1000 ? 512 / vector_size : 1;
+
+    size_t num_teams = (total_extent + team_size - 1) / team_size;
+
+    Kokkos::parallel_for(
+        "Sacado::deep_copy Hierarchical",
+        Kokkos::TeamPolicy<exec_space>(num_teams, team_size, vector_size),
+      DeepCopyViewScalar<view_t, SrcT, exec_space>{dst, src, total_extent}
+    );
+
+    Kokkos::fence();
+}
+
 template <class SrcT, class... SrcArgs>
 void resize_view(
     Kokkos::View<SrcT, SrcArgs...> &src,
@@ -325,6 +432,49 @@ void resize_view(
 } // namespace Sacado
 
 namespace Kokkos {
+
+template <class DstT, class... DstArgs, class SrcT>
+requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...> &src, SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>*, DstArgs...> &src, SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>**, DstArgs...> &src, SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>***, DstArgs...> &src, SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>****, DstArgs...> &src, SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>*****, DstArgs...> &src, SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>******, DstArgs...> &src, SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
 
 template <class SrcT, class... SrcArgs>
 void resize(
