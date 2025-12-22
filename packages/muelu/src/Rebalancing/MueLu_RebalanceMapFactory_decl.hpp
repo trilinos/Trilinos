@@ -48,7 +48,9 @@ class RebalanceMapFactory : public SingleLevelFactoryBase {
   virtual ~RebalanceMapFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! @name Input
   //@{

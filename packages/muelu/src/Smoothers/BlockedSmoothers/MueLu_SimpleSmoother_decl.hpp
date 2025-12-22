@@ -63,7 +63,9 @@ class SimpleSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdi
   //! Input
   //@{
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   void DeclareInput(Level &currentLevel) const;
 

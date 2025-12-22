@@ -34,7 +34,7 @@ StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> StructuredAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    GetValidParameterList() const {
+    GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))

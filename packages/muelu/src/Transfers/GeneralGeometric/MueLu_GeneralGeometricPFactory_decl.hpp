@@ -97,7 +97,9 @@ class GeneralGeometricPFactory : public PFactory {
   virtual ~GeneralGeometricPFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{

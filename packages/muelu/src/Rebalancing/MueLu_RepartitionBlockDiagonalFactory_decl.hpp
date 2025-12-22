@@ -44,7 +44,9 @@ class RepartitionBlockDiagonalFactory : public SingleLevelFactoryBase {
   virtual ~RepartitionBlockDiagonalFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! @name Input
   //@{

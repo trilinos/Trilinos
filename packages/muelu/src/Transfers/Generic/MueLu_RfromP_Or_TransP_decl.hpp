@@ -48,7 +48,9 @@ class RfromP_Or_TransP : public TwoLevelFactoryBase {
   //! Destructor.
   virtual ~RfromP_Or_TransP() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

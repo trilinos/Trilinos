@@ -31,7 +31,7 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> BlockedPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<RCP<const FactoryBase> >("A", null, "Generating factory of the matrix A (block matrix)");

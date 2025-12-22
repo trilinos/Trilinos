@@ -108,7 +108,9 @@ class CombinePFactory : public PFactory {
   virtual ~CombinePFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{

@@ -30,7 +30,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 NodePartitionInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::NodePartitionInterface() {}
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> NodePartitionInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> NodePartitionInterface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("repartition: node id");

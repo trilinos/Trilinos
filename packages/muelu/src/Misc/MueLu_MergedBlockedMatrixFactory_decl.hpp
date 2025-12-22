@@ -46,7 +46,9 @@ class MergedBlockedMatrixFactory : public SingleLevelFactoryBase {
   //! @name Input
   //@{
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   void DeclareInput(Level &currentLevel) const;
 

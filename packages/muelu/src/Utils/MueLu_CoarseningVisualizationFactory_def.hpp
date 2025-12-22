@@ -19,8 +19,8 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> CoarseningVisualizationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
-  RCP<ParameterList> validParamList = VisualizationHelpers::GetValidParameterList();
+RCP<const ParameterList> CoarseningVisualizationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
+  RCP<ParameterList> validParamList = rcp(new Teuchos::ParameterList(*VisualizationHelpers::GetValidParameterList()));
 
   validParamList->set<int>("visualization: start level", 0, "visualize only levels with level ids greater or equal than start level");  // Remove me?
 

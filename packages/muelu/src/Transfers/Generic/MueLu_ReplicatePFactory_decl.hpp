@@ -89,7 +89,9 @@ class ReplicatePFactory : public PFactory {
   virtual ~ReplicatePFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{

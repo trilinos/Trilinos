@@ -48,7 +48,9 @@ class BraessSarazinSmoother : public SmootherPrototype<Scalar, LocalOrdinal, Glo
   //! Input
   //@{
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   void DeclareInput(Level &currentLevel) const;
 

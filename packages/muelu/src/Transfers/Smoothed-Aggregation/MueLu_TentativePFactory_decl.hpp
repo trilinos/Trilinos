@@ -97,7 +97,9 @@ class TentativePFactory : public PFactory {
   virtual ~TentativePFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{

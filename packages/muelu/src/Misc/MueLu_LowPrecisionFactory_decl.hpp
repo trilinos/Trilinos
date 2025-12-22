@@ -39,7 +39,9 @@ class LowPrecisionFactory : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~LowPrecisionFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 
@@ -80,7 +82,9 @@ class LowPrecisionFactory<double, LocalOrdinal, GlobalOrdinal, Node> : public Si
   //! Destructor.
   virtual ~LowPrecisionFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 
@@ -122,7 +126,9 @@ class LowPrecisionFactory<std::complex<double>, LocalOrdinal, GlobalOrdinal, Nod
   //! Destructor.
   virtual ~LowPrecisionFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

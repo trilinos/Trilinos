@@ -47,7 +47,7 @@ void SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetSmootherProt
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> SmootherFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<bool>("keep smoother data", false, "Keep constructed smoothers for later reuse");
