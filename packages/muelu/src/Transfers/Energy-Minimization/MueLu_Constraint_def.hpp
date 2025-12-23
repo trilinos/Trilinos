@@ -531,6 +531,7 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresS
 
   // If we pass a view of size 0 to the functor, all blocks are assumed to be non-singular.
   Kokkos::View<bool*> block_is_singular;
+  LocalOrdinal numSingularBlocks = 0;
   if (detect_singular_blocks)
     block_is_singular = Kokkos::View<bool*>("block_is_singular", numBlocks);
 
@@ -540,6 +541,15 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresS
   if (detect_singular_blocks) {
     SubMonitor m2(*this, "singular block detection");
     Kokkos::parallel_for("", Kokkos::TeamPolicy<typename Node::execution_space, typename functor_type::TagFindSingularBlocks>(numBlocks, 1), functor);
+
+    if (IsPrint(Statistics1)) {
+      Kokkos::parallel_reduce(
+          "", Kokkos::RangePolicy<typename Node::execution_space, LocalOrdinal>(0, numBlocks), KOKKOS_LAMBDA(const LocalOrdinal blockId, LocalOrdinal& count) {
+            if (block_is_singular(blockId))
+              ++count;
+          },
+          numSingularBlocks);
+    }
   }
 
   {
@@ -552,9 +562,11 @@ void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresS
 
     auto comm = invXXt_->getRowMap()->getComm();
     GlobalOrdinal globalNumBlocks;
+    GlobalOrdinal globalNumSingularBlocks;
     MueLu_sumAll(comm, (GlobalOrdinal)numBlocks, globalNumBlocks);
+    MueLu_sumAll(comm, (GlobalOrdinal)numSingularBlocks, globalNumSingularBlocks);
 
-    GetOStream(Statistics0) << "Least-squares problem:\n maximum block size: " << invXXt_->getGlobalMaxNumRowEntries() << "\n Number of blocks: " << globalNumBlocks << std::endl;
+    GetOStream(Statistics0) << "Least-squares problem:\n maximum block size: " << invXXt_->getGlobalMaxNumRowEntries() << "\n Number of blocks: " << globalNumBlocks << "\n Number of singular blocks: " << globalNumSingularBlocks << std::endl;
   }
 }
 
