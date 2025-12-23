@@ -26,6 +26,7 @@
     <Parameter name="multigrid algorithm" type="string"  value="sa"/>
     <!-- <Parameter name="multigrid algorithm" type="string"  value="emin"/> -->
     <Parameter name="aggregation: deterministic" type="bool" value="true"/>
+    <Parameter name="use kokkos refactor" type="bool" value="false"/>
     <Parameter name="coarse: max size" type="int" value="50"/>
 
     <!-- ===========  REPARTITIONING  =========== -->
