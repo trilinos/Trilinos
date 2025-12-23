@@ -203,9 +203,13 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     auto importer = Z->getCrsGraph()->getImporter();
     // todo: replace with Kokkos
     Teuchos::Array<int> Z_col_pids;
+    Kokkos::View<int*> Z_col_pids_d;
     if (!importer.is_null()) {
       MueLu::ImportUtils<LO, GO, NO> utils;
       utils.getPids(*importer, Z_col_pids, false);
+      Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > Z_col_pids_h(Z_col_pids.data(), Z_col_pids.size());
+      Z_col_pids_d = Kokkos::View<int*>("Z_col_pids_d", Z_col_pids.size());
+      Kokkos::deep_copy(Z_col_pids_d, Z_col_pids_h);
     }
 
     int myProcId = rowMap->getComm()->getRank();
@@ -228,7 +232,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
         return (rlid < clid);
       } else {
         // Column index is nonlocal. Need to decide if this process owns the new edge.
-        int otherProcId = Z_col_pids[clid];
+        int otherProcId = Z_col_pids_d(clid);
         int owner       = tie_break(myProcId, otherProcId);
         return (owner == myProcId);
       }
