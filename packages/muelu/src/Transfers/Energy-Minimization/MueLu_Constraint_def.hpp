@@ -147,6 +147,7 @@ FindBlocks(RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>& X) {
       KOKKOS_LAMBDA(const LocalOrdinal i) {
         blockIds(i) = i;
       });
+  Kokkos::fence();
 
   bool changed    = true;
   bool resultsIn2 = false;
@@ -170,7 +171,7 @@ FindBlocks(RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>& X) {
   Kokkos::parallel_for(
       "init", range,
       KOKKOS_LAMBDA(LocalOrdinal i) {
-        blockStatus(blockIds(i)) = true;
+        Kokkos::atomic_store(&blockStatus(blockIds(i)), true);
       });
   Kokkos::fence();
 
@@ -192,9 +193,10 @@ FindBlocks(RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>& X) {
 
   Kokkos::parallel_for(
       "", range, KOKKOS_LAMBDA(const LocalOrdinal i) {
-    auto blockId = newBlockIds(blockIds(i));
-    if (blockId+2 < numBlocks+1)
-      ++rowptr(blockId + 2); });
+        auto blockId = newBlockIds(blockIds(i));
+        if (blockId + 2 < numBlocks + 1)
+          Kokkos::atomic_inc(&rowptr(blockId + 2));
+      });
   Kokkos::fence();
 
   auto block_range = range_type(0, numBlocks);
@@ -208,9 +210,10 @@ FindBlocks(RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>& X) {
 
   Kokkos::parallel_for(
       "", range, KOKKOS_LAMBDA(const LocalOrdinal i) {
-    auto blockId = newBlockIds(blockIds(i));
-    indices(rowptr(blockId + 1)) = i;
-    ++rowptr(blockId + 1); });
+        auto blockId = newBlockIds(blockIds(i));
+        auto k       = Kokkos::atomic_fetch_inc(&rowptr(blockId + 1));
+        indices(k)   = i;
+      });
 
   graph_type blocks(indices, rowptr);
 
@@ -238,7 +241,7 @@ class BlockInverseFunctor {
   using shared_matrix = Kokkos::View<scalar_type**, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
   using shared_vector = Kokkos::View<scalar_type*, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
 
-  BlockInverseFunctor(local_matrix_type A_, local_graph_type blocks_, LocalOrdinal maxBlocksize_, local_matrix_type invA_, const Kokkos::View<bool*>& singular_)
+  BlockInverseFunctor(local_matrix_type A_, local_graph_type blocks_, LocalOrdinal maxBlocksize_, local_matrix_type invA_, Kokkos::View<bool*> singular_)
     : A(A_)
     , blocks(blocks_)
     , maxBlocksize(maxBlocksize_)
@@ -257,7 +260,7 @@ class BlockInverseFunctor {
   local_graph_type blocks;
   LocalOrdinal maxBlocksize;
   local_matrix_type invA;
-  const Kokkos::View<bool*>& singular;
+  Kokkos::View<bool*> singular;
 
  public:
   KOKKOS_INLINE_FUNCTION
@@ -475,33 +478,33 @@ allocateBlockDiagonalMatrix(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, N
     for (LocalOrdinal k = 0; k < blockSize; ++k) {
       auto rowId = blockRow.colidx(k);
       if ((decltype(numRows))rowId+2<numRows+1)
-        rowptr(rowId+2) += blockSize;
+        Kokkos::atomic_add(&rowptr(rowId+2), blockSize);
       count += blockSize;
     } }, nnz);
 
-  LocalOrdinal temp;
   Kokkos::parallel_scan(
       "", numRows, KOKKOS_LAMBDA(const LocalOrdinal rowId, LocalOrdinal& sum, const bool is_final) {
     sum += rowptr(rowId+1);
     if (is_final) {
       rowptr(rowId+1) = sum;
-    } }, temp);
+    } });
 
   typename graph_type::entries_type::non_const_type indices("lclInvXXt_indices", nnz);
 
   Kokkos::parallel_for(
       "", numBlocks, KOKKOS_LAMBDA(const LocalOrdinal blockId) {
-    auto blockRow = blocks.rowConst(blockId);
-    auto blockSize = blockRow.length;
+        auto blockRow  = blocks.rowConst(blockId);
+        auto blockSize = blockRow.length;
 
-    for (LocalOrdinal k = 0; k < blockSize; ++k) {
-      auto rowId = blockRow.colidx(k);
-      for (LocalOrdinal jj = 0; jj < blockSize; ++jj) {
-        auto j = blockRow.colidx(jj);
-        indices(rowptr(rowId + 1)) = j;
-        ++rowptr(rowId + 1);
-      }
-    } });
+        for (LocalOrdinal k = 0; k < blockSize; ++k) {
+          auto rowId = blockRow.colidx(k);
+          for (LocalOrdinal jj = 0; jj < blockSize; ++jj) {
+            auto j     = blockRow.colidx(jj);
+            auto l     = Kokkos::atomic_fetch_inc(&rowptr(rowId + 1));
+            indices(l) = j;
+          }
+        }
+      });
 
   auto lclInvXXtGraph = graph_type(indices, rowptr);
   typename matrix_type::values_type::non_const_type values("lclInvXXt_values", nnz);
