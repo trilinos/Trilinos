@@ -905,4 +905,26 @@ bool StackedTimer::isTimer(const std::string& flat_timer_name)
   return (search == flat_names_.end()) ? false : true;
 }
 
+std::stack<std::string> StackedTimer::stopAllTimers()
+{
+  std::stack<std::string> timer_names;
+  while (top_->level() > 0) {
+    const std::string name = top_->get_name();
+    timer_names.push(name);
+    this->stop(name);
+  }
+  this->stopBaseTimer();
+
+  return timer_names;
+}
+
+void StackedTimer::startTimers(std::stack<std::string> timers_to_start)
+{
+  this->startBaseTimer();
+  while (timers_to_start.size() > 0) {
+    this->start(timers_to_start.top());
+    timers_to_start.pop();
+  }
+}
+
 } //namespace Teuchos

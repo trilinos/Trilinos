@@ -5,8 +5,9 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TrilinosFrameworkTests  commonTools/framework           PT
   TrilinosATDMConfigTests cmake/std/atdm                  PT
   Kokkos                packages/kokkos                   PT
-  Teuchos               packages/teuchos                  PT
   KokkosKernels         packages/kokkos-kernels           PT
+  magistrate            packages/magistrate               ST
+  Teuchos               packages/teuchos                  PT
   RTOp                  packages/rtop                     PT
   Sacado                packages/sacado                   PT
   MiniTensor            packages/minitensor               PT
@@ -101,6 +102,7 @@ TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(xSDKTrilinos)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SGM)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(UMR)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(TrilinosLinearSolvers)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(magistrate)
 
 #
 # Disable certain packages on certain platforms.
