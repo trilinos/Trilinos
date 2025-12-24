@@ -469,19 +469,6 @@ IF (Teuchos_TIMER_KOKKOS_FENCE)
   MESSAGE(STATUS "Will call Kokkos::fence() when a Teuchos timer starts or stops.")
 ENDIF()
 
-#Build magistrate inline as part of trilinos.
-OPTION(${PACKAGE_NAME}_ENABLE_MAGISTRATE "Enable the magistrate TPL as an inline build in teuchos." OFF)
-MESSAGE(STATUS "${PACKAGE_NAME}_ENABLE_MAGISTRATE=${${PACKAGE_NAME}_ENABLE_MAGISTRATE}")
-IF(${PACKAGE_NAME}_ENABLE_MAGISTRATE)
-  SET(HAVE_TEUCHOS_MAGISTRATE "ON" CACHE BOOL "Enable the magistrate library for checkpointing.")
-  IF(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/magistrate")
-    MESSAGE(STATUS "Enabling inline source build of magistrate = ${HAVE_TEUCHOS_MAGISTRATE}")
-    ADD_SUBDIRECTORY("magistrate")
-  ELSE()
-    MESSAGE(FATAL_ERROR "ERROR: Could not find magistrate source directory. Please check out the repo under the Trilinos/packages/teuchos source directory.")
-  ENDIF()
-ENDIF()
-
 #
 # D) Process the subpackages for Teuchos
 #

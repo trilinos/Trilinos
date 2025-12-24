@@ -18,8 +18,8 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_PerformanceMonitorBase.hpp"
 #include "Teuchos_Behavior.hpp"
-#include "Teuchos_config.h" // for HAVE_TEUCHOS_MAGISTRATE
-#ifdef HAVE_TEUCHOS_MAGISTRATE
+#include "TeuchosComm_config.h" // for HAVE_TEUCHOSCOMM_MAGISTRATE
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
 #include "checkpoint/checkpoint.h"
 #endif
 #ifdef HAVE_TEUCHOSCORE_KOKKOS
@@ -67,7 +67,7 @@ public:
 
   BaseTimer() : accumulation_(0.0), accumulationSquared_(0.0), count_started_(0), count_updates_(0), running_(false) {}
 
-#ifdef HAVE_TEUCHOS_MAGISTRATE
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
   /// For serialization only
   explicit BaseTimer(magistrate::SERIALIZE_CONSTRUCT_TAG) {}
 
@@ -308,7 +308,7 @@ protected:
         sub_timers_[i].parent_ = this;
     }
 
-#ifdef HAVE_TEUCHOS_MAGISTRATE
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
     /// For serialization only
     LevelTimer(magistrate::SERIALIZE_CONSTRUCT_TAG) : parent_(nullptr) {}
 
@@ -558,7 +558,7 @@ public:
     }
   }
 
-#ifdef HAVE_TEUCHOS_MAGISTRATE
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
   explicit StackedTimer(magistrate::SERIALIZE_CONSTRUCT_TAG) {}
 
   template<typename Serializer>

@@ -1,0 +1,6 @@
+#ifndef TEUCHOSCOMM_CONFIG_H
+#define TEUCHOSCOMM_CONFIG_H
+
+#cmakedefine HAVE_TEUCHOSCOMM_MAGISTRATE
+
+#endif

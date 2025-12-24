@@ -156,8 +156,6 @@
 
 #cmakedefine HAVE_TEUCHOS_TIMER_KOKKOS_FENCE
 
-#cmakedefine HAVE_TEUCHOS_MAGISTRATE
-
 /* template qualifier required for calling template methods from non-template
    code */
 #define INVALID_TEMPLATE_QUALIFIER @INVALID_TEMPLATE_QUALIFIER@

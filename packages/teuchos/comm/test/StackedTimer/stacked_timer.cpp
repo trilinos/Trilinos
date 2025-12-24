@@ -22,7 +22,7 @@
 #include <limits>
 #include <map>
 
-#ifdef HAVE_TEUCHOS_MAGISTRATE
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
 #include <checkpoint/checkpoint.h>
 #endif
 
@@ -753,7 +753,7 @@ TEUCHOS_UNIT_TEST(StackedTimer, TimeInfoComparison)
   TEST_ASSERT(t1 != t7);
 }
 
-#ifdef HAVE_TEUCHOS_MAGISTRATE
+#ifdef HAVE_TEUCHOSCOMM_MAGISTRATE
 TEUCHOS_UNIT_TEST(StackedTimer, MagistrateCheckpointBaseTimer)
 {
   Teuchos::BaseTimer t;
@@ -913,4 +913,4 @@ TEUCHOS_UNIT_TEST(StackedTimer, StopTimersForCheckpointing)
   TEST_EQUALITY(timer.findTimer("Total Time@Assembly@Jacobian").count, 10);
 }
 
-#endif // HAVE_TEUCHOS_MAGISTRATE
+#endif // HAVE_TEUCHOSCOMM_MAGISTRATE
