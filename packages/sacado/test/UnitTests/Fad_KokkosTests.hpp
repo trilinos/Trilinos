@@ -560,8 +560,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type fad_size = global_fad_size;
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
-#if KOKKOS_VERSION >= 40799
-  typename ViewType::type va = v;
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  auto va = Sacado::as_scalar_view(v);
 #else
   typename ViewType::array_type va = v;
 #endif
@@ -608,8 +608,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type fad_size = global_fad_size;
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
-#if KOKKOS_VERSION >= 40799
-  typename ViewType::type va = v;
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  auto va = Sacado::as_scalar_view(v);
 #else
   typename ViewType::array_type va = v;
 #endif
@@ -655,8 +655,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type fad_size = global_fad_size;
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
-#if KOKKOS_VERSION >= 40799
-  typename ViewType::type va = v;
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  auto va = Sacado::as_scalar_view(v);
 #else
   typename ViewType::array_type va = v;
 #endif
@@ -702,8 +702,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #else
   v = ViewType ("view", num_rows, num_cols, fad_size+1);
 #endif
-#if KOKKOS_VERSION >= 40799
-  typename ViewType::type va = v;
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  auto va = Sacado::as_scalar_view(v);
 #else
   typename ViewType::array_type va = v;
 #endif
@@ -714,9 +714,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   for (size_type i=0; i<fad_size; ++i)
     a.fastAccessDx(i) = 7.89 + (i+1);
 
+  // We can't deep_copy a for DFad without UVM, so only do this for statically sized
+  // (which catches SFad, but not SLFad, unfortunately)
+  if (Sacado::IsStaticallySized<FadType>::value)
+    Kokkos::deep_copy(v, a);
+  else {
+    host_view_type hv2 = Kokkos::create_mirror_view(v);
+    Kokkos::deep_copy(hv2, a);
+    Kokkos::deep_copy(v, hv2);
+  }
+
   // Copy to host
   host_view_type hv = Kokkos::create_mirror_view(v);
-  Kokkos::deep_copy(hv, a);
+  Kokkos::deep_copy(hv, v);
 
   // Check
   success = true;
@@ -748,8 +758,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #else
   v = ViewType ("view", num_rows, num_cols, num_slices, fad_size+1);
 #endif
-#if KOKKOS_VERSION >= 40799
-  typename ViewType::type va = v;
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  auto va = Sacado::as_scalar_view(v);
 #else
   typename ViewType::array_type va = v;
 #endif
@@ -813,8 +823,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #else
   v = ViewType ("view", num_rows, num_cols, num_slices, fad_size+1);
 #endif
-#if KOKKOS_VERSION >= 40799
-  typename ViewType::type va = v;
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  auto va = Sacado::as_scalar_view(v);
 #else
   typename ViewType::array_type va = v;
 #endif
@@ -878,8 +888,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type fad_size = global_fad_size;
   v = ViewType ("view", num_rows, fad_size+1);
 #endif
-#if KOKKOS_VERSION >= 40799
-  typename ViewType::type va = v;
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  auto va = Sacado::as_scalar_view(v);
 #else
   typename ViewType::array_type va = v;
 #endif
@@ -927,8 +937,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   v = ViewType ("view", num_rows, fad_size+1);
   a = ScalarViewType ("fad", fad_size+1);
 #endif
-#if KOKKOS_VERSION >= 40799
-  typename ViewType::type va = v;
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  auto va = Sacado::as_scalar_view(v);
 #else
   typename ViewType::array_type va = v;
 #endif
@@ -1275,8 +1285,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   v = ViewType ("view", 100, 1, 2, 3, 4, 5, 6, fad_size+1);
 #endif
   host_view_type h_v = Kokkos::create_mirror_view(v);
-#if KOKKOS_VERSION >= 40799
-  typename host_view_type::type h_a = h_v;
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC)
+  auto h_a = Sacado::as_scalar_view(h_v);
 #else
   typename host_view_type::array_type h_a = h_v;
 #endif
