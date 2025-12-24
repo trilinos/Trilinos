@@ -217,6 +217,7 @@ template <class Dst, class SrcT, class ExecSpace> struct DeepCopyViewScalar {
   Dst dst;
   SrcT src;
   size_t total_extent;
+  static const unsigned stride = Sacado::ViewScalarStride<view_t>::stride;
 
   KOKKOS_FUNCTION
   void operator()(
@@ -225,25 +226,27 @@ template <class Dst, class SrcT, class ExecSpace> struct DeepCopyViewScalar {
     if (ii >= total_extent)
       return;
 
+    auto src_strided = Sacado::partition_scalar<stride>(src);
+
     if constexpr (view_t::rank() == 0)
-      dst() == src;
+      dst() = src_strided;
     else if constexpr (view_t::rank() == 1) {
-      dst(ii) == src;
+      dst(ii) = src_strided;
     } else if constexpr (view_t::rank() == 2) {
       int i1 = ii % dst.extent(1);
       int i0 = ii / dst.extent(1);
-      dst(i0, i1) = src;
+      dst(i0, i1) = src_strided;
     } else if constexpr (view_t::rank() == 3) {
       int i2 = ii % dst.extent(2);
       int i1 = (ii / dst.extent(2)) % dst.extent(1);
       int i0 = ii / (dst.extent(2) * dst.extent(1));
-      dst(i0, i1, i2) = src;
+      dst(i0, i1, i2) = src_strided;
     } else if constexpr (view_t::rank() == 4) {
       int i3 = ii % dst.extent(3);
       int i2 = (ii / dst.extent(3)) % dst.extent(2);
       int i1 = (ii / (dst.extent(3) * dst.extent(2))) % dst.extent(1);
       int i0 = (ii / (dst.extent(3) * dst.extent(2) * dst.extent(1)));
-      dst(i0, i1, i2, i3) = src;
+      dst(i0, i1, i2, i3) = src_strided;
     } else if constexpr (view_t::rank() == 5) {
       int i4 = ii % dst.extent(4);
       int i3 = (ii / dst.extent(4)) % dst.extent(3);
@@ -252,7 +255,7 @@ template <class Dst, class SrcT, class ExecSpace> struct DeepCopyViewScalar {
                dst.extent(1);
       int i0 = (ii / (dst.extent(4) * dst.extent(3) * dst.extent(2) *
                       dst.extent(1)));
-      dst(i0, i1, i2, i3, i4) = src;
+      dst(i0, i1, i2, i3, i4) = src_strided;
     } else if constexpr (view_t::rank() == 6) {
       int i5 = ii % dst.extent(5);
       int i4 = (ii / dst.extent(5)) % dst.extent(4);
@@ -264,7 +267,7 @@ template <class Dst, class SrcT, class ExecSpace> struct DeepCopyViewScalar {
                dst.extent(1);
       int i0 = (ii / (dst.extent(5) * dst.extent(4) * dst.extent(3) *
                       dst.extent(2) * dst.extent(1)));
-      dst(i0, i1, i2, i3, i4, i5) = src;
+      dst(i0, i1, i2, i3, i4, i5) = src_strided;
     } else if constexpr (view_t::rank() == 7) {
       int i6 = ii % dst.extent(6);
       int i5 = (ii / dst.extent(6)) % dst.extent(5);
@@ -280,7 +283,7 @@ template <class Dst, class SrcT, class ExecSpace> struct DeepCopyViewScalar {
       int i0 = (ii / (dst.extent(6) * dst.extent(5) * dst.extent(4) *
                       dst.extent(3) * dst.extent(2) * dst.extent(1)));
 
-      dst(i0, i1, i2, i3, i4, i5, i6) = src;
+      dst(i0, i1, i2, i3, i4, i5, i6) = src_strided;
     }
   }
 };

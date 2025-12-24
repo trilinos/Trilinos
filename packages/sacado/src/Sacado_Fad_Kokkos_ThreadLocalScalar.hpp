@@ -108,6 +108,8 @@ partition_scalar(
   typedef typename LocalScalarType<
       Fad::Exp::GeneralFad<Fad::Exp::DynamicStorage<T, U>>, Stride>::type
       ret_type;
+  if (Stride == 1u)
+    return x;
   const int size = (x.size() + blockDim.x - threadIdx.x - 1) / blockDim.x;
   const int offset = threadIdx.x;
   ret_type xp(size, x.val());
@@ -130,6 +132,8 @@ partition_scalar(const Fad::Exp::GeneralFad<Fad::Exp::StaticStorage<T, N>> &x) {
   typedef typename LocalScalarType<
       Fad::Exp::GeneralFad<Fad::Exp::StaticStorage<T, N>>, Stride>::type
       ret_type;
+  if (Stride == 1u)
+    return x;
   const int size = (x.size() + blockDim.x - threadIdx.x - 1) / blockDim.x;
   const int offset = threadIdx.x;
   ret_type xp(size, x.val());
@@ -145,6 +149,8 @@ partition_scalar(
   typedef typename LocalScalarType<
       Fad::Exp::GeneralFad<Fad::Exp::StaticFixedStorage<T, N>>, Stride>::type
       ret_type;
+  if (Stride == 1u)
+    return x;
   const int size = (x.size() + blockDim.x - threadIdx.x - 1) / blockDim.x;
   const int offset = threadIdx.x;
   ret_type xp(size, x.val());
