@@ -206,24 +206,130 @@ subview(const DynRankView<T, LayoutContiguous<LayoutSrc, StrideSrc>, DRVArgs...>
 }
 } // namespace Kokkos
 
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL) ||                                  \
+    defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
 namespace Sacado {
 namespace Impl {
+
+// Using functor since we had some compiler issues with NVCC 12.8 using a lambda
+template <class Dst, class SrcT, class ExecSpace> struct DeepCopyViewScalar {
+  using view_t = Dst;
+  Dst dst;
+  SrcT src;
+  size_t total_extent;
+  static const unsigned stride = Sacado::ViewScalarStride<view_t>::stride;
+
+  KOKKOS_FUNCTION
+  void operator()(
+      const typename Kokkos::TeamPolicy<ExecSpace>::member_type &team) const {
+    size_t ii = team.league_rank() * team.team_size() + team.team_rank();
+    if (ii >= total_extent)
+      return;
+
+    auto src_strided = Sacado::partition_scalar<stride>(src);
+
+    if constexpr (view_t::rank() == 0)
+      dst() = src_strided;
+    else if constexpr (view_t::rank() == 1) {
+      dst(ii) = src_strided;
+    } else if constexpr (view_t::rank() == 2) {
+      int i1 = ii % dst.extent(1);
+      int i0 = ii / dst.extent(1);
+      dst(i0, i1) = src_strided;
+    } else if constexpr (view_t::rank() == 3) {
+      int i2 = ii % dst.extent(2);
+      int i1 = (ii / dst.extent(2)) % dst.extent(1);
+      int i0 = ii / (dst.extent(2) * dst.extent(1));
+      dst(i0, i1, i2) = src_strided;
+    } else if constexpr (view_t::rank() == 4) {
+      int i3 = ii % dst.extent(3);
+      int i2 = (ii / dst.extent(3)) % dst.extent(2);
+      int i1 = (ii / (dst.extent(3) * dst.extent(2))) % dst.extent(1);
+      int i0 = (ii / (dst.extent(3) * dst.extent(2) * dst.extent(1)));
+      dst(i0, i1, i2, i3) = src_strided;
+    } else if constexpr (view_t::rank() == 5) {
+      int i4 = ii % dst.extent(4);
+      int i3 = (ii / dst.extent(4)) % dst.extent(3);
+      int i2 = (ii / (dst.extent(4) * dst.extent(3))) % dst.extent(2);
+      int i1 = (ii / (dst.extent(4) * dst.extent(3) * dst.extent(2))) %
+               dst.extent(1);
+      int i0 = (ii / (dst.extent(4) * dst.extent(3) * dst.extent(2) *
+                      dst.extent(1)));
+      dst(i0, i1, i2, i3, i4) = src_strided;
+    } else if constexpr (view_t::rank() == 6) {
+      int i5 = ii % dst.extent(5);
+      int i4 = (ii / dst.extent(5)) % dst.extent(4);
+      int i3 = (ii / (dst.extent(5) * dst.extent(4))) % dst.extent(3);
+      int i2 = (ii / (dst.extent(5) * dst.extent(4) * dst.extent(3))) %
+               dst.extent(2);
+      int i1 = (ii / (dst.extent(5) * dst.extent(4) * dst.extent(3) *
+                      dst.extent(2))) %
+               dst.extent(1);
+      int i0 = (ii / (dst.extent(5) * dst.extent(4) * dst.extent(3) *
+                      dst.extent(2) * dst.extent(1)));
+      dst(i0, i1, i2, i3, i4, i5) = src_strided;
+    } else if constexpr (view_t::rank() == 7) {
+      int i6 = ii % dst.extent(6);
+      int i5 = (ii / dst.extent(6)) % dst.extent(5);
+      int i4 = (ii / (dst.extent(6) * dst.extent(5))) % dst.extent(4);
+      int i3 = (ii / (dst.extent(6) * dst.extent(5) * dst.extent(4))) %
+               dst.extent(3);
+      int i2 = (ii / (dst.extent(6) * dst.extent(5) * dst.extent(4) *
+                      dst.extent(3))) %
+               dst.extent(2);
+      int i1 = (ii / (dst.extent(6) * dst.extent(5) * dst.extent(4) *
+                      dst.extent(3) * dst.extent(2))) %
+               dst.extent(1);
+      int i0 = (ii / (dst.extent(6) * dst.extent(5) * dst.extent(4) *
+                      dst.extent(3) * dst.extent(2) * dst.extent(1)));
+
+      dst(i0, i1, i2, i3, i4, i5, i6) = src_strided;
+    }
+  }
+};
+
+template <class... DstArgs, class SrcT>
+void deep_copy_view(const Kokkos::View<DstArgs...> &dst, const SrcT &src) {
+  using view_t = Kokkos::View<DstArgs...>;
+  using exec_space = typename view_t::execution_space;
+
+  size_t total_extent = 1;
+  for (size_t r = 0; r < view_t::rank(); r++)
+    total_extent *= dst.extent(r);
+    // It looks like SFAD only works with 64 wide vector in HIP
+#ifdef KOKKOS_ENABLE_HIP
+  size_t vector_size = 64;
+#else
+  size_t vector_size = 32;
+#endif
+
+  // Just arbitraryly using team_size = 1 for low concurrency backends (i.e.
+  // CPUs)
+  size_t team_size = exec_space().concurrency() > 1000 ? 512 / vector_size : 1;
+
+  size_t num_teams = (total_extent + team_size - 1) / team_size;
+
+  Kokkos::parallel_for(
+      "Sacado::deep_copy Hierarchical",
+      Kokkos::TeamPolicy<exec_space>(num_teams, team_size, vector_size),
+      DeepCopyViewScalar<view_t, SrcT, exec_space>{dst, src, total_extent});
+
+  Kokkos::fence();
+}
+
 template <class SrcT, class... SrcArgs>
-void resize_view(
-    Kokkos::View<SrcT, SrcArgs...> &src,
-    const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+void resize_view(Kokkos::View<SrcT, SrcArgs...> &src,
+                 const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+                 const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
   const size_t new_extents[8] = {n0, n1, n2, n3, n4, n5, n6, n7};
   bool size_mismatch = false;
-  using view_t =
-      Kokkos::View<SrcT, SrcArgs...>;
+  using view_t = Kokkos::View<SrcT, SrcArgs...>;
   for (int r = 0; r < (int)src.rank(); r++) {
     if (new_extents[r] != src.extent(r))
       size_mismatch = true;
@@ -234,7 +340,7 @@ void resize_view(
     size_t total_extent = 1;
     for (size_t r = 0; r < view_t::rank(); r++)
       total_extent *= Kokkos::min(src.extent(r), dst.extent(r));
-    // It looks like SFAD only works with 64 wide vector in HIP
+      // It looks like SFAD only works with 64 wide vector in HIP
 #ifdef KOKKOS_ENABLE_HIP
     size_t vector_size = 64;
 #else
@@ -326,9 +432,83 @@ void resize_view(
 
 namespace Kokkos {
 
+template <class DstT, class... DstArgs, class SrcT>
+  requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT>, DstArgs...> &src,
+    SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+  requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> *, DstArgs...> &src,
+    SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+  requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> **, DstArgs...> &src,
+    SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+  requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(
+    const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ***, DstArgs...> &src,
+    SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+  requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ****,
+                                  DstArgs...> &src,
+               SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+  requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> *****,
+                                  DstArgs...> &src,
+               SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+template <class DstT, class... DstArgs, class SrcT>
+  requires(!Kokkos::is_view_v<SrcT>)
+void deep_copy(const Kokkos::View<Sacado::Fad::Exp::GeneralFad<DstT> ******,
+                                  DstArgs...> &src,
+               SrcT val) {
+  Sacado::Impl::deep_copy_view(src, val);
+}
+
+template <class SrcT, class... SrcArgs>
+void resize(Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...> &src,
+            const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+  Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+}
+template <class SrcT, class... SrcArgs>
+void resize(Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *, SrcArgs...> &src,
+            const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
+            const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
+  Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+}
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> **, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -337,11 +517,11 @@ void resize(
     const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
-   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+  Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
 }
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>*, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ***, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -350,11 +530,11 @@ void resize(
     const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
-   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+  Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
 }
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>**, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ****, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -363,11 +543,11 @@ void resize(
     const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
-   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+  Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
 }
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>***, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> *****, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -376,11 +556,11 @@ void resize(
     const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
-   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+  Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
 }
 template <class SrcT, class... SrcArgs>
 void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>****, SrcArgs...> &src,
+    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT> ******, SrcArgs...> &src,
     const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
@@ -389,33 +569,7 @@ void resize(
     const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
     const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
-   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
+  Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
 }
-template <class SrcT, class... SrcArgs>
-void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>*****, SrcArgs...> &src,
-    const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
-   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
-}
-template <class SrcT, class... SrcArgs>
-void resize(
-    Kokkos::View<Sacado::Fad::Exp::GeneralFad<SrcT>******, SrcArgs...> &src,
-    const size_t n0 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n1 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n2 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n3 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n4 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n5 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n6 = KOKKOS_IMPL_CTOR_DEFAULT_ARG,
-    const size_t n7 = KOKKOS_IMPL_CTOR_DEFAULT_ARG) {
-   Sacado::Impl::resize_view(src, n0, n1, n2, n3, n4, n5, n6, n7);
-}
-}
+} // namespace Kokkos
 #endif // SACADO_VIEW_CUDA_HIERARCHICAL
