@@ -207,7 +207,7 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
   //! Returns in Y the result of a Xpetra::Operator applied to a Xpetra::MultiVector X.
   //! \param[in]  X - MultiVector of dimension NumVectors to multiply with matrix.
   //! \param[out] Y - MultiVector of dimension NumVectors containing result.
-  void apply(const MultiVector& X, MultiVector& Y,
+  void apply(const MultiVector& RHS, MultiVector& X,
              Teuchos::ETransp mode = Teuchos::NO_TRANS,
              Scalar alpha          = Teuchos::ScalarTraits<Scalar>::one(),
              Scalar beta           = Teuchos::ScalarTraits<Scalar>::zero()) const;
@@ -270,7 +270,7 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
   //! dump out boolean ArrayView
   void dump(const Teuchos::ArrayRCP<bool>& v, std::string name) const;
 
-  //! dump out boolean Kokkos::View
+  //! dump out Boolean Kokkos::View
   void dump(const Kokkos::View<bool*, typename Node::device_type>& v, std::string name) const;
 
   //! get a (synced) timer
@@ -300,10 +300,10 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
   bool applyBCsTo22_;
 
   //! Execution modes
-  typedef enum { MODE_STANDARD = 0,
-                 MODE_REFMAXWELL,
-                 MODE_EDGE_ONLY,
-                 MODE_GMHD_STANDARD } mode_type;
+  using mode_type = enum { MODE_STANDARD = 0,
+                           MODE_REFMAXWELL,
+                           MODE_EDGE_ONLY,
+                           MODE_GMHD_STANDARD };
   mode_type mode_;
 
   //! Temporary memory (cached vectors for RefMaxwell-style)
