@@ -16,6 +16,8 @@
 #include <Xpetra_MultiVector.hpp>
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
+#include "Kokkos_Atomic.hpp"
+#include "Kokkos_Pair.hpp"
 #include "Teuchos_ScalarTraitsDecl.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 #include "Xpetra_MatrixFactory.hpp"
@@ -56,6 +58,23 @@ void SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
   auto D        = D_;
   auto Dc       = Dc_;
   auto Ppattern = this->GetPattern();
+
+  // The constraint on Pe (with graph Ppattern) takes the form
+  //
+  //   Pe * Dc = D * Pn.
+  //
+  // This means that we have nnz(Pe * Dc) constraints for nnz(Ppattern)
+  // unknowns.
+  //
+  // A single constraint corresponds to an entry (i,j) of Pe * D0c and is
+  // written out via the sparse matrix-matrix products between Pe and D0c:
+  //
+  //  sum_{k} Pe_{i,k} Dc_{k,j} = (D * Pn)_{i,j}
+  //
+  // We map (i,j) to its offset I in (Pe * D0c) and (i,k) to its offset J in Pe.
+  //
+  // The constraint matrix X then has the entry
+  //   X_{I,J} = Dc_{k,j}.
 
   auto lib = Ppattern->getRowMap()->lib();
 
@@ -127,69 +146,91 @@ void SparseConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup() {
     auto lclD0       = ghostedDc->getLocalMatrixDevice();
     auto lclAuxGraph = auxGraph->getLocalGraphDevice();
 
-    lno_view_t rowptr("constraint_rowptr", numConstraints + 1);
-
-    size_t nnz = 0;
-    Kokkos::parallel_reduce(
-        "sparse_constraint",
-        range_type(0, numRows),
-        KOKKOS_LAMBDA(const size_t pattern_i, size_t& partial_nnz) {
-          for (size_t pattern_jj = lclPattern.row_map(pattern_i); pattern_jj < lclPattern.row_map(pattern_i + 1); ++pattern_jj) {
-            auto pattern_j = lclPattern.entries(pattern_jj);
-            for (size_t mat_jj = lclD0.graph.row_map(pattern_j); mat_jj < lclD0.graph.row_map(pattern_j + 1); ++mat_jj) {
-              auto mat_j = lclD0.graph.entries(mat_jj);
-              // Find entry mat_j in row graph_i of tempGraph
-              size_t constraint_i;
-              for (constraint_i = lclAuxGraph.row_map(pattern_i); constraint_i < lclAuxGraph.row_map(pattern_i + 1); ++constraint_i) {
-                if (lclAuxGraph.entries(constraint_i) == mat_j)
-                  break;
-              }
-              partial_nnz += 1;
-              if (constraint_i + 2 < numConstraints + 1) {
-                Kokkos::atomic_add(&rowptr(constraint_i + 2), 1);
-              }
-            }
-          }
-        },
-        nnz);
-
-    // todo: merge?
-    Kokkos::parallel_scan(
-        "sparse_constraint",
-        range_type(1, numConstraints + 1),
-        KOKKOS_LAMBDA(const size_t constraint_i, size_t& partial_nnz, bool is_final) {
-          partial_nnz += rowptr(constraint_i);
-          if (is_final)
-            rowptr(constraint_i) = partial_nnz;
-        });
-
-    lno_nnz_view_t colind(Kokkos::ViewAllocateWithoutInitializing("constraint_indices"), nnz);
-    scalar_view_t values(Kokkos::ViewAllocateWithoutInitializing("constraint_values"), nnz);
+    // Over-allocate by 1. Makes the logic a bit easier in what follows.
+    lno_view_t rowptr("constraint_rowptr", numConstraints + 2);
 
     Kokkos::parallel_for(
-        "sparse_constraint",
+        "sparse_constraint_num_entries_per_row",
         range_type(0, numRows),
         KOKKOS_LAMBDA(const size_t pattern_i) {
           for (size_t pattern_jj = lclPattern.row_map(pattern_i); pattern_jj < lclPattern.row_map(pattern_i + 1); ++pattern_jj) {
             auto pattern_j = lclPattern.entries(pattern_jj);
-            for (size_t mat_jj = lclD0.graph.row_map(pattern_j); mat_jj < lclD0.graph.row_map(pattern_j + 1); ++mat_jj) {
-              auto mat_j   = lclD0.graph.entries(mat_jj);
-              auto mat_val = lclD0.values(mat_jj);
-              // Find entry mat_j in row graph_i of tempGraph
-              size_t constraint_i;
-              for (constraint_i = lclAuxGraph.row_map(pattern_i); constraint_i < lclAuxGraph.row_map(pattern_i + 1); ++constraint_i) {
-                if (lclAuxGraph.entries(constraint_i) == mat_j)
+            // entry (pattern_i, pattern_j) in Ppattern
+
+            for (size_t D0_jj = lclD0.graph.row_map(pattern_j); D0_jj < lclD0.graph.row_map(pattern_j + 1); ++D0_jj) {
+              auto D0_j = lclD0.graph.entries(D0_jj);
+              // entry (pattern_j, D0_j) in ghosted D0
+
+              // Find entry (pattern_i, D0_j) in tempGraph
+              size_t constraint_I;
+              for (constraint_I = lclAuxGraph.row_map(pattern_i); constraint_I < lclAuxGraph.row_map(pattern_i + 1); ++constraint_I) {
+                if (lclAuxGraph.entries(constraint_I) == D0_j)
                   break;
               }
-              auto constraint_jj    = rowptr(constraint_i + 1);
-              colind(constraint_jj) = pattern_jj;
-              values(constraint_jj) = mat_val;
-              ++rowptr(constraint_i + 1);
+#ifdef HAVE_MUELU_DEBUG
+              if (lclAuxGraph.entries(constraint_I) != D0_j)
+                ::Kokkos::abort("Did not find entry in row of tempGraph.");
+#endif
+              // Need an entry in row constraint_I.
+              // We offset by 2 since we do not want to compute the final rowptr just yet.
+              // That will happen during fill.
+              Kokkos::atomic_add(&rowptr(constraint_I + 2), 1);
             }
           }
         });
 
-    auto lclConstraintGraph = graph_t(colind, rowptr);
+    // The usual prefix sum.
+    size_t nnz = 0;
+    Kokkos::parallel_scan(
+        "sparse_constraint_prefix_sum",
+        range_type(1, numConstraints + 2),
+        KOKKOS_LAMBDA(const size_t constraint_i, size_t& partial_nnz, bool is_final) {
+          partial_nnz += rowptr(constraint_i);
+          if (is_final)
+            rowptr(constraint_i) = partial_nnz;
+        },
+        nnz);
+
+    // allocate indices and values
+    lno_nnz_view_t colind(Kokkos::ViewAllocateWithoutInitializing("constraint_indices"), nnz);
+    scalar_view_t values(Kokkos::ViewAllocateWithoutInitializing("constraint_values"), nnz);
+
+    // fill indices and values
+    Kokkos::parallel_for(
+        "sparse_constraint_fill",
+        range_type(0, numRows),
+        KOKKOS_LAMBDA(const size_t pattern_i) {
+          for (size_t pattern_jj = lclPattern.row_map(pattern_i); pattern_jj < lclPattern.row_map(pattern_i + 1); ++pattern_jj) {
+            auto pattern_j = lclPattern.entries(pattern_jj);
+            // entry (pattern_i, pattern_j) in Ppattern
+
+            for (size_t D0_jj = lclD0.graph.row_map(pattern_j); D0_jj < lclD0.graph.row_map(pattern_j + 1); ++D0_jj) {
+              auto D0_j   = lclD0.graph.entries(D0_jj);
+              auto D0_val = lclD0.values(D0_jj);
+              // entry (pattern_j, D0_j) in ghosted D0
+
+              // Find entry (pattern_i, D0_j) in tempGraph
+              size_t constraint_I;
+              for (constraint_I = lclAuxGraph.row_map(pattern_i); constraint_I < lclAuxGraph.row_map(pattern_i + 1); ++constraint_I) {
+                if (lclAuxGraph.entries(constraint_I) == D0_j)
+                  break;
+              }
+#ifdef HAVE_MUELU_DEBUG
+              if (lclAuxGraph.entries(constraint_I) != D0_j)
+                ::Kokkos::abort("Did not find entry in row of tempGraph.");
+#endif
+              // Enter data into constraint matrix.
+              // (constraint_I, pattern_jj) -> D0_val
+              // After this the rowptr will be correct.
+              // This is why we had to offset the index by 2 earlier on.
+              auto constraint_jj    = Kokkos::atomic_fetch_inc(&rowptr(constraint_I + 1));
+              colind(constraint_jj) = pattern_jj;
+              values(constraint_jj) = D0_val;
+            }
+          }
+        });
+
+    auto lclConstraintGraph = graph_t(colind, Kokkos::subview(rowptr, Kokkos::make_pair(size_t(0), numConstraints + 1)));
     auto lclConstraint      = matrix_t("constraint", numUnknowns, values, lclConstraintGraph);
     X                       = MatrixFactory::Build(lclConstraint, constraint_rowmap, constraint_domainmap, constraint_domainmap, constraint_rowmap);
   }
