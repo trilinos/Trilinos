@@ -296,6 +296,16 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
     precList22_.set("multigrid algorithm", "unsmoothed");
   }
 
+  if (!precList22_.isParameter("tentative: constant column sums"))
+    precList22_.set("tentative: constant column sums", false);
+  else if (precList22_.get<bool>("tentative: constant column sums") != false)
+    GetOStream(Warnings0) << "\"tentative: constant column sums\" is set to \"true\". There is no guarantee that this will work." << std::endl;
+
+  if (!precList22_.isParameter("tentative: calculate qr"))
+    precList22_.set("tentative: calculate qr", false);
+  else if (precList22_.get<bool>("tentative: calculate qr") != false)
+    GetOStream(Warnings0) << "\"tentative: calculate qr\" is set to \"true\". There is no guarantee that this will work." << std::endl;
+
   /* We need both nodal Ptent and P for Emin. */
   if ((parameterList_.sublist("maxwell1: 11list").get<std::string>("multigrid algorithm") == "emin reitzinger") &&
       (!precList22_.isParameter("sa: keep tentative prolongator") || !precList22_.get<bool>("sa: keep tentative prolongator")))
