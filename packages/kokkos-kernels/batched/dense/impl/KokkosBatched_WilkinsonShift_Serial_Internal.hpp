@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_WILKINSON_SHIFT_SERIAL_INTERNAL_HPP
 #define KOKKOSBATCHED_WILKINSON_SHIFT_SERIAL_INTERNAL_HPP
 
@@ -50,13 +37,13 @@ struct SerialWilkinsonShiftInternal {
 
     if (v < 0) {
       // complex
-      const value_type sqrt_v = Kokkos::ArithTraits<value_type>::sqrt(-v);
+      const value_type sqrt_v = KokkosKernels::ArithTraits<value_type>::sqrt(-v);
       *lambda1                = Kokkos::complex<value_type>(p, sqrt_v);
       *lambda2                = Kokkos::complex<value_type>(p, -sqrt_v);
       *is_complex             = true;
     } else {
       // real
-      const value_type sqrt_v = Kokkos::ArithTraits<value_type>::sqrt(v);
+      const value_type sqrt_v = KokkosKernels::ArithTraits<value_type>::sqrt(v);
       *lambda1                = Kokkos::complex<value_type>(p + sqrt_v);
       *lambda2                = Kokkos::complex<value_type>(p - sqrt_v);
       *is_complex             = false;

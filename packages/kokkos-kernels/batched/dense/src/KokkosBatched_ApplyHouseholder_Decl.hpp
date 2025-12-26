@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_APPLY_HOUSEHOLDER_DECL_HPP
 #define KOKKOSBATCHED_APPLY_HOUSEHOLDER_DECL_HPP
 
@@ -27,11 +14,11 @@ namespace KokkosBatched {
 ///
 
 // level 1 operation
-template <typename ArgSide>
+template <typename ArgSide, typename ArgTrans = Trans::NoTranspose>
 struct SerialApplyHouseholder {
   template <typename uViewType, typename tauViewType, typename AViewType, typename wViewType>
-  KOKKOS_INLINE_FUNCTION static int invoke(const uViewType &u2, const tauViewType &tau,
-                                           const AViewType const wViewType &w);
+  KOKKOS_INLINE_FUNCTION static int invoke(const uViewType &u2, const tauViewType &tau, const AViewType &A,
+                                           const wViewType &w);
 };
 
 // level 1 operation
@@ -39,7 +26,7 @@ template <typename MemberType, typename ArgSide>
 struct TeamVectorApplyHouseholder {
   template <typename uViewType, typename tauViewType, typename AViewType, typename wViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const uViewType &u2, const tauViewType &tau,
-                                           const AViewType const wViewType &w);
+                                           const AViewType &A, const wViewType &w);
 };
 
 }  // namespace KokkosBatched

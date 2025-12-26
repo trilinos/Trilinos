@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBLAS3_TRSM_SPEC_HPP_
 #define KOKKOSBLAS3_TRSM_SPEC_HPP_
 
@@ -91,14 +78,14 @@ struct TRSM<execution_space, AViewType, BViewType, false, KOKKOSKERNELS_IMPL_COM
     Kokkos::Profiling::pushRegion(KOKKOSKERNELS_IMPL_COMPILE_LIBRARY ? "KokkosBlas::trsm[ETI]"
                                                                      : "KokkosBlas::trsm[noETI]");
 
-    typename AViewType::HostMirror h_A = Kokkos::create_mirror_view(A);
-    typename BViewType::HostMirror h_B = Kokkos::create_mirror_view(B);
+    typename AViewType::host_mirror_type h_A = Kokkos::create_mirror_view(A);
+    typename BViewType::host_mirror_type h_B = Kokkos::create_mirror_view(B);
 
     Kokkos::deep_copy(h_A, A);
     Kokkos::deep_copy(h_B, B);
 
-    SerialTrsm_Invoke<typename AViewType::HostMirror, typename BViewType::HostMirror>(side, uplo, trans, diag, alpha,
-                                                                                      h_A, h_B);
+    SerialTrsm_Invoke<typename AViewType::host_mirror_type, typename BViewType::host_mirror_type>(
+        side, uplo, trans, diag, alpha, h_A, h_B);
 
     Kokkos::deep_copy(B, h_B);
 

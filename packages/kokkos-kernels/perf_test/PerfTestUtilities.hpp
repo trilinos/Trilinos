@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 //
 // Created by Poliakoff, David Zoeller on 4/27/21.
 //
@@ -22,6 +9,7 @@
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 #include <common/RunParams.hpp>
 #include <common/QuickKernelBase.hpp>
 #include <common/KernelBase.hpp>
@@ -81,7 +69,7 @@ struct test_reader;
 template <class Scalar, class Ordinal, class ExecutionSpace, class Offset>
 struct test_reader<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>> {
   static matrix_type<Scalar, Ordinal, ExecutionSpace, Offset> read(const std::string &filename) {
-    return KokkosKernels::Impl::read_kokkos_crst_matrix<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>>(
+    return KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>>(
         filename.c_str());
   }
 };

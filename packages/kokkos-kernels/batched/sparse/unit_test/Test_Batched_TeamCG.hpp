@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 /// \author Kim Liegeois (knliege@sandia.gov)
 
 #include "gtest/gtest.h"
@@ -83,7 +70,7 @@ struct Functor_TestBatchedTeamCG {
 template <typename DeviceType, typename ValuesViewType, typename IntView, typename VectorViewType>
 void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
   typedef typename ValuesViewType::value_type value_type;
-  typedef Kokkos::ArithTraits<value_type> ats;
+  typedef KokkosKernels::ArithTraits<value_type> ats;
 
   const int nnz = (BlkSize - 2) * 3 + 2 * 2;
 
@@ -98,7 +85,7 @@ void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
   using Layout     = typename ValuesViewType::array_layout;
   using EXSP       = typename ValuesViewType::execution_space;
 
-  using MagnitudeType = typename Kokkos::ArithTraits<ScalarType>::mag_type;
+  using MagnitudeType = typename KokkosKernels::ArithTraits<ScalarType>::mag_type;
   using NormViewType  = Kokkos::View<MagnitudeType *, Layout, EXSP>;
 
   using Norm2DViewType   = Kokkos::View<MagnitudeType **, Layout, EXSP>;
@@ -133,8 +120,9 @@ void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
   Kokkos::deep_copy(D_host, D);
 
   KokkosBatched::SerialSpmv<Trans::NoTranspose>::template invoke<
-      typename ValuesViewType::HostMirror, typename IntView::HostMirror, typename VectorViewType::HostMirror,
-      typename VectorViewType::HostMirror, 1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
+      typename ValuesViewType::host_mirror_type, typename IntView::host_mirror_type,
+      typename VectorViewType::host_mirror_type, typename VectorViewType::host_mirror_type, 1>(
+      -1, D_host, r_host, c_host, X_host, 1, R_host);
   KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host, sqr_norm_0_host);
   Functor_TestBatchedTeamCG<DeviceType, ValuesViewType, IntView, VectorViewType, KrylovHandleType>(D, r, c, X, B,
                                                                                                    N_team)
@@ -147,8 +135,9 @@ void impl_test_batched_CG(const int N, const int BlkSize, const int N_team) {
   Kokkos::deep_copy(X_host, X);
 
   KokkosBatched::SerialSpmv<Trans::NoTranspose>::template invoke<
-      typename ValuesViewType::HostMirror, typename IntView::HostMirror, typename VectorViewType::HostMirror,
-      typename VectorViewType::HostMirror, 1>(-1, D_host, r_host, c_host, X_host, 1, R_host);
+      typename ValuesViewType::host_mirror_type, typename IntView::host_mirror_type,
+      typename VectorViewType::host_mirror_type, typename VectorViewType::host_mirror_type, 1>(
+      -1, D_host, r_host, c_host, X_host, 1, R_host);
   KokkosBatched::SerialDot<Trans::NoTranspose>::invoke(R_host, R_host, sqr_norm_j_host);
 
   const MagnitudeType eps = 1.0e3 * ats::epsilon();

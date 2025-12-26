@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "KokkosODE_BDF.hpp"
 
@@ -103,7 +90,7 @@ struct bdf_input_parameters {
 template <class execution_space>
 void run_ode_chem(benchmark::State& state, const bdf_input_parameters& inputs) {
   using scalar_type = double;
-  using KAT         = Kokkos::ArithTraits<scalar_type>;
+  using KAT         = KokkosKernels::ArithTraits<scalar_type>;
   using vec_type    = Kokkos::View<scalar_type**, execution_space>;
   using mat_type    = Kokkos::View<scalar_type***, execution_space>;
 

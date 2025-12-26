@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 /// \file KokkosSparse_sptrsv.hpp
 /// \brief Parallel sparse triangular solve
@@ -68,7 +55,7 @@ template <typename graph_t, typename KernelHandle>
 graph_t read_superlu_graphU(KernelHandle *kernelHandle, SuperMatrix *L, SuperMatrix *U) {
   using row_map_view_t      = typename graph_t::row_map_type::non_const_type;
   using cols_view_t         = typename graph_t::entries_type::non_const_type;
-  using host_cols_view_t    = typename cols_view_t::HostMirror;
+  using host_cols_view_t    = typename cols_view_t::host_mirror_type;
   using integer_view_host_t = Kokkos::View<int *, Kokkos::HostSpace>;
 
   /* load options */

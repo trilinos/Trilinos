@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_GS_IMPL_HPP
 #define KOKKOSSPARSE_GS_IMPL_HPP
@@ -233,7 +220,7 @@ class PointGaussSeidel {
               scalar_persistent_work_view2d_t Yvector, nnz_lno_t color_set_begin, nnz_lno_t color_set_end,
               scalar_persistent_work_view_t permuted_inverse_diagonal_, pool_memory_space pms,
               nnz_lno_t _num_max_vals_in_l1 = 0, nnz_lno_t _num_max_vals_in_l2 = 0,
-              nnz_scalar_t omega_ = Kokkos::ArithTraits<nnz_scalar_t>::one(),
+              nnz_scalar_t omega_ = KokkosKernels::ArithTraits<nnz_scalar_t>::one(),
 
               nnz_lno_t block_size_ = 1, nnz_lno_t team_work_size_ = 1, size_t shared_memory_size_ = 16,
               int suggested_team_size_ = 1, int vector_size_ = 1)
@@ -753,7 +740,7 @@ class PointGaussSeidel {
     KokkosKernels::Impl::print_1Dview(colors);
     std::cout << "numCol:" << numColors << " numRows:" << num_rows << " cols:" << num_cols << " nnz:" << adj.extent(0)
               << std::endl;
-    typename HandleType::GraphColoringHandleType::color_view_t::HostMirror h_colors =
+    typename HandleType::GraphColoringHandleType::color_view_t::host_mirror_type h_colors =
         Kokkos::create_mirror_view(colors);
     for (int i = 0; i < num_rows; ++i) {
       h_colors(i) = i + 1;
@@ -1111,7 +1098,7 @@ class PointGaussSeidel {
           rows_per_team(rows_per_team_),
           block_size(block_size_),
           block_matrix_size(block_matrix_size_),
-          one(Kokkos::ArithTraits<nnz_scalar_t>::one()) {}
+          one(KokkosKernels::ArithTraits<nnz_scalar_t>::one()) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const nnz_lno_t& row_id) const {
@@ -1297,7 +1284,7 @@ class PointGaussSeidel {
   template <typename x_value_array_type, typename y_value_array_type>
   void block_apply(x_value_array_type x_lhs_output_vec, y_value_array_type y_rhs_input_vec,
                    bool init_zero_x_vector = false, int numIter = 1,
-                   nnz_scalar_t omega = Kokkos::ArithTraits<nnz_scalar_t>::one(), bool apply_forward = true,
+                   nnz_scalar_t omega = KokkosKernels::ArithTraits<nnz_scalar_t>::one(), bool apply_forward = true,
                    bool apply_backward = true, bool update_y_vector = true) {
     auto gsHandle = this->get_gs_handle();
     if (gsHandle->is_numeric_called() == false) {
@@ -1401,7 +1388,7 @@ class PointGaussSeidel {
   template <typename x_value_array_type, typename y_value_array_type>
   void point_apply(x_value_array_type x_lhs_output_vec, y_value_array_type y_rhs_input_vec,
                    bool init_zero_x_vector = false, int numIter = 1,
-                   nnz_scalar_t omega = Kokkos::ArithTraits<nnz_scalar_t>::one(), bool apply_forward = true,
+                   nnz_scalar_t omega = KokkosKernels::ArithTraits<nnz_scalar_t>::one(), bool apply_forward = true,
                    bool apply_backward = true, bool update_y_vector = true) {
     auto gsHandle      = get_gs_handle();
     auto my_exec_space = gsHandle->get_execution_space();
@@ -1467,8 +1454,8 @@ class PointGaussSeidel {
 
   template <typename x_value_array_type, typename y_value_array_type>
   void apply(x_value_array_type x_lhs_output_vec, y_value_array_type y_rhs_input_vec, bool init_zero_x_vector = false,
-             int numIter = 1, nnz_scalar_t omega = Kokkos::ArithTraits<nnz_scalar_t>::one(), bool apply_forward = true,
-             bool apply_backward = true, bool update_y_vector = true) {
+             int numIter = 1, nnz_scalar_t omega = KokkosKernels::ArithTraits<nnz_scalar_t>::one(),
+             bool apply_forward = true, bool apply_backward = true, bool update_y_vector = true) {
     auto gsHandle = get_gs_handle();
     if (gsHandle->is_numeric_called() == false) {
       this->initialize_numeric();

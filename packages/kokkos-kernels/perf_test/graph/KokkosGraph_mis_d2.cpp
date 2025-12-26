@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <stdlib.h>
 #include <string>
@@ -220,7 +207,7 @@ void run_mis2(const MIS2Parameters& params) {
   crsMat_t At_in = KokkosSparse::Impl::transpose_matrix(A_in);
   crsMat_t A;
   KKH kkh;
-  const scalar_type one = Kokkos::ArithTraits<scalar_type>::one();
+  const scalar_type one = KokkosKernels::ArithTraits<scalar_type>::one();
   kkh.create_spadd_handle(false);
   KokkosSparse::spadd_symbolic(&kkh, A_in, At_in, A);
   KokkosSparse::spadd_numeric(&kkh, one, A_in, one, At_in, A);
