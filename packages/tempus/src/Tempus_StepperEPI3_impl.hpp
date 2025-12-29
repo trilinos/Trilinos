@@ -185,15 +185,10 @@ void StepperEPI3<Scalar>::takeStep(
       auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
           timeDer, dt, Scalar(0.0), Scalar(1.0)));
 
-      std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
 
       // TODO: Transition away from using implicit solver methods and use ModelEvaluator directly
       RCP<Thyra::VectorBase<Scalar> > f = x->clone_v();
       this->evaluateImplicitODE(f, x, xDot, time, p);
-
-      std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
-      std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
-      std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
 
       // Using the appModel
       RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
@@ -210,19 +205,26 @@ void StepperEPI3<Scalar>::takeStep(
       bool use_phi_eval = true;
       Scalar factor = Scalar(-dt);
 
-      // use the PhiEvaluator to compute update
-      //Teuchos::RCP<Teuchos::FancyOStream> out =
-      //  Teuchos::VerboseObjectBase::getDefaultOStream();
-      //out->setOutputToRootOnly(0);
-      //phiEvaluator_->describe(*out, Teuchos::VERB_EXTREME);
+auto thyraModel = this->getModel();
+
+auto inArgs_tyra  = thyraModel->createInArgs();
+auto outArgs_tyra = thyraModel->createOutArgs();
+
+auto curr = solutionHistory->getCurrentState();
+
+inArgs_tyra.set_x(curr->getX());
+inArgs_tyra.set_t(curr->getTime());
+
+auto W = thyraModel->create_W_op();
+outArgs_tyra.set_W_op(W);
+
+thyraModel->evalModel(inArgs_tyra, outArgs_tyra);
+
 
       phiEvaluator_->setLinearizationPoint(inArgs);
       sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, f);
 
-      std::cout << "ph[0,1] = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
-      //assign(x.ptr(), ST::zero());
 
-      // x = xOld - dt*phi_1(dt*J)*f
       Thyra::V_VpStV(x.ptr(), *xOld, factor, *vphi);
     }
 
