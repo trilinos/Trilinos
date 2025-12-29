@@ -35,6 +35,12 @@ class PhiLinearSolver {
   void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
+  void matrixExponential(const Thyra::Ordinal expansionOrder);
+  void buildATilde(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> M_inv, const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> J, const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> b, const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> K);
+  void buildK(const Thyra::Ordinal n);
+  void buildb(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A, const Thyra::Ordinal p, const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot);
+  void buildv();
+
   Thyra::SolveStatus<Scalar> solveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 				      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> iMf,
 				      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf, Scalar alpha=1., Scalar beta=0.) const;
@@ -47,7 +53,17 @@ class PhiLinearSolver {
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lumpMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> invMassMatrix_;
 
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > lumpedMassDiagonal_;
+
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> expMassMatrix_;
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> KMatrix_;
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bMatrix_;
+
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> jacobianMatrix_;
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> v_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matExp_v_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;

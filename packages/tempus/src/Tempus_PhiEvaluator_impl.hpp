@@ -26,6 +26,12 @@
 #include "Thyra_MultiVectorStdOps_decl.hpp"
 #include "Thyra_OperatorVectorTypes.hpp"
 
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_DefaultZeroLinearOp_decl.hpp"
+#include "Thyra_DefaultZeroLinearOp_def.hpp"
+#include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Thyra_DefaultMultipliedLinearOp.hpp"
+
 
 namespace Tempus {
 
@@ -203,20 +209,218 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
     Teuchos::RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(*fullMassMatrix_->domain());
     Thyra::assign(ones.ptr(),1.0);
 
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > lumpMass = Thyra::createMember(*fullMassMatrix_->range());
+    lumpedMassDiagonal_ = Thyra::createMember(*fullMassMatrix_->range());
     Teuchos::RCP<Thyra::VectorBase<Scalar> > invLumpMass = Thyra::createMember(*fullMassMatrix_->range());
-    Thyra::apply(*fullMassMatrix_, Thyra::NOTRANS, *ones, lumpMass.ptr());
+    Thyra::apply(*fullMassMatrix_, Thyra::NOTRANS, *ones, lumpedMassDiagonal_.ptr());
 
     //TODO:
     //Teuchos::RCP<const Epetra_Vector> mv = Teuchos::rcp_dynamic_cast<const Epetra_Vector>(Thyra::get_Epetra_Vector(crsMat->RangeMap(), invLumpMass));
     //EpetraExt::VectorToMatrixMarketFile("fullMassMatrix_v.mm", *mv);
 
-    Thyra::reciprocal(*lumpMass, invLumpMass.ptr());
+    Thyra::reciprocal(*lumpedMassDiagonal_, invLumpMass.ptr());
 
-    lumpMassMatrix_ = Thyra::diagonal(lumpMass);
+    lumpMassMatrix_ = Thyra::diagonal(lumpedMassDiagonal_);
     invMassMatrix_ = Thyra::diagonal(invLumpMass);
   }
 }
+
+// template <class Scalar>
+// void PhiLinearSolver<Scalar>::matrixExponential(const int expansionOrder)
+// {
+//   TEUCHOS_TEST_FOR_EXCEPTION(
+//       expansionOrder < 0,
+//       std::invalid_argument,
+//       "massMatrixExponential: expansionOrder must be nonnegative");
+
+//   TEUCHOS_TEST_FOR_EXCEPTION(
+//       !lumpMass_,
+//       std::invalid_argument,
+//       "massMatrixExponential: mass lumping must be true to use this method");
+  
+//   result = Identity*v_;
+//   result = result + Atilde_*v_/2;
+//   result = result + Atilde_*v_/6;
+//   result = result + Atilde_*v_/24;
+  
+//   Teuchos::RCP<Thyra::VectorBase<Scalar>> expMassDiag =
+//       Thyra::createMember(*fullMassMatrix_->range());
+
+//   const Thyra::Ordinal n = expMassDiag->space()->dim();
+
+//   for (Thyra::Ordinal i = 0; i < n; ++i)
+//   {
+//       Scalar m_i = Thyra::get_ele(*lumpedMassDiagonal_, i);
+
+//       // Taylor series: e^{m_i} = sum_{k=0}^N m_{i}^k / k!
+//       Scalar e_i   = Scalar(1);  // k = 0 term
+//       Scalar term  = Scalar(1);  // current m_{i}^k / k!
+
+//       for (int k = 1; k <= expansionOrder; ++k)
+//       {
+//           // term_k = term_{k-1} * m_i / k
+//           term *= m_i / Scalar(k);
+//           e_i  += term;
+//       }
+
+//       Thyra::set_ele(i, e_i, expMassDiag.ptr());
+//   }
+
+//   expMassMatrix_ = Thyra::diagonal(expMassDiag);
+// }
+
+template <class Scalar>
+void PhiLinearSolver<Scalar>::buildATilde(
+    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> M_inv,   // N x N
+    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> J,   // N x N
+    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> b,   // N x p  (W -> V)
+    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> K)   // p x p  (W -> W)
+{
+  // Combine linear operators M_inv and J
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A = Thyra::multiply<Scalar>(M_inv, J);
+
+  // Spaces
+  auto V = A->domain();   // dim N, and also A->range()
+  auto W = K->domain();   // dim p, and also K->range()
+  
+  // Zero operator: V -> W  (for the (2,1) block)
+  auto Z_VW = Thyra::zero<Scalar>(W, V);
+
+  // Build block operator:
+  // [ A  b ]
+  // [ 0  K ]
+  Atilde_ = Thyra::block2x2<Scalar>(
+      A,     // (1,1): V->V
+      b,     // (1,2): W->V
+      Z_VW,  // (2,1): V->W
+      K      // (2,2): W->W
+  );
+}
+
+template <class Scalar>
+void PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal p)
+{
+  // Space of dimension p
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V =
+      Thyra::defaultSpmdVectorSpace<Scalar>(p);
+
+  // Create a p-column multivector: rows = p, cols = p
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> K_mv = Thyra::createMembers(V, p);
+
+  // Initialize to zero
+  Thyra::assign(K_mv.ptr(), Scalar(0));
+
+  // Fill superdiagonal: K(i, i+1) = 1
+  for (Thyra::Ordinal j = 1; j < p; ++j)
+  {
+      // Column j, row j-1
+      auto col_j = K_mv->col(j); 
+      Thyra::set_ele(j - 1, Scalar(1), col_j.ptr());
+  }
+
+  // Wrap as LinearOp
+  KMatrix_ = K_mv;
+}
+
+template <class Scalar>
+void PhiLinearSolver<Scalar>::buildb(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A, const Thyra::Ordinal p,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      p > 2,
+      std::invalid_argument,
+      "buildb: p must be 2. Higher order EPI is not yet supported.");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      p < 2,
+      std::invalid_argument,
+      "buildb: EPI order must be 2 or higher.");
+
+  // N-dimensional space: use A's range (rows of an NxN operator)
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V_N = A->range();
+
+  const Thyra::Ordinal N = V_N->dim();
+
+  // Create an N x p multivector (N rows, p columns)
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar>> b_Np = Thyra::createMembers(V_N, p);
+
+  // Initialize to zero
+  Thyra::assign(b_Np.ptr(), Scalar(0));
+
+  // Fill the 2nd column with xDot (Frhs) TODO: This needs to be updated for higher order support
+  auto col1 = b_Np->col(1);
+  Thyra::assign(col1.ptr(), *xDot);
+
+  // Store b
+  bMatrix_ = b_Np;
+}
+
+template <class Scalar>
+void PhiLinearSolver<Scalar>::buildv()
+{
+  // v must be in the domain of Atilde_
+  const auto space = Atilde_->domain();
+  const Thyra::Ordinal dim = space->dim();
+
+  // Create v and initialize to zero
+  v_ = Thyra::createMember(space);
+  Thyra::assign(v_.ptr(), Scalar(0));
+
+  // Get the last index
+  const Thyra::Ordinal g_last = dim - 1;
+
+  // If this is an distributed space, set only on the owning rank
+  if (auto spmdSpace = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(space))
+  {
+    const Thyra::Ordinal localOffset = spmdSpace->localOffset();
+    const Thyra::Ordinal localSubDim = spmdSpace->localSubDim();
+
+    if (g_last >= localOffset && g_last < localOffset + localSubDim)
+      Thyra::set_ele(g_last, Scalar(1), v_.ptr());
+
+  }
+  else
+  {
+    // Fallback for non-SPMD spaces
+    Thyra::set_ele(g_last, Scalar(1), v_.ptr());
+  }
+}
+
+template <class Scalar>
+void PhiLinearSolver<Scalar>::matrixExponential(const Thyra::Ordinal expansionOrder)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      expansionOrder < 0,
+      std::invalid_argument,
+      "matrixExponential: expansionOrder must be nonnegative");
+
+  // exp(A) * v is in range(A)
+  const auto rangeSpace = Atilde_->range();
+
+  Thyra::assign(matExp_v_.ptr(), Scalar(0));
+
+  // Identity * v = v
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> term = Thyra::createMember(rangeSpace);
+  Thyra::assign(term.ptr(), *v_);
+
+  // matExp_v_ += term / 0!
+  Thyra::Vp_V(matExp_v_.ptr(), *term);
+
+  // Iteratively compute term = A * term (A^k v) and accumulate term/k!
+  Scalar invFact = Scalar(1); // 1/k! updated each step
+  for (int k = 1; k <= expansionOrder; ++k)
+  {
+    // term <- A * term
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
+    Thyra::apply(*Atilde_, Thyra::NOTRANS, *term, next.ptr());
+    term = next;
+
+    invFact /= Scalar(k);
+
+    // multiply with inverse factorial
+    Thyra::Vp_StV(matExp_v_.ptr(), invFact, *term);
+  }
+}
+
 
 template <class Scalar>
 void PhiLinearSolver<Scalar>::applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf,
