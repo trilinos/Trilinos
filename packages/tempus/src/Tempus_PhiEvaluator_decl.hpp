@@ -62,7 +62,7 @@ class PhiLinearSolver {
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> jacobianMatrix_;
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> v_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> v_;
   Teuchos::RCP<const Thyra::VectorBase<Scalar>> matExp_v_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
