@@ -36,7 +36,7 @@ class PhiLinearSolver {
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
   void matrixExponential(const Thyra::Ordinal expansionOrder);
-  void buildATilde(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> M_inv, const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> J, const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> b, const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> K);
+  void buildATilde(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> M_inv, const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> J, const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> b, const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> K, const double dt);
   void buildK(const Thyra::Ordinal n);
   void buildb(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A, const Thyra::Ordinal p, const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot);
   void buildv();
