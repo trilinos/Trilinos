@@ -396,14 +396,17 @@ void PhiLinearSolver<Scalar>::matrixExponential(const Thyra::Ordinal expansionOr
   // exp(A) * v is in range(A)
   const auto rangeSpace = Atilde_->range();
 
-  Thyra::assign(matExp_v_.ptr(), Scalar(0));
+  // Create tmp vector to hold result
+  auto matExpTemp = Thyra::createMember(rangeSpace);
+
+  Thyra::assign(matExpTemp.ptr(), Scalar(0));
 
   // Identity * v = v
   Teuchos::RCP<Thyra::VectorBase<Scalar>> term = Thyra::createMember(rangeSpace);
   Thyra::assign(term.ptr(), *v_);
 
-  // matExp_v_ += term / 0!
-  Thyra::Vp_V(matExp_v_.ptr(), *term);
+  // matExpTemp += term / 0!
+  Thyra::Vp_V(matExpTemp.ptr(), *term);
 
   // Iteratively compute term = A * term (A^k v) and accumulate term/k!
   Scalar invFact = Scalar(1); // 1/k! updated each step
@@ -417,8 +420,10 @@ void PhiLinearSolver<Scalar>::matrixExponential(const Thyra::Ordinal expansionOr
     invFact /= Scalar(k);
 
     // multiply with inverse factorial
-    Thyra::Vp_StV(matExp_v_.ptr(), invFact, *term);
+    Thyra::Vp_StV(matExpTemp.ptr(), invFact, *term);
   }
+
+  matExp_v_ = matExpTemp;
 }
 
 
