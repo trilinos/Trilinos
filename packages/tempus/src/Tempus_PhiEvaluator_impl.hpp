@@ -32,6 +32,8 @@
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+
 
 namespace Tempus {
 
@@ -273,10 +275,11 @@ void PhiLinearSolver<Scalar>::buildATilde(
     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> M_inv,   // N x N
     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> J,   // N x N
     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> b,   // N x p  (W -> V)
-    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> K)   // p x p  (W -> W)
+    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> K,   // p x p  (W -> W)
+    const double dt)   // time step
 {
-  // Combine linear operators M_inv and J
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A = Thyra::multiply<Scalar>(M_inv, J);
+  // Combine linear operators M_inv and J and multiply by dt
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A = Thyra::scale(Teuchos::as<Scalar>(dt), Thyra::multiply<Scalar>(M_inv, J));
 
   // Spaces
   auto V = A->domain();   // dim N, and also A->range()
