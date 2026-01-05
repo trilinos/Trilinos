@@ -142,8 +142,16 @@ namespace Amesos2 {
                              const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
       pardiso_initialized_ = true;
     }
-
     check_pardiso_mkl_error(Amesos2::SYMBFACT, error);
+
+    if (msglvl_ > 0 && this->root_) {
+      std::cout << " PardisoMKL::symbolicFactorization done:" << std::endl;
+#ifdef HAVE_AMESOS2_TIMERS
+      std::cout << " * Time : " << this->timers_.symFactTime_.totalElapsedTime() << std::endl;
+#else
+      std::cout << " * Time : not enabled" << std::endl;
+#endif
+    }
 
     // Pardiso only lets you retrieve the total number of factor
     // non-zeros, not for each individually.  We should document how
@@ -173,8 +181,16 @@ namespace Amesos2 {
                              colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
                              const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &error );
     }
-
     check_pardiso_mkl_error(Amesos2::NUMFACT, error);
+
+    if (msglvl_ > 0 && this->root_) {
+      std::cout << " PardisoMKL::numericFactorization done:" << std::endl;
+#ifdef HAVE_AMESOS2_TIMERS
+      std::cout << " * Time : " << this->timers_.numFactTime_.totalElapsedTime() << std::endl;
+#else
+      std::cout << " * Time : not enabled" << std::endl;
+#endif
+    }
 
     return( 0 );
   }
@@ -268,6 +284,15 @@ namespace Amesos2 {
         std::cout << std::endl;
         X->describe(*fancy, Teuchos::VERB_EXTREME);
       }
+    }
+    if (msglvl_ > 0 && this->root_) {
+      std::cout << " PardisoMKL::solve done:" << std::endl;
+#ifdef HAVE_AMESOS2_TIMERS
+      std::cout << " * Time : " << this->timers_.vecRedistTime_.totalElapsedTime()
+                << " + " << this->timers_.solveTime_.totalElapsedTime() << std::endl;
+#else
+      std::cout << " * Time : not enabled" << std::endl;
+#endif
     }
 
     return( 0 );
