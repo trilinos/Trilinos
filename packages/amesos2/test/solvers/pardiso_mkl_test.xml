@@ -21,6 +21,11 @@
 	  <Parameter name="LocalOrdinal" type="string" value="int"/>
 	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
 	</ParameterList>
+	<ParameterList name="run1 - i">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long long int"/>
+	</ParameterList>
 	<ParameterList name="run1 - l">
 	  <Parameter name="Scalar" type="string" value="double"/>
 	  <Parameter name="LocalOrdinal" type="string" value="long long int"/>

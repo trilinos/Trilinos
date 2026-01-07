@@ -275,6 +275,7 @@ namespace Amesos2 {
     = Meta::or_<std::is_same_v<solver_scalar_type, PMKL::_MKL_Complex8>,
                 std::is_same_v<solver_scalar_type, PMKL::_DOUBLE_COMPLEX_t>>::value;
 
+    bool pardiso_initialized_;
     bool is_contiguous_;
 
     /// The messaging level.  Set to 1 if you wish for Pardiso MKL to print statistical info
