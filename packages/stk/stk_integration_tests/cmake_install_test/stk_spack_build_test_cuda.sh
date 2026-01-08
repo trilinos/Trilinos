@@ -68,13 +68,13 @@ exe spack add zlib
 exe spack add ncurses@6.3
 exe spack add openmpi@4.1.6
 exe spack add cuda@11.4.4
-exe spack add googletest cxxstd=17
+exe spack add googletest cxxstd=20
 exe spack add compadre
 exe spack add eigen
 exe spack add yaml-cpp@0.8.0
 exe spack add kokkos-kernels +cuda ~shared cuda_arch=70
 exe spack add kokkos+cuda~cuda_uvm+wrapper+cuda_constexpr+cuda_lambda+cuda_relocatable_device_code~shared cuda_arch=70
-exe spack add trilinos@16.1+cuda+cuda_rdc~uvm+kokkos+shards+intrepid2+stk+exodus+hdf5+zoltan2+wrapper~amesos~epetra~shared~boost cuda_arch=70 cxxstd=17
+exe spack add trilinos@16.1+cuda+cuda_rdc~uvm+kokkos+shards+intrepid2+stk+exodus+hdf5+zoltan2+wrapper~amesos~epetra~shared~boost cuda_arch=70 cxxstd=20
 
 exe spack concretize -f
 if [ $? -ne 0 ] ; then

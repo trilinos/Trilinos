@@ -140,13 +140,14 @@ std::ostream & print_restrictions(std::ostream & s, const char * const b, const 
   return s;
 }
 
-void FieldBase::set_initial_value(const void* new_initial_value, unsigned num_scalars, unsigned num_bytes) {
-  delete [] m_initial_value;
-  m_initial_value = new std::byte[num_bytes];
+void FieldBase::set_initial_value(const void* new_initial_value, unsigned num_bytes)
+{
+  Kokkos::resize(m_field_states[0]->m_initial_value, num_bytes);
 
-  m_field_states[0]->m_initial_value_num_bytes = num_bytes;
-
-  data_traits().copy(m_initial_value, new_initial_value, num_scalars);
+  const std::byte* new_init_bytes = reinterpret_cast<const std::byte*>(new_initial_value);
+  for(unsigned i=0; i<num_bytes; ++i) {
+    m_field_states[0]->m_initial_value(i) = new_init_bytes[i];
+  }
 }
 
 void FieldBase::insert_restriction(const char     * arg_method,
@@ -179,12 +180,9 @@ void FieldBase::insert_restriction(const char     * arg_method,
     size_t sizeof_scalar = data_traits().size_of;
     size_t nbytes = sizeof_scalar * num_scalars;
 
-    size_t old_nbytes = 0;
-    if (get_initial_value() != nullptr) {
-      old_nbytes = get_initial_value_num_bytes();
-    }
+    size_t old_nbytes = get_initial_value_num_bytes();
     if (nbytes > old_nbytes) {
-      set_initial_value(arg_init_value, num_scalars, nbytes);
+      set_initial_value(arg_init_value, nbytes);
     }
   }
 
@@ -297,12 +295,9 @@ void FieldBase::insert_restriction(const char     * arg_method,
     size_t sizeof_scalar = data_traits().size_of;
     size_t nbytes = sizeof_scalar * num_scalars;
 
-    size_t old_nbytes = 0;
-    if (get_initial_value() != nullptr) {
-      old_nbytes = get_initial_value_num_bytes();
-    }
+    size_t old_nbytes = get_initial_value_num_bytes();
     if (nbytes > old_nbytes) {
-      set_initial_value(arg_init_value, num_scalars, nbytes);
+      set_initial_value(arg_init_value, nbytes);
     }
   }
 
@@ -511,26 +506,34 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
 {
   const int numStates = number_of_states();
   if (numStates > 1 && StateNew == state()) {
+
+    Kokkos::Profiling::pushRegion("field-meta-data swap");
+    for (int s = numStates-1; s > 0; --s) {
+      FieldBase* fieldOld = field_state(static_cast<FieldState>(s));
+      FieldBase* fieldNew = field_state(static_cast<FieldState>(s-1));
+
+      auto& fieldMetaDataOld = fieldOld->data_bytes<std::byte>().m_fieldMetaData;
+      auto& fieldMetaDataNew = fieldNew->data_bytes<std::byte>().m_fieldMetaData;
+      const unsigned numBuckets = fieldMetaDataNew.size();
+
+      for (unsigned bucketIdx = 0; bucketIdx < numBuckets; ++bucketIdx) {
+        std::swap(fieldMetaDataOld[bucketIdx].m_data, fieldMetaDataNew[bucketIdx].m_data);
+      }
+
+      std::swap(fieldOld->m_numSyncsToHost,   fieldNew->m_numSyncsToHost);
+      std::swap(fieldOld->m_numSyncsToDevice, fieldNew->m_numSyncsToDevice);
+      std::swap(fieldOld->m_modifiedOnHost,   fieldNew->m_modifiedOnHost);
+      std::swap(fieldOld->m_modifiedOnDevice, fieldNew->m_modifiedOnDevice);
+    }
+    Kokkos::Profiling::popRegion();
+
+#if defined(STK_USE_DEVICE_MESH)
     bool allStatesHaveNgpFields = true;
     for(int s = 0; s < numStates; ++s) {
       if (not field_state(static_cast<FieldState>(s))->has_device_data()) {
         allStatesHaveNgpFields = false;
       }
     }
-
-    Kokkos::Profiling::pushRegion("field-meta-data swap");
-    for (int s = 1; s < numStates; ++s) {
-      FieldBase* sField = field_state(static_cast<FieldState>(s));
-      m_hostFieldData->swap_field_data(*sField->m_hostFieldData);
-      update_cached_field_meta_data();
-      sField->update_cached_field_meta_data();
-
-      std::swap(m_numSyncsToDevice, sField->m_numSyncsToDevice);
-      std::swap(m_numSyncsToHost, sField->m_numSyncsToHost);
-      std::swap(m_modifiedOnHost, sField->m_modifiedOnHost);
-      std::swap(m_modifiedOnDevice, sField->m_modifiedOnDevice);
-    }
-    Kokkos::Profiling::popRegion();
 
     if (!(rotateNgpFieldViews && allStatesHaveNgpFields)) {
       Kokkos::Profiling::pushRegion("ngpField update_bucket_pointer_view");
@@ -557,25 +560,31 @@ void FieldBase::rotate_multistate_data(bool rotateNgpFieldViews)
 
     Kokkos::Profiling::pushRegion("ngpField swap");
     if (rotateNgpFieldViews && allStatesHaveNgpFields) {
-      for (int s = 1; s < numStates; ++s) {
-        FieldBase* field_sminus1 = field_state(static_cast<FieldState>(s-1));
-        FieldBase* field_s = field_state(static_cast<FieldState>(s));
+      for (int s = numStates-1; s > 0; --s) {
+        FieldBase* fieldOld = field_state(static_cast<FieldState>(s));
+        FieldBase* fieldNew = field_state(static_cast<FieldState>(s-1));
 
-        FieldDataBase* deviceData_sminus1 = field_sminus1->get_device_data();
-        FieldDataBase* deviceData_s = field_s->get_device_data();
-        deviceData_s->swap_field_data(*deviceData_sminus1);
+        auto& deviceFieldMetaDataOld = fieldOld->data_bytes<std::byte, stk::ngp::DeviceSpace>().m_deviceFieldMetaData;
+        auto& deviceFieldMetaDataNew = fieldNew->data_bytes<std::byte, stk::ngp::DeviceSpace>().m_deviceFieldMetaData;
+        const unsigned numBuckets = deviceFieldMetaDataNew.extent(0);
 
-        // Since DeviceField holds a *copy* of the FieldData, force a reacquisition
-        if (field_sminus1->has_ngp_field()) {
-          field_sminus1->get_ngp_field()->update_field(m_defaultExecSpace);
-        }
-        if (field_s->has_ngp_field()) {
-          field_s->get_ngp_field()->update_field(m_defaultExecSpace);
-        }
+        Kokkos::parallel_for(numBuckets,
+          KOKKOS_LAMBDA(unsigned bucketIdx) {
+            std::byte* tmpData = deviceFieldMetaDataOld[bucketIdx].m_data;
+            deviceFieldMetaDataOld[bucketIdx].m_data = deviceFieldMetaDataNew[bucketIdx].m_data;
+            deviceFieldMetaDataNew[bucketIdx].m_data = tmpData;
 
+            std::byte* tmpHostData = deviceFieldMetaDataOld[bucketIdx].m_hostData;
+            deviceFieldMetaDataOld[bucketIdx].m_hostData = deviceFieldMetaDataNew[bucketIdx].m_hostData;
+            deviceFieldMetaDataNew[bucketIdx].m_hostData = tmpHostData;
+          }
+        );
       }
+
+      Kokkos::fence();
     }
     Kokkos::Profiling::popRegion();
+#endif  // STK_USE_DEVICE_MESH
   }
 }
 

@@ -16,7 +16,8 @@
 #include "Teuchos_FancyOStream.hpp"
 #include <type_traits>
 
-#include "KokkosSparse_sptrsv.hpp"
+#include "KokkosKernels_Handle.hpp"
+#include "KokkosSparse_sptrsv_handle.hpp"
 
 namespace Ifpack2 {
 

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_IMPL_SPILUK_SYMBOLIC_HPP_
 #define KOKKOSSPARSE_IMPL_SPILUK_SYMBOLIC_HPP_
@@ -21,7 +8,7 @@
 /// \brief Implementation of the symbolic phase of sparse ILU(k).
 
 #include <KokkosKernels_config.h>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_spiluk_handle.hpp>
 #include <KokkosSparse_SortCrs.hpp>
 #include <KokkosKernels_Error.hpp>
@@ -141,10 +128,15 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map, const Entries
   nnz_lno_view_host_t lnchunks       = thandle.get_level_nchunks();
   nnz_lno_view_host_t lnrowsperchunk = thandle.get_level_nrowsperchunk();
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   using memory_space = typename IlukHandle::memory_space;
   size_t avail_byte  = 0;
-  if (std::is_same<memory_space, Kokkos::CudaSpace>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
+  if (std::is_same<memory_space, Kokkos::CudaSpace>::value)
+#elif defined(KOKKOS_ENABLE_HIP)
+  if (std::is_same<memory_space, Kokkos::HIPSpace>::value)
+#endif
+  {
     size_t free_byte, total_byte;
     KokkosKernels::Impl::kk_get_free_total_memory<memory_space>(free_byte, total_byte);
     avail_byte = static_cast<size_t>(0.85 * static_cast<double>(free_byte) / static_cast<double>(nstreams));
@@ -158,9 +150,14 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map, const Entries
     if (maxrows < lnrows) {
       maxrows = lnrows;
     }
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     size_t required_size = static_cast<size_t>(lnrows) * nrows * sizeof(nnz_lno_t);
-    if (std::is_same<memory_space, Kokkos::CudaSpace>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
+    if (std::is_same<memory_space, Kokkos::CudaSpace>::value)
+#elif defined(KOKKOS_ENABLE_HIP)
+    if (std::is_same<memory_space, Kokkos::HIPSpace>::value)
+#endif
+    {
       lnchunks(i)       = required_size / avail_byte + 1;
       lnrowsperchunk(i) = (lnrows % lnchunks(i) == 0) ? (lnrows / lnchunks(i)) : (lnrows / lnchunks(i) + 1);
     } else

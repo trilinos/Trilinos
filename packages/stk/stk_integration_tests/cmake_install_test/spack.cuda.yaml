@@ -9,7 +9,7 @@ spack:
   - zlib
   - openmpi@4.1.6
   - kokkos+cuda+cuda_constexpr+cuda_lambda+cuda_relocatable_device_code~cuda_uvm~shared+wrapper cuda_arch=70
-  - trilinos@16.1~boost+cuda+cuda_rdc+stk+hdf5+zoltan+zoltan2+exodus+kokkos~shared~uvm+wrapper cuda_arch=70 cxxstd=17
+  - trilinos@16.1~boost+cuda+cuda_rdc+stk+hdf5+zoltan+zoltan2+exodus+kokkos~shared~uvm+wrapper cuda_arch=70 cxxstd=20
   view: true
   concretizer:
     unify: when_possible

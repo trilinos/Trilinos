@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_UTIL_HPP
 #define KOKKOSBATCHED_UTIL_HPP
 
@@ -21,21 +8,6 @@
 // no experimental name space guard for trilinos
 
 #define KOKKOSBATCHED_IMPL_PROMOTION 1
-
-#if defined(KOKKOS_COMPILER_MSVC)
-#define __KOKKOSBATCHED_PROMOTION__ /*NOLINT(bugprone-reserved-identifier)*/                                       \
-  (__pragma(message("warning: __KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version")) \
-       KOKKOSBATCHED_IMPL_PROMOTION)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define __KOKKOSBATCHED_PROMOTION__ /*NOLINT(bugprone-reserved-identifier)*/                                      \
-  (__extension__({                                                                                                \
-    _Pragma("GCC warning \"__KOKKOSBATCHED_PROMOTION__ is deprecated and will be removed in a future version\""); \
-    KOKKOSBATCHED_IMPL_PROMOTION;                                                                                 \
-  }))
-#else
-// no good way to deprecate
-#define __KOKKOSBATCHED_PROMOTION__ KOKKOSBATCHED_IMPL_PROMOTION  // NOLINT(bugprone-reserved-identifier)
-#endif
 
 #include <iomanip>
 #include <random>
@@ -58,59 +30,13 @@
 
 // TPL macros
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL)
-
-#if defined(KOKKOS_COMPILER_MSVC)
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL \
-  (__pragma(                                \
-      message("warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL__ is deprecated and will be removed in a future version")) 1)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL                                                                       \
-  (__extension__({                                                                                                \
-    _Pragma("warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL__ is deprecated and will be removed in a future version"); \
-    1;                                                                                                            \
-  }))
-#else
 #define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL 1  // no good way to deprecate?
-#endif
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL__ KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL
 
 #include "mkl_version.h"
 #if __INTEL_MKL__ >= 2018
 
-#if defined(KOKKOS_COMPILER_MSVC)
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED \
-  (__pragma(message(                                \
-      "warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ is deprecated and will be removed in a future version")) 1)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED                                                                   \
-  (__extension__({                                                                                                    \
-    _Pragma(                                                                                                          \
-        "warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ is deprecated and will be removed in a future version"); \
-    1;                                                                                                                \
-  }))
-#else
-#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED 1  // no good way to deprecate?
-#endif
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED
-
+#define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_BATCHED 1
 #define KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED 1
-#if defined(KOKKOS_COMPILER_MSVC)
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__                                                      \
-  (                                                                                                             \
-      __pragma(message("warning: __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ is deprecated and will be " \
-                       "removed in a future version")) KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__                                                    \
-  (__extension__({                                                                                            \
-    _Pragma(                                                                                                  \
-        "\"__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ is deprecated and will be removed in a future " \
-        "version\"");                                                                                         \
-    KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED;                                                      \
-  }))
-#else
-#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ \
-  KOKKOSBATCHED_IMPL_ENABLE_INTEL_MKL_COMPACT_BATCHED  // no good way to deprecate?
-#endif
 
 #include "mkl.h"
 // #include "mkl_types.h"
@@ -119,22 +45,6 @@
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE)
 #define KOKKOSBATCHED_IMPL_ENABLE_LAPACKE 1
-#if defined(KOKKOS_COMPILER_MSVC)
-#define __KOKKOSBATCHED_ENABLE_LAPACKE__                                                      \
-  (                                                                                           \
-      __pragma(message("warning: __KOKKOSBATCHED_ENABLE_LAPACKE__ is deprecated and will be " \
-                       "removed in a future version")) KOKKOSBATCHED_IMPL_ENABLE_LAPACKE)
-#elif defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-#define __KOKKOSBATCHED_ENABLE_LAPACKE__                                                    \
-  (__extension__({                                                                          \
-    _Pragma(                                                                                \
-        "\"__KOKKOSBATCHED_ENABLE_LAPACKE__ is deprecated and will be removed in a future " \
-        "version\"");                                                                       \
-    KOKKOSBATCHED_IMPL_ENABLE_LAPACKE;                                                      \
-  }))
-#else
-#define __KOKKOSBATCHED_ENABLE_LAPACKE__ KOKKOSBATCHED_IMPL_ENABLE_LAPACKE  // no good way to deprecate?
-#endif
 
 #include "lapacke.h"
 #endif
@@ -154,10 +64,10 @@ struct is_vector : public std::false_type {};
 template <typename Ta, typename Tb>
 struct is_same_mag_type {
   static const bool is_specialized =
-      (Kokkos::ArithTraits<Ta>::is_specialized && Kokkos::ArithTraits<Tb>::is_specialized);
+      (KokkosKernels::ArithTraits<Ta>::is_specialized && KokkosKernels::ArithTraits<Tb>::is_specialized);
 
-  static const bool is_mag_type_same =
-      std::is_same<typename Kokkos::ArithTraits<Ta>::mag_type, typename Kokkos::ArithTraits<Tb>::mag_type>::value;
+  static const bool is_mag_type_same = std::is_same<typename KokkosKernels::ArithTraits<Ta>::mag_type,
+                                                    typename KokkosKernels::ArithTraits<Tb>::mag_type>::value;
 
   static const bool value = is_specialized && is_mag_type_same;
 };
@@ -763,6 +673,42 @@ KOKKOS_INLINE_FUNCTION void fma_bounds_check(ViewType v, SizeType m, SizeType n,
                                              const ArgAlphaFmaTag &alpha_tag, const BoundsCheck::No &) {
   v(m, n) = fma_alpha(reg_c, alpha, alpha_tag);
 }
+
+namespace Impl {
+template <typename ViewType>
+KOKKOS_INLINE_FUNCTION int get_extent_int(const ViewType &v, const int r) {
+  static_assert(Kokkos::is_view_v<ViewType>, "KokkosBatched: ViewType is not a Kokkos::View.");
+  constexpr std::size_t V_rank = ViewType::rank();
+  static_assert(V_rank <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
+
+  if (r == 0) {
+    int V_extent_0 = V_rank < 1 ? 1 : v.extent_int(0);
+    return V_extent_0;
+  } else if (r == 1) {
+    int V_extent_1 = V_rank < 2 ? 1 : v.extent_int(1);
+    return V_extent_1;
+  } else {
+    return 1;
+  }
+}
+
+template <typename ViewType>
+KOKKOS_INLINE_FUNCTION std::size_t get_stride(const ViewType &v, const int r) {
+  static_assert(Kokkos::is_view_v<ViewType>, "KokkosBatched: ViewType is not a Kokkos::View.");
+  constexpr std::size_t V_rank = ViewType::rank();
+  static_assert(V_rank <= 2, "KokkosBatched: ViewType must have rank 0, 1 or 2.");
+
+  if (r == 0) {
+    std::size_t V_stride_0 = V_rank < 1 ? 1 : v.stride(0);
+    return V_stride_0;
+  } else if (r == 1) {
+    std::size_t V_stride_1 = V_rank < 2 ? 1 : v.stride(1);
+    return V_stride_1;
+  } else {
+    return 1;
+  }
+}
+}  // namespace Impl
 
 }  // namespace KokkosBatched
 #endif  // KOKKOSBATCHED_UTIL_HPP

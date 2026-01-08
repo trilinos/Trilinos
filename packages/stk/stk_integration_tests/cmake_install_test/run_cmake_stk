@@ -78,13 +78,12 @@ cmake \
 -DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=ON \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
 -DTrilinos_ENABLE_Fortran:BOOL=ON \
--DCMAKE_CXX_STANDARD:STRING=17 \
+-DCMAKE_CXX_STANDARD:STRING=20 \
 -DCMAKE_CXX_FLAGS:STRING="-D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
 -DTrilinos_ENABLE_STKMiddle_mesh:BOOL=ON \
 -DTrilinos_ENABLE_STKMiddle_mesh_util:BOOL=ON \
--DTrilinos_ENABLE_Gtest:BOOL=ON \
 -DTPL_ENABLE_CDT:BOOL=ON \
 -DCDT_INCLUDE_DIRS="/fgs/william/CDT/install/include" \
 -DCDT_ROOT="/fgs/william/CDT/install" \
@@ -102,5 +101,7 @@ cmake \
 -DHDF5_LIBRARIES="-lhdf5" \
 -DTPL_HDF5_LIBRARIES="-lhdf5" \
 -DCMAKE_EXE_LINKER_FLAGS="${cmake_exe_linker_flags}" \
+-DTPL_ENABLE_gtest=ON \
+-DGTest_DIR=/fgs/william/googletest/install_gcc-12.3.0/lib64/cmake/GTest \
 ${trilinos_src_dir}/
 

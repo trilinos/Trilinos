@@ -602,8 +602,6 @@ NGP_TEST_F(NgpCommunicateFieldData, simpleVersion_takesBulkData_noSyncToDeviceAf
 
 NGP_TEST_F(NgpParallelSum, DeviceMPIVersion_double)
 {
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   const int numStates = 1;
   stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
@@ -622,8 +620,6 @@ NGP_TEST_F(NgpParallelSum, DeviceMPIVersion_double)
 
 NGP_TEST_F(NgpParallelSum, DeviceMPIVersion_float)
 {
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
   const int numStates = 1;
   stk::mesh::Field<float> & userField  = get_meta().declare_field<float>(stk::topology::NODE_RANK, "userField", numStates);
@@ -639,12 +635,48 @@ NGP_TEST_F(NgpParallelSum, DeviceMPIVersion_float)
 
   check_field_on_device<float>(get_bulk(), userField, goldValues);
 }
+
+NGP_TEST_F(NgpParallelSum, HostMPIVersion_double)
+{
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  const int numStates = 1;
+  stk::mesh::Field<double> & userField  = get_meta().declare_field<double>(stk::topology::NODE_RANK, "userField", numStates);
+  stk::mesh::Field<double> & goldValues = get_meta().declare_field<double>(stk::topology::NODE_RANK, "goldValues", numStates);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
+
+  stk::io::fill_mesh("generated:1x1x4", get_bulk());
+
+  initialize_shared_values<double>(userField, goldValues);
+
+  setenv("STK_USE_HOST_MPI_OVERRIDE", "true", 1);
+  stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(get_bulk(), std::vector<const stk::mesh::FieldBase*>{&userField});
+
+  check_field_on_device<double>(get_bulk(), userField, goldValues);
+}
+
+NGP_TEST_F(NgpParallelSum, HostMPIVersion_float)
+{
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+  const int numStates = 1;
+  stk::mesh::Field<float> & userField  = get_meta().declare_field<float>(stk::topology::NODE_RANK, "userField", numStates);
+  stk::mesh::Field<float> & goldValues = get_meta().declare_field<float>(stk::topology::NODE_RANK, "goldValues", numStates);
+  stk::mesh::put_field_on_mesh(userField, get_meta().universal_part(), nullptr);
+  stk::mesh::put_field_on_mesh(goldValues, get_meta().universal_part(), nullptr);
+
+  stk::io::fill_mesh("generated:1x1x4", get_bulk());
+
+  initialize_shared_values<float>(userField, goldValues);
+
+  setenv("STK_USE_HOST_MPI_OVERRIDE", "true", 1);
+  stk::mesh::parallel_sum<stk::ngp::DeviceSpace>(get_bulk(), std::vector<const stk::mesh::FieldBase*>{&userField});
+
+  check_field_on_device<float>(get_bulk(), userField, goldValues);
+}
 #endif
 
 NGP_TEST_F(NgpParallelSum, Performance)
 {
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-
   const std::string serialMeshName = "serialParallelSumMesh.g";
   if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0)
   {
@@ -1001,9 +1033,6 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_1ghostNode_device)
   stk::ParallelMachine comm = stk::parallel_machine_world();
   const int numProcs = stk::parallel_machine_size(comm);
   if(numProcs != 3) { GTEST_SKIP(); }
-#ifdef STK_ENABLE_GPU
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-#endif
   const int myProc = stk::parallel_machine_rank(comm);
 
   setup_mesh();
@@ -1044,9 +1073,6 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_node5_sharedAndGhosted_d
   stk::ParallelMachine comm = stk::parallel_machine_world();
   const int numProcs = stk::parallel_machine_size(comm);
   if(numProcs != 3) { GTEST_SKIP(); }
-#ifdef STK_ENABLE_GPU
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-#endif
   const int myProc = stk::parallel_machine_rank(comm);
 
   setup_mesh();
@@ -1085,9 +1111,6 @@ NGP_TEST_F(NgpParallelOpIncludingGhosts, sum_hex_3procs_two_mesh_mods_device)
   stk::ParallelMachine comm = stk::parallel_machine_world();
   const int numProcs = stk::parallel_machine_size(comm);
   if(numProcs != 3) { GTEST_SKIP(); }
-#ifdef STK_ENABLE_GPU
-  if (!stk::have_device_aware_mpi()) { GTEST_SKIP(); }
-#endif
   const int myProc = stk::parallel_machine_rank(comm);
 
   setup_mesh();

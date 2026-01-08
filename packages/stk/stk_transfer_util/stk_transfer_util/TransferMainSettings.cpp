@@ -34,18 +34,18 @@ void TransferMainSettings::set_num_output_processors(unsigned numOutputProcs)
   m_numOutputProcessors = numOutputProcs;
 }
 
-void TransferMainSettings::set_fromMesh_filename(const std::string& fromMesh)
+void TransferMainSettings::set_sendMesh_filename(const std::string& sendMesh)
 {
- m_fromMesh = fromMesh; 
+ m_sendMesh = sendMesh; 
 }
 
-void TransferMainSettings::set_toMesh_filename(const std::string& toMesh)
+void TransferMainSettings::set_recvMesh_filename(const std::string& recvMesh)
 {
-  m_toMesh = toMesh;
+  m_recvMesh = recvMesh;
 }
-void TransferMainSettings::set_transfer_field(const std::string& fieldName)
+void TransferMainSettings::set_transfer_field(const std::pair<std::string, std::string>& fieldNamePair)
 {
-  m_transferFields.push_back(fieldName); 
+  m_transferFields.push_back(fieldNamePair); 
 }
 
 bool TransferMainSettings::set_extrapolate_option(const std::string& policy)
@@ -64,16 +64,16 @@ unsigned TransferMainSettings::get_num_output_processors() const
   return m_numOutputProcessors;
 }
 
-std::string TransferMainSettings::get_fromMesh_filename() const
+const std::string& TransferMainSettings::get_sendMesh_filename() const
 {
-  return m_fromMesh;
+  return m_sendMesh;
 }
-std::string TransferMainSettings::get_toMesh_filename() const
+const std::string& TransferMainSettings::get_recvMesh_filename() const
 {
-  return m_toMesh;
+  return m_recvMesh;
 }
 
-std::vector<std::string> TransferMainSettings::get_transfer_fields() const
+const std::vector<std::pair<std::string, std::string>>& TransferMainSettings::get_transfer_fields() const
 {
   return m_transferFields;
 }
@@ -94,7 +94,7 @@ std::string TransferMainSettings::get_field_list_string() const
 
   for (unsigned i = 0; i < m_transferFields.size(); i++) {
     if (i != 0) { fieldListString += ", "; }
-    fieldListString += m_transferFields[i];
+    fieldListString += m_transferFields[i].first + ":" + m_transferFields[i].second;
   }
 
   return fieldListString;

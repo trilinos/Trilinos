@@ -69,11 +69,13 @@ void copy_field_restrictions(const stk::mesh::FieldBase& field, stk::mesh::MetaD
   for(const stk::mesh::FieldRestriction& res : oldRestrictions)
   {
     stk::mesh::Selector selectNewParts = res.selector().clone_for_different_mesh(newMeta);
+    const auto& initVals = field.get_initial_value_bytes();
+    const std::byte* initValPtr = initVals.extent(0) > 0 ? initVals.data() : nullptr;
     newMeta.declare_field_restriction(*newField,
                                       selectNewParts,
                                       res.num_scalars_per_entity(),
                                       res.dimension(),
-                                      field.get_initial_value());
+                                      initValPtr);
   }
 }
 

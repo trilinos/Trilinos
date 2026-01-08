@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <gtest/gtest.h>
 
 #include <KokkosBlas_Newton_impl.hpp>
@@ -151,9 +138,9 @@ int test_intersection() {
   system_type intersection;
   vec_type x("solution vector", 2), rhs("right hand side vector", 2);
   {
-    typename vec_type::HostMirror x_h = Kokkos::create_mirror_view(x);
-    x_h(0)                            = 2.5;
-    x_h(1)                            = 3.0;
+    typename vec_type::host_mirror_type x_h = Kokkos::create_mirror_view(x);
+    x_h(0)                                  = 2.5;
+    x_h(1)                                  = 3.0;
     Kokkos::deep_copy(x, x_h);
   }
 

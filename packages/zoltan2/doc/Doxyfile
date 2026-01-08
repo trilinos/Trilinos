@@ -136,7 +136,7 @@ STRIP_CODE_COMMENTS    = YES
 # classes or files whose names only differ in case and if your file system 
 # supports case sensitive file names. 
 
-CASE_SENSE_NAMES       = YES
+CASE_SENSE_NAMES       = NO
 
 # If the HIDE_SCOPE_NAMES tag is set to NO (the default) then Doxygen 
 # will show members with their full class and namespace scopes in the 

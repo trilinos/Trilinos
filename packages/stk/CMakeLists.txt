@@ -34,7 +34,8 @@
 
 cmake_minimum_required(VERSION 3.23 FATAL_ERROR)
 
-message("Starting STK cmake configuration, CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}")
+message(" - - - Starting STK cmake configuration - - - ")
+message("CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}")
 
 option(STK_BUILT_FOR_SIERRA "Enable SIERRA capability" OFF)
 set(SIERRA_MIGRATION ${STK_BUILT_FOR_SIERRA} CACHE BOOL "Enable SIERRA capability")
@@ -267,3 +268,6 @@ IF (NOT HAVE_STK_Trilinos)
     COMPONENT Devel
   )
 ENDIF()
+
+message(" - - - End of STK cmake configuration - - - ")
+

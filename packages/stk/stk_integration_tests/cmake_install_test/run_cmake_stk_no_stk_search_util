@@ -23,7 +23,7 @@ rm -rf CMakeFiles CMakeCache.txt
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
 -DCMAKE_BUILD_TYPE=${build_type^^} \
--DCMAKE_CXX_STANDARD:STRING=17 \
+-DCMAKE_CXX_STANDARD:STRING=20 \
 -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -DTrilinos_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
@@ -38,7 +38,8 @@ cmake \
 -DTrilinos_ENABLE_STKSearchUtil:BOOL=OFF \
 -DTrilinos_ENABLE_STKUnit_tests:BOOL=OFF \
 -DTrilinos_ENABLE_STKDoc_tests:BOOL=OFF \
--DTrilinos_ENABLE_Gtest:BOOL=ON \
+-DTPL_ENABLE_gtest:BOOL=ON \
+-DGTest_DIR=/fgs/william/googletest/install_gcc-12.3.0/lib64/cmake/GTest \
 -DCMAKE_CXX_FLAGS:STRING="-D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
 ${trilinos_src_dir}/
 

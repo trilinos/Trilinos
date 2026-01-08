@@ -1,0 +1,87 @@
+#!/bin/bash
+
+exe() {
+  stdbuf -o0 -e0 echo "% $@" ;
+  eval "$@" ;
+  if [ $? -ne 0 ] ; then
+    echo "'$@' failed.";
+    exit 1;
+  fi
+}
+
+sierra_proj=${SIERRA_PROJ:-${PWD}}
+output_dir=${OUTPUT_DIR:-${PWD}/../stk-cmake-testing}
+trilinos_dir=${output_dir}/Trilinos
+cuda_on_or_off=${CUDA:-OFF}
+clear_cache=${CLEAR_CACHE:-ON}
+incremental_build=${INCREMENTAL_BUILD:-OFF}
+build_type=${CMAKE_BUILD_TYPE:-release}
+date_suffix=`date +%F_%H-%M-%S`
+
+
+if [ ! -d ${output_dir} ] ; then
+  exe mkdir -p ${output_dir};
+fi
+
+stk_cmake_testing_source_dir=${sierra_proj}/stk/stk_integration_tests/cmake_install_test
+if [ "${incremental_build}" == "OFF" ] ; then
+${stk_cmake_testing_source_dir}/create_workspace.sh ${trilinos_dir} ${sierra_proj}
+fi
+
+trilinos_install_dir=${output_dir}/trilinos_install_${build_type}_gcc
+exe rm -rf $trilinos_install_dir
+
+stk_build_dir=${output_dir}/stk_build_${build_type}_gcc
+if [ "${incremental_build}" == "OFF" ] ; then
+if [ "${clear_cache}" == "ON" ] ; then
+  exe rm -rf $stk_build_dir
+  exe mkdir -p $stk_build_dir
+fi
+fi
+
+printf "\nUsing sierra project: ${sierra_proj}\n";
+printf "Using build-type: ${build_type}\n";
+printf "CUDA: ${cuda_on_or_off}\n";
+printf "Putting output and logs here: ${output_dir}\n";
+
+stk_config_log=${output_dir}/stk-config-no-tests.out.$date_suffix
+stk_make_log=${output_dir}/stk-make-no-tests.out.$date_suffix
+stk_install_log=${output_dir}/stk-install-no-tests.out.$date_suffix
+stk_ctest_log=${output_dir}/stk-ctest.out-no-tests.$date_suffix
+stk_app_config_log=${output_dir}/stk-test-app-no-tests-config.out.$date_suffix
+stk_app_make_log=${output_dir}/stk-test-app-no-tests-make.out.$date_suffix
+
+exe cp ${stk_cmake_testing_source_dir}/run_cmake_stk_no_tests ${stk_build_dir}
+exe cd ${stk_build_dir}
+
+exe source ${stk_cmake_testing_source_dir}/load_gcc_modules
+
+if [ "${incremental_build}" == "OFF" ] ; then
+printf "Configuring trilinos/stk (running cmake)...\n";
+exe "TRILINOS_DIR=${trilinos_dir} \
+     TRILINOS_INSTALL_DIR=${trilinos_install_dir} \
+     CMAKE_BUILD_TYPE=${build_type} \
+     CUDA=${cuda_on_or_off} \
+     CLEAR_CACHE=${clear_cache} \
+     ./run_cmake_stk_no_tests >& ${stk_config_log}"
+if [ $? -ne 0 ] ; then
+  echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
+  exit 1;
+fi
+fi
+
+printf "Now building trilinos/stk using make...\n";
+exe "make VERBOSE=1 -j16 >& ${stk_make_log}";
+if [ $? -ne 0 ] ; then
+  echo "!! error in make, check output in ${stk_make_log} !!";
+  exit 1;
+fi
+
+exe "ctest -j8 >& ${stk_ctest_log}";
+if [ $? -ne 0 ] ; then
+  printf "!! error running ctest, check output in ${stk_ctest_log}\n";
+  exit 1;
+fi
+
+echo "all done, SUCCESS!";
+exit 0;

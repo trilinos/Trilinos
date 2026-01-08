@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSBATCHED_APPLY_HOUSEHOLDER_TEAMVECTOR_INTERNAL_HPP
 #define KOKKOSBATCHED_APPLY_HOUSEHOLDER_TEAMVECTOR_INTERNAL_HPP
 
@@ -56,7 +43,7 @@ struct TeamVectorApplyLeftHouseholderInternal {
       Kokkos::parallel_reduce(
           Kokkos::ThreadVectorRange(member, m),
           [&](const int &i, value_type &val) {
-            val += Kokkos::ArithTraits<value_type>::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
+            val += KokkosKernels::ArithTraits<value_type>::conj(u2[i * u2s]) * A2[i * as0 + j * as1];
           },
           tmp);
       Kokkos::single(Kokkos::PerThread(member), [&]() {
@@ -125,13 +112,13 @@ struct TeamVectorApplyRightHouseholderInternal {
     if (as0 <= as1) {
       Kokkos::parallel_for(Kokkos::TeamThreadRange(member, n), [&](const int &j) {
         Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, m), [&](const int &i) {
-          A2[i * as0 + j * as1] -= w1[i] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
+          A2[i * as0 + j * as1] -= w1[i] * KokkosKernels::ArithTraits<ValueType>::conj(u2[j * u2s]);
         });
       });
     } else {
       Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, n), [&](const int &j) {
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, m), [&](const int &i) {
-          A2[i * as0 + j * as1] -= w1[i] * Kokkos::ArithTraits<ValueType>::conj(u2[j * u2s]);
+          A2[i * as0 + j * as1] -= w1[i] * KokkosKernels::ArithTraits<ValueType>::conj(u2[j * u2s]);
         });
       });
     }

@@ -2493,7 +2493,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
 
   /// \brief Compute and return the infinity norm of the matrix.
   ///
-  /// The Frobenius norm of the matrix is defined as
+  /// The infinity norm of the matrix is defined as
   /// \f\[
   ///   \|A\|_\infty = \max_{i}{\sum_{j} \|A(i,j)\|}.
   /// \f\].
@@ -2504,7 +2504,7 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   ///
   /// \param assumeSymmetric [in] Whether the matrix is symmetric. If so, computes infinity norm instead.
   //
-  /// The Frobenius norm of the matrix is defined as
+  /// The 1-norm of the matrix is defined as
   /// \f\[
   ///   \|A\|_1 = \max_{j}{\sum_{i} \|A(i,j)\|}.
   /// \f\].

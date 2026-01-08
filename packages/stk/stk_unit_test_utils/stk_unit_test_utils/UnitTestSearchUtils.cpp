@@ -55,7 +55,7 @@ construct_send_mesh(stk::mesh::BulkData& bulk, double parametricTolerance,
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::MasterElementProvider>();
+      std::make_shared<stk::transfer_util::MasterElementProvider>();
   std::shared_ptr<stk::search::MasterElementParametricCoordsFinder> paramCoordsFinder =
       std::make_shared<stk::search::MasterElementParametricCoordsFinder>(bulk, coords, masterElemProvider, parametricTolerance);
   std::shared_ptr<stk::search::HandleExternalPointInterface> externalPointHandler =
@@ -100,7 +100,7 @@ construct_elem_recv_mesh(stk::mesh::BulkData& bulk,
 
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::MasterElementProvider>();
+      std::make_shared<stk::transfer_util::MasterElementProvider>();
 
   std::shared_ptr<stk::search::spmd::ElementRecvMesh> mesh =
       std::make_shared<stk::search::spmd::ElementRecvMesh>(&bulk, coords, parts[0]->primary_entity_rank(), parts,
@@ -196,7 +196,7 @@ construct_hex_gauss_point_recv_mesh(stk::mesh::BulkData& bulk, double parametric
   const stk::mesh::FieldBase* coords = meta.coordinate_field();
 
   std::shared_ptr<stk::search::MasterElementProviderInterface> masterElemProvider =
-      std::make_shared<stk::unit_test_util::MasterElementProvider>();
+      std::make_shared<stk::transfer_util::MasterElementProvider>();
   std::shared_ptr<stk::search::PointEvaluatorInterface> pointEvaluator =
       std::make_shared<stk::search::MasterElementGaussPointEvaluator>(bulk, coords, masterElemProvider);
   return impl::construct_elem_recv_mesh(bulk, pointEvaluator, parametricTolerance, geometricTolerance, blocks, activeSelector);

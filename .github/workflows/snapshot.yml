@@ -1,0 +1,118 @@
+name: snapshot
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 0 * * 0
+
+jobs:
+  kokkos-snapshot:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone Trilinos
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: develop
+          path: Trilinos
+
+      - name: Clone Kokkos
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: kokkos/kokkos
+          ref: develop
+          path: kokkos
+
+      - name: Clone Kokkos
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: kokkos/kokkos-kernels
+          ref: develop
+          path: kokkos-kernels
+
+      - name: Configure git
+        run: |
+          git config --global user.name "Snapshot Action"
+          git config --global user.email "snapshot@action.com"
+
+      - name: Snapshot Kokkos
+        run: |
+          kokkos/scripts/snapshot.py --verbose kokkos Trilinos/packages/
+
+      - name: Snapshot Kokkos-Kernels
+        run: |
+          kokkos/scripts/snapshot.py --verbose kokkos-kernels Trilinos/packages/
+
+      - name: Create/update PR
+        uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 # v8.0.0
+        with:
+          path: Trilinos
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Snapshot Kokkos and Kokkos-Kernels"
+          title: "Snapshot of Kokkos and Kokkos-Kernels"
+          body: |
+            Automatic snapshot of Kokkos and Kokkos-Kernels.
+            This snapshot gets updated via a GitHub Action.
+          branch: kokkos-snapshot
+          base: develop
+          delete-branch: true
+          draft: true
+          labels: |
+            pkg: Kokkos
+            pkg: KokkosKernels
+
+  rol-snapshot:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone Trilinos
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: develop
+          path: Trilinos
+
+      - name: Clone Kokkos
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: kokkos/kokkos
+          ref: develop
+          path: kokkos
+
+      - name: Clone ROL
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: sandialabs/rol
+          ref: develop
+          path: rol
+
+      - name: Configure git
+        run: |
+          git config --global user.name "Snapshot Action"
+          git config --global user.email "snapshot@action.com"
+
+      - name: Snapshot ROL
+        run: |
+          kokkos/scripts/snapshot.py --verbose rol Trilinos/packages/
+
+      - name: Create/update PR
+        uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 # v8.0.0
+        with:
+          path: Trilinos
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Snapshot ROL"
+          title: "Snapshot of ROL"
+          body: |
+            Automatic snapshot of ROL.
+            This snapshot gets updated via a GitHub Action.
+          branch: rol-snapshot
+          base: develop
+          delete-branch: true
+          draft: true
+          labels: |
+            pkg: ROL
+
+
+

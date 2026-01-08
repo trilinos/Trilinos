@@ -375,8 +375,8 @@ mult_test_results multiply_test_kernel(
       KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrix-es
-  const KCRS& Ak = Aeff->getLocalMatrixDevice();
-  const KCRS& Bk = Beff->getLocalMatrixDevice();
+  const KCRS Ak = Aeff->getLocalMatrixDevice();
+  const KCRS Bk = Beff->getLocalMatrixDevice();
 
   // Setup
   // As a note "SPGEMM_MKL" will *NOT* pass all of these tests

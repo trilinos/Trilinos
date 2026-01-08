@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "KokkosSparse_coo2crs.hpp"
 #include "KokkosSparse_crs2coo.hpp"
@@ -22,11 +9,11 @@ namespace Test {
 template <class CrsType, class RowType, class ColType, class DataType>
 void check_coo_matrix(CrsType crsMatRef, RowType row, ColType col, DataType data) {
   // Copy coo to host
-  typename RowType::HostMirror row_h = Kokkos::create_mirror_view(row);
+  typename RowType::host_mirror_type row_h = Kokkos::create_mirror_view(row);
   Kokkos::deep_copy(row_h, row);
-  typename ColType::HostMirror col_h = Kokkos::create_mirror_view(col);
+  typename ColType::host_mirror_type col_h = Kokkos::create_mirror_view(col);
   Kokkos::deep_copy(col_h, col);
-  typename DataType::HostMirror data_h = Kokkos::create_mirror_view(data);
+  typename DataType::host_mirror_type data_h = Kokkos::create_mirror_view(data);
   Kokkos::deep_copy(data_h, data);
 
   // printf("coo in:\n");
@@ -42,11 +29,11 @@ void check_coo_matrix(CrsType crsMatRef, RowType row, ColType col, DataType data
   using ViewTypeCrsValsRef   = decltype(crs_vals_ref_d);
 
   // Copy crs to host
-  typename ViewTypeCrsColIdsRef::HostMirror crs_col_ids_ref = Kokkos::create_mirror_view(crs_col_ids_ref_d);
+  typename ViewTypeCrsColIdsRef::host_mirror_type crs_col_ids_ref = Kokkos::create_mirror_view(crs_col_ids_ref_d);
   Kokkos::deep_copy(crs_col_ids_ref, crs_col_ids_ref_d);
-  typename ViewTypeCrsRowMapRef::HostMirror crs_row_map_ref = Kokkos::create_mirror_view(crs_row_map_ref_d);
+  typename ViewTypeCrsRowMapRef::host_mirror_type crs_row_map_ref = Kokkos::create_mirror_view(crs_row_map_ref_d);
   Kokkos::deep_copy(crs_row_map_ref, crs_row_map_ref_d);
-  typename ViewTypeCrsValsRef::HostMirror crs_vals_ref = Kokkos::create_mirror_view(crs_vals_ref_d);
+  typename ViewTypeCrsValsRef::host_mirror_type crs_vals_ref = Kokkos::create_mirror_view(crs_vals_ref_d);
   Kokkos::deep_copy(crs_vals_ref, crs_vals_ref_d);
 
   Kokkos::fence();

@@ -103,6 +103,12 @@ bool multiple_solves = true;
  */
 bool refactor = false;
 
+/**
+ * If \c true, then the solution routine will at some point reperform
+ * symbolic factorization using the same solver object
+ */
+bool resymbol = false;
+
 /*
  * Takes the given parameter list and performs the test solves that it describes.
  *
@@ -203,6 +209,7 @@ int main(int argc, char*argv[])
   cmdp.setOption("verbosity", &verbosity, "Set verbosity level of output");
   cmdp.setOption("multiple-solves","single-solve", &multiple_solves, "Perform multiple solves with different RHS arguments");
   cmdp.setOption("refactor","no-refactor", &refactor, "Recompute L and U using a numerically different matrix at some point");
+  cmdp.setOption("resymbol","no-resymbol", &resymbol, "Reperform symbolic using the same solver object");
   try{
     cmdp.parse(argc,argv);
   } catch (const Teuchos::CommandLineProcessor::HelpPrinted& hp) {
@@ -759,6 +766,19 @@ do_solve_routine(const string& solver_name,
       if( !success ) return success; // bail out early if necessary
     }
 
+    if( resymbol ) {
+      if (verbosity > 2) {
+        *fos << endl << " ++ Re Symbolic ++" << std::endl << std::flush;
+      }
+      solver->setA(A2, Amesos2::SYMBFACT);
+
+      solver->preOrdering();
+      solver->symbolicFactorization();
+      solver->numericFactorization();
+      solver->solve(outArg(*Xhat), ptrInArg(*b2));
+
+      success &= checker(x2, Xhat);
+    }
     ++style;
   }
 

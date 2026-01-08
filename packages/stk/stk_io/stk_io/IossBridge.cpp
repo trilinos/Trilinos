@@ -2710,7 +2710,7 @@ void define_assembly_hierarchy(stk::io::OutputParams &params,
       std::string iossSubAssemblyName = getPartName(*subAssemblyPart);
       const Ioss::Assembly* subAssembly = ioRegion.get_assembly(iossSubAssemblyName);
       if(subAssembly == nullptr) {
-        stk::RuntimeWarning() << "Failed to find subAssembly "<<iossSubAssemblyName;
+        stk::RuntimeWarningP0() << "Failed to find subAssembly "<<iossSubAssemblyName;
         continue;
       }
       if(assembly->get_member(subAssembly->name())==nullptr) {
@@ -2725,7 +2725,7 @@ void define_assembly_hierarchy(stk::io::OutputParams &params,
       std::string iossLeafPartName = getPartName(*leafPart);
       const Ioss::GroupingEntity* leafEntity = ioRegion.get_entity(iossLeafPartName);
       if (leafEntity == nullptr) {
-        stk::RuntimeWarning() << "Failed to find ioss entity: '" << iossLeafPartName << "' in assembly: '" << name
+        stk::RuntimeWarningP0() << "Failed to find ioss entity: '" << iossLeafPartName << "' in assembly: '" << name
                               << "'";
       }
       if (can_add_to_assembly(params, assembly, leafEntity, leafPart)) {

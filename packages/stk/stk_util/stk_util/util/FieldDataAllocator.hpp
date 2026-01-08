@@ -80,7 +80,7 @@ struct SerialFieldDataAllocator
 
   HostAllocationType host_allocate(size_t size) const {
     const size_t asanSize = size + STK_ASAN_FIELD_PADDING_SIZE;
-    auto allocation = HostAllocationType(Kokkos::view_alloc("HostFieldData", Kokkos::WithoutInitializing), asanSize);
+    auto allocation = HostAllocationType(Kokkos::view_alloc("HostFieldData"), asanSize);
     ASAN_POISON_MEMORY_REGION(allocation.data(), asanSize);
     return allocation;
   }
