@@ -89,7 +89,9 @@ class ZoltanInterface : public SingleLevelFactoryBase {
   virtual ~ZoltanInterface() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! @name Input
   //@{
