@@ -63,12 +63,12 @@ DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DirectSolver(const std:
   }
   triedTpetra_ = true;
 #endif
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS2)
   try {
     // GetAmesosSmoother masks the template argument matching, and simply throws if template arguments are incompatible with Epetra
-    sEpetra_ = GetAmesosSmoother<SC, LO, GO, NO>(type_, paramList);
+    sEpetra_ = rcp(new Amesos2Smoother(type_, paramList));
     if (sEpetra_.is_null())
-      errorEpetra_ = "Unable to construct Amesos direct solver";
+      errorEpetra_ = "Unable to construct Amesos2 direct solver";
     else if (!sEpetra_->constructionSuccessful()) {
       errorEpetra_ = sEpetra_->constructionErrorMsg();
       sEpetra_     = Teuchos::null;
