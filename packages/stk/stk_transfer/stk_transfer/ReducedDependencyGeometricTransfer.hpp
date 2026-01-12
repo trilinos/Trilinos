@@ -122,6 +122,7 @@ private :
   void communicate_distances();
   void exchange_transfer_ids();
   void filter_to_nearest(typename MeshB::EntityProcVec to_entity_keys, typename MeshA::EntityProcVec from_entity_keys );
+  void repeat_search_if_needed();
 
   std::shared_ptr<MeshA>               m_mesha;
   std::shared_ptr<MeshB>               m_meshb;
@@ -582,6 +583,8 @@ void ReducedDependencyGeometricTransfer<INTERPOlATE>::filter_to_nearest(typename
 
 template <class INTERPOLATE> void ReducedDependencyGeometricTransfer<INTERPOLATE>::apply()
 {
+  repeat_search_if_needed();
+
   if (m_mesha)
     m_mesha->update_values();
 
@@ -678,6 +681,38 @@ template <class INTERPOLATE>  void ReducedDependencyGeometricTransfer<INTERPOLAT
   to_points_distance_on_to_mesh.resize(to_points_on_to_mesh.size());
   do_communication(m_comm_data, to_points_distance_on_from_mesh, to_points_distance_on_to_mesh);
 }
+
+template <class INTERPOLATE>
+void ReducedDependencyGeometricTransfer<INTERPOLATE>::repeat_search_if_needed()
+{
+  constexpr int couplingVersionSupported = 20;
+  bool couplingVersionSupportsSearch = stk::util::get_common_coupling_version() >= couplingVersionSupported;
+  bool meshaSupportsRepeatSearch = impl::has_need_repeat_search<MeshA>();
+  bool meshbSupportsRepeatSearch = impl::has_need_repeat_search<MeshB>();
+  bool meshaNeedsSearch = m_mesha && impl::need_repeat_search(*m_mesha);
+  bool meshbNeedsSearch = m_meshb && impl::need_repeat_search(*m_meshb);
+
+  STK_ThrowRequireMsg(!(meshaNeedsSearch && !couplingVersionSupportsSearch),
+                       "MeshA requested a repeat search but this is not supported until couping version " + std::to_string(couplingVersionSupported) +
+                       ", currently using coupling version " + std::to_string(stk::util::get_common_coupling_version()));
+  STK_ThrowRequireMsg(!(meshbNeedsSearch && !couplingVersionSupportsSearch),
+                      "MeshA requested a repeat search but this is not supported until couping version " + std::to_string(couplingVersionSupported) +
+                       ", currently using coupling version " + std::to_string(stk::util::get_common_coupling_version()));
+
+  if (couplingVersionSupportsSearch)
+  {
+    bool needRepeatSearch = stk::is_true_on_any_proc(m_comm_data.m_shared_comm, meshaNeedsSearch || meshbNeedsSearch);
+    if (needRepeatSearch)
+    {
+      bool localMeshesSupportRepeatSearch = (!m_mesha || meshaSupportsRepeatSearch) && (!m_meshb || meshbSupportsRepeatSearch);
+      bool bothMeshesSupportRepeatSearch = stk::is_true_on_all_procs(m_comm_data.m_shared_comm, localMeshesSupportRepeatSearch);
+      STK_ThrowRequireMsg(bothMeshesSupportRepeatSearch, "One application requested to repeat the search in ReducedDependencyGeometricTransfer, however "
+                          "the other application does not support this");
+      initialize();
+    }
+  }
+}
+
 
 }
 }

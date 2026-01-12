@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <cstdio>
 
 #include <ctime>
@@ -38,10 +25,10 @@ typedef double FLOAT;
 #define EPSILON 1e-10
 
 typedef MultiVectorDynamic<FLOAT, execution_space>::type mv_type;
-typedef mv_type::HostMirror h_mv_type;
+typedef mv_type::host_mirror_type h_mv_type;
 typedef Kokkos::View<FLOAT*, Kokkos::LayoutLeft, execution_space> vector_type;
 typedef Kokkos::View<FLOAT*, Kokkos::LayoutLeft, Kokkos::Threads> h2_vector_type;
-typedef vector_type::HostMirror h_vector_type;
+typedef vector_type::host_mirror_type h_vector_type;
 typedef mv_type::size_type size_type;
 
 void test_mv_dot(int size, int numVecs, int loop) {

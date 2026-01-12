@@ -1406,9 +1406,9 @@ TEST_F(ViewVectorObjectLifetimes, MoveAssignment)
 
     EXPECT_EQ(viewVectorA.size(), 1u);
     EXPECT_EQ(viewVectorA.capacity(), 1u);
-    EXPECT_EQ(viewVectorB.size(), 1u);
+    EXPECT_EQ(viewVectorB.size(), 0u);
     EXPECT_EQ(viewVectorB.capacity(), 1u);
-    EXPECT_EQ(viewVectorA.data(), viewVectorB.data());  // Shallow copy
+    EXPECT_EQ(viewVectorA.data(), viewVectorB.data());
   }
   EXPECT_EQ(objectLifetimeSpy_getNumConstructions(),     1);
   EXPECT_EQ(objectLifetimeSpy_getNumCopyConstructions(), 0);

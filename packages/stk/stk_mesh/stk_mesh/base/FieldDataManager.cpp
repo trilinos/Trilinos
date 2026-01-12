@@ -108,12 +108,12 @@ void initialize_field_on_bucket(const stk::mesh::FieldBase& field, int bucketId,
   // Poison it all, and then unpoison each byte before writing to it below
   ASAN_POISON_MEMORY_REGION(fieldMetaData.m_data, capacity * fieldMetaData.m_bytesPerEntity);
 
-  const std::byte* initVal = reinterpret_cast<const std::byte*>(field.get_initial_value());
+  const auto& initVal = field.get_initial_value_bytes();
 
   stk::mesh::bucket_bytes_execute<std::byte>(field, bucketId,
     [&](auto& bucketBytes) {
       if (bucketBytes.is_field_defined()) {
-        if (initVal == nullptr) {
+        if (initVal.extent(0) == 0) {
           std::vector<std::byte> zeroInit(size*bucketBytes.num_bytes());
 
           for (stk::mesh::EntityIdx entity : bucketBytes.entities()) {
@@ -127,7 +127,7 @@ void initialize_field_on_bucket(const stk::mesh::FieldBase& field, int bucketId,
           for (stk::mesh::EntityIdx entity : bucketBytes.entities()) {
             for (stk::mesh::ByteIdx byte : bucketBytes.bytes()) {
               ASAN_UNPOISON_MEMORY_REGION(&bucketBytes(entity, byte), 1);
-              bucketBytes(entity, byte) = initVal[byte];
+              bucketBytes(entity, byte) = initVal(byte());
             }
           }
         }
@@ -159,12 +159,12 @@ void copy_init_into_entity(EntityBytesType& entityBytes, const std::byte* initVa
 
 void initialize_field_on_entity(const stk::mesh::FieldBase& field, unsigned bucketId, unsigned bucketOrd)
 {
-  const std::byte* initVal = reinterpret_cast<const std::byte*>(field.get_initial_value());
+  const Kokkos::View<std::byte*, stk::ngp::HostPinnedSpace>& initVal = field.get_initial_value_bytes();
 
   stk::mesh::entity_bytes_execute<std::byte>(field, stk::mesh::FastMeshIndex{bucketId, bucketOrd},
     [&](auto& entityBytes) {
       if (entityBytes.is_field_defined()) {
-        if (initVal == nullptr) {
+        if (initVal.extent(0) == 0) {
           constexpr std::byte zeroInit{0};
 
           for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
@@ -173,9 +173,13 @@ void initialize_field_on_entity(const stk::mesh::FieldBase& field, unsigned buck
           }
         }
         else {
+          STK_ThrowRequireMsg(static_cast<int>(initVal.extent(0)) >= entityBytes.num_bytes(),
+              "Field "<<field.name()<<"'s get_initial_value_bytes() returns view of size "
+              <<initVal.extent(0)<<" but entityBytes.num_bytes() = "<<entityBytes.num_bytes());
+
           for (stk::mesh::ByteIdx byte : entityBytes.bytes()) {
             ASAN_UNPOISON_MEMORY_REGION(&entityBytes(byte), 1);
-            entityBytes(byte) = initVal[byte];
+            entityBytes(byte) = initVal(byte());
           }
         }
       }

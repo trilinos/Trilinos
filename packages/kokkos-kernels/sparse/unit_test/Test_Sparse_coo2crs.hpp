@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "KokkosSparse_coo2crs.hpp"
 #include "KokkosSparse_crs2coo.hpp"
@@ -54,9 +41,9 @@ CrsType vanilla_coo2crs(size_t m, size_t n, RowType row, ColType col, DataType d
   typename CrsType::values_type values("vanilla_values", nnz);
   typename CrsType::staticcrsgraph_type::entries_type col_ids("vanilla_col_ids", nnz);
 
-  typename CrsType::row_map_type::non_const_type::HostMirror row_map_h      = Kokkos::create_mirror_view(row_map);
-  typename CrsType::values_type::HostMirror values_h                        = Kokkos::create_mirror_view(values);
-  typename CrsType::staticcrsgraph_type::entries_type::HostMirror col_ids_h = Kokkos::create_mirror_view(col_ids);
+  typename CrsType::row_map_type::non_const_type::host_mirror_type row_map_h      = Kokkos::create_mirror_view(row_map);
+  typename CrsType::values_type::host_mirror_type values_h                        = Kokkos::create_mirror_view(values);
+  typename CrsType::staticcrsgraph_type::entries_type::host_mirror_type col_ids_h = Kokkos::create_mirror_view(col_ids);
 
   int row_len = 0;
   for (uint64_t i = 0; i < m; i++) {
@@ -90,19 +77,19 @@ template <class CrsType, class RowType, class ColType, class DataType>
 void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data,
                       std::string failure_info = "no failure information!") {
   using value_type = typename DataType::value_type;
-  using ats        = Kokkos::ArithTraits<value_type>;
+  using ats        = KokkosKernels::ArithTraits<value_type>;
 
   // Copy coo to host
-  typename RowType::HostMirror row_h = Kokkos::create_mirror_view(row);
+  typename RowType::host_mirror_type row_h = Kokkos::create_mirror_view(row);
   Kokkos::deep_copy(row_h, row);
-  typename ColType::HostMirror col_h = Kokkos::create_mirror_view(col);
+  typename ColType::host_mirror_type col_h = Kokkos::create_mirror_view(col);
   Kokkos::deep_copy(col_h, col);
-  typename DataType::HostMirror data_h = Kokkos::create_mirror_view(data);
+  typename DataType::host_mirror_type data_h = Kokkos::create_mirror_view(data);
   Kokkos::deep_copy(data_h, data);
 
   auto crsMatRef =
-      vanilla_coo2crs<CrsType, typename RowType::HostMirror, typename ColType::HostMirror,
-                      typename DataType::HostMirror>(crsMat.numRows(), crsMat.numCols(), row_h, col_h, data_h);
+      vanilla_coo2crs<CrsType, typename RowType::host_mirror_type, typename ColType::host_mirror_type,
+                      typename DataType::host_mirror_type>(crsMat.numRows(), crsMat.numCols(), row_h, col_h, data_h);
 
   auto crs_col_ids_ref_d = crsMatRef.graph.entries;
   auto crs_row_map_ref_d = crsMatRef.graph.row_map;
@@ -113,11 +100,11 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data,
   using ViewTypeCrsValsRef   = decltype(crs_vals_ref_d);
 
   // Copy crs to host
-  typename ViewTypeCrsColIdsRef::HostMirror crs_col_ids_ref = Kokkos::create_mirror_view(crs_col_ids_ref_d);
+  typename ViewTypeCrsColIdsRef::host_mirror_type crs_col_ids_ref = Kokkos::create_mirror_view(crs_col_ids_ref_d);
   Kokkos::deep_copy(crs_col_ids_ref, crs_col_ids_ref_d);
-  typename ViewTypeCrsRowMapRef::HostMirror crs_row_map_ref = Kokkos::create_mirror_view(crs_row_map_ref_d);
+  typename ViewTypeCrsRowMapRef::host_mirror_type crs_row_map_ref = Kokkos::create_mirror_view(crs_row_map_ref_d);
   Kokkos::deep_copy(crs_row_map_ref, crs_row_map_ref_d);
-  typename ViewTypeCrsValsRef::HostMirror crs_vals_ref = Kokkos::create_mirror_view(crs_vals_ref_d);
+  typename ViewTypeCrsValsRef::host_mirror_type crs_vals_ref = Kokkos::create_mirror_view(crs_vals_ref_d);
   Kokkos::deep_copy(crs_vals_ref, crs_vals_ref_d);
 
   auto crs_col_ids_d = crsMat.graph.entries;
@@ -129,11 +116,11 @@ void check_crs_matrix(CrsType crsMat, RowType row, ColType col, DataType data,
   using ViewTypeCrsVals   = decltype(crs_vals_d);
 
   // Copy crs to host
-  typename ViewTypeCrsColIds::HostMirror crs_col_ids = Kokkos::create_mirror_view(crs_col_ids_d);
+  typename ViewTypeCrsColIds::host_mirror_type crs_col_ids = Kokkos::create_mirror_view(crs_col_ids_d);
   Kokkos::deep_copy(crs_col_ids, crs_col_ids_d);
-  typename ViewTypeCrsRowMap::HostMirror crs_row_map = Kokkos::create_mirror_view(crs_row_map_d);
+  typename ViewTypeCrsRowMap::host_mirror_type crs_row_map = Kokkos::create_mirror_view(crs_row_map_d);
   Kokkos::deep_copy(crs_row_map, crs_row_map_d);
-  typename ViewTypeCrsVals::HostMirror crs_vals = Kokkos::create_mirror_view(crs_vals_d);
+  typename ViewTypeCrsVals::host_mirror_type crs_vals = Kokkos::create_mirror_view(crs_vals_d);
   Kokkos::deep_copy(crs_vals, crs_vals_d);
 
   Kokkos::fence();
@@ -265,9 +252,9 @@ TEST_F(TestCategory, sparse_coo2crs_staticMatrix_edgeCases) {
   Kokkos::View<long long *, TestDevice> col("coo col", 16);
   Kokkos::View<float *, TestDevice> data("coo data", 16);
 
-  typename Kokkos::View<long long *, TestDevice>::HostMirror row_h = Kokkos::create_mirror_view(row);
-  typename Kokkos::View<long long *, TestDevice>::HostMirror col_h = Kokkos::create_mirror_view(col);
-  typename Kokkos::View<float *, TestDevice>::HostMirror data_h    = Kokkos::create_mirror_view(data);
+  typename Kokkos::View<long long *, TestDevice>::host_mirror_type row_h = Kokkos::create_mirror_view(row);
+  typename Kokkos::View<long long *, TestDevice>::host_mirror_type col_h = Kokkos::create_mirror_view(col);
+  typename Kokkos::View<float *, TestDevice>::host_mirror_type data_h    = Kokkos::create_mirror_view(data);
   for (int i = 0; i < 16; i++) {
     row_h(i)  = staticRow[i];
     col_h(i)  = staticCol[i];

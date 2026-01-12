@@ -146,8 +146,8 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
       typename device_t::execution_space, typename device_t::memory_space, typename device_t::memory_space>;
 
   // Grab the  Kokkos::SparseCrsMatrices
-  const KCRS& Amat = Aview.origMatrix->getLocalMatrixDevice();
-  const KCRS& Bmat = Bview.origMatrix->getLocalMatrixDevice();
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const KCRS Bmat = Bview.origMatrix->getLocalMatrixDevice();
 
   c_lno_view_t Arowptr         = Amat.graph.row_map,
                Browptr         = Bmat.graph.row_map;
@@ -329,9 +329,9 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
   size_t n                    = Ccolmap->getLocalNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS& Amat = Aview.origMatrix->getLocalMatrixHost();
-  const KCRS& Bmat = Bview.origMatrix->getLocalMatrixHost();
-  const KCRS& Cmat = C.getLocalMatrixHost();
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS Cmat = C.getLocalMatrixHost();
 
   c_lno_view_t Arowptr         = Amat.graph.row_map,
                Browptr         = Bmat.graph.row_map,
@@ -537,9 +537,9 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
   size_t n                    = Ccolmap->getLocalNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS& Amat = Aview.origMatrix->getLocalMatrixHost();
-  const KCRS& Bmat = Bview.origMatrix->getLocalMatrixHost();
-  const KCRS& Cmat = C.getLocalMatrixHost();
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS Cmat = C.getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -705,8 +705,8 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
   const matrix_t Bmerged = Tpetra::MMdetails::merge_matrices(Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C.getColMap()->getLocalNumElements());
 
   // Get the properties and arrays of input matrices
-  const matrix_t& Amat = Aview.origMatrix->getLocalMatrixDevice();
-  const matrix_t& Bmat = Bview.origMatrix->getLocalMatrixDevice();
+  const matrix_t Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const matrix_t Bmat = Bview.origMatrix->getLocalMatrixDevice();
 
   typename handle_t::nnz_lno_t AnumRows = Amat.numRows();
   typename handle_t::nnz_lno_t BnumRows = Bmerged.numRows();

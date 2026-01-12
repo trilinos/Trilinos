@@ -140,6 +140,23 @@ namespace Amesos2 {
       Teuchos::TimeMonitor symbFactTimer( this->timers_.symFactTime_ );
 #endif
 
+      if (css_initialized_)
+      {
+        int_t phase = -1;         // release all internal solver memory
+        void *bdummy, *xdummy;
+        const MPI_Fint CssComm = CssComm_;
+        function_map::cluster_sparse_solver( pt_, const_cast<int_t*>(&maxfct_),
+                               const_cast<int_t*>(&mnum_), &mtype_, &phase, &n_,
+                               nzvals_view_.data(), rowptr_view_.data(),
+                               colind_view_.data(), perm_.getRawPtr(), &nrhs_, iparm_,
+                               const_cast<int_t*>(&msglvl_), &bdummy, &xdummy, &CssComm, &error );
+        css_initialized_ = false;
+        if (msglvl_ > 0 && error != 0 && this->matrixA_->getComm()->getRank() == 0) {
+          std::cout << " CssMKL::symbolicFactorization: clean-up failed with " << error << std::endl;
+        }
+      }
+
+      error = 0;
       int_t phase = 11; // Analysis
       void *bdummy, *xdummy;
       const MPI_Fint CssComm = CssComm_;
@@ -152,7 +169,11 @@ namespace Amesos2 {
     check_css_mkl_error(Amesos2::SYMBFACT, error);
     if (msglvl_ > 0 && this->matrixA_->getComm()->getRank() == 0) {
       std::cout << " CssMKL::symbolicFactorization done:" << std::endl;
+#ifdef HAVE_AMESOS2_TIMERS
       std::cout << " * Time : " << this->timers_.symFactTime_.totalElapsedTime() << std::endl;
+#else
+      std::cout << " * Time : not enabled" << std::endl;
+#endif
     }
 
     // CSS only lets you retrieve the total number of factor
@@ -190,7 +211,11 @@ namespace Amesos2 {
     check_css_mkl_error(Amesos2::NUMFACT, error);
     if (msglvl_ > 0 && this->matrixA_->getComm()->getRank() == 0) {
       std::cout << " CssMKL::numericFactorization done:" << std::endl;
-      std::cout << " Time : " << this->timers_.numFactTime_.totalElapsedTime() << std::endl;
+#ifdef HAVE_AMESOS2_TIMERS
+      std::cout << " * Time : " << this->timers_.numFactTime_.totalElapsedTime() << std::endl;
+#else
+      std::cout << " * Time : not enabled" << std::endl;
+#endif
     }
 
     return( 0 );
@@ -261,6 +286,15 @@ namespace Amesos2 {
         solver_scalar_type>::do_put(X, xvals_(),
           as<size_t>(ld_rhs),
           Teuchos::ptrInArg(*css_rowmap_));
+    }
+    if (msglvl_ > 0 && this->matrixA_->getComm()->getRank() == 0) {
+      std::cout << " CssMKL::solve done:" << std::endl;
+#ifdef HAVE_AMESOS2_TIMERS
+      std::cout << " * Time : " << this->timers_.vecRedistTime_.totalElapsedTime()
+                << " + " << this->timers_.solveTime_.totalElapsedTime() << std::endl;
+#else
+      std::cout << " * Time : not enabled" << std::endl;
+#endif
     }
 
     return( 0 );

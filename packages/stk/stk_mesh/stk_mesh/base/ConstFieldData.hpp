@@ -90,6 +90,7 @@ public:
 protected:
   template <typename _T, typename _MemSpace> friend class DeviceField;
 
+  virtual void update_device_field_metadata() override;
   virtual void sync_to_host(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout) override;
   virtual void sync_to_device(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout) override;
   virtual void update(const stk::ngp::ExecSpace& execSpace, Layout hostDataLayout, bool needsSync) override;
@@ -420,6 +421,16 @@ ConstFieldData<T, Space, DataLayout>::bucket_values(int bucketId,
         fieldMetaData.m_numCopiesPerEntity,
         fieldMetaData.m_bucketSize,
         fieldMetaData.m_bucketCapacity, this->field_name());
+}
+
+//------------------------------------------------------------------------------
+template <typename T, typename Space, Layout DataLayout>
+void
+ConstFieldData<T, Space, DataLayout>::update_device_field_metadata()
+{
+  DeviceFieldDataManagerBase* deviceFieldDataManager = impl::get_device_field_data_manager<Space>(this->mesh());
+  deviceFieldDataManager->set_device_field_meta_data(*this);
+  this->m_deviceMeshSyncCountAtLastSync = deviceFieldDataManager->synchronized_count();
 }
 
 //------------------------------------------------------------------------------

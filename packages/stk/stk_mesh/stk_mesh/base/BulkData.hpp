@@ -47,6 +47,7 @@
 #include <stk_mesh/base/NgpTypes.hpp>
 #include <stk_mesh/base/Ngp.hpp>
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
+#include <stk_mesh/baseImpl/ViewVector.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
@@ -202,6 +203,8 @@ public:
    *          each call to 'modification_end'.
    */
   size_t synchronized_count() const { return m_meshModification.synchronized_count() ; }
+
+  size_t ngp_mesh_synchronized_count() const;
 
   /** \brief  Begin a modification phase during which the mesh bulk data
    *          could become parallel inconsistent.  This is a parallel
@@ -891,6 +894,8 @@ protected: //functions
   bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
                                              ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT); // Mod Mark
 
+  void modification_end_for_sync_to_host(ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT);
+
   bool internal_modification_end_for_skin_mesh( EntityRank entity_rank,
                                                 ModEndOptimizationFlag opt,
                                                 const stk::mesh::Selector& selectedToSkin,
@@ -1044,7 +1049,8 @@ protected: //functions
                                                                                stk::mesh::Entity e_to,
                                                                                OrdinalVector &to_add);
 
-  bool internal_modification_begin(const std::string& description, bool resetSymGhostInfo = true);
+  bool modification_begin_for_sync_to_host(const std::string description);
+  bool internal_modification_begin(const std::string& description, bool resetSymGhostInfo = true, bool isSyncToHost=false);
   bool internal_modification_end_for_change_entity_owner(ModEndOptimizationFlag opt );
   bool internal_modification_end_for_change_parts(ModEndOptimizationFlag opt = ModEndOptimizationFlag::MOD_END_SORT);
   void internal_modification_end_for_change_ghosting();
@@ -1493,7 +1499,7 @@ protected: //data
   std::vector<int> m_owner;
   std::vector<std::pair<EntityKey,EntityCommInfo>> m_removedGhosts;
   CommListUpdater m_comm_list_updater;
-  std::vector<EntityKey> m_entity_keys; //indexed by Entity
+  impl::ViewVector<EntityKey> m_entity_keys; //indexed by Entity
   std::unique_ptr<FieldDataManager> m_field_data_manager;
   impl::BucketRepository m_bucket_repository;
 
@@ -1528,7 +1534,7 @@ private: // data
   PartVector m_ghost_parts;
   int m_num_fields;
   bool m_keep_fields_updated;
-  std::vector<unsigned> m_local_ids; //indexed by Entity
+  impl::ViewVector<unsigned> m_local_ids; //indexed by Entity
 
   mutable std::vector<SelectorBucketMap> m_selector_to_buckets_maps;
   bool m_use_identifiers_for_resolving_sharing;
@@ -2299,6 +2305,7 @@ template <typename MemSpace>
 MeshIndexType<MemSpace>&
 BulkData::get_updated_fast_mesh_indices() const
 {
+  Kokkos::Profiling::pushRegion("get_updated_fast_mesh_indices");
   if (not m_deviceFastMeshIndices.has_value()) {
     m_deviceFastMeshIndices = std::any(MeshIndexType<MemSpace>("FastMeshIndices", 0));
   }
@@ -2307,20 +2314,16 @@ BulkData::get_updated_fast_mesh_indices() const
 
   if (m_deviceFastMeshIndicesSynchronizedCount < synchronized_count()) {
     const size_t indexSpaceSize = get_size_of_entity_index_space();
-    Kokkos::resize(Kokkos::WithoutInitializing, deviceFastMeshIndices, indexSpaceSize);
+    if (deviceFastMeshIndices.extent(0) != indexSpaceSize) {
+      Kokkos::resize(Kokkos::WithoutInitializing, deviceFastMeshIndices, indexSpaceSize);
+    }
 
     HostMeshIndexType<MemSpace> hostFastMeshIndices = Kokkos::create_mirror_view(Kokkos::WithoutInitializing,
                                                                                  deviceFastMeshIndices);
-
-    for (stk::mesh::EntityRank rank = stk::topology::NODE_RANK; rank < stk::topology::NUM_RANKS; ++rank) {
-      const stk::mesh::BucketVector& bucketsOfRank = buckets(rank);
-
-      for (const stk::mesh::Bucket* bucketPtr : bucketsOfRank) {
-        const stk::mesh::Bucket& bucket = *bucketPtr;
-        for (unsigned bucketOrd = 0; bucketOrd < bucket.size(); ++bucketOrd) {
-          const stk::mesh::Entity& entity = bucket[bucketOrd];
-          hostFastMeshIndices[entity.local_offset()] = stk::mesh::FastMeshIndex{bucket.bucket_id(), bucketOrd};
-        }
+    for(unsigned i=0; i<indexSpaceSize; ++i) {
+      const MeshIndex& mIdx = m_mesh_indexes[i];
+      if (mIdx.bucket != nullptr) {
+        hostFastMeshIndices[i] = FastMeshIndex{mIdx.bucket->bucket_id(), mIdx.bucket_ordinal};
       }
     }
 
@@ -2328,6 +2331,7 @@ BulkData::get_updated_fast_mesh_indices() const
     m_deviceFastMeshIndicesSynchronizedCount = synchronized_count();
   }
 
+  Kokkos::Profiling::popRegion();
   return deviceFastMeshIndices;
 }
 
@@ -2336,9 +2340,7 @@ inline NgpMeshBase * get_ngp_mesh(const BulkData & bulk) {
   return bulk.get_ngp_mesh();
 }
 
-inline void set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh) {
-  bulk.set_ngp_mesh(ngpMesh);
-}
+void set_ngp_mesh(const BulkData & bulk, NgpMeshBase * ngpMesh);
 
 template <typename NgpMemSpace>
 inline impl::NgpMeshHostData<NgpMemSpace>* get_ngp_mesh_host_data(const BulkData& bulk)
@@ -2354,7 +2356,6 @@ inline DeviceFieldDataManagerBase* get_device_field_data_manager(const BulkData&
 {
   return bulk.get_device_field_data_manager<Space>();
 }
-
 }
 
 } // namespace mesh

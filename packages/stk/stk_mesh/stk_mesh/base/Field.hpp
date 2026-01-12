@@ -205,7 +205,7 @@ public:
     return out;
   }
 
-  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo) const override
+  virtual FieldBase * clone(stk::mesh::impl::FieldRepository & fieldRepo, const std::string fieldName = "") const override
   {
     FieldBase * f[MaximumFieldStates] {nullptr};
 
@@ -218,12 +218,14 @@ public:
       "_STKFS_NM4"
     };
 
+    std::string clonedFieldName = (fieldName == "") ? name() : fieldName;
+
     for (unsigned i = 0 ; i < 6 ; ++i) {
-      const int len_name   = name().size();
+      const int len_name   = clonedFieldName.size();
       const int len_suffix = std::strlen(reserved_state_suffix[i]);
       const int offset     = len_name - len_suffix ;
       if ( 0 <= offset ) {
-        [[maybe_unused]] const char * const name_suffix = name().c_str() + offset;
+        [[maybe_unused]] const char * const name_suffix = clonedFieldName.c_str() + offset;
         STK_ThrowErrorMsgIf(equal_case(name_suffix , reserved_state_suffix[i]),
                         "For name = \"" << name_suffix << "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
                         reserved_state_suffix[i] << "\"");
@@ -232,15 +234,15 @@ public:
 
     std::string fieldNames[MaximumFieldStates];
 
-    fieldNames[0] = name();
+    fieldNames[0] = clonedFieldName;
 
     if (number_of_states() == 2) {
-      fieldNames[1] = name();
+      fieldNames[1] = clonedFieldName;
       fieldNames[1].append(reserved_state_suffix[0]);
     }
     else {
       for (unsigned i = 1; i < number_of_states(); ++i) {
-        fieldNames[i] = name();
+        fieldNames[i] = clonedFieldName;
         fieldNames[i].append(reserved_state_suffix[i]);
       }
     }
@@ -254,7 +256,15 @@ public:
                        data_traits(),
                        number_of_states(),
                        static_cast<FieldState>(i));
+
       fieldRepo.add_field(f[i]);
+    }
+
+    const InitValsViewType& initVals = get_initial_value_bytes();
+    f[0]->m_initial_value = FieldBase::InitValsViewType("Init-Vals-"+name(), initVals.extent(0));
+
+    for(unsigned j=0; j<initVals.extent(0); ++j) {
+      f[0]->m_initial_value(j) = initVals(j);
     }
 
     for (unsigned i = 0 ; i < number_of_states() ; ++i) {

@@ -94,7 +94,10 @@ struct TeamFunctor
 };
 
 template <typename Mesh, typename AlgorithmPerEntity>
-void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor)
+void for_each_entity_run(const std::string& label,
+                         Mesh &mesh, stk::topology::rank_t rank,
+                         const stk::mesh::Selector &selector,
+                         const AlgorithmPerEntity &functor)
 {
   Kokkos::Profiling::pushRegion("for_each_entity_run with selector");
 
@@ -103,20 +106,30 @@ void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh
 
   using EXEC_SPACE = typename Mesh::MeshExecSpace;
   TeamFunctor<Mesh, AlgorithmPerEntity, EXEC_SPACE> teamFunctor(mesh, rank, bucketIds, functor);
-  Kokkos::parallel_for(stk::ngp::TeamPolicy<EXEC_SPACE>(numBuckets, Kokkos::AUTO), teamFunctor);
+  Kokkos::parallel_for(label, stk::ngp::TeamPolicy<EXEC_SPACE>(numBuckets, Kokkos::AUTO), teamFunctor);
 
   Kokkos::Profiling::popRegion();
 }
 
+template <typename Mesh, typename AlgorithmPerEntity>
+void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor)
+{
+  for_each_entity_run("for_each_entity_run - no-label", mesh, rank, selector, functor);
+}
+
 template <typename Mesh, typename AlgorithmPerEntity, typename EXEC_SPACE>
-void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, stk::NgpVector<unsigned>& bucketIds, const AlgorithmPerEntity &functor, const EXEC_SPACE& execSpace)
+void for_each_entity_run(const std::string& label,
+                         Mesh &mesh, stk::topology::rank_t rank,
+                         stk::NgpVector<unsigned>& bucketIds,
+                         const AlgorithmPerEntity &functor,
+                         const EXEC_SPACE& execSpace)
 {
   Kokkos::Profiling::pushRegion("for_each_entity_run with bucketIds and EXEC_SPACE");
 
   unsigned numBuckets = bucketIds.size();
 
   using TeamHandleType = typename stk::ngp::TeamPolicy<EXEC_SPACE>::member_type;
-  Kokkos::parallel_for(stk::ngp::TeamPolicy<EXEC_SPACE>(execSpace, numBuckets, Kokkos::AUTO),
+  Kokkos::parallel_for(label, stk::ngp::TeamPolicy<EXEC_SPACE>(execSpace, numBuckets, Kokkos::AUTO),
     KOKKOS_LAMBDA(const TeamHandleType& team){
       const int bucketIndex = bucketIds.get<EXEC_SPACE>(team.league_rank());
       const typename Mesh::BucketType& bucket = mesh.get_bucket(rank, bucketIndex);
@@ -133,15 +146,31 @@ void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, stk::NgpVector<
 }
 
 template <typename Mesh, typename AlgorithmPerEntity, typename EXEC_SPACE>
-void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor, const EXEC_SPACE& execSpace)
+void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, stk::NgpVector<unsigned>& bucketIds, const AlgorithmPerEntity &functor, const EXEC_SPACE& execSpace)
+{
+  for_each_entity_run("for_each_entity_run - no-label", mesh, rank, bucketIds, functor, execSpace);
+}
+
+template <typename Mesh, typename AlgorithmPerEntity, typename EXEC_SPACE>
+void for_each_entity_run(const std::string& label,
+                         Mesh &mesh, stk::topology::rank_t rank,
+                         const stk::mesh::Selector &selector,
+                         const AlgorithmPerEntity &functor,
+                         const EXEC_SPACE& execSpace)
 {
   Kokkos::Profiling::pushRegion("for_each_entity_run with selector and EXEC_SPACE");
 
   stk::NgpVector<unsigned> bucketIds = mesh.get_bucket_ids(rank, selector);
 
-  for_each_entity_run(mesh, rank, bucketIds, functor, execSpace);
+  for_each_entity_run(label, mesh, rank, bucketIds, functor, execSpace);
 
   Kokkos::Profiling::popRegion();
+}
+
+template <typename Mesh, typename AlgorithmPerEntity, typename EXEC_SPACE>
+void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const stk::mesh::Selector &selector, const AlgorithmPerEntity &functor, const EXEC_SPACE& execSpace)
+{
+  for_each_entity_run("for_each_entity_run - no-label", mesh, rank, selector, functor, execSpace);
 }
 
 }

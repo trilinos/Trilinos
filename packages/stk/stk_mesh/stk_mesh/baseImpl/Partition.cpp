@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,7 +30,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #include <stk_mesh/baseImpl/Partition.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
@@ -75,7 +75,13 @@ Partition::~Partition()
   size_t num_bkts = m_buckets.size();
   for (size_t i = 0; i < num_bkts; ++i)
   {
-    delete m_buckets[i];
+    if (empty())
+    {
+      delete m_buckets[i];
+    } else
+    {
+      m_repository->deallocate_bucket(m_buckets[i]);
+    }
   }
 }
 
@@ -116,6 +122,18 @@ bool Partition::remove(Entity entity)
     remove_internal(bucket, ordinal);
   }
   return true;
+}
+
+stk::mesh::Bucket* Partition::add_empty_bucket()
+{
+  const std::vector<unsigned>& partition_key = get_legacy_partition_id();
+  Bucket *bucket = m_repository->allocate_bucket(m_rank, partition_key,
+                                                 m_repository->get_initial_bucket_capacity(),
+                                                 m_repository->get_maximum_bucket_capacity());
+  bucket->m_partition = this;
+  m_buckets.push_back(bucket);
+
+  return bucket;
 }
 
 bool Partition::add(Entity entity)
@@ -197,7 +215,7 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
         foundBucket = true;
         break;
       }
-    } 
+    }
     STK_ThrowRequireMsg(foundBucket, "Failed to find bucket in partition for entity that is being removed.");
   }
   else {
@@ -522,14 +540,7 @@ stk::mesh::Bucket *Partition::get_bucket_for_adds()
   clear_pending_removes_by_filling_from_end();
 
   if (no_buckets()) {
-    const std::vector<unsigned>& partition_key = get_legacy_partition_id();
-    Bucket *bucket = m_repository->allocate_bucket(m_rank, partition_key,
-                                                   m_repository->get_initial_bucket_capacity(),
-                                                   m_repository->get_maximum_bucket_capacity());
-    bucket->m_partition = this;
-    m_buckets.push_back(bucket);
-
-    return bucket;
+    return add_empty_bucket();
   }
 
   Bucket *bucket = *(end() - 1);  // Last bucket of the partition.

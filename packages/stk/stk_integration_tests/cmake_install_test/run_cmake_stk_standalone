@@ -31,7 +31,7 @@ printf "calling cmake from run_cmake_stk_standalone, stk_src_dir='${stk_src_dir}
 cmake \
 -DCMAKE_INSTALL_PREFIX=${stk_install_dir} \
 -DCMAKE_BUILD_TYPE=${build_type} \
--DCMAKE_CXX_STANDARD:STRING=17 \
+-DCMAKE_CXX_STANDARD:STRING=20 \
 -DCMAKE_CXX_STANDARD_REQUIRED=ON \
 -DCMAKE_CXX_EXTENSIONS=OFF \
 -DCMAKE_CXX_COMPILER=${OMPI_CXX} \
@@ -47,6 +47,7 @@ cmake \
 -DShards_DIR=/fgs/william/Trilinos/install_gcc/lib64/cmake/Shards \
 -DZoltan2Core_DIR=/fgs/william/Trilinos/install_gcc/lib64/cmake/Zoltan2Core \
 -DKokkos_DIR=/fgs/william/Trilinos/install_gcc/lib64/cmake/Kokkos \
--DGTest_DIR=/fgs/william/googletest/install/lib64/cmake/GTest \
+-DTPL_ENABLE_gtest=ON \
+-DGTest_DIR=/fgs/william/googletest/install_gcc-12.3.0/lib64/cmake/GTest \
 ${stk_src_dir}/
 

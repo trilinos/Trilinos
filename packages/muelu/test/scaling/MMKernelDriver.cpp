@@ -252,8 +252,8 @@ void Multiply_ViennaCL(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal,
     RCP<const crs_matrix_type> Cu = toTpetra(rcp(&C, false));
     RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
-    const KCRS &Amat = Au->getLocalMatrixDevice();
-    const KCRS &Bmat = Bu->getLocalMatrixDevice();
+    const KCRS Amat = Au->getLocalMatrixDevice();
+    const KCRS Bmat = Bu->getLocalMatrixDevice();
 
     using no_init_view = Kokkos::ViewAllocateWithoutInitializing;
 
@@ -419,8 +419,8 @@ void Multiply_MKL_SPMM(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal,
   RCP<const crs_matrix_type> Cu = toTpetra(rcp(&C, false));
   RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
-  const KCRS &Amat = Au->getLocalMatrixDevice();
-  const KCRS &Bmat = Bu->getLocalMatrixDevice();
+  const KCRS Amat = Au->getLocalMatrixDevice();
+  const KCRS Bmat = Bu->getLocalMatrixDevice();
   if (A.getLocalNumRows() != C.getLocalNumRows()) throw std::runtime_error("C is not sized correctly");
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
@@ -603,8 +603,8 @@ void Multiply_KokkosKernels(const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrd
     RCP<const crs_matrix_type> Cu = toTpetra(rcpFromRef(C));
     RCP<crs_matrix_type> Cnc      = Teuchos::rcp_const_cast<crs_matrix_type>(Cu);
 
-    const KCRS &Amat = Au->getLocalMatrixDevice();
-    const KCRS &Bmat = Bu->getLocalMatrixDevice();
+    const KCRS Amat = Au->getLocalMatrixDevice();
+    const KCRS Bmat = Bu->getLocalMatrixDevice();
 
     c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
     lno_view_t Crowptr("Crowptr", A.getLocalNumRows() + 1);

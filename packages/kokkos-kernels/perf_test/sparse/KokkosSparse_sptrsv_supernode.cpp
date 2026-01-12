@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "Kokkos_Random.hpp"
 #include "KokkosSparse_Utils.hpp"
@@ -42,7 +29,7 @@ int test_sptrsv_perf(std::vector<int> tests, bool verbose, std::string& lower_fi
                      std::string& supernode_filename, bool merge, bool invert_offdiag, bool u_in_csr, int loop) {
   using ordinal_type = int;
   using size_type    = int;
-  using STS          = Kokkos::ArithTraits<scalar_type>;
+  using STS          = KokkosKernels::ArithTraits<scalar_type>;
   using mag_type     = typename STS::mag_type;
 
   // Default spaces

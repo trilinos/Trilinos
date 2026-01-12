@@ -167,7 +167,7 @@ void get_entities( const BulkData& bulk,
   }
 }
 
-std::vector<Entity> get_entities(const BulkData& bulk,
+[[nodiscard]] std::vector<Entity> get_entities(const BulkData& bulk,
                                  const EntityRank rank,
                                  const Selector & selector,
                                  bool sortByGlobalId)

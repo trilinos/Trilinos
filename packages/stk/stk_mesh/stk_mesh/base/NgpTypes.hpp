@@ -66,6 +66,8 @@ template <typename MemSpace> using MeshIndexType                  = Kokkos::View
                                                                                  Kokkos::MemoryTraits<Kokkos::RandomAccess>>;
 template <typename MemSpace> using HostMeshIndexType              = typename MeshIndexType<MemSpace>::host_mirror_type;
 
+template <typename MemSpace> using EntityOffsetPairViewType       = Kokkos::View<Kokkos::pair<Entity, unsigned>*, MemSpace>;
+template <typename MemSpace> using EntityOffsetPair2dViewType     = Kokkos::View<Kokkos::pair<Entity, unsigned>**, MemSpace>;
 template <typename MemSpace> using UnsignedPairViewType           = Kokkos::View<Kokkos::pair<unsigned, unsigned>*, MemSpace>;
 template <typename MemSpace> using EntityRankViewType             = Kokkos::View<EntityRank*, MemSpace>;
 

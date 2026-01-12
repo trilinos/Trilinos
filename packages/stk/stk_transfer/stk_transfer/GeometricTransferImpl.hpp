@@ -198,8 +198,8 @@ void call_copy_entities(T & ... /*t*/)
 template <class INTERPOLATE>
 void coarse_search_impl(typename INTERPOLATE::EntityProcRelationVec &domain_to_range,
     stk::ParallelMachine comm,
-    const typename INTERPOLATE::MeshA *mesha,
-    const typename INTERPOLATE::MeshB *meshb,
+    typename INTERPOLATE::MeshA *mesha,
+    typename INTERPOLATE::MeshB *meshb,
     const stk::search::SearchMethod search_method,
     const double expansion_factor)
 {
@@ -334,7 +334,45 @@ template <class INTERPOLATE> void localize_entity_key_map(typename INTERPOLATE::
     if (range_owning_rank == my_rank) insert<INTERPOLATE>(local_range_to_domain, i.first.id(), i.second.id());
   }
 }
+
+
+template <typename T>
+class HasNeedRepeatSearch
+{
+  private:
+    using yes = std::array<int, 1>;
+    using no  = std::array<int, 2>;
+
+    template <typename C>
+    static yes test(decltype(&C::need_repeat_search));
+
+    template <typename C>
+    static no test(...);
+
+  public:
+    static constexpr bool value = sizeof(test<T>(0)) == sizeof(yes);
+};
+
+template <typename Mesh>
+constexpr bool has_need_repeat_search()
+{
+  return HasNeedRepeatSearch<Mesh>::value;
 }
+
+template <typename Mesh>
+bool need_repeat_search(Mesh& mesh)
+{
+  if constexpr (has_need_repeat_search<Mesh>())
+  {
+    return mesh.need_repeat_search();
+  } else
+  {
+    return false;
+  }
+}
+}
+
+
 
 }
 }

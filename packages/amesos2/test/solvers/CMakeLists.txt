@@ -376,7 +376,7 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
   TRIBITS_ADD_TEST(
     Solver_Test
     NAME Pardiso_MKL_Solver_Test
-    ARGS "--xml-params=pardiso_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    ARGS "--xml-params=pardiso_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --resymbol"
     STANDARD_PASS_OUTPUT
     COMM serial mpi
     )
@@ -394,7 +394,7 @@ IF (${PACKAGE_NAME}_ENABLE_CSS_MKL)
   TRIBITS_ADD_TEST(
     Solver_Test
     NAME Css_MKL_Solver_Test
-    ARGS "--xml-params=css_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    ARGS "--xml-params=css_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --resymbol"
     NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
     COMM mpi

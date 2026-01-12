@@ -199,7 +199,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
         KernelHandle;
 
     // Grab the  Kokkos::SparseCrsMatrices
-    const KCRS& Ak = Aview.origMatrix->getLocalMatrixDevice();
+    const KCRS Ak = Aview.origMatrix->getLocalMatrixDevice();
     // const KCRS & Bk = Bview.origMatrix->getLocalMatrixDevice();
 
     // Get the algorithm mode
@@ -521,8 +521,8 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
   const matrix_t Bmerged = Tpetra::MMdetails::merge_matrices(Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C.getColMap()->getLocalNumElements());
 
   // Get the properties and arrays of input matrices
-  const matrix_t& Amat = Aview.origMatrix->getLocalMatrixDevice();
-  const matrix_t& Bmat = Bview.origMatrix->getLocalMatrixDevice();
+  const matrix_t Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const matrix_t Bmat = Bview.origMatrix->getLocalMatrixDevice();
 
   typename handle_t::nnz_lno_t AnumRows = Amat.numRows();
   typename handle_t::nnz_lno_t BnumRows = Bmerged.numRows();

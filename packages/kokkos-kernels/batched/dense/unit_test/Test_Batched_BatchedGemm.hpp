@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
@@ -33,7 +20,7 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
   using transA          = typename ParamTagType::transA;
   using transB          = typename ParamTagType::transB;
   using batchLayout     = typename ParamTagType::batchLayout;
-  using ats             = Kokkos::ArithTraits<ScalarType>;
+  using ats             = KokkosKernels::ArithTraits<ScalarType>;
 
   int ret        = 0;
   auto algo_type = batchedGemmHandle->get_kernel_algo_type();
@@ -146,8 +133,8 @@ void impl_test_batched_gemm_with_handle(BatchedGemmHandle* batchedGemmHandle, co
 
   Kokkos::fence();
 
-  typename ViewType::HostMirror c_expected_host = Kokkos::create_mirror_view(c_expected);
-  typename ViewType::HostMirror c_actual_host   = Kokkos::create_mirror_view(c_actual);
+  typename ViewType::host_mirror_type c_expected_host = Kokkos::create_mirror_view(c_expected);
+  typename ViewType::host_mirror_type c_actual_host   = Kokkos::create_mirror_view(c_actual);
 
   // Copy to host
   Kokkos::deep_copy(c_expected_host, c_expected);

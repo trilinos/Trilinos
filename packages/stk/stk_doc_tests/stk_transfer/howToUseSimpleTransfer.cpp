@@ -144,7 +144,7 @@ TEST(StkTransferHowTo, useSimpleTransfer)
   stk::mesh::EntityRank recvRank = stk::topology::NODE_RANK;
 
   auto extrapolateOption = stk::search::ObjectOutsideDomainPolicy::ABORT;
-  auto masterElemProvider = std::make_shared<stk::unit_test_util::MasterElementProvider>();
+  auto masterElemProvider = std::make_shared<stk::transfer_util::MasterElementProvider>();
 
   unsigned numSendCopies = 1;
   unsigned numRecvCopies = 1;

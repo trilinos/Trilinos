@@ -114,7 +114,7 @@ void testAllocateFieldData(stk::mesh::BulkData& bulkData, const size_t extraCapa
   const stk::mesh::FieldVector &fields = meshMetaData.get_fields();
   for (stk::mesh::FieldBase* field : fields) {
     if (is_test_field(*field)) {
-      const T *initial_value = reinterpret_cast<const T*>(field->get_initial_value());
+      const T *initial_value = field->get_initial_value_num_bytes() > 0 ? reinterpret_cast<const T*>(field->get_initial_value_bytes().data()) : nullptr;
       auto fieldData = field->data<T, stk::mesh::ReadOnly, stk::ngp::HostSpace, Layout>();
 
       size_t totalBytesAllocatedForField = 0;

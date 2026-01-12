@@ -357,6 +357,11 @@ public:
     {
         return m_bucket_repository;
     }
+
+    const stk::mesh::impl::BucketRepository& my_get_bucket_repository() const
+    {
+        return m_bucket_repository;
+    }    
 };
 
 class BulkDataFaceSharingTester : public BulkDataTester

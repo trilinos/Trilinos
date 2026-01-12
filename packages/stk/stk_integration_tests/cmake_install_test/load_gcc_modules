@@ -2,6 +2,7 @@
 
 module load aue/cmake/3.31.6
 module load aue/gcc/12.3.0
+module load aue/boost/1.85.0-gcc-12.3.0-openmpi-4.1.6
 module load aue/metis/5.1.0-gcc-12.3.0
 module load aue/netlib-lapack/3.11.0-gcc-12.3.0
 

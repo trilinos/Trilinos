@@ -30,6 +30,7 @@ typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight,32> RightContiguous32;
   VIEW_FAD_TESTS_SFLD( F, RightContiguous32, D )
 
 // Instantiate tests for Cuda device
+// We need to fix this because UVM is going away in Kokkos and we need some basic testing of Hierarchical-DFad
 #if defined(KOKKOS_ENABLE_CUDA_UVM)
 using Kokkos::Cuda;
 VIEW_FAD_TESTS_FDC(  DFadType , Cuda )
