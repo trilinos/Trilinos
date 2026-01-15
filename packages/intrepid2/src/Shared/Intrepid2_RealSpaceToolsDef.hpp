@@ -95,14 +95,13 @@ namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------
 
-
   template<typename DeviceType>
-  template<class MatrixViewType>
+  template<ordinal_type D, class MatrixViewType>
   KOKKOS_INLINE_FUNCTION
   typename MatrixViewType::value_type
   RealSpaceTools<DeviceType>::Serial::
-  det( const MatrixViewType inMat ) {
-
+  det( const MatrixViewType inMat )
+  {
     typedef typename decltype(inMat)::non_const_value_type value_type;
 #ifdef HAVE_INTREPID2_DEBUG
     {
@@ -118,27 +117,44 @@ namespace Intrepid2 {
 #endif
     }
 #endif
-    const auto dim = inMat.extent(0);
-    
-    value_type r_val = 0.0;
-    switch (dim) {
-    case 3:
-      r_val = ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
-                inMat(1,0) * inMat(2,1) * inMat(0,2) +
-                inMat(2,0) * inMat(0,1) * inMat(1,2) -
-                inMat(2,0) * inMat(1,1) * inMat(0,2) -
-                inMat(0,0) * inMat(2,1) * inMat(1,2) -
-                inMat(1,0) * inMat(0,1) * inMat(2,2) );
-      break;
-    case 2:
-      r_val = ( inMat(0,0) * inMat(1,1) -
-                inMat(0,1) * inMat(1,0) );
-      break;
-    case 1:
-      r_val = ( inMat(0,0) );
-      break;
+    if constexpr (D==1)
+    {
+      value_type r_val = ( inMat(0,0) );
+      return r_val;
     }
-    return r_val;
+    else if constexpr (D==2)
+    {
+      value_type r_val = ( inMat(0,0) * inMat(1,1) -
+                           inMat(0,1) * inMat(1,0) );
+      return r_val;
+    }
+    else if constexpr (D==3)
+    {
+      value_type r_val = ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
+                           inMat(1,0) * inMat(2,1) * inMat(0,2) +
+                           inMat(2,0) * inMat(0,1) * inMat(1,2) -
+                           inMat(2,0) * inMat(1,1) * inMat(0,2) -
+                           inMat(0,0) * inMat(2,1) * inMat(1,2) -
+                           inMat(1,0) * inMat(0,1) * inMat(2,2) );
+      return r_val;
+    }
+    static_assert((D >= 1) && (D <= 3));
+  }
+
+  template<typename DeviceType>
+  template<class MatrixViewType>
+  KOKKOS_INLINE_FUNCTION
+  typename MatrixViewType::value_type
+  RealSpaceTools<DeviceType>::Serial::
+  det( const MatrixViewType inMat ) {
+    const auto dim = inMat.extent(0);
+    switch (dim) {
+      case 3: return det<3, MatrixViewType>(inMat); break;
+      case 2: return det<2, MatrixViewType>(inMat); break;
+      case 1: return det<1, MatrixViewType>(inMat); break;
+      default: INTREPID2_TEST_FOR_ABORT((dim < 1) || (dim > 3), "dim must be 1, 2, or 3");
+    }
+    
   }
 
   // ------------------------------------------------------------------------------------

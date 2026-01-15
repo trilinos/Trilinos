@@ -67,6 +67,20 @@ namespace Intrepid2 {
           
           \param inMat  [in]  - array representing a single matrix, indexed by (D, D)
           
+          \note  Requirements: \n
+          \li rank(<b><var>inMats</var></b>) == 2  (checked at runtime, in debug mode)
+          \li matrix dimension is limited to 1, 2, or 3, and is equal to template parameter D (checked at compile time; check may depend on compilation environment).
+      */
+      template<ordinal_type D, class MatrixViewType>
+      KOKKOS_INLINE_FUNCTION
+      static typename MatrixViewType::value_type
+      det( const MatrixViewType inMat );
+
+      /** \brief Computes determinant of a single square matrix stored in
+          an array of rank 2.
+          
+          \param inMat  [in]  - array representing a single matrix, indexed by (D, D)
+          
           \note  Requirements (checked at runtime, in debug mode): \n
           \li rank(<b><var>inMats</var></b>) == 2
           \li matrix dimension is limited to 1, 2, and 3
@@ -76,6 +90,7 @@ namespace Intrepid2 {
       static typename MatrixViewType::value_type
       det( const MatrixViewType inMat );
 
+      
       /** \brief Computes dot product of two vectors stored in
           arrays of rank 1.
           
