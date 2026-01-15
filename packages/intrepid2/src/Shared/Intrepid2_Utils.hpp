@@ -27,6 +27,7 @@
 #ifdef HAVE_INTREPID2_SACADO
 #include "Kokkos_View_Fad_Fwd.hpp"
 #include "Kokkos_LayoutNatural.hpp"
+#include "Kokkos_ViewFactory.hpp"
 #endif
 
 namespace Intrepid2 {
@@ -321,8 +322,125 @@ namespace Intrepid2 {
   static ordinal_type get_dimension_scalar(const Kokkos::View<T, P...> &view) {
     return dimension_scalar(view);
   }
+
+  //! Used to obtain the dynRankView type from an input View,
+  // such that the ouptut view type has the default layout when the input has LayoutStride
+  template <typename InputView>
+  struct DeduceDynRankView
+  {
+    using value = typename InputView::non_const_value_type;
+    using layout = typename DeduceLayout<InputView>::result_layout;
+    using device = typename InputView::device_type;
+    using type = Kokkos::DynRankView<value, layout, device>;
+  };
+
+
+
+  //! @brief Factory to create a view based on the properties of input views
+  /// The class is useful when the view can be of Fad type
+  /// It works with both DynRankViews and Views
+  template <class... ViewPack>
+  struct CreateViewFactory
+  {
+    //! \brief Creates and returns a view that matches the value_type of the provided view 
+    ///        When Sacado is enabled we use Sacado implementation
+    /// \param [in] views  - the view(s) to match
+    /// \param [in] prop - the properties (e.g., label)
+    /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
+    template <class OutViewType, class CtorProp, class... Dims>
+    static OutViewType
+    create_view(const ViewPack &...views,
+                const CtorProp &prop,
+                const Dims... dims)
+    {
+#ifdef HAVE_INTREPID2_SACADO
+      using view_factory = Kokkos::ViewFactory<ViewPack...>;
+      return view_factory::template create_view<OutViewType>(views..., prop, dims...);
+#else
+      (void)views, ...;
+      return OutViewType(prop, dims...);
+#endif
+    }
+  };
+
+  //! \brief Creates and returns a view that matches the value_type of the provided view
+  ///        The type of the output view needs to be provided
+  ///        It works both with DynRankViews and Views
+  /// \param [in] view  - the view(s) to match
+  /// \param [in] prop - the properties (e.g., label)
+  /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
+  template <typename OutViewType, typename InViewType, typename CtorProp, typename... Dims>
+  typename std::enable_if<
+      Kokkos::is_view<InViewType>::value || Kokkos::is_dyn_rank_view<InViewType>::value,
+      OutViewType>::type
+  createViewFromViewWithType(const InViewType &view,
+                             const CtorProp &prop,
+                             const Dims... dims)
+  {
+    using cvf = CreateViewFactory<InViewType>;
+    return cvf::template create_view<OutViewType>(view, prop, dims...);
+  }
+
+  //! \brief Creates and returns a view that matches the value_type of the provided view
+  ///        The output view type is deduced from the input view, choosing the default layout when the input view has a stride layout
+  /// \param [in] view  - the view(s) to match
+  /// \param [in] prop - the properties (e.g., label)
+  /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
+  template <typename InViewType, typename CtorProp, typename... Dims>
+  typename std::enable_if<
+      Kokkos::is_view<InViewType>::value || Kokkos::is_dyn_rank_view<InViewType>::value,
+      typename DeduceDynRankView<InViewType>::type>::type
+  createDynRankViewFromView(const InViewType &view,
+                            const CtorProp &prop,
+                            const Dims... dims)
+  {
+    using OutViewType = typename DeduceDynRankView<InViewType>::type;
+    return createViewFromViewWithType<OutViewType>(view, prop, dims...);
+  }
+
+  //! \brief Creates an unmanaged view that matches the value_type of the provided view
+  ///        The type of the output view needs to be provided
+  /// \param [in] view  - the view(s) to match
+  /// \param [in] view  - the view(s) to match
+  /// \param [in] data  - pointer to array
+  /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
+  template <typename OutViewType, typename InViewType, typename CtorProp, typename... Dims>
+  typename std::enable_if<
+      Kokkos::is_view<InViewType>::value || Kokkos::is_dyn_rank_view<InViewType>::value,
+      OutViewType>::type
+  createUnmanagedViewWithType(const InViewType &view, const CtorProp &data, const Dims... dims)
+  {
+#ifdef HAVE_INTREPID2_SACADO
+    if constexpr (Sacado::is_view_fad<InViewType>::value)
+    {
+      const int derivative_dimension = get_dimension_scalar(view);
+      return OutViewType(data, dims..., derivative_dimension);
+    }
+    else
+      return OutViewType(data, dims...);
+#else
+    (void)view;
+    return OutViewType(data, dims...);
+#endif
+  }
+
+  //! \brief Creates an unmanaged view that matches the value_type of the provided view
+  ///        The output view type is deduced from the input view, choosing the default layout when the input view has a stride layout
+  /// \param [in] view  - the view(s) to match
+  /// \param [in] data  - pointer to array
+  /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
+  template <typename InViewType, typename CtorProp, typename ... Dims>
+  typename std::enable_if<
+    Kokkos::is_view<InViewType>::value || Kokkos::is_dyn_rank_view<InViewType>::value,
+    typename DeduceDynRankView<InViewType>::type
+  >::type
+  createUnmanagedDynRankView(const InViewType& view, const CtorProp&  data, const Dims... dims){
+      using OutViewType = typename DeduceDynRankView<InViewType>::type;
+      return createUnmanagedViewWithType<OutViewType>(view, data, dims...);
+  }
+
   
-  //! \brief Creates and returns a view that matches the provided view in Kokkos Layout.
+  //! \brief Creates and returns a view that matches the provided view in Kokkos Layout. DEPRECATED, use createDynRankViewFromView instead
   //! \param [in] view  - the view to match
   //! \param [in] label - a string label for the view to be created
   //! \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
@@ -335,21 +453,7 @@ namespace Intrepid2 {
   Kokkos::DynRankView<typename ViewType::value_type, typename DeduceLayout< ViewType >::result_layout, typename ViewType::device_type >
   getMatchingViewWithLabel(const ViewType &view, const std::string &label, DimArgs... dims)
   {
-    using ValueType          = typename ViewType::value_type;
-    using ResultLayout       = typename DeduceLayout< ViewType >::result_layout;
-    using DeviceType         = typename ViewType::device_type;
-    using ViewTypeWithLayout = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
-    
-    const bool allocateFadStorage = !(std::is_standard_layout<ValueType>::value && std::is_trivial<ValueType>::value);
-    if (!allocateFadStorage)
-    {
-      return ViewTypeWithLayout(label,dims...);
-    }
-    else
-    {
-      const int derivative_dimension = get_dimension_scalar(view);
-      return ViewTypeWithLayout(label,dims...,derivative_dimension);
-    }
+    return createDynRankViewFromView(view, label, dims...);
   }
 
   using std::enable_if_t;
@@ -832,6 +936,14 @@ namespace Intrepid2 {
     typename Device::execution_space().fence();
     return std::unique_ptr<Derived,DeviceDeleter<Device>>(p);
   }
+
+
+
+
+
+
+
+
 } // end namespace Intrepid2
 
 #endif
