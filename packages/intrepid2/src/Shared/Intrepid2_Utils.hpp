@@ -370,9 +370,7 @@ namespace Intrepid2 {
   /// \param [in] prop - the properties (e.g., label)
   /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
   template <typename OutViewType, typename InViewType, typename CtorProp, typename... Dims>
-  typename std::enable_if<
-      Kokkos::is_view<InViewType>::value || Kokkos::is_dyn_rank_view<InViewType>::value,
-      OutViewType>::type
+  OutViewType
   createViewFromViewWithType(const InViewType &view,
                              const CtorProp &prop,
                              const Dims... dims)
@@ -387,9 +385,7 @@ namespace Intrepid2 {
   /// \param [in] prop - the properties (e.g., label)
   /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
   template <typename InViewType, typename CtorProp, typename... Dims>
-  typename std::enable_if<
-      Kokkos::is_view<InViewType>::value || Kokkos::is_dyn_rank_view<InViewType>::value,
-      typename DeduceDynRankView<InViewType>::type>::type
+  typename DeduceDynRankView<InViewType>::type
   createDynRankViewFromView(const InViewType &view,
                             const CtorProp &prop,
                             const Dims... dims)
@@ -405,9 +401,7 @@ namespace Intrepid2 {
   /// \param [in] data  - pointer to array
   /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
   template <typename OutViewType, typename InViewType, typename CtorProp, typename... Dims>
-  typename std::enable_if<
-      Kokkos::is_view<InViewType>::value || Kokkos::is_dyn_rank_view<InViewType>::value,
-      OutViewType>::type
+  OutViewType
   createUnmanagedViewWithType(const InViewType &view, const CtorProp &data, const Dims... dims)
   {
 #ifdef HAVE_INTREPID2_SACADO
@@ -430,10 +424,7 @@ namespace Intrepid2 {
   /// \param [in] data  - pointer to array
   /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
   template <typename InViewType, typename CtorProp, typename ... Dims>
-  typename std::enable_if<
-    Kokkos::is_view<InViewType>::value || Kokkos::is_dyn_rank_view<InViewType>::value,
-    typename DeduceDynRankView<InViewType>::type
-  >::type
+  typename DeduceDynRankView<InViewType>::type
   createUnmanagedDynRankView(const InViewType& view, const CtorProp&  data, const Dims... dims){
       using OutViewType = typename DeduceDynRankView<InViewType>::type;
       return createUnmanagedViewWithType<OutViewType>(view, data, dims...);
