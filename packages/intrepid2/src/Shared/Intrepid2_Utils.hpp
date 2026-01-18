@@ -401,6 +401,7 @@ namespace Intrepid2 {
   /// \param [in] data  - pointer to array
   /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
   template <typename OutViewType, typename InViewType, typename CtorProp, typename... Dims>
+  KOKKOS_INLINE_FUNCTION
   OutViewType
   createUnmanagedViewWithType(const InViewType &view, const CtorProp &data, const Dims... dims)
   {
@@ -424,6 +425,7 @@ namespace Intrepid2 {
   /// \param [in] data  - pointer to array
   /// \param [in] dims  - dimensions to use for the view (the logical dimensions; this method handles adding the derivative dimension required for Fad types).
   template <typename InViewType, typename CtorProp, typename ... Dims>
+  KOKKOS_INLINE_FUNCTION
   typename DeduceDynRankView<InViewType>::type
   createUnmanagedDynRankView(const InViewType& view, const CtorProp&  data, const Dims... dims){
       using OutViewType = typename DeduceDynRankView<InViewType>::type;
