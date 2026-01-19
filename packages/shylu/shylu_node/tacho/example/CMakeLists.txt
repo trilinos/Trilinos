@@ -88,8 +88,38 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Tacho_SimpleSparseTest_File
 #
 TRIBITS_ADD_TEST(
   Tacho_ExampleDriverDouble.x
-  ARGS "--method=chol --variant=3"
-  NAME "Tacho_ExampleDriverDouble_Chol_v0"
+  ARGS "--niters=100 --nfacts=1 --nsolves=5 --default --method=chol --variant=2"
+  NAME "Tacho_ExampleDriverDouble_Chol_v2"
+  NOEXESUFFIX
+  NOEXEPREFIX
+  NUM_MPI_PROCS 1
+  CATEGORIES BASIC PERFORMANCE
+)
+
+TRIBITS_ADD_TEST(
+  Tacho_ExampleDriverDouble.x
+  ARGS "--niters=100 --nfacts=1 --nsolves=5 --default --method=chol --variant=3"
+  NAME "Tacho_ExampleDriverDouble_Chol_v3"
+  NOEXESUFFIX
+  NOEXEPREFIX
+  NUM_MPI_PROCS 1
+  CATEGORIES BASIC PERFORMANCE
+)
+
+TRIBITS_ADD_TEST(
+  Tacho_ExampleDriverDouble.x
+  ARGS "--niters=100 --nfacts=1 --nsolves=5 --default --method=lu --variant=2"
+  NAME "Tacho_ExampleDriverDouble_LU_v2"
+  NOEXESUFFIX
+  NOEXEPREFIX
+  NUM_MPI_PROCS 1
+  CATEGORIES BASIC PERFORMANCE
+)
+
+TRIBITS_ADD_TEST(
+  Tacho_ExampleDriverDouble.x
+  ARGS "--niters=100 --nfacts=1 --nsolves=5 --default --method=lu --variant=3"
+  NAME "Tacho_ExampleDriverDouble_LU_v3"
   NOEXESUFFIX
   NOEXEPREFIX
   NUM_MPI_PROCS 1
