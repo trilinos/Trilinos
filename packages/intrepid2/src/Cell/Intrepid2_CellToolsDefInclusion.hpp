@@ -245,13 +245,13 @@ namespace Intrepid2 {
       numPoints = points.extent(points.rank()-2), 
       spaceDim = cellTopo.getDimension();
 
-    auto refPoints = createDynRankViewFromView(points, "CellTools::checkPointwiseInclusion::refPoints", numCells, numPoints, spaceDim);
+    auto refPoints = Impl::createMatchingDynRankView(points, "CellTools::checkPointwiseInclusion::refPoints", numCells, numPoints, spaceDim);
     
     // expect refPoints(CPD), points (CPD or PD), cellWorkset(CND) 
     if(points.rank() == 3)  
       mapToReferenceFrame(refPoints, points, cellWorkset, cellTopo);
     else { //points.rank() == 2
-      auto cellPoints = createDynRankViewFromView(points, "CellTools::checkPointwiseInclusion::physCellPoints", numCells, numPoints, spaceDim);
+      auto cellPoints = Impl::createMatchingDynRankView(points, "CellTools::checkPointwiseInclusion::physCellPoints", numCells, numPoints, spaceDim);
       RealSpaceTools<DeviceType>::clone(cellPoints,points);
       mapToReferenceFrame(refPoints, cellPoints, cellWorkset, cellTopo);
     }    

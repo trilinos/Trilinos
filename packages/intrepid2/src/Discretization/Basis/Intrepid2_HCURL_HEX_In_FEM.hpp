@@ -110,7 +110,7 @@ namespace Intrepid2 {
 
           typename workViewType::pointer_type ptr = _work.data() + _work.extent(0)*ptBegin*get_dimension_scalar(_work);
 
-          workViewType work = createUnmanagedViewWithType<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
+          workViewType work = createMatchingUnmanagedView<workViewType>(_work, ptr, (ptEnd-ptBegin)*_work.extent(0));
 
           switch (opType) {
           case OPERATOR_VALUE : {

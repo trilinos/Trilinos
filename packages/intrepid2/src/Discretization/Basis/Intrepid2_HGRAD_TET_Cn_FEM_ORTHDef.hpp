@@ -290,8 +290,8 @@ typedef typename inputViewType::memory_space memory_space;
 typedef typename Kokkos::View<fad_type***, memory_space> outViewType;
 typedef typename Kokkos::View<fad_type**, memory_space> inViewType;
 
-inViewType in = createUnmanagedViewWithType<inViewType>(input, (value_type*)&inBuf[0][0], npts, spaceDim);
-outViewType out = createUnmanagedViewWithType<outViewType>(input, (value_type*)&outBuf[0][0][0], card, npts, n*(n+1)/2);
+inViewType in = createMatchingUnmanagedView<inViewType>(input, (value_type*)&inBuf[0][0], npts, spaceDim);
+outViewType out = createMatchingUnmanagedView<outViewType>(input, (value_type*)&outBuf[0][0][0], card, npts, n*(n+1)/2);
 
 for (ordinal_type i=0;i<npts;++i)
   for (ordinal_type j=0;j<spaceDim;++j) {
@@ -304,7 +304,7 @@ outViewType_ workView;
 if (n==2) {
   //char outBuf[bufSize*sizeof(typename inViewType::value_type)];
   fad_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][spaceDim+1];
-  workView = createUnmanagedViewWithType<outViewType_>(in, (value_type*)&outBuf[0][0][0], card, npts, spaceDim+1);
+  workView = createMatchingUnmanagedView<outViewType_>(in, (value_type*)&outBuf[0][0][0], card, npts, spaceDim+1);
 }
 OrthPolynomialTet<outViewType,inViewType,outViewType_,hasDeriv,n-1>::generate(out, in, workView, order);
 
@@ -410,7 +410,7 @@ getValues(
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    workViewType work = createViewFromViewWithType<workViewType>(inputPoints, "Basis_HGRAD_TET_In_FEM_ORTH::getValues::work", cardinality, inputPoints.extent(0), spaceDim+1);
+    workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HGRAD_TET_In_FEM_ORTH::getValues::work", cardinality, inputPoints.extent(0), spaceDim+1);
     typedef Functor<outputValueViewType,inputPointViewType,workViewType,OPERATOR_D1,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, work, order) );
     break;

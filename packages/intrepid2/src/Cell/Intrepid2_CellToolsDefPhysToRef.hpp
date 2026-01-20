@@ -68,7 +68,7 @@ namespace Intrepid2 {
     const auto numPoints = physPoints.extent(1);
     
     // init guess is created locally and non fad whatever refpoints type is 
-    auto initGuess = createDynRankViewFromView(refPoints, "CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim );
+    auto initGuess = Impl::createMatchingDynRankView(refPoints, "CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim );
     rst::clone(initGuess, cellCenter);
     
     mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, worksetCell, cellTopo);  
@@ -120,8 +120,8 @@ namespace Intrepid2 {
 
     using result_layout = typename DeduceLayout< decltype(refPoints) >::result_layout;
     // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
-    auto xOld = createDynRankViewFromView(refPoints, "CellTools::mapToReferenceFrameInitGuess::xOld", numCells, numPoints, spaceDim);
-    auto xTmp = createDynRankViewFromView(refPoints, "CellTools::mapToReferenceFrameInitGuess::xTmp", numCells, numPoints, spaceDim);
+    auto xOld = Impl::createMatchingDynRankView(refPoints, "CellTools::mapToReferenceFrameInitGuess::xOld", numCells, numPoints, spaceDim);
+    auto xTmp = Impl::createMatchingDynRankView(refPoints, "CellTools::mapToReferenceFrameInitGuess::xTmp", numCells, numPoints, spaceDim);
 
     // deep copy may not work with FAD but this is right thing to do as it can move data between devices
     Kokkos::deep_copy(xOld, initGuess);
@@ -129,7 +129,7 @@ namespace Intrepid2 {
     // jacobian should select fad dimension between xOld and worksetCell as they are input; no front interface yet
     using valueTypeJ = std::common_type_t<typename decltype(refPoints)::value_type, typename decltype(worksetCell)::value_type>;    
     using viewTypeJ = Kokkos::DynRankView<valueTypeJ, result_layout, DeviceType >;
-    using view_factory = CreateViewFactory<decltype(refPoints), decltype(worksetCell)>;
+    using view_factory = Impl::CreateViewFactory<decltype(refPoints), decltype(worksetCell)>;
     viewTypeJ jacobian = view_factory::template create_view<viewTypeJ>(refPoints, worksetCell, "CellTools::mapToReferenceFrameInitGuess::jacobian", numCells, numPoints, spaceDim, spaceDim);
     viewTypeJ jacobianInv = view_factory::template create_view<viewTypeJ>(refPoints, worksetCell, "CellTools::mapToReferenceFrameInitGuess::jacobianInv", numCells, numPoints, spaceDim, spaceDim);
     

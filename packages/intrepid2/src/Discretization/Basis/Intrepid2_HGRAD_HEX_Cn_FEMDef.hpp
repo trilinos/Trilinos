@@ -54,10 +54,10 @@ namespace Intrepid2 {
 
       switch (opType) {
       case OPERATOR_VALUE: {
-        viewType work_line = createUnmanagedViewWithType<viewType>(input, ptr0, cardLine, npts);
-        viewType output_x = createUnmanagedViewWithType<viewType>(input, ptr1, cardLine, npts);
-        viewType output_y = createUnmanagedViewWithType<viewType>(input, ptr2, cardLine, npts);
-        viewType output_z = createUnmanagedViewWithType<viewType>(input, ptr3, cardLine, npts);
+        viewType work_line = createMatchingUnmanagedView<viewType>(input, ptr0, cardLine, npts);
+        viewType output_x = createMatchingUnmanagedView<viewType>(input, ptr1, cardLine, npts);
+        viewType output_y = createMatchingUnmanagedView<viewType>(input, ptr2, cardLine, npts);
+        viewType output_z = createMatchingUnmanagedView<viewType>(input, ptr3, cardLine, npts);
         
         Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
           getValues(output_x, input_x, work_line, vinv);
@@ -105,35 +105,35 @@ namespace Intrepid2 {
             if (mult_x < 0) {
               // pass
             } else {              
-              viewType work_line = createUnmanagedViewWithType<viewType>(input, ptr0, cardLine, npts);
+              viewType work_line = createMatchingUnmanagedView<viewType>(input, ptr0, cardLine, npts);
               decltype(work_line)  output_x, output_y, output_z;
                   
               if (mult_x) {
-                output_x = createUnmanagedViewWithType<viewType>(input, ptr1, cardLine, npts, 1);
+                output_x = createMatchingUnmanagedView<viewType>(input, ptr1, cardLine, npts, 1);
                 Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
                   getValues(output_x, input_x, work_line, vinv, mult_x);
               } else {
-                output_x = createUnmanagedViewWithType<viewType>(input, ptr1, cardLine, npts);
+                output_x = createMatchingUnmanagedView<viewType>(input, ptr1, cardLine, npts);
                 Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
                   getValues(output_x, input_x, work_line, vinv);
               }
               
               if (mult_y) {
-                output_y = createUnmanagedViewWithType<viewType>(input, ptr2, cardLine, npts, 1);
+                output_y = createMatchingUnmanagedView<viewType>(input, ptr2, cardLine, npts, 1);
                 Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
                   getValues(output_y, input_y, work_line, vinv, mult_y);
               } else {
-                output_y = createUnmanagedViewWithType<viewType>(input, ptr2, cardLine, npts);
+                output_y = createMatchingUnmanagedView<viewType>(input, ptr2, cardLine, npts);
                 Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
                   getValues(output_y, input_y, work_line, vinv);
               }
 
               if (mult_z) {
-                output_z = createUnmanagedViewWithType<viewType>(input, ptr3, cardLine, npts, 1);
+                output_z = createMatchingUnmanagedView<viewType>(input, ptr3, cardLine, npts, 1);
                 Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
                   getValues(output_z, input_z, work_line, vinv, mult_z);
               } else {
-                output_z = createUnmanagedViewWithType<viewType>(input, ptr3, cardLine, npts);
+                output_z = createMatchingUnmanagedView<viewType>(input, ptr3, cardLine, npts);
                 Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
                   getValues(output_z, input_z, work_line, vinv);
               }
@@ -184,7 +184,7 @@ namespace Intrepid2 {
       const ordinal_type cardLine = std::cbrt(cardinality);
       const ordinal_type workSize = 4*cardLine;
 
-      auto work = createDynRankViewFromView(inputPoints, "Basis_HGRAD_HEX_Cn_FEM::getValues::work", workSize, inputPoints.extent(0));
+      auto work = createMatchingDynRankView(inputPoints, "Basis_HGRAD_HEX_Cn_FEM::getValues::work", workSize, inputPoints.extent(0));
 
       switch (operatorType) {
       case OPERATOR_VALUE: {

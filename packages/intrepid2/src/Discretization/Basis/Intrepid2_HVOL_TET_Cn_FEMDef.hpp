@@ -55,7 +55,7 @@ namespace Intrepid2 {
 
       switch (OpType) {
       case OPERATOR_VALUE: {
-        const ViewType phis = createUnmanagedViewWithType<ViewType>(input, ptr, card, npts);
+        const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts);
         ViewType dummyView;
 
         Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
@@ -71,9 +71,9 @@ namespace Intrepid2 {
       }
       case OPERATOR_GRAD:
       case OPERATOR_D1: {
-        const ViewType phis = createUnmanagedViewWithType<ViewType>(input, ptr, card, npts, spaceDim);
+        const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
         ptr += card*npts*spaceDim*get_dimension_scalar(input);
-        const ViewType workView = createUnmanagedViewWithType<ViewType>(input, ptr, card, npts, spaceDim+1);
+        const ViewType workView = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim+1);
         Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
           Serial<OpType>::getValues(phis, input, workView, order);
 
@@ -97,7 +97,7 @@ namespace Intrepid2 {
       case OPERATOR_D10: {
         const ordinal_type dkcard = getDkCardinality<OpType,spaceDim>(); //(orDn + 1);
         const 
-        ViewType phis = createUnmanagedViewWithType<ViewType>(input, ptr, card, npts, dkcard);
+        ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, dkcard);
         ViewType dummyView;
 
         Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
@@ -151,7 +151,7 @@ namespace Intrepid2 {
       switch (operatorType) {
       case OPERATOR_VALUE: {
         auto bufferSize = Basis_HVOL_TET_Cn_FEM::Serial<OPERATOR_VALUE>::getWorkSizePerPoint(order);
-        workViewType work = createViewFromViewWithType<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", bufferSize, inputPoints.extent(0));
+        workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", bufferSize, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
@@ -160,7 +160,7 @@ namespace Intrepid2 {
       case OPERATOR_GRAD:
       case OPERATOR_D1: {
         auto bufferSize = Basis_HVOL_TET_Cn_FEM::Serial<OPERATOR_D1>::getWorkSizePerPoint(order);
-        workViewType work = createViewFromViewWithType<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", bufferSize, inputPoints.extent(0));
+        workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", bufferSize, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
             OPERATOR_D1,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
@@ -170,14 +170,14 @@ namespace Intrepid2 {
         auto bufferSize = Basis_HVOL_TET_Cn_FEM::Serial<OPERATOR_D2>::getWorkSizePerPoint(order);
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
             OPERATOR_D2,numPtsPerEval> FunctorType;
-        workViewType work = createViewFromViewWithType<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", bufferSize, inputPoints.extent(0));
+        workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", bufferSize, inputPoints.extent(0));
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
         break;
       }
     /*  case OPERATOR_D3: {
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType
             OPERATOR_D3,numPtsPerEval> FunctorType;
-        workViewType work = createViewFromViewWithType<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", cardinality, inputPoints.extent(0), outputValues.extent(2));
+        workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HVOL_TET_Cn_FEM::getValues::work", cardinality, inputPoints.extent(0), outputValues.extent(2));
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
         break;
       }*/

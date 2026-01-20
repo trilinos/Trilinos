@@ -165,7 +165,7 @@ namespace Intrepid2 {
     switch (refPointRank) {
     case 2: {
       // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
-      vals = createViewFromViewWithType<valViewType>(physPoints, "CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
+      vals = Impl::createMatchingView<valViewType>(physPoints, "CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
       basis->getValues(vals,
                        refPoints,
                        OPERATOR_VALUE);
@@ -173,7 +173,7 @@ namespace Intrepid2 {
     }
     case 3: {
       // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.
-      vals = createViewFromViewWithType<valViewType>(physPoints, "CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
+      vals = Impl::createMatchingView<valViewType>(physPoints, "CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
       for (size_type cell=0;cell<numCells;++cell)
         basis->getValues(Kokkos::subdynrankview( vals,      cell, Kokkos::ALL(), Kokkos::ALL() ),
                          Kokkos::subdynrankview( refPoints, cell, Kokkos::ALL(), Kokkos::ALL() ),

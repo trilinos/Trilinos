@@ -356,8 +356,8 @@ namespace Intrepid2 {
     // Reference face normal = vector product of reference face tangents. Allocate temp FC storage:
     const auto dim = parentCell.getDimension();
     using ViewType = Kokkos::DynRankView< typename decltype(refFaceNormal)::value_type, DeviceType >; 
-    ViewType refFaceTanU = createViewFromViewWithType<ViewType>(refFaceNormal,"CellTools::getReferenceFaceNormal::refFaceTanU", dim);
-    ViewType refFaceTanV = createViewFromViewWithType<ViewType>(refFaceNormal,"CellTools::getReferenceFaceNormal::refFaceTanV", dim);
+    ViewType refFaceTanU = Impl::createMatchingView<ViewType>(refFaceNormal,"CellTools::getReferenceFaceNormal::refFaceTanU", dim);
+    ViewType refFaceTanV = Impl::createMatchingView<ViewType>(refFaceNormal,"CellTools::getReferenceFaceNormal::refFaceTanV", dim);
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, faceOrd, parentCell);
   
     RealSpaceTools<DeviceType>::vecprod(refFaceNormal, refFaceTanU, refFaceTanV);
@@ -410,7 +410,7 @@ namespace Intrepid2 {
     // Storage for constant reference edge tangent: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
     using ViewType = Kokkos::DynRankView< typename decltype(edgeTangents)::value_type, DeviceType >; 
-    ViewType refEdgeTan = createViewFromViewWithType<ViewType>(edgeTangents,"CellTools::getPhysicalEdgeTangents::refEdgeTan", dim);
+    ViewType refEdgeTan = Impl::createMatchingView<ViewType>(edgeTangents,"CellTools::getPhysicalEdgeTangents::refEdgeTan", dim);
     getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
     
     RealSpaceTools<DeviceType>::matvec(edgeTangents, worksetJacobians, refEdgeTan);
@@ -497,7 +497,7 @@ namespace Intrepid2 {
     const ordinal_type dim = parentCell.getDimension();
     
     using ViewType = Kokkos::DynRankView< typename decltype(edgeTangents)::value_type, DeviceType >; 
-    ViewType refEdgeTan = createViewFromViewWithType<ViewType>(edgeTangents,"CellTools::getPhysicalEdgeTangents::refEdgeTan", edgeTangents.extent(0), dim);
+    ViewType refEdgeTan = Impl::createMatchingView<ViewType>(edgeTangents,"CellTools::getPhysicalEdgeTangents::refEdgeTan", edgeTangents.extent(0), dim);
 
     const auto edgeMap = RefSubcellParametrization<DeviceType>::get(1, parentCell.getKey());
 
@@ -563,8 +563,8 @@ namespace Intrepid2 {
     const auto dim = parentCell.getDimension();
 
     using ViewType = Kokkos::DynRankView< typename decltype(faceTanU)::value_type, DeviceType >; 
-    ViewType refFaceTanU = createViewFromViewWithType<ViewType>(faceTanU,"CellTools::getPhysicalFaceTangents::refFaceTanU", dim);
-    ViewType refFaceTanV = createViewFromViewWithType<ViewType>(faceTanV,"CellTools::getPhysicalFaceTangents::refFaceTanV", dim);
+    ViewType refFaceTanU = Impl::createMatchingView<ViewType>(faceTanU,"CellTools::getPhysicalFaceTangents::refFaceTanU", dim);
+    ViewType refFaceTanV = Impl::createMatchingView<ViewType>(faceTanV,"CellTools::getPhysicalFaceTangents::refFaceTanV", dim);
 
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, worksetFaceOrd, parentCell);
 
@@ -664,8 +664,8 @@ namespace Intrepid2 {
     const ordinal_type dim  = parentCell.getDimension();
 
     using ViewType = Kokkos::DynRankView< typename decltype(faceTanU)::value_type, DeviceType >; 
-    ViewType refFaceTanU = createViewFromViewWithType<ViewType>(faceTanU,"CellTools::getPhysicalFaceTangents::refFaceTanU", faceTanU.extent(0), dim);
-    ViewType refFaceTanV = createViewFromViewWithType<ViewType>(faceTanV,"CellTools::getPhysicalFaceTangents::refFaceTanV", faceTanV.extent(0), dim);
+    ViewType refFaceTanU = Impl::createMatchingView<ViewType>(faceTanU,"CellTools::getPhysicalFaceTangents::refFaceTanU", faceTanU.extent(0), dim);
+    ViewType refFaceTanV = Impl::createMatchingView<ViewType>(faceTanV,"CellTools::getPhysicalFaceTangents::refFaceTanV", faceTanV.extent(0), dim);
     
 
     const auto faceMap = RefSubcellParametrization<DeviceType>::get(2, parentCell.getKey());
@@ -735,7 +735,7 @@ namespace Intrepid2 {
     if (dim == 2) {
       // compute edge tangents and rotate it
       using ViewType = Kokkos::DynRankView< typename decltype(sideNormals)::value_type, DeviceType >; 
-      ViewType edgeTangents = createViewFromViewWithType<ViewType>(sideNormals,"CellTools::getPhysicalSideNormals::edgeTan", sideNormals.extent(0), sideNormals.extent(1), sideNormals.extent(2));
+      ViewType edgeTangents = Impl::createMatchingView<ViewType>(sideNormals,"CellTools::getPhysicalSideNormals::edgeTan", sideNormals.extent(0), sideNormals.extent(1), sideNormals.extent(2));
       getPhysicalEdgeTangents(edgeTangents, worksetJacobians, worksetSideOrd, parentCell);
 
       //Note: this function has several template parameters and the compiler gets confused if using a lambda function
@@ -778,7 +778,7 @@ namespace Intrepid2 {
 
     if (dim == 2) {
       using ViewType = Kokkos::DynRankView< typename decltype(sideNormals)::value_type, DeviceType >; 
-      ViewType edgeTangents = createViewFromViewWithType<ViewType>(sideNormals,"CellTools::getPhysicalSideNormals::edgeTan", sideNormals.extent(0), sideNormals.extent(1), sideNormals.extent(2));
+      ViewType edgeTangents = Impl::createMatchingView<ViewType>(sideNormals,"CellTools::getPhysicalSideNormals::edgeTan", sideNormals.extent(0), sideNormals.extent(1), sideNormals.extent(2));
       getPhysicalEdgeTangents(edgeTangents, worksetJacobians, worksetSideOrds, parentCell);
 
       //Note: this function has several template parameters and the compiler gets confused if using a lambda function
@@ -841,8 +841,8 @@ namespace Intrepid2 {
     const auto dim = parentCell.getDimension();
 
     using ViewType = Kokkos::DynRankView< typename decltype(faceNormals)::value_type, DeviceType >; 
-    ViewType faceTanU = createViewFromViewWithType<ViewType>(faceNormals, "CellTools::getPhysicalFaceNormals::faceTanU", worksetSize, facePtCount, dim);
-    ViewType faceTanV = createViewFromViewWithType<ViewType>(faceNormals, "CellTools::getPhysicalFaceNormals::faceTanV", worksetSize, facePtCount, dim);
+    ViewType faceTanU = Impl::createMatchingView<ViewType>(faceNormals, "CellTools::getPhysicalFaceNormals::faceTanU", worksetSize, facePtCount, dim);
+    ViewType faceTanV = Impl::createMatchingView<ViewType>(faceNormals, "CellTools::getPhysicalFaceNormals::faceTanV", worksetSize, facePtCount, dim);
 
     getPhysicalFaceTangents(faceTanU, faceTanV, 
                             worksetJacobians, 
@@ -906,8 +906,8 @@ namespace Intrepid2 {
     const auto dim = parentCell.getDimension();
 
     using ViewType = Kokkos::DynRankView< typename decltype(faceNormals)::value_type, DeviceType >; 
-    ViewType faceTanU = createViewFromViewWithType<ViewType>(faceNormals,"CellTools::getPhysicalFaceNormals::faceTanU", worksetSize, facePtCount, dim);
-    ViewType faceTanV = createViewFromViewWithType<ViewType>(faceNormals,"CellTools::getPhysicalFaceNormals::faceTanV", worksetSize, facePtCount, dim);
+    ViewType faceTanU = Impl::createMatchingView<ViewType>(faceNormals,"CellTools::getPhysicalFaceNormals::faceTanU", worksetSize, facePtCount, dim);
+    ViewType faceTanV = Impl::createMatchingView<ViewType>(faceNormals,"CellTools::getPhysicalFaceNormals::faceTanV", worksetSize, facePtCount, dim);
 
     getPhysicalFaceTangents(faceTanU, faceTanV,
                             worksetJacobians,

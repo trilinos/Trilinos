@@ -271,7 +271,7 @@ getValues(
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    workViewType work = createViewFromViewWithType<workViewType>(inputPoints, "Basis_HGRAD_TRI_In_FEM_ORTH::getValues::work", cardinality, inputPoints.extent(0), spaceDim+1);
+    workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HGRAD_TRI_In_FEM_ORTH::getValues::work", cardinality, inputPoints.extent(0), spaceDim+1);
     typedef Functor<outputValueViewType,inputPointViewType,workViewType,OPERATOR_D1,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, work, order) );
     break;

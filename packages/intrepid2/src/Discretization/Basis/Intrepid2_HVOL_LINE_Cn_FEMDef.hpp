@@ -45,7 +45,7 @@ namespace Intrepid2 {
       
       switch (opType) {
       case OPERATOR_VALUE: {
-        ViewType phis = createUnmanagedViewWithType<ViewType>(input, work.data(), card, npts);     
+        ViewType phis = createMatchingUnmanagedView<ViewType>(input, work.data(), card, npts);     
 
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta);
@@ -73,7 +73,7 @@ namespace Intrepid2 {
       case OPERATOR_Dn: {
         // dkcard is always 1 for 1D element
         const ordinal_type dkcard = 1;
-        ViewType phis = createUnmanagedViewWithType<ViewType>(input, work.data(), card, npts, dkcard);     
+        ViewType phis = createMatchingUnmanagedView<ViewType>(input, work.data(), card, npts, dkcard);     
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta, opDn);
 
@@ -117,7 +117,7 @@ namespace Intrepid2 {
 
       const ordinal_type cardinality = outputValues.extent(0);
 
-      auto work = createDynRankViewFromView(inputPoints, "Basis_HVOL_LINE_Cn_FEM::getValues::work", cardinality, inputPoints.extent(0));
+      auto work = createMatchingDynRankView(inputPoints, "Basis_HVOL_LINE_Cn_FEM::getValues::work", cardinality, inputPoints.extent(0));
 
       switch (operatorType) {
       case OPERATOR_VALUE: {

@@ -58,7 +58,7 @@ namespace Intrepid2 {
 
       switch (OpType) {
       case OPERATOR_VALUE: {
-        const ViewType phis = createUnmanagedViewWithType<ViewType>(input, ptr, card, npts), dummyView;
+        const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts), dummyView;
 
         Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
           Serial<OpType>::getValues(phis, input, dummyView, order);
@@ -73,9 +73,9 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_CURL: {
-        const ViewType phis = createUnmanagedViewWithType<ViewType>(input, ptr, card, npts, spaceDim);
+        const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
         ptr += card*npts*spaceDim*get_dimension_scalar(input);
-        const ViewType workView = createUnmanagedViewWithType<ViewType>(input, ptr, card, npts, spaceDim+1);
+        const ViewType workView = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim+1);
 
         Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
           Serial<OPERATOR_GRAD>::getValues(phis, input, workView, order);
@@ -125,14 +125,14 @@ namespace Intrepid2 {
 
       switch (operatorType) {
       case OPERATOR_VALUE: {
-        auto work = createDynRankViewFromView(inputPoints, "Basis_HCURL_TRI_In_FEM::getValues::work", cardinality, inputPoints.extent(0));
+        auto work = createMatchingDynRankView(inputPoints, "Basis_HCURL_TRI_In_FEM::getValues::work", cardinality, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, decltype(work),
           OPERATOR_VALUE,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );
         break;
       }
       case OPERATOR_CURL: {
-        auto work = createDynRankViewFromView(inputPoints, "Basis_HCURL_TRI_In_FEM::getValues::work", cardinality*(2*spaceDim+1), inputPoints.extent(0));
+        auto work = createMatchingDynRankView(inputPoints, "Basis_HCURL_TRI_In_FEM::getValues::work", cardinality*(2*spaceDim+1), inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, decltype(work),
           OPERATOR_CURL,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );

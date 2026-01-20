@@ -104,19 +104,19 @@ namespace Intrepid2 {
     if ( cellVaries && pointVaries )
     {
       auto data = jacobian.getUnderlyingView4();
-      auto detData = createDynRankViewFromView(data, "Jacobian det data", data.extent_int(0), data.extent_int(1));
+      auto detData = Impl::createMatchingDynRankView(data, "Jacobian det data", data.extent_int(0), data.extent_int(1));
       return Data<PointScalar,DeviceType>(detData,2,extents,variationTypes);
     }
     else if (cellVaries || pointVaries)
     {
       auto data = jacobian.getUnderlyingView3();
-      auto detData = createDynRankViewFromView(data, "Jacobian det data", data.extent_int(0));
+      auto detData = Impl::createMatchingDynRankView(data, "Jacobian det data", data.extent_int(0));
       return Data<PointScalar,DeviceType>(detData,2,extents,variationTypes);
     }
     else
     {
       auto data = jacobian.getUnderlyingView1();
-      auto detData = createDynRankViewFromView(data, "Jacobian det data", 1);
+      auto detData = Impl::createMatchingDynRankView(data, "Jacobian det data", 1);
       return Data<PointScalar,DeviceType>(detData,2,extents,variationTypes);
     }
   }
@@ -132,25 +132,25 @@ namespace Intrepid2 {
     if ( jacDataRank == 4 )
     {
       auto jacData = jacobian.getUnderlyingView4();
-      auto invData = createDynRankViewFromView(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1),jacData.extent(2),jacData.extent(3));
+      auto invData = Impl::createMatchingDynRankView(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1),jacData.extent(2),jacData.extent(3));
       return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else if (jacDataRank == 3)
     {
       auto jacData = jacobian.getUnderlyingView3();
-      auto invData = createDynRankViewFromView(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1),jacData.extent(2));
+      auto invData = Impl::createMatchingDynRankView(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1),jacData.extent(2));
       return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else if (jacDataRank == 2)
     {
       auto jacData = jacobian.getUnderlyingView2();
-      auto invData = createDynRankViewFromView(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1));
+      auto invData = Impl::createMatchingDynRankView(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1));
       return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else if (jacDataRank == 1)
     {
       auto jacData = jacobian.getUnderlyingView1();
-      auto invData = createDynRankViewFromView(jacData, "Jacobian inv data",jacData.extent(0));
+      auto invData = Impl::createMatchingDynRankView(jacData, "Jacobian inv data",jacData.extent(0));
       return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else
@@ -828,7 +828,7 @@ namespace Intrepid2 {
     switch (pointRank) {
     case 2: {
       // For most FEMs
-      grads = createViewFromViewWithType<GradViewType>(points, "CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
+      grads = Impl::createMatchingView<GradViewType>(points, "CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
       basis->getValues(grads, 
                        points, 
                        OPERATOR_GRAD);
@@ -836,7 +836,7 @@ namespace Intrepid2 {
     }
     case 3: { 
       // For CVFEM
-      grads = createViewFromViewWithType<GradViewType>(points, "CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
+      grads = Impl::createMatchingView<GradViewType>(points, "CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
       for (ordinal_type cell=0;cell<numCells;++cell) 
         basis->getValues(Kokkos::subview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
                          Kokkos::subview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  

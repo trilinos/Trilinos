@@ -52,9 +52,9 @@ namespace Intrepid2 {
 
       switch (OpType) {
       case OPERATOR_VALUE: {
-        ViewType workLine = createUnmanagedViewWithType<ViewType>(input, ptr0, cardLine, npts);
-        ViewType outputLine = createUnmanagedViewWithType<ViewType>(input, ptr1, cardLine, npts);
-        ViewType outputBubble = createUnmanagedViewWithType<ViewType>(input, ptr2, cardBubble, npts);
+        ViewType workLine = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
+        ViewType outputLine = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts);
+        ViewType outputBubble = createMatchingUnmanagedView<ViewType>(input, ptr2, cardBubble, npts);
 
         // tensor product
         ordinal_type idx = 0;
@@ -98,11 +98,11 @@ namespace Intrepid2 {
       case OPERATOR_DIV: {
         ordinal_type idx = 0;
         { // x - component
-          ViewType workLine = createUnmanagedViewWithType<ViewType>(input, ptr0, cardLine, npts);
+          ViewType workLine = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
           // x bubble value
-          ViewType output_x = createUnmanagedViewWithType<ViewType>(input, ptr2, cardBubble, npts);
+          ViewType output_x = createMatchingUnmanagedView<ViewType>(input, ptr2, cardBubble, npts);
           // y line grad
-          ViewType output_y = createUnmanagedViewWithType<ViewType>(input, ptr1, cardLine, npts,1);
+          ViewType output_y = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts,1);
 
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
             getValues(output_x, input_x, workLine, vinvBubble);
@@ -117,11 +117,11 @@ namespace Intrepid2 {
                 output.access(idx,k) = output_x.access(i,k)*output_y.access(j,k,0);
         }
         { // y - component
-          ViewType workLine = createUnmanagedViewWithType<ViewType>(input, ptr0, cardLine, npts);
+          ViewType workLine = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
           // x line grad
-          ViewType output_x = createUnmanagedViewWithType<ViewType>(input, ptr1, cardLine, npts,1);
+          ViewType output_x = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts,1);
           // y bubble value
-          ViewType output_y = createUnmanagedViewWithType<ViewType>(input, ptr2, cardBubble, npts);
+          ViewType output_y = createMatchingUnmanagedView<ViewType>(input, ptr2, cardBubble, npts);
 
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
             getValues(output_y, input_y, workLine, vinvBubble);
@@ -181,7 +181,7 @@ namespace Intrepid2 {
       switch (operatorType) {
       case OPERATOR_VALUE: {
         auto workSize = Serial<OPERATOR_VALUE>::getWorkSizePerPoint(order);
-        auto work = createDynRankViewFromView(inputPoints, "Basis_HDIV_QUAD_In_FEM::getValues::work", workSize, inputPoints.extent(0));
+        auto work = createMatchingDynRankView(inputPoints, "Basis_HDIV_QUAD_In_FEM::getValues::work", workSize, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, decltype(work),
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, work) );
@@ -189,7 +189,7 @@ namespace Intrepid2 {
       }
       case OPERATOR_DIV: {
         auto workSize = Serial<OPERATOR_DIV>::getWorkSizePerPoint(order);
-        auto work = createDynRankViewFromView(inputPoints, "Basis_HDIV_QUAD_In_FEM::getValues::work", workSize, inputPoints.extent(0));
+        auto work = createMatchingDynRankView(inputPoints, "Basis_HDIV_QUAD_In_FEM::getValues::work", workSize, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, decltype(work),
             OPERATOR_DIV,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, work) );

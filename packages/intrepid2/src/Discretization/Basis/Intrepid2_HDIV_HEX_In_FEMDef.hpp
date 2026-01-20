@@ -54,10 +54,10 @@ namespace Intrepid2 {
 
       switch (OpType) {
       case OPERATOR_VALUE: {
-        ViewType workLine = createUnmanagedViewWithType<ViewType>(input, ptr0, cardLine, npts);
-        ViewType outputLine = createUnmanagedViewWithType<ViewType>(input, ptr1, cardLine, npts);
-        ViewType outputBubble_A = createUnmanagedViewWithType<ViewType>(input, ptr2, cardBubble, npts);
-        ViewType outputBubble_B = createUnmanagedViewWithType<ViewType>(input, ptr3, cardBubble, npts);
+        ViewType workLine = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
+        ViewType outputLine = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts);
+        ViewType outputBubble_A = createMatchingUnmanagedView<ViewType>(input, ptr2, cardBubble, npts);
+        ViewType outputBubble_B = createMatchingUnmanagedView<ViewType>(input, ptr3, cardBubble, npts);
         
         // tensor product
         ordinal_type idx = 0;
@@ -137,13 +137,13 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_DIV: {      
-        ViewType workLine = createUnmanagedViewWithType<ViewType>(input, ptr0, cardLine, npts);
+        ViewType workLine = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
         // A line value
-        ViewType outputBubble_A = createUnmanagedViewWithType<ViewType>(input, ptr2, cardBubble, npts);
+        ViewType outputBubble_A = createMatchingUnmanagedView<ViewType>(input, ptr2, cardBubble, npts);
         // B line value
-        ViewType outputBubble_B = createUnmanagedViewWithType<ViewType>(input, ptr3, cardBubble, npts);
+        ViewType outputBubble_B = createMatchingUnmanagedView<ViewType>(input, ptr3, cardBubble, npts);
         // Line grad
-        ViewType outputLine = createUnmanagedViewWithType<ViewType>(input, ptr1, cardLine, npts, 1);
+        ViewType outputLine = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts, 1);
         
         // tensor product
         ordinal_type idx = 0;
@@ -255,7 +255,7 @@ namespace Intrepid2 {
       switch (operatorType) {
       case OPERATOR_VALUE: {
         auto workSize = Serial<OPERATOR_VALUE>::getWorkSizePerPoint(order);
-        auto work = createDynRankViewFromView(inputPoints, "Basis_HDIV_HEX_In_FEM::getValues::work", workSize, inputPoints.extent(0));
+        auto work = createMatchingDynRankView(inputPoints, "Basis_HDIV_HEX_In_FEM::getValues::work", workSize, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, decltype(work),
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, work) );
@@ -263,7 +263,7 @@ namespace Intrepid2 {
       }
       case OPERATOR_DIV: {
         auto workSize = Serial<OPERATOR_DIV>::getWorkSizePerPoint(order);
-        auto work = createDynRankViewFromView(inputPoints, "Basis_HDIV_HEX_In_FEM::getValues::work", workSize, inputPoints.extent(0));
+        auto work = createMatchingDynRankView(inputPoints, "Basis_HDIV_HEX_In_FEM::getValues::work", workSize, inputPoints.extent(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, decltype(work),
             OPERATOR_DIV,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, work) );
