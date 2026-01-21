@@ -358,7 +358,7 @@ namespace Intrepid2 {
         using view_factory = Kokkos::ViewFactory<ViewPack...>;
         return view_factory::template create_view<OutViewType>(views..., prop, dims...);
   #else
-        (void)views, ...;
+        ((void)views, ...);
         return OutViewType(prop, dims...);
   #endif
       }
