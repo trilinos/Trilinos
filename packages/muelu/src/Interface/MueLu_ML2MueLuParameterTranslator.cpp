@@ -591,8 +591,8 @@ int ML2MueLuParameterTranslator::SetDefaultsSA(ParameterList &inList,
   List.set("coarse: sweeps", 1);
   List.set("coarse: split communicator", false);
 
-  List.set("ML output",0);
-  
+  List.set("ML output", 0);
+
   // Make sure we know this follows the ML defaults
   List.set("parameterlist: syntax", "ml");
 
@@ -634,8 +634,8 @@ int ML2MueLuParameterTranslator::SetDefaultsDD(ParameterList &inList,
   List.set("coarse: pre or post", "post");
   List.set("coarse: sweeps", 1);
 
-  List.set("ML output",0);
-  
+  List.set("ML output", 0);
+
   // Make sure we know this follows the ML defaults
   List.set("parameterlist: syntax", "ml");
 
@@ -883,7 +883,7 @@ int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList &i
   List11c.set("aggregation: threshold", .01);
   List11c.set("coarse: type", "Amesos-KLU");
   List11c.set("ML label", "coarse (1,1) block");
-  List11c.set("ML output",0);
+  List11c.set("ML output", 0);
   UpdateList(List11c, List11c_, OverWrite);
 
   /* Build Teuchos List: (1,1) */
@@ -895,7 +895,7 @@ int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList &i
   List11.set("aggregation: damping factor", 0.0);
   List11.set("edge matrix free: coarse", List11c);
   List11.set("aggregation: threshold", .01);
-  List11.set("ML output",0);
+  List11.set("ML output", 0);
   UpdateList(List11, List11_, OverWrite);
 
   /* Build Teuchos List: (2,2) */
@@ -907,8 +907,8 @@ int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList &i
   List22.set("aggregation: threshold", .01);
   List22.set("coarse: type", "Amesos-KLU");
   List22.set("ML label", "(2,2) block");
-  List22.set("ML output",0);
-  
+  List22.set("ML output", 0);
+
   // This line is commented out due to IFPACK issues
   //  List22.set("smoother: sweeps (level 0)",0);
   UpdateList(List22, List22_, OverWrite);
@@ -924,8 +924,8 @@ int ML2MueLuParameterTranslator::SetDefaultsRefMaxwell(Teuchos::ParameterList &i
   ListRF.set("refmaxwell: mode", "additive");
   ListRF.set("default values", "RefMaxwell");
   ListRF.set("zero starting solution", false);
-  ListRF.set("ML output",0);
-  
+  ListRF.set("ML output", 0);
+
   // Make sure we know this follows the ML defaults
   ListRF.set("parameterlist: syntax", "ml");
 
