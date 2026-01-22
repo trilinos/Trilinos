@@ -1207,7 +1207,7 @@ public:
 #endif
         const auto &s = _h_supernodes(sid);
         {
-          const ordinal_type m = s.m, n = s.n;
+          const ordinal_type m = s.m;
           if (m > 0) {
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
@@ -1293,7 +1293,7 @@ public:
 
         const auto &s = _h_supernodes(sid);
         {
-          const ordinal_type m = s.m, n = s.n;
+          const ordinal_type m = s.m;
           if (m > 0) {
             // Factor the diagonal block
             value_type *aptr = s.u_buf;
@@ -1394,14 +1394,13 @@ public:
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        blas_handle_type   handle_blas   = getBlasHandle();
         lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
 
         const auto &s = _h_supernodes(sid);
         {
-          const ordinal_type m = s.m, n = s.n;
+          const ordinal_type m = s.m;
           if (m > 0) {
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
