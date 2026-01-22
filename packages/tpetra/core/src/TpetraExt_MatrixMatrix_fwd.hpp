@@ -90,9 +90,9 @@ void import_and_extract_views(
     bool userAssertsThereAreNoRemotes                                                = false);
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
-struct KernelWrappers;
+struct KernelWrappers_spgemm;
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
-struct KernelWrappers2;
+struct KernelWrappers_jacobi;
 
 }  // namespace MMdetails
 }  // namespace Tpetra

@@ -134,7 +134,7 @@ void shuffle_crs_entries(std::vector<ordinal_type>& colind_rand,
 //
 
 // Unit Test the functionality in Tpetra_Import_Util
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Import_Util, SortCrsEntries, Scalar, LO, GO) {
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Import_Util, SortCrsEntries, Scalar, LO, GO, NT) {
   using Tpetra::Import_Util::sortAndMergeCrsEntries;
   using Tpetra::Import_Util::sortCrsEntries;
 
@@ -146,6 +146,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Import_Util, SortCrsEntries, Scalar, LO, GO) {
   typedef typename std::vector<ordinal_type> colind_type;
   typedef typename std::vector<scalar_type> vals_type;
   typedef typename colind_type::size_type size_type;
+
+  // Map is not actually used, but is needed to instantiate Kokkos
+  auto comm = Tpetra::getDefaultComm();
+  const Tpetra::global_size_t INVALID =
+      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+  auto dummy_map = Tpetra::Map<LO, GO, NT>(INVALID, 1, 0, comm);
 
   int max_num_entries_per_row = 7;   // should be odd
   int num_cols                = 15;  // should be odd
@@ -393,10 +399,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Import_Util, SortCrsEntriesKokkos, Scalar, LO,
 // INSTANTIATIONS
 //
 
-#define UNIT_TEST_GROUP_SC_LO_GO(SC, LO, GO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(Import_Util, SortCrsEntries, SC, LO, GO)
-
-#define UNIT_TEST_GROUP_SC_LO_GO_NO(SC, LO, GO, NT) \
+#define UNIT_TEST_GROUP_SC_LO_GO_NO(SC, LO, GO, NT)                                 \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Import_Util, SortCrsEntries, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Import_Util, SortCrsEntriesKokkos, SC, LO, GO, NT)
 
 // Note: This test fails.  Should fix later.
@@ -406,8 +410,6 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 
 // Test CrsMatrix for all Scalar, LO, GO template parameter
 // combinations, and the default Node type.
-TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP_SC_LO_GO)
-
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(UNIT_TEST_GROUP_SC_LO_GO_NO)
 
 }  // namespace

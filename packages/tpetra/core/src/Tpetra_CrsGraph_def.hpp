@@ -4208,11 +4208,6 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     sortAndMergeAllIndices(const bool sorted, const bool merged) {
   using std::endl;
-  using LO = LocalOrdinal;
-  using host_execution_space =
-      typename Kokkos::View<LO*, device_type>::host_mirror_type::
-          execution_space;
-  using range_type           = Kokkos::RangePolicy<host_execution_space, LO>;
   const char tfecfFuncName[] = "sortAndMergeAllIndices";
   Details::ProfilingRegion regionSortAndMerge("Tpetra::CrsGraph::sortAndMergeAllIndices");
 
@@ -4232,38 +4227,56 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
                                         "merging any indices.  "
                                         "Please report this bug to the Tpetra developers.");
 
-  if (!sorted || !merged) {
-    const LO lclNumRows(this->getLocalNumRows());
-    auto range = range_type(0, lclNumRows);
+#if KOKKOS_VERSION >= 40799
+  using ATS = KokkosKernels::ArithTraits<LocalOrdinal>;
+#else
+  using ATS = Kokkos::ArithTraits<LocalOrdinal>;
+#endif
+  const auto unused = ATS::max();
 
-    if (verbose_) {
-      size_t totalNumDups = 0;
-      // Sync and mark-modified the local indices before disabling WDV tracking
-      lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
-      Details::disableWDVTracking();
-      Kokkos::parallel_reduce(
-          range,
-          [this, sorted, merged](const LO lclRow, size_t& numDups) {
-            const RowInfo rowInfo = this->getRowInfo(lclRow);
-            numDups += this->sortAndMergeRowIndices(rowInfo, sorted, merged);
-          },
-          totalNumDups);
-      Details::enableWDVTracking();
-      std::ostringstream os;
-      os << *prefix << "totalNumDups=" << totalNumDups << endl;
-      std::cerr << os.str();
-    } else {
-      // make sure that host rowptrs have been created before we enter the parallel region
-      (void)this->getRowPtrsUnpackedHost();
-      // Sync and mark-modified the local indices before disabling WDV tracking
-      lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
-      Details::disableWDVTracking();
-      Kokkos::parallel_for(range,
-                           [this, sorted, merged](const LO lclRow) {
-                             const RowInfo rowInfo = this->getRowInfo(lclRow);
-                             this->sortAndMergeRowIndices(rowInfo, sorted, merged);
-                           });
-      Details::enableWDVTracking();
+  // We are sorting & merging the unpacked views.
+  // This means that not all entries are actually in use. We need to take k_numRowEntries_ into account.
+  if (!sorted && merged) {
+    KokkosSparse::sort_crs_graph(rowPtrsUnpacked_dev_, lclIndsUnpacked_wdv.getDeviceView(Access::ReadWrite));
+    this->indicesAreSorted_ = true;  // we just sorted every row
+  } else if (!sorted || !merged) {
+    auto rowptr           = rowPtrsUnpacked_dev_;
+    auto colinds          = lclIndsUnpacked_wdv.getDeviceView(Access::ReadWrite);
+    auto nnz_before_merge = colinds.extent(0);
+
+    auto numRows = rowptr.extent(0) - 1;
+
+    // Create a device copy of k_numRowEntries_.
+    auto k_numRowEntries_d = Kokkos::create_mirror_view(k_numRowEntries_);
+    Kokkos::deep_copy(k_numRowEntries_d, k_numRowEntries_);
+    // make sure that unused entries will get ordered last
+    Kokkos::parallel_for(
+        "", Kokkos::RangePolicy<execution_space, LocalOrdinal>(0, numRows), KOKKOS_LAMBDA(const LocalOrdinal rlid) {
+          for (size_t jj = rowptr(rlid) + k_numRowEntries_d(rlid); jj < rowptr(rlid + 1); ++jj) {
+            colinds(jj) = unused;
+          }
+        });
+
+    // sort and merge
+    KokkosSparse::sort_and_merge_graph(rowptr, colinds, rowptr, colinds);
+
+    if (colinds.extent(0) != nnz_before_merge) {
+      // merge triggered reallocation
+      lclIndsUnpacked_wdv = local_inds_wdv_type(colinds);
+      setRowPtrsUnpacked(rowptr);
+
+      {  // update k_numRowEntries_, ignoring unused entries
+        Kokkos::parallel_for(
+            "", Kokkos::RangePolicy<execution_space, size_t>(0, numRows), KOKKOS_LAMBDA(const size_t rlid) {
+              auto nnzRow = rowptr(rlid + 1) - rowptr(rlid);
+              if ((nnzRow > 0) && (colinds(rowptr(rlid + 1) - 1) == unused))
+                --nnzRow;
+              k_numRowEntries_d(rlid) = nnzRow;
+            });
+        num_row_entries_type numEntries_h("numEntriesPerRow", numRows);
+        Kokkos::deep_copy(numEntries_h, k_numRowEntries_d);
+        k_numRowEntries_ = numEntries_h;
+      }
     }
     this->indicesAreSorted_ = true;  // we just sorted every row
     this->noRedundancies_   = true;  // we just merged every row

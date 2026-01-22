@@ -3923,9 +3923,9 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   // Friend the matrix multiply kernels so they can access internally-cached integer
   // row pointers without making them part of the CrsMatrix interface
   template <typename S, typename LO, typename GO, typename NODE, typename LOV>
-  friend struct Tpetra::MMdetails::KernelWrappers;
+  friend struct Tpetra::MMdetails::KernelWrappers_spgemm;
   template <typename S, typename LO, typename GO, typename NODE, typename LOV>
-  friend struct Tpetra::MMdetails::KernelWrappers2;
+  friend struct Tpetra::MMdetails::KernelWrappers_jacobi;
 
   // friend Matrix Matrix utility function that needs to access integer-typed rowptrs
   friend void Tpetra::MMdetails::import_and_extract_views<Scalar, LocalOrdinal, GlobalOrdinal, Node>(

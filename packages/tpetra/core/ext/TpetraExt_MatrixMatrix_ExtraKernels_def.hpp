@@ -922,74 +922,20 @@ void copy_out_from_thread_memory(const OutColindType& thread_total_nnz,
 #endif  // OpenMP
 
 /*********************************************************************************************************/
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
-void jacobi_A_B_newmatrix_MultiplyScaleAddKernel(Scalar omega,
-                                                 const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
-                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-                                                 const LocalOrdinalViewType& Acol2Brow,
-                                                 const LocalOrdinalViewType& Acol2Irow,
-                                                 const LocalOrdinalViewType& Bcol2Ccol,
-                                                 const LocalOrdinalViewType& Icol2Ccol,
-                                                 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                 Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
-                                                 const std::string& label,
-                                                 const Teuchos::RCP<Teuchos::ParameterList>& params) {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<TimeMonitor> MM  = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK"))));
-  Teuchos::RCP<TimeMonitor> MM2 = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Multiply"))));
-  using Teuchos::rcp;
-#endif
-  typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix_t;
-
-  // This kernel computes (I-omega Dinv A) B the slow way (for generality's sake, you must understand)
-
-  // 1) Multiply A*B
-  Teuchos::RCP<Matrix_t> AB = Teuchos::rcp(new Matrix_t(C.getRowMap(), 0));
-  Tpetra::MMdetails::mult_A_B_newmatrix(Aview, Bview, *AB, label + std::string(" MSAK"), params);
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2 = Teuchos::null;
-  MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Scale"))));
-#endif
-
-  // 2) Scale A by Dinv
-  AB->leftScale(Dinv);
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2 = Teuchos::null;
-  MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix MSAK Add"))));
-#endif
-
-  // 3) Add [-omega Dinv A] + B
-  Teuchos::ParameterList jparams;
-  if (!params.is_null()) {
-    jparams = *params;
-    jparams.set("label", label + std::string(" MSAK Add"));
-  }
-  Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-  Tpetra::MatrixMatrix::add(one, false, *Bview.origMatrix, Scalar(-omega), false, *AB, C, AB->getDomainMap(), AB->getRangeMap(), Teuchos::rcp(&jparams, false));
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM2 = Teuchos::null;
-#endif
-}  // jacobi_A_B_newmatrix_MultiplyScaleAddKernel
-
 #if defined(HAVE_TPETRA_INST_OPENMP)
 /*********************************************************************************************************/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class LocalOrdinalViewType>
-static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Rview,
-                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
-                                                                 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Pview,
-                                                                 const LocalOrdinalViewType& Acol2PRow,
-                                                                 const LocalOrdinalViewType& Acol2PRowImport,
-                                                                 const LocalOrdinalViewType& Pcol2Accol,
-                                                                 const LocalOrdinalViewType& PIcol2Accol,
-                                                                 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Ac,
-                                                                 Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Acimport,
-                                                                 const std::string& label,
-                                                                 const Teuchos::RCP<Teuchos::ParameterList>& params) {
+static void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Rview,
+                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
+                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Pview,
+                                                          const LocalOrdinalViewType& Acol2PRow,
+                                                          const LocalOrdinalViewType& Acol2PRowImport,
+                                                          const LocalOrdinalViewType& Pcol2Accol,
+                                                          const LocalOrdinalViewType& PIcol2Accol,
+                                                          CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Ac,
+                                                          Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Acimport,
+                                                          const std::string& label,
+                                                          const Teuchos::RCP<Teuchos::ParameterList>& params) {
   using Teuchos::RCP;
   using Tpetra::MatrixMatrix::UnmanagedView;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -1246,17 +1192,17 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
 
 /*********************************************************************************************************/
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class LocalOrdinalViewType>
-static inline void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Rview,
-                                                             CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
-                                                             CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Pview,
-                                                             const LocalOrdinalViewType& Acol2PRow,
-                                                             const LocalOrdinalViewType& Acol2PRowImport,
-                                                             const LocalOrdinalViewType& Pcol2Accol,
-                                                             const LocalOrdinalViewType& PIcol2Accol,
-                                                             CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Ac,
-                                                             Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Acimport,
-                                                             const std::string& label,
-                                                             const Teuchos::RCP<Teuchos::ParameterList>& params) {
+static void mult_R_A_P_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Rview,
+                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Aview,
+                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Pview,
+                                                      const LocalOrdinalViewType& Acol2PRow,
+                                                      const LocalOrdinalViewType& Acol2PRowImport,
+                                                      const LocalOrdinalViewType& Pcol2Accol,
+                                                      const LocalOrdinalViewType& PIcol2Accol,
+                                                      CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode>& Ac,
+                                                      Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> > Acimport,
+                                                      const std::string& label,
+                                                      const Teuchos::RCP<Teuchos::ParameterList>& params) {
   using Teuchos::RCP;
   using Tpetra::MatrixMatrix::UnmanagedView;
 #ifdef HAVE_TPETRA_MMM_TIMINGS

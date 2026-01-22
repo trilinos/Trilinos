@@ -15,6 +15,7 @@
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_shortSort.hpp"
+#include "Tpetra_Details_Sortedness.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "KokkosSparse_Utils.hpp"
@@ -103,7 +104,8 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #endif
 
   const bool sort = [&]() {
-    constexpr bool sortDefault = true;  // see #4607 discussion
+    // see #4607 discussion
+    constexpr bool sortDefault = Details::MatrixTraits<Scalar, LocalOrdinal, GlobalOrdinal, Node>::spgemmNeedsSortedInputs();
     const char sortParamName[] = "sort";
     return params.get() == nullptr ? sortDefault : params->get(sortParamName, sortDefault);
   }();

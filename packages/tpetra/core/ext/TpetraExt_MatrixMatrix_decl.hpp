@@ -463,29 +463,60 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node,
           class LocalOrdinalViewType>
-struct KernelWrappers {
-  static inline void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                       CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-                                                       const LocalOrdinalViewType& Acol2Brow,
-                                                       const LocalOrdinalViewType& Acol2Irow,
-                                                       const LocalOrdinalViewType& Bcol2Ccol,
-                                                       const LocalOrdinalViewType& Icol2Ccol,
-                                                       CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                       Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
-                                                       const std::string& label                           = std::string(),
-                                                       const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+struct KernelWrappers_spgemm {
+  static void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                const LocalOrdinalViewType& Acol2Brow,
+                                                const LocalOrdinalViewType& Acol2Irow,
+                                                const LocalOrdinalViewType& Bcol2Ccol,
+                                                const LocalOrdinalViewType& Icol2Ccol,
+                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
+                                                const std::string& label                           = std::string(),
+                                                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-                                                   const LocalOrdinalViewType& Acol2Brow,
-                                                   const LocalOrdinalViewType& Acol2Irow,
-                                                   const LocalOrdinalViewType& Bcol2Ccol,
-                                                   const LocalOrdinalViewType& Icol2Ccol,
-                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
-                                                   const std::string& label                           = std::string(),
-                                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  static void mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                            const LocalOrdinalViewType& Acol2Brow,
+                                            const LocalOrdinalViewType& Acol2Irow,
+                                            const LocalOrdinalViewType& Bcol2Ccol,
+                                            const LocalOrdinalViewType& Icol2Ccol,
+                                            CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                            Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
+                                            const std::string& label                           = std::string(),
+                                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 };
+
+#ifdef HAVE_TPETRA_INST_SERIAL
+// MMM KernelWrappers for Partial Specialization to Serial
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class LocalOrdinalViewType>
+struct KernelWrappers_spgemm<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode, LocalOrdinalViewType> {
+  static void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& Aview,
+                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& Bview,
+                                                const LocalOrdinalViewType& Acol2Brow,
+                                                const LocalOrdinalViewType& Acol2Irow,
+                                                const LocalOrdinalViewType& Bcol2Ccol,
+                                                const LocalOrdinalViewType& Icol2Ccol,
+                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& C,
+                                                Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>> Cimport,
+                                                const std::string& label                           = std::string(),
+                                                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+  static void mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& Aview,
+                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& Bview,
+                                            const LocalOrdinalViewType& Acol2Brow,
+                                            const LocalOrdinalViewType& Acol2Irow,
+                                            const LocalOrdinalViewType& Bcol2Ccol,
+                                            const LocalOrdinalViewType& Icol2Ccol,
+                                            CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& C,
+                                            Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>> Cimport,
+                                            const std::string& label                           = std::string(),
+                                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+};
+#endif
 
 // Jacobi Kernel wrappers struct
 // Because C++ doesn't support partial template specialization of functions.
@@ -495,33 +526,67 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node,
           class LocalOrdinalViewType>
-struct KernelWrappers2 {
-  static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
-                                                         const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
-                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-                                                         const LocalOrdinalViewType& Acol2Brow,
-                                                         const LocalOrdinalViewType& Acol2Irow,
-                                                         const LocalOrdinalViewType& Bcol2Ccol,
-                                                         const LocalOrdinalViewType& Icol2Ccol,
-                                                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                         Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
-                                                         const std::string& label                           = std::string(),
-                                                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+struct KernelWrappers_jacobi {
+  static void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+                                                  const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                  const LocalOrdinalViewType& Acol2Brow,
+                                                  const LocalOrdinalViewType& Acol2Irow,
+                                                  const LocalOrdinalViewType& Bcol2Ccol,
+                                                  const LocalOrdinalViewType& Icol2Ccol,
+                                                  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
+                                                  const std::string& label                           = std::string(),
+                                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
-                                                     const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
-                                                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-                                                     const LocalOrdinalViewType& Acol2Brow,
-                                                     const LocalOrdinalViewType& Acol2Irow,
-                                                     const LocalOrdinalViewType& Bcol2Ccol,
-                                                     const LocalOrdinalViewType& Icol2Ccol,
-                                                     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-                                                     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
-                                                     const std::string& label                           = std::string(),
-                                                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  static void jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+                                              const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Dinv,
+                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                              const LocalOrdinalViewType& Acol2Brow,
+                                              const LocalOrdinalViewType& Acol2Irow,
+                                              const LocalOrdinalViewType& Bcol2Ccol,
+                                              const LocalOrdinalViewType& Icol2Ccol,
+                                              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                              Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
+                                              const std::string& label                           = std::string(),
+                                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 };
+
+#ifdef HAVE_TPETRA_INST_SERIAL
+// Jacobi KernelWrappers for Partial Specialization to Serial
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal, class LocalOrdinalViewType>
+struct KernelWrappers_jacobi<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode, LocalOrdinalViewType> {
+  static void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+                                                  const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& Dinv,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& Aview,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& Bview,
+                                                  const LocalOrdinalViewType& Acol2Brow,
+                                                  const LocalOrdinalViewType& Acol2Irow,
+                                                  const LocalOrdinalViewType& Bcol2Ccol,
+                                                  const LocalOrdinalViewType& Icol2Ccol,
+                                                  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& C,
+                                                  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>> Cimport,
+                                                  const std::string& label                           = std::string(),
+                                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+  static void jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+                                              const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& Dinv,
+                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& Aview,
+                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& Bview,
+                                              const LocalOrdinalViewType& Acol2Brow,
+                                              const LocalOrdinalViewType& Acol2Irow,
+                                              const LocalOrdinalViewType& Bcol2Ccol,
+                                              const LocalOrdinalViewType& Icol2Ccol,
+                                              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>& C,
+                                              Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::KokkosSerialWrapperNode>> Cimport,
+                                              const std::string& label                           = std::string(),
+                                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+};
+#endif
 
 // Triple-Product Kernel wrappers struct
 // Because C++ doesn't support partial template specialization of functions.
@@ -531,51 +596,51 @@ template <class Scalar,
           class Node,
           class LocalOrdinalViewType>
 struct KernelWrappers3 {
-  static inline void mult_R_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
-                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                                         const LocalOrdinalViewType& Acol2Prow,
-                                                         const LocalOrdinalViewType& Acol2PIrow,
-                                                         const LocalOrdinalViewType& Pcol2Ccol,
-                                                         const LocalOrdinalViewType& PIcol2Ccol,
-                                                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
-                                                         Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Acimport,
-                                                         const std::string& label                           = std::string(),
-                                                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  static void mult_R_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
+                                                  const LocalOrdinalViewType& Acol2Prow,
+                                                  const LocalOrdinalViewType& Acol2PIrow,
+                                                  const LocalOrdinalViewType& Pcol2Ccol,
+                                                  const LocalOrdinalViewType& PIcol2Ccol,
+                                                  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
+                                                  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Acimport,
+                                                  const std::string& label                           = std::string(),
+                                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void mult_R_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
-                                                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                                     const LocalOrdinalViewType& Acol2Prow,
-                                                     const LocalOrdinalViewType& Acol2PIrow,
-                                                     const LocalOrdinalViewType& Pcol2Ccol,
-                                                     const LocalOrdinalViewType& PIcol2Ccol,
-                                                     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
-                                                     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Acimport,
-                                                     const std::string& label                           = std::string(),
-                                                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  static void mult_R_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
+                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                              CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
+                                              const LocalOrdinalViewType& Acol2Prow,
+                                              const LocalOrdinalViewType& Acol2PIrow,
+                                              const LocalOrdinalViewType& Pcol2Ccol,
+                                              const LocalOrdinalViewType& PIcol2Ccol,
+                                              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
+                                              Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Acimport,
+                                              const std::string& label                           = std::string(),
+                                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void mult_PT_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                          CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                                          const LocalOrdinalViewType& Acol2Prow,
-                                                          const LocalOrdinalViewType& Acol2PIrow,
-                                                          const LocalOrdinalViewType& Pcol2Ccol,
-                                                          const LocalOrdinalViewType& PIcol2Ccol,
-                                                          CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
-                                                          Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Acimport,
-                                                          const std::string& label                           = std::string(),
-                                                          const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  static void mult_PT_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
+                                                   const LocalOrdinalViewType& Acol2Prow,
+                                                   const LocalOrdinalViewType& Acol2PIrow,
+                                                   const LocalOrdinalViewType& Pcol2Ccol,
+                                                   const LocalOrdinalViewType& PIcol2Ccol,
+                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
+                                                   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Acimport,
+                                                   const std::string& label                           = std::string(),
+                                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  static inline void mult_PT_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                      CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                                      const LocalOrdinalViewType& Acol2Prow,
-                                                      const LocalOrdinalViewType& Acol2PIrow,
-                                                      const LocalOrdinalViewType& Pcol2Ccol,
-                                                      const LocalOrdinalViewType& PIcol2Ccol,
-                                                      CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
-                                                      Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Acimport,
-                                                      const std::string& label                           = std::string(),
-                                                      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  static void mult_PT_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
+                                               const LocalOrdinalViewType& Acol2Prow,
+                                               const LocalOrdinalViewType& Acol2PIrow,
+                                               const LocalOrdinalViewType& Pcol2Ccol,
+                                               const LocalOrdinalViewType& PIcol2Ccol,
+                                               CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
+                                               Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Acimport,
+                                               const std::string& label                           = std::string(),
+                                               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 };
 
 // This only merges matrices that look like B & Bimport, aka, they have no overlapping rows

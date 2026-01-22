@@ -37,10 +37,8 @@
 /*********************************************************************************************************/
 // Include the architecture-specific kernel partial specializations here
 // NOTE: This needs to be outside all namespaces
+// #include "TpetraExt_MatrixMatrix_Serial.hpp"
 #include "TpetraExt_MatrixMatrix_OpenMP.hpp"
-#include "TpetraExt_MatrixMatrix_Cuda.hpp"
-#include "TpetraExt_MatrixMatrix_HIP.hpp"
-#include "TpetraExt_MatrixMatrix_SYCL.hpp"
 
 namespace Tpetra {
 

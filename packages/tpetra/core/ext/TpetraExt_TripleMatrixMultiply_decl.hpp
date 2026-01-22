@@ -137,16 +137,16 @@ template <class Scalar,
           class GlobalOrdinal,
           class Node>
 struct KernelWrappers3MMM {
-  static inline void mult_PT_A_P_newmatrix_kernel_wrapper_2pass(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                                                const Teuchos::Array<LocalOrdinal>& Acol2PRow,
-                                                                const Teuchos::Array<LocalOrdinal>& Acol2PRowImport,
-                                                                const Teuchos::Array<LocalOrdinal>& Pcol2Accol,
-                                                                const Teuchos::Array<LocalOrdinal>& PIcol2Accol,
-                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
-                                                                Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Acimport,
-                                                                const std::string& label                           = std::string(),
-                                                                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  static void mult_PT_A_P_newmatrix_kernel_wrapper_2pass(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                         CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
+                                                         const Teuchos::Array<LocalOrdinal>& Acol2PRow,
+                                                         const Teuchos::Array<LocalOrdinal>& Acol2PRowImport,
+                                                         const Teuchos::Array<LocalOrdinal>& Pcol2Accol,
+                                                         const Teuchos::Array<LocalOrdinal>& PIcol2Accol,
+                                                         CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
+                                                         Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Acimport,
+                                                         const std::string& label                           = std::string(),
+                                                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 };
 
 }  // end namespace MMdetails

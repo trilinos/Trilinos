@@ -432,164 +432,31 @@ template <typename Scalar, typename Ordinal>
 void sortCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
                     const Teuchos::ArrayView<Ordinal>& CRS_colind,
                     const Teuchos::ArrayView<Scalar>& CRS_vals) {
-  // For each row, sort column entries from smallest to largest.
-  // Use shell sort. Stable sort so it is fast if indices are already sorted.
-  // Code copied from  Epetra_CrsMatrix::SortEntries()
-  size_t NumRows = CRS_rowptr.size() - 1;
-  size_t nnz     = CRS_colind.size();
-
-  const bool permute_values_array = CRS_vals.size() > 0;
-
-  for (size_t i = 0; i < NumRows; i++) {
-    size_t start = CRS_rowptr[i];
-    if (start >= nnz) continue;
-
-    size_t NumEntries = CRS_rowptr[i + 1] - start;
-    Teuchos::ArrayRCP<Scalar> locValues;
-    if (permute_values_array)
-      locValues = Teuchos::arcp<Scalar>(&CRS_vals[start], 0, NumEntries, false);
-    Teuchos::ArrayRCP<Ordinal> locIndices(&CRS_colind[start], 0, NumEntries, false);
-
-    Ordinal n = NumEntries;
-    Ordinal m = 1;
-    while (m < n) m = m * 3 + 1;
-    m /= 3;
-
-    while (m > 0) {
-      Ordinal max = n - m;
-      for (Ordinal j = 0; j < max; j++) {
-        for (Ordinal k = j; k >= 0; k -= m) {
-          if (locIndices[k + m] >= locIndices[k])
-            break;
-          if (permute_values_array) {
-            Scalar dtemp     = locValues[k + m];
-            locValues[k + m] = locValues[k];
-            locValues[k]     = dtemp;
-          }
-          Ordinal itemp     = locIndices[k + m];
-          locIndices[k + m] = locIndices[k];
-          locIndices[k]     = itemp;
-        }
-      }
-      m = m / 3;
-    }
-  }
+  auto rowptr_k = Kokkos::View<size_t*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(CRS_rowptr.data(), CRS_rowptr.size());
+  auto colind_k = Kokkos::View<Ordinal*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(CRS_colind.data(), CRS_colind.size());
+  auto vals_k   = Kokkos::View<Scalar*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(CRS_vals.data(), CRS_vals.size());
+  sortCrsEntries(rowptr_k, colind_k, vals_k);
 }
 
 template <typename Ordinal>
 void sortCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
                     const Teuchos::ArrayView<Ordinal>& CRS_colind) {
-  // Generate dummy values array
-  Teuchos::ArrayView<Tpetra::Details::DefaultTypes::scalar_type> CRS_vals;
-  sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
+  auto rowptr_k = Kokkos::View<size_t*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(CRS_rowptr.data(), CRS_rowptr.size());
+  auto colind_k = Kokkos::View<Ordinal*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(CRS_colind.data(), CRS_colind.size());
+  sortCrsEntries(rowptr_k, colind_k);
 }
-
-namespace Impl {
-
-template <class RowOffsetsType, class ColumnIndicesType, class ValuesType>
-class SortCrsEntries {
- private:
-  typedef typename ColumnIndicesType::non_const_value_type ordinal_type;
-  typedef typename ValuesType::non_const_value_type scalar_type;
-
- public:
-  SortCrsEntries(const RowOffsetsType& ptr,
-                 const ColumnIndicesType& ind,
-                 const ValuesType& val)
-    : ptr_(ptr)
-    , ind_(ind)
-    , val_(val) {
-    static_assert(std::is_signed<ordinal_type>::value,
-                  "The type of each "
-                  "column index -- that is, the type of each entry of ind "
-                  "-- must be signed in order for this functor to work.");
-  }
-
-  KOKKOS_FUNCTION void operator()(const size_t i) const {
-    const size_t nnz                = ind_.extent(0);
-    const size_t start              = ptr_(i);
-    const bool permute_values_array = val_.extent(0) > 0;
-
-    if (start < nnz) {
-      const size_t NumEntries = ptr_(i + 1) - start;
-
-      const ordinal_type n = static_cast<ordinal_type>(NumEntries);
-      ordinal_type m       = 1;
-      while (m < n) m = m * 3 + 1;
-      m /= 3;
-
-      while (m > 0) {
-        ordinal_type max = n - m;
-        for (ordinal_type j = 0; j < max; j++) {
-          for (ordinal_type k = j; k >= 0; k -= m) {
-            const size_t sk = start + k;
-            if (ind_(sk + m) >= ind_(sk)) {
-              break;
-            }
-            if (permute_values_array) {
-              const scalar_type dtemp = val_(sk + m);
-              val_(sk + m)            = val_(sk);
-              val_(sk)                = dtemp;
-            }
-            const ordinal_type itemp = ind_(sk + m);
-            ind_(sk + m)             = ind_(sk);
-            ind_(sk)                 = itemp;
-          }
-        }
-        m = m / 3;
-      }
-    }
-  }
-
-  static void
-  sortCrsEntries(const RowOffsetsType& ptr,
-                 const ColumnIndicesType& ind,
-                 const ValuesType& val) {
-    // For each row, sort column entries from smallest to largest.
-    // Use shell sort. Stable sort so it is fast if indices are already sorted.
-    // Code copied from  Epetra_CrsMatrix::SortEntries()
-    // NOTE: This should not be taken as a particularly efficient way to sort
-    // rows of matrices in parallel.  But it is correct, so that's something.
-    if (ptr.extent(0) == 0) {
-      return;  // no rows, so nothing to sort
-    }
-    const size_t NumRows = ptr.extent(0) - 1;
-
-    typedef size_t index_type;  // what this function was using; not my choice
-    typedef typename ValuesType::execution_space execution_space;
-    // Specify RangePolicy explicitly, in order to use correct execution
-    // space.  See #1345.
-    typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
-    Kokkos::parallel_for("sortCrsEntries", range_type(0, NumRows),
-                         SortCrsEntries(ptr, ind, val));
-  }
-
- private:
-  RowOffsetsType ptr_;
-  ColumnIndicesType ind_;
-  ValuesType val_;
-};
-
-}  // namespace Impl
 
 template <typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
 void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
                     const colind_array_type& CRS_colind,
                     const vals_array_type& CRS_vals) {
-  Impl::SortCrsEntries<rowptr_array_type, colind_array_type,
-                       vals_array_type>::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
+  KokkosSparse::sort_crs_matrix(CRS_rowptr, CRS_colind, CRS_vals);
 }
 
 template <typename rowptr_array_type, typename colind_array_type>
 void sortCrsEntries(const rowptr_array_type& CRS_rowptr,
                     const colind_array_type& CRS_colind) {
-  // Generate dummy values array
-  typedef typename colind_array_type::execution_space execution_space;
-  typedef Tpetra::Details::DefaultTypes::scalar_type scalar_type;
-  typedef typename Kokkos::View<scalar_type*, execution_space> scalar_view_type;
-  scalar_view_type CRS_vals;
-  sortCrsEntries<rowptr_array_type, colind_array_type,
-                 scalar_view_type>(CRS_rowptr, CRS_colind, CRS_vals);
+  KokkosSparse::sort_crs_graph(CRS_rowptr, CRS_colind);
 }
 
 // Note: This should get merged with the other Tpetra sort routines eventually.
