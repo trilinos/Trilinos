@@ -10,32 +10,20 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_DefaultComm.hpp"
 
-#include "Tempus_config.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_DetachedVectorView.hpp"
+
 #include "Tempus_IntegratorBasic.hpp"
+
 #include "Tempus_StepperEPI3.hpp"
 
-#ifdef TEMPUS_ENABLE_EPETRA_STACK
-#include "../TestModels/CDR_Model.hpp"
-#ifdef Tempus_ENABLE_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#endif
-#ifdef TEMPUS_ENABLE_TPETRA_STACK
-#include "../TestModels/CDR_Model_Tpetra.hpp"
-#include "Tpetra_Core.hpp"
-#endif
+#include "../TestModels/SinCosModel.hpp"
+#include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-
-#include <vector>
 #include <fstream>
-#include <sstream>
-#include <limits>
+#include <vector>
 
 namespace Tempus_Test {
 
@@ -52,9 +40,172 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-template <typename SC, typename Model, typename Comm>
-void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
-              bool& success)
+TEUCHOS_UNIT_TEST(EPI3, ParameterList)
+{
+  // Read params from .xml file
+  RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_EPI3_SinCos.xml");
+
+  // Setup the SinCosModel
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+  auto model                = rcp(new SinCosModel<double>(scm_pl));
+
+  RCP<ParameterList> tempusPL = sublist(pList, "Tempus", true);
+
+  // Test constructor IntegratorBasic(tempusPL, model)
+  {
+    RCP<Tempus::IntegratorBasic<double>> integrator =
+        Tempus::createIntegratorBasic<double>(tempusPL, model);
+
+    RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+    RCP<const ParameterList> defaultPL =
+        integrator->getStepper()->getValidParameters();
+
+    bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      out << std::endl;
+      out << "stepperPL -------------- \n"
+          << *stepperPL << std::endl;
+      out << "defaultPL -------------- \n"
+          << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
+  }
+
+  // Test constructor IntegratorBasic(model, stepperType)
+  {
+    RCP<Tempus::IntegratorBasic<double>> integrator =
+        Tempus::createIntegratorBasic<double>(model,
+                                              std::string("EPI3"));
+
+    RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+    RCP<const ParameterList> defaultPL =
+        integrator->getStepper()->getValidParameters();
+
+    bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
+    if (!pass) {
+      out << std::endl;
+      out << "stepperPL -------------- \n"
+          << *stepperPL << std::endl;
+      out << "defaultPL -------------- \n"
+          << *defaultPL << std::endl;
+    }
+    TEST_ASSERT(pass)
+  }
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(EPI3, ConstructingFromDefaults)
+{
+  double dt = 0.1;
+  std::vector<std::string> options;
+  options.push_back("useFSAL=true");
+  options.push_back("useFSAL=false");
+  options.push_back("ICConsistency and Check");
+
+  for (const auto& option : options) {
+    // Read params from .xml file
+    RCP<ParameterList> pList =
+        getParametersFromXmlFile("Tempus_EPI3_SinCos.xml");
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+    // Setup the SinCosModel
+    RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+    // RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
+    auto model = rcp(new SinCosModel<double>(scm_pl));
+
+    // Setup Stepper for field solve ----------------------------
+    auto stepper = rcp(new Tempus::StepperEPI3<double>());
+    stepper->setModel(model);
+    if (option == "useFSAL=true")
+      stepper->setUseFSAL(true);
+    else if (option == "useFSAL=false")
+      stepper->setUseFSAL(false);
+    else if (option == "ICConsistency and Check") {
+      stepper->setICConsistency("Consistent");
+      stepper->setICConsistencyCheck(true);
+    }
+    stepper->initialize();
+
+    // Setup TimeStepControl ------------------------------------
+    auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
+    ParameterList tscPL =
+        pl->sublist("Demo Integrator").sublist("Time Step Control");
+    timeStepControl->setInitIndex(tscPL.get<int>("Initial Time Index"));
+    timeStepControl->setInitTime(tscPL.get<double>("Initial Time"));
+    timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));
+    timeStepControl->setInitTimeStep(dt);
+    timeStepControl->initialize();
+
+    // Setup initial condition SolutionState --------------------
+    auto inArgsIC = model()->getNominalValues();
+    auto icSolution =
+        rcp_const_cast<Thyra::VectorBase<double>>(inArgsIC.get_x());
+    auto icState = Tempus::createSolutionStateX(icSolution);
+    icState->setTime(timeStepControl->getInitTime());
+    icState->setIndex(timeStepControl->getInitIndex());
+    icState->setTimeStep(0.0);
+    icState->setSolutionStatus(Tempus::Status::PASSED);  // ICs are passing.
+
+    // Setup SolutionHistory ------------------------------------
+    auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
+    solutionHistory->setName("Forward States");
+    solutionHistory->setStorageType(Tempus::STORAGE_TYPE_STATIC);
+    solutionHistory->setStorageLimit(2);
+    solutionHistory->addState(icState);
+
+    // Ensure ICs are consistent and stepper memory is set (e.g., xDot is set).
+    stepper->setInitialConditions(solutionHistory);
+
+    // Setup Integrator -----------------------------------------
+    RCP<Tempus::IntegratorBasic<double>> integrator =
+        Tempus::createIntegratorBasic<double>();
+    integrator->setStepper(stepper);
+    integrator->setTimeStepControl(timeStepControl);
+    integrator->setSolutionHistory(solutionHistory);
+    // integrator->setObserver(...);
+    integrator->initialize();
+
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
+
+    // Test if at 'Final Time'
+    double time      = integrator->getTime();
+    double timeFinal = pl->sublist("Demo Integrator")
+                           .sublist("Time Step Control")
+                           .get<double>("Final Time");
+    TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+    // Time-integrated solution and the exact solution
+    RCP<Thyra::VectorBase<double>> x = integrator->getX();
+    RCP<const Thyra::VectorBase<double>> x_exact =
+        model->getExactSolution(time).get_x();
+
+    // Calculate the error
+    RCP<Thyra::VectorBase<double>> xdiff = x->clone_v();
+    Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_exact, -1.0, *(x));
+
+    // Check the order and intercept
+    out << "  Stepper = " << stepper->description() << "\n            with "
+        << option << std::endl;
+    out << "  =========================" << std::endl;
+    out << "  Exact solution   : " << get_ele(*(x_exact), 0) << "   "
+        << get_ele(*(x_exact), 1) << std::endl;
+    out << "  Computed solution: " << get_ele(*(x), 0) << "   "
+        << get_ele(*(x), 1) << std::endl;
+    out << "  Difference       : " << get_ele(*(xdiff), 0) << "   "
+        << get_ele(*(xdiff), 1) << std::endl;
+    out << "  =========================" << std::endl;
+    TEST_FLOATING_EQUALITY(get_ele(*(x), 0), 0.882508, 1.0e-4);
+    TEST_FLOATING_EQUALITY(get_ele(*(x), 1), 0.570790, 1.0e-4);
+  }
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(EPI3, SinCos)
 {
   RCP<Tempus::IntegratorBasic<double>> integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -62,38 +213,155 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
-  const int nTimeStepSizes = 3;
-  double dt                = 0.02;
+  const int nTimeStepSizes = 7;
+  double dt                = 0.2;
+  double time              = 0.0;
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_EPI3_CDR.xml");
+        getParametersFromXmlFile("Tempus_EPI3_SinCos.xml");
 
-    // Create CDR Model
-    RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
-    const auto num_elements     = model_pl->get<int>("num elements");
-    const auto left_end         = model_pl->get<SC>("left end");
-    const auto right_end        = model_pl->get<SC>("right end");
-    const auto a_convection     = model_pl->get<SC>("a (convection)");
-    const auto k_source         = model_pl->get<SC>("k (source)");
+    // std::ofstream ftmp("PL.txt");
+    // pList->print(ftmp);
+    // ftmp.close();
 
-    auto model = rcp(new Model(comm, num_elements, left_end, right_end,
-                               a_convection, k_source));
+    // Setup the SinCosModel
+    RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+    // RCP<SinCosModel<double> > model = sineCosineModel(scm_pl);
+    auto model = rcp(new SinCosModel<double>(scm_pl));
 
-    // Set the factory
-    ::Stratimikos::DefaultLinearSolverBuilder builder;
+    dt /= 2;
 
-    auto p = rcp(new ParameterList);
-    p->set("Linear Solver Type", "Belos");
-    p->set("Preconditioner Type", "None");
-    builder.setParameterList(p);
+    // Setup the Integrator and reset initial time step
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+    pl->sublist("Demo Integrator")
+        .sublist("Time Step Control")
+        .set("Initial Time Step", dt);
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
-    auto lowsFactory = builder.createLinearSolveStrategy("");
+    // Initial Conditions
+    // During the Integrator construction, the initial SolutionState
+    // is set by default to model->getNominalVales().get_x().  However,
+    // the application can set it also by integrator->initializeSolutionHistory.
+    RCP<Thyra::VectorBase<double>> x0 =
+        model->getNominalValues().get_x()->clone_v();
+//           auto vec = x0;
+// auto space = vec->space();
+// int n_n_n = space->dim();
 
-    model->set_W_factory(lowsFactory);
+// for (int i = 0; i < n_n_n; ++i) {
+//   std::cout << "v[" << i << "] = "
+//             << Thyra::get_ele(*vec, i) << std::endl;
+// }
+    integrator->initializeSolutionHistory(0.0, x0);
+    integrator->initialize();
+
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
+
+    // Test PhysicsState
+    RCP<Tempus::PhysicsState<double>> physicsState =
+        integrator->getSolutionHistory()->getCurrentState()->getPhysicsState();
+    TEST_EQUALITY(physicsState->getName(), "Tempus::PhysicsState");
+
+    // Test if at 'Final Time'
+    time             = integrator->getTime();
+    double timeFinal = pl->sublist("Demo Integrator")
+                           .sublist("Time Step Control")
+                           .get<double>("Final Time");
+    TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+    // Time-integrated solution and the exact solution
+    RCP<Thyra::VectorBase<double>> x = integrator->getX();
+    RCP<const Thyra::VectorBase<double>> x_exact =
+        model->getExactSolution(time).get_x();
+
+    // Plot sample solution and exact solution
+    if (n == 0) {
+      RCP<const SolutionHistory<double>> solutionHistory =
+          integrator->getSolutionHistory();
+      writeSolution("Tempus_EPI3_SinCos.dat", solutionHistory);
+
+    //   solutionHistory->printHistory("high");
+
+      auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
+      for (int i = 0; i < solutionHistory->getNumStates(); i++) {
+        double time_i = (*solutionHistory)[i]->getTime();
+        auto state    = Tempus::createSolutionStateX(
+               rcp_const_cast<Thyra::VectorBase<double>>(
+                model->getExactSolution(time_i).get_x()),
+               rcp_const_cast<Thyra::VectorBase<double>>(
+                model->getExactSolution(time_i).get_x_dot()));
+        state->setTime((*solutionHistory)[i]->getTime());
+        solnHistExact->addState(state);
+      }
+      writeSolution("Tempus_EPI3_SinCos-Ref.dat", solnHistExact);
+    }
+
+    // Store off the final solution and step size
+    StepSize.push_back(dt);
+    auto solution = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getX()), solution.ptr());
+    solutions.push_back(solution);
+    auto solutionDot = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getXDot()), solutionDot.ptr());
+    solutionsDot.push_back(solutionDot);
+    if (n == nTimeStepSizes - 1) {  // Add exact solution last in vector.
+      StepSize.push_back(0.0);
+      auto solutionExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),
+                  solutionExact.ptr());
+      solutions.push_back(solutionExact);
+      auto solutionDotExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
+                  solutionDotExact.ptr());
+      solutionsDot.push_back(solutionDotExact);
+    }
+  }
+
+  // Check the order and intercept
+  double xSlope                        = 0.0;
+  double xDotSlope                     = 0.0;
+  RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
+  double order                         = stepper->getOrder();
+  writeOrderError("Tempus_EPI3_SinCos-Error.dat", stepper, StepSize,
+                  solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
+                  xDotSlope, out);
+
+  TEST_FLOATING_EQUALITY(xSlope, order, 0.01);
+  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.051123, 1.0e-4);
+  // xDot not yet available for EPI3.
+  // TEST_FLOATING_EQUALITY( xDotSlope,            order, 0.01   );
+  // TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 0.0486418, 1.0e-4 );
+
+  Teuchos::TimeMonitor::summarize();
+}
+
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(EPI3, VanDerPol)
+{
+  RCP<Tempus::IntegratorBasic<double>> integrator;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
+  std::vector<double> StepSize;
+  std::vector<double> xErrorNorm;
+  std::vector<double> xDotErrorNorm;
+  const int nTimeStepSizes = 7;  // 8 for Error plot
+  double dt                = 0.2;
+  for (int n = 0; n < nTimeStepSizes; n++) {
+    // Read params from .xml file
+    RCP<ParameterList> pList =
+        getParametersFromXmlFile("Tempus_EPI3_VanDerPol.xml");
+
+    // Setup the VanDerPolModel
+    RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
+    auto model                 = rcp(new VanDerPolModel<double>(vdpm_pl));
 
     // Set the step size
     dt /= 2;
+    if (n == nTimeStepSizes - 1) dt /= 10.0;
 
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
@@ -125,31 +393,12 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
-    if ((n == nTimeStepSizes - 1) && (commSize == 1)) {
-      std::ofstream ftmp("Tempus_EPI3_CDR.dat");
-      ftmp << "TITLE=\"EPI3 Solution to CDR\"\n"
-           << "VARIABLES=\"z\",\"T\"\n";
-      const double dx =
-          std::fabs(left_end - right_end) / static_cast<double>(num_elements);
+    if ((n == 0) || (n == nTimeStepSizes - 1)) {
+      std::string fname = "Tempus_EPI3_VanDerPol-Ref.dat";
+      if (n == 0) fname = "Tempus_EPI3_VanDerPol.dat";
       RCP<const SolutionHistory<double>> solutionHistory =
           integrator->getSolutionHistory();
-      int nStates = solutionHistory->getNumStates();
-      for (int i = 0; i < nStates; i++) {
-        RCP<const SolutionState<double>> solutionState = (*solutionHistory)[i];
-        RCP<const Thyra::VectorBase<double>> x         = solutionState->getX();
-        double ttime                                   = solutionState->getTime();
-        ftmp << "ZONE T=\"Time=" << ttime << "\", I=" << num_elements + 1
-             << ", F=BLOCK\n";
-        for (int j = 0; j < num_elements + 1; j++) {
-          const double x_coord = left_end + static_cast<double>(j) * dx;
-          ftmp << x_coord << "   ";
-        }
-        ftmp << std::endl;
-        for (int j = 0; j < num_elements + 1; j++)
-          ftmp << get_ele(*x, j) << "   ";
-        ftmp << std::endl;
-      }
-      ftmp.close();
+      writeSolution(fname, solutionHistory);
     }
   }
 
@@ -157,84 +406,152 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   double xSlope                        = 0.0;
   double xDotSlope                     = 0.0;
   RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
-  //writeOrderError("Tempus_EPI3_CDR-Error.dat", stepper, StepSize,
-  //                solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
-  //                xDotSlope, out);
-  writeOrderError("Tempus_EPI3_CDR-Error.dat", stepper, StepSize,
-                  solutions, xErrorNorm, xSlope, out);
+  double order                         = stepper->getOrder();
+  writeOrderError("Tempus_EPI3_VanDerPol-Error.dat", stepper, StepSize,
+                  solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
+                  xDotSlope, out);
 
-  TEST_FLOATING_EQUALITY(xSlope, 1.3372, 0.01);
-  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.498668, 1.0e-4);
-  //TEST_FLOATING_EQUALITY(xDotSlope, 1.32052, 0.01);
-  //TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.449888, 1.0e-4);
-  // At small dt, slopes should be equal to order.
-  // double order = stepper->getOrder();
-  // TEST_FLOATING_EQUALITY(xSlope,              order, 0.01 );
-  // TEST_FLOATING_EQUALITY(xDotSlope,           order, 0.01 );
-
-  // Write fine mesh solution at final time
-  // This only works for ONE MPI process
-  if (commSize == 1) {
-    RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_EPI3_CDR.xml");
-    RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
-    const int num_elements      = model_pl->get<int>("num elements");
-    const double left_end       = model_pl->get<double>("left end");
-    const double right_end      = model_pl->get<double>("right end");
-
-    const Thyra::VectorBase<double>& x = *(solutions[solutions.size() - 1]);
-
-    std::ofstream ftmp("Tempus_EPI3_CDR-Solution.dat");
-    for (int n = 0; n < num_elements + 1; n++) {
-      const double dx =
-          std::fabs(left_end - right_end) / static_cast<double>(num_elements);
-      const double x_coord = left_end + static_cast<double>(n) * dx;
-      ftmp << x_coord << "   " << Thyra::get_ele(x, n) << std::endl;
-    }
-    ftmp.close();
-  }
+  TEST_FLOATING_EQUALITY(xSlope, order, 0.10);
+  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.387476, 1.0e-4);
+  // xDot not yet available for EPI3.
+  // TEST_FLOATING_EQUALITY( xDotSlope,       1.74898, 0.10   );
+  // TEST_FLOATING_EQUALITY( xDotErrorNorm[0], 1.0038, 1.0e-4 );
 
   Teuchos::TimeMonitor::summarize();
 }
 
-#ifdef TEMPUS_ENABLE_EPETRA_STACK
-// ************************************************************
-// ************************************************************
-TEUCHOS_UNIT_TEST(EPI3, CDR)
-{
-  // Create a communicator for Epetra objects
-  RCP<Epetra_Comm> comm;
-#ifdef Tempus_ENABLE_MPI
-  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  comm = rcp(new Epetra_SerialComm);
-#endif
+// // ************************************************************
+// // ************************************************************
+// TEUCHOS_UNIT_TEST(EPI3, NumberTimeSteps)
+// {
+//   std::vector<double> StepSize;
+//   std::vector<double> ErrorNorm;
+//   // const int nTimeStepSizes = 7;
+//   // double dt = 0.2;
+//   // double order = 0.0;
 
-  CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
-                                                   success);
+//   // Read params from .xml file
+//   RCP<ParameterList> pList =
+//       getParametersFromXmlFile("Tempus_EPI3_NumberOfTimeSteps.xml");
 
-  std::cout << "Running EPETRA" << std::endl;
-}
-#endif
+//   // Setup the VanDerPolModel
+//   RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
+//   auto model                 = rcp(new VanDerPolModel<double>(vdpm_pl));
 
-#ifdef TEMPUS_ENABLE_TPETRA_STACK
-// ************************************************************
-// ************************************************************
-TEUCHOS_UNIT_TEST(EPI3, CDR_Tpetra)
-{
-  // Get default Tpetra template types
-  using SC   = Tpetra::Vector<>::scalar_type;
-  using LO   = Tpetra::Vector<>::local_ordinal_type;
-  using GO   = Tpetra::Vector<>::global_ordinal_type;
-  using Node = Tpetra::Vector<>::node_type;
+//   // Setup the Integrator and reset initial time step
+//   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
-  auto comm = Tpetra::getDefaultComm();
+//   // dt = pl->sublist("Demo Integrator")
+//   //         .sublist("Time Step Control")
+//   //         .get<double>("Initial Time Step");
+//   const int numTimeSteps = pl->sublist("Demo Integrator")
+//                                .sublist("Time Step Control")
+//                                .get<int>("Number of Time Steps");
 
-  //CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
-  //    comm, comm->getSize(), out, success);
+//   RCP<Tempus::IntegratorBasic<double>> integrator =
+//       Tempus::createIntegratorBasic<double>(pl, model);
 
-  std::cout << "Running TPETRA" << std::endl;
-}
-#endif
+//   // Integrate to timeMax
+//   bool integratorStatus = integrator->advanceTime();
+//   TEST_ASSERT(integratorStatus)
+
+//   // check that the number of time steps taken is whats is set
+//   // in the parameter list
+//   TEST_EQUALITY(numTimeSteps, integrator->getIndex());
+// }
+
+// // ************************************************************
+// // ************************************************************
+// TEUCHOS_UNIT_TEST(EPI3, Variable_TimeSteps)
+// {
+//   // Read params from .xml file
+//   RCP<ParameterList> pList =
+//       getParametersFromXmlFile("Tempus_EPI3_VanDerPol.xml");
+
+//   // Setup the VanDerPolModel
+//   RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
+//   auto model                 = rcp(new VanDerPolModel<double>(vdpm_pl));
+
+//   // Setup the Integrator and reset initial time step
+//   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+//   // Set parameters for this test.
+//   pl->sublist("Demo Integrator")
+//       .sublist("Time Step Control")
+//       .set("Initial Time Step", 0.01);
+
+//   pl->sublist("Demo Integrator")
+//       .sublist("Time Step Control")
+//       .sublist("Time Step Control Strategy")
+//       .set("Reduction Factor", 0.9);
+//   pl->sublist("Demo Integrator")
+//       .sublist("Time Step Control")
+//       .sublist("Time Step Control Strategy")
+//       .set("Amplification Factor", 1.15);
+//   pl->sublist("Demo Integrator")
+//       .sublist("Time Step Control")
+//       .sublist("Time Step Control Strategy")
+//       .set("Minimum Value Monitoring Function", 0.05);
+//   pl->sublist("Demo Integrator")
+//       .sublist("Time Step Control")
+//       .sublist("Time Step Control Strategy")
+//       .set("Maximum Value Monitoring Function", 0.1);
+
+//   pl->sublist("Demo Integrator")
+//       .sublist("Solution History")
+//       .set("Storage Type", "Static");
+//   pl->sublist("Demo Integrator")
+//       .sublist("Solution History")
+//       .set("Storage Limit", 3);
+
+//   RCP<Tempus::IntegratorBasic<double>> integrator =
+//       Tempus::createIntegratorBasic<double>(pl, model);
+
+//   // Integrate to timeMax
+//   bool integratorStatus = integrator->advanceTime();
+//   TEST_ASSERT(integratorStatus)
+
+//   // Check 'Final Time'
+//   double time      = integrator->getTime();
+//   double timeFinal = pl->sublist("Demo Integrator")
+//                          .sublist("Time Step Control")
+//                          .get<double>("Final Time");
+//   TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+//   // Check TimeStep size
+//   auto state = integrator->getCurrentState();
+//   double dt  = state->getTimeStep();
+//   TEST_FLOATING_EQUALITY(dt, 0.008310677297208358, 1.0e-12);
+
+//   // Check number of time steps taken
+//   const int numTimeSteps = 60;
+//   TEST_EQUALITY(numTimeSteps, integrator->getIndex());
+
+//   // Time-integrated solution and the reference solution
+//   RCP<Thyra::VectorBase<double>> x     = integrator->getX();
+//   RCP<Thyra::VectorBase<double>> x_ref = x->clone_v();
+//   {
+//     Thyra::DetachedVectorView<double> x_ref_view(*x_ref);
+//     x_ref_view[0] = -1.931946840284863;
+//     x_ref_view[1] = 0.645346748303107;
+//   }
+
+//   // Calculate the error
+//   RCP<Thyra::VectorBase<double>> xdiff = x->clone_v();
+//   Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_ref, -1.0, *(x));
+
+//   // Check the solution
+//   out << "  Stepper = EPI3" << std::endl;
+//   out << "  =========================" << std::endl;
+//   out << "  Reference solution: " << get_ele(*(x_ref), 0) << "   "
+//       << get_ele(*(x_ref), 1) << std::endl;
+//   out << "  Computed solution : " << get_ele(*(x), 0) << "   "
+//       << get_ele(*(x), 1) << std::endl;
+//   out << "  Difference        : " << get_ele(*(xdiff), 0) << "   "
+//       << get_ele(*(xdiff), 1) << std::endl;
+//   out << "  =========================" << std::endl;
+//   TEST_FLOATING_EQUALITY(get_ele(*(x), 0), get_ele(*(x_ref), 0), 1.0e-12);
+//   TEST_FLOATING_EQUALITY(get_ele(*(x), 1), get_ele(*(x_ref), 1), 1.0e-12);
+// }
 
 }  // namespace Tempus_Test

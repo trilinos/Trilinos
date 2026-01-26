@@ -1,214 +1,152 @@
-// @HEADER
-// ****************************************************************************
-// TODO
-// ****************************************************************************
-// @HEADER
+//@HEADER
+// *****************************************************************************
+//          Tempus: Time Integration and Sensitivity Analysis Package
+//
+// Copyright 2017 NTESS and the Tempus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+//@HEADER
 
 #ifndef Tempus_StepperEPI3_decl_hpp
 #define Tempus_StepperEPI3_decl_hpp
 
-#include "Tempus_config.hpp"
-#include "Tempus_StepperImplicit.hpp"
-#include "Tempus_WrapperModelEvaluator.hpp"
-#include "Tempus_StepperEPI3AppAction.hpp"
-
 #include "Tempus_PhiEvaluator.hpp"
 
+#include "Tempus_config.hpp"
+#include "Tempus_StepperExplicit.hpp"
+#include "Tempus_StepperEPI3AppAction.hpp"
+
 namespace Tempus {
-// TODO: FURKAN: FIX THE DESCRIPTION
-/** \brief Exponential Euler time stepper.
+
+/** \brief Forward Euler time stepper.
  *
- *  For the explicit ODE system, \f$\dot{x} = \mathcal{F}(x,t)\f$,
- *  the solution, \f$x\f$, is determined using explicit evaluations of \f$\mathcal{F}\f$
- *  and exponentials of a linear operator \f$W\f$.
+ *  For the explicit ODE system,
+ *  \f[
+ *    \dot{x} = \bar{f}(x,t),
+ *  \f]
+ *  the Forward Euler stepper can be written as
+ *  \f[
+ *    x_{n} = x_{n-1} + \Delta t\, \bar{f}(x_{n-1},t_{n-1})
+ *  \f]
+ *  Forward Euler is an explicit time stepper (i.e., no solver used).
+ *  Note that the time derivative by definition is
+ *  \f[
+ *    \dot{x}_{n} = \bar{f}(x_{n},t_{n}),
+ *  \f]
  *
  *  <b> Algorithm </b>
- *  The single-timestep algorithm for Exponential Euler is:
+ *  The single-timestep algorithm for Forward Euler is
  *
- *  \f{center}{
+ *  \f{center}
  *    \parbox{5in}{
  *    \rule{5in}{0.4pt} \\
- *    {\bf Algorithm} Exponential Euler \\
+ *    {\bf Algorithm} Forward Euler \\
  *    \rule{5in}{0.4pt} \vspace{-15pt}
  *    \begin{enumerate}
- *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
- *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *      \item {\bf Compute the explicit evaluation}  $f_{n-1} = \mathcal{F}(x_{n-1}, t_{n-1})$.
- *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXP)}
- *      \item {\bf Compute $d_{n-1} = \exp(\Delta{t_{n-1}} W_{n-1}) f_{n-1}$.}
- *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_EXP)}
- *      \item $\dot{x}_n \leftarrow x_{n-1} + \Delta{t_n}d_n$
- *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *    \end{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt}
+ * \setlength{\parsep}{0pt} \item {\it appAction.execute(solutionHistory,
+ * stepper, BEGIN\_STEP)} \item {\bf if (Not ``Use FSAL'' or (previous step
+ * failed)) then} \item \quad  {\it appAction.execute(solutionHistory, stepper,
+ * BEFORE\_EXPLICIT\_EVAL)} \item \quad  $\dot{x}_{n-1} \leftarrow
+ * \bar{f}(x_{n-1},t_{n-1})$ \item {\bf endif} \item $x_{n} \leftarrow x_{n-1} +
+ * \Delta t\, \dot{x}_{n-1}$ \hfill {\it * Forward Euler update.} \item {\it
+ * appAction.execute(solutionHistory, stepper, END\_STEP)} \item {\bf if (``Use
+ * FSAL'') then} \item \quad  {\it appAction.execute(solutionHistory, stepper,
+ * BEFORE\_EXPLICIT\_EVAL)} \item \quad  $\dot{x}_n \leftarrow
+ * \bar{f}(x_{n},t_{n})$ \item {\bf endif} \item {\it
+ * appAction.execute(solutionHistory, stepper, END\_STEP)} \end{enumerate}
  *    \vspace{-10pt} \rule{5in}{0.4pt}
  *    }
  *  \f}
  *
- *  The First-Same-As-Last (FSAL) principle is not needed with Exponential Euler.
- *  The default is to set useFSAL=false, however useFSAL=true will also work
- *  but have no affect (i.e., no-op).
+ *  Note that with useFSAL=false \f$x_n\f$ and \f$\dot{x}_{n-1}\f$ are not
+ *  at the same time level at the end of the time step (i.e., they are not
+ *  sync'ed).
  *
- *  <b> Iteration Matrix, \f$W\f$.</b>
- *  Recalling that the definition of the iteration matrix, \f$W\f$, is
- *  \f[
- *    W = \frac{\partial \mathcal{F}}{\partial x},
- *  \f]
- *  to obtain that from the implicit model evaluator, we set
- *  \f$ \alpha = 0 \f$ and \f$ \beta = 1 \f$.
- *  TODO: Need to use exponential model evaluator:
- *        explicit model evaluator plus W, or implicit model evaluator wrapper.
+ *  To have them at the same time level, we can use the First-Same-As-Last
+ *  (FSAL) principle where the function evaulation from the last time step
+ *  can be used as the first function evalulation of the current step.
+ *
+ *  The default for Forward Euler is to use FSAL (useFSAL=true), but will
+ *  also work with useFSAL=false.  Using useFSAL=true does assume that the
+ *  solution, \f$x\f$, and its time derivative, \f$\dot{x}\f$, are consistent
+ *  at the initial conditions (ICs), i.e.,
+ *  \f$\dot{x}_{0} = \bar{f}(x_{0},t_{0})\f$.  This can be ensured by setting
+ *  setICConsistency("Consistent"), and checked with
+ *  setICConsistencyCheck(true).
  */
-template<class Scalar>
-class StepperEPI3 :
-    virtual public Tempus::StepperImplicit<Scalar>
-{
-public:
-
+template <class Scalar>
+class StepperEPI3 : virtual public Tempus::StepperExplicit<Scalar> {
+ public:
   /** \brief Default constructor.
    *
-   *  Requires subsequent setModel(), setSolver() and initialize()
-   *  calls before calling takeStep().
-  */
+   *  - Requires subsequent setModel() and initialize() calls before calling
+   *    takeStep().
+   */
   StepperEPI3();
 
   /// Constructor
   StepperEPI3(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck,
-    bool zeroInitialGuess,
-    const Teuchos::RCP<StepperEPI3AppAction<Scalar> >& stepperEEAppAction);
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+      bool useFSAL, std::string ICConsistency, bool ICConsistencyCheck,
+      const Teuchos::RCP<StepperEPI3AppAction<Scalar> >&
+          stepperEPI3AppAction);
 
-  /// \name Basic stepper methods
-  //@{
-    virtual void setAppAction(
+  virtual void setAppAction(
       Teuchos::RCP<StepperEPI3AppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperEPI3AppAction<Scalar> > getAppAction() const
-    { return stepperEEAppAction_; }
-
-    /// Set the model
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) override;
-
-    /// Set the initial conditions and make them consistent.
-    virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
-
-    /// Take the specified timestep, dt, and return true if successful.
-    virtual void takeStep(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) override;
-
-    /// Get a default (initial) StepperState
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState() override;
-    virtual Scalar getOrder() const override {return 1.0;}
-    virtual Scalar getOrderMin() const override {return 1.0;}
-    virtual Scalar getOrderMax() const override {return 2.0;} //order is 2 for autonomous problems
-
-    virtual bool isExplicit() const override {return false;}
-    virtual bool isImplicit() const override {return true;}
-    virtual bool isExplicitImplicit() const override
-      {return isExplicit() && isImplicit();}
-    virtual bool isOneStepMethod() const override {return true;}
-    virtual bool isMultiStepMethod() const override {return !isOneStepMethod();}
-    virtual OrderODE getOrderODE() const override {return FIRST_ORDER_ODE;}
-  //@}
-
-  // TODO: not sure what alpha should be for an exponential method
-  // figure out where this is needed exterally (public) 
-  /// Return alpha = d(xDot)/dx.
-  virtual Scalar getAlpha(const Scalar dt) const override { return Scalar(1.0)/dt; }
-  /// Return beta  = d(x)/dx.
-  virtual Scalar getBeta (const Scalar) const override { return Scalar(1.0); }
-
-  /// Return a valid ParameterList with current settings.
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
-
-  /// Set StepperExponential member data from the ParameterList.
-  void setStepperExponentialValues(Teuchos::RCP<Teuchos::ParameterList> pl);
-  
-  /// \name Overridden from Teuchos::Describable
-  //@{
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const override;
-  //@}
-
-  virtual bool isValidSetup(Teuchos::FancyOStream & out) const override;
-  
-private:
-
-  /// Implementation of computeStep*() methods
-  void computeStepResidDerivImpl(
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
-    const Teuchos::Array< Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x,
-    const Teuchos::Array<Scalar>& t,
-    const Thyra::VectorBase<Scalar>& p,
-    const int param_index,
-    const int deriv_index = 0) const;
-
-private:
-
-  Teuchos::RCP<StepperEPI3AppAction<Scalar> > stepperEEAppAction_;
-
-  Teuchos::RCP<PhiEvaluator<Scalar> > phiEvaluator_;
-
-};
-
-/** \brief Time-derivative interface for Backward Euler.
- *
- *  Given the state \f$x\f$, compute the Backward Euler time-derivative,
- *  \f[
- *    \dot{x}_{n} = \frac{(x_{n} - x_{n-1})}{\Delta t_{n}}.
- *  \f]
- *  \f$\ddot{x}\f$ is not used and set to null.
- */
-template <typename Scalar>
-class StepperEPI3TimeDerivative
-  : virtual public Tempus::TimeDerivative<Scalar>
-{
-public:
-  // TODO: remove this, not needed for exponential.
-  /// Constructor
-  StepperEPI3TimeDerivative(
-    Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld)
-  { initialize(s, xOld); }
-
-  /// Destructor
-  virtual ~StepperEPI3TimeDerivative() {}
-
-  /// Compute the time derivative.
-  virtual void compute(
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
-    Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDot,
-    Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot = Teuchos::null)
+  virtual Teuchos::RCP<StepperEPI3AppAction<Scalar> > getAppAction()
+      const
   {
-    xDotDot = Teuchos::null;
-    // Calculate the Backward Euler x dot vector
-    Thyra::V_StVpStV(xDot.ptr(),s_,*x,-s_,*xOld_);
+    return stepperEPI3AppAction_;
   }
 
-  virtual void initialize(Scalar s,
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld)
-  { s_ = s; xOld_ = xOld; }
+  /// Set the model
+  virtual void setModel(
+      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) override;
 
-private:
+  /// Set the initial conditions, make them consistent, and set needed memory.
+  virtual void setInitialConditions(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld_;
-  Scalar                                         s_;    // = 1.0/dt
+  /// Take the specified timestep, dt, and return true if successful.
+  virtual void takeStep(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+
+  /// Get a default (initial) StepperState
+  virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+  virtual Scalar getOrder() const { return 2.0; }
+  virtual Scalar getOrderMin() const { return 2.0; }
+  virtual Scalar getOrderMax() const { return 2.0; }
+  virtual void setUseFSAL(bool a)
+  {
+    this->useFSAL_       = a;
+    this->isInitialized_ = false;
+  }
+  virtual OrderODE getOrderODE() const { return FIRST_ORDER_ODE; }
+  //@}
+
+  /// \name Overridden from Teuchos::Describable
+  //@{
+  virtual void describe(Teuchos::FancyOStream& out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
+
+  virtual bool isValidSetup(Teuchos::FancyOStream& out) const;
+
+ protected:
+  Teuchos::RCP<StepperEPI3AppAction<Scalar> > stepperEPI3AppAction_;
+
+  Teuchos::RCP<PhiEvaluator<Scalar> > phiEvaluator_;
 };
-
 
 /// Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
-template<class Scalar>
-Teuchos::RCP<StepperEPI3<Scalar> >
-createStepperEPI3(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl);
+template <class Scalar>
+Teuchos::RCP<StepperEPI3<Scalar> > createStepperEPI3(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
 
+}  // namespace Tempus
 
-} // namespace Tempus
-
-#endif // Tempus_StepperEPI3_decl_hpp
+#endif  // Tempus_StepperEPI3_decl_hpp
