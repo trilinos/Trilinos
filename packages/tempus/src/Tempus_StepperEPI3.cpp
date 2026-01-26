@@ -1,8 +1,11 @@
-// @HEADER
-// ****************************************************************************
-// TODO
-// ****************************************************************************
-// @HEADER
+//@HEADER
+// *****************************************************************************
+//          Tempus: Time Integration and Sensitivity Analysis Package
+//
+// Copyright 2017 NTESS and the Tempus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+//@HEADER
 
 #include "Tempus_ExplicitTemplateInstantiation.hpp"
 
@@ -12,14 +15,13 @@
 
 namespace Tempus {
 
-  TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperEPI3)
+TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperEPI3)
 
-  // Nonmember constructor
-  template Teuchos::RCP<StepperEPI3<double> >
-  createStepperEPI3(
+// Nonmember constructor
+template Teuchos::RCP<StepperEPI3<double> > createStepperEPI3(
     const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
     Teuchos::RCP<Teuchos::ParameterList> pl);
 
-}
+}  // namespace Tempus
 
 #endif

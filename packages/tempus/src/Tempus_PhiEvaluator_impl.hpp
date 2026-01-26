@@ -25,6 +25,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps_decl.hpp"
 #include "Thyra_OperatorVectorTypes.hpp"
+#include "Thyra_ProductVectorBase.hpp"
 
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultZeroLinearOp_decl.hpp"
@@ -33,6 +34,10 @@
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+
+// For printing
+    #include "Teuchos_FancyOStream.hpp"
+    #include "Teuchos_VerbosityLevel.hpp"
 
 
 namespace Tempus {
@@ -148,7 +153,7 @@ void PhiEvaluator<Scalar>::checkInitialized()
 }
 
 template <class Scalar>
-void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<double> > appModel)
+void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel)
 {
   appModel_ = appModel;
 
@@ -157,16 +162,37 @@ void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluat
   phiLinSolv_ = Teuchos::rcp(new PhiLinearSolver<Scalar>(appModel_, lumpmass));
 }
 
+template <class Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluator<Scalar>::buildATildeMatrix(const Thyra::Ordinal p, 
+    const double dt,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot)
+{
+  phiLinSolv_->computeMassMatrix();
+  phiLinSolv_->computeJacobian();
+  phiLinSolv_->buildK(p);
+  phiLinSolv_->buildb(p, xDot);
+  phiLinSolv_->buildATilde(dt);
+  phiLinSolv_->buildv();
+  auto vec = phiLinSolv_->matrixExponential(2);
+  auto pv = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar>>(vec, true);
+  auto vecV = pv->getVectorBlock(0);  // V block
+  return vecV;
+  
+}
+
 
 /*
  * PhiLinearSolver methods
  */
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
+void PhiLinearSolver<Scalar>::computeMassMatrix()
+// void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
 {
-
+  
   typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar> inArgs = appModel_->getNominalValues();
 
   // first allocate space for the mass matrix
   fullMassMatrix_ = appModel_->create_W_op();
@@ -226,64 +252,16 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
   }
 }
 
-// template <class Scalar>
-// void PhiLinearSolver<Scalar>::matrixExponential(const int expansionOrder)
-// {
-//   TEUCHOS_TEST_FOR_EXCEPTION(
-//       expansionOrder < 0,
-//       std::invalid_argument,
-//       "massMatrixExponential: expansionOrder must be nonnegative");
-
-//   TEUCHOS_TEST_FOR_EXCEPTION(
-//       !lumpMass_,
-//       std::invalid_argument,
-//       "massMatrixExponential: mass lumping must be true to use this method");
-  
-//   result = Identity*v_;
-//   result = result + Atilde_*v_/2;
-//   result = result + Atilde_*v_/6;
-//   result = result + Atilde_*v_/24;
-  
-//   Teuchos::RCP<Thyra::VectorBase<Scalar>> expMassDiag =
-//       Thyra::createMember(*fullMassMatrix_->range());
-
-//   const Thyra::Ordinal n = expMassDiag->space()->dim();
-
-//   for (Thyra::Ordinal i = 0; i < n; ++i)
-//   {
-//       Scalar m_i = Thyra::get_ele(*lumpedMassDiagonal_, i);
-
-//       // Taylor series: e^{m_i} = sum_{k=0}^N m_{i}^k / k!
-//       Scalar e_i   = Scalar(1);  // k = 0 term
-//       Scalar term  = Scalar(1);  // current m_{i}^k / k!
-
-//       for (int k = 1; k <= expansionOrder; ++k)
-//       {
-//           // term_k = term_{k-1} * m_i / k
-//           term *= m_i / Scalar(k);
-//           e_i  += term;
-//       }
-
-//       Thyra::set_ele(i, e_i, expMassDiag.ptr());
-//   }
-
-//   expMassMatrix_ = Thyra::diagonal(expMassDiag);
-// }
-
 template <class Scalar>
 void PhiLinearSolver<Scalar>::buildATilde(
-    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> M_inv,   // N x N
-    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> J,   // N x N
-    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> b,   // N x p  (W -> V)
-    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> K,   // p x p  (W -> W)
     const double dt)   // time step
 {
-  // Combine linear operators M_inv and J and multiply by dt
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A = Thyra::scale(Teuchos::as<Scalar>(dt), Thyra::multiply<Scalar>(M_inv, J));
+  // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A = Thyra::scale(Teuchos::as<Scalar>(-dt), Thyra::multiply<Scalar>(invMassMatrix_, jacobianMatrix_));
 
   // Spaces
   auto V = A->domain();   // dim N, and also A->range()
-  auto W = K->domain();   // dim p, and also K->range()
+  auto W = KMatrix_->domain();   // dim p, and also K->range()
   
   // Zero operator: V -> W  (for the (2,1) block)
   auto Z_VW = Thyra::zero<Scalar>(W, V);
@@ -292,10 +270,10 @@ void PhiLinearSolver<Scalar>::buildATilde(
   // [ A  b ]
   // [ 0  K ]
   Atilde_ = Thyra::block2x2<Scalar>(
-      A,     // (1,1): V->V
-      b,     // (1,2): W->V
-      Z_VW,  // (2,1): V->W
-      K      // (2,2): W->W
+      A,            // (1,1): V->V
+      bMatrix_,     // (1,2): W->V
+      Z_VW,         // (2,1): V->W
+      KMatrix_      // (2,2): W->W
   );
 }
 
@@ -325,7 +303,7 @@ void PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal p)
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::buildb(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A, const Thyra::Ordinal p,
+void PhiLinearSolver<Scalar>::buildb(const Thyra::Ordinal p,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -339,7 +317,7 @@ void PhiLinearSolver<Scalar>::buildb(const Teuchos::RCP<const Thyra::LinearOpBas
       "buildb: EPI order must be 2 or higher.");
 
   // N-dimensional space: use A's range (rows of an NxN operator)
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V_N = A->range();
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V_N = invMassMatrix_->range();
 
   const Thyra::Ordinal N = V_N->dim();
 
@@ -389,7 +367,7 @@ void PhiLinearSolver<Scalar>::buildv()
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::matrixExponential(const Thyra::Ordinal expansionOrder)
+Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiLinearSolver<Scalar>::matrixExponential(const Thyra::Ordinal expansionOrder)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       expansionOrder < 0,
@@ -426,7 +404,9 @@ void PhiLinearSolver<Scalar>::matrixExponential(const Thyra::Ordinal expansionOr
     Thyra::Vp_StV(matExpTemp.ptr(), invFact, *term);
   }
 
-  matExp_v_ = matExpTemp;
+  matExp_v_ = matExpTemp; // This is required to wrap multivector as linearop
+
+  return matExp_v_;
 }
 
 
@@ -454,9 +434,11 @@ void PhiLinearSolver<Scalar>::solveMass(const Teuchos::Ptr<Thyra::VectorBase<Sca
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
+void PhiLinearSolver<Scalar>::computeJacobian()
 {
   typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar> inArgs = appModel_->getNominalValues();
 
   // first allocate space for the Jacobian matrix
   jacobianMatrix_ = appModel_->create_W_op();

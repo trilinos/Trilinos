@@ -7,8 +7,8 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3ModifierBase_hpp
-#define Tempus_StepperEPI3ModifierBase_hpp
+#ifndef Tempus_StepperEPI3ObserverBase_hpp
+#define Tempus_StepperEPI3ObserverBase_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
@@ -16,35 +16,34 @@
 
 namespace Tempus {
 
-/** \brief Base modifier for StepperBackwardEuler.
+/** \brief Base observer for StepperEPI3.
  *
- *  This class provides a means to modify values (e.g., solution variables
+ *  This class provides a means to observe values (e.g., solution variables
  *  through SolutionHistory, and stepper member data through the Stepper),
- *  and can be very powerful and easy to make changes to the stepper and
- *  the solution.
+ *  and cannot modify them.
  *
- *  Users deriving from this class can access a lot of data, and it is
- *  expected that those users know what changes are allowable without
- *  affecting the Stepper correctness, performance, accuracy and stability.
- *  Thus the user should be careful when accessing data through classes
- *  derived from the default modifier (i.e., USER BEWARE!!).
+ *  Users deriving from this class can observer a lot of data, and it is
+ *  expected that users will NOT modify any of that data.  If the user
+ *  wishes to modify the solution and/or stepper data during the
+ *  Stepper::takeStep, they should use the Modifier class (with care!).
  *
  *  The locations for these AppAction calls
  *  (StepperEPI3AppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperEPI3.
  */
 template <class Scalar>
-class StepperEPI3ModifierBase
+class StepperEPI3ObserverBase
   : virtual public Tempus::StepperEPI3AppAction<Scalar> {
  private:
   /* \brief Adaptor execute function
    *
    *  This is an adaptor function to bridge between the AppAction
-   *  interface and the Modifier interface.  It is meant to be private
+   *  interface and this derived interface.  It is meant to be private
    *  and non-virtual as deriving from this class should only need to
-   *  implement the modify function.
+   *  implement the observe function.
    *
-   *  For the Modifier interface, this adaptor is a "simple pass through".
+   *  For the Observer interface, this adaptor simply "applies" constantness
+   *  to the arguments.
    */
   void execute(
       Teuchos::RCP<SolutionHistory<Scalar> > sh,
@@ -52,18 +51,18 @@ class StepperEPI3ModifierBase
       const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
           actLoc)
   {
-    this->modify(sh, stepper, actLoc);
+    this->observe(sh, stepper, actLoc);
   }
 
  public:
-  /// Modify EPI3 Stepper.
-  virtual void modify(
-      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-      Teuchos::RCP<StepperEPI3<Scalar> > /* stepper */,
+  /// Observe EPI3 Stepper.
+  virtual void observe(
+      Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<const StepperEPI3<Scalar> > /* stepper */,
       const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
           actLoc) = 0;
 };
 
 }  // namespace Tempus
 
-#endif  // Tempus_StepperEPI3ModifierBase_hpp
+#endif  // Tempus_StepperEPI3ObserverBase_hpp
