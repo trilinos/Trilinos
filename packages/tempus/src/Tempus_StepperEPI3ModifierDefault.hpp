@@ -1,8 +1,11 @@
-// @HEADER
-// ****************************************************************************
-// TODO
-// ****************************************************************************
-// @HEADER
+//@HEADER
+// *****************************************************************************
+//          Tempus: Time Integration and Sensitivity Analysis Package
+//
+// Copyright 2017 NTESS and the Tempus contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+//@HEADER
 
 #ifndef Tempus_StepperEPI3ModifierDefault_hpp
 #define Tempus_StepperEPI3ModifierDefault_hpp
@@ -14,7 +17,6 @@
 // if they need access to the stepper methods.
 //#include "Tempus_StepperEPI3.hpp"
 
-
 namespace Tempus {
 
 /** \brief Default modifier for StepperEPI3.
@@ -25,41 +27,37 @@ namespace Tempus {
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
-template<class Scalar>
+template <class Scalar>
 class StepperEPI3ModifierDefault
-  : virtual public Tempus::StepperEPI3ModifierBase<Scalar>
-{
-public:
-
+  : virtual public Tempus::StepperEPI3ModifierBase<Scalar> {
+ public:
   /// Constructor
-  StepperEPI3ModifierDefault(){}
+  StepperEPI3ModifierDefault() {}
 
   /// Destructor
-  virtual ~StepperEPI3ModifierDefault(){}
+  virtual ~StepperEPI3ModifierDefault() {}
 
   /// Modify EPI3 Stepper.
   virtual void modify(
-    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-    Teuchos::RCP<StepperEPI3<Scalar> > /* stepper */,
-    const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION actLoc)
+      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+      Teuchos::RCP<StepperEPI3<Scalar> > /* stepper */,
+      const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
+          actLoc)
   {
-    switch(actLoc) {
+    switch (actLoc) {
       case StepperEPI3AppAction<Scalar>::BEGIN_STEP:
-      case StepperEPI3AppAction<Scalar>::BEFORE_EXP:
-      case StepperEPI3AppAction<Scalar>::AFTER_EXP:
-      case StepperEPI3AppAction<Scalar>::END_STEP:
-      {
+      case StepperEPI3AppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
+      case StepperEPI3AppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown action location.\n");
+                                   "Error - unknown action location.\n");
     }
   }
-
 };
 
-} // namespace Tempus
+}  // namespace Tempus
 
-#endif // Tempus_StepperEPI3ModifierDefault_hpp
+#endif  // Tempus_StepperEPI3ModifierDefault_hpp
