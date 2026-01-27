@@ -1,4 +1,4 @@
-<ParameterList name="EPI3_VanDerPol">
+<ParameterList name="ForwardEuler_VanDerPol">
   <ParameterList name="VanDerPolModel">
     <Parameter name="Accept model parameters"    type="bool" value="false"/>
     <Parameter name="Provide nominal values"     type="bool" value="true"/>
@@ -23,8 +23,8 @@
         <Parameter name="Initial Time"           type="double" value="0.0"/>
         <Parameter name="Final Time"             type="double" value="3.0"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
-        <Parameter name="Final Time Index"       type="int"    value="100000"/>
-        <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
+        <Parameter name="Final Time Index"       type="int"    value="10000000"/>
+        <Parameter name="Minimum Time Step"      type="double" value="0.00000001"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
@@ -48,6 +48,7 @@
     <ParameterList name="Demo Stepper">
       <Parameter name="Stepper Type" type="string" value="EPI3"/>
       <Parameter name="Use FSAL"       type="bool" value="true"/>
+      <Parameter name="Taylor Expansion Order" type="int" value="20"/>
     </ParameterList>
 
   </ParameterList>
