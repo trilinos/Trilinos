@@ -49,6 +49,7 @@
       <Parameter name="Use FSAL" type="bool" value="true"/>
       <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
+      <Parameter name="Taylor Expansion Order" type="int" value="2"/>
     </ParameterList>
 
   </ParameterList>

@@ -14,6 +14,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
+#include "Tempus_Stepper.hpp"
 #include "Tempus_StepperEPI3AppAction.hpp"
 
 namespace Tempus {
@@ -118,6 +119,7 @@ class StepperEPI3 : virtual public Tempus::StepperExplicit<Scalar> {
   virtual Scalar getOrder() const { return 2.0; }
   virtual Scalar getOrderMin() const { return 2.0; }
   virtual Scalar getOrderMax() const { return 2.0; }
+  virtual int getTaylorExpansionOrder() const { return taylorExpOrder_; }
   virtual void setUseFSAL(bool a)
   {
     this->useFSAL_       = a;
@@ -134,10 +136,20 @@ class StepperEPI3 : virtual public Tempus::StepperExplicit<Scalar> {
 
   virtual bool isValidSetup(Teuchos::FancyOStream& out) const;
 
+  /// Return a valid ParameterList with current settings.
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+  /// Return a valid ParameterList with basic settings.
+  Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasic() const;
+
+  void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
+
  protected:
   Teuchos::RCP<StepperEPI3AppAction<Scalar> > stepperEPI3AppAction_;
 
   Teuchos::RCP<PhiEvaluator<Scalar> > phiEvaluator_;
+
+  int taylorExpOrder_;
 };
 
 /// Nonmember constructor - ModelEvaluator and ParameterList
