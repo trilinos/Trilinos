@@ -28,15 +28,15 @@ class PhiLinearSolver {
 
   ~PhiLinearSolver() {}
 
-  void computeMassMatrix();
-  // void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
+  // void computeMassMatrix();
+  void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
   void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
 
-  void computeJacobian();
+  void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matrixExponential(const Thyra::Ordinal expansionOrder);
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matrixExponential(const int expansionOrder);
   void buildATilde(const double dt);
   void buildK(const Thyra::Ordinal n);
   void buildb(const Thyra::Ordinal p, const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot);
@@ -138,7 +138,7 @@ class PhiEvaluator
   void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel);
 
   /// calculate Mass Matrix Jacobian and build Atilde matrix
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> buildATildeMatrix(const Thyra::Ordinal p, const double dt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot);
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> buildATildeMatrix(const Thyra::Ordinal p, const int taylorOrder, const double dt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot, const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
 
   /// Set the linearization point for the Jacobian calculation
   virtual void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) = 0;
