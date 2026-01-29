@@ -19,7 +19,6 @@
 #include "MueLu_Level.hpp"
 
 #include "MueLu_Amesos2Smoother.hpp"
-#include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_BelosSmoother.hpp"
 #include "MueLu_StratimikosSmoother.hpp"
 #include "MueLu_RefMaxwellSmoother.hpp"
@@ -36,7 +35,6 @@ DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DirectSolver(const std:
   // constructed object (or objects, as we have two different code branches for Epetra and Tpetra). The only place where we
   // could construct these objects is the constructor. Thus, we need to store RCPs, and both TrilinosSmoother and DirectSolver
   // obtain a state: they contain RCP to smoother prototypes.
-  sEpetra_ = Teuchos::null;
   sTpetra_ = Teuchos::null;
   sBelos_  = Teuchos::null;
 
@@ -44,7 +42,7 @@ DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DirectSolver(const std:
 
   // We want DirectSolver to be able to work with both Epetra and Tpetra objects, therefore we try to construct both
   // Amesos and Amesos2 solver prototypes. The construction really depends on configuration options.
-  triedEpetra_ = triedTpetra_ = false;
+  triedTpetra_ = false;
   try {
     sTpetra_ = rcp(new Amesos2Smoother(type_, paramList));
     if (sTpetra_.is_null())
@@ -106,14 +104,11 @@ DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DirectSolver(const std:
 
   // Check if we were able to construct at least one solver. In many cases that's all we need, for instance if a user
   // simply wants to use Tpetra only stack, never enables Amesos, and always runs Tpetra objects.
-  TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_ && !triedBelos_ && !triedStratimikos_ && !triedRefMaxwell_, Exceptions::RuntimeError,
-                             "Unable to construct any direct solver."
-                             "Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS) or (BELOS) or (STRATIMIKOS)");
+  TEUCHOS_TEST_FOR_EXCEPTION(!triedTpetra_ && !triedBelos_ && !triedStratimikos_ && !triedRefMaxwell_, Exceptions::RuntimeError,
+                             "Unable to construct any direct solver.");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null() && sBelos_.is_null() && sStratimikos_.is_null() && sRefMaxwell_.is_null(), Exceptions::RuntimeError,
+  TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null() && sBelos_.is_null() && sStratimikos_.is_null() && sRefMaxwell_.is_null(), Exceptions::RuntimeError,
                              "Could not enable any direct solver:\n"
-                                 << (triedEpetra_ ? "Epetra mode was disabled due to an error:\n" : "")
-                                 << (triedEpetra_ ? errorEpetra_ : "")
                                  << (triedTpetra_ ? "Tpetra mode was disabled due to an error:\n" : "")
                                  << (triedTpetra_ ? errorTpetra_ : "")
                                  << (triedBelos_ ? "Belos was disabled due to an error:\n" : "")
@@ -130,7 +125,6 @@ DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DirectSolver(const std:
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
   // We need to propagate SetFactory to proper place
-  if (!sEpetra_.is_null()) sEpetra_->SetFactory(varName, factory);
   if (!sTpetra_.is_null()) sTpetra_->SetFactory(varName, factory);
   if (!sBelos_.is_null()) sBelos_->SetFactory(varName, factory);
   if (!sStratimikos_.is_null()) sStratimikos_->SetFactory(varName, factory);
@@ -146,43 +140,24 @@ void DirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level
   else if (!sRefMaxwell_.is_null())
     s_ = sRefMaxwell_;
   else {
-    // Decide whether we are running in Epetra or Tpetra mode
-    //
-    // Theoretically, we could make this decision in the constructor, and create only
-    // one of the smoothers. But we want to be able to reuse, so one can imagine a scenario
-    // where one first runs hierarchy with tpetra matrix, and then with epetra.
-    bool useTpetra = (currentLevel.lib() == Xpetra::UseTpetra);
-    s_             = (useTpetra ? sTpetra_ : sEpetra_);
-    if (s_.is_null()) {
-      if (useTpetra) {
-#if not defined(HAVE_MUELU_AMESOS2)
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-                                   "Error: running in Tpetra mode, but MueLu with Amesos2 was disabled during the configure stage.\n"
-                                   "Please make sure that:\n"
-                                   "  - Amesos2 is enabled (Trilinos_ENABLE_Amesos2=ON),\n"
-                                   "  - Amesos2 is available for MueLu to use (MueLu_ENABLE_Amesos2=ON)\n");
-#else
-        if (triedTpetra_)
-          this->GetOStream(Errors) << "Tpetra mode was disabled due to an error:\n"
-                                   << errorTpetra_ << std::endl;
-#endif
-      }
-      if (!useTpetra) {
-#if not defined(HAVE_MUELU_AMESOS)
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-                                   "Error: running in Epetra mode, but MueLu with Amesos was disabled during the configure stage.\n"
-                                   "Please make sure that:\n"
-                                   "  - Amesos is enabled (you can do that with Trilinos_ENABLE_Amesos=ON),\n"
-                                   "  - Amesos is available for MueLu to use (MueLu_ENABLE_Amesos=ON)\n");
-#else
-        if (triedEpetra_)
-          this->GetOStream(Errors) << "Epetra mode was disabled due to an error:\n"
-                                   << errorEpetra_ << std::endl;
-#endif
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-                                 "Direct solver for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
-    }
+    s_ = sTpetra_;
+  }
+  if (s_.is_null()) {
+    if (triedBelos_)
+      this->GetOStream(Errors) << "Belos mode was disabled due to an error:\n"
+                               << errorBelos_ << std::endl;
+    if (triedStratimikos_)
+      this->GetOStream(Errors) << "Stratimikos mode was disabled due to an error:\n"
+                               << errorStratimikos_ << std::endl;
+    if (triedRefMaxwell_)
+      this->GetOStream(Errors) << "RefMaxwell mode was disabled due to an error:\n"
+                               << errorRefMaxwell_ << std::endl;
+    if (triedTpetra_)
+      this->GetOStream(Errors) << "Tpetra mode was disabled due to an error:\n"
+                               << errorTpetra_ << std::endl;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+                               "Direct solver was not constructed");
   }
 
   s_->DeclareInput(currentLevel);
@@ -217,8 +192,6 @@ RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Direct
 
   // We need to be quite careful with Copy
   // We still want DirectSolver to follow Prototype Pattern, so we need to hide the fact that we do have some state
-  if (!sEpetra_.is_null())
-    newSmoo->sEpetra_ = sEpetra_->Copy();
   if (!sTpetra_.is_null())
     newSmoo->sTpetra_ = sTpetra_->Copy();
   if (!sBelos_.is_null())
@@ -235,10 +208,8 @@ RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Direct
     newSmoo->s_ = newSmoo->sStratimikos_;
   else if (s_.get() == sRefMaxwell_.get())
     newSmoo->s_ = newSmoo->sRefMaxwell_;
-  else if (s_.get() == sTpetra_.get())
-    newSmoo->s_ = newSmoo->sTpetra_;
   else
-    newSmoo->s_ = newSmoo->sEpetra_;
+    newSmoo->s_ = newSmoo->sTpetra_;
   newSmoo->SetParameterList(this->GetParameterList());
 
   return newSmoo;

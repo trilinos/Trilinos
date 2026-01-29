@@ -28,7 +28,6 @@
 namespace MueLu {
 
 // General implementation
-// Epetra variant throws
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Jacobi(
     Scalar omega,

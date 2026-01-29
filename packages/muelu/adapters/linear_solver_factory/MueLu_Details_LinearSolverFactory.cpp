@@ -19,12 +19,6 @@
 // for making Tpetra's macros work.
 #include "TpetraCore_ETIHelperMacros.h"
 
-#ifdef HAVE_MUELU_EPETRA
-// Do explicit instantiation of MueLu::Details::LinearSolverFactory,
-// for Epetra objects.
-template class MueLu::Details::LinearSolverFactory<Epetra_MultiVector, Epetra_Operator, double>;
-#endif  // HAVE_MUELU_EPETRA
-
 // Define typedefs that make the Tpetra macros work
 TPETRA_ETI_MANGLING_TYPEDEFS()
 

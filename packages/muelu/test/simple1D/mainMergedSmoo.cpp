@@ -24,7 +24,6 @@
 #include "MueLu_GenericPRFactory.hpp"
 
 #include "MueLu_MergedSmoother.hpp"
-#include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -137,7 +136,7 @@ int main(int argc, char* argv[]) {
   clp.setOption("nSmoothers", &nSmoothers, "number of Gauss-Seidel smoothers in the MergedSmootehrs");
   clp.setOption("maxLevels", &maxLevels, "maximum number of levels allowed. If 1, then a MergedSmoother is used on the coarse grid");
   clp.setOption("its", &its, "number of multigrid cycles");
-  clp.setOption("coarseSolver", &coarseSolver, "amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
+  clp.setOption("coarseSolver", &coarseSolver, "amesos2 or ifpack2");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;

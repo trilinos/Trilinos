@@ -16,7 +16,6 @@
 #include "MueLu_TrilinosSmoother_decl.hpp"
 
 #include "MueLu_Level.hpp"
-#include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_BelosSmoother.hpp"
 #include "MueLu_StratimikosSmoother.hpp"
@@ -35,7 +34,6 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TrilinosSmoother(co
   // constructed object (or objects, as we have two different code branches for Epetra and Tpetra). The only place where we
   // could construct these objects is the constructor. Thus, we need to store RCPs, and both TrilinosSmoother and DirectSolver
   // obtain a state: they contain RCP to smoother prototypes.
-  sEpetra_      = Teuchos::null;
   sTpetra_      = Teuchos::null;
   sBelos_       = Teuchos::null;
   sStratimikos_ = Teuchos::null;
@@ -47,7 +45,7 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TrilinosSmoother(co
 
   // We want TrilinosSmoother to be able to work with both Epetra and Tpetra objects, therefore we try to construct both
   // Ifpack and Ifpack2 smoother prototypes. The construction really depends on configuration options.
-  triedEpetra_ = triedTpetra_ = triedBelos_ = triedStratimikos_ = false;
+  triedTpetra_ = triedBelos_ = triedStratimikos_ = false;
   try {
     sTpetra_ = rcp(new Ifpack2Smoother(type_, paramList, overlap_));
     if (sTpetra_.is_null())
@@ -97,14 +95,11 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TrilinosSmoother(co
 
   // Check if we were able to construct at least one smoother. In many cases that's all we need, for instance if a user
   // simply wants to use Tpetra only stack, never enables Ifpack, and always runs Tpetra objects.
-  TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_ && !triedBelos_ && !triedStratimikos_, Exceptions::RuntimeError,
-                             "Unable to construct any smoother."
-                             "Please enable (TPETRA and IFPACK2) or (EPETRA and IFPACK) or (BELOS) or (STRATIMIKOS)");
+  TEUCHOS_TEST_FOR_EXCEPTION(!triedTpetra_ && !triedBelos_ && !triedStratimikos_, Exceptions::RuntimeError,
+                             "Unable to construct any smoother.");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null() && sBelos_.is_null() && sStratimikos_.is_null(), Exceptions::RuntimeError,
+  TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null() && sBelos_.is_null() && sStratimikos_.is_null(), Exceptions::RuntimeError,
                              "Could not construct any smoother:\n"
-                                 << (triedEpetra_ ? "=> Failed to build an Epetra smoother due to the following exception:\n" : "=> Epetra and/or Ifpack are not enabled.\n")
-                                 << (triedEpetra_ ? errorEpetra_ + "\n" : "")
                                  << (triedTpetra_ ? "=> Failed to build a Tpetra smoother due to the following exception:\n" : "=> Tpetra and/or Ifpack2 are not enabled.\n")
                                  << (triedTpetra_ ? errorTpetra_ + "\n" : "")
                                  << (triedBelos_ ? "=> Failed to build a Belos smoother due to the following exception:\n" : "=> Belos not enabled.\n")
@@ -118,7 +113,6 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TrilinosSmoother(co
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
   // We need to propagate SetFactory to proper place
-  if (!sEpetra_.is_null()) sEpetra_->SetFactory(varName, factory);
   if (!sTpetra_.is_null()) sTpetra_->SetFactory(varName, factory);
   if (!sBelos_.is_null()) sBelos_->SetFactory(varName, factory);
   if (!sStratimikos_.is_null()) sStratimikos_->SetFactory(varName, factory);
@@ -131,44 +125,20 @@ void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(L
   else if (!sStratimikos_.is_null())
     s_ = sStratimikos_;
   else {
-    // Decide whether we are running in Epetra or Tpetra mode
-    //
-    // Theoretically, we could make this decision in the constructor, and create only
-    // one of the smoothers. But we want to be able to reuse, so one can imagine a scenario
-    // where one first runs hierarchy with tpetra matrix, and then with epetra.
-
-    bool useTpetra = (currentLevel.lib() == Xpetra::UseTpetra);
-    s_             = (useTpetra ? sTpetra_ : sEpetra_);
-    if (s_.is_null()) {
-      if (useTpetra) {
-#if not defined(HAVE_MUELU_IFPACK2)
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-                                   "Error: running in Tpetra mode, but MueLu with Ifpack2 was disabled during the configure stage.\n"
-                                   "Please make sure that:\n"
-                                   "  - Ifpack2 is enabled (Trilinos_ENABLE_Ifpack2=ON),\n"
-                                   "  - Ifpack2 is available for MueLu to use (MueLu_ENABLE_Ifpack2=ON)\n");
-#else
-        if (triedTpetra_)
-          this->GetOStream(Errors) << "Tpetra mode was disabled due to an error:\n"
-                                   << errorTpetra_ << std::endl;
-#endif
-      }
-      if (!useTpetra) {
-#if not defined(HAVE_MUELU_IFPACK)
-        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-                                   "Error: running in Epetra mode, but MueLu with Ifpack was disabled during the configure stage.\n"
-                                   "Please make sure that:\n"
-                                   "  - Ifpack is enabled (you can do that with Trilinos_ENABLE_Ifpack=ON),\n"
-                                   "  - Ifpack is available for MueLu to use (MueLu_ENABLE_Ifpack=ON)\n");
-#else
-        if (triedEpetra_)
-          this->GetOStream(Errors) << "Epetra mode was disabled due to an error:\n"
-                                   << errorEpetra_ << std::endl;
-#endif
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
-                                 "Smoother for " << (useTpetra ? "Tpetra" : "Epetra") << " was not constructed");
-    }
+    s_ = sTpetra_;
+  }
+  if (s_.is_null()) {
+    if (triedBelos_)
+      this->GetOStream(Errors) << "Belos was disabled due to an error:\n"
+                               << errorBelos_ << std::endl;
+    if (triedStratimikos_)
+      this->GetOStream(Errors) << "Stratimikos was disabled due to an error:\n"
+                               << errorStratimikos_ << std::endl;
+    if (triedTpetra_)
+      this->GetOStream(Errors) << "Tpetra mode was disabled due to an error:\n"
+                               << errorTpetra_ << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
+                               "Smoother was not constructed");
   }
 
   s_->DeclareInput(currentLevel);
@@ -204,8 +174,6 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const {
 
   // We need to be quite careful with Copy
   // We still want TrilinosSmoother to follow Prototype Pattern, so we need to hide the fact that we do have some state
-  if (!sEpetra_.is_null())
-    newSmoo->sEpetra_ = sEpetra_->Copy();
   if (!sTpetra_.is_null())
     newSmoo->sTpetra_ = sTpetra_->Copy();
   if (!sBelos_.is_null())
@@ -218,10 +186,9 @@ TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const {
     newSmoo->s_ = newSmoo->sBelos_;
   else if (s_.get() == sStratimikos_.get())
     newSmoo->s_ = newSmoo->sStratimikos_;
-  else if (s_.get() == sTpetra_.get())
-    newSmoo->s_ = newSmoo->sTpetra_;
   else
-    newSmoo->s_ = newSmoo->sEpetra_;
+    newSmoo->s_ = newSmoo->sTpetra_;
+
   newSmoo->SetParameterList(this->GetParameterList());
 
   return newSmoo;
@@ -354,13 +321,7 @@ void TrilinosSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::print(Teuchos:
   }
 
   if (verbLevel & Debug) {
-    out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl
-         << "-" << std::endl
-         << "Epetra PrecType: " << Ifpack2ToIfpack1Type(type_) << std::endl
-         << "Epetra Parameter list: " << std::endl;
-    Teuchos::OSTab tab2(out);
-    out << Ifpack2ToIfpack1Param(this->GetParameterList());
-    ;
+    out0 << "IsSetup: " << Teuchos::toString(SmootherPrototype::IsSetup()) << std::endl;
   }
 }
 

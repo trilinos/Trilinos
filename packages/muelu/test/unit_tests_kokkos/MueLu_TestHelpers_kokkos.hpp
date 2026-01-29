@@ -36,7 +36,6 @@
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_FactoryManager.hpp"
 
-#include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Level.hpp"
 
 // Galeri

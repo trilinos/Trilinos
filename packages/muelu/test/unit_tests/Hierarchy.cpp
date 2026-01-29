@@ -22,8 +22,6 @@
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_IO.hpp>
 
-#include <MueLu_AmesosSmoother.hpp>
-#include <MueLu_AmesosSmoother.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_FactoryManagerBase.hpp>
 #include <MueLu_Hierarchy.hpp>

@@ -148,8 +148,6 @@ bool compare_to_gold(int myRank, const std::string& baseFile) {
     // using different seed, and may have different algorithm from one
     // gcc version to another, or to anogther compiler (like clang)
     // This leads to us always failing this test.
-    // NOTE1 : Epetra, on the other hand, rolls out its out random number
-    // generator, which always produces same results
 
     // make sure complex tests pass
     run_sed("'s/relaxation: damping factor = (1,0)/relaxation: damping factor = 1/'", baseFile);
