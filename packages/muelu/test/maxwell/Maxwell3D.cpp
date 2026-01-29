@@ -59,41 +59,6 @@ using Teuchos::TimeMonitor;
 #include <Stratimikos_MueLuHelpers.hpp>
 #endif
 
-// Support for ML interface
-#if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
-#include <Xpetra_EpetraOperator.hpp>
-#include "ml_MultiLevelPreconditioner.h"
-#include "ml_MultiLevelOperator.h"
-#include "ml_RefMaxwell.h"
-#endif
-
-// Helper functions for compilation purposes
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-struct EpetraSolvers_Wrapper {
-  static void Generate_ML_MaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& SM,
-                                                Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& D0,
-                                                Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Kn,
-                                                Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& nullspace,
-                                                Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& coords,
-                                                Teuchos::ParameterList& mueluList,
-                                                Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& mlopX) {
-    throw std::runtime_error("Template parameter mismatch");
-  }
-
-  static void Generate_ML_RefMaxwellPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& SM,
-                                                   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& D0,
-                                                   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Ms,
-                                                   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& M0inv,
-                                                   Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& M1,
-                                                   Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& nullspace,
-                                                   Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& node_material,
-                                                   Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> >& coords,
-                                                   Teuchos::ParameterList& mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& mlopX) {
-    throw std::runtime_error("Template parameter mismatch");
-  }
-};
-
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 bool SetupSolve(std::map<std::string, void*> inputs) {
 #include <MueLu_UseShortNames.hpp>
@@ -361,7 +326,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   std::string belosSolverType = "Block CG";
   clp.setOption("belosSolverType", &belosSolverType, "Name of the Belos linear solver");
   std::string precType = "MueLu-RefMaxwell";
-  clp.setOption("precType", &precType, "preconditioner to use (MueLu-RefMaxwell|MueLu-Maxwell1|ML-RefMaxwell|none)");
+  clp.setOption("precType", &precType, "preconditioner to use (MueLu-RefMaxwell|MueLu-Maxwell1|none)");
   std::string xml = "";
   clp.setOption("xml", &xml, "xml file with solver parameters (default: \"Maxwell.xml\")");
   std::string belos_xml = "Belos.xml";
@@ -430,7 +395,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL: break;
   }
 
-  if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1" || precType == "ML-Maxwell") {
+  if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1") {
     if (SM_file != "")
       M1_file = "";
     M0_file = "";
@@ -441,10 +406,6 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
       xml = "Maxwell.xml";
     else if (precType == "MueLu-Reitzinger" || precType == "MueLu-Maxwell1")
       xml = "Maxwell_Reitzinger.xml";
-    else if (precType == "ML-RefMaxwell")
-      xml = "Maxwell_ML.xml";
-    else if (precType == "ML-Maxwell")
-      xml = "Maxwell_ML1.xml";
     else if (precType == "Hypre")
 
       xml = "Hypre.xml";

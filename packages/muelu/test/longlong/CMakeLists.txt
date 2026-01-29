@@ -1,10 +1,5 @@
 # Ensure that these cmake boolean variables are defined
-ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos
-  ${PACKAGE_NAME}_ENABLE_Amesos2
-  ${PACKAGE_NAME}_ENABLE_Epetra
-  ${PACKAGE_NAME}_ENABLE_Zoltan2Core
-)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2 ${PACKAGE_NAME}_ENABLE_Zoltan2Core)
 
 #
 # Executable
@@ -21,9 +16,7 @@ TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 INCLUDE(XpetraAddTest)
 
-IF(${PACKAGE_NAME}_ENABLE_Ifpack2
-   AND ${PACKAGE_NAME}_ENABLE_Amesos2
-   AND ${PACKAGE_NAME}_ENABLE_Zoltan2Core
+IF(${PACKAGE_NAME}_ENABLE_Zoltan2Core
    AND Zoltan2_ENABLE_Experimental
    AND TPL_ENABLE_MPI
 )
