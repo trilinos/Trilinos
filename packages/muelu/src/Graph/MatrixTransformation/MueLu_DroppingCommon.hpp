@@ -178,6 +178,7 @@ class VectorDropBoundaryFunctor {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class VectorSymmetricDropBoundaryFunctor {
  private:
+  using matrix_type             = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   using local_matrix_type       = typename Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using scalar_type             = typename local_matrix_type::value_type;
   using local_ordinal_type      = typename local_matrix_type::ordinal_type;
@@ -194,15 +195,15 @@ class VectorSymmetricDropBoundaryFunctor {
   results_view results;
 
  public:
-  VectorSymmetricDropBoundaryFunctor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_, boundary_nodes_view boundaryNodes_, results_view& results_)
-    : point_to_block(point_to_block_)
+  VectorSymmetricDropBoundaryFunctor(local_matrix_type& A_, matrix_type& mergedA_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_, boundary_nodes_view boundaryNodes_, results_view& results_)
+    : A(A_)
+    , point_to_block(point_to_block_)
     , ghosted_point_to_block(ghosted_point_to_block_)
     , boundaryNodes(boundaryNodes_)
     , results(results_) {
-    A                        = A_.getLocalMatrixDevice();
-    auto boundaryNodesColumn = typename boundary_nodes_view::non_const_type("boundaryNodesColumn", A_.getColMap()->getLocalNumElements());
-    auto boundaryNodesDomain = typename boundary_nodes_view::non_const_type("boundaryNodesDomain", A_.getDomainMap()->getLocalNumElements());
-    Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletColsAndDomains(A_, boundaryNodes, boundaryNodesColumn, boundaryNodesDomain);
+    auto boundaryNodesColumn = typename boundary_nodes_view::non_const_type("boundaryNodesColumn", mergedA_.getColMap()->getLocalNumElements());
+    auto boundaryNodesDomain = typename boundary_nodes_view::non_const_type("boundaryNodesDomain", mergedA_.getDomainMap()->getLocalNumElements());
+    Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DetectDirichletColsAndDomains(mergedA_, boundaryNodes, boundaryNodesColumn, boundaryNodesDomain);
     boundaryNodesCol = boundaryNodesColumn;
   }
 

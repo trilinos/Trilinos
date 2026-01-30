@@ -809,7 +809,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacianC
 
     TEST_EQUALITY(myDofsPerNode, 3);
     TEST_EQUALITY(numGlobalBoundaryNodes, 100);
-    TEST_EQUALITY(numGlobalEdges, 7940);
+
+    if (comm->getSize() == 1) {
+      TEST_EQUALITY(numGlobalEdges, 8482);
+    } else {
+      TEST_EQUALITY(numGlobalEdges, 8454);
+    }
   }
 }  // DistanceLaplacianCutScaled
 
