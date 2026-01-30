@@ -137,9 +137,6 @@ class PhiEvaluator
   /// set the ModelEvaluator
   void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel);
 
-  /// calculate Mass Matrix Jacobian and build Atilde matrix
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> buildATildeMatrix(const Thyra::Ordinal p, const int taylorOrder, const double dt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot, const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
-
   /// Set the linearization point for the Jacobian calculation
   virtual void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) = 0;
 

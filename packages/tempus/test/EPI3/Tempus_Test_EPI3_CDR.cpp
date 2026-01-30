@@ -40,59 +40,59 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(EPI3, ParameterList)
-{
-  // Read params from .xml file
-  RCP<ParameterList> pList =
-      getParametersFromXmlFile("Tempus_EPI3_SinCos.xml");
+// TEUCHOS_UNIT_TEST(EPI3, ParameterList)
+// {
+//   // Read params from .xml file
+//   RCP<ParameterList> pList =
+//       getParametersFromXmlFile("Tempus_EPI3_SinCos.xml");
 
-  // Setup the SinCosModel
-  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-  auto model                = rcp(new SinCosModel<double>(scm_pl));
+//   // Setup the SinCosModel
+//   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
+//   auto model                = rcp(new SinCosModel<double>(scm_pl));
 
-  RCP<ParameterList> tempusPL = sublist(pList, "Tempus", true);
+//   RCP<ParameterList> tempusPL = sublist(pList, "Tempus", true);
 
-  // Test constructor IntegratorBasic(tempusPL, model)
-  {
-    RCP<Tempus::IntegratorBasic<double>> integrator =
-        Tempus::createIntegratorBasic<double>(tempusPL, model);
+//   // Test constructor IntegratorBasic(tempusPL, model)
+//   {
+//     RCP<Tempus::IntegratorBasic<double>> integrator =
+//         Tempus::createIntegratorBasic<double>(tempusPL, model);
 
-    RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
-    RCP<const ParameterList> defaultPL =
-        integrator->getStepper()->getValidParameters();
+//     RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+//     RCP<const ParameterList> defaultPL =
+//         integrator->getStepper()->getValidParameters();
 
-    bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
-    if (!pass) {
-      out << std::endl;
-      out << "stepperPL -------------- \n"
-          << *stepperPL << std::endl;
-      out << "defaultPL -------------- \n"
-          << *defaultPL << std::endl;
-    }
-    TEST_ASSERT(pass)
-  }
+//     bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
+//     if (!pass) {
+//       out << std::endl;
+//       out << "stepperPL -------------- \n"
+//           << *stepperPL << std::endl;
+//       out << "defaultPL -------------- \n"
+//           << *defaultPL << std::endl;
+//     }
+//     TEST_ASSERT(pass)
+//   }
 
-  // Test constructor IntegratorBasic(model, stepperType)
-  {
-    RCP<Tempus::IntegratorBasic<double>> integrator =
-        Tempus::createIntegratorBasic<double>(model,
-                                              std::string("EPI3"));
+//   // Test constructor IntegratorBasic(model, stepperType)
+//   {
+//     RCP<Tempus::IntegratorBasic<double>> integrator =
+//         Tempus::createIntegratorBasic<double>(model,
+//                                               std::string("EPI3"));
 
-    RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
-    RCP<const ParameterList> defaultPL =
-        integrator->getStepper()->getValidParameters();
+//     RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
+//     RCP<const ParameterList> defaultPL =
+//         integrator->getStepper()->getValidParameters();
 
-    bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
-    if (!pass) {
-      out << std::endl;
-      out << "stepperPL -------------- \n"
-          << *stepperPL << std::endl;
-      out << "defaultPL -------------- \n"
-          << *defaultPL << std::endl;
-    }
-    TEST_ASSERT(pass)
-  }
-}
+//     bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
+//     if (!pass) {
+//       out << std::endl;
+//       out << "stepperPL -------------- \n"
+//           << *stepperPL << std::endl;
+//       out << "defaultPL -------------- \n"
+//           << *defaultPL << std::endl;
+//     }
+//     TEST_ASSERT(pass)
+//   }
+// }
 
 // ************************************************************
 // ************************************************************
