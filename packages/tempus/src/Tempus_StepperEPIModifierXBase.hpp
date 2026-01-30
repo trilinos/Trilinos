@@ -7,16 +7,16 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3ModifierXBase_hpp
-#define Tempus_StepperEPI3ModifierXBase_hpp
+#ifndef Tempus_StepperEPIModifierXBase_hpp
+#define Tempus_StepperEPIModifierXBase_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperEPI3AppAction.hpp"
+#include "Tempus_StepperEPIAppAction.hpp"
 
 namespace Tempus {
 
-/** \brief Base ModifierX for StepperEPI3.
+/** \brief Base ModifierX for StepperEPI.
  *
  *  This class provides a means to modify just the solution values
  *  (i.e., \f$x\f$ and \f$dot{x}\f$), and nothing else, but time and
@@ -28,15 +28,15 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
  *
- *  The locations of the StepperEPI3ModifierXBase::MODIFIER_TYPE
+ *  The locations of the StepperEPIModifierXBase::MODIFIER_TYPE
  *  which correspond to the AppAction calls
- *  (StepperEPI3AppAction::ACTION_LOCATION) are shown in the
- *  algorithm documentation of the StepperEPI3.
+ *  (StepperEPIAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperEPI.
  */
 
 template <class Scalar>
-class StepperEPI3ModifierXBase
-  : virtual public Tempus::StepperEPI3AppAction<Scalar> {
+class StepperEPIModifierXBase
+  : virtual public Tempus::StepperEPIAppAction<Scalar> {
  private:
   /* \brief Adaptor execute function
    *
@@ -46,15 +46,15 @@ class StepperEPI3ModifierXBase
    *  implement the modify function.
    *
    *  For the ModifierX interface, this adaptor maps the
-   *  StepperEPI3AppAction::ACTION_LOCATION to the
-   *  StepperEPI3ModifierX::MODIFIERX_TYPE, and only pass the solution
+   *  StepperEPIAppAction::ACTION_LOCATION to the
+   *  StepperEPIModifierX::MODIFIERX_TYPE, and only pass the solution
    *  (\f$x\f$ and/or \f$\dot{x}\f$ and other parameters to the modify
    *  function.
    */
   void execute(
       Teuchos::RCP<SolutionHistory<Scalar> > sh,
-      Teuchos::RCP<StepperEPI3<Scalar> > stepper,
-      const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
+      Teuchos::RCP<StepperEPI<Scalar> > stepper,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
           actLoc)
   {
     using Teuchos::RCP;
@@ -66,17 +66,17 @@ class StepperEPI3ModifierXBase
     RCP<Thyra::VectorBase<Scalar> > x;
 
     switch (actLoc) {
-      case StepperEPI3AppAction<Scalar>::BEGIN_STEP: {
+      case StepperEPIAppAction<Scalar>::BEGIN_STEP: {
         modType = X_BEGIN_STEP;
         x       = workingState->getX();
         break;
       }
-      case StepperEPI3AppAction<Scalar>::BEFORE_EXPLICIT_EVAL: {
+      case StepperEPIAppAction<Scalar>::BEFORE_EXPLICIT_EVAL: {
         modType = X_BEFORE_EXPLICIT_EVAL;
         x       = workingState->getX();
         break;
       }
-      case StepperEPI3AppAction<Scalar>::END_STEP: {
+      case StepperEPIAppAction<Scalar>::END_STEP: {
         modType = XDOT_END_STEP;
         if (workingState->getXDot() != Teuchos::null)
           x = workingState->getXDot();
@@ -108,4 +108,4 @@ class StepperEPI3ModifierXBase
 
 }  // namespace Tempus
 
-#endif  // Tempus_StepperEPI3ModifierXBase_hpp
+#endif  // Tempus_StepperEPIModifierXBase_hpp

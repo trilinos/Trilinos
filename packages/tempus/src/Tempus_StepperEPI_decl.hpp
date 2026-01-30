@@ -7,15 +7,15 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3_decl_hpp
-#define Tempus_StepperEPI3_decl_hpp
+#ifndef Tempus_StepperEPI_decl_hpp
+#define Tempus_StepperEPI_decl_hpp
 
 #include "Tempus_PhiEvaluator.hpp"
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
 #include "Tempus_Stepper.hpp"
-#include "Tempus_StepperEPI3AppAction.hpp"
+#include "Tempus_StepperEPIAppAction.hpp"
 
 namespace Tempus {
 
@@ -77,29 +77,29 @@ namespace Tempus {
  *  setICConsistencyCheck(true).
  */
 template <class Scalar>
-class StepperEPI3 : virtual public Tempus::StepperExplicit<Scalar> {
+class StepperEPI : virtual public Tempus::StepperExplicit<Scalar> {
  public:
   /** \brief Default constructor.
    *
    *  - Requires subsequent setModel() and initialize() calls before calling
    *    takeStep().
    */
-  StepperEPI3();
+  StepperEPI();
 
   /// Constructor
-  StepperEPI3(
+  StepperEPI(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
       bool useFSAL, std::string ICConsistency, bool ICConsistencyCheck,
-      const Teuchos::RCP<StepperEPI3AppAction<Scalar> >&
-          stepperEPI3AppAction);
+      const Teuchos::RCP<StepperEPIAppAction<Scalar> >&
+          stepperEPIAppAction);
 
   virtual void setAppAction(
-      Teuchos::RCP<StepperEPI3AppAction<Scalar> > appAction);
+      Teuchos::RCP<StepperEPIAppAction<Scalar> > appAction);
 
-  virtual Teuchos::RCP<StepperEPI3AppAction<Scalar> > getAppAction()
+  virtual Teuchos::RCP<StepperEPIAppAction<Scalar> > getAppAction()
       const
   {
-    return stepperEPI3AppAction_;
+    return stepperEPIAppAction_;
   }
 
   /// Set the model
@@ -147,7 +147,7 @@ class StepperEPI3 : virtual public Tempus::StepperExplicit<Scalar> {
   { phiEvaluatorPL_ = pl; }
 
  protected:
-  Teuchos::RCP<StepperEPI3AppAction<Scalar> > stepperEPI3AppAction_;
+  Teuchos::RCP<StepperEPIAppAction<Scalar> > stepperEPIAppAction_;
 
   Teuchos::RCP<PhiEvaluator<Scalar> > phiEvaluator_;
 
@@ -159,10 +159,10 @@ class StepperEPI3 : virtual public Tempus::StepperExplicit<Scalar> {
 /// Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
 template <class Scalar>
-Teuchos::RCP<StepperEPI3<Scalar> > createStepperEPI3(
+Teuchos::RCP<StepperEPI<Scalar> > createStepperEPI(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
     Teuchos::RCP<Teuchos::ParameterList> pl);
 
 }  // namespace Tempus
 
-#endif  // Tempus_StepperEPI3_decl_hpp
+#endif  // Tempus_StepperEPI_decl_hpp

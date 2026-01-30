@@ -7,43 +7,43 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3ModifierX_hpp
-#define Tempus_StepperEPI3ModifierX_hpp
+#ifndef Tempus_StepperEPIModifierX_hpp
+#define Tempus_StepperEPIModifierX_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_StepperEPI3ModifierXBase.hpp"
+#include "Tempus_StepperEPIModifierXBase.hpp"
 
 namespace Tempus {
 
-/** \brief Default ModifierX for StepperEPI3.
+/** \brief Default ModifierX for StepperEPI.
  *
  *  The default provides no-op functionality for ModifierX.
- *  See StepperEPI3ModifierXBase for details on the algorithm.
+ *  See StepperEPIModifierXBase for details on the algorithm.
  *
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
 template <class Scalar>
-class StepperEPI3ModifierXDefault
-  : virtual public Tempus::StepperEPI3ModifierXBase<Scalar> {
+class StepperEPIModifierXDefault
+  : virtual public Tempus::StepperEPIModifierXBase<Scalar> {
  public:
   /// Constructor
-  StepperEPI3ModifierXDefault() {}
+  StepperEPIModifierXDefault() {}
 
   /// Destructor
-  virtual ~StepperEPI3ModifierXDefault() {}
+  virtual ~StepperEPIModifierXDefault() {}
 
   /// Modify solution based on the MODIFIER_TYPE.
   virtual void modify(
       Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */, const Scalar /* time */,
       const Scalar /* dt */,
-      const typename StepperEPI3ModifierXBase<Scalar>::MODIFIER_TYPE
+      const typename StepperEPIModifierXBase<Scalar>::MODIFIER_TYPE
           modType)
   {
     switch (modType) {
-      case StepperEPI3ModifierXBase<Scalar>::X_BEGIN_STEP:
-      case StepperEPI3ModifierXBase<Scalar>::X_BEFORE_EXPLICIT_EVAL:
-      case StepperEPI3ModifierXBase<Scalar>::XDOT_END_STEP: {
+      case StepperEPIModifierXBase<Scalar>::X_BEGIN_STEP:
+      case StepperEPIModifierXBase<Scalar>::X_BEFORE_EXPLICIT_EVAL:
+      case StepperEPIModifierXBase<Scalar>::XDOT_END_STEP: {
         // No-op.
         break;
       }
@@ -56,4 +56,4 @@ class StepperEPI3ModifierXDefault
 
 }  // namespace Tempus
 
-#endif  // Tempus_StepperEPI3ModifierX_hpp
+#endif  // Tempus_StepperEPIModifierX_hpp

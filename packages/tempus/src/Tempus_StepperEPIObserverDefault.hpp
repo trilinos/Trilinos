@@ -7,47 +7,47 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3ObserverDefault_hpp
-#define Tempus_StepperEPI3ObserverDefault_hpp
+#ifndef Tempus_StepperEPIObserverDefault_hpp
+#define Tempus_StepperEPIObserverDefault_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_StepperEPI3ObserverBase.hpp"
+#include "Tempus_StepperEPIObserverBase.hpp"
 
 // Applications can uncomment this include in their implementation,
 // if they need access to the stepper methods.
-//#include "Tempus_StepperEPI3.hpp"
+//#include "Tempus_StepperEPI.hpp"
 
 namespace Tempus {
 
-/** \brief Default observer for StepperEPI3.
+/** \brief Default observer for StepperEPI.
  *
  *  The default observer provides no-op functionality for the observer.
- *  See StepperEPI3ObserverBase for details on the algorithm.
+ *  See StepperEPIObserverBase for details on the algorithm.
  *
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
 template <class Scalar>
-class StepperEPI3ObserverDefault
-  : virtual public Tempus::StepperEPI3ObserverBase<Scalar> {
+class StepperEPIObserverDefault
+  : virtual public Tempus::StepperEPIObserverBase<Scalar> {
  public:
   /// Constructor
-  StepperEPI3ObserverDefault() {}
+  StepperEPIObserverDefault() {}
 
   /// Destructor
-  virtual ~StepperEPI3ObserverDefault() {}
+  virtual ~StepperEPIObserverDefault() {}
 
-  /// Observe EPI3 Stepper at end of takeStep.
+  /// Observe EPI Stepper at end of takeStep.
   virtual void observe(
       Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
-      Teuchos::RCP<const StepperEPI3<Scalar> > /* stepper */,
-      const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
+      Teuchos::RCP<const StepperEPI<Scalar> > /* stepper */,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
           actLoc)
   {
     switch (actLoc) {
-      case StepperEPI3AppAction<Scalar>::BEGIN_STEP:
-      case StepperEPI3AppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
-      case StepperEPI3AppAction<Scalar>::END_STEP: {
+      case StepperEPIAppAction<Scalar>::BEGIN_STEP:
+      case StepperEPIAppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
+      case StepperEPIAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
@@ -60,4 +60,4 @@ class StepperEPI3ObserverDefault
 
 }  // namespace Tempus
 
-#endif  // Tempus_StepperEPI3ObserverDefault_hpp
+#endif  // Tempus_StepperEPIObserverDefault_hpp

@@ -7,12 +7,12 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3ModifierBase_hpp
-#define Tempus_StepperEPI3ModifierBase_hpp
+#ifndef Tempus_StepperEPIModifierBase_hpp
+#define Tempus_StepperEPIModifierBase_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperEPI3AppAction.hpp"
+#include "Tempus_StepperEPIAppAction.hpp"
 
 namespace Tempus {
 
@@ -30,12 +30,12 @@ namespace Tempus {
  *  derived from the default modifier (i.e., USER BEWARE!!).
  *
  *  The locations for these AppAction calls
- *  (StepperEPI3AppAction::ACTION_LOCATION) are shown in the
- *  algorithm documentation of the StepperEPI3.
+ *  (StepperEPIAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperEPI.
  */
 template <class Scalar>
-class StepperEPI3ModifierBase
-  : virtual public Tempus::StepperEPI3AppAction<Scalar> {
+class StepperEPIModifierBase
+  : virtual public Tempus::StepperEPIAppAction<Scalar> {
  private:
   /* \brief Adaptor execute function
    *
@@ -48,22 +48,22 @@ class StepperEPI3ModifierBase
    */
   void execute(
       Teuchos::RCP<SolutionHistory<Scalar> > sh,
-      Teuchos::RCP<StepperEPI3<Scalar> > stepper,
-      const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
+      Teuchos::RCP<StepperEPI<Scalar> > stepper,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
           actLoc)
   {
     this->modify(sh, stepper, actLoc);
   }
 
  public:
-  /// Modify EPI3 Stepper.
+  /// Modify EPI Stepper.
   virtual void modify(
       Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-      Teuchos::RCP<StepperEPI3<Scalar> > /* stepper */,
-      const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
+      Teuchos::RCP<StepperEPI<Scalar> > /* stepper */,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
           actLoc) = 0;
 };
 
 }  // namespace Tempus
 
-#endif  // Tempus_StepperEPI3ModifierBase_hpp
+#endif  // Tempus_StepperEPIModifierBase_hpp
