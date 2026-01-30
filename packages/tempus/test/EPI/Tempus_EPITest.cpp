@@ -16,7 +16,7 @@
 
 #include "Tempus_IntegratorBasic.hpp"
 
-#include "Tempus_StepperEPI3.hpp"
+#include "Tempus_StepperEPI.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
@@ -40,11 +40,11 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-// TEUCHOS_UNIT_TEST(EPI3, ParameterList)
+// TEUCHOS_UNIT_TEST(EPI, ParameterList)
 // {
 //   // Read params from .xml file
 //   RCP<ParameterList> pList =
-//       getParametersFromXmlFile("Tempus_EPI3_SinCos.xml");
+//       getParametersFromXmlFile("Tempus_EPI_SinCos.xml");
 
 //   // Setup the SinCosModel
 //   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
@@ -76,7 +76,7 @@ using Tempus::SolutionState;
 //   {
 //     RCP<Tempus::IntegratorBasic<double>> integrator =
 //         Tempus::createIntegratorBasic<double>(model,
-//                                               std::string("EPI3"));
+//                                               std::string("EPI"));
 
 //     RCP<ParameterList> stepperPL = sublist(tempusPL, "Demo Stepper", true);
 //     RCP<const ParameterList> defaultPL =
@@ -96,7 +96,7 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(EPI3, SinCos)
+TEUCHOS_UNIT_TEST(EPI, SinCos)
 {
   RCP<Tempus::IntegratorBasic<double>> integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -111,7 +111,7 @@ TEUCHOS_UNIT_TEST(EPI3, SinCos)
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_EPI3_SinCos.xml");
+        getParametersFromXmlFile("Tempus_EPI_SinCos.xml");
 
     // std::ofstream ftmp("PL.txt");
     // pList->print(ftmp);
@@ -169,7 +169,7 @@ TEUCHOS_UNIT_TEST(EPI3, SinCos)
     if (n == 0) {
       RCP<const SolutionHistory<double>> solutionHistory =
           integrator->getSolutionHistory();
-      writeSolution("Tempus_EPI3_SinCos.dat", solutionHistory);
+      writeSolution("Tempus_EPI_SinCos.dat", solutionHistory);
 
     //   solutionHistory->printHistory("high");
 
@@ -184,7 +184,7 @@ TEUCHOS_UNIT_TEST(EPI3, SinCos)
         state->setTime((*solutionHistory)[i]->getTime());
         solnHistExact->addState(state);
       }
-      writeSolution("Tempus_EPI3_SinCos-Ref.dat", solnHistExact);
+      writeSolution("Tempus_EPI_SinCos-Ref.dat", solnHistExact);
     }
 
     // Store off the final solution and step size
@@ -215,7 +215,7 @@ TEUCHOS_UNIT_TEST(EPI3, SinCos)
   // This is a linear problem, so the expected order is 3 due to 
   // Taylor expansion order regardless of the integration order.
   double order                         = (double)expected_order;
-  writeOrderError("Tempus_EPI3_SinCos-Error.dat", stepper, StepSize,
+  writeOrderError("Tempus_EPI_SinCos-Error.dat", stepper, StepSize,
                   solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
                   xDotSlope, out);
 
@@ -227,7 +227,7 @@ TEUCHOS_UNIT_TEST(EPI3, SinCos)
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(EPI3, VanDerPol)
+TEUCHOS_UNIT_TEST(EPI, VanDerPol)
 {
   RCP<Tempus::IntegratorBasic<double>> integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -240,7 +240,7 @@ TEUCHOS_UNIT_TEST(EPI3, VanDerPol)
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_EPI3_VanDerPol.xml");
+        getParametersFromXmlFile("Tempus_EPI_VanDerPol.xml");
 
     // Setup the VanDerPolModel
     RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
@@ -281,8 +281,8 @@ TEUCHOS_UNIT_TEST(EPI3, VanDerPol)
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
     if ((n == 0) || (n == nTimeStepSizes - 1)) {
-      std::string fname = "Tempus_EPI3_VanDerPol-Ref.dat";
-      if (n == 0) fname = "Tempus_EPI3_VanDerPol.dat";
+      std::string fname = "Tempus_EPI_VanDerPol-Ref.dat";
+      if (n == 0) fname = "Tempus_EPI_VanDerPol.dat";
       RCP<const SolutionHistory<double>> solutionHistory =
           integrator->getSolutionHistory();
       writeSolution(fname, solutionHistory);
@@ -294,7 +294,7 @@ TEUCHOS_UNIT_TEST(EPI3, VanDerPol)
   double xDotSlope                     = 0.0;
   RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
   double order                         = stepper->getOrder();
-  writeOrderError("Tempus_EPI3_VanDerPol-Error.dat", stepper, StepSize,
+  writeOrderError("Tempus_EPI_VanDerPol-Error.dat", stepper, StepSize,
                   solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
                   xDotSlope, out);
 
@@ -306,7 +306,7 @@ TEUCHOS_UNIT_TEST(EPI3, VanDerPol)
 
 // // ************************************************************
 // // ************************************************************
-// TEUCHOS_UNIT_TEST(EPI3, NumberTimeSteps)
+// TEUCHOS_UNIT_TEST(EPI, NumberTimeSteps)
 // {
 //   std::vector<double> StepSize;
 //   std::vector<double> ErrorNorm;
@@ -316,7 +316,7 @@ TEUCHOS_UNIT_TEST(EPI3, VanDerPol)
 
 //   // Read params from .xml file
 //   RCP<ParameterList> pList =
-//       getParametersFromXmlFile("Tempus_EPI3_NumberOfTimeSteps.xml");
+//       getParametersFromXmlFile("Tempus_EPI_NumberOfTimeSteps.xml");
 
 //   // Setup the VanDerPolModel
 //   RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
@@ -346,11 +346,11 @@ TEUCHOS_UNIT_TEST(EPI3, VanDerPol)
 
 // // ************************************************************
 // // ************************************************************
-// TEUCHOS_UNIT_TEST(EPI3, Variable_TimeSteps)
+// TEUCHOS_UNIT_TEST(EPI, Variable_TimeSteps)
 // {
 //   // Read params from .xml file
 //   RCP<ParameterList> pList =
-//       getParametersFromXmlFile("Tempus_EPI3_VanDerPol.xml");
+//       getParametersFromXmlFile("Tempus_EPI_VanDerPol.xml");
 
 //   // Setup the VanDerPolModel
 //   RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
@@ -425,7 +425,7 @@ TEUCHOS_UNIT_TEST(EPI3, VanDerPol)
 //   Thyra::V_StVpStV(xdiff.ptr(), 1.0, *x_ref, -1.0, *(x));
 
 //   // Check the solution
-//   out << "  Stepper = EPI3" << std::endl;
+//   out << "  Stepper = EPI" << std::endl;
 //   out << "  =========================" << std::endl;
 //   out << "  Reference solution: " << get_ele(*(x_ref), 0) << "   "
 //       << get_ele(*(x_ref), 1) << std::endl;

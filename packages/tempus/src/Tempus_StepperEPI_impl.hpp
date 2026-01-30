@@ -7,12 +7,12 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3_impl_hpp
-#define Tempus_StepperEPI3_impl_hpp
+#ifndef Tempus_StepperEPI_impl_hpp
+#define Tempus_StepperEPI_impl_hpp
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_StepperEPI3ModifierDefault.hpp"
+#include "Tempus_StepperEPIModifierDefault.hpp"
 
 #include "Tempus_PhiEvaluator.hpp"
 #include "Tempus_PhiEvaluatorFactory.hpp"
@@ -20,10 +20,10 @@
 namespace Tempus {
 
 template <class Scalar>
-StepperEPI3<Scalar>::StepperEPI3()
+StepperEPI<Scalar>::StepperEPI()
 {
-  this->setStepperName("EPI3");
-  this->setStepperType("EPI3");
+  this->setStepperName("EPI");
+  this->setStepperType("EPI");
   this->setUseFSAL(true);
   this->setTaylorExpansionOrder(2);
   this->setICConsistency("Consistent");
@@ -32,19 +32,19 @@ StepperEPI3<Scalar>::StepperEPI3()
 }
 
 template <class Scalar>
-StepperEPI3<Scalar>::StepperEPI3(
+StepperEPI<Scalar>::StepperEPI(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     bool useFSAL, std::string ICConsistency, bool ICConsistencyCheck,
-    const Teuchos::RCP<StepperEPI3AppAction<Scalar> >&
-        stepperEPI3AppAction)
+    const Teuchos::RCP<StepperEPIAppAction<Scalar> >&
+        stepperEPIAppAction)
 {
-  this->setStepperName("EPI3");
-  this->setStepperType("EPI3");
+  this->setStepperName("EPI");
+  this->setStepperType("EPI");
   this->setUseFSAL(useFSAL);
   this->setICConsistency(ICConsistency);
   this->setICConsistencyCheck(ICConsistencyCheck);
 
-  this->setAppAction(stepperEPI3AppAction);
+  this->setAppAction(stepperEPIAppAction);
   if (appModel != Teuchos::null) {
     this->setModel(appModel);
     this->initialize();
@@ -52,21 +52,21 @@ StepperEPI3<Scalar>::StepperEPI3(
 }
 
 template <class Scalar>
-void StepperEPI3<Scalar>::setAppAction(
-    Teuchos::RCP<StepperEPI3AppAction<Scalar> > appAction)
+void StepperEPI<Scalar>::setAppAction(
+    Teuchos::RCP<StepperEPIAppAction<Scalar> > appAction)
 {
   if (appAction == Teuchos::null) {
     // Create default appAction
-    stepperEPI3AppAction_ =
-        Teuchos::rcp(new StepperEPI3ModifierDefault<Scalar>());
+    stepperEPIAppAction_ =
+        Teuchos::rcp(new StepperEPIModifierDefault<Scalar>());
   }
   else {
-    stepperEPI3AppAction_ = appAction;
+    stepperEPIAppAction_ = appAction;
   }
 }
 
 template<class Scalar>
-void StepperEPI3<Scalar>::setModel(
+void StepperEPI<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
   StepperExplicit<Scalar>::setModel(appModel);
@@ -76,7 +76,7 @@ void StepperEPI3<Scalar>::setModel(
 
   TEUCHOS_TEST_FOR_EXCEPTION(
   phiEvaluator_.is_null(), std::logic_error,
-  "phiEvaluator_ is null in StepperEPI3::setModel");
+  "phiEvaluator_ is null in StepperEPI::setModel");
 
   phiEvaluator_->setModel(appModel);
   phiEvaluator_->initialize();
@@ -85,7 +85,7 @@ void StepperEPI3<Scalar>::setModel(
 }
 
 template <class Scalar>
-void StepperEPI3<Scalar>::setInitialConditions(
+void StepperEPI<Scalar>::setInitialConditions(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
@@ -102,7 +102,7 @@ void StepperEPI3<Scalar>::setInitialConditions(
 }
 
 template <class Scalar>
-void StepperEPI3<Scalar>::takeStep(
+void StepperEPI<Scalar>::takeStep(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   this->checkInitialized();
@@ -111,21 +111,21 @@ void StepperEPI3<Scalar>::takeStep(
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperEPI3::takeStep()");
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperEPI::takeStep()");
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
         solutionHistory->getNumStates() < 2, std::logic_error,
-        "Error - StepperEPI3<Scalar>::takeStep(...)\n"
-            << "Need at least two SolutionStates for EPI3.\n"
+        "Error - StepperEPI<Scalar>::takeStep(...)\n"
+            << "Need at least two SolutionStates for EPI.\n"
             << "  Number of States = " << solutionHistory->getNumStates()
             << "\n Try setting in \"Solution History\" \"Storage Type\" = "
             << "\"Undo\"\n or \"Storage Type\" = \"Static\" and \"Storage Limit\" = "
             << "\"2\"\n");
 
-    RCP<StepperEPI3<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
-    stepperEPI3AppAction_->execute(
+    RCP<StepperEPI<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
+    stepperEPIAppAction_->execute(
         solutionHistory, thisStepper,
-        StepperEPI3AppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+        StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar> > currentState =
         solutionHistory->getCurrentState();
@@ -138,9 +138,9 @@ void StepperEPI3<Scalar>::takeStep(
 
     // if (!(this->getUseFSAL()) || workingState->getNConsecutiveFailures() != 0) {
       // Need to compute XDotOld.
-      stepperEPI3AppAction_->execute(
+      stepperEPIAppAction_->execute(
           solutionHistory, thisStepper,
-          StepperEPI3AppAction<
+          StepperEPIAppAction<
               Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
 
       auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
@@ -167,7 +167,7 @@ void StepperEPI3<Scalar>::takeStep(
       currentState->setIsSynced(true);
     // }
 
-    // EPI3 update, x^n = x^{n-1} + dt^n * xDot^{n-1}
+    // EPI update, x^n = x^{n-1} + dt^n * xDot^{n-1}
     // Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
     //                *(currentState->getX()), dt, *(xDot));
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
@@ -179,9 +179,9 @@ void StepperEPI3<Scalar>::takeStep(
 
     if (this->getUseFSAL()) {
       // Get consistent xDot^n.
-      stepperEPI3AppAction_->execute(
+      stepperEPIAppAction_->execute(
           solutionHistory, thisStepper,
-          StepperEPI3AppAction<
+          StepperEPIAppAction<
               Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
 
       auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
@@ -202,9 +202,9 @@ void StepperEPI3<Scalar>::takeStep(
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    stepperEPI3AppAction_->execute(
+    stepperEPIAppAction_->execute(
         solutionHistory, thisStepper,
-        StepperEPI3AppAction<Scalar>::ACTION_LOCATION::END_STEP);
+        StepperEPIAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }
@@ -217,7 +217,7 @@ void StepperEPI3<Scalar>::takeStep(
  */
 template <class Scalar>
 Teuchos::RCP<Tempus::StepperState<Scalar> >
-StepperEPI3<Scalar>::getDefaultStepperState()
+StepperEPI<Scalar>::getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
       rcp(new StepperState<Scalar>(this->getStepperType()));
@@ -225,7 +225,7 @@ StepperEPI3<Scalar>::getDefaultStepperState()
 }
 
 template <class Scalar>
-void StepperEPI3<Scalar>::describe(
+void StepperEPI<Scalar>::describe(
     Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
 {
   auto l_out = Teuchos::fancyOStream(out.getOStream());
@@ -235,12 +235,12 @@ void StepperEPI3<Scalar>::describe(
   *l_out << std::endl;
   Stepper<Scalar>::describe(*l_out, verbLevel);
   StepperExplicit<Scalar>::describe(*l_out, verbLevel);
-  *l_out << "  stepperEPI3AppAction_ = " << stepperEPI3AppAction_ << std::endl
+  *l_out << "  stepperEPIAppAction_ = " << stepperEPIAppAction_ << std::endl
          << "----------------------------" << std::endl;
 }
 
 template <class Scalar>
-bool StepperEPI3<Scalar>::isValidSetup(Teuchos::FancyOStream& out) const
+bool StepperEPI<Scalar>::isValidSetup(Teuchos::FancyOStream& out) const
 {
   out.setOutputToRootOnly(0);
 
@@ -248,22 +248,22 @@ bool StepperEPI3<Scalar>::isValidSetup(Teuchos::FancyOStream& out) const
 
   if (!Stepper<Scalar>::isValidSetup(out)) isValidSetup = false;
   if (!StepperExplicit<Scalar>::isValidSetup(out)) isValidSetup = false;
-  if (stepperEPI3AppAction_ == Teuchos::null) {
+  if (stepperEPIAppAction_ == Teuchos::null) {
     isValidSetup = false;
-    out << "The EPI3 AppAction is not set!\n";
+    out << "The EPI AppAction is not set!\n";
   }
   return isValidSetup;
 }
 
 template <class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList> StepperEPI3<Scalar>::getValidParameters()
+Teuchos::RCP<const Teuchos::ParameterList> StepperEPI<Scalar>::getValidParameters()
     const
 {
   return this->getValidParametersBasic();
 }
 
 template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList> StepperEPI3<Scalar>::getValidParametersBasic()
+Teuchos::RCP<Teuchos::ParameterList> StepperEPI<Scalar>::getValidParametersBasic()
     const
 {
   auto pl = Teuchos::parameterList(this->getStepperName());
@@ -328,13 +328,13 @@ Teuchos::RCP<Teuchos::ParameterList> StepperEPI3<Scalar>::getValidParametersBasi
 
   pl->template set<int>(
       "Taylor Expansion Order", 2,
-      "The order of the Taylor expansion used in the EPI3 stepper.\n"
+      "The order of the Taylor expansion used in the EPI stepper.\n"
       "\n"
       "The default is 2.");
 
   pl->template set<std::string>(
       "Phi Evaluator Type", "Taylor",
-      "The type of Phi evaluator used in the EPI3 stepper.\n"
+      "The type of Phi evaluator used in the EPI stepper.\n"
       "\n"
       "The default is 'Taylor'.  Other options are 'PFD' and 'Leja'.");
 
@@ -344,11 +344,11 @@ Teuchos::RCP<Teuchos::ParameterList> StepperEPI3<Scalar>::getValidParametersBasi
 // Nonmember constructor - ModelEvaluator and ParameterList
 // ------------------------------------------------------------------------
 template <class Scalar>
-Teuchos::RCP<StepperEPI3<Scalar> > createStepperEPI3(
+Teuchos::RCP<StepperEPI<Scalar> > createStepperEPI(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
     Teuchos::RCP<Teuchos::ParameterList> pl)
 {
-  auto stepper = Teuchos::rcp(new StepperEPI3<Scalar>());
+  auto stepper = Teuchos::rcp(new StepperEPI<Scalar>());
   stepper->setStepperExplicitValues(pl);
 
   stepper->setPhiEvaluatorParameterList(pl);
@@ -366,4 +366,4 @@ Teuchos::RCP<StepperEPI3<Scalar> > createStepperEPI3(
 }
 
 }  // namespace Tempus
-#endif  // Tempus_StepperEPI3_impl_hpp
+#endif  // Tempus_StepperEPI_impl_hpp

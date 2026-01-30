@@ -7,47 +7,47 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3ModifierDefault_hpp
-#define Tempus_StepperEPI3ModifierDefault_hpp
+#ifndef Tempus_StepperEPIModifierDefault_hpp
+#define Tempus_StepperEPIModifierDefault_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_StepperEPI3ModifierBase.hpp"
+#include "Tempus_StepperEPIModifierBase.hpp"
 
 // Applications can uncomment this include in their implementation,
 // if they need access to the stepper methods.
-//#include "Tempus_StepperEPI3.hpp"
+//#include "Tempus_StepperEPI.hpp"
 
 namespace Tempus {
 
-/** \brief Default modifier for StepperEPI3.
+/** \brief Default modifier for StepperEPI.
  *
  *  The default modifier provides no-op functionality for the modifier.
- *  See StepperEPI3ModifierBase for details on the algorithm.
+ *  See StepperEPIModifierBase for details on the algorithm.
  *
  *  Applications can copy this implementation, rename, implement their
  *  action, and set on the stepper to get app-specific functionality.
  */
 template <class Scalar>
-class StepperEPI3ModifierDefault
-  : virtual public Tempus::StepperEPI3ModifierBase<Scalar> {
+class StepperEPIModifierDefault
+  : virtual public Tempus::StepperEPIModifierBase<Scalar> {
  public:
   /// Constructor
-  StepperEPI3ModifierDefault() {}
+  StepperEPIModifierDefault() {}
 
   /// Destructor
-  virtual ~StepperEPI3ModifierDefault() {}
+  virtual ~StepperEPIModifierDefault() {}
 
-  /// Modify EPI3 Stepper.
+  /// Modify EPI Stepper.
   virtual void modify(
       Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-      Teuchos::RCP<StepperEPI3<Scalar> > /* stepper */,
-      const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
+      Teuchos::RCP<StepperEPI<Scalar> > /* stepper */,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
           actLoc)
   {
     switch (actLoc) {
-      case StepperEPI3AppAction<Scalar>::BEGIN_STEP:
-      case StepperEPI3AppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
-      case StepperEPI3AppAction<Scalar>::END_STEP: {
+      case StepperEPIAppAction<Scalar>::BEGIN_STEP:
+      case StepperEPIAppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
+      case StepperEPIAppAction<Scalar>::END_STEP: {
         // No-op.
         break;
       }
@@ -60,4 +60,4 @@ class StepperEPI3ModifierDefault
 
 }  // namespace Tempus
 
-#endif  // Tempus_StepperEPI3ModifierDefault_hpp
+#endif  // Tempus_StepperEPIModifierDefault_hpp

@@ -39,7 +39,7 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
       "'IE' - uses an implicit Euler approximation (order 1).  "
       "'CN' - uses a Crank-Nicolson approximation (order 2).");
 
-  pl->set<std::string>("Stepper Type", "EPI3",
+  pl->set<std::string>("Stepper Type", "EPI",
       "The type of Tempus stepper that will use this Phi evaluator.");
 
   pl->set<bool>(
@@ -101,13 +101,13 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
 
   pl->set<int>(
       "Taylor Expansion Order", 2,
-      "The order of the Taylor expansion used in the EPI3 stepper.\n"
+      "The order of the Taylor expansion used in the EPI stepper.\n"
       "\n"
       "The default is 2.");
 
   pl->set<std::string>(
       "Phi Evaluator Type", "Taylor",
-      "The type of Phi evaluator used in the EPI3 stepper.\n"
+      "The type of Phi evaluator used in the EPI stepper.\n"
       "\n"
       "The default is 'Taylor'.  Other options are 'PFD' and 'Leja'.");
 

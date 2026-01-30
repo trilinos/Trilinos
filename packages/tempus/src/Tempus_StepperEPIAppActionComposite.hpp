@@ -7,11 +7,11 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3AppActionComposite_hpp
-#define Tempus_StepperEPI3AppActionComposite_hpp
+#ifndef Tempus_StepperEPIAppActionComposite_hpp
+#define Tempus_StepperEPIAppActionComposite_hpp
 
 #include "Tempus_config.hpp"
-#include "Tempus_StepperEPI3AppAction.hpp"
+#include "Tempus_StepperEPIAppAction.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include <vector>
 
@@ -23,34 +23,34 @@ namespace Tempus {
  *  were added.
  */
 template <class Scalar>
-class StepperEPI3AppActionComposite
-  : virtual public Tempus::StepperEPI3AppAction<Scalar> {
+class StepperEPIAppActionComposite
+  : virtual public Tempus::StepperEPIAppAction<Scalar> {
  public:
   /// Default constructor
-  StepperEPI3AppActionComposite();
+  StepperEPIAppActionComposite();
 
   /// Destructor
-  virtual ~StepperEPI3AppActionComposite();
+  virtual ~StepperEPIAppActionComposite();
 
-  /// Execute application action for EPI3 Stepper.
+  /// Execute application action for EPI Stepper.
   virtual void execute(
       Teuchos::RCP<SolutionHistory<Scalar> > sh,
-      Teuchos::RCP<StepperEPI3<Scalar> > stepper,
-      const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
+      Teuchos::RCP<StepperEPI<Scalar> > stepper,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
           actLoc)
   {
     for (auto& a : appActions_) a->execute(sh, stepper, actLoc);
   }
 
   // Add AppAction to the AppAction vector.
-  void addEPI3AppAction(
-      Teuchos::RCP<StepperEPI3AppAction<Scalar> > appAction);
+  void addEPIAppAction(
+      Teuchos::RCP<StepperEPIAppAction<Scalar> > appAction);
   {
     appActions_.push_back(appAction);
   }
 
   // Clear the AppAction vector.
-  void clearEPI3AppActions();
+  void clearEPIAppActions();
   {
     appActions_.clear();
   }
@@ -59,8 +59,8 @@ class StepperEPI3AppActionComposite
   std::size_t getSize() const { return appActions_.size(); }
 
  private:
-  std::vector<Teuchos::RCP<StepperEPI3AppAction<Scalar> > > appActions_;
+  std::vector<Teuchos::RCP<StepperEPIAppAction<Scalar> > > appActions_;
 };
 
 }  // namespace Tempus
-#endif  // Tempus_StepperEPI3AppActionComposite_hpp
+#endif  // Tempus_StepperEPIAppActionComposite_hpp
