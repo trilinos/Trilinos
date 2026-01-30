@@ -162,25 +162,6 @@ void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluat
   phiLinSolv_ = Teuchos::rcp(new PhiLinearSolver<Scalar>(appModel_, lumpmass));
 }
 
-template <class Scalar>
-Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluator<Scalar>::buildATildeMatrix(const Thyra::Ordinal p, const int taylorOrder,
-    const double dt,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot, const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
-{
-  phiLinSolv_->computeMassMatrix(inArgs);
-  phiLinSolv_->computeJacobian(inArgs);
-  phiLinSolv_->buildK(p);
-  phiLinSolv_->buildb(p, xDot);
-  phiLinSolv_->buildATilde(dt);
-  phiLinSolv_->buildv();
-  auto vec = phiLinSolv_->matrixExponential(taylorOrder);
-
-  // Get the first block of the multi-vector calculated from 2x2 multi-matrix
-  auto pv = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar>>(vec, true);
-  auto vecV = pv->getVectorBlock(0);  // V block
-  return vecV;
-}
-
 
 /*
  * PhiLinearSolver methods

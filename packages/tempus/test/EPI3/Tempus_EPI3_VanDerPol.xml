@@ -49,6 +49,7 @@
       <Parameter name="Stepper Type" type="string" value="EPI3"/>
       <Parameter name="Use FSAL"       type="bool" value="true"/>
       <Parameter name="Taylor Expansion Order" type="int" value="20"/>
+      <Parameter name="Phi Evaluator Type" type="string" value="Taylor"/>
     </ParameterList>
 
   </ParameterList>
