@@ -7,8 +7,8 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3AppAction_hpp
-#define Tempus_StepperEPI3AppAction_hpp
+#ifndef Tempus_StepperEPIAppAction_hpp
+#define Tempus_StepperEPIAppAction_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
@@ -17,22 +17,22 @@ namespace Tempus {
 
 // Forward Declaration
 template <class Scalar>
-class StepperEPI3;
+class StepperEPI;
 
-/** \brief Application Action for StepperEPI3.
+/** \brief Application Action for StepperEPI.
  *
- *  This class provides a means to apply various actions with the EPI3
+ *  This class provides a means to apply various actions with the EPI
  * time step. The data available to this class is solution variables (through
  *  SolutionHistory), and stepper data (through the Stepper).  It allows
  *  the application to just observe this data, i.e., use but not change
  *  any of it (USER BEWARE!).
  *
  *  The locations for these AppAction calls
- *  (StepperEPI3AppAction::ACTION_LOCATION) are shown in the
- *  algorithm documentation of the StepperEPI3.
+ *  (StepperEPIAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperEPI.
  */
 template <class Scalar>
-class StepperEPI3AppAction {
+class StepperEPIAppAction {
  public:
   /// Indicates the location of application action (see algorithm).
   enum ACTION_LOCATION {
@@ -42,19 +42,19 @@ class StepperEPI3AppAction {
   };
 
   /// Constructor
-  StepperEPI3AppAction() {}
+  StepperEPIAppAction() {}
 
   /// Destructor
-  virtual ~StepperEPI3AppAction() {}
+  virtual ~StepperEPIAppAction() {}
 
-  /// Execute application action for EPI3 Stepper.
+  /// Execute application action for EPI Stepper.
   virtual void execute(
       Teuchos::RCP<SolutionHistory<Scalar> > sh,
-      Teuchos::RCP<StepperEPI3<Scalar> > stepper,
-      const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
+      Teuchos::RCP<StepperEPI<Scalar> > stepper,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
           actLoc) = 0;
 };
 
 }  // namespace Tempus
 
-#endif  // Tempus_StepperEPI3AppAction_hpp
+#endif  // Tempus_StepperEPIAppAction_hpp

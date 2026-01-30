@@ -7,16 +7,16 @@
 // *****************************************************************************
 //@HEADER
 
-#ifndef Tempus_StepperEPI3ObserverBase_hpp
-#define Tempus_StepperEPI3ObserverBase_hpp
+#ifndef Tempus_StepperEPIObserverBase_hpp
+#define Tempus_StepperEPIObserverBase_hpp
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperEPI3AppAction.hpp"
+#include "Tempus_StepperEPIAppAction.hpp"
 
 namespace Tempus {
 
-/** \brief Base observer for StepperEPI3.
+/** \brief Base observer for StepperEPI.
  *
  *  This class provides a means to observe values (e.g., solution variables
  *  through SolutionHistory, and stepper member data through the Stepper),
@@ -28,12 +28,12 @@ namespace Tempus {
  *  Stepper::takeStep, they should use the Modifier class (with care!).
  *
  *  The locations for these AppAction calls
- *  (StepperEPI3AppAction::ACTION_LOCATION) are shown in the
- *  algorithm documentation of the StepperEPI3.
+ *  (StepperEPIAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperEPI.
  */
 template <class Scalar>
-class StepperEPI3ObserverBase
-  : virtual public Tempus::StepperEPI3AppAction<Scalar> {
+class StepperEPIObserverBase
+  : virtual public Tempus::StepperEPIAppAction<Scalar> {
  private:
   /* \brief Adaptor execute function
    *
@@ -47,22 +47,22 @@ class StepperEPI3ObserverBase
    */
   void execute(
       Teuchos::RCP<SolutionHistory<Scalar> > sh,
-      Teuchos::RCP<StepperEPI3<Scalar> > stepper,
-      const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
+      Teuchos::RCP<StepperEPI<Scalar> > stepper,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
           actLoc)
   {
     this->observe(sh, stepper, actLoc);
   }
 
  public:
-  /// Observe EPI3 Stepper.
+  /// Observe EPI Stepper.
   virtual void observe(
       Teuchos::RCP<const SolutionHistory<Scalar> > /* sh */,
-      Teuchos::RCP<const StepperEPI3<Scalar> > /* stepper */,
-      const typename StepperEPI3AppAction<Scalar>::ACTION_LOCATION
+      Teuchos::RCP<const StepperEPI<Scalar> > /* stepper */,
+      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
           actLoc) = 0;
 };
 
 }  // namespace Tempus
 
-#endif  // Tempus_StepperEPI3ObserverBase_hpp
+#endif  // Tempus_StepperEPIObserverBase_hpp
