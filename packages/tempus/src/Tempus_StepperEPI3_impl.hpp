@@ -72,7 +72,7 @@ void StepperEPI3<Scalar>::setModel(
   StepperExplicit<Scalar>::setModel(appModel);
 
   auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
-  phiEvaluator_ = phif->createPhiEvaluator("PFD", appModel);
+  phiEvaluator_ = phif->createPhiEvaluator("Taylor", appModel);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
   phiEvaluator_.is_null(), std::logic_error,
