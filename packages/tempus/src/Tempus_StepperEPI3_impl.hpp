@@ -72,7 +72,7 @@ void StepperEPI3<Scalar>::setModel(
   StepperExplicit<Scalar>::setModel(appModel);
 
   auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
-  phiEvaluator_ = phif->createPhiEvaluator("Taylor", appModel);
+  phiEvaluator_ = phif->createPhiEvaluator(phiEvaluatorPL_, appModel);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
   phiEvaluator_.is_null(), std::logic_error,
@@ -108,6 +108,8 @@ void StepperEPI3<Scalar>::takeStep(
   this->checkInitialized();
   phiEvaluator_->checkInitialized();
   using Teuchos::RCP;
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperEPI3::takeStep()");
   {
@@ -155,7 +157,10 @@ void StepperEPI3<Scalar>::takeStep(
       inArgs.set_x(currentState->getX());
       inArgs.set_t(time);
       inArgs.set_x_dot(xDot);
-      RCP<const Thyra::VectorBase<Scalar> > xDot_Exponential = phiEvaluator_->buildATildeMatrix(2, this->getTaylorExpansionOrder(), dt, xDot, inArgs);
+      phiEvaluator_->setLinearizationPoint(inArgs);
+      RCP<Thyra::VectorBase<Scalar>> vphi = workingState->getX()->clone_v();
+      assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
+      Thyra::SolveStatus<Scalar> sStatus = phiEvaluator_->computePhi(vphi.ptr(), 2, dt, xDot);
 
       // For UseFSAL=false, x and xDot are now sync'ed or consistent
       // at the same time level for the currentState.
@@ -166,7 +171,7 @@ void StepperEPI3<Scalar>::takeStep(
     // Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
     //                *(currentState->getX()), dt, *(xDot));
     Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
-                   *(currentState->getX()), dt, *(xDot_Exponential));
+                   *(currentState->getX()), dt, *(vphi));
 
     if (workingState->getXDot() != Teuchos::null)
       this->setStepperXDot(workingState->getXDot());
@@ -327,6 +332,12 @@ Teuchos::RCP<Teuchos::ParameterList> StepperEPI3<Scalar>::getValidParametersBasi
       "\n"
       "The default is 2.");
 
+  pl->template set<std::string>(
+      "Phi Evaluator Type", "Taylor",
+      "The type of Phi evaluator used in the EPI3 stepper.\n"
+      "\n"
+      "The default is 'Taylor'.  Other options are 'PFD' and 'Leja'.");
+
   return pl;
 }
 
@@ -339,6 +350,8 @@ Teuchos::RCP<StepperEPI3<Scalar> > createStepperEPI3(
 {
   auto stepper = Teuchos::rcp(new StepperEPI3<Scalar>());
   stepper->setStepperExplicitValues(pl);
+
+  stepper->setPhiEvaluatorParameterList(pl);
 
   if (pl != Teuchos::null) {
     stepper->setTaylorExpansionOrder(pl->template get<int>("Taylor Expansion Order", 2));

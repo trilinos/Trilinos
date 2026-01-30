@@ -143,11 +143,15 @@ class StepperEPI3 : virtual public Tempus::StepperExplicit<Scalar> {
   Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasic() const;
 
   void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
+  void setPhiEvaluatorParameterList(const Teuchos::RCP<Teuchos::ParameterList>& pl)
+  { phiEvaluatorPL_ = pl; }
 
  protected:
   Teuchos::RCP<StepperEPI3AppAction<Scalar> > stepperEPI3AppAction_;
 
   Teuchos::RCP<PhiEvaluator<Scalar> > phiEvaluator_;
+
+  Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL_;
 
   int taylorExpOrder_;
 };

@@ -50,6 +50,7 @@
       <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
       <Parameter name="Taylor Expansion Order" type="int" value="2"/>
+      <Parameter name="Phi Evaluator Type" type="string" value="Taylor"/>
     </ParameterList>
 
   </ParameterList>
