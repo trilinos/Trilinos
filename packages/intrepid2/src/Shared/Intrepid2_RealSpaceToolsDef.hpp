@@ -147,12 +147,27 @@ namespace Intrepid2 {
   typename MatrixViewType::value_type
   RealSpaceTools<DeviceType>::Serial::
   det( const MatrixViewType inMat ) {
+    typedef typename decltype(inMat)::non_const_value_type value_type;
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      bool dbgInfo = false;
+      INTREPID2_TEST_FOR_DEBUG_ABORT( getFunctorRank( inMat ) != 2, dbgInfo,
+                                      ">>> ERROR (RealSpaceTools::det): Rank of matrix argument must be 2!");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.extent(0) != inMat.extent(1), dbgInfo,
+                                      ">>> ERROR (RealSpaceTools::det): Matrix is not square!");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.extent(0) < 1 || inMat.extent(0) > 3, dbgInfo,
+                                      ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      if (dbgInfo) return value_type(0);
+#endif
+    }
+#endif
     const auto dim = inMat.extent(0);
     switch (dim) {
       case 3: return det<3, MatrixViewType>(inMat); break;
       case 2: return det<2, MatrixViewType>(inMat); break;
       case 1: return det<1, MatrixViewType>(inMat); break;
-      default: INTREPID2_TEST_FOR_ABORT((dim < 1) || (dim > 3), "dim must be 1, 2, or 3");
+      default: INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE((dim < 1) || (dim > 3), std::invalid_argument, ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
     }
     
   }
@@ -788,7 +803,7 @@ namespace Intrepid2 {
       case 1: inverse<1,InverseMatrixViewType,MatrixViewType>(inverseMats,inMats); break;
       case 2: inverse<2,InverseMatrixViewType,MatrixViewType>(inverseMats,inMats); break;
       case 3: inverse<3,InverseMatrixViewType,MatrixViewType>(inverseMats,inMats); break;
-      default: INTREPID2_TEST_FOR_ABORT((dim < 1) || (dim > 3), "dim must be 1, 2, or 3");
+      default: INTREPID2_TEST_FOR_EXCEPTION((dim < 1) || (dim > 3), std::invalid_argument, ">>> ERROR (RealSpaceTools::inverse): Spatial dimension must be 1, 2, or 3!");
     }
   }
 
