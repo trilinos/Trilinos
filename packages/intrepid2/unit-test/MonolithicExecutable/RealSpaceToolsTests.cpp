@@ -106,8 +106,6 @@ namespace
   template<int D>
   std::vector<std::vector<double>> getDiagonalInverse(double value)
   {
-    using ExecSpace = DefaultTestDeviceType::execution_space;
-    
     using ViewType = Kokkos::DynRankView<double,DefaultTestDeviceType>;
     
     const int numPoints = 1;
@@ -144,8 +142,6 @@ namespace
 
   std::vector<std::vector<double>> getDiagonalInverse(int dim, double value)
   {
-    using ExecSpace = DefaultTestDeviceType::execution_space;
-    
     using ViewType = Kokkos::DynRankView<double,DefaultTestDeviceType>;
     
     const int numPoints = 1;
