@@ -169,7 +169,8 @@ namespace Intrepid2 {
       case 1: return det<1, MatrixViewType>(inMat); break;
       default: INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE((dim < 1) || (dim > 3), std::invalid_argument, ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
     }
-    
+    // the following statement is unreachable, but some compilers complain about control reaching the end of non-void function without it.
+    INTREPID2_TEST_FOR_ABORT(true, "dim must be 1, 2, or 3");
   }
 
   // ------------------------------------------------------------------------------------
