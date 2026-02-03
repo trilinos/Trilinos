@@ -235,7 +235,7 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::buildATilde(
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildATilde(
     const double dt)   // time step
 {
   // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
@@ -257,6 +257,8 @@ void PhiLinearSolver<Scalar>::buildATilde(
       Z_VW,         // (2,1): V->W
       KMatrix_      // (2,2): W->W
   );
+
+  return Atilde_;
 }
 
 template <class Scalar>
@@ -318,10 +320,9 @@ void PhiLinearSolver<Scalar>::buildb(const Thyra::Ordinal p,
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::buildv()
+Teuchos::RCP<Thyra::VectorBase<Scalar>> PhiLinearSolver<Scalar>::buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space)
 {
   // v must be in the domain of Atilde_
-  const auto space = Atilde_->domain();
   const Thyra::Ordinal dim = space->dim();
 
   // Create v and initialize to zero
@@ -346,50 +347,52 @@ void PhiLinearSolver<Scalar>::buildv()
     // Fallback for non-SPMD spaces
     Thyra::set_ele(g_last, Scalar(1), v_.ptr());
   }
+
+  return v_;
 }
 
-template <class Scalar>
-Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiLinearSolver<Scalar>::matrixExponential(const int expansionOrder)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      expansionOrder < 0,
-      std::invalid_argument,
-      "matrixExponential: expansionOrder must be nonnegative");
+// template <class Scalar>
+// Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiLinearSolver<Scalar>::matrixExponential(const int expansionOrder)
+// {
+//   TEUCHOS_TEST_FOR_EXCEPTION(
+//       expansionOrder < 0,
+//       std::invalid_argument,
+//       "matrixExponential: expansionOrder must be nonnegative");
 
-  // exp(A) * v is in range(A)
-  const auto rangeSpace = Atilde_->range();
+//   // exp(A) * v is in range(A)
+//   const auto rangeSpace = Atilde_->range();
 
-  // Create tmp vector to hold result
-  auto matExpTemp = Thyra::createMember(rangeSpace);
+//   // Create tmp vector to hold result
+//   auto matExpTemp = Thyra::createMember(rangeSpace);
 
-  Thyra::assign(matExpTemp.ptr(), Scalar(0));
+//   Thyra::assign(matExpTemp.ptr(), Scalar(0));
 
-  // Identity * v = v
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> term = Thyra::createMember(rangeSpace);
-  Thyra::assign(term.ptr(), *v_);
+//   // Identity * v = v
+//   Teuchos::RCP<Thyra::VectorBase<Scalar>> term = Thyra::createMember(rangeSpace);
+//   Thyra::assign(term.ptr(), *v_);
 
-  // matExpTemp += term / 0!
-  Thyra::Vp_V(matExpTemp.ptr(), *term);
+//   // matExpTemp += term / 0!
+//   Thyra::Vp_V(matExpTemp.ptr(), *term);
 
-  // Iteratively compute term = A * term (A^k v) and accumulate term/k!
-  Scalar invFact = Scalar(1); // 1/k! updated each step
-  for (int k = 1; k <= expansionOrder; ++k)
-  {
-    // term <- A * term
-    Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
-    Thyra::apply(*Atilde_, Thyra::NOTRANS, *term, next.ptr());
-    term = next;
+//   // Iteratively compute term = A * term (A^k v) and accumulate term/k!
+//   Scalar invFact = Scalar(1); // 1/k! updated each step
+//   for (int k = 1; k <= expansionOrder; ++k)
+//   {
+//     // term <- A * term
+//     Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
+//     Thyra::apply(*Atilde_, Thyra::NOTRANS, *term, next.ptr());
+//     term = next;
 
-    invFact /= Scalar(k);
+//     invFact /= Scalar(k);
 
-    // multiply with inverse factorial
-    Thyra::Vp_StV(matExpTemp.ptr(), invFact, *term);
-  }
+//     // multiply with inverse factorial
+//     Thyra::Vp_StV(matExpTemp.ptr(), invFact, *term);
+//   }
 
-  matExp_v_ = matExpTemp; // This is required to wrap multivector as linearop
+//   matExp_v_ = matExpTemp; // This is required to wrap multivector as linearop
 
-  return matExp_v_;
-}
+//   return matExp_v_;
+// }
 
 
 template <class Scalar>
