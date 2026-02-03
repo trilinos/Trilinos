@@ -147,7 +147,6 @@ namespace Intrepid2 {
   typename MatrixViewType::value_type
   RealSpaceTools<DeviceType>::Serial::
   det( const MatrixViewType inMat ) {
-    typedef typename decltype(inMat)::non_const_value_type value_type;
 #ifdef HAVE_INTREPID2_DEBUG
     {
       bool dbgInfo = false;
@@ -158,6 +157,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.extent(0) < 1 || inMat.extent(0) > 3, dbgInfo,
                                       ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      typedef typename decltype(inMat)::non_const_value_type value_type;
       if (dbgInfo) return value_type(0);
 #endif
     }
