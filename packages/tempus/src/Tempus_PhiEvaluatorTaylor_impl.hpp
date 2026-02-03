@@ -130,18 +130,60 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos:
   this->phiLinSolv_->computeJacobian(*inArgs_lin_);
   this->phiLinSolv_->buildK(k);
   this->phiLinSolv_->buildb(k, rhs_b);
-  this->phiLinSolv_->buildATilde(cdt);
-  this->phiLinSolv_->buildv();
-  auto vec = this->phiLinSolv_->matrixExponential(taylorExpOrder_);
+  Atilde_ = this->phiLinSolv_->buildATilde(cdt);
+  v_ = this->phiLinSolv_->buildv(Atilde_->domain());
+  auto vec = this->matrixExponential(taylorExpOrder_);
 
   // Get the first block of the multi-vector calculated from 2x2 multi-matrix
   auto pv = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar>>(vec, true);
-  // phiv = pv->getVectorBlock(0);  // V block
-  auto v0 = pv->getVectorBlock(0);  // V block (const)
+  auto v0 = pv->getVectorBlock(0);  // V block
   Thyra::copy(*v0, phiv.ptr());
   // return vecV;
   Thyra::SolveStatus<Scalar> sStatus;
   return sStatus;
+}
+
+template <class Scalar>
+Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluatorTaylor<Scalar>::matrixExponential(const int expansionOrder)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      expansionOrder < 0,
+      std::invalid_argument,
+      "matrixExponential: expansionOrder must be nonnegative");
+
+  // exp(A) * v is in range(A)
+  const auto rangeSpace = Atilde_->range();
+
+  // Create tmp vector to hold result
+  auto matExpTemp = Thyra::createMember(rangeSpace);
+
+  Thyra::assign(matExpTemp.ptr(), Scalar(0));
+
+  // Identity * v = v
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> term = Thyra::createMember(rangeSpace);
+  Thyra::assign(term.ptr(), *v_);
+
+  // matExpTemp += term / 0!
+  Thyra::Vp_V(matExpTemp.ptr(), *term);
+
+  // Iteratively compute term = A * term (A^k v) and accumulate term/k!
+  Scalar invFact = Scalar(1); // 1/k! updated each step
+  for (int k = 1; k <= expansionOrder; ++k)
+  {
+    // term <- A * term
+    Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
+    Thyra::apply(*Atilde_, Thyra::NOTRANS, *term, next.ptr());
+    term = next;
+
+    invFact /= Scalar(k);
+
+    // multiply with inverse factorial
+    Thyra::Vp_StV(matExpTemp.ptr(), invFact, *term);
+  }
+
+  matExp_v_ = matExpTemp; // This is required to wrap multivector as linearop
+
+  return matExp_v_;
 }
   
 // Nonmember constructors.

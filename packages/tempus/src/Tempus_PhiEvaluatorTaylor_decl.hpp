@@ -36,12 +36,18 @@ class PhiEvaluatorTaylor
   Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> vphi,
 					int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
 
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matrixExponential(const int expansionOrder);
+
   void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
 
  private:
   mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
 
   int taylorExpOrder_;
+
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> v_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matExp_v_;
 };
 
 /// Nonmember constructor from a ParameterList
