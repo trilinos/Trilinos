@@ -10,6 +10,7 @@ endif()
 SET(HEADERS_NEED_IO
   ElemGraphMultipleSharedSidesUtils.hpp
   BulkDataTester.hpp
+  DeviceBucketTestUtils.hpp
   FaceCreationTestUtils.hpp
   FaceTestingUtils.hpp
   GeneratedMeshToFile.hpp
@@ -35,9 +36,11 @@ SET(HEADERS_NEED_IO
   meshCreationHelpers.hpp
   exampleMeshes.h
   )
+
 SET(SOURCES_NEED_IO
   BulkDataTester.cpp
   ConstructedMesh.cpp
+  DeviceBucketTestUtils.cpp
   FaceTestingUtils.cpp
   GenerateALefRAMesh.cpp
   GeneratedMeshToFile.cpp
@@ -49,16 +52,11 @@ SET(SOURCES_NEED_IO
   meshCreationHelpers.cpp
   )
 
-SET(HEADERS_NEED_SEARCHUTIL
-  MockMasterElementHex8.hpp
-  MockMasterElement.hpp
-  MockMasterElementLine2.hpp
-  MockMasterElementProvider.hpp
-  MockMasterElementQuad4.hpp
+SET(HEADERS_NEED_SEARCHUTIL_AND_IO
   UnitTestSearchUtils.hpp
   )
-SET(SOURCES_NEED_SEARCHUTIL
-  MockMasterElementProvider.cpp
+
+SET(SOURCES_NEED_SEARCHUTIL_AND_IO
   UnitTestSearchUtils.cpp
   )
 
@@ -100,7 +98,6 @@ SET(SOURCES_NEED_MPI
 SET(HEADERS
   algorithmTimer.hpp
   AssemblyUtils.hpp
-  Legendre.hpp
   CommandLineArgs.hpp
   getOption.h
   ObjectLifetimeSpy.hpp
@@ -110,7 +107,6 @@ SET(HEADERS
   )
 SET(SOURCES
   AssemblyUtils.cpp
-  Legendre.cpp
   ObjectLifetimeSpy.cpp
   StkReportRedirector.cpp
   stringAndNumberComparisons.cpp
@@ -127,9 +123,9 @@ IF(${PROJECT_NAME}_ENABLE_STKMesh)
   LIST(APPEND HEADERS ${HEADERS_NEED_MESH_BUT_NOT_IO})
 ENDIF()
 
-IF(${PROJECT_NAME}_ENABLE_STKSearchUtil)
-  LIST(APPEND SOURCES ${SOURCES_NEED_SEARCHUTIL})
-  LIST(APPEND HEADERS ${HEADERS_NEED_SEARCHUTIL})
+IF(${PROJECT_NAME}_ENABLE_STKSearchUtil AND ${PROJECT_NAME}_ENABLE_STKIO)
+  LIST(APPEND SOURCES ${SOURCES_NEED_SEARCHUTIL_AND_IO})
+  LIST(APPEND HEADERS ${HEADERS_NEED_SEARCHUTIL_AND_IO})
 ENDIF()
 
 IF(${PROJECT_NAME}_ENABLE_STKTransferUtil)

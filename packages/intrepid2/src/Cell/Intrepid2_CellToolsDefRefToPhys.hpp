@@ -157,7 +157,6 @@ namespace Intrepid2 {
     const auto refPointRank = refPoints.rank();
     const auto numPoints = (refPointRank == 2 ? refPoints.extent(0) : refPoints.extent(1));
     const auto basisCardinality = basis->getCardinality();
-    auto vcprop = Kokkos::common_view_alloc_prop(physPoints);
 
     using valViewType = Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),DeviceType>;
 
@@ -166,7 +165,7 @@ namespace Intrepid2 {
     switch (refPointRank) {
     case 2: {
       // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
-      vals = valViewType(Kokkos::view_alloc("CellTools::mapToPhysicalFrame::vals", vcprop), basisCardinality, numPoints);
+      vals = Impl::createMatchingView<valViewType>(physPoints, "CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
       basis->getValues(vals,
                        refPoints,
                        OPERATOR_VALUE);
@@ -174,8 +173,7 @@ namespace Intrepid2 {
     }
     case 3: {
       // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.
-      //vals = valViewType("CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
-      vals = valViewType(Kokkos::view_alloc("CellTools::mapToPhysicalFrame::vals", vcprop), numCells, basisCardinality, numPoints);
+      vals = Impl::createMatchingView<valViewType>(physPoints, "CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
       for (size_type cell=0;cell<numCells;++cell)
         basis->getValues(Kokkos::subdynrankview( vals,      cell, Kokkos::ALL(), Kokkos::ALL() ),
                          Kokkos::subdynrankview( refPoints, cell, Kokkos::ALL(), Kokkos::ALL() ),

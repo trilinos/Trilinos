@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include <gtest/gtest.h>
 #include "KokkosKernels_TestUtils.hpp"
@@ -34,7 +21,7 @@ struct chem_model_1 {
   const double tstart, tend, T0, T1;
 
   chem_model_1(const double tstart_ = 0, const double tend_ = 100, const double T0_ = 300, const double T1_ = 800)
-      : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_){};
+      : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_) {}
 
   template <class vec_type1, class vec_type2>
   KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/, const vec_type1& y,
@@ -60,7 +47,7 @@ struct chem_model_2 {
   const double tstart, tend, T0, T1;
 
   chem_model_2(const double tstart_ = 0, const double tend_ = 1200, const double T0_ = 300, const double T1_ = 1000)
-      : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_){};
+      : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_) {}
 
   template <class vec_type1, class vec_type2>
   KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/, const vec_type1& y,

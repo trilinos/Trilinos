@@ -356,8 +356,15 @@ namespace Belos {
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
       typedef typename flat_view_type::execution_space execution_space;
-      typename flat_view_type::const_type flat_A_view = Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
-      flat_view_type flat_C_view = Ctmp->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+      auto A_View= Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto C_View = Ctmp->getLocalViewDevice(Tpetra::Access::OverwriteAll);
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+      typename flat_view_type::const_type flat_A_view = A_View;
+      flat_view_type flat_C_view = C_View;
+#else
+      auto flat_A_view = Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(A_View);      
+      auto flat_C_view = Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(C_View);
+#endif
 
       // Create a view for B on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> b_host_view_type;
@@ -477,8 +484,15 @@ namespace Belos {
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
       typedef typename FMV::dual_view_type::t_dev flat_view_type;
       typedef typename flat_view_type::execution_space execution_space;
-      typename flat_view_type::const_type flat_A_view = Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
-      typename flat_view_type::const_type flat_B_view = Btmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto A_view = Atmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      auto B_view = Btmp->getLocalViewDevice(Tpetra::Access::ReadOnly);
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+      typename flat_view_type::const_type flat_A_view = A_view;
+      typename flat_view_type::const_type flat_B_view = B_view;
+#else
+      auto flat_A_view = Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(A_view);
+      auto flat_B_view = Stokhos::reinterpret_as_unmanaged_scalar_columnwise_flat_view(B_view);
+#endif
 
       // Create a view for C on the host
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, Kokkos::HostSpace> c_host_view_type;

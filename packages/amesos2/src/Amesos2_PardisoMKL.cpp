@@ -12,18 +12,8 @@
 
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
-#  include "Amesos2_PardisoMKL_def.hpp"
-#  include "Amesos2_ExplicitInstantiationHelpers.hpp"
-
-
-
-namespace Amesos2 {
-
-#ifdef HAVE_AMESOS2_EPETRA
-  AMESOS2_SOLVER_EPETRA_INST(PardisoMKL);
-#endif
-
-}
+#include "Amesos2_PardisoMKL_def.hpp"
+#include "Amesos2_ExplicitInstantiationHelpers.hpp"
 
 
 #ifdef HAVE_TPETRA_INST_INT_INT

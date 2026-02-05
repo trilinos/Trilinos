@@ -25,8 +25,7 @@ interface for their own operators and vectors.  This allows them to
 use any %Belos solver with their objects without changing a line of
 %Belos code.  Defining this interface requires only a modest effort,
 and %Belos provides plenty of examples.  For more details, please
-refer to the \ref belos_opvec_interfaces "Belos Operator/Vector
-abstract interface".
+refer to the \ref belos_opvec_interfaces "Belos Operator/Vector abstract interface".
 
 The \ref belos_solver_framework "Belos linear solver framework"
 describes solver managers that provide efficient, convenient, and

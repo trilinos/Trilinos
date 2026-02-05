@@ -125,6 +125,7 @@ protected :
 
   void copy_domain_to_range_processors();
   void localize_entity_key_map();
+  void repeat_search_if_needed();
 
   const std::string     m_name;
   bool m_has_parallel_machine;

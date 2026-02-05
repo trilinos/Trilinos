@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 // #include "KokkosKernels_ETIHelperMacros.h"
 #include <gtest/gtest.h>
@@ -84,9 +71,9 @@ void makeSparseMatrix(typename sparseMat_t::StaticCrsGraphType::row_map_type::no
     val = val_type("val", nnz);
 
     // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-    typename ptr_type::HostMirror::const_type ptrIn(ptrRaw, numRows + 1);
-    typename ind_type::HostMirror::const_type indIn(indRaw, nnz);
-    typename val_type::HostMirror::const_type valIn(valRaw, nnz);
+    typename ptr_type::host_mirror_type::const_type ptrIn(ptrRaw, numRows + 1);
+    typename ind_type::host_mirror_type::const_type indIn(indRaw, nnz);
+    typename val_type::host_mirror_type::const_type valIn(valRaw, nnz);
 
     Kokkos::deep_copy(ptr, ptrIn);
     Kokkos::deep_copy(ind, indIn);
@@ -110,9 +97,9 @@ void makeSparseMatrix(typename sparseMat_t::StaticCrsGraphType::row_map_type::no
     val = val_type("val", nnz);
 
     // Wrap the above three arrays in unmanaged Views, so we can use deep_copy.
-    typename ptr_type::HostMirror::const_type ptrIn(ptrRaw, numRows + 1);
-    typename ind_type::HostMirror::const_type indIn(indRaw, numBlocks);
-    typename val_type::HostMirror::const_type valIn(valRaw, nnz);
+    typename ptr_type::host_mirror_type::const_type ptrIn(ptrRaw, numRows + 1);
+    typename ind_type::host_mirror_type::const_type indIn(indRaw, numBlocks);
+    typename val_type::host_mirror_type::const_type valIn(valRaw, nnz);
 
     Kokkos::deep_copy(ptr, ptrIn);
     Kokkos::deep_copy(ind, indIn);
@@ -202,16 +189,14 @@ struct TestFunctor {
             auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
             for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
               auto entry = iblockrow.local_block_value(blk, lrow, lcol);
-              // std::cout << "check0: " << ( entry == row_ptr[lcol] );
-              // std::cout << "check1: " << ( entry == view_blk(lrow,lcol) );
-              check0 = check0 && (entry == row_ptr[lcol]);
-              check1 = check1 && (entry == view_blk(lrow, lcol));
+              check0 &= (entry == row_ptr[lcol]);
+              check1 &= (entry == view_blk(lrow, lcol));
             }  // end local col in row
           }    // end local row in blk
         }      // end blk
       }
-      d_results(0) = check0;
-      d_results(1) = check1;
+      d_results(0) &= check0;
+      d_results(1) &= check1;
 
       // Test BsrRowViewConst
       {
@@ -223,16 +208,14 @@ struct TestFunctor {
             auto row_ptr = iblockrow.local_row_in_block(blk, lrow);
             for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
               auto entry = iblockrow.local_block_value(blk, lrow, lcol);
-              check2     = check2 && (entry == row_ptr[lcol]);
-              check3     = check3 && (entry == view_blk(lrow, lcol));
+              check2 &= (entry == row_ptr[lcol]);
+              check3 &= (entry == view_blk(lrow, lcol));
             }  // end local col in row
           }    // end local row in blk
         }      // end blk
       }
-      d_results(0) = check0;
-      d_results(1) = check1;
-      d_results(2) = check2;
-      d_results(3) = check3;
+      d_results(2) &= check2;
+      d_results(3) &= check3;
     }  // end for blk rows
 
     // Test sumIntoValues
@@ -256,14 +239,14 @@ struct TestFunctor {
         auto row_ptr = iblockrow.local_row_in_block(relBlk, lrow);
         for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
           auto entry = iblockrow.local_block_value(relBlk, lrow, lcol);
-          check0     = check0 && (entry == row_ptr[lcol]);
-          check1     = check1 && (entry == view_blk(lrow, lcol));
-          check2     = check2 && (entry == result[lrow * A.blockDim() + lcol]);
+          check0 &= (entry == row_ptr[lcol]);
+          check1 &= (entry == view_blk(lrow, lcol));
+          check2 &= (entry == result[lrow * A.blockDim() + lcol]);
         }  // end local col in row
       }    // end local row in blk
-      d_results(4) = check0;
-      d_results(5) = check1;
-      d_results(6) = check2;
+      d_results(4) &= check0;
+      d_results(5) &= check1;
+      d_results(6) &= check2;
     }
 
     // Test replaceValues
@@ -286,18 +269,78 @@ struct TestFunctor {
         auto row_ptr = iblockrow.local_row_in_block(relBlk, lrow);
         for (auto lcol = 0; lcol < A.blockDim(); ++lcol) {
           auto entry = iblockrow.local_block_value(relBlk, lrow, lcol);
-          check0     = check0 && (entry == row_ptr[lcol]);
-          check1     = check1 && (entry == view_blk(lrow, lcol));
-          check2     = check2 && (entry == valsreplace[lrow * A.blockDim() + lcol]);
+          check0 &= (entry == row_ptr[lcol]);
+          check1 &= (entry == view_blk(lrow, lcol));
+          check2 &= (entry == valsreplace[lrow * A.blockDim() + lcol]);
         }  // end local col in row
       }    // end local row in blk
-      d_results(7) = check0;
-      d_results(8) = check1;
-      d_results(9) = check2;
+      d_results(7) &= check0;
+      d_results(8) &= check1;
+      d_results(9) &= check2;
     }
-
   }  // end operator()(i)
 };   // end TestFunctor
+
+template <class BsrMatrixType, class ResultsType>
+struct TestConvFunctor {
+  typedef typename BsrMatrixType::value_type scalar_t;
+  typedef typename BsrMatrixType::ordinal_type lno_t;
+  typedef typename BsrMatrixType::size_type size_type;
+
+  // Members
+  BsrMatrixType A_;
+  BsrMatrixType A_bsr_conv_;
+  ResultsType d_results_;
+
+  // Constructor
+  TestConvFunctor(BsrMatrixType &A, ResultsType &d_results) : A_(A), d_results_(d_results) {
+    auto A_crs  = A_.convertToCrs();
+    A_bsr_conv_ = BsrMatrixType(A_crs, A_.blockDim());
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const int /*rid*/) const {
+    // Test 1: Converting to Crs and then back to Bsr should give us an indentical bsr
+    bool check0    = true;
+    bool check1    = true;
+    bool check2    = true;
+    bool check3    = true;
+    bool check4    = true;
+    bool check5    = true;
+    bool check6    = true;
+    int result_idx = 0;
+
+    check0 = A_bsr_conv_.numRows() == A_.numRows();
+    check1 = A_bsr_conv_.numCols() == A_.numCols();
+    check2 = A_bsr_conv_.blockDim() == A_.blockDim();
+    check3 = A_bsr_conv_.nnz() == A_.nnz();
+
+    const auto blockRowMap1  = A_.graph.row_map;
+    const auto blockEntries1 = A_.graph.entries;
+    const auto blockValues1  = A_.values;
+
+    const auto blockRowMap2  = A_.graph.row_map;
+    const auto blockEntries2 = A_.graph.entries;
+    const auto blockValues2  = A_.values;
+
+    for (lno_t i = 0; i < A_.numRows() + 1; ++i) {
+      check4 &= (blockRowMap1(i) == blockRowMap2(i));
+    }
+
+    for (size_type i = 0; i < A_.nnz(); ++i) {
+      check5 &= (blockEntries1(i) == blockEntries2(i));
+      check6 &= (blockValues1(i) == blockValues2(i));
+    }
+
+    d_results_(result_idx++) = check0;
+    d_results_(result_idx++) = check1;
+    d_results_(result_idx++) = check2;
+    d_results_(result_idx++) = check3;
+    d_results_(result_idx++) = check4;
+    d_results_(result_idx++) = check5;
+    d_results_(result_idx++) = check6;
+  }  // end operator()(i)
+};   // end TestConvFunctor
 
 }  // namespace Test_Bsr
 
@@ -312,13 +355,26 @@ void testBsrMatrix() {
   crs_matrix_type crsA = makeCrsMatrix_BlockStructure<crs_matrix_type>();
   bsr_matrix_type A    = makeBsrMatrix<bsr_matrix_type>();
 
-  const int num_entries = 10;
+  static constexpr int num_entries = 10;
   typedef Kokkos::View<bool[num_entries], device> result_view_type;
   result_view_type d_results("d_results");
+  Kokkos::deep_copy(d_results, true);
   auto h_results = Kokkos::create_mirror_view(d_results);
+  Test_Bsr::TestFunctor<bsr_matrix_type, result_view_type> functor(A, d_results);
 
   Kokkos::parallel_for("KokkosSparse::Test_Bsr::BsrMatrix", Kokkos::RangePolicy<typename device::execution_space>(0, 1),
-                       Test_Bsr::TestFunctor<bsr_matrix_type, result_view_type>(A, d_results));
+                       functor);
+
+  Kokkos::deep_copy(h_results, d_results);
+
+  for (decltype(h_results.extent(0)) i = 0; i < h_results.extent(0); ++i) {
+    EXPECT_EQ(h_results[i], true);
+  }
+
+  Kokkos::deep_copy(d_results, true);
+  Test_Bsr::TestConvFunctor<bsr_matrix_type, result_view_type> conv_functor(A, d_results);
+  Kokkos::parallel_for("KokkosSparse::Test_Bsr::BsrMatrix", Kokkos::RangePolicy<typename device::execution_space>(0, 1),
+                       conv_functor);
 
   Kokkos::deep_copy(h_results, d_results);
 

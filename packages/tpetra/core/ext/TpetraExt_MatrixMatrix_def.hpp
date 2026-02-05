@@ -1957,8 +1957,8 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
   size_t b_max_nnz_per_row    = Bview.origMatrix->getLocalMaxNumRowEntries();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS& Amat = Aview.origMatrix->getLocalMatrixHost();
-  const KCRS& Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS Bmat = Bview.origMatrix->getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
@@ -2250,9 +2250,9 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
   size_t n                    = Ccolmap->getLocalNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS& Amat = Aview.origMatrix->getLocalMatrixHost();
-  const KCRS& Bmat = Bview.origMatrix->getLocalMatrixHost();
-  const KCRS& Cmat = C.getLocalMatrixHost();
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS Cmat = C.getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -2553,8 +2553,8 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
   size_t b_max_nnz_per_row    = Bview.origMatrix->getLocalMaxNumRowEntries();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS& Amat = Aview.origMatrix->getLocalMatrixHost();
-  const KCRS& Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS Bmat = Bview.origMatrix->getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
@@ -2878,9 +2878,9 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
   size_t n                    = Ccolmap->getLocalNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS& Amat = Aview.origMatrix->getLocalMatrixHost();
-  const KCRS& Bmat = Bview.origMatrix->getLocalMatrixHost();
-  const KCRS& Cmat = C.getLocalMatrixHost();
+  const KCRS Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS Cmat = C.getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -3319,20 +3319,20 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
   // Grab the  Kokkos::SparseCrsMatrices
-  const KCRS& Ak = Aview.origMatrix->getLocalMatrixDevice();
-  const KCRS& Bk = Bview.origMatrix->getLocalMatrixDevice();
+  const KCRS Ak = Aview.origMatrix->getLocalMatrixDevice();
+  const KCRS Bk = Bview.origMatrix->getLocalMatrixDevice();
 
   // We need to do this dance if either (a) We have Bimport or (b) We don't A's colMap is not the same as B's rowMap
   if (!Bview.importMatrix.is_null() || (Bview.importMatrix.is_null() && (&*Aview.origMatrix->getGraph()->getColMap() != &*Bview.origMatrix->getGraph()->getRowMap()))) {
     // We do have a Bimport
     // NOTE: We're going merge Borig and Bimport into a single matrix and reindex the columns *before* we multiply.
     // This option was chosen because we know we don't have any duplicate entries, so we can allocate once.
-    RCP<const KCRS> Ik_;
-    if (!Bview.importMatrix.is_null()) Ik_ = Teuchos::rcpFromRef<const KCRS>(Bview.importMatrix->getLocalMatrixDevice());
-    const KCRS* Ik = Bview.importMatrix.is_null() ? 0 : &*Ik_;
+
     KCRS Iks;
-    if (Ik != 0) Iks = *Ik;
+    if (!Bview.importMatrix.is_null()) Iks = Bview.importMatrix->getLocalMatrixDevice();
+
     size_t merge_numrows = Ak.numCols();
+
     // The last entry of this at least, need to be initialized
     lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
 
@@ -3410,8 +3410,8 @@ merge_matrices(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& 
   typedef typename KBCRS::values_type::non_const_type scalar_view_t;
 
   // Grab the  KokkosSparse::BsrMatrix
-  const KBCRS& Ak = Aview.origMatrix->getLocalMatrixDevice();
-  const KBCRS& Bk = Bview.origMatrix->getLocalMatrixDevice();
+  const KBCRS Ak = Aview.origMatrix->getLocalMatrixDevice();
+  const KBCRS Bk = Bview.origMatrix->getLocalMatrixDevice();
 
   // We need to do this dance if either (a) We have Bimport or (b) A's colMap is not the same as B's rowMap
   if (!Bview.importMatrix.is_null() ||
@@ -3420,11 +3420,8 @@ merge_matrices(BlockCrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& 
     // We do have a Bimport
     // NOTE: We're going merge Borig and Bimport into a single matrix and reindex the columns *before* we multiply.
     // This option was chosen because we know we don't have any duplicate entries, so we can allocate once.
-    RCP<const KBCRS> Ik_;
-    if (!Bview.importMatrix.is_null()) Ik_ = Teuchos::rcpFromRef<const KBCRS>(Bview.importMatrix->getLocalMatrixDevice());
-    const KBCRS* Ik = Bview.importMatrix.is_null() ? 0 : &*Ik_;
     KBCRS Iks;
-    if (Ik != 0) Iks = *Ik;
+    if (!Bview.importMatrix.is_null()) Iks = Bview.importMatrix->getLocalMatrixDevice();
     size_t merge_numrows = Ak.numCols();
 
     // The last entry of this at least, need to be initialized
@@ -3607,9 +3604,9 @@ struct ConvertLocalToGlobalFunctor {
 template <typename SC, typename LO, typename GO, typename NO>
 void MMdetails::AddKernels<SC, LO, GO, NO>::
     convertToGlobalAndAdd(
-        const typename MMdetails::AddKernels<SC, LO, GO, NO>::KCRS& A,
+        const typename MMdetails::AddKernels<SC, LO, GO, NO>::KCRS A,
         const typename MMdetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
-        const typename MMdetails::AddKernels<SC, LO, GO, NO>::KCRS& B,
+        const typename MMdetails::AddKernels<SC, LO, GO, NO>::KCRS B,
         const typename MMdetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
         const typename MMdetails::AddKernels<SC, LO, GO, NO>::local_map_type& AcolMap,
         const typename MMdetails::AddKernels<SC, LO, GO, NO>::local_map_type& BcolMap,

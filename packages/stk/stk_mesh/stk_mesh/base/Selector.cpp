@@ -647,7 +647,10 @@ const BulkData* Selector::find_mesh() const
 BucketVector const& Selector::get_buckets(EntityRank entity_rank) const
 {
     static BucketVector emptyBucketVector;
-    if (is_empty(entity_rank)) {
+    const bool wasDefaultConstructed = (m_expr.size()==1 &&
+                                        m_expr[0].node_type()==SelectorNodeType::PART &&
+                                        m_expr[0].part() == InvalidPartOrdinal);
+    if (m_expr.empty() || wasDefaultConstructed) {
         return emptyBucketVector;
     }
 

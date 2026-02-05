@@ -40,7 +40,7 @@
 #include "LOCA_Stepper.H"
 #include "NOX_SolverStats.hpp"
 #include "NOX_Observer.hpp"
-#include "NOX_Observer_Vector.cpp"
+#include "NOX_Observer_Vector.hpp"
 
 // For solution io
 #include "Thyra_TpetraVector.hpp"

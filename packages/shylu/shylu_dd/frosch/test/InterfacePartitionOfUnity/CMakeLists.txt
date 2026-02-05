@@ -10,28 +10,10 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(IPOUCopyFiles
     EXEDEPS interfacepartitionofunity
 )
 
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Tpetra::KokkosCompat::KokkosCudaWrapperNode")
-TRIBITS_ADD_TEST(
-interfacepartitionofunity
-NAME test_interfacepartitionofunity_DIM2_EPETRA
-ARGS "--DIM=2 --M=4 --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 4
-)
-
-TRIBITS_ADD_TEST(
-interfacepartitionofunity
-NAME test_interfacepartitionofunity_DIM3_EPETRA
-ARGS "--DIM=3 --M=4 --USEEPETRA"
-COMM mpi
-NUM_MPI_PROCS 8
-)
-ENDIF()
-
 TRIBITS_ADD_TEST(
 interfacepartitionofunity
 NAME test_interfacepartitionofunity_DIM2_TPETRA
-ARGS "--DIM=2 --M=4 --USETPETRA"
+ARGS "--DIM=2 --M=4"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -39,7 +21,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 interfacepartitionofunity
 NAME test_interfacepartitionofunity_DIM3_TPETRA
-ARGS "--DIM=3 --M=4 --USETPETRA"
+ARGS "--DIM=3 --M=4"
 COMM mpi
 NUM_MPI_PROCS 8
 )

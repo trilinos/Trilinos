@@ -426,8 +426,8 @@ auto common_view_alloc_prop(const Kokkos::DynRankView<ViewArgs...> &view,
 } // namespace Sacado
 
 #define SACADO_FAD_KOKKOS_VIEW_SUPPORT_INCLUDES
-#include "Sacado_Fad_Kokkos_Specialization.hpp"
 #include "Sacado_Fad_Kokkos_ThreadLocalScalar.hpp"
+#include "Sacado_Fad_Kokkos_Specialization.hpp"
 
 #if defined(HAVE_SACADO_KOKKOS) && defined(HAVE_SACADO_TEUCHOSKOKKOSCOMM) &&   \
     defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)

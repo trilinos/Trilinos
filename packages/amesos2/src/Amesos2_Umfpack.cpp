@@ -16,13 +16,6 @@
 #include "TpetraCore_ETIHelperMacros.h"
 
 
-#ifdef HAVE_AMESOS2_EPETRA
-namespace Amesos2 {
-  AMESOS2_SOLVER_EPETRA_INST(Umfpack);
-} // namespace Amesos2
-#endif
-
-
 #define AMESOS2_UMFPACK_LOCAL_INSTANT(S,LO,GO,N) \
   template class Amesos2::Umfpack<Tpetra::CrsMatrix<S, LO, GO, N>, \
                                   Tpetra::MultiVector<S, LO, GO, N> >;

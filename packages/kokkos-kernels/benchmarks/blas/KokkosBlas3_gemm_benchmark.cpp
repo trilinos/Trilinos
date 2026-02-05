@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #include "KokkosBlas3_gemm.hpp"
 #include <Kokkos_Random.hpp>
@@ -137,7 +124,7 @@ int main(int argc, char** argv) {
   // or -1, for no such selection
   const int device_id = params.use_cuda
                             ? params.use_cuda - 1
-                            : (params.use_sycl ? params.use_sycl - 1 : (params.use_hip ? params.use_hip - 1 : -1));
+                            : (params.use_sycl ? params.use_sycl - 1 : (params.use_hip ? params.use_hip - 1 : 0));
 
   Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
   benchmark::Initialize(&argc, argv);

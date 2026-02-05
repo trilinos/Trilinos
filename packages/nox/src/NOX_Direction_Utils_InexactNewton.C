@@ -17,6 +17,7 @@
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 // **************************************************************************
 // *** Constructor
@@ -263,6 +264,31 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
 
   return eta_k;
 }
+
+// **************************************************************************
+// *** throwError
+// **************************************************************************
+Teuchos::RCP<Teuchos::ParameterList>
+NOX::Direction::Utils::InexactNewton::getDefaultParameters() const
+{
+  Teuchos::RCP<Teuchos::ParameterList> validParams = Teuchos::make_rcp<Teuchos::ParameterList>("Defaults for Inexact Newton Utils");
+
+  validParams->sublist("Linear Solver").disableRecursiveValidation();
+  validParams->sublist("Stratimikos Linear Solver").disableRecursiveValidation();
+  validParams->set<std::string>("Forcing Term Method", "Constant",
+                               "Choice of forcing term used by the linear solver",
+                               Teuchos::rcp(new Teuchos::StringValidator(Teuchos::tuple<std::string>("Constant", "Type 1", "Type 2"))));
+  validParams->set("Forcing Term Minimum Tolerance", 1.0e-4);
+  validParams->set("Forcing Term Maximum Tolerance", 0.9);
+  validParams->set("Forcing Term Initial Tolerance", 0.01);
+  validParams->set("Forcing Term Alpha", 1.5);
+  validParams->set("Forcing Term Gamma", 0.9);
+  validParams->set("Rescue Bad Newton Solve", true);
+  validParams->set("Set Tolerance in Parameter List",true);
+  
+  return validParams;
+}
+
 
 // **************************************************************************
 // *** throwError

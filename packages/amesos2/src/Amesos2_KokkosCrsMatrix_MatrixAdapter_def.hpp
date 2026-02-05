@@ -201,6 +201,20 @@ namespace Amesos2 {
     //TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "KokkosCrsMatrixAdapter has not been implemented gather_impl.");
     return -1;
   }
+
+
+  template <typename Scalar, typename LocalOrdinal, typename ExecutionSpace>
+  void
+  ConcreteMatrixAdapter<
+    KokkosSparse::CrsMatrix<Scalar,LocalOrdinal,ExecutionSpace>
+    >::describe (Teuchos::FancyOStream& os,
+                   const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    size_t m = this->mat_->numRows();
+    size_t n = this->mat_->numCols();
+    os << " KokkosSparse::CrsMatrix(" << std::to_string(m) << " x " << std::to_string(n) << ")";
+    os << " of type " << std::string(typeid(Scalar).name()) << std::endl;
+  }
 } // end namespace Amesos2
 
 #endif  // AMESOS2_KOKKOS_CRSMATRIX_MATRIXADAPTER_DEF_HPP

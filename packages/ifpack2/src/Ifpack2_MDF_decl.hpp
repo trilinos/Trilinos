@@ -19,7 +19,7 @@
 #include "Ifpack2_ScalingType.hpp"
 #include "Ifpack2_IlukGraph.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
-#include "KokkosSparse_mdf.hpp"
+#include "KokkosSparse_mdf_handle.hpp"
 
 #include <type_traits>
 

@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #ifndef KOKKOSKERNELS_SORTING_HPP
 #define KOKKOSKERNELS_SORTING_HPP
 
@@ -66,7 +53,7 @@ namespace Impl {
 template <typename View, typename Ordinal, typename TeamMember, typename Comparator>
 struct BitonicSingleTeamFunctor {
   BitonicSingleTeamFunctor(View& v_, const Comparator& comp_) : v(v_), comp(comp_) {}
-  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const { Kokkos::Experimental::sort_team(t, v, comp); };
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const { Kokkos::Experimental::sort_team(t, v, comp); }
   View v;
   Comparator comp;
 };
@@ -82,7 +69,7 @@ struct BitonicChunkFunctor {
     Ordinal n          = chunkSize;
     if (chunkStart + n > Ordinal(v.extent(0))) n = v.extent(0) - chunkStart;
     Kokkos::Experimental::sort_team(t, Kokkos::subview(v, Kokkos::make_pair(chunkStart, chunkStart + n)), comp);
-  };
+  }
   View v;
   Comparator comp;
   Ordinal chunkSize;
@@ -112,7 +99,7 @@ struct BitonicPhase1Functor {
         }
       }
     });
-  };
+  }
   View v;
   Comparator comp;
   Ordinal boxSize;
@@ -170,7 +157,7 @@ struct BitonicPhase2Functor {
         });
       }
     }
-  };
+  }
   View v;
   Comparator comp;
   Ordinal boxSize;

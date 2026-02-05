@@ -266,9 +266,6 @@ namespace Amesos2 {
     /// 1-based indexing, but our interface must use 0-based indexing
     int_t iparm_[64];
 
-    /// The messaging level.  Set to 1 if you wish for Pardiso MKL to print statistical info
-    static const int_t msglvl_;
-
     // We will deal with 1 factor at a time
     static const int_t maxfct_;
     static const int_t mnum_;
@@ -278,8 +275,12 @@ namespace Amesos2 {
     = Meta::or_<std::is_same_v<solver_scalar_type, PMKL::_MKL_Complex8>,
                 std::is_same_v<solver_scalar_type, PMKL::_DOUBLE_COMPLEX_t>>::value;
 
+    bool pardiso_initialized_;
     bool is_contiguous_;
 
+    /// The messaging level.  Set to 1 if you wish for Pardiso MKL to print statistical info
+    int_t msglvl_;
+    int debug_level_;
 };                              // End class PardisoMKL
 
 

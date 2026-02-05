@@ -88,6 +88,8 @@ namespace FROSch {
 
         using ConstBoolVecPtr           = typename SchwarzOperator<SC,LO,GO,NO>::ConstBoolVecPtr;
 
+        using execution_space = typename SchwarzOperator<SC,LO,GO,NO>::XMap::local_map_type::execution_space;
+        using GOView = Kokkos::View<GO*, execution_space>;
     public:
 
         HarmonicCoarseOperator(ConstXMatrixPtr k,
@@ -99,7 +101,6 @@ namespace FROSch {
 
         ConstXMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
 
-        #if defined(HAVE_XPETRA_TPETRA)
         template<class GOIndView, class ConstSCView, class SCView>
         struct CopyPhiViewFunctor
         {
@@ -243,7 +244,6 @@ namespace FROSch {
                 }
             }
         };
-        #endif
 
     protected:
 
@@ -268,7 +268,7 @@ namespace FROSch {
                                                        EntitySetConstPtr entitySet,
                                                        UN discardRotations = 0);
 
-        virtual LOVecPtr detectLinearDependencies(GOVecView indicesGammaDofsAll,
+        virtual LOVecPtr detectLinearDependencies(GOView indicesGammaDofsAll,
                                                         ConstXMapPtr rowMap,
                                                         ConstXMapPtr rangeMap,
                                                         ConstXMapPtr repeatedMap,
@@ -276,7 +276,7 @@ namespace FROSch {
                                                         SC tresholdOrthogonalization);
 
         virtual XMultiVectorPtr computeExtensions(ConstXMapPtr localMap,
-                                                  GOVecView indicesGammaDofsAll,
+                                                  GOView indicesGammaDofsAll,
                                                   GOVecView indicesIDofsAll,
                                                   XMatrixPtr kII,
                                                   XMatrixPtr kIGamma);

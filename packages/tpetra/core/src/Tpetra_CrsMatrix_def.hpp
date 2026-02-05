@@ -3699,7 +3699,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNormInf() const {
   Kokkos::parallel_reduce(
       "getNormInf", range_type(0, equilInfo.rowNorms.extent(0)),
       KOKKOS_LAMBDA(local_ordinal_type i, mag_type & max) {
-        max = equilInfo.rowNorms(i);
+        max = Kokkos::max(max, equilInfo.rowNorms(i));
       },
       Kokkos::Max<mag_type>(myMax));
   mag_type totalMax = STM::zero();
@@ -3720,7 +3720,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Kokkos::parallel_reduce(
       "getNorm1", range_type(0, equilInfo.colNorms.extent(0)),
       KOKKOS_LAMBDA(local_ordinal_type i, mag_type & max) {
-        max = equilInfo.colNorms(i);
+        max = Kokkos::max(max, equilInfo.colNorms(i));
       },
       Kokkos::Max<mag_type>(myMax));
   mag_type totalMax = STM::zero();

@@ -129,13 +129,19 @@ private:
    *Currently, the following MUMPS parameters/options are recognized and acted upon:
    *Please see MUMPS manual for details as parameters changed based on MUMPS version
    *<ul>
-   *   <li> \c "ICNTL(1)" </li>
-   *   <li> \c "ICNTL(2)" </li>
-   *   <li> \c "ICNTL(3)" </li>
-   *   <li> \c "ICNTL(4)" </li>
-   *   <li> \c "ICNTL(6)" </li>
-   *   <li> \c "ICNTL(9)" </li>
-   *   <li> \c "ICNTL(11)" </li>
+   *   <li> \c "ICNTL(1)": Output stream for error messages (default: -1, off).</li>
+   *   <li> \c "ICNTL(2)": Output stream for diagnostic printing and statistics local to each MPI process (default: off, -1).</li>
+   *   <li> \c "ICNTL(3)": Output stream for global information, collected on the host (default: -1, off).</li>
+   *   <li> \c "ICNTL(4)": Level of printing for error, warning, and diagnostic messages (default: 1).
+   *                       <=0 : No messages output.
+   *                         1 : Only error messages printed.
+   *                         2 : Errors, warnings, and main statistics printed.
+   *                         3 : Errors and warnings and terse diagnostics (only first ten entries of arrays) printed.
+   *                       >=4 : Errors, warnings and information on input, output paramete
+   *   </li>
+   *   <li> \c "ICNTL(6)": Permutes the matrix to a zero-free diagonal and/or scale the matrix (default: 7, automatic)</li>
+   *   <li> \c "ICNTL(9)": Computes the solution using transpose if not 1 (default: 1, non-transpose solve)</li>
+   *   <li> \c "ICNTL(11)": Computes statistics related to an error analysis of the linear system solved (default: 0, no analysis)</li>
    *</ul>
    *
    */

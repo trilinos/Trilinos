@@ -1505,4 +1505,28 @@ TEST_F(FieldDataSynchronization, interleavedOldAndNewDeviceAccess_properlySyncsT
   }
 }
 
+TEST_F(FieldDataSynchronization, lateFieldsDoNotAbandonModifiedDataOnDevice)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) GTEST_SKIP();
+  build_two_element_mesh_with_nodal_field();
+
+  {
+    auto deviceFieldData = m_field->data<stk::mesh::ReadWrite, stk::ngp::DeviceSpace>();
+  }
+
+  get_meta().enable_late_fields();
+
+  auto& lateField = get_meta().declare_field<int>(stk::topology::NODE_RANK, "late_field");
+  stk::mesh::put_field_on_mesh(lateField, get_meta().universal_part(), nullptr);
+
+  {
+    EXPECT_FALSE(m_field->need_sync_to_host());
+
+    // Better check, once the currently-blocked throw in sync_to_host() gets merged:
+    // EXPECT_NO_THROW(( m_field->data<stk::mesh::ReadWrite, stk::ngp::HostSpace>() ));
+  }
+}
+
+
+
 }

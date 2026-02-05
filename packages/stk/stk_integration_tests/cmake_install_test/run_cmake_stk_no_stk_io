@@ -27,7 +27,7 @@ rm -rf CMakeFiles CMakeCache.txt
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
 -DCMAKE_BUILD_TYPE=${build_type^^} \
--DCMAKE_CXX_STANDARD:STRING=17 \
+-DCMAKE_CXX_STANDARD:STRING=20 \
 -DCMAKE_CXX_FLAGS:STRING="${cmake_cxx_flags}" \
 -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -DTrilinos_ENABLE_TESTS:BOOL=OFF \
@@ -40,7 +40,6 @@ cmake \
 -DKokkos_ENABLE_CUDA_UVM:BOOL=${cuda_on_or_off} \
 -DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=OFF \
 -DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
--DTpetra_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
 -DSTK_ENABLE_TESTS:BOOL=ON \
 -DTrilinos_ENABLE_Intrepid2:BOOL=ON \
 -DTrilinos_ENABLE_STK:BOOL=ON \
@@ -49,7 +48,8 @@ cmake \
 -DTrilinos_ENABLE_STKTransfer:BOOL=ON \
 -DTrilinos_ENABLE_STKUnit_tests:BOOL=ON \
 -DTrilinos_ENABLE_STKDoc_tests:BOOL=ON \
--DTrilinos_ENABLE_Gtest:BOOL=ON \
+-DTPL_ENABLE_gtest:BOOL=ON \
+-DGTest_DIR=/fgs/william/googletest/install_gcc-12.3.0/lib64/cmake/GTest \
 -DCMAKE_EXE_LINKER_FLAGS="${cmake_exe_linker_flags}" \
 ${trilinos_src_dir}/
 

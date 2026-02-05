@@ -418,8 +418,6 @@ namespace FROSch {
             RCP<const TpetraMap<LO,GO,NO> > xTpetraMapUnique(new const TpetraMap<LO,GO,NO>(tpetraMapUnique));
             return rcp_dynamic_cast<const Map<LO,GO,NO> >(xTpetraMapUnique);
         } else { // This is an alternative implementation to createOneToOneMap()
-            FROSCH_WARNING("FROSch::BuildUniqueMap",(map->lib()==UseEpetra && map->getComm()->getRank()==0),"createOneToOneMap() does not exist for Epetra => Using a different implementation.");
-
             RCP<Vector<GO,LO,GO,NO> > myIndices = VectorFactory<GO,LO,GO,NO>::Build(map);
             myIndices->putScalar(map->getComm()->getRank()+1);
 
@@ -493,10 +491,7 @@ namespace FROSch {
         RCP<Import<LO,GO,NO> > scatter;
         RCP<Export<LO,GO,NO> > gather = ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
 
-        if (tmpMatrix->getRowMap()->lib()==UseEpetra) {
-            scatter = ImportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
-            tmpMatrix->doImport(*matrix,*scatter,ADD);
-        } else {
+        {
             tmpMatrix->doImport(*matrix,*gather,ADD);
         }
 
@@ -592,10 +587,7 @@ namespace FROSch {
         RCP<Import<LO,GO,NO> > scatter;
         RCP<Export<LO,GO,NO> > gather = ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
 
-        if (tmpGraph->getRowMap()->lib()==UseEpetra) {
-            scatter = ImportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
-            tmpGraph->doImport(*graph,*scatter,ADD);
-        } else {
+        {
             tmpGraph->doImport(*graph,*gather,ADD);
         }
 
@@ -951,7 +943,7 @@ namespace FROSch {
             /*
             globalstart += mapVector[j]->getMaxAllGlobalIndex();
 
-            if (mapVector[0]->lib()==UseEpetra || mapVector[j]->getGlobalNumElements()>0) {
+            if (mapVector[j]->getGlobalNumElements()>0) {
                 globalstart += 1;
             }
              */
@@ -997,7 +989,7 @@ namespace FROSch {
                 /*
                 globalstart += mapVector[j]->getMaxAllGlobalIndex();
 
-                if (mapVector[0]->lib()==UseEpetra || mapVector[j]->getGlobalNumElements()>0) {
+                if (mapVector[j]->getGlobalNumElements()>0) {
                 globalstart += 1;
             }
             */
@@ -1562,148 +1554,6 @@ namespace FROSch {
         return nullSpaceBasis;
     }
 
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-    template <class SC,class LO,class GO,class NO>
-    RCP<Map<LO,GO,NO> > ConvertToXpetra<SC,LO,GO,NO>::ConvertMap(UnderlyingLib lib,
-                                                                 const Epetra_BlockMap &map,
-                                                                 RCP<const Comm<int> > comm)
-    {
-        FROSCH_ASSERT(false,"FROSch::ConvertToXpetra: Needs specialization.");
-        return null;
-    }
-
-    template <class SC,class LO,class GO,class NO>
-    RCP<Matrix<SC,LO,GO,NO> > ConvertToXpetra<SC,LO,GO,NO>::ConvertMatrix(UnderlyingLib lib,
-                                                                          Epetra_CrsMatrix &matrix,
-                                                                          RCP<const Comm<int> > comm)
-    {
-        FROSCH_ASSERT(false,"FROSch::ConvertToXpetra: Needs specialization.");
-        return null;
-    }
-
-    template <class SC,class LO,class GO,class NO>
-    RCP<MultiVector<SC,LO,GO,NO> > ConvertToXpetra<SC,LO,GO,NO>::ConvertMultiVector(UnderlyingLib lib,
-                                                                                    Epetra_MultiVector &vector,
-                                                                                    RCP<const Comm<int> > comm)
-    {
-        FROSCH_DETAILTIMER_START(convertMultiVectorTime,"ConvertToXpetra::ConvertMultiVector");
-        RCP<Map<LO,GO,NO> > map = ConvertToXpetra<SC,LO,GO,NO>::ConvertMap(lib,vector.Map(),comm);
-        RCP<MultiVector<SC,LO,GO,NO> > xMultiVector = MultiVectorFactory<SC,LO,GO,NO>::Build(map,vector.NumVectors());
-        for (LO i=0; i<vector.NumVectors(); i++) {
-            for (LO j=0; j<vector.MyLength(); j++) {
-                xMultiVector->getDataNonConst(i)[j] = vector[i][j];
-            }
-        }
-        return xMultiVector;
-    }
-
-    template <class SC,class LO,class NO>
-    RCP<Map<LO,int,NO> > ConvertToXpetra<SC,LO,int,NO>::ConvertMap(UnderlyingLib lib,
-                                                                   const Epetra_BlockMap &map,
-                                                                   RCP<const Comm<int> > comm)
-    {
-        FROSCH_DETAILTIMER_START(convertMapTime,"ConvertToXpetra::ConvertMap");
-        ArrayView<int> mapArrayView(map.MyGlobalElements(),map.NumMyElements());
-
-        const int INVALID = Teuchos::OrdinalTraits<int>::invalid();
-        return MapFactory<LO,int,NO>::Build(lib,INVALID,mapArrayView,0,comm);
-    }
-
-    template <class SC,class LO,class NO>
-    RCP<Matrix<SC,LO,int,NO> > ConvertToXpetra<SC,LO,int,NO>::ConvertMatrix(UnderlyingLib lib,
-                                                                            Epetra_CrsMatrix &matrix,
-                                                                            RCP<const Comm<int> > comm)
-    {
-        FROSCH_DETAILTIMER_START(convertMatrixTime,"ConvertToXpetra::ConvertMatrix");
-        RCP<Map<LO,int,NO> > rowMap = ConvertToXpetra<SC,LO,int,NO>::ConvertMap(lib,matrix.RowMap(),comm);
-        RCP<Matrix<SC,LO,int,NO> > xmatrix = MatrixFactory<SC,LO,int,NO>::Build(rowMap,matrix.MaxNumEntries());
-        for (unsigned i=0; i<xmatrix->getLocalNumRows(); i++) {
-            LO numEntries;
-            LO* indices;
-            SC* values;
-            matrix.ExtractMyRowView(i,numEntries,values,indices);
-
-            Array<int> indicesArray(numEntries);
-            ArrayView<SC> valuesArrayView(values,numEntries);
-            for (LO j=0; j<numEntries; j++) {
-                indicesArray[j] = matrix.ColMap().GID(indices[j]);
-            }
-            xmatrix->insertGlobalValues(matrix.RowMap().GID(i),indicesArray(),valuesArrayView);
-        }
-        xmatrix->fillComplete();
-        return xmatrix;
-    }
-
-    template <class SC,class LO,class NO>
-    RCP<MultiVector<SC,LO,int,NO> > ConvertToXpetra<SC,LO,int,NO>::ConvertMultiVector(UnderlyingLib lib,
-                                                                                      Epetra_MultiVector &vector,
-                                                                                      RCP<const Comm<int> > comm)
-    {
-        FROSCH_DETAILTIMER_START(convertMultiVectorTime,"ConvertToXpetra::ConvertMultiVector");
-        RCP<Map<LO,int,NO> > map = ConvertToXpetra<SC,LO,int,NO>::ConvertMap(lib,vector.Map(),comm);
-        RCP<MultiVector<SC,LO,int,NO> > xMultiVector = MultiVectorFactory<SC,LO,int,NO>::Build(map,vector.NumVectors());
-        for (LO i=0; i<vector.NumVectors(); i++) {
-            for (LO j=0; j<vector.MyLength(); j++) {
-                xMultiVector->getDataNonConst(i)[j] = vector[i][j];
-            }
-        }
-        return xMultiVector;
-    }
-
-    template <class SC,class LO,class NO>
-    RCP<Map<LO,long long,NO> > ConvertToXpetra<SC,LO,long long,NO>::ConvertMap(UnderlyingLib lib,
-                                                                               const Epetra_BlockMap &map,
-                                                                               RCP<const Comm<int> > comm)
-    {
-        FROSCH_DETAILTIMER_START(convertMapTime,"ConvertToXpetra::ConvertMap");
-        ArrayView<long long> mapArrayView(map.MyGlobalElements64(),map.NumMyElements());
-
-        const long long INVALID = Teuchos::OrdinalTraits<long long>::invalid();
-        return MapFactory<LO,long long,NO>::Build(lib,INVALID,mapArrayView,0,comm);
-    }
-
-    template <class SC,class LO,class NO>
-    RCP<Matrix<SC,LO,long long,NO> > ConvertToXpetra<SC,LO,long long,NO>::ConvertMatrix(UnderlyingLib lib,
-                                                                                        Epetra_CrsMatrix &matrix,
-                                                                                        RCP<const Comm<int> > comm)
-    {
-        FROSCH_DETAILTIMER_START(convertMatrixTime,"ConvertToXpetra::ConvertMatrix");
-        RCP<Map<LO,long long,NO> > rowMap = ConvertToXpetra<SC,LO,long long,NO>::ConvertMap(lib,matrix.RowMap(),comm);
-        RCP<Matrix<SC,LO,long long,NO> > xmatrix = MatrixFactory<SC,LO,long long,NO>::Build(rowMap,matrix.MaxNumEntries());
-        for (unsigned i=0; i<xmatrix->getLocalNumRows(); i++) {
-            LO numEntries;
-            LO* indices;
-            SC* values;
-            matrix.ExtractMyRowView(i,numEntries,values,indices);
-
-            Array<long long> indicesArray(numEntries);
-            ArrayView<SC> valuesArrayView(values,numEntries);
-            for (LO j=0; j<numEntries; j++) {
-                indicesArray[j] = matrix.ColMap().GID64(indices[j]);
-            }
-            xmatrix->insertGlobalValues(matrix.RowMap().GID64(i),indicesArray(),valuesArrayView);
-        }
-        xmatrix->fillComplete();
-        return xmatrix;
-    }
-
-    template <class SC,class LO,class NO>
-    RCP<MultiVector<SC,LO,long long,NO> > ConvertToXpetra<SC,LO,long long,NO>::ConvertMultiVector(UnderlyingLib lib,
-                                                                                                  Epetra_MultiVector &vector,
-                                                                                                  RCP<const Comm<int> > comm)
-    {
-        FROSCH_DETAILTIMER_START(convertMultiVectorTime,"ConvertToXpetra::ConvertMultiVector");
-        RCP<Map<LO,long long,NO> > map = ConvertToXpetra<SC,LO,long long,NO>::ConvertMap(lib,vector.Map(),comm);
-        RCP<MultiVector<SC,LO,long long,NO> > xMultiVector = MultiVectorFactory<SC,LO,long long,NO>::Build(map,vector.NumVectors());
-        for (LO i=0; i<vector.NumVectors(); i++) {
-            for (LO j=0; j<vector.MyLength(); j++) {
-                xMultiVector->getDataNonConst(i)[j] = vector[i][j];
-            }
-        }
-        return xMultiVector;
-    }
-#endif
-
     template <class Type>
     RCP<Type> ExtractPtrFromParameterList(ParameterList& paramList,
                                           string namePtr)
@@ -1737,62 +1587,6 @@ namespace FROSch {
 
         return vector;
     }
-
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-    template <class LO,class GO,class NO>
-    RCP<Epetra_Map> ConvertToEpetra(const Map<LO,GO,NO> &map,
-                                    RCP<Epetra_Comm> epetraComm)
-    {
-        FROSCH_DETAILTIMER_START(convertToEpetraTime,"ConvertToEpetra");
-        ArrayView<const GO> elementList = map.getLocalElementList();
-
-        GO numGlobalElements = map.getGlobalNumElements();
-
-        if (elementList.size()>0)
-            return rcp(new Epetra_Map(numGlobalElements,elementList.size(),elementList.getRawPtr(),0,*epetraComm));
-        else
-            return rcp(new Epetra_Map(numGlobalElements,0,NULL,0,*epetraComm));
-    }
-
-    template <class SC, class LO, class GO,class NO>
-    RCP<Epetra_MultiVector> ConvertToEpetra(const MultiVector<SC,LO,GO,NO> &vector,
-                                            RCP<Epetra_Comm> epetraComm)
-    {
-        FROSCH_DETAILTIMER_START(convertToEpetraTime,"ConvertToEpetra");
-        RCP<Epetra_Map> map = ConvertToEpetra<LO,GO,NO>(*vector.getMap(),epetraComm);
-        RCP<Epetra_MultiVector > multiVector(new Epetra_MultiVector(*map,vector.getNumVectors()));
-        for (LO i=0; i<vector.getNumVectors(); i++) {
-            for (LO j=0; j<vector.getLocalLength(); j++) {
-                (*multiVector)[i][j] = vector.getData(i)[j];
-            }
-        }
-        return multiVector;
-    }
-
-    template <class SC, class LO,class GO, class NO>
-    RCP<Epetra_CrsMatrix> ConvertToEpetra(const Matrix<SC,LO,GO,NO> &matrix,
-                                          RCP<Epetra_Comm> epetraComm)
-    {
-        FROSCH_DETAILTIMER_START(convertToEpetraTime,"ConvertToEpetra");
-        RCP<Epetra_Map> map = ConvertToEpetra<LO,GO,NO>(*matrix.getMap(),epetraComm);
-        RCP<Epetra_CrsMatrix> matrixEpetra(new Epetra_CrsMatrix(::Copy,*map,matrix.getGlobalMaxNumRowEntries()));
-        ArrayView<const SC> valuesArrayView;
-        ArrayView<const LO> indicesArrayView;
-
-        for (LO i=0; i<(LO) matrix.getRowMap()->getLocalNumElements(); i++) {
-            matrix.getLocalRowView(i, indicesArrayView, valuesArrayView);
-            Array<GO> indicesGlobal(indicesArrayView.size());
-            for (LO j=0; j<indicesArrayView.size(); j++) {
-                indicesGlobal[j] = matrix.getColMap()->getGlobalElement(indicesArrayView[j]);
-            }
-            if (indicesArrayView.size()>0) {
-                matrixEpetra->InsertGlobalValues(matrix.getRowMap()->getGlobalElement(i), indicesArrayView.size(), &(valuesArrayView[0]), &(indicesGlobal[0]));
-            }
-        }
-        matrixEpetra->FillComplete();
-        return matrixEpetra;
-    }
-#endif
 
     template <class LO>
     Array<LO> GetIndicesFromString(string string, LO dummy)

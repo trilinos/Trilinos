@@ -68,11 +68,7 @@ namespace Intrepid2 {
     const auto numPoints = physPoints.extent(1);
     
     // init guess is created locally and non fad whatever refpoints type is 
-    using result_layout = typename DeduceLayout< decltype(refPoints) >::result_layout;
-    auto vcprop = Kokkos::common_view_alloc_prop(refPoints);
-    using common_value_type = refPointValueType;
-    Kokkos::DynRankView< common_value_type, result_layout, deviceType > initGuess ( Kokkos::view_alloc("CellTools::mapToReferenceFrame::initGuess", vcprop), numCells, numPoints, spaceDim );
-    //refPointViewSpType initGuess("CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim);
+    auto initGuess = Impl::createMatchingDynRankView(refPoints, "CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim );
     rst::clone(initGuess, cellCenter);
     
     mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, worksetCell, cellTopo);  
@@ -123,25 +119,19 @@ namespace Intrepid2 {
     const auto tol = tolerence();
 
     using result_layout = typename DeduceLayout< decltype(refPoints) >::result_layout;
-    auto vcprop = Kokkos::common_view_alloc_prop(refPoints);
-    using viewType = Kokkos::DynRankView<typename decltype(refPoints)::value_type, result_layout, DeviceType >;
-
     // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
-    viewType xOld(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::xOld", vcprop), numCells, numPoints, spaceDim);
-    viewType xTmp(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::xTmp", vcprop), numCells, numPoints, spaceDim);
+    auto xOld = Impl::createMatchingDynRankView(refPoints, "CellTools::mapToReferenceFrameInitGuess::xOld", numCells, numPoints, spaceDim);
+    auto xTmp = Impl::createMatchingDynRankView(refPoints, "CellTools::mapToReferenceFrameInitGuess::xTmp", numCells, numPoints, spaceDim);
 
     // deep copy may not work with FAD but this is right thing to do as it can move data between devices
     Kokkos::deep_copy(xOld, initGuess);
 
     // jacobian should select fad dimension between xOld and worksetCell as they are input; no front interface yet
-    auto vcpropJ = Kokkos::common_view_alloc_prop(refPoints, worksetCell);
-    // using valueTypeJ = typename Sacado::Promote<typename decltype(refPoints)::value_type,
-    //	                                        typename decltype(worksetCell)::value_type>::type;
-    using valueTypeJ = std::common_type_t<typename decltype(refPoints)::value_type,
-	                                  typename decltype(worksetCell)::value_type>;
+    using valueTypeJ = std::common_type_t<typename decltype(refPoints)::value_type, typename decltype(worksetCell)::value_type>;    
     using viewTypeJ = Kokkos::DynRankView<valueTypeJ, result_layout, DeviceType >;
-    viewTypeJ jacobian(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::jacobian", vcpropJ), numCells, numPoints, spaceDim, spaceDim);
-    viewTypeJ jacobianInv(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::jacobianInv", vcpropJ), numCells, numPoints, spaceDim, spaceDim);
+    using view_factory = Impl::CreateViewFactory<decltype(refPoints), decltype(worksetCell)>;
+    viewTypeJ jacobian = view_factory::template create_view<viewTypeJ>(refPoints, worksetCell, "CellTools::mapToReferenceFrameInitGuess::jacobian", numCells, numPoints, spaceDim, spaceDim);
+    viewTypeJ jacobianInv = view_factory::template create_view<viewTypeJ>(refPoints, worksetCell, "CellTools::mapToReferenceFrameInitGuess::jacobianInv", numCells, numPoints, spaceDim, spaceDim);
     
     using errorViewType = Kokkos::DynRankView<typename ScalarTraits<refPointValueType>::scalar_type, DeviceType>;
     errorViewType

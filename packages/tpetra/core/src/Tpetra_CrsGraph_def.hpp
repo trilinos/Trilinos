@@ -1729,39 +1729,6 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-size_t
-CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-    sortAndMergeRowIndices(const RowInfo& rowInfo,
-                           const bool sorted,
-                           const bool merged) {
-  const size_t origNumEnt = rowInfo.numEntries;
-  if (origNumEnt != Tpetra::Details::OrdinalTraits<size_t>::invalid() &&
-      origNumEnt != 0) {
-    auto lclColInds = this->getLocalIndsViewHostNonConst(rowInfo);
-
-    LocalOrdinal* const lclColIndsRaw = lclColInds.data();
-    if (!sorted) {
-      std::sort(lclColIndsRaw, lclColIndsRaw + origNumEnt);
-    }
-
-    if (!merged) {
-      LocalOrdinal* const beg    = lclColIndsRaw;
-      LocalOrdinal* const end    = beg + rowInfo.numEntries;
-      LocalOrdinal* const newend = std::unique(beg, end);
-      const size_t newNumEnt     = newend - beg;
-
-      // NOTE (mfh 08 May 2017) This is a host View, so it does not assume UVM.
-      this->k_numRowEntries_(rowInfo.localRow) = newNumEnt;
-      return origNumEnt - newNumEnt;  // the number of duplicates in the row
-    } else {
-      return static_cast<size_t>(0);  // assume no duplicates
-    }
-  } else {
-    return static_cast<size_t>(0);  // no entries in the row
-  }
-}
-
-template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     setDomainRangeMaps(const Teuchos::RCP<const map_type>& domainMap,
                        const Teuchos::RCP<const map_type>& rangeMap) {
@@ -4204,15 +4171,54 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   }
 }
 
+template <class execution_space, class LO, class rowptr_type, class colinds_type, class numRowEntries_type>
+void prepareSortMergeUnpackedGraph(rowptr_type rowptr, colinds_type colinds, numRowEntries_type numRowEntries) {
+  using ATS         = KokkosKernels::ArithTraits<LO>;
+  const auto unused = ATS::max();
+
+  auto numRows = rowptr.extent(0) - 1;
+
+  // make sure that unused entries will get ordered last
+  Kokkos::parallel_for(
+      "flag_unused_entries", Kokkos::RangePolicy<execution_space, LO>(0, numRows), KOKKOS_LAMBDA(const LO rlid) {
+        for (size_t jj = rowptr(rlid) + numRowEntries(rlid); jj < rowptr(rlid + 1); ++jj) {
+          colinds(jj) = unused;
+        }
+      });
+}
+
+template <class execution_space, class LO, class rowptr_type, class colinds_type, class numRowEntries_type>
+void mergeUnpackedGraph(rowptr_type rowptr, colinds_type colinds, numRowEntries_type numRowEntries) {
+  // For this to work correctly, we require that the unsused column entries have been filled
+  // with indices that get ordered last.
+
+  auto numRows = rowptr.extent(0) - 1;
+
+  // merge
+  // We cannot use KokkosSparse::sort_and_merge_matrix since we
+  // do not actually want to change the allocations.
+
+  Kokkos::parallel_for(
+      "merge_entries", Kokkos::RangePolicy<execution_space>(0, numRows), KOKKOS_LAMBDA(const LO rlid) {
+        auto rowNNZ = numRowEntries(rlid);
+        if (rowNNZ == 0) {
+          return;
+        }
+        auto rowBegin = rowptr(rlid);
+        auto pos      = rowBegin;
+        for (size_t offset = rowBegin + 1; offset < rowBegin + rowNNZ; ++offset) {
+          if ((colinds(offset) != colinds(pos))) {
+            colinds(++pos) = colinds(offset);
+          }
+        }
+        numRowEntries(rlid) = pos + 1 - rowBegin;
+      });
+}
+
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     sortAndMergeAllIndices(const bool sorted, const bool merged) {
   using std::endl;
-  using LO = LocalOrdinal;
-  using host_execution_space =
-      typename Kokkos::View<LO*, device_type>::host_mirror_type::
-          execution_space;
-  using range_type           = Kokkos::RangePolicy<host_execution_space, LO>;
   const char tfecfFuncName[] = "sortAndMergeAllIndices";
   Details::ProfilingRegion regionSortAndMerge("Tpetra::CrsGraph::sortAndMergeAllIndices");
 
@@ -4233,40 +4239,39 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
                                         "Please report this bug to the Tpetra developers.");
 
   if (!sorted || !merged) {
-    const LO lclNumRows(this->getLocalNumRows());
-    auto range = range_type(0, lclNumRows);
+    if (storageStatus_ == Details::STORAGE_1D_UNPACKED) {
+      // We are sorting & merging the unpacked views.
+      // This means that not all entries are actually in use. We need to take k_numRowEntries_ into account.
+      auto rowptr  = rowPtrsUnpacked_dev_;
+      auto colinds = lclIndsUnpacked_wdv.getDeviceView(Access::ReadWrite);
 
-    if (verbose_) {
-      size_t totalNumDups = 0;
-      // Sync and mark-modified the local indices before disabling WDV tracking
-      lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
-      Details::disableWDVTracking();
-      Kokkos::parallel_reduce(
-          range,
-          [this, sorted, merged](const LO lclRow, size_t& numDups) {
-            const RowInfo rowInfo = this->getRowInfo(lclRow);
-            numDups += this->sortAndMergeRowIndices(rowInfo, sorted, merged);
-          },
-          totalNumDups);
-      Details::enableWDVTracking();
-      std::ostringstream os;
-      os << *prefix << "totalNumDups=" << totalNumDups << endl;
-      std::cerr << os.str();
+      // Create a device copy of k_numRowEntries_.
+      auto k_numRowEntries_d = Kokkos::create_mirror_view_and_copy(execution_space(), k_numRowEntries_);
+
+      // set set unused column entries so they get sorted last
+      prepareSortMergeUnpackedGraph<execution_space, LocalOrdinal>(rowptr, colinds, k_numRowEntries_d);
+
+      if (!sorted) {
+        KokkosSparse::sort_crs_graph(rowptr, colinds);
+        this->indicesAreSorted_ = true;  // we just sorted every row
+      }
+      if (!merged) {
+        mergeUnpackedGraph<execution_space, LocalOrdinal>(rowptr, colinds, k_numRowEntries_d);
+        Kokkos::deep_copy(k_numRowEntries_, k_numRowEntries_d);
+        this->noRedundancies_ = true;  // we just merged every row
+      }
     } else {
-      // make sure that host rowptrs have been created before we enter the parallel region
-      (void)this->getRowPtrsUnpackedHost();
-      // Sync and mark-modified the local indices before disabling WDV tracking
-      lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
-      Details::disableWDVTracking();
-      Kokkos::parallel_for(range,
-                           [this, sorted, merged](const LO lclRow) {
-                             const RowInfo rowInfo = this->getRowInfo(lclRow);
-                             this->sortAndMergeRowIndices(rowInfo, sorted, merged);
-                           });
-      Details::enableWDVTracking();
+      auto rowptr  = rowPtrsPacked_dev_;
+      auto colinds = lclIndsPacked_wdv.getDeviceView(Access::ReadWrite);
+      if (!sorted && merged) {
+        KokkosSparse::sort_crs_graph(rowptr, colinds);
+        this->indicesAreSorted_ = true;  // we just sorted every row
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error,
+                                              "We should never get here."
+                                              "Please report this bug to the Tpetra developers.");
+      }
     }
-    this->indicesAreSorted_ = true;  // we just sorted every row
-    this->noRedundancies_   = true;  // we just merged every row
   }
 
   if (verbose_) {

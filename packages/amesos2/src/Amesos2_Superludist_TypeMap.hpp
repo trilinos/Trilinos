@@ -66,6 +66,17 @@ namespace SLUD {
   typedef mem_usage_t              amesos2_superlu_dist_mem_usage_t;
 #endif
 
+#if SUPERLU_DIST_MAJOR_VERSION > 9 || (SUPERLU_DIST_MAJOR_VERSION == 9 && SUPERLU_DIST_MINOR_VERSION > 1)
+  typedef int   perm_int_t;
+#else
+  typedef int_t perm_int_t;
+#endif
+
+#if SUPERLU_DIST_MAJOR_VERSION > 8
+  typedef int   info_t;
+#else
+  typedef int_t info_t;
+#endif
 
   namespace D {
 #include "superlu_ddefs.h"	// double-precision real definitions

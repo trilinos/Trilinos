@@ -316,7 +316,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib& lib, int ar
             std::string filename = runList.get<std::string>("filename");
             if (numReruns > 1)
               filename += "_run" + MueLu::toString(rerunCount);
-            filename += (lib == Xpetra::UseEpetra ? ".epetra" : ".tpetra");
+            filename += ".tpetra";
 
             savedOut  = dup(STDOUT_FILENO);
             openedOut = fopen(filename.c_str(), "w");

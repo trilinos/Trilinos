@@ -12,18 +12,7 @@
 #define AMESOS2_MATRIXTRAITS_HPP
 
 #include "Amesos2_config.h"
-
-#include <Tpetra_CrsMatrix.hpp>
-
-
-#ifdef HAVE_AMESOS2_EPETRA
-#  include <Epetra_RowMatrix.h>
-#  include <Epetra_CrsMatrix.h>
-// #  include <Epetra_MsrMatrix.h>
-#  include <Epetra_VbrMatrix.h>
-// and perhaps some others later...
-#endif
-
+#include "Tpetra_CrsMatrix.hpp"
 #include "Amesos2_Util.hpp"
 
 namespace Amesos2 {
@@ -108,77 +97,6 @@ namespace Amesos2 {
 
     typedef row_access major_access;
   };
-
-#ifdef HAVE_AMESOS2_EPETRA
-
-  template <>
-  struct MatrixTraits<Epetra_RowMatrix> {
-    typedef double scalar_t;
-    typedef double impl_scalar_type;
-    typedef int local_ordinal_t;
-    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
-    typedef Tpetra::Map<>::node_type node_t;
-
-    typedef Epetra_RowMatrix matrix_type;
-    typedef matrix_type local_matrix_t;
-    typedef int* sparse_ptr_type;
-    typedef int* sparse_idx_type;
-    typedef double* sparse_values_type;
-
-    typedef Kokkos::View<global_ordinal_t*, Kokkos::HostSpace> global_host_idx_type;
-    typedef Kokkos::View<scalar_t*,         Kokkos::HostSpace> global_host_val_type;
-
-    typedef row_access major_access;
-  };
-
-  template <>
-  struct MatrixTraits<Epetra_CrsMatrix> {
-    typedef double scalar_t;
-    typedef double impl_scalar_type;
-    typedef int local_ordinal_t;
-    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
-    typedef Tpetra::Map<>::node_type node_t;
-
-    typedef Epetra_CrsMatrix matrix_type;
-    typedef matrix_type local_matrix_t;
-    typedef int* sparse_ptr_type;
-    typedef int* sparse_idx_type;
-    typedef double* sparse_values_type;
-
-    typedef Kokkos::View<global_ordinal_t*, Kokkos::HostSpace> global_host_idx_type;
-    typedef Kokkos::View<scalar_t*,         Kokkos::HostSpace> global_host_val_type;
-
-    typedef row_access major_access;
-  };
-
-  // template <>
-  // struct MatrixTraits<Epetra_MsrMatrix> {
-  //   typedef double scalar_t;
-  //   typedef int local_ordinal_t;
-  //   typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
-  //   typedef Tpetra::Map<>::node_type node_t;
-
-  //   typedef row_access major_access;
-  // };
-
-  template <>
-  struct MatrixTraits<Epetra_VbrMatrix> {
-    typedef double scalar_t;
-    typedef double impl_scalar_type;
-    typedef int local_ordinal_t;
-    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
-    typedef Tpetra::Map<>::node_type node_t;
-
-    typedef Epetra_VbrMatrix matrix_type;
-    typedef matrix_type local_matrix_t;
-    typedef int* sparse_ptr_type;
-    typedef int* sparse_idx_type;
-    typedef double* sparse_values_type;
-
-    typedef row_access major_access;
-  };
-
-#endif
 
 }
 

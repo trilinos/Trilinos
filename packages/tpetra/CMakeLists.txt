@@ -24,7 +24,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # Supported Kokkos version in Trilinos
 # NOTE: When we snapshot Kokkos into Trilinos, we have to update these numbers to maintain
 # compatibility with external Kokkos
-SET(Tpetra_SUPPORTED_KOKKOS_VERSION "4.7.1")
+SET(Tpetra_SUPPORTED_KOKKOS_VERSION "5.0.2")
 
 
 # Option to allow developers to ignore incompatible Kokkos versions
@@ -521,6 +521,7 @@ ELSE ()
           SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT ON)
         ELSEIF (NOT (Tpetra_OMPI_INFO_OUTPUT_FOUND_FALSE EQUAL -1))
           MESSAGE (STATUS "  - \"ompi_info\" explicitly claims that your MPI implementation is NOT GPU aware.  You may want to use a different OpenMPI installation that is GPU aware, or reconfigure and rebuild OpenMPI in order to make it GPU aware.  For details, please refer to OpenMPI's website: https://www.open-mpi.org/faq/?category=runcuda .  You can still override this at runtime with the environment variable TPETRA_ASSUME_GPU_AWARE_MPI=ON or OFF.")
+          SET (Tpetra_ASSUME_GPU_AWARE_MPI_DEFAULT OFF)
         ELSE ()
           MESSAGE (STATUS "  - \"ompi_info\" claims to know nothing about whether your MPI implementation is GPU aware.  Its output is \"${Tpetra_OMPI_INFO_OUTPUT}\".")
         ENDIF ()

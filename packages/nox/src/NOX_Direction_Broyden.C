@@ -172,6 +172,27 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
   Teuchos::ParameterList&  p = params.sublist("Broyden");
 
+  const std::string restartFrequencyName = "Restart Frequency";
+  const std::string maxConvergenceRateName = "Max Convergence Rate";
+  const std::string memoryName = "Memory";
+  const int defaultRestartFrequency = 10;
+  int defaultMemorySize = defaultRestartFrequency;
+
+  {
+    Teuchos::ParameterList validParams("Broyden Valid Parameters");
+
+    // Add in defaults for inexact forcing terms
+    validParams = *(inexactNewtonUtils.getDefaultParameters());
+
+    validParams.set(restartFrequencyName, defaultRestartFrequency);
+    validParams.set(maxConvergenceRateName, 1.0);
+    // if the user explicitly set a restart frequency, use that as the default memory size
+    if (p.isType<int>(restartFrequencyName))
+      defaultMemorySize = p.get<int>(restartFrequencyName);
+    validParams.set(memoryName, defaultMemorySize);
+    p.validateParametersAndSetDefaults(validParams);
+  }
+
   // Save a pointer to the Linear Solver sublist
   lsParamsPtr = &p.sublist("Linear Solver");
 
@@ -183,16 +204,23 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   inexactNewtonUtils.reset(gd, params);
 
   // Get the restart frequency
-  cntMax = p.get("Restart Frequency", 10);
+  cntMax = p.get(restartFrequencyName, 10);
 
   // Get the maximum convergence rate
-  maxConvRate = p.get("Max Convergence Rate", 1.0);
+  maxConvRate = p.get(maxConvergenceRateName, 1.0);
 
   // Get the memory size
-  memorySizeMax = p.get("Memory", cntMax);
+  memorySizeMax = p.get(memoryName, cntMax);
 
   // Reset the memory
   memory.reset(memorySizeMax);
+
+  if (utils->isPrintType(NOX::Utils::Details)) {
+    utils->out() << "NOX::Direction::Broyden::reset() called:" << std::endl;
+    utils->out() << "  " << restartFrequencyName << " = " << cntMax << std::endl;
+    utils->out() << "  " << maxConvergenceRateName << " = " << maxConvRate << std::endl;
+    utils->out() << "  " << memoryName << " = " << memorySizeMax << std::endl << std::endl;
+  }
 
   return true;
 }
@@ -255,20 +283,22 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
 
   // Compute inexact forcing term if requested.
   inexactNewtonUtils.computeForcingTerm(soln,
-                    solver.getPreviousSolutionGroup(),
-                    solver.getNumIterations(),
-                    solver);
+                                        solver.getPreviousSolutionGroup(),
+                                        solver.getNumIterations(),
+                                        solver);
 
   // dir = - J_old^{-1} * F
   cnt ++;
+
   status = oldJacobianGrpPtr->applyJacobianInverse(*lsParamsPtr,
-                           soln.getF(),
-                           dir);
+                                                   soln.getF(),
+                                                   dir);
 
   oldJacobianGrpPtr->logLastLinearSolveStats(*globalDataPtr->getNonConstSolverStatistics());
 
   if (status != NOX::Abstract::Group::Ok)
     throwError("compute", "Unable to apply Jacobian inverse");
+
   dir.scale(-1.0);
 
   // Apply the Broyden modifications to the old Jacobian (implicitly)
@@ -325,21 +355,37 @@ bool NOX::Direction::Broyden::doRestart(NOX::Abstract::Group& soln,
                     const NOX::Solver::LineSearchBased& solver)
 {
   // Test 1 - First iteration!
-  if (solver.getNumIterations() == 0)
+  if (solver.getNumIterations() == 0) {
+    if (utils->isPrintType(NOX::Utils::Details)) {
+      utils->out() << "NOX::Deirection::Broyden::doRestart() Restarting due to iteration 0!" << std::endl;
+    }
     return true;
+  }
 
   // Test 2 - Frequency
-  if (cnt >= cntMax)
+  if (cnt >= cntMax) {
+    if (utils->isPrintType(NOX::Utils::Details)) {
+      utils->out() << "NOX::Deirection::Broyden::doRestart() Restarting due to restart frequency!" << std::endl;
+    }
     return true;
+  }
 
   // Test 3 - Last step was zero!
-  if (solver.getStepSize() == 0.0)
+  if (solver.getStepSize() == 0.0) {
+    if (utils->isPrintType(NOX::Utils::Details)) {
+      utils->out() << "NOX::Deirection::Broyden::doRestart() Restarting due to last step using size 0.0!" << std::endl;
+    }
     return true;
+  }
 
   // Test 4 - Check for convergence rate
   convRate = soln.getNormF() / solver.getPreviousSolutionGroup().getNormF();
-  if (convRate > maxConvRate)
+  if (convRate > maxConvRate) {
+    if (utils->isPrintType(NOX::Utils::Details)) {
+      utils->out() << "NOX::Deirection::Broyden::doRestart() Restarting due to convergence rate " << convRate << " > " << maxConvRate << std::endl;
+    }
     return true;
+  }
 
   return false;
 }

@@ -1068,13 +1068,13 @@ public:
     {
       switch (dataRank_)
       {
-        case 1: return getMatchingViewWithLabel(get_fixed_view<View1>(underlyingView_), "Intrepid2 Data", get_fixed_view<View1>(underlyingView_).extent_int(0));
-        case 2: return getMatchingViewWithLabel(get_fixed_view<View2>(underlyingView_), "Intrepid2 Data", get_fixed_view<View2>(underlyingView_).extent_int(0), get_fixed_view<View2>(underlyingView_).extent_int(1));
-        case 3: return getMatchingViewWithLabel(get_fixed_view<View3>(underlyingView_), "Intrepid2 Data", get_fixed_view<View3>(underlyingView_).extent_int(0), get_fixed_view<View3>(underlyingView_).extent_int(1), get_fixed_view<View3>(underlyingView_).extent_int(2));
-        case 4: return getMatchingViewWithLabel(get_fixed_view<View4>(underlyingView_), "Intrepid2 Data", get_fixed_view<View4>(underlyingView_).extent_int(0), get_fixed_view<View4>(underlyingView_).extent_int(1), get_fixed_view<View4>(underlyingView_).extent_int(2), get_fixed_view<View4>(underlyingView_).extent_int(3));
-        case 5: return getMatchingViewWithLabel(get_fixed_view<View5>(underlyingView_), "Intrepid2 Data", get_fixed_view<View5>(underlyingView_).extent_int(0), get_fixed_view<View5>(underlyingView_).extent_int(1), get_fixed_view<View5>(underlyingView_).extent_int(2), get_fixed_view<View5>(underlyingView_).extent_int(3), get_fixed_view<View5>(underlyingView_).extent_int(4));
-        case 6: return getMatchingViewWithLabel(get_fixed_view<View6>(underlyingView_), "Intrepid2 Data", get_fixed_view<View6>(underlyingView_).extent_int(0), get_fixed_view<View6>(underlyingView_).extent_int(1), get_fixed_view<View6>(underlyingView_).extent_int(2), get_fixed_view<View6>(underlyingView_).extent_int(3), get_fixed_view<View6>(underlyingView_).extent_int(4), get_fixed_view<View6>(underlyingView_).extent_int(5));
-        case 7: return getMatchingViewWithLabel(get_fixed_view<View7>(underlyingView_), "Intrepid2 Data", get_fixed_view<View7>(underlyingView_).extent_int(0), get_fixed_view<View7>(underlyingView_).extent_int(1), get_fixed_view<View7>(underlyingView_).extent_int(2), get_fixed_view<View7>(underlyingView_).extent_int(3), get_fixed_view<View7>(underlyingView_).extent_int(4), get_fixed_view<View7>(underlyingView_).extent_int(5), get_fixed_view<View7>(underlyingView_).extent_int(6));
+        case 1: return Impl::createMatchingDynRankView(get_fixed_view<View1>(underlyingView_), "Intrepid2 Data", get_fixed_view<View1>(underlyingView_).extent_int(0));
+        case 2: return Impl::createMatchingDynRankView(get_fixed_view<View2>(underlyingView_), "Intrepid2 Data", get_fixed_view<View2>(underlyingView_).extent_int(0), get_fixed_view<View2>(underlyingView_).extent_int(1));
+        case 3: return Impl::createMatchingDynRankView(get_fixed_view<View3>(underlyingView_), "Intrepid2 Data", get_fixed_view<View3>(underlyingView_).extent_int(0), get_fixed_view<View3>(underlyingView_).extent_int(1), get_fixed_view<View3>(underlyingView_).extent_int(2));
+        case 4: return Impl::createMatchingDynRankView(get_fixed_view<View4>(underlyingView_), "Intrepid2 Data", get_fixed_view<View4>(underlyingView_).extent_int(0), get_fixed_view<View4>(underlyingView_).extent_int(1), get_fixed_view<View4>(underlyingView_).extent_int(2), get_fixed_view<View4>(underlyingView_).extent_int(3));
+        case 5: return Impl::createMatchingDynRankView(get_fixed_view<View5>(underlyingView_), "Intrepid2 Data", get_fixed_view<View5>(underlyingView_).extent_int(0), get_fixed_view<View5>(underlyingView_).extent_int(1), get_fixed_view<View5>(underlyingView_).extent_int(2), get_fixed_view<View5>(underlyingView_).extent_int(3), get_fixed_view<View5>(underlyingView_).extent_int(4));
+        case 6: return Impl::createMatchingDynRankView(get_fixed_view<View6>(underlyingView_), "Intrepid2 Data", get_fixed_view<View6>(underlyingView_).extent_int(0), get_fixed_view<View6>(underlyingView_).extent_int(1), get_fixed_view<View6>(underlyingView_).extent_int(2), get_fixed_view<View6>(underlyingView_).extent_int(3), get_fixed_view<View6>(underlyingView_).extent_int(4), get_fixed_view<View6>(underlyingView_).extent_int(5));
+        case 7: return Impl::createMatchingDynRankView(get_fixed_view<View7>(underlyingView_), "Intrepid2 Data", get_fixed_view<View7>(underlyingView_).extent_int(0), get_fixed_view<View7>(underlyingView_).extent_int(1), get_fixed_view<View7>(underlyingView_).extent_int(2), get_fixed_view<View7>(underlyingView_).extent_int(3), get_fixed_view<View7>(underlyingView_).extent_int(4), get_fixed_view<View7>(underlyingView_).extent_int(5), get_fixed_view<View7>(underlyingView_).extent_int(6));
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
     }
@@ -1085,13 +1085,13 @@ public:
     {
       switch (dataRank_)
       {
-        case 1: return getMatchingViewWithLabel(get_fixed_view<View1>(underlyingView_), "Intrepid2 Data", dims...);
-        case 2: return getMatchingViewWithLabel(get_fixed_view<View2>(underlyingView_), "Intrepid2 Data", dims...);
-        case 3: return getMatchingViewWithLabel(get_fixed_view<View3>(underlyingView_), "Intrepid2 Data", dims...);
-        case 4: return getMatchingViewWithLabel(get_fixed_view<View4>(underlyingView_), "Intrepid2 Data", dims...);
-        case 5: return getMatchingViewWithLabel(get_fixed_view<View5>(underlyingView_), "Intrepid2 Data", dims...);
-        case 6: return getMatchingViewWithLabel(get_fixed_view<View6>(underlyingView_), "Intrepid2 Data", dims...);
-        case 7: return getMatchingViewWithLabel(get_fixed_view<View7>(underlyingView_), "Intrepid2 Data", dims...);
+        case 1: return Impl::createMatchingDynRankView(get_fixed_view<View1>(underlyingView_), "Intrepid2 Data", dims...);
+        case 2: return Impl::createMatchingDynRankView(get_fixed_view<View2>(underlyingView_), "Intrepid2 Data", dims...);
+        case 3: return Impl::createMatchingDynRankView(get_fixed_view<View3>(underlyingView_), "Intrepid2 Data", dims...);
+        case 4: return Impl::createMatchingDynRankView(get_fixed_view<View4>(underlyingView_), "Intrepid2 Data", dims...);
+        case 5: return Impl::createMatchingDynRankView(get_fixed_view<View5>(underlyingView_), "Intrepid2 Data", dims...);
+        case 6: return Impl::createMatchingDynRankView(get_fixed_view<View6>(underlyingView_), "Intrepid2 Data", dims...);
+        case 7: return Impl::createMatchingDynRankView(get_fixed_view<View7>(underlyingView_), "Intrepid2 Data", dims...);
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
     }
@@ -1415,34 +1415,34 @@ public:
       auto viewToMatch = A_MatData.getUnderlyingView();
       if (resultNumActiveDims == 1)
       {
-        data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0]);
+        data = Impl::createMatchingDynRankView(viewToMatch, "Data mat-mat result", resultDataDims[0]);
       }
       else if (resultNumActiveDims == 2)
       {
-        data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1]);
+        data = Impl::createMatchingDynRankView(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1]);
       }
       else if (resultNumActiveDims == 3)
       {
-        data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2]);
+        data = Impl::createMatchingDynRankView(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2]);
       }
       else if (resultNumActiveDims == 4)
       {
-        data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
+        data = Impl::createMatchingDynRankView(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3]);
       }
       else if (resultNumActiveDims == 5)
       {
-        data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
+        data = Impl::createMatchingDynRankView(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3], resultDataDims[4]);
       }
       else if (resultNumActiveDims == 6)
       {
-        data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
+        data = Impl::createMatchingDynRankView(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3], resultDataDims[4], resultDataDims[5]);
       }
       else // resultNumActiveDims == 7
       {
-        data = getMatchingViewWithLabel(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
+        data = Impl::createMatchingDynRankView(viewToMatch, "Data mat-mat result", resultDataDims[0], resultDataDims[1], resultDataDims[2],
                                         resultDataDims[3], resultDataDims[4], resultDataDims[5], resultDataDims[6]);
       }
       

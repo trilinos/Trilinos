@@ -25,11 +25,6 @@ ADD_SUBDIRECTORIES(
 # uncomment this to ensure Xpetra header files include all necessary dependencies
 #ADD_SUBDIRECTORY(compile_tests)
 
-IF (${PACKAGE_NAME}_ENABLE_Epetra)
-  ADD_SUBDIRECTORIES(
-    BlockedCrsMatrix
-  )
-ENDIF()
-  ADD_SUBDIRECTORIES(
-    BlockedMultiVector
-  )
+ADD_SUBDIRECTORIES(
+  BlockedMultiVector
+)

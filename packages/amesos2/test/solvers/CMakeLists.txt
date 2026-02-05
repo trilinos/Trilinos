@@ -345,22 +345,6 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
     COMM mpi
     )
 
-  IF (${PACKAGE_NAME}_ENABLE_Epetra)
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopySuperLUDistFiles_GapEpetra
-      SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-      SOURCE_FILES superludist_gapped_test_epetra.xml
-      EXEDEPS Solver_Test
-      )
-
-    TRIBITS_ADD_TEST(
-      Solver_Test
-      NAME SuperLU_DIST_Solver_Gapped_Test_Epetra
-      ARGS "--xml-params=superludist_gapped_test_epetra.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves"
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      COMM mpi
-      )
-  ENDIF()
 ENDIF()
 
 
@@ -376,7 +360,7 @@ IF (${PACKAGE_NAME}_ENABLE_PARDISO_MKL)
   TRIBITS_ADD_TEST(
     Solver_Test
     NAME Pardiso_MKL_Solver_Test
-    ARGS "--xml-params=pardiso_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    ARGS "--xml-params=pardiso_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --resymbol"
     STANDARD_PASS_OUTPUT
     COMM serial mpi
     )
@@ -394,7 +378,7 @@ IF (${PACKAGE_NAME}_ENABLE_CSS_MKL)
   TRIBITS_ADD_TEST(
     Solver_Test
     NAME Css_MKL_Solver_Test
-    ARGS "--xml-params=css_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    ARGS "--xml-params=css_mkl_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor --resymbol"
     NUM_MPI_PROCS 2
     STANDARD_PASS_OUTPUT
     COMM mpi

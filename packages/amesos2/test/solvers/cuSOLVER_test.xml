@@ -5,13 +5,7 @@
     <Parameter name="complex" type="bool" value="false"/>
     <ParameterList name="cuSOLVER">
 
-      <!-- Test Epetra objects first -->
-      <ParameterList name="epetra">
-        <!-- A non-list entry for epetra denotes a default run, name, type, and value are arbitrary -->
-        <Parameter name="defaultrun" type="bool" value="true"/>
-      </ParameterList>
-
-      <!-- Next test Tpetra objects -->
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
         <!-- these `run*' sublist names are arbitrary -->
         <ParameterList name="run0">

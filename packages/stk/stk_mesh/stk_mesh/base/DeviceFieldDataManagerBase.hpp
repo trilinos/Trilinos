@@ -45,11 +45,30 @@ class FieldDataBase;
 class DeviceFieldDataManagerBase
 {
 public:
+
+  struct BucketShift {
+    BucketShift(int _oldIndex, int _newIndex)
+      : oldIndex(_oldIndex),
+        newIndex(_newIndex)
+    {}
+    int oldIndex;
+    int newIndex;
+  };
+
+  struct SizeAndCapacity
+  {
+    size_t size = 0;
+    size_t capacity = 0;
+  };
+
   DeviceFieldDataManagerBase() = default;
   virtual ~DeviceFieldDataManagerBase() = default;
 
   virtual bool update_all_bucket_allocations() = 0;
   virtual void update_host_bucket_pointers(Ordinal fieldOrdinal) = 0;
+  virtual void reorder_and_resize_buckets(EntityRank rank, const FieldVector& fields,
+                                          const std::vector<SizeAndCapacity>& newBucketSizes,
+                                          const std::vector<BucketShift>& bucketShifts) = 0;
   virtual void swap_field_data(Ordinal fieldOrdinal1, Ordinal fieldOrdinal2) = 0;
   virtual void clear_bucket_is_modified(Ordinal fieldOrdinal) = 0;
   virtual std::any get_device_bucket_is_modified(Ordinal fieldOrdinal, int& fieldRankedOrdinal) = 0;
@@ -57,6 +76,15 @@ public:
   virtual bool has_unified_device_storage(Ordinal fieldOrdinal) const = 0;
 
   virtual void set_device_field_meta_data(FieldDataBase& fieldDataBase) = 0;
+
+  virtual void add_new_bucket(EntityRank rank,
+                              unsigned bucketSize,
+                              unsigned bucketCapacity,
+                              const PartVector& parts,
+                              bool deviceMeshMod = false) = 0;
+
+  virtual size_t synchronized_count() const = 0;
+
 };
 
 }

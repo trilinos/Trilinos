@@ -53,9 +53,9 @@
 #include <utility>    // for move, pair
 #include <vector>     // for vector, swap
 
-#include "MockMasterElementHex8.hpp"
-#include "MockMasterElementLine2.hpp"
-#include "MockMasterElementQuad4.hpp"
+#include "stk_transfer_util/MockMasterElementHex8.hpp"
+#include "stk_transfer_util/MockMasterElementLine2.hpp"
+#include "stk_transfer_util/MockMasterElementQuad4.hpp"
 #include <stk_io/FillMesh.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -233,7 +233,7 @@ class Hex8SendMesh : public stk::search::SourceMeshInterface<Hex8SendMesh>
     );
 
     parametricCoords.assign(3, std::numeric_limits<double>::max());
-    parametricDistance = Hex8::is_in_element(transposedElementCoords.data(), toCoords.data(), parametricCoords.data());
+    parametricDistance = stk::transfer_util::Hex8::is_in_element(transposedElementCoords.data(), toCoords.data(), parametricCoords.data());
 
     isWithinParametricTolerance = parametricDistance <= (1 + m_parametricTolerance);
   }

@@ -95,14 +95,13 @@ namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------
 
-
   template<typename DeviceType>
-  template<class MatrixViewType>
+  template<ordinal_type D, class MatrixViewType>
   KOKKOS_INLINE_FUNCTION
   typename MatrixViewType::value_type
   RealSpaceTools<DeviceType>::Serial::
-  det( const MatrixViewType inMat ) {
-
+  det( const MatrixViewType inMat )
+  {
     typedef typename decltype(inMat)::non_const_value_type value_type;
 #ifdef HAVE_INTREPID2_DEBUG
     {
@@ -118,27 +117,60 @@ namespace Intrepid2 {
 #endif
     }
 #endif
-    const auto dim = inMat.extent(0);
-    
-    value_type r_val = 0.0;
-    switch (dim) {
-    case 3:
-      r_val = ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
-                inMat(1,0) * inMat(2,1) * inMat(0,2) +
-                inMat(2,0) * inMat(0,1) * inMat(1,2) -
-                inMat(2,0) * inMat(1,1) * inMat(0,2) -
-                inMat(0,0) * inMat(2,1) * inMat(1,2) -
-                inMat(1,0) * inMat(0,1) * inMat(2,2) );
-      break;
-    case 2:
-      r_val = ( inMat(0,0) * inMat(1,1) -
-                inMat(0,1) * inMat(1,0) );
-      break;
-    case 1:
-      r_val = ( inMat(0,0) );
-      break;
+    if constexpr (D==1)
+    {
+      value_type r_val = ( inMat(0,0) );
+      return r_val;
     }
-    return r_val;
+    else if constexpr (D==2)
+    {
+      value_type r_val = ( inMat(0,0) * inMat(1,1) -
+                           inMat(0,1) * inMat(1,0) );
+      return r_val;
+    }
+    else if constexpr (D==3)
+    {
+      value_type r_val = ( inMat(0,0) * inMat(1,1) * inMat(2,2) +
+                           inMat(1,0) * inMat(2,1) * inMat(0,2) +
+                           inMat(2,0) * inMat(0,1) * inMat(1,2) -
+                           inMat(2,0) * inMat(1,1) * inMat(0,2) -
+                           inMat(0,0) * inMat(2,1) * inMat(1,2) -
+                           inMat(1,0) * inMat(0,1) * inMat(2,2) );
+      return r_val;
+    }
+    static_assert((D >= 1) && (D <= 3));
+  }
+
+  template<typename DeviceType>
+  template<class MatrixViewType>
+  KOKKOS_INLINE_FUNCTION
+  typename MatrixViewType::value_type
+  RealSpaceTools<DeviceType>::Serial::
+  det( const MatrixViewType inMat ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      bool dbgInfo = false;
+      INTREPID2_TEST_FOR_DEBUG_ABORT( getFunctorRank( inMat ) != 2, dbgInfo,
+                                      ">>> ERROR (RealSpaceTools::det): Rank of matrix argument must be 2!");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.extent(0) != inMat.extent(1), dbgInfo,
+                                      ">>> ERROR (RealSpaceTools::det): Matrix is not square!");
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.extent(0) < 1 || inMat.extent(0) > 3, dbgInfo,
+                                      ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+      typedef typename decltype(inMat)::non_const_value_type value_type;
+      if (dbgInfo) return value_type(0);
+#endif
+    }
+#endif
+    const auto dim = inMat.extent(0);
+    switch (dim) {
+      case 3: return det<3, MatrixViewType>(inMat); break;
+      case 2: return det<2, MatrixViewType>(inMat); break;
+      case 1: return det<1, MatrixViewType>(inMat); break;
+      default: INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE((dim < 1) || (dim > 3), std::invalid_argument, ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
+    }
+    // the following statement is unreachable, but some compilers complain about control reaching the end of non-void function without it.
+    INTREPID2_TEST_FOR_ABORT(true, "dim must be 1, 2, or 3");
   }
 
   // ------------------------------------------------------------------------------------
@@ -202,10 +234,10 @@ namespace Intrepid2 {
 
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type i) const {
-        const ordinal_type jend = _input.extent(1);
-        const ordinal_type kend = _input.extent(2);
-        const ordinal_type lend = _input.extent(3);
-        const ordinal_type mend = _input.extent(4);
+        const ordinal_type jend = _input.extent_int(1);
+        const ordinal_type kend = _input.extent_int(2);
+        const ordinal_type lend = _input.extent_int(3);
+        const ordinal_type mend = _input.extent_int(4);
 
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type k=0;k<kend;++k)
@@ -593,7 +625,8 @@ namespace Intrepid2 {
     /**
       \brief Functor to compute inverse see Intrepid2::RealSpaceTools for more
     */ 
-    template<typename inverseMatViewType,
+    template<ordinal_type D,
+             typename inverseMatViewType,
              typename inMatViewType>
     struct F_inverse {
       typedef typename inMatViewType::non_const_value_type value_type;
@@ -612,7 +645,7 @@ namespace Intrepid2 {
       apply_inverse(       invViewType inv,
                      const matViewType mat ) {
         // compute determinant
-        const value_type val = RealSpaceTools<>::Serial::det(mat);
+        const value_type val = RealSpaceTools<>::Serial::det<D,matViewType>(mat);
         
 #ifdef HAVE_INTREPID2_DEBUG
         {
@@ -626,20 +659,20 @@ namespace Intrepid2 {
 #endif
         }
 #endif
-        switch (mat.extent(0)) {
-        case 1: {
+        if constexpr (D==1)
+        {
           inv(0,0) = value_type(1)/mat(0,0);
-          break;
         }
-        case 2: {
+        else if constexpr (D==2)
+        {
           inv(0,0) =   mat(1,1)/val;
           inv(1,1) =   mat(0,0)/val;
 
           inv(1,0) = - mat(1,0)/val;
           inv(0,1) = - mat(0,1)/val;
-          break;
         }
-        case 3: {
+        else if constexpr (D==3)
+        {
           value_type val0, val1, val2;
 
           val0 =   mat(1,1)*mat(2,2) - mat(2,1)*mat(1,2);
@@ -665,9 +698,8 @@ namespace Intrepid2 {
           inv(0,2) = val0/val;
           inv(1,2) = val1/val;
           inv(2,2) = val2/val;
-          break;
         }
-        }
+        static_assert((D >= 1) && (D <= 3));
       }
       
       template< bool B, class T = void >
@@ -711,7 +743,7 @@ namespace Intrepid2 {
   }
 
   template<typename DeviceType>
-  template<class InverseMatrixViewType, class MatrixViewType>
+  template<ordinal_type D, class InverseMatrixViewType, class MatrixViewType>
   void
   RealSpaceTools<DeviceType>::
   inverse( InverseMatrixViewType inverseMats, MatrixViewType inMats ) {
@@ -734,7 +766,7 @@ namespace Intrepid2 {
 #endif
 
     using ExecSpaceType = typename DeviceType::execution_space;
-    using FunctorType = FunctorRealSpaceTools::F_inverse<InverseMatrixViewType, MatrixViewType>;
+    using FunctorType = FunctorRealSpaceTools::F_inverse<D, InverseMatrixViewType, MatrixViewType>;
 
     switch (rank) {
     case 3: { // output P,D,D and input P,D,D
@@ -755,6 +787,24 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                                     ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
     }
+    }
+  }
+
+  template<typename DeviceType>
+  template<class InverseMatrixViewType, class MatrixViewType>
+  void
+  RealSpaceTools<DeviceType>::
+  inverse( InverseMatrixViewType inverseMats, MatrixViewType inMats ) {
+    // both Views are either shape C,P,D,D or P,D,D
+    // either way, the second rank is D
+    
+    const auto dim = inMats.extent(2);
+    switch (dim)
+    {
+      case 1: inverse<1,InverseMatrixViewType,MatrixViewType>(inverseMats,inMats); break;
+      case 2: inverse<2,InverseMatrixViewType,MatrixViewType>(inverseMats,inMats); break;
+      case 3: inverse<3,InverseMatrixViewType,MatrixViewType>(inverseMats,inMats); break;
+      default: INTREPID2_TEST_FOR_EXCEPTION((dim < 1) || (dim > 3), std::invalid_argument, ">>> ERROR (RealSpaceTools::inverse): Spatial dimension must be 1, 2, or 3!");
     }
   }
 

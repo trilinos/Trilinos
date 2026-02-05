@@ -310,6 +310,11 @@ Superlu<Matrix,Vector>::numericFactorization_impl()
 #endif
 
     if( data_.options.Equil == SLU::YES ){
+#ifdef HAVE_AMESOS2_TIMERS
+    Teuchos::RCP< Teuchos::Time > Amesos2SLU_EQL = Teuchos::TimeMonitor::getNewCounter ("Time to scale matrix");
+    Teuchos::TimeMonitor equilTimer(*Amesos2SLU_EQL);
+#endif
+
       magnitude_type rowcnd, colcnd, amax;
 
       // calculate row and column scalings
@@ -474,11 +479,6 @@ Superlu<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> > 
                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
 {
   using Teuchos::as;
-#ifdef HAVE_AMESOS2_TIMERS
-    Teuchos::RCP< Teuchos::Time > Amesos2SolveTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Amesos2");
-    Teuchos::TimeMonitor solveTimer(*Amesos2SolveTimer_);
-#endif
-
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 

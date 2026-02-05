@@ -1,20 +1,5 @@
-/*
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSPARSE_SPGEMM_SYMBOLIC_TPL_SPEC_DECL_HPP_
 #define KOKKOSPARSE_SPGEMM_SYMBOLIC_TPL_SPEC_DECL_HPP_
@@ -175,8 +160,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
                               const ConstEntriesType &entriesB, const RowMapType &row_mapC, bool computeRowptrs) {
   using scalar_type      = typename KernelHandle::nnz_scalar_t;
   using ordinal_type     = typename KernelHandle::nnz_lno_t;
-  const auto alpha       = Kokkos::ArithTraits<scalar_type>::one();
-  const auto beta        = Kokkos::ArithTraits<scalar_type>::zero();
+  const auto alpha       = KokkosKernels::ArithTraits<scalar_type>::one();
+  const auto beta        = KokkosKernels::ArithTraits<scalar_type>::zero();
   void *dummyValues_AB   = nullptr;
   bool firstSymbolicCall = false;
   if (!handle->is_symbolic_called()) {
@@ -340,7 +325,8 @@ void spgemm_symbolic_cusparse(KernelHandle *handle, lno_t m, lno_t n, lno_t k, c
                                 typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,                \
                                 c_int_view_t row_mapA, c_int_view_t entriesA, bool, c_int_view_t row_mapB,             \
                                 c_int_view_t entriesB, bool, int_view_t row_mapC, bool computeRowptrs) {               \
-      std::string label = "KokkosSparse::spgemm_symbolic[TPL_CUSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]";   \
+      std::string label =                                                                                              \
+          "KokkosSparse::spgemm_symbolic[TPL_CUSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";            \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       spgemm_symbolic_cusparse(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, row_mapB, entriesB, row_mapC, \
                                computeRowptrs);                                                                        \
@@ -409,8 +395,8 @@ void spgemm_symbolic_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_
   // alpha, beta are on host, but since we use singleton on the rocsparse
   // handle, we save/restore the pointer mode to not interference with
   // others' use
-  const auto alpha = Kokkos::ArithTraits<scalar_type>::one();
-  const auto beta  = Kokkos::ArithTraits<scalar_type>::zero();
+  const auto alpha = KokkosKernels::ArithTraits<scalar_type>::one();
+  const auto beta  = KokkosKernels::ArithTraits<scalar_type>::zero();
   rocsparse_pointer_mode oldPtrMode;
 
   KOKKOSSPARSE_IMPL_ROCSPARSE_SAFE_CALL(rocsparse_get_pointer_mode(h->rocsparseHandle, &oldPtrMode));
@@ -442,41 +428,42 @@ void spgemm_symbolic_rocsparse(KernelHandle *handle, typename KernelHandle::nnz_
   handle->set_computed_rowptrs();
 }
 
-#define SPGEMM_SYMBOLIC_DECL_ROCSPARSE(SCALAR, TPL_AVAIL)                                                             \
-  template <>                                                                                                         \
-  struct SPGEMM_SYMBOLIC<                                                                                             \
-      KokkosKernels::Experimental::KokkosKernelsHandle<const int, const int, const SCALAR, Kokkos::HIP,               \
-                                                       Kokkos::HIPSpace, Kokkos::HIPSpace>,                           \
-      Kokkos::View<const int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
-      Kokkos::View<const int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
-      Kokkos::View<const int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
-      Kokkos::View<const int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,         \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
-      Kokkos::View<int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,               \
-                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                          \
-      true, TPL_AVAIL> {                                                                                              \
-    using KernelHandle =                                                                                              \
-        KokkosKernels::Experimental::KokkosKernelsHandle<const int, const int, const SCALAR, Kokkos::HIP,             \
-                                                         Kokkos::HIPSpace, Kokkos::HIPSpace>;                         \
-    using c_int_view_t =                                                                                              \
-        Kokkos::View<const int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,       \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                                        \
-    using int_view_t =                                                                                                \
-        Kokkos::View<int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,             \
-                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                                        \
-    static void spgemm_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,                             \
-                                typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,               \
-                                c_int_view_t row_mapA, c_int_view_t entriesA, bool, c_int_view_t row_mapB,            \
-                                c_int_view_t entriesB, bool, int_view_t row_mapC, bool) {                             \
-      std::string label = "KokkosSparse::spgemm_symbolic[TPL_ROCSPARSE," + Kokkos::ArithTraits<SCALAR>::name() + "]"; \
-      Kokkos::Profiling::pushRegion(label);                                                                           \
-      spgemm_symbolic_rocsparse(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, row_mapB, entriesB,         \
-                                row_mapC);                                                                            \
-      Kokkos::Profiling::popRegion();                                                                                 \
-    }                                                                                                                 \
+#define SPGEMM_SYMBOLIC_DECL_ROCSPARSE(SCALAR, TPL_AVAIL)                                                       \
+  template <>                                                                                                   \
+  struct SPGEMM_SYMBOLIC<                                                                                       \
+      KokkosKernels::Experimental::KokkosKernelsHandle<const int, const int, const SCALAR, Kokkos::HIP,         \
+                                                       Kokkos::HIPSpace, Kokkos::HIPSpace>,                     \
+      Kokkos::View<const int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                    \
+      Kokkos::View<const int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                    \
+      Kokkos::View<const int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                    \
+      Kokkos::View<const int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,   \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                    \
+      Kokkos::View<int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,         \
+                   Kokkos::MemoryTraits<Kokkos::Unmanaged>>,                                                    \
+      true, TPL_AVAIL> {                                                                                        \
+    using KernelHandle =                                                                                        \
+        KokkosKernels::Experimental::KokkosKernelsHandle<const int, const int, const SCALAR, Kokkos::HIP,       \
+                                                         Kokkos::HIPSpace, Kokkos::HIPSpace>;                   \
+    using c_int_view_t =                                                                                        \
+        Kokkos::View<const int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>, \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                                  \
+    using int_view_t =                                                                                          \
+        Kokkos::View<int *, KokkosKernels::default_layout, Kokkos::Device<Kokkos::HIP, Kokkos::HIPSpace>,       \
+                     Kokkos::MemoryTraits<Kokkos::Unmanaged>>;                                                  \
+    static void spgemm_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t m,                       \
+                                typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,         \
+                                c_int_view_t row_mapA, c_int_view_t entriesA, bool, c_int_view_t row_mapB,      \
+                                c_int_view_t entriesB, bool, int_view_t row_mapC, bool) {                       \
+      std::string label =                                                                                       \
+          "KokkosSparse::spgemm_symbolic[TPL_ROCSPARSE," + KokkosKernels::ArithTraits<SCALAR>::name() + "]";    \
+      Kokkos::Profiling::pushRegion(label);                                                                     \
+      spgemm_symbolic_rocsparse(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, row_mapB, entriesB,   \
+                                row_mapC);                                                                      \
+      Kokkos::Profiling::popRegion();                                                                           \
+    }                                                                                                           \
   };
 
 SPGEMM_SYMBOLIC_DECL_ROCSPARSE(float, false)
@@ -561,7 +548,7 @@ void spgemm_symbolic_mkl(KernelHandle *handle, typename KernelHandle::nnz_lno_t 
                                 typename KernelHandle::nnz_lno_t n, typename KernelHandle::nnz_lno_t k,                \
                                 c_int_view_t row_mapA, c_int_view_t entriesA, bool, c_int_view_t row_mapB,             \
                                 c_int_view_t entriesB, bool, int_view_t row_mapC, bool) {                              \
-      std::string label = "KokkosSparse::spgemm_symbolic[TPL_MKL," + Kokkos::ArithTraits<SCALAR>::name() + "]";        \
+      std::string label = "KokkosSparse::spgemm_symbolic[TPL_MKL," + KokkosKernels::ArithTraits<SCALAR>::name() + "]"; \
       Kokkos::Profiling::pushRegion(label);                                                                            \
       spgemm_symbolic_mkl(handle->get_spgemm_handle(), m, n, k, row_mapA, entriesA, row_mapB, entriesB, row_mapC);     \
       Kokkos::Profiling::popRegion();                                                                                  \

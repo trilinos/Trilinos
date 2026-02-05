@@ -133,7 +133,7 @@ ENDFUNCTION()
 
 
 set(ALL_TOPLEVEL_PACKAGES_REGEX
-  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos Teuchos KokkosKernels .*Tpetra .*Thyra .*SEACAS .*Teko .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL .*Panzer Adelus TrilinosCouplings TrilinosBuildStats TrilinosInstallTests")
+  "TrilinosFrameworkTests TrilinosATDMConfigTests .*Kokkos KokkosKernels Teuchos .*Tpetra .*Thyra .*SEACAS .*Teko .*MueLu .*ShyLU_DD ShyLU .*Tempus Stokhos ROL .*Panzer Adelus TrilinosCouplings TrilinosBuildStats TrilinosInstallTests")
 
 create_get_changed_trilinos_packages_test(ProjectsList_TeuchosCore
   "ProjectsList.cmake\npackages/teuchos/core/CMakeLists.txt"

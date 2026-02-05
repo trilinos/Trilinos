@@ -127,14 +127,17 @@ namespace Intrepid2 {
             const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
             
             OutValueType diff = 0; 
-            auto tol = epsilon<double>();
+            const auto tol = 100.0 * epsilon<double>();
             for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
                   diff = 0;
-                  for (int d=0;d<ndim;++d)
+                  OutValueType maxMagnitude = 0;
+                  for (int d=0;d<ndim;++d) {
                     diff += std::abs(outputValuesB_Host(i,j,d) - outputValuesA_Host(ic,i,j,d));
-                  if (diff > tol) {
+                    maxMagnitude = std::max(maxMagnitude, std::max(std::abs(outputValuesA_Host(ic,i,j,d)), std::abs(outputValuesB_Host(i,j,d))));
+                  }
+                  if (diff > tol * std::max(1.0, maxMagnitude)) {
                     ++errorFlag;
                     std::cout << " order: " << order
                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
@@ -153,12 +156,15 @@ namespace Intrepid2 {
             const auto outputCurlsB_Host = Kokkos::create_mirror_view(outputCurlsB); Kokkos::deep_copy(outputCurlsB_Host, outputCurlsB);
             
             OutValueType diff = 0;
-            auto tol = epsilon<double>();
+            const auto tol = 100.0 * epsilon<double>();
             for (size_t ic=0;ic<outputCurlsA_Host.extent(0);++ic)
               for (size_t i=0;i<outputCurlsA_Host.extent(1);++i)
                 for (size_t j=0;j<outputCurlsA_Host.extent(2);++j) {
-                  diff = std::abs(outputCurlsB_Host(i,j) - outputCurlsA_Host(ic,i,j));
-                  if (diff > tol) {
+                  const auto valA = outputCurlsA_Host(ic,i,j);
+                  const auto valB = outputCurlsB_Host(i,j);
+                  diff = std::abs(valB - valA);
+                  const auto maxMagnitude = std::max(std::abs(valA), std::abs(valB));
+                  if (diff > tol * std::max(1.0, maxMagnitude)) {
                     ++errorFlag;
                     std::cout << " order: " << order
                               << ", ic: " << ic << ", i: " << i << ", j: " << j 

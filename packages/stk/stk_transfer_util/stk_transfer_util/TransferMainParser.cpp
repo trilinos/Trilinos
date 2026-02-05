@@ -7,6 +7,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <utility>
 #include "TransferMainParser.hpp"
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_transfer_util/LogMessage.hpp>
@@ -27,16 +28,16 @@ TransferMainParser::TransferMainParser(MPI_Comm comm)
 void TransferMainParser::add_options_to_parser() 
 {
 
-  stk::CommandLineOption fromMeshFilename{m_optionNames.fromMesh, "f",
-          "Mesh to read from, i.e., source mesh. (required)"};
-  stk::CommandLineOption toMeshFilename{m_optionNames.toMesh, "t",
-          "Mesh to write to, i.e., destination or output mesh. (required)"};
-  stk::CommandLineOption fieldList{m_optionNames.fieldList, "l",
-          "Comma-separated list of fields to transfer. Syntax example: field_1, field_2. If this option is not specified, all fields will be transferred. "};
+  stk::CommandLineOption sendMeshFilename{m_optionNames.sendMesh, "s",
+          "Mesh to read from, i.e., send mesh. (required)"};
+  stk::CommandLineOption recvMeshFilename{m_optionNames.recvMesh, "r",
+          "Mesh to write to, i.e., receive or output mesh. (required)"};
+  stk::CommandLineOption fieldList{m_optionNames.fieldList, "f",
+          "Comma-separated list of send/receive field names to transfer. To transfer between fields of different names, use a colon separator (send_field_1:recv_field_1). To transfer a field of the same name, specify the field name once (field_2). Note: When only one field name is specified, a field with that name will be created on the receive mesh if it does not exist already. Syntax example: field_1, field_2:recv_field_2. If this option is not specified, all fields will be transferred. "};
   stk::CommandLineOption ExtrapolateOption{m_optionNames.ExtrapolateOption, "e",
           "Extrapolation option to be used. If this option is not specified, it will default to IGNORE."};
-  m_cmdLineParser.add_required<std::string>(fromMeshFilename);
-  m_cmdLineParser.add_required<std::string>(toMeshFilename);
+  m_cmdLineParser.add_required<std::string>(sendMeshFilename);
+  m_cmdLineParser.add_required<std::string>(recvMeshFilename);
   m_cmdLineParser.add_optional<std::string>(fieldList);
   m_cmdLineParser.add_optional<std::string>(ExtrapolateOption);
 
@@ -81,8 +82,8 @@ TransferMainSettings TransferMainParser::generate_transfer_settings()
   if (m_transferParserStatus == TransferParserStatus::SUCCESS) {
     set_num_input_processors(settings);
     set_num_output_processors(settings);
-    set_fromMesh_filename(settings);
-    set_toMesh_filename(settings);
+    set_sendMesh_filename(settings);
+    set_recvMesh_filename(settings);
     set_transfer_fields(settings);
     set_extrapolate_option(settings);
   }
@@ -100,16 +101,16 @@ void TransferMainParser::set_num_output_processors(TransferMainSettings& setting
   settings.set_num_output_processors(1);
 }
 
-void TransferMainParser::set_fromMesh_filename(TransferMainSettings& settings)
+void TransferMainParser::set_sendMesh_filename(TransferMainSettings& settings)
 {
-  const std::string fromMesh = m_cmdLineParser.get_option_value<std::string>(m_optionNames.fromMesh);
-  settings.set_fromMesh_filename(fromMesh);
+  const std::string sendMesh = m_cmdLineParser.get_option_value<std::string>(m_optionNames.sendMesh);
+  settings.set_sendMesh_filename(sendMesh);
 }
 
-void TransferMainParser::set_toMesh_filename(TransferMainSettings& settings)
+void TransferMainParser::set_recvMesh_filename(TransferMainSettings& settings)
 {
-  const std::string toMesh = m_cmdLineParser.get_option_value<std::string>(m_optionNames.toMesh);
-  settings.set_toMesh_filename(toMesh);
+  const std::string recvMesh = m_cmdLineParser.get_option_value<std::string>(m_optionNames.recvMesh);
+  settings.set_recvMesh_filename(recvMesh);
 }
 
 void TransferMainParser::set_transfer_fields(TransferMainSettings& settings)
@@ -117,9 +118,17 @@ void TransferMainParser::set_transfer_fields(TransferMainSettings& settings)
   if (m_cmdLineParser.is_option_parsed(m_optionNames.fieldList))
   {
     const std::string fieldList = m_cmdLineParser.get_option_value<std::string>(m_optionNames.fieldList);
-    std::vector<std::string> fieldNames = stk::split_csv_string(fieldList);
-    for (const std::string & fieldName : fieldNames) {
-      settings.set_transfer_field(fieldName);  
+    std::vector<std::string> fieldNamePairs = stk::split_csv_string(fieldList);
+    for (const std::string & fieldNames : fieldNamePairs) {
+      auto fieldNamePair = stk::split_string(fieldNames, ':');
+      STK_ThrowRequireMsg(fieldNamePair.size() <= 2 && fieldNamePair[0] != "",
+                          "Please check for syntax errors in the provided field names list: " + fieldList);
+      if (fieldNamePair.size() == 1) {
+        settings.set_transfer_field({fieldNamePair[0], fieldNamePair[0]});
+      }
+      else {
+        settings.set_transfer_field({fieldNamePair[0], fieldNamePair[1]});
+      }
     }
   }
 }

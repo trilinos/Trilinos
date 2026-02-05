@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 // Note: Luc Berger-Vergiat 04/14/21
 //       This tests uses KOKKOS_LAMBDA so we need
 //       to make sure that these are enabled in
@@ -36,7 +23,7 @@ void impl_test_team_nrm2(int N, int K) {
   const team_policy policy(K, Kokkos::AUTO);
 
   typedef typename ViewTypeA::value_type ScalarA;
-  typedef Kokkos::ArithTraits<ScalarA> AT;
+  typedef KokkosKernels::ArithTraits<ScalarA> AT;
 
   view_stride_adapter<ViewTypeA> a("A", N, K);
 
@@ -50,7 +37,7 @@ void impl_test_team_nrm2(int N, int K) {
   for (int j = 0; j < K; j++) {
     expected_result[j] = typename AT::mag_type();
     for (int i = 0; i < N; i++) expected_result[j] += AT::abs(a.h_view(i, j)) * AT::abs(a.h_view(i, j));
-    expected_result[j] = Kokkos::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
+    expected_result[j] = KokkosKernels::ArithTraits<typename AT::mag_type>::sqrt(expected_result[j]);
   }
 
   double eps = std::is_same<ScalarA, float>::value ? 2 * 1e-5 : 1e-7;

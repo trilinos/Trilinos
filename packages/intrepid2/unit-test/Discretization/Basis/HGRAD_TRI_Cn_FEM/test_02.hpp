@@ -145,12 +145,15 @@ namespace Intrepid2 {
             const auto outputValuesB_Host = Kokkos::create_mirror_view(outputValuesB); Kokkos::deep_copy(outputValuesB_Host, outputValuesB);
             
             OutValueType diff = 0; 
-            auto tol = epsilon<double>();
+            const auto tol = 100.0 * epsilon<double>();
             for (size_t ic=0;ic<outputValuesA_Host.extent(0);++ic)
               for (size_t i=0;i<outputValuesA_Host.extent(1);++i)
                 for (size_t j=0;j<outputValuesA_Host.extent(2);++j) {
-                  diff = std::abs(outputValuesB_Host(i,j) - outputValuesA_Host(ic,i,j));
-                  if (diff > tol) {
+                  const auto valA = outputValuesA_Host(ic,i,j);
+                  const auto valB = outputValuesB_Host(i,j);
+                  diff = std::abs(valB - valA);
+                  const auto maxMagnitude = std::max(std::abs(valA), std::abs(valB));
+                  if (diff > tol * std::max(1.0, maxMagnitude)) {
                     ++errorFlag;
                     std::cout << " order: " << order
                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
@@ -169,14 +172,17 @@ namespace Intrepid2 {
             const auto outputGradsB_Host = Kokkos::create_mirror_view(outputGradsB); Kokkos::deep_copy(outputGradsB_Host, outputGradsB);
             
             OutValueType diff = 0;
-            auto tol = epsilon<double>();
+            const auto tol = 100.0 * epsilon<double>();
             for (size_t ic=0;ic<outputGradsA_Host.extent(0);++ic)
               for (size_t i=0;i<outputGradsA_Host.extent(1);++i)
                 for (size_t j=0;j<outputGradsA_Host.extent(2);++j) {
                   diff = 0;
-                  for (int d=0;d<ndim;++d)
+                  OutValueType maxMagnitude = 0;
+                  for (int d=0;d<ndim;++d) {
                     diff += std::abs(outputGradsB_Host(i,j,d) - outputGradsA_Host(ic,i,j,d));
-                  if (diff > tol) {
+                    maxMagnitude = std::max(maxMagnitude, std::max(std::abs(outputGradsA_Host(ic,i,j,d)), std::abs(outputGradsB_Host(i,j,d))));
+                  }
+                  if (diff > tol * std::max(1.0, maxMagnitude)) {
                     ++errorFlag;
                     std::cout << " order: " << order
                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
@@ -195,7 +201,7 @@ namespace Intrepid2 {
             const auto outputCurlsB_Host = Kokkos::create_mirror_view(outputCurlsB); Kokkos::deep_copy(outputCurlsB_Host, outputCurlsB);
             
             OutValueType diff = 0;
-            auto tol = epsilon<double>();
+            const auto tol = 100.0 * epsilon<double>();
             for (size_t ic=0;ic<outputCurlsA_Host.extent(0);++ic)
               for (size_t i=0;i<outputCurlsA_Host.extent(1);++i)
                 for (size_t j=0;j<outputCurlsA_Host.extent(2);++j) {

@@ -469,11 +469,11 @@ namespace BaskerNS
           if(Options.verbose == BASKER_TRUE) {
             printf("Basker: blk=%d break due to size (work: %d > %d, size: %d > %d)\n",(int)blk_idx-1, (int)blk_work,(int)break_work_size, (int)blk_size,(int)break_block_size);
           }
-          if (nblks == 1) {
-            if(Options.verbose == BASKER_TRUE && replace_zero_pivot_in == BASKER_TRUE) {
-              printf("Basker: turning back replace-zero-pivot back because one block is big\n");
-              Options.replace_zero_pivot = BASKER_TRUE;
+          if (nblks == 1 && replace_zero_pivot_in == BASKER_TRUE) {
+            if(Options.verbose == BASKER_TRUE) {
+              printf("Basker: turning back replace-zero-pivot back because one big block\n");
             }
+            Options.replace_zero_pivot = BASKER_TRUE;
           }
           move_fwd = BASKER_FALSE;
         }

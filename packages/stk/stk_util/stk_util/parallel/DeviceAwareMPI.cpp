@@ -36,6 +36,7 @@
 #include <stk_util/stk_config.h>
 #include <stk_util/stk_kokkos_macros.h>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/util/GetEnv.hpp>
 
 #ifdef OMPI_MAJOR_VERSION
 #include <mpi-ext.h>
@@ -59,5 +60,12 @@ bool have_device_aware_mpi()
   return false;
 }
 
+bool use_device_aware_mpi()
+{
+  if (stk::get_env_var_as_bool("STK_USE_HOST_MPI_OVERRIDE", false)) {
+    return false;
+  }
+  return have_device_aware_mpi();
+}
 }
 

@@ -1,0 +1,105 @@
+#!/bin/bash
+
+trilinos_src_dir=${TRILINOS_DIR:-${PWD}/../Trilinos}
+build_dir=${BUILD_DIR:-${PWD}}
+build_type=${CMAKE_BUILD_TYPE:-release}
+trilinos_install_dir=${TRILINOS_INSTALL_DIR:-${PWD}/../trilinos_install_dir}
+fortran_macro=${FORTRAN_MACRO:-FORTRAN_ONE_UNDERSCORE}
+cmake_cxx_flags=${CMAKE_CXX_FLAGS}
+cmake_exe_linker_flags=${CMAKE_EXE_LINKER_FLAGS}
+cuda_on_or_off=${CUDA:-OFF}
+CUDA=$cuda_on_or_off
+clear_cache=${CLEAR_CACHE:-ON}
+
+printf "\nTRILINOS_DIR=${trilinos_src_dir}\n";
+printf "BUILD_DIR=${build_dir}\n";
+printf "CMAKE_BUILD_TYPE=${build_type}\n";
+printf "CMAKE_EXE_LINKER_FLAGS=${cmake_exe_linker_flags}\n";
+printf "CMAKE_CXX_FLAGS=${cmake_cxx_flags}\n";
+printf "CUDA=${cuda_on_or_off}\n";
+printf "TRILINOS_INSTALL_DIR=${trilinos_install_dir}\n";
+printf "FORTRAN_MACRO=${fortran_macro}\n";
+printf "\nTo change these vars, set as env vars or pass to this script like 'VAR=value run_cmake_stk'\n\n";
+
+if [ "${CUDA}" != "OFF" ] && [ "${CUDA}" != "ON" ]; then
+  echo "CUDA must be set to 'ON' or 'OFF'"
+  exit 1;
+fi
+
+not_cuda=ON
+if [ "${CUDA}" == "ON" ] ; then
+  not_cuda=OFF
+fi
+printf "not_cuda: ${not_cuda}\n";
+
+if [ ! -d ${trilinos_src_dir}/packages/seacas ] && [ ! -L ${trilinos_src_dir}/packages/seacas ] ; then
+  echo "Trilinos dir (${trilinos_src_dir}) doesn't have packages/seacas directory. If using a Sierra project, make a soft-link to Sierra's seacas directory.";
+  exit 1;
+fi
+if [ ! -d ${trilinos_src_dir}/packages/stk ] && [ ! -L ${trilinos_src_dir}/packages/stk ]; then
+  echo "Trilinos dir (${trilinos_src_dir}) doesn't have packages/stk directory. If using a Sierra project, make a soft-link to Sierra's stk directory.";
+  exit 1;
+fi
+
+mkdir -p $trilinos_install_dir
+mkdir -p $build_dir
+
+cd ${build_dir}
+
+if [ "${clear_cache}" == "ON" ] ; then
+# Cleanup old cache before we configure
+  rm -rf CMakeFiles CMakeCache.txt
+fi
+
+cmake \
+-DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
+-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-DTrilinos_ENABLE_TESTS:BOOL=OFF \
+-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
+-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
+-DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
+-DBUILD_SHARED_LIBS:BOOL=OFF \
+-DTPL_ENABLE_MPI=ON \
+-DTrilinos_ENABLE_Zoltan2:BOOL=ON \
+-DZoltan2_ENABLE_ParMETIS:BOOL=ON \
+-DTrilinos_ENABLE_Pamgen:BOOL=ON \
+-DTrilinos_ENABLE_Krino:BOOL=ON \
+-DTrilinos_ENABLE_Percept:BOOL=ON \
+-DTrilinos_ENABLE_TrilinosCouplings:BOOL=ON \
+-DTrilinos_ENABLE_Panzer:BOOL=${not_cuda} \
+-DTrilinos_ENABLE_PanzerAdaptersSTK:BOOL=${not_cuda} \
+-DPanzer_ENABLE_TESTS:BOOL=OFF \
+-DPanzer_STK_ENABLE_TESTS:BOOL=OFF \
+-DTrilinos_ENABLE_TrilinosCouplings:BOOL=${not_cuda} \
+-DTPL_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
+-DKokkos_ENABLE_CUDA:BOOL=${cuda_on_or_off} \
+-DKokkos_ENABLE_CUDA_UVM:BOOL=OFF \
+-DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE:BOOL=ON \
+-DKokkos_ARCH_VOLTA70=${cuda_on_or_off} \
+-DTrilinos_ENABLE_Fortran:BOOL=ON \
+-DCMAKE_CXX_STANDARD:STRING=20 \
+-DCMAKE_CXX_FLAGS:STRING="-D${fortran_macro} ${cmake_cxx_flags} -Werror=dangling-else" \
+-DSTK_ENABLE_TESTS:BOOL=OFF \
+-DTrilinos_ENABLE_STK:BOOL=ON \
+-DTrilinos_ENABLE_STKMiddle_mesh:BOOL=ON \
+-DTrilinos_ENABLE_STKMiddle_mesh_util:BOOL=ON \
+-DTPL_ENABLE_CDT:BOOL=ON \
+-DCDT_INCLUDE_DIRS="/fgs/william/CDT/install/include" \
+-DCDT_ROOT="/fgs/william/CDT/install" \
+-DTrilinos_ENABLE_SEACASExodus:BOOL=ON \
+-DTrilinos_ENABLE_SEACASIoss:BOOL=ON \
+-DTrilinos_ENABLE_SEACASNemesis:BOOL=ON \
+-DTPL_ENABLE_Netcdf:BOOL=ON \
+-DTPL_Netcdf_Enables_Netcdf4:BOOL=ON \
+-DTPL_Netcdf_Enables_Pnetcdf:BOOL=ON \
+-DTPL_ENABLE_Zlib:BOOL=ON \
+-DTPL_ENABLE_ParMETIS:BOOL=ON \
+-DTPL_ENABLE_Pnetcdf:BOOL=ON \
+-DNetCDF_LIBRARIES="-lnetcdf -lpnetcdf -lhdf5_hl -lhdf5 -ldl" \
+-DTPL_ENABLE_HDF5:BOOL=ON \
+-DHDF5_LIBRARIES="-lhdf5" \
+-DTPL_HDF5_LIBRARIES="-lhdf5" \
+-DCMAKE_EXE_LINKER_FLAGS="${cmake_exe_linker_flags}" \
+${trilinos_src_dir}/
+

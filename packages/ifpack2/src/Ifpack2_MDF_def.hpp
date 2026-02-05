@@ -18,6 +18,7 @@
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Sort.hpp"
+#include "KokkosSparse_mdf.hpp"
 #include "KokkosKernels_Sorting.hpp"
 #include <exception>
 #include <type_traits>

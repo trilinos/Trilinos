@@ -107,9 +107,6 @@ void solve_system_list(Xpetra::UnderlyingLib& lib,
 #include "MueLu_UseShortNames.hpp"
   using Teuchos::rcp;
 
-  if (lib == Xpetra::UseEpetra) {
-    MueLuList.set("use kokkos refactor", false);
-  }
   Teuchos::RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>> H =
       MueLu::CreateXpetraPreconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A, MueLuList);
 

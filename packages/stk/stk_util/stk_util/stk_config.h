@@ -113,6 +113,7 @@
 //   namespaces (namespace STK_DEPRECATED stk { int variable; }),
 //   enumeration (enum STK_DEPRECATED Enum{};),
 //   enumerators (enum {Type 1 STK_DEPRECATED, Type2 DEPRECATED};), and
+//   template functions (template <typename T> STK_DEPRECATED inline void function()),
 //   template specialization (template<> struct STK_DEPRECATED Struct<int>;).
 //
 // This is basically copied from the Trilinos version in Tribits to maintain some compatibility

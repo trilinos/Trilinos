@@ -3,8 +3,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 
-namespace
-{
+namespace {
 
 class GetEntitiesTest : public stk::unit_test_util::MeshFixture { };
 

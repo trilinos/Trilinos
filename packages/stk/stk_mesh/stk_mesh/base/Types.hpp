@@ -199,14 +199,22 @@ struct FastMeshIndex
   unsigned bucket_ord;
 };
 
+KOKKOS_INLINE_FUNCTION
 constexpr bool operator<(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
 {
   return lhs.bucket_id == rhs.bucket_id ? lhs.bucket_ord < rhs.bucket_ord : lhs.bucket_id < rhs.bucket_id;
 }
 
+KOKKOS_INLINE_FUNCTION
 constexpr bool operator==(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
 {
   return lhs.bucket_id == rhs.bucket_id && lhs.bucket_ord == rhs.bucket_ord;
+}
+
+KOKKOS_INLINE_FUNCTION
+constexpr bool operator!=(const FastMeshIndex& lhs, const FastMeshIndex& rhs)
+{
+  return lhs.bucket_id != rhs.bucket_id || lhs.bucket_ord != rhs.bucket_ord;
 }
 
 typedef stk::topology::rank_t EntityRank ;

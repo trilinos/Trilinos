@@ -1133,7 +1133,7 @@ public:
     // All three cases are legal according to both C++03 and C99.
     // However, I (mfh 15 Nov 2012) have never encountered Cases 2 and
     // 3.
-    if (sizeof (short) < sizeof (double)) {
+    if constexpr (sizeof (short) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1205,7 +1205,7 @@ public:
     // rounding.  Case 3 is quite rare, but casting minVal or maxVal
     // to double in this case could result in overflow.  Thus, we only
     // do the cast for Case 1.
-    if (sizeof (int) < sizeof (double)) {
+    if constexpr (sizeof (int) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1277,7 +1277,7 @@ public:
     // implementation of the LLP64 integer model, on which
     // sizeof(long) == 4, and sizeof(long long) == sizeof(void*) ==
     // 8).
-    if (sizeof (long) < sizeof (double)) {
+    if constexpr (sizeof (long) < sizeof (double)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1410,7 +1410,7 @@ public:
     // is certainly reasonable.  (For example, some hardware prefers
     // to work only with 32-bit words, so _every_ built-in type has
     // size a multiple of 4 bytes.)
-    if (sizeof (short) < sizeof (float)) {
+    if constexpr (sizeof (short) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1482,7 +1482,7 @@ public:
     // float in this case could result in loss of accuracy
     // (sizeof(int) == 8 or 16) or overflow (sizeof(int) > 16).  Thus,
     // we only do the test for Case 1.
-    if (sizeof (int) < sizeof (float)) {
+    if constexpr (sizeof (int) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > maxVal,
         std::range_error,
@@ -1559,7 +1559,7 @@ public:
     // (64-bit Windows) and other implementations of (I32L32)LLP64.
     // Case 3 is common (e.g., in the (I32)LP64 integer model of
     // GNU/Linux and other operating systems).
-    if (sizeof (long) < sizeof (float)) {
+    if constexpr (sizeof (long) < sizeof (float)) {
       TEUCHOS_TEST_FOR_EXCEPTION(
         t < minVal || t > static_cast<float>(maxVal),
         std::range_error,
@@ -2089,7 +2089,7 @@ public:
     // overflow.
 
     // The C++ standard promises that sizeof (unsigned int) <= sizeof (long).
-    if (sizeof (unsigned int) < sizeof (long)) {
+    if constexpr (sizeof (unsigned int) < sizeof (long)) {
       const unsigned int maxInt = std::numeric_limits<unsigned int>::max ();
 
       TEUCHOS_TEST_FOR_EXCEPTION(

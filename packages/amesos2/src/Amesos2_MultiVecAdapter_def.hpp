@@ -12,7 +12,6 @@
 #define AMESOS2_MULTIVECADAPTER_DEF_HPP
 
 #include "Amesos2_TpetraMultiVecAdapter_def.hpp"
-// EpetraMultiVecAdapter_def.hpp not included because the specialization is not a template
 #include "Amesos2_KokkosMultiVecAdapter_def.hpp"
 
 #include "Amesos2_Util.hpp"     // for getDistributionMap
@@ -376,4 +375,4 @@ namespace Amesos2{
 
 } // end namespace Amesos2
 
-#endif  // AMESOS2_EPETRAMULTIVECADAPTER_DEF
+#endif  // AMESOS2_MULTIVECADAPTER_DEF_HPP

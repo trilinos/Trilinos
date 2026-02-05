@@ -126,8 +126,13 @@ namespace Amesos2 {
                              host_ordinal_type_array &recvCounts, host_ordinal_type_array &recvDispls,
                              host_ordinal_type_array &transpose_map, host_scalar_type_array &nzvals_t,
                              bool column_major, EPhase current_phase) const;
-  };
 
+    //! Print a description of this adapter to the given output stream
+    void
+    describe (Teuchos::FancyOStream& os,
+              const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const;
+  };
 } // end namespace Amesos2
 
 #endif  // AMESOS2_KOKKOSCRSMATRIX_MATRIXADAPTER_DECL_HPP

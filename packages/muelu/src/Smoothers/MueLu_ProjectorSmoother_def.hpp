@@ -67,7 +67,6 @@ void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level &
   }
   this->GetOStream(Runtime0) << "Coarse level orth indices: " << selectedIndices << std::endl;
 
-#if defined(HAVE_XPETRA_TPETRA)
 #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
   // Orthonormalize
   RCP<const Tpetra::MultiVector<SC, LO, GO, NO> > B_ = toTpetra(B);
@@ -93,7 +92,6 @@ void ProjectorSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level &
   Borth_ = rcp(static_cast<MultiVector *>(new TpetraMultiVector(Borth)));
 #else
   TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Tpetra with GO=int not available. The code in ProjectorSmoother should be rewritten!");
-#endif
 #endif
 
   SmootherPrototype::IsSetup(true);

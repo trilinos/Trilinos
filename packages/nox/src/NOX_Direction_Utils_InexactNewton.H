@@ -170,6 +170,9 @@ public:
                     const NOX::Solver::Generic& solver,
                     double eta_last = -1.0);
 
+  virtual Teuchos::RCP<Teuchos::ParameterList>
+  getDefaultParameters() const;
+
 private:
 
   //! Print an error message

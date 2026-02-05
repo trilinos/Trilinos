@@ -36,12 +36,13 @@
 #include "Tpetra_Details_initializeKokkos.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 
-namespace {  // (anonymous)
+namespace Tpetra {
+namespace Impl {
 
-void checkMapInputArray(const char ctorName[],
-                        const void* indexList,
-                        const size_t indexListSize,
-                        const Teuchos::Comm<int>* const comm) {
+inline void checkMapInputArray(const char ctorName[],
+                               const void* indexList,
+                               const size_t indexListSize,
+                               const Teuchos::Comm<int>* const comm) {
   using Tpetra::Details::Behavior;
 
   const bool debug = Behavior::debug("Map");
@@ -124,9 +125,7 @@ void computeConstantsOnDevice(const ViewType& entryList, GlobalOrdinal& minMyGID
   lastContiguousGID_loc = myMinLoc.val;
 }
 
-}  // namespace
-
-namespace Tpetra {
+}  // namespace Impl
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Map<LocalOrdinal, GlobalOrdinal, Node>::
@@ -828,9 +827,9 @@ Map<LocalOrdinal, GlobalOrdinal, Node>::
   Tpetra::Details::initializeKokkos();
   Tpetra::Details::Behavior::reject_unrecognized_env_vars();
   Tpetra::Details::ProfilingRegion pr(funcName);
-  checkMapInputArray("(GST, const GO[], LO, GO, comm)",
-                     indexList, static_cast<size_t>(indexListSize),
-                     comm.getRawPtr());
+  Impl::checkMapInputArray("(GST, const GO[], LO, GO, comm)",
+                           indexList, static_cast<size_t>(indexListSize),
+                           comm.getRawPtr());
   // Not quite sure if I trust all code to behave correctly if the
   // pointer is nonnull but the array length is nonzero, so I'll
   // make sure the raw pointer is null if the length is zero.
@@ -874,9 +873,9 @@ Map<LocalOrdinal, GlobalOrdinal, Node>::
   Tpetra::Details::Behavior::reject_unrecognized_env_vars();
   Tpetra::Details::ProfilingRegion pr(funcName);
   const size_t numLclInds = static_cast<size_t>(entryList.size());
-  checkMapInputArray("(GST, ArrayView, GO, comm)",
-                     entryList.getRawPtr(), numLclInds,
-                     comm.getRawPtr());
+  Impl::checkMapInputArray("(GST, ArrayView, GO, comm)",
+                           entryList.getRawPtr(), numLclInds,
+                           comm.getRawPtr());
   // Not quite sure if I trust both ArrayView and View to behave
   // correctly if the pointer is nonnull but the array length is
   // nonzero, so I'll make sure it's null if the length is zero.
@@ -941,10 +940,10 @@ Map<LocalOrdinal, GlobalOrdinal, Node>::
   Tpetra::Details::initializeKokkos();
   Tpetra::Details::Behavior::reject_unrecognized_env_vars();
   Tpetra::Details::ProfilingRegion pr(funcName);
-  checkMapInputArray("(GST, Kokkos::View, GO, comm)",
-                     entryList.data(),
-                     static_cast<size_t>(entryList.extent(0)),
-                     comm.getRawPtr());
+  Impl::checkMapInputArray("(GST, Kokkos::View, GO, comm)",
+                           entryList.data(),
+                           static_cast<size_t>(entryList.extent(0)),
+                           comm.getRawPtr());
 
   // The user has specified the distribution of indices over the
   // processes, via the input array of global indices on each
@@ -1025,7 +1024,7 @@ Map<LocalOrdinal, GlobalOrdinal, Node>::
     // DEEP_COPY REVIEW - DEVICE-TO-DEVICE
     Kokkos::deep_copy(typename device_type::execution_space(), lgMap, entryList);
     LO lastContiguousGID_loc;
-    computeConstantsOnDevice(entryList, minMyGID_, maxMyGID_, firstContiguousGID_, lastContiguousGID_, lastContiguousGID_loc);
+    Impl::computeConstantsOnDevice(entryList, minMyGID_, maxMyGID_, firstContiguousGID_, lastContiguousGID_, lastContiguousGID_loc);
     LO firstNonContiguous_loc = lastContiguousGID_loc + 1;
     auto nonContigGids        = Kokkos::subview(entryList, std::pair<size_t, size_t>(firstNonContiguous_loc, entryList.extent(0)));
 

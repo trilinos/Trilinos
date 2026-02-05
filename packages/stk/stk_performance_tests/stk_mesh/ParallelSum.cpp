@@ -180,8 +180,6 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
     }
   }
 
-  MPI_Barrier(pm);
-
   NgpMesh* ngpMesh = nullptr;
   if (device_mpi) {
     ngpMesh = & stk::mesh::get_updated_ngp_mesh(bulk);
@@ -193,6 +191,8 @@ void do_stk_test(bool with_ghosts=false, bool device_mpi=false)
       ngpFields[i] = &stk::mesh::get_updated_ngp_field<double>(*fields[i]);
     }
   }
+
+  MPI_Barrier(pm);
 
   stk::unit_test_util::BatchTimer batchTimer(pm);
   batchTimer.initialize_batch_timer();

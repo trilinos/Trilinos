@@ -11,14 +11,8 @@
 
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
-#  include "Amesos2_MUMPS_def.hpp"
-#  include "Amesos2_ExplicitInstantiationHelpers.hpp"
-
-namespace Amesos2 {
-#ifdef HAVE_AMESOS2_EPETRA
-  AMESOS2_SOLVER_EPETRA_INST(MUMPS);
-#endif
-}
+#include "Amesos2_MUMPS_def.hpp"
+#include "Amesos2_ExplicitInstantiationHelpers.hpp"
 
 #include <Tpetra_KokkosCompat_DefaultNode.hpp>
 #include "Tpetra_ETIHelperMacros.h"

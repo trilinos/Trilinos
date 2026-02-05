@@ -1,5 +1,6 @@
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES TeuchosCore TeuchosParameterList
+  LIB_OPTIONAL_PACKAGES magistrate
   )
 
 # ToDo: Ross Bartlett: Make TeuchosComm (this package) only optionally depend

@@ -23,6 +23,11 @@ namespace Sacado {
 #endif
 #endif
 
+// Note, the difference in ifdef logic here with regards to hierarchical is intentional because 
+// this macro is currently only used for atomics (which must only update the value once for both 
+// hierarchical and hierarchical-dfad for any Fad type), not in the ExprAssign class below.  One 
+// could argue that something like this should be used for ExprAssign, but it should only be for 
+// Fad types that share the value field in hierarchical contexts (e.g., DFad and ViewFad).
 #ifndef SACADO_FAD_THREAD_SINGLE
 #if (defined(SACADO_VIEW_CUDA_HIERARCHICAL) || defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)) && !defined(SACADO_DISABLE_CUDA_IN_KOKKOS) && ( defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) )
 #define SACADO_FAD_THREAD_SINGLE if (threadIdx.x == 0)

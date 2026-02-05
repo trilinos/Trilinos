@@ -176,7 +176,7 @@ inline void field_axpby(const stk::mesh::BulkData& mesh,
     bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
   // y = a*x + b*y
-  field_axpbyz(mesh, alpha, xField, beta, yField, yField, selector, execSpace, isDeviceExecSpaceUserOverride);
+  ngp_field_blas::impl::field_axpby_impl(mesh, alpha, xField, beta, yField, &selector, execSpace, isDeviceExecSpaceUserOverride);
 }
 
 template<class DataType, typename EXEC_SPACE>
@@ -189,7 +189,7 @@ inline void field_axpby(const stk::mesh::BulkData& mesh,
     bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
   // y = a*x + b*y
-  field_axpbyz(mesh, alpha, xField, beta, yField, yField, execSpace, isDeviceExecSpaceUserOverride);
+  ngp_field_blas::impl::field_axpby_impl(mesh, alpha, xField, beta, yField, nullptr, execSpace, isDeviceExecSpaceUserOverride);
 }
 
 template<class Scalar, typename EXEC_SPACE>
@@ -231,8 +231,7 @@ inline void field_axpy(const stk::mesh::BulkData& mesh,
     const EXEC_SPACE& execSpace,
     bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  Scalar beta = 0;
-  ngp_field_blas::impl::field_axpbyz_impl(mesh, alpha, xField, beta, yField, yField, &selector, execSpace, isDeviceExecSpaceUserOverride);
+  ngp_field_blas::impl::field_axpy_impl(mesh, alpha, xField, yField, &selector, execSpace, isDeviceExecSpaceUserOverride);
 }
 
 template<class Scalar, typename EXEC_SPACE>
@@ -243,8 +242,7 @@ inline void field_axpy(const stk::mesh::BulkData& mesh,
     const EXEC_SPACE& execSpace,
     bool isDeviceExecSpaceUserOverride = (!std::is_same_v<stk::ngp::HostExecSpace,EXEC_SPACE>))
 {
-  Scalar beta = 0;
-  ngp_field_blas::impl::field_axpbyz_impl(mesh, alpha, xField, beta, yField, yField, nullptr, execSpace, isDeviceExecSpaceUserOverride);
+  ngp_field_blas::impl::field_axpy_impl(mesh, alpha, xField, yField, nullptr, execSpace, isDeviceExecSpaceUserOverride);
 }
 
 template<typename EXEC_SPACE>
@@ -322,6 +320,57 @@ inline void field_dot(ReturnT& result,
                       const EXEC_SPACE& execSpace)
 {
   ngp_field_blas::impl::field_dot_impl(mesh, xField, yField, result, &selector, execSpace);
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+inline void field_amin(Scalar& aminOut,
+    const FieldBase& xField,
+    const EXEC_SPACE& execSpace)
+{
+  ngp_field_blas::impl::field_amin_impl(aminOut, xField, nullptr, execSpace);
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+inline void field_amin(Scalar& aminOut,
+    const FieldBase& xField,
+    const Selector& selector,
+    const EXEC_SPACE& execSpace)
+{
+  ngp_field_blas::impl::field_amin_impl(aminOut, xField, &selector, execSpace);
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+inline void field_asum(Scalar& aminOut,
+    const FieldBase& xField,
+    const EXEC_SPACE& execSpace )
+{
+  ngp_field_blas::impl::field_asum_impl(aminOut, xField, nullptr, execSpace);
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+inline void field_asum(Scalar& aminOut,
+    const FieldBase& xField,
+    const Selector& selector,
+    const EXEC_SPACE& execSpace)
+{
+  ngp_field_blas::impl::field_asum_impl(aminOut, xField, &selector, execSpace);
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+inline void field_nrm2(Scalar& nrm2Out,
+    const FieldBase& xField,
+    const EXEC_SPACE& execSpace )
+{
+  ngp_field_blas::impl::field_nrm2_impl(nrm2Out, xField, nullptr, execSpace);
+}
+
+template <typename Scalar, typename EXEC_SPACE>
+inline void field_nrm2(Scalar& nrm2Out,
+    const FieldBase& xField,
+    const Selector& selector,
+    const EXEC_SPACE& execSpace)
+{
+  ngp_field_blas::impl::field_nrm2_impl(nrm2Out, xField, &selector, execSpace);
 }
 
 } // mesh

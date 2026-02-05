@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_IMPL_SPILUK_NUMERIC_HPP_
 #define KOKKOSSPARSE_IMPL_SPILUK_NUMERIC_HPP_
@@ -22,7 +9,7 @@
 
 #include <KokkosKernels_config.h>
 #include <KokkosKernels_Error.hpp>
-#include <Kokkos_ArithTraits.hpp>
+#include <KokkosKernels_ArithTraits.hpp>
 #include <KokkosSparse_spiluk_handle.hpp>
 #include "KokkosBatched_SetIdentity_Decl.hpp"
 #include "KokkosBatched_SetIdentity_Impl.hpp"
@@ -55,10 +42,8 @@ struct IlukWrap {
   using WorkViewType      = typename IlukHandle::work_view_t;
   using LevelHostViewType = typename IlukHandle::nnz_lno_view_host_t;
   using LevelViewType     = typename IlukHandle::nnz_lno_view_t;
-  using karith            = typename Kokkos::ArithTraits<scalar_t>;
   using team_policy       = typename IlukHandle::TeamPolicy;
   using member_type       = typename team_policy::member_type;
-  using range_policy      = typename IlukHandle::RangePolicy;
 
   static team_policy get_team_policy(const size_type nrows, const int team_size) {
     team_policy rv;
@@ -446,8 +431,8 @@ struct IlukWrap {
       const auto bs = Base::get_block_size();
       typename Base::SBlock shared_buff(team.team_shmem(), bs, bs);
 
-      const auto my_team = team.league_rank();
-      const auto rowid   = Base::level_idx(my_team + Base::lev_start);  // map to rowid
+      const size_type my_team = static_cast<size_type>(team.league_rank());
+      const size_type rowid   = static_cast<size_type>(Base::level_idx(my_team + Base::lev_start));  // map to rowid
 
       // Set active entries in L to zero, store active cols in iw
       // Set L diagonal for this row to identity
@@ -455,7 +440,7 @@ struct IlukWrap {
       size_type k2 = Base::L_row_map(rowid + 1) - 1;
       Base::lset_id(team, k2);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2), [&](const size_type k) {
-        const auto col = Base::L_entries(k);
+        const size_type col = static_cast<size_type>(Base::L_entries(k));
         Base::lset(k, 0.0);
         Base::iw(my_team, col) = k;
       });
@@ -466,7 +451,7 @@ struct IlukWrap {
       k1 = Base::U_row_map(rowid);
       k2 = Base::U_row_map(rowid + 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2), [&](const size_type k) {
-        const auto col = Base::U_entries(k);
+        const size_type col = static_cast<size_type>(Base::U_entries(k));
         Base::uset(k, 0.0);
         Base::iw(my_team, col) = k;
       });
@@ -477,8 +462,8 @@ struct IlukWrap {
       k1 = Base::A_row_map(rowid);
       k2 = Base::A_row_map(rowid + 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2), [&](const size_type k) {
-        const auto col  = Base::A_entries(k);
-        const auto ipos = Base::iw(my_team, col);
+        const size_type col = static_cast<size_type>(Base::A_entries(k));
+        const auto ipos     = Base::iw(my_team, col);
         if (col < rowid) {
           Base::lset(ipos, Base::aget(k));
         } else {
@@ -506,8 +491,8 @@ struct IlukWrap {
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(team, Base::U_row_map(prev_row) + 1, Base::U_row_map(prev_row + 1)),
             [&](const size_type kk) {
-              const auto col  = Base::U_entries(kk);
-              const auto ipos = Base::iw(my_team, col);
+              const size_type col = static_cast<size_type>(Base::U_entries(kk));
+              const auto ipos     = Base::iw(my_team, col);
               if (ipos != -1) {
                 typename Base::reftype C = col < rowid ? Base::lget(ipos) : Base::uget(ipos);
                 if (BlockEnabled) {
@@ -538,14 +523,14 @@ struct IlukWrap {
       k1 = Base::L_row_map(rowid);
       k2 = Base::L_row_map(rowid + 1) - 1;
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2), [&](const size_type k) {
-        const auto col         = Base::L_entries(k);
+        const size_type col    = static_cast<size_type>(Base::L_entries(k));
         Base::iw(my_team, col) = -1;
       });
 
       k1 = Base::U_row_map(rowid);
       k2 = Base::U_row_map(rowid + 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, k1, k2), [&](const size_type k) {
-        const auto col         = Base::U_entries(k);
+        const size_type col    = static_cast<size_type>(Base::U_entries(k));
         Base::iw(my_team, col) = -1;
       });
     }

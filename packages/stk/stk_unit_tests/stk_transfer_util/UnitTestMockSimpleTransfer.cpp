@@ -172,7 +172,7 @@ class MockSimpleTransferTest : public ::testing::Test
     stk::mesh::MetaData& sendMeta = m_sendBulk->mesh_meta_data();
     stk::mesh::MetaData& recvMeta = m_recvBulk->mesh_meta_data();
 
-    m_masterElemProvider = std::make_shared<stk::unit_test_util::MasterElementProvider>();
+    m_masterElemProvider = std::make_shared<stk::transfer_util::MasterElementProvider>();
 
     m_numSendCopies = 1;
     m_numRecvCopies = (nullptr != topo) ? m_masterElemProvider->num_integration_points(*topo) : 1;

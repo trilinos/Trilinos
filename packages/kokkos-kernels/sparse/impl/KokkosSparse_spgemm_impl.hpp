@@ -1,18 +1,5 @@
-//@HEADER
-// ************************************************************************
-//
-//                        Kokkos v. 4.0
-//       Copyright (2022) National Technology & Engineering
-//               Solutions of Sandia, LLC (NTESS).
-//
-// Under the terms of Contract DE-NA0003525 with NTESS,
-// the U.S. Government retains certain rights in this software.
-//
-// Part of Kokkos, under the Apache License v2.0 with LLVM Exceptions.
-// See https://kokkos.org/LICENSE for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//@HEADER
+// SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 
 #ifndef KOKKOSSPARSE_SPGEMM_IMPL_HPP
 #define KOKKOSSPARSE_SPGEMM_IMPL_HPP
@@ -451,14 +438,14 @@ class KokkosSPGEMM {
                        int vectorlane, const int cache_line_size, const int data_size, const int cache_size,
 
                        nnz_lno_persistent_work_host_view_t color_xadj,
-                       typename nnz_lno_persistent_work_view_t::HostMirror color_adj,
-                       typename nnz_lno_persistent_work_view_t::HostMirror vertex_colors,
+                       typename nnz_lno_persistent_work_view_t::host_mirror_type color_adj,
+                       typename nnz_lno_persistent_work_view_t::host_mirror_type vertex_colors,
 
-                       size_t overall_flops, typename row_lno_temp_work_view_t::HostMirror c_flop_rowmap,
-                       typename row_lno_temp_work_view_t::HostMirror c_comp_a_net_index,
-                       typename row_lno_temp_work_view_t::HostMirror c_comp_b_net_index,
-                       typename nnz_lno_temp_work_view_t::HostMirror c_comp_row_index,
-                       typename nnz_lno_temp_work_view_t::HostMirror c_comp_col_index, c_row_view_t rowmapC,
+                       size_t overall_flops, typename row_lno_temp_work_view_t::host_mirror_type c_flop_rowmap,
+                       typename row_lno_temp_work_view_t::host_mirror_type c_comp_a_net_index,
+                       typename row_lno_temp_work_view_t::host_mirror_type c_comp_b_net_index,
+                       typename nnz_lno_temp_work_view_t::host_mirror_type c_comp_row_index,
+                       typename nnz_lno_temp_work_view_t::host_mirror_type c_comp_col_index, c_row_view_t rowmapC,
                        int write_type  // 0 -- KKMEM, 1-KKSPEED, 2- KKCOLOR 3-KKMULTICOLOR
                                        // 4-KKMULTICOLOR2
   );

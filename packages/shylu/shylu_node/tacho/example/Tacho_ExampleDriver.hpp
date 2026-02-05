@@ -40,6 +40,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   std::string rhs_file = "";
   std::string graph_file = "";
   std::string weight_file = "";
+  int mm_base = 1;
   bool default_setup = false;
   int dofs_per_node = 1;
   int graph_algo_type = -1;
@@ -61,6 +62,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   int variant = 0;
   int nstreams = 8;
   bool no_warmup = false;
+  int niters = 1;
   int nfacts = 2;
   int nsolves = 10;
 
@@ -70,6 +72,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
   opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
   opts.set_option<bool>("duplicate", "Flag to duplicate input graph in the solver", &duplicate);
+  opts.set_option<int>("mm-base", "Base for reading matrix file", &mm_base);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<std::string>("rhs", "Input RHS file", &rhs_file);
   opts.set_option<std::string>("graph", "Input condensed graph", &graph_file);
@@ -91,6 +94,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<bool>("one-rhs", "Set RHS to be ones", &onesRHS);
   opts.set_option<bool>("random-rhs", "Set RHS to be random", &randomRHS);
   opts.set_option<bool>("no-warmup", "Flag to turn off warmup", &no_warmup);
+  opts.set_option<int>("niters", "# of iterations", &niters);
   opts.set_option<int>("nfacts", "# of factorizations to perform", &nfacts);
   opts.set_option<int>("nsolves", "# of solves to perform", &nsolves);
 
@@ -111,48 +115,44 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     return -1;
   }
 
-  Kokkos::initialize(argc, argv);
-
-  const bool detail = false;
-
-  using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
-  using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
-
-  std::cout << std::endl << "   ---------------------- " << std::endl;
-  Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
-  Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
-  std::cout << "     Method Name:: " << method_name << std::endl;
-  std::cout << "     Solver Type:: " << variant << std::endl;
-  std::cout << "          # RHSs:: " << nrhs << std::endl << std::endl;
-  if (default_setup) {
-    std::cout << "   Using default Parameters " << std::endl;
-  } else {
-    std::cout << "   Using non default Parameters " << std::endl;
-    std::cout << "       # Streams:: " << nstreams << std::endl;
-    std::cout << "    Small Poblem:: " << small_problem_thres << std::endl;
-    std::cout << "   Device Thresh:: " << device_factor_thres << ", " << device_solve_thres << std::endl;
-  }
-  std::cout << "  ---------------------- " << std::endl << std::endl;
-
   int r_val = 0;
-  try {
-    /// crs matrix format and dense multi vector
+  Kokkos::initialize(argc, argv);
+  {
+    const bool detail = false;
+    using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
+    using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
     using CrsMatrixBaseTypeHost = Tacho::CrsMatrixBase<value_type, host_device_type>;
     using DenseMultiVectorType = Kokkos::View<value_type **, Kokkos::LayoutLeft, device_type>;
+    using size_type_array_host = typename CrsMatrixBaseTypeHost::size_type_array;
+    using ordinal_type_array_host = typename CrsMatrixBaseTypeHost::ordinal_type_array;
 
+    std::cout << std::endl << "   ---------------------- " << std::endl;
+    Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
+    Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
+    std::cout << "     Method Name:: " << method_name << std::endl;
+    std::cout << "     Solver Type:: " << variant << std::endl;
+    std::cout << "          # RHSs:: " << nrhs << std::endl << std::endl;
+    if (default_setup) {
+      std::cout << "   Using default Parameters " << std::endl;
+    } else {
+      std::cout << "   Using non default Parameters " << std::endl;
+      std::cout << "       # Streams:: " << nstreams << std::endl;
+      std::cout << "    Small Poblem:: " << small_problem_thres << std::endl;
+      std::cout << "   Device Thresh:: " << device_factor_thres << ", " << device_solve_thres << std::endl;
+    }
+    std::cout << "  ---------------------- " << std::endl << std::endl;
+
+    /// crs matrix format and dense multi vector
     /// read a spd matrix of matrix market format
     CrsMatrixBaseTypeHost A;
     {
-      if (Tacho::MatrixMarket<value_type>::read(file, A, sanitize, verbose) != 0) {
+      if (Tacho::MatrixMarket<value_type>::read(file, A, mm_base, sanitize, verbose) != 0) {
         return -1;
       }
       if (verbose) A.showMe(std::cout, false);
     }
 
     /// read graph file if available
-    using size_type_array_host = typename CrsMatrixBaseTypeHost::size_type_array;
-    using ordinal_type_array_host = typename CrsMatrixBaseTypeHost::ordinal_type_array;
-
     ordinal_type m_graph(0);
     size_type_array_host ap_graph;
     ordinal_type_array_host aw_graph, aj_graph;
@@ -202,6 +202,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       }
     }
 
+    /// solver object
     Tacho::Driver<value_type, device_type> solver;
 
     /// common options
@@ -209,14 +210,14 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     solver.setSolutionMethod(method);
     solver.setLevelSetOptionAlgorithmVariant(variant);
 
-    /// graph options
-    if (order_connected_graph_separately) {
-      solver.setOrderConnectedGraphSeparately();
-    }
-    if (graph_algo_type >= 0) {
-      solver.setGraphAlgorithmType(graph_algo_type);
-    }
     if (!default_setup) {
+      /// graph options
+      if (order_connected_graph_separately) {
+        solver.setOrderConnectedGraphSeparately();
+      }
+      if (graph_algo_type >= 0) {
+        solver.setGraphAlgorithmType(graph_algo_type);
+      }
       /// levelset options
       solver.setLevelSetOptionNumStreams(nstreams);
       solver.setSmallProblemThresholdsize(small_problem_thres);
@@ -263,29 +264,11 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     double initi_time = timer.seconds();
 #endif
 
-    /// symbolic structure can be reused
-    if (!no_warmup) {
-      // warm-up
-      solver.factorize(values_on_device);
-    }
-#ifdef TACHO_HAVE_TEUCHOS
-    for (int i = 0; i < nfacts; ++i) {
-      Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Factorize"));
-      solver.factorize(values_on_device);
-    }
-#else
-    timer.reset();
-    for (int i = 0; i < nfacts; ++i) {
-      solver.factorize(values_on_device);
-    }
-    double facto_time = timer.seconds();
-#endif
-
+    // setup vectors
     DenseMultiVectorType
         b("b", A.NumRows(), nrhs),  // rhs multivector
         x("x", A.NumRows(), nrhs),  // solution multivector
         t("t", A.NumRows(), nrhs);  // temp workspace (store permuted rhs)
-
     {
       if (rhs_file.length() > 0) {
         if(Tacho::MatrixMarket<value_type>::readDenseVectors(rhs_file, b, verbose) != 0) {
@@ -309,35 +292,67 @@ template <typename value_type> int driver(int argc, char *argv[]) {
 
     bool success = true;
     mag_type tol = sqrt(arith_traits::epsilon()); // loose accuracy tol..
+    for (int iter = 0; iter < niters; iter++) {
+      try {
+        /// symbolic structure can be reused
+        std::cout << "\n === Iteration " << iter << " === " << "\n";
 
-    double solve_time = 0.0;
-    if (!no_warmup) {
-      // warm-up
-      timer.reset();
-      solver.solve(x, b, t);
-      solve_time = timer.seconds();
-      const double res = solver.computeRelativeResidual(values_on_device, x, b);
-      std::cout << "TachoSolver (warm-up): residual = " << res << " time " << solve_time << "\n";
-      if (res > tol) success = false;
-    }
+        /// factorize
+        if (!no_warmup) {
+          // warm-up
+          solver.factorize(values_on_device);
+        }
 
-    for (int i = 0; i < nsolves; ++i) {
 #ifdef TACHO_HAVE_TEUCHOS
-      {
-        Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Solve"));
-        solver.solve(x, b, t);
-      }
+        for (int i = 0; i < nfacts; ++i) {
+          Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Factorize"));
+          solver.factorize(values_on_device);
+        }
 #else
-      timer.reset();
-      solver.solve(x, b, t);
-      solve_time += timer.seconds();
+        timer.reset();
+        for (int i = 0; i < nfacts; ++i) {
+          solver.factorize(values_on_device);
+        }
+        double facto_time = timer.seconds();
 #endif
-      const mag_type res = solver.computeRelativeResidual(values_on_device, x, b);
-      if (res > tol) success = false;
-      std::cout << "TachoSolver: residual = " << res << "\n";
-    }
-    std::cout << std::endl;
 
+        /// solve
+        bool pass = true;
+        double solve_time = 0.0;
+        if (!no_warmup) {
+          // warm-up
+          timer.reset();
+          solver.solve(x, b, t);
+          solve_time = timer.seconds();
+          const double res = solver.computeRelativeResidual(values_on_device, x, b);
+          std::cout << "TachoSolver (warm-up): residual = " << res << " time " << solve_time << "\n";
+          if (res > tol) pass = false;
+        }
+
+        for (int i = 0; i < nsolves; ++i) {
+#ifdef TACHO_HAVE_TEUCHOS
+          {
+            Teuchos::TimeMonitor localTimer(*Teuchos::TimeMonitor::getNewTimer("Solve"));
+            solver.solve(x, b, t);
+          }
+#else
+          timer.reset();
+          solver.solve(x, b, t);
+          solve_time += timer.seconds();
+#endif
+          const mag_type res = solver.computeRelativeResidual(values_on_device, x, b);
+          if (res > tol) pass = false;
+          std::cout << "TachoSolver: residual = " << res << "\n";
+        }
+        if (!pass) success = false;
+        std::cout << (pass ? " PASS" : " FAIL") << std::endl;
+        std::cout << std::endl;
+      } catch (const std::exception &e) {
+        success = false;
+        std::cerr << "Error: exception is caught: \n" << e.what() << "\n";
+        std::cout << " EXCEPTION" << std::endl;
+      }
+    }
     if (verbose) {
       solver.printParameters();
     }
@@ -378,8 +393,6 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     }
     std::cout << std::endl;
     solver.release();
-  } catch (const std::exception &e) {
-    std::cerr << "Error: exception is caught: \n" << e.what() << "\n";
   }
   Kokkos::finalize();
 
