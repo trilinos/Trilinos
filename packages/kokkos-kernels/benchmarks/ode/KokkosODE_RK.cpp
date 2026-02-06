@@ -23,7 +23,7 @@ struct chem_model_1 {
   const double tstart, tend, T0, T1;
 
   chem_model_1(const double tstart_ = 0, const double tend_ = 300, const double T0_ = 300, const double T1_ = 800)
-      : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_){};
+      : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_) {}
 
   template <class vec_type1, class vec_type2>
   KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/, const vec_type1& y,
@@ -52,7 +52,7 @@ struct chem_model_2 {
   const double tstart, tend, T0, T1;
 
   chem_model_2(const double tstart_ = 0, const double tend_ = 2000, const double T0_ = 300, const double T1_ = 1000)
-      : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_){};
+      : tstart(tstart_), tend(tend_), T0(T0_), T1(T1_) {}
 
   template <class vec_type1, class vec_type2>
   KOKKOS_FUNCTION void evaluate_function(const double t, const double /*dt*/, const vec_type1& y,
@@ -129,7 +129,7 @@ struct rk_input_parameters {
   bool verbose;
 
   rk_input_parameters(const int num_odes_, const int model_, const int repeat_, const bool verbose_)
-      : num_odes(num_odes_), model(model_), repeat(repeat_), verbose(verbose_){};
+      : num_odes(num_odes_), model(model_), repeat(repeat_), verbose(verbose_) {}
 };
 
 }  // namespace

@@ -116,7 +116,7 @@ struct BalloonClustering {
         distances(i) = numRows;
         pressure(i)  = 0.1;
       }
-    };
+    }
 
     KOKKOS_INLINE_FUNCTION void operator()(const UpdatePressureTag, const nnz_lno_t i) const {
       nnz_lno_t cluster = vertClusters(i);

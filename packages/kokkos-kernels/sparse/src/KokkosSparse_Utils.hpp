@@ -450,7 +450,7 @@ struct TransposeBsrMatrix {
         Avalues(valuesA),
         tArow_map(row_mapAt),
         tAentries(entriesAt),
-        tAvalues(valuesAt){};
+        tAvalues(valuesAt) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int tArowIdx) const {

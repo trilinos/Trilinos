@@ -43,12 +43,11 @@ getValues(       OutputViewType output,
   npts = input.extent(0);
 
   typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
-  auto vcprop = Kokkos::common_view_alloc_prop(input);
   auto ptr = work.data();
 
   switch (OpType) {
   case OPERATOR_VALUE: {
-    const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts);
+    const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts);
     ViewType dummyView;
 
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
@@ -64,9 +63,9 @@ getValues(       OutputViewType output,
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
+    const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
     ptr += card*npts*spaceDim*get_dimension_scalar(input);
-    const ViewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
+    const ViewType workView = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim+1);
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
     Serial<OpType>::getValues(phis, input, workView, order);
 
@@ -89,7 +88,7 @@ getValues(       OutputViewType output,
   case OPERATOR_D9:
   case OPERATOR_D10: {
     const ordinal_type dkcard = getDkCardinality<OpType,spaceDim>(); //(orDn + 1);
-    const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, dkcard);
+    const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, dkcard);
     ViewType dummyView;
 
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
@@ -105,9 +104,9 @@ getValues(       OutputViewType output,
     break;
   }
   case OPERATOR_CURL: { // only works in 2d. first component is -d/dy, second is d/dx
-    const ViewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
+    const ViewType phis = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim);
     ptr += card*npts*spaceDim*get_dimension_scalar(input);
-    const ViewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
+    const ViewType workView = createMatchingUnmanagedView<ViewType>(input, ptr, card, npts, spaceDim+1);
 
 
     Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
@@ -155,17 +154,14 @@ getValues(
   const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
   Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(space, 0, loopSize);
 
-  typedef typename inputPointViewType::value_type inputPointType;
-
   const ordinal_type cardinality = outputValues.extent(0);
   const ordinal_type spaceDim = 2;
 
-  auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
-  typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
+  typedef typename DeduceDynRankView<inputPointViewType>::type workViewType;
 
   switch (operatorType) {
   case OPERATOR_VALUE: {
-    workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
+    workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HGRAD_TRI_Cn_FEM::getValues::work", cardinality, inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_VALUE,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work, order) );
@@ -173,14 +169,14 @@ getValues(
   }
   case OPERATOR_GRAD:
   case OPERATOR_D1: {
-    workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
+    workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HGRAD_TRI_Cn_FEM::getValues::work", cardinality*(2*spaceDim+1), inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_D1,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work, order) );
     break;
   }
   case OPERATOR_CURL: {
-    workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.extent(0));
+    workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HGRAD_TRI_Cn_FEM::getValues::work", cardinality*(2*spaceDim+1), inputPoints.extent(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_CURL,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work, order) );
@@ -189,7 +185,7 @@ getValues(
   case OPERATOR_D2: {
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_D2,numPtsPerEval> FunctorType;
-    workViewType  work(Kokkos::view_alloc(space, "Basis_HGRAD_TRI_Cn_FEM::getValues::work", vcprop), cardinality*outputValues.extent(2), inputPoints.extent(0));
+    workViewType work = createMatchingView<workViewType>(inputPoints, "Basis_HGRAD_TRI_Cn_FEM::getValues::work", cardinality*outputValues.extent(2), inputPoints.extent(0));
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work, order) );
     break;
   }

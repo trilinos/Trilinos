@@ -222,12 +222,12 @@ void inner_products_MP(
 
     if (beta == Scalar(0.))
         Kokkos::parallel_for(
-            m, KOKKOS_LAMBDA(const int i) {
+            Kokkos::RangePolicy<execution_space>(0, m), KOKKOS_LAMBDA(const int i) {
                 y(i) = beta;
             });
     else
         Kokkos::parallel_for(
-            m, KOKKOS_LAMBDA(const int i) {
+            Kokkos::RangePolicy<execution_space>(0, m), KOKKOS_LAMBDA(const int i) {
                 y(i) *= beta;
             });
 

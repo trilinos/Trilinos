@@ -42,11 +42,10 @@ namespace Intrepid2 {
       const double alpha = 0.0, beta = 0.0;
 
       typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
-      auto vcprop = Kokkos::common_view_alloc_prop(input);
       
       switch (opType) {
       case OPERATOR_VALUE: {
-        ViewType phis(Kokkos::view_wrap(work.data(), vcprop), card, npts);     
+        ViewType phis = createMatchingUnmanagedView<ViewType>(input, work.data(), card, npts);     
 
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta);
@@ -74,7 +73,7 @@ namespace Intrepid2 {
       case OPERATOR_Dn: {
         // dkcard is always 1 for 1D element
         const ordinal_type dkcard = 1;
-        ViewType phis(Kokkos::view_wrap(work.data(), vcprop), card, npts, dkcard);     
+        ViewType phis = createMatchingUnmanagedView<ViewType>(input, work.data(), card, npts, dkcard);     
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta, opDn);
 
@@ -116,17 +115,13 @@ namespace Intrepid2 {
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
-      typedef typename inputPointViewType::value_type inputPointType;
-
       const ordinal_type cardinality = outputValues.extent(0);
 
-      auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
-      typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
-      workViewType  work(Kokkos::view_alloc("Basis_HVOL_LINE_Cn_FEM::getValues::work", vcprop), cardinality, inputPoints.extent(0));
+      auto work = createMatchingDynRankView(inputPoints, "Basis_HVOL_LINE_Cn_FEM::getValues::work", cardinality, inputPoints.extent(0));
 
       switch (operatorType) {
       case OPERATOR_VALUE: {
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,workViewType,
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,decltype(work),
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work) );
         break;
@@ -142,7 +137,7 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10: {
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,workViewType,
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,decltype(work),
             OPERATOR_Dn,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv, work,
                                                   getOperatorOrder(operatorType)) );

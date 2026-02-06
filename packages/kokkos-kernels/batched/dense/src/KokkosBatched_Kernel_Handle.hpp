@@ -142,7 +142,7 @@ class BatchedKernelHandle {
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }
 #endif  // !defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-  };
+  }
 
   int get_kernel_algo_type() const { return _kernelAlgoType; }
 

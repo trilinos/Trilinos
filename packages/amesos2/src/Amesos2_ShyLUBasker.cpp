@@ -17,10 +17,6 @@
 
 namespace Amesos2 {
 
-#ifdef HAVE_AMESOS2_EPETRA
-  AMESOS2_SOLVER_EPETRA_INST(ShyLUBasker);
-#endif
-
 #define AMESOS2_SHYLUBASKER_LOCAL_INSTANT(S,LO,GO,N) \
   template class Amesos2::ShyLUBasker<Tpetra::CrsMatrix<S, LO, GO, N>, \
                                   Tpetra::MultiVector<S, LO, GO, N> >;

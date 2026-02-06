@@ -46,7 +46,7 @@ WARNINGS             = YES
 WARN_IF_UNDOCUMENTED = YES
 WARN_FORMAT          = "$file:$line: $text"
 
-INPUT                = . ../core/src/epetra  ../core/src/interfaces ../ichol/src
+INPUT                = . ../core/src/interfaces ../ichol/src
 FILE_PATTERNS        = *.hpp *.h *.cpp *.c *.dox
 RECURSIVE            = YES
 EXCLUDE              = .git build
@@ -105,7 +105,6 @@ EXPAND_AS_DEFINED      =
 
 TAGFILES = \
   $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=../$(TRILINOS_HOME)/packages/teuchos/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=../$(TRILINOS_HOME)/packages/epetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=../$(TRILINOS_HOME)/packages/tpetra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/kokkos.tag=../$(TRILINOS_HOME)/packages/kokkos/doc/html 
 

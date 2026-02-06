@@ -271,11 +271,7 @@ SEARCH_INCLUDES        = YES
 INCLUDE_PATH           =
 INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = DOXYGEN_COMPILE \
-                         DOXYGEN_SHOULD_SKIP_THIS \
-                         EPETRA_MPI \
-                         HAVE_XPETRA_TPETRA \
-                         HAVE_XPETRA_EPETRA \
-                         HAVE_XPETRA_EPETRAEXT
+                         DOXYGEN_SHOULD_SKIP_THIS
 EXPAND_AS_DEFINED      =
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------
@@ -283,8 +279,7 @@ SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------
 TAGFILES = +\
   $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/teuchos/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html
+  $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html
 GENERATE_TAGFILE       =
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO

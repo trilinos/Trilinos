@@ -19,7 +19,7 @@ namespace FROSch {
     using namespace Teuchos;
     using namespace Xpetra;
 
-    #if defined HAVE_XPETRA_EPETRA || defined HAVE_TPETRA_INT_INT
+    #if defined HAVE_TPETRA_INT_INT
     typedef int DefaultGlobalOrdinal;
     #elif !defined HAVE_TPETRA_INT_LONG_LONG
     typedef long DefaultGlobalOrdinal;

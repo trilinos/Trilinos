@@ -115,15 +115,6 @@ using TpetraCrsMatrix [[maybe_unused]] = Xpetra::TpetraCrsMatrix<Scalar, LocalOr
 using TpetraBlockCrsMatrix [[maybe_unused]] = Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
 
-// TODO remove this
-#ifdef XPETRA_EPETRACRSMATRIX_SHORT
-#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-using EpetraCrsMatrix64 [[maybe_unused]] = Xpetra::EpetraCrsMatrixT<long long, Xpetra::EpetraNode>;
-#endif
-using EpetraCrsMatrix [[maybe_unused]] = Xpetra::EpetraCrsMatrixT<int, Xpetra::EpetraNode>;  // do we need this???
-#endif
-// TODO remove above entries
-
 #ifdef XPETRA_TPETRAMULTIVECTOR_SHORT
 using TpetraMultiVector [[maybe_unused]] = Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -144,4 +135,3 @@ using MapExtractorFactory [[maybe_unused]] = Xpetra::MapExtractorFactory<Scalar,
 
 // Define convenient shortcut for data types
 using SC [[maybe_unused]] = Scalar;
-// TODO: do the same for Epetra object (problem of namespace)

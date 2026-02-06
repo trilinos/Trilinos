@@ -21,7 +21,7 @@ struct Logistic {
 
   const double r, K;
 
-  Logistic(double r_, double K_) : r(r_), K(K_){};
+  Logistic(double r_, double K_) : r(r_), K(K_) {}
 
   template <class vec_type1, class vec_type2>
   KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
@@ -58,7 +58,7 @@ struct LotkaVolterra {
   const double alpha, beta, delta, gamma;
 
   LotkaVolterra(double alpha_, double beta_, double delta_, double gamma_)
-      : alpha(alpha_), beta(beta_), delta(delta_), gamma(gamma_){};
+      : alpha(alpha_), beta(beta_), delta(delta_), gamma(gamma_) {}
 
   template <class vec_type1, class vec_type2>
   KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,

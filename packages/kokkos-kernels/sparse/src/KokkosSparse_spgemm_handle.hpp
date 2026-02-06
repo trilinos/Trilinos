@@ -488,7 +488,7 @@ class SPGEMMHandle {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
     this->destroy_mkl_spgemm_handle();
 #endif
-  };
+  }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
   void create_rocsparse_spgemm_handle(bool transA, bool transB) {

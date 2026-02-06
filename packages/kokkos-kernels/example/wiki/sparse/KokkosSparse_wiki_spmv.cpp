@@ -18,7 +18,7 @@ struct check_spmv_functor {
   Yvector y;
   const Scalar SC_ONE = KokkosKernels::ArithTraits<Scalar>::one();
 
-  check_spmv_functor(Yvector y_) : y(y_){};
+  check_spmv_functor(Yvector y_) : y(y_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int i, Ordinal& update) const {

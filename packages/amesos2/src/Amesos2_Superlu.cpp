@@ -15,13 +15,6 @@
 #include "Amesos2_ExplicitInstantiationHelpers.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 
-namespace Amesos2 {
-
-#ifdef HAVE_AMESOS2_EPETRA
-  AMESOS2_SOLVER_EPETRA_INST(Superlu);
-#endif
-
-} // namespace Amesos2
 
 #define AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N) \
   template class Amesos2::Superlu<Tpetra::CrsMatrix<S, LO, GO, N>, \

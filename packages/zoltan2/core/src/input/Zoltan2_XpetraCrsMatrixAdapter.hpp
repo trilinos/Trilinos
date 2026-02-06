@@ -36,7 +36,6 @@ namespace Zoltan2 {
     The template parameter is the user's input object:
      \li Tpetra::CrsMatrix
      \li Xpetra::CrsMatrix
-     \li Epetra_CrsMatrix
 
     The \c scalar_t type, representing use data such as matrix values, is
     used by Zoltan2 for weights, coordinates, part sizes and
@@ -71,7 +70,7 @@ public:
   ~XpetraCrsMatrixAdapter() { }
 
   /*! \brief Constructor
-   *    \param inmatrix The users Epetra, Tpetra, or Xpetra CrsMatrix object
+   *    \param inmatrix The users Tpetra, or Xpetra CrsMatrix object
    *    \param nWeightsPerRow If row weights will be provided in setRowWeights(),
    *        then set \c nWeightsPerRow to the number of weights per row.
    */

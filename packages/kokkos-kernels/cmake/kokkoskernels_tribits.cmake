@@ -1,261 +1,256 @@
-INCLUDE(CMakeParseArguments)
-INCLUDE(CTest)
+include(CMakeParseArguments)
+include(CTest)
 
-IF (KOKKOSKERNELS_HAS_TRILINOS)
-INCLUDE(TribitsETISupport)
-ENDIF()
+if (KOKKOSKERNELS_HAS_TRILINOS)
+  include(TribitsETISupport)
+endif()
 
-FUNCTION(VERIFY_EMPTY CONTEXT)
-  IF(${ARGN})
-    MESSAGE(FATAL_ERROR "Kokkos does not support all of Tribits. Unhandled arguments in ${CONTEXT}:\n${ARGN}")
-  ENDIF()
-ENDFUNCTION()
+function(verify_empty CONTEXT)
+  if(${ARGN})
+    message(FATAL_ERROR "Kokkos does not support all of Tribits. Unhandled arguments in ${CONTEXT}:\n${ARGN}")
+  endif()
+endfunction()
 
 #MESSAGE(STATUS "The project name is: ${PROJECT_NAME}")
 
-MACRO(KOKKOSKERNELS_PACKAGE_POSTPROCESS)
-  IF (KOKKOSKERNELS_HAS_TRILINOS)
-    TRIBITS_PACKAGE_POSTPROCESS()
-  ELSE()
-    INCLUDE(CMakePackageConfigHelpers)
+macro(kokkoskernels_package_postprocess)
+  if (KOKKOSKERNELS_HAS_TRILINOS)
+    tribits_package_postprocess()
+  else()
+    include(CMakePackageConfigHelpers)
     configure_package_config_file(cmake/KokkosKernelsConfig.cmake.in
-         "${KokkosKernels_BINARY_DIR}/KokkosKernelsConfig.cmake"
-         INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels)
+      "${KokkosKernels_BINARY_DIR}/KokkosKernelsConfig.cmake"
+      INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels)
     write_basic_package_version_file("${KokkosKernels_BINARY_DIR}/KokkosKernelsConfigVersion.cmake"
-            VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}"
-            COMPATIBILITY AnyNewerVersion)
+      VERSION "${KokkosKernels_VERSION_MAJOR}.${KokkosKernels_VERSION_MINOR}.${KokkosKernels_VERSION_PATCH}"
+      COMPATIBILITY AnyNewerVersion)
 
-    INSTALL(FILES
+    install(FILES
       "${KokkosKernels_BINARY_DIR}/KokkosKernelsConfig.cmake"
       "${KokkosKernels_BINARY_DIR}/KokkosKernelsConfigVersion.cmake"
       DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels)
 
-    INSTALL(EXPORT KokkosKernelsTargets
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels
-            NAMESPACE Kokkos::)
-  ENDIF()
-ENDMACRO(KOKKOSKERNELS_PACKAGE_POSTPROCESS)
+    install(EXPORT KokkosKernelsTargets
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/KokkosKernels
+      NAMESPACE Kokkos::)
+  endif()
+endmacro(kokkoskernels_package_postprocess)
 
-MACRO(KOKKOSKERNELS_SUBPACKAGE NAME)
-IF (KOKKOSKERNELS_HAS_TRILINOS)
-  TRIBITS_SUBPACKAGE(${NAME})
-ELSE()
-  SET(PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-  SET(PARENT_PACKAGE_NAME ${PACKAGE_NAME})
-  SET(PACKAGE_NAME ${PACKAGE_NAME}${NAME})
-  STRING(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UC)
-  SET(${PACKAGE_NAME}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-ENDIF()
-ENDMACRO(KOKKOSKERNELS_SUBPACKAGE)
+macro(kokkoskernels_subpackage NAME)
+if (KOKKOSKERNELS_HAS_TRILINOS)
+  tribits_subpackage(${NAME})
+else()
+  set(PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  set(PARENT_PACKAGE_NAME ${PACKAGE_NAME})
+  set(PACKAGE_NAME ${PACKAGE_NAME}${NAME})
+  string(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UC)
+  set(${PACKAGE_NAME}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+endmacro(kokkoskernels_subpackage)
 
-MACRO(KOKKOSKERNELS_SUBPACKAGE_POSTPROCESS)
-IF (KOKKOSKERNELS_HAS_TRILINOS)
-  TRIBITS_SUBPACKAGE_POSTPROCESS()
-ELSE()
-ENDIF()
-ENDMACRO(KOKKOSKERNELS_SUBPACKAGE_POSTPROCESS)
+macro(kokkoskernels_subpackage_postprocess)
+if (KOKKOSKERNELS_HAS_TRILINOS)
+  tribits_subpackage_postprocess()
+endif()
+endmacro(kokkoskernels_subpackage_postprocess)
 
-MACRO(KOKKOSKERNELS_PROCESS_SUBPACKAGES)
-IF (KOKKOSKERNELS_HAS_TRILINOS)
-  TRIBITS_PROCESS_SUBPACKAGES()
-ENDIF()
-ENDMACRO(KOKKOSKERNELS_PROCESS_SUBPACKAGES)
+macro(kokkoskernels_process_subpackages)
+if (kokkoskernels_has_trilinos)
+  tribits_process_subpackages()
+endif()
+endmacro(kokkoskernels_process_subpackages)
 
-MACRO(KOKKOSKERNELS_PACKAGE)
-IF (KOKKOSKERNELS_HAS_TRILINOS)
-  TRIBITS_PACKAGE(KokkosKernels)
-ELSE()
-  SET(PACKAGE_NAME KokkosKernels)
-  SET(PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-  STRING(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UC)
-  SET(${PACKAGE_NAME}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-ENDIF()
-ENDMACRO(KOKKOSKERNELS_PACKAGE)
+macro(kokkoskernels_package)
+if (KOKKOSKERNELS_HAS_TRILINOS)
+  tribits_package(KokkosKernels)
+else()
+  set(PACKAGE_NAME KokkosKernels)
+  set(PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  string(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UC)
+  set(${PACKAGE_NAME}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+endmacro(kokkoskernels_package)
 
-FUNCTION(KOKKOSKERNELS_INTERNAL_ADD_LIBRARY LIBRARY_NAME)
-CMAKE_PARSE_ARGUMENTS(PARSE 
-  "STATIC;SHARED"
-  ""
-  "HEADERS;SOURCES"
-  ${ARGN})
+function(kokkoskernels_internal_add_library LIBRARY_NAME)
+  cmake_parse_arguments(PARSE
+    "STATIC;SHARED"
+    ""
+    "HEADERS;SOURCES"
+    ${ARGN})
 
-IF(PARSE_HEADERS)
-  LIST(REMOVE_DUPLICATES PARSE_HEADERS)
-ENDIF()
-IF(PARSE_SOURCES)
-  LIST(REMOVE_DUPLICATES PARSE_SOURCES)
-ENDIF()
-IF(Kokkos_COMPILE_LANGUAGE)
-  FOREACH(source ${PARSE_SOURCES})
-    SET_SOURCE_FILES_PROPERTIES(${source} PROPERTIES LANGUAGE ${Kokkos_COMPILE_LANGUAGE})
-  ENDFOREACH()
-ENDIF()
+  if (PARSE_HEADERS)
+    list(REMOVE_DUPLICATES PARSE_HEADERS)
+  endif()
+  if (PARSE_SOURCES)
+    list(REMOVE_DUPLICATES PARSE_SOURCES)
+  endif()
+  if (Kokkos_COMPILE_LANGUAGE)
+    foreach(source ${PARSE_SOURCES})
+      set_source_files_properties(${source} PROPERTIES LANGUAGE ${Kokkos_COMPILE_LANGUAGE})
+    endforeach()
+  endif()
 
-ADD_LIBRARY(
-  ${LIBRARY_NAME}
-  ${PARSE_HEADERS}
-  ${PARSE_SOURCES}
-)
-ADD_LIBRARY(Kokkos::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
+  add_library(
+    ${LIBRARY_NAME}
+    ${PARSE_HEADERS}
+    ${PARSE_SOURCES}
+  )
+  add_library(Kokkos::${LIBRARY_NAME} ALIAS ${LIBRARY_NAME})
 
-INSTALL(
-  TARGETS ${LIBRARY_NAME}
-  EXPORT KokkosKernelsTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+  install(
+    TARGETS ${LIBRARY_NAME}
+    EXPORT KokkosKernelsTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
 
-INSTALL(
-  FILES  ${PARSE_HEADERS}
-  DESTINATION ${KOKKOSKERNELS_HEADER_INSTALL_DIR}
-  COMPONENT ${PACKAGE_NAME}
-)
+  install(
+    FILES  ${PARSE_HEADERS}
+    DESTINATION ${KOKKOSKERNELS_HEADER_INSTALL_DIR}
+    COMPONENT ${PACKAGE_NAME}
+  )
 
-INSTALL(
-  FILES  ${PARSE_HEADERS}
-  DESTINATION ${KOKKOSKERNELS_HEADER_INSTALL_DIR}
-)
+  install(
+    FILES  ${PARSE_HEADERS}
+    DESTINATION ${KOKKOSKERNELS_HEADER_INSTALL_DIR}
+  )
 
-ENDFUNCTION(KOKKOSKERNELS_INTERNAL_ADD_LIBRARY LIBRARY_NAME)
+endfunction(kokkoskernels_internal_add_library LIBRARY_NAME)
 
-FUNCTION(KOKKOSKERNELS_ADD_LIBRARY LIBRARY_NAME)
-IF (KOKKOSKERNELS_HAS_TRILINOS)
-  TRIBITS_ADD_LIBRARY(${LIBRARY_NAME} ${ARGN})
-ELSE()
-  KOKKOSKERNELS_INTERNAL_ADD_LIBRARY(
-    ${LIBRARY_NAME} ${ARGN})
-ENDIF()
-ENDFUNCTION()
+function(kokkoskernels_add_library LIBRARY_NAME)
+  if (KOKKOSKERNELS_HAS_TRILINOS)
+    tribits_add_library(${LIBRARY_NAME} ${ARGN})
+  else()
+    kokkoskernels_internal_add_library(${LIBRARY_NAME} ${ARGN})
+  endif()
+endfunction()
 
-FUNCTION(KOKKOSKERNELS_ADD_EXECUTABLE EXE_NAME)
-CMAKE_PARSE_ARGUMENTS(PARSE
-  ""
-  ""
-  "SOURCES;COMPONENTS;TESTONLYLIBS"
-  ${ARGN})
-VERIFY_EMPTY(KOKKOSKERNELS_ADD_EXECUTABLE ${PARSE_UNPARSED_ARGUMENTS})
+function(kokkoskernels_add_executable EXE_NAME)
+  cmake_parse_arguments(PARSE
+    ""
+    ""
+    "SOURCES;COMPONENTS;TESTONLYLIBS"
+    ${ARGN})
+  verify_empty(KOKKOSKERNELS_ADD_EXECUTABLE ${PARSE_UNPARSED_ARGUMENTS})
 
-KOKKOSKERNELS_IS_ENABLED(
-  COMPONENTS ${PARSE_COMPONENTS}
-  OUTPUT_VARIABLE IS_ENABLED
-)
+  kokkoskernels_is_enabled(
+    COMPONENTS ${PARSE_COMPONENTS}
+    OUTPUT_VARIABLE IS_ENABLED
+  )
 
-IF (IS_ENABLED)
-  IF (KOKKOSKERNELS_HAS_TRILINOS)
-    TRIBITS_ADD_EXECUTABLE(${EXE_NAME}
-      SOURCES ${PARSE_SOURCES}
-      TESTONLYLIBS ${PARSE_TESTONLYLIBS})
-  ELSE()
-    # Set the correct CMake language on all source files for this exe
-    IF(Kokkos_COMPILE_LANGUAGE)
-      FOREACH(source ${PARSE_SOURCES})
-        SET_SOURCE_FILES_PROPERTIES(${source} PROPERTIES LANGUAGE ${Kokkos_COMPILE_LANGUAGE})
-      ENDFOREACH()
-    ENDIF()
-    ADD_EXECUTABLE(${EXE_NAME} ${PARSE_SOURCES})
-    #AJP, BMK altered:
-    IF(KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE)
-      TARGET_LINK_LIBRARIES(${EXE_NAME} PRIVATE common ${PARSE_TESTONLYLIBS})
-    ENDIF()
+  if (IS_ENABLED)
+    if (KOKKOSKERNELS_HAS_TRILINOS)
+      tribits_add_executable(${EXE_NAME}
+        SOURCES ${PARSE_SOURCES}
+        TESTONLYLIBS ${PARSE_TESTONLYLIBS})
+    else()
+      # Set the correct CMake language on all source files for this exe
+      if (Kokkos_COMPILE_LANGUAGE)
+        foreach(source ${PARSE_SOURCES})
+          set_source_files_properties(${source} PROPERTIES LANGUAGE ${Kokkos_COMPILE_LANGUAGE})
+        endforeach()
+      endif()
+      add_executable(${EXE_NAME} ${PARSE_SOURCES})
+      #AJP, BMK altered:
+      if (KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE)
+        target_link_libraries(${EXE_NAME} PRIVATE common ${PARSE_TESTONLYLIBS})
+      endif()
 
-    IF (PARSE_TESTONLYLIBS)
-      TARGET_LINK_LIBRARIES(${EXE_NAME} PRIVATE Kokkos::kokkoskernels ${PARSE_TESTONLYLIBS})
-    ELSE ()
-      TARGET_LINK_LIBRARIES(${EXE_NAME} PRIVATE Kokkos::kokkoskernels)
-    ENDIF()
-  ENDIF()
-ELSE()
-  MESSAGE(STATUS "Skipping executable ${EXE_NAME} because not all necessary components enabled")
-ENDIF()
-ENDFUNCTION()
+      if (PARSE_TESTONLYLIBS)
+        target_link_libraries(${EXE_NAME} PRIVATE Kokkos::kokkoskernels ${PARSE_TESTONLYLIBS})
+      else ()
+        target_link_libraries(${EXE_NAME} PRIVATE Kokkos::kokkoskernels)
+      endif()
+    endif()
+  else()
+    message(STATUS "Skipping executable ${EXE_NAME} because not all necessary components enabled")
+  endif()
+endfunction()
 
-FUNCTION(KOKKOSKERNELS_ADD_UNIT_TEST ROOT_NAME)
-  KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST(
+function(kokkoskernels_add_unit_test ROOT_NAME)
+  kokkoskernels_add_executable_and_test(
     ${ROOT_NAME}
     TESTONLYLIBS kokkoskernels_gtest
     ${ARGN}
   )
-ENDFUNCTION()
+endfunction()
 
-FUNCTION(KOKKOSKERNELS_IS_ENABLED)
-  CMAKE_PARSE_ARGUMENTS(PARSE
+function(KOKKOSKERNELS_IS_ENABLED)
+  cmake_parse_arguments(PARSE
     ""
     "OUTPUT_VARIABLE"
     "COMPONENTS"
     ${ARGN})
 
-  IF (KOKKOSKERNELS_ENABLED_COMPONENTS STREQUAL "ALL")
-    SET(${PARSE_OUTPUT_VARIABLE} TRUE PARENT_SCOPE)
-  ELSEIF(PARSE_COMPONENTS)
-    SET(ENABLED TRUE)
-    FOREACH(comp ${PARSE_COMPONENTS})
-      STRING(TOUPPER ${comp} COMP_UC)
+  if (KOKKOSKERNELS_ENABLED_COMPONENTS STREQUAL "ALL")
+    set(${PARSE_OUTPUT_VARIABLE} TRUE PARENT_SCOPE)
+  elseif(PARSE_COMPONENTS)
+    set(ENABLED TRUE)
+    foreach(comp ${PARSE_COMPONENTS})
+      string(TOUPPER ${comp} COMP_UC)
       # make sure this is in the list of enabled components
-      IF(NOT "${COMP_UC}" IN_LIST KOKKOSKERNELS_ENABLED_COMPONENTS)
+      if (NOT "${COMP_UC}" IN_LIST KOKKOSKERNELS_ENABLED_COMPONENTS)
         # if not in the list, one or more components is missing
-        SET(ENABLED FALSE)
-      ENDIF()
-    ENDFOREACH()
-    SET(${PARSE_OUTPUT_VARIABLE} ${ENABLED} PARENT_SCOPE)
-  ELSE()
+        set(ENABLED FALSE)
+      endif()
+    endforeach()
+    set(${PARSE_OUTPUT_VARIABLE} ${ENABLED} PARENT_SCOPE)
+  else()
     # we did not enable all components and no components
     # were given as part of this - we consider this enabled
-    SET(${PARSE_OUTPUT_VARIABLE} TRUE PARENT_SCOPE)
-  ENDIF()
-ENDFUNCTION()
+    set(${PARSE_OUTPUT_VARIABLE} TRUE PARENT_SCOPE)
+  endif()
+endfunction()
 
-FUNCTION(KOKKOSKERNELS_ADD_EXECUTABLE_AND_TEST ROOT_NAME)
+function(kokkoskernels_add_executable_and_test ROOT_NAME)
 
-CMAKE_PARSE_ARGUMENTS(PARSE
-  ""
-  ""
-  "SOURCES;CATEGORIES;COMPONENTS;TESTONLYLIBS"
-  ${ARGN})
-VERIFY_EMPTY(KOKKOSKERNELS_ADD_EXECUTABLE_AND_RUN_VERIFY ${PARSE_UNPARSED_ARGUMENTS})
+  cmake_parse_arguments(PARSE
+    ""
+    ""
+    "SOURCES;CATEGORIES;COMPONENTS;TESTONLYLIBS"
+    ${ARGN})
 
-KOKKOSKERNELS_IS_ENABLED(
-  COMPONENTS ${PARSE_COMPONENTS}
-  OUTPUT_VARIABLE IS_ENABLED
-)
+  verify_empty(KOKKOSKERNELS_ADD_EXECUTABLE_AND_RUN_VERIFY ${PARSE_UNPARSED_ARGUMENTS})
 
-IF (IS_ENABLED)
-  IF (KOKKOSKERNELS_HAS_TRILINOS)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      ${ROOT_NAME}
-      SOURCES ${PARSE_SOURCES}
-      CATEGORIES ${PARSE_CATEGORIES}
-      TESTONLYLIBS ${PARSE_TESTONLYLIBS}
-      NUM_MPI_PROCS 1
-      COMM serial mpi
-    )
-  ELSE()
-    SET(EXE_NAME ${PACKAGE_NAME}_${ROOT_NAME})
-    KOKKOSKERNELS_ADD_EXECUTABLE(${EXE_NAME}
-      SOURCES ${PARSE_SOURCES}
-    )
-    IF (PARSE_TESTONLYLIBS)
-      TARGET_LINK_LIBRARIES(${EXE_NAME} PRIVATE ${PARSE_TESTONLYLIBS})
-    ENDIF()
-    KOKKOSKERNELS_ADD_TEST(NAME ${ROOT_NAME}
-      EXE ${EXE_NAME}
-    )
-  ENDIF()
-ELSE()
-  MESSAGE(STATUS "Skipping executable/test ${ROOT_NAME} because not all necessary components enabled")
-ENDIF()
+  kokkoskernels_is_enabled(
+    COMPONENTS ${PARSE_COMPONENTS}
+    OUTPUT_VARIABLE IS_ENABLED
+  )
 
-ENDFUNCTION()
+  if (IS_ENABLED)
+    if (KOKKOSKERNELS_HAS_TRILINOS)
+      tribits_add_executable_and_test(
+        ${ROOT_NAME}
+        SOURCES ${PARSE_SOURCES}
+        CATEGORIES ${PARSE_CATEGORIES}
+        TESTONLYLIBS ${PARSE_TESTONLYLIBS}
+        NUM_MPI_PROCS 1
+        COMM serial mpi
+        )
+    else()
+      set(EXE_NAME ${PACKAGE_NAME}_${ROOT_NAME})
+      kokkoskernels_add_executable(${EXE_NAME} SOURCES ${PARSE_SOURCES})
+      if (PARSE_TESTONLYLIBS)
+        target_link_libraries(${EXE_NAME} PRIVATE ${PARSE_TESTONLYLIBS})
+      endif()
+      kokkoskernels_add_test(NAME ${ROOT_NAME} EXE ${EXE_NAME})
+    endif()
+  else()
+    message(STATUS "Skipping executable/test ${ROOT_NAME} because not all necessary components enabled")
+  endif()
 
-MACRO(ADD_COMPONENT_SUBDIRECTORY SUBDIR)
-  KOKKOSKERNELS_IS_ENABLED(
+endfunction()
+
+macro(add_component_subdirectory SUBDIR)
+  kokkoskernels_is_enabled(
     COMPONENTS ${SUBDIR}
     OUTPUT_VARIABLE COMP_SUBDIR_ENABLED
   )
-  IF (COMP_SUBDIR_ENABLED)
-    ADD_SUBDIRECTORY(${SUBDIR})
-  ELSE()
-    MESSAGE(STATUS "Skipping subdirectory ${SUBDIR} because component is not enabled")
-  ENDIF()
-  UNSET(COMP_SUBDIR_ENABLED)
-ENDMACRO()
+  if (COMP_SUBDIR_ENABLED)
+    add_subdirectory(${SUBDIR})
+  else()
+    message(STATUS "Skipping subdirectory ${SUBDIR} because component is not enabled")
+  endif()
+  unset(COMP_SUBDIR_ENABLED)
+endmacro()

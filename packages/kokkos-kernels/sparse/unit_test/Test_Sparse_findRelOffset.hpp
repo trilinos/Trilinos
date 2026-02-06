@@ -363,7 +363,7 @@ void test_findRelOffset() {
 
   class NullBuffer : public std::streambuf {
    public:
-    int overflow(int c) { return c; }
+    int overflow(int c) override { return c; }
   };
   NullBuffer null_buffer;
   // std::ostream &out = std::cout;

@@ -785,7 +785,7 @@ class SPTRSVHandle {
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
     this->destroy_cuSPARSE_Handle();
 #endif
-  };
+  }
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   void create_cuSPARSE_Handle(bool transpose, bool is_lower) {

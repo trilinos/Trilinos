@@ -1005,7 +1005,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 0>
   }
 
  protected:
-  virtual int testHostImpl(std::ostream& out) const {
+  virtual int testHostImpl(std::ostream& out) const override {
     using std::endl;
     typedef KokkosKernels::ArithTraits<ScalarType> AT;
 
@@ -1084,7 +1084,7 @@ class ArithTraitsTesterComplexBase<ScalarType, DeviceType, 1>
   }
 
  protected:
-  virtual int testHostImpl(std::ostream& out) const {
+  virtual int testHostImpl(std::ostream& out) const override {
     using std::endl;
     typedef KokkosKernels::ArithTraits<ScalarType> AT;
     int success = 1;
@@ -1250,7 +1250,7 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 0>
   }
 
  protected:
-  virtual int testHostImpl(std::ostream& out) const {
+  virtual int testHostImpl(std::ostream& out) const override {
     typedef KokkosKernels::ArithTraits<ScalarType> AT;
     using std::endl;
     int success = 1;
@@ -1363,7 +1363,7 @@ class ArithTraitsTesterFloatingPointBase<ScalarType, DeviceType, 1>
   }
 
  protected:
-  virtual int testHostImpl(std::ostream& out) const {
+  virtual int testHostImpl(std::ostream& out) const override {
     typedef KokkosKernels::ArithTraits<ScalarType> AT;
     using std::endl;
     int success = 1;
@@ -1669,7 +1669,7 @@ void test_ArithTraits() {
 
   class NullBuffer : public std::streambuf {
    public:
-    int overflow(int c) { return c; }
+    int overflow(int c) override { return c; }
   };
   NullBuffer null_buffer;
   std::ostream& out = std::cerr;

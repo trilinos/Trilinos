@@ -2,22 +2,34 @@
 
 ## Overall Description
 
- This package performs LU factorization with partial pivoting and solves a dense
-matrix equation on a distributed computer system using MPI for message passing.
-The code was ported from Pliris, which runs on CPUs only. The code uses Kokkos
-and Kokkos Kernels libraries to achieve performance portability on heterogeneous
-architectures equipped with CPUs and acceleration hardware such as GPUs.
+Adelus performs LU factorization with partial pivoting and solves
+for a dense (real or complex) linear equation system on a distributed
+computing system using MPI for message passing. It can be considered
+a replacement for Pliris, which runs only on CPUs. Adelus uses
+Kokkos and Kokkos Kernels to achieve performance portability on
+heterogeneous architectures equipped with CPUs and accelerated
+hardware such as GPUs.
 
- The matrix is blocked mapped onto the processors of the parallel machine
-(either CPUs or GPUs). It is solved as if it was torus-wrapped for an optimal balance 
-of computation and communication. A permutation operation is performed on the 
-results to restore the results to their correct position so the torus-wrap distribution
-is hidden to the user. Each processor contains blocks of the matrix and the right hand sides. 
-A distribution function is used to optimally load balance the computation and communication
-during the LU factorization of the matrix. Each processor handles its own workload
-through the Kokkos Kernels BLAS routines optimized for multi-threaded CPUs and 
-massively parallel GPUs. Furthermore, CUDA-aware MPI is exploited on 
-GPU architectures which allows direct communication from GPU memory.
+The matrix is blocked mapped onto MPI processes (either on host
+memory or device memory). It is factored and solved as if it was
+torus-wrapped for an optimal balance of computation and communication.
+A permutation operation is performed on the results to restore the
+results to their correct position so the torus-wrap distribution
+is hidden to the user. Each process contains blocks of the matrix
+and the right hand sides. A distribution function is used to optimally
+load balance the computation and communication during the LU
+factorization of the matrix. Each process handles its own workload
+through the Kokkos Kernels BLAS routines optimized for multi-threaded
+CPUs and massively parallel GPUs. GPU-aware MPI can be used on GPU
+architectures to allows direct communication among GPU buffers.
+
+Adelus provides three interfaces, FactorSolve (factors and solves
+a dense system in which matrix and RHS are packed in Kokkos View),
+Factor (factors a dense matrix for later solve), and Solve (solves
+a previously factored dense matrix for provided RHS). Adelus supports
+solving for multiple RHS vectors. Adelus allows applications to
+concurrently launch multiple solvers each of which is associated
+with a MPI sub-communicator of the MPI_COMM_WORLD.
 
 ### Relation of the Matrix Distribution to MPI Process Topology
 
@@ -280,12 +292,21 @@ cmake -DTrilinos_DIR={trilinos_install_path}/include ..
 
 from the ```cmakebuild``` directory.
 
-##### [LICENSE](https://github.com/vqd8a/Trilinos/tree/add_adelus/packages/adelus/LICENSE)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+## Documentation
 
-Adelus is licensed under standard 3-clause BSD terms of use. For
-specifics, please refer to the LICENSE file contained in the
-repository or distribution.  Under the terms of Contract DE-NA0003525 with NTESS,
-the U.S. Government retains certain rights in this software.
+Additional information on Adelus can be found at the [Trilinos Project](https://trilinos.github.io), and through the [Adelus's Doxygen webpages](https://trilinos.github.io/docs/adelus/index.html).
+
+## Questions?
 
 Any questions can be directed to: Vinh Dang (vqdang@sandia.gov), Joseph Kotulski (jdkotul@sandia.gov), Siva Rajamanickam (srajama@sandia.gov)
+
+## Copyright and License
+
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
+Adelus is licensed under standard 3-clause BSD terms of use.
+For Adelus-specific copyright and license details, refer to the [adelus/COPYRIGHT](COPYRIGHT) and [adelus/LICENSE](LICENSE) files located in the `adelus` directory. Additional copyright information may also be found in the headers of individual source files.
+
+For general copyright and license information, refer to the Trilinos [License](../../LICENSE) and [Copyright](../../COPYRIGHT).
+
+For developers, general guidance on documenting copyrights and licenses can be found in the Trilinos [Guidance on Copyrights and Licenses](https://github.com/trilinos/Trilinos/wiki/Guidance-on-Copyrights-and-Licenses) document.

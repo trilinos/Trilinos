@@ -65,26 +65,26 @@ class MatrixPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   //
   virtual void apply(const Kokkos::View<const ScalarType *, Kokkos::Device<EXSP, MEMSP>> &X,
                      const Kokkos::View<ScalarType *, Kokkos::Device<EXSP, MEMSP>> &Y, const char transM[] = "N",
-                     ScalarType alpha = karith::one(), ScalarType beta = karith::zero()) const {
+                     ScalarType alpha = karith::one(), ScalarType beta = karith::zero()) const override {
     KokkosSparse::spmv(transM, alpha, A_, X, beta, Y);
   }
   //@}
 
   //! Set this preconditioner's parameters.
-  void setParameters() {}
+  void setParameters() override {}
 
-  void initialize() {}
+  void initialize() override {}
 
   //! True if the preconditioner has been successfully initialized, else false.
-  bool isInitialized() const { return true; }
+  bool isInitialized() const override { return true; }
 
-  void compute() {}
+  void compute() override {}
 
   //! True if the preconditioner has been successfully computed, else false.
-  bool isComputed() const { return true; }
+  bool isComputed() const override { return true; }
 
   //! True if the preconditioner implements a transpose operator apply.
-  bool hasTransposeApply() const { return true; }
+  bool hasTransposeApply() const override { return true; }
 };
 }  // namespace Experimental
 }  // End namespace KokkosSparse

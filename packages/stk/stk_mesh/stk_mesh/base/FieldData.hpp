@@ -99,7 +99,7 @@ public:
 
   FieldData();
   FieldData(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName, const DataTraits& dataTraits);
-  KOKKOS_DEFAULTED_FUNCTION virtual ~FieldData() override = default;
+  KOKKOS_FUNCTION virtual ~FieldData() override {}
 
   FieldData(const FieldData& fieldData, FieldAccessTag accessTag);
   KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
@@ -147,7 +147,7 @@ public:
 
   FieldData();
   FieldData(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName, const DataTraits& dataTraits);
-  KOKKOS_DEFAULTED_FUNCTION virtual ~FieldData() override = default;
+  KOKKOS_FUNCTION virtual ~FieldData() override {}
 
   FieldData(const FieldData& fieldData, FieldAccessTag accessTag);
   KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
@@ -195,7 +195,7 @@ public:
 
   FieldData();
   FieldData(const FieldDataBytes<stk::ngp::HostSpace>& hostFieldBytes, FieldAccessTag accessTag);
-  KOKKOS_DEFAULTED_FUNCTION virtual ~FieldData() override = default;
+  KOKKOS_FUNCTION virtual ~FieldData() override {}
 
   KOKKOS_DEFAULTED_FUNCTION FieldData(const FieldData& fieldData) = default;
   KOKKOS_DEFAULTED_FUNCTION FieldData(FieldData&&) = default;

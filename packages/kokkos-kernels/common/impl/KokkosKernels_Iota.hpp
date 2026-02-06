@@ -96,7 +96,7 @@ class Iota {
      i >= size() or i < 0 yields undefined behavior.
   */
   KOKKOS_INLINE_FUNCTION
-  constexpr T operator()(size_type i) const noexcept { return value_type(i + offset_); };
+  constexpr T operator()(size_type i) const noexcept { return value_type(i + offset_); }
 
   /// \brief return the size of the iota
   KOKKOS_INLINE_FUNCTION

@@ -90,8 +90,8 @@ namespace Amesos2 {
      * arguments.
      */
     static void gstrf(SLUD::amesos2_superlu_dist_options_t* options, int m, int n, double anorm, 
-		      type_map::LUstruct_t* LU, SLUD::gridinfo_t* grid, SLUD::SuperLUStat_t* stat, 
-		      int* info)
+                      type_map::LUstruct_t* LU, SLUD::gridinfo_t* grid, SLUD::SuperLUStat_t* stat, 
+                      int* info)
     {
       SLUD::D::pdgstrf(options, m, n, anorm, LU, grid, stat, info);
     }
@@ -103,30 +103,30 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void gstrs(SLUD::amesos2_superlu_dist_options_t* options,
                       SLUD::int_t n, type_map::LUstruct_t* lu_struct, 
-		      SLUD::D::dScalePermstruct_t* scale_perm_struct, SLUD::gridinfo_t* grid,
-		      type_map::type* B, SLUD::int_t l_numrows, SLUD::int_t fst_global_row, 
-		      SLUD::int_t ldb, int nrhs, type_map::SOLVEstruct_t* solve_struct, 
-		      SLUD::SuperLUStat_t* stat, int* info)
+                      SLUD::D::dScalePermstruct_t* scale_perm_struct, SLUD::gridinfo_t* grid,
+                      type_map::type* B, SLUD::int_t l_numrows, SLUD::int_t fst_global_row, 
+                      SLUD::int_t ldb, int nrhs, type_map::SOLVEstruct_t* solve_struct, 
+                      SLUD::SuperLUStat_t* stat, int* info)
 #elif SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
     static void gstrs(SLUD::int_t n, type_map::LUstruct_t* lu_struct, 
-		      SLUD::D::dScalePermstruct_t* scale_perm_struct, SLUD::gridinfo_t* grid,
-		      type_map::type* B, SLUD::int_t l_numrows, SLUD::int_t fst_global_row, 
-		      SLUD::int_t ldb, int nrhs, type_map::SOLVEstruct_t* solve_struct, 
-		      SLUD::SuperLUStat_t* stat, int* info)
+                      SLUD::D::dScalePermstruct_t* scale_perm_struct, SLUD::gridinfo_t* grid,
+                      type_map::type* B, SLUD::int_t l_numrows, SLUD::int_t fst_global_row, 
+                      SLUD::int_t ldb, int nrhs, type_map::SOLVEstruct_t* solve_struct, 
+                      SLUD::SuperLUStat_t* stat, int* info)
 #else
     static void gstrs(SLUD::int_t n, type_map::LUstruct_t* lu_struct, 
-		      SLUD::ScalePermstruct_t* scale_perm_struct, SLUD::gridinfo_t* grid,
-		      type_map::type* B, SLUD::int_t l_numrows, SLUD::int_t fst_global_row, 
-		      SLUD::int_t ldb, int nrhs, type_map::SOLVEstruct_t* solve_struct, 
-		      SLUD::SuperLUStat_t* stat, int* info)
+                      SLUD::ScalePermstruct_t* scale_perm_struct, SLUD::gridinfo_t* grid,
+                      type_map::type* B, SLUD::int_t l_numrows, SLUD::int_t fst_global_row, 
+                      SLUD::int_t ldb, int nrhs, type_map::SOLVEstruct_t* solve_struct, 
+                      SLUD::SuperLUStat_t* stat, int* info)
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
       SLUD::D::pdgstrs(options, n, lu_struct, scale_perm_struct, grid, B, l_numrows,
-		       fst_global_row, ldb, nrhs, solve_struct, stat, info);
+                       fst_global_row, ldb, nrhs, solve_struct, stat, info);
 #else
       SLUD::D::pdgstrs(n, lu_struct, scale_perm_struct, grid, B, l_numrows,
-		       fst_global_row, ldb, nrhs, solve_struct, stat, info);
+                       fst_global_row, ldb, nrhs, solve_struct, stat, info);
 #endif
     }
 
@@ -140,18 +140,18 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void gstrs_Bglobal(SLUD::amesos2_superlu_dist_options_t* options,
                               SLUD::int_t n, type_map::LUstruct_t* lu_struct,
-			      SLUD::gridinfo_t* grid, type_map::type* B,
-			      SLUD::int_t ldb, int nrhs,
-			      SLUD::SuperLUStat_t* stat, int* info)
+                              SLUD::gridinfo_t* grid, type_map::type* B,
+                              SLUD::int_t ldb, int nrhs,
+                              SLUD::SuperLUStat_t* stat, int* info)
 
     {
       SLUD::D::pdgstrs_Bglobal(options, n, lu_struct, grid, B, ldb, nrhs, stat, info);
     }
 #else
     static void gstrs_Bglobal(SLUD::int_t n, type_map::LUstruct_t* lu_struct,
-			      SLUD::gridinfo_t* grid, type_map::type* B,
-			      SLUD::int_t ldb, int nrhs,
-			      SLUD::SuperLUStat_t* stat, int* info)
+                              SLUD::gridinfo_t* grid, type_map::type* B,
+                              SLUD::int_t ldb, int nrhs,
+                              SLUD::SuperLUStat_t* stat, int* info)
 
     {
       SLUD::D::pdgstrs_Bglobal(n, lu_struct, grid, B, ldb, nrhs, stat, info);
@@ -164,36 +164,36 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void gsrfs(SLUD::amesos2_superlu_dist_options_t* options,
                       SLUD::int_t n, SLUD::SuperMatrix* A, double anorm, 
-		      type_map::LUstruct_t* lu_struct,
-		      SLUD::D::dScalePermstruct_t* scale_perm, 
-		      SLUD::gridinfo_t* grid, type_map::type* B, SLUD::int_t ldb, 
-		      type_map::type* X, SLUD::int_t ldx, int nrhs, 
-		      type_map::SOLVEstruct_t* solve_struct, double* berr, 
-		      SLUD::SuperLUStat_t* stat, int* info)
+                      type_map::LUstruct_t* lu_struct,
+                      SLUD::D::dScalePermstruct_t* scale_perm, 
+                      SLUD::gridinfo_t* grid, type_map::type* B, SLUD::int_t ldb, 
+                      type_map::type* X, SLUD::int_t ldx, int nrhs, 
+                      type_map::SOLVEstruct_t* solve_struct, double* berr, 
+                      SLUD::SuperLUStat_t* stat, int* info)
 #elif SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
     static void gsrfs(SLUD::int_t n, SLUD::SuperMatrix* A, double anorm, 
-		      type_map::LUstruct_t* lu_struct,
-		      SLUD::D::dScalePermstruct_t* scale_perm, 
-		      SLUD::gridinfo_t* grid, type_map::type* B, SLUD::int_t ldb, 
-		      type_map::type* X, SLUD::int_t ldx, int nrhs, 
-		      type_map::SOLVEstruct_t* solve_struct, double* berr, 
-		      SLUD::SuperLUStat_t* stat, int* info)
+                      type_map::LUstruct_t* lu_struct,
+                      SLUD::D::dScalePermstruct_t* scale_perm, 
+                      SLUD::gridinfo_t* grid, type_map::type* B, SLUD::int_t ldb, 
+                      type_map::type* X, SLUD::int_t ldx, int nrhs, 
+                      type_map::SOLVEstruct_t* solve_struct, double* berr, 
+                      SLUD::SuperLUStat_t* stat, int* info)
 #else
     static void gsrfs(SLUD::int_t n, SLUD::SuperMatrix* A, double anorm, 
-		      type_map::LUstruct_t* lu_struct,
-		      SLUD::ScalePermstruct_t* scale_perm, 
-		      SLUD::gridinfo_t* grid, type_map::type* B, SLUD::int_t ldb, 
-		      type_map::type* X, SLUD::int_t ldx, int nrhs, 
-		      type_map::SOLVEstruct_t* solve_struct, double* berr, 
-		      SLUD::SuperLUStat_t* stat, int* info)
+                      type_map::LUstruct_t* lu_struct,
+                      SLUD::ScalePermstruct_t* scale_perm, 
+                      SLUD::gridinfo_t* grid, type_map::type* B, SLUD::int_t ldb, 
+                      type_map::type* X, SLUD::int_t ldx, int nrhs, 
+                      type_map::SOLVEstruct_t* solve_struct, double* berr, 
+                      SLUD::SuperLUStat_t* stat, int* info)
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
       SLUD::D::pdgsrfs(options, n, A, anorm, lu_struct, scale_perm, grid, B, ldb, 
-		       X, ldx, nrhs, solve_struct, berr, stat, info);
+                       X, ldx, nrhs, solve_struct, berr, stat, info);
 #else
       SLUD::D::pdgsrfs(n, A, anorm, lu_struct, scale_perm, grid, B, ldb, 
-		       X, ldx, nrhs, solve_struct, berr, stat, info);
+                       X, ldx, nrhs, solve_struct, berr, stat, info);
 #endif
     }
 
@@ -207,23 +207,23 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void gsrfs_ABXglobal(SLUD::amesos2_superlu_dist_options_t* options,
                                 SLUD::int_t n, SLUD::SuperMatrix* A, double anorm,
-				type_map::LUstruct_t* lu_struct, SLUD::gridinfo_t* grid,
-				type_map::type* B, SLUD::int_t ldb, type_map::type* X,
-				SLUD::int_t ldx, int nrhs, double* berr,
-				SLUD::SuperLUStat_t* stat, int* info)
+                                type_map::LUstruct_t* lu_struct, SLUD::gridinfo_t* grid,
+                                type_map::type* B, SLUD::int_t ldb, type_map::type* X,
+                                SLUD::int_t ldx, int nrhs, double* berr,
+                                SLUD::SuperLUStat_t* stat, int* info)
     {
       SLUD::D::pdgsrfs_ABXglobal(options, n, A, anorm, lu_struct, grid, B, ldb, 
-				 X, ldx, nrhs, berr, stat, info);
+                                 X, ldx, nrhs, berr, stat, info);
     }
 #else
     static void gsrfs_ABXglobal(SLUD::int_t n, SLUD::SuperMatrix* A, double anorm,
-				type_map::LUstruct_t* lu_struct, SLUD::gridinfo_t* grid,
-				type_map::type* B, SLUD::int_t ldb, type_map::type* X,
-				SLUD::int_t ldx, int nrhs, double* berr,
-				SLUD::SuperLUStat_t* stat, int* info)
+                                type_map::LUstruct_t* lu_struct, SLUD::gridinfo_t* grid,
+                                type_map::type* B, SLUD::int_t ldb, type_map::type* X,
+                                SLUD::int_t ldx, int nrhs, double* berr,
+                                SLUD::SuperLUStat_t* stat, int* info)
     {
       SLUD::D::pdgsrfs_ABXglobal(n, A, anorm, lu_struct, grid, B, ldb, 
-				 X, ldx, nrhs, berr, stat, info);
+                                 X, ldx, nrhs, berr, stat, info);
     }
 #endif
   
@@ -232,16 +232,16 @@ namespace Amesos2 {
      * appropriate function
      */
     static void create_CompRowLoc_Matrix(SLUD::SuperMatrix* A, SLUD::int_t g_numrows,
-					 SLUD::int_t g_numcols, SLUD::int_t l_nnz,
-					 SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
-					 type_map::type* nzval, SLUD::int_t* colind,
-					 SLUD::int_t* rowptr, SLUD::Stype_t storage_t,
-					 SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)
+                                         SLUD::int_t g_numcols, SLUD::int_t l_nnz,
+                                         SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
+                                         type_map::type* nzval, SLUD::int_t* colind,
+                                         SLUD::int_t* rowptr, SLUD::Stype_t storage_t,
+                                         SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)
     {
       SLUD::D::dCreate_CompRowLoc_Matrix_dist(A, g_numrows, g_numcols, l_nnz, 
-					      l_numrows, fst_global_row,
-					      nzval, colind, rowptr,
-					      storage_t, data_t, mat_t);
+                                              l_numrows, fst_global_row,
+                                              nzval, colind, rowptr,
+                                              storage_t, data_t, mat_t);
     }
 
     /**
@@ -252,14 +252,14 @@ namespace Amesos2 {
      * vector B.
      */
     static void create_CompCol_Matrix(SLUD::SuperMatrix* A, SLUD::int_t numrows,
-				      SLUD::int_t numcols, SLUD::int_t nnz,
-				      type_map::type* nzval, SLUD::int_t* rowind,
-				      SLUD::int_t* colptr, SLUD::Stype_t storage_t,
-				      SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)
+                                      SLUD::int_t numcols, SLUD::int_t nnz,
+                                      type_map::type* nzval, SLUD::int_t* rowind,
+                                      SLUD::int_t* colptr, SLUD::Stype_t storage_t,
+                                      SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)
     {
       SLUD::D::dCreate_CompCol_Matrix_dist(A, numrows, numcols, nnz, 
-					   nzval, rowind, colptr,
-					   storage_t, data_t, mat_t);
+                                           nzval, rowind, colptr,
+                                           storage_t, data_t, mat_t);
     }
 
     /**
@@ -271,19 +271,19 @@ namespace Amesos2 {
      * \param ldx leading dimension of x
      */
     static void create_Dense_Matrix(SLUD::SuperMatrix* X, int m, int n,
-				    type_map::type* x, int ldx, SLUD::Stype_t stype,
-				    SLUD::Dtype_t dtype, SLUD::Mtype_t mtype)
+                                    type_map::type* x, int ldx, SLUD::Stype_t stype,
+                                    SLUD::Dtype_t dtype, SLUD::Mtype_t mtype)
     {
       SLUD::D::dCreate_Dense_Matrix_dist(X, m, n, x, ldx, stype, dtype, mtype);
     }
 
     static void permute_Dense_Matrix(SLUD::int_t fst_row, SLUD::int_t m_loc,
-				     SLUD::int_t* row_to_proc, SLUD::int_t* perm,
-				     type_map::type* X, int ldx, type_map::type* B,
-				     int ldb, int nrhs, SLUD::gridinfo_t* grid)
+                                     SLUD::int_t* row_to_proc, SLUD::perm_int_t* perm,
+                                     type_map::type* X, int ldx, type_map::type* B,
+                                     int ldb, int nrhs, SLUD::gridinfo_t* grid)
     {
       SLUD::D::pdPermute_Dense_Matrix(fst_row, m_loc, row_to_proc, perm,
-				      X, ldx, B, ldb, nrhs, grid);
+                                      X, ldx, B, ldb, nrhs, grid);
     }
   
     /**
@@ -295,8 +295,8 @@ namespace Amesos2 {
      * This form operates on a SuperMatrix having the NRformat_loc
      */
     static void gsequ_loc(SLUD::SuperMatrix* A, double* r, double* c, 
-			  double* rowcnd, double* colcnd, double* amax, SLUD::int_t* info,
-			  SLUD::gridinfo_t* grid)
+                          double* rowcnd, double* colcnd, double* amax, SLUD::info_t* info,
+                          SLUD::gridinfo_t* grid)
     {
       SLUD::D::pdgsequ(A, r, c, rowcnd, colcnd, amax, info, grid);
     }
@@ -306,7 +306,7 @@ namespace Amesos2 {
      * suitable for a globally-replicated matrix.
      */
     static void gsequ(SLUD::SuperMatrix* A, double* r, double* c, 
-		      double* rowcnd, double* colcnd, double* amax, SLUD::int_t* info)
+                      double* rowcnd, double* colcnd, double* amax, SLUD::info_t* info)
     {
       SLUD::D::dgsequ_dist(A, r, c, rowcnd, colcnd, amax, info);
     }
@@ -315,8 +315,8 @@ namespace Amesos2 {
      * This form suitable for working with matrices in NC format.
      */
     static void laqgs_loc(SLUD::SuperMatrix* A, double* r, double* c, 
-			  double rowcnd, double colcnd, double amax,
-			  SLUD::DiagScale_t* equed)
+                          double rowcnd, double colcnd, double amax,
+                          SLUD::DiagScale_t* equed)
     {
       char eq = AMESOS2_SLUD_GET_EQUED(*equed);
       SLUD::D::pdlaqgs(A, r, c, rowcnd, colcnd, amax, &eq);
@@ -337,7 +337,7 @@ namespace Amesos2 {
      * to DiagScale_t
      */
     static void laqgs(SLUD::SuperMatrix* A, double* r, double* c, 
-		      double rowcnd, double colcnd, double amax, SLUD::DiagScale_t* equed)
+                      double rowcnd, double colcnd, double amax, SLUD::DiagScale_t* equed)
     {
       char eq = AMESOS2_SLUD_GET_EQUED(*equed);
       SLUD::D::dlaqgs_dist(A, r, c, rowcnd, colcnd, amax, &eq);
@@ -350,15 +350,15 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void distribute(SLUD::amesos2_superlu_dist_options_t* options,
                            SLUD::fact_t fact, SLUD::int_t n,
-			   SLUD::SuperMatrix* A, SLUD::Glu_freeable_t* glu_freeable,
-			   type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
+                           SLUD::SuperMatrix* A, SLUD::Glu_freeable_t* glu_freeable,
+                           type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
     {
       SLUD::D::ddistribute(options, n, A, glu_freeable, lu, grid);
     }
 #else
     static void distribute(SLUD::fact_t fact, SLUD::int_t n,
-			   SLUD::SuperMatrix* A, SLUD::Glu_freeable_t* glu_freeable,
-			   type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
+                           SLUD::SuperMatrix* A, SLUD::Glu_freeable_t* glu_freeable,
+                           type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
     {
       SLUD::D::ddistribute(fact, n, A, glu_freeable, lu, grid);
     }
@@ -374,19 +374,19 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void pdistribute(SLUD::amesos2_superlu_dist_options_t* options,
                             SLUD::int_t n, 
-			    SLUD::SuperMatrix* A, SLUD::D::dScalePermstruct_t* scale_perm, 
-			    SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
-			    SLUD::gridinfo_t* grid)
+                            SLUD::SuperMatrix* A, SLUD::D::dScalePermstruct_t* scale_perm, 
+                            SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
+                            SLUD::gridinfo_t* grid)
 #elif SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
     static void pdistribute(SLUD::fact_t fact, SLUD::int_t n, 
-			    SLUD::SuperMatrix* A, SLUD::D::dScalePermstruct_t* scale_perm, 
-			    SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
-			    SLUD::gridinfo_t* grid)
+                            SLUD::SuperMatrix* A, SLUD::D::dScalePermstruct_t* scale_perm, 
+                            SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
+                            SLUD::gridinfo_t* grid)
 #else
     static void pdistribute(SLUD::fact_t fact, SLUD::int_t n, 
-			    SLUD::SuperMatrix* A, SLUD::ScalePermstruct_t* scale_perm, 
-			    SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
-			    SLUD::gridinfo_t* grid)
+                            SLUD::SuperMatrix* A, SLUD::ScalePermstruct_t* scale_perm, 
+                            SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
+                            SLUD::gridinfo_t* grid)
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
@@ -407,19 +407,19 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void dist_psymbtonum(SLUD::amesos2_superlu_dist_options_t* options,
                                 SLUD::int_t n, SLUD::SuperMatrix* A,
-				SLUD::D::dScalePermstruct_t* scale_perm,
-				SLUD::Pslu_freeable_t* pslu_freeable,
-				type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
+                                SLUD::D::dScalePermstruct_t* scale_perm,
+                                SLUD::Pslu_freeable_t* pslu_freeable,
+                                type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
 #elif SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
     static void dist_psymbtonum(SLUD::fact_t fact, SLUD::int_t n, SLUD::SuperMatrix* A,
-				SLUD::D::dScalePermstruct_t* scale_perm,
-				SLUD::Pslu_freeable_t* pslu_freeable,
-				type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
+                                SLUD::D::dScalePermstruct_t* scale_perm,
+                                SLUD::Pslu_freeable_t* pslu_freeable,
+                                type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
 #else
     static void dist_psymbtonum(SLUD::fact_t fact, SLUD::int_t n, SLUD::SuperMatrix* A,
-		          	SLUD::ScalePermstruct_t* scale_perm,
-				SLUD::Pslu_freeable_t* pslu_freeable,
-				type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
+                                  SLUD::ScalePermstruct_t* scale_perm,
+                                SLUD::Pslu_freeable_t* pslu_freeable,
+                                type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
@@ -442,15 +442,15 @@ namespace Amesos2 {
     }
 
     static void SolveInit(SLUD::amesos2_superlu_dist_options_t* options, SLUD::SuperMatrix* A, 
-			  SLUD::int_t* perm_r, SLUD::int_t* perm_c, SLUD::int_t nrhs, 
-			  type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
-			  type_map::SOLVEstruct_t* solve_struct)
+                          SLUD::perm_int_t* perm_r, SLUD::perm_int_t* perm_c, SLUD::int_t nrhs, 
+                          type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
+                          type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::D::dSolveInit(options, A, perm_r, perm_c, nrhs, lu, grid, solve_struct);
     }
 
     static void LUstructInit(SLUD::int_t m, SLUD::int_t n,
-			     type_map::LUstruct_t* lu)
+                             type_map::LUstruct_t* lu)
     {
       /// When we make sure that version 5 and higher is used
       /// we do not perform runtime check of the interface
@@ -468,7 +468,7 @@ namespace Amesos2 {
     }
 
     static void Destroy_LU(SLUD::int_t m, SLUD::gridinfo_t* grid,
-			   type_map::LUstruct_t* lu)
+                           type_map::LUstruct_t* lu)
     {
 #if SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
       SLUD::D::dDestroy_LU(m, grid, lu);
@@ -487,13 +487,13 @@ namespace Amesos2 {
     }
 
     static void SolveFinalize(SLUD::amesos2_superlu_dist_options_t* options,
-			      type_map::SOLVEstruct_t* solve_struct)
+                              type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::D::dSolveFinalize(options, solve_struct);
     }
 
     static int ldperm_dist(int job, int n, SLUD::int_t nnz, SLUD::int_t colptr[], SLUD::int_t adjncy[],
-            double nzval[], SLUD::int_t *perm, double u[], double v[])
+            double nzval[], SLUD::perm_int_t *perm, double u[], double v[])
     {
       return SLUD::D::dldperm_dist(job, n, nnz, colptr, adjncy, nzval, perm, u, v);
     }
@@ -510,8 +510,8 @@ namespace Amesos2 {
     typedef TypeMap<Superludist,std::complex<double> > type_map;
 
     static void gstrf(SLUD::amesos2_superlu_dist_options_t* options, int m, int n, double anorm, 
-		      type_map::LUstruct_t* LU, SLUD::gridinfo_t* grid,
-		      SLUD::SuperLUStat_t* stat, int* info)
+                      type_map::LUstruct_t* LU, SLUD::gridinfo_t* grid,
+                      SLUD::SuperLUStat_t* stat, int* info)
     {
       SLUD::Z::pzgstrf(options, m, n, anorm, LU, grid, stat, info);
     }
@@ -519,112 +519,112 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void gstrs(SLUD::amesos2_superlu_dist_options_t* options,
                       SLUD::int_t n, type_map::LUstruct_t* lu_struct,
-		      SLUD::Z::zScalePermstruct_t* scale_perm_struct,
-		      SLUD::gridinfo_t* grid, type_map::type* B,
-		      SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
-		      SLUD::int_t ldb, int nrhs,
-		      type_map::SOLVEstruct_t* solve_struct,
-		      SLUD::SuperLUStat_t* stat, int* info)
+                      SLUD::Z::zScalePermstruct_t* scale_perm_struct,
+                      SLUD::gridinfo_t* grid, type_map::type* B,
+                      SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
+                      SLUD::int_t ldb, int nrhs,
+                      type_map::SOLVEstruct_t* solve_struct,
+                      SLUD::SuperLUStat_t* stat, int* info)
 #elif SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
     static void gstrs(SLUD::int_t n, type_map::LUstruct_t* lu_struct,
-		      SLUD::Z::zScalePermstruct_t* scale_perm_struct,
-		      SLUD::gridinfo_t* grid, type_map::type* B,
-		      SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
-		      SLUD::int_t ldb, int nrhs,
-		      type_map::SOLVEstruct_t* solve_struct,
-		      SLUD::SuperLUStat_t* stat, int* info)
+                      SLUD::Z::zScalePermstruct_t* scale_perm_struct,
+                      SLUD::gridinfo_t* grid, type_map::type* B,
+                      SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
+                      SLUD::int_t ldb, int nrhs,
+                      type_map::SOLVEstruct_t* solve_struct,
+                      SLUD::SuperLUStat_t* stat, int* info)
 #else
     static void gstrs(SLUD::int_t n, type_map::LUstruct_t* lu_struct,
-		      SLUD::ScalePermstruct_t* scale_perm_struct,
-		      SLUD::gridinfo_t* grid, type_map::type* B,
-		      SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
-		      SLUD::int_t ldb, int nrhs,
-		      type_map::SOLVEstruct_t* solve_struct,
-		      SLUD::SuperLUStat_t* stat, int* info)
+                      SLUD::ScalePermstruct_t* scale_perm_struct,
+                      SLUD::gridinfo_t* grid, type_map::type* B,
+                      SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
+                      SLUD::int_t ldb, int nrhs,
+                      type_map::SOLVEstruct_t* solve_struct,
+                      SLUD::SuperLUStat_t* stat, int* info)
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
       SLUD::Z::pzgstrs(options, n, lu_struct, scale_perm_struct, grid, B, l_numrows,
-		       fst_global_row, ldb, nrhs, solve_struct, stat, info);
+                       fst_global_row, ldb, nrhs, solve_struct, stat, info);
 #else
       SLUD::Z::pzgstrs(n, lu_struct, scale_perm_struct, grid, B, l_numrows,
-		       fst_global_row, ldb, nrhs, solve_struct, stat, info);
+                       fst_global_row, ldb, nrhs, solve_struct, stat, info);
 #endif
     }
 
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void gstrs_Bglobal(SLUD::amesos2_superlu_dist_options_t* options,
                               SLUD::int_t n, type_map::LUstruct_t* lu_struct, 
-			      SLUD::gridinfo_t* grid, type_map::type* B, 
-			      SLUD::int_t ldb, int nrhs, SLUD::SuperLUStat_t* stat, int* info)
+                              SLUD::gridinfo_t* grid, type_map::type* B, 
+                              SLUD::int_t ldb, int nrhs, SLUD::SuperLUStat_t* stat, int* info)
     {
       SLUD::Z::pzgstrs_Bglobal(options,n, lu_struct, grid, B, ldb, nrhs, stat, info);
     }
 #else
     static void gstrs_Bglobal(SLUD::int_t n, type_map::LUstruct_t* lu_struct, 
-			      SLUD::gridinfo_t* grid, type_map::type* B, 
-			      SLUD::int_t ldb, int nrhs, SLUD::SuperLUStat_t* stat, int* info)
+                              SLUD::gridinfo_t* grid, type_map::type* B, 
+                              SLUD::int_t ldb, int nrhs, SLUD::SuperLUStat_t* stat, int* info)
     {
       SLUD::Z::pzgstrs_Bglobal(n, lu_struct, grid, B, ldb, nrhs, stat, info);
     }
 #endif
   
     static void create_CompRowLoc_Matrix(SLUD::SuperMatrix* A, SLUD::int_t g_numrows,
-					 SLUD::int_t g_numcols, SLUD::int_t l_nnz,
-					 SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
-					 type_map::type* nzval, SLUD::int_t* colind,
-					 SLUD::int_t* rowptr, SLUD::Stype_t storage_t,
-					 SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)
+                                         SLUD::int_t g_numcols, SLUD::int_t l_nnz,
+                                         SLUD::int_t l_numrows, SLUD::int_t fst_global_row,
+                                         type_map::type* nzval, SLUD::int_t* colind,
+                                         SLUD::int_t* rowptr, SLUD::Stype_t storage_t,
+                                         SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)
     {
       SLUD::Z::zCreate_CompRowLoc_Matrix_dist(A, g_numrows, g_numcols, l_nnz, 
-					      l_numrows, fst_global_row,
-					      nzval, colind, rowptr,
-					      storage_t, data_t, mat_t);
+                                              l_numrows, fst_global_row,
+                                              nzval, colind, rowptr,
+                                              storage_t, data_t, mat_t);
     }
 
     static void create_CompCol_Matrix(SLUD::SuperMatrix* A, SLUD::int_t numrows,
-				      SLUD::int_t numcols, SLUD::int_t nnz,
-				      type_map::type* nzval, SLUD::int_t* rowind,
-				      SLUD::int_t* colptr, SLUD::Stype_t storage_t,
-				      SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)
+                                      SLUD::int_t numcols, SLUD::int_t nnz,
+                                      type_map::type* nzval, SLUD::int_t* rowind,
+                                      SLUD::int_t* colptr, SLUD::Stype_t storage_t,
+                                      SLUD::Dtype_t data_t, SLUD::Mtype_t mat_t)
     {
       SLUD::Z::zCreate_CompCol_Matrix_dist(A, numrows, numcols, nnz, 
-					   nzval, rowind, colptr,
-					   storage_t, data_t, mat_t);
+                                           nzval, rowind, colptr,
+                                           storage_t, data_t, mat_t);
     }
 
     static void create_Dense_Matrix(SLUD::SuperMatrix* X, int m, int n,
-				    TypeMap<Superludist,std::complex<double> >::type* x, int ldx, 
-				    SLUD::Stype_t stype, SLUD::Dtype_t dtype, SLUD::Mtype_t mtype)
+                                    TypeMap<Superludist,std::complex<double> >::type* x, int ldx, 
+                                    SLUD::Stype_t stype, SLUD::Dtype_t dtype, SLUD::Mtype_t mtype)
     {
       SLUD::Z::zCreate_Dense_Matrix_dist(X, m, n, x, ldx, stype, dtype, mtype);
     }
 
     static void permute_Dense_Matrix(SLUD::int_t fst_row, SLUD::int_t m_loc,
-				     SLUD::int_t* row_to_proc, SLUD::int_t* perm,
-				     type_map::type* X, int ldx,
-				     type_map::type* B, int ldb,
-				     int nrhs, SLUD::gridinfo_t* grid)
+                                     SLUD::int_t* row_to_proc, SLUD::perm_int_t* perm,
+                                     type_map::type* X, int ldx,
+                                     type_map::type* B, int ldb,
+                                     int nrhs, SLUD::gridinfo_t* grid)
     {
       SLUD::Z::pzPermute_Dense_Matrix(fst_row, m_loc, row_to_proc, perm,
-				      X, ldx, B, ldb, nrhs, grid);
+                                      X, ldx, B, ldb, nrhs, grid);
     }
   
     static void gsequ_loc(SLUD::SuperMatrix* A, double* r, double* c, 
-			  double* rowcnd, double* colcnd, double* amax, SLUD::int_t* info, 
-			  SLUD::gridinfo_t* grid)
+                          double* rowcnd, double* colcnd, double* amax, SLUD::info_t* info, 
+                          SLUD::gridinfo_t* grid)
     {
       SLUD::Z::pzgsequ(A, r, c, rowcnd, colcnd, amax, info, grid);
     }
 
     static void gsequ(SLUD::SuperMatrix* A, double* r, double* c, 
-		      double* rowcnd, double* colcnd, double* amax, SLUD::int_t* info)
+                      double* rowcnd, double* colcnd, double* amax, SLUD::info_t* info)
     {
       SLUD::Z::zgsequ_dist(A, r, c, rowcnd, colcnd, amax, info);
     }
 
     static void laqgs_loc(SLUD::SuperMatrix* A, double* r, double* c, 
-			  double rowcnd, double colcnd, double amax, SLUD::DiagScale_t* equed)
+                          double rowcnd, double colcnd, double amax, SLUD::DiagScale_t* equed)
     {
       char eq = AMESOS2_SLUD_GET_EQUED(*equed);
       SLUD::Z::pzlaqgs(A, r, c, rowcnd, colcnd, amax, &eq);
@@ -632,7 +632,7 @@ namespace Amesos2 {
     }
 
     static void laqgs(SLUD::SuperMatrix* A, double* r, double* c, 
-		      double rowcnd, double colcnd, double amax, SLUD::DiagScale_t* equed)
+                      double rowcnd, double colcnd, double amax, SLUD::DiagScale_t* equed)
     {
       char eq = AMESOS2_SLUD_GET_EQUED(*equed);
       SLUD::Z::zlaqgs_dist(A, r, c, rowcnd, colcnd, amax, &eq);
@@ -642,15 +642,15 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void distribute(SLUD::amesos2_superlu_dist_options_t* options,
                            SLUD::int_t n,
-			   SLUD::SuperMatrix* A, SLUD::Glu_freeable_t* glu_freeable,
-			   type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
+                           SLUD::SuperMatrix* A, SLUD::Glu_freeable_t* glu_freeable,
+                           type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
     {
       SLUD::Z::zdistribute(options, n, A, glu_freeable, lu, grid);
     }
 #else
     static void distribute(SLUD::fact_t fact, SLUD::int_t n,
-			   SLUD::SuperMatrix* A, SLUD::Glu_freeable_t* glu_freeable,
-			   type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
+                           SLUD::SuperMatrix* A, SLUD::Glu_freeable_t* glu_freeable,
+                           type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid)
     {
       SLUD::Z::zdistribute(fact, n, A, glu_freeable, lu, grid);
     }
@@ -659,19 +659,19 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void pdistribute(SLUD::amesos2_superlu_dist_options_t* options,
                             SLUD::int_t n, 
-			    SLUD::SuperMatrix* A, SLUD::Z::zScalePermstruct_t* scale_perm, 
-			    SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
-			    SLUD::gridinfo_t* grid)
+                            SLUD::SuperMatrix* A, SLUD::Z::zScalePermstruct_t* scale_perm, 
+                            SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
+                            SLUD::gridinfo_t* grid)
 #elif SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
     static void pdistribute(SLUD::fact_t fact, SLUD::int_t n, 
-			    SLUD::SuperMatrix* A, SLUD::Z::zScalePermstruct_t* scale_perm, 
-			    SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
-			    SLUD::gridinfo_t* grid)
+                            SLUD::SuperMatrix* A, SLUD::Z::zScalePermstruct_t* scale_perm, 
+                            SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
+                            SLUD::gridinfo_t* grid)
 #else
     static void pdistribute(SLUD::fact_t fact, SLUD::int_t n, 
-			    SLUD::SuperMatrix* A, SLUD::ScalePermstruct_t* scale_perm, 
-			    SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
-			    SLUD::gridinfo_t* grid)
+                            SLUD::SuperMatrix* A, SLUD::ScalePermstruct_t* scale_perm, 
+                            SLUD::Glu_freeable_t* glu_freeable, type_map::LUstruct_t* lu,
+                            SLUD::gridinfo_t* grid)
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
@@ -684,19 +684,19 @@ namespace Amesos2 {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
     static void dist_psymbtonum(SLUD::amesos2_superlu_dist_options_t* options,
                                 SLUD::int_t n,
-				SLUD::SuperMatrix* A, SLUD::Z::zScalePermstruct_t* scale_perm, 
-				SLUD::Pslu_freeable_t* pslu_freeable, type_map::LUstruct_t* lu,
-				SLUD::gridinfo_t* grid)
+                                SLUD::SuperMatrix* A, SLUD::Z::zScalePermstruct_t* scale_perm, 
+                                SLUD::Pslu_freeable_t* pslu_freeable, type_map::LUstruct_t* lu,
+                                SLUD::gridinfo_t* grid)
 #elif SUPERLU_DIST_MAJOR_VERSION > 6 || (SUPERLU_DIST_MAJOR_VERSION == 6 && SUPERLU_DIST_MINOR_VERSION > 2)
     static void dist_psymbtonum(SLUD::fact_t fact, SLUD::int_t n,
-				SLUD::SuperMatrix* A, SLUD::Z::zScalePermstruct_t* scale_perm, 
-				SLUD::Pslu_freeable_t* pslu_freeable, type_map::LUstruct_t* lu,
-				SLUD::gridinfo_t* grid)
+                                SLUD::SuperMatrix* A, SLUD::Z::zScalePermstruct_t* scale_perm, 
+                                SLUD::Pslu_freeable_t* pslu_freeable, type_map::LUstruct_t* lu,
+                                SLUD::gridinfo_t* grid)
 #else
     static void dist_psymbtonum(SLUD::fact_t fact, SLUD::int_t n,
-		  	        SLUD::SuperMatrix* A, SLUD::ScalePermstruct_t* scale_perm, 
-				SLUD::Pslu_freeable_t* pslu_freeable, type_map::LUstruct_t* lu,
-				SLUD::gridinfo_t* grid)
+                                  SLUD::SuperMatrix* A, SLUD::ScalePermstruct_t* scale_perm, 
+                                SLUD::Pslu_freeable_t* pslu_freeable, type_map::LUstruct_t* lu,
+                                SLUD::gridinfo_t* grid)
 #endif
     {
 #if (SUPERLU_DIST_MAJOR_VERSION > 7)
@@ -712,9 +712,9 @@ namespace Amesos2 {
     }
 
     static void SolveInit(SLUD::amesos2_superlu_dist_options_t* options, SLUD::SuperMatrix* A,
-			  SLUD::int_t* perm_r, SLUD::int_t* perm_c, SLUD::int_t nrhs,
-			  type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
-			  type_map::SOLVEstruct_t* solve_struct)
+                          SLUD::perm_int_t* perm_r, SLUD::perm_int_t* perm_c, SLUD::int_t nrhs,
+                          type_map::LUstruct_t* lu, SLUD::gridinfo_t* grid, 
+                          type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::Z::zSolveInit(options, A, perm_r, perm_c, nrhs, lu, grid, solve_struct);
     }
@@ -755,18 +755,18 @@ namespace Amesos2 {
     }
 
     static void SolveFinalize(SLUD::amesos2_superlu_dist_options_t* options,
-			      type_map::SOLVEstruct_t* solve_struct)
+                              type_map::SOLVEstruct_t* solve_struct)
     {
       SLUD::Z::zSolveFinalize(options, solve_struct);
     }
 
     static int ldperm_dist(int job, int n, SLUD::int_t nnz, SLUD::int_t colptr[], SLUD::int_t adjncy[],
-            SLUD::Z::doublecomplex nzval[], SLUD::int_t *perm, double u[], double v[])
+            SLUD::Z::doublecomplex nzval[], SLUD::perm_int_t *perm, double u[], double v[])
     {
       return SLUD::Z::zldperm_dist(job, n, nnz, colptr, adjncy, nzval, perm, u, v);
     }
   };
-#endif	// HAVE_TEUCHOS_COMPLEX
+#endif        // HAVE_TEUCHOS_COMPLEX
 
 } // end namespace Amesos2
 

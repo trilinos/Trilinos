@@ -41,6 +41,7 @@ namespace Amesos2 {
     , in_grid_(false)
     , force_symbfact_(false)
     , is_contiguous_(true)
+    , debug_level_(0)
   {
     using Teuchos::Comm;
     // It's OK to depend on MpiComm explicitly here, because
@@ -61,8 +62,8 @@ namespace Amesos2 {
     ////////////////////////////////////////////
 
     RCP<const Comm<int> > comm = this->getComm ();
-    const int myRank = comm->getRank ();
-    const int numProcs = comm->getSize ();
+    myRank = comm->getRank ();
+    numProcs = comm->getSize ();
 
     SLUD::int_t nprow, npcol;
     get_default_grid_size (numProcs, nprow, npcol);
@@ -357,6 +358,11 @@ namespace Amesos2 {
   int
   Superludist<Matrix,Vector>::preOrdering_impl()
   {
+    if (debug_level_ > 0 && myRank == 0) {
+      std::cout << " * Superludist::preOrdering ( size(int_t)= " << sizeof(SLUD::int_t)
+                << ", size(info_t) = * " << sizeof(SLUD::info_t) 
+                << ", size(perm_t) = " << sizeof(SLUD::perm_int_t) << ") * " <<std::endl;
+    }
     if (data_.options.RowPerm == SLUD::NOROWPERM) {
       SLUD::int_t slu_rows_ub = Teuchos::as<SLUD::int_t>(this->globalNumRows_);
       for( SLUD::int_t i = 0; i < slu_rows_ub; ++i ) data_.perm_r[i] = i;
@@ -414,6 +420,9 @@ namespace Amesos2 {
   Superludist<Matrix,Vector>::symbolicFactorization_impl()
   {
     // loadA_impl();                    // Refresh matrix values
+    if (debug_level_ > 0 && myRank == 0) {
+      std::cout << " * Superludist::symbolicFactorization * " << std::endl;
+    }
     if (!force_symbfact_) {
        if (data_.options.RowPerm == SLUD::LargeDiag_MC64) {
           // defer to numerical factorization because row permutation requires the matrix values
@@ -462,6 +471,9 @@ namespace Amesos2 {
   int
   Superludist<Matrix,Vector>::numericFactorization_impl(){
     using Teuchos::as;
+    if (debug_level_ > 0 && myRank == 0) {
+      std::cout << " * Superludist::numericFactorization * " << std::endl;
+    }
 
     // loadA_impl();                    // Refresh the matrix values
     SLUD::SuperMatrix GA;      /* Global A in NC format */
@@ -469,7 +481,7 @@ namespace Amesos2 {
 
     if( in_grid_ ) {
       if( data_.options.Equil == SLUD::YES ) {
-        SLUD::int_t info = 0;
+        SLUD::info_t info = 0;
 
         // Compute scaling
         data_.R.resize(this->globalNumRows_);
@@ -858,6 +870,9 @@ namespace Amesos2 {
     if( parameterList->isParameter("IsContiguous") ){
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
     }
+    if( parameterList->isParameter("DebugLevel") ){
+      debug_level_ = parameterList->get<int>("DebugLevel");
+    }
   }
 
 
@@ -939,6 +954,7 @@ namespace Amesos2 {
                                                     pl.getRawPtr());
 
       pl->set("IsContiguous", true, "Whether GIDs contiguous");
+      pl->set("DebugLevel", 0, "Message levels for debuging");
 
       valid_params = pl;
     }
@@ -982,7 +998,6 @@ namespace Amesos2 {
     using Teuchos::as;
 
     using SLUD::int_t;
-    const int numProcs = this->getComm()->getSize();
     const int nprow = data_.grid.nprow;
     const int npcol = data_.grid.npcol;
 
@@ -995,7 +1010,6 @@ namespace Amesos2 {
       SLUD::Destroy_SuperMatrix_Store_dist( &(data_.A) );
       data_.A.Store = NULL;
     }
-
 
     // is_contiguous : input is contiguous
     int_t nnz_ret = 0;
@@ -1037,7 +1051,7 @@ namespace Amesos2 {
       Teuchos::RCP<const MatrixAdapter<Matrix> > redist_mat
         = this->matrixA_->get(ptrInArg(*superlu_rowmap_));
 
-      // ssame as A's target
+      // same as A's target
       superlu_contig_rowmap_ = superlu_rowmap_;
 
       l_nnz  = as<int_t>(redist_mat->getLocalNNZ());

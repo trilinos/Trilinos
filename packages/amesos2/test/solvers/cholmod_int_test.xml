@@ -6,13 +6,7 @@
     <Parameter name="complex" type="bool" value="false"/>
     <ParameterList name="Cholmod">
  
-      <!-- Test Epetra objects -->
-      <ParameterList name="epetra">
-        <!-- A non-list entry for epetra denotes a default run, name, type, and value are arbitrary -->
-        <Parameter name="defaultrun" type="bool" value="true"/>
-      </ParameterList>
-
-      <!-- Next test Tpetra objects -->
+      <!-- Test Tpetra objects -->
       <ParameterList name="tpetra">
         <!-- these `run*' sublist names are arbitrary -->
         <!-- The `Node' parameter is not yet supported -->
@@ -30,7 +24,7 @@
         </ParameterList>
       </ParameterList>
 
-        <!-- Next test Kokkos objects -->
+      <!-- Next test Kokkos objects -->
       <ParameterList name="kokkos">
         <!-- these `run*' sublist names are arbitrary -->
         <!-- Cholmod does not support float yet. -->

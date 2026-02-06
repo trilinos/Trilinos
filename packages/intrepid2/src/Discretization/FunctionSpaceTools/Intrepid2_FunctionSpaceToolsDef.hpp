@@ -596,17 +596,7 @@ namespace Intrepid2 {
 #endif
 
     // face normals (reshape scratch)
-    // Kokkos::DynRankView<scratchValueType,scratchProperties...> faceNormals(scratch.data(), 
-    //                                                                        inputJac.extent(0), 
-    //                                                                        inputJac.extent(1), 
-    //                                                                        inputJac.extent(2));
-    auto vcprop = Kokkos::common_view_alloc_prop(scratch);
-    //typedef Kokkos::DynRankView<scratchValueType, typename decltype(scratch)::memory_space> viewType;
-    typedef Kokkos::DynRankView<scratchValueType, DeviceType> viewType;
-    viewType faceNormals(Kokkos::view_wrap(scratch.data(), vcprop),
-                         inputJac.extent(0),
-                         inputJac.extent(1),
-                         inputJac.extent(2));
+    auto faceNormals = Impl::createMatchingUnmanagedDynRankView(inputJac, scratch.data(), inputJac.extent(0), inputJac.extent(1), inputJac.extent(2));
 
     // compute normals
     CellTools<DeviceType>::getPhysicalFaceNormals(faceNormals, inputJac, whichFace, parentCell);
@@ -643,17 +633,7 @@ namespace Intrepid2 {
 #endif
 
     // edge tangents (reshape scratch)
-    // Kokkos::DynRankView<scratchValueType,scratchProperties...> edgeTangents(scratch.data(), 
-    //                                                                         inputJac.extent(0), 
-    //                                                                         inputJac.extent(1), 
-    //                                                                         inputJac.extent(2));
-    auto vcprop = Kokkos::common_view_alloc_prop(scratch);
-    //typedef Kokkos::DynRankView<scratchValueType, typename decltype(scratch)::memory_space> viewType;
-    typedef Kokkos::DynRankView<scratchValueType, DeviceType> viewType;
-    viewType edgeTangents(Kokkos::view_wrap(scratch.data(), vcprop),
-                         inputJac.extent(0),
-                         inputJac.extent(1),
-                         inputJac.extent(2));
+    auto edgeTangents = Impl::createMatchingUnmanagedDynRankView(inputJac, scratch.data(), inputJac.extent(0), inputJac.extent(1), inputJac.extent(2));
 
     // compute normals
     CellTools<DeviceType>::getPhysicalEdgeTangents(edgeTangents, inputJac, whichEdge, parentCell);

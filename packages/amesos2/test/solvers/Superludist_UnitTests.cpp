@@ -28,17 +28,6 @@
 #include "Amesos2.hpp"
 #include "Amesos2_Meta.hpp"
 
-#if defined(HAVE_AMESOS2_EPETRA)
-#ifdef HAVE_MPI
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-#include <Epetra_Map.h>
-#include <Epetra_MultiVector.h>
-#include <Epetra_CrsMatrix.h>
-#endif
-
 namespace {
 
   using std::cout;
@@ -114,17 +103,23 @@ namespace {
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
     typedef Superludist<MAT,MV> SOLVER;
 
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    const GO INVALID = OrdinalTraits<GO>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
-    //const size_t numprocs = comm->getSize();
+    const size_t numprocs = comm->getSize();
     const size_t rank     = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
-    RCP<MAT> eye = rcp( new MAT(map,1) );
+    // create a Matrix
+    // (adding offdiagonals because calling parmetis with diagonal matrix may cause an error
+    //  "PARMETIS ERROR adjncy is NULL")
+    RCP<MAT> eye = rcp( new MAT(map,2) );
     GO base = numLocal*rank;
     for( size_t i = 0; i < numLocal; ++i ){
       eye->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<SCALAR>(ST::one()));
+      if (1+base+i <= numLocal*numprocs-1 ) {
+        eye->insertGlobalValues(base+i,tuple<GO>(1+base+i),tuple<SCALAR>(-ST::one()));
+      }
     }
     eye->fillComplete();
 
@@ -161,17 +156,23 @@ namespace {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
 
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    const GO INVALID = OrdinalTraits<GO>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
-    //const size_t numprocs = comm->getSize();
+    const size_t numprocs = comm->getSize();
     const size_t rank     = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
-    RCP<MAT> eye = rcp( new MAT(map,1) );
+    // create a Matrix
+    // (adding offdiagonals because calling parmetis with diagonal matrix may cause an error
+    //  "PARMETIS ERROR adjncy is NULL")
+    RCP<MAT> eye = rcp( new MAT(map,2) );
     GO base = numLocal*rank;
     for( size_t i = 0; i < numLocal; ++i ){
       eye->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<SCALAR>(ST::one()));
+      if (1+base+i <= numLocal*numprocs-1 ) {
+        eye->insertGlobalValues(base+i,tuple<GO>(1+base+i),tuple<SCALAR>(-ST::one()));
+      }
     }
     eye->fillComplete();
 
@@ -195,17 +196,23 @@ namespace {
     typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
     typedef MultiVector<SCALAR,LO,GO,Node> MV;
 
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    const GO INVALID = OrdinalTraits<GO>::invalid();
     RCP<const Comm<int> > comm = getDefaultComm();
-    //const size_t numprocs = comm->getSize();
+    const size_t numprocs = comm->getSize();
     const size_t rank     = comm->getRank();
     // create a Map
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
-    RCP<MAT> eye = rcp( new MAT(map,1) );
+    // create a Matrix
+    // (adding offdiagonals because calling parmetis with diagonal matrix may cause an error
+    //  "PARMETIS ERROR adjncy is NULL")
+    RCP<MAT> eye = rcp( new MAT(map,2) );
     GO base = numLocal*rank;
     for( size_t i = 0; i < numLocal; ++i ){
       eye->insertGlobalValues(base+i,tuple<GO>(base+i),tuple<SCALAR>(ST::one()));
+      if (1+base+i <= numLocal*numprocs-1 ) {
+        eye->insertGlobalValues(base+i,tuple<GO>(1+base+i),tuple<SCALAR>(-ST::one()));
+      }
     }
     eye->fillComplete();
 
@@ -240,14 +247,14 @@ namespace {
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
-    size_t myRank = comm->getRank();
+    const size_t myRank = comm->getRank();
     const global_size_t numProcs = comm->getSize();
 
     // Unit test created for 2 processes
     if ( numProcs == 2 ) {
 
-      const global_size_t numVectors = 1;
-      const global_size_t nrows = 6;
+      const GO numVectors = 1;
+      const GO nrows = 6;
 
       const GO numGlobalEntries = nrows;
       const LO numLocalEntries = nrows / numProcs;
@@ -321,7 +328,7 @@ namespace {
       B->setObjectLabel("B");
       GO rowids[nrows] = {0,2,4,5,7,9};
       Scalar data[nrows] = {-7,18,3,17,18,28};
-      for( global_size_t i = 0; i < nrows; ++i ){
+      for( GO i = 0; i < nrows; ++i ){
         if( B->getMap()->isNodeGlobalElement(rowids[i]) ){
           B->replaceGlobalValue(rowids[i],0,data[i]);
         }
@@ -361,7 +368,7 @@ namespace {
       Xhat->setObjectLabel("Xhat");
       GO rowids_soln[nrows] = {0,2,4,5,7,9};
       Scalar data_soln[nrows] = {1,2,3,4,5,6};
-      for( global_size_t i = 0; i < nrows; ++i ){
+      for( GO i = 0; i < nrows; ++i ){
         if( Xhat->getMap()->isNodeGlobalElement(rowids_soln[i]) ){
           Xhat->replaceGlobalValue(rowids_soln[i],0,data_soln[i]);
         }
@@ -390,27 +397,39 @@ namespace {
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
 
-    size_t myRank = comm->getRank();
-    const global_size_t numProcs = comm->getSize();
+    const size_t myRank = comm->getRank();
+    const GO numProcs = comm->getSize();
 
-    printf( " Contig test\n" );
     // Unit test created for 2 processes
     if ( numProcs == 2 ) {
 
-      const global_size_t numVectors = 1;
-      const global_size_t nrows = 6;
+      // NOTE: Though test passes, Parmetis prints "***Cannot bisect a graph with 0 vertices!"
+      const GO numVectors = 1;
+      const GO nrows = 8;
 
       const GO numGlobalEntries = nrows;
-      const LO numLocalEntries = (myRank == 0 ? nrows : 0);
 
-      // Create non-contiguous Map
-      // This example: np 2 leads to GIDS: proc0 - 0,2,4  proc 1 - 1,3,5
-      Teuchos::Array<GO> elementList(numLocalEntries);
-      for ( LO k = 0; k < numLocalEntries; ++k ) {
-        elementList[k] = k;
+      // Create contiguous Map
+        Teuchos::Array<GO> elementList;
+      if (false) {
+        // This example: np 2 leads to GIDS with equal number of rows per proc,
+        //  assuming even nrows
+        const LO numLocalEntries = nrows / numProcs;
+        const GO base = numLocalEntries*myRank;
+        elementList.resize(numLocalEntries, 0);
+        for ( LO k = 0; k < numLocalEntries; ++k ) {
+          elementList[k] = base+k;
+        }
+      } else {
+        // This example: np 2 leads to GIDS with all rows assigned to proc0, empty proc1
+        const LO numLocalEntries = (myRank == 0 ? nrows : 0);
+        elementList.resize(numLocalEntries, 0);
+        for ( LO k = 0; k < numLocalEntries; ++k ) {
+          elementList[k] = k;
+        }
       }
 
-      typedef Tpetra::Map<LO,GO>  map_type;
+      typedef Tpetra::Map<LO,GO> map_type;
       RCP< const map_type > map = rcp( new map_type(numGlobalEntries, elementList, 0, comm) );
 
       RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
@@ -423,12 +442,15 @@ namespace {
 
       // Construct matrix
       if( myRank == 0 ){
-        A->insertGlobalValues(0,tuple<GO>(  0,1),tuple<Scalar>(2,-1));
-        A->insertGlobalValues(1,tuple<GO>(0,1,2),tuple<Scalar>(-1,2,-1));
-        A->insertGlobalValues(2,tuple<GO>(1,2,3),tuple<Scalar>(-1,2,-1));
-        A->insertGlobalValues(3,tuple<GO>(2,3,4),tuple<Scalar>(-1,2,-1));
-        A->insertGlobalValues(4,tuple<GO>(3,4,5),tuple<Scalar>(-1,2,-1));
-        A->insertGlobalValues(5,tuple<GO>(4,5),  tuple<Scalar>(-1,2));
+        for ( GO k = 0; k < nrows; ++k ) {
+          if (k == 0) {
+            A->insertGlobalValues(k,tuple<GO>(k,k+1),tuple<Scalar>(2,-1));
+          } else if (k == nrows-1) {
+            A->insertGlobalValues(k,tuple<GO>(k-1,k), tuple<Scalar>(-1,2));
+          } else {
+            A->insertGlobalValues(k,tuple<GO>(k-1,k,k+1),tuple<Scalar>(-1,2,-1));
+          }
+        }
       }
       A->fillComplete();
       //{ RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(rcpFromRef(std::cout)); A->describe(*fancy,Teuchos::VERB_EXTREME); }
@@ -446,17 +468,20 @@ namespace {
        *  [[1]
        *   [0]
        *   [0]
+       *    :
        *   [0]
        *   [0]
        *   [1]]
        */
       RCP<MV> B = rcp(new MV(map,numVectors));
       B->setObjectLabel("B");
-      GO rowids[nrows] = {0,1,2,3,4,5};
-      Scalar data[nrows] = {1,0,0,0,0,1};
-      for( global_size_t i = 0; i < nrows; ++i ){
-        if( B->getMap()->isNodeGlobalElement(rowids[i]) ){
-          B->replaceGlobalValue(rowids[i],0,data[i]);
+      for( GO i = 0; i < nrows; ++i ){
+        if( B->getMap()->isNodeGlobalElement(i) ){
+          if (i == 0 || i == nrows-1) {
+            B->replaceGlobalValue(i,0,Scalar(1));
+          } else {
+            B->replaceGlobalValue(i,0,Scalar(0));
+          }
         }
       }
 
@@ -476,6 +501,7 @@ namespace {
        *  [[1]
        *   [1]
        *   [1]
+       *    :
        *   [1]
        *   [1]
        *   [1]]
@@ -483,11 +509,9 @@ namespace {
       // Solution Vector for later comparison
       RCP<MV> Xhat = rcp(new MV(map,numVectors));
       Xhat->setObjectLabel("Xhat");
-      GO rowids_soln[nrows] = {0,1,2,3,4,5};
-      Scalar data_soln[nrows] = {1,1,1,1,1,1};
-      for( global_size_t i = 0; i < nrows; ++i ){
-        if( Xhat->getMap()->isNodeGlobalElement(rowids_soln[i]) ){
-          Xhat->replaceGlobalValue(rowids_soln[i],0,data_soln[i]);
+      for( GO i = 0; i < nrows; ++i ){
+        if( Xhat->getMap()->isNodeGlobalElement(i) ){
+          Xhat->replaceGlobalValue(i,0,Scalar(1));
         }
       }
 
@@ -498,145 +522,6 @@ namespace {
       TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
     } // end if numProcs = 2
   }
-
-#if defined(HAVE_AMESOS2_EPETRA)
-  //! @test Test for Epetra non-contiguous GIDs.
-  TEUCHOS_UNIT_TEST( Superludist, NonContigGIDEpetra)
-  {
-    using SCALAR = double;
-    using LO = int;
-    using GO = int;
-    typedef Epetra_CrsMatrix MAT;
-    typedef ScalarTraits<SCALAR> ST;
-    typedef Epetra_MultiVector MV;
-    typedef typename ST::magnitudeType Mag;
-    typedef Epetra_Map map_type;
-
-    using Tpetra::global_size_t;
-    using Teuchos::tuple;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Scalar = SCALAR;
-
-    RCP<const Comm<int> > t_comm = Tpetra::getDefaultComm();
-    size_t myRank = t_comm->getRank();
-    const global_size_t numProcs = t_comm->getSize();
-
-    // Unit test created for 2 processes
-    if ( numProcs == 2 ) {
-
-      const global_size_t numVectors = 1;
-      const global_size_t nrows = 6;
-
-      const int numGlobalEntries = nrows;
-      const LO numLocalEntries = nrows / numProcs;
-
-      // Create non-contiguous Map
-      // This example: np 2 leads to GIDS: proc0 - 0,2,4  proc 1 - 1,3,5
-      Teuchos::Array<int> elementList(numLocalEntries);
-      for ( LO k = 0; k < numLocalEntries; ++k ) {
-        elementList[k] = myRank + k*numProcs + 4*myRank;
-      }
-
-#ifdef HAVE_MPI
-      const Epetra_MpiComm comm(MPI_COMM_WORLD);
-#else
-      const Epetra_SerialComm comm;
-#endif
-
-      RCP< const map_type > map = rcp( new Epetra_Map( numGlobalEntries, numLocalEntries, elementList.data(), 0, comm ));
-      RCP<MAT> A = rcp( new MAT(Epetra_DataAccess::Copy, *map, numLocalEntries) );
-
-      /*
-       * We will solve a system with a known solution, for which we will be using
-       * the following matrix:
-       *
-       *  GID  0   2   4   5   7   9
-       * [ 0 [ 7,  0, -3,  0, -1,  0 ]
-       *   2 [ 2,  8,  0,  0,  0,  0 ]
-       *   4 [ 0,  0,  1,  0,  0,  0 ]
-       *   5 [-3,  0,  0,  5,  0,  0 ]
-       *   7 [ 0, -1,  0,  0,  4,  0 ]
-       *   9 [ 0,  0,  0, -2,  0,  6 ] ]
-       *
-       */
-
-      // Construct matrix
-      if( myRank == 0 ){
-        A->InsertGlobalValues(0,3,tuple<Scalar>(7,-3,-1).data(),tuple<GO>(0,4,7).data());
-        A->InsertGlobalValues(2,2,tuple<Scalar>(2,8).data(),tuple<GO>(0,2).data());
-        A->InsertGlobalValues(4,1,tuple<Scalar>(1).data(),tuple<GO>(4).data());
-      } else {
-        A->InsertGlobalValues(5,2,tuple<Scalar>(-3,5).data(),tuple<GO>(0,5).data());
-        A->InsertGlobalValues(7,2,tuple<Scalar>(-1,4).data(),tuple<GO>(2,7).data());
-        A->InsertGlobalValues(9,2,tuple<Scalar>(-2,6).data(),tuple<GO>(5,9).data());
-      }
-      A->FillComplete();
-
-      // Create X with random values
-      RCP<MV> X = rcp(new MV(*map, numVectors));
-      X->Random();
-
-      /* Create B, use same GIDs
-       *
-       * Use RHS:
-       *
-       *  [[-7]
-       *   [18]
-       *   [ 3]
-       *   [17]
-       *   [18]
-       *   [28]]
-       */
-      RCP<MV> B = rcp(new MV(*map, numVectors));
-      GO rowids[nrows] = {0,2,4,5,7,9};
-      Scalar data[nrows] = {-7,18,3,17,18,28};
-      for( global_size_t i = 0; i < nrows; ++i ){
-        if( B->Map().MyGID(rowids[i]) ){
-          B->ReplaceGlobalValue(rowids[i],0,data[i]);
-        }
-      }
-
-      // Create solver interface with Amesos2 factory method
-      RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("SuperLU_DIST", A, X, B);
-
-      // Create a Teuchos::ParameterList to hold solver parameters
-      Teuchos::ParameterList amesos2_params("Amesos2");
-      amesos2_params.sublist("SuperLU_DIST").set("IsContiguous", false, "Are GIDs Contiguous");
-
-      solver->setParameters( Teuchos::rcpFromRef(amesos2_params) );
-
-      solver->symbolicFactorization().numericFactorization().solve();
-
-      /* Check the solution
-       *
-       * Should be:
-       *
-       *  [[1]
-       *   [2]
-       *   [3]
-       *   [4]
-       *   [5]
-       *   [6]]
-       */
-      // Solution Vector for later comparison
-      RCP<MV> Xhat = rcp(new MV(*map, numVectors));
-      GO rowids_soln[nrows] = {0,2,4,5,7,9};
-      Scalar data_soln[nrows] = {1,2,3,4,5,6};
-      for( global_size_t i = 0; i < nrows; ++i ){
-        if( Xhat->Map().MyGID(rowids_soln[i]) ){
-          Xhat->ReplaceGlobalValue(rowids_soln[i],0,data_soln[i]);
-        }
-      }
-
-      // Check result of solve
-      Array<Mag> xhatnorms(numVectors), xnorms(numVectors);
-      Xhat->Norm2(xhatnorms().data());
-      X->Norm2(xnorms().data());
-      TEST_COMPARE_FLOATING_ARRAYS( xhatnorms, xnorms, 0.005 );
-    } // end if numProcs = 2
-  }
-#endif
 
 
   /*

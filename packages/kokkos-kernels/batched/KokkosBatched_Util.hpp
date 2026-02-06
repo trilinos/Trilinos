@@ -167,7 +167,7 @@ struct Random<
 struct Timer {
   std::string _label;
   Kokkos::Timer _clock;
-  Timer(const std::string label) : _label(label), _clock(){};
+  Timer(const std::string label) : _label(label), _clock() {}
 
   void reset() { _clock.reset(); }
   double seconds() { return _clock.seconds(); }

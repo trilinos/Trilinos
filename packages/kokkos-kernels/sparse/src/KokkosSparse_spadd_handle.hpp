@@ -107,7 +107,7 @@ class SPADDHandle {
         called_symbolic(false),
         called_numeric(false) {}
 
-  virtual ~SPADDHandle(){};
+  virtual ~SPADDHandle() {}
 
   bool is_symbolic_called() { return this->called_symbolic; }
   bool is_numeric_called() { return this->called_numeric; }

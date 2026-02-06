@@ -84,7 +84,7 @@ struct bdf_input_parameters {
   bool verbose;
 
   bdf_input_parameters(const int num_odes_, const int repeat_, const bool verbose_)
-      : num_odes(num_odes_), repeat(repeat_), verbose(verbose_){};
+      : num_odes(num_odes_), repeat(repeat_), verbose(verbose_) {}
 };
 
 template <class execution_space>

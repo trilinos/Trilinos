@@ -297,14 +297,12 @@ int main(int argc, char *argv[]) {
       if( allprint ){
         if( myRank == 0 ) *fos << "Solution :" << std::endl;
         Xhat->describe(*fos,Teuchos::VERB_EXTREME);
-        *fos << std::endl;
+        if( myRank == 0 ) *fos << std::endl;
       } else {
         Xhat->doImport(*X,*importer,Tpetra::REPLACE);
-        if( myRank == 0 ){
-          *fos << "Solution :" << std::endl;
-          Xhat->describe(*fos,Teuchos::VERB_EXTREME);
-          *fos << std::endl;
-        }
+        if( myRank == 0 ) *fos << "Solution :" << std::endl;
+        Xhat->describe(*fos,Teuchos::VERB_EXTREME);
+        if( myRank == 0 ) *fos << std::endl;
       }
     }
 

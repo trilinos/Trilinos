@@ -442,7 +442,7 @@ void sort_and_merge_graph(const exec_space& exec, const typename rowmap_t::const
   nc_rowmap_t nc_rowmap_out(Kokkos::view_alloc(exec, Kokkos::WithoutInitializing, "SortedMerged rowmap"), numRows + 1);
   Offset numCompressedEntries = 0;
   Kokkos::parallel_reduce("KokkosSparse::Impl::MergedRowmapFunctor", range_t(exec, 0, numRows),
-                          Impl::MergedRowmapFunctor<rowmap_t, entries_t>(nc_rowmap_out, rowmap_in, entries_in),
+                          Impl::MergedRowmapFunctor<nc_rowmap_t, entries_t>(nc_rowmap_out, rowmap_in, entries_in),
                           numCompressedEntries);
   if (entries_in.extent(0) == size_t(numCompressedEntries)) {
     // No merges to perform, so the output rowmap is unchanged and we can just

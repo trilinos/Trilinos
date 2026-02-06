@@ -222,7 +222,7 @@ KLU2<Matrix,Vector>::solve_impl(
       B->description();
     } else {
       Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      B->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+      if (!is_null(B->getMap())) B->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
       std::cout << std::endl;
       B->describe(*fancy, Teuchos::VERB_EXTREME);
     }
@@ -404,7 +404,7 @@ KLU2<Matrix,Vector>::solve_impl(
       X->description();
     } else {
       Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      X->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
+      if (!is_null(X->getMap())) X->getMap()->describe(*fancy, Teuchos::VERB_EXTREME);
       std::cout << std::endl;
       X->describe(*fancy, Teuchos::VERB_EXTREME);
     }
@@ -502,9 +502,15 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   if(current_phase == SOLVE)return(false);
   if (debug_level_ > 0 && current_phase == NUMFACT) {
-    if (this->root_) std::cout << "\n == Amesos2_KLU2::loadA_impl(NumFact) ==\n" << std::endl;
+    if (this->root_) {
+      std::cout << "\n == Amesos2_KLU2::loadA_impl";
+      if (current_phase == PREORDERING) std::cout << "(PreOrder)";
+      if (current_phase == SYMBFACT) std::cout << "(SymFact)";
+      if (current_phase == NUMFACT)  std::cout << "(NumFact)";
+      std::cout << " ==" << std::endl;
+    }
     Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    this->matrixA_->describe(*fancy, Teuchos::VERB_EXTREME);
+    this->matrixA_->describe(*fancy, (debug_level_ == 1 ? Teuchos::VERB_LOW : Teuchos::VERB_EXTREME));
   }
 
   if ( single_proc_optimization() ) {

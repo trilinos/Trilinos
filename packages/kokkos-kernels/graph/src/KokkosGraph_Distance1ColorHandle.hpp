@@ -527,7 +527,7 @@ class GraphColoringHandle {
     }
   }
 
-  virtual ~GraphColoringHandle(){};
+  virtual ~GraphColoringHandle() {}
 
   // getters
   ColoringAlgorithm get_coloring_algo_type() const { return this->coloring_algorithm_type; }

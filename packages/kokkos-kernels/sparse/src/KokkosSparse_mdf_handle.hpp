@@ -51,7 +51,7 @@ struct MDF_handle {
       : numRows(A.numRows()),
         permutation(col_ind_type("row permutation", A.numRows())),
         permutation_inv(col_ind_type("inverse row permutation", A.numRows())),
-        verbosity(0){};
+        verbosity(0) {}
 
   void set_verbosity(const int verbosity_level) { verbosity = verbosity_level; }
 

@@ -81,6 +81,7 @@ SET( TestGroups
   IntegratedLegendre
   Jacobi
   Legendre
+  RealSpaceTools
   StructuredIntegration
   SubBasisInclusion
   TensorBasis

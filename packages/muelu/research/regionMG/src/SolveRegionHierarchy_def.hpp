@@ -179,8 +179,6 @@ void MgCycle(const int levelID,  ///< ID of current level
       }
 
       if (coarseSolverType == "direct") {
-#if defined(HAVE_MUELU_AMESOS2)
-
         using DirectCoarseSolver             = Amesos2::Solver<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>, Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>;
         RCP<DirectCoarseSolver> coarseSolver = coarseSolverData->get<RCP<DirectCoarseSolver>>("direct solver object");
 
@@ -216,13 +214,6 @@ void MgCycle(const int levelID,  ///< ID of current level
                   "but actually is missing. Anyway ... just do it right now."
                << std::endl;
         coarseSolver->solve(tX.ptr(), tB.ptr());
-#else
-        *fos << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++\n"
-             << "+ Coarse level direct solver requires Tpetra and Amesos2.   +\n"
-             << "+ Skipping the coarse level solve.                          +\n"
-             << "+++++++++++++++++++++++++++ WARNING +++++++++++++++++++++++++"
-             << std::endl;
-#endif
       } else if (coarseSolverType == "amg")  // use AMG as coarse level solver
       {
         const bool coarseSolverRebalance = coarseSolverData->get<bool>("coarse solver rebalance");

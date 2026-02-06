@@ -75,17 +75,16 @@ namespace Stokhos {
 
 template<class DataType, class ... Args>
 requires(!is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
-KOKKOS_FUNCTION
 auto reinterpret_as_unmanaged_scalar_view(const Kokkos::View<DataType, Args...>& view) {
   return view;
 }
 
 template<class DataType, class ... Args>
 requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
-KOKKOS_FUNCTION
 auto reinterpret_as_unmanaged_scalar_view(const Kokkos::View<DataType, Args...>& view) {
   using view_t = Kokkos::View<DataType, Args...>;
-  using scalar_t = typename view_t::value_type::value_type;
+  using value_type = typename view_t::value_type::value_type;
+  using scalar_t = std::conditional_t<std::is_const_v<typename view_t::value_type>, const value_type, value_type>;
   constexpr bool is_layout_right = std::is_same_v<typename view_t::layout_type, Kokkos::LayoutRight> ||
                                    std::is_same_v<typename view_t::layout_type, Kokkos::Experimental::layout_right_padded<Kokkos::dynamic_extent>>;
   if constexpr (view_t::rank() == 0) {
@@ -123,14 +122,12 @@ auto reinterpret_as_unmanaged_scalar_view(const Kokkos::View<DataType, Args...>&
 
 template<class DataType, class ... Args>
 requires(!is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
-KOKKOS_FUNCTION
 auto reinterpret_as_unmanaged_scalar_flat_view(const Kokkos::View<DataType, Args...>& view) {
   return view;
 }
 
 template<class DataType, class ... Args>
 requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
-KOKKOS_FUNCTION
 auto reinterpret_as_unmanaged_scalar_flat_view(const Kokkos::View<DataType, Args...>& view) {
   using view_t = Kokkos::View<DataType, Args...>;
   using value_type = typename view_t::value_type::value_type;
@@ -138,11 +135,32 @@ auto reinterpret_as_unmanaged_scalar_flat_view(const Kokkos::View<DataType, Args
   return Kokkos::View<scalar_t*, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.mapping().required_span_size() * Kokkos::dimension_scalar(view));
 }
 
+template<class DataType, class ... Args>
+requires(!is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
+auto reinterpret_as_unmanaged_scalar_columnwise_flat_view(const Kokkos::View<DataType, Args...>& view) {
+  return view;
+}
+
+template<class DataType, class ... Args>
+requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type> 
+  && (Kokkos::View<DataType, Args...>::rank() == 2) 
+  && (std::same_as<typename Kokkos::View<DataType, Args...>::layout_type, Kokkos::LayoutLeft> ||
+      std::same_as<typename Kokkos::View<DataType, Args...>::layout_type, Kokkos::Experimental::layout_left_padded<Kokkos::dynamic_extent>>))
+auto reinterpret_as_unmanaged_scalar_columnwise_flat_view(const Kokkos::View<DataType, Args...>& view) {
+  using view_t = Kokkos::View<DataType, Args...>;
+  using value_type = typename view_t::value_type::value_type;
+  using scalar_t = std::conditional_t<std::is_const_v<typename view_t::value_type>, const value_type, value_type>;
+  return Kokkos::View<scalar_t**, Args...>(reinterpret_cast<scalar_t*>(view.data()), view.extent(0) * Kokkos::dimension_scalar(view), view.extent(1));
+}
+
 template<class T>
 using scalar_view_t = decltype(reinterpret_as_unmanaged_scalar_view(std::declval<T>()));
 
 template<class T>
 using scalar_flat_view_t = decltype(reinterpret_as_unmanaged_scalar_flat_view(std::declval<T>()));
+
+template<class T>
+using scalar_columnwise_flat_view_t = decltype(reinterpret_as_unmanaged_scalar_columnwise_flat_view(std::declval<T>()));
 
 namespace {
 template<class DataType, class ... Args>
@@ -163,14 +181,12 @@ struct DualViewModifiedFlagsAccessor: public Kokkos::DualView<DataType, Args...>
 // DualView reinterpretation for creating flat Tpetra MV
 template<class DataType, class ... Args>
 requires(!is_mp_vector_v<typename Kokkos::DualView<DataType, Args...>::value_type>)
-KOKKOS_FUNCTION
 auto reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(const Kokkos::DualView<DataType, Args...>& view) {
   return view;
 }
 
 template<class DataType, class ... Args>
 requires(is_mp_vector_v<typename Kokkos::View<DataType, Args...>::value_type>)
-KOKKOS_FUNCTION
 auto reinterpret_as_unmanaged_scalar_dual_view_of_same_rank(const Kokkos::DualView<DataType, Args...>& view) {
   static_assert(Kokkos::DualView<DataType, Args...>::t_dev::rank() == 2);
 

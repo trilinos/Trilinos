@@ -331,10 +331,12 @@ class CrsMatrix {
   //! Type of a host-memory mirror of the sparse matrix.
   typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits, SizeType> host_mirror_type;
   //! Type of the graph structure of the sparse matrix.
-  typedef StaticCrsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits, size_type>
+  typedef KokkosSparse::StaticCrsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits,
+                                       size_type>
       StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef StaticCrsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits, size_type>
+  typedef KokkosSparse::StaticCrsGraph<ordinal_type, KokkosKernels::default_layout, device_type, memory_traits,
+                                       size_type>
       staticcrsgraph_type;
   //! Type of column indices in the sparse matrix.
   typedef typename staticcrsgraph_type::entries_type index_type;

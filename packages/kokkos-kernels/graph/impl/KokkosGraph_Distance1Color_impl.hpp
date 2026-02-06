@@ -261,7 +261,7 @@ class GraphColor_VB : public GraphColor<HandleType, lno_row_view_t_, lno_nnz_vie
    * vertex. \param num_phases: The number of iterations (phases) that algorithm
    * takes to converge.
    */
-  virtual void color_graph(color_view_type colors, int &num_loops) {
+  virtual void color_graph(color_view_type colors, int &num_loops) override {
     if (this->_ticToc) {
       std::cout << "\tVB params:" << std::endl
                 << "\tuseConflictList:" << int(this->_conflict_scheme) << std::endl
@@ -1656,7 +1656,7 @@ class GraphColor_VBD : public GraphColor<HandleType, lno_row_view_t_, lno_nnz_vi
    * \param num_loops: The number of loops in the while statement required to
    * color the graph.
    */
-  virtual void color_graph(color_view_type colors, int &num_loops) {
+  virtual void color_graph(color_view_type colors, int &num_loops) override {
     if (this->_ticToc) {
       std::cout << "\tVBD params:" << std::endl
                 << "\talgorithm:" << (int)this->_use_color_set << std::endl
@@ -2022,7 +2022,7 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_, in_
    * this->nv. \param num_loops is the output for the number of phases that the
    * algorithm took to converge.
    */
-  virtual void color_graph(color_view_type kok_colors, int &num_loops) {
+  virtual void color_graph(color_view_type kok_colors, int &num_loops) override {
     // std::cout << ">>> GraphColor_EB::color_graph()" << std::endl;  // WCMCLEN
 
     // get EB parameters
@@ -2269,7 +2269,7 @@ class GraphColor_EB : public GraphColor<HandleType, in_row_index_view_type_, in_
     char_temp_work_view_type _edge_conflict_marker;
 
     init_work_arrays(size_type_temp_work_view_t edge_conflict_indices, char_temp_work_view_type edge_conflict_marker)
-        : _edge_conflict_indices(edge_conflict_indices), _edge_conflict_marker(edge_conflict_marker){};
+        : _edge_conflict_indices(edge_conflict_indices), _edge_conflict_marker(edge_conflict_marker) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const size_type &ii) const {

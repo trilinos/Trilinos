@@ -71,7 +71,7 @@ using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputTyp
               some conversion mechanisms defined elsewhere, a LayoutLeft view (the default for Cuda views in
               Kokkos) or a LayoutRight view (the default on most other platforms).  This does introduce some
               additional complexity when Views need to be allocated for temporary storage; see the method
-              \ref getMatchingViewWithLabel() provided in \ref Intrepid_Utils.hpp.
+              \ref createMatchingDynRankView() provided in \ref Intrepid_Utils.hpp.
    
       \remark To limit memory use by factory-type objects (basis factories will be included in future
               releases of Intrepid2), tag data is not initialized by basis ctors,

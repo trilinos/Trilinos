@@ -28,18 +28,6 @@
 #include <Xpetra_BlockedMap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 
-#ifdef HAVE_MUELU_ISORROPIA
-#include <Isorropia_Exception.hpp>
-
-#ifdef HAVE_MUELU_EPETRA
-#include <Xpetra_EpetraCrsGraph.hpp>
-#include <Epetra_CrsGraph.h>
-#include <Isorropia_EpetraPartitioner.hpp>
-#endif
-
-#include <Xpetra_TpetraCrsGraph.hpp>
-#endif  // ENDIF HAVE_MUELU_ISORROPIA
-
 #include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_Monitor.hpp"
@@ -177,54 +165,7 @@ void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) 
   crsGraph->fillComplete(nodeMap, nodeMap);
 
 #ifdef HAVE_MPI
-#ifdef HAVE_MUELU_ISORROPIA
-
-  // prepare parameter list for Isorropia
-  Teuchos::ParameterList paramlist;
-  paramlist.set("NUM PARTS", toString(numParts));
-
-  /*STRUCTURALLY SYMMETRIC [NO/yes] (is symmetrization required?)
-  PARTITIONING METHOD [block/cyclic/random/rcb/rib/hsfc/graph/HYPERGRAPH]
-  NUM PARTS [int k] (global number of parts)
-  IMBALANCE TOL [float tol] (1.0 is perfect balance)
-  BALANCE OBJECTIVE [ROWS/nonzeros]
-  */
-  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_APPROACH", "PARTITION");
-
-#ifdef HAVE_MUELU_EPETRA
-  RCP<Xpetra::EpetraCrsGraphT<GO, Node> > epCrsGraph = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsGraphT<GO, Node> >(crsGraph);
-  if (epCrsGraph != Teuchos::null) {
-    RCP<const Epetra_CrsGraph> epetraCrsGraph = epCrsGraph->getEpetra_CrsGraph();
-
-    RCP<Isorropia::Epetra::Partitioner> isoPart = Teuchos::rcp(new Isorropia::Epetra::Partitioner(epetraCrsGraph, paramlist));
-
-    int size         = 0;
-    const int* array = NULL;
-    isoPart->extractPartsView(size, array);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(size != Teuchos::as<int>(nodeMap->getLocalNumElements()), Exceptions::RuntimeError, "length of array returned from extractPartsView does not match local length of rowMap");
-
-    RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(nodeMap, false);
-    ArrayRCP<GO> decompEntries                         = decomposition->getDataNonConst(0);
-
-    // fill vector with amalgamated information about partitioning
-    for (int i = 0; i < size; i++) {
-      decompEntries[i] = Teuchos::as<GO>(array[i]);
-    }
-
-    Set(level, "AmalgamatedPartition", decomposition);
-  }
-#endif  // ENDIF HAVE_MUELU_EPETRA
-
-#ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-  RCP<Xpetra::TpetraCrsGraph<LO, GO, Node> > tpCrsGraph = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsGraph<LO, GO, Node> >(crsGraph);
-  TEUCHOS_TEST_FOR_EXCEPTION(tpCrsGraph != Teuchos::null, Exceptions::RuntimeError, "Tpetra is not supported with Isorropia.");
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Isorropia is an interface to Zoltan which only has support for LO=GO=int and SC=double.");
-#endif  // ENDIF HAVE_MUELU_INST_DOUBLE_INT_INT
-#endif  // HAVE_MUELU_ISORROPIA
-#else   // if we don't have MPI
+#else  // if we don't have MPI
 
   // Running on one processor, so decomposition is the trivial one, all zeros.
   RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(rowMap, true);

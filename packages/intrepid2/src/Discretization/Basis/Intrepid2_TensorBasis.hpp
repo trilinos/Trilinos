@@ -1651,14 +1651,14 @@ struct OperatorTensorDecomposition
               
               OutputViewType outputValues1, outputValues2;
               if (op1 == OPERATOR_VALUE)
-                outputValues1 = getMatchingViewWithLabel(outputValues, "output values - basis 1",basisCardinality1,pointCount1);
+                outputValues1 = Impl::createMatchingDynRankView(outputValues, "output values - basis 1",basisCardinality1,pointCount1);
               else
-                outputValues1 = getMatchingViewWithLabel(outputValues, "output values - basis 1",basisCardinality1,pointCount1,dkCardinality1);
+                outputValues1 = Impl::createMatchingDynRankView(outputValues, "output values - basis 1",basisCardinality1,pointCount1,dkCardinality1);
               
               if (op2 == OPERATOR_VALUE)
-                outputValues2 = getMatchingViewWithLabel(outputValues, "output values - basis 2",basisCardinality2,pointCount2);
+                outputValues2 = Impl::createMatchingDynRankView(outputValues, "output values - basis 2",basisCardinality2,pointCount2);
               else
-                outputValues2 = getMatchingViewWithLabel(outputValues, "output values - basis 2",basisCardinality2,pointCount2,dkCardinality2);
+                outputValues2 = Impl::createMatchingDynRankView(outputValues, "output values - basis 2",basisCardinality2,pointCount2,dkCardinality2);
                 
               basis1_->getValues(outputValues1,inputPoints1,op1);
               basis2_->getValues(outputValues2,inputPoints2,op2);
@@ -1798,11 +1798,11 @@ struct OperatorTensorDecomposition
       OutputViewType outputValues1, outputValues2;
       if (outputRank1 == 0)
       {
-        outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
+        outputValues1 = Impl::createMatchingDynRankView(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
       }
       else if (outputRank1 == 1)
       {
-        outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
+        outputValues1 = Impl::createMatchingDynRankView(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
       }
       else
       {
@@ -1811,11 +1811,11 @@ struct OperatorTensorDecomposition
       
       if (outputRank2 == 0)
       {
-        outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
+        outputValues2 = Impl::createMatchingDynRankView(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
       }
       else if (outputRank2 == 1)
       {
-        outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
+        outputValues2 = Impl::createMatchingDynRankView(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
       }
       else
       {
@@ -2314,29 +2314,29 @@ struct OperatorTensorDecomposition
       if ((spaceDim1 == 1) && (operatorType1 == OPERATOR_VALUE))
       {
         // use a rank 2 container for basis1
-        outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
+        outputValues1 = Impl::createMatchingDynRankView(outputValues,"output values - basis 1",basisCardinality1,pointCount1);
       }
       else
       {
-        outputValues1 = getMatchingViewWithLabel(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
+        outputValues1 = Impl::createMatchingDynRankView(outputValues,"output values - basis 1",basisCardinality1,pointCount1,spaceDim1);
       }
       if ((spaceDim2 == 1) && (operatorType2 == OPERATOR_VALUE))
       {
         // use a rank 2 container for basis2
-        outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
+        outputValues2 = Impl::createMatchingDynRankView(outputValues,"output values - basis 2",basisCardinality2,pointCount2);
       }
       else
       {
-        outputValues2 = getMatchingViewWithLabel(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
+        outputValues2 = Impl::createMatchingDynRankView(outputValues,"output values - basis 2",basisCardinality2,pointCount2,spaceDim2);
       }
       if ((spaceDim3 == 1) && (operatorType3 == OPERATOR_VALUE))
       {
         // use a rank 2 container for basis2
-        outputValues3 = getMatchingViewWithLabel(outputValues,"output values - basis 3",basisCardinality3,pointCount3);
+        outputValues3 = Impl::createMatchingDynRankView(outputValues,"output values - basis 3",basisCardinality3,pointCount3);
       }
       else
       {
-        outputValues3 = getMatchingViewWithLabel(outputValues,"output values - basis 3",basisCardinality3,pointCount3,spaceDim3);
+        outputValues3 = Impl::createMatchingDynRankView(outputValues,"output values - basis 3",basisCardinality3,pointCount3,spaceDim3);
       }
 
       basis1_->getValues(outputValues1,inputPoints1,operatorType1);

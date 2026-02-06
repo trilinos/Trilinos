@@ -264,22 +264,15 @@ INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = DOXYGEN_COMPILE \
                          DOXYGEN_SHOULD_SKIP_THIS \
                          HAVE_MPI \
-                         EPETRA_MPI \
-                         HAVE_MUELU_AMESOS \
                          HAVE_MUELU_AMESOS2 \
                          HAVE_MUELU_AMGX \
                          HAVE_MUELU_AZTECOO \
                          HAVE_MUELU_BELOS \
                          HAVE_MUELU_BOOST \
-                         HAVE_MUELU_EPETRA \
-                         HAVE_MUELU_EPETRAEXT \
                          HAVE_MUELU_EXPERIMENTAL \
                          HAVE_MUELU_GALERI \
-                         HAVE_MUELU_IFPACK \
                          HAVE_MUELU_IFPACK2 \
-                         HAVE_MUELU_ISORROPIA \
                          HAVE_MUELU_MATLAB \
-                         HAVE_MUELU_ML \
                          HAVE_MUELU_STRATIMIKOS \
                          HAVE_MUELU_TEKO \
                          HAVE_MUELU_TPETRA \
@@ -294,8 +287,6 @@ TAGFILES               = $(TRILINOS_HOME)/packages/common/tag_files/ifpack.tag=$
                          $(TRILINOS_HOME)/packages/common/tag_files/ifpack2.tag=$(TRILINOS_HOME)/packages/ifpack2/doc/html \
                          $(TRILINOS_HOME)/packages/common/tag_files/amesos.tag=$(TRILINOS_HOME)/packages/amesos/doc/html \
                          $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/teuchos/doc/html \
-                         $(TRILINOS_HOME)/packages/common/tag_files/epetraext.tag=$(TRILINOS_HOME)/packages/epetraext/doc/html \
-                         $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
                          $(TRILINOS_HOME)/packages/common/tag_files/tpetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html \
                          $(TRILINOS_HOME)/packages/common/tag_files/xpetra.tag=$(TRILINOS_HOME)/packages/xpetra/doc/html
 GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/muelu.tag

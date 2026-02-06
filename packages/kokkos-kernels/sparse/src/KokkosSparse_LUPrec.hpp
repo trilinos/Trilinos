@@ -74,7 +74,7 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   //
   virtual void apply(const Kokkos::View<const ScalarType *, DEVICE> &X, const Kokkos::View<ScalarType *, DEVICE> &Y,
                      const char transM[] = "N", ScalarType alpha = karith::one(),
-                     ScalarType beta = karith::zero()) const {
+                     ScalarType beta = karith::zero()) const override {
     KK_REQUIRE_MSG(transM[0] == NoTranspose[0], "LUPrec::apply only supports 'N' for transM");
 
     KokkosSparse::sptrsv_symbolic(&_khL, L_.graph.row_map, L_.graph.entries);
@@ -88,20 +88,20 @@ class LUPrec : public KokkosSparse::Experimental::Preconditioner<CRS> {
   //@}
 
   //! Set this preconditioner's parameters.
-  void setParameters() {}
+  void setParameters() override {}
 
-  void initialize() {}
+  void initialize() override {}
 
   //! True if the preconditioner has been successfully initialized, else false.
-  bool isInitialized() const { return true; }
+  bool isInitialized() const override { return true; }
 
-  void compute() {}
+  void compute() override {}
 
   //! True if the preconditioner has been successfully computed, else false.
-  bool isComputed() const { return true; }
+  bool isComputed() const override { return true; }
 
   //! True if the preconditioner implements a transpose operator apply.
-  bool hasTransposeApply() const { return true; }
+  bool hasTransposeApply() const override { return true; }
 };
 
 }  // namespace Experimental

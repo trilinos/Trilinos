@@ -14,11 +14,6 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Operator.hpp"
 
-#ifdef HAVE_AMESOS2_EPETRA
-#  include "Epetra_MultiVector.h"
-#  include "Epetra_Operator.h"
-#endif // HAVE_AMESOS2_EPETRA
-
 #include "TpetraCore_ETIHelperMacros.h"
 
 // Define Tpetra instantiation macros and typedefs that make the
@@ -51,13 +46,6 @@ registerLinearSolverFactory ()
   // run-time registration functions, for registering Amesos2's
   // LinearSolverFactory with Tpetra objects.
   TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
-
-  // If Epetra is enabled in Amesos2, also register Amesos2's
-  // LinearSolverFactory for Epetra objects.
-#ifdef HAVE_AMESOS2_EPETRA
-  ::Amesos2::Details::LinearSolverFactory<Epetra_MultiVector,
-    Epetra_Operator, double>::registerLinearSolverFactory ();
-#endif // HAVE_AMESOS2_EPETRA
 }
 
 } // namespace Details

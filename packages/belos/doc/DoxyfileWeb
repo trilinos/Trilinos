@@ -101,25 +101,7 @@ FILE_PATTERNS          = *.h *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = ../epetra/example \
-                         ../epetra/example/BlockCG/BlockCGEpetraExFile.cpp \
-                         ../epetra/example/BlockCG/BlockPrecCGEpetraExFile.cpp \
-                         ../epetra/example/BlockCG/PseudoBlockCGEpetraExFile.cpp \
-                         ../epetra/example/BlockCG/PseudoBlockPrecCGEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/BlockGmresEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/BlockPrecGmresEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/BlockFlexGmresEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/BlockGmresPolyEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/PseudoBlockGmresEpetraExFile.cpp \
-                         ../epetra/example/BlockGmres/PseudoBlockPrecGmresEpetraExFile.cpp \
-                         ../epetra/example/GCRODR/GCRODREpetraExFile.cpp \
-                         ../epetra/example/GCRODR/PrecGCRODREpetraExFile.cpp \
-                         ../epetra/example/RCG/RCGEpetraExFile.cpp \
-                         ../epetra/example/PCPG/PCPGEpetraExFile.cpp \
-                         ../epetra/example/TFQMR/TFQMREpetraExFile.cpp \
-                         ../epetra/example/TFQMR/PseudoBlockTFQMREpetraExFile.cpp \
-                         ../epetra/example/SolverFactory/SolverFactoryEpetraGaleriEx.cpp \
-                         ../tpetra/example \
+EXAMPLE_PATH           = ../tpetra/example \
                          ../tpetra/example/BlockCG/BlockCGTpetraExFile.cpp \
                          ../tpetra/example/BlockCG/PseudoBlockCGTpetraExFile.cpp \
                          ../tpetra/example/BlockGmres/PseudoBlockGmresTpetraExFile.cpp \
@@ -153,14 +135,14 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
 INCLUDE_FILE_PATTERNS  = 
-PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI
+PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS
 INCLUDE_PATH           = ../../teuchos/src
 EXPAND_AS_DEFINED      = STANDARD_COMPOSITION_MEMBERS STANDARD_NONCONST_COMPOSITION_MEMBERS \
                          STANDARD_CONST_COMPOSITION_MEMBERS STANDARD_MEMBER_COMPOSITION_MEMBERS
 #
 # Links to other packages
 #
-TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html 
+TAGFILES               = ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html 
 GENERATE_TAGFILE       = ../../common/tag_files/belos.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO

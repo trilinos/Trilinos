@@ -16,7 +16,7 @@ struct svd_parameters {
   bool verbose;
 
   svd_parameters(const int numRows_, const int numCols_, const bool verbose_)
-      : numRows(numRows_), numCols(numCols_), verbose(verbose_){};
+      : numRows(numRows_), numCols(numCols_), verbose(verbose_) {}
 };
 
 void print_options() {

@@ -245,16 +245,13 @@ namespace Intrepid2 {
       numPoints = points.extent(points.rank()-2), 
       spaceDim = cellTopo.getDimension();
 
-    using result_layout = typename DeduceLayout< decltype(points) >::result_layout;
-    auto vcprop = Kokkos::common_view_alloc_prop(points);
-    using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, result_layout, DeviceType > refPoints ( Kokkos::view_alloc("CellTools::checkPointwiseInclusion::refPoints", vcprop), numCells, numPoints, spaceDim);
+    auto refPoints = Impl::createMatchingDynRankView(points, "CellTools::checkPointwiseInclusion::refPoints", numCells, numPoints, spaceDim);
     
     // expect refPoints(CPD), points (CPD or PD), cellWorkset(CND) 
     if(points.rank() == 3)  
       mapToReferenceFrame(refPoints, points, cellWorkset, cellTopo);
     else { //points.rank() == 2
-      Kokkos::DynRankView< common_value_type, result_layout, DeviceType > cellPoints ( Kokkos::view_alloc("CellTools::checkPointwiseInclusion::physCellPoints", vcprop), numCells, numPoints, spaceDim);
+      auto cellPoints = Impl::createMatchingDynRankView(points, "CellTools::checkPointwiseInclusion::physCellPoints", numCells, numPoints, spaceDim);
       RealSpaceTools<DeviceType>::clone(cellPoints,points);
       mapToReferenceFrame(refPoints, cellPoints, cellWorkset, cellTopo);
     }    

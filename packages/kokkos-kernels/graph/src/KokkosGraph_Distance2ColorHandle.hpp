@@ -201,7 +201,7 @@ class GraphColorDistance2Handle {
   /**
    * \brief Destructor
    */
-  virtual ~GraphColorDistance2Handle(){};
+  virtual ~GraphColorDistance2Handle() {}
 
   // getters and setters
   GraphColoringAlgorithmDistance2 get_coloring_algo_type() const { return this->coloring_algorithm_type; }

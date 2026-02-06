@@ -495,8 +495,7 @@ int run_ilu_perf_tests(const std::string& matrix_file, int rows, int nnz_per_row
     auto plambda = [&](benchmark::State& state) {
       run_par_ilut_test(state, kh, A, num_iters, parilut_results, validate, gmres_max_subspace);
     };
-    auto r = KokkosKernelsBenchmark::register_benchmark_real_time((name + "_par_ilut").c_str(), plambda, arg_names,
-                                                                  args, loop);
+    KokkosKernelsBenchmark::register_benchmark_real_time((name + "_par_ilut").c_str(), plambda, arg_names, args, loop);
   }
 
   if (test & 2) {

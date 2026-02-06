@@ -10,7 +10,6 @@
 #ifndef _FROSCH_TPETRAPRECONDITIONER_DECL_HPP
 #define _FROSCH_TPETRAPRECONDITIONER_DECL_HPP
 
-#if defined(HAVE_XPETRA_TPETRA)
 #include <Tpetra_Operator.hpp>
 
 #include <Xpetra_Operator.hpp>
@@ -78,6 +77,5 @@ namespace FROSch {
     };
 
 }
-#endif
 
 #endif

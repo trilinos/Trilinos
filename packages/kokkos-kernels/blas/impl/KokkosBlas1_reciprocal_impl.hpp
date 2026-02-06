@@ -14,6 +14,12 @@ namespace Impl {
 // reciprocal
 //
 
+#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13)) && !defined(__NVCC__)
+#define KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE 1
+#else
+#define KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE 0
+#endif
+
 // Entry-wise reciprocalolute value / magnitude: R(i,j) = reciprocal(X(i,j)).
 template <class RMV, class XMV, class SizeType = typename RMV::size_type>
 struct MV_Reciprocal_Functor {
@@ -41,7 +47,7 @@ struct MV_Reciprocal_Functor {
 
   // disable vectorization in this function
   // work-around https://github.com/kokkos/kokkos-kernels/issues/2091
-#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13))
+#if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
 #pragma GCC push_options
 #pragma GCC optimize("no-tree-vectorize")
 #endif
@@ -55,7 +61,7 @@ struct MV_Reciprocal_Functor {
     }
   }
 };
-#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13))
+#if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
 #pragma GCC pop_options
 #endif
 
@@ -80,7 +86,7 @@ struct MV_ReciprocalSelf_Functor {
 
   // disable vectorization in this function
   // work-around https://github.com/kokkos/kokkos-kernels/issues/2091
-#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13))
+#if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
 #pragma GCC push_options
 #pragma GCC optimize("no-tree-vectorize")
 #endif
@@ -94,7 +100,7 @@ struct MV_ReciprocalSelf_Functor {
     }
   }
 };
-#if defined(__GNUC__) && ((__GNUC__ == 12) || (__GNUC__ == 13))
+#if KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
 #pragma GCC pop_options
 #endif
 
@@ -205,6 +211,8 @@ void V_Reciprocal_Generic(const execution_space& space, const RV& R, const XV& X
     Kokkos::parallel_for("KokkosBlas::Reciprocal::S3", policy, op);
   }
 }
+
+#undef KOKKOSKERNELS_GCC_BUG_DISABLE_TREE_VECTORIZE
 
 }  // namespace Impl
 }  // namespace KokkosBlas

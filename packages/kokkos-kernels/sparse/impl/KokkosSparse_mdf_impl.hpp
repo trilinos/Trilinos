@@ -39,7 +39,7 @@ struct MDF_count_lower {
   using team_member_t   = typename team_policy_t::member_type;
 
   MDF_count_lower(crs_matrix_type A_, col_ind_type permutation_, col_ind_type permutation_inv_)
-      : A(A_), permutation(permutation_), permutation_inv(permutation_inv_){};
+      : A(A_), permutation(permutation_), permutation_inv(permutation_inv_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const team_member_t team, value_type& update) const {
@@ -100,7 +100,7 @@ struct MDF_discarded_fill_norm {
         update_list(update_list_),
         discarded_fill(discarded_fill_),
         deficiency(deficiency_),
-        verbosity(verbosity_){};
+        verbosity(verbosity_) {}
 
   using execution_space = typename crs_matrix_type::execution_space;
   using team_policy_t   = Kokkos::TeamPolicy<execution_space>;
@@ -247,7 +247,7 @@ struct MDF_select_row {
         discarded_fill(discarded_fill_),
         deficiency(deficiency_),
         row_map(row_map_),
-        permutation(permutation_){};
+        permutation(permutation_) {}
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const ordinal_type src, ordinal_type& dst) const {
@@ -382,7 +382,7 @@ struct MDF_factorize_row {
         selected_row_idx(selected_row_idx_),
         factorization_step(factorization_step_),
         update_list(update_list_),
-        verbosity(verbosity_){};
+        verbosity(verbosity_) {}
 
   // Phase 2, do facrotization
   KOKKOS_INLINE_FUNCTION
@@ -495,7 +495,7 @@ struct MDF_compute_list_length {
         selected_row_idx(selected_row_idx_),
         factorization_step(factorization_step_),
         update_list(update_list_),
-        verbosity(verbosity_){};
+        verbosity(verbosity_) {}
 
   // Phase 1, update list length
   KOKKOS_INLINE_FUNCTION

@@ -1198,7 +1198,7 @@ SKIP_FUNCTION_MACROS   = YES
 # If a tag file is not located in the directory in which doxygen 
 # is run, you must also specify the path to the tagfile here.
 
-TAGFILES               = ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html ../../common/tag_files/epetra.tag=../../../epetra/doc/html \
+TAGFILES               = ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html \
                          ../../common/tag_files/belos.tag=../../../belos/doc/html ../../common/tag_files/anasazi.tag=../../../anasazi/doc/html 
 
 # When a file name is specified after GENERATE_TAGFILE, doxygen will create 

@@ -26,7 +26,7 @@ struct duho {
   const double a11 = 0, a12 = 1, a21, a22;
 
   duho(const double m_, const double c_, const double k_)
-      : m(m_), c(c_), k(k_), d(k_ / m_ - (c_ * c_) / (4 * m_ * m_)), a21(-k / m), a22(-c / m){};
+      : m(m_), c(c_), k(k_), d(k_ / m_ - (c_ * c_) / (4 * m_ * m_)), a21(-k / m), a22(-c / m) {}
 
   template <class vec_type1, class vec_type2>
   KOKKOS_FUNCTION void evaluate_function(const double /*t*/, const double /*dt*/, const vec_type1& y,
@@ -57,7 +57,7 @@ struct solution_wrapper {
   vec_type y_old, y_ref;
 
   solution_wrapper(const ode_type& ode_, const scalar_type t_, const vec_type& y_old_, const vec_type& y_ref_)
-      : ode(ode_), t(t_), y_old(y_old_), y_ref(y_ref_){};
+      : ode(ode_), t(t_), y_old(y_old_), y_ref(y_ref_) {}
 
   KOKKOS_FUNCTION
   void operator()(const int /*idx*/) const { ode.solution(t, y_old, y_ref); }

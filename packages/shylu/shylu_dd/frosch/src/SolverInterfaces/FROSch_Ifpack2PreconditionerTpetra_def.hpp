@@ -124,7 +124,6 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_SOLVER(Ifpack2PreconditionerTpetraTime,"Ifpack2PreconditionerTpetra::Ifpack2PreconditionerTpetra");
         FROSCH_ASSERT(!this->K_.is_null(),"FROSch::Ifpack2PreconditionerTpetra: K_ is null.");
-        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseTpetra,"FROSch::Ifpack2PreconditionerTpetra: Not compatible with Epetra.")
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());

@@ -39,7 +39,7 @@ KOKKOS_INLINE_FUNCTION IndexType SerialIamaxInternal::invoke(const int n, const 
   }
 
   return imax;
-};
+}
 
 }  // namespace Impl
 }  // namespace KokkosBatched

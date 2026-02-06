@@ -53,7 +53,7 @@ namespace Impl {
 template <typename View, typename Ordinal, typename TeamMember, typename Comparator>
 struct BitonicSingleTeamFunctor {
   BitonicSingleTeamFunctor(View& v_, const Comparator& comp_) : v(v_), comp(comp_) {}
-  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const { Kokkos::Experimental::sort_team(t, v, comp); };
+  KOKKOS_INLINE_FUNCTION void operator()(const TeamMember t) const { Kokkos::Experimental::sort_team(t, v, comp); }
   View v;
   Comparator comp;
 };
@@ -69,7 +69,7 @@ struct BitonicChunkFunctor {
     Ordinal n          = chunkSize;
     if (chunkStart + n > Ordinal(v.extent(0))) n = v.extent(0) - chunkStart;
     Kokkos::Experimental::sort_team(t, Kokkos::subview(v, Kokkos::make_pair(chunkStart, chunkStart + n)), comp);
-  };
+  }
   View v;
   Comparator comp;
   Ordinal chunkSize;
@@ -99,7 +99,7 @@ struct BitonicPhase1Functor {
         }
       }
     });
-  };
+  }
   View v;
   Comparator comp;
   Ordinal boxSize;
@@ -157,7 +157,7 @@ struct BitonicPhase2Functor {
         });
       }
     }
-  };
+  }
   View v;
   Comparator comp;
   Ordinal boxSize;

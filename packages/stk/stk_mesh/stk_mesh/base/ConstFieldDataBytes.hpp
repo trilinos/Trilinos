@@ -128,7 +128,7 @@ public:
   ConstFieldDataBytes();
   ConstFieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName,
                       const DataTraits& dataTraits, Layout dataLayout);
-  virtual ~ConstFieldDataBytes() override = default;
+  KOKKOS_FUNCTION virtual ~ConstFieldDataBytes() override {}
 
   // The AMD ROCm compiler has an "undefined hidden symbol" link error when this copy constructor is defined
   // below, along with all of the other functions.  Not sure why this one is special.

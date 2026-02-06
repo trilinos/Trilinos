@@ -38,8 +38,6 @@ namespace Xpetra {
 
 typedef size_t global_size_t;
 
-// TODO: Epetra_Map trait not implemented
-
 template <typename T>
 struct UndefinedMultiVectorTraits {
   static inline T notDefined() { return T::this_type_is_missing_a_specialization(); }

@@ -54,13 +54,7 @@ void Jacobi(
 
   bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
 
-  if (C.getRowMap()->lib() == Xpetra::UseEpetra) {
-#ifndef HAVE_MUELU_EPETRAEXT
-    throw(MueLu::Exceptions::RuntimeError("MueLu::Jacobi requires EpetraExt to be compiled."));
-#else
-    throw(MueLu::Exceptions::RuntimeError("MueLu::Jacobi requires you to use an Epetra-compatible data type."));
-#endif
-  } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
+  if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpA    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(A);
     const Tpetra::CrsMatrix<SC, LO, GO, NO>& tpB    = Xpetra::Helpers<SC, LO, GO, NO>::Op2TpetraCrs(B);
     Tpetra::CrsMatrix<SC, LO, GO, NO>& tpC          = Xpetra::Helpers<SC, LO, GO, NO>::Op2NonConstTpetraCrs(C);
@@ -79,32 +73,6 @@ void Jacobi(
   RCP<Xpetra::Matrix<SC, LO, GO, NO> > rcpB = Teuchos::rcp_const_cast<Xpetra::Matrix<SC, LO, GO, NO> >(Teuchos::rcpFromRef(B));
   C.CreateView("stridedMaps", rcpA, false, rcpB, false);  // TODO use references instead of RCPs
 }  // end Jacobi
-
-#if defined(HAVE_MUELU_EPETRA) && !defined(XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES)
-template <>
-void Jacobi<double, int, int, Xpetra::EpetraNode>(double omega,
-                                                  const Xpetra::Vector<double, int, int, Xpetra::EpetraNode>& Dinv,
-                                                  const Xpetra::Matrix<double, int, int, Xpetra::EpetraNode>& A,
-                                                  const Xpetra::Matrix<double, int, int, Xpetra::EpetraNode>& B,
-                                                  Xpetra::Matrix<double, int, int, Xpetra::EpetraNode>& C,
-                                                  bool call_FillComplete_on_result,
-                                                  bool doOptimizeStorage,
-                                                  const std::string& label,
-                                                  const Teuchos::RCP<Teuchos::ParameterList>& params);
-#endif
-
-#if defined(HAVE_MUELU_EPETRA) && !defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
-template <>
-void Jacobi<double, int, long long, Xpetra::EpetraNode>(double omega,
-                                                        const Xpetra::Vector<double, int, long long, Xpetra::EpetraNode>& Dinv,
-                                                        const Xpetra::Matrix<double, int, long long, Xpetra::EpetraNode>& A,
-                                                        const Xpetra::Matrix<double, int, long long, Xpetra::EpetraNode>& B,
-                                                        Xpetra::Matrix<double, int, long long, Xpetra::EpetraNode>& C,
-                                                        bool call_FillComplete_on_result,
-                                                        bool doOptimizeStorage,
-                                                        const std::string& label,
-                                                        const Teuchos::RCP<Teuchos::ParameterList>& params);
-#endif
 
 /*!
   @class IteratorOps

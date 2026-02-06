@@ -42,7 +42,7 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 ///                          SQUARE select invocations based on square matrix heuristics where M=N
 ///                          TALL   select invocations based on tall   matrix heuristics where M>N
 ///                          WIDE   select invocations based on wide   matrix heuristics where M<N
-///    
+///
 ///                        Specifies which cmake-enabled TPL algorithm to invoke:
 ///                          ARMPL    Invoke the ArmPL TPL interface  (Currently UNSUPPORTED)
 ///                          MKL      Invoke the MKL TPL interface    (Currently UNSUPPORTED)
@@ -53,7 +53,7 @@ enum GEMM_KOKKOS_BATCHED_ALGOS : int {
 ///                        Note: If the user selects a TPL, an error will be thrown if:
 ///                                1. The TPL is not enabled via cmake
 ///                                2. The input views do not reside on the host/device as needed
-///    
+///
 ///                        Specifies which kokkos-kernels (KK) algorithm to invoke:
 ///                          KK_SERIAL       Invoke SerialGemm     via RangePolicy(BatchSz)
 ///                          KK_TEAM         Invoke TeamGemm       via TeamPolicy(BatchSz)
@@ -96,20 +96,20 @@ class BatchedGemmHandle : public BatchedKernelHandle {
       _tplParamsSet                   = true;
     }
 #endif  // MAGMA
-  };
+  }
 
   BatchedGemmHandle(bool tplParamsSet, int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0,
                     int vecLength = 0)
       : BatchedKernelHandle(kernelAlgoType, teamSize, vecLength) {
     _tplParamsSet = tplParamsSet;
-  };
+  }
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
   BatchedGemmHandle(cublasHandle_t &cublas_handle, int kernelAlgoType = BaseHeuristicAlgos::SQUARE, int teamSize = 0,
                     int vecLength = 0)
       : BatchedGemmHandle(true, kernelAlgoType, teamSize, vecLength) {
     _tplParamsSingleton.cublas_handle = &cublas_handle;
-  };
+  }
 #endif  // CUBLAS
 
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MAGMA)
@@ -117,7 +117,7 @@ class BatchedGemmHandle : public BatchedKernelHandle {
                     int vecLength = 0)
       : BatchedGemmHandle(true, kernelAlgoType, teamSize, vecLength) {
     _tplParamsSingleton.magma_queue = &magma_queue;
-  };
+  }
 #endif  // MAGMA
 
   decltype(auto) get_tpl_params() {

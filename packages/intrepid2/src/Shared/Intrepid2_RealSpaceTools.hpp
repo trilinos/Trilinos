@@ -67,6 +67,20 @@ namespace Intrepid2 {
           
           \param inMat  [in]  - array representing a single matrix, indexed by (D, D)
           
+          \note  Requirements: \n
+          \li rank(<b><var>inMats</var></b>) == 2  (checked at runtime, in debug mode)
+          \li matrix dimension is limited to 1, 2, or 3, and is equal to template parameter D (checked at compile time; check may depend on compilation environment).
+      */
+      template<ordinal_type D, class MatrixViewType>
+      KOKKOS_INLINE_FUNCTION
+      static typename MatrixViewType::value_type
+      det( const MatrixViewType inMat );
+
+      /** \brief Computes determinant of a single square matrix stored in
+          an array of rank 2.
+          
+          \param inMat  [in]  - array representing a single matrix, indexed by (D, D)
+          
           \note  Requirements (checked at runtime, in debug mode): \n
           \li rank(<b><var>inMats</var></b>) == 2
           \li matrix dimension is limited to 1, 2, and 3
@@ -76,6 +90,7 @@ namespace Intrepid2 {
       static typename MatrixViewType::value_type
       det( const MatrixViewType inMat );
 
+      
       /** \brief Computes dot product of two vectors stored in
           arrays of rank 1.
           
@@ -187,6 +202,30 @@ namespace Intrepid2 {
     static void 
     transpose(       Kokkos::DynRankView<transposeMatValueType,transposeMatProperties...> transposeMats, 
                const Kokkos::DynRankView<inMatValueType,       inMatProperties...>        inMats );
+    
+    template<ordinal_type D, class MatrixViewType>
+    KOKKOS_INLINE_FUNCTION
+    static typename MatrixViewType::value_type
+    det( const MatrixViewType inMat );
+    
+    /** \brief Computes inverses of nonsingular matrices stored in
+        an array of total rank 2 (single matrix), indexed by (D, D),
+        3 (array of matrices), indexed by (i0, D, D),
+        or 4 (array of arrays of matrices), indexed by (i0, i1, D, D).
+
+        \param inverseMats  [out]  - array of inverses indexed by (D, D), (i0, D, D) or (i0, i1, D, D)
+        \param inMats        [in]  - array of matrices indexed by (D, D), (i0, D, D) or (i0, i1, D, D)
+
+        \note  Requirements (checked at runtime, in debug mode): \n
+        \li rank(<b><var>inverseMats</var></b>) == rank(<b><var>inMats</var></b>)
+        \li rank(<b><var>inMats</var></b>) == 3 or 4
+        \li dimensions(<b><var>inverseMats</var></b>) == dimensions(<b><var>inMats</var></b>)
+        \li matrices must be square
+        \li matrix dimension i limited to 1, 2, and 3 is equal to template parameter D (checked at compile time; check may depend on compilation environment).
+    */
+    template<ordinal_type D, class InverseMatrixViewType, class MatrixViewType>
+    static void
+    inverse( InverseMatrixViewType inverseMats, MatrixViewType inMats );
     
     /** \brief Computes inverses of nonsingular matrices stored in
         an array of total rank 2 (single matrix), indexed by (D, D),

@@ -130,7 +130,7 @@ class SPILUKHandle {
     reset_symbolic_complete();
   }
 
-  virtual ~SPILUKHandle(){};
+  virtual ~SPILUKHandle() {}
 
   void set_algorithm(SPILUKAlgorithm choice) { algm = choice; }
 

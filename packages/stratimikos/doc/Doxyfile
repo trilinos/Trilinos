@@ -6,17 +6,8 @@
 # Note: I have to manually include these tag files because if I used the TagFile from
 # each package then doxygen hangs.
 TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/EpetraThyra.tag=$(TRILINOS_HOME)/packages/epetra/thyra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetraext.tag=$(TRILINOS_HOME)/packages/epetraext/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/EpetraExtThyra.tag=$(TRILINOS_HOME)/packages/epetraext/thyra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/amesos.tag=$(TRILINOS_HOME)/packages/amesos/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/AmesosThyra.tag=$(TRILINOS_HOME)/packages/amesos/thyra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/aztecoo.tag=$(TRILINOS_HOME)/packages/aztecoo/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/AztecOOThyra.tag=$(TRILINOS_HOME)/packages/aztecoo/thyra/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/belos.tag=$(TRILINOS_HOME)/packages/belos/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/BelosThyra.tag=$(TRILINOS_HOME)/packages/belos/thyra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/ifpack.tag=$(TRILINOS_HOME)/packages/ifpack/doc/html
+  $(TRILINOS_HOME)/packages/common/tag_files/BelosThyra.tag=$(TRILINOS_HOME)/packages/belos/thyra/doc/html
 #
 # Package options
 #

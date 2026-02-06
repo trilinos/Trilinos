@@ -88,7 +88,7 @@ public:
     require_ngp_mesh_rank_limit(bulk->mesh_meta_data());
   }
 
-  virtual ~HostMeshT() override = default;
+  KOKKOS_FUNCTION virtual ~HostMeshT() override {}
 
   HostMeshT(const HostMeshT &) = default;
   HostMeshT(HostMeshT &&) = default;

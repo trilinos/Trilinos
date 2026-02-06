@@ -49,13 +49,12 @@ namespace Intrepid2 {
       auto ptr2 = work.data()+2*cardLine*npts*dim_s;
       
       typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
-      auto vcprop = Kokkos::common_view_alloc_prop(input);
 
       switch (OpType) {
       case OPERATOR_VALUE: {
-        ViewType workLine(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
-        ViewType outputLine(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts);
-        ViewType outputBubble(Kokkos::view_wrap(ptr2, vcprop), cardBubble, npts);
+        ViewType workLine = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
+        ViewType outputLine = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts);
+        ViewType outputBubble = createMatchingUnmanagedView<ViewType>(input, ptr2, cardBubble, npts);
 
         // tensor product
         ordinal_type idx = 0;
@@ -99,11 +98,11 @@ namespace Intrepid2 {
       case OPERATOR_DIV: {
         ordinal_type idx = 0;
         { // x - component
-          ViewType workLine(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
+          ViewType workLine = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
           // x bubble value
-          ViewType output_x(Kokkos::view_wrap(ptr2, vcprop), cardBubble, npts);
+          ViewType output_x = createMatchingUnmanagedView<ViewType>(input, ptr2, cardBubble, npts);
           // y line grad
-          ViewType output_y(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts,1);
+          ViewType output_y = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts,1);
 
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
             getValues(output_x, input_x, workLine, vinvBubble);
@@ -118,11 +117,11 @@ namespace Intrepid2 {
                 output.access(idx,k) = output_x.access(i,k)*output_y.access(j,k,0);
         }
         { // y - component
-          ViewType workLine(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
+          ViewType workLine = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
           // x line grad
-          ViewType output_x(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts,1);
+          ViewType output_x = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts,1);
           // y bubble value
-          ViewType output_y(Kokkos::view_wrap(ptr2, vcprop), cardBubble, npts);
+          ViewType output_y = createMatchingUnmanagedView<ViewType>(input, ptr2, cardBubble, npts);
 
           Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
             getValues(output_y, input_y, workLine, vinvBubble);
@@ -167,7 +166,7 @@ namespace Intrepid2 {
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
-      typedef typename inputPointViewType::value_type inputPointType;
+      //typedef typename inputPointViewType::value_type inputPointType;
 
       const ordinal_type cardinality = outputValues.extent(0);
       //get basis order based on basis cardinality.
@@ -179,22 +178,19 @@ namespace Intrepid2 {
         cardLine = Intrepid2::getPnCardinality<1>(++order);
       } while((2*cardBubble*cardLine !=  cardinality) && (order != Parameters::MaxOrder));
 
-      auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
-      typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
-
       switch (operatorType) {
       case OPERATOR_VALUE: {
         auto workSize = Serial<OPERATOR_VALUE>::getWorkSizePerPoint(order);
-        workViewType  work(Kokkos::view_alloc("Basis_HDIV_QUAD_In_FEM::getValues::work", vcprop), workSize, inputPoints.extent(0));
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
+        auto work = createMatchingDynRankView(inputPoints, "Basis_HDIV_QUAD_In_FEM::getValues::work", workSize, inputPoints.extent(0));
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, decltype(work),
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, work) );
         break;
       }
       case OPERATOR_DIV: {
         auto workSize = Serial<OPERATOR_DIV>::getWorkSizePerPoint(order);
-        workViewType  work(Kokkos::view_alloc("Basis_HDIV_QUAD_In_FEM::getValues::work", vcprop), workSize, inputPoints.extent(0));
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
+        auto work = createMatchingDynRankView(inputPoints, "Basis_HDIV_QUAD_In_FEM::getValues::work", workSize, inputPoints.extent(0));
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, decltype(work),
             OPERATOR_DIV,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, work) );
         break;

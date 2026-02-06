@@ -93,11 +93,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RebalanceAcFactory, BuildWithImporter, Scalar,
   MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
   out << "version: " << MueLu::Version() << std::endl;
 
-  if (TestHelpers::Parameters::getLib() == Xpetra::UseEpetra) {
-    out << "skipping test for linAlgebra==UseEpetra" << std::endl;
-    return;
-  }
-
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   Teuchos::CommandLineProcessor clp(false);
   Galeri::Xpetra::Parameters<GO> matrixParameters(clp, 8748);  // manage parameters of the test case

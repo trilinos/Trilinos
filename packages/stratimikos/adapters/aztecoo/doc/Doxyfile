@@ -2,7 +2,6 @@
 # Note: all relative paths are relative to package/doc!
 #
 @INCLUDE = Doxyfile.options
-@INCLUDE = epetra/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
 #
 # Package options
 #
