@@ -187,6 +187,14 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
   inArgs_new.set_alpha(1.0);
   inArgs_new.set_beta(0.0);
 
+  TEUCHOS_TEST_FOR_EXCEPTION(inArgs_new.get_x().is_null(), std::runtime_error,
+  "computeMassMatrix: x is null");
+
+TEUCHOS_TEST_FOR_EXCEPTION(inArgs_new.get_x_dot().is_null(), std::runtime_error,
+  "computeMassMatrix: x_dot is null");
+
+std::cout << "alpha=" << inArgs_new.get_alpha() << " beta=" << inArgs_new.get_beta() << "\n";
+
   // TODO:
   // set the one time beta to ensure dirichlet conditions
   // are correctly included in the mass matrix: do it for
@@ -232,6 +240,12 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 
     lumpMassMatrix_ = Thyra::diagonal(lumpedMassDiagonal_);
     invMassMatrix_ = Thyra::diagonal(invLumpMass);
+    std::cout << "Using lumped mass matrix for Phi evaluation." << std::endl;
+    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+// lumpedMassDiagonal_->describe(*out, Teuchos::VERB_EXTREME);
+//     fullMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
+// lumpMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
+// invMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
   }
 }
 
@@ -242,8 +256,8 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildAT
   // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
-invMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
-jacobianMatrix_->describe(*out, Teuchos::VERB_EXTREME);
+// invMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
+// jacobianMatrix_->describe(*out, Teuchos::VERB_EXTREME);
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A = Thyra::scale(Teuchos::as<Scalar>(-dt), Thyra::multiply<Scalar>(invMassMatrix_, jacobianMatrix_));
 
   // Spaces

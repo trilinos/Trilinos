@@ -132,11 +132,27 @@ void PhiEvaluatorTaylor<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluat
 
 template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> phiv,
-							       int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
+							       int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b)
 {
   this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
   this->phiLinSolv_->computeJacobian(*inArgs_lin_);
   this->phiLinSolv_->buildK(k);
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> rhs_b = Mrhs_b->clone_v();
+  this->phiLinSolv_->solveMass(rhs_b.ptr(), Mrhs_b);
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+// rhs_b->describe(*out, Teuchos::VERB_EXTREME);
+// Mrhs_b->describe(*out, Teuchos::VERB_EXTREME);
+//   auto vec = rhs_b;
+// auto space = vec->space();
+// int n = space->dim();
+
+// for (int i = 0; i < n; ++i) {
+//    std::cout << "rhs[" << i << "] = "
+//              << Thyra::get_ele(*rhs_b, i) << std::endl;
+//              std::cout << "Mrhs[" << i << "] = "
+//              << Thyra::get_ele(*Mrhs_b, i) << std::endl;
+// }
+
   this->phiLinSolv_->buildb(k, rhs_b);
   Atilde_ = this->phiLinSolv_->buildATilde(cdt);
   v_ = this->phiLinSolv_->buildv(Atilde_->domain());
