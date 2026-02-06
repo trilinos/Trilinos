@@ -1,21 +1,28 @@
-//@HEADER
-// *****************************************************************************
-//          Tempus: Time Integration and Sensitivity Analysis Package
-//
-// Copyright 2017 NTESS and the Tempus contributors.
-// SPDX-License-Identifier: BSD-3-Clause
-// *****************************************************************************
-//@HEADER
+// @HEADER
+// ****************************************************************************
+// TODO
+// ****************************************************************************
+// @HEADER
 
 #ifndef Tempus_StepperEPI_impl_hpp
 #define Tempus_StepperEPI_impl_hpp
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_StepperEPIModifierDefault.hpp"
-
 #include "Tempus_PhiEvaluator.hpp"
 #include "Tempus_PhiEvaluatorFactory.hpp"
+#include "Tempus_StepperEPIModifierDefault.hpp"
+#include "Tempus_StepperEPI_decl.hpp"
+#include "Tempus_WrapperModelEvaluatorBasic.hpp"
+#include "Tempus_StepperFactory.hpp"
+
+// TODO: have to include this header to get LSP to work.
+#include "Tempus_StepperEPI.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
+#include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_MultiVectorStdOps_decl.hpp"
+#include "Thyra_OperatorVectorTypes.hpp"
 
 namespace Tempus {
 
@@ -28,55 +35,60 @@ StepperEPI<Scalar>::StepperEPI()
   this->setTaylorExpansionOrder(2);
   this->setICConsistency("Consistent");
   this->setICConsistencyCheck(false);
+  this->setZeroInitialGuess(false);
+
   this->setAppAction(Teuchos::null);
+  this->setDefaultSolver();
 }
 
-template <class Scalar>
+
+template<class Scalar>
 StepperEPI<Scalar>::StepperEPI(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    bool useFSAL, std::string ICConsistency, bool ICConsistencyCheck,
-    const Teuchos::RCP<StepperEPIAppAction<Scalar> >&
-        stepperEPIAppAction)
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+  bool useFSAL,
+  std::string ICConsistency,
+  bool ICConsistencyCheck,
+  bool zeroInitialGuess,
+  const Teuchos::RCP<StepperEPIAppAction<Scalar> >& stepperEPIAppAction)
 {
   this->setStepperName("EPI");
   this->setStepperType("EPI");
   this->setUseFSAL(useFSAL);
   this->setICConsistency(ICConsistency);
   this->setICConsistencyCheck(ICConsistencyCheck);
+  this->setZeroInitialGuess(zeroInitialGuess);
 
   this->setAppAction(stepperEPIAppAction);
+  this->setSolver(solver);
+
   if (appModel != Teuchos::null) {
     this->setModel(appModel);
     this->initialize();
   }
 }
 
-template <class Scalar>
+
+template<class Scalar>
 void StepperEPI<Scalar>::setAppAction(
-    Teuchos::RCP<StepperEPIAppAction<Scalar> > appAction)
+  Teuchos::RCP<StepperEPIAppAction<Scalar> > appAction)
 {
   if (appAction == Teuchos::null) {
     // Create default appAction
     stepperEPIAppAction_ =
-        Teuchos::rcp(new StepperEPIModifierDefault<Scalar>());
-  }
-  else {
+      Teuchos::rcp(new StepperEPIModifierDefault<Scalar>());
+  } else {
     stepperEPIAppAction_ = appAction;
   }
+  this->isInitialized_ = false;
 }
+
 
 template<class Scalar>
 void StepperEPI<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  StepperExplicit<Scalar>::setModel(appModel);
-
-  auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
-  phiEvaluator_ = phif->createPhiEvaluator(phiEvaluatorPL_, appModel);
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-  phiEvaluator_.is_null(), std::logic_error,
-  "phiEvaluator_ is null in StepperEPI::setModel");
+  StepperImplicit<Scalar>::setModel(appModel);
 
   phiEvaluator_->setModel(appModel);
   phiEvaluator_->initialize();
@@ -84,9 +96,10 @@ void StepperEPI<Scalar>::setModel(
   this->isInitialized_ = false;
 }
 
-template <class Scalar>
+
+template<class Scalar>
 void StepperEPI<Scalar>::setInitialConditions(
-    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
 
@@ -98,116 +111,129 @@ void StepperEPI<Scalar>::setInitialConditions(
   else
     this->setStepperXDot(initialState->getXDot());
 
-  StepperExplicit<Scalar>::setInitialConditions(solutionHistory);
+  StepperImplicit<Scalar>::setInitialConditions(solutionHistory);
 }
 
-template <class Scalar>
+
+template<class Scalar>
 void StepperEPI<Scalar>::takeStep(
-    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   this->checkInitialized();
   phiEvaluator_->checkInitialized();
+//std::cout << "Inside takeStep 1." << std::endl;
   using Teuchos::RCP;
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperEPI::takeStep()");
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        solutionHistory->getNumStates() < 2, std::logic_error,
-        "Error - StepperEPI<Scalar>::takeStep(...)\n"
-            << "Need at least two SolutionStates for EPI.\n"
-            << "  Number of States = " << solutionHistory->getNumStates()
-            << "\n Try setting in \"Solution History\" \"Storage Type\" = "
-            << "\"Undo\"\n or \"Storage Type\" = \"Static\" and \"Storage Limit\" = "
-            << "\"2\"\n");
+    TEUCHOS_TEST_FOR_EXCEPTION(solutionHistory->getNumStates() < 2,
+      std::logic_error,
+      "Error - StepperEPI<Scalar>::takeStep(...)\n"
+      "Need at least two SolutionStates for EPI.\n"
+      "  Number of States = " << solutionHistory->getNumStates() << "\n"
+      "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
+      "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
     RCP<StepperEPI<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
-    stepperEPIAppAction_->execute(
-        solutionHistory, thisStepper,
-        StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
-
-    RCP<SolutionState<Scalar> > currentState =
-        solutionHistory->getCurrentState();
-    RCP<SolutionState<Scalar> > workingState =
-        solutionHistory->getWorkingState();
-    if (currentState->getXDot() != Teuchos::null)
-      this->setStepperXDot(currentState->getXDot());
-    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot();
-    const Scalar dt                      = workingState->getTimeStep();
-
-    // if (!(this->getUseFSAL()) || workingState->getNConsecutiveFailures() != 0) {
-      // Need to compute XDotOld.
-      stepperEPIAppAction_->execute(
-          solutionHistory, thisStepper,
-          StepperEPIAppAction<
-              Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
-
-      auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
-
-      // Evaluate xDot = f(x,t).
-      this->evaluateExplicitODE(xDot, currentState->getX(),
-                                currentState->getTime(), p);
-
-      RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
-      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
-
-      // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
-      const Scalar time = workingState->getTime();
-      inArgs.set_x(currentState->getX());
-      inArgs.set_t(time);
-      inArgs.set_x_dot(xDot);
-      phiEvaluator_->setLinearizationPoint(inArgs);
-      RCP<Thyra::VectorBase<Scalar>> vphi = workingState->getX()->clone_v();
-      assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
-      Thyra::SolveStatus<Scalar> sStatus = phiEvaluator_->computePhi(vphi.ptr(), 2, dt, xDot);
-
-      // For UseFSAL=false, x and xDot are now sync'ed or consistent
-      // at the same time level for the currentState.
-      currentState->setIsSynced(true);
-    // }
-
-    // EPI update, x^n = x^{n-1} + dt^n * xDot^{n-1}
-    // Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
-    //                *(currentState->getX()), dt, *(xDot));
-    Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
-                   *(currentState->getX()), dt, *(vphi));
-
+    stepperEPIAppAction_->execute(solutionHistory, thisStepper,
+      StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+//std::cout << "Inside takeStep 2." << std::endl;
+    RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
+    RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
+//std::cout << "Inside takeStep 3." << std::endl;
+    RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
+    RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
     if (workingState->getXDot() != Teuchos::null)
       this->setStepperXDot(workingState->getXDot());
-    xDot = this->getStepperXDot();
+    RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot();
+//std::cout << "Inside takeStep 4." << std::endl;
+    const Scalar time = workingState->getTime();
+    const Scalar dt = workingState->getTimeStep();
+//std::cout << "Inside takeStep 5." << std::endl;
+    stepperEPIAppAction_->execute(solutionHistory, thisStepper,
+      StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
+//std::cout << "Inside takeStep 6." << std::endl;
+    //{
+    //  Teuchos::basic_FancyOStream<char> ostr(Teuchos::rcp(&std::cout, false));
+    //  this->describe(ostr, Teuchos::VERB_EXTREME);
+    //}
+    Teuchos::RCP<TimeDerivative<Scalar> > timeDer;
 
-    if (this->getUseFSAL()) {
-      // Get consistent xDot^n.
-      stepperEPIAppAction_->execute(
-          solutionHistory, thisStepper,
-          StepperEPIAppAction<
-              Scalar>::ACTION_LOCATION::BEFORE_EXPLICIT_EVAL);
+    Thyra::SolveStatus<Scalar> sStatus;
+//std::cout << "Inside takeStep 7." << std::endl;    
+      // Setup TimeDerivative
+      timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>(
+        Scalar(0.0),xOld));
+      auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
+          timeDer, dt, Scalar(0.0), Scalar(1.0)));
+//std::cout << "Inside takeStep 8." << std::endl;
 
-      auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(dt));
+      // TODO: Transition away from using implicit solver methods and use ModelEvaluator directly
+      RCP<Thyra::VectorBase<Scalar> > f = x->clone_v();
+      std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
+      std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
+      std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
+      this->evaluateImplicitODE(f, x, xDot, time, p);
+      // std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
+      // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
+      // std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
+//std::cout << "Inside takeStep 9." << std::endl;
+      // Using the appModel
+      RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
+      // Model evaluator builds: alpha*u_dot + beta*F(u) = 0
+      inArgs.set_x(x);
+      inArgs.set_t(time);
+      inArgs.set_x_dot(xDot); // for what? xDot is zero at this point, updating of it not decided
+//std::cout << "Inside takeStep 10." << std::endl;
+      // initialize space for the update
+      RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();
+      assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
+//std::cout << "Inside takeStep 11." << std::endl;
+      // auto thyraModel = this->getModel();
+//std::cout << "Inside takeStep 12." << std::endl;
+      // auto inArgs_tyra  = thyraModel->createInArgs();
+      // auto outArgs_tyra = thyraModel->createOutArgs();
+//std::cout << "Inside takeStep 13." << std::endl;
+      // auto curr = solutionHistory->getCurrentState();
 
-      // Evaluate xDot = f(x,t).
-      this->evaluateExplicitODE(xDot, workingState->getX(),
-                                workingState->getTime(), p);
+      // inArgs_tyra.set_x(curr->getX());
+      // inArgs_tyra.set_t(curr->getTime());
+//std::cout << "Inside takeStep 14." << std::endl;
+      // auto W = thyraModel->create_W_op();
+      // outArgs_tyra.set_W_op(W);
+//std::cout << "Inside takeStep 15." << std::endl;
+      // thyraModel->evalModel(inArgs_tyra, outArgs_tyra);
 
-      // For UseFSAL=true, x and xDot are now sync'ed or consistent
-      // for the workingState.
-      workingState->setIsSynced(true);
-    }
-    else {
-      assign(xDot.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
-      workingState->setIsSynced(false);
-    }
+//std::cout << "Inside takeStep 16." << std::endl;
+      phiEvaluator_->setLinearizationPoint(inArgs);
+//std::cout << "Inside takeStep 16.5." << std::endl;
+      sStatus = phiEvaluator_->computePhi(vphi.ptr(), 2, dt, f);
+//std::cout << "Inside takeStep 17." << std::endl;
 
-    workingState->setSolutionStatus(Status::PASSED);
+      Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.0)*dt, *vphi);
+//std::cout << "Inside takeStep 18." << std::endl;
+
+    // std::cout << sStatus << std::endl;
+
+    stepperEPIAppAction_->execute(solutionHistory, thisStepper,
+      StepperEPIAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);
+//std::cout << "Inside takeStep 19." << std::endl;
+    if (workingState->getXDot() != Teuchos::null)
+      timeDer->compute(x, xDot);
+//std::cout << "Inside takeStep 20." << std::endl;
+    workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
-    stepperEPIAppAction_->execute(
-        solutionHistory, thisStepper,
-        StepperEPIAppAction<Scalar>::ACTION_LOCATION::END_STEP);
+    stepperEPIAppAction_->execute(solutionHistory, thisStepper,
+      StepperEPIAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }
+
+
 
 /** \brief Provide a StepperState to the SolutionState.
  *  This Stepper does not have any special state data,
@@ -215,147 +241,91 @@ void StepperEPI<Scalar>::takeStep(
  *  Stepper description.  This can be checked to ensure
  *  that the input StepperState can be used by this Stepper.
  */
-template <class Scalar>
+template<class Scalar>
 Teuchos::RCP<Tempus::StepperState<Scalar> >
-StepperEPI<Scalar>::getDefaultStepperState()
+StepperEPI<Scalar>::
+getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
-      rcp(new StepperState<Scalar>(this->getStepperType()));
+    rcp(new StepperState<Scalar>(this->getStepperType()));
   return stepperState;
 }
 
-template <class Scalar>
+
+template<class Scalar>
 void StepperEPI<Scalar>::describe(
-    Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
-{
-  auto l_out = Teuchos::fancyOStream(out.getOStream());
-  Teuchos::OSTab ostab(*l_out, 2, this->description());
-  l_out->setOutputToRootOnly(0);
-
-  *l_out << std::endl;
-  Stepper<Scalar>::describe(*l_out, verbLevel);
-  StepperExplicit<Scalar>::describe(*l_out, verbLevel);
-  *l_out << "  stepperEPIAppAction_ = " << stepperEPIAppAction_ << std::endl
-         << "----------------------------" << std::endl;
-}
-
-template <class Scalar>
-bool StepperEPI<Scalar>::isValidSetup(Teuchos::FancyOStream& out) const
+  Teuchos::FancyOStream               &out,
+  const Teuchos::EVerbosityLevel      verbLevel) const
 {
   out.setOutputToRootOnly(0);
+  out << std::endl;
+  Stepper<Scalar>::describe(out, verbLevel);
+  StepperImplicit<Scalar>::describe(out, verbLevel);
 
+  out << "--- StepperEPI ---\n";
+  out << "  stepperEPIAppAction_                = "
+      << stepperEPIAppAction_ << std::endl;
+  out << "----------------------------" << std::endl;
+}
+
+
+template<class Scalar>
+bool StepperEPI<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
+{
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
-  if (!Stepper<Scalar>::isValidSetup(out)) isValidSetup = false;
-  if (!StepperExplicit<Scalar>::isValidSetup(out)) isValidSetup = false;
+  if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
+  if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
+
   if (stepperEPIAppAction_ == Teuchos::null) {
     isValidSetup = false;
     out << "The EPI AppAction is not set!\n";
   }
+
   return isValidSetup;
 }
 
-template <class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList> StepperEPI<Scalar>::getValidParameters()
-    const
+
+template<class Scalar>
+Teuchos::RCP<const Teuchos::ParameterList>
+StepperEPI<Scalar>::getValidParameters() const
 {
-  return this->getValidParametersBasic();
-}
-
-template <class Scalar>
-Teuchos::RCP<Teuchos::ParameterList> StepperEPI<Scalar>::getValidParametersBasic()
-    const
-{
-  auto pl = Teuchos::parameterList(this->getStepperName());
-  pl->template set<std::string>("Stepper Type", this->getStepperType());
-
-  pl->template set<bool>(
-      "Use FSAL", this->getUseFSAL(),
-      "The First-Same-As-Last (FSAL) principle is the situation where the\n"
-      "last function evaluation, f(x^{n-1},t^{n-1}) [a.k.a. xDot^{n-1}],\n"
-      "can be used for the first function evaluation, f(x^n,t^n)\n"
-      "[a.k.a. xDot^n].  For RK methods, this applies to the stages.\n"
-      "\n"
-      "Often the FSAL priniciple can be used to save an evaluation.\n"
-      "However there are cases when it cannot be used, e.g., operator\n"
-      "splitting where other steppers/operators have modified the solution,\n"
-      "x^*, and thus require the function evaluation, f(x^*, t^{n-1}).\n"
-      "\n"
-      "It should be noted that when the FSAL priniciple can be used\n"
-      "(can set useFSAL=true), setting useFSAL=false will give the\n"
-      "same solution but at additional expense.  However, the reverse\n"
-      "is not true.  When the FSAL priniciple can not be used\n"
-      "(need to set useFSAL=false), setting useFSAL=true will produce\n"
-      "incorrect solutions.\n"
-      "\n"
-      "Default in general for explicit and implicit steppers is false,\n"
-      "but individual steppers can override this default.");
-
-  pl->template set<std::string>(
-      "Initial Condition Consistency", this->getICConsistency(),
-      "This indicates which type of consistency should be applied to\n"
-      "the initial conditions (ICs):\n"
-      "\n"
-      "  'None'   - Do nothing to the ICs provided in the SolutionHistory.\n"
-      "  'Zero'   - Set the derivative of the SolutionState to zero in the\n"
-      "             SolutionHistory provided, e.g., xDot^0 = 0, or \n"
-      "             xDotDot^0 = 0.\n"
-      "  'App'    - Use the application's ICs, e.g., getNominalValues().\n"
-      "  'Consistent' - Make the initial conditions for x and xDot\n"
-      "             consistent with the governing equations, e.g.,\n"
-      "             xDot = f(x,t), and f(x, xDot, t) = 0.  For implicit\n"
-      "             ODEs, this requires a solve of f(x, xDot, t) = 0 for\n"
-      "             xDot, and another Jacobian and residual may be\n"
-      "             needed, e.g., boundary conditions on xDot may need\n"
-      "             to replace boundary conditions on x.\n"
-      "\n"
-      "In general for explicit steppers, the default is 'Consistent',\n"
-      "because it is fairly cheap with just one residual evaluation.\n"
-      "In general for implicit steppers, the default is 'None', because\n"
-      "the application often knows its IC and can set it the initial\n"
-      "SolutionState.  Also, as noted above, 'Consistent' may require\n"
-      "another Jacobian from the application.  Individual steppers may\n"
-      "override these defaults.");
-
-  pl->template set<bool>(
-      "Initial Condition Consistency Check", this->getICConsistencyCheck(),
-      "Check if the initial condition, x and xDot, is consistent with the\n"
-      "governing equations, xDot = f(x,t), or f(x, xDot, t) = 0.\n"
-      "\n"
-      "In general for explicit and implicit steppers, the default is true,\n"
-      "because it is fairly cheap with just one residual evaluation.\n"
-      "Individual steppers may override this default.");
-
-  pl->template set<int>(
-      "Taylor Expansion Order", 2,
-      "The order of the Taylor expansion used in the EPI stepper.\n"
-      "\n"
-      "The default is 2.");
-
-  pl->template set<std::string>(
-      "Phi Evaluator Type", "Taylor",
-      "The type of Phi evaluator used in the EPI stepper.\n"
-      "\n"
-      "The default is 'Taylor'.  Other options are 'PFD' and 'Leja'.");
-
+  auto pl = this->getValidParametersBasicImplicit();
   return pl;
 }
 
-// Nonmember constructor - ModelEvaluator and ParameterList
-// ------------------------------------------------------------------------
+
 template <class Scalar>
-Teuchos::RCP<StepperEPI<Scalar> > createStepperEPI(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+void StepperEPI<Scalar>::setStepperExponentialValues(
     Teuchos::RCP<Teuchos::ParameterList> pl)
 {
-  auto stepper = Teuchos::rcp(new StepperEPI<Scalar>());
-  stepper->setStepperExplicitValues(pl);
-
-  stepper->setPhiEvaluatorParameterList(pl);
+  Teuchos::RCP<Teuchos::ParameterList> phiPL = Teuchos::null;
 
   if (pl != Teuchos::null) {
-    stepper->setTaylorExpansionOrder(pl->template get<int>("Taylor Expansion Order", 2));
+    // TODO read in the pl for the exponential solver
+    phiPL = sublist(pl, "PhiEvaluator");
   }
+  
+  // TODO: is this the right place to initialize the PhiEvaluator?
+  auto phif = Teuchos::rcp(new PhiEvaluatorFactory<Scalar>());
+  phiEvaluator_ = phif->createPhiEvaluator(phiPL);
+}
+
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperEPI<Scalar> >
+createStepperEPI(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperEPI<Scalar>());
+
+  stepper->setStepperImplicitValues(pl);
+
+  stepper->setStepperExponentialValues(pl);
 
   if (model != Teuchos::null) {
     stepper->setModel(model);
@@ -365,5 +335,6 @@ Teuchos::RCP<StepperEPI<Scalar> > createStepperEPI(
   return stepper;
 }
 
-}  // namespace Tempus
-#endif  // Tempus_StepperEPI_impl_hpp
+
+} // namespace Tempus
+#endif // Tempus_StepperEPI_impl_hpp
