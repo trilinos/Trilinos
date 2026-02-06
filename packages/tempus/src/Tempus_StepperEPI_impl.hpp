@@ -171,11 +171,12 @@ void StepperEPI<Scalar>::takeStep(
 //std::cout << "Inside takeStep 8." << std::endl;
 
       // TODO: Transition away from using implicit solver methods and use ModelEvaluator directly
-      RCP<Thyra::VectorBase<Scalar> > f = x->clone_v();
+      RCP<Thyra::VectorBase<Scalar> > Mf = x->clone_v();
       std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
       std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
-      std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
-      this->evaluateImplicitODE(f, x, xDot, time, p);
+      std::cout << "f[0,1]  = " << Thyra::get_ele(*Mf, 0) << " " << Thyra::get_ele(*Mf, 1) << std::endl;
+      this->evaluateImplicitODE(Mf, x, xDot, time, p);
+      // f = M*xDot in here
       // std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
       // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       // std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
@@ -210,7 +211,7 @@ void StepperEPI<Scalar>::takeStep(
 //std::cout << "Inside takeStep 16." << std::endl;
       phiEvaluator_->setLinearizationPoint(inArgs);
 //std::cout << "Inside takeStep 16.5." << std::endl;
-      sStatus = phiEvaluator_->computePhi(vphi.ptr(), 2, dt, f);
+      sStatus = phiEvaluator_->computePhi(vphi.ptr(), 2, dt, Mf);
 //std::cout << "Inside takeStep 17." << std::endl;
 
       Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.0)*dt, *vphi);
