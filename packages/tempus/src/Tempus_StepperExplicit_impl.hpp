@@ -46,13 +46,18 @@ void StepperExplicit<Scalar>::setInitialConditions(
          << "Setting the initial conditions on the currentState.\n"
          << std::endl;
   }
-
+std::cout << "Inside Explicit setInitialConditions." << std::endl;
   RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
   RCP<Thyra::VectorBase<Scalar> > x        = initialState->getX();
   RCP<Thyra::VectorBase<Scalar> > xDot     = initialState->getXDot();
-  if (xDot == Teuchos::null) xDot = this->getStepperXDot();
-
+  if (xDot == Teuchos::null) 
+  {
+    xDot = this->getStepperXDot();
+    std::cout << "xDot null." << std::endl;
+  }
+  std::cout << "After xDot Assignment." << std::endl;
   inArgs_ = appModel_->getNominalValues();
+  std::cout << "After inArgs_ Assignment." << std::endl;
   if (this->getOrderODE() == SECOND_ORDER_ODE) {
     RCP<Thyra::VectorBase<Scalar> > initialXDot = initialState->getXDot();
     // If initialState has x and xDot set, treat them as the initial conditions.
@@ -66,9 +71,10 @@ void StepperExplicit<Scalar>::setInitialConditions(
         "        either initialState or appModel_->getNominalValues::InArgs\n"
         "        (but not from a mixture of the two).\n");
   }
-
+  std::cout << "After second order ode." << std::endl;
   if (this->getOrderODE() == FIRST_ORDER_ODE) {
     if (x == Teuchos::null) {
+      std::cout << "first order ode if x is null." << std::endl;
       // Use x from inArgs as ICs.
       TEUCHOS_TEST_FOR_EXCEPTION(
           (x == Teuchos::null) && (inArgs_.get_x() == Teuchos::null),
@@ -102,7 +108,9 @@ void StepperExplicit<Scalar>::setInitialConditions(
 
   // Perform IC Consistency
   std::string icConsistency = this->getICConsistency();
+  std::cout << "getICConsistency." << std::endl;
   if (icConsistency == "None") {
+    std::cout << "icConsistency is none." << std::endl;
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
       if (initialState->getXDot() == Teuchos::null) {
         RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -133,6 +141,7 @@ void StepperExplicit<Scalar>::setInitialConditions(
     }
   }
   else if (icConsistency == "Zero") {
+    std::cout << "icConsistency is zero." << std::endl;
     if (this->getOrderODE() == FIRST_ORDER_ODE)
       Thyra::assign(xDot.ptr(), Scalar(0.0));
     else if (this->getOrderODE() == SECOND_ORDER_ODE)
@@ -159,6 +168,7 @@ void StepperExplicit<Scalar>::setInitialConditions(
     }
   }
   else if (icConsistency == "Consistent") {
+    std::cout << "icConsistency is consistent." << std::endl;
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
       // Evaluate xDot = f(x,t).
       auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
@@ -182,13 +192,15 @@ void StepperExplicit<Scalar>::setInitialConditions(
   // At this point, x, and xDot (and xDotDot) sync'ed or consistent
   // at the same time level for the initialState.
   initialState->setIsSynced(true);
-
+  std::cout << "before getICConsistencyCheck." << std::endl;
   // Test for consistency.
   if (this->getICConsistencyCheck()) {
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
       auto f = initialState->getX()->clone_v();
       auto p = Teuchos::rcp(new ExplicitODEParameters<Scalar>(0.0));
+      std::cout << "before evaluateExplicitODE." << std::endl;
       evaluateExplicitODE(f, x, initialState->getTime(), p);
+      std::cout << "after evaluateExplicitODE." << std::endl;
       Thyra::Vp_StV(f.ptr(), Scalar(-1.0), *(xDot));
       Scalar normX   = Thyra::norm(*x);
       Scalar reldiff = Scalar(0.0);
@@ -295,7 +307,7 @@ void StepperExplicit<Scalar>::evaluateExplicitODE(
   // make sure the latter is set to null in order to request the evaluation
   // of a state function corresponding to the explicit ODE formulation
   // xDot = f(x, t).
-  if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
+  // if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
 
   outArgs_.set_f(xDot);
 

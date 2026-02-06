@@ -100,16 +100,24 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
       "Individual steppers may override this default.");
 
   pl->set<int>(
-      "Taylor Expansion Order", 2,
+      "Taylor Expansion Order", 4,
       "The order of the Taylor expansion used in the EPI stepper.\n"
       "\n"
       "The default is 2.");
 
   pl->set<std::string>(
-      "Phi Evaluator Type", "Taylor",
+      "PhiEvaluator Type", "Taylor",
       "The type of Phi evaluator used in the EPI stepper.\n"
       "\n"
       "The default is 'Taylor'.  Other options are 'PFD' and 'Leja'.");
+
+     pl->set<bool>(
+      "Zero Initial Guess", false,
+      "Indicates whether to use a zero initial guess for the nonlinear\n"
+      "solver when computing phi-function evaluations.");
+
+      pl->set<std::string>("Solver Name", "Demo Solver", "Solver name for PhiEvaluator.");
+      pl->set<std::string>("Predictor Stepper Type", "None", "Solver name for PhiEvaluator.");
 
   //pl->set("?", *member_->getNonconstParameterList());
 
@@ -140,6 +148,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos:
   Thyra::copy(*v0, phiv.ptr());
   // return vecV;
   Thyra::SolveStatus<Scalar> sStatus;
+  sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
   return sStatus;
 }
 
@@ -195,12 +204,11 @@ Teuchos::RCP<PhiEvaluatorTaylor<Scalar> > createPhiEvaluatorTaylor(
 {
   auto phi = Teuchos::rcp(new PhiEvaluatorTaylor<Scalar>());
   phi->setName("From createPhiEvaluatorTaylor");
-
   if (pl == Teuchos::null || pl->numParams() == 0) return phi;
 
   pl->validateParametersAndSetDefaults(*phi->getValidParameters());
 
-  phi->setTaylorExpansionOrder(pl->get<int>("Taylor Expansion Order", 2));
+  phi->setTaylorExpansionOrder(pl->get<int>("Taylor Expansion Order", 4));
   phi->setName(pl->name());
   //phi->setThing(pl->get("Thing", "default"));
 

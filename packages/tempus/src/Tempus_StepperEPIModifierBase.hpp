@@ -1,11 +1,8 @@
-//@HEADER
-// *****************************************************************************
-//          Tempus: Time Integration and Sensitivity Analysis Package
-//
-// Copyright 2017 NTESS and the Tempus contributors.
-// SPDX-License-Identifier: BSD-3-Clause
-// *****************************************************************************
-//@HEADER
+// @HEADER
+// ****************************************************************************
+// TODO
+// ****************************************************************************
+// @HEADER
 
 #ifndef Tempus_StepperEPIModifierBase_hpp
 #define Tempus_StepperEPIModifierBase_hpp
@@ -14,9 +11,10 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperEPIAppAction.hpp"
 
+
 namespace Tempus {
 
-/** \brief Base modifier for StepperBackwardEuler.
+/** \brief Base modifier for StepperEPI.
  *
  *  This class provides a means to modify values (e.g., solution variables
  *  through SolutionHistory, and stepper member data through the Stepper),
@@ -33,10 +31,12 @@ namespace Tempus {
  *  (StepperEPIAppAction::ACTION_LOCATION) are shown in the
  *  algorithm documentation of the StepperEPI.
  */
-template <class Scalar>
+template<class Scalar>
 class StepperEPIModifierBase
-  : virtual public Tempus::StepperEPIAppAction<Scalar> {
- private:
+  : virtual public Tempus::StepperEPIAppAction<Scalar>
+{
+private:
+
   /* \brief Adaptor execute function
    *
    *  This is an adaptor function to bridge between the AppAction
@@ -47,23 +47,21 @@ class StepperEPIModifierBase
    *  For the Modifier interface, this adaptor is a "simple pass through".
    */
   void execute(
-      Teuchos::RCP<SolutionHistory<Scalar> > sh,
-      Teuchos::RCP<StepperEPI<Scalar> > stepper,
-      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
-          actLoc)
-  {
-    this->modify(sh, stepper, actLoc);
-  }
+    Teuchos::RCP<SolutionHistory<Scalar> > sh,
+    Teuchos::RCP<StepperEPI<Scalar> > stepper,
+    const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION actLoc)
+  { this->modify(sh, stepper, actLoc); }
 
- public:
+public:
+
   /// Modify EPI Stepper.
   virtual void modify(
-      Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
-      Teuchos::RCP<StepperEPI<Scalar> > /* stepper */,
-      const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION
-          actLoc) = 0;
+    Teuchos::RCP<SolutionHistory<Scalar> > /* sh */,
+    Teuchos::RCP<StepperEPI<Scalar> > /* stepper */,
+    const typename StepperEPIAppAction<Scalar>::ACTION_LOCATION actLoc) = 0;
+
 };
 
-}  // namespace Tempus
+} // namespace Tempus
 
-#endif  // Tempus_StepperEPIModifierBase_hpp
+#endif // Tempus_StepperEPIModifierBase_hpp

@@ -34,7 +34,7 @@ Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvalua
   if (phiEvaluatorPL == Teuchos::null)
     phiEvaluatorType = "PFD";
   else
-    phiEvaluatorType = phiEvaluatorPL->get<std::string>("Phi Evaluator Type", "PFD");
+    phiEvaluatorType = phiEvaluatorPL->get<std::string>("PhiEvaluator Type", "PFD");
   return this->createPhiEvaluator(phiEvaluatorType, phiEvaluatorPL, model);
 }
 
