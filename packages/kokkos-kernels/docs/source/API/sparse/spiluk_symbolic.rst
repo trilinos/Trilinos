@@ -3,7 +3,7 @@ KokkosSparse::spiluk_symbolic
 
 Defined in header ``KokkosSparse_spiluk.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename KernelHandle, typename ARowMapType, typename AEntriesType, typename LRowMapType,
             typename LEntriesType, typename URowMapType, typename UEntriesType>
@@ -72,7 +72,7 @@ Two main requirements are that the types of the ``rowmap`` and ``entries`` shoul
 Example
 =======
 
-.. code:: cppkokkos
+.. code:: c++
 
   #include <Kokkos_Core.hpp>
   #include <KokkosSparse_CrsMatrix.hpp>

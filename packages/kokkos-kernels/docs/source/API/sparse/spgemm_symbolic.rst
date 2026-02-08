@@ -6,7 +6,7 @@ Defined in header ``KokkosSparse_spgemm.hpp``
 .. note::
   The minimal header ``KokkosSparse_spgemm_symbolic.hpp`` is also sufficient for version 1 below.
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename KernelHandle, typename alno_row_view_t_, typename alno_nnz_view_t_,
             typename blno_row_view_t_, typename blno_nnz_view_t_, typename clno_row_view_t_>

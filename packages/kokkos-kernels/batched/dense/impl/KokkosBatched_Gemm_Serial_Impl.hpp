@@ -21,7 +21,7 @@ KOKKOS_INLINE_FUNCTION static int checkGemmInput([[maybe_unused]] const AViewTyp
   static_assert(BViewType::rank <= 2, "KokkosBatched::gemm: BViewType must have rank 0, 1 or 2.");
   static_assert(CViewType::rank <= 2, "KokkosBatched::gemm: CViewType must have rank 0, 1 or 2.");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int m = C.extent(0), n = C.extent(1);
   const int lda = A.extent(0);
   const int ldb = B.extent(0);

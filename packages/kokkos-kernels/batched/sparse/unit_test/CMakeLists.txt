@@ -4,31 +4,30 @@
 #                   #
 #####################
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/test_common)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test_common)
+kokkoskernels_include_directories(${CMAKE_BINARY_DIR}/test_common)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test_common)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/src)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/src)
+kokkoskernels_include_directories(${CMAKE_BINARY_DIR}/src)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/src)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched)
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR}/batched)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/dense/src)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse/src)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/batched/dense/impl)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse/impl)
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR}/batched/dense/src)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse/src)
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR}/batched/dense/impl)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/batched/sparse/impl)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
-IF (NOT KokkosKernels_ENABLE_COMPONENT_BLAS)
-  MESSAGE("batched enabled and blas not enabled, we need to include some include directories manually!")
-  KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/src/blas)
-  KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/src/blas)
-  KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/src/blas/impl)
-  KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/src/blas/impl)
-ENDIF()
-
+if(NOT KokkosKernels_ENABLE_COMPONENT_BLAS)
+  message("batched enabled and blas not enabled, we need to include some include directories manually!")
+  kokkoskernels_include_directories(${CMAKE_BINARY_DIR}/src/blas)
+  kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/src/blas)
+  kokkoskernels_include_directories(${CMAKE_BINARY_DIR}/src/blas/impl)
+  kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/src/blas/impl)
+endif()
 
 #####################
 #                   #
@@ -41,80 +40,57 @@ ENDIF()
 # Add GPU backends  #
 #                   #
 #####################
-IF (KOKKOS_ENABLE_CUDA)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+set(TEST_MAIN ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp)
+if(KOKKOS_ENABLE_CUDA)
+  kokkoskernels_add_unit_test(
     batched_sla_cuda
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Cuda_Batched_Sparse.cpp
-    COMPONENTS batched_sla
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_Cuda_Batched_Sparse.cpp
+    COMPONENTS batched_sla)
+endif()
 
-IF (KOKKOS_ENABLE_HIP)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_HIP)
+  kokkoskernels_add_unit_test(
     batched_sla_hip
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_HIP_Batched_Sparse.cpp
-    COMPONENTS batched_sla
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_HIP_Batched_Sparse.cpp
+    COMPONENTS batched_sla)
+endif()
 
-IF (KOKKOS_ENABLE_SYCL)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_SYCL)
+  kokkoskernels_add_unit_test(
     batched_sla_sycl
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_SYCL_Batched_Sparse.cpp
-    COMPONENTS batched_sla
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_SYCL_Batched_Sparse.cpp
+    COMPONENTS batched_sla)
+endif()
 
-IF (KOKKOS_ENABLE_OPENMPTARGET)
+if(KOKKOS_ENABLE_OPENMPTARGET)
   # KOKKOSKERNELS_ADD_UNIT_TEST(
   #   batched_sla_openmptarget
-  #   SOURCES
-  #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-  #     backends/Test_OpenMPTarget_Batched_Sparse.cpp
-  #   COMPONENTS batched_sla
-  # )
-ENDIF ()
-
-
+  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Batched_Sparse.cpp
+  #   COMPONENTS batched_sla)
+endif()
 
 #####################
 #                   #
 # Add CPU backends  #
 #                   #
 #####################
-IF (KOKKOS_ENABLE_SERIAL)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_SERIAL)
+  kokkoskernels_add_unit_test(
     batched_sla_serial
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Serial_Batched_Sparse.cpp
-    COMPONENTS batched_sla
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_Serial_Batched_Sparse.cpp
+    COMPONENTS batched_sla)
+endif()
 
-IF (KOKKOS_ENABLE_OPENMP)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_OPENMP)
+  kokkoskernels_add_unit_test(
     batched_sla_openmp
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_OpenMP_Batched_Sparse.cpp
-    COMPONENTS batched_sla
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_OpenMP_Batched_Sparse.cpp
+    COMPONENTS batched_sla)
+endif()
 
-IF (KOKKOS_ENABLE_THREADS)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_THREADS)
+  kokkoskernels_add_unit_test(
     batched_sla_threads
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Threads_Batched_Sparse.cpp
-    COMPONENTS batched_sla
-  )
-ENDIF ()
-
+    SOURCES ${TEST_MAIN} backends/Test_Threads_Batched_Sparse.cpp
+    COMPONENTS batched_sla)
+endif()

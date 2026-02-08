@@ -29,12 +29,12 @@ KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::Transpose, 1>::invoke(const AViewTy
 template <>
 template <typename AViewType, typename BViewType>
 KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::NoTranspose, 2>::invoke(const AViewType &A, const BViewType &B) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<AViewType>::value, "KokkosBatched::copy: AViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<BViewType>::value, "KokkosBatched::copy: BViewType is not a Kokkos::View.");
   static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
   static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
+#ifndef NDEBUG
   // Check compatibility of dimensions at run time.
   if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
     Kokkos::printf(
@@ -51,12 +51,12 @@ KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::NoTranspose, 2>::invoke(const AView
 template <>
 template <typename AViewType, typename BViewType>
 KOKKOS_INLINE_FUNCTION int SerialCopy<Trans::Transpose, 2>::invoke(const AViewType &A, const BViewType &B) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
   static_assert(Kokkos::is_view<AViewType>::value, "KokkosBatched::copy: AViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view<BViewType>::value, "KokkosBatched::copy: BViewType is not a Kokkos::View.");
   static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
   static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
+#ifndef NDEBUG
   // Check compatibility of dimensions at run time.
   if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
     Kokkos::printf(
@@ -94,12 +94,12 @@ template <typename MemberType>
 struct TeamCopy<MemberType, Trans::NoTranspose, 2> {
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<AViewType>::value, "KokkosBatched::copy: AViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<BViewType>::value, "KokkosBatched::copy: BViewType is not a Kokkos::View.");
     static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
     static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
       Kokkos::printf(
@@ -123,12 +123,12 @@ template <typename MemberType>
 struct TeamCopy<MemberType, Trans::Transpose, 2> {
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<AViewType>::value, "KokkosBatched::copy: AViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<BViewType>::value, "KokkosBatched::copy: BViewType is not a Kokkos::View.");
     static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
     static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
       Kokkos::printf(
@@ -172,12 +172,12 @@ template <typename MemberType>
 struct TeamVectorCopy<MemberType, Trans::NoTranspose, 2> {
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<AViewType>::value, "KokkosBatched::copy: AViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<BViewType>::value, "KokkosBatched::copy: BViewType is not a Kokkos::View.");
     static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
     static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
       Kokkos::printf(
@@ -201,12 +201,12 @@ template <typename MemberType>
 struct TeamVectorCopy<MemberType, Trans::Transpose, 2> {
   template <typename AViewType, typename BViewType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const AViewType &A, const BViewType &B) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<AViewType>::value, "KokkosBatched::copy: AViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<BViewType>::value, "KokkosBatched::copy: BViewType is not a Kokkos::View.");
     static_assert(AViewType::rank == 2, "KokkosBatched::copy: AViewType must have rank 2.");
     static_assert(BViewType::rank == 2, "KokkosBatched::copy: BViewType must have rank 2.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != B.extent(0) || A.extent(1) != B.extent(1)) {
       Kokkos::printf(

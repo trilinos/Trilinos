@@ -39,7 +39,7 @@ extensions = ["myst_parser",
               "sphinx.ext.intersphinx",
               "sphinx_copybutton",
               "sphinx_design",
-              "cppkokkos"]
+              "sphinxcontrib.googleanalytics"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -60,6 +60,10 @@ pygments_dark_style = "monokai"
 #
 html_theme = 'furo'
 
+html_theme_options = {
+   "announcement": "Upcoming Event: KUG returns to Chicago March 19-20, 2026. <a href='https://kokkos.org/blog/kug-2026-call-for-submissions/#call-for-submissions'>Submit to speak now!</a>",
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -71,6 +75,8 @@ source_suffix = {
     '.rst': 'restructuredtext',
     '.md': 'markdown',
 }
+
+googleanalytics_id = 'G-F9FYCDDLH4'
 
 myst_heading_anchors = 4
 

@@ -5,6 +5,7 @@ API: Batched Dense (DLA)
    :maxdepth: 2
    :hidden:
    
+   dense/batched_axpy
    dense/batched_iamax
    dense/batched_trsv
    dense/batched_tbsv
@@ -22,6 +23,7 @@ API: Batched Dense (DLA)
    dense/batched_laswp
    dense/batched_apply_householder
    dense/batched_householder
+   dense/batched_trsm
 
 Our implementation of batched dense linear algebra (DLA) allows user to compose various batched DLA operations.
 For example, consider a case where small element matrices are created via `gemm` and those matrices are triangular solved by `lu` and `trsv`.
@@ -127,9 +129,9 @@ BLAS 1
      - `TeamCopy`
      - `TeamVectorCopy`
    * - AXPY
-     - `SerialAxpy`
-     - `TeamAxpy`
-     - `TeamVectorAxpy`
+     - :doc:`SerialAxpy <dense/batched_axpy>`
+     - :doc:`TeamAxpy <dense/batched_axpy>`
+     - :doc:`TeamVectorAxpy <dense/batched_axpy>`
    * - DOT*
      - `SerialDot`
      - `TeamDot`
@@ -283,9 +285,9 @@ BLAS 3
      - `TeamTrmm`
      - `TeamVectorTrmm`
    * - TRSM
-     - `SerialTrsm`
-     - `TeamTrsm`
-     - `TeamVectorTrsm`
+     - :doc:`SerialTrsm <dense/batched_trsm>`
+     - :doc:`TeamTrsm <dense/batched_trsm>`
+     - :doc:`TeamVectorTrsm <dense/batched_trsm>`
 
 LAPACK support
 ==============

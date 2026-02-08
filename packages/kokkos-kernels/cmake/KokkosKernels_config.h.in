@@ -30,7 +30,7 @@
    than just BLAS and LAPACK functions.  */
 #cmakedefine HAVE_KOKKOSKERNELS_MKL
 
-#cmakedefine KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
+/* Define this macro to build the benchmark tests */
 #cmakedefine KOKKOSKERNELS_ENABLE_BENCHMARKS
 
 /* Define this macro if experimental features of Kokkoskernels are enabled */
@@ -142,12 +142,15 @@
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_ROCSPARSE
 /* ROCSOLVER */
 #cmakedefine KOKKOSKERNELS_ENABLE_TPL_ROCSOLVER
+/* ACCELERATE */
+#cmakedefine KOKKOSKERNELS_ENABLE_TPL_ACCELERATE
 
 #cmakedefine KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV
 
 /* if MKL or ARMPL, BLAS is also defined */
 #if defined(KOKKOSKERNELS_ENABLE_TPL_MKL) || \
-    defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+    defined(KOKKOSKERNELS_ENABLE_TPL_ARMPL) || \
+    defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
 #if !defined(KOKKOSKERNELS_ENABLE_TPL_BLAS)
 #define KOKKOSKERNELS_ENABLE_TPL_BLAS
 #endif

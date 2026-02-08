@@ -16,6 +16,7 @@ API: BLAS
    blas/blas1_rotmg
    blas/blas1_rotm
    blas/blas1_scal
+   blas/blas1_set
    blas/blas1_swap
 
    blas/blas2_gemv

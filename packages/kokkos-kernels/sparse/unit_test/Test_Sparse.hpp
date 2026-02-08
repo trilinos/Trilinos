@@ -7,6 +7,7 @@
 #include "Test_Sparse_crs2coo.hpp"
 #include "Test_Sparse_Controls.hpp"
 #include "Test_Sparse_CrsMatrix.hpp"
+#include "Test_Sparse_SellMatrix.hpp"
 #include "Test_Sparse_mdf.hpp"
 #include "Test_Sparse_findRelOffset.hpp"
 #include "Test_Sparse_gauss_seidel.hpp"

@@ -3,8 +3,6 @@
 
 #include <fstream>
 
-#define KOKKOSKERNELS_DEBUG_LEVEL 0
-
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Timer.hpp"
 #include "Kokkos_Random.hpp"
@@ -147,6 +145,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
     timer.reset();
     Kokkos::parallel_for(name.c_str(), policy, *this);
     exec_space().fence();
+    Kokkos::Profiling::popRegion();
     double sec = timer.seconds();
 
     return sec;

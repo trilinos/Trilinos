@@ -6,7 +6,7 @@ Defined in header ``KokkosSparse_sort_crs.hpp``
 SortAlgorithm Enum
 ==================
 
-.. code:: cppkokkos
+.. code:: c++
 
   enum class SortAlgorithm {
     DEFAULT,
@@ -51,7 +51,7 @@ Functions
 sort_crs_matrix
 ^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename execution_space, typename rowmap_t, typename entries_t, typename values_t>
   void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const entries_t& entries,
@@ -85,7 +85,7 @@ Parameters
 sort_bsr_matrix
 ^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename execution_space, typename rowmap_t, typename entries_t, typename values_t, typename Ordinal>
   void sort_bsr_matrix(const execution_space& exec, Ordinal blockSize, const rowmap_t& rowmap, const entries_t& entries,
@@ -119,7 +119,7 @@ Parameters
 sort_crs_graph
 ^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename execution_space, typename rowmap_t, typename entries_t>
   void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const entries_t& entries,
@@ -150,7 +150,7 @@ Parameters
 sort_and_merge_matrix
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename exec_space, typename rowmap_t, typename entries_t, typename values_t>
   void sort_and_merge_matrix(const exec_space& exec, const typename rowmap_t::const_type& rowmap_in,
@@ -188,7 +188,7 @@ Parameters
 sort_and_merge_graph
 ^^^^^^^^^^^^^^^^^^^^
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename exec_space, typename rowmap_t, typename entries_t>
   void sort_and_merge_graph(const exec_space& exec, const typename rowmap_t::const_type& rowmap_in,

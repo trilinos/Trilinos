@@ -230,7 +230,7 @@ void kk_create_bsr_from_bsr_formatted_point_crs(int block_size, size_t num_rows,
 }
 
 template <typename in_row_view_t, typename in_nnz_view_t, typename in_scalar_view_t, typename out_row_view_t,
-          typename out_nnz_view_t, typename out_scalar_view_t, typename tempwork_row_view_t, typename MyExecSpace>
+          typename out_nnz_view_t, typename out_scalar_view_t, typename MyExecSpace, bool transpose_values>
 struct TransposeMatrix {
   struct CountTag {};
   struct FillTag {};
@@ -252,13 +252,11 @@ struct TransposeMatrix {
   out_row_view_t t_xadj;     // allocated
   out_nnz_view_t t_adj;      // allocated
   out_scalar_view_t t_vals;  // allocated
-  tempwork_row_view_t tmp_txadj;
-  bool transpose_values;
   nnz_lno_t team_work_size;
 
   TransposeMatrix(nnz_lno_t num_rows_, nnz_lno_t num_cols_, in_row_view_t xadj_, in_nnz_view_t adj_,
                   in_scalar_view_t vals_, out_row_view_t t_xadj_, out_nnz_view_t t_adj_, out_scalar_view_t t_vals_,
-                  tempwork_row_view_t tmp_txadj_, bool transpose_values_, nnz_lno_t team_row_work_size_)
+                  nnz_lno_t team_row_work_size_)
       : num_rows(num_rows_),
         num_cols(num_cols_),
         xadj(xadj_),
@@ -267,8 +265,6 @@ struct TransposeMatrix {
         t_xadj(t_xadj_),
         t_adj(t_adj_),
         t_vals(t_vals_),
-        tmp_txadj(tmp_txadj_),
-        transpose_values(transpose_values_),
         team_work_size(team_row_work_size_) {}
 
   KOKKOS_INLINE_FUNCTION
@@ -285,8 +281,7 @@ struct TransposeMatrix {
                            Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, left_work), [&](nnz_lno_t i) {
                              const size_type adjind   = i + col_begin;
                              const nnz_lno_t colIndex = adj[adjind];
-                             typedef typename std::remove_reference<decltype(t_xadj(0))>::type atomic_incr_type;
-                             Kokkos::atomic_fetch_add(&(t_xadj(colIndex)), atomic_incr_type(1));
+                             if (colIndex < num_cols) Kokkos::atomic_inc(&(t_xadj(colIndex + 1)));
                            });
                          });
   }
@@ -296,27 +291,26 @@ struct TransposeMatrix {
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_work_size;
     const nnz_lno_t team_row_end   = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_work_size, num_rows);
 
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&](const nnz_lno_t &row_index) {
-          // const nnz_lno_t teamsize = teamMember.team_size();
-          // for (nnz_lno_t row_index = team_row_begin + teamMember.team_rank();
-          // row_index < team_row_end; row_index += teamsize){
-          const size_type col_begin = xadj[row_index];
-          const size_type col_end   = xadj[row_index + 1];
-          const nnz_lno_t left_work = col_end - col_begin;
-          Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, left_work), [&](nnz_lno_t i) {
-            const size_type adjind   = i + col_begin;
-            const nnz_lno_t colIndex = adj[adjind];
-            typedef typename std::remove_reference<decltype(tmp_txadj(0))>::type atomic_incr_type;
-            const size_type pos = Kokkos::atomic_fetch_add(&(tmp_txadj(colIndex)), atomic_incr_type(1));
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end),
+                         [&](const nnz_lno_t &row_index) {
+                           // const nnz_lno_t teamsize = teamMember.team_size();
+                           // for (nnz_lno_t row_index = team_row_begin + teamMember.team_rank();
+                           // row_index < team_row_end; row_index += teamsize){
+                           const size_type col_begin = xadj[row_index];
+                           const size_type col_end   = xadj[row_index + 1];
+                           const nnz_lno_t left_work = col_end - col_begin;
+                           Kokkos::parallel_for(Kokkos::ThreadVectorRange(teamMember, left_work), [&](nnz_lno_t i) {
+                             const size_type adjind   = i + col_begin;
+                             const nnz_lno_t colIndex = adj[adjind];
+                             const size_type pos      = Kokkos::atomic_fetch_inc(&(t_xadj(colIndex + 1)));
 
-            t_adj(pos) = row_index;
-            if (transpose_values) {
-              t_vals(pos) = vals[adjind];
-            }
-          });
-          //}
-        });
+                             t_adj(pos) = row_index;
+                             if constexpr (transpose_values) {
+                               t_vals(pos) = vals[adjind];
+                             }
+                           });
+                           //}
+                         });
   }
 };
 
@@ -329,12 +323,9 @@ void transpose_matrix(typename in_nnz_view_t::non_const_value_type num_rows,
                       out_nnz_view_t t_adj,     // pre-allocated -- no need for initialize
                       out_scalar_view_t t_vals  // pre-allocated -- no need for initialize
 ) {
-  // allocate some memory for work for row pointers
-  tempwork_row_view_t tmp_row_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_row_view"), num_cols + 1);
-
-  // create the functor for tranpose.
+  // create the functor for transpose.
   typedef TransposeMatrix<in_row_view_t, in_nnz_view_t, in_scalar_view_t, out_row_view_t, out_nnz_view_t,
-                          out_scalar_view_t, tempwork_row_view_t, MyExecSpace>
+                          out_scalar_view_t, MyExecSpace, true>
       TransposeFunctor_t;
 
   typedef typename TransposeFunctor_t::team_count_policy_t count_tp_t;
@@ -349,14 +340,12 @@ void transpose_matrix(typename in_nnz_view_t::non_const_value_type num_rows,
   // determine threads per team
   int team_size = kk_get_suggested_team_size(thread_size, KokkosKernels::Impl::kk_get_exec_space_type<MyExecSpace>());
 
-  TransposeFunctor_t tm(num_rows, num_cols, xadj, adj, vals, t_xadj, t_adj, t_vals, tmp_row_view, true, team_size);
+  TransposeFunctor_t tm(num_rows, num_cols, xadj, adj, vals, t_xadj, t_adj, t_vals, team_size);
 
   Kokkos::parallel_for("KokkosSparse::Impl::transpose_matrix::S0",
                        count_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
 
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<MyExecSpace>(num_cols + 1, t_xadj);
-
-  Kokkos::deep_copy(tmp_row_view, t_xadj);
 
   Kokkos::parallel_for("KokkosSparse::Impl::transpose_matrix::S1",
                        fill_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
@@ -390,15 +379,12 @@ void transpose_graph(typename in_nnz_view_t::non_const_value_type num_rows,
                      out_row_view_t t_xadj,  // pre-allocated -- initialized with 0
                      out_nnz_view_t t_adj    // pre-allocated -- no need for initialize
 ) {
-  // allocate some memory for work for row pointers
-  tempwork_row_view_t tmp_row_view(Kokkos::view_alloc(Kokkos::WithoutInitializing, "tmp_row_view"), num_cols + 1);
-
   in_nnz_view_t tmp1;
   out_nnz_view_t tmp2;
 
-  // create the functor for tranpose.
+  // create the functor for transpose.
   typedef TransposeMatrix<in_row_view_t, in_nnz_view_t, in_nnz_view_t, out_row_view_t, out_nnz_view_t, out_nnz_view_t,
-                          tempwork_row_view_t, MyExecSpace>
+                          MyExecSpace, false>
       TransposeFunctor_t;
 
   typedef typename TransposeFunctor_t::team_count_policy_t count_tp_t;
@@ -413,14 +399,12 @@ void transpose_graph(typename in_nnz_view_t::non_const_value_type num_rows,
   // determine threads per team
   int team_size = kk_get_suggested_team_size(thread_size, KokkosKernels::Impl::kk_get_exec_space_type<MyExecSpace>());
 
-  TransposeFunctor_t tm(num_rows, num_cols, xadj, adj, tmp1, t_xadj, t_adj, tmp2, tmp_row_view, false, team_size);
+  TransposeFunctor_t tm(num_rows, num_cols, xadj, adj, tmp1, t_xadj, t_adj, tmp2, team_size);
 
   Kokkos::parallel_for("KokkosKernels::Impl::transpose_graph::S0",
                        count_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
 
   KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<MyExecSpace>(num_cols + 1, t_xadj);
-
-  Kokkos::deep_copy(tmp_row_view, t_xadj);
 
   Kokkos::parallel_for("KokkosKernels::Impl::transpose_graph::S1",
                        fill_tp_t((num_rows + team_size - 1) / team_size, team_size, thread_size), tm);
@@ -1296,12 +1280,12 @@ void kk_get_lower_triangle(typename cols_view_t::non_const_value_type nr, row_ma
 
 template <typename row_map_view_t, typename cols_view_t, typename out_row_map_view_t, typename out_cols_view_t,
           typename exec_space>
-void kk_create_incidence_tranpose_matrix_from_lower_triangle(typename cols_view_t::non_const_value_type nr,
-                                                             row_map_view_t in_rowmap, cols_view_t in_entries,
-                                                             out_row_map_view_t &out_rowmap,
-                                                             out_cols_view_t &out_entries,
-                                                             bool /*use_dynamic_scheduling */ = false,
-                                                             bool /*chunksize*/               = 4) {
+void kk_create_incidence_transpose_matrix_from_lower_triangle(typename cols_view_t::non_const_value_type nr,
+                                                              row_map_view_t in_rowmap, cols_view_t in_entries,
+                                                              out_row_map_view_t &out_rowmap,
+                                                              out_cols_view_t &out_entries,
+                                                              bool /*use_dynamic_scheduling */ = false,
+                                                              bool /*chunksize*/               = 4) {
   // typedef typename row_map_view_t::const_type const_row_map_view_t;
   // typedef typename cols_view_t::const_type   const_cols_view_t;
 

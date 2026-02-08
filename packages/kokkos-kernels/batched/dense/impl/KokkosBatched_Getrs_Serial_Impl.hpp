@@ -16,7 +16,7 @@ KOKKOS_INLINE_FUNCTION static int checkGetrsInput([[maybe_unused]] const AViewTy
   static_assert(Kokkos::is_view_v<BViewType>, "KokkosBatched::getrs: BViewType is not a Kokkos::View.");
   static_assert(AViewType::rank == 2, "KokkosBatched::getrs: AViewType must have rank 2.");
   static_assert(BViewType::rank == 1, "KokkosBatched::getrs: BViewType must have rank 1.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int lda = A.extent(0), n = A.extent(1);
   if (lda < Kokkos::max(1, n)) {
     Kokkos::printf(
