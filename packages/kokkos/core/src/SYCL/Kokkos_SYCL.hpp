@@ -12,12 +12,7 @@ static_assert(false,
 #include <Kokkos_Macros.hpp>
 
 #ifdef KOKKOS_ENABLE_SYCL
-// FIXME_SYCL
-#if __has_include(<sycl/sycl.hpp>)
 #include <sycl/sycl.hpp>
-#else
-#include <CL/sycl.hpp>
-#endif
 #include <SYCL/Kokkos_SYCL_Space.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_ScratchSpace.hpp>
@@ -48,6 +43,9 @@ class SYCL {
 
   using scratch_memory_space = ScratchMemorySpace<SYCL>;
 
+  SYCL(const SYCL&)            = default;
+  SYCL& operator=(const SYCL&) = default;
+  ~SYCL();
   SYCL();
   explicit SYCL(const sycl::queue&);
 

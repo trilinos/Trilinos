@@ -2,6 +2,7 @@ ARG BASE=nvcr.io/nvidia/cuda:12.0.0-devel-ubuntu22.04@sha256:0578d90ce082ed37cdc
 FROM $BASE
 
 ARG ADDITIONAL_PACKAGES
+ARG ONEAPI_VERSION=2025.2
 
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
 
@@ -47,17 +48,25 @@ RUN wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRO
     | tee /etc/apt/sources.list.d/oneAPI.list
 
 RUN apt-get update && apt-get install -y \
-        intel-oneapi-compiler-dpcpp-cpp-2025.0 \
+        intel-oneapi-compiler-dpcpp-cpp-${ONEAPI_VERSION} \
         curl \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN curl -LOJ "https://developer.codeplay.com/api/v1/products/download?product=oneapi&variant=nvidia&version=2025.0.0&filters[]=12.0&filters[]=linux" && \
-    chmod +x oneapi-for-nvidia-gpus-2025.0.0-cuda-12.0-linux.sh && \
-    ./oneapi-for-nvidia-gpus-2025.0.0-cuda-12.0-linux.sh
+RUN cd /tmp && git clone https://github.com/intel/llvm.git -b v6.2.0 --depth=1 && cd llvm && \
+    cmake -S unified-runtime -B build_ur \
+      -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+      -DUR_BUILD_TESTS=OFF \
+      -DUR_ENABLE_TRACING=ON \
+      -DUR_BUILD_ADAPTER_CUDA=ON \
+      -DUR_BUILD_ADAPTER_OPENCL=ON \
+      -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build build_ur -j 8 && \
+    cp -r build_ur/lib/* /opt/intel/oneapi/compiler/${ONEAPI_VERSION}/lib/ && \
+    rm -r /tmp/llvm
 
 # sycl-ls, icpx
-ENV PATH=/opt/intel/oneapi/compiler/2025.0/bin/:$PATH
+ENV PATH=/opt/intel/oneapi/compiler/${ONEAPI_VERSION}/bin/:$PATH
 # libsycl, libsvml
-ENV LD_LIBRARY_PATH=/opt/intel/oneapi/compiler/2025.0/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/opt/intel/oneapi/compiler/${ONEAPI_VERSION}/lib:$LD_LIBRARY_PATH

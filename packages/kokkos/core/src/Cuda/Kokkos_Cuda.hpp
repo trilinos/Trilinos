@@ -143,6 +143,9 @@ class Cuda {
   //--------------------------------------------------
   //! \name  Cuda space instances
 
+  Cuda(const Cuda&)            = default;
+  Cuda& operator=(const Cuda&) = default;
+  ~Cuda();
   Cuda();
 
   explicit Cuda(cudaStream_t stream) : Cuda(stream, Impl::ManageStream::no) {}
