@@ -6,7 +6,7 @@ INCLUDE(PyTrilinos2MakeTest)
 PyTrilinos2_MAKE_MPI_TEST(CG)
 PyTrilinos2_MAKE_MPI_TEST(parameterList)
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(Stratimiko_cp
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Stratimikos_cp
     SOURCE_FILES Stratimikos.py)
 
 TRIBITS_ADD_TEST(
@@ -42,3 +42,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 target_link_libraries(PyTrilinos2_RTC PRIVATE pybind11::embed)
 target_link_libraries(PyTrilinos2_RTC PRIVATE ${TORCH_LIBRARIES} ${TORCH_PYTHON_LIBRARY})
+
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(pl_cp
+    SOURCE_FILES test.xml)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PL
+  SOURCES pl.cpp
+  ENVIRONMENT "PYTHONPATH=${PyTrilinos2_PYTHONPATH}:$ENV{PYTHONPATH}"
+  NUM_MPI_PROCS 1
+)
+
+target_link_libraries(PyTrilinos2_PL PRIVATE pybind11::embed)
+target_link_libraries(PyTrilinos2_PL PRIVATE ${TORCH_LIBRARIES} ${TORCH_PYTHON_LIBRARY})
