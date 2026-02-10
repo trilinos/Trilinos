@@ -168,7 +168,7 @@ class RowGraph : virtual public Teuchos::Describable,
   /// \pre <tt>gblColInds.size() >= getNumEntriesInGlobalRow(gblRow)</tt> is <tt>true</tt>.
 
   virtual void
-  getGlobalRowCopy(const GlobalOrdinal gblRow,
+  getGlobalRowCopy(GlobalOrdinal gblRow,
                    nonconst_global_inds_host_view_type& gblColInds,
                    size_t& numColInds) const = 0;
 
@@ -189,7 +189,7 @@ class RowGraph : virtual public Teuchos::Describable,
   /// \pre <tt>getRowMap()->isNodeLocalElement(lclRow)<tt> is <tt>true</tt>.
   /// \pre <tt>lclColInds.size() >= getNumEntriesInLocalRow(lclRow)</tt> is <tt>true</tt>.
   virtual void
-  getLocalRowCopy(const LocalOrdinal lclRow,
+  getLocalRowCopy(LocalOrdinal lclRow,
                   nonconst_local_inds_host_view_type& lclColInds,
                   size_t& numColInds) const = 0;
 
