@@ -85,7 +85,7 @@ namespace Kokkos {
       Pool(const execution_space& exec, uint64_t seed);
 
       //Initializing constructor
-      //Initialize Pool with seed as a starting seed with a pool_size of num_states using the 
+      //Initialize Pool with seed as a starting seed with a pool_size of num_states using the
       //specified execution space instance
       Pool(const execution_space& exec, uint64_t seed, uint64_t num_states);
 
@@ -611,11 +611,6 @@ struct Random_XorShift1024_UseCArrayState<Kokkos::Cuda> : std::false_type {};
 template <>
 struct Random_XorShift1024_UseCArrayState<Kokkos::HIP> : std::false_type {};
 #endif
-#ifdef KOKKOS_ENABLE_OPENMPTARGET
-template <>
-struct Random_XorShift1024_UseCArrayState<Kokkos::Experimental::OpenMPTarget>
-    : std::false_type {};
-#endif
 #ifdef KOKKOS_ENABLE_OPENACC
 template <>
 struct Random_XorShift1024_UseCArrayState<Kokkos::Experimental::OpenACC>
@@ -710,28 +705,6 @@ struct Random_UniqueIndex<Kokkos::Device<Kokkos::SYCL, MemorySpace>> {
       if (i >= static_cast<int>(locks_.extent(0))) {
         i = i_offset;
       }
-    }
-    return i;
-  }
-};
-#endif
-
-#ifdef KOKKOS_ENABLE_OPENMPTARGET
-template <class MemorySpace>
-struct Random_UniqueIndex<
-    Kokkos::Device<Kokkos::Experimental::OpenMPTarget, MemorySpace>> {
-  using locks_view_type =
-      View<int**,
-           Kokkos::Device<Kokkos::Experimental::OpenMPTarget, MemorySpace>>;
-  KOKKOS_FUNCTION
-  static int get_state_idx(const locks_view_type& locks) {
-    const int team_size = omp_get_num_threads();
-    int i               = omp_get_team_num() * team_size + omp_get_thread_num();
-    const int lock_size = locks.extent_int(0);
-
-    i %= lock_size;
-    while (Kokkos::atomic_compare_exchange(&locks(i, 0), 0, 1)) {
-      i = (i + 1) % lock_size;
     }
     return i;
   }
