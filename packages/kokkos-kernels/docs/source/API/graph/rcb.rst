@@ -3,7 +3,7 @@ KokkosGraph::Experimental::recursive_coordinate_bisection
 
 Defined in header: :code:`KokkosGraph_RCB.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename coors_view_type, typename perm_view_type>
   std::vector<typename perm_view_type::value_type> recursive_coordinate_bisection(coors_view_type &coordinates, perm_view_type &perm,

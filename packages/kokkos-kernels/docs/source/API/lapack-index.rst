@@ -5,6 +5,7 @@ API: LAPACK
    :maxdepth: 2
    :hidden:
 
+   lapack/geqrf
    lapack/gesv
    lapack/gesvd
    lapack/trtri
@@ -69,7 +70,7 @@ Below are tables summarizing the currently supported function calls and third pa
      - 
      - 
    * - geqrf
-     - 
+     - :doc:`geqrf <lapack/geqrf>`
      - 
      - 
      - 

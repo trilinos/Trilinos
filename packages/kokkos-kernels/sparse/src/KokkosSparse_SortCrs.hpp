@@ -23,7 +23,7 @@ namespace KokkosSparse {
 // duplicated entries in A, A is sorted and returned (instead of a newly
 // allocated matrix).
 
-enum class SortAlgorithm { DEFAULT, PARALLEL_THREAD_LEVEL, BULK_SORT, RADIX, SHELL };
+enum class SortAlgorithm { DEFAULT, PARALLEL_THREAD_LEVEL, BULK_SORT };
 
 // Sort a CRS matrix: within each row, sort entries ascending by column.
 // At the same time, permute the values.
@@ -54,21 +54,10 @@ void sort_crs_matrix(const execution_space& exec, const rowmap_t& rowmap, const 
   }
   Ordinal numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if constexpr (!KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
-    if (option == SortAlgorithm::DEFAULT) {
-      option = SortAlgorithm::SHELL;
-    } else if ((option != SortAlgorithm::RADIX) && (option != SortAlgorithm::SHELL)) {
-      throw std::invalid_argument(
-        "sort_csr_matrix: Only RADIX and SHELL sort are available on CPU.");
-    }
-
-    if (option == SortAlgorithm::RADIX)
-      Kokkos::parallel_for("sort_crs_matrix[CPU,radix]",
-                           Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
-                           Impl::MatrixRadixSortFunctor<rowmap_t, entries_t, values_t>(rowmap, entries, values));
-    else
-      Kokkos::parallel_for("sort_crs_matrix[CPU,shell]",
-                           Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
-                           Impl::MatrixShellSortFunctor<rowmap_t, entries_t, values_t, true>(rowmap, entries, values));
+    // On CPUs, use a sequential radix sort within each row.
+    Kokkos::parallel_for("sort_crs_matrix[CPU,radix]",
+                         Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
+                         Impl::MatrixRadixSortFunctor<rowmap_t, entries_t, values_t>(rowmap, entries, values));
   } else {
     // On GPUs:
     //   If the matrix is highly imbalanced, or has long rows AND the dimensions
@@ -224,20 +213,9 @@ void sort_crs_graph(const execution_space& exec, const rowmap_t& rowmap, const e
   if constexpr (!KokkosKernels::Impl::is_gpu_exec_space_v<execution_space>) {
     // If on CPU, sort each row independently. Don't need to know numCols for
     // this.
-    if (option == SortAlgorithm::DEFAULT) {
-      option = SortAlgorithm::SHELL;
-    } else if ((option != SortAlgorithm::RADIX) && (option != SortAlgorithm::SHELL)) {
-      throw std::invalid_argument("sort_csr_graph: Only RADIX and SHELL sort are available on CPU.");
-    }
-
-    if (option == SortAlgorithm::RADIX)
-      Kokkos::parallel_for("sort_crs_graph[CPU,radix]",
-                           Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
-                           Impl::GraphRadixSortFunctor<rowmap_t, entries_t>(rowmap, entries));
-    else
-      Kokkos::parallel_for("sort_crs_graph[CPU,shell]",
-                           Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
-                           Impl::GraphShellSortFunctor<rowmap_t, entries_t>(rowmap, entries));
+    Kokkos::parallel_for("sort_crs_graph[CPU,radix]",
+                         Kokkos::RangePolicy<execution_space, Kokkos::Schedule<Kokkos::Dynamic>>(exec, 0, numRows),
+                         Impl::GraphRadixSortFunctor<rowmap_t, entries_t>(rowmap, entries));
   } else {
     // On GPUs:
     //   If the graph is highly imbalanced AND the dimensions are not too large

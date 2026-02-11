@@ -3,7 +3,7 @@ KokkosSparse::Impl::kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential
 
 Defined in header: :code:`KokkosSparse_Utils.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename crsMat_t, typename coor_view_type, typename perm_view_type>
   void kk_extract_diagonal_blocks_crsmatrix_with_rcb_sequential(const crsMat_t &A, coor_view_type &coors,
