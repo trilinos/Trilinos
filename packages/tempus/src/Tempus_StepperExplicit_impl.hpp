@@ -50,12 +50,9 @@ void StepperExplicit<Scalar>::setInitialConditions(
   RCP<SolutionState<Scalar> > initialState = solutionHistory->getCurrentState();
   RCP<Thyra::VectorBase<Scalar> > x        = initialState->getX();
   RCP<Thyra::VectorBase<Scalar> > xDot     = initialState->getXDot();
-  if (xDot == Teuchos::null) 
-  {
-    xDot = this->getStepperXDot();
-  }  
-  inArgs_ = appModel_->getNominalValues();
+  if (xDot == Teuchos::null) xDot = this->getStepperXDot();
 
+  inArgs_ = appModel_->getNominalValues();
   if (this->getOrderODE() == SECOND_ORDER_ODE) {
     RCP<Thyra::VectorBase<Scalar> > initialXDot = initialState->getXDot();
     // If initialState has x and xDot set, treat them as the initial conditions.
@@ -185,6 +182,7 @@ void StepperExplicit<Scalar>::setInitialConditions(
   // At this point, x, and xDot (and xDotDot) sync'ed or consistent
   // at the same time level for the initialState.
   initialState->setIsSynced(true);
+
   // Test for consistency.
   if (this->getICConsistencyCheck()) {
     if (this->getOrderODE() == FIRST_ORDER_ODE) {
@@ -297,7 +295,7 @@ void StepperExplicit<Scalar>::evaluateExplicitODE(
   // make sure the latter is set to null in order to request the evaluation
   // of a state function corresponding to the explicit ODE formulation
   // xDot = f(x, t).
-  // if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
+  if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
 
   outArgs_.set_f(xDot);
 
