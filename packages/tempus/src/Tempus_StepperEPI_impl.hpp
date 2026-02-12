@@ -32,7 +32,6 @@ StepperEPI<Scalar>::StepperEPI()
   this->setStepperName("EPI");
   this->setStepperType("EPI");
   this->setUseFSAL(true);
-  this->setTaylorExpansionOrder(2);
   this->setICConsistency("Consistent");
   this->setICConsistencyCheck(false);
   this->setZeroInitialGuess(false);
@@ -211,6 +210,7 @@ void StepperEPI<Scalar>::takeStep(
 //std::cout << "Inside takeStep 16." << std::endl;
       phiEvaluator_->setLinearizationPoint(inArgs);
 //std::cout << "Inside takeStep 16.5." << std::endl;
+        // TODO: Avoid using hard coded EPI2 (p=2) and adjust the logic for general p.
       sStatus = phiEvaluator_->computePhi(vphi.ptr(), 2, dt, Mf);
 //std::cout << "Inside takeStep 17." << std::endl;
 

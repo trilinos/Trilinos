@@ -113,7 +113,6 @@ public:
       {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod() const override {return true;}
     virtual bool isMultiStepMethod() const override {return !isOneStepMethod();}
-    virtual int getTaylorExpansionOrder() const { return taylorExpOrder_; }
     virtual OrderODE getOrderODE() const override {return FIRST_ORDER_ODE;}
   //@}
 
@@ -138,7 +137,6 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const override;
 
-  void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
   void setPhiEvaluatorParameterList(const Teuchos::RCP<Teuchos::ParameterList>& pl)
   { phiEvaluatorPL_ = pl; }
   
@@ -160,8 +158,6 @@ private:
   Teuchos::RCP<PhiEvaluator<Scalar> > phiEvaluator_;
 
   Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL_;
-
-  int taylorExpOrder_;
 
 };
 
