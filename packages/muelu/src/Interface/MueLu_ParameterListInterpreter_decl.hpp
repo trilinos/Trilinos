@@ -63,6 +63,10 @@
 #include "MueLu_SingleLevelMatlabFactory_fwd.hpp"
 #endif
 
+#ifdef HAVE_MUELU_TEKO
+#include "MueLu_TekoSmoother_fwd.hpp"
+#endif
+
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"
 #include "MueLu_SemiCoarsenPFactory_kokkos_fwd.hpp"
 #include "MueLu_TentativePFactory_kokkos_fwd.hpp"

@@ -87,6 +87,11 @@
 #include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
 #endif
 
+#ifdef HAVE_MUELU_TEKO
+#include "MueLu_TekoSmoother_decl.hpp"
+#include "MueLu_TekoSmoother_def.hpp"
+#endif
+
 #ifdef HAVE_MUELU_INTREPID2
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
 #endif
@@ -814,6 +819,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         preSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother(preSmootherParams))));
       else
 #endif
+#ifdef HAVE_MUELU_TEKO
+          if (preSmootherType == "teko")
+        preSmoother = rcp(new SmootherFactory(rcp(new TekoSmoother(preSmootherParams))));
+      else
+#endif
         preSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap))));
     }
 
@@ -861,6 +871,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_MUELU_MATLAB
         if (postSmootherType == "matlab")
           postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother(postSmootherParams))));
+        else
+#endif
+#ifdef HAVE_MUELU_TEKO
+            if (preSmootherType == "teko")
+          postSmoother = rcp(new SmootherFactory(rcp(new TekoSmoother(postSmootherParams))));
         else
 #endif
           postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
@@ -974,6 +989,11 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 #ifdef HAVE_MUELU_MATLAB
       if (coarseType == "matlab")
         coarseSmoother = rcp(new MatlabSmoother(coarseParams));
+      else
+#endif
+#ifdef HAVE_MUELU_TEKO
+          if (coarseType == "teko")
+        coarseSmoother = rcp(new TekoSmoother(coarseParams));
       else
 #endif
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
