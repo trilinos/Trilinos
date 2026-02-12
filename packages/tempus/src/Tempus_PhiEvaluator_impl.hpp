@@ -341,6 +341,7 @@ void PhiLinearSolver<Scalar>::buildb(const Thyra::Ordinal p,
 template <class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar>> PhiLinearSolver<Scalar>::buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space)
 {
+  // TODO: Update the logic for general p. For now, just build v for p=2, which is the only supported case.
   // v must be in the domain of Atilde_
   const Thyra::Ordinal dim = space->dim();
 
