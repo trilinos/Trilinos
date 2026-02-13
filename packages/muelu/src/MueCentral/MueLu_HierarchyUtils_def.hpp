@@ -170,7 +170,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
                    name == "Mk_one" || name == "Mk_1_one" || name == "M1_beta" || name == "M1_alpha" ||
                    name == "invMk_1_invBeta" || name == "invMk_2_invAlpha" ||
                    name == "M1" || name == "Ms" || name == "M0inv" ||
-                   name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix") {
+                   name == "Pnodal" || name == "NodeMatrix" || name == "NodeAggMatrix" || name == "CurlCurl") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           if (levelListEntry->second.isType<RCP<Operator>>())
             level->Set(name, Teuchos::getValue<RCP<Operator>>(levelListEntry->second), NoFactory::get());
@@ -306,7 +306,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
                                        name != "Mk_one" && name != "Mk_1_one" && name != "M1_beta" && name != "M1_alpha" &&
                                        name != "invMk_1_invBeta" && name != "invMk_2_invAlpha" &&
                                        name != "M1" && name != "Ms" && name != "M0inv" &&
-                                       name != "NodeMatrix" &&
+                                       name != "NodeMatrix" && name != "CurlCurl" &&
                                        name != "Nullspace" && name != "Coordinates" && name != "Material" &&
                                        name != "BlockNumber" && name != "pcoarsen: element to node map" &&
                                        name != "Node Comm" && name != "DualNodeID2PrimalNodeID" && name != "Primal interface DOF map" &&
@@ -321,7 +321,7 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
             name == "Mk_one" || name == "Mk_1_one" || name == "M1_beta" || name == "M1_alpha" ||
             name == "invMk_1_invBeta" || name == "invMk_2_invAlpha" ||
             name == "M1" || name == "Ms" || name == "M0inv" ||
-            name == "NodeMatrix") {
+            name == "NodeMatrix" || name == "CurlCurl") {
           level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
           level->Set(name, Teuchos::getValue<RCP<Matrix>>(userListEntry->second), NoFactory::get());
         } else if (name == "Mdiag") {
