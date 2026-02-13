@@ -66,6 +66,7 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
   typedef Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO> coordMV;
 
   RCP<Matrix> SM_Matrix    = *static_cast<RCP<Matrix>*>(inputs["SM"]);
+  RCP<Matrix> S_Matrix     = *static_cast<RCP<Matrix>*>(inputs["S"]);
   RCP<Matrix> GmhdA_Matrix = *static_cast<RCP<Matrix>*>(inputs["GmhdA"]);
   RCP<Matrix> D0_Matrix    = *static_cast<RCP<Matrix>*>(inputs["D0"]);
   RCP<Matrix> M1_Matrix    = *static_cast<RCP<Matrix>*>(inputs["M1"]);
@@ -105,7 +106,7 @@ bool SetupSolve(std::map<std::string, void*> inputs) {
                                                                  M1_Matrix, nullspace, coords, material, params));
     } else if (precType == "MueLu-Maxwell1" || precType == "MueLu-Reitzinger") {
       if (GmhdA_Matrix.is_null())  // are we doing MHD as opposed to GMHD?
-        preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, material, params));
+        preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, S_Matrix, material, params));
       else
         preconditioner = rcp(new MueLu::Maxwell1<SC, LO, GO, NO>(SM_Matrix, D0_Matrix, Kn_Matrix, nullspace, coords, params, GmhdA_Matrix));
     }
@@ -420,7 +421,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   auto tm                = TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices");
 
   // Read matrices in from files
-  RCP<Matrix> D0_Matrix, SM_Matrix, M1_Matrix, Ms_Matrix, M0inv_Matrix, Kn_Matrix, GmhdA_Matrix;
+  RCP<Matrix> D0_Matrix, SM_Matrix, S_Matrix, M1_Matrix, Ms_Matrix, M0inv_Matrix, Kn_Matrix, GmhdA_Matrix;
 
   // maps for nodal and edge matrices
   RCP<const Map> node_map;
@@ -451,8 +452,8 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
   // build stiffness plus mass matrix (SM_Matrix)
   if (SM_file == "") {
     // edge stiffness matrix
-    RCP<Matrix> S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(S_file, edge_map);
-    M1_Matrix            = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
+    S_Matrix  = Xpetra::IO<SC, LO, GO, NO>::Read(S_file, edge_map);
+    M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read(M1_file, edge_map);
     Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*S_Matrix, false, (SC)1.0, *M1_Matrix, false, scaling, SM_Matrix, *out);
     SM_Matrix->fillComplete();
   } else {
@@ -558,6 +559,7 @@ int main_(Teuchos::CommandLineProcessor& clp, Xpetra::UnderlyingLib lib, int arg
 
   std::map<std::string, void*> inputs;
   inputs["SM"]    = &SM_Matrix;
+  inputs["S"]     = &S_Matrix;
   inputs["GmhdA"] = &GmhdA_Matrix;
   inputs["D0"]    = &D0_Matrix;
   inputs["M1"]    = &M1_Matrix;
