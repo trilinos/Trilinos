@@ -4167,9 +4167,6 @@ void prepareSortMergeUnpackedGraph(rowptr_type rowptr, colinds_type colinds, num
 
 template <class execution_space, class LO, class rowptr_type, class colinds_type, class numRowEntries_type>
 void mergeUnpackedGraph(rowptr_type rowptr, colinds_type colinds, numRowEntries_type numRowEntries) {
-  // For this to work correctly, we require that the unsused column entries have been filled
-  // with indices that get ordered last.
-
   auto numRows = rowptr.extent(0) - 1;
 
   // merge
@@ -4198,7 +4195,6 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     sortAndMergeAllIndices(const bool sorted, const bool merged) {
   using std::endl;
   const char tfecfFuncName[] = "sortAndMergeAllIndices";
-  Details::ProfilingRegion regionSortAndMerge("Tpetra::CrsGraph::sortAndMergeAllIndices");
 
   std::unique_ptr<std::string> prefix;
   if (verbose_) {
@@ -4217,6 +4213,8 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
                                         "Please report this bug to the Tpetra developers.");
 
   if (!sorted || !merged) {
+    Details::ProfilingRegion regionSortAndMerge("Tpetra::CrsGraph::sortAndMergeAllIndices");
+
     if (storageStatus_ == Details::STORAGE_1D_UNPACKED) {
       // We are sorting & merging the unpacked views.
       // This means that not all entries are actually in use. We need to take k_numRowEntries_ into account.
@@ -4230,6 +4228,8 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
       prepareSortMergeUnpackedGraph<execution_space, LocalOrdinal>(rowptr, colinds, k_numRowEntries_d);
 
       if (!sorted) {
+        // For this to work correctly, we require that the unused column entries have been filled
+        // with indices that get ordered last.
         KokkosSparse::sort_crs_graph(rowptr, colinds);
         this->indicesAreSorted_ = true;  // we just sorted every row
       }

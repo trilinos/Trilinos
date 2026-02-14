@@ -4420,51 +4420,64 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   checkInternalState();
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-size_t CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    mergeRowIndicesAndValues(size_t rowLen, LocalOrdinal* cols, impl_scalar_type* vals) {
-  impl_scalar_type* rowValueIter = vals;
-  // beg,end define a half-exclusive interval over which to iterate.
-  LocalOrdinal* beg    = cols;
-  LocalOrdinal* end    = cols + rowLen;
-  LocalOrdinal* newend = beg;
-  if (beg != end) {
-    LocalOrdinal* cur      = beg + 1;
-    impl_scalar_type* vcur = rowValueIter + 1;
-    impl_scalar_type* vend = rowValueIter;
-    cur                    = beg + 1;
-    while (cur != end) {
-      if (*cur != *newend) {
-        // new entry; save it
-        ++newend;
-        ++vend;
-        (*newend) = (*cur);
-        (*vend)   = (*vcur);
-      } else {
-        // old entry; merge it
-        //(*vend) = f (*vend, *vcur);
-        (*vend) += *vcur;
-      }
-      ++cur;
-      ++vcur;
-    }
-    ++newend;  // one past the last entry, per typical [beg,end) semantics
-  }
-  return newend - beg;
+template <class execution_space, class LO, class rowptr_type, class colinds_type, class numRowEntries_type, class values_type>
+void prepareSortMergeUnpackedMatrix(rowptr_type rowptr, colinds_type colinds, numRowEntries_type numRowEntries, values_type values) {
+  using ATS         = KokkosKernels::ArithTraits<LO>;
+  using scalarATS   = KokkosKernels::ArithTraits<typename values_type::value_type>;
+  const auto unused = ATS::max();
+  const auto zero   = scalarATS::zero();
+
+  auto numRows = rowptr.extent(0) - 1;
+
+  // make sure that unused entries will get ordered last
+  Kokkos::parallel_for(
+      "flag_unused_entries", Kokkos::RangePolicy<execution_space, LO>(0, numRows), KOKKOS_LAMBDA(const LO rlid) {
+        for (size_t jj = rowptr(rlid) + numRowEntries(rlid); jj < rowptr(rlid + 1); ++jj) {
+          colinds(jj) = unused;
+          values(jj)  = zero;
+        }
+      });
+}
+
+template <class execution_space, class LO, class rowptr_type, class colinds_type, class numRowEntries_type, class values_type>
+void mergeUnpackedMatrix(rowptr_type rowptr, colinds_type colinds, numRowEntries_type numRowEntries, values_type values) {
+  auto numRows = rowptr.extent(0) - 1;
+
+  // merge
+  // We cannot use KokkosSparse::sort_and_merge_matrix since we
+  // do not actually want to change the allocations.
+
+  Kokkos::parallel_for(
+      "merge_entries", Kokkos::RangePolicy<execution_space>(0, numRows), KOKKOS_LAMBDA(const LO rlid) {
+        auto rowNNZ = numRowEntries(rlid);
+        if (rowNNZ == 0) {
+          return;
+        }
+        auto rowBegin = rowptr(rlid);
+        auto pos      = rowBegin;
+        for (size_t offset = rowBegin + 1; offset < rowBegin + rowNNZ; ++offset) {
+          if ((colinds(offset) != colinds(pos))) {
+            ++pos;
+            colinds(pos) = colinds(offset);
+            values(pos)  = values(offset);
+          } else {
+            values(pos) += values(offset);
+          }
+        }
+        numRowEntries(rlid) = pos + 1 - rowBegin;
+      });
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     sortAndMergeIndicesAndValues(const bool sorted, const bool merged) {
   using ::Tpetra::Details::ProfilingRegion;
-  typedef LocalOrdinal LO;
-  typedef typename Kokkos::View<LO*, device_type>::host_mirror_type::execution_space
-      host_execution_space;
-  typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
+
   const char tfecfFuncName[] = "sortAndMergeIndicesAndValues: ";
-  ProfilingRegion regionSAM("Tpetra::CrsMatrix::sortAndMergeIndicesAndValues");
 
   if (!sorted || !merged) {
+    ProfilingRegion regionSAM("Tpetra::CrsMatrix::sortAndMergeIndicesAndValues");
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(this->isStaticGraph(), std::runtime_error,
                                           "Cannot sort or merge with "
                                           "\"static\" (const) graph, since the matrix does not own the graph.");
@@ -4478,36 +4491,24 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                           "Please report this bug to the Tpetra developers.");
 
     crs_graph_type& graph = *(this->myGraph_);
-    const LO lclNumRows   = static_cast<LO>(this->getLocalNumRows());
-    size_t totalNumDups   = 0;
-    {
-      // Accessing host unpacked (4-array CRS) local matrix.
-      auto rowBegins_  = graph.getRowPtrsUnpackedHost();
-      auto rowLengths_ = graph.k_numRowEntries_;
-      auto vals_       = this->valuesUnpacked_wdv.getHostView(Access::ReadWrite);
-      auto cols_       = graph.lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
-      Kokkos::parallel_reduce(
-          "sortAndMergeIndicesAndValues", range_type(0, lclNumRows),
-          [=](const LO lclRow, size_t& numDups) {
-            size_t rowBegin        = rowBegins_(lclRow);
-            size_t rowLen          = rowLengths_(lclRow);
-            LO* cols               = cols_.data() + rowBegin;
-            impl_scalar_type* vals = vals_.data() + rowBegin;
-            if (!sorted) {
-              sort2(cols, cols + rowLen, vals);
-            }
-            if (!merged) {
-              size_t newRowLength = mergeRowIndicesAndValues(rowLen, cols, vals);
-              rowLengths_(lclRow) = newRowLength;
-              numDups += rowLen - newRowLength;
-            }
-          },
-          totalNumDups);
-    }
+    auto rowptr           = graph.rowPtrsUnpacked_dev_;
+    auto colinds          = graph.lclIndsUnpacked_wdv.getDeviceView(Access::ReadWrite);
+    auto values           = valuesUnpacked_wdv.getDeviceView(Access::ReadWrite);
+
+    // Create a device copy of k_numRowEntries_.
+    auto k_numRowEntries_d = Kokkos::create_mirror_view_and_copy(execution_space(), graph.k_numRowEntries_);
+    // set set unused column entries so they get sorted last
+    prepareSortMergeUnpackedMatrix<execution_space, LocalOrdinal>(rowptr, colinds, k_numRowEntries_d, values);
+
     if (!sorted) {
+      // For this to work correctly, we require that the unused column entries have been filled
+      // with indices that get ordered last.
+      KokkosSparse::sort_crs_matrix(rowptr, colinds, values);
       graph.indicesAreSorted_ = true;  // we just sorted every row
     }
     if (!merged) {
+      mergeUnpackedMatrix<execution_space, LocalOrdinal>(rowptr, colinds, k_numRowEntries_d, values);
+      Kokkos::deep_copy(graph.k_numRowEntries_, k_numRowEntries_d);
       graph.noRedundancies_ = true;  // we just merged every row
     }
   }
@@ -4983,12 +4984,14 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     checkInternalState() const {
+  using Details::ProfilingRegion;
   const bool debug = ::Tpetra::Details::Behavior::debug("CrsGraph");
   if (debug) {
     const char tfecfFuncName[] = "checkInternalState: ";
     const char err[] =
         "Internal state is not consistent.  "
         "Please report this bug to the Tpetra developers.";
+    ProfilingRegion("Tpetra::CrsMatrix::checkInternalState");
 
     // This version of the graph (RCP<const crs_graph_type>) must
     // always be nonnull.
