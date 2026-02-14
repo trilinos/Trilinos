@@ -1756,10 +1756,13 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     checkInternalState() const {
+  using Details::ProfilingRegion;
   if (debug_) {
     using std::endl;
     const char tfecfFuncName[] = "checkInternalState: ";
     const char suffix[]        = "  Please report this bug to the Tpetra developers.";
+
+    ProfilingRegion("Tpetra::CrsGraph::checkInternalState");
 
     std::unique_ptr<std::string> prefix;
     if (verbose_) {
@@ -3208,8 +3211,6 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
 
   fillComplete_ = true;
 
-  MM = Teuchos::null;
-  MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra ESFC-G-cIS"));
   checkInternalState();
 }
 

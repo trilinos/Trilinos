@@ -4370,11 +4370,8 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
 
   this->fillComplete_ = true;  // Now we're fill complete!
-  {
-    Details::ProfilingRegion region_cis(
-        "Tpetra::CrsMatrix::fillComplete", "checkInternalState");
-    this->checkInternalState();
-  }
+
+  this->checkInternalState();
 }  // fillComplete(domainMap, rangeMap, params)
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4419,11 +4416,8 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                         ": We're at the end of fillComplete(), but isFillActive() is true.  "
                                         "Please report this bug to the Tpetra developers.");
 #endif  // HAVE_TPETRA_DEBUG
-  {
-    Tpetra::Details::ProfilingRegion cIS("Tpetra ESFC-M-cIS");
 
-    checkInternalState();
-  }
+  checkInternalState();
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
