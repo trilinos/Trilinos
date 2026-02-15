@@ -4180,8 +4180,6 @@ public:
 
   inline void solveLDL_DiagOnDevice(const ordinal_type pbeg, const ordinal_type pend,
                                     const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
-    const ordinal_type nrhs = t.extent(1);
-    const value_type minus_one(-1), one(1);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
