@@ -170,7 +170,7 @@ private:
   ordinal_type _nstreams;            // on cuda, multi streams are used
 
   bool _shift_diag;                  // shift diagonal with small perturbation
-  ordinal_type_array _dj;
+  mag_type _shift;
   value_type_array _dv;
 
   mag_type _pivot_tol;               // tolerance for tiny pivot perturbation
@@ -226,9 +226,10 @@ public:
   void setLevelSetOptionNumStreams(const ordinal_type nstreams);
   void setLevelSetOptionAlgorithmVariant(const ordinal_type variant);
 
+  void shiftDiagonal();
+  mag_type currentShift() { return _shift; }
   void setPivotTolerance(const mag_type pivot_tol);
   void useNoPivotTolerance();
-  void shiftDiagonal();
   void useDefaultPivotTolerance();
   void storeExplicitTranspose(bool flag);
 
@@ -448,12 +449,12 @@ public:
 
   int factorize(const value_type_array &ax);
   int factorize(const value_type_array &ax, ordinal_type method);
-  int factorize_small_host(const value_type_array &ax);
+  int factorize_small_host(const value_type_array &ax, const mag_type shift);
 
   int solve(const value_type_matrix &x, const value_type_matrix &b, const value_type_matrix &t);
   int solve_small_host(const value_type_matrix &x, const value_type_matrix &b, const value_type_matrix &t);
 
-  double computeRelativeResidual(const value_type_array &ax, const value_type_matrix &x, const value_type_matrix &b);
+  double computeRelativeResidual(const value_type_array &ax, const value_type_matrix &x, const value_type_matrix &b, const mag_type shift = 0.0);
   void   computeSpMV(const value_type_array &ax, const value_type_matrix &x, value_type_matrix &b);
 
   int exportFactorsToCrsMatrix(crs_matrix_type &A);

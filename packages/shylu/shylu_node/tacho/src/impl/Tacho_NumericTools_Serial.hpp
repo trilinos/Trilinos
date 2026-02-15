@@ -126,7 +126,7 @@ public:
   ///
   /// Choleksy
   ///
-  inline void factorizeCholesky(const value_type_array &ax, const ordinal_type verbose) {
+  inline void factorizeCholesky(const value_type_array &ax, const mag_type shift, const ordinal_type verbose) {
     Kokkos::Timer timer;
     {
       timer.reset();
@@ -136,7 +136,7 @@ public:
 
         /// copy the input matrix into super panels
         const bool copy_to_l_buf(false);
-        _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
+        _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, shift, _perm, _peri);
       }
       stat.t_copy = timer.seconds();
     }
@@ -168,7 +168,8 @@ public:
     }
   }
 
-  inline void factorizeCholesky(const value_type_array &ax, const ordinal_type panelsize, const ordinal_type verbose) {
+  inline void factorizeCholesky(const value_type_array &ax, const mag_type shift,
+                                const ordinal_type panelsize, const ordinal_type verbose) {
     Kokkos::Timer timer;
     {
       timer.reset();
@@ -178,7 +179,7 @@ public:
 
         /// copy the input matrix into super panels
         const bool copy_to_l_buf(false);
-        _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
+        _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, shift, _perm, _peri);
       }
       stat.t_copy = timer.seconds();
     }
@@ -260,7 +261,7 @@ public:
   ///
   /// LDL
   ///
-  inline void factorizeLDL(const value_type_array &ax, const ordinal_type verbose) {
+  inline void factorizeLDL(const value_type_array &ax, const mag_type shift, const ordinal_type verbose) {
     {
       const bool test = !std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
       TACHO_TEST_FOR_EXCEPTION(test, std::logic_error, "Serial interface works on host device only");
@@ -275,7 +276,7 @@ public:
 
         /// copy the input matrix into super panels
         const bool copy_to_l_buf(false);
-        _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
+        _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, shift, _perm, _peri);
       }
       stat.t_copy = timer.seconds();
     }
@@ -369,7 +370,7 @@ public:
   ///
   /// LU
   ///
-  inline void factorizeLU(const value_type_array &ax, const ordinal_type verbose) {
+  inline void factorizeLU(const value_type_array &ax, const mag_type shift, const ordinal_type verbose) {
     {
       const bool test = !std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
       TACHO_TEST_FOR_EXCEPTION(test, std::logic_error, "Serial interface works on host device only");
@@ -384,7 +385,7 @@ public:
 
         /// copy the input matrix into super panels
         const bool copy_to_l_buf(true);
-        _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
+        _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, shift, _perm, _peri);
       }
       stat.t_copy = timer.seconds();
     }
@@ -476,7 +477,9 @@ public:
   ///
   /// main interface
   ///
-  inline void factorize(const value_type_array &ax, const bool /* store_transpose */, const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) override {
+  inline void factorize(const value_type_array &ax, const bool /* store_transpose */,
+                        const mag_type shift, const mag_type pivot_tol = 0.0,
+                        const ordinal_type verbose = 0) override {
     {
       const bool test = !std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
       TACHO_TEST_FOR_EXCEPTION(test, std::logic_error, "Serial interface works on host device only");
@@ -490,7 +493,7 @@ public:
       // } else {
       //   factorizeCholesky(ax, verbose);
       // }
-      factorizeCholesky(ax, verbose);
+      factorizeCholesky(ax, shift, verbose);
       break;
     }
     case 2: { /// LDL
@@ -510,7 +513,7 @@ public:
           track_alloc(this->_diag.span() * sizeof(value_type));
         }
       }
-      factorizeLDL(ax, verbose);
+      factorizeLDL(ax, shift, verbose);
       break;
     }
     case 3: { /// LU
@@ -522,7 +525,7 @@ public:
           track_alloc(this->_piv.span() * sizeof(ordinal_type));
         }
       }
-      factorizeLU(ax, verbose);
+      factorizeLU(ax, shift, verbose);
       break;
     }
     default: {
