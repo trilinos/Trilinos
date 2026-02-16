@@ -50,11 +50,6 @@ of supported matrices is reported
 The supported Tpetra_Map’s are instead
 [here](https://trilinos.github.io/docs/galeri/gl__gallery_maps.html).
 
-Galeri also contains a nice and simple finite element code, to be
-used for scalar and vector elliptic-type equations using Galerkin
-and SUPG discretization techniques, on both 2D and 3D unstructured
-grids, composed by triangles, quads, tetrahedra and hexahedra.
-
 Galeri’s technical documentation is maintained using Doxygen; click
 [here](https://trilinos.github.io/docs/galeri/index.html) to access
 the latest Doxygen documentation.
