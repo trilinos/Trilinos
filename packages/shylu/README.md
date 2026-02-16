@@ -19,7 +19,7 @@ BDDC is an experimental code for the solver that implements the Balancing Domain
 
 Basker is a shared-memory parallel LU factorization based direct solver that uses the BTF ordering.
 
-Tacho is a shared-memory parallel Cholesky factorization based direct solver that uses Kokkos based tasking.
+Tacho is a shared-memory parallel symmetric factorization based direct solver that uses Kokkos based tasking.
 
 HTS is a sparse triangular solver that uses OpenMP for triangular solves on the host.
 
@@ -37,6 +37,10 @@ Contact lead developers:
 * **Ichitaro Yamazaki**:   GitHub handle: [@iyamazaki](https://github.com/iyamazaki) or iyamaza@sandia.gov
 * **Nathan Ellingwood**:   GitHub handle: [ndellingwood](https://github.com/ndellingwood)
 * **Siva Rajamanickam**:   GitHub handle: [srajama1](https://github.com/srajama1) or srajama@sandia.gov
+
+FROSch developer:
+
+* **Alexander Heinlein**:   GitHub handle: [searhein](https://github.com/searhein) or a.heinlein@tudelft.nl
 
 ## Copyright and License
 
