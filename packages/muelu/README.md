@@ -19,10 +19,15 @@ MueLu is extensible and allows for the research and development of new multigrid
 
 ## Features
 
+*   **Runs on modern CPUs and GPUs.**
 *   **Easy-to-use interface:** MueLu has a user-friendly parameter input deck which covers most important use cases, with reasonable defaults provided for common problem types.
 *   **Modern object-oriented software architecture:** MueLu is written completely in C++ as a modular object-oriented multigrid framework, which provides flexibility to combine and reuse existing components to develop novel multigrid methods.
 *   **Extensibility:** Due to its flexible design, MueLu is an excellent toolkit for research on novel multigrid concepts. Experienced multigrid users have full access to the underlying framework through an advanced XML based interface. Expert users may use and extend the C++ API directly.
-*   **Integration with Trilinos:** As a package of Trilinos, MueLu is well integrated into the Trilinos environment and can use either of the two main solver stacks:
+*   **Integration with Trilinos:** As a package of Trilinos, MueLu is well integrated into the Trilinos environment and depends on the Tpetra solver stack:
+    * Belos (Krylov solvers)
+    * Ifpack2( algebraic solvers)*
+    * Amesos2 (sparse direct solvers)
+    * Zoltan2 (load rebalancing).
     *   Tpetra sparse linear algebra: Belos (Krylov solvers), Ifpack2( algebraic solvers), Amesos2 (sparse direct solvers), Zoltan2 (load rebalancing).
 *   **Broad range of supported platforms:** MueLu runs on wide variety of architectures, from desktop workstations to parallel Linux clusters and supercomputers.
 
@@ -41,10 +46,10 @@ institution = {Sandia National Laboratories}
 
 ```bibtex
 @Misc{MueLuURL,  
-author={Luc Berger-Vergiat and Christian A. Glusa and Jonathan J. Hu and Matthias Mayr and Andrey Prokopenko and Christopher M. Siefert and Raymond S. Tuminaro and Tobias A. Wiesner},
+author={MueLu development team},
 title = {MueLu multigrid framework},
 howpublished = {\url{http://trilinos.org/packages/muelu}},
-year = {2019}
+year = {2026}
 }
 ```
 
@@ -76,7 +81,7 @@ The current MueLu development team is
 *   Chris Siefert, Sandia National Labs
 *   Ray Tuminaro, Sandia National Labs
 
-Other contributors are
+Contributors and former developers are
 
 *   Tom Benson, LLNL
 *   Emily Furst, University of Washington (summer intern, 2015)
