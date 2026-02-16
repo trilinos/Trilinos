@@ -3,7 +3,7 @@
  * Choose `base:develop` and NOT `base:master`!
  * Title should start with "PackageName:  ".
  * Select Reviewers, Assignees, and Labels.
-   - Should this PR be in the Release Notes?  Apply "xx.y release note" label.
+   - Should this PR be in the Release Notes?  Apply "Release Note" label.
  * Notify the appropriate teams.
 
 @trilinos/<teamName>
