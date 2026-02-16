@@ -4213,8 +4213,8 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     std::cerr << os.str();
   }
   Details::ProfilingRegion region(
-      "Tpetra::CrsMatrix::fillCompete",
-      "fillCompete");
+      "Tpetra::CrsMatrix::fillComplete",
+      "fillComplete");
 
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!this->isFillActive() || this->isFillComplete(), std::runtime_error,
                                         "Matrix fill state must be active (isFillActive() "
@@ -4225,7 +4225,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // Read parameters from the input ParameterList.
   //
   {
-    Details::ProfilingRegion region_fc("Tpetra::CrsMatrix::fillCompete", "ParameterList");
+    Details::ProfilingRegion region_fc("Tpetra::CrsMatrix::fillComplete", "ParameterList");
 
     // If true, the caller promises that no process did nonlocal
     // changes since the last call to fillComplete.
@@ -4271,7 +4271,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
   }
   if (this->isStaticGraph()) {
-    Details::ProfilingRegion region_isg("Tpetra::CrsMatrix::fillCompete", "isStaticGraph");
+    Details::ProfilingRegion region_isg("Tpetra::CrsMatrix::fillComplete", "isStaticGraph");
     // FIXME (mfh 14 Nov 2016) In order to fix #843, I enable the
     // checks below only in debug mode.  It would be nicer to do a
     // local check, then propagate the error state in a deferred
@@ -4318,7 +4318,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // structure is already fixed, so just fill the local matrix.
     this->fillLocalMatrix(params);
   } else {
-    Details::ProfilingRegion region_insg("Tpetra::CrsMatrix::fillCompete", "isNotStaticGraph");
+    Details::ProfilingRegion region_insg("Tpetra::CrsMatrix::fillComplete", "isNotStaticGraph");
     // Set the graph's domain and range Maps.  This will clear the
     // Import if the domain Map has changed (is a different
     // pointer), and the Export if the range Map has changed (is a
@@ -4372,7 +4372,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   this->fillComplete_ = true;  // Now we're fill complete!
   {
     Details::ProfilingRegion region_cis(
-        "Tpetra::CrsMatrix::fillCompete", "checkInternalState");
+        "Tpetra::CrsMatrix::fillComplete", "checkInternalState");
     this->checkInternalState();
   }
 }  // fillComplete(domainMap, rangeMap, params)

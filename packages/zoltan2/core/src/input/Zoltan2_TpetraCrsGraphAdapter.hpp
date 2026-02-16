@@ -59,6 +59,8 @@ public:
   TpetraCrsGraphAdapter(const RCP<const User> &graph, int nVtxWeights = 0,
                         int nEdgeWeights = 0);
 
+  void init(const RCP<const User> &graph);
+
   /*! \brief Access to user's graph
    */
   RCP<const User> getUserGraph() const { return this->graph_; }
@@ -79,29 +81,56 @@ public:
 /////////////////////////////////////////////////////////////////
 
 template <typename User, typename UserCoord>
+TpetraCrsGraphAdapter<User, UserCoord>::Base::IdsDeviceView
+getColIds(const RCP<const User> &inmatrix) {
+  auto colIdsDevice = inmatrix->getLocalIndicesDevice();
+
+  auto colIdsGlobalDevice =
+    typename TpetraCrsGraphAdapter<User, UserCoord>::Base::IdsDeviceView("colIdsGlobalDevice", colIdsDevice.extent(0));
+  auto colMap = inmatrix->getColMap();
+  auto lclColMap = colMap->getLocalMap();
+
+  // Convert to global IDs using Tpetra::Map
+  Kokkos::parallel_for("colIdsGlobalDevice",
+                       Kokkos::RangePolicy<typename User::node_type::execution_space>(
+                                                                                      0, colIdsGlobalDevice.extent(0)),
+                       KOKKOS_LAMBDA(const int i) {
+    colIdsGlobalDevice(i) =
+      lclColMap.getGlobalElement(colIdsDevice(i));
+  });
+
+  return colIdsGlobalDevice;
+}
+
+
+template <typename User, typename UserCoord>
+void TpetraCrsGraphAdapter<User, UserCoord>::init(const RCP<const User> &graph) {
+  auto colIdsDevice = graph->getLocalIndicesDevice();
+
+  auto colIdsGlobalDevice =
+    typename TpetraCrsGraphAdapter<User, UserCoord>::Base::IdsDeviceView("colIdsGlobalDevice", colIdsDevice.extent(0));
+  auto colMap = graph->getColMap();
+  auto lclColMap = colMap->getLocalMap();
+
+  // Convert to global IDs using Tpetra::Map
+  Kokkos::parallel_for("colIdsGlobalDevice",
+                       Kokkos::RangePolicy<typename User::node_type::execution_space>(
+                                                                                      0, colIdsGlobalDevice.extent(0)),
+                       KOKKOS_LAMBDA(const int i) {
+    colIdsGlobalDevice(i) =
+      lclColMap.getGlobalElement(colIdsDevice(i));
+  });
+
+  this->adjIdsDevice_ = colIdsGlobalDevice;
+  this->offsDevice_ = graph->getLocalRowPtrsDevice();
+}
+
+template <typename User, typename UserCoord>
 TpetraCrsGraphAdapter<User, UserCoord>::TpetraCrsGraphAdapter(
     const RCP<const User> &graph, int nVtxWgts, int nEdgeWgts)
     : TpetraRowGraphAdapter<User>(nVtxWgts, nEdgeWgts, graph) {
-  auto adjIdsHost = graph->getLocalIndicesHost();
 
-  auto adjIdsGlobalHost =
-      typename Base::IdsHostView("adjIdsGlobalHost", adjIdsHost.extent(0));
-  auto colMap = graph->getColMap();
-
-  // Convert to global IDs using Tpetra::Map
-  Kokkos::parallel_for("adjIdsGlobalHost",
-                       Kokkos::RangePolicy<Kokkos::HostSpace::execution_space>(
-                           0, adjIdsGlobalHost.extent(0)),
-                       [=](const int i) {
-                         adjIdsGlobalHost(i) =
-                             colMap->getGlobalElement(adjIdsHost(i));
-                       });
-
-  auto adjIdsDevice = Kokkos::create_mirror_view_and_copy(
-      typename Base::device_t(), adjIdsGlobalHost);
-
-  this->adjIdsDevice_ = adjIdsDevice;
-  this->offsDevice_ = graph->getLocalRowPtrsDevice();
+  this->init(graph);
 
   if (this->nWeightsPerVertex_ > 0) {
 
