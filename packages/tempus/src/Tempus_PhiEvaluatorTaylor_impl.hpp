@@ -110,26 +110,28 @@ Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluatorTaylor<Scalar>::matrix
 
   Thyra::assign(matExpTemp.ptr(), Scalar(0));
 
-  // Identity * v = v
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> term = Thyra::createMember(rangeSpace);
-  Thyra::assign(term.ptr(), *v_);
+  // Iteration vector d_0 = v
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> d_k = Thyra::createMember(rangeSpace);
+  Thyra::assign(d_k.ptr(), *v_);
 
-  // matExpTemp += term / 0!
-  Thyra::Vp_V(matExpTemp.ptr(), *term);
+  // matExpTemp += d_0 / 0!
+  Thyra::Vp_V(matExpTemp.ptr(), *d_k);
 
-  // Iteratively compute term = A * term (A^k v) and accumulate term/k!
-  Scalar invFact = Scalar(1); // 1/k! updated each step
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
+  // Iteratively compute d_k = (A^k v) / k! and add to result
   for (int k = 1; k <= expansionOrder; ++k)
   {
-    // term <- A * term
-    Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
-    Thyra::apply(*Atilde_, Thyra::NOTRANS, *term, next.ptr());
-    term = next;
+    // next <- A * d_k
+    // TODO: do we need the temp vector?
+    Thyra::apply(*Atilde_, Thyra::NOTRANS, *d_k, next.ptr());
 
-    invFact /= Scalar(k);
+    // multiply the update by 1/k and store in d_k
+    Thyra::V_StV(d_k.ptr(), Scalar(1.) / Scalar(k), *next);
 
-    // multiply with inverse factorial
-    Thyra::Vp_StV(matExpTemp.ptr(), invFact, *term);
+    //std::cout << "Norm of update in iteration " << k << " is " << Thyra::norm_2(*d_k) << std::endl;
+
+    // add d_k to the final result
+    Thyra::Vp_V(matExpTemp.ptr(), *d_k);
   }
 
   matExp_v_ = matExpTemp; // This is required to wrap multivector as linearop
@@ -150,10 +152,12 @@ Teuchos::RCP<PhiEvaluatorTaylor<Scalar> > createPhiEvaluatorTaylor(
 
   pl->validateParametersAndSetDefaults(*phi->getValidParameters());
 
-  auto test = pl->get<int>("Taylor Expansion Order", 4);
+  auto test = pl->get<int>("Taylor Expansion Order", 10);
   phi->setTaylorExpansionOrder(test);
   phi->setName(pl->name());
   //phi->setThing(pl->get("Thing", "default"));
+
+  std::cout << "Taylor Expansion Order is " << phi->getTaylorExpansionOrder() << std::endl;
 
   return phi;
 }

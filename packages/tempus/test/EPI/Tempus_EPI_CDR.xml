@@ -49,7 +49,7 @@
 	  <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
       -->
       <ParameterList name="PhiEvaluator">
-	<Parameter name="Taylor Expansion Order" type="int" value="4"/>
+	<Parameter name="Taylor Expansion Order" type="int" value="100"/>
 	<Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
       </ParameterList>
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>

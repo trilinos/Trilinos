@@ -123,7 +123,7 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
   const int nTimeStepSizes = 7;
   double dt                = 0.2;
   double time              = 0.0;
-  const int expected_order = 3;
+  int expected_order = 3;
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =
@@ -145,10 +145,12 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
     pl->sublist("Demo Integrator")
         .sublist("Time Step Control")
         .set("Initial Time Step", dt);
-    // The reason why this is set to 3 in here rather than xml file is that
-    // xml file values are compared with the default parameter list values.
-    pl->sublist("Demo Stepper").sublist("PhiEvaluator")
-        .set("Taylor Expansion Order", expected_order);
+    // Read the Taylor order from the xml file with a default of expected_order 
+    // and make them the same.
+    int taylor_order = pl->sublist("Demo Stepper").sublist("PhiEvaluator")
+      .get("Taylor Expansion Order", 3);
+    expected_order = taylor_order;
+
     integrator = Tempus::createIntegratorBasic<double>(pl, model);
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
@@ -337,7 +339,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 4;
-  double dt                = 0.0001;
+  double dt                = 0.001;
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =
