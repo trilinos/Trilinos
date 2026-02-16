@@ -120,6 +120,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   {
     // defaults for command-line options
     int x_elements=-1,y_elements=-1,z_elements=-1,basis_order=1;
+    std::string meshType = "";
     int workset_size=2000;
     std::string pCoarsenScheduleStr = "1";
     double dt=0.0;
@@ -149,6 +150,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("x-elements",&x_elements);
     clp.setOption("y-elements",&y_elements);
     clp.setOption("z-elements",&z_elements);
+    clp.setOption("meshType",&meshType);
     clp.setOption("basis-order",&basis_order);
     clp.setOption("workset-size",&workset_size);
     clp.setOption("pCoarsenSchedule",&pCoarsenScheduleStr);
@@ -258,7 +260,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     {
       Teuchos::TimeMonitor tMmesh(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build mesh")));
       double mesh_size = 0.;
-      mini_em::getMesh(mesh_pl, meshFile, x_elements, y_elements, z_elements, basis_order, comm, mesh, mesh_factory, mesh_size);
+      mini_em::getMesh(mesh_pl, meshFile, x_elements, y_elements, z_elements, meshType, basis_order, comm, mesh, mesh_factory, mesh_size);
       dim = Teuchos::as<int>(mesh->getDimension());
 
       // set dt

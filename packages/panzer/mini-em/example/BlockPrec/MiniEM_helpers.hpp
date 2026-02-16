@@ -58,6 +58,7 @@ namespace mini_em {
                int &x_elements,
                int &y_elements,
                int &z_elements,
+               std::string meshType,
                int &basis_order,
                Teuchos::RCP<const Teuchos::MpiComm<int> > &comm,
                Teuchos::RCP<panzer_stk::STK_Interface> &mesh,

@@ -19,6 +19,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyBlockPrecFiles
   maxwell-bdot-small.xml maxwell-bdot-medium.xml maxwell-bdot-large.xml
   maxwell-exterior-small.xml maxwell-exterior-medium.xml maxwell-exterior-large.xml
   maxwell-donut.xml maxwell-analyticSolution.xml
+  steadyState.xml steadyState2D.xml
   darcyTet.xml darcyHex.xml
   darcyTetAnalytic.xml darcyHexAnalytic.xml
   solverCG.xml solverGMRES.xml
