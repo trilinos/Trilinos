@@ -63,7 +63,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 3;
-  double dt                = 0.02;
+  double dt                = 0.02;   //// /1000;
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =

@@ -22,8 +22,8 @@
         <Parameter name="Initial Time"           type="double" value="0.0"/>
         <Parameter name="Final Time"             type="double" value=".1"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
-        <Parameter name="Final Time Index"       type="int"    value="10000"/>
-        <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
+        <Parameter name="Final Time Index"       type="int"    value="1000000"/>
+        <Parameter name="Minimum Time Step"      type="double" value="0.0000001"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
@@ -48,6 +48,17 @@
 	  <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
       -->
       <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
+
+      <!--
+      <ParameterList name="PhiEvaluator">
+	<Parameter name="Taylor Expansion Order" type="int" value="4"/>
+	<Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
+      </ParameterList>
+      -->
+      <ParameterList name="PhiEvaluator">
+	<Parameter name="PhiEvaluator Type" type="string" value="PFD"/>
+	<Parameter name="Lump Mass" type="bool" value="false"/>
+      </ParameterList>
 
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
