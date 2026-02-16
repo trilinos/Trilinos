@@ -47,13 +47,14 @@
 
     <ParameterList name="Demo Stepper">
       <Parameter name="Stepper Type" type="string" value="EPI"/>
-      <Parameter name="Use FSAL"       type="bool" value="true"/>
+      <Parameter name="Use FSAL"       type="bool" value="false"/>
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Predictor Stepper Type" type="string" value="None"/>
-<ParameterList name="PhiEvaluator">
-      <Parameter name="Taylor Expansion Order" type="int" value="20"/>
-      <Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
-</ParameterList>
+
+      <ParameterList name="PhiEvaluator">
+	<Parameter name="Taylor Expansion Order" type="int" value="20"/>
+	<Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
+      </ParameterList>
 
       <ParameterList name="Demo Solver">
         <ParameterList name="NOX">

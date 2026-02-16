@@ -337,7 +337,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 4;
-  double dt                = 0.00001;
+  double dt                = 0.0001;
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =
@@ -374,7 +374,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     pl->sublist("Demo Integrator")
         .sublist("Time Step Control")
         .set("Initial Time Step", dt);
-      // std::cout << "Integrator is about to be created." << std::endl;
+    // std::cout << "Integrator is about to be created." << std::endl;
     integrator = Tempus::createIntegratorBasic<double>(pl, model);
     // std::cout << "Integrator created." << std::endl;
     // Integrate to timeMax

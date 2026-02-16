@@ -31,7 +31,7 @@ StepperEPI<Scalar>::StepperEPI()
 {
   this->setStepperName("EPI");
   this->setStepperType("EPI");
-  this->setUseFSAL(true);
+  this->setUseFSAL(false);
   this->setICConsistency("Consistent");
   this->setICConsistencyCheck(false);
   this->setZeroInitialGuess(false);
