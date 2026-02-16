@@ -4,7 +4,7 @@
 ![logo_Blue](doc/logo_Blue1.png)
 
 
-MueLu is designed to solve large sparse linear systems of equations arising from PDE discretizations. MueLu provides easy-to-use multigrid solvers and preconditioners based on smoothed aggregation algorithms. As a multigrid framework, MueLu supports the design of highly application specific multigrid preconditioners. MueLu has been used for pressure solves within a low Mach thermal fluids simulation on 524K cores of a BlueGene/Q machine, and for solving a fully-coupled MHD problem on 524K BlueGene/Q cores.
+MueLu is designed to solve large sparse linear systems of equations arising from PDE discretizations. MueLu provides easy-to-use multigrid solvers and preconditioners based on smoothed aggregation algorithms. As a multigrid framework, MueLu supports the design of highly application specific multigrid preconditioners.
 
 ## Overview
 
@@ -23,7 +23,6 @@ MueLu is extensible and allows for the research and development of new multigrid
 *   **Modern object-oriented software architecture:** MueLu is written completely in C++ as a modular object-oriented multigrid framework, which provides flexibility to combine and reuse existing components to develop novel multigrid methods.
 *   **Extensibility:** Due to its flexible design, MueLu is an excellent toolkit for research on novel multigrid concepts. Experienced multigrid users have full access to the underlying framework through an advanced XML based interface. Expert users may use and extend the C++ API directly.
 *   **Integration with Trilinos:** As a package of Trilinos, MueLu is well integrated into the Trilinos environment and can use either of the two main solver stacks:
-    *   Epetra (32-bit) sparse linear algebra: AztecOO (Krylov solvers), Ifpack (algebraic smoothers), Amesos (sparse direct solvers), Zoltan (load rebalancing)
     *   Tpetra sparse linear algebra: Belos (Krylov solvers), Ifpack2( algebraic solvers), Amesos2 (sparse direct solvers), Zoltan2 (load rebalancing).
 *   **Broad range of supported platforms:** MueLu runs on wide variety of architectures, from desktop workstations to parallel Linux clusters and supercomputers.
 
@@ -34,12 +33,11 @@ To cite MueLu, please use the following bibliography entries.
 ```bibtex
 @techreport{MueLu,  
 title={Mue{L}u User’s Guide},  
-author={Luc Berger-Vergiat and Christian A. Glusa and Jonathan J. Hu and Matthias Mayr and Andrey Prokopenko and Christopher M. Siefert and Raymond S. Tuminaro and Tobias A. Wiesner},
-number={SAND2019-0537},
-year={2019},
+author={Luc Berger-Vergiat and Christian A. Glusa and Graham Harper and Jonathan J. Hu and Matthias Mayr and Peter Ohm and Andrey Prokopenko and Christopher M. Siefert and Raymond S. Tuminaro and Tobias A. Wiesner},
+number={SAND2023-12265},
+year={2023},
 institution = {Sandia National Laboratories}
-}
-```
+}```
 
 ```bibtex
 @Misc{MueLuURL,  
@@ -62,7 +60,7 @@ Contact lead developers:
 
 * **MueLu team**         (GitHub handle: @trilinos/muelu)
 
-Bug reporting: [Issues](https://github.com/trilinos/Trilinos/issues) (prefrred)
+Bug reporting: [Issues](https://github.com/trilinos/Trilinos/issues) (preferred)
 
 ### Team
 
