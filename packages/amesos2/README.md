@@ -40,6 +40,9 @@ Contact lead developers:
 
 * **Amesos2 team**           (GitHub handle: @trilinos/amesos2)
 * **Ichitaro Yamazaki**      (GitHub handle: [@iyamazaki](https://github.com/iyamazaki) or iyamaza@sandia.gov)
+
+Other contributors:
+
 * **Nathan Ellingwood**      (GitHub handle: [ndellingwood](https://github.com/ndellingwood)
 * **Siva Rajamanickam**      (GitHub handle: [srajama1](https://github.com/srajama1) or srajama@sandia.gov)
 * **Lisa Claus** (STRUMPACK) (lclaus@lbl.gov)
