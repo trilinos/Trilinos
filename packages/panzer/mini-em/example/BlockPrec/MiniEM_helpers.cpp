@@ -17,6 +17,7 @@ namespace mini_em {
                int &x_elements,
                int &y_elements,
                int &z_elements,
+               std::string meshType,
                int &basis_order,
                Teuchos::RCP<const Teuchos::MpiComm<int> > &comm,
                Teuchos::RCP<panzer_stk::STK_Interface> &mesh,
@@ -54,7 +55,26 @@ namespace mini_em {
       // set mesh factory parameters
       Teuchos::ParameterList & inline_gen_pl = mesh_pl.sublist("Inline Mesh");
       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList(inline_gen_pl.sublist("Mesh Factory Parameter List")));
-      dim = inline_gen_pl.get<int>("Mesh Dimension");
+
+      if (meshType == "") {
+        meshType = inline_gen_pl.get<std::string>("Mesh Type");
+      }
+
+      // build mesh
+      if (meshType == "tet") {
+        dim = 3;
+        mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
+      } else if (meshType == "hex") {
+        dim = 3;
+        mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
+      } else if (meshType == "tri") {
+        dim = 2;
+        mesh_factory = rcp(new panzer_stk::SquareTriMeshFactory());
+      } else if (meshType == "quad") {
+        dim = 2;
+        mesh_factory = rcp(new panzer_stk::SquareQuadMeshFactory());
+      } else
+        throw;
 
       // overrides from command line
       if (x_elements > 0)
@@ -63,23 +83,13 @@ namespace mini_em {
         pl->set<int>("Y Elements",y_elements);
       if (dim == 3 && z_elements > 0)
         pl->set<int>("Z Elements",z_elements);
-
-      // build mesh
-      if (dim == 3) {
-        if (inline_gen_pl.get<std::string>("Mesh Type") == "tet")
-          mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
-        else if (inline_gen_pl.get<std::string>("Mesh Type") == "quad")
-          mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
-        else
-          throw;
-      } else if (dim == 2) {
-        if (inline_gen_pl.get<std::string>("Mesh Type") == "tet")
-          mesh_factory = rcp(new panzer_stk::SquareTriMeshFactory());
-        else if (inline_gen_pl.get<std::string>("Mesh Type") == "quad")
-          mesh_factory = rcp(new panzer_stk::SquareQuadMeshFactory());
-        else
-          throw;
+      if (dim == 2) {
+        if (pl->isParameter("Z Elements"))
+          pl->remove("Z Elements");
+        if (pl->isParameter("Z Blocks"))
+          pl->remove("Z Blocks");
       }
+
       mesh_factory->setParameterList(pl);
       mesh = mesh_factory->buildUncommitedMesh((*comm->getRawMpiComm())());
 
