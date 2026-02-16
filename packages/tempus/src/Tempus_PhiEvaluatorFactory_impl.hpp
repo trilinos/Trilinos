@@ -10,6 +10,7 @@
 #include "Tempus_PhiEvaluator.hpp"
 #include "Tempus_PhiEvaluatorPFD.hpp"
 #include "Tempus_PhiEvaluatorLeja.hpp"
+#include "Tempus_PhiEvaluatorTaylor.hpp"
 //#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Tempus_PhiEvaluatorFactory.hpp"
 
@@ -29,8 +30,10 @@ Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvalua
     Teuchos::RCP<Teuchos::ParameterList> phiEvaluatorPL,
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
 {
-  std::string phiEvaluatorType = "PFD";
-  if (phiEvaluatorPL != Teuchos::null)
+  std::string phiEvaluatorType;
+  if (phiEvaluatorPL == Teuchos::null)
+    phiEvaluatorType = "PFD";
+  else
     phiEvaluatorType = phiEvaluatorPL->get<std::string>("PhiEvaluator Type", "PFD");
   return this->createPhiEvaluator(phiEvaluatorType, phiEvaluatorPL, model);
 }
@@ -45,6 +48,9 @@ Teuchos::RCP<PhiEvaluator<Scalar> > PhiEvaluatorFactory<Scalar>::createPhiEvalua
   }
   else if (phiEvaluatorType == "Leja") {
     return createPhiEvaluatorLeja<Scalar>(phiEvaluatorPL);
+  }
+  else if (phiEvaluatorType == "Taylor") {
+    return createPhiEvaluatorTaylor<Scalar>(phiEvaluatorPL);
   }
   else {
     Teuchos::RCP<Teuchos::FancyOStream> out =

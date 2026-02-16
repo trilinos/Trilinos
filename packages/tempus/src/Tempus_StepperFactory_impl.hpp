@@ -12,6 +12,7 @@
 
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
+#include "Tempus_StepperEPI.hpp"
 #include "Tempus_StepperExponentialEuler.hpp"
 #include "Tempus_StepperTrapezoidal.hpp"
 #include "Tempus_StepperBDF2.hpp"
@@ -75,6 +76,8 @@ Teuchos::RCP<Stepper<Scalar> > StepperFactory<Scalar>::createStepper(
     return createStepperForwardEuler(model, stepperPL);
   else if (stepperType == "Backward Euler")
     return createStepperBackwardEuler(model, stepperPL);
+  else if (stepperType == "EPI")
+    return createStepperEPI(model, stepperPL);
   else if (stepperType == "Exponential Euler")
     return createStepperExponentialEuler(model, stepperPL);
   else if (stepperType == "Trapezoidal Method")
@@ -193,6 +196,7 @@ Teuchos::RCP<Stepper<Scalar> > StepperFactory<Scalar>::createStepper(
          << "    'Trapezoidal Method'\n"
          << "  Multi-Step Methods:\n"
          << "    'BDF2'\n"
+         << "    'EPI'\n"
          << "  Second-order PDE Methods:\n"
          << "    'Leapfrog'\n"
          << "    'Newmark Implicit a-Form'\n"
