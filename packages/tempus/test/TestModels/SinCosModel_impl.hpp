@@ -229,6 +229,7 @@ Teuchos::RCP<Thyra::LinearOpBase<Scalar> > SinCosModel<Scalar>::create_W_op()
 {
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > matrix =
       Thyra::createMembers(x_space_, dim_);
+
   return (matrix);
 }
 
@@ -313,6 +314,7 @@ void SinCosModel<Scalar>::evalModelImpl(
 
   const RCP<VectorBase<Scalar> > f_out          = outArgs.get_f();
   const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
+
   RCP<Thyra::MultiVectorBase<Scalar> > DfDp_out;
   if (acceptModelParams_) {
     Thyra::ModelEvaluatorBase::Derivative<Scalar> DfDp = outArgs.get_DfDp(0);

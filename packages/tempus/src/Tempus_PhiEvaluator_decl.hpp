@@ -22,12 +22,13 @@ namespace Tempus {
 template <class Scalar>
 class PhiLinearSolver {
  public:
-  PhiLinearSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<double>> appModel, bool lumpMass=false)
+  PhiLinearSolver(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel, bool lumpMass=false)
     : appModel_(appModel), lumpMass_(lumpMass) {
   }
 
   ~PhiLinearSolver() {}
 
+  // void computeMassMatrix();
   void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
   void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
@@ -35,19 +36,34 @@ class PhiLinearSolver {
   void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(const double dt);
+  void buildK(const Thyra::Ordinal n);
+  void buildb(const Thyra::Ordinal p, const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot);
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space);
+
   Thyra::SolveStatus<Scalar> solveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 				      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> iMf,
 				      const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf, Scalar alpha=1., Scalar beta=0.) const;
 
  private:
-  Teuchos::RCP<const Thyra::ModelEvaluator<double>> appModel_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
   const bool lumpMass_;
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> fullMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lumpMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> invMassMatrix_;
 
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > lumpedMassDiagonal_;
+
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> expMassMatrix_;
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> KMatrix_;
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bMatrix_;
+
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> jacobianMatrix_;
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> v_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matExp_v_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
@@ -118,7 +134,7 @@ class PhiEvaluator
   void checkInitialized();
 
   /// set the ModelEvaluator
-  void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<double> > appModel);
+  void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel);
 
   /// Set the linearization point for the Jacobian calculation
   virtual void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) = 0;
