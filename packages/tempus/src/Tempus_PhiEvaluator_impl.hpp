@@ -288,6 +288,11 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildAT
 template <class Scalar>
 void PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal p)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      p < 1,
+      std::invalid_argument,
+      "buildb: p must be positive.");
+
   // Space of dimension p
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V =
       Thyra::defaultSpmdVectorSpace<Scalar>(p);
@@ -317,14 +322,9 @@ void PhiLinearSolver<Scalar>::buildb(const Thyra::Ordinal p,
   //TODO: replace xDot with a list of rhs
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-      p > 2,
+      p < 1,
       std::invalid_argument,
-      "buildb: p must be 2. Higher order EPI is not yet supported.");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      p < 2,
-      std::invalid_argument,
-      "buildb: EPI order must be 2 or higher.");
+      "buildb:  p must be positive.");
 
   // N-dimensional space: use A's range (rows of an NxN operator)
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V_N = invMassMatrix_->range();
@@ -349,7 +349,6 @@ void PhiLinearSolver<Scalar>::buildb(const Thyra::Ordinal p,
 template <class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar>> PhiLinearSolver<Scalar>::buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space)
 {
-  // TODO: Update the logic for general p. For now, just build v for p=2, which is the only supported case.
   // v must be in the domain of Atilde_
   const Thyra::Ordinal dim = space->dim();
 

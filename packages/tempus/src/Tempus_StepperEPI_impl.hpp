@@ -210,8 +210,10 @@ void StepperEPI<Scalar>::takeStep(
 //std::cout << "Inside takeStep 16." << std::endl;
       phiEvaluator_->setLinearizationPoint(inArgs);
 //std::cout << "Inside takeStep 16.5." << std::endl;
-        // TODO: Avoid using hard coded EPI2 (p=2) and adjust the logic for general p.
-      sStatus = phiEvaluator_->computePhi(vphi.ptr(), 2, dt, Mf);
+      // TODO: Avoid using hard coded EPI2 (p=2) and adjust the logic for general p.
+      // TODO: right now, we have p=1 for EPI2, since we do not compute dF/dt yet
+      // (correct only for autonomous problems)
+      sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, Mf);
 //std::cout << "Inside takeStep 17." << std::endl;
 
       Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.0)*dt, *vphi);
