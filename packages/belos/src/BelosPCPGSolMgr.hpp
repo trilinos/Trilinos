@@ -694,6 +694,7 @@ PCPGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
+  this->unconvergenceCause_ = AllOk;
 
   // Set the current parameters if are not set already.
   if (!isSet_) { setParameters( params_ ); }

@@ -716,6 +716,8 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 {
   const char prefix[] = "Belos::PseudoBlockCGSolMgr::solve: ";
 
+  this->unconvergenceCause_ = AllOk;
+
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
   // then didn't set any parameters using setParameters().

@@ -125,6 +125,27 @@ namespace Belos {
     Unconverged /*!< Convergence was not reached for some or all linear systems. */
   };
 
+  /// \enum UnconvergenceCauseType
+  ///
+  /// This unconvergence cause complements the return code 'rc' (of
+  /// type ReturnType) returned by the most recent call to solve():
+  /// - if rc == Converged, then unconvergence cause = AllOk;
+  /// - if rc == Unconverged, then unconvergence cause will give (an
+  ///   indication for) the cause of the failure. If there is no hint
+  ///   on why the solver failed to converge, then unconvergence
+  ///   cause = Unknown.
+  enum UnconvergenceCauseType {
+    AllOk,                  /*!< Most recent solve() returned 'Converged'. */
+    MaxItersAchieved,       /*!< Most recent solve() returned 'Unconverged' because the maximum number of iterations was achieved. */
+    MaxRestartsAchieved,    /*!< Most recent solve() returned 'Unconverged' because the maximum number of restarts was achieved. */
+    OrthonormFailure,       /*!< Most recent solve() returned 'Unconverged' because the orthonormalization failed. */
+    BlockOrthonormFailure,  /*!< Most recent solve() returned 'Unconverged' because the block orthonormalization failed. */
+    NaNDetected,            /*!< Most recent solve() returned 'Unconverged' because a NaN was detected. */
+    BreakdownDetected,      /*!< Most recent solve() returned 'Unconverged' because a breakdown was detected. */
+    LossOfAccuracyDetected, /*!< Most recent solve() returned 'Unconverged' because loss of accuracty was detected. */
+    Unknown                 /*!< Most recent solve() returned 'Unconverged', but there is no hint on why it did so. */
+  };
+
   //! Convert the given \c ReturnType enum value to its corresponding string.
   std::string
   convertReturnTypeToString (const ReturnType result);

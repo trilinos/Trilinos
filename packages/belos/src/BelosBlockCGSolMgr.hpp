@@ -793,6 +793,8 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
 
+  this->unconvergenceCause_ = AllOk;
+
   // Set the current parameters if they were not set before.  NOTE:
   // This may occur if the user generated the solver manager with the
   // default constructor and then didn't set any parameters using
@@ -978,6 +980,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
           // maximum iteration count was reached.
           //
           else if (maxIterTest_->getStatus() == Passed) {
+            this->unconvergenceCause_ = MaxItersAchieved;
             isConverged = false; // None of the linear systems converged.
             break;  // break from while(1){block_cg_iter->iterate()}
           }
@@ -994,6 +997,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          this->unconvergenceCause_ = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
@@ -1002,6 +1006,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
           return Unconverged;
         }
         catch (const std::exception &e) {
+          this->unconvergenceCause_ = Unknown;
           std::ostream& err = printer_->stream (Errors);
           err << "Error! Caught std::exception in CGIteration::iterate() at "
               << "iteration " << block_cg_iter->getNumIters() << std::endl

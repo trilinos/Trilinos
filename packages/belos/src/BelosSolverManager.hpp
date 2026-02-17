@@ -44,7 +44,10 @@ class SolverManager : virtual public Teuchos::Describable {
   //@{
 
   //! Empty constructor.
-  SolverManager() {};
+  SolverManager()
+  {
+    unconvergenceCause_ = AllOk;
+  };
 
   //! Destructor.
   virtual ~SolverManager() {};
@@ -89,6 +92,20 @@ class SolverManager : virtual public Teuchos::Describable {
    *  \note This method is normally applicable to GMRES-type solvers.
   */
   virtual bool isLOADetected() const = 0;
+
+  /// Get the unconvergence cause for the most recent call to \c solve().
+  ///
+  /// This unconvergence cause complements the return code 'rc' (of
+  /// type ReturnType) returned by the most recent call to solve():
+  /// - if rc == Converged, then unconvergence cause = AllOk;
+  /// - if rc == Unconverged, then unconvergence cause will give (an
+  ///   indication for) the cause of the failure. If there is no hint
+  ///   on why the solver failed to converge, then unconvergence
+  ///   cause = Unknown.
+  UnconvergenceCauseType getUnconvergenceCause() const
+  {
+    return unconvergenceCause_;
+  }
 
   //@}
 
@@ -162,6 +179,9 @@ class SolverManager : virtual public Teuchos::Describable {
   virtual ReturnType solve() = 0;
   //@}
 
+  protected:
+
+  UnconvergenceCauseType unconvergenceCause_;
 };
 
 

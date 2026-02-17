@@ -644,6 +644,8 @@ namespace Belos {
     using Teuchos::rcp_const_cast;
     using std::endl;
 
+    this->unconvergenceCause_ = AllOk;
+
     if (! parametersSet_) {
       setParameters (params_);
     }

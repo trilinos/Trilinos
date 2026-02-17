@@ -1025,6 +1025,7 @@ void RCGSolMgr<ScalarType,MV,OP,true>::initializeStateStorage() {
 
 template<class ScalarType, class MV, class OP>
 ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
+  this->unconvergenceCause_ = AllOk;
 
   Teuchos::LAPACK<int,ScalarType> lapack;
   std::vector<int> index(recycleBlocks_);

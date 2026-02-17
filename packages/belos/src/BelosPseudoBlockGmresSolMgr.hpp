@@ -1159,6 +1159,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
+  this->unconvergenceCause_ = AllOk;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
