@@ -9,11 +9,7 @@ The node level solvers include sparse LU factorization (basker), sparse symmetri
 
 FROSch is currently the only package implementing the Domain Decomposition preconditioner in ShyLU. 
 
-The one-level hybrid direct/iterative approach based on Schur complements was developed to provide robustness similar to sparse direct solvers with less memory use. This has been particularly effective for circuit simulation problems.
-
 [FROSch](https://shylu-frosch.github.io) can be used for both one-level overlapping Schwarz and two-level GDSW (Generalized Dryja-Smith-Widlund) type preconditioners. FROSch has been shown to be effective in several applications including land-ice simulations.
-
-BDDC is an experimental code for the solver that implements the Balancing Domain Decomposition solver.
 
 ## Node Level Direct Solvers
 
