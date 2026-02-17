@@ -45,9 +45,11 @@ public:
     int _scratch_thread_level_b;
     int _thread_scratch_size_b;
 
-    //! largest team size 
-    int _default_threads;
-    int _default_vector_lanes;
+    //! number of threads and vector lanes
+    //! if not specified through environment variables THREADS and VECTORLANES,
+    //! then set to Kokkos::AUTO
+    int _environment_threads;
+    int _environment_vector_lanes;
 
 
 /** @name Private Modifiers
@@ -84,25 +86,25 @@ public:
         _scratch_team_level_b = 1;
         _scratch_thread_level_b = 1;
 
-        _default_threads = 16;
-        _default_vector_lanes = 8;
+        _environment_threads = -1;
+        _environment_vector_lanes = -1;
 #else
         _scratch_team_level_a = 0;
         _scratch_thread_level_a = 0;
         _scratch_team_level_b = 0;
         _scratch_thread_level_b = 0;
 
-        _default_threads = 1;
-        _default_vector_lanes = 1;
+        _environment_threads = -1;
+        _environment_vector_lanes = -1;
 #endif
         if (const char* env_threads = std::getenv("THREADS")) {
-            _default_threads = std::atoi(env_threads);
+            _environment_threads = std::atoi(env_threads);
         }
         if (const char* env_vector_lanes = std::getenv("VECTORLANES")) {
-            _default_vector_lanes = std::atoi(env_vector_lanes);
+            _environment_vector_lanes = std::atoi(env_vector_lanes);
         }
 #ifdef COMPADRE_EXTREME_DEBUG
-        printf("threads per team: %d, vector lanes per team: %d\n", _default_threads, _default_vector_lanes);
+        printf("ENVIRONMENT:: threads per team: %d, vector lanes per team: %d\n", _environment_threads, _environment_vector_lanes);
 #endif
     }
 
@@ -125,447 +127,52 @@ public:
         TeamPolicyThreadsAndVectors(const global_index_type batch_size, const int threads_per_team = -1, 
             const int vector_lanes_per_thread = -1) const {
 
+        // first create object
+        Kokkos::TeamPolicy<device_execution_space> tp;
         if (threads_per_team>0 && vector_lanes_per_thread>0) {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                // all levels of each type need specified separately
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
-            } else {
-                // scratch team levels and thread levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
-            }
+            tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, vector_lanes_per_thread);
         } else if (threads_per_team>0) {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                // all levels of each type need specified separately
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
+            if (_environment_vector_lanes>0) {
+                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, _environment_vector_lanes);
             } else {
-                // scratch team levels and thread levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
+                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, Kokkos::AUTO);
             }
         } else if (vector_lanes_per_thread>0) {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                // all levels of each type need specified separately
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
+            if (_environment_threads>0) {
+                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, _environment_threads, vector_lanes_per_thread);
             } else {
-                // scratch team levels and thread levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
+                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, Kokkos::AUTO, vector_lanes_per_thread);
             }
         } else {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                // all levels of each type need specified separately
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
+            if (_environment_vector_lanes>0 && _environment_threads>0) {
+                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, _environment_threads, _environment_vector_lanes);
+            } else if (_environment_vector_lanes>0) {
+                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, Kokkos::AUTO, _environment_vector_lanes);
+            } else if (_environment_threads>0) {
+                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, _environment_threads, Kokkos::AUTO);
             } else {
-                // scratch team levels and thread levels are the same
-                return Kokkos::TeamPolicy<device_execution_space>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
+                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, Kokkos::AUTO, Kokkos::AUTO);
             }
         }
-    }
-
-    //! Calls a parallel_for
-    //! parallel_for will break out over loops over teams with each vector lane executing code be default
-    template<typename Tag, class C>
-    void CallFunctorWithTeamThreadsAndVectors(C functor, const global_index_type batch_size, const int threads_per_team = -1, 
-            const int vector_lanes_per_thread = -1) const {
-
-        if (threads_per_team>0 && vector_lanes_per_thread>0) {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                    // all levels of each type need specified separately
-                    Kokkos::parallel_for(
-                        typeid(Tag).name(),
-                        Kokkos::TeamPolicy<Tag>(batch_size, threads_per_team, vector_lanes_per_thread)
-                        .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                        .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                        .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                        .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                        functor);
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else {
-                // scratch team levels and thread levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            }
-        } else if (threads_per_team>0) {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                    // all levels of each type need specified separately
-                    Kokkos::parallel_for(
-                        typeid(Tag).name(),
-                        Kokkos::TeamPolicy<Tag>(batch_size, threads_per_team, _default_vector_lanes)
-                        .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                        .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                        .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                        .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                        functor);
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else {
-                // scratch team levels and thread levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            }
-        } else if (vector_lanes_per_thread>0) {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                    // all levels of each type need specified separately
-                    Kokkos::parallel_for(
-                        typeid(Tag).name(),
-                        Kokkos::TeamPolicy<Tag>(batch_size, _default_threads, vector_lanes_per_thread)
-                        .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                        .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                        .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                        .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                        functor);
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else {
-                // scratch team levels and thread levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            }
+        
+        if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
+            tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
+              .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
+              .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
+              .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
+        } else if (_scratch_team_level_a != _scratch_team_level_b) {
+            tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
+              .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
+              .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
+        } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
+            tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
+              .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
+              .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
         } else {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                    // all levels of each type need specified separately
-                    Kokkos::parallel_for(
-                        typeid(Tag).name(),
-                        Kokkos::TeamPolicy<Tag>(batch_size, _default_threads, _default_vector_lanes)
-                        .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                        .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                        .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                        .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                        functor);
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else {
-                // scratch team levels and thread levels are the same
-                Kokkos::parallel_for(
-                    typeid(Tag).name(),
-                    Kokkos::TeamPolicy<Tag>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            }
+            tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
+              .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
         }
-    }
-
-    //! Calls a parallel_for
-    //! parallel_for will break out over loops over teams with each vector lane executing code be default
-    template<class C>
-    void CallFunctorWithTeamThreadsAndVectors(C functor, const global_index_type batch_size, const int threads_per_team = -1, 
-            const int vector_lanes_per_thread = -1, std::string functor_name = typeid(C).name()) const {
-
-        if (threads_per_team>0 && vector_lanes_per_thread>0) {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                // all levels of each type need specified separately
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else {
-                // scratch team levels and thread levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, threads_per_team, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            }
-        } else if (threads_per_team>0) {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                // all levels of each type need specified separately
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else {
-                // scratch team levels and thread levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, threads_per_team, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            }
-        } else if (vector_lanes_per_thread>0) {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else {
-                // scratch team levels and thread levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, _default_threads, vector_lanes_per_thread)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            }
-        } else {
-            if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_team_level_a != _scratch_team_level_b) {
-                // scratch thread levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-                    .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-                // scratch team levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-                    .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b)),
-                    functor);
-            } else {
-                // scratch team levels and thread levels are the same
-                Kokkos::parallel_for(
-                    functor_name,
-                    Kokkos::TeamPolicy<>(batch_size, _default_threads, _default_vector_lanes)
-                    .set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-                    .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b)),
-                    functor);
-            }
-        }
-    }
-
-    //! Calls a parallel_for
-    //! parallel_for will break out over loops over teams with each thread executing code be default
-    template<typename Tag, class C>
-    void CallFunctorWithTeamThreads(C functor, const global_index_type batch_size) const {
-        // calls breakout over vector lanes with vector lane size of 1
-        CallFunctorWithTeamThreadsAndVectors<Tag,C>(functor, batch_size, _default_threads, 1);
-    }
-
-    //! Calls a parallel_for
-    //! parallel_for will break out over loops over teams with each thread executing code be default
-    template<class C>
-    void CallFunctorWithTeamThreads(C functor, const global_index_type batch_size, std::string functor_name = typeid(C).name()) const {
-        // calls breakout over vector lanes with vector lane size of 1
-        CallFunctorWithTeamThreadsAndVectors<C>(functor, batch_size, _default_threads, 1, functor_name);
+        return tp;
     }
 
     KOKKOS_INLINE_FUNCTION

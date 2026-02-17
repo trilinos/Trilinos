@@ -251,12 +251,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
         auto gmls_basis_data = this->extractBasisData();
         auto gmls_solution_data = this->extractSolutionData();
 
-        
-        // even kernels that should run on other # of vector lanes do not (on GPU)
-        auto tp = _pm.TeamPolicyThreadsAndVectors(this_batch_size, _pm._default_threads, 1);
-        //auto tp = _pm.TeamPolicyThreadsAndVectors(this_batch_size, _pm._default_threads, _pm._default_vector_lanes);
-        //const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
-        //const auto tp2 = Kokkos::Experimental::require(tp, work_item_property);
+        auto tp = _pm.TeamPolicyThreadsAndVectors(this_batch_size);
 
         if (_problem_type == ProblemType::MANIFOLD) {
 
@@ -397,7 +392,6 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
          *    Calculate Optimal Threads Based On Levels of Parallelism
          */
 
-
         if (_problem_type == ProblemType::MANIFOLD) {
 
             /*
@@ -422,7 +416,7 @@ void GMLS::generatePolynomialCoefficients(const int number_of_batches, const boo
             
         // fine grain control over applying target (most expensive part after QR solve)
         ParallelManager pm;
-        tp = pm.TeamPolicyThreadsAndVectors(this_batch_size, pm._default_threads, pm._default_vector_lanes);
+        tp = pm.TeamPolicyThreadsAndVectors(this_batch_size);
         const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
         const auto tp2 = Kokkos::Experimental::require(tp, work_item_property);
         auto functor_apply_targets = ApplyTargets(gmls_solution_data);
