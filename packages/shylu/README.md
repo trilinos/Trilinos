@@ -7,7 +7,7 @@ The node level solvers include sparse LU factorization (basker), sparse symmetri
 
 ## Domain Decomposition Solvers
 
-The Domain Decomposition methods in ShyLU are a one-level hybrid direct/iterative approach based on Schur complements, two-level balancing domain decomposition method (bddc) and Overlapping Schwarz methods (FROSch). 
+FROSch is currently the only package implementing the Domain Decomposition preconditioner in ShyLU. 
 
 The one-level hybrid direct/iterative approach based on Schur complements was developed to provide robustness similar to sparse direct solvers with less memory use. This has been particularly effective for circuit simulation problems.
 
