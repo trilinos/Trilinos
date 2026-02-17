@@ -458,7 +458,29 @@ int makeColMap(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
         auto numRowEntries       = Kokkos::create_mirror_view_and_copy(execution_space(), graph.k_numRowEntries_);
         auto colindUnpacked      = graph.gblInds_wdv.getDeviceView(Access::ReadOnly);
         using unordered_map_type = Kokkos::UnorderedMap<GO, size_t, typename NT::device_type>;
-        size_t remoteGIDCapacity = (size_t)colindUnpacked.extent(0);
+        // We need an estimate for the number of remote gids since overallocating an UnorderedMap is expensive.
+        // On a single rank that's easy. If we have multiple ranks we compute an upper bound.
+        size_t remoteGIDCapacity;
+        if (domMap->getComm()->getSize() == 1) {
+          remoteGIDCapacity = 0;
+        } else {
+          Kokkos::parallel_reduce(
+              Kokkos::RangePolicy<execution_space>(0, lclNumRows), KOKKOS_LAMBDA(const LO lclRow, size_t& myCapacity) {
+                auto rowStart = rowptrsUnpacked(lclRow);
+                auto rowEnd   = rowStart + numRowEntries(lclRow);
+                for (auto offset = rowStart; offset < rowEnd; ++offset) {
+                  const auto gid = colindUnpacked(offset);
+                  const auto lid = lclDomMap.getLocalElement(gid);
+                  if (lid == LINV) {
+                    ++myCapacity;
+                  }
+                }
+              },
+              remoteGIDCapacity);
+
+          // fudge factor
+          remoteGIDCapacity *= 1.2;
+        }
         unordered_map_type RemoteGIDMap(remoteGIDCapacity);
         while (true) {
           AtomicMin<Kokkos::View<size_t*, typename NT::device_type>, uint32_t> atomic_min;
