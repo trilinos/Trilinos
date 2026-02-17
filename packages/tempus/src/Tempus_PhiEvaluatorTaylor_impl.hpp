@@ -63,19 +63,20 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos:
   this->phiLinSolv_->buildK(k);
   Teuchos::RCP<Thyra::VectorBase<Scalar>> rhs_b = Mrhs_b->clone_v();
   this->phiLinSolv_->solveMass(rhs_b.ptr(), Mrhs_b);
-  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-// rhs_b->describe(*out, Teuchos::VERB_EXTREME);
-// Mrhs_b->describe(*out, Teuchos::VERB_EXTREME);
-//   auto vec = rhs_b;
-// auto space = vec->space();
-// int n = space->dim();
 
-// for (int i = 0; i < n; ++i) {
-//    std::cout << "rhs[" << i << "] = "
-//              << Thyra::get_ele(*rhs_b, i) << std::endl;
-//              std::cout << "Mrhs[" << i << "] = "
-//              << Thyra::get_ele(*Mrhs_b, i) << std::endl;
-// }
+  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  // rhs_b->describe(*out, Teuchos::VERB_EXTREME);
+  // Mrhs_b->describe(*out, Teuchos::VERB_EXTREME);
+  //   auto vec = rhs_b;
+  // auto space = vec->space();
+  // int n = space->dim();
+
+  // for (int i = 0; i < n; ++i) {
+  //    std::cout << "rhs[" << i << "] = "
+  //              << Thyra::get_ele(*rhs_b, i) << std::endl;
+  //              std::cout << "Mrhs[" << i << "] = "
+  //              << Thyra::get_ele(*Mrhs_b, i) << std::endl;
+  // }
 
   this->phiLinSolv_->buildb(k, rhs_b);
   Atilde_ = this->phiLinSolv_->buildATilde(cdt);
@@ -86,9 +87,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos:
   auto pv = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar>>(vec, true);
   auto v0 = pv->getVectorBlock(0);  // V block
   Thyra::copy(*v0, phiv.ptr());
-  // return vecV;
-  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  // vec->describe(*out, Teuchos::VERB_EXTREME);
+
   Thyra::SolveStatus<Scalar> sStatus;
   sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
   return sStatus;
@@ -118,8 +117,11 @@ Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluatorTaylor<Scalar>::matrix
   Thyra::Vp_V(matExpTemp.ptr(), *d_k);
 
   Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
+  Scalar err_est;
+  Scalar overflow = 0.;
+  int k;
   // Iteratively compute d_k = (A^k v) / k! and add to result
-  for (int k = 1; k <= expansionOrder; ++k)
+  for (k = 1; k <= expansionOrder; ++k)
   {
     // next <- A * d_k
     // TODO: do we need the temp vector?
@@ -128,17 +130,21 @@ Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluatorTaylor<Scalar>::matrix
     // multiply the update by 1/k and store in d_k
     Thyra::V_StV(d_k.ptr(), Scalar(1.) / Scalar(k), *next);
 
-    //std::cout << "Norm of update in iteration " << k << " is " << Thyra::norm_2(*d_k) << std::endl;
-
     // add d_k to the final result
     Thyra::Vp_V(matExpTemp.ptr(), *d_k);
+
+    err_est = Thyra::norm_inf(*d_k);
+
+    if (err_est < 1e-20)
+      break;
   }
+  std::cout << "Norm of final update in iteration " << k << " is " << err_est << std::endl;
 
   matExp_v_ = matExpTemp; // This is required to wrap multivector as linearop
 
   return matExp_v_;
 }
-  
+
 // Nonmember constructors.
 // ------------------------------------------------------------------------
 
