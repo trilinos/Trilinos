@@ -3,7 +3,7 @@
 ShyLU is a package for solving sparse linear systems using domain decomposition methods. ShyLU has two main focus areas - 
 (1) distributed memory domain-decomposition solvers and (2) node-level solvers and kernels that support the distributed memory solvers. The approaches in ShyLU are algebraic and so can be used as a black-box solvers.
 
-The node level solvers include sparse LU factorization (basker), sparse Cholesky factorization (Tacho), multithreaded triangular solver (HTS) and a fast iterative ILU algorithm (FastILU).
+The node level solvers include sparse LU factorization (basker), sparse symmetric factorization (Tacho), multithreaded triangular solver (HTS) and a fast iterative ILU algorithm (FastILU).
 
 ## Domain Decomposition Solvers
 
