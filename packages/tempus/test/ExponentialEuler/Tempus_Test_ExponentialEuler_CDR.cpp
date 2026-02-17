@@ -54,7 +54,7 @@ using Tempus::SolutionState;
 // ************************************************************
 template <typename SC, typename Model, typename Comm>
 void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
-              bool& success)
+              bool& success, const std::string& fileName)
 {
   RCP<Tempus::IntegratorBasic<double>> integrator;
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
@@ -62,12 +62,18 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
-  const int nTimeStepSizes = 3;
-  double dt                = 0.02;   //// /1000;
+  const int nTimeStepSizes = 6;
+
+  // Read params from .xml file
+  const std::string pListFile = fileName + ".xml";
+  RCP<ParameterList> pList = getParametersFromXmlFile(pListFile);
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  double dt = pl->sublist("Demo Integrator")
+        .sublist("Time Step Control")
+        .get<double>("Initial Time Step");
+  dt = 2. * dt;
+
   for (int n = 0; n < nTimeStepSizes; n++) {
-    // Read params from .xml file
-    RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_ExponentialEuler_CDR.xml");
 
     // Create CDR Model
     RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
@@ -93,7 +99,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     model->set_W_factory(lowsFactory);
 
     // Set the step size
-    dt /= 2;
+    dt /= 2.;
 
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
@@ -126,7 +132,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
     if ((n == nTimeStepSizes - 1) && (commSize == 1)) {
-      std::ofstream ftmp("Tempus_ExponentialEuler_CDR.dat");
+      std::ofstream ftmp(fileName + ".dat");
       ftmp << "TITLE=\"Exponential Euler Solution to CDR\"\n"
            << "VARIABLES=\"z\",\"T\"\n";
       const double dx =
@@ -160,7 +166,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   //writeOrderError("Tempus_ExponentialEuler_CDR-Error.dat", stepper, StepSize,
   //                solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
   //                xDotSlope, out);
-  writeOrderError("Tempus_ExponentialEuler_CDR-Error.dat", stepper, StepSize,
+  writeOrderError(fileName + "-Error.dat", stepper, StepSize,
                   solutions, xErrorNorm, xSlope, out);
 
   TEST_FLOATING_EQUALITY(xSlope, 1.3372, 0.01);
@@ -176,7 +182,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   // This only works for ONE MPI process
   if (commSize == 1) {
     RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_ExponentialEuler_CDR.xml");
+        getParametersFromXmlFile(pListFile);
     RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
     const int num_elements      = model_pl->get<int>("num elements");
     const double left_end       = model_pl->get<double>("left end");
@@ -184,7 +190,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 
     const Thyra::VectorBase<double>& x = *(solutions[solutions.size() - 1]);
 
-    std::ofstream ftmp("Tempus_ExponentialEuler_CDR-Solution.dat");
+    std::ofstream ftmp(fileName + "-Solution.dat");
     for (int n = 0; n < num_elements + 1; n++) {
       const double dx =
           std::fabs(left_end - right_end) / static_cast<double>(num_elements);
@@ -198,9 +204,10 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
 }
 
 #ifdef TEMPUS_ENABLE_EPETRA_STACK
+
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(ExponentialEuler, CDR)
+TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Taylor)
 {
   // Create a communicator for Epetra objects
   RCP<Epetra_Comm> comm;
@@ -210,10 +217,26 @@ TEUCHOS_UNIT_TEST(ExponentialEuler, CDR)
   comm = rcp(new Epetra_SerialComm);
 #endif
 
+  const std::string fileName = "Tempus_ExponentialEuler_CDR_PhiTaylor";
   CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
-                                                   success);
+                                                   success, fileName);
+}
 
-  std::cout << "Running EPETRA" << std::endl;
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_PFD)
+{
+  // Create a communicator for Epetra objects
+  RCP<Epetra_Comm> comm;
+#ifdef Tempus_ENABLE_MPI
+  comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  comm = rcp(new Epetra_SerialComm);
+#endif
+
+  const std::string fileName = "Tempus_ExponentialEuler_CDR_PhiPFD";
+  CDR_Test<double, Tempus_Test::CDR_Model<double>>(comm, comm->NumProc(), out,
+                                                   success, fileName);
 }
 #endif
 
@@ -233,7 +256,7 @@ TEUCHOS_UNIT_TEST(ExponentialEuler, CDR_Tpetra)
   //CDR_Test<SC, Tempus_Test::CDR_Model_Tpetra<SC, LO, GO, Node>>(
   //    comm, comm->getSize(), out, success);
 
-  std::cout << "Running TPETRA" << std::endl;
+  std::cout << "Disabled TPETRA test" << std::endl;
 }
 #endif
 
