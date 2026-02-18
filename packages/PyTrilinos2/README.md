@@ -77,20 +77,20 @@ with the PyTrilinos2 tag, the used configuration script, the log of the outpupt 
 
 ## Documentation
 
-Tempus is part of the [Trilinos Project](https://trilinos.github.io), and additional information (e.g., examples, tutorials, and source code documentation) is available through [PyTrilinos2 code](https://github.com/trilinos/Trilinos/tree/master/packages/PyTrilinos2).
+PyTrilinos2 is part of the [Trilinos Project](https://trilinos.github.io), and additional information (e.g., examples, tutorials, and source code documentation) is available through [PyTrilinos2 code](https://github.com/trilinos/Trilinos/tree/master/packages/PyTrilinos2).
 
 ## Questions?
 
 Contact the lead developers:
 
 - **PyTrilinos2 team**: GitHub handle: @trilinos/pytrilinos2
-- **Kim Liegeois**:     GitHub handle: [kliegeois](https://github.com/kliegeois) or knliege@sandia.gov
+- **Kim Liegeois**:     GitHub handle: [kliegeois](https://github.com/kliegeois)
 - **Christian Glusa**:  GitHub handle: [cgcgcg](https://github.com/cgcgcg) or caglusa@sandia.gov
 
 ## Copyright and License
 
 For general copyright and license information, refer to the Trilinos [License and Copyright](https://trilinos.github.io/about.html#license-and-copyright) page.
 
-For Tempus-specific copyright and license details, refer to the [PyTrilinos2/COPYRIGHT](COPYRIGHT) and [PyTrilinos2/LICENSE](LICENSE) files located in the `PyTrilinos2` directory. Additional copyright information may also be found in the headers of individual source files.
+For PyTrilinos2-specific copyright and license details, refer to the [PyTrilinos2/COPYRIGHT](COPYRIGHT) and [PyTrilinos2/LICENSE](LICENSE) files located in the `PyTrilinos2` directory. Additional copyright information may also be found in the headers of individual source files.
 
 For developers, general guidance on documenting copyrights and licenses can be found in the Trilinos [Guidance on Copyrights and Licenses](https://github.com/trilinos/Trilinos/wiki/Guidance-on-Copyrights-and-Licenses) document.
