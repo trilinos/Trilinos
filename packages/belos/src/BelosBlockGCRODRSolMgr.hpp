@@ -2245,7 +2245,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         // Check to see if the most recent least-squares solution yielded convergence.
         sTest_->checkStatus( &*block_gcrodr_iter );
         if (convTest_->getStatus() != Passed) {
-          this->unconvergenceCause_ = BlockOrthonormFailure;
+          this->unconvergenceCause_ = BlockOrthonormFailure; // AquiHeidi
 	  isConverged = false;
 	}
         break;

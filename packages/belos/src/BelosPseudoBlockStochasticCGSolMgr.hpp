@@ -712,6 +712,7 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
+            this->unconvergenceCause_ = MaxItersAchieved;
             isConverged = false;
             break;  // break from while(1){block_cg_iter->iterate()}
           }
@@ -724,11 +725,13 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
+            this->unconvergenceCause_ = Unknown;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PseudoBlockStochasticCGSolMgr::solve(): Invalid return from PseudoBlockStochasticCGIter::iterate().");
           }
         }
         catch (const std::exception &e) {
+          this->unconvergenceCause_ = Unknown;
           printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockStochasticCGIter::iterate() at iteration "
                                    << block_cg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

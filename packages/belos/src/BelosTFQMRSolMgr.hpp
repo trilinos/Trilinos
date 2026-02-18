@@ -708,6 +708,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
+            this->unconvergenceCause_ = MaxItersAchieved;
             isConverged = false;
             break;  // break from while(1){tfqmr_iter->iterate()}
           }
@@ -720,12 +721,14 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
+            this->unconvergenceCause_ = Unknown;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::TFQMRSolMgr::solve(): Invalid return from TFQMRIter::iterate().");
           }
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          this->unconvergenceCause_ = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
@@ -734,6 +737,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
           return Unconverged; 
         }
         catch (const std::exception &e) {
+          this->unconvergenceCause_ = Unknown;
           printer_->stream(Errors) << "Error! Caught std::exception in TFQMRIter::iterate() at iteration "
                                    << tfqmr_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

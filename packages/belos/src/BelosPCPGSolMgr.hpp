@@ -849,6 +849,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
+            this->unconvergenceCause_ = MaxItersAchieved;
             isConverged = false;
             break;  // break from while(1){pcpg_iter->iterate()}
           }
@@ -867,6 +868,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
         } // end try
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
+          this->unconvergenceCause_ = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
@@ -875,6 +877,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
           return Unconverged;
         }
         catch (const std::exception &e) {
+          this->unconvergenceCause_ = Unknown;
           printer_->stream(Errors) << "Error! Caught exception in PCPGIter::iterate() at iteration "
                                    << pcpg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
