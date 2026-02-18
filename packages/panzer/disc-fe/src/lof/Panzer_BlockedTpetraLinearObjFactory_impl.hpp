@@ -996,129 +996,227 @@ buildTpetraGhostedGraph(int i,int j) const
    gidProviders_[0]->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
                                                           // same element blocks
 
-   // Gather elements from mesh blocks.
-   size_t numElements;
-   Kokkos::View<LocalOrdinalT*, memory_space> elementsFromBlocks;
-   {
-     auto numElementBlocks = elementBlockIds.size();
-
-     std::vector<size_t> elementBlockOffsets(numElementBlocks+1);
-     elementBlockOffsets[0] = 0;
-
-     numElements = 0;
-     size_t blockNo = 0;
-     std::vector<std::string>::const_iterator blockItr;
-     for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
-       std::string blockId = *blockItr;
-       const std::vector<LocalOrdinalT> & elements = gidProviders_[0]->getElementBlock(blockId); // each sub provider "should" have the
-                                                                                                 // same elements in each element block
-       numElements += elements.size();
-       ++blockNo;
-       elementBlockOffsets[blockNo] = numElements;
-     }
-     elementsFromBlocks = Kokkos::View<LocalOrdinalT*, memory_space>("elementsFromBlocks", numElements);
-     blockNo = 0;
-     for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
-       std::string blockId = *blockItr;
-       const std::vector<LocalOrdinalT> & elements = gidProviders_[0]->getElementBlock(blockId); // each sub provider "should" have the
-                                                                                                 // same elements in each element block
-       Kokkos::View<const LocalOrdinalT*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>> elements_h(elements.data(), elements.size());
-       Kokkos::deep_copy(Kokkos::subview(elementsFromBlocks, Kokkos::make_pair(elementBlockOffsets[blockNo],
-                                                                               elementBlockOffsets[blockNo+1])),
-                         elements_h);
-       ++blockNo;
-     }
-   }
-
    RCP<CrsGraphType> graph;
-   {
+   if constexpr (NodeT::is_gpu) {
 
-     using local_graph_type = typename CrsGraphType::local_graph_device_type;
-     using rowptr_type       = typename local_graph_type::row_map_type::non_const_type;
-     using colidx_type       = typename local_graph_type::entries_type::non_const_type;
+     // Gather elements from mesh blocks.
+     size_t numElements;
+     Kokkos::View<LocalOrdinalT *, memory_space> elementsFromBlocks;
+     {
+       auto numElementBlocks = elementBlockIds.size();
 
-     using entries_map_type = Kokkos::UnorderedMap<entry_type<LocalOrdinalT>, void, exec_space>;
+       std::vector<size_t> elementBlockOffsets(numElementBlocks + 1);
+       elementBlockOffsets[0] = 0;
 
-     auto numRows = map_i->getLocalNumElements();
-
-     // We are overallocating by 1 here. This simplifies the logic below. But we have to remember to take a subview in the end.
-     rowptr_type rowptr("ghostedGraph_rowptr", numRows+2);
-
-     auto rowLIDs = rowProvider->getLIDs();
-     auto colLIDs = colProvider->getLIDs();
-
-     auto numDoFsPerElementRow = rowLIDs.extent(1);
-     auto numDoFsPerElementCol = colLIDs.extent(1);
-
-     auto capacity = numElements*numDoFsPerElementRow*numDoFsPerElementCol;
-     entries_map_type entries(capacity);
-
-     while (true) {
-
-       // Loop over all elements and record the entries that we need in the graph.
-       // Also start building the rowptr.
-       Kokkos::parallel_for("collect_entries", Kokkos::RangePolicy<exec_space>(0, numElements), KOKKOS_LAMBDA(const LocalOrdinalT k) {
-         auto elementId = elementsFromBlocks(k);
-         entry_type<LocalOrdinalT> entry;
-         for (size_t dofNoRow = 0; dofNoRow<numDoFsPerElementRow; ++dofNoRow) {
-           entry.row = rowLIDs(elementId, dofNoRow);
-           for (size_t dofNoCol = 0; dofNoCol<numDoFsPerElementCol; ++dofNoCol) {
-             entry.col = colLIDs(elementId, dofNoCol);
-             auto result = entries.insert(entry);
-             if (result.success()) {
-               // New entry. We offset by 2 here.
-               Kokkos::atomic_inc(&rowptr(entry.row+2));
-             }
-           }
-         }
-       });
-
-       if (!entries.failed_insert()) {
-         auto numEntries = entries.size();
-
-         // Prefix sum to get offsets.
-         // This is not the correct rowptr yet.
-         // We have essentially shifted everything by one position.
-         // This is useful for when we fill.
-         typename rowptr_type::value_type numEntries2;
-         Kokkos::parallel_scan("prefix_sum", Kokkos::RangePolicy<exec_space>(0, numRows+2), KOKKOS_LAMBDA(const size_t rlid, typename rowptr_type::value_type &nnz, const bool is_final) {
-           nnz += rowptr(rlid);
-           if (is_final)
-             rowptr(rlid) = nnz;
-         }, numEntries2);
-         TEUCHOS_ASSERT_EQUALITY(numEntries, numEntries2);
-
-         // The column indices.
-         colidx_type colidx(Kokkos::ViewAllocateWithoutInitializing("ghostedGraph_colidx"), numEntries);
-
-         // Fill the column indices.
-         // We are using the rowptr to figure out offsets.
-         // After this step the rowptr is correct.
-         Kokkos::parallel_for("fill", Kokkos::RangePolicy<exec_space>(0, entries.capacity()), KOKKOS_LAMBDA(const uint32_t c) {
-           if (entries.valid_at(c)) {
-             auto entry = entries.key_at(c);
-             auto offset = Kokkos::atomic_fetch_inc(&rowptr(entry.row+1));
-             colidx(offset) = entry.col;
-           }
-         });
-
-         // Sort the rows.
-         KokkosSparse::sort_crs_graph(rowptr, colidx);
-
-         // Create the graph
-         graph = rcp(new CrsGraphType(map_i, map_j, Kokkos::subview(rowptr, Kokkos::make_pair((decltype(numRows))0, numRows+1)), colidx));
-         graph->fillComplete(getMap(j),getMap(i));
-
-         break;
-       } else {
-         // We ended up not having enough capacity in the UnorderedMap.
-         // Bump it up and try again.
-         std::cout << "Insufficient capacity: " << capacity << std::endl;
-         capacity *= 2;
-         Kokkos::deep_copy(rowptr, 0);
-         entries = entries_map_type(capacity);
+       numElements = 0;
+       size_t blockNo = 0;
+       std::vector<std::string>::const_iterator blockItr;
+       for (blockItr = elementBlockIds.begin();
+            blockItr != elementBlockIds.end(); ++blockItr) {
+         std::string blockId = *blockItr;
+         const std::vector<LocalOrdinalT> &elements =
+             gidProviders_[0]->getElementBlock(
+                 blockId); // each sub provider "should" have the
+                           // same elements in each element block
+         numElements += elements.size();
+         ++blockNo;
+         elementBlockOffsets[blockNo] = numElements;
+       }
+       elementsFromBlocks = Kokkos::View<LocalOrdinalT *, memory_space>(
+           "elementsFromBlocks", numElements);
+       blockNo = 0;
+       for (blockItr = elementBlockIds.begin();
+            blockItr != elementBlockIds.end(); ++blockItr) {
+         std::string blockId = *blockItr;
+         const std::vector<LocalOrdinalT> &elements =
+             gidProviders_[0]->getElementBlock(
+                 blockId); // each sub provider "should" have the
+                           // same elements in each element block
+         Kokkos::View<const LocalOrdinalT *, Kokkos::HostSpace,
+                      Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+             elements_h(elements.data(), elements.size());
+         Kokkos::deep_copy(
+             Kokkos::subview(
+                 elementsFromBlocks,
+                 Kokkos::make_pair(elementBlockOffsets[blockNo],
+                                   elementBlockOffsets[blockNo + 1])),
+             elements_h);
+         ++blockNo;
        }
      }
+
+     {
+
+       using local_graph_type = typename CrsGraphType::local_graph_device_type;
+       using rowptr_type =
+           typename local_graph_type::row_map_type::non_const_type;
+       using colidx_type =
+           typename local_graph_type::entries_type::non_const_type;
+
+       using entries_map_type =
+           Kokkos::UnorderedMap<entry_type<LocalOrdinalT>, void, exec_space>;
+
+       auto numRows = map_i->getLocalNumElements();
+
+       // We are overallocating by 1 here. This simplifies the logic below. But
+       // we have to remember to take a subview in the end.
+       rowptr_type rowptr("ghostedGraph_rowptr", numRows + 2);
+
+       auto rowLIDs = rowProvider->getLIDs();
+       auto colLIDs = colProvider->getLIDs();
+
+       auto numDoFsPerElementRow = rowLIDs.extent(1);
+       auto numDoFsPerElementCol = colLIDs.extent(1);
+
+       auto capacity =
+           numElements * numDoFsPerElementRow * numDoFsPerElementCol;
+       entries_map_type entries(capacity);
+
+       while (true) {
+
+         // Loop over all elements and record the entries that we need in the
+         // graph. Also start building the rowptr.
+         Kokkos::parallel_for(
+             "collect_entries", Kokkos::RangePolicy<exec_space>(0, numElements),
+             KOKKOS_LAMBDA(const LocalOrdinalT k) {
+               auto elementId = elementsFromBlocks(k);
+               entry_type<LocalOrdinalT> entry;
+               for (size_t dofNoRow = 0; dofNoRow < numDoFsPerElementRow;
+                    ++dofNoRow) {
+                 entry.row = rowLIDs(elementId, dofNoRow);
+                 for (size_t dofNoCol = 0; dofNoCol < numDoFsPerElementCol;
+                      ++dofNoCol) {
+                   entry.col = colLIDs(elementId, dofNoCol);
+                   auto result = entries.insert(entry);
+                   if (result.success()) {
+                     // New entry. We offset by 2 here.
+                     Kokkos::atomic_inc(&rowptr(entry.row + 2));
+                   }
+                 }
+               }
+             });
+
+         if (!entries.failed_insert()) {
+           auto numEntries = entries.size();
+
+           // Prefix sum to get offsets.
+           // This is not the correct rowptr yet.
+           // We have essentially shifted everything by one position.
+           // This is useful for when we fill.
+           typename rowptr_type::value_type numEntries2;
+           Kokkos::parallel_scan(
+               "prefix_sum", Kokkos::RangePolicy<exec_space>(0, numRows + 2),
+               KOKKOS_LAMBDA(const size_t rlid,
+                             typename rowptr_type::value_type &nnz,
+                             const bool is_final) {
+                 nnz += rowptr(rlid);
+                 if (is_final)
+                   rowptr(rlid) = nnz;
+               },
+               numEntries2);
+           TEUCHOS_ASSERT_EQUALITY(numEntries, numEntries2);
+
+           // The column indices.
+           colidx_type colidx(
+               Kokkos::ViewAllocateWithoutInitializing("ghostedGraph_colidx"),
+               numEntries);
+
+           // Fill the column indices.
+           // We are using the rowptr to figure out offsets.
+           // After this step the rowptr is correct.
+           Kokkos::parallel_for(
+               "fill", Kokkos::RangePolicy<exec_space>(0, entries.capacity()),
+               KOKKOS_LAMBDA(const uint32_t c) {
+                 if (entries.valid_at(c)) {
+                   auto entry = entries.key_at(c);
+                   auto offset =
+                       Kokkos::atomic_fetch_inc(&rowptr(entry.row + 1));
+                   colidx(offset) = entry.col;
+                 }
+               });
+
+           // Sort the rows.
+           KokkosSparse::sort_crs_graph(rowptr, colidx);
+
+           // Create the graph
+           graph = rcp(new CrsGraphType(
+               map_i, map_j,
+               Kokkos::subview(rowptr, Kokkos::make_pair((decltype(numRows))0,
+                                                         numRows + 1)),
+               colidx));
+           graph->fillComplete(getMap(j), getMap(i));
+
+           break;
+         } else {
+           // We ended up not having enough capacity in the UnorderedMap.
+           // Bump it up and try again.
+           std::cout << "Insufficient capacity: " << capacity << std::endl;
+           capacity *= 2;
+           Kokkos::deep_copy(rowptr, 0);
+           entries = entries_map_type(capacity);
+         }
+       }
+     }
+   } else {
+     // Count number of entries in each row of graph; needed for graph
+     // constructor
+     std::vector<size_t> nEntriesPerRow(map_i->getLocalNumElements(), 0);
+     std::vector<std::string>::const_iterator blockItr;
+     for (blockItr = elementBlockIds.begin(); blockItr != elementBlockIds.end();
+          ++blockItr) {
+       std::string blockId = *blockItr;
+       // grab elements for this block
+       const std::vector<LocalOrdinalT> &elements =
+           gidProviders_[0]->getElementBlock(
+               blockId); // each sub provider "should" have the
+                         // same elements in each element block
+
+       // get information about number of indicies
+       std::vector<GlobalOrdinalT> row_gids;
+       std::vector<GlobalOrdinalT> col_gids;
+
+       // loop over the elemnts
+       for (std::size_t elmt = 0; elmt < elements.size(); elmt++) {
+
+         rowProvider->getElementGIDs(elements[elmt], row_gids);
+         colProvider->getElementGIDs(elements[elmt], col_gids);
+         for (std::size_t row = 0; row < row_gids.size(); row++) {
+           LocalOrdinalT lid = map_i->getLocalElement(row_gids[row]);
+           nEntriesPerRow[lid] += col_gids.size();
+         }
+       }
+     }
+     Teuchos::ArrayView<const size_t> nEntriesPerRowView(nEntriesPerRow);
+     graph = rcp(new CrsGraphType(map_i, map_j, nEntriesPerRowView));
+
+     // graph information about the mesh
+     for (blockItr = elementBlockIds.begin(); blockItr != elementBlockIds.end();
+          ++blockItr) {
+       std::string blockId = *blockItr;
+
+       // grab elements for this block
+       const std::vector<LocalOrdinalT> &elements =
+           gidProviders_[0]->getElementBlock(
+               blockId); // each sub provider "should" have the
+                         // same elements in each element block
+
+       // get information about number of indicies
+       std::vector<GlobalOrdinalT> row_gids;
+       std::vector<GlobalOrdinalT> col_gids;
+
+       // loop over the elemnts
+       for (std::size_t elmt = 0; elmt < elements.size(); elmt++) {
+
+         rowProvider->getElementGIDs(elements[elmt], row_gids);
+         colProvider->getElementGIDs(elements[elmt], col_gids);
+         for (std::size_t row = 0; row < row_gids.size(); row++)
+           graph->insertGlobalIndices(row_gids[row], col_gids);
+       }
+     }
+
+     // finish filling the graph: Make sure the colmap and row maps coincide to
+     //                           minimize calls to LID lookups
+     graph->fillComplete(getMap(j), getMap(i));
    }
 
    return graph;
