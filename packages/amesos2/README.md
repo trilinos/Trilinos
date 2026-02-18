@@ -38,14 +38,14 @@ Amesos2 is part of the 2nd generation, templated Trilinos stack, so it is templa
 
 Contact lead developers:
 
-* **Amesos2 team**           (GitHub handle: @trilinos/amesos2)
-* **Ichitaro Yamazaki**      (GitHub handle: [@iyamazaki](https://github.com/iyamazaki) or iyamaza@sandia.gov)
+* **Amesos2 team**:          GitHub handle: @trilinos/amesos2
+* **Ichitaro Yamazaki**:     GitHub handle: [@iyamazaki](https://github.com/iyamazaki) or iyamaza@sandia.gov
+* **Nathan Ellingwood**:     GitHub handle: [ndellingwood](https://github.com/ndellingwood)
 
 Other contributors:
 
-* **Nathan Ellingwood**      (GitHub handle: [ndellingwood](https://github.com/ndellingwood)
-* **Siva Rajamanickam**      (GitHub handle: [srajama1](https://github.com/srajama1) or srajama@sandia.gov)
-* **Lisa Claus** (STRUMPACK) (lclaus@lbl.gov)
+* **Siva Rajamanickam**:     GitHub handle: [srajama1](https://github.com/srajama1) or srajama@sandia.gov
+* **Lisa Claus**: (STRUMPACK) (lclaus@lbl.gov)
 
 ## Copyright and License
 
