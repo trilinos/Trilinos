@@ -120,7 +120,7 @@ void StepperEPI<Scalar>::takeStep(
 {
   this->checkInitialized();
   phiEvaluator_->checkInitialized();
-//std::cout << "Inside takeStep 1." << std::endl;
+
   using Teuchos::RCP;
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -138,22 +138,22 @@ void StepperEPI<Scalar>::takeStep(
     RCP<StepperEPI<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
-//std::cout << "Inside takeStep 2." << std::endl;
+
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
-//std::cout << "Inside takeStep 3." << std::endl;
-    RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
+
+    RCP<const Thyra::VectorBase<Scalar> > xOld = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
     if (workingState->getXDot() != Teuchos::null)
       this->setStepperXDot(workingState->getXDot());
     RCP<Thyra::VectorBase<Scalar> > xDot = this->getStepperXDot();
-//std::cout << "Inside takeStep 4." << std::endl;
+
     const Scalar time = workingState->getTime();
     const Scalar dt = workingState->getTimeStep();
-//std::cout << "Inside takeStep 5." << std::endl;
+
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::BEFORE_EXP);
-//std::cout << "Inside takeStep 6." << std::endl;
+
     //{
     //  Teuchos::basic_FancyOStream<char> ostr(Teuchos::rcp(&std::cout, false));
     //  this->describe(ostr, Teuchos::VERB_EXTREME);
@@ -161,13 +161,13 @@ void StepperEPI<Scalar>::takeStep(
     Teuchos::RCP<TimeDerivative<Scalar> > timeDer;
 
     Thyra::SolveStatus<Scalar> sStatus;
-//std::cout << "Inside takeStep 7." << std::endl;    
+ 
       // Setup TimeDerivative
       timeDer = Teuchos::rcp(new StepperEPITimeDerivative<Scalar>(
         Scalar(0.0),xOld));
       auto p = Teuchos::rcp(new ImplicitODEParameters<Scalar>(
           timeDer, dt, Scalar(0.0), Scalar(1.0)));
-//std::cout << "Inside takeStep 8." << std::endl;
+
 
       // TODO: Transition away from using implicit solver methods and use ModelEvaluator directly
       RCP<Thyra::VectorBase<Scalar> > Mf = x->clone_v();
@@ -179,7 +179,7 @@ void StepperEPI<Scalar>::takeStep(
       // std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
       // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
       // std::cout << "f[0,1]  = " << Thyra::get_ele(*f, 0) << " " << Thyra::get_ele(*f, 1) << std::endl;
-//std::cout << "Inside takeStep 9." << std::endl;
+
       // Using the appModel
       RCP<const Thyra::ModelEvaluator<Scalar>> appModel = this->getModel();
       Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs = appModel->createInArgs();
@@ -187,24 +187,22 @@ void StepperEPI<Scalar>::takeStep(
       inArgs.set_x(x);
       inArgs.set_t(time);
       inArgs.set_x_dot(xDot); // for what? xDot is zero at this point, updating of it not decided
-//std::cout << "Inside takeStep 10." << std::endl;
+
       // initialize space for the update
       RCP<Thyra::VectorBase<Scalar>> vphi = x->clone_v();
       assign(vphi.ptr(), ST::zero());  // Must initialize to a guess before solve!
-//std::cout << "Inside takeStep 11." << std::endl;
+
       // auto thyraModel = this->getModel();
-//std::cout << "Inside takeStep 12." << std::endl;
       // auto inArgs_tyra  = thyraModel->createInArgs();
       // auto outArgs_tyra = thyraModel->createOutArgs();
-//std::cout << "Inside takeStep 13." << std::endl;
       // auto curr = solutionHistory->getCurrentState();
 
       // inArgs_tyra.set_x(curr->getX());
       // inArgs_tyra.set_t(curr->getTime());
-//std::cout << "Inside takeStep 14." << std::endl;
+
       // auto W = thyraModel->create_W_op();
       // outArgs_tyra.set_W_op(W);
-//std::cout << "Inside takeStep 15." << std::endl;
+
       // thyraModel->evalModel(inArgs_tyra, outArgs_tyra);
 
 //std::cout << "Inside takeStep 16." << std::endl;
@@ -214,19 +212,21 @@ void StepperEPI<Scalar>::takeStep(
       // TODO: right now, we have p=1 for EPI2, since we do not compute dF/dt yet
       // (correct only for autonomous problems)
       sStatus = phiEvaluator_->computePhi(vphi.ptr(), 1, dt, Mf);
-//std::cout << "Inside takeStep 17." << std::endl;
 
+      //   std::cout << "xO[0,1] = " << Thyra::get_ele(*xOld, 0) << " " << Thyra::get_ele(*xOld, 1) << std::endl;
+      // std::cout << "x[0,1]  = " << Thyra::get_ele(*x, 0) << " " << Thyra::get_ele(*x, 1) << std::endl;
+      // std::cout << "vphi[0,1]  = " << Thyra::get_ele(*vphi, 0) << " " << Thyra::get_ele(*vphi, 1) << std::endl;
       Thyra::V_VpStV(x.ptr(), *xOld, Scalar(-1.0)*dt, *vphi);
-//std::cout << "Inside takeStep 18." << std::endl;
+
 
     // std::cout << sStatus << std::endl;
 
     stepperEPIAppAction_->execute(solutionHistory, thisStepper,
       StepperEPIAppAction<Scalar>::ACTION_LOCATION::AFTER_EXP);
-//std::cout << "Inside takeStep 19." << std::endl;
+
     if (workingState->getXDot() != Teuchos::null)
       timeDer->compute(x, xDot);
-//std::cout << "Inside takeStep 20." << std::endl;
+
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
