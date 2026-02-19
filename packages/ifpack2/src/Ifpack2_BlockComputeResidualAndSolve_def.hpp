@@ -362,7 +362,7 @@ struct ComputeResidualAndSolve_2Pass_Impl {
     const local_ordinal_type blocksize   = (B == 0 ? blocksize_requested : B);
     const local_ordinal_type rowidx      = member.league_rank();
     const local_ordinal_type row         = rowidx * blocksize;
-    const local_ordinal_type num_vectors = b.extent(1);
+    const local_ordinal_type num_vectors = y.extent(1);
 
     auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(
         tpetra_values.data(), blocksize, blocksize);
@@ -546,8 +546,6 @@ struct ComputeResidualAndSolve_YZero_Impl {
 
  private:
   ConstUnmanaged<impl_scalar_type_2d_view_tpetra> b;
-  ConstUnmanaged<impl_scalar_type_2d_view_tpetra> x;  // x_owned
-  ConstUnmanaged<impl_scalar_type_2d_view_tpetra> x_remote;
   Unmanaged<impl_scalar_type_2d_view_tpetra> y;
 
   // AmD information
@@ -638,12 +636,13 @@ struct ComputeResidualAndSolve_YZero_Impl {
   // also puts the partial squared update norms (1 per row) into W.
   void run(const ConstUnmanaged<impl_scalar_type_2d_view_tpetra>& b_,
            const Unmanaged<impl_scalar_type_2d_view_tpetra>& y_) {
-    this->y = y_;
-    this->b = b_;
     IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
     IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE(
         "BlockTriDi::ComputeResidualAndSolve::Run_Y_Zero",
         ComputeResidualAndSolve0, execution_space);
+
+    this->y = y_;
+    this->b = b_;
 
     const local_ordinal_type blocksize = blocksize_requested;
     const local_ordinal_type nrows     = d_inv.extent(0);
