@@ -664,9 +664,9 @@ struct ComputeResidualAndSolve_YZero_Impl {
 // vector is just b. The kernel applies the inverse diags to b to find y, and
 // also puts the partial squared update norms (1 per row) into W.
 template <typename MatrixType>
-void ComputeResidualAndSolve<MatrixType>::run_y_zero(
-    const Const<typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra>& b_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_) {
+void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run_y_zero(
+    const Const<impl_scalar_type_2d_view_tpetra>& b_,
+    const impl_scalar_type_2d_view_tpetra& y_) {
 #define RUN_CASE(B)                                                                                                \
   {                                                                                                                \
     ComputeResidualAndSolve_YZero_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
@@ -690,11 +690,11 @@ void ComputeResidualAndSolve<MatrixType>::run_y_zero(
 }
 
 template <typename MatrixType>
-void ComputeResidualAndSolve<MatrixType>::run_single_pass(
-    const Const<typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra>& b_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& x_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& x_remote_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_) {
+void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run_single_pass(
+    const Const<impl_scalar_type_2d_view_tpetra>& b_,
+    const impl_scalar_type_2d_view_tpetra& x_,
+    const impl_scalar_type_2d_view_tpetra& x_remote_,
+    const impl_scalar_type_2d_view_tpetra& y_) {
 #define RUN_CASE(B)                                                                                                     \
   {                                                                                                                     \
     ComputeResidualAndSolve_SinglePass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
@@ -718,10 +718,10 @@ void ComputeResidualAndSolve<MatrixType>::run_single_pass(
 }
 
 template <typename MatrixType>
-void ComputeResidualAndSolve<MatrixType>::run_pass1_of_2(
-    const Const<typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra>& b_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& x_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_) {
+void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run_pass1_of_2(
+    const Const<impl_scalar_type_2d_view_tpetra>& b_,
+    const impl_scalar_type_2d_view_tpetra& x_,
+    const impl_scalar_type_2d_view_tpetra& y_) {
 #define RUN_CASE(B)                                                                                                \
   {                                                                                                                \
     ComputeResidualAndSolve_2Pass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
@@ -745,10 +745,10 @@ void ComputeResidualAndSolve<MatrixType>::run_pass1_of_2(
 }
 
 template <typename MatrixType>
-void ComputeResidualAndSolve<MatrixType>::run_pass2_of_2(
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& x_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& x_remote_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_) {
+void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run_pass2_of_2(
+    const impl_scalar_type_2d_view_tpetra& x_,
+    const impl_scalar_type_2d_view_tpetra& x_remote_,
+    const impl_scalar_type_2d_view_tpetra& y_) {
 #define RUN_CASE(B)                                                                                                \
   {                                                                                                                \
     ComputeResidualAndSolve_2Pass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \

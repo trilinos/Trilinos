@@ -22,11 +22,11 @@ namespace Ifpack2::BlockHelperDetails {
 // This function allocates and populates these members of AmD:
 // A_x_offsets, A_x_offsets_remote
 template <typename MatrixType>
-void ComputeResidualVector<MatrixType>::precompute_A_x_offsets(
+void ComputeResidualVector<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::precompute_A_x_offsets(
     AmD<MatrixType> &amd,
     const PartInterface<MatrixType> &interf,
-    const Teuchos::RCP<const typename ComputeResidualVector<MatrixType>::impl_type::tpetra_crs_graph_type> &g,
-    const typename ComputeResidualVector<MatrixType>::impl_type::local_ordinal_type_1d_view &dm2cm,
+    const Teuchos::RCP<const typename impl_type::tpetra_crs_graph_type> &g,
+    const local_ordinal_type_1d_view &dm2cm,
     int blocksize,
     bool ownedRemoteSeparate) {
   using impl_type                 = ImplType<MatrixType>;
@@ -744,9 +744,9 @@ struct ComputeResidualFunctor {
 
 // y = b - Rx; seq method
 template <typename MatrixType>
-void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &y_,
-                                            const Const<typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra> &b_,
-                                            const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &x_) {
+void ComputeResidualVector<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run(const impl_scalar_type_2d_view_tpetra &y_,
+                                                                                     const Const<impl_scalar_type_2d_view_tpetra> &b_,
+                                                                                     const impl_scalar_type_2d_view_tpetra &x_) {
   IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
   IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<SeqTag>", ComputeResidual0, execution_space);
 
@@ -772,10 +772,10 @@ void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector
 
 // y = b - R (x , x_remote)
 template <typename MatrixType>
-void ComputeResidualVector<MatrixType>::run(const vector_type_3d_view &y_packed_,
-                                            const Const<typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra> &b_,
-                                            const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &x_,
-                                            const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &x_remote_) {
+void ComputeResidualVector<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run(const vector_type_3d_view &y_packed_,
+                                                                                     const Const<impl_scalar_type_2d_view_tpetra> &b_,
+                                                                                     const impl_scalar_type_2d_view_tpetra &x_,
+                                                                                     const impl_scalar_type_2d_view_tpetra &x_remote_) {
   IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
   IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<AsyncTag>", ComputeResidual0, execution_space);
 
@@ -871,11 +871,11 @@ void ComputeResidualVector<MatrixType>::run(const vector_type_3d_view &y_packed_
 
 // y = b - R (y , y_remote)
 template <typename MatrixType>
-void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector<MatrixType>::vector_type_3d_view &y_packed_,
-                                            const Const<typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra> &b_,
-                                            const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &x_,
-                                            const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &x_remote_,
-                                            const bool compute_owned) {
+void ComputeResidualVector<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run(const vector_type_3d_view &y_packed_,
+                                                                                     const Const<impl_scalar_type_2d_view_tpetra> &b_,
+                                                                                     const impl_scalar_type_2d_view_tpetra &x_,
+                                                                                     const impl_scalar_type_2d_view_tpetra &x_remote_,
+                                                                                     const bool compute_owned) {
   IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
   IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<OverlapTag>", ComputeResidual0, execution_space);
 
