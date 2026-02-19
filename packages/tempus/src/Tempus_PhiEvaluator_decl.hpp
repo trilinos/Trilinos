@@ -29,6 +29,7 @@ class PhiLinearSolver {
   ~PhiLinearSolver() {}
 
   // void computeMassMatrix();
+  void setLumpMassMatrix(const bool lump);
   void computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Mf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
   void solveMass(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> f, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf) const;
@@ -47,7 +48,7 @@ class PhiLinearSolver {
 
  private:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
-  const bool lumpMass_;
+  bool lumpMass_;
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> fullMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lumpMassMatrix_;

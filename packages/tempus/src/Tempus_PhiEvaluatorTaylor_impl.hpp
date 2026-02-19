@@ -35,13 +35,15 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
       "\n"
       "The default is 2.");
 
-     pl->set<bool>(
-      "Zero Initial Guess", false,
-      "Indicates whether to use a zero initial guess for the nonlinear\n"
-      "solver when computing phi-function evaluations.");
+  pl->set<bool>(
+  "Zero Initial Guess", false,
+  "Indicates whether to use a zero initial guess for the nonlinear\n"
+  "solver when computing phi-function evaluations.");
 
-      pl->set<std::string>("Solver Name", "Demo Solver", "Solver name for PhiEvaluator.");
-      pl->set<std::string>("Predictor Stepper Type", "None", "Solver name for PhiEvaluator.");
+  pl->set<std::string>("Solver Name", "Demo Solver", "Solver name for PhiEvaluator.");
+  pl->set<std::string>("Predictor Stepper Type", "None", "Solver name for PhiEvaluator.");
+
+  pl->set<bool>("Lump Mass Matrix", true, "Whether to lump the mass matrix in PhiEvaluator.");
 
   //pl->set("?", *member_->getNonconstParameterList());
 
@@ -58,6 +60,8 @@ template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> phiv,
 							       int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b)
 {
+  // phi->setLumpMassMatrix(useLumpedMass_);
+  this->phiLinSolv_->setLumpMassMatrix(useLumpedMass_);
   this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
   this->phiLinSolv_->computeJacobian(*inArgs_lin_);
   this->phiLinSolv_->buildK(k);
@@ -145,6 +149,17 @@ Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluatorTaylor<Scalar>::matrix
   return matExp_v_;
 }
 
+template<class Scalar>
+void PhiEvaluatorTaylor<Scalar>::setLumpMassMatrix(bool lump)
+{
+  if (this->phiLinSolv_ != Teuchos::null)
+  {
+    std::cout << "Setting lump mass matrix to " << lump << std::endl;
+    this->phiLinSolv_->setLumpMassMatrix(lump);
+  }
+    useLumpedMass_ = lump;
+}
+
 // Nonmember constructors.
 // ------------------------------------------------------------------------
 
@@ -158,8 +173,11 @@ Teuchos::RCP<PhiEvaluatorTaylor<Scalar> > createPhiEvaluatorTaylor(
 
   pl->validateParametersAndSetDefaults(*phi->getValidParameters());
 
-  auto test = pl->get<int>("Taylor Expansion Order", 10);
-  phi->setTaylorExpansionOrder(test);
+  phi->setTaylorExpansionOrder(pl->get<int>("Taylor Expansion Order", 10));
+  std::cout << "Parameter List: " << *pl << std::endl;
+
+  // phi->setLumpMassMatrix(false);
+  phi->setLumpMassMatrix(pl->get<bool>("Lump Mass Matrix", true));
   phi->setName(pl->name());
   //phi->setThing(pl->get("Thing", "default"));
 
