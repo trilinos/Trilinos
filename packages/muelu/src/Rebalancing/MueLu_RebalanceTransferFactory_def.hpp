@@ -293,7 +293,7 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
         coordImporter = ImportFactory::Build(origMap, targetVectorMap);
       }
 
-      RCP<xdMV> permutedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
+      RCP<xdMV> permutedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors(), false);
       permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
       if (pL.isParameter("repartition: use subcommunicators") == true && pL.get<bool>("repartition: use subcommunicators") == true)
@@ -337,7 +337,7 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
         materialImporter = ImportFactory::Build(origMap, targetVectorMap);
       }
 
-      RCP<MultiVector> permutedMaterial = MultiVectorFactory::Build(materialImporter->getTargetMap(), material->getNumVectors());
+      RCP<MultiVector> permutedMaterial = MultiVectorFactory::Build(materialImporter->getTargetMap(), material->getNumVectors(), false);
       permutedMaterial->doImport(*material, *materialImporter, Xpetra::INSERT);
 
       if (pL.get<bool>("repartition: use subcommunicators") == true)
@@ -379,7 +379,7 @@ void RebalanceTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(
       // This line must be after the Get call
       SubFactoryMonitor subM(*this, "Rebalancing nullspace", coarseLevel);
 
-      RCP<MultiVector> permutedNullspace = MultiVectorFactory::Build(importer->getTargetMap(), nullspace->getNumVectors());
+      RCP<MultiVector> permutedNullspace = MultiVectorFactory::Build(importer->getTargetMap(), nullspace->getNumVectors(), false);
       permutedNullspace->doImport(*nullspace, *importer, Xpetra::INSERT);
 
       if (pL.get<bool>("repartition: use subcommunicators") == true)

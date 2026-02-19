@@ -203,15 +203,9 @@ Teuchos::RCP<matrix_type> applyFilter_GID(const matrix_type& A, const filter_typ
 
 template <class scalar_type, class local_ordinal_type>
 struct AbsoluteMagnitudeFilter {
-#if KOKKOS_VERSION >= 40799
   using ATS              = KokkosKernels::ArithTraits<scalar_type>;
   using impl_scalar_type = typename ATS::val_type;
   using implATS          = KokkosKernels::ArithTraits<impl_scalar_type>;
-#else
-  using ATS              = Kokkos::ArithTraits<scalar_type>;
-  using impl_scalar_type = typename ATS::val_type;
-  using implATS          = Kokkos::ArithTraits<impl_scalar_type>;
-#endif
 
   typename implATS::magnitudeType tol_;
 

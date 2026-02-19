@@ -35,7 +35,7 @@ Driver<VT, DT>::Driver()
       #else
       _variant(-1), // sequential by default
       #endif
-      _nstreams(16), _pivot_tol(0.0),
+      _nstreams(16), _shift_diag(false), _pivot_tol(0.0),
 #if defined(KOKKOS_ENABLE_HIP)
       _store_transpose(true)
 #else
@@ -209,13 +209,17 @@ template <typename VT, typename DT> void Driver<VT, DT>::setPivotTolerance(const
   _pivot_tol = pivot_tol;
 }
 
+template <typename VT, typename DT> void Driver<VT, DT>::shiftDiagonal() {
+  _shift_diag = true;
+}
+
 template <typename VT, typename DT> void Driver<VT, DT>::useNoPivotTolerance() {
   _pivot_tol = 0.0;
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::useDefaultPivotTolerance() {
   using arith_traits = ArithTraits<value_type>;
-  _pivot_tol = sqrt(arith_traits::epsilon());
+  _pivot_tol = Kokkos::sqrt(arith_traits::epsilon());
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::storeExplicitTranspose(bool flag) {
@@ -424,6 +428,10 @@ template <typename VT, typename DT> int Driver<VT, DT>::initialize() {
 
     factory.createObject(_N);
   }
+  if (_shift_diag) {
+    Kokkos::resize(_dj, _m);
+    Kokkos::resize(_dv, _m);
+  }
   return 0;
 }
 
@@ -435,25 +443,67 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
   if (method != _method) {
     setFactorizationMethod(method);
   }
+  using arith_traits = ArithTraits<value_type>;
+  typename arith_traits::mag_type shift(0.0);
+  if (_shift_diag) {
+    const value_type zero(0.0);
+    const ordinal_type m = _m;
+    Kokkos::RangePolicy<exec_space> range_policy(0, m);
+
+    // Compute alpha = ||A||_2
+    value_type alpha(zero);
+    //for (size_t i=0; i<ax.extent(0); i++) alpha += arith_traits::conj(ax(i)) * ax(i);
+    const auto ap = _ap;
+    const auto aj = _aj;
+    const auto dj = _dj;
+    const auto dv = _dv;
+    // * parallel-sum among rows
+    Kokkos::parallel_for(
+      range_policy, KOKKOS_LAMBDA(const ordinal_type &i) {
+        dv(i) = zero;
+        dj(i) = -1;
+        for (size_type k=ap(i); k<ap(i+1); k++) {
+          dv(i) += arith_traits::conj(ax(k)) * ax(k);
+          if (aj(k) == i) dj(i) = k;
+        }
+      });
+    // * atomic_sum row-sums
+    Kokkos::parallel_reduce(
+      range_policy, KOKKOS_LAMBDA (int i, value_type &tmp) {
+        tmp += dv(i);
+      }, alpha);
+    // Compute shift = sqrt(eps * ||A||_2)
+    shift = Kokkos::sqrt(arith_traits::abs(alpha * arith_traits::epsilon()));
+    // Add shift to diagonal
+    //for (ordinal_type i=0; i<_m; i++) for (ordinal_type k=_ap(i); k<_ap(i+1); k++) if(_aj(k) == i) ax(k) += alpha;
+    Kokkos::parallel_for(
+      range_policy, KOKKOS_LAMBDA(const ordinal_type i) {
+        ax(dj(i)) += shift;
+      });
+  }
   if (_verbose) {
     switch (_method) {
     case LDL_nopiv: {
       printf("TachoSolver: Factorize LDL (no pivot)\n");
+      if (_shift_diag) printf(" > shifting diagonal by %.2e\n",shift);
       printf("=====================================\n");
       break;
     }
     case Cholesky: {
       printf("TachoSolver: Factorize Cholesky\n");
+      if (_shift_diag) printf(" > shifting diagonal by %.2e\n",shift);
       printf("===============================\n");
       break;
     }
     case LDL: {
       printf("TachoSolver: Factorize LDL\n");
+      if (_shift_diag) printf(" > shifting diagonal by %.2e\n",shift);
       printf("==========================\n");
       break;
     }
     case SymLU: {
       printf("TachoSolver: Factorize SymLU\n");
+      if (_shift_diag) printf(" > shifting diagonal by %.2e\n",shift);
       printf("============================\n");
       break;
     }

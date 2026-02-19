@@ -181,7 +181,6 @@ void reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
                               Teuchos::ArrayRCP<LocalOrdinal>& type3LIDs,
                               Teuchos::RCP<const Teuchos::Comm<int>>& rcomm) {
 #ifdef HAVE_TPETRACORE_MPI
-  using Teuchos::TimeMonitor;
   using ::Tpetra::Details::Behavior;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
@@ -244,9 +243,7 @@ void reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   Teuchos::Array<Teuchos::ArrayRCP<pidgidpair_t>> RSB(NumRecvs);
 
   {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    TimeMonitor set_all(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSB")));
-#endif
+    Tpetra::Details::ProfilingRegion set_all("Import_Util2::ReverseND::isMMallSetRSB");
 
     // 25 Jul 2018: CBL
     // todo:std::unordered_set (hash table),
@@ -260,9 +257,7 @@ void reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
 
     Teuchos::Array<std::set<pidgidpair_t>> pidsets(NumRecvs);
     {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-      TimeMonitor set_insert(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBinsert")));
-#endif
+      Tpetra::Details::ProfilingRegion set_insert("Import_Util2::ReverseND::isMMallSetRSBinsert");
       for (size_t i = 0; i < NumExportLIDs; i++) {
         LO lid     = ExportLIDs[i];
         GO exp_pid = ExportPIDs[i];
@@ -278,9 +273,7 @@ void reverseNeighborDiscovery(const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
     }
 
     {
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-      TimeMonitor set_cpy(*TimeMonitor::getNewTimer(prefix + std::string("isMMallSetRSBcpy")));
-#endif
+      Tpetra::Details::ProfilingRegion set_cpy("Import_Util2::ReverseND::isMMallSetRSBcpy");
       int jj = 0;
       for (auto&& ps : pidsets) {
         auto s  = ps.size();

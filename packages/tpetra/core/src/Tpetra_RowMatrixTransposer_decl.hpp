@@ -137,9 +137,6 @@ class BlockCrsMatrixTransposer {
  private:
   //! The original matrix to be transposed.
   Teuchos::RCP<const bcrs_matrix_type> origMatrix_;
-
-  //! Label for timers
-  std::string label_;
 };
 
 }  // namespace Tpetra

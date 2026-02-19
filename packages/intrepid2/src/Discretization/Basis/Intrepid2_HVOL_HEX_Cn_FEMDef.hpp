@@ -19,7 +19,7 @@ namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
   namespace Impl {
-    
+
     template<EOperator OpType>
     template<typename OutputViewType,
              typename InputViewType,
@@ -47,8 +47,8 @@ namespace Intrepid2 {
       auto ptr0 = work.data();
       auto ptr1 = work.data()+cardLine*npts*dim_s;
       auto ptr2 = work.data()+2*cardLine*npts*dim_s;
-      auto ptr3 = work.data()+3*cardLine*npts*dim_s;      
-      
+      auto ptr3 = work.data()+3*cardLine*npts*dim_s;
+
       typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
 
       switch (OpType) {
@@ -57,7 +57,7 @@ namespace Intrepid2 {
         ViewType output_x = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts);
         ViewType output_y = createMatchingUnmanagedView<ViewType>(input, ptr2, cardLine, npts);
         ViewType output_z = createMatchingUnmanagedView<ViewType>(input, ptr3, cardLine, npts);
-        
+
         Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
           getValues(output_x, input_x, work_line, vinv);
 
@@ -75,7 +75,7 @@ namespace Intrepid2 {
               for (ordinal_type l=0;l<npts;++l)
                 output.access(idx,l) = output_x.access(i,l)*output_y.access(j,l)*output_z.access(k,l);
         break;
-      }        
+      }
       case OPERATOR_GRAD:
       case OPERATOR_D1:
       case OPERATOR_D2:
@@ -88,6 +88,7 @@ namespace Intrepid2 {
       case OPERATOR_D9:
       case OPERATOR_D10:
         opDn = getOperatorOrder(OpType);
+        [[fallthrough]];
       case OPERATOR_Dn: {
         const ordinal_type dkcard = opDn + 1;
 
@@ -103,10 +104,10 @@ namespace Intrepid2 {
 
             if (mult_x < 0) {
               // pass
-            } else {              
+            } else {
               ViewType work_line = createMatchingUnmanagedView<ViewType>(input, ptr0, cardLine, npts);
               decltype(work_line)  output_x, output_y, output_z;
-                  
+
               if (mult_x) {
                 output_x = createMatchingUnmanagedView<ViewType>(input, ptr1, cardLine, npts, 1);
                 Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
@@ -116,7 +117,7 @@ namespace Intrepid2 {
                 Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
                   getValues(output_x, input_x, work_line, vinv);
               }
-              
+
               if (mult_y) {
                 output_y = createMatchingUnmanagedView<ViewType>(input, ptr2, cardLine, npts, 1);
                 Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
@@ -137,7 +138,7 @@ namespace Intrepid2 {
                   getValues(output_z, input_z, work_line, vinv);
               }
 
-              // tensor product (extra dimension of ouput x,y and z are ignored)              
+              // tensor product (extra dimension of ouput x,y and z are ignored)
               ordinal_type idx = 0;
               for (ordinal_type k=0;k<cardLine;++k) // z
                 for (ordinal_type j=0;j<cardLine;++j) // y
@@ -150,13 +151,13 @@ namespace Intrepid2 {
         break;
       }
       default: {
-        INTREPID2_TEST_FOR_ABORT( true , 
+        INTREPID2_TEST_FOR_ABORT( true ,
                                   ">>> ERROR (Basis_HVOL_HEX_Cn_FEM): Operator type not implemented");
         break;
       }
       }
     }
-  
+
     template<typename DT, ordinal_type numPtsPerEval,
              typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties,
@@ -171,7 +172,7 @@ namespace Intrepid2 {
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
       typedef typename ExecSpace<typename inputPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
-      
+
       // loopSize corresponds to cardinality
       const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
       const auto loopSizeTmp2 = (inputPoints.extent(0)%numPtsPerEval != 0);
@@ -230,7 +231,7 @@ namespace Intrepid2 {
     this->pointType_         = pointType;
     this->vinv_ = Kokkos::DynRankView<typename ScalarViewType::value_type,DT>("HVOL::HEX::Cn::vinv", cardLine, cardLine);
     lineBasis.getVandermondeInverse(this->vinv_);
-    
+
     const ordinal_type spaceDim = 3;
     this->basisCardinality_     = cardLine*cardLine*cardLine;
     this->basisDegree_          = order;
@@ -259,7 +260,7 @@ namespace Intrepid2 {
             const auto tag_y = lineBasis.getDofTag(j);
             for (ordinal_type i=0;i<cardLine;++i,++idx) { // x
               const auto tag_x = lineBasis.getDofTag(i);
-              
+
               // interior
               tags[idx][0] = 3; // interior dof
               tags[idx][1] = 0;
@@ -313,8 +314,8 @@ namespace Intrepid2 {
   }
 
   template<typename DT, typename OT, typename PT>
-  void 
-  Basis_HVOL_HEX_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(       
+  void
+  Basis_HVOL_HEX_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(
                                     ordinal_type& perTeamSpaceSize,
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
@@ -325,16 +326,16 @@ namespace Intrepid2 {
 
   template<typename DT, typename OT, typename PT>
   KOKKOS_INLINE_FUNCTION
-  void 
-  Basis_HVOL_HEX_Cn_FEM<DT,OT,PT>::getValues(       
+  void
+  Basis_HVOL_HEX_Cn_FEM<DT,OT,PT>::getValues(
           OutputViewType outputValues,
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const typename DT::execution_space::scratch_memory_space & scratchStorage,
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
-      
+
       INTREPID2_TEST_FOR_ABORT( !((subcellDim == -1) && (subcellOrdinal == -1)),
         ">>> ERROR: (Intrepid2::Basis_HVOL_HEX_Cn_FEM::getValues), The capability of selecting subsets of basis functions has not been implemented yet.");
 
@@ -353,7 +354,7 @@ namespace Intrepid2 {
             Impl::Basis_HVOL_HEX_Cn_FEM::Serial<OPERATOR_VALUE>::getValues( output, input, work, vinv_, basisDegree_);
           });
           break;
-        default: {          
+        default: {
           INTREPID2_TEST_FOR_ABORT( true,
             ">>> ERROR (Basis_HVOL_HEX_Cn_FEM): getValues not implemented for this operator");
           }

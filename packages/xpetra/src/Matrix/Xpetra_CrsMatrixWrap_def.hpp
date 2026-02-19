@@ -401,11 +401,7 @@ void CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::setObjectLabel(co
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-#if KOKKOS_VERSION >= 40799
 typename Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::host_mirror_type
-#else
-typename Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type::HostMirror
-#endif
 CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getLocalMatrixHost() const {
   return matrixData_->getLocalMatrixHost();
 }

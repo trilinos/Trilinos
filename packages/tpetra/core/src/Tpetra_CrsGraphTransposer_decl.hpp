@@ -59,7 +59,7 @@ class CrsGraphTransposer {
   //@{
 
   //! Constructor that takes the graph to transpose.
-  CrsGraphTransposer(const Teuchos::RCP<const crs_graph_type> &origGraph, const std::string &label = std::string());
+  CrsGraphTransposer(const Teuchos::RCP<const crs_graph_type> &origGraph);
 
   //@}
   //! @name Methods for computing the explicit transpose.
@@ -84,9 +84,6 @@ class CrsGraphTransposer {
  private:
   //! The original graph to be transposed.
   Teuchos::RCP<const crs_graph_type> origGraph_;
-
-  //! Label for timers
-  std::string label_;
 };
 
 }  // namespace Tpetra

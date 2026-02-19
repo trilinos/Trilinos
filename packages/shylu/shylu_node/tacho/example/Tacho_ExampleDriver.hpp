@@ -50,6 +50,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
 #else
   bool storeTranspose = false;
 #endif
+  bool shiftDiag = false;
   bool perturbPivot = false;
   int nrhs = 1;
   bool randomRHS = false;
@@ -222,6 +223,10 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       solver.setLevelSetOptionNumStreams(nstreams);
       solver.setSmallProblemThresholdsize(small_problem_thres);
       solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
+      if (shiftDiag) {
+        if (verbose) std::cout << " > shift diagonals with a small pertubation" << std::endl;
+        solver.shiftDiagonal();
+      }
       if (perturbPivot) {
         if (verbose) std::cout << " > perturb tiny pivots" << std::endl;
         solver.useDefaultPivotTolerance();

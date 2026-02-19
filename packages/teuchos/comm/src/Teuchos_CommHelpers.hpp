@@ -12,6 +12,7 @@
 
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommUtilities.hpp"
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 #include "Teuchos_SerializationTraitsHelpers.hpp"
 #include "Teuchos_ReductionOpHelpers.hpp"
 #include "Teuchos_SerializerHelpers.hpp"
@@ -1120,6 +1121,7 @@ createOp (const EReductionType reductType)
            "(EReductionType): The Packet type " << TypeNameTraits<Packet>::name ()
            << " is not less-than comparable, so it does not make sense to do a "
            "MIN reduction with it.");
+        TEUCHOS_UNREACHABLE_RETURN(nullptr);
       }
     }
     case REDUCE_MAX: {
@@ -1132,6 +1134,7 @@ createOp (const EReductionType reductType)
            "(EReductionType): The Packet type " << TypeNameTraits<Packet>::name ()
            << " is not less-than comparable, so it does not make sense to do a "
            "MAX reduction with it.");
+        TEUCHOS_UNREACHABLE_RETURN(nullptr);
       }
     }
     case REDUCE_AND: {

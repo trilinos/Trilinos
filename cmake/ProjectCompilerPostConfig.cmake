@@ -62,7 +62,6 @@ set(upcoming_warnings
     maybe-uninitialized  # -Wall
     mismatched-new-delete  # -Wall
     pessimizing-move  # -Wall
-    redundant-move  # -Wextra
     restrict
     #unused-parameter  # -Wextra, lots of warnings
     ${Trilinos_ADDITIONAL_WARNINGS}
@@ -130,6 +129,7 @@ set(promoted_warnings
     parentheses
     pointer-sign
     range-loop-construct
+    redundant-move  # -Wextra
     reorder
     return-type
     self-move

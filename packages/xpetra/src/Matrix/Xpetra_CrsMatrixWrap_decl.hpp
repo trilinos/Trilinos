@@ -414,11 +414,7 @@ class CrsMatrixWrap : public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   //@}
 
   virtual local_matrix_type getLocalMatrixDevice() const;
-#if KOKKOS_VERSION >= 40799
   virtual typename local_matrix_type::host_mirror_type getLocalMatrixHost() const;
-#else
-  virtual typename local_matrix_type::HostMirror getLocalMatrixHost() const;
-#endif
 
   // JG: Added:
 

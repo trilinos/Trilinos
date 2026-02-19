@@ -91,11 +91,7 @@ class NullspaceFunctor {
   LO numPDEs;
   LO nullspaceDim;
   typedef typename NullspaceType::value_type SC;
-#if KOKKOS_VERSION >= 40799
   typedef KokkosKernels::ArithTraits<SC> ATS;
-#else
-  typedef Kokkos::ArithTraits<SC> ATS;
-#endif
 
  public:
   NullspaceFunctor(NullspaceType nullspace_, CoordsType coords_, MeanCoordsType mean_, LO numPDEs_, LO nullspaceDim_)
@@ -187,7 +183,7 @@ void NullspaceFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& c
       } else
         GetOStream(Runtime1) << "Generating canonical nullspace: dimension = " << numPDEs << std::endl;
 
-      nullspace = MultiVectorFactory::Build(A->getDomainMap(), nullspaceDim);
+      nullspace = MultiVectorFactory::Build(A->getDomainMap(), nullspaceDim, true);
 
       fillNullspaceVector(nullspace, numPDEs, nullspaceDim, coordsView, meanView);
     }

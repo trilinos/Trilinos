@@ -17,11 +17,7 @@
 #include "KokkosBatched_Trsv_Serial_Impl.hpp"
 #include "MueLu_DroppingCommon.hpp"
 #include "Kokkos_Core.hpp"
-#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
-#else
-#include "Kokkos_ArithTraits.hpp"
-#endif
 #include "Teuchos_RCP.hpp"
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_MultiVector.hpp"
@@ -40,25 +36,13 @@ class UnweightedDistanceFunctor {
   using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS     = Kokkos::ArithTraits<scalar_type>;
-#endif
-  using impl_scalar_type = typename ATS::val_type;
-#if KOKKOS_VERSION >= 40799
-  using implATS = KokkosKernels::ArithTraits<impl_scalar_type>;
-#else
-  using implATS = Kokkos::ArithTraits<impl_scalar_type>;
-#endif
-  using magnitudeType = typename implATS::magnitudeType;
-#if KOKKOS_VERSION >= 40799
-  using magATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-  using magATS  = Kokkos::ArithTraits<magnitudeType>;
-#endif
-  using coords_type       = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_coords_type = typename coords_type::dual_view_type_const::t_dev;
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using magATS             = KokkosKernels::ArithTraits<magnitudeType>;
+  using coords_type        = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_coords_type  = typename coords_type::dual_view_type_const::t_dev;
 
   Teuchos::RCP<coords_type> coordsMV;
   Teuchos::RCP<coords_type> ghostedCoordsMV;
@@ -71,7 +55,7 @@ class UnweightedDistanceFunctor {
     coordsMV      = coords_;
     auto importer = A.getCrsGraph()->getImporter();
     if (!importer.is_null()) {
-      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
+      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors(), false);
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
       coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
@@ -104,25 +88,13 @@ class WeightedDistanceFunctor {
   using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS     = Kokkos::ArithTraits<scalar_type>;
-#endif
-  using impl_scalar_type = typename ATS::val_type;
-#if KOKKOS_VERSION >= 40799
-  using implATS = KokkosKernels::ArithTraits<impl_scalar_type>;
-#else
-  using implATS = Kokkos::ArithTraits<impl_scalar_type>;
-#endif
-  using magnitudeType = typename implATS::magnitudeType;
-#if KOKKOS_VERSION >= 40799
-  using magATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-  using magATS  = Kokkos::ArithTraits<magnitudeType>;
-#endif
-  using coords_type       = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_coords_type = typename coords_type::dual_view_type_const::t_dev;
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using magATS             = KokkosKernels::ArithTraits<magnitudeType>;
+  using coords_type        = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_coords_type  = typename coords_type::dual_view_type_const::t_dev;
 
   Teuchos::RCP<coords_type> coordsMV;
   Teuchos::RCP<coords_type> ghostedCoordsMV;
@@ -137,7 +109,7 @@ class WeightedDistanceFunctor {
     coordsMV      = coords_;
     auto importer = A.getCrsGraph()->getImporter();
     if (!importer.is_null()) {
-      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
+      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors(), false);
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
       coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
@@ -174,25 +146,13 @@ class BlockWeightedDistanceFunctor {
   using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS     = Kokkos::ArithTraits<scalar_type>;
-#endif
-  using impl_scalar_type = typename ATS::val_type;
-#if KOKKOS_VERSION >= 40799
-  using implATS = KokkosKernels::ArithTraits<impl_scalar_type>;
-#else
-  using implATS = Kokkos::ArithTraits<impl_scalar_type>;
-#endif
-  using magnitudeType = typename implATS::magnitudeType;
-#if KOKKOS_VERSION >= 40799
-  using magATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-  using magATS  = Kokkos::ArithTraits<magnitudeType>;
-#endif
-  using coords_type       = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_coords_type = typename coords_type::dual_view_type_const::t_dev;
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using magATS             = KokkosKernels::ArithTraits<magnitudeType>;
+  using coords_type        = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_coords_type  = typename coords_type::dual_view_type_const::t_dev;
 
   Teuchos::RCP<coords_type> coordsMV;
   Teuchos::RCP<coords_type> ghostedCoordsMV;
@@ -208,7 +168,7 @@ class BlockWeightedDistanceFunctor {
     coordsMV      = coords_;
     auto importer = A.getCrsGraph()->getImporter();
     if (!importer.is_null()) {
-      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
+      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors(), false);
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
       coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
@@ -240,27 +200,15 @@ class BlockWeightedDistanceFunctor {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class ScalarMaterialDistanceFunctor {
  private:
-  using matrix_type        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_matrix_type  = typename matrix_type::local_matrix_device_type;
-  using scalar_type        = typename local_matrix_type::value_type;
-  using local_ordinal_type = LocalOrdinal;
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS     = Kokkos::ArithTraits<scalar_type>;
-#endif
-  using impl_scalar_type = typename ATS::val_type;
-#if KOKKOS_VERSION >= 40799
-  using implATS = KokkosKernels::ArithTraits<impl_scalar_type>;
-#else
-  using implATS = Kokkos::ArithTraits<impl_scalar_type>;
-#endif
-  using magnitudeType = typename implATS::magnitudeType;
-#if KOKKOS_VERSION >= 40799
-  using magATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-  using magATS  = Kokkos::ArithTraits<magnitudeType>;
-#endif
+  using matrix_type         = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_matrix_type   = typename matrix_type::local_matrix_device_type;
+  using scalar_type         = typename local_matrix_type::value_type;
+  using local_ordinal_type  = LocalOrdinal;
+  using ATS                 = KokkosKernels::ArithTraits<scalar_type>;
+  using impl_scalar_type    = typename ATS::val_type;
+  using implATS             = KokkosKernels::ArithTraits<impl_scalar_type>;
+  using magnitudeType       = typename implATS::magnitudeType;
+  using magATS              = KokkosKernels::ArithTraits<magnitudeType>;
   using coords_type         = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
   using local_coords_type   = typename coords_type::dual_view_type_const::t_dev;
   using material_type       = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
@@ -284,12 +232,12 @@ class ScalarMaterialDistanceFunctor {
     materialMV    = material_;
     auto importer = A.getCrsGraph()->getImporter();
     if (!importer.is_null()) {
-      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
+      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors(), false);
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
       coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
 
-      ghostedMaterialMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), materialMV->getNumVectors());
+      ghostedMaterialMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), materialMV->getNumVectors(), false);
       ghostedMaterialMV->doImport(*materialMV, *importer, Xpetra::INSERT);
       material        = materialMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedMaterial = ghostedMaterialMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
@@ -354,27 +302,15 @@ class TensorMaterialDistanceFunctor {
   using local_matrix_type  = typename matrix_type::local_matrix_device_type;
   using scalar_type        = typename local_matrix_type::value_type;
   using local_ordinal_type = LocalOrdinal;
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS     = Kokkos::ArithTraits<scalar_type>;
-#endif
-  using impl_scalar_type = typename ATS::val_type;
-#if KOKKOS_VERSION >= 40799
-  using implATS = KokkosKernels::ArithTraits<impl_scalar_type>;
-#else
-  using implATS = Kokkos::ArithTraits<impl_scalar_type>;
-#endif
-  using magnitudeType = typename implATS::magnitudeType;
-#if KOKKOS_VERSION >= 40799
-  using magATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-  using magATS  = Kokkos::ArithTraits<magnitudeType>;
-#endif
-  using coords_type       = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
-  using local_coords_type = typename coords_type::dual_view_type_const::t_dev;
-  using material_type     = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-  using memory_space      = typename local_matrix_type::memory_space;
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using magATS             = KokkosKernels::ArithTraits<magnitudeType>;
+  using coords_type        = Xpetra::MultiVector<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_coords_type  = typename coords_type::dual_view_type_const::t_dev;
+  using material_type      = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using memory_space       = typename local_matrix_type::memory_space;
 
   using local_material_type = Kokkos::View<impl_scalar_type***, memory_space>;
   using local_dist_type     = Kokkos::View<impl_scalar_type**, memory_space>;
@@ -397,7 +333,7 @@ class TensorMaterialDistanceFunctor {
 
     auto importer = A.getCrsGraph()->getImporter();
     if (!importer.is_null()) {
-      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors());
+      ghostedCoordsMV = Xpetra::MultiVectorFactory<magnitudeType, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), coordsMV->getNumVectors(), false);
       ghostedCoordsMV->doImport(*coordsMV, *importer, Xpetra::INSERT);
       coords        = coordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
       ghostedCoords = ghostedCoordsMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
@@ -409,7 +345,7 @@ class TensorMaterialDistanceFunctor {
     {
       Teuchos::RCP<material_type> ghostedMaterial;
       if (!importer.is_null()) {
-        ghostedMaterial = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), material_->getNumVectors());
+        ghostedMaterial = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), material_->getNumVectors(), false);
         ghostedMaterial->doImport(*material_, *importer, Xpetra::INSERT);
       } else {
         ghostedMaterial = material_;
@@ -482,22 +418,14 @@ getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
             DistanceFunctorType& distFunctor) {
   using scalar_type        = Scalar;
   using local_ordinal_type = LocalOrdinal;
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS     = Kokkos::ArithTraits<scalar_type>;
-#endif
-  using impl_scalar_type = typename ATS::val_type;
-#if KOKKOS_VERSION >= 40799
-  using implATS = KokkosKernels::ArithTraits<impl_scalar_type>;
-#else
-  using implATS = Kokkos::ArithTraits<impl_scalar_type>;
-#endif
-  using magnitudeType   = typename implATS::magnitudeType;
-  using execution_space = typename Node::execution_space;
-  using range_type      = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using execution_space    = typename Node::execution_space;
+  using range_type         = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
 
-  auto diag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRowMap(), 1);
+  auto diag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRowMap(), 1, false);
   {
     auto lclA    = A.getLocalMatrixDevice();
     auto lclDiag = diag->getLocalViewDevice(Tpetra::Access::OverwriteAll);
@@ -528,7 +456,7 @@ getDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
   }
   auto importer = A.getCrsGraph()->getImporter();
   if (!importer.is_null()) {
-    auto ghostedDiag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getColMap(), 1);
+    auto ghostedDiag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getColMap(), 1, false);
     ghostedDiag->doImport(*diag, *importer, Xpetra::INSERT);
     return ghostedDiag;
   } else {
@@ -542,22 +470,14 @@ getMaxMinusOffDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
                        DistanceFunctorType& distFunctor) {
   using scalar_type        = Scalar;
   using local_ordinal_type = LocalOrdinal;
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS     = Kokkos::ArithTraits<scalar_type>;
-#endif
-  using impl_scalar_type = typename ATS::val_type;
-#if KOKKOS_VERSION >= 40799
-  using implATS = KokkosKernels::ArithTraits<impl_scalar_type>;
-#else
-  using implATS = Kokkos::ArithTraits<impl_scalar_type>;
-#endif
-  using magnitudeType   = typename implATS::magnitudeType;
-  using execution_space = typename Node::execution_space;
-  using range_type      = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
+  using ATS                = KokkosKernels::ArithTraits<scalar_type>;
+  using impl_scalar_type   = typename ATS::val_type;
+  using implATS            = KokkosKernels::ArithTraits<impl_scalar_type>;
+  using magnitudeType      = typename implATS::magnitudeType;
+  using execution_space    = typename Node::execution_space;
+  using range_type         = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
 
-  auto diag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRowMap(), 1);
+  auto diag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getRowMap(), 1, false);
   {
     auto lclA    = A.getLocalMatrixDevice();
     auto lclDiag = diag->getLocalViewDevice(Tpetra::Access::OverwriteAll);
@@ -586,7 +506,7 @@ getMaxMinusOffDiagonal(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   }
   auto importer = A.getCrsGraph()->getImporter();
   if (!importer.is_null()) {
-    auto ghostedDiag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getColMap(), 1);
+    auto ghostedDiag = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(A.getColMap(), 1, false);
     ghostedDiag->doImport(*diag, *importer, Xpetra::INSERT);
     return ghostedDiag;
   } else {
@@ -617,18 +537,10 @@ class DropFunctor {
 
   using results_view = Kokkos::View<DecisionType*, memory_space>;
 
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS     = Kokkos::ArithTraits<scalar_type>;
-#endif
+  using ATS                 = KokkosKernels::ArithTraits<scalar_type>;
   using magnitudeType       = typename ATS::magnitudeType;
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
-#if KOKKOS_VERSION >= 40799
-  using mATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-  using mATS    = Kokkos::ArithTraits<magnitudeType>;
-#endif
+  using mATS                = KokkosKernels::ArithTraits<magnitudeType>;
 
  private:
   local_matrix_type A;
@@ -746,18 +658,10 @@ class VectorDropFunctor {
 
   using results_view = Kokkos::View<DecisionType*, memory_space>;
 
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS     = Kokkos::ArithTraits<scalar_type>;
-#endif
+  using ATS                 = KokkosKernels::ArithTraits<scalar_type>;
   using magnitudeType       = typename ATS::magnitudeType;
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
-#if KOKKOS_VERSION >= 40799
-  using mATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-  using mATS    = Kokkos::ArithTraits<magnitudeType>;
-#endif
+  using mATS                = KokkosKernels::ArithTraits<magnitudeType>;
 
  private:
   local_matrix_type A;

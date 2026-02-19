@@ -28,11 +28,7 @@ template <typename MatrixType>
 class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
  public:
   typedef typename MatrixType::scalar_type scalar_type;
-#if KOKKOS_VERSION >= 40799
   typedef typename KokkosKernels::ArithTraits<scalar_type>::val_type impl_scalar_type;
-#else
-  typedef typename Kokkos::ArithTraits<scalar_type>::val_type impl_scalar_type;
-#endif
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;
@@ -73,11 +69,7 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
   typedef typename row_map_type::host_mirror_type host_row_map_type;
   typedef typename entries_type::host_mirror_type host_entries_type;
   typedef typename values_type::host_mirror_type host_values_type;
-#if KOKKOS_VERSION >= 40799
   typedef typename local_matrix_type::host_mirror_type host_local_matrix_type;
-#else
-  typedef typename local_matrix_type::HostMirror host_local_matrix_type;
-#endif
 
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::AdditiveSchwarzFilter: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 

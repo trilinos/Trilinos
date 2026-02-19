@@ -29,19 +29,11 @@ using nox_tpetra_multivector_t = NOX::Tpetra::MultiVector<Scalar, LocalOrdinal, 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 using nox_tpetra_vector_t = NOX::Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-#if KOKKOS_VERSION >= 40799
 template <typename Scalar>
 using magnitude_t = typename KokkosKernels::ArithTraits<Scalar>::magnitudeType;
 
 template <typename S>
 using arith_traits_ns = KokkosKernels::ArithTraits<S>;
-#else
-template <typename Scalar>
-using magnitude_t = typename Kokkos::ArithTraits<Scalar>::magnitudeType;
-
-template <typename S>
-using arith_traits_ns = Kokkos::ArithTraits<S>;
-#endif
 
 //! Function to check solution.
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>

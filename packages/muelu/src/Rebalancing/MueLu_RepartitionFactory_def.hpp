@@ -102,7 +102,6 @@ void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level&
   RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
   RCP<const Teuchos::Comm<int> > comm     = origComm;
 
-  int myRank   = comm->getRank();
   int numProcs = comm->getSize();
 
   RCP<const Teuchos::MpiComm<int> > tmpic = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
@@ -218,6 +217,7 @@ void RepartitionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level&
   //  * The decomposition vector contains the partitions ids that the corresponding GID belongs to
 
 #ifdef HAVE_MUELU_DEBUG
+  int myRank = comm->getRank();
   ArrayRCP<const GO> decompEntries;
   if (decomposition->getLocalLength() > 0)
     decompEntries = decomposition->getData(0);

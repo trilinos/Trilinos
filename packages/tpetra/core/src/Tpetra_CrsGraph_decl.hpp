@@ -21,6 +21,7 @@
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Util.hpp"  // need this here for sort2
 #include "Tpetra_Details_WrappedDualView.hpp"
+#include "Tpetra_Details_makeColMap.hpp"
 
 #include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
@@ -225,11 +226,7 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
                                    device_type, void, size_t>;
 
   //! The type of the part of the sparse graph on each MPI process.
-#if KOKKOS_VERSION >= 40799
   using local_graph_host_type = typename local_graph_device_type::host_mirror_type;
-#else
-  using local_graph_host_type = typename local_graph_device_type::HostMirror;
-#endif
 
   //! The Map specialization used by this class.
   using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -1634,6 +1631,16 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
                                                              typename CrsGraphType::global_ordinal_type,
                                                              typename CrsGraphType::node_type>>& rangeMap,
                                 const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+  // Friend declaration for nonmember function.
+  template <class LO, class GO, class NT>
+  friend int
+  Details::makeColMap(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
+                      Teuchos::Array<int>& remotePIDs,
+                      const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
+                      const CrsGraph<LO, GO, NT>& graph,
+                      const bool sortEachProcsGids,
+                      std::ostream* errStrm);
 
  public:
   /// \brief Import from <tt>this</tt> to the given destination

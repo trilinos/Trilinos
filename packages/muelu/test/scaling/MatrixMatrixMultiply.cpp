@@ -84,6 +84,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   double optSeed = -1;
   clp.setOption("seed", &optSeed, "random number seed (cast to unsigned int)");
 
+  bool useGaleri = false;
+  clp.setOption("useGaleri", "nouseGaleri", &useGaleri, "Use Galeri to generate a matrix instead of a random inputs.");
+
+  GO nx = 100, ny = 100, nz = 100;
+  Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D");
+
   std::ostringstream description;
   description << "This is a parallel-only test of the sparse matrix matrix multiply.  Two\n"
               << "\"random\" matrices are generated. They are most likely rectangular.  Each\n"
@@ -105,42 +111,85 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   RCP<StackedTimer> timer = rcp(new StackedTimer("MatrixMatrix Multiply: Total"));
   TimeMonitor::setStackedTimer(timer);
 
+  RCP<Matrix> A;
+  RCP<Matrix> B;
+
+  if (useGaleri) {
+    TimeMonitor tm(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: 1 - Matrix creation"));
+
+    std::string matrixType            = galeriParameters.GetMatrixType();
+    Teuchos::ParameterList galeriList = galeriParameters.GetParameterList();
+    RCP<Map> map;
+    if (matrixType == "Laplace1D" || matrixType == "Identity") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
+
+    } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
+               matrixType == "BigStar2D" || matrixType == "AnisotropicDiffusion" || matrixType == "Elasticity2D" || matrixType == "Recirc2D") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
+
+    } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
+      map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+    }
+    // Expand map to do multiple DOF per node for block problems
+    if (matrixType == "Elasticity2D")
+      map = Xpetra::MapFactory<LO, GO, Node>::Build(map, 2);
+    if (matrixType == "Elasticity3D")
+      map = Xpetra::MapFactory<LO, GO, Node>::Build(map, 3);
+
+    auto Pr = Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
+    A       = Pr->BuildMatrix();
+    B       = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(A);
+
+    if (comm->getRank() == 0) {
+      std::cout << "  A stats:"
+                << " #rows = " << A->getRowMap()->getGlobalNumElements()
+                << " #cols = " << A->getDomainMap()->getGlobalNumElements()
+                << ", nnz = " << A->getGlobalNumEntries()
+                << std::endl
+                << "  B stats:"
+                << " #rows = " << A->getDomainMap()->getGlobalNumElements()
+                << " #cols = " << B->getDomainMap()->getGlobalNumElements()
+                << ", nnz = " << B->getGlobalNumEntries()
+                << std::endl;
+    }
+  }
+
   for (int jj = 0; jj < optNmults; ++jj) {
-    RCP<Matrix> A;
-    RCP<Matrix> B;
     {
-      TimeMonitor tm(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: 1 - Matrix creation"));
+      if (!useGaleri) {
+        TimeMonitor tm(*TimeMonitor::getNewTimer("MatrixMatrixMultiplyTest: 1 - Matrix creation"));
 
-      size_t maxRowsPerProc = optMaxRowsPerProc;
-      size_t minRowsPerProc = optMinRowsPerProc;
-      if (minRowsPerProc > maxRowsPerProc) minRowsPerProc = maxRowsPerProc;
+        size_t maxRowsPerProc = optMaxRowsPerProc;
+        size_t minRowsPerProc = optMinRowsPerProc;
+        if (minRowsPerProc > maxRowsPerProc) minRowsPerProc = maxRowsPerProc;
 
-      // Create row map.  This will also be used as the range map.
-      RCP<const Map> rowMapForA = generateRandomContiguousMap<LO, GO, NO>(minRowsPerProc, maxRowsPerProc, comm, xpetraParameters.GetLib());
-      // Create domain map for A. This will also be the row map for B.
-      RCP<const Map> domainMapForA = generateRandomContiguousMap<LO, GO, NO>(minRowsPerProc, maxRowsPerProc, comm, xpetraParameters.GetLib());
-      // Create domain map for B.
-      RCP<const Map> domainMapForB = generateRandomContiguousMap<LO, GO, NO>(minRowsPerProc, maxRowsPerProc, comm, xpetraParameters.GetLib());
+        // Create row map.  This will also be used as the range map.
+        RCP<const Map> rowMapForA = generateRandomContiguousMap<LO, GO, NO>(minRowsPerProc, maxRowsPerProc, comm, xpetraParameters.GetLib());
+        // Create domain map for A. This will also be the row map for B.
+        RCP<const Map> domainMapForA = generateRandomContiguousMap<LO, GO, NO>(minRowsPerProc, maxRowsPerProc, comm, xpetraParameters.GetLib());
+        // Create domain map for B.
+        RCP<const Map> domainMapForB = generateRandomContiguousMap<LO, GO, NO>(minRowsPerProc, maxRowsPerProc, comm, xpetraParameters.GetLib());
 
-      A = generateRandomMatrix<SC, LO, GO, NO>(optMinEntriesPerRow, optMaxEntriesPerRow, rowMapForA, domainMapForA);
-      B = generateRandomMatrix<SC, LO, GO, NO>(optMinEntriesPerRow, optMaxEntriesPerRow, domainMapForA, domainMapForB);
+        A = generateRandomMatrix<SC, LO, GO, NO>(optMinEntriesPerRow, optMaxEntriesPerRow, rowMapForA, domainMapForA);
+        B = generateRandomMatrix<SC, LO, GO, NO>(optMinEntriesPerRow, optMaxEntriesPerRow, domainMapForA, domainMapForB);
 
-      if (comm->getRank() == 0) {
-        std::cout << "case " << jj << " of " << optNmults - 1 << " : "
-                  << "original seed = " << seed
-                  << ", minEntriesPerRow = " << optMinEntriesPerRow
-                  << ", maxEntriesPerRow = " << optMaxEntriesPerRow
-                  << std::endl
-                  << "  A stats:"
-                  << " #rows = " << rowMapForA->getGlobalNumElements()
-                  << " #cols = " << domainMapForA->getGlobalNumElements()
-                  << ", nnz = " << A->getGlobalNumEntries()
-                  << std::endl
-                  << "  B stats:"
-                  << " #rows = " << domainMapForA->getGlobalNumElements()
-                  << " #cols = " << domainMapForB->getGlobalNumElements()
-                  << ", nnz = " << B->getGlobalNumEntries()
-                  << std::endl;
+        if (comm->getRank() == 0) {
+          std::cout << "case " << jj << " of " << optNmults - 1 << " : "
+                    << "original seed = " << seed
+                    << ", minEntriesPerRow = " << optMinEntriesPerRow
+                    << ", maxEntriesPerRow = " << optMaxEntriesPerRow
+                    << std::endl
+                    << "  A stats:"
+                    << " #rows = " << A->getRowMap()->getGlobalNumElements()
+                    << " #cols = " << A->getDomainMap()->getGlobalNumElements()
+                    << ", nnz = " << A->getGlobalNumEntries()
+                    << std::endl
+                    << "  B stats:"
+                    << " #rows = " << A->getDomainMap()->getGlobalNumElements()
+                    << " #cols = " << B->getDomainMap()->getGlobalNumElements()
+                    << ", nnz = " << B->getGlobalNumEntries()
+                    << std::endl;
+        }
       }
 
       if (optDumpMatrices) {
@@ -172,7 +221,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   options.print_warnings = false;
   timer->report(std::cout, comm, options);
 
-  auto xmlOut = timer->reportWatchrXML(std::string("MueLu MatrixMatrix Multiply ") + std::to_string(comm->getSize()) + " ranks", comm);
+  auto watchrTestName = std::string("MueLu MatrixMatrix Multiply ") + std::to_string(comm->getSize()) + " ranks";
+  if (useGaleri)
+    watchrTestName += " " + galeriParameters.GetMatrixType();
+  auto xmlOut = timer->reportWatchrXML(watchrTestName, comm);
   if (xmlOut.length())
     std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
 

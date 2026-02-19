@@ -197,6 +197,7 @@ private:
     int streams;
     bool verbose;
     int dofs_per_node;
+    bool diag_shift;
     bool pivot_pert;
     // int num_kokkos_threads;
     // int max_num_superblocks;

@@ -50,11 +50,7 @@
 #ifdef HAVE_INTREPID2_KOKKOSKERNELS
 #include "KokkosBatched_QR_Serial_Internal.hpp"
 #include "KokkosBatched_ApplyQ_Serial_Internal.hpp"
-#if KOKKOS_VERSION >= 40599
 #include "KokkosBatched_Trsv_Decl.hpp"
-#else
-#include "KokkosBatched_Trsv_Serial_Internal.hpp"
-#endif
 #include "KokkosBatched_Util.hpp"
 #endif
 
@@ -524,11 +520,7 @@ public:
         auto w0_host = Kokkos::create_mirror_view(Kokkos::subview(work, 0, Kokkos::ALL()));
 
         //computing QR of A0. QR is saved in A0 and tau0
-#if KOKKOS_VERSION >= 40599
         KokkosBatched::Impl::SerialQR_Internal::invoke
-#else
-        KokkosBatched::SerialQR_Internal::invoke
-#endif
             (A0_host.extent(0), A0_host.extent(1),
              A0_host.data(), A0_host.stride(0), A0_host.stride(1),
              tau0_host.data(), tau0_host.stride(0), w0_host.data());
@@ -554,15 +546,7 @@ public:
               w.data());
 
           // R0^{-1} b -> b
-#if KOKKOS_VERSION >= 40599
           KokkosBatched::SerialTrsv<KokkosBatched::Uplo::Upper, KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::NonUnit, KokkosBatched::Algo::Trsv::Unblocked>::invoke(1.0, A0, b);
-#else
-          KokkosBatched::SerialTrsvInternalUpper<KokkosBatched::Algo::Trsv::Unblocked>::invoke(false,
-              A0.extent(0),
-              1.0,
-              A0.data(), A0.stride(0), A0.stride(1),
-              b.data(),  b.stride(0));
-#endif
 
           //scattering b into the basis coefficients
           for(ordinal_type i=0; i<n; ++i){
@@ -585,11 +569,7 @@ public:
               A(i,j) = A(j,i);
 
           //computing QR of A. QR is saved in A and tau
-#if KOKKOS_VERSION >= 40599
           KokkosBatched::Impl::SerialQR_Internal::invoke
-#else
-          KokkosBatched::SerialQR_Internal::invoke
-#endif
               (A.extent(0), A.extent(1),
                A.data(), A.stride(0), A.stride(1), tau.data(), tau.stride(0), w.data());
 
@@ -604,15 +584,7 @@ public:
               w.data());
 
           // R^{-1} b -> b
-#if KOKKOS_VERSION >= 40599
           KokkosBatched::SerialTrsv<KokkosBatched::Uplo::Upper, KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::NonUnit, KokkosBatched::Algo::Trsv::Unblocked>::invoke(1.0, A, b);
-#else
-          KokkosBatched::SerialTrsvInternalUpper<KokkosBatched::Algo::Trsv::Unblocked>::invoke(false,
-              A.extent(0),
-              1.0,
-              A.data(), A.stride(0), A.stride(1),
-              b.data(),  b.stride(0));
-#endif
 
           //scattering b into the basis coefficients
           for(ordinal_type i=0; i<n; ++i){

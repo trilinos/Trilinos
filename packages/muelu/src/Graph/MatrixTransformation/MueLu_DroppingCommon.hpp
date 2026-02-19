@@ -13,11 +13,7 @@
 // #define MUELU_COALESCE_DROP_DEBUG 1
 
 #include "Kokkos_Core.hpp"
-#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
-#else
-#include "Kokkos_ArithTraits.hpp"
-#endif
 #include "Tpetra_Access.hpp"
 #include "Xpetra_Matrix.hpp"
 #include "Xpetra_VectorFactory.hpp"
@@ -412,7 +408,7 @@ class BlockDiagonalizeFunctor {
     auto importer = A_.getCrsGraph()->getImporter();
 
     if (!importer.is_null()) {
-      ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
+      ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), false);
       ghosted_point_to_blockMV->doImport(point_to_block_, *importer, Xpetra::INSERT);
       ghosted_point_to_block = ghosted_point_to_blockMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
     } else
@@ -470,7 +466,7 @@ class BlockDiagonalizeVectorFunctor {
     , row_translation(row_translation_)
     , col_translation(col_translation_) {
     if (!importer.is_null()) {
-      ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap());
+      ghosted_point_to_blockMV = Xpetra::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>::Build(importer->getTargetMap(), false);
       ghosted_point_to_blockMV->doImport(point_to_block_, *importer, Xpetra::INSERT);
       ghosted_point_to_block = ghosted_point_to_blockMV->getLocalViewDevice(Tpetra::Access::ReadOnly);
     } else

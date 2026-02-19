@@ -71,6 +71,7 @@ namespace Intrepid2 {
       case OPERATOR_D9:
       case OPERATOR_D10:
         opDn = getOperatorOrder(opType);
+        [[fallthrough]];
       case OPERATOR_Dn: {
         {
           const ordinal_type pend = output.extent(0);

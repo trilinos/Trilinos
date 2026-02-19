@@ -18,11 +18,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
-#else
-#include "Kokkos_ArithTraits.hpp"
-#endif
 
 #include <Xpetra_BlockedCrsMatrix_fwd.hpp>
 #include <Xpetra_BlockedMap_fwd.hpp>

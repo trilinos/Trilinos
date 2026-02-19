@@ -15,11 +15,7 @@ namespace {  // (anonymous)
 
 template <class ScalarType, class IntegerType>
 KOKKOS_INLINE_FUNCTION ScalarType toScalar(const IntegerType x) {
-#if KOKKOS_VERSION >= 40799
-  using KAT = KokkosKernels::ArithTraits<ScalarType>;
-#else
-  using KAT = Kokkos::ArithTraits<ScalarType>;
-#endif
+  using KAT      = KokkosKernels::ArithTraits<ScalarType>;
   using mag_type = typename KAT::mag_type;
   // The double cast handles conversions like integer to
   // std::complex<double>, where no one-step conversion exists.
@@ -130,13 +126,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Vector, OffsetViewCtor, ST, LO, GO, NT) {
       auto x_offset_lcl_h =
           Kokkos::subview(x_offset_lcl_h_2d, Kokkos::ALL(), 0);
       for (LO newLclRow = 0; newLclRow < newLclNumRows; ++newLclRow) {
-#if KOKKOS_VERSION >= 40799
         TEST_EQUALITY(x_offset_lcl_h(newLclRow),
                       KokkosKernels::ArithTraits<IST>::one());
-#else
-        TEST_EQUALITY(x_offset_lcl_h(newLclRow),
-                      Kokkos::ArithTraits<IST>::one());
-#endif
       }
     }
     restoreVectorEntries(x);

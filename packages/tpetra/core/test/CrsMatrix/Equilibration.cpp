@@ -29,11 +29,7 @@
 
 namespace {  // (anonymous)
 
-#if KOKKOS_VERSION >= 40799
 template <class SC, const bool isComplex = KokkosKernels::ArithTraits<SC>::is_complex>
-#else
-template <class SC, const bool isComplex = Kokkos::ArithTraits<SC>::is_complex>
-#endif
 struct NaughtyValues {
   static SC infinity();
   static SC quiet_NaN();
@@ -56,11 +52,7 @@ struct NaughtyValues<SC, false> {
 // real and imaginary parts are (Inf or NaN).
 template <class SC>
 struct NaughtyValues<SC, true> {
-#if KOKKOS_VERSION >= 40799
   using mag_type = typename KokkosKernels::ArithTraits<SC>::mag_type;
-#else
-  using mag_type = typename Kokkos::ArithTraits<SC>::mag_type;
-#endif
 
   static SC infinity() {
     return SC(std::numeric_limits<mag_type>::infinity(), 0.0);
@@ -90,16 +82,8 @@ createVectorFromCopyOf1DView(const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >&
 template <class ValueType>
 bool near(const ValueType& x,
           const ValueType& y,
-#if KOKKOS_VERSION >= 40799
           const typename KokkosKernels::ArithTraits<ValueType>::mag_type& factor) {
-#else
-          const typename Kokkos::ArithTraits<ValueType>::mag_type& factor) {
-#endif
-#if KOKKOS_VERSION >= 40799
   using KAT = KokkosKernels::ArithTraits<ValueType>;
-#else
-  using KAT      = Kokkos::ArithTraits<ValueType>;
-#endif
 
   if (KAT::isNan(x) && KAT::isNan(y)) {
     // Any comparison involving a NaN will fail, so we need a special case.
@@ -136,11 +120,7 @@ void testCrsMatrixEquality(bool& success,
                            const Tpetra::CrsMatrix<SC, LO, GO, NT>& A_expected,
                            const Tpetra::CrsMatrix<SC, LO, GO, NT>& A_actual) {
   using std::endl;
-#if KOKKOS_VERSION >= 40799
-  using mag_type = typename KokkosKernels::ArithTraits<SC>::mag_type;
-#else
-  using mag_type = typename Kokkos::ArithTraits<SC>::mag_type;
-#endif
+  using mag_type                 = typename KokkosKernels::ArithTraits<SC>::mag_type;
   const mag_type toleranceFactor = 10.0;  // factor of eps
 
   auto A_expected_lcl = A_expected.getLocalMatrixHost();
@@ -200,16 +180,8 @@ struct EquilibrationTest {
   using map_type        = Tpetra::Map<LO, GO, NT>;
   using crs_graph_type  = Tpetra::CrsGraph<LO, GO, NT>;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-#if KOKKOS_VERSION >= 40799
-  using val_type = typename KokkosKernels::ArithTraits<SC>::val_type;
-#else
-  using val_type = typename Kokkos::ArithTraits<SC>::val_type;
-#endif
-#if KOKKOS_VERSION >= 40799
-  using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
-#else
-  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
-#endif
+  using val_type        = typename KokkosKernels::ArithTraits<SC>::val_type;
+  using mag_type        = typename KokkosKernels::ArithTraits<val_type>::mag_type;
 
   Teuchos::RCP<crs_matrix_type> A;
   std::vector<mag_type> lclRowNorms;
@@ -245,11 +217,7 @@ void testEquilibration(Teuchos::FancyOStream& out,
   using Teuchos::reduceAll;
   using map_type        = Tpetra::Map<LO, GO, NT>;
   using row_matrix_type = Tpetra::RowMatrix<SC, LO, GO, NT>;
-#if KOKKOS_VERSION >= 40799
-  using mag_type = typename KokkosKernels::ArithTraits<SC>::mag_type;
-#else
-  using mag_type = typename Kokkos::ArithTraits<SC>::mag_type;
-#endif
+  using mag_type        = typename KokkosKernels::ArithTraits<SC>::mag_type;
 
   const mag_type toleranceFactor = 10.0;             // factor of eps
   int lclSuccess                 = success ? 1 : 0;  // for reduceAll (see below)
@@ -970,22 +938,10 @@ makeSymmetricPositiveDefiniteTridiagonalMatrixTest(Teuchos::FancyOStream& out,
   using map_type        = Tpetra::Map<LO, GO, NT>;
   using crs_graph_type  = Tpetra::CrsGraph<LO, GO, NT>;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-#if KOKKOS_VERSION >= 40799
-  using KAT = KokkosKernels::ArithTraits<SC>;
-#else
-  using KAT      = Kokkos::ArithTraits<SC>;
-#endif
-  using val_type = typename KAT::val_type;
-#if KOKKOS_VERSION >= 40799
-  using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
-#else
-  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
-#endif
-#if KOKKOS_VERSION >= 40799
-  using KAM = KokkosKernels::ArithTraits<mag_type>;
-#else
-  using KAM      = Kokkos::ArithTraits<mag_type>;
-#endif
+  using KAT             = KokkosKernels::ArithTraits<SC>;
+  using val_type        = typename KAT::val_type;
+  using mag_type        = typename KokkosKernels::ArithTraits<val_type>::mag_type;
+  using KAM             = KokkosKernels::ArithTraits<mag_type>;
 
   const LO lclNumRows = 5;
   const GO gblNumRows =
@@ -1347,22 +1303,10 @@ makeMatrixTestWithExplicitZeroDiag(Teuchos::FancyOStream& out,
   using map_type        = Tpetra::Map<LO, GO, NT>;
   using crs_graph_type  = Tpetra::CrsGraph<LO, GO, NT>;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-#if KOKKOS_VERSION >= 40799
-  using KAT = KokkosKernels::ArithTraits<SC>;
-#else
-  using KAT      = Kokkos::ArithTraits<SC>;
-#endif
-  using val_type = typename KAT::val_type;
-#if KOKKOS_VERSION >= 40799
-  using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
-#else
-  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
-#endif
-#if KOKKOS_VERSION >= 40799
-  using KAM = KokkosKernels::ArithTraits<mag_type>;
-#else
-  using KAM      = Kokkos::ArithTraits<mag_type>;
-#endif
+  using KAT             = KokkosKernels::ArithTraits<SC>;
+  using val_type        = typename KAT::val_type;
+  using mag_type        = typename KokkosKernels::ArithTraits<val_type>::mag_type;
+  using KAM             = KokkosKernels::ArithTraits<mag_type>;
 
   const int myRank   = comm->getRank();
   const int numProcs = comm->getSize();
@@ -1617,22 +1561,10 @@ makeMatrixTestWithImplicitZeroDiag(Teuchos::FancyOStream& out,
   using map_type        = Tpetra::Map<LO, GO, NT>;
   using crs_graph_type  = Tpetra::CrsGraph<LO, GO, NT>;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-#if KOKKOS_VERSION >= 40799
-  using KAT = KokkosKernels::ArithTraits<SC>;
-#else
-  using KAT      = Kokkos::ArithTraits<SC>;
-#endif
-  using val_type = typename KAT::val_type;
-#if KOKKOS_VERSION >= 40799
-  using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
-#else
-  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
-#endif
-#if KOKKOS_VERSION >= 40799
-  using KAM = KokkosKernels::ArithTraits<mag_type>;
-#else
-  using KAM      = Kokkos::ArithTraits<mag_type>;
-#endif
+  using KAT             = KokkosKernels::ArithTraits<SC>;
+  using val_type        = typename KAT::val_type;
+  using mag_type        = typename KokkosKernels::ArithTraits<val_type>::mag_type;
+  using KAM             = KokkosKernels::ArithTraits<mag_type>;
 
   const int myRank   = comm->getRank();
   const int numProcs = comm->getSize();
@@ -1887,22 +1819,10 @@ makeMatrixTestWithExplicitInfAndNan(Teuchos::FancyOStream& out,
   using map_type        = Tpetra::Map<LO, GO, NT>;
   using crs_graph_type  = Tpetra::CrsGraph<LO, GO, NT>;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-#if KOKKOS_VERSION >= 40799
-  using KAT = KokkosKernels::ArithTraits<SC>;
-#else
-  using KAT      = Kokkos::ArithTraits<SC>;
-#endif
-  using val_type = typename KAT::val_type;
-#if KOKKOS_VERSION >= 40799
-  using mag_type = typename KokkosKernels::ArithTraits<val_type>::mag_type;
-#else
-  using mag_type = typename Kokkos::ArithTraits<val_type>::mag_type;
-#endif
-#if KOKKOS_VERSION >= 40799
-  using KAM = KokkosKernels::ArithTraits<mag_type>;
-#else
-  using KAM      = Kokkos::ArithTraits<mag_type>;
-#endif
+  using KAT             = KokkosKernels::ArithTraits<SC>;
+  using val_type        = typename KAT::val_type;
+  using mag_type        = typename KokkosKernels::ArithTraits<val_type>::mag_type;
+  using KAM             = KokkosKernels::ArithTraits<mag_type>;
 
   const int myRank   = comm->getRank();
   const int numProcs = comm->getSize();

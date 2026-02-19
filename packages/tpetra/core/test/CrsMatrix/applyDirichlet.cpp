@@ -52,11 +52,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, ApplyDirichletRows, SC, LO, GO, NT)
   using IST             = typename vec_type::impl_scalar_type;
   using GST             = Tpetra::global_size_t;
   using STS             = Teuchos::ScalarTraits<SC>;
-#if KOKKOS_VERSION >= 40799
-  using KAT = KokkosKernels::ArithTraits<IST>;
-#else
-  using KAT = Kokkos::ArithTraits<IST>;
-#endif
+  using KAT             = KokkosKernels::ArithTraits<IST>;
   using local_matrix_device_type =
       typename crs_matrix_type::local_matrix_device_type;
   using local_graph_device_type =
@@ -203,11 +199,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, ApplyDirichletRowsAndCols, SC, LO, 
   using IST             = typename vec_type::impl_scalar_type;
   using GST             = Tpetra::global_size_t;
   using STS             = Teuchos::ScalarTraits<SC>;
-#if KOKKOS_VERSION >= 40799
-  using KAT = KokkosKernels::ArithTraits<IST>;
-#else
-  using KAT = Kokkos::ArithTraits<IST>;
-#endif
+  using KAT             = KokkosKernels::ArithTraits<IST>;
   using local_matrix_device_type =
       typename crs_matrix_type::local_matrix_device_type;
   using local_graph_device_type =

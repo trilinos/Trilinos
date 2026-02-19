@@ -15,11 +15,7 @@
 
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
-#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
-#else
-#include "Kokkos_ArithTraits.hpp"
-#endif
 #include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
 
@@ -63,18 +59,10 @@ enum EScaling {
 template <class SC, class LO, class GO, class NT>
 void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
                                   const Kokkos::View<
-#if KOKKOS_VERSION >= 40799
                                       const typename KokkosKernels::ArithTraits<SC>::mag_type*,
-#else
-                                      const typename Kokkos::ArithTraits<SC>::mag_type*,
-#endif
                                       typename NT::device_type>& rowScalingFactors,
                                   const Kokkos::View<
-#if KOKKOS_VERSION >= 40799
                                       const typename KokkosKernels::ArithTraits<SC>::mag_type*,
-#else
-                                      const typename Kokkos::ArithTraits<SC>::mag_type*,
-#endif
                                       typename NT::device_type>& colScalingFactors,
                                   const bool leftScale,
                                   const bool rightScale,
@@ -110,17 +98,9 @@ void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
 ///   if SCALING_MULTIPLY, it means "multiply by."
 template <class SC, class LO, class GO, class NT>
 void leftAndOrRightScaleCrsMatrix(Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
-#if KOKKOS_VERSION >= 40799
                                   const Tpetra::Vector<typename KokkosKernels::ArithTraits<SC>::mag_type,
-#else
-                                  const Tpetra::Vector<typename Kokkos::ArithTraits<SC>::mag_type,
-#endif
                                                        LO, GO, NT>& rowScalingFactors,
-#if KOKKOS_VERSION >= 40799
                                   const Tpetra::Vector<typename KokkosKernels::ArithTraits<SC>::mag_type,
-#else
-                                  const Tpetra::Vector<typename Kokkos::ArithTraits<SC>::mag_type,
-#endif
                                                        LO, GO, NT>& colScalingFactors,
                                   const bool leftScale,
                                   const bool rightScale,

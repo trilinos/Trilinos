@@ -270,12 +270,8 @@ class CrsMatrix
 
   //! @name Xpetra-specific routines
   //@{
-#if KOKKOS_VERSION >= 40799
   using impl_scalar_type = typename KokkosKernels::ArithTraits<Scalar>::val_type;
-#else
-  using impl_scalar_type       = typename Kokkos::ArithTraits<Scalar>::val_type;
-#endif
-  using execution_space = typename node_type::device_type;
+  using execution_space  = typename node_type::device_type;
 
   // that is the local_graph_type in Tpetra::CrsGraph...
   using local_graph_type        = KokkosSparse::StaticCrsGraph<LocalOrdinal,
@@ -288,11 +284,7 @@ class CrsMatrix
                                                                execution_space,
                                                                void,
                                                                size_t>;
-#if KOKKOS_VERSION >= 40799
-  using local_graph_host_type = typename local_graph_device_type::host_mirror_type;
-#else
-  using local_graph_host_type  = typename local_graph_device_type::HostMirror;
-#endif
+  using local_graph_host_type   = typename local_graph_device_type::host_mirror_type;
 
   /// \brief The specialization of Kokkos::CrsMatrix that represents
   ///   the part of the sparse matrix on each MPI process.
@@ -301,11 +293,7 @@ class CrsMatrix
                                                     typename local_graph_type::size_type>;
   using local_matrix_device_type = KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void,
                                                            typename local_graph_type::size_type>;
-#if KOKKOS_VERSION >= 40799
-  using local_matrix_host_type = typename local_matrix_device_type::host_mirror_type;
-#else
-  using local_matrix_host_type = typename local_matrix_device_type::HostMirror;
-#endif
+  using local_matrix_host_type   = typename local_matrix_device_type::host_mirror_type;
 
   virtual local_matrix_device_type getLocalMatrixDevice() const = 0;
   virtual local_matrix_host_type getLocalMatrixHost() const     = 0;

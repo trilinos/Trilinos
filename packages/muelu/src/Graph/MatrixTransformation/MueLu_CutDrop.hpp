@@ -11,11 +11,7 @@
 #define MUELU_CUTDROP_HPP
 
 #include "Kokkos_Core.hpp"
-#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
-#else
-#include "Kokkos_ArithTraits.hpp"
-#endif
 #include "MueLu_DroppingCommon.hpp"
 #include "MueLu_Utilities.hpp"
 #include "Xpetra_Matrix.hpp"
@@ -49,11 +45,7 @@ class UnscaledComparison {
   results_view results;
 
  private:
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS = Kokkos::ArithTraits<scalar_type>;
-#endif
+  using ATS           = KokkosKernels::ArithTraits<scalar_type>;
   using magnitudeType = typename ATS::magnitudeType;
   using values_view   = Kokkos::View<magnitudeType*, memory_space>;
   mutable values_view values;
@@ -72,11 +64,7 @@ class UnscaledComparison {
     using memory_space       = typename local_matrix_type2::memory_space;
     using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-#if KOKKOS_VERSION >= 40799
-    using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-    using ATS = Kokkos::ArithTraits<scalar_type>;
-#endif
+    using ATS           = KokkosKernels::ArithTraits<scalar_type>;
     using magnitudeType = typename ATS::magnitudeType;
     using values_view   = Kokkos::View<magnitudeType*, memory_space>;
 
@@ -157,11 +145,7 @@ class ScaledComparison {
   results_view results;
 
  private:
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS = Kokkos::ArithTraits<scalar_type>;
-#endif
+  using ATS           = KokkosKernels::ArithTraits<scalar_type>;
   using magnitudeType = typename ATS::magnitudeType;
 
   Teuchos::RCP<diag_vec_type> diagVec;
@@ -193,18 +177,10 @@ class ScaledComparison {
     using memory_space       = typename local_matrix_type2::memory_space;
     using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-#if KOKKOS_VERSION >= 40799
-    using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-    using ATS  = Kokkos::ArithTraits<scalar_type>;
-#endif
+    using ATS           = KokkosKernels::ArithTraits<scalar_type>;
     using magnitudeType = typename ATS::magnitudeType;
-#if KOKKOS_VERSION >= 40799
-    using mATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-    using mATS = Kokkos::ArithTraits<magnitudeType>;
-#endif
-    using values_view = Kokkos::View<magnitudeType*, memory_space>;
+    using mATS          = KokkosKernels::ArithTraits<magnitudeType>;
+    using values_view   = Kokkos::View<magnitudeType*, memory_space>;
 
     const local_matrix_type2 A;
     const diag_view_type2 diag;
@@ -318,11 +294,7 @@ class UnscaledDistanceLaplacianComparison {
   results_view results;
 
  private:
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS = Kokkos::ArithTraits<scalar_type>;
-#endif
+  using ATS           = KokkosKernels::ArithTraits<scalar_type>;
   using magnitudeType = typename ATS::magnitudeType;
   using values_view   = Kokkos::View<magnitudeType*, memory_space>;
 
@@ -351,11 +323,7 @@ class UnscaledDistanceLaplacianComparison {
     using memory_space       = typename local_matrix_type2::memory_space;
     using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-#if KOKKOS_VERSION >= 40799
-    using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-    using ATS = Kokkos::ArithTraits<scalar_type>;
-#endif
+    using ATS           = KokkosKernels::ArithTraits<scalar_type>;
     using magnitudeType = typename ATS::magnitudeType;
     using values_view   = Kokkos::View<magnitudeType*, memory_space>;
 
@@ -452,11 +420,7 @@ class ScaledDistanceLaplacianComparison {
   results_view results;
 
  private:
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS = Kokkos::ArithTraits<scalar_type>;
-#endif
+  using ATS           = KokkosKernels::ArithTraits<scalar_type>;
   using magnitudeType = typename ATS::magnitudeType;
 
   Teuchos::RCP<diag_vec_type> diagVec;
@@ -492,17 +456,9 @@ class ScaledDistanceLaplacianComparison {
     using memory_space       = typename local_matrix_type2::memory_space;
     using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-#if KOKKOS_VERSION >= 40799
-    using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-    using ATS  = Kokkos::ArithTraits<scalar_type>;
-#endif
+    using ATS           = KokkosKernels::ArithTraits<scalar_type>;
     using magnitudeType = typename ATS::magnitudeType;
-#if KOKKOS_VERSION >= 40799
-    using mATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-    using mATS = Kokkos::ArithTraits<magnitudeType>;
-#endif
+    using mATS          = KokkosKernels::ArithTraits<magnitudeType>;
 
     using values_view = Kokkos::View<magnitudeType*, memory_space>;
 
@@ -628,11 +584,7 @@ class CutDropFunctor {
   using memory_space       = typename local_matrix_type::memory_space;
   using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS = Kokkos::ArithTraits<scalar_type>;
-#endif
+  using ATS                 = KokkosKernels::ArithTraits<scalar_type>;
   using magnitudeType       = typename ATS::magnitudeType;
   using boundary_nodes_view = Kokkos::View<const bool*, memory_space>;
 

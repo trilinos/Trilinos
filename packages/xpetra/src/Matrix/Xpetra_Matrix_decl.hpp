@@ -74,11 +74,7 @@ class Matrix : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node
   using local_matrix_device_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using local_matrix_host_type   = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type;
 
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<Scalar>;
-#else
-  using ATS                                                                 = Kokkos::ArithTraits<Scalar>;
-#endif
+  using ATS              = KokkosKernels::ArithTraits<Scalar>;
   using impl_scalar_type = typename ATS::val_type;
 
   //! @name Constructor/Destructor Methods
@@ -429,12 +425,8 @@ class Matrix : public Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node
   virtual Scalar GetMaxEigenvalueEstimate() const;
 
   // ----------------------------------------------------------------------------------
-  virtual local_matrix_type getLocalMatrixDevice() const = 0;
-#if KOKKOS_VERSION >= 40799
+  virtual local_matrix_type getLocalMatrixDevice() const                          = 0;
   virtual typename local_matrix_type::host_mirror_type getLocalMatrixHost() const = 0;
-#else
-  virtual typename local_matrix_type::HostMirror getLocalMatrixHost() const = 0;
-#endif
   // ----------------------------------------------------------------------------------
 
   //! Compute a residual R = B - (*this) * X

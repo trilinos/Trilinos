@@ -43,7 +43,9 @@ jobs:
       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v3.29.5
+      uses: github/codeql-action/init@cdefb33c0f6224e58673d9004f47f7cb3e328b89
+      env:
+        NODE_USE_SYSTEM_CA: 1
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
@@ -68,6 +70,9 @@ jobs:
       working-directory: ./packages/framework
       run: |
           ./get_dependencies.sh
+
+    - name: Add Googletest
+      uses: ./.github/workflows/actions/add-spack-googletest
 
     - if: matrix.build-mode == 'manual'
       name: Generate CMake fragments

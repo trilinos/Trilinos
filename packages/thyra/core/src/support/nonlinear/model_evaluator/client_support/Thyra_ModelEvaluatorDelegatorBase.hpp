@@ -506,7 +506,7 @@ ModelEvaluatorDelegatorBase<Scalar>::createInArgs() const
 {
   ModelEvaluatorBase::InArgsSetup<Scalar> inArgs = getUnderlyingModel()->createInArgs();
   inArgs.setModelEvalDescription(this->description());
-  return std::move(inArgs);
+  return inArgs;
 }
 
 
@@ -610,7 +610,7 @@ ModelEvaluatorDelegatorBase<Scalar>::createOutArgsImpl() const
   ModelEvaluatorBase::OutArgsSetup<Scalar>
     outArgs = getUnderlyingModel()->createOutArgs();
   outArgs.setModelEvalDescription(this->description());
-  return std::move(outArgs);
+  return outArgs;
 }
 
 

@@ -193,11 +193,7 @@ class CrsGraph
   typedef typename node_type::device_type device_type;
   using local_graph_type        = KokkosSparse::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t>;
   using local_graph_device_type = KokkosSparse::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type, void, size_t>;
-#if KOKKOS_VERSION >= 40799
-  using local_graph_host_type = typename local_graph_device_type::host_mirror_type;
-#else
-  using local_graph_host_type                                             = typename local_graph_device_type::HostMirror;
-#endif
+  using local_graph_host_type   = typename local_graph_device_type::host_mirror_type;
 
   /// \brief Get the local graph.
   ///
@@ -206,12 +202,8 @@ class CrsGraph
   ///
   /// This is only a valid representation of the local graph if the
   /// (global) graph is fill complete.
-#if KOKKOS_VERSION >= 40799
   virtual typename local_graph_type::host_mirror_type getLocalGraphHost() const = 0;
-#else
-  virtual typename local_graph_type::HostMirror getLocalGraphHost() const = 0;
-#endif
-  virtual local_graph_type getLocalGraphDevice() const = 0;
+  virtual local_graph_type getLocalGraphDevice() const                          = 0;
 
   //! Get offsets of the diagonal entries in the matrix.
   virtual void getLocalDiagOffsets(const Kokkos::View<size_t *, device_type, Kokkos::MemoryUnmanaged> &offsets) const = 0;

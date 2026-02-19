@@ -173,7 +173,7 @@ void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
     }
 
     // Build the coarseCoords MultiVector
-    coarseCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
+    coarseCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(coarseCoordMap, fineCoords->getNumVectors(), false);
 
     RCP<Aggregates> aggregates;
     bool aggregatesCrossProcessors;
@@ -186,7 +186,7 @@ void CoordinatesTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Buil
       RCP<const Map> nonUniqueMap = aggregates->GetMap();
       RCP<const Import> importer  = ImportFactory::Build(uniqueMap, nonUniqueMap);
 
-      ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
+      ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LO, GO, NO>::Build(nonUniqueMap, fineCoords->getNumVectors(), false);
       ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
     }
 

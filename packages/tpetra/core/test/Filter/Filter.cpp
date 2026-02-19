@@ -32,15 +32,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Filter, SC, LO, GO, NT) {
 
   const auto ONE = Teuchos::ScalarTraits<magnitudeType>::one();
 
-#if KOKKOS_VERSION >= 40799
   using ATS      = KokkosKernels::ArithTraits<SC>;
   using impl_SC  = typename ATS::val_type;
   using impl_ATS = KokkosKernels::ArithTraits<impl_SC>;
-#else
-  using ATS      = Kokkos::ArithTraits<SC>;
-  using impl_SC  = typename ATS::val_type;
-  using impl_ATS = Kokkos::ArithTraits<impl_SC>;
-#endif
 
   RCP<const Comm<int> > comm = getDefaultComm();
 

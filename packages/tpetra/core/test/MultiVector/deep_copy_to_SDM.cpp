@@ -11,11 +11,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
-#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
-#else
-#include "Kokkos_ArithTraits.hpp"
-#endif
 #include "Kokkos_Core.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -129,11 +125,7 @@ bool serialDenseMatrix_multiVector_same(const Tpetra::MultiVector<ST, LO, GO, NT
 
 template <class ValueType>
 KOKKOS_INLINE_FUNCTION ValueType toValue(const size_t k) {
-#if KOKKOS_VERSION >= 40799
   using mag_type = typename KokkosKernels::ArithTraits<ValueType>::mag_type;
-#else
-  using mag_type      = typename Kokkos::ArithTraits<ValueType>::mag_type;
-#endif
   return static_cast<ValueType>(static_cast<mag_type>(k));
 }
 
@@ -223,11 +215,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(MultiVector, deep_copy_to_SDM, ST, LO, GO, NT)
       << std::endl;
   Teuchos::OSTab tab1(out);
 
-#if KOKKOS_VERSION >= 40799
-  const IST flagValue = KokkosKernels::ArithTraits<IST>::one();
-#else
-  const IST flagValue = Kokkos::ArithTraits<IST>::one();
-#endif
+  const IST flagValue  = KokkosKernels::ArithTraits<IST>::one();
   const IST startValue = Teuchos::ScalarTraits<ST>::one() +
                          Teuchos::ScalarTraits<ST>::one();
   const GO indexBase = 0;

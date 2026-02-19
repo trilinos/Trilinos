@@ -34,11 +34,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
-#if KOKKOS_VERSION >= 40799
 #include <KokkosKernels_ArithTraits.hpp>
-#else
-#include <Kokkos_ArithTraits.hpp>
-#endif
 
 #include <SGPreconditioner.hpp>
 

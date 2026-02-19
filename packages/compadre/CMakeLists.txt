@@ -528,9 +528,9 @@ else() # Raw CMake Project
     else()
         add_subdirectory(pycompadre/pybind11)
     endif()
-    if (${PYTHON_VERSION} VERSION_LESS "3.6")
+    if (${PYTHON_VERSION} VERSION_LESS "3.10")
         MESSAGE(FATAL_ERROR "
-        Compadre_USE_PYTHON:BOOL=ON but Python version <3.6 is not supported.
+        Compadre_USE_PYTHON:BOOL=ON but Python version <3.10 is not supported.
         ")
     endif()
     pybind11_add_module(_pycompadre pycompadre/pycompadre.cpp)

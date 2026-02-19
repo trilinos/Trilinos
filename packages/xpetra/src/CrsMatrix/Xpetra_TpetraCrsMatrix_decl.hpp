@@ -55,11 +55,7 @@ class TpetraCrsMatrix
   using local_matrix_device_type = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type;
   using local_matrix_host_type   = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type;
 
-#if KOKKOS_VERSION >= 40799
-  using ATS = KokkosKernels::ArithTraits<Scalar>;
-#else
-  using ATS = Kokkos::ArithTraits<Scalar>;
-#endif
+  using ATS              = KokkosKernels::ArithTraits<Scalar>;
   using impl_scalar_type = typename ATS::val_type;
 
   //! @name Constructor/Destructor Methods
@@ -400,11 +396,7 @@ class TpetraCrsMatrix
   RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> getTpetra_CrsMatrixNonConst() const;  // TODO: remove
 
   /// \brief Access the local Kokkos::CrsMatrix data
-#if KOKKOS_VERSION >= 40799
   typename local_matrix_type::host_mirror_type getLocalMatrixHost() const {
-#else
-  typename local_matrix_type::HostMirror getLocalMatrixHost() const {
-#endif
     return getTpetra_CrsMatrixNonConst()->getLocalMatrixHost();
   }
   /// \brief Access the local Kokkos::CrsMatrix data

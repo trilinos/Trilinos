@@ -114,11 +114,7 @@ namespace std {
 #endif
 }
 
-#if KOKKOS_VERSION >= 40499
 #include "View/Kokkos_ViewMapping.hpp"
-#else
-#include "impl/Kokkos_ViewMapping.hpp"
-#endif
 
 namespace Kokkos {
 namespace Impl {

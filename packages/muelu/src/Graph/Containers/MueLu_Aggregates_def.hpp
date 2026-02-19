@@ -28,10 +28,10 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Node>::Aggregates(const LWGraph& graph) 
   numAggregates_       = 0;
   numGlobalAggregates_ = 0;
 
-  vertex2AggId_ = LOMultiVectorFactory::Build(graph.GetImportMap(), 1);
+  vertex2AggId_ = LOMultiVectorFactory::Build(graph.GetImportMap(), 1, false);
   vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
 
-  procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
+  procWinner_ = LOVectorFactory::Build(graph.GetImportMap(), false);
   procWinner_->putScalar(MUELU_UNASSIGNED);
 
   isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getLocalNumElements(), false);
@@ -46,10 +46,10 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Node>::
   numAggregates_       = 0;
   numGlobalAggregates_ = 0;
 
-  vertex2AggId_ = LOMultiVectorFactory::Build(graph.GetImportMap(), 1);
+  vertex2AggId_ = LOMultiVectorFactory::Build(graph.GetImportMap(), 1, false);
   vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
 
-  procWinner_ = LOVectorFactory::Build(graph.GetImportMap());
+  procWinner_ = LOVectorFactory::Build(graph.GetImportMap(), false);
   procWinner_->putScalar(MUELU_UNASSIGNED);
 
   isRoot_ = Teuchos::ArrayRCP<bool>(graph.GetImportMap()->getLocalNumElements(), false);
@@ -64,10 +64,10 @@ Aggregates<LocalOrdinal, GlobalOrdinal, Node>::
   numAggregates_       = 0;
   numGlobalAggregates_ = 0;
 
-  vertex2AggId_ = LOMultiVectorFactory::Build(map, 1);
+  vertex2AggId_ = LOMultiVectorFactory::Build(map, 1, false);
   vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
 
-  procWinner_ = LOVectorFactory::Build(map);
+  procWinner_ = LOVectorFactory::Build(map, false);
   procWinner_->putScalar(MUELU_UNASSIGNED);
 
   isRoot_ = Teuchos::ArrayRCP<bool>(map->getLocalNumElements(), false);

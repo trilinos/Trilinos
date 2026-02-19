@@ -20,7 +20,7 @@ namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
   namespace Impl {
-    
+
     template<EOperator opType>
     template<typename OutputViewType,
              typename InputViewType,
@@ -33,7 +33,7 @@ namespace Intrepid2 {
                const InputViewType  input,
                      WorkViewType   work,
                const VinvViewType   vinv,
-               const ordinal_type   operatorDn ) {    
+               const ordinal_type   operatorDn ) {
       ordinal_type opDn = operatorDn;
 
       const ordinal_type card = vinv.extent(0);
@@ -43,15 +43,15 @@ namespace Intrepid2 {
       const double alpha = 0.0, beta = 0.0;
 
       typedef typename Kokkos::DynRankView<typename InputViewType::value_type, typename WorkViewType::memory_space> ViewType;
-      
+
       switch (opType) {
       case OPERATOR_VALUE: {
-        ViewType phis = createMatchingUnmanagedView<ViewType>(input, work.data(), card, npts);     
+        ViewType phis = createMatchingUnmanagedView<ViewType>(input, work.data(), card, npts);
 
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta);
 
-        for (ordinal_type i=0;i<card;++i) 
+        for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j) {
             output.access(i,j) = 0.0;
             for (ordinal_type k=0;k<card;++k)
@@ -69,17 +69,18 @@ namespace Intrepid2 {
       case OPERATOR_D7:
       case OPERATOR_D8:
       case OPERATOR_D9:
-      case OPERATOR_D10: 
+      case OPERATOR_D10:
         opDn = getOperatorOrder(opType);
+        [[fallthrough]];
       case OPERATOR_Dn: {
         // dkcard is always 1 for 1D element
         const ordinal_type dkcard = 1;
-        ViewType phis = createMatchingUnmanagedView<ViewType>(input, work.data(), card, npts, dkcard);     
+        ViewType phis = createMatchingUnmanagedView<ViewType>(input, work.data(), card, npts, dkcard);
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta, opDn);
 
-        for (ordinal_type i=0;i<card;++i) 
-          for (ordinal_type j=0;j<npts;++j) 
+        for (ordinal_type i=0;i<card;++i)
+          for (ordinal_type j=0;j<npts;++j)
             for (ordinal_type k=0;k<dkcard;++k) {
               output.access(i,j,k) = 0.0;
               for (ordinal_type l=0;l<card;++l)
@@ -93,7 +94,7 @@ namespace Intrepid2 {
       }
       }
     }
-    
+
 
     template<typename DT, ordinal_type numPtsPerEval,
              typename outputValueValueType, class ...outputValueProperties,
@@ -168,8 +169,8 @@ namespace Intrepid2 {
     this->functionSpace_        = FUNCTION_SPACE_HGRAD;
 
     const ordinal_type card = this->basisCardinality_;
-    
-    // points are computed in the host and will be copied 
+
+    // points are computed in the host and will be copied
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
       dofCoords("Hgrad::Line::Cn::dofCoords", card, 1);
 
@@ -179,33 +180,33 @@ namespace Intrepid2 {
     switch (pointT) {
     case POINTTYPE_EQUISPACED:
     case POINTTYPE_WARPBLEND: {
-      // lattice ordering 
+      // lattice ordering
       {
         shards::CellTopology cellTopo(shards::getCellTopologyData<shards::Line<2>>());
         const ordinal_type offset = 0;
         PointTools::getLattice( dofCoords,
-                                cellTopo, 
-                                order, offset, 
+                                cellTopo,
+                                order, offset,
                                 pointT );
-        
+
       }
       break;
     }
     default: {
       INTREPID2_TEST_FOR_EXCEPTION( !isValidPointType(pointT),
-                                    std::invalid_argument , 
+                                    std::invalid_argument ,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) invalid pointType." );
     }
     }
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
-    
+
     // form Vandermonde matrix; actually, this is the transpose of the VDM,
     // this matrix is used in LAPACK so it should be column major and left layout
     const ordinal_type lwork = card*card;
     Kokkos::DynRankView<typename ScalarViewType::value_type,Kokkos::LayoutLeft,Kokkos::HostSpace>
-      vmat("Hgrad::Line::Cn::vmat", card, card), 
+      vmat("Hgrad::Line::Cn::vmat", card, card),
       work("Hgrad::Line::Cn::work", lwork),
       ipiv("Hgrad::Line::Cn::ipiv", card);
 
@@ -217,31 +218,31 @@ namespace Intrepid2 {
     ordinal_type info = 0;
     Teuchos::LAPACK<ordinal_type,typename ScalarViewType::value_type> lapack;
 
-    lapack.GETRF(card, card, 
+    lapack.GETRF(card, card,
                  vmat.data(), vmat.stride(1),
                  (ordinal_type*)ipiv.data(),
                  &info);
 
     INTREPID2_TEST_FOR_EXCEPTION( info != 0,
-                                  std::runtime_error , 
+                                  std::runtime_error ,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) lapack.GETRF returns nonzero info." );
 
-    lapack.GETRI(card, 
+    lapack.GETRI(card,
                  vmat.data(), vmat.stride(1),
                  (ordinal_type*)ipiv.data(),
                  work.data(), lwork,
                  &info);
 
     INTREPID2_TEST_FOR_EXCEPTION( info != 0,
-                                  std::runtime_error , 
+                                  std::runtime_error ,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM) lapack.GETRI returns nonzero info." );
-    
-    // create host mirror 
+
+    // create host mirror
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
       vinv("Hgrad::Line::Cn::vinv", card, card);
 
-    for (ordinal_type i=0;i<card;++i) 
-      for (ordinal_type j=0;j<card;++j) 
+    for (ordinal_type i=0;i<card;++i)
+      for (ordinal_type j=0;j<card;++j)
         vinv(i,j) = vmat(j,i);
 
     this->vinv_ = Kokkos::create_mirror_view(typename DT::memory_space(), vinv);
@@ -251,10 +252,10 @@ namespace Intrepid2 {
     {
       // Basis-dependent initializations
       const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-      
+
       // Note: the only reason why equispaced can't support higher order than Parameters::MaxOrder appears to be the fact that the tags below get stored into a fixed-length array.
       // TODO: relax the maximum order requirement by setting up tags in a different container, perhaps directly into an OrdinalTypeArray1DHost (tagView, below).  (As of this writing (1/25/22), looks like other nodal bases do this in a similar way -- those should be fixed at the same time; maybe search for Parameters::MaxOrder.)
       INTREPID2_TEST_FOR_EXCEPTION( order > Parameters::MaxOrder, std::invalid_argument, "polynomial order exceeds the max supported by this class");
@@ -319,12 +320,12 @@ namespace Intrepid2 {
                               posScDim,
                               posScOrd,
                               posDfOrd);
-    }  
+    }
   }
 
   template<typename DT, typename OT, typename PT>
-  void 
-  Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(       
+  void
+  Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT>::getScratchSpaceSize(
                                     ordinal_type& perTeamSpaceSize,
                                     ordinal_type& perThreadSpaceSize,
                               const PointViewType inputPoints,
@@ -335,13 +336,13 @@ namespace Intrepid2 {
 
   template<typename DT, typename OT, typename PT>
   KOKKOS_INLINE_FUNCTION
-  void 
-  Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT>::getValues(       
+  void
+  Basis_HGRAD_LINE_Cn_FEM<DT,OT,PT>::getValues(
           OutputViewType outputValues,
       const PointViewType  inputPoints,
       const EOperator operatorType,
       const typename Kokkos::TeamPolicy<typename DT::execution_space>::member_type& team_member,
-      const typename DT::execution_space::scratch_memory_space & scratchStorage, 
+      const typename DT::execution_space::scratch_memory_space & scratchStorage,
       const ordinal_type subcellDim,
       const ordinal_type subcellOrdinal) const {
 
@@ -372,13 +373,13 @@ namespace Intrepid2 {
             Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_GRAD>::getValues( output, input, work, vinv_ );
           });
           break;
-        default: {          
+        default: {
           INTREPID2_TEST_FOR_ABORT( true,
             ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): getValues not implemented for this operator");
           }
     }
   }
-  
+
 }// namespace Intrepid2
 
 #endif

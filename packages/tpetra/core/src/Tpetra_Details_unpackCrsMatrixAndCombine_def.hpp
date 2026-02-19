@@ -1426,10 +1426,7 @@ void unpackAndCombineIntoCrsArrays(
   typedef typename matrix_type::impl_scalar_type ST;
 
   const char prefix[] = "Tpetra::Details::unpackAndCombineIntoCrsArrays_new: ";
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<TimeMonitor> tm;
-#endif
+  Teuchos::RCP<Tpetra::Details::ProfilingRegion> tm;
 
   using Kokkos::MemoryUnmanaged;
 
@@ -1450,26 +1447,18 @@ void unpackAndCombineIntoCrsArrays(
   auto local_matrix = sourceMatrix.getLocalMatrixDevice();
 
   // TargetNumNonzeros is number of nonzeros in local matrix.
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("unpackAndCombineWithOwningPIDsCount"))));
-#endif
+  tm = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Details::unpackAndCombineIntoCrsArrays_new: unpackAndCombineWithOwningPIDsCount"));
   size_t TargetNumNonzeros =
       UnpackAndCombineCrsMatrixImpl::unpackAndCombineWithOwningPIDsCount(
           local_matrix, permute_from_lids_d, imports_d,
           num_packets_per_lid_d, numSameIDs);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::null;
-#endif
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("resize CRS pointers"))));
-#endif
+  tm = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Details::unpackAndCombineIntoCrsArrays_new: resize CRS pointers"));
   Kokkos::resize(crs_rowptr_d, TargetNumRows + 1);
   Kokkos::resize(crs_colind_d, TargetNumNonzeros);
   Kokkos::resize(crs_vals_d, TargetNumNonzeros);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::null;
-#endif
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       permute_to_lids_d.size() != permute_from_lids_d.size(), std::invalid_argument,
@@ -1484,9 +1473,7 @@ void unpackAndCombineIntoCrsArrays(
   // Grab pointers for sourceMatrix
   auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("create mirror views from inputs"))));
-#endif
+  tm = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Details::unpackAndCombineIntoCrsArrays_new: create mirror views from inputs"));
   // Convert input arrays to Kokkos::Views
   DT outputDevice;
 
@@ -1494,9 +1481,7 @@ void unpackAndCombineIntoCrsArrays(
       create_mirror_view_from_raw_host_array(outputDevice, SourcePids.getRawPtr(),
                                              SourcePids.size(), true, "src_pids");
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::null;
-#endif
 
   size_t bytes_per_value = 0;
   if (PackTraits<ST>::compileTimeSize) {
@@ -1525,23 +1510,17 @@ void unpackAndCombineIntoCrsArrays(
                                     outArg(bytes_per_value));
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("unpackAndCombineIntoCrsArrays"))));
-#endif
+  tm = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Details::unpackAndCombineIntoCrsArrays_new: unpackAndCombineIntoCrsArrays"));
   UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsArrays(
       local_matrix, local_col_map, import_lids_d, imports_d,
       num_packets_per_lid_d, permute_to_lids_d, permute_from_lids_d,
       crs_rowptr_d, crs_colind_d, crs_vals_d, src_pids_d, TargetPids,
       numSameIDs, TargetNumRows, TargetNumNonzeros, MyTargetPID,
       bytes_per_value);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::null;
-#endif
 
   // Copy outputs back to host
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("copy back to host"))));
-#endif
+  tm = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Details::unpackAndCombineIntoCrsArrays_new: copy back to host"));
 
   Kokkos::parallel_for(
       "setLocalEntriesToPID", Kokkos::RangePolicy<typename DT::execution_space>(0, TargetPids.size()), KOKKOS_LAMBDA(const size_t i) {
@@ -1623,10 +1602,7 @@ void unpackAndCombineIntoCrsArrays(
   typedef typename matrix_type::impl_scalar_type ST;
 
   const char prefix[] = "Tpetra::Details::unpackAndCombineIntoCrsArrays_new: ";
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<TimeMonitor> tm;
-#endif
+  Teuchos::RCP<Tpetra::Details::ProfilingRegion> tm;
 
   using Kokkos::MemoryUnmanaged;
 
@@ -1647,27 +1623,19 @@ void unpackAndCombineIntoCrsArrays(
   auto local_matrix = sourceMatrix.getLocalMatrixDevice();
 
   // TargetNumNonzeros is number of nonzeros in local matrix.
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("unpackAndCombineWithOwningPIDsCount"))));
-#endif
+  tm = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Details::unpackAndCombineIntoCrsArrays_new: unpackAndCombineWithOwningPIDsCount"));
   size_t TargetNumNonzeros =
       UnpackAndCombineCrsMatrixImpl::unpackAndCombineWithOwningPIDsCount(
           local_matrix, permute_from_lids_d, imports_d,
           num_packets_per_lid_d, numSameIDs);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::null;
-#endif
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("resize CRS pointers"))));
-#endif
+  tm = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Details::unpackAndCombineIntoCrsArrays_new: resize CRS pointers"));
   CRS_rowptr.resize(TargetNumRows + 1);
   CRS_colind.resize(TargetNumNonzeros);
   CRS_vals.resize(TargetNumNonzeros);
   Teuchos::ArrayRCP<ST> const& CRS_vals_impl_scalar_type = Teuchos::arcp_reinterpret_cast<ST>(CRS_vals);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::null;
-#endif
+  tm                                                     = Teuchos::null;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       permute_to_lids_d.size() != permute_from_lids_d.size(), std::invalid_argument,
@@ -1683,9 +1651,7 @@ void unpackAndCombineIntoCrsArrays(
   // Grab pointers for sourceMatrix
   auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("create mirror views from inputs"))));
-#endif
+  tm = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Details::unpackAndCombineIntoCrsArrays_new: create mirror views from inputs"));
   // Convert input arrays to Kokkos::Views
   DT outputDevice;
 
@@ -1726,9 +1692,7 @@ void unpackAndCombineIntoCrsArrays(
       create_mirror_view_from_raw_host_array(outputDevice, TargetPids.getRawPtr(),
                                              TargetPids.size(), true, "tgt_pids");
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::null;
-#endif
 
   size_t bytes_per_value = 0;
   if (PackTraits<ST>::compileTimeSize) {
@@ -1765,23 +1729,17 @@ void unpackAndCombineIntoCrsArrays(
                 "never happen, since std::complex does not work in Kokkos::View objects.");
 #endif  // HAVE_TPETRA_INST_COMPLEX_DOUBLE
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("unpackAndCombineIntoCrsArrays"))));
-#endif
+  tm = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Details::unpackAndCombineIntoCrsArrays_new: unpackAndCombineIntoCrsArrays"));
   UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsArrays(
       local_matrix, local_col_map, import_lids_d, imports_d,
       num_packets_per_lid_d, permute_to_lids_d, permute_from_lids_d,
       crs_rowptr_d, crs_colind_d, crs_vals_d, src_pids_d, tgt_pids_d,
       numSameIDs, TargetNumRows, TargetNumNonzeros, MyTargetPID,
       bytes_per_value);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
   tm = Teuchos::null;
-#endif
 
   // Copy outputs back to host
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  tm = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("copy back to host"))));
-#endif
+  tm = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Details::unpackAndCombineIntoCrsArrays_new: copy back to host"));
   typename decltype(crs_rowptr_d)::host_mirror_type crs_rowptr_h(
       CRS_rowptr.getRawPtr(), CRS_rowptr.size());
   // DEEP_COPY REVIEW - DEVICE-TO-HOSTMIRROR

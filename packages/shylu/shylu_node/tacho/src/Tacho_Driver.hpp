@@ -169,6 +169,10 @@ private:
   ordinal_type _variant;             // algorithmic variant in levelset 0: naive, 1: invert diagonals
   ordinal_type _nstreams;            // on cuda, multi streams are used
 
+  bool _shift_diag;                  // shift diagonal with small perturbation
+  ordinal_type_array _dj;
+  value_type_array _dv;
+
   mag_type _pivot_tol;               // tolerance for tiny pivot perturbation
   bool _store_transpose;             // store transpose explicitly
 
@@ -224,6 +228,7 @@ public:
 
   void setPivotTolerance(const mag_type pivot_tol);
   void useNoPivotTolerance();
+  void shiftDiagonal();
   void useDefaultPivotTolerance();
   void storeExplicitTranspose(bool flag);
 

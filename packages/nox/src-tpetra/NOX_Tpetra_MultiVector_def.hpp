@@ -109,7 +109,6 @@ Abstract::MultiVector& MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 random(bool useSeed, int seed)
 {
     if (!tpetraMultiVec->isDistributed())
-#if KOKKOS_VERSION >= 40799
     {
         if (tpetraMultiVec->getMap()->getComm()->getRank() == 0) {
             tpetraMultiVec->randomize(-KokkosKernels::ArithTraits<Scalar>::one(), KokkosKernels::ArithTraits<Scalar>::one());
@@ -122,20 +121,6 @@ random(bool useSeed, int seed)
     else {
         tpetraMultiVec->randomize(-KokkosKernels::ArithTraits<Scalar>::one(), KokkosKernels::ArithTraits<Scalar>::one());
     }
-#else
-    {
-        if (tpetraMultiVec->getMap()->getComm()->getRank() == 0) {
-            tpetraMultiVec->randomize(-Kokkos::ArithTraits<Scalar>::one(), Kokkos::ArithTraits<Scalar>::one());
-        }
-        else {
-            tpetraMultiVec->putScalar(Kokkos::ArithTraits<Scalar>::zero());
-        }
-        tpetraMultiVec->reduce();
-    }
-    else {
-        tpetraMultiVec->randomize(-Kokkos::ArithTraits<Scalar>::one(), Kokkos::ArithTraits<Scalar>::one());
-    }
-#endif
     return *this;
 }
 

@@ -210,6 +210,50 @@ IF(${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLVE
   )
 
   TRIBITS_ADD_TEST(
+    MatrixMatrixMultiply
+    NAME MatrixMultiply_Performance_Laplace3D
+    COMM mpi
+    ARGS "--timings --nmults=5 --useGaleri --matrixType=Laplace3D --nx=22 --ny=22 --nz=22"
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    MatrixMatrixMultiply
+    NAME MatrixMultiply_Performance_Laplace3D
+    COMM mpi
+    ARGS "--timings --nmults=5 --useGaleri --matrixType=Laplace3D --nx=44 --ny=44 --nz=22"
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    MatrixMatrixMultiply
+    NAME MatrixMultiply_Performance_Brick3D
+    COMM mpi
+    ARGS "--timings --nmults=5 --useGaleri --matrixType=Brick3D --nx=22 --ny=22 --nz=22"
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    MatrixMatrixMultiply
+    NAME MatrixMultiply_Performance_Brick3D
+    COMM mpi
+    ARGS "--timings --nmults=5 --useGaleri --matrixType=Brick3D --nx=44 --ny=44 --nz=22"
+    NUM_MPI_PROCS 4
+    STANDARD_PASS_OUTPUT
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
     Driver
     NAME Driver_anisotropic
     #ARGS "--xml=anisotropic.xml --tol=1e-6 --its=66"

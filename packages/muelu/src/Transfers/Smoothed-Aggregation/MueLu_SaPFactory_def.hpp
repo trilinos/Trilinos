@@ -10,11 +10,7 @@
 #ifndef MUELU_SAPFACTORY_DEF_HPP
 #define MUELU_SAPFACTORY_DEF_HPP
 
-#if KOKKOS_VERSION >= 40799
 #include "KokkosKernels_ArithTraits.hpp"
-#else
-#include "Kokkos_ArithTraits.hpp"
-#endif
 #include "MueLu_SaPFactory_decl.hpp"
 
 #include <Xpetra_Matrix.hpp>
@@ -696,15 +692,11 @@ bool SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::constrainRow(Scalar*
 
 template <typename local_matrix_type>
 struct constraintKernel {
-  using Scalar = typename local_matrix_type::non_const_value_type;
-  using SC     = Scalar;
-  using LO     = typename local_matrix_type::non_const_ordinal_type;
-  using Device = typename local_matrix_type::device_type;
-#if KOKKOS_VERSION >= 40799
-  using KAT = KokkosKernels::ArithTraits<SC>;
-#else
-  using KAT = Kokkos::ArithTraits<SC>;
-#endif
+  using Scalar      = typename local_matrix_type::non_const_value_type;
+  using SC          = Scalar;
+  using LO          = typename local_matrix_type::non_const_ordinal_type;
+  using Device      = typename local_matrix_type::device_type;
+  using KAT         = KokkosKernels::ArithTraits<SC>;
   const Scalar zero = KAT::zero();
   const Scalar one  = KAT::one();
   LO nPDEs;
@@ -784,15 +776,11 @@ struct constraintKernel {
 
 template <typename local_matrix_type>
 struct optimalSatisfyConstraintsForScalarPDEsKernel {
-  using Scalar = typename local_matrix_type::non_const_value_type;
-  using SC     = Scalar;
-  using LO     = typename local_matrix_type::non_const_ordinal_type;
-  using Device = typename local_matrix_type::device_type;
-#if KOKKOS_VERSION >= 40799
-  using KAT = KokkosKernels::ArithTraits<SC>;
-#else
-  using KAT = Kokkos::ArithTraits<SC>;
-#endif
+  using Scalar      = typename local_matrix_type::non_const_value_type;
+  using SC          = Scalar;
+  using LO          = typename local_matrix_type::non_const_ordinal_type;
+  using Device      = typename local_matrix_type::device_type;
+  using KAT         = KokkosKernels::ArithTraits<SC>;
   const Scalar zero = KAT::zero();
   const Scalar one  = KAT::one();
   LO nPDEs;

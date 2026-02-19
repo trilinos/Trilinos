@@ -135,6 +135,8 @@ int driver(const std::string file, const std::string method_name, const int vari
       std::cout << "  > Using explicit transpose " << std::endl;
       solver.storeExplicitTranspose(true);
     }
+    /// test "shift diag" code path
+    solver.shiftDiagonal();
 
     /// levelset options
     ///  forcing to have a few device factor/solve tasks

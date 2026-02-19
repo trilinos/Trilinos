@@ -229,8 +229,7 @@ private:
   #define getLapackHandle(id) _handle_lapack
 #elif defined(KOKKOS_ENABLE_HIP)
   bool _is_rocblas_created;
-  rocblas_handle _handle_blas;
-  rocblas_handle _handle_lapack;
+  rocblas_handle _handle_lapack; // just used for workspace size query
   std::vector<rocblas_handle> _handles;
   // workspace for SpMV
   rocsparse_dnmat_descr matL, matU, matW;
@@ -569,10 +568,9 @@ public:
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
     if (!_is_rocblas_created) {
-      _status = rocblas_create_handle(&_handle_blas);
+      _status = rocblas_create_handle(&_handle_lapack);
       checkDeviceBlasStatus("rocblasCreate");
       _is_rocblas_created = true;
-      _handle_lapack = _handle_blas;
     }
 #endif
     // pre-allocate buf
@@ -611,8 +609,10 @@ public:
     }
     if (this->getSolutionMethod() == 0) {
       // worksize for on-device non-pivot LDL
-      // the blocksize 128 is used in Tacho_NonPivLDL_OnDevice
-      _worksize += (128*_info.max_supernode_size);
+      // the blocksize is used in Tacho_NonPivLDL_OnDevice
+      char *nb_env = getenv("TACHO_BLOCK_SIZE");
+      const ordinal_type nb = (nb_env == NULL ? 256 : atoi(nb_env));
+      _worksize += (nb*_info.max_supernode_size);
     }
     size_type worksize = _worksize * (nstreams + 1);
     Kokkos::resize(_work, worksize);
@@ -795,7 +795,7 @@ public:
     _exec_instances.clear();
 
     if (_is_rocblas_created) {
-      _status = rocblas_destroy_handle(_handle_blas);
+      _status = rocblas_destroy_handle(_handle_lapack);
       checkDeviceLapackStatus("rocblasDestroy");
     }
     for (ordinal_type i = 0; i < _nstreams; ++i) {
@@ -849,8 +849,11 @@ public:
     for (ordinal_type i = 0; i < _nstreams; ++i) {
       _status = rocblas_create_handle(&_handles[i]);
       checkDeviceStatus("rocblas_create_handle");
+      //_status = hipStreamCreateWithFlags(&_streams[i], hipStreamDefault);
       _status = hipStreamCreateWithFlags(&_streams[i], hipStreamNonBlocking);
       checkDeviceStatus("hipStreamCreate");
+      _status = rocblas_set_stream(_handles[i], _streams[i]);
+      checkDeviceBlasStatus("rocblasSetStream(handles[qid])");
     }
 #endif
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
@@ -870,7 +873,6 @@ public:
 
   inline void setStreamOnHandle(const ordinal_type qid) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-    // const ordinal_type qid = q % _nstreams;
     const auto mystream = _streams[qid];
 #if defined(KOKKOS_ENABLE_CUDA)
     _status = cublasSetStream(_handle_blas, mystream);
@@ -880,10 +882,9 @@ public:
     checkDeviceLapackStatus("cusolverDnSetStream");
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    _status = rocblas_set_stream(_handle_blas, mystream);
-    checkDeviceBlasStatus("rocblasSetStream(handle_blas)");
-    _status = rocblas_set_stream(_handles[qid], mystream);
-    checkDeviceBlasStatus("rocblasSetStream(handles[qid])");
+    // > already set in createStream()
+    //_status = rocblas_set_stream(_handles[qid], mystream);
+    //checkDeviceBlasStatus("rocblasSetStream(handles[qid])");
 #endif
 #endif
   }
@@ -895,13 +896,14 @@ public:
   ///
   /// Non-pivot LDL
   ///
-  inline void factorizeNoPivotLDLOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
-                                              const size_type_array_host &h_buf_factor_ptr,
-                                              const value_type_array &work) {
+  inline int factorizeNoPivotLDLOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                             const size_type_array_host &h_buf_factor_ptr,
+                                             const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -955,17 +957,20 @@ public:
             }
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void factorizeNoPivotLDLOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
-                                              const size_type_array_host &h_buf_factor_ptr,
-                                              const value_type_array &work) {
+  inline int factorizeNoPivotLDLOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                             const size_type_array_host &h_buf_factor_ptr,
+                                             const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -1043,17 +1048,20 @@ public:
             }
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void factorizeNoPivotLDLOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
-                                              const size_type_array_host &h_buf_factor_ptr,
-                                              const value_type_array &work) {
+  inline int factorizeNoPivotLDLOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                             const size_type_array_host &h_buf_factor_ptr,
+                                             const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -1150,58 +1158,56 @@ public:
             }
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void factorizeNoPivotLDLOnDevice(const ordinal_type pbeg, const ordinal_type pend,
+  inline int factorizeNoPivotLDLOnDevice(const ordinal_type pbeg, const ordinal_type pend,
                                           const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     if (variant == 0)
-      factorizeNoPivotLDLOnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeNoPivotLDLOnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 1)
-      factorizeNoPivotLDLOnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeNoPivotLDLOnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 2 || variant == 3)
-      factorizeNoPivotLDLOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeNoPivotLDLOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::factorizeNoPivotLDLOnDevice, algorithm variant is not supported");
     }
+    return 0;
   }
 
   ///
   /// Cholesky
   ///
-  inline void factorizeCholeskyOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
-                                            const size_type_array_host &h_buf_factor_ptr,
-                                            const value_type_array &work) {
+  inline int factorizeCholeskyOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                           const size_type_array_host &h_buf_factor_ptr,
+                                           const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
-    exec_space exec_instance;
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
         lapack_handle_type handle_lapack = getLapackHandle(qid);
-
         setStreamOnHandle(qid);
-        exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        blas_handle_type   handle_blas   = getBlasHandle();
         lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
-
         const auto &s = _h_supernodes(sid);
         {
-          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          const ordinal_type m = s.m;
           if (m > 0) {
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
@@ -1210,6 +1216,36 @@ public:
             // On NVIDIA/AMD, calling Chol<ArgUplo, Algo::OnDevice>::invoke with member = handle.
             _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(handle_lapack, ATL, W);
             checkDeviceLapackStatus("chol");
+	  }
+	}
+      }
+    }
+    #if defined(KOKKOS_ENABLE_HIP)
+    Kokkos::fence();
+    #endif
+
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    q = 0;
+#endif
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_factorize_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        const ordinal_type qid = q % _nstreams;
+        blas_handle_type handle_blas = getBlasHandle(qid);
+        setStreamOnHandle(qid);
+
+        ++q;
+#else
+        blas_handle_type handle_blas = getBlasHandle();
+#endif
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *aptr = s.u_buf;
+            UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+            aptr += m * m;
 
             if (n_m > 0) {
               UnmanagedViewType<value_type_matrix> ABR(_buf.data() + h_buf_factor_ptr(p - pbeg), n_m, n_m);
@@ -1224,41 +1260,40 @@ public:
             }
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void factorizeCholeskyOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
-                                            const size_type_array_host &h_buf_factor_ptr,
-                                            const value_type_array &work) {
+  inline int factorizeCholeskyOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                           const size_type_array_host &h_buf_factor_ptr,
+                                           const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
         lapack_handle_type handle_lapack = getLapackHandle(qid);
-
         setStreamOnHandle(qid);
-        exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        blas_handle_type   handle_blas   = getBlasHandle();
         lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
 #endif
 
         const auto &s = _h_supernodes(sid);
         {
-          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          const ordinal_type m = s.m;
           if (m > 0) {
             // Factor the diagonal block
             value_type *aptr = s.u_buf;
@@ -1268,6 +1303,38 @@ public:
             // On NVIDIA/AMD, calling Chol<ArgUplo, Algo::OnDevice>::invoke with member = handle.
             _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(handle_lapack, ATL, W);
             checkDeviceLapackStatus("chol");
+	  }
+	}
+      }
+    }
+    #if defined(KOKKOS_ENABLE_HIP)
+    Kokkos::fence();
+    #endif
+
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    q = 0;
+#endif
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_factorize_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas  = getBlasHandle(qid);
+        setStreamOnHandle(qid);
+
+        exec_instance = _exec_instances[qid];
+        ++q;
+#else
+        blas_handle_type handle_blas = getBlasHandle();
+#endif
+
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m, n = s.n, n_m = n - m;
+          if (m > 0) {
+            value_type *aptr = s.u_buf;
+            UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+            aptr += m * m;
 
             // Compute inverse of diagonal block (in T)
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
@@ -1300,36 +1367,71 @@ public:
             }
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void factorizeCholeskyOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
-                                            const size_type_array_host &h_buf_factor_ptr,
-                                            const value_type_array &work) {
+  inline int factorizeCholeskyOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                           const size_type_array_host &h_buf_factor_ptr,
+                                           const value_type_array &work) {
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_factorize_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
-        blas_handle_type   handle_blas   = getBlasHandle(qid);
         lapack_handle_type handle_lapack = getLapackHandle(qid);
-
         setStreamOnHandle(qid);
-        exec_instance = _exec_instances[qid];
 
         const size_type worksize = work.extent(0) / _nstreams;
         value_type_array W(work.data() + worksize * qid, worksize);
         ++q;
 #else
-        blas_handle_type   handle_blas   = getBlasHandle();
         lapack_handle_type handle_lapack = getLapackHandle();
         value_type_array W = work;
+#endif
+
+        const auto &s = _h_supernodes(sid);
+        {
+          const ordinal_type m = s.m;
+          if (m > 0) {
+            value_type *aptr = s.u_buf;
+            UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
+            aptr += m * m;
+
+            // On NVIDIA/AMD, calling Chol<ArgUplo, Algo::OnDevice>::invoke with member = handle.
+            _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(handle_lapack, ATL, W);
+            checkDeviceLapackStatus("chol");
+	  }
+	}
+      }
+    }
+    #if defined(KOKKOS_ENABLE_HIP)
+    Kokkos::fence();
+    #endif
+
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    q = 0;
+#endif
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      if (_h_factorize_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        const ordinal_type qid = q % _nstreams;
+        blas_handle_type   handle_blas = getBlasHandle(qid);
+        setStreamOnHandle(qid);
+
+        exec_instance = _exec_instances[qid];
+        ++q;
+#else
+        blas_handle_type handle_blas = getBlasHandle();
 #endif
 
         const auto &s = _h_supernodes(sid);
@@ -1339,10 +1441,6 @@ public:
             value_type *aptr = s.u_buf;
             UnmanagedViewType<value_type_matrix> ATL(aptr, m, m);
             aptr += m * m;
-
-            // On NVIDIA/AMD, calling Chol<ArgUplo, Algo::OnDevice>::invoke with member = handle.
-            _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(handle_lapack, ATL, W);
-            checkDeviceLapackStatus("chol");
 
             value_type *bptr = _buf.data() + h_buf_factor_ptr(p - pbeg);
             if (n_m > 0) {
@@ -1384,22 +1482,25 @@ public:
             }
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void factorizeCholeskyOnDevice(const ordinal_type pbeg, const ordinal_type pend,
-                                        const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
+  inline int factorizeCholeskyOnDevice(const ordinal_type pbeg, const ordinal_type pend,
+                                       const size_type_array_host &h_buf_factor_ptr, const value_type_array &work) {
     if (variant == 0)
-      factorizeCholeskyOnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeCholeskyOnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 1)
-      factorizeCholeskyOnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeCholeskyOnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work);
     else if (variant == 2 || variant == 3)
-      factorizeCholeskyOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
+      return factorizeCholeskyOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
     else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::factorizeCholeskyOnDevice, algorithm variant is not supported");
     }
+    return 0;
   }
 
   /// 
@@ -2882,13 +2983,14 @@ public:
   /// 
   /// Non-pivot LDL Lower
   ///
-  inline void solveNoPivotLDLLowerOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+  inline int solveNoPivotLDLLowerOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
                                               const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -2933,17 +3035,20 @@ public:
             checkDeviceBlasStatus("scale");
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveNoPivotLDLLowerOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
-                                               const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveNoPivotLDLLowerOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -2995,18 +3100,21 @@ public:
             checkDeviceBlasStatus("scale");
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveNoPivotLDLLowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
-                                               const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveNoPivotLDLLowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
 
     exec_space exec_instance;
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
@@ -3048,19 +3156,21 @@ public:
             checkDeviceBlasStatus("scale");
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveNoPivotLDLLowerOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
-                                           const ordinal_type pbeg, const ordinal_type pend,
-                                           const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveNoPivotLDLLowerOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
+                                          const ordinal_type pbeg, const ordinal_type pend,
+                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     if (variant == 0)
-      solveNoPivotLDLLowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+      return solveNoPivotLDLLowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveNoPivotLDLLowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+      return solveNoPivotLDLLowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveNoPivotLDLLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      return solveNoPivotLDLLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
       // apply L^{-1}
       solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
@@ -3082,18 +3192,20 @@ public:
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveNoPivotLDLLowerOnDevice, algorithm variant is not supported");
     }
+    return 0;
   }
 
   /// 
   /// Non-pivot LDL Upper
   ///
-  inline void solveNoPivotLDLUpperOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
-                                               const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveNoPivotLDLUpperOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
@@ -3129,17 +3241,20 @@ public:
             checkDeviceBlasStatus("trsv");
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveNoPivotLDLUpperOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
-                                               const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveNoPivotLDLUpperOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -3188,17 +3303,20 @@ public:
             checkDeviceBlasStatus("Copy");
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveNoPivotLDLUpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
-                                               const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveNoPivotLDLUpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                              const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     exec_space exec_instance;
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
@@ -3233,38 +3351,41 @@ public:
             checkDeviceBlasStatus("trmv");
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveNoPivotLDLUpperOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
-                                           const ordinal_type pbeg, const ordinal_type pend,
-                                           const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveNoPivotLDLUpperOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
+                                          const ordinal_type pbeg, const ordinal_type pend,
+                                          const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     if (variant == 0)
-      solveNoPivotLDLUpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+      return solveNoPivotLDLUpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveNoPivotLDLUpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+      return solveNoPivotLDLUpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveNoPivotLDLUpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      return solveNoPivotLDLUpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
       solveGenericUpperOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
     } else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveNoPivotLDLUpperOnDevice, algorithm variant is not supported");
     }
+    return 0;
   }
 
   /// 
   /// Cholesky Lower
   ///
-  inline void solveCholeskyLowerOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
-                                             const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveCholeskyLowerOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                            const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
-    exec_space exec_instance;
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
@@ -3272,7 +3393,6 @@ public:
         const ordinal_type qid = q % _nstreams;
         blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
-        exec_instance = _exec_instances[qid];
         ++q;
 #else
         blas_handle_type handle_blas = getBlasHandle();
@@ -3303,18 +3423,20 @@ public:
             }
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveCholeskyLowerOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
-                                             const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveCholeskyLowerOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                            const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
-    exec_space exec_instance;
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
@@ -3322,7 +3444,6 @@ public:
         const ordinal_type qid = q % _nstreams;
         blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
-        exec_instance = _exec_instances[qid];
         ++q;
 #else
         blas_handle_type handle_blas = getBlasHandle();
@@ -3357,27 +3478,29 @@ public:
             }
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveCholeskyLowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
-                                             const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveCholeskyLowerOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                            const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const value_type one(1), zero(0);
     const ordinal_type nrhs = t.extent(1);
 
-    exec_space exec_instance;
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        //const ordinal_type qid = 0; //q % _nstreams;
         const ordinal_type qid = q % _nstreams;
         blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
-        exec_instance = _exec_instances[qid];
         ++q;
 #else
         blas_handle_type handle_blas = getBlasHandle();
@@ -3400,37 +3523,41 @@ public:
             checkDeviceBlasStatus("gemv");
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveCholeskyLowerOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
-                                         const ordinal_type pbeg, const ordinal_type pend,
-                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveCholeskyLowerOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
+                                        const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     if (variant == 0)
-      solveCholeskyLowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+      return solveCholeskyLowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveCholeskyLowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+      return solveCholeskyLowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveCholeskyLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      return solveCholeskyLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
       solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
     } else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveCholeskyLowerOnDevice, algorithm variant is not supported");
     }
+    return 0;
   }
 
   /// 
   /// Cholesky Upper
   ///
-  inline void solveCholeskyUpperOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
-                                             const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveCholeskyUpperOnDeviceVar0(const ordinal_type pbeg, const ordinal_type pend,
+                                            const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
@@ -3466,17 +3593,20 @@ public:
             checkDeviceBlasStatus("trsv");
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveCholeskyUpperOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
-                                             const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveCholeskyUpperOnDeviceVar1(const ordinal_type pbeg, const ordinal_type pend,
+                                            const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const ordinal_type nrhs = t.extent(1);
     const value_type minus_one(-1), one(1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
@@ -3521,27 +3651,29 @@ public:
             checkDeviceBlasStatus("Copy");
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveCholeskyUpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
-                                             const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveCholeskyUpperOnDeviceVar2(const ordinal_type pbeg, const ordinal_type pend,
+                                            const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     const value_type one(1), zero(0);
     const ordinal_type nrhs = t.extent(1);
 
-    exec_space exec_instance;
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
+    int num_device_calls = 0;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const ordinal_type qid = q % _nstreams;
+        //const ordinal_type qid = 0; //q % _nstreams;
         blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
-        exec_instance = _exec_instances[qid];
         ++q;
 #else
         blas_handle_type handle_blas = getBlasHandle();
@@ -3563,25 +3695,28 @@ public:
             checkDeviceBlasStatus("gemv");
           }
         }
+        num_device_calls ++;
       }
     }
+    return num_device_calls;
   }
 
-  inline void solveCholeskyUpperOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
-                                         const ordinal_type pbeg, const ordinal_type pend,
-                                         const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+  inline int solveCholeskyUpperOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
+                                        const ordinal_type pbeg, const ordinal_type pend,
+                                        const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     if (variant == 0)
-      solveCholeskyUpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+      return solveCholeskyUpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 1)
-      solveCholeskyUpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+      return solveCholeskyUpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
-      solveCholeskyUpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      return solveCholeskyUpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
       solveGenericUpperOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
     } else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "LevelSetTools::solveCholeskyUpperOnDevice, algorithm variant is not supported");
     }
+    return 0;
   }
 
   /// 
@@ -4145,7 +4280,6 @@ public:
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
-    exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
@@ -4153,7 +4287,6 @@ public:
         const ordinal_type qid = q % _nstreams;
         blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
-        exec_instance = _exec_instances[qid];
         ++q;
 #else
         blas_handle_type handle_blas = getBlasHandle();
@@ -4242,7 +4375,6 @@ public:
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     ordinal_type q(0);
 #endif
-    exec_space exec_instance;
     for (ordinal_type p = pbeg; p < pend; ++p) {
       const ordinal_type sid = _h_level_sids(p);
       if (_h_solve_mode(sid) == 0) {
@@ -4250,7 +4382,6 @@ public:
         const ordinal_type qid = q % _nstreams;
         blas_handle_type handle_blas = getBlasHandle(qid);
         setStreamOnHandle(qid);
-        exec_instance = _exec_instances[qid];
         ++q;
 #else
         blas_handle_type handle_blas = getBlasHandle();
@@ -4332,8 +4463,6 @@ public:
       _ax = ax; // matrix values
       constexpr bool copy_to_l_buf(false);
       _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
-    }
-    if (_nstreams > 1) {
       exec_space().fence(); // wait for copy
     }
     stat.t_copy = timer.seconds();
@@ -4418,14 +4547,15 @@ public:
               ++stat_level.n_kernel_launching;
             }
 
-            const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
             if (verbose) {
               Kokkos::fence(); tick.reset();
             }
+            int num_device_calls = 0;
+            const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
             if (this->getSolutionMethod() == 0) {
-              factorizeNoPivotLDLOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
+              num_device_calls = factorizeNoPivotLDLOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
             } else {
-              factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
+              num_device_calls = factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, _work);
             }
             if (verbose) {
               Kokkos::fence(); time_device += tick.seconds();
@@ -4436,13 +4566,14 @@ public:
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(true, std::runtime_error, "POTRF (team) returns non-zero error code.");
             }
-
+            if (num_device_calls > 0)
+                Kokkos::fence(); // sync device-calls
             Kokkos::parallel_for("update factor", policy_update, functor);
+            exec_space().fence(); // sync default, for potential device calls
             if (verbose) {
               Kokkos::fence(); time_update += tick.seconds();
             }
             ++stat_level.n_kernel_launching;
-            exec_space().fence(); // Kokkos::fence();
           }
         }
       }
@@ -4496,6 +4627,7 @@ public:
     // 0. permute and copy b -> t
     const auto exec_instance = exec_space();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
+    exec_space().fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -4558,25 +4690,30 @@ public:
             const auto policy_solve_with_work_property = policy_solve;
             const auto policy_update_with_work_property = policy_update;
 #endif
-            if (lvl < _device_level_cut) {
-              // do nothing
-              // Kokkos::parallel_for("solve lower", policy_solve, functor);
-            } else {
-              Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
-              ++stat_level.n_kernel_launching;
+            if (variant != 3) {
+              if (lvl < _device_level_cut) {
+                // do nothing
+                // Kokkos::parallel_for("solve lower", policy_solve, functor);
+              } else {
+                Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
+                ++stat_level.n_kernel_launching;
+              }
             }
+            int num_device_calls = 0;
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             if (this->getSolutionMethod() == 0) {
-              solveNoPivotLDLLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              num_device_calls = solveNoPivotLDLLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             } else {
-              solveCholeskyLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              num_device_calls = solveCholeskyLowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             }
             if (variant != 3) {
+              if (num_device_calls > 0)
+                Kokkos::fence(); // synch device calls
+
               // copy from buffer to t
-              Kokkos::fence();
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
+              exec_space().fence(); // sync default, for potential device-calls
               ++stat_level.n_kernel_launching;
-              exec_space().fence();
             }
           }
         }
@@ -4631,8 +4768,8 @@ public:
 #endif
             if (variant != 3) {
               Kokkos::parallel_for("update upper", policy_update_with_work_property, functor);
+              exec_space().fence(); // sync default, for potential device-calls
               ++stat_level.n_kernel_launching;
-              exec_space().fence();
 
               if (lvl < _device_level_cut) {
                 // do nothing
@@ -4642,13 +4779,14 @@ public:
                 ++stat_level.n_kernel_launching;
               }
             }
+            int num_device_calls = 0;
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             if (this->getSolutionMethod() == 0) {
-              solveNoPivotLDLUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              num_device_calls = solveNoPivotLDLUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             } else {
-              solveCholeskyUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
+              num_device_calls = solveCholeskyUpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             }
-            if (variant != 3) {
+            if (num_device_calls > 0 || 1+lvl == _team_serial_level_cut) {
               Kokkos::fence();
             }
           }
@@ -4705,8 +4843,6 @@ public:
       _ax = ax; // matrix values
       constexpr bool copy_to_l_buf(false);
       _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
-    }
-    if (_nstreams > 1) {
       exec_space().fence(); // wait for copy
     }
     stat.t_copy = timer.seconds();
@@ -4808,13 +4944,14 @@ public:
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "SYTRF (team) returns non-zero error code.");
             }
+            Kokkos::fence(); // sync device calls
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             if (verbose) {
               Kokkos::fence(); time_update += tick.seconds();
             }
-            ++stat_level.n_kernel_launching;
             exec_space().fence();
+            ++stat_level.n_kernel_launching;
           }
           const auto exec_instance = exec_space();
           Kokkos::deep_copy(exec_instance, _h_supernodes, _info.supernodes);
@@ -4857,6 +4994,7 @@ public:
     // 0. permute and copy b -> t
     const auto exec_instance = exec_space();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
+    exec_space().fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -5055,8 +5193,6 @@ public:
       _ax = ax; // matrix values
       constexpr bool copy_to_l_buf(true);
       _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
-    }
-    if (_nstreams > 1) {
       exec_space().fence(); // wait for copy
     }
     stat.t_copy = timer.seconds();
@@ -5161,13 +5297,14 @@ public:
             if (rval != 0) {
               TACHO_TEST_FOR_EXCEPTION(rval, std::runtime_error, "GETRF (team) returns non-zero error code.");
             }
+            Kokkos::fence(); // sync device calls
 
             Kokkos::parallel_for("update factor", policy_update, functor);
             if (verbose) {
               Kokkos::fence(); time_update += tick.seconds();
             }
-            ++stat_level.n_kernel_launching;
             exec_space().fence();
+            ++stat_level.n_kernel_launching;
           }
           const auto exec_instance = exec_space();
           Kokkos::deep_copy(exec_instance, _h_supernodes, _info.supernodes);

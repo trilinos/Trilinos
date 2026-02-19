@@ -179,7 +179,8 @@ namespace GMLS_LinearAlgebra {
       pm.setTeamScratchSize(0, l0_scratch_size);
       pm.setTeamScratchSize(1, scratch_size);
 
-      pm.CallFunctorWithTeamThreadsAndVectors(*this, _a.extent(0));
+      auto tp = pm.TeamPolicyThreadsAndVectors(_a.extent(0));
+      Kokkos::parallel_for("BatchedTeamVectorSolveUTV", tp, *this);
       Kokkos::fence();
 
       Kokkos::Profiling::popRegion();

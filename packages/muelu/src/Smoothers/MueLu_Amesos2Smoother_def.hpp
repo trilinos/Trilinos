@@ -35,7 +35,7 @@ Projection<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                                            Nullspace->getMap()->getComm(),
                                                                            Xpetra::LocallyReplicated);
 
-  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, Nullspace->getNumVectors());
+  Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempMV = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(localMap_, Nullspace->getNumVectors(), false);
   const Scalar ONE                                                                     = Teuchos::ScalarTraits<Scalar>::one();
   const Scalar ZERO                                                                    = Teuchos::ScalarTraits<Scalar>::zero();
   tempMV->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, ONE, *Nullspace, *Nullspace, ZERO);
@@ -112,7 +112,7 @@ Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Amesos2Smoother(cons
 #if defined(HAVE_AMESOS2_KLU2)
     type_ = "Klu";
 #elif defined(HAVE_AMESOS2_SUPERLU)
-    type_          = "Superlu";
+    type_ = "Superlu";
 #elif defined(HAVE_AMESOS2_SUPERLUDIST)
     type_ = "Superludist";
 #elif defined(HAVE_AMESOS2_BASKER)
@@ -195,25 +195,17 @@ void Amesos2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
         elements[k] = Teuchos::as<GO>(k);
       colMap           = MapFactory::Build(rowMap->lib(), gblNumCols * rowMap->getComm()->getSize(), elements, Teuchos::ScalarTraits<GO>::zero(), rowMap->getComm());
       importer         = ImportFactory::Build(rowMap, colMap);
-      ghostedNullspace = MultiVectorFactory::Build(colMap, Nullspace->getNumVectors());
+      ghostedNullspace = MultiVectorFactory::Build(colMap, Nullspace->getNumVectors(), false);
       ghostedNullspace->doImport(*Nullspace, *importer, Xpetra::INSERT);
     } else {
       ghostedNullspace = Nullspace;
       colMap           = rowMap;
     }
 
-#if KOKKOS_VERSION >= 40799
-    using ATS = KokkosKernels::ArithTraits<SC>;
-#else
-    using ATS      = Kokkos::ArithTraits<SC>;
-#endif
+    using ATS         = KokkosKernels::ArithTraits<SC>;
     using impl_Scalar = typename ATS::val_type;
-#if KOKKOS_VERSION >= 40799
-    using impl_ATS = KokkosKernels::ArithTraits<impl_Scalar>;
-#else
-    using impl_ATS = Kokkos::ArithTraits<impl_Scalar>;
-#endif
-    using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+    using impl_ATS    = KokkosKernels::ArithTraits<impl_Scalar>;
+    using range_type  = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     typedef typename Matrix::local_matrix_device_type KCRS;
     typedef typename KCRS::StaticCrsGraphType graph_t;
