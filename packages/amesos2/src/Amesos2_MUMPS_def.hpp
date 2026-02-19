@@ -303,14 +303,14 @@ namespace Amesos2
     if( is_null(valid_params) ){
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     
-       pl->set("ICNTL(1)", -1, "See Manual" );
-       pl->set("ICNTL(2)", -1, "See Manual" );
-       pl->set("ICNTL(3)", -1, "See Manual" );
-       pl->set("ICNTL(4)", 1, "See Manual" );
-       pl->set("ICNTL(6)", 0, "See Manual" );
-       pl->set("ICNTL(9)", 1, "See Manual" );
-       pl->set("ICNTL(11)", 0, "See Manual" );
-       pl->set("ICNTL(14)", 20, "See Manual" );
+       pl->set("ICNTL(1)", -1, "Output stream for error messages." );
+       pl->set("ICNTL(2)", -1, "Output stream for diagnostic." );
+       pl->set("ICNTL(3)", -1, "Output stream for global information." );
+       pl->set("ICNTL(4)",  1, "Level of printing." );
+       pl->set("ICNTL(6)",  0, "Permutes the matrix to a zero-free diagonal" );
+       pl->set("ICNTL(9)",  1, "Transpose solve, if not 1" );
+       pl->set("ICNTL(11)", 0, "Computes statistics for error analysis" );
+       pl->set("ICNTL(14)", 20, "Percentage increase in the estimated working space" );
        pl->set("IsContiguous", true, "Whether GIDs contiguous");
       
        valid_params = pl;
