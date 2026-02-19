@@ -228,7 +228,6 @@ static inline int ComputeResidualVectorRecommendedVectorSize(const int blksize,
 
 template <typename MatrixType>
 struct ComputeResidualFunctor {
- public:
   using impl_type        = BlockHelperDetails::ImplType<MatrixType>;
   using node_device_type = typename impl_type::node_device_type;
   using execution_space  = typename impl_type::execution_space;
@@ -254,7 +253,6 @@ struct ComputeResidualFunctor {
   /// team policy member type (used in cuda)
   using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;
 
- private:
   ConstUnmanaged<impl_scalar_type_2d_view_tpetra> b;
   ConstUnmanaged<impl_scalar_type_2d_view_tpetra> x;  // x_owned
   ConstUnmanaged<impl_scalar_type_2d_view_tpetra> x_remote;
@@ -291,7 +289,6 @@ struct ComputeResidualFunctor {
   const bool is_dm2cm_active;
   const bool hasBlockCrsMatrix;
 
- public:
   ComputeResidualFunctor (const ComputeResidualVector<MatrixType>& crv)
     : rowptr(crv.rowptr)
     , rowptr_remote(crv.rowptr_remote)
@@ -754,11 +751,12 @@ void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector
   IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
   IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<SeqTag>", ComputeResidual0, execution_space);
 
-  y = y_;
-  b = b_;
-  x = x_;
   using Functor = ComputeResidualFunctor<typename impl_type::matrix_type>;
   Functor functor(*this);
+
+  functor.y = y_;
+  functor.b = b_;
+  functor.x = x_;
   if constexpr (is_device<execution_space>::value) {
     const local_ordinal_type blocksize   = blocksize_requested;
     const local_ordinal_type team_size   = 8;
@@ -782,21 +780,21 @@ void ComputeResidualVector<MatrixType>::run(const vector_type_3d_view &y_packed_
   IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
   IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<AsyncTag>", ComputeResidual0, execution_space);
 
-  b        = b_;
-  x        = x_;
-  x_remote = x_remote_;
+  using Functor = ComputeResidualFunctor<typename impl_type::matrix_type>;
+  Functor functor(*this);
+
+  functor.b        = b_;
+  functor.x        = x_;
+  functor.x_remote = x_remote_;
   if constexpr (is_device<execution_space>::value) {
-    y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type *)y_packed_.data(),
+    functor.y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type *)y_packed_.data(),
                                                y_packed_.extent(0),
                                                y_packed_.extent(1),
                                                y_packed_.extent(2),
                                                vector_length);
   } else {
-    y_packed = y_packed_;
+    functor.y_packed = y_packed_;
   }
-
-  using Functor = ComputeResidualFunctor<typename impl_type::matrix_type>;
-  Functor functor(*this);
 
   if constexpr (is_device<execution_space>::value) {
     const local_ordinal_type blocksize = blocksize_requested;
@@ -882,21 +880,21 @@ void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector
   IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
   IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<OverlapTag>", ComputeResidual0, execution_space);
 
-  b        = b_;
-  x        = x_;
-  x_remote = x_remote_;
+  using Functor = ComputeResidualFunctor<typename impl_type::matrix_type>;
+  Functor functor(*this);
+
+  functor.b        = b_;
+  functor.x        = x_;
+  functor.x_remote = x_remote_;
   if constexpr (is_device<execution_space>::value) {
-    y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type *)y_packed_.data(),
+    functor.y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type *)y_packed_.data(),
                                                y_packed_.extent(0),
                                                y_packed_.extent(1),
                                                y_packed_.extent(2),
                                                vector_length);
   } else {
-    y_packed = y_packed_;
+    functor.y_packed = y_packed_;
   }
-
-  using Functor = ComputeResidualFunctor<typename impl_type::matrix_type>;
-  Functor functor(*this);
 
   if constexpr (is_device<execution_space>::value) {
     const local_ordinal_type blocksize = blocksize_requested;

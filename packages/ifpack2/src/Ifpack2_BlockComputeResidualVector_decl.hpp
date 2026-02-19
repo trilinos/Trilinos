@@ -45,13 +45,6 @@ struct ComputeResidualVector {
   /// team policy member type (used in cuda)
   using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;
 
-  ConstUnmanaged<impl_scalar_type_2d_view_tpetra> b;
-  ConstUnmanaged<impl_scalar_type_2d_view_tpetra> x;  // x_owned
-  ConstUnmanaged<impl_scalar_type_2d_view_tpetra> x_remote;
-  Unmanaged<impl_scalar_type_2d_view_tpetra> y;
-  Unmanaged<vector_type_3d_view> y_packed;
-  Unmanaged<btdm_scalar_type_4d_view> y_packed_scalar;
-
   // AmD information
   const ConstUnmanaged<size_type_1d_view> rowptr, rowptr_remote;
   const ConstUnmanaged<local_ordinal_type_1d_view> colindsub, colindsub_remote;
