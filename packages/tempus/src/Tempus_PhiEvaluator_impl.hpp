@@ -166,6 +166,11 @@ void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluat
 /*
  * PhiLinearSolver methods
  */
+template <class Scalar>
+void PhiLinearSolver<Scalar>::setLumpMassMatrix(bool lump)
+{
+  lumpMass_ = lump;
+}
 
 template <class Scalar>
 void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
@@ -222,9 +227,9 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 
   //Teuchos::RCP<const Epetra_CrsMatrix> crsMat = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*fullMassMatrix));
   //EpetraExt::RowMatrixToMatrixMarketFile("fullMassMatrix_mat.mm",*crsMat);
-
+  std::cout << lumpMass_ << std::endl;
   if(!lumpMass_) {
-    // std::cout << "Using full mass matrix for Phi evaluation." << std::endl;
+    std::cout << "Using full mass matrix for Phi evaluation." << std::endl;
     invMassMatrix_ = Thyra::inverse<Scalar>(*appModel_->get_W_factory(),fullMassMatrix_);
   }
   else {
@@ -245,7 +250,7 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
     invMassMatrix_ = Thyra::diagonal(invLumpMass);
 
     // std::cout << "Using lumped mass matrix for Phi evaluation." << std::endl;
-    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     // lumpedMassDiagonal_->describe(*out, Teuchos::VERB_EXTREME);
     // fullMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);

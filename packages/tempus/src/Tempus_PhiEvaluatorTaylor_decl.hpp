@@ -39,11 +39,13 @@ class PhiEvaluatorTaylor
   Teuchos::RCP<const Thyra::VectorBase<Scalar>> matrixExponential(const int expansionOrder);
 
   void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
+  void setLumpMassMatrix(bool lump);
 
  private:
   mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
 
   int taylorExpOrder_;
+  bool useLumpedMass_;
 
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
   Teuchos::RCP<Thyra::VectorBase<Scalar>> v_;
