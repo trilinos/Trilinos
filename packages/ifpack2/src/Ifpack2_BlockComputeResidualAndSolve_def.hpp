@@ -72,10 +72,10 @@ struct ComputeResidualAndSolve_SinglePass_Impl {
 
  public:
   ComputeResidualAndSolve_SinglePass_Impl(const AmD<MatrixType>& amd,
-                                const btdm_scalar_type_3d_view& d_inv_,
-                                const impl_scalar_type_1d_view& W_,
-                                const local_ordinal_type& blocksize_requested_,
-                                const impl_scalar_type& damping_factor_)
+                                          const btdm_scalar_type_3d_view& d_inv_,
+                                          const impl_scalar_type_1d_view& W_,
+                                          const local_ordinal_type& blocksize_requested_,
+                                          const impl_scalar_type& damping_factor_)
     : tpetra_values(amd.tpetra_values)
     , blocksize_requested(blocksize_requested_)
     , A_x_offsets(amd.A_x_offsets)
@@ -86,102 +86,102 @@ struct ComputeResidualAndSolve_SinglePass_Impl {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const member_type& member) const {
-      const local_ordinal_type blocksize      = (B == 0 ? blocksize_requested : B);
-      const local_ordinal_type rowidx         = member.league_rank();
-      const local_ordinal_type row            = rowidx * blocksize;
-      const local_ordinal_type num_vectors    = b.extent(1);
-      const local_ordinal_type num_local_rows = d_inv.extent(0);
+    const local_ordinal_type blocksize      = (B == 0 ? blocksize_requested : B);
+    const local_ordinal_type rowidx         = member.league_rank();
+    const local_ordinal_type row            = rowidx * blocksize;
+    const local_ordinal_type num_vectors    = b.extent(1);
+    const local_ordinal_type num_local_rows = d_inv.extent(0);
 
-      const impl_scalar_type* xx;
-      auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(
-          tpetra_values.data(), blocksize, blocksize);
+    const impl_scalar_type* xx;
+    auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(
+        tpetra_values.data(), blocksize, blocksize);
 
-      // Get shared allocation for a local copy of x, residual, and A
-      impl_scalar_type* local_residual = reinterpret_cast<impl_scalar_type*>(
-          member.team_scratch(0).get_shmem(blocksize * sizeof(impl_scalar_type)));
-      impl_scalar_type* local_Dinv_residual = reinterpret_cast<impl_scalar_type*>(
-          member.team_scratch(0).get_shmem(blocksize * sizeof(impl_scalar_type)));
-      impl_scalar_type* local_x =
-          reinterpret_cast<impl_scalar_type*>(member.thread_scratch(0).get_shmem(
-              blocksize * sizeof(impl_scalar_type)));
+    // Get shared allocation for a local copy of x, residual, and A
+    impl_scalar_type* local_residual = reinterpret_cast<impl_scalar_type*>(
+        member.team_scratch(0).get_shmem(blocksize * sizeof(impl_scalar_type)));
+    impl_scalar_type* local_Dinv_residual = reinterpret_cast<impl_scalar_type*>(
+        member.team_scratch(0).get_shmem(blocksize * sizeof(impl_scalar_type)));
+    impl_scalar_type* local_x =
+        reinterpret_cast<impl_scalar_type*>(member.thread_scratch(0).get_shmem(
+            blocksize * sizeof(impl_scalar_type)));
 
-      magnitude_type norm = 0;
-      for (local_ordinal_type col = 0; col < num_vectors; ++col) {
-        if (col) member.team_barrier();
-        // y -= Rx
-        // Initialize accumulation arrays
-        Kokkos::parallel_for(Kokkos::TeamVectorRange(member, blocksize),
-                             [&](const local_ordinal_type& i) {
-                               local_Dinv_residual[i] = 0;
-                               local_residual[i]      = b(row + i, col);
-                             });
-        member.team_barrier();
+    magnitude_type norm = 0;
+    for (local_ordinal_type col = 0; col < num_vectors; ++col) {
+      if (col) member.team_barrier();
+      // y -= Rx
+      // Initialize accumulation arrays
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(member, blocksize),
+                           [&](const local_ordinal_type& i) {
+                             local_Dinv_residual[i] = 0;
+                             local_residual[i]      = b(row + i, col);
+                           });
+      member.team_barrier();
 
-        int numEntries = A_x_offsets.extent(2);
+      int numEntries = A_x_offsets.extent(2);
 
-        Kokkos::parallel_for(
-            Kokkos::TeamThreadRange(member, 0, numEntries), [&](const int k) {
-              int64_t A_offset = A_x_offsets(rowidx, 0, k);
-              int64_t x_offset = A_x_offsets(rowidx, 1, k);
-              if (A_offset != KokkosKernels::ArithTraits<int64_t>::min()) {
-                A_block_cst.assign_data(tpetra_values.data() + A_offset);
-                // Pull x into local memory
-                int64_t remote_cutoff = blocksize * num_local_rows;
-                if (x_offset >= remote_cutoff)
-                  xx = &x_remote(x_offset - remote_cutoff, col);
-                else
-                  xx = &x(x_offset, col);
+      Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(member, 0, numEntries), [&](const int k) {
+            int64_t A_offset = A_x_offsets(rowidx, 0, k);
+            int64_t x_offset = A_x_offsets(rowidx, 1, k);
+            if (A_offset != KokkosKernels::ArithTraits<int64_t>::min()) {
+              A_block_cst.assign_data(tpetra_values.data() + A_offset);
+              // Pull x into local memory
+              int64_t remote_cutoff = blocksize * num_local_rows;
+              if (x_offset >= remote_cutoff)
+                xx = &x_remote(x_offset - remote_cutoff, col);
+              else
+                xx = &x(x_offset, col);
 
-                Kokkos::parallel_for(
-                    Kokkos::ThreadVectorRange(member, blocksize),
-                    [&](const local_ordinal_type& i) { local_x[i] = xx[i]; });
-
-                // matvec on block: local_residual -= A_block_cst * local_x
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, blocksize),
-                                     [&](const int k0) {
-                                       impl_scalar_type val = 0;
-                                       for (int k1 = 0; k1 < blocksize; k1++)
-                                         val += A_block_cst(k0, k1) * local_x[k1];
-                                       Kokkos::atomic_add(local_residual + k0, -val);
-                                     });
-              }
-            });
-        member.team_barrier();
-        // Compute local_Dinv_residual = D^-1 * local_residual
-        Kokkos::parallel_for(
-            Kokkos::TeamThreadRange(member, blocksize),
-            [&](const local_ordinal_type& k0) {
-              Kokkos::parallel_reduce(
+              Kokkos::parallel_for(
                   Kokkos::ThreadVectorRange(member, blocksize),
-                  [&](const local_ordinal_type& k1, impl_scalar_type& update) {
-                    update += d_inv(rowidx, k0, k1) * local_residual[k1];
-                  },
-                  local_Dinv_residual[k0]);
-            });
-        member.team_barrier();
-        // local_Dinv_residual is fully computed. Now compute the
-        // squared y update norm and update y (using damping factor).
-        magnitude_type colNorm;
-        Kokkos::parallel_reduce(
-            Kokkos::TeamVectorRange(member, blocksize),
-            [&](const local_ordinal_type& k, magnitude_type& update) {
-              // Compute the change in y (assuming damping_factor == 1) for this
-              // entry.
-              impl_scalar_type old_y    = x(row + k, col);
-              impl_scalar_type y_update = local_Dinv_residual[k] - old_y;
-              if constexpr (KokkosKernels::ArithTraits<impl_scalar_type>::is_complex) {
-                magnitude_type ydiff =
-                    KokkosKernels::ArithTraits<impl_scalar_type>::abs(y_update);
-                update += ydiff * ydiff;
-              } else {
-                update += y_update * y_update;
-              }
-              y(row + k, col) = old_y + damping_factor * y_update;
-            },
-            colNorm);
-        norm += colNorm;
-      }
-      Kokkos::single(Kokkos::PerTeam(member), [&]() { W(rowidx) = norm; });
+                  [&](const local_ordinal_type& i) { local_x[i] = xx[i]; });
+
+              // matvec on block: local_residual -= A_block_cst * local_x
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, blocksize),
+                                   [&](const int k0) {
+                                     impl_scalar_type val = 0;
+                                     for (int k1 = 0; k1 < blocksize; k1++)
+                                       val += A_block_cst(k0, k1) * local_x[k1];
+                                     Kokkos::atomic_add(local_residual + k0, -val);
+                                   });
+            }
+          });
+      member.team_barrier();
+      // Compute local_Dinv_residual = D^-1 * local_residual
+      Kokkos::parallel_for(
+          Kokkos::TeamThreadRange(member, blocksize),
+          [&](const local_ordinal_type& k0) {
+            Kokkos::parallel_reduce(
+                Kokkos::ThreadVectorRange(member, blocksize),
+                [&](const local_ordinal_type& k1, impl_scalar_type& update) {
+                  update += d_inv(rowidx, k0, k1) * local_residual[k1];
+                },
+                local_Dinv_residual[k0]);
+          });
+      member.team_barrier();
+      // local_Dinv_residual is fully computed. Now compute the
+      // squared y update norm and update y (using damping factor).
+      magnitude_type colNorm;
+      Kokkos::parallel_reduce(
+          Kokkos::TeamVectorRange(member, blocksize),
+          [&](const local_ordinal_type& k, magnitude_type& update) {
+            // Compute the change in y (assuming damping_factor == 1) for this
+            // entry.
+            impl_scalar_type old_y    = x(row + k, col);
+            impl_scalar_type y_update = local_Dinv_residual[k] - old_y;
+            if constexpr (KokkosKernels::ArithTraits<impl_scalar_type>::is_complex) {
+              magnitude_type ydiff =
+                  KokkosKernels::ArithTraits<impl_scalar_type>::abs(y_update);
+              update += ydiff * ydiff;
+            } else {
+              update += y_update * y_update;
+            }
+            y(row + k, col) = old_y + damping_factor * y_update;
+          },
+          colNorm);
+      norm += colNorm;
+    }
+    Kokkos::single(Kokkos::PerTeam(member), [&]() { W(rowidx) = norm; });
   }
 
   void run(const ConstUnmanaged<impl_scalar_type_2d_view_tpetra>& b_,
@@ -282,7 +282,7 @@ struct ComputeResidualAndSolve_2Pass_Impl {
   impl_scalar_type damping_factor;
 
  public:
-  ComputeResidualAndSolve_2Pass_Impl (
+  ComputeResidualAndSolve_2Pass_Impl(
       const AmD<MatrixType>& amd,
       const btdm_scalar_type_3d_view& d_inv_,
       const impl_scalar_type_1d_view& W_,
@@ -584,52 +584,52 @@ struct ComputeResidualAndSolve_YZero_Impl {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const member_type& member) const {
-      const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
-      const local_ordinal_type rowidx =
-          member.league_rank() * member.team_size() + member.team_rank();
-      const local_ordinal_type row         = rowidx * blocksize;
-      const local_ordinal_type num_vectors = b.extent(1);
+    const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
+    const local_ordinal_type rowidx =
+        member.league_rank() * member.team_size() + member.team_rank();
+    const local_ordinal_type row         = rowidx * blocksize;
+    const local_ordinal_type num_vectors = b.extent(1);
 
-      // Get shared allocation for a local copy of x, Ax, and A
-      impl_scalar_type* local_Dinv_residual =
-          reinterpret_cast<impl_scalar_type*>(member.thread_scratch(0).get_shmem(
-              blocksize * sizeof(impl_scalar_type)));
+    // Get shared allocation for a local copy of x, Ax, and A
+    impl_scalar_type* local_Dinv_residual =
+        reinterpret_cast<impl_scalar_type*>(member.thread_scratch(0).get_shmem(
+            blocksize * sizeof(impl_scalar_type)));
 
-      if (rowidx >= (local_ordinal_type)d_inv.extent(0)) return;
+    if (rowidx >= (local_ordinal_type)d_inv.extent(0)) return;
 
-      magnitude_type norm = 0;
-      for (local_ordinal_type col = 0; col < num_vectors; ++col) {
-        // Compute local_Dinv_residual = D^-1 * local_residual
-        Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, blocksize),
-                             [&](const local_ordinal_type& k0) {
-                               impl_scalar_type val = 0;
-                               for (local_ordinal_type k1 = 0; k1 < blocksize;
-                                    k1++) {
-                                 val += d_inv(rowidx, k0, k1) * b(row + k1, col);
-                               }
-                               local_Dinv_residual[k0] = val;
-                             });
+    magnitude_type norm = 0;
+    for (local_ordinal_type col = 0; col < num_vectors; ++col) {
+      // Compute local_Dinv_residual = D^-1 * local_residual
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, blocksize),
+                           [&](const local_ordinal_type& k0) {
+                             impl_scalar_type val = 0;
+                             for (local_ordinal_type k1 = 0; k1 < blocksize;
+                                  k1++) {
+                               val += d_inv(rowidx, k0, k1) * b(row + k1, col);
+                             }
+                             local_Dinv_residual[k0] = val;
+                           });
 
-        magnitude_type colNorm;
-        Kokkos::parallel_reduce(
-            Kokkos::ThreadVectorRange(member, blocksize),
-            [&](const local_ordinal_type& k, magnitude_type& update) {
-              // Compute the change in y (assuming damping_factor == 1) for this
-              // entry.
-              impl_scalar_type y_update = local_Dinv_residual[k];
-              if constexpr (KokkosKernels::ArithTraits<impl_scalar_type>::is_complex) {
-                magnitude_type ydiff =
-                    KokkosKernels::ArithTraits<impl_scalar_type>::abs(y_update);
-                update += ydiff * ydiff;
-              } else {
-                update += y_update * y_update;
-              }
-              y(row + k, col) = damping_factor * y_update;
-            },
-            colNorm);
-        norm += colNorm;
-      }
-      Kokkos::single(Kokkos::PerThread(member), [&]() { W(rowidx) = norm; });
+      magnitude_type colNorm;
+      Kokkos::parallel_reduce(
+          Kokkos::ThreadVectorRange(member, blocksize),
+          [&](const local_ordinal_type& k, magnitude_type& update) {
+            // Compute the change in y (assuming damping_factor == 1) for this
+            // entry.
+            impl_scalar_type y_update = local_Dinv_residual[k];
+            if constexpr (KokkosKernels::ArithTraits<impl_scalar_type>::is_complex) {
+              magnitude_type ydiff =
+                  KokkosKernels::ArithTraits<impl_scalar_type>::abs(y_update);
+              update += ydiff * ydiff;
+            } else {
+              update += y_update * y_update;
+            }
+            y(row + k, col) = damping_factor * y_update;
+          },
+          colNorm);
+      norm += colNorm;
+    }
+    Kokkos::single(Kokkos::PerThread(member), [&]() { W(rowidx) = norm; });
   }
 
   // ComputeResidualAndSolve_SolveOnly::run does the solve for the first
@@ -664,22 +664,21 @@ struct ComputeResidualAndSolve_YZero_Impl {
 // iteration, when the initial guess for y is zero. This means the residual
 // vector is just b. The kernel applies the inverse diags to b to find y, and
 // also puts the partial squared update norms (1 per row) into W.
-template<typename MatrixType>
+template <typename MatrixType>
 void ComputeResidualAndSolve<MatrixType>::run_y_zero(
     const Const<typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra>& b_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_)
-{
-  #define RUN_CASE(B) \
-  { \
+    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_) {
+#define RUN_CASE(B)                                                                                                \
+  {                                                                                                                \
     ComputeResidualAndSolve_YZero_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
-    functor.run(b_, y_); \
+    functor.run(b_, y_);                                                                                           \
   }
 
   switch (blocksize_requested) {
-    case 3:  RUN_CASE(3);
-    case 5:  RUN_CASE(5);
-    case 7:  RUN_CASE(7);
-    case 9:  RUN_CASE(9);
+    case 3: RUN_CASE(3);
+    case 5: RUN_CASE(5);
+    case 7: RUN_CASE(7);
+    case 9: RUN_CASE(9);
     case 10: RUN_CASE(10);
     case 11: RUN_CASE(11);
     case 16: RUN_CASE(16);
@@ -687,27 +686,26 @@ void ComputeResidualAndSolve<MatrixType>::run_y_zero(
     case 18: RUN_CASE(18);
     default: RUN_CASE(0);
   }
-  #undef RUN_CASE
+#undef RUN_CASE
 }
 
-template<typename MatrixType>
+template <typename MatrixType>
 void ComputeResidualAndSolve<MatrixType>::run_single_pass(
     const Const<typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra>& b_,
     const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& x_,
     const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& x_remote_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_)
-{
-  #define RUN_CASE(B) \
-  { \
+    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_) {
+#define RUN_CASE(B)                                                                                                     \
+  {                                                                                                                     \
     ComputeResidualAndSolve_SinglePass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
-    functor.run(b_, x_, x_remote_, y_); \
+    functor.run(b_, x_, x_remote_, y_);                                                                                 \
   }
 
   switch (blocksize_requested) {
-    case 3:  RUN_CASE(3);
-    case 5:  RUN_CASE(5);
-    case 7:  RUN_CASE(7);
-    case 9:  RUN_CASE(9);
+    case 3: RUN_CASE(3);
+    case 5: RUN_CASE(5);
+    case 7: RUN_CASE(7);
+    case 9: RUN_CASE(9);
     case 10: RUN_CASE(10);
     case 11: RUN_CASE(11);
     case 16: RUN_CASE(16);
@@ -715,26 +713,25 @@ void ComputeResidualAndSolve<MatrixType>::run_single_pass(
     case 18: RUN_CASE(18);
     default: RUN_CASE(0);
   }
-  #undef RUN_CASE
+#undef RUN_CASE
 }
 
-template<typename MatrixType>
+template <typename MatrixType>
 void ComputeResidualAndSolve<MatrixType>::run_pass1_of_2(
     const Const<typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra>& b_,
     const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& x_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_)
-{
-  #define RUN_CASE(B) \
-  { \
+    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_) {
+#define RUN_CASE(B)                                                                                                \
+  {                                                                                                                \
     ComputeResidualAndSolve_2Pass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
-    functor.run_pass1(b_, x_, y_); \
+    functor.run_pass1(b_, x_, y_);                                                                                 \
   }
 
   switch (blocksize_requested) {
-    case 3:  RUN_CASE(3);
-    case 5:  RUN_CASE(5);
-    case 7:  RUN_CASE(7);
-    case 9:  RUN_CASE(9);
+    case 3: RUN_CASE(3);
+    case 5: RUN_CASE(5);
+    case 7: RUN_CASE(7);
+    case 9: RUN_CASE(9);
     case 10: RUN_CASE(10);
     case 11: RUN_CASE(11);
     case 16: RUN_CASE(16);
@@ -742,26 +739,25 @@ void ComputeResidualAndSolve<MatrixType>::run_pass1_of_2(
     case 18: RUN_CASE(18);
     default: RUN_CASE(0);
   }
-  #undef RUN_CASE
+#undef RUN_CASE
 }
 
-template<typename MatrixType>
+template <typename MatrixType>
 void ComputeResidualAndSolve<MatrixType>::run_pass2_of_2(
     const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& x_,
     const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& x_remote_,
-    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_)
-{
-  #define RUN_CASE(B) \
-  { \
+    const typename ComputeResidualAndSolve<MatrixType>::impl_scalar_type_2d_view_tpetra& y_) {
+#define RUN_CASE(B)                                                                                                \
+  {                                                                                                                \
     ComputeResidualAndSolve_2Pass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
-    functor.run_pass2(x_, x_remote_, y_); \
+    functor.run_pass2(x_, x_remote_, y_);                                                                          \
   }
 
   switch (blocksize_requested) {
-    case 3:  RUN_CASE(3);
-    case 5:  RUN_CASE(5);
-    case 7:  RUN_CASE(7);
-    case 9:  RUN_CASE(9);
+    case 3: RUN_CASE(3);
+    case 5: RUN_CASE(5);
+    case 7: RUN_CASE(7);
+    case 9: RUN_CASE(9);
     case 10: RUN_CASE(10);
     case 11: RUN_CASE(11);
     case 16: RUN_CASE(16);
@@ -769,10 +765,10 @@ void ComputeResidualAndSolve<MatrixType>::run_pass2_of_2(
     case 18: RUN_CASE(18);
     default: RUN_CASE(0);
   }
-  #undef RUN_CASE
+#undef RUN_CASE
 }
 
-}
+}  // namespace Ifpack2::BlockHelperDetails
 
 #define IFPACK2_BLOCKCOMPUTERESIDUALANDSOLVE_INSTANT(S, LO, GO, N) \
   template class Ifpack2::BlockHelperDetails::ComputeResidualAndSolve<Tpetra::RowMatrix<S, LO, GO, N> >;

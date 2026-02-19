@@ -21,7 +21,7 @@ namespace Ifpack2::BlockHelperDetails {
 //
 // This function allocates and populates these members of AmD:
 // A_x_offsets, A_x_offsets_remote
-template<typename MatrixType>
+template <typename MatrixType>
 void ComputeResidualVector<MatrixType>::precompute_A_x_offsets(
     AmD<MatrixType> &amd,
     const PartInterface<MatrixType> &interf,
@@ -289,7 +289,7 @@ struct ComputeResidualFunctor {
   const bool is_dm2cm_active;
   const bool hasBlockCrsMatrix;
 
-  ComputeResidualFunctor (const ComputeResidualVector<MatrixType>& crv)
+  ComputeResidualFunctor(const ComputeResidualVector<MatrixType> &crv)
     : rowptr(crv.rowptr)
     , rowptr_remote(crv.rowptr_remote)
     , colindsub(crv.colindsub)
@@ -308,8 +308,7 @@ struct ComputeResidualFunctor {
     , A_x_offsets(crv.A_x_offsets)
     , A_x_offsets_remote(crv.A_x_offsets_remote)
     , is_dm2cm_active(crv.is_dm2cm_active)
-    , hasBlockCrsMatrix(crv.hasBlockCrsMatrix)
-  {}
+    , hasBlockCrsMatrix(crv.hasBlockCrsMatrix) {}
 
   inline void
   SerialDot(const local_ordinal_type &blocksize,
@@ -744,10 +743,10 @@ struct ComputeResidualFunctor {
 };
 
 // y = b - Rx; seq method
-template<typename MatrixType>
-void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra& y_,
-         const Const<typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra>& b_,
-         const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra& x_) {
+template <typename MatrixType>
+void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &y_,
+                                            const Const<typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra> &b_,
+                                            const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &x_) {
   IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
   IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<SeqTag>", ComputeResidual0, execution_space);
 
@@ -772,11 +771,11 @@ void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector
 }
 
 // y = b - R (x , x_remote)
-template<typename MatrixType>
+template <typename MatrixType>
 void ComputeResidualVector<MatrixType>::run(const vector_type_3d_view &y_packed_,
-         const Const<typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra>& b_,
-         const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra& x_,
-         const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra& x_remote_) {
+                                            const Const<typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra> &b_,
+                                            const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &x_,
+                                            const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &x_remote_) {
   IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
   IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<AsyncTag>", ComputeResidual0, execution_space);
 
@@ -788,10 +787,10 @@ void ComputeResidualVector<MatrixType>::run(const vector_type_3d_view &y_packed_
   functor.x_remote = x_remote_;
   if constexpr (is_device<execution_space>::value) {
     functor.y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type *)y_packed_.data(),
-                                               y_packed_.extent(0),
-                                               y_packed_.extent(1),
-                                               y_packed_.extent(2),
-                                               vector_length);
+                                                       y_packed_.extent(0),
+                                                       y_packed_.extent(1),
+                                                       y_packed_.extent(2),
+                                                       vector_length);
   } else {
     functor.y_packed = y_packed_;
   }
@@ -803,27 +802,27 @@ void ComputeResidualVector<MatrixType>::run(const vector_type_3d_view &y_packed_
     // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
     // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)                                                                          \
-{                                                                                                                             \
-  if (this->hasBlockCrsMatrix) {                                                                                              \
-    const local_ordinal_type team_size   = 8;                                                                                 \
-    const local_ordinal_type vector_size = 8;                                                                                 \
-    const size_t shmem_team_size         = blocksize * sizeof(btdm_scalar_type);                                              \
-    const size_t shmem_thread_size       = blocksize * sizeof(btdm_scalar_type);                                              \
-    Kokkos::TeamPolicy<execution_space, typename Functor::AsyncTag<B, true>>                                                                    \
-        policy(rowidx2part.extent(0), team_size, vector_size);                                                                \
-    policy.set_scratch_size(0, Kokkos::PerTeam(shmem_team_size), Kokkos::PerThread(shmem_thread_size));                       \
-    Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<AsyncTag>",                                                        \
-                         policy, functor);                                                                                      \
-  } else {                                                                                                                    \
-    const local_ordinal_type team_size   = 8;                                                                                 \
-    const local_ordinal_type vector_size = ComputeResidualVectorRecommendedVectorSize<execution_space>(blocksize, team_size); \
-    const Kokkos::TeamPolicy<execution_space, typename Functor::AsyncTag<B, false>>                                                             \
-        policy(rowidx2part.extent(0), team_size, vector_size);                                                                \
-    Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<AsyncTag>",                                                        \
-                         policy, functor);                                                                                      \
-  }                                                                                                                           \
-}                                                                                                                             \
-break
+  {                                                                                                                             \
+    if (this->hasBlockCrsMatrix) {                                                                                              \
+      const local_ordinal_type team_size   = 8;                                                                                 \
+      const local_ordinal_type vector_size = 8;                                                                                 \
+      const size_t shmem_team_size         = blocksize * sizeof(btdm_scalar_type);                                              \
+      const size_t shmem_thread_size       = blocksize * sizeof(btdm_scalar_type);                                              \
+      Kokkos::TeamPolicy<execution_space, typename Functor::AsyncTag<B, true>>                                                  \
+          policy(rowidx2part.extent(0), team_size, vector_size);                                                                \
+      policy.set_scratch_size(0, Kokkos::PerTeam(shmem_team_size), Kokkos::PerThread(shmem_thread_size));                       \
+      Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<AsyncTag>",                                                        \
+                           policy, functor);                                                                                    \
+    } else {                                                                                                                    \
+      const local_ordinal_type team_size   = 8;                                                                                 \
+      const local_ordinal_type vector_size = ComputeResidualVectorRecommendedVectorSize<execution_space>(blocksize, team_size); \
+      const Kokkos::TeamPolicy<execution_space, typename Functor::AsyncTag<B, false>>                                           \
+          policy(rowidx2part.extent(0), team_size, vector_size);                                                                \
+      Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<AsyncTag>",                                                        \
+                           policy, functor);                                                                                    \
+    }                                                                                                                           \
+  }                                                                                                                             \
+  break
     switch (blocksize_requested) {
       case 3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(3);
       case 5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(5);
@@ -838,19 +837,19 @@ break
     }
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
   } else {
-#define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)                                                 \
-{                                                                                                    \
-  if (this->hasBlockCrsMatrix) {                                                                     \
-    const Kokkos::RangePolicy<execution_space, typename Functor::AsyncTag<B, true>> policy(0, rowidx2part.extent(0));  \
-    Kokkos::parallel_for("ComputeResidual::RangePolicy::run<AsyncTag>",                              \
-                         policy, functor);                                                             \
-  } else {                                                                                           \
-    const Kokkos::RangePolicy<execution_space, typename Functor::AsyncTag<B, false>> policy(0, rowidx2part.extent(0)); \
-    Kokkos::parallel_for("ComputeResidual::RangePolicy::run<AsyncTag>",                              \
-                         policy, functor);                                                             \
-  }                                                                                                  \
-}                                                                                                    \
-break
+#define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)                                                                   \
+  {                                                                                                                      \
+    if (this->hasBlockCrsMatrix) {                                                                                       \
+      const Kokkos::RangePolicy<execution_space, typename Functor::AsyncTag<B, true>> policy(0, rowidx2part.extent(0));  \
+      Kokkos::parallel_for("ComputeResidual::RangePolicy::run<AsyncTag>",                                                \
+                           policy, functor);                                                                             \
+    } else {                                                                                                             \
+      const Kokkos::RangePolicy<execution_space, typename Functor::AsyncTag<B, false>> policy(0, rowidx2part.extent(0)); \
+      Kokkos::parallel_for("ComputeResidual::RangePolicy::run<AsyncTag>",                                                \
+                           policy, functor);                                                                             \
+    }                                                                                                                    \
+  }                                                                                                                      \
+  break
 
     switch (blocksize_requested) {
       case 3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(3);
@@ -871,12 +870,12 @@ break
 }
 
 // y = b - R (y , y_remote)
-template<typename MatrixType>
+template <typename MatrixType>
 void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector<MatrixType>::vector_type_3d_view &y_packed_,
-         const Const<typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra>& b_,
-         const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra& x_,
-         const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra& x_remote_,
-         const bool compute_owned) {
+                                            const Const<typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra> &b_,
+                                            const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &x_,
+                                            const typename ComputeResidualVector<MatrixType>::impl_scalar_type_2d_view_tpetra &x_remote_,
+                                            const bool compute_owned) {
   IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN;
   IFPACK2_BLOCKHELPER_TIMER_WITH_FENCE("BlockTriDi::ComputeResidual::<OverlapTag>", ComputeResidual0, execution_space);
 
@@ -888,10 +887,10 @@ void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector
   functor.x_remote = x_remote_;
   if constexpr (is_device<execution_space>::value) {
     functor.y_packed_scalar = btdm_scalar_type_4d_view((btdm_scalar_type *)y_packed_.data(),
-                                               y_packed_.extent(0),
-                                               y_packed_.extent(1),
-                                               y_packed_.extent(2),
-                                               vector_length);
+                                                       y_packed_.extent(0),
+                                                       y_packed_.extent(1),
+                                                       y_packed_.extent(2),
+                                                       vector_length);
   } else {
     functor.y_packed = y_packed_;
   }
@@ -903,36 +902,36 @@ void ComputeResidualVector<MatrixType>::run(const typename ComputeResidualVector
     // vl_power_of_two *= (vl_power_of_two < blocksize_requested ? 2 : 1);
     // const local_ordinal_type vl = vl_power_of_two > vector_length ? vector_length : vl_power_of_two;
 #define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)                                                                        \
-if (this->hasBlockCrsMatrix) {                                                                                              \
-  const local_ordinal_type team_size   = 8;                                                                                 \
-  const local_ordinal_type vector_size = 8;                                                                                 \
-  const size_t shmem_team_size         = blocksize * sizeof(btdm_scalar_type);                                              \
-  const size_t shmem_thread_size       = blocksize * sizeof(btdm_scalar_type);                                              \
-  if (compute_owned) {                                                                                                      \
-    Kokkos::TeamPolicy<execution_space, typename Functor::OverlapTag<0, B, true>>                                                             \
-        policy(rowidx2part.extent(0), team_size, vector_size);                                                              \
-    policy.set_scratch_size(0, Kokkos::PerTeam(shmem_team_size), Kokkos::PerThread(shmem_thread_size));                     \
-    Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, functor);                                \
-  } else {                                                                                                                  \
-    Kokkos::TeamPolicy<execution_space, typename Functor::OverlapTag<1, B, true>>                                                             \
-        policy(rowidx2part.extent(0), team_size, vector_size);                                                              \
-    policy.set_scratch_size(0, Kokkos::PerTeam(shmem_team_size), Kokkos::PerThread(shmem_thread_size));                     \
-    Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, functor);                                \
-  }                                                                                                                         \
-} else {                                                                                                                    \
-  const local_ordinal_type team_size   = 8;                                                                                 \
-  const local_ordinal_type vector_size = ComputeResidualVectorRecommendedVectorSize<execution_space>(blocksize, team_size); \
-  if (compute_owned) {                                                                                                      \
-    const Kokkos::TeamPolicy<execution_space, typename Functor::OverlapTag<0, B, false>>                                                      \
-        policy(rowidx2part.extent(0), team_size, vector_size);                                                              \
-    Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, functor);                                \
-  } else {                                                                                                                  \
-    const Kokkos::TeamPolicy<execution_space, typename Functor::OverlapTag<1, B, false>>                                                      \
-        policy(rowidx2part.extent(0), team_size, vector_size);                                                              \
-    Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, functor);                                \
-  }                                                                                                                         \
-}                                                                                                                           \
-break
+  if (this->hasBlockCrsMatrix) {                                                                                              \
+    const local_ordinal_type team_size   = 8;                                                                                 \
+    const local_ordinal_type vector_size = 8;                                                                                 \
+    const size_t shmem_team_size         = blocksize * sizeof(btdm_scalar_type);                                              \
+    const size_t shmem_thread_size       = blocksize * sizeof(btdm_scalar_type);                                              \
+    if (compute_owned) {                                                                                                      \
+      Kokkos::TeamPolicy<execution_space, typename Functor::OverlapTag<0, B, true>>                                           \
+          policy(rowidx2part.extent(0), team_size, vector_size);                                                              \
+      policy.set_scratch_size(0, Kokkos::PerTeam(shmem_team_size), Kokkos::PerThread(shmem_thread_size));                     \
+      Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, functor);                              \
+    } else {                                                                                                                  \
+      Kokkos::TeamPolicy<execution_space, typename Functor::OverlapTag<1, B, true>>                                           \
+          policy(rowidx2part.extent(0), team_size, vector_size);                                                              \
+      policy.set_scratch_size(0, Kokkos::PerTeam(shmem_team_size), Kokkos::PerThread(shmem_thread_size));                     \
+      Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, functor);                              \
+    }                                                                                                                         \
+  } else {                                                                                                                    \
+    const local_ordinal_type team_size   = 8;                                                                                 \
+    const local_ordinal_type vector_size = ComputeResidualVectorRecommendedVectorSize<execution_space>(blocksize, team_size); \
+    if (compute_owned) {                                                                                                      \
+      const Kokkos::TeamPolicy<execution_space, typename Functor::OverlapTag<0, B, false>>                                    \
+          policy(rowidx2part.extent(0), team_size, vector_size);                                                              \
+      Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<OverlapTag<0> >", policy, functor);                              \
+    } else {                                                                                                                  \
+      const Kokkos::TeamPolicy<execution_space, typename Functor::OverlapTag<1, B, false>>                                    \
+          policy(rowidx2part.extent(0), team_size, vector_size);                                                              \
+      Kokkos::parallel_for("ComputeResidual::TeamPolicy::run<OverlapTag<1> >", policy, functor);                              \
+    }                                                                                                                         \
+  }                                                                                                                           \
+  break
     switch (blocksize_requested) {
       case 3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(3);
       case 5: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(5);
@@ -947,29 +946,29 @@ break
     }
 #undef BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL
   } else {
-#define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)                                          \
-if (this->hasBlockCrsMatrix) {                                                                \
-  if (compute_owned) {                                                                        \
-    const Kokkos::RangePolicy<execution_space, typename Functor::OverlapTag<0, B, true>>                        \
-        policy(0, rowidx2part.extent(0));                                                     \
-    Kokkos::parallel_for("ComputeResidual::RangePolicy::run<OverlapTag<0> >", policy, functor); \
-  } else {                                                                                    \
-    const Kokkos::RangePolicy<execution_space, typename Functor::OverlapTag<1, B, true>>                        \
-        policy(0, rowidx2part.extent(0));                                                     \
-    Kokkos::parallel_for("ComputeResidual::RangePolicy::run<OverlapTag<1> >", policy, functor); \
-  }                                                                                           \
-} else {                                                                                      \
-  if (compute_owned) {                                                                        \
-    const Kokkos::RangePolicy<execution_space, typename Functor::OverlapTag<0, B, false>>                       \
-        policy(0, rowidx2part.extent(0));                                                     \
-    Kokkos::parallel_for("ComputeResidual::RangePolicy::run<OverlapTag<0> >", policy, functor); \
-  } else {                                                                                    \
-    const Kokkos::RangePolicy<execution_space, typename Functor::OverlapTag<1, B, false>>                       \
-        policy(0, rowidx2part.extent(0));                                                     \
-    Kokkos::parallel_for("ComputeResidual::RangePolicy::run<OverlapTag<1> >", policy, functor); \
-  }                                                                                           \
-}                                                                                             \
-break
+#define BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(B)                                            \
+  if (this->hasBlockCrsMatrix) {                                                                  \
+    if (compute_owned) {                                                                          \
+      const Kokkos::RangePolicy<execution_space, typename Functor::OverlapTag<0, B, true>>        \
+          policy(0, rowidx2part.extent(0));                                                       \
+      Kokkos::parallel_for("ComputeResidual::RangePolicy::run<OverlapTag<0> >", policy, functor); \
+    } else {                                                                                      \
+      const Kokkos::RangePolicy<execution_space, typename Functor::OverlapTag<1, B, true>>        \
+          policy(0, rowidx2part.extent(0));                                                       \
+      Kokkos::parallel_for("ComputeResidual::RangePolicy::run<OverlapTag<1> >", policy, functor); \
+    }                                                                                             \
+  } else {                                                                                        \
+    if (compute_owned) {                                                                          \
+      const Kokkos::RangePolicy<execution_space, typename Functor::OverlapTag<0, B, false>>       \
+          policy(0, rowidx2part.extent(0));                                                       \
+      Kokkos::parallel_for("ComputeResidual::RangePolicy::run<OverlapTag<0> >", policy, functor); \
+    } else {                                                                                      \
+      const Kokkos::RangePolicy<execution_space, typename Functor::OverlapTag<1, B, false>>       \
+          policy(0, rowidx2part.extent(0));                                                       \
+      Kokkos::parallel_for("ComputeResidual::RangePolicy::run<OverlapTag<1> >", policy, functor); \
+    }                                                                                             \
+  }                                                                                               \
+  break
 
     switch (blocksize_requested) {
       case 3: BLOCKTRIDICONTAINER_DETAILS_COMPUTERESIDUAL(3);
@@ -989,9 +988,9 @@ break
   IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
 }
 
-}
+}  // namespace Ifpack2::BlockHelperDetails
 
 #define IFPACK2_BLOCKCOMPUTERESIDUALVECTOR_INSTANT(S, LO, GO, N) \
-  template class Ifpack2::BlockHelperDetails::ComputeResidualVector<Tpetra::RowMatrix<S, LO, GO, N> >;
+  template class Ifpack2::BlockHelperDetails::ComputeResidualVector<Tpetra::RowMatrix<S, LO, GO, N>>;
 
 #endif

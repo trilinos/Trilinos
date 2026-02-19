@@ -72,17 +72,16 @@ struct ComputeResidualAndSolve {
   /// team policy member type (used in cuda)
   using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;
 
-  
- ComputeResidualAndSolve(const AmD<MatrixType>& amd_,
-                         const btdm_scalar_type_3d_view& d_inv_,
-                         const impl_scalar_type_1d_view& W_,
-                         const local_ordinal_type& blocksize_requested_,
-                         const impl_scalar_type& damping_factor_)
-  : amd(amd_)
-  , blocksize_requested(blocksize_requested_)
-  , d_inv(d_inv_)
-  , W(W_)
-  , damping_factor(damping_factor_) {}
+  ComputeResidualAndSolve(const AmD<MatrixType>& amd_,
+                          const btdm_scalar_type_3d_view& d_inv_,
+                          const impl_scalar_type_1d_view& W_,
+                          const local_ordinal_type& blocksize_requested_,
+                          const impl_scalar_type& damping_factor_)
+    : amd(amd_)
+    , blocksize_requested(blocksize_requested_)
+    , d_inv(d_inv_)
+    , W(W_)
+    , damping_factor(damping_factor_) {}
 
   void run_y_zero(
       const Const<impl_scalar_type_2d_view_tpetra>& b_,
@@ -117,6 +116,6 @@ struct ComputeResidualAndSolve {
   impl_scalar_type damping_factor;
 };
 
-}
+}  // namespace Ifpack2::BlockHelperDetails
 
 #endif

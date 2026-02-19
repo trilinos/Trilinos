@@ -118,24 +118,24 @@ struct ComputeResidualVector {
       bool ownedRemoteSeparate);
 
   // y = b - Rx; seq method
-  void run(const impl_scalar_type_2d_view_tpetra& y_,
-           const Const<impl_scalar_type_2d_view_tpetra>& b_,
-           const impl_scalar_type_2d_view_tpetra& x_);
+  void run(const impl_scalar_type_2d_view_tpetra &y_,
+           const Const<impl_scalar_type_2d_view_tpetra> &b_,
+           const impl_scalar_type_2d_view_tpetra &x_);
 
   // y = b - R (x , x_remote)
   void run(const vector_type_3d_view &y_packed_,
-           const Const<impl_scalar_type_2d_view_tpetra>& b_,
-           const impl_scalar_type_2d_view_tpetra& x_,
-           const impl_scalar_type_2d_view_tpetra& x_remote_);
+           const Const<impl_scalar_type_2d_view_tpetra> &b_,
+           const impl_scalar_type_2d_view_tpetra &x_,
+           const impl_scalar_type_2d_view_tpetra &x_remote_);
 
   // y = b - R (y , y_remote)
   void run(const vector_type_3d_view &y_packed_,
-           const Const<impl_scalar_type_2d_view_tpetra>& b_,
-           const impl_scalar_type_2d_view_tpetra& x_,
-           const impl_scalar_type_2d_view_tpetra& x_remote_,
+           const Const<impl_scalar_type_2d_view_tpetra> &b_,
+           const impl_scalar_type_2d_view_tpetra &x_,
+           const impl_scalar_type_2d_view_tpetra &x_remote_,
            const bool compute_owned);
 };
 
-}
+}  // namespace Ifpack2::BlockHelperDetails
 
 #endif
