@@ -194,6 +194,15 @@ private:
    */
   bool loadA_impl(EPhase current_phase);
 
+
+  /** 
+   * \brief Prints the status information about the current solver with some level
+   * of verbosity
+   */
+  void describe_impl(Teuchos::FancyOStream &out,
+                     const Teuchos::EVerbosityLevel verbLevel) const;
+
+
   // struct holds all data necessary for KLU2 factorization or solve call
   mutable struct KLU2Data {
       ::KLU2::klu_symbolic<klu2_dtype, local_ordinal_type> *symbolic_;

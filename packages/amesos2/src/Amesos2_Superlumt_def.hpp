@@ -628,9 +628,16 @@ namespace Amesos2 {
   }
 
 
+  template <class Matrix, class Vector>
+  void
+  Superlumt<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                          const Teuchos::EVerbosityLevel verbLevel) const
+  {
+  }
+
+
   template<class Matrix, class Vector>
   const char* Superlumt<Matrix,Vector>::name = "SuperLU_MT";
-
 
 } // end namespace Amesos2
 

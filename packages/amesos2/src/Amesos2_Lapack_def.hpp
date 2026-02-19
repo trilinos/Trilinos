@@ -244,15 +244,15 @@ namespace Amesos2 {
 
       // typedef Util::get_ccs_helper<MatrixAdapter<Matrix>,
       //        scalar_type, global_ordinal_type, global_size_type> ccs_helper;
-    typedef Util::get_ccs_helper_kokkos_view<MatrixAdapter<Matrix>,
+      typedef Util::get_ccs_helper_kokkos_view<MatrixAdapter<Matrix>,
         host_value_type_array, host_ordinal_type_array, host_ordinal_type_array> ccs_helper;
 
-    ccs_helper::do_get(this->matrixA_.ptr(),
-      nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
-      (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
-      ARBITRARY,
-      this->rowIndexBase_);
-  }
+      ccs_helper::do_get(this->matrixA_.ptr(),
+        nzvals_view_, rowind_view_, colptr_view_, nnz_ret,
+        (is_contiguous_ == true) ? ROOTED : CONTIGUOUS_AND_ROOTED,
+        ARBITRARY,
+        this->rowIndexBase_);
+    }
 
     if( this->root_ ){
       // entries are initialized to zero in here:
@@ -270,10 +270,15 @@ namespace Amesos2 {
 
       // lu_.print(std::cout);
     }
+    return( true );
+  }
 
-  return( true );
-}
-
+  template <class Matrix, class Vector>
+  void
+  Lapack<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                       const Teuchos::EVerbosityLevel verbLevel) const
+  {
+  }
 
   template<class Matrix, class Vector>
   const char* Lapack<Matrix,Vector>::name = "LAPACK";

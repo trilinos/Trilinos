@@ -301,6 +301,14 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 }
 
 
+template <class Matrix, class Vector>
+void
+Basker<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                     const Teuchos::EVerbosityLevel verbLevel) const
+{
+}
+
+
 template<class Matrix, class Vector>
 const char* Basker<Matrix,Vector>::name = "Basker";
 

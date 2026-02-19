@@ -229,6 +229,12 @@ int main(int argc, char *argv[]) {
   }
 
   solver = Amesos2::create<MAT,MV>(solvername, A, X, B);
+  if( verbose ) {
+    solver->describe(*fos, Teuchos::VERB_EXTREME);
+  } else if (myRank == 0) {
+    std::cout << solver->description() << std::endl << std::endl;
+  }
+
   if (xml_filename != "") {
     Teuchos::ParameterList test_params =
       Teuchos::ParameterXMLFileReader(xml_filename).getParameters();

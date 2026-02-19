@@ -1000,6 +1000,13 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template <class Matrix, class Vector>
 void
+Superlu<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                      const Teuchos::EVerbosityLevel verbLevel) const
+{
+}
+
+template <class Matrix, class Vector>
+void
 Superlu<Matrix,Vector>::triangular_solve_factor()
 {
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)

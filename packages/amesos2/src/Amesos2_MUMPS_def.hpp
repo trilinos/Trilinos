@@ -374,6 +374,13 @@ namespace Amesos2
     MUMPS_MATRIX_LOAD = true;
     return (true);
   }//end loadA_impl()
+
+  template <class Matrix, class Vector>
+  void
+  MUMPS<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                      const Teuchos::EVerbosityLevel verbLevel) const
+  {
+  }
   
   template <class Matrix, class Vector>
   int

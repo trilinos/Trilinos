@@ -1098,6 +1098,14 @@ namespace Amesos2 {
 }
 
 
+template <class Matrix, class Vector>
+void
+Superludist<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                          const Teuchos::EVerbosityLevel verbLevel) const
+{
+}
+
+
   template<class Matrix, class Vector>
   const char* Superludist<Matrix,Vector>::name = "SuperLU_DIST";
 

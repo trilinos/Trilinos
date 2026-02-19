@@ -297,6 +297,13 @@ cuSOLVER<Matrix,Vector>::loadA_impl(EPhase current_phase)
   return true;
 }
 
+template <class Matrix, class Vector>
+void
+cuSOLVER<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                       const Teuchos::EVerbosityLevel verbLevel) const
+{
+}
+
 template<class Matrix, class Vector>
 const char* cuSOLVER<Matrix,Vector>::name = "cuSOLVER";
 

@@ -188,6 +188,15 @@ private:
    *     what precision to compute the residual. (Not currently supported)</li>
    */
 
+
+  /** 
+   * \brief Prints the status information about the current solver with some level
+   * of verbosity
+   */
+  void describe_impl(Teuchos::FancyOStream &out,
+                     const Teuchos::EVerbosityLevel verbLevel) const;
+
+
   /**
    * Hooked in by Amesos2::SolverCore parent class.
    *
