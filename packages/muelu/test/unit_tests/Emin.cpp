@@ -431,6 +431,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint_HexesWithDir, 
                                                                    out, success);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint_wonky, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+  testMaxwellConstraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>(/*inputDir=*/"emin_matrices/wonky/",
+                                                                   /*readNodalProlongators=*/true,
+                                                                   out, success);
+}
+
 #define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                                \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint_Laplace1D, SC, LO, GO, Node)    \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, NullspaceConstraint_Laplace2D, SC, LO, GO, Node)    \
@@ -446,7 +455,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(EminPFactory, MaxwellConstraint_HexesWithDir, 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, MaxwellConstraint_Tets, SC, LO, GO, Node)           \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, MaxwellConstraint_TetsWithDir, SC, LO, GO, Node)    \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, MaxwellConstraint_Hexes, SC, LO, GO, Node)          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, MaxwellConstraint_HexesWithDir, SC, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, MaxwellConstraint_HexesWithDir, SC, LO, GO, Node)   \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(EminPFactory, MaxwellConstraint_wonky, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
