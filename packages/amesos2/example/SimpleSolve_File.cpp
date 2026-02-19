@@ -74,10 +74,11 @@ int main(int argc, char *argv[]) {
   bool printSolution   = false;
   bool checkSolution   = false;
   bool printTiming     = false;
-  bool useStackedTimer = false;
+  bool useStackedTimer = true;
   bool allprint        = false;
   bool verbose = (myRank==0);
-  bool useZoltan2 = false;
+  bool describe_on = false;
+  bool useZoltan2  = false;
   bool useParMETIS = false;
   std::string mat_filename("arc130.mtx");
   std::string map_filename("");
@@ -86,6 +87,7 @@ int main(int argc, char *argv[]) {
   std::string xml_filename("");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("describe","no_describe",&describe_on,"Describe solver.");
   cmdp.setOption("filename",&mat_filename,"Filename for Matrix-Market test matrix.");
   cmdp.setOption("map_filename",&map_filename,"Filename for matrix rowmap.");
   cmdp.setOption("numSolves",&numSolves,"Number of computes & solves.");
@@ -229,7 +231,7 @@ int main(int argc, char *argv[]) {
   }
 
   solver = Amesos2::create<MAT,MV>(solvername, A, X, B);
-  if( verbose ) {
+  if( describe_on ) {
     solver->describe(*fos, Teuchos::VERB_EXTREME);
   } else if (myRank == 0) {
     std::cout << solver->description() << std::endl << std::endl;

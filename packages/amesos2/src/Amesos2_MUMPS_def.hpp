@@ -380,6 +380,18 @@ namespace Amesos2
   MUMPS<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
                                       const Teuchos::EVerbosityLevel verbLevel) const
   {
+    out << " MUMPS current parameters:" << std::endl;
+    out << "  > ICNTL(1)  = " << mumps_par.icntl[0]  << std::endl;
+    out << "  > ICNTL(2)  = " << mumps_par.icntl[1]  << std::endl;
+    out << "  > ICNTL(3)  = " << mumps_par.icntl[2]  << std::endl;
+    out << "  > ICNTL(4)  = " << mumps_par.icntl[3]  << std::endl;
+    out << "  > ICNTL(6)  = " << mumps_par.icntl[5]  << std::endl;
+    out << "  > ICNTL(7)  = " << mumps_par.icntl[6]  << std::endl;
+    out << "  > ICNTL(9)  = " << mumps_par.icntl[8]  << std::endl;
+    out << "  > ICNTL(11) = " << mumps_par.icntl[10] << std::endl;
+    out << "  > ICNTL(14) = " << mumps_par.icntl[13] << std::endl;
+    out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+    out << std::endl;
   }
   
   template <class Matrix, class Vector>
