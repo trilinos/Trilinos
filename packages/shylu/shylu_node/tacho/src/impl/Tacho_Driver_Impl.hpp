@@ -502,11 +502,11 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
       printf( " Small matrix\n" );
     }
   }
-  _shift = shift; // save internally..
+  _shift = shift; // internally keep track of the current shift
   if (_m <= _small_problem_thres) {
     factorize_small_host(ax, shift);
   } else {
-    _N->factorize(ax, _store_transpose, _shift, _pivot_tol, _verbose);
+    _N->factorize(ax, _store_transpose, shift, _pivot_tol, _verbose);
   }
   return 0;
 }
