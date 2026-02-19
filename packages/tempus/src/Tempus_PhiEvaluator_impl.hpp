@@ -153,7 +153,7 @@ void PhiEvaluator<Scalar>::checkInitialized()
 }
 
 template <class Scalar>
-void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel)
+void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel)
 {
   appModel_ = appModel;
 
@@ -227,27 +227,28 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 
   //Teuchos::RCP<const Epetra_CrsMatrix> crsMat = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*fullMassMatrix));
   //EpetraExt::RowMatrixToMatrixMarketFile("fullMassMatrix_mat.mm",*crsMat);
-  std::cout << lumpMass_ << std::endl;
+
   if(!lumpMass_) {
     std::cout << "Using full mass matrix for Phi evaluation." << std::endl;
-    invMassMatrix_ = Thyra::inverse<Scalar>(*appModel_->get_W_factory(),fullMassMatrix_);
+    inverseMassMatrix_ = Thyra::inverse<Scalar>(*appModel_->get_W_factory(), fullMassMatrix_);
   }
   else {
+    std::cout << "Using lumped mass matrix for Phi evaluation." << std::endl;
     // build lumped mass matrix (assumes all positive mass entries, does a simple sum)
     Teuchos::RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(*fullMassMatrix_->domain());
-    Thyra::assign(ones.ptr(),1.0);
+    Thyra::assign(ones.ptr(), 1.0);
 
     lumpedMassDiagonal_ = Thyra::createMember(*fullMassMatrix_->range());
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > invLumpMass = Thyra::createMember(*fullMassMatrix_->range());
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > invLumpedMassDiagonal = Thyra::createMember(*fullMassMatrix_->range());
     Thyra::apply(*fullMassMatrix_, Thyra::NOTRANS, *ones, lumpedMassDiagonal_.ptr());
 
     //Teuchos::RCP<const Epetra_Vector> mv = Teuchos::rcp_dynamic_cast<const Epetra_Vector>(Thyra::get_Epetra_Vector(crsMat->RangeMap(), invLumpMass));
     //EpetraExt::VectorToMatrixMarketFile("fullMassMatrix_v.mm", *mv);
 
-    Thyra::reciprocal(*lumpedMassDiagonal_, invLumpMass.ptr());
+    Thyra::reciprocal(*lumpedMassDiagonal_, invLumpedMassDiagonal.ptr());
 
-    lumpMassMatrix_ = Thyra::diagonal(lumpedMassDiagonal_);
-    invMassMatrix_ = Thyra::diagonal(invLumpMass);
+    lumpedMassMatrix_ = Thyra::diagonal(lumpedMassDiagonal_);
+    inverseMassMatrix_ = Thyra::diagonal(invLumpedMassDiagonal);
 
     // std::cout << "Using lumped mass matrix for Phi evaluation." << std::endl;
     // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -261,14 +262,15 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 
 template <class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildATilde(
-    const double dt)   // time step
+    const Scalar dt)   // time step
 {
   // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   // invMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
   // jacobianMatrix_->describe(*out, Teuchos::VERB_EXTREME);
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A = Thyra::scale(Teuchos::as<Scalar>(-dt), Thyra::multiply<Scalar>(invMassMatrix_, jacobianMatrix_));
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> A
+    = Thyra::scale(-dt, Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_));
 
   // Spaces
   auto V = A->domain();   // dim N, and also A->range()
@@ -332,7 +334,7 @@ void PhiLinearSolver<Scalar>::buildb(const Thyra::Ordinal p,
       "buildb:  p must be positive.");
 
   // N-dimensional space: use A's range (rows of an NxN operator)
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V_N = invMassMatrix_->range();
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V_N = inverseMassMatrix_->range();
 
   const Thyra::Ordinal N = V_N->dim();
 
@@ -391,7 +393,7 @@ void PhiLinearSolver<Scalar>::applyMass(const Teuchos::Ptr<Thyra::VectorBase<Sca
     if (!lumpMass_)
       Thyra::apply(*fullMassMatrix_, Thyra::NOTRANS, *f, Mf.ptr());
     else
-      Thyra::apply(*lumpMassMatrix_, Thyra::NOTRANS, *f, Mf.ptr());
+      Thyra::apply(*lumpedMassMatrix_, Thyra::NOTRANS, *f, Mf.ptr());
   }
 }
 
@@ -401,7 +403,7 @@ void PhiLinearSolver<Scalar>::solveMass(const Teuchos::Ptr<Thyra::VectorBase<Sca
 {
   // invert the mass matrix
   if (Mf != Teuchos::null && f != Teuchos::null) {
-    Thyra::apply(*invMassMatrix_, Thyra::NOTRANS, *Mf, f.ptr());
+    Thyra::apply(*inverseMassMatrix_, Thyra::NOTRANS, *Mf, f.ptr());
   }
 }
 
@@ -446,7 +448,7 @@ void PhiLinearSolver<Scalar>::applyJacobian(const Teuchos::Ptr<Thyra::VectorBase
 
 template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
-							     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> iMf,
+							     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
 							     const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
 							     Scalar alpha, Scalar beta) const
 {
@@ -461,7 +463,7 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Thyra::ModelE
   if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
     MpJ_p = appModel_->create_W_prec();
   }
-  //TODO: support all types of preconditoner (compare NOX_Thyra_Group.C)
+  //TODO: support all types of preconditioner (compare NOX_Thyra_Group.C)
 
   MEB::InArgs<Scalar> inArgs_new = appModel_->createInArgs();
   inArgs_new.setArgs(inArgs);
@@ -498,7 +500,7 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Thyra::ModelE
     Thyra::initializePreconditionedOp<Scalar>(*lowsFactory, MpJ, MpJ_p, LOWSB.ptr());
   }
 
-  assign(iMf.ptr(), ST::zero()); //TODO: needed?
+  assign(x.ptr(), ST::zero()); //TODO: needed?
 
   // Create solve criteria
   Thyra::SolveCriteria<Scalar> solveCriteria;
@@ -521,8 +523,8 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Thyra::ModelE
   solveCriteria.solveMeasureType =
     Thyra::SolveMeasureType(Thyra::SOLVE_MEASURE_NORM_RESIDUAL, Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL);
 
-  // compute the solution to (MpJ)\Mf and write it to iMf
-  Thyra::SolveStatus<Scalar> sStatus = LOWSB->solve(Thyra::NOTRANS, *Mf, iMf.ptr(), Teuchos::constPtr(solveCriteria));
+  // compute the solution to (MpJ)\Mf and write it to x
+  Thyra::SolveStatus<Scalar> sStatus = LOWSB->solve(Thyra::NOTRANS, *Mf, x.ptr(), Teuchos::constPtr(solveCriteria));
 
   return sStatus;
 }
