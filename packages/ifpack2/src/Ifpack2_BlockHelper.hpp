@@ -272,6 +272,7 @@ struct ImplType {
   /// matrix type derived types
   ///
   typedef size_t size_type;
+  typedef MatrixType matrix_type;
   typedef typename MatrixType::scalar_type scalar_type;
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;

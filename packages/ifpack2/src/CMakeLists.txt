@@ -123,7 +123,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
 
   IF(${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockTriDiContainer)
-    #    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockComputeResidualVector)
+    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockComputeResidualVector)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockComputeResidualAndSolve)
   ENDIF()
 

@@ -2269,7 +2269,7 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
     bool is_async_importer_active    = !async_importer.is_null();
     local_ordinal_type_1d_view dm2cm = is_async_importer_active ? async_importer->dm2cm : local_ordinal_type_1d_view();
     bool ownedRemoteSeparate         = overlap_communication_and_computation || !is_async_importer_active;
-    BlockHelperDetails::precompute_A_x_offsets<MatrixType>(amd, interf, g, dm2cm, blocksize, ownedRemoteSeparate);
+    BlockHelperDetails::ComputeResidualVector<MatrixType>::precompute_A_x_offsets(amd, interf, g, dm2cm, blocksize, ownedRemoteSeparate);
   }
 
   // If using fused block Jacobi path, allocate diagonal inverses here (d_inv) and find diagonal offsets.
