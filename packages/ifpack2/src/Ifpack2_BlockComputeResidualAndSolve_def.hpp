@@ -672,6 +672,7 @@ void ComputeResidualAndSolve<MatrixType>::run_y_zero(
   {                                                                                                                \
     ComputeResidualAndSolve_YZero_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
     functor.run(b_, y_);                                                                                           \
+    break;                                                                                                         \
   }
 
   switch (blocksize_requested) {
@@ -699,6 +700,7 @@ void ComputeResidualAndSolve<MatrixType>::run_single_pass(
   {                                                                                                                     \
     ComputeResidualAndSolve_SinglePass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
     functor.run(b_, x_, x_remote_, y_);                                                                                 \
+    break;                                                                                                              \
   }
 
   switch (blocksize_requested) {
@@ -725,6 +727,7 @@ void ComputeResidualAndSolve<MatrixType>::run_pass1_of_2(
   {                                                                                                                \
     ComputeResidualAndSolve_2Pass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
     functor.run_pass1(b_, x_, y_);                                                                                 \
+    break;                                                                                                         \
   }
 
   switch (blocksize_requested) {
@@ -751,6 +754,7 @@ void ComputeResidualAndSolve<MatrixType>::run_pass2_of_2(
   {                                                                                                                \
     ComputeResidualAndSolve_2Pass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
     functor.run_pass2(x_, x_remote_, y_);                                                                          \
+    break;                                                                                                         \
   }
 
   switch (blocksize_requested) {
