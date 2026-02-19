@@ -30,10 +30,10 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
   Teuchos::RCP<Teuchos::ParameterList> pl = this->getValidParametersBasic();
 
   pl->set<int>(
-      "Taylor Expansion Order", 4,
+      "Taylor Expansion Order", 10,
       "The order of the Taylor expansion used in the EPI stepper.\n"
       "\n"
-      "The default is 2.");
+      "The default is 10.");
 
   pl->set<bool>(
   "Zero Initial Guess", false,
@@ -58,13 +58,14 @@ void PhiEvaluatorTaylor<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluat
 
 template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> phiv,
-							       int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b)
+								  int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b)
 {
   // phi->setLumpMassMatrix(useLumpedMass_);
   this->phiLinSolv_->setLumpMassMatrix(useLumpedMass_);
   this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
   this->phiLinSolv_->computeJacobian(*inArgs_lin_);
   this->phiLinSolv_->buildK(k);
+
   Teuchos::RCP<Thyra::VectorBase<Scalar>> rhs_b = Mrhs_b->clone_v();
   this->phiLinSolv_->solveMass(rhs_b.ptr(), Mrhs_b);
 
@@ -121,7 +122,7 @@ Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluatorTaylor<Scalar>::matrix
   Thyra::Vp_V(matExpTemp.ptr(), *d_k);
 
   Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
-  Scalar err_est;
+  Scalar norm_d_k;
   Scalar overflow = 0.;
   int k;
   // Iteratively compute d_k = (A^k v) / k! and add to result
@@ -137,12 +138,24 @@ Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluatorTaylor<Scalar>::matrix
     // add d_k to the final result
     Thyra::Vp_V(matExpTemp.ptr(), *d_k);
 
-    err_est = Thyra::norm_inf(*d_k);
+    norm_d_k = Thyra::norm_inf(*d_k);
 
-    if (err_est < 1e-20)
+    // overflow is an upper bound on Thyra::norm_inf(*matExpTemp);
+    // it tracks how large the update matExpTemp could have gotten in intermediate iterations
+    // any number larger than overflow * machine_eps should not be affected much by roundoff
+    overflow += norm_d_k;
+      
+    //std::cout << "Norm in it " << k << " of: solution=" << Thyra::norm_inf(*matExpTemp)
+    //	      << " overflow=" << overflow << " update=" << norm_d_k << std::endl;
+
+    // terminate if the update drops below likely significance
+    if (norm_d_k < 1e-21 * overflow)
       break;
   }
-  std::cout << "Norm of final update in iteration " << k << " is " << err_est << std::endl;
+  std::cout << "Taylor: Norm in it " << k << " of: solution=" << Thyra::norm_inf(*matExpTemp)
+	    << " overflow=" << overflow << " update=" << norm_d_k << std::endl;
+
+  //TODO return overflow * 1e-17 as an error estimate.
 
   matExp_v_ = matExpTemp; // This is required to wrap multivector as linearop
 
