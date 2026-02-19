@@ -1,6 +1,11 @@
 include_tribits_build()
 
-bob_config_header("${CMAKE_CURRENT_BINARY_DIR}/Compadre_Config.h")
+bob_config_header_nowrite("Compadre")
+configure_file(
+    "${PROJECT_SOURCE_DIR}/cmake/Compadre_Config.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/Compadre_Config.h"
+    @ONLY
+)
 
 MACRO(COMPADRE_APPEND_GLOB VAR)
   FILE(GLOB LOCAL_TMP_VAR ${ARGN})
