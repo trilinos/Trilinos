@@ -146,7 +146,7 @@ void Zoltan2Interface<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& l
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<typename Zoltan2Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GOVector>
-Zoltan2Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeDecomposition(int numPartitions, RCP<Matrix>& A, RCP<RealValuedMultiVector> coords, Teuchos::ParameterList& Zoltan2Params, std::string debuggingFile) {
+Zoltan2Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeDecomposition(int numPartitions, RCP<const Matrix>& A, RCP<const RealValuedMultiVector> coords, Teuchos::ParameterList& Zoltan2Params, std::string debuggingFile) {
   Zoltan2Params.set("num_global_parts", numPartitions);
 
   RCP<const Map> rowMap = A->getRowMap();
