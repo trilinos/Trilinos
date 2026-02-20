@@ -10,6 +10,8 @@ smoother ->
 
 Level 1
 Prolongator minimization (MueLu::EminPFactory)
+Constraint (MueLu::ConstraintFactory)
+Ppattern (MueLu::PatternFactory)
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildScalar (MueLu::CoalesceDropFactory_kokkos)
@@ -25,11 +27,18 @@ Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Constraint (MueLu::ConstraintFactory)
-Ppattern (MueLu::PatternFactory)
-[empty list]
-Number of emin iterations = 1
-GMRES iterations
+PrepareLeastSquaresSolveDirect (MueLu::DenseConstraint)
+Getting P from coarseLevel
+
+*******************************************************
+***** Belos Iterative Solver:  Pseudo Block Gmres 
+***** Maximum Iterations: 1
+***** Block Size: 1
+***** Residual Test: 
+*****   Test 1 : Belos::StatusTestImpResNorm<>: (2-Norm Res Vec) , tol = 1e-08
+*******************************************************
+Iter 0, [ 1] :    6.665458e+01
+Iter 1, [ 1] :    6.062458e-17
 emin: num iterations = 1
 emin: iterative method = gmres
 Transpose P (MueLu::TransPFactory)
@@ -47,6 +56,8 @@ smoother ->
 
 Level 2
 Prolongator minimization (MueLu::EminPFactory)
+Constraint (MueLu::ConstraintFactory)
+Ppattern (MueLu::PatternFactory)
 Build (MueLu::TentativePFactory_kokkos)
 Build (MueLu::UncoupledAggregationFactory)
 BuildScalar (MueLu::CoalesceDropFactory_kokkos)
@@ -62,11 +73,18 @@ Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Constraint (MueLu::ConstraintFactory)
-Ppattern (MueLu::PatternFactory)
-[empty list]
-Number of emin iterations = 1
-GMRES iterations
+PrepareLeastSquaresSolveDirect (MueLu::DenseConstraint)
+Getting P from coarseLevel
+
+*******************************************************
+***** Belos Iterative Solver:  Pseudo Block Gmres 
+***** Maximum Iterations: 1
+***** Block Size: 1
+***** Residual Test: 
+*****   Test 1 : Belos::StatusTestImpResNorm<>: (2-Norm Res Vec) , tol = 1e-08
+*******************************************************
+Iter 0, [ 1] :    4.275004e+00
+Iter 1, [ 1] :    8.575540e-16
 emin: num iterations = 1
 emin: iterative method = gmres
 Transpose P (MueLu::TransPFactory)
@@ -89,10 +107,10 @@ Operator complexity = 1.44
 Smoother complexity = <ignored>
 Cycle type          = V
 
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  1  
-  1  3333  9997   3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+  1    3333   9997     3.00     3.00      1
+  2    1111   3331     3.00     3.00      1
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
