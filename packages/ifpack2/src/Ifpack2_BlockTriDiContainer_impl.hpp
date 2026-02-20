@@ -2194,11 +2194,12 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
       // Also check that the final elements of R_rowptr (aka amd.rowptr)
       // and R_rowptr_remote (aka amd.rowptr_remote) match the total entry counts computed earlier.
       {
-        size_type R_rowptr_final, R_rowptr_remote_final;
+        size_type R_rowptr_final;
         KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(nrows + 1, R_rowptr, R_rowptr_final);
-        KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(nrows + 1, R_rowptr_remote, R_rowptr_remote_final);
         TEUCHOS_ASSERT(R_rowptr_final == R_nnz_owned);
         if (overlap_communication_and_computation) {
+          size_type R_rowptr_remote_final;
+          KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(nrows + 1, R_rowptr_remote, R_rowptr_remote_final);
           TEUCHOS_ASSERT(R_rowptr_remote_final == R_nnz_remote);
         }
       }
