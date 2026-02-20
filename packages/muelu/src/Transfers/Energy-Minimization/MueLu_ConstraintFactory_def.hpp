@@ -14,6 +14,7 @@
 
 #include "MueLu_Constraint.hpp"
 #include "MueLu_DenseConstraint.hpp"
+#include "MueLu_SparseConstraint.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MasterList.hpp"
 
@@ -33,15 +34,25 @@ RCP<const ParameterList> ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, 
 
   validParamList->set<RCP<const FactoryBase>>("FineNullspace", Teuchos::null, "Generating factory for the nullspace");
   validParamList->set<RCP<const FactoryBase>>("CoarseNullspace", Teuchos::null, "Generating factory for the nullspace");
+  validParamList->set<RCP<const FactoryBase>>("FineD0", Teuchos::null, "Generating factory for the fine discrete gradient");
+  validParamList->set<RCP<const FactoryBase>>("CoarseD0", Teuchos::null, "Generating factory for the coarse discrete gradient");
   validParamList->set<RCP<const FactoryBase>>("Ppattern", Teuchos::null, "Generating factory for the nonzero pattern");
+  validParamList->set<RCP<const FactoryBase>>("PnodalEmin", Teuchos::null, "Generating factory for nodal P");
 
   return validParamList;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
-  Input(fineLevel, "Nullspace", "FineNullspace");
-  Input(coarseLevel, "Nullspace", "CoarseNullspace");
+  const ParameterList& pL = GetParameterList();
+  if (pL.get<std::string>("emin: constraint type") == "nullspace") {
+    Input(fineLevel, "Nullspace", "FineNullspace");
+    Input(coarseLevel, "Nullspace", "CoarseNullspace");
+  } else {
+    Input(fineLevel, "D0", "FineD0");
+    Input(coarseLevel, "D0", "CoarseD0");
+    Input(coarseLevel, "PnodalEmin", "PnodalEmin");
+  }
   Input(coarseLevel, "Ppattern");
 }
 
@@ -63,7 +74,46 @@ void ConstraintFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& 
       constraint = rcp(new DenseConstraint(fineNullspace, coarseNullspace, Ppattern, solverType));
     }
   } else {
-    TEUCHOS_ASSERT(false);
+    RCP<Matrix> fineD0   = Get<RCP<Matrix>>(fineLevel, "D0", "FineD0");
+    RCP<Matrix> coarseD0 = Get<RCP<Matrix>>(coarseLevel, "D0", "CoarseD0");
+    RCP<Matrix> Pnodal   = Get<RCP<Matrix>>(coarseLevel, "PnodalEmin", "PnodalEmin");
+    RCP<SparseConstraint> sparse_constraint;
+    {
+      SubFactoryMonitor m2(*this, "Sparse Constraint", coarseLevel);
+      sparse_constraint = rcp(new SparseConstraint(Pnodal, fineD0, coarseD0, Ppattern, solverType));
+    }
+
+    // Construct an initial guess.
+    // This is different from the nullspace constraint where we use the tentative prolongator as initial guess.
+    // Instead, we leverage the least-squares solve to construct a prolongator that satisfies the constraints.
+
+    auto X             = sparse_constraint->GetConstraintMatrix();
+    auto vecPProjected = MultiVectorFactory::Build(sparse_constraint->getDomainMap(), 1);
+    auto temp          = MultiVectorFactory::Build(X->getRangeMap(), 1);
+    auto rhs           = MultiVectorFactory::Build(X->getRangeMap(), 1);
+
+    // We want
+    //  P * coarseD0 = fineD0 * Pnodal
+    // which is, after vectorization
+    //  X * vec(P) = vec(fineD0 * Pnodal)
+    // A solution of this is given by
+    //  vec(P) = X^T * (X * X^T)^dagger * vec(fineD0 * Pnodal)
+
+    // rhs = fineD0 * Pnodal
+    {
+      RCP<Matrix> fineD0_Pnodal;
+      fineD0_Pnodal = MatrixMatrix::Multiply(*fineD0, false, *Pnodal, false, fineD0_Pnodal, GetOStream(Runtime0), true, true);
+      sparse_constraint->AssignMatrixEntriesToConstraintVector(*fineD0_Pnodal, *rhs);
+    }
+
+    // vecPProjected = X^T (X * X^T)^dagger * rhs
+    sparse_constraint->LeastSquaresSolve(*rhs, *temp);
+    X->apply(*temp, *vecPProjected, Teuchos::TRANS);
+
+    auto P0 = sparse_constraint->GetMatrixWithEntriesFromVector(*vecPProjected);
+
+    Set(coarseLevel, "P", P0);
+    constraint = sparse_constraint;
   }
 
   Set(coarseLevel, "Constraint", constraint);
