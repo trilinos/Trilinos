@@ -26,6 +26,8 @@ DistributorSendTypeEnumToString(EDistributorSendType sendType) {
     return "Send";
   } else if (sendType == DISTRIBUTOR_ALLTOALL) {
     return "Alltoall";
+  } else if (sendType == DISTRIBUTOR_PERSISTENT) {
+    return "Persistent";
   }
 #if defined(HAVE_TPETRA_MPI)
   else if (sendType == DISTRIBUTOR_IALLTOFEWV) {
@@ -52,6 +54,7 @@ DistributorSendTypeStringToEnum(const std::string_view s) {
   if (s == "Isend") return DISTRIBUTOR_ISEND;
   if (s == "Send") return DISTRIBUTOR_SEND;
   if (s == "Alltoall") return DISTRIBUTOR_ALLTOALL;
+  if (s == "Persistent") return DISTRIBUTOR_PERSISTENT;
 #if defined(HAVE_TPETRA_MPI)
   if (s == "Ialltofewv") return DISTRIBUTOR_IALLTOFEWV;
 #endif
@@ -935,6 +938,7 @@ Teuchos::Array<std::string> distributorSendTypes() {
   sendTypes.push_back("Isend");
   sendTypes.push_back("Send");
   sendTypes.push_back("Alltoall");
+  sendTypes.push_back("Persistent");
 #if defined(HAVE_TPETRA_MPI)
   sendTypes.push_back("Ialltofewv");
 #endif
@@ -950,6 +954,7 @@ Teuchos::Array<EDistributorSendType> distributorSendTypeEnums() {
   res.push_back(DISTRIBUTOR_ISEND);
   res.push_back(DISTRIBUTOR_SEND);
   res.push_back(DISTRIBUTOR_ALLTOALL);
+  res.push_back(DISTRIBUTOR_PERSISTENT);
 #if defined(HAVE_TPETRA_MPI)
   res.push_back(DISTRIBUTOR_IALLTOFEWV);
 #endif
