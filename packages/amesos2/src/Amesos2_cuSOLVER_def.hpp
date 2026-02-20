@@ -302,6 +302,9 @@ void
 cuSOLVER<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
                                        const Teuchos::EVerbosityLevel verbLevel) const
 {
+  out << " cuSOLVER current parameters:" << std::endl;
+  out << "  > Reorder = " << (data_.bReorder ? "YES" : "NO") << std::endl;
+  out << std::endl;
 }
 
 template<class Matrix, class Vector>
