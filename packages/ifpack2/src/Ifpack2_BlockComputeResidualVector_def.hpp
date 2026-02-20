@@ -413,7 +413,6 @@ struct ComputeResidualFunctor {
 
   struct SeqTag {};
 
-  KOKKOS_INLINE_FUNCTION
   void
   operator()(const SeqTag &, const local_ordinal_type &i) const {
     const local_ordinal_type blocksize        = blocksize_requested;
@@ -517,7 +516,7 @@ struct ComputeResidualFunctor {
 
   // CPU implementation for all cases
   template <int B, bool async, bool overlap, bool haveBlockMatrix>
-  KOKKOS_INLINE_FUNCTION void
+  void
   operator()(const GeneralTag<B, async, overlap, haveBlockMatrix> &, const local_ordinal_type &rowidx) const {
     const local_ordinal_type blocksize = (B == 0 ? blocksize_requested : B);
 
