@@ -1,10 +1,12 @@
 tribits_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-#tribits_add_executable(
-#  UnitTests
-#  SOURCES
-#    Compadre_UnitTests.cpp
-#  ) # end tribits_add_executable
+if (TPL_ENABLE_gtest)
+  tribits_add_executable(
+    UnitTests
+    SOURCES
+      Compadre_UnitTests.cpp
+    ) # end tribits_add_executable
+endif()
 
 tribits_add_executable(
   GMLS_Host_Test
@@ -84,25 +86,27 @@ tribits_add_executable(
     NeighborSearchTest.cpp
   ) # end tribits_add_executable
 
-#set(testName Compadre_Unit_Tests)
-#tribits_add_test(
-#  UnitTests
-#  NAME
-#    ${testName}
-#  COMM serial mpi
-#  NUM_MPI_PROCS 1
-#  ADDED_TESTS_NAMES_OUT ${testName}_CREATED
-#  ) # end tribits_add_test
-#if (${testName}_CREATED)
-#  set_tests_properties(
-#    ${${testName}_CREATED}
-#    PROPERTIES
-#      LABELS
-#        "UnitTest;unittest;Unit;unit"
-#      TIMEOUT
-#        60
-#    ) # end set_tests_properties
-#endif() # test created
+if (TPL_ENABLE_gtest)
+  set(testName Unit_Tests)
+  tribits_add_test(
+    UnitTests
+    NAME
+      ${testName}
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    ADDED_TESTS_NAMES_OUT ${testName}_CREATED
+    ) # end tribits_add_test
+  if (${testName}_CREATED)
+    set_tests_properties(
+      ${${testName}_CREATED}
+      PROPERTIES
+        LABELS
+          "UnitTest;unittest;Unit;unit"
+        TIMEOUT
+          60
+      ) # end set_tests_properties
+  endif() # test created
+endif()
 
 # Host views tests for GMLS
 set(testName GMLS_Host_Dim3_QR)
