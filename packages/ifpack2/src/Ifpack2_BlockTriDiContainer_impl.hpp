@@ -46,8 +46,6 @@
 #include <KokkosBlas1_nrm1.hpp>
 #include <KokkosBlas1_nrm2.hpp>
 
-#include <Kokkos_StdAlgorithms.hpp>
-
 #include <memory>
 
 #include "Ifpack2_BlockHelper.hpp"
@@ -2192,9 +2190,18 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
               }
             });
       }
-      // Prefix-sums to finish computing R_rowptr and R_rowptr_remote
-      Kokkos::Experimental::exclusive_scan(execution_space(), R_rowptr, R_rowptr, size_type(0));
-      Kokkos::Experimental::exclusive_scan(execution_space(), R_rowptr_remote, R_rowptr_remote, size_type(0));
+      // Prefix sums to finish computing R_rowptr and R_rowptr_remote.
+      // Also check that the final elements of R_rowptr (aka amd.rowptr)
+      // and R_rowptr_remote (aka amd.rowptr_remote) match the total entry counts computed earlier.
+      {
+        size_type R_rowptr_final, R_rowptr_remote_final;
+        KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(nrows + 1, R_rowptr, R_rowptr_final);
+        KokkosKernels::Impl::kk_exclusive_parallel_prefix_sum<execution_space>(nrows + 1, R_rowptr_remote, R_rowptr_remote_final);
+        TEUCHOS_ASSERT(R_rowptr_final == R_nnz_owned);
+        if (overlap_communication_and_computation) {
+          TEUCHOS_ASSERT(R_rowptr_remote_final == R_nnz_remote);
+        }
+      }
       {
         // Fill R graph entries (R_A_colindsub and R_A_colindsub_remote)
         Kokkos::RangePolicy<execution_space> policy(0, nrows);
@@ -2224,16 +2231,6 @@ void performSymbolicPhase(const Teuchos::RCP<const typename BlockHelperDetails::
                   R_A_colindsub_remote(cnt_rowptr_remote++) = row_entry;
               }
             });
-      }
-      {
-        // Check that the last elements of R_rowptr (aka amd.rowptr)
-        // and R_rowptr_remote (aka amd.rowptr_remote) match the expected entry counts
-        auto r_rowptr_end = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), Kokkos::subview(R_rowptr, nrows));
-        TEUCHOS_ASSERT(r_rowptr_end() == R_nnz_owned);
-        if (overlap_communication_and_computation) {
-          auto r_rowptr_remote_end = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), Kokkos::subview(R_rowptr_remote, nrows));
-          TEUCHOS_ASSERT(r_rowptr_remote_end() == R_nnz_remote);
-        }
       }
 
       // Allocate or view values.
