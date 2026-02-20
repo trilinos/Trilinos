@@ -364,7 +364,10 @@ protected:
                  const OrdinalType numCols)
   {
     const size_t size = size_t(numRows) * size_t(numCols);
-    return new ScalarType[size];
+    if (size > 0)
+      return new ScalarType[size];
+    else
+      return nullptr;
   }
 
   OrdinalType numRows_ = 0;
