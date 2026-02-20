@@ -85,6 +85,7 @@ struct SuperNodeInfoInitReducer {
 
 template <typename ValueType, typename DeviceType> struct SupernodeInfo {
   using value_type = ValueType;
+  using mag_type = typename ArithTraits<value_type>::mag_type;
 
   using device_type = DeviceType;
   using exec_space = typename device_type::execution_space;
@@ -147,7 +148,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
     Supernode()
         : lock(0), row_begin(0), m(0), n(0), gid_col_begin(0), gid_col_end(0), sid_col_begin(0), sid_col_end(0),
           nchildren(0), children(NULL), max_decendant_schur_size(0), max_decendant_supernode_size(0), l_buf(NULL),
-          u_buf(NULL), do_not_apply_pivots(false) {
+          u_buf(NULL), do_not_apply_pivots(false), nnzU(0), rowptrU(NULL), colindU(NULL), nzvalsU(NULL),
+          nnzL(0), rowptrL(NULL), colindL(NULL), nzvalsL(NULL), nzvalsD(NULL) {
       // for (ordinal_type i=0;i<MaxDependenceSize;++i) children[i] = 0;
     }
 
@@ -352,8 +354,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
                                              const bool copy_to_l_buf,
                                              /// input from sparse matrix
                                              const size_type_array &ap, const ordinal_type_array &aj,
-                                             const value_type_array &ax, const ordinal_type_array &perm,
-                                             const ordinal_type_array &peri) {
+                                             const value_type_array &ax, const mag_type shift,
+                                             const ordinal_type_array &perm, const ordinal_type_array &peri) {
     const ordinal_type nsupernodes = self.supernodes.extent(0);
     using policy_type = Kokkos::TeamPolicy<exec_space, Kokkos::Schedule<Kokkos::Static>>;
 
@@ -413,6 +415,7 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
                                          TACHO_TEST_FOR_ABORT(*loc != jj, "copy is wrong");
                                          const ordinal_type j = loc - first;
                                          tgt_u(i, j) = ax(k);
+                                         if (i == j) tgt_u(i,j) += value_type(shift); 
                                          if (j >= s.m && copy_to_l_buf) {
                                            tgt_l(j - s.m, i) = axt(k);
                                          }
@@ -426,8 +429,8 @@ template <typename ValueType, typename DeviceType> struct SupernodeInfo {
 
   inline void copySparseToSuperpanels( // input from sparse matrix
       const bool copy_to_l_buf, const size_type_array &ap, const ordinal_type_array &aj, const value_type_array &ax,
-      const ordinal_type_array &perm, const ordinal_type_array &peri) {
-    copySparseToSuperpanels(*this, copy_to_l_buf, ap, aj, ax, perm, peri);
+      const mag_type shift, const ordinal_type_array &perm, const ordinal_type_array &peri) {
+    copySparseToSuperpanels(*this, copy_to_l_buf, ap, aj, ax, shift, perm, peri);
   }
 
   static inline void createCrsMatrix(SupernodeInfo &self, crs_matrix_type &A,

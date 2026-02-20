@@ -372,7 +372,7 @@ template <typename ValueType, typename DeviceType>
 inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType> &A,
                                       const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &x,
                                       const Kokkos::View<ValueType **, Kokkos::LayoutLeft, DeviceType> &b,
-                                      const bool verbose = false) {
+                                      const double shift = 0.0, const bool verbose = false) {
   const bool test = (size_t(A.NumRows()) != size_t(A.NumCols()) || size_t(A.NumRows()) != size_t(b.extent(0)) ||
                      size_t(x.extent(0)) != size_t(b.extent(0)) || size_t(x.extent(1)) != size_t(b.extent(1)));
   if (test)
@@ -397,7 +397,7 @@ inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType>
   for (ordinal_type p = 0; p < k; ++p) {
     double diff_p = 0, norm_p = 0;
     for (ordinal_type i = 0; i < m; ++i) {
-      value_type s = 0;
+      value_type s = value_type(shift) * h_x(i, p);;
       const ordinal_type jbeg = h_A.RowPtrBegin(i), jend = h_A.RowPtrEnd(i);
       for (ordinal_type j = jbeg; j < jend; ++j) {
         const ordinal_type col = h_A.Col(j);
@@ -409,8 +409,14 @@ inline double computeRelativeResidual(const CrsMatrixBase<ValueType, DeviceType>
       norm += arith_traits::real(h_b(i, p) * arith_traits::conj(h_b(i, p)));
       diff += arith_traits::real((h_b(i, p) - s) * arith_traits::conj(h_b(i, p) - s));
     }
-    if (verbose)
-      std::cout << " * Relative residual norm(" << p << ") = " << sqrt(diff_p) << " / " << sqrt(norm_p) << " = " << sqrt(diff_p/norm_p) << std::endl;
+    if (verbose) {
+      std::cout << " * Relative residual norm(" << p << ") = "
+                << sqrt(diff_p) << " / " << sqrt(norm_p) << " = " << sqrt(diff_p/norm_p);
+      if (shift != 0.0) {
+        std::cout << " (with shift = " << shift << ")";
+      }
+      std::cout << std::endl;
+    }
   }
   if (verbose)
     std::cout << " Relative residual norm = " << sqrt(diff) << " / " << sqrt(norm) << " = " << sqrt(diff/norm) << std::endl;

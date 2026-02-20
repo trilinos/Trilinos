@@ -246,7 +246,8 @@ public:
   }
 
   inline virtual void factorize(const value_type_array &ax, const bool store_transpose,
-                                const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) {
+                                const mag_type shift, const mag_type pivot_tol = 0.0,
+                                const ordinal_type verbose = 0) {
     TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "The function should be overriden by derived classes");
   }
 
