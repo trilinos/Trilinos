@@ -206,6 +206,9 @@ using MapTransferFactory [[maybe_unused]] = MueLu::MapTransferFactory<Scalar, Lo
 #ifdef MUELU_MATRIXANALYSISFACTORY_SHORT
 using MatrixAnalysisFactory [[maybe_unused]] = MueLu::MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
+#ifdef MUELU_MATRIXTRANSFERFACTORY_SHORT
+using MatrixTransferFactory [[maybe_unused]] = MueLu::MatrixTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+#endif
 #ifdef MUELU_MERGEDBLOCKEDMATRIXFACTORY_SHORT
 using MergedBlockedMatrixFactory [[maybe_unused]] = MueLu::MergedBlockedMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 #endif
