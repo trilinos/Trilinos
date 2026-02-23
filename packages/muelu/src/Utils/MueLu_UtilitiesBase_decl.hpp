@@ -14,6 +14,10 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
+#include "MueLu_BaseClass.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
+
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -33,6 +37,7 @@
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MatrixFactory_fwd.hpp>
+#include <Xpetra_MatrixUtils_fwd.hpp>
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_MultiVectorFactory_fwd.hpp>
 #include <Xpetra_Operator_fwd.hpp>
@@ -465,6 +470,16 @@ class UtilitiesBase {
   /*! Perform a Reverse Cuthill-McKee (RCM) ordering of the local component of the matrix.
    */
   static RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node>> ReverseCuthillMcKee(const Matrix& Op);
+
+  static void TripleMatrixProduct(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& R,
+                                  const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
+                                  const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& P,
+                                  Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ac,
+                                  const Teuchos::ParameterList& pL,
+                                  const MueLu::BaseClass& verbObj,
+                                  Teuchos::RCP<Teuchos::ParameterList>& APparams,
+                                  Teuchos::RCP<Teuchos::ParameterList>& RAPparams,
+                                  Level* coarseLevel = nullptr);
 
 };  // class UtilitiesBase
 

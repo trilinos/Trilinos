@@ -63,6 +63,7 @@ LocalPermutationStrategy
 LowPrecisionFactory
 MapTransferFactory
 MatrixAnalysisFactory
+MatrixTransferFactory
 MergedBlockedMatrixFactory
 MergedSmoother
 MultiVectorTransferFactory
