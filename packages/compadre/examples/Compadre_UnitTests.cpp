@@ -33,7 +33,7 @@ TEST (KokkosInitialize, NoArgsGiven) {
 TEST (KokkosInitialize, NoCommandLineArgsGiven) { 
     std::vector<std::string> arguments = {KOKKOS_THREADS_ARG+std::string("=4")};
     ASSERT_NO_DEATH({
-            auto kp = KokkosParser(arguments);
+            auto kp = Compadre::KokkosParser(arguments);
     });
 }
 
@@ -46,8 +46,13 @@ int main(int argc, char **argv) {
     #ifdef COMPADRE_USE_MPI
     MPI_Init(&argc, &argv);
     #endif
+    // this MPI init is rerun when using the "threadsafe" test style below
 
     ::testing::InitGoogleTest(&argc, argv);
+
+    // threadsafe is necessary for cuda+mpi to ensure cuda does not get
+    // a corrupted state 
+    ::testing::FLAGS_gtest_death_test_style = "threadsafe";
     ::testing::GTEST_FLAG(filter) = "Kokkos*";
     int sig = RUN_ALL_TESTS();
 
