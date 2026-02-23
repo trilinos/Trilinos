@@ -32,8 +32,8 @@ PhiEvaluatorPFD<Scalar>::getValidParameters() const
       "Method to approximate the phi-function evaluation.");
 
   pl->set(
-      "PFD method", "CN",
-      "'PDF method' determines the partial fraction decomposition used to approximate the exponential.  "
+      "PFD Method", "CN",
+      "'PDF Method' determines the partial fraction decomposition used to approximate the exponential.  "
       "'IE' - uses an implicit Euler approximation (order 1).  "
       "'CN' - uses a Crank-Nicolson approximation (order 2).");
 
@@ -79,6 +79,34 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
 
   return sStatus;
 }
+
+template <class Scalar>
+void PhiEvaluatorPFD<Scalar>::setPhiEvaluatorValues(
+    Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  PhiEvaluator<Scalar>::setPhiEvaluatorValues(pl);
+
+  //pl->validateParametersAndSetDefaults(*getValidParameters());
+
+  std::string pfdMethod = pl->get<std::string>("PFD Method", "CN");
+  if (pfdMethod != "CN")
+  {
+    Teuchos::RCP<Teuchos::FancyOStream> l_out = this->getOStream();
+    l_out->setOutputToRootOnly(0);
+    *l_out << "PFD Method '" << pfdMethod << "'\n"
+           << "is not yet implemented, continuing with CN!\n";
+  }
+
+  if (this->lumpMassMatrix_ == true)
+  {
+    Teuchos::RCP<Teuchos::FancyOStream> l_out = this->getOStream();
+    l_out->setOutputToRootOnly(0);
+    *l_out << "Option: 'Lump Mass Matrix' is not supported for PDF Solvers, continuing with full matrix.\n";
+  }
+
+  std::cout << "\nParameter List: " << *pl << std::endl;
+}
+
   
 // Nonmember constructors.
 // ------------------------------------------------------------------------
@@ -90,12 +118,8 @@ Teuchos::RCP<PhiEvaluatorPFD<Scalar> > createPhiEvaluatorPFD(
   auto phi = rcp(new PhiEvaluatorPFD<Scalar>());
   phi->setName("From createPhiEvaluatorPFD");
 
-  if (pl == Teuchos::null || pl->numParams() == 0) return phi;
-
-  pl->validateParametersAndSetDefaults(*phi->getValidParameters());
-
-  phi->setName(pl->name());
-  //phi->setThing(pl->get("Thing", "default"));
+  if (pl != Teuchos::null)
+    phi->setPhiEvaluatorValues(pl);
 
   return phi;
 }

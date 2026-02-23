@@ -11,7 +11,7 @@
 
 namespace Tempus {
 
-/** \brief PhiEvaluatorTaylor uses a partial fraction decomposition to evaluate
+/** \brief PhiEvaluatorTaylor uses a Taylor expansion to compute
  *
  *  \f$[x = \varphi_k(J) b]\f$, where 
  *
@@ -29,6 +29,11 @@ class PhiEvaluatorTaylor
 
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
+
+  /// Set the parameters from a ParameterList
+  void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+
+  void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
   int getTaylorExpansionOrder() const { return taylorExpOrder_; }
 
   void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) override;
@@ -38,14 +43,10 @@ class PhiEvaluatorTaylor
 
   Teuchos::RCP<const Thyra::VectorBase<Scalar>> matrixExponential(const int expansionOrder);
 
-  void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
-  void setLumpMassMatrix(bool lump);
-
  private:
   mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
 
   int taylorExpOrder_;
-  bool useLumpedMass_;
 
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
   Teuchos::RCP<Thyra::VectorBase<Scalar>> v_;
