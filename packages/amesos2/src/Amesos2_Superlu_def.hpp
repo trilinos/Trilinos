@@ -1000,6 +1000,23 @@ Superlu<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template <class Matrix, class Vector>
 void
+Superlu<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                      const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " SuperLU current parameters:" << std::endl;
+  out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << "  > Trans        = " << data_.options.Trans << std::endl;
+  out << "  > IterRefine   = " << data_.options.IterRefine << std::endl;
+  out << "  > ColPerm      = " << data_.options.ColPerm << std::endl;
+  out << "  > Equil        = " << data_.options.Equil << std::endl;
+  out << "  > SymmetricMode   = " << data_.options.SymmetricMode << std::endl;
+  out << "  > ConditionNumber = " << data_.options.ConditionNumber << std::endl;
+  out << "  > DiagPivotThresh = " << data_.options.DiagPivotThresh << std::endl;
+  out << std::endl;
+}
+
+template <class Matrix, class Vector>
+void
 Superlu<Matrix,Vector>::triangular_solve_factor()
 {
 #if defined(KOKKOSKERNELS_ENABLE_SUPERNODAL_SPTRSV) && defined(KOKKOSKERNELS_ENABLE_TPL_SUPERLU)

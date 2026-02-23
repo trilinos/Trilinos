@@ -1098,6 +1098,23 @@ namespace Amesos2 {
 }
 
 
+template <class Matrix, class Vector>
+void
+Superludist<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " SuperLU_DIST current parameters:" << std::endl;
+  out << "  > Equil = " << data_.options.Equil << std::endl;
+  out << "  > RowPerm = " << data_.options.RowPerm << std::endl;
+  out << "  > ColPerm = " << data_.options.ColPerm << std::endl;
+  out << "  > ReplaceTinyPivot = " << data_.options.ReplaceTinyPivot << std::endl;
+  out << "  > LargeDiag_MC64-Options = " << data_.largediag_mc64_job << std::endl;
+  out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << "  > DebugLevel   = " << debug_level_ << std::endl;
+  out << std::endl;
+}
+
+
   template<class Matrix, class Vector>
   const char* Superludist<Matrix,Vector>::name = "SuperLU_DIST";
 

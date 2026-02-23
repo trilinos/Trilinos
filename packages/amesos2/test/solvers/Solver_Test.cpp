@@ -532,6 +532,7 @@ do_solve_routine(const string& solver_name,
     solver = Amesos2::create<Matrix,Vector> (solver_name, A1);
     //JDB: We should really use the parameters the user gives
     solver->setParameters( rcpFromRef(solve_params) );
+    solver->describe(*fos, Teuchos::VERB_EXTREME);
     switch (phase) {
     case Amesos2::CLEAN:
       if (verbosity > 2) {

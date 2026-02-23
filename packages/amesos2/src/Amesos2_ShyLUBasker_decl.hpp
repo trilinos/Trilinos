@@ -128,6 +128,14 @@ private:
                  const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
 
 
+  /** 
+   * \brief Prints the status information about the current solver with some level
+   * of verbosity
+   */
+  void describe_impl(Teuchos::FancyOStream &out,
+                     const Teuchos::EVerbosityLevel verbLevel) const;
+
+
   /**
    * \brief Determines whether the shape of the matrix is OK for this solver.
    */
