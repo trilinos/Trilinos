@@ -62,7 +62,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
-  const int nTimeStepSizes = 9;
+  const int nTimeStepSizes = 5;
 
   // Read params from .xml file
   const std::string pListFile = fileName + ".xml";

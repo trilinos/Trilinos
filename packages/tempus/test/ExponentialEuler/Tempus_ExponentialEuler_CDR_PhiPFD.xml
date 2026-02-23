@@ -46,7 +46,7 @@
 
       <ParameterList name="PhiEvaluator">
 	<Parameter name="PhiEvaluator Type" type="string" value="PFD"/>
-	<Parameter name="Lump Mass" type="bool" value="false"/>
+	<Parameter name="Lump Mass Matrix" type="bool" value="false"/>
       </ParameterList>
 
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>
