@@ -116,6 +116,9 @@ class PhiEvaluator
   /// Return a valid non-const ParameterList with current settings.
   Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
 
+  /// Set the parameters from a ParameterList
+  void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+
   /// \name Overridden from Teuchos::Describable
   //@{
   virtual std::string description() const;
@@ -135,6 +138,8 @@ class PhiEvaluator
   bool isInitialized() { return isInitialized_; }
 
   void checkInitialized();
+
+  void setLumpMassMatrix(bool lumpMassMatrix);
 
   /// set the ModelEvaluator
   void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel);
@@ -157,6 +162,7 @@ class PhiEvaluator
 
  protected:
   std::string name_;
+  bool lumpMassMatrix_;
 
   mutable bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
 

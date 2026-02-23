@@ -47,6 +47,7 @@
       <ParameterList name="PhiEvaluator">
 	<Parameter name="Taylor Expansion Order" type="int" value="400"/>
 	<Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
+	<Parameter name="Lump Mass Matrix" type="bool" value="1"/>
       </ParameterList>
 
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>

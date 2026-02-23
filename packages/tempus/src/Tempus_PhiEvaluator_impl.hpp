@@ -44,13 +44,13 @@ namespace Tempus {
 
 template <class Scalar>
 PhiEvaluator<Scalar>::PhiEvaluator()
-  : name_("Phi Evaluator"), isInitialized_(false)
+  : name_("Phi Evaluator"), isInitialized_(false), lumpMassMatrix_(false)
 {
 }
 
 template <class Scalar>
 PhiEvaluator<Scalar>::PhiEvaluator(std::string name)
-  : isInitialized_(false)
+  : isInitialized_(false), lumpMassMatrix_(false)
 {
   setName(name);
 }
@@ -114,8 +114,8 @@ PhiEvaluator<Scalar>::getValidParametersBasic() const
       "Method to approximate the phi-function evaluation.");
 
   pl->set(
-      "Lump Mass", false,
-      "'Lump Mass' switch on lumping of the mass matrix.  "
+      "Lump Mass Matrix", false,
+      "'Lump Mass Matrix' switch on lumping of the mass matrix.  "
       "'true' - will lump the mass matrix for PhiEvaluators that support this feature.  "
       "'false' - will switch off mass lumping.");
 
@@ -142,6 +142,17 @@ void PhiEvaluator<Scalar>::initialize() const
 }
 
 template <class Scalar>
+void PhiEvaluator<Scalar>::setPhiEvaluatorValues(
+    Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  pl->validateParametersAndSetDefaults(*getValidParameters());
+
+  setLumpMassMatrix(pl->get<bool>("Lump Mass Matrix", true));
+  setName(pl->name());
+}
+
+
+template <class Scalar>
 void PhiEvaluator<Scalar>::checkInitialized()
 {
   if (!this->isInitialized()) {
@@ -158,8 +169,18 @@ void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluat
   appModel_ = appModel;
 
   // TODO: read this in from the xml file
-  const bool lumpmass = true;
-  phiLinSolv_ = Teuchos::rcp(new PhiLinearSolver<Scalar>(appModel_, lumpmass));
+  phiLinSolv_ = Teuchos::rcp(new PhiLinearSolver<Scalar>(appModel_, lumpMassMatrix_));
+}
+
+template<class Scalar>
+void PhiEvaluator<Scalar>::setLumpMassMatrix(bool lumpMassMatrix)
+{
+  lumpMassMatrix_ = lumpMassMatrix;
+  if (this->phiLinSolv_ != Teuchos::null)
+  {
+    std::cout << "Setting lump mass matrix to " << lumpMassMatrix_ << std::endl;
+    this->phiLinSolv_->setLumpMassMatrix(lumpMassMatrix_);
+  }
 }
 
 
@@ -229,11 +250,11 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
   //EpetraExt::RowMatrixToMatrixMarketFile("fullMassMatrix_mat.mm",*crsMat);
 
   if(!lumpMass_) {
-    std::cout << "Using full mass matrix for Phi evaluation." << std::endl;
+    //std::cout << "Using full mass matrix for Phi evaluation." << std::endl;
     inverseMassMatrix_ = Thyra::inverse<Scalar>(*appModel_->get_W_factory(), fullMassMatrix_);
   }
   else {
-    std::cout << "Using lumped mass matrix for Phi evaluation." << std::endl;
+    //std::cout << "Using lumped mass matrix for Phi evaluation." << std::endl;
     // build lumped mass matrix (assumes all positive mass entries, does a simple sum)
     Teuchos::RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(*fullMassMatrix_->domain());
     Thyra::assign(ones.ptr(), 1.0);
