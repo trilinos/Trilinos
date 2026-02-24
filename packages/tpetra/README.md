@@ -31,7 +31,7 @@ Tpetra has the following unique features:
 
 If you are familiar with the Epetra package, think of Tpetra as the next version of Epetra. Epetra’s interface is stable, but Tpetra has better support for shared-memory parallelism. Current and future software development effort will focus on Tpetra and the solvers and preconditioners that depend on it.
 For more details, please refer to the Frequently Asked Questions
-document, ./doc/FAQ.txt, or to Tpetra's Doxygen documentation online.
+document, [FAQ](doc/FAQ.txt), or to Tpetra's Doxygen documentation online.
 
 ## Questions?
 
