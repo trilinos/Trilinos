@@ -16,6 +16,8 @@ Tpetra uses the Kokkos package’s shared-memory parallel programming model for 
 *   OpenMP
 *   POSIX Threads (Pthreads)
 *   Nvidia’s CUDA programming model for graphics processing units (GPUs)
+*   AMD's ROCm programming model for GPUs
+*   Intel's SYCL programming model for GPUs
 
 ## Distributed
 
