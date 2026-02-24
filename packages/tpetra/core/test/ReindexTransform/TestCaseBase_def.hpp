@@ -169,7 +169,7 @@ bool TestCaseBase<Scalar_t, LocalId_t, GlobalId_t, Node_t>::baseCheckBeforeOrAft
   // Check Frobenius norm
   {
     Scalar_t frobNorm(matrix->getFrobeniusNorm());
-    Scalar_t relDiff(abs(1. - frobNorm / m_frobNorm));
+    Scalar_t relDiff(Teuchos::ScalarTraits<Scalar_t>::magnitude(1. - frobNorm / m_frobNorm));
     if (relDiff > relDiffThershold) {
       std::stringstream msg;
       msg << "In TestCaseBase::baseCheckBeforeOrAfterTransform()"
@@ -219,7 +219,7 @@ bool TestCaseBase<Scalar_t, LocalId_t, GlobalId_t, Node_t>::baseCheckBeforeOrAft
           throw std::runtime_error(msg.str());
         }
       } else {
-        Scalar_t relDiff(abs(1. - allNorms2[v] / m_lhsNorms2[v]));
+        Scalar_t relDiff(Teuchos::ScalarTraits<Scalar_t>::magnitude(1. - allNorms2[v] / m_lhsNorms2[v]));
         if (relDiff > relDiffThershold) {
           std::stringstream msg;
           msg << "In TestCaseBase::baseCheckBeforeOrAfterTransform()"
@@ -270,7 +270,7 @@ bool TestCaseBase<Scalar_t, LocalId_t, GlobalId_t, Node_t>::baseCheckBeforeOrAft
           throw std::runtime_error(msg.str());
         }
       } else {
-        Scalar_t relDiff(abs(1. - allNorms2[v] / m_rhsNorms2[v]));
+        Scalar_t relDiff(Teuchos::ScalarTraits<Scalar_t>::magnitude(1. - allNorms2[v] / m_rhsNorms2[v]));
         if (relDiff > relDiffThershold) {
           std::stringstream msg;
           msg << "In TestCaseBase::baseCheckBeforeOrAfterTransform()"
