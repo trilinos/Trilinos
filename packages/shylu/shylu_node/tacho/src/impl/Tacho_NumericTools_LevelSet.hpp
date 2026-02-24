@@ -189,6 +189,7 @@ private:
   value_type_array _work;
 
   // for using SpMV
+  bool _keep_zeros;
   rowptr_view rowptrU;
   colind_view colindU;
   nzvals_view nzvalsU;
@@ -415,7 +416,8 @@ public:
   /// initialization / release
   ///
   inline void initialize(const ordinal_type device_level_cut, const ordinal_type device_factorize_thres,
-                         const ordinal_type device_solve_thres, const int nstreams_in = 1, const ordinal_type verbose = 0) {
+                         const ordinal_type device_solve_thres, const int nstreams_in = 1,
+                         const bool store_transpose = false, const ordinal_type verbose = 0) {
     stat_level.n_device_factorize = 0;
     stat_level.n_device_solve = 0;
     stat_level.n_team_factorize = 0;
@@ -680,7 +682,12 @@ public:
     track_alloc(_solve_mode.span() * sizeof(ordinal_type));
 
     createStream(nstreams, verbose);
+    if (variant == 3 && _keep_zeros) {
+      // compress each partitioned inverse at each level into CRS matrix
+      setupCRS(store_transpose, verbose);
+    }
     stat.t_mode_classification = timer.seconds();
+
     if (verbose) {
       switch (this->getSolutionMethod()) {
       case 0: {
@@ -712,7 +719,7 @@ public:
   inline void release(const ordinal_type verbose = 0) override {
     base_type::release(false);
     if (variant == 3) {
-      this->releaseCRS(true);
+      this->releaseCRS(true, verbose);
     }
     track_free(_buf_factor_ptr.span() * sizeof(size_type));
     track_free(_buf_solve_ptr.span() * sizeof(size_type));
@@ -739,6 +746,7 @@ public:
     _bufsize_factorize = 0;
     _bufsize_solve = 0;
     _nstreams = 0;
+    _keep_zeros = false;
     stat_level = stat_level();
   }
   NumericToolsLevelSet(const NumericToolsLevelSet &b) = default;
@@ -757,6 +765,7 @@ public:
                        const ordinal_type_array_host &stree_level, const ordinal_type_array_host &stree_roots)
       : base_type(method, m, ap, aj, perm, peri, nsupernodes, supernodes, gid_ptr, gid_colidx, sid_ptr, sid_colidx,
                   blk_colidx, stree_parent, stree_ptr, stree_children, stree_level, stree_roots) {
+    _keep_zeros = false;
     _nstreams = 0;
     _is_spmv_extracted = 0;
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1173,8 +1182,9 @@ public:
     else if (variant == 2 || variant == 3)
       return factorizeNoPivotLDLOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
     else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::factorizeNoPivotLDLOnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::factorizeNoPivotLDLOnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
     return 0;
   }
@@ -1216,8 +1226,8 @@ public:
             // On NVIDIA/AMD, calling Chol<ArgUplo, Algo::OnDevice>::invoke with member = handle.
             _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(handle_lapack, ATL, W);
             checkDeviceLapackStatus("chol");
-	  }
-	}
+          }
+        }
       }
     }
     #if defined(KOKKOS_ENABLE_HIP)
@@ -1303,8 +1313,8 @@ public:
             // On NVIDIA/AMD, calling Chol<ArgUplo, Algo::OnDevice>::invoke with member = handle.
             _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(handle_lapack, ATL, W);
             checkDeviceLapackStatus("chol");
-	  }
-	}
+          }
+        }
       }
     }
     #if defined(KOKKOS_ENABLE_HIP)
@@ -1409,8 +1419,8 @@ public:
             // On NVIDIA/AMD, calling Chol<ArgUplo, Algo::OnDevice>::invoke with member = handle.
             _status = Chol<Uplo::Upper, Algo::OnDevice>::invoke(handle_lapack, ATL, W);
             checkDeviceLapackStatus("chol");
-	  }
-	}
+          }
+        }
       }
     }
     #if defined(KOKKOS_ENABLE_HIP)
@@ -1497,8 +1507,9 @@ public:
     else if (variant == 2 || variant == 3)
       return factorizeCholeskyOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
     else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::factorizeCholeskyOnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::factorizeCholeskyOnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
     return 0;
   }
@@ -1726,6 +1737,7 @@ public:
               const ordinal_type used_span = ABR.span() + T.span();
               UnmanagedViewType<value_type_matrix> STR(bptr + used_span, m, n_m);
 
+              // STR := L^{-1} * ATR
               ConstUnmanagedViewType<ordinal_type_array> perm(P.data() + 2 * m, m);
               _status = ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, ATR,
                                                                                                  perm, STR);
@@ -1734,16 +1746,20 @@ public:
                   handle_blas, Diag::Unit(), one, ATL, STR);
               checkDeviceBlasStatus("trsm");
 
-              _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
+              // ATR := (LT)^{-1} * ATR
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, ATR, STR);
-
-              _status = Symmetrize<Uplo::Lower, Algo::OnDevice>::invoke(exec_instance, T);
-              _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, minus_one);
               _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice>::invoke(exec_instance, P, D, ATR);
 
+              // ABR := ATR^T * STR = ((LT)^{-1}*ATR)^T * (L^{-1}*ATR)
               _status = GemmTriangular<Trans::Transpose, Trans::NoTranspose, Uplo::Upper, Algo::OnDevice>::invoke(
                   handle_blas, minus_one, ATR, STR, zero, ABR);
               checkDeviceBlasStatus("gemm");
+
+              // AT = ATL^{-1} [I, ATR] (= L^{-1} where A = LTL^T and A^{-1} = L^{-T} T^{-1} L^{-1} = (TL^{-T})^{-1) * L^{-1})
+              //                                                             = (solveLDL_Upper_varian2 with Scale2x2_BlockInverseDiagonals) * (solveLDL_Lower_variant2)
+              _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL);
+              _status = Symmetrize<Uplo::Lower, Algo::OnDevice>::invoke(exec_instance, T);
+              _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, minus_one);
 
               UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
               _status = Trsm<Side::Left, Uplo::Upper, Trans::NoTranspose, Algo::OnDevice>::invoke(
@@ -1772,8 +1788,9 @@ public:
     else if (variant == 2 || variant == 3)
       factorizeLDL_OnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
     else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::factorizeLDL_OnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::factorizeLDL_OnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
   }
 
@@ -2042,24 +2059,28 @@ public:
     else if (variant == 2 || variant == 3)
       factorizeLU_OnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work);
     else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::factorizeLU_OnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::factorizeLU_OnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
   }
 
   ///
   /// Extract CRS for SpMV
   ///
-  inline void extractCRS(bool lu, bool store_transpose) {
+  inline void setupCRS(bool store_transpose, bool verbose) {
+    if (verbose) {
+      printf("LevelSetTools:setupCRS(method=%d)\n",this->getSolutionMethod());
+      printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    }
+    const bool lu = (this->getSolutionMethod() == 3);
+    const bool ldl = (this->getSolutionMethod() == 2);
+    const bool ldl_nopiv = (this->getSolutionMethod() == 0);
 
     // ========================
     // free CRS, 
     // if it has been extracted
-#if defined(KOKKOS_ENABLE_HIP)
-    this->releaseCRS(!lu);
-#else
-    this->releaseCRS(true);
-#endif
+    this->releaseCRS(true, verbose);
 
     // ========================
     // workspace
@@ -2067,7 +2088,6 @@ public:
     const ordinal_type nrhs = 1;
     Kokkos::resize(_w_vec, m, nrhs);
 
-    const value_type one(1);
 #if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
      defined(KOKKOS_ENABLE_HIP)
     const value_type zero(0);
@@ -2093,36 +2113,28 @@ public:
     cusparseCreateDnVec(&vecL, m, (void*)(_w_vec.data()), computeType);
     cusparseCreateDnMat(&matU, m, nrhs, ldw, (void*)(_w_vec.data()), computeType, CUSPARSE_ORDER_COL);
     cusparseCreateDnVec(&vecU, m, (void*)(_w_vec.data()), computeType);
-    // vectors used for preprocessing
-#ifdef USE_SPMM_FOR_WORKSPACE_SIZE
-    cusparseDnMatDescr_t vecX, vecY;
-    const ordinal_type ldx = _w_vec.stride(1);
-    cusparseCreateDnMat(&vecX, m, nrhs, ldx, _w_vec.data(), computeType, CUSPARSE_ORDER_COL);
-    cusparseCreateDnMat(&vecY, m, nrhs, ldx, _w_vec.data(), computeType, CUSPARSE_ORDER_COL);
-#else
-    cusparseDnVecDescr_t vecX, vecY;
-    cusparseCreateDnVec(&vecX, m, _w_vec.data(), computeType);
-    cusparseCreateDnVec(&vecY, m, _w_vec.data(), computeType);
-#endif
 #elif defined(KOKKOS_ENABLE_HIP)
     rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
     if (std::is_same<value_type, float>::value) {
       rocsparse_compute_type = rocsparse_datatype_f32_r;
     }
     // create rocsparse handle
-    rocsparse_create_handle(&rocsparseHandle);
+    _status = rocsparse_create_handle(&rocsparseHandle);
+    checkDeviceBlasStatus("rocblas_create_handle");
     // attach to Rocsparse data struct
-    rocsparse_create_dnmat_descr(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
-    rocsparse_create_dnvec_descr(&vecW, m, (void*)(_w_vec.data()), rocsparse_compute_type);
+    _status = rocsparse_create_dnmat_descr(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
+    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    _status = rocsparse_create_dnvec_descr(&vecW, m, (void*)(_w_vec.data()), rocsparse_compute_type);
+    checkDeviceBlasStatus("rocblas_dnmat_descr");
     // also to T, to be destroyed before each SpMV call
-    rocsparse_create_dnmat_descr(&matL, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
-    rocsparse_create_dnvec_descr(&vecL, m, (void*)(_w_vec.data()), rocsparse_compute_type);
-    rocsparse_create_dnmat_descr(&matU, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
-    rocsparse_create_dnvec_descr(&vecU, m, (void*)(_w_vec.data()), rocsparse_compute_type);
-    // vectors used for preprocessing
-    rocsparse_dnvec_descr vecX, vecY;
-    rocsparse_create_dnvec_descr(&vecX, m, (void*)_w_vec.data(), rocsparse_compute_type);
-    rocsparse_create_dnvec_descr(&vecY, m, (void*)_w_vec.data(), rocsparse_compute_type);
+    _status = rocsparse_create_dnmat_descr(&matL, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
+    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    _status = rocsparse_create_dnvec_descr(&vecL, m, (void*)(_w_vec.data()), rocsparse_compute_type);
+    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    _status = rocsparse_create_dnmat_descr(&matU, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
+    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    _status = rocsparse_create_dnvec_descr(&vecU, m, (void*)(_w_vec.data()), rocsparse_compute_type);
+    checkDeviceBlasStatus("rocblas_dnmat_descr");
 #endif
 #endif
 
@@ -2135,7 +2147,6 @@ public:
     size_t nnzU = 0;
     size_t nnzL = 0;
     typedef TeamFunctor_ExtractCrs<supernode_info_type> functor_type;
-    bool unit_diag = (this->getSolutionMethod() == 0 ? true : false);
     for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
       const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
 
@@ -2152,10 +2163,14 @@ public:
       auto d_rowptrU = Kokkos::subview(rowptrU, range_type(ptr, ptr+m+1));
       s0.rowptrU = d_rowptrU.data();
 
-      functor_type extractor_crs(_info, _solve_mode, _level_sids);
+      functor_type extractor_crs(_keep_zeros, _info, _solve_mode, _level_sids);
       extractor_crs.setGlobalSize(m);
       extractor_crs.setRange(pbeg, pend);
       extractor_crs.setRowPtr(s0.rowptrU);
+      if (ldl) {
+        // integrate pivoting into U
+        extractor_crs.integratePivots(true, _piv);
+      }
       {
         using team_policy_type = Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>, exec_space,
                                                     typename functor_type::ExtractPtrTag>;
@@ -2215,25 +2230,71 @@ public:
     }
 
     // allocate (TODO: move to symbolic)
-    if (nnzU) {
-      Kokkos::resize(colindU, nnzU);
-      Kokkos::resize(nzvalsU, nnzU);
-    } 
-    if (nnzL) {
-      Kokkos::resize(colindL, nnzL);
-      Kokkos::resize(nzvalsL, nnzL);
-    }
-    if (unit_diag) {
+    Kokkos::resize(colindU, nnzU);
+    Kokkos::resize(nzvalsU, nnzU);
+    Kokkos::resize(colindL, nnzL);
+    Kokkos::resize(nzvalsL, nnzL);
+    if (ldl_nopiv) {
       // Initialized to be I, then updated with diagonal values during numeric
       //  The location of the updated values should be the same / symbolic
+      const value_type one(1);
       Kokkos::resize(nzvalsD, _team_serial_level_cut*m);
       Kokkos::deep_copy(nzvalsD, one);
     }
 
+    _is_spmv_extracted = 1;
+  }
+
+  inline void loadCRS(bool store_transpose, bool verbose) {
+    // store both L & U?
+    const bool lu = (this->getSolutionMethod() == 3);
+    const bool ldl = (this->getSolutionMethod() == 2);
+    const bool ldl_nopiv = (this->getSolutionMethod() == 0);
+
+    // ========================
+    // workspace
+    const ordinal_type m = _m;
+#if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
+     defined(KOKKOS_ENABLE_HIP)
+#if defined(KOKKOS_ENABLE_CUDA)
+    // vectors used for preprocessing
+    cudaDataType computeType;
+    if (std::is_same<value_type, double>::value) {
+      computeType = CUDA_R_64F;
+    } else if (std::is_same<value_type, float>::value) {
+      computeType = CUDA_R_32F;
+    } else {
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "LevelSetTools::solveCholeskyLowerOnDevice: ComputeSPMV only supported double or float");
+    }
+#ifdef USE_SPMM_FOR_WORKSPACE_SIZE
+    cusparseDnMatDescr_t vecX, vecY;
+    const ordinal_type ldx = _w_vec.stride(1);
+    cusparseCreateDnMat(&vecX, m, nrhs, ldx, _w_vec.data(), computeType, CUSPARSE_ORDER_COL);
+    cusparseCreateDnMat(&vecY, m, nrhs, ldx, _w_vec.data(), computeType, CUSPARSE_ORDER_COL);
+#else
+    cusparseDnVecDescr_t vecX, vecY;
+    cusparseCreateDnVec(&vecX, m, _w_vec.data(), computeType);
+    cusparseCreateDnVec(&vecY, m, _w_vec.data(), computeType);
+#endif
+#elif defined(KOKKOS_ENABLE_HIP)
+    rocsparse_datatype rocsparse_compute_type = rocsparse_datatype_f64_r;
+    if (std::is_same<value_type, float>::value) {
+      rocsparse_compute_type = rocsparse_datatype_f32_r;
+    }
+    // vectors used for preprocessing
+    rocsparse_dnvec_descr vecX, vecY;
+    rocsparse_create_dnvec_descr(&vecX, m, (void*)_w_vec.data(), rocsparse_compute_type);
+    rocsparse_create_dnvec_descr(&vecY, m, (void*)_w_vec.data(), rocsparse_compute_type);
+#endif
+#endif
+
+    size_t ptr = 0;
+    size_t nnzU = 0;
+    size_t nnzL = 0;
+    typedef TeamFunctor_ExtractCrs<supernode_info_type> functor_type;
+
     // load nonzero val/ind
-    ptr = 0;
-    nnzU = 0;
-    nnzL = 0;
     for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
       const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1);
 
@@ -2251,12 +2312,15 @@ public:
 
       // ========================
       // extract nonzero element
-      functor_type extractor_crs(_info, _solve_mode, _level_sids);
+      functor_type extractor_crs(_keep_zeros, _info, _solve_mode, _level_sids);
       extractor_crs.setGlobalSize(m);
       extractor_crs.setRange(pbeg, pend);
       extractor_crs.setRowPtr(s0.rowptrU);
       extractor_crs.setCrsView(s0.colindU, s0.nzvalsU);
-      if (unit_diag) {
+      if (ldl) {
+        // integrate pivoting into U
+        extractor_crs.integratePivots(true, _piv);
+      } else if (ldl_nopiv) {
         auto d_nzvalsD = Kokkos::subview(nzvalsD, range_type(lvl*m, (lvl+1)*m));
         s0.nzvalsD = d_nzvalsD.data();
         extractor_crs.withUnitDiag(s0.nzvalsD);
@@ -2364,6 +2428,8 @@ public:
 
 #if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
      defined(KOKKOS_ENABLE_HIP)
+      const value_type one(1);
+      const value_type zero(0);
       // ========================
       // create NVIDIA/AMD data structures for SpMV
       size_t buffer_size_L = 0;
@@ -2407,7 +2473,7 @@ public:
       } else {
         // create matrix (L_cusparse stores the same ptrs as descrU, but optimized for trans)
         s0.nnzL = s0.nnzU;
-        cusparseCreateCsr(&s0.L_cusparse, m, m, s0.nnzL,
+        cusparseCreateCsr(&s0.L_cusparse, m, m, s0.nnzU,
                           s0.rowptrU, s0.colindU, s0.nzvalsU,
                           CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
                           CUSPARSE_INDEX_BASE_ZERO, computeType);
@@ -2458,11 +2524,13 @@ public:
       #endif
       if (s0.spmv_explicit_transpose) {
         // create matrix (transpose)
-        rocsparse_create_csr_descr(&(s0.descrL), m, m, s0.nnzL,
-                                   s0.rowptrL, s0.colindL, s0.nzvalsL,
-                                   rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
+        _status = rocsparse_create_csr_descr(&(s0.descrL), m, m, s0.nnzL,
+                                             s0.rowptrL, s0.colindL, s0.nzvalsL,
+                                             rocsparse_indextype_i32, rocsparse_indextype_i32,
+                                             rocsparse_index_base_zero, rocsparse_compute_type);
+        checkDeviceBlasStatus("rocsparse_create_crs_descr");
         // workspace
-        tacho_rocsparse_spmv
+        _status = tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_none,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2470,6 +2538,7 @@ public:
            rocsparse_spmv_stage_buffer_size,
            #endif
            &buffer_size_L, nullptr);
+        checkDeviceBlasStatus("rocsparse_create_spmv");
         // allocate workspace
         if (buffer_size_L > buffer_L.extent(0)) {
           Kokkos::resize(buffer_L, buffer_size_L);
@@ -2486,11 +2555,13 @@ public:
         #endif
       } else {
         // create matrix, transpose (L_cusparse stores the same ptrs as descrU, but optimized for trans)
-        rocsparse_create_csr_descr(&(s0.descrL), m, m, s0.nnzL,
-                                   s0.rowptrU, s0.colindU, s0.nzvalsU,
-                                   rocsparse_indextype_i32, rocsparse_indextype_i32, rocsparse_index_base_zero, rocsparse_compute_type);
+        _status = rocsparse_create_csr_descr(&(s0.descrL), m, m, s0.nnzU,
+                                             s0.rowptrU, s0.colindU, s0.nzvalsU,
+                                             rocsparse_indextype_i32, rocsparse_indextype_i32,
+                                             rocsparse_index_base_zero, rocsparse_compute_type);
+        checkDeviceBlasStatus("rocsparse_create_crs_descr");
         // workspace (transpose)
-        tacho_rocsparse_spmv
+        _status = tacho_rocsparse_spmv
           (rocsparseHandle, rocsparse_operation_transpose,
            &alpha, s0.descrL, vecX, &beta, vecY,
            rocsparse_compute_type, rocsparse_spmv_alg_default,
@@ -2498,6 +2569,7 @@ public:
            rocsparse_spmv_stage_buffer_size,
            #endif
            &buffer_size_L, nullptr);
+        checkDeviceBlasStatus("rocsparse_create_spmv");
         // allcate workspace
         if (buffer_size_L > buffer_L.extent(0)) {
           Kokkos::resize(buffer_L, buffer_size_L);
@@ -2516,7 +2588,6 @@ public:
 #endif
 #endif
     }
-
 #if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
      defined(KOKKOS_ENABLE_HIP)
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -2531,15 +2602,40 @@ public:
     rocsparse_destroy_dnvec_descr(vecX);
     rocsparse_destroy_dnvec_descr(vecY);
 #endif
-    _is_spmv_extracted = 1;
 #endif
+    if (verbose) {
+      printf("LevelSetTools:loadCRS(method = %d)\n",this->getSolutionMethod());
+      printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    }
+  }
+
+  inline void extractCRS(bool store_transpose, bool verbose) {
+    if (verbose) {
+      printf("LevelSetTools:extractCRS\n");
+      printf("========================\n");
+      if (store_transpose) printf( "Store Transpose\n" );
+    }
+    if (!_keep_zeros) {
+      setupCRS(store_transpose, verbose);
+    }
+    loadCRS(store_transpose, verbose);
+    if (verbose) {
+      printf("\n");
+    }
   }
 
   /// 
   /// Release CRS extracted for SpMV
   ///
-  inline void releaseCRS(bool release_all) {
-    if(_is_spmv_extracted) {
+  inline void releaseCRS(bool release_all, bool verbose) {
+    if (verbose) {
+      printf("LevelSetTools:releaseCRS\n");
+      printf("========================\n");
+      printf(" Have%s been extracted\n", (_is_spmv_extracted == 0 ?  " not" : ""));
+      if (release_all) printf(" Release all\n");
+      printf("\n"); fflush(stdout);
+    }
+    if(_is_spmv_extracted != 0) {
       Kokkos::fence();
       if (release_all) {
         for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
@@ -2608,13 +2704,12 @@ public:
   }
 
   inline void solveGenericLowerOnDeviceVar2_SpMV(const ordinal_type lvl, const ordinal_type nlvls,
-                                                 const ordinal_type pbeg, const ordinal_type pend,
-                                                 const value_type_matrix &t) {
+                                                 const ordinal_type sid, const value_type_matrix &t) {
     const ordinal_type m = t.extent(0);
     const ordinal_type nrhs = t.extent(1);
     const ordinal_type old_nrhs = _w_vec.extent(1);
 
-    auto &s0 = _h_supernodes(_h_level_sids(pbeg));
+    auto &s0 = _h_supernodes(_h_level_sids(sid));
     if (old_nrhs != nrhs) {
       // expand workspace
       Kokkos::resize(_w_vec, m, nrhs);
@@ -2831,12 +2926,11 @@ public:
   }
 
   inline void solveGenericUpperOnDeviceVar2_SpMV(const ordinal_type lvl, const ordinal_type nlvls,
-                                                 const ordinal_type pbeg, const ordinal_type pend,
-                                                 const value_type_matrix &t) {
+                                                 const ordinal_type sid, const value_type_matrix &t) {
     const ordinal_type m = t.extent(0);
     const ordinal_type nrhs = t.extent(1);
 
-    auto &s0 = _h_supernodes(_h_level_sids(pbeg));
+    auto &s0 = _h_supernodes(_h_level_sids(sid));
 
 #if (defined(KOKKOS_ENABLE_CUDA) && defined(TACHO_HAVE_CUSPARSE)) || \
      defined(KOKKOS_ENABLE_HIP)
@@ -3173,7 +3267,7 @@ public:
       return solveNoPivotLDLLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
       // apply L^{-1}
-      solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
+      solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, t);
       {
         // apply D^{-1}
         const ordinal_type nrhs = t.extent(1);
@@ -3189,8 +3283,9 @@ public:
             });
       }
     } else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::solveNoPivotLDLLowerOnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::solveNoPivotLDLLowerOnDevice, algorithm variant ("
+                        + std::to_string(variant) + "is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
     return 0;
   }
@@ -3367,10 +3462,11 @@ public:
     else if (variant == 2)
       return solveNoPivotLDLUpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
-      solveGenericUpperOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
+      solveGenericUpperOnDeviceVar2_SpMV(lvl, nlvls, pbeg, t);
     } else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::solveNoPivotLDLUpperOnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::solveNoPivotLDLUpperOnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
     return 0;
   }
@@ -3539,10 +3635,11 @@ public:
     else if (variant == 2)
       return solveCholeskyLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
-      solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
+      solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, t);
     } else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::solveCholeskyLowerOnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::solveCholeskyLowerOnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
     return 0;
   }
@@ -3711,10 +3808,11 @@ public:
     else if (variant == 2)
       return solveCholeskyUpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
-      solveGenericUpperOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
+      solveGenericUpperOnDeviceVar2_SpMV(lvl, nlvls, pbeg, t);
     } else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::solveCholeskyUpperOnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::solveCholeskyUpperOnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
     return 0;
   }
@@ -3873,7 +3971,6 @@ public:
               UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
               ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
-
               _status =
                   ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, perm, tT);
             }
@@ -3886,7 +3983,8 @@ public:
     }
   }
 
-  inline void solveLDL_LowerOnDevice(const ordinal_type pbeg, const ordinal_type pend,
+  inline void solveLDL_LowerOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
+                                     const ordinal_type pbeg, const ordinal_type pend,
                                      const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
     if (variant == 0)
       solveLDL_LowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
@@ -3894,9 +3992,12 @@ public:
       solveLDL_LowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 2)
       solveLDL_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+    else if (variant == 3)
+      solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, t);
     else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::solveLDL_LowerOnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::solveLDL_LowerOnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
   }
 
@@ -4077,17 +4178,57 @@ public:
     }
   }
 
-  inline void solveLDL_UpperOnDevice(const ordinal_type pbeg, const ordinal_type pend,
+  inline void solveLDL_DiagOnDevice(const ordinal_type pbeg, const ordinal_type pend,
+                                    const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    ordinal_type q(0);
+#endif
+    exec_space exec_instance;
+    for (ordinal_type p = pbeg; p < pend; ++p) {
+      const ordinal_type sid = _h_level_sids(p);
+      //if (_h_solve_mode(sid) == 0)
+      {
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        const ordinal_type qid = q % _nstreams;
+        setStreamOnHandle(qid);
+        exec_instance = _exec_instances[qid];
+        ++q;
+#endif
+
+        const auto &s = _h_supernodes(sid);
+        {
+          if (s.m > 0) {
+            const ordinal_type m = s.m;
+            const ordinal_type offm = s.row_begin;
+            const auto tT = Kokkos::subview(t, range_type(offm, offm + m), Kokkos::ALL());
+            const auto P = ordinal_type_array(_piv.data() + 4 * offm, 4 * m);
+            const auto D = value_type_matrix(_diag.data() + 2 * offm, m, 2);
+            _status = Scale2x2_BlockInverseDiagonals<Side::Left, Algo::OnDevice> /// row scaling
+                ::invoke(exec_instance, P, D, tT);
+          }
+        }
+      }
+    }
+  }
+
+  inline void solveLDL_UpperOnDevice(const ordinal_type lvl, const ordinal_type nlvls,
+                                     const ordinal_type pbeg, const ordinal_type pend,
                                      const size_type_array_host &h_buf_solve_ptr, const value_type_matrix &t) {
-    if (variant == 0)
+    if (variant == 0) {
       solveLDL_UpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
-    else if (variant == 1)
+    } else if (variant == 1) {
       solveLDL_UpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
-    else if (variant == 2)
+    } else if (variant == 2) {
       solveLDL_UpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
-    else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::solveLDL_UpperOnDevice, algorithm variant is not supported");
+    } else if (variant == 3) {
+      // NOTE: merge D into U, or convert D into Crs?
+      solveLDL_DiagOnDevice(pbeg, pend, h_buf_solve_ptr, (lvl%2 == 0 ? t : _w_vec));
+      Kokkos::fence();
+      solveGenericUpperOnDeviceVar2_SpMV(lvl, nlvls, pbeg, t);
+    } else {
+      std::string msg = "Error: LevelSetTools::solveLDL_UpperOnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
   }
 
@@ -4241,7 +4382,6 @@ public:
               UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs);
               ConstUnmanagedViewType<ordinal_type_array> perm(_piv.data() + 4 * offm + 2 * m, m);
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, bT, tT);
-
               _status =
                   ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, bT, perm, tT);
             }
@@ -4263,10 +4403,12 @@ public:
     else if (variant == 2)
       solveLU_LowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
-      solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
+      // L (stored by cols) incorporate partial-pivoting
+      solveGenericLowerOnDeviceVar2_SpMV(lvl, nlvls, pbeg, t);
     } else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::solveLU_LowerOnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::solveLU_LowerOnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
   }
 
@@ -4416,10 +4558,11 @@ public:
     else if (variant == 2)
       solveLU_UpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
     else if (variant == 3) {
-      solveGenericUpperOnDeviceVar2_SpMV(lvl, nlvls, pbeg, pend, t);
+      solveGenericUpperOnDeviceVar2_SpMV(lvl, nlvls, pbeg, t);
     } else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "LevelSetTools::solveLU_UpperOnDevice, algorithm variant is not supported");
+      std::string msg = "Error: LevelSetTools::solveLU_UpperOnDevice, algorithm variant ("
+                        + std::to_string(variant) + ") is not supported.\n";
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, msg.c_str());
     }
   }
 
@@ -4431,7 +4574,8 @@ public:
   /// Cholesky
   ///
   inline void factorizeCholesky(const value_type_array &ax, const bool store_transpose,
-                                const mag_type pivot_tol, const ordinal_type verbose) {
+                                const mag_type shift, const mag_type pivot_tol,
+                                const ordinal_type verbose) {
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     Kokkos::Timer timer;
     Kokkos::Timer tick;
@@ -4462,7 +4606,7 @@ public:
     {
       _ax = ax; // matrix values
       constexpr bool copy_to_l_buf(false);
-      _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
+      _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, shift, _perm, _peri);
       exec_space().fence(); // wait for copy
     }
     stat.t_copy = timer.seconds();
@@ -4582,8 +4726,7 @@ public:
     timer.reset();
     if (variant == 3) {
       // compress each partitioned inverse at each level into CRS matrix
-      bool lu = false;
-      extractCRS(lu, store_transpose);
+      extractCRS(store_transpose, verbose);
     }
     stat.t_extra += timer.seconds();
 
@@ -4624,7 +4767,7 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
-    // 0. permute and copy b -> t
+    // 0. permute (from METIS) and copy b -> t
     const auto exec_instance = exec_space();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
     exec_space().fence();
@@ -4796,7 +4939,7 @@ public:
     } // end of solve
     stat.t_solve = timer.seconds();
 
-    // permute and copy t -> x
+    // permute (from METIS) and copy t -> x
     timer.reset();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
     stat.t_extra += timer.seconds();
@@ -4812,7 +4955,8 @@ public:
   /// 
   /// LDL
   ///
-  inline void factorizeLDL(const value_type_array &ax, const ordinal_type verbose) {
+  inline void factorizeLDL(const value_type_array &ax, const bool store_transpose, const mag_type shift,
+                           const ordinal_type verbose) {
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     Kokkos::Timer timer;
     Kokkos::Timer tick;
@@ -4842,7 +4986,7 @@ public:
     {
       _ax = ax; // matrix values
       constexpr bool copy_to_l_buf(false);
-      _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
+      _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, shift, _perm, _peri);
       exec_space().fence(); // wait for copy
     }
     stat.t_copy = timer.seconds();
@@ -4953,12 +5097,19 @@ public:
             exec_space().fence();
             ++stat_level.n_kernel_launching;
           }
-          const auto exec_instance = exec_space();
-          Kokkos::deep_copy(exec_instance, _h_supernodes, _info.supernodes);
+	  // NOTE: device info not needed on host?
+          //const auto exec_instance = exec_space();
+          //Kokkos::deep_copy(exec_instance, _h_supernodes, _info.supernodes);
         }
       }
     } // end of LDL
     stat.t_factor = timer.seconds();
+    timer.reset();
+    if (variant == 3) {
+      // compress each partitioned inverse at each level into CRS matrix
+      extractCRS(store_transpose, verbose);
+    }
+    stat.t_extra += timer.seconds();
 
     if (verbose) {
       printf("Summary: LevelSetTools-Variant-%d (LDL Factorize)\n", variant);
@@ -4991,7 +5142,7 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
-    // 0. permute and copy b -> t
+    // 0. permute (from METIS) and copy b -> t
     const auto exec_instance = exec_space();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
     exec_space().fence();
@@ -5032,7 +5183,7 @@ public:
         team_policy_solve policy_solve(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
 
-        //  1. L w = t
+        //  1. L^{-1}t = t
         {
           for (ordinal_type lvl = (_team_serial_level_cut - 1); lvl >= 0; --lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
@@ -5059,20 +5210,24 @@ public:
             const auto policy_solve_with_work_property = policy_solve;
             const auto policy_update_with_work_property = policy_update;
 #endif
-            if (lvl < _device_level_cut) {
-              // do nothing
-              // Kokkos::parallel_for("solve lower", policy_solve, functor);
-            } else {
-              Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
-              ++stat_level.n_kernel_launching;
+            if (variant != 3) {
+              if (lvl < _device_level_cut) {
+                // do nothing
+                // Kokkos::parallel_for("solve lower", policy_solve, functor);
+              } else {
+                Kokkos::parallel_for("solve lower", policy_solve_with_work_property, functor);
+                ++stat_level.n_kernel_launching;
+              }
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-            solveLDL_LowerOnDevice(pbeg, pend, h_buf_solve_ptr, t);
+            solveLDL_LowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             Kokkos::fence();
 
-            Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
-            ++stat_level.n_kernel_launching;
-            exec_space().fence();
+            if (variant != 3) {
+              Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
+              ++stat_level.n_kernel_launching;
+              exec_space().fence();
+            }
           }
         }
       } // end of lower tri solve
@@ -5097,7 +5252,7 @@ public:
         team_policy_solve policy_solve(1, 1, 1);
         team_policy_update policy_update(1, 1, 1);
 
-        //  2. U t = w;
+        //  2. U^{-1} t = t;
         {
           for (ordinal_type lvl = 0; lvl < _team_serial_level_cut; ++lvl) {
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
@@ -5123,29 +5278,30 @@ public:
             const auto policy_solve_with_work_property = policy_solve;
             const auto policy_update_with_work_property = policy_update;
 #endif
-            Kokkos::parallel_for("update upper", policy_update_with_work_property, functor);
-            ++stat_level.n_kernel_launching;
-            exec_space().fence();
-
-            if (lvl < _device_level_cut) {
-              // do nothing
-              // Kokkos::parallel_for("solve upper", policy_solve, functor);
-            } else {
-              Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
+            if (variant != 3) {
+              Kokkos::parallel_for("update upper", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
+              exec_space().fence();
+
+              if (lvl < _device_level_cut) {
+                // do nothing
+                // Kokkos::parallel_for("solve upper", policy_solve, functor);
+              } else {
+                Kokkos::parallel_for("solve upper", policy_solve_with_work_property, functor);
+                ++stat_level.n_kernel_launching;
+              }
             }
 
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-            solveLDL_UpperOnDevice(pbeg, pend, h_buf_solve_ptr, t);
+            solveLDL_UpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
             Kokkos::fence();
           }
         }
       } /// end of upper tri solve
-
     } // end of solve
     stat.t_solve = timer.seconds();
 
-    // permute and copy t -> x
+    // permute (from METIS) and copy t -> x
     timer.reset();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
     stat.t_extra += timer.seconds();
@@ -5161,7 +5317,8 @@ public:
   /// 
   /// LU
   ///
-  inline void factorizeLU(const value_type_array &ax, const bool store_transpose, const mag_type pivot_tol, const ordinal_type verbose) {
+  inline void factorizeLU(const value_type_array &ax, const bool store_transpose,
+                          const mag_type shift, const mag_type pivot_tol, const ordinal_type verbose) {
     constexpr bool is_host = std::is_same<exec_memory_space, Kokkos::HostSpace>::value;
     Kokkos::Timer timer;
     Kokkos::Timer tick;
@@ -5192,7 +5349,7 @@ public:
     {
       _ax = ax; // matrix values
       constexpr bool copy_to_l_buf(true);
-      _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, _perm, _peri);
+      _info.copySparseToSuperpanels(copy_to_l_buf, _ap, _aj, _ax, shift, _perm, _peri);
       exec_space().fence(); // wait for copy
     }
     stat.t_copy = timer.seconds();
@@ -5246,7 +5403,6 @@ public:
             const ordinal_type pbeg = _h_level_ptr(lvl), pend = _h_level_ptr(lvl + 1), pcnt = pend - pbeg;
 
             const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl + 1));
-
             const auto buf_factor_ptr = Kokkos::subview(_buf_factor_ptr, range_buf_factor_ptr);
             functor.setRange(pbeg, pend);
             functor.setBufferPtr(buf_factor_ptr);
@@ -5282,11 +5438,10 @@ public:
               ++stat_level.n_kernel_launching;
             }
 
-            const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
-
             if (verbose) {
               Kokkos::fence(); tick.reset();
             }
+            const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
             factorizeLU_OnDevice(pbeg, pend, h_buf_factor_ptr, _work);
             if (verbose) {
               Kokkos::fence(); time_device += tick.seconds();
@@ -5306,8 +5461,9 @@ public:
             exec_space().fence();
             ++stat_level.n_kernel_launching;
           }
-          const auto exec_instance = exec_space();
-          Kokkos::deep_copy(exec_instance, _h_supernodes, _info.supernodes);
+	  // NOTE: device info not needed on host?
+          //const auto exec_instance = exec_space();
+          //Kokkos::deep_copy(exec_instance, _h_supernodes, _info.supernodes);
         }
       }
     } // end of LU
@@ -5315,8 +5471,7 @@ public:
     timer.reset();
     if (variant == 3) {
       // compress each partitioned inverse at each level into CRS matrix
-      bool lu = true;
-      extractCRS(lu, store_transpose);
+      extractCRS(store_transpose, verbose);
     }
     stat.t_extra += timer.seconds();
 
@@ -5356,7 +5511,7 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
-    // 0. permute and copy b -> t
+    // 0. permute (from METIS) and copy b -> t
     const auto exec_instance = exec_space();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
     exec_instance.fence();
@@ -5516,7 +5671,7 @@ public:
     } // end of solve
     stat.t_solve = timer.seconds();
 
-    // permute and copy t -> x
+    // permute (from METIS) and copy t -> x
     timer.reset();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
     exec_instance.fence();
@@ -5533,12 +5688,13 @@ public:
   /// Main Entry Functions
   ///
   inline void factorize(const value_type_array &ax, const bool store_transpose,
-                        const mag_type pivot_tol = 0.0, const ordinal_type verbose = 0) override {
+                        const mag_type shift, const mag_type pivot_tol = 0.0,
+                        const ordinal_type verbose = 0) override {
     Kokkos::deep_copy(_superpanel_buf, value_type(0));
     switch (this->getSolutionMethod()) {
     case 0:   /// LDL no-pivot
     case 1: { /// Cholesky
-      factorizeCholesky(ax, store_transpose, pivot_tol, verbose);
+      factorizeCholesky(ax, store_transpose, shift, pivot_tol, verbose);
       break;
     }
     case 2: { /// LDL
@@ -5558,7 +5714,7 @@ public:
           track_alloc(_diag.span() * sizeof(value_type));
         }
       }
-      factorizeLDL(ax, verbose);
+      factorizeLDL(ax, store_transpose, shift, verbose);
       break;
     }
     case 3: { /// LU
@@ -5570,7 +5726,7 @@ public:
           track_alloc(_piv.span() * sizeof(ordinal_type));
         }
       }
-      factorizeLU(ax, store_transpose, pivot_tol, verbose);
+      factorizeLU(ax, store_transpose, shift, pivot_tol, verbose);
       break;
     }
     default: {

@@ -132,7 +132,6 @@ namespace Amesos2 {
   {
     if (msglvl_ > 0 && this->matrixA_->getComm()->getRank() == 0) {
       std::cout << " CssMKL::symbolicFactorization:\n" << std::endl;
-      for (int i=0; i < 64; i++) std::cout << " * IPARM[" << i << "] = " << iparm_[i] << std::endl;
     }
     int_t error = 0;
     {
@@ -574,6 +573,25 @@ CssMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
     }
   }
   return( true );
+}
+
+
+template <class Matrix, class Vector>
+void
+CssMKL<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                     const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " CssMKL current parameters:" << std::endl;
+  out << "  > IPARM(2)  = " << iparm_[1]  << std::endl;
+  out << "  > IPARM(8)  = " << iparm_[7]  << std::endl;
+  out << "  > IPARM(10) = " << iparm_[9]  << std::endl;
+  out << "  > IPARM(12) = " << iparm_[11] << std::endl;
+  out << "  > IPARM(13) = " << iparm_[12] << std::endl;
+  out << "  > IPARM(18) = " << iparm_[17] << std::endl;
+  out << "  > IPARM(27) = " << iparm_[26] << std::endl;
+  out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << "  > verbose = " << msglvl_ << std::endl;
+  out << std::endl;
 }
 
 

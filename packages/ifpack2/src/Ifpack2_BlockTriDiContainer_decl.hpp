@@ -19,6 +19,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_BlockCrsMatrix_decl.hpp"
+#include "Ifpack2_BlockHelper_ETI.hpp"
 #include <type_traits>
 #include <string>
 
@@ -71,33 +72,6 @@ namespace Ifpack2 {
 ///  - Always better remove warnings (shadows and signed/unsinged comparison). If the code is used by
 ///    other customers, they may have a different software quality standard. It is better to follow
 ///    a higher quality standard.
-
-///
-/// Impl Tag
-///
-namespace BlockTriDiContainerDetails {
-///
-/// impl tag to distinguish built-in types and sacado types
-///
-struct ImplNotAvailTag {};
-struct ImplSimdTag {};
-struct ImplSacadoTag {};
-
-template <typename T>
-struct ImplTag { typedef ImplNotAvailTag type; };
-template <>
-struct ImplTag<float> { typedef ImplSimdTag type; };
-template <>
-struct ImplTag<double> { typedef ImplSimdTag type; };
-template <>
-struct ImplTag<std::complex<float> > { typedef ImplSimdTag type; };
-template <>
-struct ImplTag<std::complex<double> > { typedef ImplSimdTag type; };
-
-/// forward declaration
-template <typename MatrixType>
-struct ImplObject;
-}  // namespace BlockTriDiContainerDetails
 
 ///
 /// Primary declation

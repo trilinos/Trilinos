@@ -7,41 +7,15 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef IFPACK2_BLOCKCOMPUTERESAND_SOLVE_IMPL_HPP
-#define IFPACK2_BLOCKCOMPUTERESAND_SOLVE_IMPL_HPP
+#ifndef IFPACK2_BLOCKCOMPUTERES_AND_SOLVE_DEF_HPP
+#define IFPACK2_BLOCKCOMPUTERES_AND_SOLVE_DEF_HPP
 
-#include "Ifpack2_BlockHelper.hpp"
-#include "Ifpack2_BlockComputeResidualVector.hpp"
+#include "Ifpack2_BlockComputeResidualAndSolve_decl.hpp"
 
 namespace Ifpack2::BlockHelperDetails {
 
-template <typename ExecSpace, typename DiagOffsets, typename Rowptrs,
-          typename Entries>
-DiagOffsets findDiagOffsets(const Rowptrs& rowptrs, const Entries& entries,
-                            size_t nrows, int blocksize) {
-  DiagOffsets diag_offsets(do_not_initialize_tag("btdm.diag_offsets"), nrows);
-  int err1 = 0;
-  Kokkos::parallel_reduce(
-      Kokkos::RangePolicy<ExecSpace>(0, nrows),
-      KOKKOS_LAMBDA(size_t row, int& err2) {
-        auto rowBegin = rowptrs(row);
-        auto rowEnd   = rowptrs(row + 1);
-        for (size_t j = rowBegin; j < rowEnd; j++) {
-          if (size_t(entries(j)) == row) {
-            diag_offsets(row) = j * blocksize * blocksize;
-            return;
-          }
-        }
-        err2++;
-      },
-      err1);
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(
-      err1, "Ifpack2 BTD: at least one row has no diagonal entry");
-  return diag_offsets;
-}
-
 template <typename MatrixType, int B>
-struct ComputeResidualAndSolve_1Pass {
+struct ComputeResidualAndSolve_SinglePass_Impl {
   using impl_type        = BlockHelperDetails::ImplType<MatrixType>;
   using node_device_type = typename impl_type::node_device_type;
   using execution_space  = typename impl_type::execution_space;
@@ -97,11 +71,11 @@ struct ComputeResidualAndSolve_1Pass {
   impl_scalar_type damping_factor;
 
  public:
-  ComputeResidualAndSolve_1Pass(const AmD<MatrixType>& amd,
-                                const btdm_scalar_type_3d_view& d_inv_,
-                                const impl_scalar_type_1d_view& W_,
-                                const local_ordinal_type& blocksize_requested_,
-                                const impl_scalar_type& damping_factor_)
+  ComputeResidualAndSolve_SinglePass_Impl(const AmD<MatrixType>& amd,
+                                          const btdm_scalar_type_3d_view& d_inv_,
+                                          const impl_scalar_type_1d_view& W_,
+                                          const local_ordinal_type& blocksize_requested_,
+                                          const impl_scalar_type& damping_factor_)
     : tpetra_values(amd.tpetra_values)
     , blocksize_requested(blocksize_requested_)
     , A_x_offsets(amd.A_x_offsets)
@@ -210,8 +184,6 @@ struct ComputeResidualAndSolve_1Pass {
     Kokkos::single(Kokkos::PerTeam(member), [&]() { W(rowidx) = norm; });
   }
 
-  // Launch SinglePass version (owned + nonowned residual, plus Dinv in a single
-  // kernel)
   void run(const ConstUnmanaged<impl_scalar_type_2d_view_tpetra>& b_,
            const ConstUnmanaged<impl_scalar_type_2d_view_tpetra>& x_,
            const ConstUnmanaged<impl_scalar_type_2d_view_tpetra>& x_remote_,
@@ -240,13 +212,14 @@ struct ComputeResidualAndSolve_1Pass {
                             Kokkos::PerThread(shmem_thread_size));
     Kokkos::parallel_for("ComputeResidualAndSolve::TeamPolicy::SinglePass",
                          policy, *this);
+
     IFPACK2_BLOCKHELPER_PROFILER_REGION_END;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
   }
 };
 
 template <typename MatrixType, int B>
-struct ComputeResidualAndSolve_2Pass {
+struct ComputeResidualAndSolve_2Pass_Impl {
   using impl_type        = BlockHelperDetails::ImplType<MatrixType>;
   using node_device_type = typename impl_type::node_device_type;
   using execution_space  = typename impl_type::execution_space;
@@ -309,11 +282,12 @@ struct ComputeResidualAndSolve_2Pass {
   impl_scalar_type damping_factor;
 
  public:
-  ComputeResidualAndSolve_2Pass(const AmD<MatrixType>& amd,
-                                const btdm_scalar_type_3d_view& d_inv_,
-                                const impl_scalar_type_1d_view& W_,
-                                const local_ordinal_type& blocksize_requested_,
-                                const impl_scalar_type& damping_factor_)
+  ComputeResidualAndSolve_2Pass_Impl(
+      const AmD<MatrixType>& amd,
+      const btdm_scalar_type_3d_view& d_inv_,
+      const impl_scalar_type_1d_view& W_,
+      const local_ordinal_type& blocksize_requested_,
+      const impl_scalar_type& damping_factor_)
     : tpetra_values(amd.tpetra_values)
     , blocksize_requested(blocksize_requested_)
     , A_x_offsets(amd.A_x_offsets)
@@ -388,7 +362,7 @@ struct ComputeResidualAndSolve_2Pass {
     const local_ordinal_type blocksize   = (B == 0 ? blocksize_requested : B);
     const local_ordinal_type rowidx      = member.league_rank();
     const local_ordinal_type row         = rowidx * blocksize;
-    const local_ordinal_type num_vectors = b.extent(1);
+    const local_ordinal_type num_vectors = y.extent(1);
 
     auto A_block_cst = ConstUnmanaged<tpetra_block_access_view_type>(
         tpetra_values.data(), blocksize, blocksize);
@@ -542,7 +516,7 @@ struct ComputeResidualAndSolve_2Pass {
 };
 
 template <typename MatrixType, int B>
-struct ComputeResidualAndSolve_SolveOnly {
+struct ComputeResidualAndSolve_YZero_Impl {
   using impl_type        = BlockHelperDetails::ImplType<MatrixType>;
   using node_device_type = typename impl_type::node_device_type;
   using execution_space  = typename impl_type::execution_space;
@@ -570,13 +544,8 @@ struct ComputeResidualAndSolve_SolveOnly {
   /// team policy member type (used in cuda)
   using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;
 
-  // enum for max blocksize and vector length
-  enum : int { max_blocksize = 32 };
-
  private:
   ConstUnmanaged<impl_scalar_type_2d_view_tpetra> b;
-  ConstUnmanaged<impl_scalar_type_2d_view_tpetra> x;  // x_owned
-  ConstUnmanaged<impl_scalar_type_2d_view_tpetra> x_remote;
   Unmanaged<impl_scalar_type_2d_view_tpetra> y;
 
   // AmD information
@@ -598,7 +567,7 @@ struct ComputeResidualAndSolve_SolveOnly {
   impl_scalar_type damping_factor;
 
  public:
-  ComputeResidualAndSolve_SolveOnly(
+  ComputeResidualAndSolve_YZero_Impl(
       const AmD<MatrixType>& amd, const btdm_scalar_type_3d_view& d_inv_,
       const impl_scalar_type_1d_view& W_,
       const local_ordinal_type& blocksize_requested_,
@@ -672,8 +641,8 @@ struct ComputeResidualAndSolve_SolveOnly {
         "BlockTriDi::ComputeResidualAndSolve::Run_Y_Zero",
         ComputeResidualAndSolve0, execution_space);
 
-    y = y_;
-    b = b_;
+    this->y = y_;
+    this->b = b_;
 
     const local_ordinal_type blocksize = blocksize_requested;
     const local_ordinal_type nrows     = d_inv.extent(0);
@@ -684,13 +653,127 @@ struct ComputeResidualAndSolve_SolveOnly {
     Kokkos::TeamPolicy<execution_space> policy(
         (nrows + team_size - 1) / team_size, team_size, vector_size);
     policy.set_scratch_size(0, Kokkos::PerThread(shmem_thread_size));
-    Kokkos::parallel_for("ComputeResidualAndSolve::TeamPolicy::y_zero", policy,
-                         *this);
+    Kokkos::parallel_for("ComputeResidualAndSolve::TeamPolicy::y_zero", policy, *this);
     IFPACK2_BLOCKHELPER_PROFILER_REGION_END;
     IFPACK2_BLOCKHELPER_TIMER_FENCE(execution_space)
   }
 };
 
+// run_y_zero does the solve for the first
+// iteration, when the initial guess for y is zero. This means the residual
+// vector is just b. The kernel applies the inverse diags to b to find y, and
+// also puts the partial squared update norms (1 per row) into W.
+template <typename MatrixType>
+void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run_y_zero(
+    const Const<impl_scalar_type_2d_view_tpetra>& b_,
+    const impl_scalar_type_2d_view_tpetra& y_) {
+#define RUN_CASE(B)                                                                                                \
+  {                                                                                                                \
+    ComputeResidualAndSolve_YZero_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
+    functor.run(b_, y_);                                                                                           \
+    break;                                                                                                         \
+  }
+
+  switch (blocksize_requested) {
+    case 3: RUN_CASE(3);
+    case 5: RUN_CASE(5);
+    case 7: RUN_CASE(7);
+    case 9: RUN_CASE(9);
+    case 10: RUN_CASE(10);
+    case 11: RUN_CASE(11);
+    case 16: RUN_CASE(16);
+    case 17: RUN_CASE(17);
+    case 18: RUN_CASE(18);
+    default: RUN_CASE(0);
+  }
+#undef RUN_CASE
+}
+
+template <typename MatrixType>
+void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run_single_pass(
+    const Const<impl_scalar_type_2d_view_tpetra>& b_,
+    const impl_scalar_type_2d_view_tpetra& x_,
+    const impl_scalar_type_2d_view_tpetra& x_remote_,
+    const impl_scalar_type_2d_view_tpetra& y_) {
+#define RUN_CASE(B)                                                                                                     \
+  {                                                                                                                     \
+    ComputeResidualAndSolve_SinglePass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
+    functor.run(b_, x_, x_remote_, y_);                                                                                 \
+    break;                                                                                                              \
+  }
+
+  switch (blocksize_requested) {
+    case 3: RUN_CASE(3);
+    case 5: RUN_CASE(5);
+    case 7: RUN_CASE(7);
+    case 9: RUN_CASE(9);
+    case 10: RUN_CASE(10);
+    case 11: RUN_CASE(11);
+    case 16: RUN_CASE(16);
+    case 17: RUN_CASE(17);
+    case 18: RUN_CASE(18);
+    default: RUN_CASE(0);
+  }
+#undef RUN_CASE
+}
+
+template <typename MatrixType>
+void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run_pass1_of_2(
+    const Const<impl_scalar_type_2d_view_tpetra>& b_,
+    const impl_scalar_type_2d_view_tpetra& x_,
+    const impl_scalar_type_2d_view_tpetra& y_) {
+#define RUN_CASE(B)                                                                                                \
+  {                                                                                                                \
+    ComputeResidualAndSolve_2Pass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
+    functor.run_pass1(b_, x_, y_);                                                                                 \
+    break;                                                                                                         \
+  }
+
+  switch (blocksize_requested) {
+    case 3: RUN_CASE(3);
+    case 5: RUN_CASE(5);
+    case 7: RUN_CASE(7);
+    case 9: RUN_CASE(9);
+    case 10: RUN_CASE(10);
+    case 11: RUN_CASE(11);
+    case 16: RUN_CASE(16);
+    case 17: RUN_CASE(17);
+    case 18: RUN_CASE(18);
+    default: RUN_CASE(0);
+  }
+#undef RUN_CASE
+}
+
+template <typename MatrixType>
+void ComputeResidualAndSolve<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>::run_pass2_of_2(
+    const impl_scalar_type_2d_view_tpetra& x_,
+    const impl_scalar_type_2d_view_tpetra& x_remote_,
+    const impl_scalar_type_2d_view_tpetra& y_) {
+#define RUN_CASE(B)                                                                                                \
+  {                                                                                                                \
+    ComputeResidualAndSolve_2Pass_Impl<MatrixType, B> functor(amd, d_inv, W, blocksize_requested, damping_factor); \
+    functor.run_pass2(x_, x_remote_, y_);                                                                          \
+    break;                                                                                                         \
+  }
+
+  switch (blocksize_requested) {
+    case 3: RUN_CASE(3);
+    case 5: RUN_CASE(5);
+    case 7: RUN_CASE(7);
+    case 9: RUN_CASE(9);
+    case 10: RUN_CASE(10);
+    case 11: RUN_CASE(11);
+    case 16: RUN_CASE(16);
+    case 17: RUN_CASE(17);
+    case 18: RUN_CASE(18);
+    default: RUN_CASE(0);
+  }
+#undef RUN_CASE
+}
+
 }  // namespace Ifpack2::BlockHelperDetails
+
+#define IFPACK2_BLOCKCOMPUTERESIDUALANDSOLVE_INSTANT(S, LO, GO, N) \
+  template class Ifpack2::BlockHelperDetails::ComputeResidualAndSolve<Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif

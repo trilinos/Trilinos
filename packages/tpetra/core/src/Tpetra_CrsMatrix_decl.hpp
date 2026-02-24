@@ -3724,19 +3724,6 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
   void allocateValues(ELocalGlobal lg, GraphAllocationStatus gas,
                       const bool verbose);
 
-  /// \brief Merge duplicate row indices in the given row, along
-  ///   with their corresponding values.
-  ///
-  /// This method is only called by sortAndMergeIndicesAndValues(),
-  /// and only when the matrix owns the graph, not when the matrix
-  /// was constructed with a const graph.
-  ///
-  /// \pre The graph is not already storage optimized:
-  ///   <tt>isStorageOptimized() == false</tt>
-  /// \return The new row length, after merging.
-  static size_t
-  mergeRowIndicesAndValues(size_t rowLen, local_ordinal_type* cols, impl_scalar_type* vals);
-
   /// \brief Sort and merge duplicate local column indices in all
   ///   rows on the calling process, along with their corresponding
   ///   values.

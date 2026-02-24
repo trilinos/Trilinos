@@ -72,7 +72,7 @@ int run(int argc, char *argv[]) {
   using Teuchos::rcp;
   using Teuchos::ParameterList;
 
-  Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
+  Tpetra::initialize(&argc, &argv);
   const auto comm = Tpetra::getDefaultComm();
   const int myPID = comm->getRank();
 
@@ -258,6 +258,8 @@ int run(int argc, char *argv[]) {
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  Tpetra::finalize();
 
   return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

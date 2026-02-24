@@ -129,7 +129,7 @@ public:
                   if (type == "bool") {
                     *((bool *)tval) = true;
                   } else {
-                    std::cout << " bool somethng wrong\n";
+                    std::cout << " bool somethng wrong(" << desc << ", " << type << ")\n";
                   }
                   _map[it->first] = std::make_tuple(desc, type, "1", (void *)NULL);
                 }

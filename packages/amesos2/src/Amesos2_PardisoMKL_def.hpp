@@ -594,6 +594,29 @@ PardisoMKL<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
 template <class Matrix, class Vector>
 void
+PardisoMKL<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                         const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " PardisoMKL current parameters:" << std::endl;
+  out << "  > IPARM(2)  = " << iparm_[1]  << std::endl;
+  out << "  > IPARM(4)  = " << iparm_[3]  << std::endl;
+  out << "  > IPARM(8)  = " << iparm_[7]  << std::endl;
+  out << "  > IPARM(10) = " << iparm_[9]  << std::endl;
+  out << "  > IPARM(12) = " << iparm_[11] << std::endl;
+  out << "  > IPARM(13) = " << iparm_[12] << std::endl;
+  out << "  > IPARM(18) = " << iparm_[17] << std::endl;
+  out << "  > IPARM(24) = " << iparm_[23] << std::endl;
+  out << "  > IPARM(25) = " << iparm_[24] << std::endl;
+  out << "  > IPARM(60) = " << iparm_[59] << std::endl;
+  out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << "  > MessageLevel = " << msglvl_ << std::endl;
+  out << "  > DebugLevel   = " << debug_level_ << std::endl;
+  out << std::endl;
+}
+
+
+template <class Matrix, class Vector>
+void
 PardisoMKL<Matrix,Vector>::check_pardiso_mkl_error(EPhase phase,
                                                    int_t error) const
 {

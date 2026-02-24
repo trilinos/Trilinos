@@ -81,7 +81,7 @@ public:
 /////////////////////////////////////////////////////////////////
 
 template <typename User, typename UserCoord>
-TpetraCrsGraphAdapter<User, UserCoord>::Base::IdsDeviceView
+typename TpetraCrsGraphAdapter<User, UserCoord>::Base::IdsDeviceView
 getColIds(const RCP<const User> &inmatrix) {
   auto colIdsDevice = inmatrix->getLocalIndicesDevice();
 
