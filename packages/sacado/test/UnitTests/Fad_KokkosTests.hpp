@@ -563,7 +563,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
   auto va = Sacado::as_scalar_view(v);
 #else
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
   typename ViewType::array_type va = v;
+#else
+  typename ViewType::type va = v;
+#endif
 #endif
   Kokkos::deep_copy( va, 1.0 );
 
@@ -611,7 +615,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
   auto va = Sacado::as_scalar_view(v);
 #else
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
   typename ViewType::array_type va = v;
+#else
+  typename ViewType::type va = v;
+#endif
 #endif
   Kokkos::deep_copy( va, 1.0 );
 
@@ -658,7 +666,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
   auto va = Sacado::as_scalar_view(v);
 #else
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
   typename ViewType::array_type va = v;
+#else
+  typename ViewType::type va = v;
+#endif
 #endif
   Kokkos::deep_copy( va, 1.0 );
 
@@ -705,7 +717,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
   auto va = Sacado::as_scalar_view(v);
 #else
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
   typename ViewType::array_type va = v;
+#else
+  typename ViewType::type va = v;
+#endif
 #endif
   Kokkos::deep_copy( va, 1.0 );
 
@@ -761,7 +777,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
   auto va = Sacado::as_scalar_view(v);
 #else
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
   typename ViewType::array_type va = v;
+#else
+  typename ViewType::type va = v;
+#endif
 #endif
   Kokkos::deep_copy( va, 1.0 );
 
@@ -826,7 +846,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
   auto va = Sacado::as_scalar_view(v);
 #else
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
   typename ViewType::array_type va = v;
+#else
+  typename ViewType::type va = v;
+#endif
 #endif
   Kokkos::deep_copy( va, 1.0 );
 
@@ -891,7 +915,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
   auto va = Sacado::as_scalar_view(v);
 #else
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
   typename ViewType::array_type va = v;
+#else
+  typename ViewType::type va = v;
+#endif
 #endif
   Kokkos::deep_copy( va, 1.0 );
 
@@ -940,7 +968,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
   auto va = Sacado::as_scalar_view(v);
 #else
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
   typename ViewType::array_type va = v;
+#else
+  typename ViewType::type va = v;
+#endif
 #endif
   Kokkos::deep_copy( va, 1.0 );
 
@@ -1288,7 +1320,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
   auto h_a = Sacado::as_scalar_view(h_v);
 #else
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
   typename host_view_type::array_type h_a = h_v;
+#else
+  typename host_view_type::type h_a = h_v;
+#endif
 #endif
   Kokkos::deep_copy(h_a, 1.0);
 
