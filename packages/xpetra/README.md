@@ -7,6 +7,8 @@ Xpetra a lightweight wrapper to both the Epetra and Tpetra linear algebra librar
 Xpetra is used extensively in Frosch and MueLu.  By virtue of using Xpetra, many MueLu tests and example allow the runtime selection of either Epetra or Tpetra.
 Xpetra is also used in Zoltan2, Ifpack2, and Galeri.
 
+**_NOTE:_ As of Trilinos release 17, Epetra is no longer available. Thus, Xpetra wraps only Tpetra. Users should expect that Xpetra will eventually be deprecated and then removed entirely.**
+
 ## Documentation
 
 Xpetra is part of the [Trilinos Project](https://trilinos.github.io), and additional information (e.g., examples, tutorials, and source code documentation) is available through [Xpetra's Doxygen webpages](https://trilinos.github.io/docs/xpetra/index.html).
