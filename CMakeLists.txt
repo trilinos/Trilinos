@@ -56,4 +56,6 @@ IF(${PROJECT_NAME}_ENABLE_YouCompleteMe)
   INCLUDE(CodeCompletion)
 ENDIF()
 
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/CollectGitInfo.cmake)
+
 message(STATUS "If publishing results using Trilinos, please cite us: https://trilinos.github.io/about.html#citing-trilinos")
