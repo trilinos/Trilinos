@@ -1,0 +1,36 @@
+name: master-merge
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 2 * * 6
+
+jobs:
+
+  master-merge:
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v2
+        id: generate-token
+        with:
+          app-id: ${{ secrets.SNAPSHOT_APP_ID }}
+          private-key: ${{ secrets.SNAPSHOT_APP_PRIVATE_KEY }}
+
+      - name: Clone Trilinos
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: develop
+
+      - name: Create PR
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          gh pr create \
+          --base master \
+          --head develop \
+          --title "Master Merge: Automatic PR from develop to master" \
+          --body "Automatic PR from develop to master."
+
+      
