@@ -4,6 +4,13 @@
 #include "Reporter.hpp"
 #include "stk_util/ngp/NgpSpaces.hpp"
 #include "NgpTestDeviceMacros.hpp"
+#if defined(KOKKOS_ENABLE_HIP)
+ #if __has_include(<rocm-core/rocm_version.h>)
+  #include <rocm-core/rocm_version.h>
+ #else
+  #include <rocm_version.h>
+ #endif
+#endif
 
 // RDC is required for HIP build since registering a static global variable
 // on an inline variable is not available until rocm 6.3.0
