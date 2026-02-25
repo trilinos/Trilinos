@@ -228,10 +228,11 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
       auto solver = solverFactory.create(solverType, belosList);
       solver->setProblem(problem);
 
-      solver->solve();
+      if (numIts > 0) solver->solve();
     }
     // Convert from vector to matrix
-    P = X->GetMatrixWithEntriesFromVector(*vecP);
+    if (numIts > 0) P = X->GetMatrixWithEntriesFromVector(*vecP);
+    else P = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(P0);
     if (P0->IsView("stridedMaps"))
       P->CreateView("stridedMaps", P0);
   }
