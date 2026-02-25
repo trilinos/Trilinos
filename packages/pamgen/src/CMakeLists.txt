@@ -46,6 +46,7 @@ APPEND_SET(HEADERS
   element_density_function.h
   geometry_transform.h
   uns_inline_decomp.h
+  pamgen_kokkos_utils.h
   )
 
 # Set sources
@@ -59,6 +60,7 @@ APPEND_SET(SOURCES
   inline_mesh_desc.C
   inline_mesh_driver_lt.C
   legacy_inline_mesh_desc.C
+  pamgen_kokkos_utils.C
   parse_routines.C
   radial_inline_mesh_desc.C
   radial_trisection_inline_mesh_desc.C
@@ -189,4 +191,3 @@ TRIBITS_ADD_LIBRARY(
 if (WIN32)
   target_compile_definitions (pamgen PRIVATE _USE_MATH_DEFINES)
 endif ()
-
