@@ -20,7 +20,6 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' }}
 
     permissions:
       # required for all workflows
