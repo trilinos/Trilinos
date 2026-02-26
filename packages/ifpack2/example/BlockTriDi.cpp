@@ -135,7 +135,7 @@ bool getCmdLineArgs(CmdLineArgs& args, int argc, char* argv[]) {
 
 // Create a matrix as specified by parameter list options
 template <class SC, class LO, class GO, class NO>
-static Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO> > BuildMatrix(Teuchos::ParameterList& matrixList, Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+static Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO>> BuildMatrix(Teuchos::ParameterList& matrixList, Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -170,7 +170,7 @@ static Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO> > BuildMatrix(Teuchos::Parame
     std::string msg = matrixType + " is unsupported (in unit testing)";
     throw std::runtime_error(msg);
   }
-  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector> > Pr =
+  RCP<Galeri::Xpetra::Problem<Map, CrsMatrixWrap, MultiVector>> Pr =
       Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>(matrixType, map, matrixList);
   RCP<Matrix> Op = Pr->BuildMatrix();
 
@@ -178,18 +178,18 @@ static Teuchos::RCP<Xpetra::Matrix<SC, LO, GO, NO> > BuildMatrix(Teuchos::Parame
 }  // BuildMatrix()
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > BuildBlockMatrix(Teuchos::ParameterList& matrixList, Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> BuildBlockMatrix(Teuchos::ParameterList& matrixList, Teuchos::RCP<const Teuchos::Comm<int>>& comm) {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
 
   // Make the graph
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > FirstMatrix = BuildMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(matrixList, comm);
-  RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > FGraph      = FirstMatrix->getCrsGraph();
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> FirstMatrix = BuildMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(matrixList, comm);
+  RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> FGraph      = FirstMatrix->getCrsGraph();
 
-  const int blocksize                                                          = matrixList.get("blockSize", 3);
-  RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >(FGraph);
-  RCP<const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TTGraph      = TGraph->getTpetra_CrsGraph();
+  const int blocksize                                                         = matrixList.get("blockSize", 3);
+  RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>> TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node>>(FGraph);
+  RCP<const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> TTGraph      = TGraph->getTpetra_CrsGraph();
 
   using BCRS           = Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
   RCP<BCRS> bcrsmatrix = rcp(new BCRS(*TTGraph, blocksize));
@@ -297,6 +297,37 @@ Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
   return bcrsmatrix;
 }  // BuildBlockMatrix()
 
+template <class SC, class LO, class GO, class NO>
+void solverWarmup(Teuchos::RCP<const Teuchos::Comm<int>>& comm, Teuchos::RCP<Tpetra::RowMatrix<>> Ablock, const Teuchos::Array<Teuchos::Array<LO>>& parts, int sublinesPerLineSchur, bool overlapCommAndComp, int nvecs) {
+  using row_matrix_type = Tpetra::RowMatrix<>;
+  using MV              = Tpetra::MultiVector<>;
+  using BTDC            = Ifpack2::BlockTriDiContainer<row_matrix_type>;
+
+  // Just need to warmup correct codepath (single or multi vector)
+  // so don't run on more vectors than necessary
+  if (nvecs > 1)
+    nvecs = 2;
+
+  auto X = rcp(new MV(Ablock->getRangeMap(), nvecs));
+  auto B = rcp(new MV(Ablock->getRangeMap(), nvecs));
+  X->putScalar(Teuchos::ScalarTraits<SC>::zero());
+  B->putScalar(Teuchos::ScalarTraits<SC>::one());
+
+  auto precond = Teuchos::rcp(new BTDC(Ablock, parts, sublinesPerLineSchur, overlapCommAndComp));
+  precond->initialize();
+
+  // Solver Parameters
+  auto ap                 = precond->createDefaultApplyParameters();
+  ap.zeroStartingSolution = true;
+  ap.tolerance            = 1e-8;
+  ap.maxNumSweeps         = 2;
+  ap.checkToleranceEvery  = 1;
+
+  // Solve
+  precond->compute();
+  (void)precond->applyInverseJacobi(*B, *X, ap);
+}
+
 #endif  // HAVE_IFPACK2_XPETRA
 
 int main(int argc, char* argv[]) {
@@ -321,13 +352,13 @@ int main(int argc, char* argv[]) {
 
   typedef Tpetra::Vector<LO, LO, GO, NO> IV;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  typedef Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<LO, LO, GO, NO> > LO_reader_type;
+  typedef Tpetra::MatrixMarket::Reader<Tpetra::CrsMatrix<LO, LO, GO, NO>> LO_reader_type;
   typedef Ifpack2::BlockTriDiContainer<row_matrix_type> BTDC;
 
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
 
-  RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
-  bool rank0                 = comm->getRank() == 0;
+  RCP<const Comm<int>> comm = Tpetra::getDefaultComm();
+  bool rank0                = comm->getRank() == 0;
 
   // Get command-line arguments.
   CmdLineArgs args;
@@ -337,16 +368,14 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  // If using StackedTimer, then do not time Galeri or matrix I/O because that will dominate the total time.
-
+  // If using StackedTimer, then do not time Galeri, matrix I/O or warmup solve.
   RCP<StackedTimer> stackedTimer;
   RCP<Time> totalTime;
   RCP<Teuchos::TimeMonitor> totalTimeMon;
-  RCP<Time> precSetupTime         = Teuchos::TimeMonitor::getNewTimer("Preconditioner setup");
-  RCP<Time> precComputeTime       = Teuchos::TimeMonitor::getNewTimer("Preconditioner compute");
-  RCP<Time> solveTime             = Teuchos::TimeMonitor::getNewTimer("Solve");
-  RCP<Time> normTime              = Teuchos::TimeMonitor::getNewTimer("Norm");
-  RCP<Time> warmupMatrixApplyTime = Teuchos::TimeMonitor::getNewTimer("Preposition of the matrix on device");
+  RCP<Time> precSetupTime   = Teuchos::TimeMonitor::getNewTimer("Preconditioner setup");
+  RCP<Time> precComputeTime = Teuchos::TimeMonitor::getNewTimer("Preconditioner compute");
+  RCP<Time> solveTime       = Teuchos::TimeMonitor::getNewTimer("Solve");
+  RCP<Time> normTime        = Teuchos::TimeMonitor::getNewTimer("Norm");
   if (!args.useStackedTimer) {
     totalTime    = Teuchos::TimeMonitor::getNewTimer("Total");
     totalTimeMon = rcp(new Teuchos::TimeMonitor(*totalTime));
@@ -588,7 +617,7 @@ int main(int argc, char* argv[]) {
 
   // Convert line_info vector to parts arrays
   // NOTE: Both of these needs to be nodes-leve guys, not parts-level.
-  Teuchos::Array<Teuchos::Array<LO> > parts;
+  Teuchos::Array<Teuchos::Array<LO>> parts;
   {
     if (rank0) std::cout << "Converting line info to parts..." << std::endl;
     // Number of lines will vary per proc, so we need to count these
@@ -611,12 +640,9 @@ int main(int argc, char* argv[]) {
     //    std::cout<<"On "<<line_ids.size()<<" local DOFs, detected "<<num_local_lines<<" lines"<<std::endl;
   }
 
-  // Preposition the matrix on device by letting a matvec ensure a transfer
   {
-    Teuchos::TimeMonitor warmupMatrixApplyTimeMon(*warmupMatrixApplyTime);
-
-    RCP<MV> temp = rcp(new MV(Ablock->getRangeMap(), args.numVecs));
-    Ablock->apply(*X, *temp);
+    if (rank0) std::cout << "Performing warmup solve to ensure kernels and matrix are ready on device..." << std::endl;
+    solverWarmup<SC, LO, GO, NO>(comm, Ablock, parts, args.sublinesPerLineSchur, args.overlapCommAndComp, args.numVecs);
   }
 
   if (args.useStackedTimer) {
