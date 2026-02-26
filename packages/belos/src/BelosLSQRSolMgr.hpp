@@ -820,7 +820,7 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  this->unconvergenceCause_ = AllOk;
+  this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.  NOTE:
   // This may occur if the user generated the solver manager with the
@@ -917,10 +917,10 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
     if (convTest_->getStatus () == Belos::Passed) {
       isConverged = true;
     } else if (maxIterTest_->getStatus () == Belos::Passed) {
-      this->unconvergenceCause_ = MaxItersAchieved;
+      this->unconvergedCause_ = MaxItersReached;
       isConverged = false;
     } else {
-      this->unconvergenceCause_ = Unknown;
+      this->unconvergedCause_ = UnknownException;
       TEUCHOS_TEST_FOR_EXCEPTION
         (true, std::logic_error, "Belos::LSQRSolMgr::solve: "
          "LSQRIteration::iterate returned without either the convergence test "
@@ -928,7 +928,7 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
          "Please report this bug to the Belos developers.");
     }
   } catch (const std::exception& e) {
-    this->unconvergenceCause_ = Unknown;
+    this->unconvergedCause_ = UnknownException;
     printer_->stream(Belos::Errors)
       << "Error! Caught std::exception in LSQRIter::iterate at iteration "
       << lsqr_iter->getNumIters () << std::endl << e.what () << std::endl;
@@ -960,6 +960,7 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
   if (! isConverged) {
     return Belos::Unconverged;
   } else {
+    this->unconvergedCause_ = Convergeb;
     return Belos::Converged;
   }
 }

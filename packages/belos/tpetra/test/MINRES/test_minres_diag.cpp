@@ -230,7 +230,7 @@ void IterativeInverseOperator<OP, ST, MP, MV>::operator()(const MV &b, MV &x) {
   timer.stop();
 
   if (pid == 0 && print) {
-    if (ret == Belos::Converged) {
+    if (ret == Belos::Converged) { // AquiHeidi
       std::cout << std::endl << "pid[" << pid << "] Minres converged" << std::endl;
       std::cout << "Solution time: " << timer.totalElapsedTime() << std::endl;
 

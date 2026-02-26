@@ -46,7 +46,7 @@ class SolverManager : virtual public Teuchos::Describable {
   //! Empty constructor.
   SolverManager()
   {
-    unconvergenceCause_ = AllOk;
+    unconvergedCause_ = Undetermined;
   };
 
   //! Destructor.
@@ -93,18 +93,17 @@ class SolverManager : virtual public Teuchos::Describable {
   */
   virtual bool isLOADetected() const = 0;
 
-  /// Get the unconvergence cause for the most recent call to \c solve().
+  /// Get the unconverged cause for the most recent call to \c solve().
   ///
-  /// This unconvergence cause complements the return code 'rc' (of
+  /// This unconverged cause complements the return code 'rc' (of
   /// type ReturnType) returned by the most recent call to solve():
-  /// - if rc == Converged, then unconvergence cause = AllOk;
-  /// - if rc == Unconverged, then unconvergence cause will give (an
-  ///   indication for) the cause of the failure. If there is no hint
-  ///   on why the solver failed to converge, then unconvergence
-  ///   cause = Unknown.
-  UnconvergenceCauseType getUnconvergenceCause() const
+  /// - if rc == Converged, then unconverged cause = Convergeb;
+  /// - if rc == Unconverged, then unconverged cause will give (an indication
+  ///   for) the cause of the failure. If there is no hint on why the
+  ///   solver failed to converge, then unconvergednce cause = Undetermined.
+  UnconvergedCauseType getUnconvergedCause() const
   {
-    return unconvergenceCause_;
+    return unconvergedCause_;
   }
 
   //@}
@@ -181,7 +180,7 @@ class SolverManager : virtual public Teuchos::Describable {
 
   protected:
 
-  UnconvergenceCauseType unconvergenceCause_;
+  UnconvergedCauseType unconvergedCause_;
 };
 
 

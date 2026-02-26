@@ -143,6 +143,7 @@ int run(int argc, char *argv[])
     
     // Perform solve
     Belos::ReturnType ret = solver->solve();
+    Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause();
     if (ret!=Belos::Converged) {
       if (proc_verbose)
         std::cout << "End Result: TEST FAILED" << std::endl;
@@ -320,7 +321,7 @@ int run(int argc, char *argv[])
       std::cout << std::endl;
     }
 
-    success = ret==Belos::Converged && !badRes;
+    success = ret==Belos::Converged && (unconvergedCause==Belos::Convergeb) && !badRes;
 
     if (success) {
       if (proc_verbose)

@@ -1309,7 +1309,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  this->unconvergenceCause_ = AllOk;
+  this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -1498,7 +1498,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
-          this->unconvergenceCause_ = NaNDetected;
+          this->unconvergedCause_ = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
@@ -1507,7 +1507,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           return Unconverged; 
         }
         catch (const std::exception &e) {
-          this->unconvergenceCause_ = Unknown;
+          this->unconvergedCause_ = UnknownException;
           printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration "
                                    << gcrodr_prime_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -1721,7 +1721,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
-            this->unconvergenceCause_ = MaxItersAchieved;
+            this->unconvergedCause_ = MaxItersReached;
             isConverged = false;
             break;  // break from while(1){gcrodr_iter->iterate()}
           }
@@ -1747,7 +1747,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
 
             // NOTE:  If we have hit the maximum number of restarts then quit
             if (numRestarts >= maxRestarts_) {
-              this->unconvergenceCause_ = MaxRestartsAchieved;
+              this->unconvergedCause_ = MaxRestartsReached;
               isConverged = false;
               break; // break from while(1){gcrodr_iter->iterate()}
             }
@@ -1800,13 +1800,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           // Check to see if the most recent least-squares solution yielded convergence.
           sTest_->checkStatus( &*gcrodr_iter );
           if (convTest_->getStatus() != Passed) {
-            this->unconvergenceCause_ = OrthonormFailure;
+            this->unconvergedCause_ = OrthonormFailure;
             isConverged = false;
 	  }
           break;
         }
         catch (const std::exception& e) {
-          this->unconvergenceCause_ = Unknown;
+          this->unconvergedCause_ = UnknownException;
           printer_->stream(Errors)
             << "Error! Caught exception in GCRODRIter::iterate() at iteration "
             << gcrodr_iter->getNumIters() << std::endl << e.what() << std::endl;
@@ -1886,6 +1886,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
     achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
   }
 
+  if (isConverged) {
+    this->unconvergedCause_ = Convergeb;
+  }
   return isConverged ? Converged : Unconverged; // return from solve()
 }
 

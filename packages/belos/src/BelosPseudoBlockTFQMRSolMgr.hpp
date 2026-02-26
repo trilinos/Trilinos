@@ -604,7 +604,7 @@ PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::getValidParameters() const
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
-  this->unconvergenceCause_ = AllOk;
+  this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -763,7 +763,7 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
-            this->unconvergenceCause_ = MaxItersAchieved;
+            this->unconvergedCause_ = MaxItersReached;
             isConverged = false;
             break;  // break from while(1){block_tfqmr_iter->iterate()}
           }
@@ -776,14 +776,14 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
-            this->unconvergenceCause_ = Unknown;
+            this->unconvergedCause_ = UnknownException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PseudoBlockTFQMRSolMgr::solve(): Invalid return from PseudoBlockTFQMRIter::iterate().");
           }
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
-          this->unconvergenceCause_ = NaNDetected;
+          this->unconvergedCause_ = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
@@ -792,7 +792,7 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
           return Unconverged; 
         }
         catch (const std::exception &e) {
-          this->unconvergenceCause_ = Unknown;
+          this->unconvergedCause_ = UnknownException;
           printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockTFQMRIter::iterate() at iteration "
                                    << block_tfqmr_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -889,6 +889,7 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
   if (!isConverged) {
     return Unconverged; // return from PseudoBlockTFQMRSolMgr::solve()
   }
+  this->unconvergedCause_ = Convergeb;
   return Converged; // return from PseudoBlockTFQMRSolMgr::solve()
 }
 

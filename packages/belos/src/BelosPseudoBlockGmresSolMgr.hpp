@@ -1159,7 +1159,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
-  this->unconvergenceCause_ = AllOk;
+  this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -1280,7 +1280,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
               //
               // We choose to deal with this situation by deflating
               // out the affected right-hand sides and moving on.
-              this->unconvergenceCause_ = LossOfAccuracyDetected;
+              this->unconvergedCause_ = LossOfAccuracyDetected;
               loaDetected_ = true;
               printer_->stream(Warnings) <<
                 "Belos::PseudoBlockGmresSolMgr::solve(): Warning! Solver has experienced a loss of accuracy!" << std::endl;
@@ -1362,7 +1362,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
-            this->unconvergenceCause_ = MaxItersAchieved;
+            this->unconvergedCause_ = MaxItersReached;
             isConverged = false;
             break;  // break from while(1){block_gmres_iter->iterate()}
           }
@@ -1374,7 +1374,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           else if ( block_gmres_iter->getCurSubspaceDim() == block_gmres_iter->getMaxSubspaceDim() ) {
 
             if ( numRestarts >= maxRestarts_ ) {
-              this->unconvergenceCause_ = MaxRestartsAchieved;
+              this->unconvergedCause_ = MaxRestartsReached;
               isConverged = false;
               break; // break from while(1){block_gmres_iter->iterate()}
             }
@@ -1442,13 +1442,13 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           // Check to see if the most recent least-squares solution yielded convergence.
           sTest_->checkStatus( &*block_gmres_iter );
           if (convTest_->getStatus() != Passed)
-            this->unconvergenceCause_ = Unknown; // AquiHeidi
+            this->unconvergedCause_ = UnknownException; // AquiHeidi
             isConverged = false;
           break;
         }
         catch (const StatusTestNaNError& e) {
           // A NaN was detected in the solver.  Set the solution to zero and return unconverged.
-          this->unconvergenceCause_ = NaNDetected;
+          this->unconvergedCause_ = NaNDetected;
           achievedTol_ = MT::one();
           Teuchos::RCP<MV> X = problem_->getLHS();
           MVT::MvInit( *X, SCT::zero() );
@@ -1457,7 +1457,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           return Unconverged;
         }
         catch (const std::exception &e) {
-          this->unconvergenceCause_ = Unknown;
+          this->unconvergedCause_ = UnknownException;
           printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockGmresIter::iterate() at iteration "
                                    << block_gmres_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -1572,6 +1572,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   if (!isConverged || loaDetected_) {
     return Unconverged; // return from PseudoBlockGmresSolMgr::solve()
   }
+  this->unconvergedCause_ = Convergeb;
   return Converged; // return from PseudoBlockGmresSolMgr::solve()
 }
 

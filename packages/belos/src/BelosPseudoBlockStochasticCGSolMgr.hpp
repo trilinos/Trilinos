@@ -579,7 +579,7 @@ PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
-  this->unconvergenceCause_ = AllOk;
+  this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -712,7 +712,7 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
           else if ( maxIterTest_->getStatus() == Passed ) {
             // we don't have convergence
-            this->unconvergenceCause_ = MaxItersAchieved;
+            this->unconvergedCause_ = MaxItersReached;
             isConverged = false;
             break;  // break from while(1){block_cg_iter->iterate()}
           }
@@ -725,13 +725,13 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
-            this->unconvergenceCause_ = Unknown;
+            this->unconvergedCause_ = UnknownException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PseudoBlockStochasticCGSolMgr::solve(): Invalid return from PseudoBlockStochasticCGIter::iterate().");
           }
         }
         catch (const std::exception &e) {
-          this->unconvergenceCause_ = Unknown;
+          this->unconvergedCause_ = UnknownException;
           printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockStochasticCGIter::iterate() at iteration "
                                    << block_cg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -787,6 +787,7 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
   if (!isConverged ) {
     return Unconverged; // return from PseudoBlockStochasticCGSolMgr::solve()
   }
+  this->unconvergedCause_ = Convergeb;
   return Converged; // return from PseudoBlockStochasticCGSolMgr::solve()
 }
 
