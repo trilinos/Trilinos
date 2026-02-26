@@ -286,7 +286,7 @@ Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildAT
     const Scalar dt)   // time step
 {
   // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
-  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   // invMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
   // jacobianMatrix_->describe(*out, Teuchos::VERB_EXTREME);
