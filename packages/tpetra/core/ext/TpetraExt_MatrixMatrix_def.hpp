@@ -1325,12 +1325,17 @@ void mult_A_B(
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
     CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
     const std::string& /* label */,
-    const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::null;
   using Teuchos::OrdinalTraits;
+
+  bool skipExplicitZero = true;
+  if (params && params->isParameter("MM Skip Explicit Zeros")) {
+    skipExplicitZero = params->get<bool>("MM Skip Explicit Zeros");
+  }
 
   typedef Teuchos::ScalarTraits<Scalar> STS;
   // TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
@@ -1435,7 +1440,7 @@ void mult_A_B(
     for (k = Arowptr[i]; k < Arowptr[i + 1]; ++k) {
       LocalOrdinal Ak   = Acol2Brow[Acolind[k]];
       const Scalar Aval = Avals[k];
-      if (Aval == STS::zero())
+      if (Aval == STS::zero() && skipExplicitZero)
         continue;
 
       if (Ak == LO_INVALID)
@@ -1477,7 +1482,7 @@ void mult_A_B(
     for (k = Arowptr[i]; k < Arowptr[i + 1]; ++k) {
       LocalOrdinal Ak   = Acol2Brow[Acolind[k]];
       const Scalar Aval = Avals[k];
-      if (Aval == STS::zero())
+      if (Aval == STS::zero() && skipExplicitZero)
         continue;
 
       if (Ak != LO_INVALID) continue;
@@ -1950,6 +1955,11 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
   const LO LO_INVALID     = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO        = Teuchos::ScalarTraits<Scalar>::zero();
 
+  bool skipExplicitZero = true;
+  if (params && params->isParameter("MM Skip Explicit Zeros")) {
+    skipExplicitZero = params->get<bool>("MM Skip Explicit Zeros");
+  }
+
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m                    = Aview.origMatrix->getLocalNumRows();
@@ -2016,7 +2026,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
     for (size_t k = Arowptr[i]; k < Arowptr[i + 1]; k++) {
       LO Aik        = Acolind[k];  // local column index of current entry of A
       const SC Aval = Avals[k];    // value of current entry of A
-      if (Aval == SC_ZERO)
+      if (Aval == SC_ZERO && skipExplicitZero)
         continue;  // skip explicitly stored zero values in A
 
       if (targetMapToOrigRow[Aik] != LO_INVALID) {
@@ -2221,7 +2231,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
                                                                                                                     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
                                                                                                                     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> /* Cimport */,
                                                                                                                     const std::string& label,
-                                                                                                                    const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
+                                                                                                                    const Teuchos::RCP<Teuchos::ParameterList>& params) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -2240,6 +2250,11 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
   const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const LO LO_INVALID     = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO        = Teuchos::ScalarTraits<Scalar>::zero();
+
+  bool skipExplicitZero = true;
+  if (params && params->isParameter("MM Skip Explicit Zeros")) {
+    skipExplicitZero = params->get<bool>("MM Skip Explicit Zeros");
+  }
 
   Tpetra::Details::ProfilingRegion MM("TpetraExt: MMM: Reuse SerialCore");
   (void)label;
@@ -2297,7 +2312,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
     for (size_t k = Arowptr[i]; k < Arowptr[i + 1]; k++) {
       LO Aik        = Acolind[k];
       const SC Aval = Avals[k];
-      if (Aval == SC_ZERO)
+      if (Aval == SC_ZERO && skipExplicitZero)
         continue;
 
       if (targetMapToOrigRow[Aik] != LO_INVALID) {
@@ -2597,7 +2612,11 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
   scalar_view_t Cvals(Kokkos::ViewAllocateWithoutInitializing("Cvals"), CSR_alloc);
   size_t CSR_ip = 0, OLD_ip = 0;
 
-  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const SC SC_ZERO      = Teuchos::ScalarTraits<Scalar>::zero();
+  bool skipExplicitZero = true;
+  if (params && params->isParameter("MM Skip Explicit Zeros")) {
+    skipExplicitZero = params->get<bool>("MM Skip Explicit Zeros");
+  }
 
   // mfh 27 Sep 2016: Here is the local sparse matrix-matrix multiply
   // routine.  The routine computes
@@ -2620,7 +2639,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
     // Entries of B
     for (size_t j = Browptr[i]; j < Browptr[i + 1]; j++) {
       Scalar Bval = Bvals[j];
-      if (Bval == SC_ZERO)
+      if (Bval == SC_ZERO && skipExplicitZero)
         continue;
       LO Bij = Bcolind[j];
       LO Cij = Bcol2Ccol[Bij];
@@ -2636,7 +2655,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
     for (size_t k = Arowptr[i]; k < Arowptr[i + 1]; k++) {
       LO Aik        = Acolind[k];
       const SC Aval = Avals[k];
-      if (Aval == SC_ZERO)
+      if (Aval == SC_ZERO && skipExplicitZero)
         continue;
 
       if (targetMapToOrigRow[Aik] != LO_INVALID) {
@@ -2848,7 +2867,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
                                                                                                                        CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
                                                                                                                        Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> /* Cimport */,
                                                                                                                        const std::string& label,
-                                                                                                                       const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
+                                                                                                                       const Teuchos::RCP<Teuchos::ParameterList>& params) {
   Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Reuse Serial Core");
   (void)label;
 
@@ -2871,6 +2890,10 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
   const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const LO LO_INVALID     = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO        = Teuchos::ScalarTraits<Scalar>::zero();
+  bool skipExplicitZero   = true;
+  if (params && params->isParameter("MM Skip Explicit Zeros")) {
+    skipExplicitZero = params->get<bool>("MM Skip Explicit Zeros");
+  }
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
@@ -2927,7 +2950,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
     // Entries of B
     for (size_t j = Browptr[i]; j < Browptr[i + 1]; j++) {
       Scalar Bval = Bvals[j];
-      if (Bval == SC_ZERO)
+      if (Bval == SC_ZERO && skipExplicitZero)
         continue;
       LO Bij = Bcolind[j];
       LO Cij = Bcol2Ccol[Bij];
@@ -2942,7 +2965,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
     for (size_t k = Arowptr[i]; k < Arowptr[i + 1]; k++) {
       LO Aik        = Acolind[k];
       const SC Aval = Avals[k];
-      if (Aval == SC_ZERO)
+      if (Aval == SC_ZERO && skipExplicitZero)
         continue;
 
       if (targetMapToOrigRow[Aik] != LO_INVALID) {
