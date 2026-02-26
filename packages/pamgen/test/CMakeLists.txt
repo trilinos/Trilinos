@@ -197,6 +197,22 @@ TRIBITS_ADD_TEST(
   ARGS ""
 )
 
+# Mesh specification Kokkos integration test
+TRIBITS_ADD_EXECUTABLE(
+  pamgen_test_mesh_spec_kokkos
+  NOEXEPREFIX
+  SOURCES
+    test_mesh_spec_kokkos.C
+)
+
+TRIBITS_ADD_TEST(
+  pamgen_test_mesh_spec_kokkos
+  NAME mesh_spec_kokkos
+  COMM serial mpi
+  NOEXEPREFIX
+  ARGS ""
+)
+
 # 2009/05/28: rabartl: Above, the test 17 timing out at 600s on gabriel and
 # the test 26 just takes too long (see bug 4428).
 
