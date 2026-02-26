@@ -297,6 +297,8 @@ Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> 
   return bcrsmatrix;
 }  // BuildBlockMatrix()
 
+#endif  // HAVE_IFPACK2_XPETRA
+
 template <class SC, class LO, class GO, class NO>
 void solverWarmup(Teuchos::RCP<const Teuchos::Comm<int>>& comm, Teuchos::RCP<Tpetra::RowMatrix<>> Ablock, const Teuchos::Array<Teuchos::Array<LO>>& parts, int sublinesPerLineSchur, bool overlapCommAndComp, int nvecs) {
   using row_matrix_type = Tpetra::RowMatrix<>;
@@ -327,8 +329,6 @@ void solverWarmup(Teuchos::RCP<const Teuchos::Comm<int>>& comm, Teuchos::RCP<Tpe
   precond->compute();
   (void)precond->applyInverseJacobi(*B, *X, ap);
 }
-
-#endif  // HAVE_IFPACK2_XPETRA
 
 int main(int argc, char* argv[]) {
   using std::cerr;
