@@ -58,6 +58,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos:
   this->phiLinSolv_->buildK(k);
 
   Teuchos::RCP<Thyra::VectorBase<Scalar>> rhs_b = Mrhs_b->clone_v();
+  Thyra::assign(rhs_b.ptr(),0.0);
   this->phiLinSolv_->solveMass(rhs_b.ptr(), Mrhs_b);
 
   // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
