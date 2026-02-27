@@ -1070,7 +1070,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
   if (!isConverged) {
     return Unconverged; // return from PCPGSolMgr::solve()
   }
-  this->unconvergedCause_ = Convergeb;
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from PCPGSolMgr::solve()
 }
 

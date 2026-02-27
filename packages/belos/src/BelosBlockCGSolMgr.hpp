@@ -1096,7 +1096,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
   if (!isConverged) {
     return Unconverged; // return from BlockCGSolMgr::solve()
   }
-  this->unconvergedCause_ = Convergeb;
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from BlockCGSolMgr::solve()
 }
 

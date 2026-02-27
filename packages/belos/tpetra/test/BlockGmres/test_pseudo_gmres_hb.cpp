@@ -173,7 +173,7 @@ int run(int argc, char *argv[]) {
       }
     }
 
-    if (ret == Belos::Converged && (unconvergedCause==Belos::Convergeb) && !badRes) {
+    if (ret == Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes) {
       // Ok
     }
     else {
@@ -225,7 +225,7 @@ int run(int argc, char *argv[]) {
     ret = augSolver->solve();
     unconvergedCause = augSolver->getUnconvergedCause();
 
-    if (ret == Belos::Converged && (unconvergedCause==Belos::Convergeb)) {
+    if (ret == Belos::Converged && (unconvergedCause==Belos::SolverConverged)) {
       // Ok
     }
     else {

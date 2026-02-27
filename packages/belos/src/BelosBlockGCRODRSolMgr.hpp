@@ -2245,7 +2245,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         // Check to see if the most recent least-squares solution yielded convergence.
         sTest_->checkStatus( &*block_gcrodr_iter );
         if (convTest_->getStatus() != Passed) {
-          this->unconvergedCause_ = BlockOrthonormFailure; // AquiHeidi
+          this->unconvergedCause_ = OrthonormFailure;
 	  isConverged = false;
 	}
         break;
@@ -2340,7 +2340,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
   achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
 
   if (!isConverged) return Unconverged; // return from BlockGCRODRSolMgr::solve()
-  this->unconvergedCause_ = Convergeb;
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from BlockGCRODRSolMgr::solve()
 } //end solve()
 

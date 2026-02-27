@@ -321,7 +321,7 @@ int run(int argc, char *argv[])
       std::cout << std::endl;
     }
 
-    success = ret==Belos::Converged && (unconvergedCause==Belos::Convergeb) && !badRes;
+    success = ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes;
 
     if (success) {
       if (proc_verbose)

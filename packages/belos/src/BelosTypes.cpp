@@ -175,6 +175,34 @@ namespace Belos {
     }
   }
 
+  std::string
+  convertUnconvergedCauseTypeToString (const UnconvergedCauseType unconvergedCause)
+  {
+    if (unconvergedCause == Belos::SolverConverged) {
+      return "SolverConverged";
+    } else if (unconvergedCause == Belos::MaxItersReached) {
+      return "MaxItersReached";
+    } else if (unconvergedCause == Belos::MaxRestartsReached) {
+      return "MaxRestartsReached";
+    } else if (unconvergedCause == Belos::OrthonormFailure) {
+      return "OrthonormFailure";
+    } else if (unconvergedCause == Belos::NaNDetected) {
+      return "NaNDetected";
+    } else if (unconvergedCause == Belos::BreakdownDetected) {
+      return "BreakdownDetected";
+    } else if (unconvergedCause == Belos::LossOfAccuracyDetected) {
+      return "LossOfAccuracyDetected";
+    } else if (unconvergedCause == Belos::UnknownException) {
+      return "UnknownException";
+    } else if (unconvergedCause == Belos::Undetermined) {
+      return "Undetermined";
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Belos::convertUnconvergedCauseTypeToString: Invalid UnconvergedCauseType enum value "
+        << unconvergedCause << ".");
+    }
+  }
+  
   // Initialize DefaultSolverParameters.  Has to be done this way because
   // the "static consexpr double blah = ...;" pattern can create ODR-used
   // linking errors (usually in debug builds).

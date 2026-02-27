@@ -1256,7 +1256,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   if (!isConverged || loaDetected_) {
     return Unconverged; // return from BlockGmresSolMgr::solve()
   }
-  this->unconvergedCause_ = Convergeb;
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from BlockGmresSolMgr::solve()
 }
 

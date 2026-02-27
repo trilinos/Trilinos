@@ -129,16 +129,15 @@ namespace Belos {
   ///
   /// This unconverged cause complements the return code 'rc' (of
   /// type ReturnType) returned by the most recent call to solve():
-  /// - if rc == Converged, then unconverged cause = Convergeb;
+  /// - if rc == Converged, then unconverged cause = SolverConverged;
   /// - if rc == Unconverged, then unconverged cause will give (an indication
   ///   for) the cause of the failure. If there is no hint on why the
-  ///   solver failed to converge, then unconvergednce cause = Undetermined.
+  ///   solver failed to converge, then unconverged cause = Undetermined.
   enum UnconvergedCauseType {
-    Convergeb,              /*!< Most recent solve() returned 'Converged'. */
-    MaxItersReached,        /*!< Most recent solve() returned 'Unconverged' because the maximum number of iterations was achieved. */
-    MaxRestartsReached,     /*!< Most recent solve() returned 'Unconverged' because the maximum number of restarts was achieved. */
+    SolverConverged,        /*!< Most recent solve() returned 'Converged'. */
+    MaxItersReached,        /*!< Most recent solve() returned 'Unconverged' because the maximum number of iterations was reached. */
+    MaxRestartsReached,     /*!< Most recent solve() returned 'Unconverged' because the maximum number of restarts was reached. */
     OrthonormFailure,       /*!< Most recent solve() returned 'Unconverged' because the orthonormalization failed. */
-    BlockOrthonormFailure,  /*!< Most recent solve() returned 'Unconverged' because the block orthonormalization failed. */
     NaNDetected,            /*!< Most recent solve() returned 'Unconverged' because a NaN was detected. */
     BreakdownDetected,      /*!< Most recent solve() returned 'Unconverged' because a breakdown was detected. */
     LossOfAccuracyDetected, /*!< Most recent solve() returned 'Unconverged' because loss of accuracty was detected. */
@@ -150,6 +149,10 @@ namespace Belos {
   std::string
   convertReturnTypeToString (const ReturnType result);
 
+  //! Convert the given \c UnconvergedCauseType enum value to its corresponding string.
+  std::string
+  convertUnconvergedCauseTypeToString (const UnconvergedCauseType unconvergedCause);
+  
   /// \enum StatusType
   /// \brief Whether the \c StatusTest wants iteration to stop.
   ///

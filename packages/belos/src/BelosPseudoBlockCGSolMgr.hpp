@@ -974,7 +974,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
   if (! isConverged) {
     return Unconverged; // return from PseudoBlockCGSolMgr::solve()
   }
-  this->unconvergedCause_ = Convergeb;
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from PseudoBlockCGSolMgr::solve()
 }
 

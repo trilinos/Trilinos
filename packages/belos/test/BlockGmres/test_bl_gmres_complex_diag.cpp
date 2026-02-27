@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
       std::cout << "Final abs 2-norm / rhs 2-norm : " << residualLog[residualLog.size()-1] / norm_denom[0] << std::endl;
     }
 
-    success = ret==Belos::Converged && (unconvergedCause == Belos::Convergeb) && !norm_failure;
+    success = ret==Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !norm_failure;
     if (success) {
       if (proc_verbose)
         std::cout << "End Result: TEST PASSED" << std::endl;

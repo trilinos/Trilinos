@@ -1855,7 +1855,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
   if (!isConverged) {
     return Unconverged; // return from RCGSolMgr::solve()
   }
-  this->unconvergedCause_ = Convergeb;
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from RCGSolMgr::solve()
 }
 

@@ -1441,9 +1441,10 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
           // Check to see if the most recent least-squares solution yielded convergence.
           sTest_->checkStatus( &*block_gmres_iter );
-          if (convTest_->getStatus() != Passed)
-            this->unconvergedCause_ = UnknownException; // AquiHeidi
+          if (convTest_->getStatus() != Passed) {
+            this->unconvergedCause_ = UnknownException;
             isConverged = false;
+	  }
           break;
         }
         catch (const StatusTestNaNError& e) {
@@ -1572,7 +1573,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   if (!isConverged || loaDetected_) {
     return Unconverged; // return from PseudoBlockGmresSolMgr::solve()
   }
-  this->unconvergedCause_ = Convergeb;
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from PseudoBlockGmresSolMgr::solve()
 }
 

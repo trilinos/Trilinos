@@ -371,7 +371,7 @@ int run(int argc, char *argv[]) {
             }
         }
 
-        success = ret==Belos::Converged && (unconvergedCause==Belos::Convergeb) && !badRes;
+        success = ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes;
         if (!success)
             break;
         } // for time_step

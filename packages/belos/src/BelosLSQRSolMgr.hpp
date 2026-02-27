@@ -960,7 +960,7 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
   if (! isConverged) {
     return Belos::Unconverged;
   } else {
-    this->unconvergedCause_ = Convergeb;
+    this->unconvergedCause_ = SolverConverged;
     return Belos::Converged;
   }
 }

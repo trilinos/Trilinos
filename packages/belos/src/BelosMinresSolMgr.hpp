@@ -811,7 +811,7 @@ namespace Belos {
     if (notConverged.size() > 0) {
       return Unconverged;
     } else {
-      this->unconvergedCause_ = Convergeb;
+      this->unconvergedCause_ = SolverConverged;
       return Converged;
     }
   }

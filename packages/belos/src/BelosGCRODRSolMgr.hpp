@@ -1887,7 +1887,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
   }
 
   if (isConverged) {
-    this->unconvergedCause_ = Convergeb;
+    this->unconvergedCause_ = SolverConverged;
   }
   return isConverged ? Converged : Unconverged; // return from solve()
 }

@@ -706,7 +706,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
   }
 
   if (ret == Converged) { // AquiHeidi
-    this->unconvergedCause_ = Convergeb;
+    this->unconvergedCause_ = SolverConverged;
   }
   return ret;
 }

@@ -807,7 +807,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
   if (!isConverged) {
     return Unconverged; // return from FixedPointSolMgr::solve()
   }
-  this->unconvergedCause_ = Convergeb;
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from FixedPointSolMgr::solve()
 }
 

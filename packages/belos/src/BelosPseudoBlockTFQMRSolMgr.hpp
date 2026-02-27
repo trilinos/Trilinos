@@ -889,7 +889,7 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
   if (!isConverged) {
     return Unconverged; // return from PseudoBlockTFQMRSolMgr::solve()
   }
-  this->unconvergedCause_ = Convergeb;
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from PseudoBlockTFQMRSolMgr::solve()
 }
 

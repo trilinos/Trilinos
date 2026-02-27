@@ -825,7 +825,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
   if (!isConverged ) {
     return Unconverged; // return from BiCGStabSolMgr::solve()
   }
-  this->unconvergedCause_ = Convergeb;
+  this->unconvergedCause_ = SolverConverged;
   return Converged; // return from BiCGStabSolMgr::solve()
 }
 

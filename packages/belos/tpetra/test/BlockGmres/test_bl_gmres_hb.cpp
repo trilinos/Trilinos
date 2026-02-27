@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
       if (actRes > tol) badRes = true;
     }
 
-    success = (ret==Belos::Converged && (unconvergedCause==Belos::Convergeb) && !badRes);
+    success = (ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes);
 
     if (success) {
       if (proc_verbose)
