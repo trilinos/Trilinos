@@ -8,6 +8,8 @@
 #define Tempus_PhiEvaluatorTaylor_decl_hpp
 
 #include "Tempus_PhiEvaluator.hpp"
+#include "Thyra_ProductVectorBase.hpp"
+
 
 namespace Tempus {
 
@@ -31,17 +33,19 @@ class PhiEvaluatorTaylor
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
   /// Set the parameters from a ParameterList
-  void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+  void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
   void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
   int getTaylorExpansionOrder() const { return taylorExpOrder_; }
 
   void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) override;
 
-  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> vphi,
-					int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
+  Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+					 Scalar cdt,
+					 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B) override;
 
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matrixExponential(const int expansionOrder);
+  void matrixExponential(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+			 const Teuchos::RCP<Thyra::VectorBase<Scalar>> v);
 
  private:
   mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;

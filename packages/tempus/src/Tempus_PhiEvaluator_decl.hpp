@@ -12,6 +12,7 @@
 #include "Teuchos_Describable.hpp"
 
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 
 namespace Tempus {
@@ -39,8 +40,9 @@ class PhiLinearSolver {
 
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(const Scalar dt);
   void buildK(const Thyra::Ordinal n);
-  void buildb(const Thyra::Ordinal p, const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot);
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space);
+  void buildb(const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B);
+  Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space,
+							const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0);
 
   Thyra::SolveStatus<Scalar> solveMpJ(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 				      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
@@ -64,9 +66,6 @@ class PhiLinearSolver {
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> KMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> bMatrix_;
-
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> v_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matExp_v_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> prototypeInArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
@@ -117,7 +116,7 @@ class PhiEvaluator
   Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
 
   /// Set the parameters from a ParameterList
-  void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+  virtual void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl);
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -147,18 +146,28 @@ class PhiEvaluator
   /// Set the linearization point for the Jacobian calculation
   virtual void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) = 0;
 
-  /// compute the Phi_k function of cdt times Jacobian for right hand side rhs_b
+  /** \brief  Compute the Phi_k function of cdt times Jacobian for right hand side Mrhs_b
+   *
+   *  For an implicit model, the right hand side contains the mass matrix M,
+   *  which is solved as part of this method.
+   */
   virtual Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-						int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) = 0;
+						int k, Scalar cdt,
+						const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b);
 
-  /// compute the Phi_k function of cdt times Jacobian for a linear combination with right hand side vector rhs_B
-  //virtual
-  Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-					 Scalar cdt, const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B)
-  {
-    //TODO fix implementation, make this virtual and implement accross all Evaluators
-    return computePhi(x, 1, cdt, rhs_B[0]);
-  }
+  /** \brief  Compute the Phi function of cdt times Jacobian for a linear combination with right hand side vectors Mrhs_B
+   *
+   *  For an implicit model, the right hand side contains the mass matrix M,
+   *  which is solved as part of this method.
+   *
+   *  TODO: eventually, the vector of Thyra::VectorBase<Scalar> is turned into a MultiVector.
+   *  The vector of vectors Mrhs_B can be sparse and contain Teuchos::null. Figure out the
+   *  most efficient implementation and possibly adapt this interface.
+   */
+  /// 
+  virtual Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+						 Scalar cdt,
+						 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B) = 0;
 
  protected:
   std::string name_;

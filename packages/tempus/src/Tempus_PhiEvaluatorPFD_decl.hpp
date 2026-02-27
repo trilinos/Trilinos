@@ -35,8 +35,15 @@ class PhiEvaluatorPFD
 
   void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) override;
 
-  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> vphi,
-					int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
+  /// compute the Phi_k function of cdt times Jacobian for right hand side rhs_b
+  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+					int k, Scalar cdt,
+					const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
+
+  /// compute the Phi_k function of cdt times Jacobian for a linear combination with right hand side vector rhs_B
+  Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+					 Scalar cdt,
+					 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B) override;
 
  private:
   mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;

@@ -49,8 +49,9 @@ void PhiEvaluatorLeja<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluator
 
 
 template <class Scalar>
-Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>>,
-                                         int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
+Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+								 Scalar cdt,
+								 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B)
 {
   return Thyra::SolveStatus<Scalar>();
 }
