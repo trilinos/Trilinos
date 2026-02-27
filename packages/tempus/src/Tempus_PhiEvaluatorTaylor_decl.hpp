@@ -44,8 +44,8 @@ class PhiEvaluatorTaylor
 					 Scalar cdt,
 					 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B) override;
 
-  void matrixExponential(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-			 const Teuchos::RCP<Thyra::VectorBase<Scalar>> v);
+  Thyra::SolveStatus<Scalar> matrixExponential(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+					       const Teuchos::RCP<Thyra::VectorBase<Scalar>> v);
 
  private:
   mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
