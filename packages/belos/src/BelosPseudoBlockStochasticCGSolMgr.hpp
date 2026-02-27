@@ -725,13 +725,13 @@ ReturnType PseudoBlockStochasticCGSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
-            this->unconvergedCause_ = UnknownException;
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PseudoBlockStochasticCGSolMgr::solve(): Invalid return from PseudoBlockStochasticCGIter::iterate().");
           }
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockStochasticCGIter::iterate() at iteration "
                                    << block_cg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

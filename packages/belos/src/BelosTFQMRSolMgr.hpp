@@ -721,7 +721,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
-            this->unconvergedCause_ = UnknownException;
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::TFQMRSolMgr::solve(): Invalid return from TFQMRIter::iterate().");
           }
@@ -737,7 +737,7 @@ ReturnType TFQMRSolMgr<ScalarType,MV,OP>::solve() {
           return Unconverged; 
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in TFQMRIter::iterate() at iteration "
                                    << tfqmr_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

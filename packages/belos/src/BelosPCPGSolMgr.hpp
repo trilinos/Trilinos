@@ -861,7 +861,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
           // Something is wrong, and it is probably the developers fault.
           //
           ////////////////////////////////////////////////////////////////////////////////////
-
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PCPGSolMgr::solve(): Invalid return from PCPGIter::iterate().");
           } // end if
@@ -877,7 +877,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
           return Unconverged;
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught exception in PCPGIter::iterate() at iteration "
                                    << pcpg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

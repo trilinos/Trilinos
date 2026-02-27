@@ -98,9 +98,8 @@ class SolverManager : virtual public Teuchos::Describable {
   /// This unconverged cause complements the return code 'rc' (of
   /// type ReturnType) returned by the most recent call to solve():
   /// - if rc == Converged, then unconverged cause = SolverConverged;
-  /// - if rc == Unconverged, then unconverged cause will give (an indication
-  ///   for) the cause of the failure. If there is no hint on why the
-  ///   solver failed to converge, then unconverged cause = Undetermined.
+  /// - if rc == Unconverged, then unconverged cause will give (an
+  ///   indication for) the cause of the failure.
   UnconvergedCauseType getUnconvergedCause() const
   {
     return unconvergedCause_;

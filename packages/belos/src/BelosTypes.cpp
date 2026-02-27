@@ -192,8 +192,10 @@ namespace Belos {
       return "BreakdownDetected";
     } else if (unconvergedCause == Belos::LossOfAccuracyDetected) {
       return "LossOfAccuracyDetected";
-    } else if (unconvergedCause == Belos::UnknownException) {
-      return "UnknownException";
+    } else if (unconvergedCause == Belos::NonspecificException) {
+      return "NonspecificException";
+    } else if (unconvergedCause == Belos::UnknownAndException) {
+      return "UnknownAndException";
     } else if (unconvergedCause == Belos::Undetermined) {
       return "Undetermined";
     } else {

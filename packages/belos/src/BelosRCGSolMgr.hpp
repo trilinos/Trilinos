@@ -1721,6 +1721,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
           //
           ////////////////////////////////////////////////////////////////////////////////////
           else {
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::RCGSolMgr::solve(): Invalid return from RCGIter::iterate().");
           }
@@ -1736,7 +1737,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
           return Unconverged;
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in RCGIter::iterate() at iteration "
                                    << rcg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

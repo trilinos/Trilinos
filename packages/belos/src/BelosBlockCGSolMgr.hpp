@@ -989,6 +989,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
           // This indicates a bug.
           //
           else {
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
               "Belos::BlockCGSolMgr::solve(): Neither the convergence test nor "
               "the maximum iteration count test passed.  Please report this bug "
@@ -1006,7 +1007,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
           return Unconverged;
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           std::ostream& err = printer_->stream (Errors);
           err << "Error! Caught std::exception in CGIteration::iterate() at "
               << "iteration " << block_cg_iter->getNumIters() << std::endl

@@ -891,6 +891,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PseudoBlockCGSolMgr::solve(): Invalid return from PseudoBlockCGIter::iterate().");
           }
@@ -906,7 +907,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
           return Unconverged;
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockCGIter::iterate() at iteration "
                                    << block_cg_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

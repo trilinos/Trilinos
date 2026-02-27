@@ -1507,7 +1507,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           return Unconverged; 
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration "
                                    << gcrodr_prime_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;
@@ -1788,8 +1788,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
-            TEUCHOS_TEST_FOR_EXCEPTION(
-              true, std::logic_error, "Belos::GCRODRSolMgr::solve: "
+            this->unconvergedCause_ = UnknownAndException;
+            TEUCHOS_TEST_FOR_EXCEPTION(true,
+              std::logic_error, "Belos::GCRODRSolMgr::solve: "
               "Invalid return from GCRODRIter::iterate().");
           }
         }
@@ -1802,11 +1803,11 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           if (convTest_->getStatus() != Passed) {
             this->unconvergedCause_ = OrthonormFailure;
             isConverged = false;
-	  }
+          }
           break;
         }
         catch (const std::exception& e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors)
             << "Error! Caught exception in GCRODRIter::iterate() at iteration "
             << gcrodr_iter->getNumIters() << std::endl << e.what() << std::endl;

@@ -776,7 +776,7 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
-            this->unconvergedCause_ = UnknownException;
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PseudoBlockTFQMRSolMgr::solve(): Invalid return from PseudoBlockTFQMRIter::iterate().");
           }
@@ -792,7 +792,7 @@ ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
           return Unconverged; 
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockTFQMRIter::iterate() at iteration "
                                    << block_tfqmr_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

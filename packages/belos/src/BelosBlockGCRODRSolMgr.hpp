@@ -2023,7 +2023,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
           if (convTest_->getStatus() != Passed) {
             this->unconvergedCause_ = OrthonormFailure;
             isConverged = false;
-	  }
+          }
         }
       } // end catch (const GmresIterationOrthoFailure &e)
       catch (const StatusTestNaNError& e) {
@@ -2037,7 +2037,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         return Unconverged;
       }
       catch (const std::exception &e) {
-        this->unconvergedCause_ = UnknownException;
+        this->unconvergedCause_ = NonspecificException;
         printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration "
                                  << block_gmres_iter->getNumIters() << std::endl
                                  << e.what() << std::endl;
@@ -2235,6 +2235,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         // Something is wrong, and it is probably our fault.
         // ****************************************************************
         else {
+          this->unconvergedCause_ = UnknownAndException;
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::BlockGCRODRSolMgr::solve(): Invalid return from BlockGCRODRIter::iterate().");
         } //end else (no status test passed)
 
@@ -2247,7 +2248,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         if (convTest_->getStatus() != Passed) {
           this->unconvergedCause_ = OrthonormFailure;
 	  isConverged = false;
-	}
+        }
         break;
       }  // end catch orthogonalization failure
       catch(const std::exception &e){

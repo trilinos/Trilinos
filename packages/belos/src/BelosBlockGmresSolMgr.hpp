@@ -1096,6 +1096,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
               "Belos::BlockGmresSolMgr::solve(): Invalid return from BlockGmresIter::iterate().");
           }
@@ -1109,7 +1110,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             if (convTest_->getStatus() != Passed) {
               this->unconvergedCause_ = OrthonormFailure;
               isConverged = false;
-	    }
+            }
             break;
           }
           else {
@@ -1119,9 +1120,9 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             // Check to see if the most recent least-squares solution yielded convergence.
             sTest_->checkStatus( &*block_gmres_iter );
             if (convTest_->getStatus() != Passed) {
-              this->unconvergedCause_ = OrthonormFailure;
+              this->unconvergedCause_ = OrthonormFailure; // AquiHeidi
               isConverged = false;
-	    }
+            }
             break;
           }
         }
@@ -1136,7 +1137,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           return Unconverged;
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration "
                                    << block_gmres_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

@@ -750,6 +750,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::BiCGStabSolMgr::solve(): Invalid return from BiCGStabIter::iterate().");
           }
@@ -765,7 +766,7 @@ ReturnType BiCGStabSolMgr<ScalarType,MV,OP>::solve ()
           return Unconverged; 
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in BiCGStabIter::iterate() at iteration "
                                    << bicgstab_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

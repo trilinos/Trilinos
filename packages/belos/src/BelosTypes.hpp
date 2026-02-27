@@ -130,9 +130,8 @@ namespace Belos {
   /// This unconverged cause complements the return code 'rc' (of
   /// type ReturnType) returned by the most recent call to solve():
   /// - if rc == Converged, then unconverged cause = SolverConverged;
-  /// - if rc == Unconverged, then unconverged cause will give (an indication
-  ///   for) the cause of the failure. If there is no hint on why the
-  ///   solver failed to converge, then unconverged cause = Undetermined.
+  /// - if rc == Unconverged, then unconverged cause will give (an
+  ///   indication for) the cause of the failure.
   enum UnconvergedCauseType {
     SolverConverged,        /*!< Most recent solve() returned 'Converged'. */
     MaxItersReached,        /*!< Most recent solve() returned 'Unconverged' because the maximum number of iterations was reached. */
@@ -141,8 +140,9 @@ namespace Belos {
     NaNDetected,            /*!< Most recent solve() returned 'Unconverged' because a NaN was detected. */
     BreakdownDetected,      /*!< Most recent solve() returned 'Unconverged' because a breakdown was detected. */
     LossOfAccuracyDetected, /*!< Most recent solve() returned 'Unconverged' because loss of accuracty was detected. */
-    UnknownException,       /*!< Most recent solve() returned 'Unconverged' because of an exception, but there is no extra information. */
-    Undetermined,           /*!< Most recent solve() returned 'Unconverged', but there is no hint on why. */
+    NonspecificException,   /*!< Most recent solve() returned 'Unconverged' because it caught a nonspecific exception. */
+    UnknownAndException,    /*!< Most recent solve() returned 'Unconverged': the code detected the situation, but could not explain why, thus throwing an exception. */
+    Undetermined            /*!< Most recent solve() returned 'Unconverged', but without setting the cause (upon entrance, solve() always initializes cause to 'Undetermined'). */
   };
 
   //! Convert the given \c ReturnType enum value to its corresponding string.

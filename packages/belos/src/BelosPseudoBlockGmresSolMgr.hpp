@@ -1430,6 +1430,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                 "Belos::PseudoBlockGmresSolMgr::solve(): Invalid return from PseudoBlockGmresIter::iterate().");
           }
@@ -1442,7 +1443,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           // Check to see if the most recent least-squares solution yielded convergence.
           sTest_->checkStatus( &*block_gmres_iter );
           if (convTest_->getStatus() != Passed) {
-            this->unconvergedCause_ = UnknownException;
+            this->unconvergedCause_ = NonspecificException;
             isConverged = false;
 	  }
           break;
@@ -1458,7 +1459,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           return Unconverged;
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockGmresIter::iterate() at iteration "
                                    << block_gmres_iter->getNumIters() << std::endl
                                    << e.what() << std::endl;

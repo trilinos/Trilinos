@@ -719,14 +719,14 @@ namespace Belos {
           }
           // Now check for max # of iterations
           else if (maxIterTest_->getStatus() == Passed) {
-            this->unconvergedCause_ = MaxItersReached; // AquiHeidi
+            this->unconvergedCause_ = MaxItersReached;
             dbg << "---- Did not converge after " << maxIterTest_->getNumIters()
                 << " iterations" << endl;
             // This right-hand side didn't converge!
             notConverged.push_back (currentRHS);
             break;
           } else {
-            this->unconvergedCause_ = UnknownException;
+            this->unconvergedCause_ = UnknownAndException;
             // If we get here, we returned from iterate(), but none of
             // our status tests Passed.  Something is wrong, and it is
             // probably our fault.
@@ -747,7 +747,7 @@ namespace Belos {
           return Unconverged; 
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           printer_->stream (Errors)
             << "Error! Caught std::exception in MinresIter::iterate() at "
             << "iteration " << minres_iter->getNumIters() << endl

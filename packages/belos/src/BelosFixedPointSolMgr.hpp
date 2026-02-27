@@ -709,6 +709,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
           // This indicates a bug.
           //
           else {
+            this->unconvergedCause_ = UnknownAndException;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
               "Belos::FixedPointSolMgr::solve(): Neither the convergence test nor "
               "the maximum iteration count test passed.  Please report this bug "
@@ -726,7 +727,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
           return Unconverged;
         }
         catch (const std::exception &e) {
-          this->unconvergedCause_ = UnknownException;
+          this->unconvergedCause_ = NonspecificException;
           std::ostream& err = printer_->stream (Errors);
           err << "Error! Caught std::exception in FixedPointIteration::iterate() at "
               << "iteration " << block_fp_iter->getNumIters() << std::endl

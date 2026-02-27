@@ -920,15 +920,15 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
       this->unconvergedCause_ = MaxItersReached;
       isConverged = false;
     } else {
-      this->unconvergedCause_ = UnknownException;
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::logic_error, "Belos::LSQRSolMgr::solve: "
+      this->unconvergedCause_ = UnknownAndException;
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
+         std::logic_error, "Belos::LSQRSolMgr::solve: "
          "LSQRIteration::iterate returned without either the convergence test "
          "or the maximum iteration count test passing.  "
          "Please report this bug to the Belos developers.");
     }
   } catch (const std::exception& e) {
-    this->unconvergedCause_ = UnknownException;
+    this->unconvergedCause_ = NonspecificException;
     printer_->stream(Belos::Errors)
       << "Error! Caught std::exception in LSQRIter::iterate at iteration "
       << lsqr_iter->getNumIters () << std::endl << e.what () << std::endl;
