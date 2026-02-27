@@ -183,6 +183,22 @@ void PhiEvaluator<Scalar>::setLumpMassMatrix(bool lumpMassMatrix)
   }
 }
 
+template<class Scalar>
+Thyra::SolveStatus<Scalar>
+PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+				 int k, Scalar cdt,
+				 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    k < 0, std::logic_error,
+    "Error - PhiEvaluator::computePhi() k must be non-negative!\n");
+
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(k+1);
+  rhs_B[k] = rhs_b;
+
+  return computePhis(x, cdt, rhs_B);
+}
+
 
 /*
  * PhiLinearSolver methods
@@ -319,7 +335,7 @@ void PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal p)
   TEUCHOS_TEST_FOR_EXCEPTION(
       p < 1,
       std::invalid_argument,
-      "buildb: p must be positive.");
+      "buildK: p must be positive.");
 
   // Space of dimension p
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V =
@@ -344,15 +360,14 @@ void PhiLinearSolver<Scalar>::buildK(const Thyra::Ordinal p)
 }
 
 template <class Scalar>
-void PhiLinearSolver<Scalar>::buildb(const Thyra::Ordinal p,
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar>>& xDot)
+void PhiLinearSolver<Scalar>::buildb(const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B)
 {
-  //TODO: replace xDot with a list of rhs
+  int p = rhs_B.size() - 1;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
       p < 1,
       std::invalid_argument,
-      "buildb:  p must be positive.");
+      "buildb: list of rhs must have at least two entries.");
 
   // N-dimensional space: use A's range (rows of an NxN operator)
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> V_N = inverseMassMatrix_->range();
@@ -365,44 +380,63 @@ void PhiLinearSolver<Scalar>::buildb(const Thyra::Ordinal p,
   // Initialize to zero
   Thyra::assign(b_Np.ptr(), Scalar(0));
 
-  // Fill the last column with xDot (Frhs)
+  // Fill the columns with rhs_B vectors in reverse order, excluding the first entry
   // TODO: This needs to be updated for higher order support
-  auto col1 = b_Np->col(p-1);
-  Thyra::assign(col1.ptr(), *xDot);
-
+  for (int k = 0; k < p; k++)
+  {
+    if (rhs_B[p-k] != Teuchos::null)
+    {
+      auto col = b_Np->col(k);
+      Thyra::assign(col.ptr(), *rhs_B[p-k]);
+    }
+  }
   // Store b
   bMatrix_ = b_Np;
 }
 
 template <class Scalar>
-Teuchos::RCP<Thyra::VectorBase<Scalar>> PhiLinearSolver<Scalar>::buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space)
+Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> PhiLinearSolver<Scalar>::buildv(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar>> space, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> x0)
 {
-  // v must be in the domain of Atilde_
-  const Thyra::Ordinal dim = space->dim();
-
   // Create v and initialize to zero
-  v_ = Thyra::createMember(space);
-  Thyra::assign(v_.ptr(), Scalar(0));
+  Teuchos::RCP<Thyra::ProductVectorBase<Scalar>> v =
+    Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar>>(Thyra::createMember(space));
+
+  // TODO: should the argument be a Thyra::ProductVectorSpace<Scalar>> instead of dynamic cast?
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> v0 = v->getNonconstVectorBlock(0);  // V block
+  if (x0 != Teuchos::null)
+  {
+    Thyra::copy(*x0, v0.ptr());
+  }
+  else
+  {
+    Thyra::assign(v0.ptr(), Scalar(0.));
+  }
+
+  Teuchos::RCP<Thyra::VectorBase<Scalar>> v1 = v->getNonconstVectorBlock(1);  // W block
+  Thyra::assign(v1.ptr(), Scalar(0.));
 
   // Get the last index
-  const Thyra::Ordinal g_last = dim - 1;
+  const Thyra::Ordinal p = v1->space()->dim();
+  const Thyra::Ordinal g_last = p - 1;
 
-  // If this is an distributed space, set only on the owning rank
+  // TODO: can this small dim x dim vector be distributed? It should live on every rank.
+  // If this is a distributed space, set only on the owning rank
   if (auto spmdSpace = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar>>(space))
   {
     const Thyra::Ordinal localOffset = spmdSpace->localOffset();
     const Thyra::Ordinal localSubDim = spmdSpace->localSubDim();
 
     if (g_last >= localOffset && g_last < localOffset + localSubDim)
-      Thyra::set_ele(g_last, Scalar(1), v_.ptr());
+      Thyra::set_ele(g_last, Scalar(1), v1.ptr());
   }
   else
   {
     // Fallback for non-SPMD spaces
-    Thyra::set_ele(g_last, Scalar(1), v_.ptr());
+    Thyra::set_ele(g_last, Scalar(1), v1.ptr());
   }
 
-  return v_;
+  return v;
 }
 
 template <class Scalar>

@@ -53,10 +53,15 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
 							       int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
 {
   // TODO: right now, hard-codes 'CN' method and k == 1. Generalize.
-  
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      k != 1,
+      std::invalid_argument,
+      "PhiEvaluatorPFD<Scalar>::computePhi is only implemented for k=1");
+
   const Scalar alpha = Scalar(1.0);
   const Scalar beta  = Scalar(0.5) * cdt;
-  
+
   Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(*inArgs_lin_, phiv, rhs_b, alpha, beta);
 
   //TODO: make this configurable
@@ -81,6 +86,21 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
 }
 
 template <class Scalar>
+Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+								Scalar cdt,
+								const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B)
+{
+  bool not_phi1 = (rhs_B.size() != 2) || (rhs_B[0] != Teuchos::null);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      not_phi1,
+      std::invalid_argument,
+      "PhiEvaluatorPFD<Scalar>::computePhis is only implemented for k=1");
+
+  return this->computePhi(x, 1, cdt, rhs_B[1]);
+}
+
+template <class Scalar>
 void PhiEvaluatorPFD<Scalar>::setPhiEvaluatorValues(
     Teuchos::RCP<Teuchos::ParameterList> pl)
 {
@@ -101,18 +121,19 @@ void PhiEvaluatorPFD<Scalar>::setPhiEvaluatorValues(
   {
     Teuchos::RCP<Teuchos::FancyOStream> l_out = this->getOStream();
     l_out->setOutputToRootOnly(0);
-    *l_out << "Option: 'Lump Mass Matrix' is not supported for PDF Solvers, continuing with full matrix.\n";
+    *l_out << "Option: 'Lump Mass Matrix' is not supported for PFD Solvers, continuing with full matrix.\n";
+    this->setLumpMassMatrix(false);
   }
 
   std::cout << "\nParameter List: " << *pl << std::endl;
 }
 
-  
+
 // Nonmember constructors.
 // ------------------------------------------------------------------------
 
 template <class Scalar>
-Teuchos::RCP<PhiEvaluatorPFD<Scalar> > createPhiEvaluatorPFD(
+Teuchos::RCP<PhiEvaluatorPFD<Scalar>> createPhiEvaluatorPFD(
     Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto phi = rcp(new PhiEvaluatorPFD<Scalar>());
