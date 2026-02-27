@@ -34,8 +34,10 @@ class PhiEvaluatorLeja
   /// Set the linearization point for the Jacobian calculation
   void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) override;
   
-  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>>,
-					int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
+  /// compute the Phi_k function of cdt times Jacobian for a linear combination with right hand side vector rhs_B
+  Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+					 Scalar cdt,
+					 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B) override;
   
   //protected:
 };

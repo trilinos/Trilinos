@@ -48,18 +48,38 @@ void PhiEvaluatorTaylor<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluat
 }
 
 template <class Scalar>
-Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> phiv,
-								  int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b)
+Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+								   Scalar cdt,
+								   const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B)
 {
-  // phi->setLumpMassMatrix(useLumpedMass_);
+  int p = Mrhs_B.size() - 1;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      p < 1,
+      std::invalid_argument,
+      "computePhis: list of rhs must have at least two entries.");
+  // TODO: Support p = 0? It can be done by calling computePhi with k=0, but that requires a dedicated impl.
+
   this->phiLinSolv_->setLumpMassMatrix(this->lumpMassMatrix_);
   this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
   this->phiLinSolv_->computeJacobian(*inArgs_lin_);
-  this->phiLinSolv_->buildK(k);
 
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> rhs_b = Mrhs_b->clone_v();
-  Thyra::assign(rhs_b.ptr(),0.0);
-  this->phiLinSolv_->solveMass(rhs_b.ptr(), Mrhs_b);
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(p+1);
+
+  // Invert the mass matrix out of the right hand sides
+  // TODO: This might be more efficient to do on the combined MultiVector that will be assembled in buildb
+  //       However, if Mrhs_B is sparse, it may not.
+  for (int ii = 0; ii < p+1; ii++)
+  {
+    if (Mrhs_B[ii] != Teuchos::null)
+    {
+      auto Mrhs_b = Mrhs_B[ii];
+      Teuchos::RCP<Thyra::VectorBase<Scalar>> rhs_b = Mrhs_b->clone_v();
+      Thyra::assign(rhs_b.ptr(), 0.0);
+      this->phiLinSolv_->solveMass(rhs_b.ptr(), Mrhs_b);
+      rhs_B[ii] = rhs_b;
+    }
+  }
 
   // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   // rhs_b->describe(*out, Teuchos::VERB_EXTREME);
@@ -75,15 +95,22 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos:
   //              << Thyra::get_ele(*Mrhs_b, i) << std::endl;
   // }
 
-  this->phiLinSolv_->buildb(k, rhs_b);
+  // Build extended matrix
+  this->phiLinSolv_->buildK(p);
+  this->phiLinSolv_->buildb(rhs_B);
   Atilde_ = this->phiLinSolv_->buildATilde(cdt);
-  v_ = this->phiLinSolv_->buildv(Atilde_->domain());
-  auto vec = this->matrixExponential(taylorExpOrder_);
+
+  // Build initial vector and compute matrix exponential in place
+  auto v = this->phiLinSolv_->buildv(Atilde_->domain(), rhs_B[0]);
+  this->matrixExponential(Atilde_, v);
+
+  //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  //Atilde_->describe(*out, Teuchos::VERB_EXTREME);
+  //Atilde_->domain()->describe(*out, Teuchos::VERB_EXTREME);
 
   // Get the first block of the multi-vector calculated from 2x2 multi-matrix
-  auto pv = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar>>(vec, true);
-  auto v0 = pv->getVectorBlock(0);  // V block
-  Thyra::copy(*v0, phiv.ptr());
+  auto v0 = v->getVectorBlock(0);  // V block
+  Thyra::copy(*v0, x.ptr());
 
   Thyra::SolveStatus<Scalar> sStatus;
   sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
@@ -91,28 +118,26 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhi(const Teuchos:
 }
 
 template <class Scalar>
-Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluatorTaylor<Scalar>::matrixExponential(const int expansionOrder)
+void PhiEvaluatorTaylor<Scalar>::matrixExponential(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+						   const Teuchos::RCP<Thyra::VectorBase<Scalar>> v)
 {
+  const int expansionOrder = getTaylorExpansionOrder();
+
   TEUCHOS_TEST_FOR_EXCEPTION(
       expansionOrder < 0,
       std::invalid_argument,
       "matrixExponential: expansionOrder must be nonnegative");
 
-  // exp(A) * v is in range(A)
-  const auto rangeSpace = Atilde_->range();
-
-  // Create tmp vector to hold result
-  auto matExpTemp = Thyra::createMember(rangeSpace);
-
-  Thyra::assign(matExpTemp.ptr(), Scalar(0));
+  // exp(L) * v is in range(L)
+  const auto rangeSpace = L->range();
 
   // Iteration vector d_0 = v
   Teuchos::RCP<Thyra::VectorBase<Scalar>> d_k = Thyra::createMember(rangeSpace);
-  Thyra::assign(d_k.ptr(), *v_);
+  Thyra::assign(d_k.ptr(), *v);
 
-  // matExpTemp += d_0 / 0!
-  Thyra::Vp_V(matExpTemp.ptr(), *d_k);
+  // v = d_0 / 0! = d_0
 
+  // allocate temporary vector
   Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
   Scalar norm_d_k;
   Scalar overflow = 0.;
@@ -128,30 +153,26 @@ Teuchos::RCP<const Thyra::VectorBase<Scalar>> PhiEvaluatorTaylor<Scalar>::matrix
     Thyra::V_StV(d_k.ptr(), Scalar(1.) / Scalar(k), *next);
 
     // add d_k to the final result
-    Thyra::Vp_V(matExpTemp.ptr(), *d_k);
+    Thyra::Vp_V(v.ptr(), *d_k);
 
     norm_d_k = Thyra::norm_inf(*d_k);
 
-    // overflow is an upper bound on Thyra::norm_inf(*matExpTemp);
+    // overflow is an upper bound on Thyra::norm_inf(*v);
     // it tracks how large the update matExpTemp could have gotten in intermediate iterations
     // any number larger than overflow * machine_eps should not be affected much by roundoff
     overflow += norm_d_k;
-      
-    //std::cout << "Norm in it " << k << " of: solution=" << Thyra::norm_inf(*matExpTemp)
+
+    //std::cout << "Norm in it " << k << " of: solution=" << Thyra::norm_inf(*v)
     //	      << " overflow=" << overflow << " update=" << norm_d_k << std::endl;
 
     // terminate if the update drops below likely significance
     if (norm_d_k < 1e-21 * overflow)
       break;
   }
-  std::cout << "Taylor: Norm in it " << k << " of: solution=" << Thyra::norm_inf(*matExpTemp)
+  std::cout << "Taylor: Norm in it " << k << " of: solution=" << Thyra::norm_inf(*v)
 	    << " overflow=" << overflow << " update=" << norm_d_k << std::endl;
 
   //TODO return overflow * 1e-17 as an error estimate.
-
-  matExp_v_ = matExpTemp; // This is required to wrap multivector as linearop
-
-  return matExp_v_;
 }
 
 template <class Scalar>
@@ -178,7 +199,7 @@ Teuchos::RCP<PhiEvaluatorTaylor<Scalar>> createPhiEvaluatorTaylor(
 {
   Teuchos::RCP<PhiEvaluatorTaylor<Scalar>> phi = Teuchos::rcp(new PhiEvaluatorTaylor<Scalar>());
   phi->setName("From createPhiEvaluatorTaylor");
-  
+
   if (pl != Teuchos::null)
     phi->setPhiEvaluatorValues(pl);
 

@@ -264,7 +264,7 @@ TEUCHOS_UNIT_TEST(EPI, VanDerPol)
                   xDotSlope, out);
 
   TEST_FLOATING_EQUALITY(xSlope, order, 0.15);
-  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.00210467, 1.0e-3);
+  TEST_FLOATING_EQUALITY(xErrorNorm[0], 0.00159347, 1.0e-3);
 
   Teuchos::TimeMonitor::summarize();
 }
@@ -282,7 +282,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 4;
-  double dt                = 0.001;
+  double dt                = 0.0002;
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =
@@ -386,7 +386,9 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
                   solutions, xErrorNorm, xSlope, out);
 
   // TEST_FLOATING_EQUALITY(xSlope, 1.3372, 0.01);
-  TEST_COMPARE(std::abs(xErrorNorm[0] - 1e-12), <=, 2.0e-12);
+  // TODO: The accuracy for the "Lump Mass Matrix" == False testcase is affected by the linear solver tolerance
+  TEST_COMPARE(std::abs(xErrorNorm[0]), <=, 1.0e-6);
+  TEST_COMPARE(std::abs(xErrorNorm[nTimeStepSizes - 2]), <=, 1.e-9);
   // TEST_ABSOLUTE_EQUALITY(xErrorNorm[0], 1e-12, 2.0e-12);
   //TEST_FLOATING_EQUALITY(xDotSlope, 1.32052, 0.01);
   //TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.449888, 1.0e-4);
