@@ -48,9 +48,10 @@ void PhiEvaluatorTaylor<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluat
 }
 
 template <class Scalar>
-Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-								   Scalar cdt,
-								   const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B)
+Thyra::SolveStatus<Scalar>
+PhiEvaluatorTaylor<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+					Scalar cdt,
+					const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B)
 {
   int p = Mrhs_B.size() - 1;
 
@@ -102,7 +103,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhis(const Teuchos
 
   // Build initial vector and compute matrix exponential in place
   auto v = this->phiLinSolv_->buildv(Atilde_->domain(), rhs_B[0]);
-  this->matrixExponential(Atilde_, v);
+  Thyra::SolveStatus<Scalar> sStatus = this->matrixExponential(Atilde_, v);
 
   //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   //Atilde_->describe(*out, Teuchos::VERB_EXTREME);
@@ -112,14 +113,13 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorTaylor<Scalar>::computePhis(const Teuchos
   auto v0 = v->getVectorBlock(0);  // V block
   Thyra::copy(*v0, x.ptr());
 
-  Thyra::SolveStatus<Scalar> sStatus;
-  sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
   return sStatus;
 }
 
 template <class Scalar>
-void PhiEvaluatorTaylor<Scalar>::matrixExponential(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-						   const Teuchos::RCP<Thyra::VectorBase<Scalar>> v)
+Thyra::SolveStatus<Scalar>
+PhiEvaluatorTaylor<Scalar>::matrixExponential(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+					      const Teuchos::RCP<Thyra::VectorBase<Scalar>> v)
 {
   const int expansionOrder = getTaylorExpansionOrder();
 
@@ -139,6 +139,8 @@ void PhiEvaluatorTaylor<Scalar>::matrixExponential(const Teuchos::RCP<const Thyr
 
   // allocate temporary vector
   Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
+
+  Thyra::SolveStatus<Scalar> sStatus;
   Scalar norm_d_k;
   Scalar overflow = 0.;
   int k;
@@ -162,17 +164,43 @@ void PhiEvaluatorTaylor<Scalar>::matrixExponential(const Teuchos::RCP<const Thyr
     // any number larger than overflow * machine_eps should not be affected much by roundoff
     overflow += norm_d_k;
 
-    //std::cout << "Norm in it " << k << " of: solution=" << Thyra::norm_inf(*v)
-    //	      << " overflow=" << overflow << " update=" << norm_d_k << std::endl;
+    // TODO: refine this and make dependent on Scalar type
+    const Scalar cutoff = 1e22;
+    if (overflow > cutoff)
+    {
+      sStatus.achievedTol = norm_d_k;
+      sStatus.solveStatus = Thyra::SOLVE_STATUS_UNCONVERGED;
+      break;
+    }
 
     // terminate if the update drops below likely significance
-    if (norm_d_k < 1e-21 * overflow)
+    if (norm_d_k < overflow / cutoff)
+    {
+      sStatus.achievedTol = norm_d_k;
+      sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
       break;
-  }
-  std::cout << "Taylor: Norm in it " << k << " of: solution=" << Thyra::norm_inf(*v)
-	    << " overflow=" << overflow << " update=" << norm_d_k << std::endl;
+    }
 
-  //TODO return overflow * 1e-17 as an error estimate.
+    // set status if expansionOrder has been reached
+    if (k == expansionOrder)
+    {
+      sStatus.achievedTol = norm_d_k;
+      //sStatus.solveStatus = Thyra::SOLVE_STATUS_UNKNOWN;
+      sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
+      break;
+    }
+  }
+
+  std::stringstream ss;
+  ss << "Taylor: Norm of solution=" << Thyra::norm_inf(*v)
+     << " overflow=" << overflow
+     << " final update=" << norm_d_k
+     << " achieved in it. " << k << ".";
+  sStatus.message = ss.str();
+
+  std::cout << sStatus.message << std::endl;
+
+  return sStatus;
 }
 
 template <class Scalar>
