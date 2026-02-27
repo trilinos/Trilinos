@@ -2231,7 +2231,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
                                                                                                                     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
                                                                                                                     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> /* Cimport */,
                                                                                                                     const std::string& label,
-                                                                                                                    const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                                                                                                    const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -2858,7 +2858,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
                                                                                                                        CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
                                                                                                                        Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> /* Cimport */,
                                                                                                                        const std::string& label,
-                                                                                                                       const Teuchos::RCP<Teuchos::ParameterList>& params) {
+                                                                                                                       const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
   Tpetra::Details::ProfilingRegion MM2("TpetraExt: Jacobi: Reuse Serial Core");
   (void)label;
 
