@@ -2517,7 +2517,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, cancellation_zero_entry_test, S
 
     const auto eps = 1e2 * Teuchos::ScalarTraits<SC>::eps();
 
-    TEST_ASSERT(LinfErr < eps);
+    TEST_ASSERT(relLinfErr < eps);
   };
 
   confirm_triple_product_equality();
