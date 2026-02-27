@@ -820,6 +820,7 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  std::cout << "Entering LSQRSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.  NOTE:

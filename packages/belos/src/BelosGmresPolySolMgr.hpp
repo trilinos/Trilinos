@@ -604,6 +604,7 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
   using Teuchos::rcp_const_cast;
 
   // Assume convergence is achieved if user does not require strict convergence.
+  std::cout << "Entering GmresPolySolMgr::solve()" << std::endl;
   ReturnType ret = Belos::Converged;
   this->unconvergedCause_ = Undetermined;
 

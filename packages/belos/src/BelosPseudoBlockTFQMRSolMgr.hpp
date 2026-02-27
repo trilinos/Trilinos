@@ -604,6 +604,7 @@ PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::getValidParameters() const
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PseudoBlockTFQMRSolMgr<ScalarType,MV,OP>::solve() {
+  std::cout << "Entering PseudoBlockTFQMRGSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.

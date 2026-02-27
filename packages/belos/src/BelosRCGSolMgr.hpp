@@ -1025,6 +1025,7 @@ void RCGSolMgr<ScalarType,MV,OP,true>::initializeStateStorage() {
 
 template<class ScalarType, class MV, class OP>
 ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
+  std::cout << "Entering RCGSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   Teuchos::LAPACK<int,ScalarType> lapack;

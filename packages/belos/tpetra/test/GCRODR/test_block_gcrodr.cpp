@@ -144,7 +144,7 @@ int run (int argc, char *argv[])
 
   *verbOut << "Result of solve"
            << ": rc = " << Belos::convertReturnTypeToString (result)
-           << ": unconvergedCause = " << Belos::convertUnconvergedCauseToString (unconvergedCause)
+           << ": unconvergedCause = " << Belos::convertUnconvergedCauseTypeToString (unconvergedCause)
            << std::endl;
 
   // Make sure that all the processes finished.

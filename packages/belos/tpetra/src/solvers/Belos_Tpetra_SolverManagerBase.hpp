@@ -146,6 +146,7 @@ public:
     using Teuchos::RCP;
     const char prefix[] = "SolverManagerBase::solve: ";
 
+    std::cout << "Entering SolverManagerBase::solve() in Trilinos/packages/belos/tpetra/src/solvers/Belos_Tpetra_SolverManagerBase.hpp" << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION
       (this->solver_.get () == nullptr, std::logic_error,
        prefix << ErrMsgs::solverNull);
@@ -165,6 +166,12 @@ public:
        "a nonnull argument before calling this method.");
 
     lastSolverOutput_ = solver_->solve (*X, *B);
+    if (lastSolverOutput_.converged) {
+      this->unconvergedCause_ = Belos::SolverConverged;
+    }
+    else {
+      this->unconvergedCause_ = Belos::Undetermined; // solver_->getUnconvergedCause() // AquiHeidi
+    }
     return lastSolverOutput_.converged ? Belos::Converged : Belos::Unconverged;
   }
 

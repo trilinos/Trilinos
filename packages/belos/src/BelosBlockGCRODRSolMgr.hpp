@@ -1770,6 +1770,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
 
+  std::cout << "Entering BlockGCRODRSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // MLP: NEED TO ADD CHECK IF PARAMETERS ARE SET LATER

@@ -557,6 +557,7 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
 
+  std::cout << "Entering FixedPointSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.  NOTE:

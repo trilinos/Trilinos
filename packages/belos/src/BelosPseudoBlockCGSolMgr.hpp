@@ -716,6 +716,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 {
   const char prefix[] = "Belos::PseudoBlockCGSolMgr::solve: ";
 
+  std::cout << "Entering PseudoBlockCGSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.

@@ -1159,6 +1159,7 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
+  std::cout << "Entering PseudoBlockGmresSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.

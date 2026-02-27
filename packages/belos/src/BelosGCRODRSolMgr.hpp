@@ -1309,6 +1309,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  std::cout << "Entering GCRODRSolMgr::solve()" << std::endl;
   this->unconvergedCause_ = Undetermined;
 
   // Set the current parameters if they were not set before.
