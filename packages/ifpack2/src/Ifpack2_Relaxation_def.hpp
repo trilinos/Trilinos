@@ -693,14 +693,16 @@ void Relaxation<MatrixType>::initialize() {
       IsParallel_ = !comm.is_null() && comm->getSize() > 1;
     }
 
-    // mfh 21 Mar 2013, 07 May 2019: The Import object may be null,
-    // but in that case, the domain and column Maps are the same and
-    // we don't need to Import anyway.
-    //
-    // mfh 07 May 2019: A_->getGraph() might be an
-    // OverlappingRowGraph, which doesn't have an Import object.
-    // However, in that case, the comm should have size 1.
-    Importer_ = IsParallel_ ? A_->getGraph()->getImporter() : Teuchos::null;
+    if (PrecType_ == Ifpack2::Details::GS || PrecType_ == Ifpack2::Details::SGS) {
+      // mfh 21 Mar 2013, 07 May 2019: The Import object may be null,
+      // but in that case, the domain and column Maps are the same and
+      // we don't need to Import anyway.
+      //
+      // mfh 07 May 2019: A_->getGraph() might be an
+      // OverlappingRowGraph, which doesn't have an Import object.
+      // However, in that case, the comm should have size 1.
+      Importer_ = IsParallel_ ? A_->getGraph()->getImporter() : Teuchos::null;
+    }
 
     {
       Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
