@@ -181,7 +181,8 @@ testResiduals (bool& success,
                const Tpetra::MultiVector<>& B,
                const Tpetra::MultiVector<>& X_exact,
                const MT& tol,
-               const Belos::ReturnType& ret)
+               const Belos::ReturnType& ret,
+               const Belos::UnconvergedCauseType& unconvergedCause)
 {
   const size_t numRhs = X.getNumVectors ();
 
@@ -229,11 +230,11 @@ testResiduals (bool& success,
     out << "]" << endl;
   }
 
-  if (ret != Belos::Converged || badRes) {
+  if (ret == Belos::Converged && (unconvergedCause == Belos::SolverConverged) && !badRes) {
+    out << "Belos converged!" << endl;
+  } else {
     success = false;
     out << "Belos did NOT converge!" << endl;
-  } else {
-    out << "Belos converged!" << endl;
   }
 }
 
@@ -299,9 +300,10 @@ TEUCHOS_UNIT_TEST( MultipleSolves, GMRES )
 
   // Ask Belos to solve the linear system.
   Belos::ReturnType ret = solver->solve ();
+  Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause();
 
   // Evaluate the result.
-  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret);
+  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret, unconvergedCause);
 
   //
   // Second solve: Exact solution is all 1.5.  We pick this because
@@ -323,9 +325,10 @@ TEUCHOS_UNIT_TEST( MultipleSolves, GMRES )
 
   // Ask Belos to solve the linear system.
   ret = solver->solve ();
+  unconvergedCause = solver->getUnconvergedCause();
 
   // Evaluate the result.
-  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret);
+  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret, unconvergedCause);
 }
 
 
@@ -390,9 +393,10 @@ TEUCHOS_UNIT_TEST( MultipleSolves, CG )
 
   // Ask Belos to solve the linear system.
   Belos::ReturnType ret = solver->solve ();
+  Belos::UnconvergedCauseType unconvergedCause = solver->getUnconvergedCause();
 
   // Evaluate the result.
-  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret);
+  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret, unconvergedCause);
 
   //
   // Second solve: Exact solution is all 1.5.  We pick this because
@@ -414,9 +418,10 @@ TEUCHOS_UNIT_TEST( MultipleSolves, CG )
 
   // Ask Belos to solve the linear system.
   ret = solver->solve ();
+  unconvergedCause = solver->getUnconvergedCause();
 
   // Evaluate the result.
-  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret);
+  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret, unconvergedCause);
 }
 
 } // namespace (anonymous)

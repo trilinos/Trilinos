@@ -265,6 +265,7 @@ int run(int argc, char *argv[]) {
 
     // Perform solve
     Belos::ReturnType ret = newSolver->solve();
+    Belos::UnconvergedCauseType unconvergedCause = newSolver->getUnconvergedCause();
 
     std::vector<ST> solNorm(numRHS);  // get solution norm
     MVT::MvNorm(*X, solNorm);
@@ -304,14 +305,14 @@ int run(int argc, char *argv[]) {
       }
     }
 
-    if (ret != Belos::Converged || badRes) {
-      success = false;
-      if (procVerbose)
-        std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
-    } else {
+    if (ret==Belos::Converged && (unconvergedCause==Belos::SolverConverged) && !badRes) {
       success = true;
       if (procVerbose)
         std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+    } else {
+      success = false;
+      if (procVerbose)
+        std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
     }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);

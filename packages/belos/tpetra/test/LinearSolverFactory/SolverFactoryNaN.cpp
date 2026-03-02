@@ -295,7 +295,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT
   //
   // Teuchos::Array<std::string> solverNames = factory.supportedSolverNames ();
   // const int numSolvers = static_cast<int> (solverNames.size ());
-  const char* solverNames[10] = { // AquiHeidi
+  const char* solverNames[10] = {
     "BICGSTAB",
     "BLOCK CG",
     "BLOCK GMRES",

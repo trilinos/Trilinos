@@ -141,6 +141,7 @@ int run (int argc, char *argv[])
   *verbOut << "Solving linear system" << std::endl;
   Belos::ReturnType result = solver.solve ();
   Belos::UnconvergedCauseType unconvergedCause = solver.getUnconvergedCause ();
+  success = (result == Belos::Converged && (uncovergedCause == Belos::SolverConverged));
 
   *verbOut << "Result of solve"
            << ": rc = " << Belos::convertReturnTypeToString (result)
