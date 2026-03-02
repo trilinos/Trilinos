@@ -39,6 +39,7 @@
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 #include <MueLu_ML2MueLuParameterTranslator.hpp>
 #include <MueLu_RefMaxwellSmoother.hpp>
+#include <MueLu_Behavior.hpp>
 
 #ifdef HAVE_MUELU_CUDA
 #include "cuda_profiler_api.h"
@@ -677,32 +678,34 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
 
   describe(GetOStream(Runtime0));
 
-  for (int i = 1; i < Hierarchy11_->GetNumLevels(); i++) {
-    auto EdgeL      = Hierarchy11_->GetLevel(i);
-    auto EdgeL_fine = Hierarchy11_->GetLevel(i - 1);
-    auto NodeL      = Hierarchy22_->GetLevel(i);
+  if (Behavior::debug()) {
+    for (int i = 1; i < Hierarchy11_->GetNumLevels(); i++) {
+      auto EdgeL      = Hierarchy11_->GetLevel(i);
+      auto EdgeL_fine = Hierarchy11_->GetLevel(i - 1);
+      auto NodeL      = Hierarchy22_->GetLevel(i);
 
-    auto Pe   = EdgeL->template Get<RCP<Matrix>>("P");
-    auto Pn   = NodeL->template Get<RCP<Matrix>>("P");
-    auto D0_f = EdgeL_fine->template Get<RCP<Matrix>>("D0");
-    auto D0_c = EdgeL->template Get<RCP<Matrix>>("D0");
+      auto Pe   = EdgeL->template Get<RCP<Matrix>>("P");
+      auto Pn   = NodeL->template Get<RCP<Matrix>>("P");
+      auto D0_f = EdgeL_fine->template Get<RCP<Matrix>>("D0");
+      auto D0_c = EdgeL->template Get<RCP<Matrix>>("D0");
 
-    if (!Pe.is_null() && !D0_c.is_null() && (Pe->getRowMap()->getComm()->getSize() == D0_c->getRowMap()->getComm()->getSize())) {
-      using XMM = Xpetra::MatrixMatrix<SC, LO, GO, NO>;
-      auto one  = Teuchos::ScalarTraits<SC>::one();
+      if (!Pe.is_null() && !D0_c.is_null() && (Pe->getRowMap()->getComm()->getSize() == D0_c->getRowMap()->getComm()->getSize())) {
+        using XMM = Xpetra::MatrixMatrix<SC, LO, GO, NO>;
+        auto one  = Teuchos::ScalarTraits<SC>::one();
 
-      RCP<Matrix> dummy;
-      RCP<Matrix> left  = XMM::Multiply(*Pe, false, *D0_c, false, dummy, GetOStream(Runtime0));
-      RCP<Matrix> right = XMM::Multiply(*D0_f, false, *Pn, false, dummy, GetOStream(Runtime0));
+        RCP<Matrix> dummy;
+        RCP<Matrix> left  = XMM::Multiply(*Pe, false, *D0_c, false, dummy, GetOStream(Runtime0));
+        RCP<Matrix> right = XMM::Multiply(*D0_f, false, *Pn, false, dummy, GetOStream(Runtime0));
 
-      RCP<Matrix> summation;
-      XMM::TwoMatrixAdd(*left, false, one, *right, false, -one, summation, GetOStream(Runtime0));
-      summation->fillComplete(left->getDomainMap(), left->getRangeMap());
+        RCP<Matrix> summation;
+        XMM::TwoMatrixAdd(*left, false, one, *right, false, -one, summation, GetOStream(Runtime0));
+        summation->fillComplete(left->getDomainMap(), left->getRangeMap());
 
-      auto norm = summation->getFrobeniusNorm();
-      GetOStream(Runtime0) << "CheckCommutingProperty on level " << i - 1 << ": || Pe D0_c - D0_f Pn || = " << norm << std::endl;
-    } else if (!Pe.is_null()) {
-      GetOStream(Runtime0) << "Cannot run CheckCommutingProperty on level " << i - 1 << " due to rebalancing" << std::endl;
+        auto norm = summation->getFrobeniusNorm();
+        GetOStream(Runtime0) << "CheckCommutingProperty on level " << i - 1 << ": || Pe D0_c - D0_f Pn || = " << norm << std::endl;
+      } else if (!Pe.is_null()) {
+        GetOStream(Runtime0) << "Cannot run CheckCommutingProperty on level " << i - 1 << " due to rebalancing" << std::endl;
+      }
     }
   }
 #ifdef MUELU_MAXWELL1_DEBUG
@@ -958,14 +961,14 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // some pre-conditions
   TEUCHOS_ASSERT(D0_Matrix != Teuchos::null);
 
-#ifdef HAVE_MUELU_DEBUG
-  if (!Kn_Matrix.is_null()) {
-    TEUCHOS_ASSERT(Kn_Matrix->getDomainMap()->isSameAs(*D0_Matrix->getDomainMap()));
-    TEUCHOS_ASSERT(Kn_Matrix->getRangeMap()->isSameAs(*D0_Matrix->getDomainMap()));
-  }
+  if (Behavior::debug()) {
+    if (!Kn_Matrix.is_null()) {
+      TEUCHOS_ASSERT(Kn_Matrix->getDomainMap()->isSameAs(*D0_Matrix->getDomainMap()));
+      TEUCHOS_ASSERT(Kn_Matrix->getRangeMap()->isSameAs(*D0_Matrix->getDomainMap()));
+    }
 
-  TEUCHOS_ASSERT(D0_Matrix->getRangeMap()->isSameAs(*D0_Matrix->getRowMap()));
-#endif
+    TEUCHOS_ASSERT(D0_Matrix->getRangeMap()->isSameAs(*D0_Matrix->getRowMap()));
+  }
 
   Hierarchy11_   = Teuchos::null;
   Hierarchy22_   = Teuchos::null;

@@ -21,6 +21,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
+#include "MueLu_Behavior.hpp"
 
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
@@ -166,7 +167,7 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
     numIts = pL.get<int>("emin: num iterations");
   }
 
-  if (IsPrint(Statistics1)) {
+  if (Behavior::debug() && IsPrint(Statistics1)) {
     SubFactoryMonitor m2(*this, "Statistics", coarseLevel);
     GetOStream(Statistics1) << "Energy norm of P0: " << ComputeProlongatorEnergyNorm(A, P0, GetOStream(Statistics0)) << std::endl;
     GetOStream(Statistics1) << "Constraint residual norm of P0: " << X->ResidualNorm(P0) << std::endl;
@@ -238,7 +239,7 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
   if (P0->IsView("stridedMaps"))
     P->CreateView("stridedMaps", P0);
 
-  if (IsPrint(Statistics1)) {
+  if (Behavior::debug() && IsPrint(Statistics1)) {
     SubFactoryMonitor m2(*this, "Statistics", coarseLevel);
     // Compute constraint residual norm if we are not in a debug build
     GetOStream(Statistics1) << "Energy norm of P: " << ComputeProlongatorEnergyNorm(A, P, GetOStream(Statistics0)) << std::endl;

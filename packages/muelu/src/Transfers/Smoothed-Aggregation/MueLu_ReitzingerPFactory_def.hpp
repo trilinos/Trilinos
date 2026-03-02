@@ -31,6 +31,8 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_ImportUtils.hpp"
 
+#include "MueLu_Behavior.hpp"
+
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -139,7 +141,7 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
   if (pL.isSublist("matrixmatrix: kernel params"))
     mm_params->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
 
-  {  // Check that Pn is piecewise constant
+  if (Behavior::debug()) {  // Check that Pn is piecewise constant
     // TODO: Should this be a debug-only check?
 
     auto vec_ones = VectorFactory::Build(Pn->getDomainMap(), false);
@@ -186,9 +188,9 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     auto lclZ         = Z->getLocalMatrixDevice();
     auto numLocalRows = lclZ.numRows();
 
-#ifdef HAVE_MUELU_DEBUG
-    TEUCHOS_ASSERT(Utilities::MapsAreNested(*rowMap, *colMap));
-#endif
+    if (Behavior::debug()) {
+      TEUCHOS_ASSERT(Utilities::MapsAreNested(*rowMap, *colMap));
+    }
 
     auto importer = Z->getCrsGraph()->getImporter();
     // TODO: replace with Kokkos once PID data lives on device
@@ -589,8 +591,10 @@ void ReitzingerPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level
     Pe = MatrixFactory::Build(lclPe, D0->getRowMap(), D0_Pn_D0HT->getColMap(), D0H->getRangeMap(), D0->getRangeMap());
   }
 
-  /* Check commuting property */
-  CheckCommutingProperty(*Pe, *D0H, *D0, *Pn);
+  if (Behavior::debug()) {
+    /* Check commuting property */
+    CheckCommutingProperty(*Pe, *D0H, *D0, *Pn);
+  }
 
   /*  If we're repartitioning here, we need to cut down the communicators */
   // NOTE: We need to do this *after* checking the commuting property, since
