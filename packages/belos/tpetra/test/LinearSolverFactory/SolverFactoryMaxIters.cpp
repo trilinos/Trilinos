@@ -18,16 +18,9 @@
 #include <vector>
 #include <string>
 
-// mfh 12 Oct 2017: Test that the Tpetra specialization of
-// Belos::SolverFactory builds and runs without throwing.
-// See e.g., Trilinos GitHub issue #754.
-
 namespace { // (anonymous)
 
-// Create a very simple square test matrix.  We use the identity
-// matrix here.  The point of this test is NOT to exercise the solver;
-// it's just to check that Belos' LinearSolverFactory can create
-// working solvers.  Belos has more rigorous tests for its solvers.
+// Create a very simple square test matrix.
 template<class SC, class LO, class GO, class NT>
 Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NT> >
 createTestMatrix (Teuchos::FancyOStream& out,
@@ -40,8 +33,6 @@ createTestMatrix (Teuchos::FancyOStream& out,
   using std::endl;
   typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
   typedef Tpetra::Map<LO,GO,NT> map_type;
-  typedef Teuchos::ScalarTraits<SC> STS;
-  typedef Teuchos::ScalarTraits<typename STS::magnitudeType> MTS;
 
   Teuchos::OSTab tab0 (out);
   out << "Create test matrix with " << gblNumRows << " row(s)" << endl;
@@ -65,7 +56,7 @@ createTestMatrix (Teuchos::FancyOStream& out,
     for (LO lclRow = rowMap->getMinLocalIndex ();
          lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
       inds[0] = lclRow;
-      vals[0] = MTS::zero () / MTS::zero (); // Fill matrix with NaNs
+      vals[0] = lclRow;
       A->insertLocalValues (lclRow, inds (), vals ());
     }
   }
@@ -77,11 +68,7 @@ createTestMatrix (Teuchos::FancyOStream& out,
 }
 
 // Create a very simple square test linear system (matrix, right-hand
-// side(s), and exact solution(s).  We use the identity matrix here.
-// The point of this test is NOT to exercise the preconditioner; it's
-// just to check that its LinearSolverFactory can create working
-// preconditioners.  Belos has more rigorous tests for each of its
-// preconditioners.
+// side(s), and exact solution(s).
 template<class SC, class LO, class GO, class NT>
 void
 createTestProblem (Teuchos::FancyOStream& out,
@@ -162,8 +149,7 @@ testSolver (Teuchos::FancyOStream& out,
   out << "Set up the solver" << endl;
   solver->setProblem (problem);
 
-  out << "Apply solver to \"solve\" AX=B for X.  Belos already has solver tests;"
-    " the point is to check that solve() doesn't throw if it encounters a NaN." << endl;
+  out << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'MaxItersReached' unconverged cause." << endl;
   Belos::ReturnType ret;
   Belos::UnconvergedCauseType unconvergedCause;
 
@@ -180,7 +166,7 @@ testSolver (Teuchos::FancyOStream& out,
       << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << endl;
 
-  // Check that the solution vector is zeros, the achieved tolerance is 1, and the solver return Unconverged.
+  // Check that the solution vector is zeros, and the solver return Unconverged.
   bool nonZeroX = false;
   std::vector<typename STS::magnitudeType> normX( X->getNumVectors () );
   Teuchos::ArrayView<typename STS::magnitudeType> normAV( normX );
@@ -190,7 +176,7 @@ testSolver (Teuchos::FancyOStream& out,
     if ( normX[i] != MTS::zero() )
       nonZeroX = true;
   } 
-  if ( nonZeroX || (ret != Belos::Unconverged) || (unconvergedCause != Belos::NaNDetected) || ( solver->achievedTol() != MTS::one() ) ) {
+  if ( nonZeroX || (ret != Belos::Unconverged) || (unconvergedCause != Belos::MaxItersReached) ) {
     success = false;
     return;
   }
