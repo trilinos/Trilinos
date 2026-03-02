@@ -7,6 +7,7 @@ on:
       - synchronize
   schedule:
     - cron: '41 23 * * 2'
+  workflow_dispatch:
 
 # Cancels any in progress workflows associated with this PR
 concurrency:
@@ -20,7 +21,6 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' }}
 
     permissions:
       # required for all workflows

@@ -147,6 +147,7 @@ namespace Intrepid2 {
   typename MatrixViewType::value_type
   RealSpaceTools<DeviceType>::Serial::
   det( const MatrixViewType inMat ) {
+    typename decltype(inMat)::non_const_value_type val(0);
 #ifdef HAVE_INTREPID2_DEBUG
     {
       bool dbgInfo = false;
@@ -156,21 +157,21 @@ namespace Intrepid2 {
                                       ">>> ERROR (RealSpaceTools::det): Matrix is not square!");
       INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.extent(0) < 1 || inMat.extent(0) > 3, dbgInfo,
                                       ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
-#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
-      typedef typename decltype(inMat)::non_const_value_type value_type;
-      if (dbgInfo) return value_type(0);
+#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE      
+      if (dbgInfo) return val;
 #endif
     }
 #endif
     const auto dim = inMat.extent(0);
     switch (dim) {
-      case 3: return det<3, MatrixViewType>(inMat); break;
-      case 2: return det<2, MatrixViewType>(inMat); break;
-      case 1: return det<1, MatrixViewType>(inMat); break;
-      default: INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE((dim < 1) || (dim > 3), std::invalid_argument, ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
+      case 3: val = det<3, MatrixViewType>(inMat); break;
+      case 2: val = det<2, MatrixViewType>(inMat); break;
+      case 1: val = det<1, MatrixViewType>(inMat); break;
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE((dim < 1) || (dim > 3), std::invalid_argument, ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
+      }
     }
-    // the following statement is unreachable, but some compilers complain about control reaching the end of non-void function without it.
-    INTREPID2_TEST_FOR_ABORT(true, "dim must be 1, 2, or 3");
+    return val;
   }
 
   // ------------------------------------------------------------------------------------
