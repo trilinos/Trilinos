@@ -144,30 +144,28 @@ class PhiEvaluator
   void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel);
 
   /// Set the linearization point for the Jacobian calculation
-  virtual void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) = 0;
+  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
 
-  /** \brief  Compute the Phi_k function of cdt times Jacobian for right hand side Mrhs_b
+  /** \brief  Compute the Phi_k function of cdt*Jacobian for right hand side Mrhs_b
    *
+   *  phi_order is the index of the phi-function Phi_k.
    *  For an implicit model, the right hand side contains the mass matrix M,
    *  which is solved as part of this method.
    */
   virtual Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-						int k, Scalar cdt,
+						const int phi_order, const Scalar cdt,
 						const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b);
 
   /** \brief  Compute the Phi function of cdt times Jacobian for a linear combination with right hand side vectors Mrhs_B
    *
-   *  For an implicit model, the right hand side contains the mass matrix M,
+   *  The vectors in Mrhs_B are at the index of the vector corresponding to the phi_order of the 
+   *  respective Phi function, Mrhs_b[0] is the rhs for the matrix exponential.
+   *  For an implicit model, the right hand side contains a multiplication with the mass matrix M,
    *  which is solved as part of this method.
-   *
-   *  TODO: eventually, the vector of Thyra::VectorBase<Scalar> is turned into a MultiVector.
-   *  The vector of vectors Mrhs_B can be sparse and contain Teuchos::null. Figure out the
-   *  most efficient implementation and possibly adapt this interface.
    */
-  /// 
   virtual Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-						 Scalar cdt,
-						 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B) = 0;
+						 const Scalar cdt,
+						 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B);
 
  protected:
   std::string name_;
@@ -177,6 +175,18 @@ class PhiEvaluator
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
   Teuchos::RCP<Tempus::PhiLinearSolver<Scalar>> phiLinSolv_;
+
+  //mutable
+  Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
+
+
+  /** \brief  Internal method for a LinOp, used for default impl. of computePhi/computePhis
+   *
+   *  Computes v := phi_{phi_order}(L)v in place (overwriting the rhs with the result)
+   */
+  virtual Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
+						     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+						     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) = 0;
 };
 
 }  // namespace Tempus

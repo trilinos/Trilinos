@@ -183,20 +183,104 @@ void PhiEvaluator<Scalar>::setLumpMassMatrix(bool lumpMassMatrix)
   }
 }
 
+template <class Scalar>
+void PhiEvaluator<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs)
+{
+  inArgs_lin_ = Teuchos::rcpFromRef(inArgs);
+}
+
 template<class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-				 int k, Scalar cdt,
+				 const int phi_order, const Scalar cdt,
 				 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    k < 0, std::logic_error,
-    "Error - PhiEvaluator::computePhi() k must be non-negative!\n");
+    phi_order < 0, std::logic_error,
+    "Error - PhiEvaluator::computePhi() phi_order must be non-negative!\n");
 
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(k+1);
-  rhs_B[k] = rhs_b;
+  //TODO: Could also invert mass and call
+  //       this->computeLinOpPhi(0, MinvJ, rhs_b);
+  //      This impl is easier but less efficient.
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(phi_order+1);
+  rhs_B[phi_order] = rhs_b;
 
   return computePhis(x, cdt, rhs_B);
+}
+
+
+template <class Scalar>
+Thyra::SolveStatus<Scalar>
+PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+				  const Scalar cdt,
+				  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B)
+{
+  const int max_phi_order = Mrhs_B.size() - 1;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      max_phi_order < 1,
+      std::invalid_argument,
+      "Error - PhiEvaluator::computePhis() list of rhs must have at least two entries.");
+
+  // support max_phi_order == 0
+  //if (max_phi_order == 0)
+  //{
+  //  return computePhi(x, 0, cdt, Mrhs_B[0]);
+  //}
+
+  this->phiLinSolv_->setLumpMassMatrix(this->lumpMassMatrix_);
+  this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
+  this->phiLinSolv_->computeJacobian(*inArgs_lin_);
+
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(max_phi_order+1);
+
+  // Invert the mass matrix out of the right hand sides
+  // TODO: This might be more efficient to do on the combined MultiVector that will be assembled in buildb
+  //       However, if Mrhs_B is sparse, it may not.
+  for (int ii = 0; ii < max_phi_order+1; ii++)
+  {
+    if (Mrhs_B[ii] != Teuchos::null)
+    {
+      auto Mrhs_b = Mrhs_B[ii];
+      Teuchos::RCP<Thyra::VectorBase<Scalar>> rhs_b = Mrhs_b->clone_v();
+      Thyra::assign(rhs_b.ptr(), 0.0);
+      this->phiLinSolv_->solveMass(rhs_b.ptr(), Mrhs_b);
+      rhs_B[ii] = rhs_b;
+    }
+  }
+
+  // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  // rhs_b->describe(*out, Teuchos::VERB_EXTREME);
+  // Mrhs_b->describe(*out, Teuchos::VERB_EXTREME);
+  //   auto vec = rhs_b;
+  // auto space = vec->space();
+  // int n = space->dim();
+
+  // for (int i = 0; i < n; ++i) {
+  //    std::cout << "rhs[" << i << "] = "
+  //              << Thyra::get_ele(*rhs_b, i) << std::endl;
+  //              std::cout << "Mrhs[" << i << "] = "
+  //              << Thyra::get_ele(*Mrhs_b, i) << std::endl;
+  // }
+
+  // Build extended matrix
+  this->phiLinSolv_->buildK(max_phi_order);
+  this->phiLinSolv_->buildb(rhs_B);
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde = this->phiLinSolv_->buildATilde(cdt);
+
+  // Build initial vector and compute matrix exponential in place
+  auto v = this->phiLinSolv_->buildv(Atilde->domain(), rhs_B[0]);
+  Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(0, Atilde, v);
+
+  //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  //Atilde->describe(*out, Teuchos::VERB_EXTREME);
+  //Atilde->domain()->describe(*out, Teuchos::VERB_EXTREME);
+
+  // Get the first block of the multi-vector calculated from 2x2 multi-matrix
+  auto v0 = v->getVectorBlock(0);  // V block
+  Thyra::copy(*v0, x.ptr());
+
+  return sStatus;
 }
 
 

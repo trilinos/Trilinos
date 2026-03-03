@@ -33,20 +33,24 @@ class PhiEvaluatorPFD
   /// Set the parameters from a ParameterList
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl);
 
-  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) override;
-
   /// compute the Phi_k function of cdt times Jacobian for right hand side rhs_b
   Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-					int k, Scalar cdt,
-					const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
+					const int phi_order, Scalar cdt,
+					const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b) override;
 
   /// compute the Phi_k function of cdt times Jacobian for a linear combination with right hand side vector rhs_B
   Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-					 Scalar cdt,
-					 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B) override;
+					 const Scalar cdt,
+					 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B) override;
 
- private:
-  mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
+ protected:
+  Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
+					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+					     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) override
+  {
+    // TODO throw error message.
+    return Thyra::SolveStatus<Scalar>();
+  }
 };
 
 /// Nonmember constructor from a ParameterList
