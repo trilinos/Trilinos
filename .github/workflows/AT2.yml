@@ -34,7 +34,7 @@ jobs:
 
   gcc12-openmpi4:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20251023]
+    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20251204]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -75,8 +75,6 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
-      - name: Add Googletest
-        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -135,7 +133,7 @@ jobs:
 
   clang19-openmpi4:
     needs: pre-checks
-    runs-on: [self-hosted, clang-19.1.6-openmpi-4.1.6, 20250723]
+    runs-on: [self-hosted, clang-19.1.6-openmpi-4.1.6, 20251204]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -176,8 +174,6 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
-      - name: Add Googletest
-        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -236,7 +232,7 @@ jobs:
 
   cuda12:
     needs: pre-checks
-    runs-on: [self-hosted, cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6, 20250723, gpu:A100]
+    runs-on: [self-hosted, cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6, 20251204, gpu:A100]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -277,8 +273,6 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
-      - name: Add Googletest
-        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -337,7 +331,7 @@ jobs:
 
   gcc14:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-14, 20250724]
+    runs-on: [self-hosted, gcc-14, 20251204]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -378,8 +372,6 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
-      - name: Add Googletest
-        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -439,7 +431,7 @@ jobs:
 
   cuda12-uvm:
     needs: pre-checks
-    runs-on: [self-hosted, cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6, 20250723]
+    runs-on: [self-hosted, cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6, 20251204]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -480,8 +472,6 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
-      - name: Add Googletest
-        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -539,7 +529,7 @@ jobs:
 
   oneapi2024:
     needs: pre-checks
-    runs-on: [self-hosted, oneapi-2024.2, 20251007]
+    runs-on: [self-hosted, oneapi-2024.2, 20251204]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -577,8 +567,6 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
-      - name: Add Googletest
-        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -637,7 +625,7 @@ jobs:
 
   openmp:
     needs: pre-checks
-    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20251023]
+    runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6, 20251204]
     if: ${{ needs.pre-checks.outputs.should_skip != 'true' && (github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.review.state == 'APPROVED') }}
     steps:
       - name: env
@@ -678,8 +666,6 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
-      - name: Add Googletest
-        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
@@ -776,8 +762,6 @@ jobs:
         working-directory: ./packages/framework
         run: |
           bash -l -c "./get_dependencies.sh"
-      - name: Add Googletest
-        uses: ./.github/workflows/actions/add-spack-googletest
       - name: PullRequestLinuxDriverTest.py
         shell: bash -l {0}
         working-directory: /home/Trilinos/build
