@@ -208,7 +208,7 @@ TEST_F (TargetTest, EvalBernsteinBasis1D) {
     auto gmls_basis_data = gmls.extractBasisData();
 
     int local_index = 0;
-    scratch_matrix_right_type P_target_row_device_unmanaged(gmls_basis_data.P_target_row_data 
+    device_unmanaged_matrix_right_type P_target_row_device_unmanaged(gmls_basis_data.P_target_row_data 
             + TO_GLOBAL(local_index)*TO_GLOBAL(gmls_basis_data.P_target_row_dim_0*gmls_basis_data.P_target_row_dim_1), 
                 gmls_basis_data.P_target_row_dim_0, gmls_basis_data.P_target_row_dim_1);
     auto P_target_row = Kokkos::create_mirror_view(P_target_row_device_unmanaged);
@@ -317,7 +317,7 @@ TEST_F (TargetTest, EvalBernsteinBasis2D) {
     auto gmls_basis_data = gmls.extractBasisData();
 
     int local_index = 0;
-    scratch_matrix_right_type P_target_row_device_unmanaged(gmls_basis_data.P_target_row_data 
+    device_unmanaged_matrix_right_type P_target_row_device_unmanaged(gmls_basis_data.P_target_row_data 
             + TO_GLOBAL(local_index)*TO_GLOBAL(gmls_basis_data.P_target_row_dim_0*gmls_basis_data.P_target_row_dim_1), 
                 gmls_basis_data.P_target_row_dim_0, gmls_basis_data.P_target_row_dim_1);
     auto P_target_row = Kokkos::create_mirror_view(P_target_row_device_unmanaged);

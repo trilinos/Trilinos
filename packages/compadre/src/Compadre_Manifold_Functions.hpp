@@ -11,7 +11,7 @@ namespace Compadre {
 
     //! Metric factor (det(G)) at any point in the local chart
     KOKKOS_INLINE_FUNCTION
-    double MetricFactor(const scratch_vector_type a_, const double h, const double u1, const double u2) {
+    double MetricFactor(const device_unmanaged_vector_type a_, const double h, const double u1, const double u2) {
         double det_g = 1.0;
         double q1 = 0;
         double q2 = 0;
@@ -55,7 +55,7 @@ namespace Compadre {
 
     //! Gaussian curvature K at any point in the local chart
     KOKKOS_INLINE_FUNCTION
-    double GaussianCurvature(const scratch_vector_type a_, const double h, const double u1, const double u2) {
+    double GaussianCurvature(const device_unmanaged_vector_type a_, const double h, const double u1, const double u2) {
 
         double q1=0, q2=0, q3=0;
         switch (a_.extent(0)) {
@@ -101,7 +101,7 @@ namespace Compadre {
 
     //! Surface curl at any point in the local chart
     KOKKOS_INLINE_FUNCTION
-    double SurfaceCurlOfScalar(const scratch_vector_type a_, const double h, const double u1, const double u2, int x_pow, int y_pow, const int component) {
+    double SurfaceCurlOfScalar(const device_unmanaged_vector_type a_, const double h, const double u1, const double u2, int x_pow, int y_pow, const int component) {
 
         const double factorial[15] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600, 6227020800, 87178291200};
 

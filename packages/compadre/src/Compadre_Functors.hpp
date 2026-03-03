@@ -129,10 +129,10 @@ struct ApplyTargets {
          */
 
         // Coefficients for polynomial basis have overwritten _data._RHS
-        scratch_matrix_right_type Coeffs = scratch_matrix_right_type(_data.Coeffs_data 
+        device_unmanaged_matrix_right_type Coeffs = device_unmanaged_matrix_right_type(_data.Coeffs_data 
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.Coeffs_dim_0*_data.Coeffs_dim_1), 
                     _data.Coeffs_dim_0, _data.Coeffs_dim_1);
-        scratch_matrix_right_type P_target_row(_data.P_target_row_data 
+        device_unmanaged_matrix_right_type P_target_row(_data.P_target_row_data 
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.P_target_row_dim_0*_data.P_target_row_dim_1), 
                     _data.P_target_row_dim_0, _data.P_target_row_dim_1);
 
@@ -159,7 +159,7 @@ struct EvaluateStandardTargets {
          *    Data
          */
 
-        scratch_matrix_right_type P_target_row(_data.P_target_row_data 
+        device_unmanaged_matrix_right_type P_target_row(_data.P_target_row_data 
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.P_target_row_dim_0*_data.P_target_row_dim_1), 
                     _data.P_target_row_dim_0, _data.P_target_row_dim_1);
 
@@ -223,11 +223,11 @@ struct ComputePrestencilWeights {
 
 
         // holds polynomial coefficients for curvature reconstruction
-        scratch_matrix_right_type Q = scratch_matrix_right_type(_data.Coeffs_data 
+        device_unmanaged_matrix_right_type Q = device_unmanaged_matrix_right_type(_data.Coeffs_data 
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.Coeffs_dim_0*_data.Coeffs_dim_1),
                     _data.Coeffs_dim_0, _data.Coeffs_dim_1);
 
-        scratch_matrix_right_type T(_data.T_data
+        device_unmanaged_matrix_right_type T(_data.T_data
                 + TO_GLOBAL(target_index)*TO_GLOBAL(dimensions)*TO_GLOBAL(dimensions), 
                     dimensions, dimensions);
 
@@ -404,13 +404,13 @@ struct AssembleStandardPsqrtW {
          *    Data
          */
     
-        scratch_matrix_right_type PsqrtW(_data.P_data
+        device_unmanaged_matrix_right_type PsqrtW(_data.P_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.P_dim_0*_data.P_dim_1), 
                     _data.P_dim_0, _data.P_dim_1);
-        scratch_matrix_right_type RHS(_data.RHS_data
+        device_unmanaged_matrix_right_type RHS(_data.RHS_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.RHS_dim_0*_data.RHS_dim_1), 
                     _data.RHS_dim_0, _data.RHS_dim_1);
-        scratch_vector_type w(_data.w_data
+        device_unmanaged_vector_type w(_data.w_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.max_num_rows), 
                     _data.max_num_rows);
     
@@ -437,8 +437,8 @@ struct AssembleStandardPsqrtW {
             });
         } else {
             // create global memory for matrix M = PsqrtW^T*PsqrtW
-            // don't need to cast into scratch_matrix_left_type since the matrix is symmetric
-            scratch_matrix_right_type M(_data.RHS_data
+            // don't need to cast into device_unmanaged_matrix_left_type since the matrix is symmetric
+            device_unmanaged_matrix_right_type M(_data.RHS_data
                     + TO_GLOBAL(local_index)*TO_GLOBAL(_data.RHS_dim_0*_data.RHS_dim_1), 
                         _data.RHS_dim_0, _data.RHS_dim_1);
             KokkosBatched::TeamVectorGemm<member_type,KokkosBatched::Trans::Transpose,KokkosBatched::Trans::NoTranspose,KokkosBatched::Algo::Gemm::Unblocked>
@@ -461,7 +461,7 @@ struct AssembleStandardPsqrtW {
             // conditionally fill in rows determined by constraint type
             if (_data._constraint_type == ConstraintType::NEUMANN_GRAD_SCALAR) {
                 // normal vector is contained in last row of T
-                scratch_matrix_right_type T(_data.T_data
+                device_unmanaged_matrix_right_type T(_data.T_data
                         + TO_GLOBAL(target_index)*TO_GLOBAL(_data._dimensions*_data._dimensions), 
                             _data._dimensions, _data._dimensions);
     
@@ -505,13 +505,13 @@ struct ComputeCoarseTangentPlane {
          *    Data
          */
 
-        scratch_matrix_right_type PsqrtW(_data.P_data
+        device_unmanaged_matrix_right_type PsqrtW(_data.P_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.P_dim_0*_data.P_dim_1), 
                     _data.P_dim_0, _data.P_dim_1);
-        scratch_vector_type w(_data.w_data
+        device_unmanaged_vector_type w(_data.w_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.max_num_rows), 
                     _data.max_num_rows);
-        scratch_matrix_right_type T(_data.T_data
+        device_unmanaged_matrix_right_type T(_data.T_data
                 + TO_GLOBAL(target_index)*TO_GLOBAL(dimensions*dimensions),
                     dimensions, dimensions);
 
@@ -571,15 +571,15 @@ struct AssembleCurvaturePsqrtW {
          *    Data
          */
 
-        scratch_matrix_right_type CurvaturePsqrtW(_data.P_data
+        device_unmanaged_matrix_right_type CurvaturePsqrtW(_data.P_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.P_dim_0*_data.P_dim_1), 
                     _data.P_dim_0, _data.P_dim_1);
-        scratch_matrix_right_type RHS(_data.RHS_data
+        device_unmanaged_matrix_right_type RHS(_data.RHS_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.RHS_dim_0*_data.RHS_dim_1), 
                     _data.RHS_dim_0, _data.RHS_dim_1);
-        scratch_vector_type w(_data.w_data
+        device_unmanaged_vector_type w(_data.w_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.max_num_rows), _data.max_num_rows);
-        scratch_matrix_right_type T(_data.T_data
+        device_unmanaged_matrix_right_type T(_data.T_data
                 + TO_GLOBAL(target_index)*TO_GLOBAL(_data._dimensions*_data._dimensions), 
                     _data._dimensions, _data._dimensions);
 
@@ -607,8 +607,8 @@ struct AssembleCurvaturePsqrtW {
             });
         } else {
             // create global memory for matrix M = PsqrtW^T*PsqrtW
-            // don't need to cast into scratch_matrix_left_type since the matrix is symmetric
-            scratch_matrix_right_type M(_data.RHS_data
+            // don't need to cast into device_unmanaged_matrix_left_type since the matrix is symmetric
+            device_unmanaged_matrix_right_type M(_data.RHS_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.RHS_dim_0*_data.RHS_dim_1), 
                     _data.RHS_dim_0, _data.RHS_dim_1);
             // Assemble matrix M
@@ -655,13 +655,13 @@ struct GetAccurateTangentDirections {
          *    Data
          */
 
-        scratch_matrix_right_type Q = scratch_matrix_right_type(_data.Coeffs_data 
+        device_unmanaged_matrix_right_type Q = device_unmanaged_matrix_right_type(_data.Coeffs_data 
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.Coeffs_dim_0*_data.Coeffs_dim_1),
                     _data.Coeffs_dim_0, _data.Coeffs_dim_1);
-        scratch_matrix_right_type T(_data.T_data
+        device_unmanaged_matrix_right_type T(_data.T_data
                 + TO_GLOBAL(target_index)*TO_GLOBAL(dimensions*dimensions), 
                     dimensions, dimensions);
-        scratch_matrix_right_type P_target_row(_data.P_target_row_data
+        device_unmanaged_matrix_right_type P_target_row(_data.P_target_row_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.P_target_row_dim_0*_data.P_target_row_dim_1),
                     _data.P_target_row_dim_0, _data.P_target_row_dim_1);
 
@@ -807,8 +807,8 @@ struct FixTangentDirectionOrdering {
          *    Data
          */
 
-        scratch_matrix_right_type T(_data.T_data + target_index*dimensions*dimensions, dimensions, dimensions);
-        scratch_vector_type N(_data.ref_N_data + target_index*dimensions, dimensions);
+        device_unmanaged_matrix_right_type T(_data.T_data + target_index*dimensions*dimensions, dimensions, dimensions);
+        device_unmanaged_vector_type N(_data.ref_N_data + target_index*dimensions, dimensions);
 
         // take the dot product of the calculated normal in the tangent bundle with a given reference outward normal 
         // direction provided by the user. if the dot product is negative, flip the tangent vector ordering 
@@ -863,18 +863,18 @@ struct ApplyCurvatureTargets {
          *    Data
          */
 
-        scratch_matrix_right_type Q = scratch_matrix_right_type(_data.Coeffs_data 
+        device_unmanaged_matrix_right_type Q = device_unmanaged_matrix_right_type(_data.Coeffs_data 
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.Coeffs_dim_0*_data.Coeffs_dim_1),
                     _data.Coeffs_dim_0, _data.Coeffs_dim_1);
 
-        scratch_matrix_right_type T(_data.T_data
+        device_unmanaged_matrix_right_type T(_data.T_data
                 + TO_GLOBAL(target_index)*TO_GLOBAL(dimensions*dimensions), 
                     dimensions, dimensions);
 
-        scratch_vector_type manifold_coeffs(_data.manifold_curvature_coefficients_data
+        device_unmanaged_vector_type manifold_coeffs(_data.manifold_curvature_coefficients_data
                 + target_index*TO_GLOBAL(_data.manifold_NP), _data.manifold_NP);
 
-        scratch_matrix_right_type P_target_row(_data.P_target_row_data
+        device_unmanaged_matrix_right_type P_target_row(_data.P_target_row_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.P_target_row_dim_0*_data.P_target_row_dim_1),
                     _data.P_target_row_dim_0, _data.P_target_row_dim_1);
 
@@ -937,15 +937,15 @@ struct AssembleManifoldPsqrtW {
          *    Data
          */
 
-        scratch_matrix_right_type PsqrtW(_data.P_data
+        device_unmanaged_matrix_right_type PsqrtW(_data.P_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.P_dim_0)*TO_GLOBAL(_data.P_dim_1), 
                     _data.P_dim_0, _data.P_dim_1);
-        scratch_matrix_right_type Q(_data.RHS_data
+        device_unmanaged_matrix_right_type Q(_data.RHS_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.RHS_dim_0)*TO_GLOBAL(_data.RHS_dim_1), 
                     _data.RHS_dim_0, _data.RHS_dim_1);
-        scratch_vector_type w(_data.w_data
+        device_unmanaged_vector_type w(_data.w_data
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.max_num_rows), _data.max_num_rows);
-        scratch_matrix_right_type T(_data.T_data
+        device_unmanaged_matrix_right_type T(_data.T_data
                 + TO_GLOBAL(target_index)*TO_GLOBAL(dimensions)*TO_GLOBAL(dimensions), dimensions, dimensions);
 
         // delta, used for each thread
@@ -970,8 +970,8 @@ struct AssembleManifoldPsqrtW {
             });
         } else {
             // create global memory for matrix M = PsqrtW^T*PsqrtW
-            // don't need to cast into scratch_matrix_left_type since the matrix is symmetric
-            scratch_matrix_right_type M(_data.RHS_data
+            // don't need to cast into device_unmanaged_matrix_left_type since the matrix is symmetric
+            device_unmanaged_matrix_right_type M(_data.RHS_data
                     + TO_GLOBAL(local_index)*TO_GLOBAL(_data.RHS_dim_0*_data.RHS_dim_1), 
                         _data.RHS_dim_0, _data.RHS_dim_1);
 
@@ -1018,11 +1018,11 @@ struct EvaluateManifoldTargets {
          *    Data
          */
 
-        scratch_matrix_right_type T(_data.T_data
+        device_unmanaged_matrix_right_type T(_data.T_data
                 + TO_GLOBAL(target_index)*TO_GLOBAL(dimensions*dimensions), dimensions, dimensions);
-        scratch_vector_type manifold_coeffs(_data.manifold_curvature_coefficients_data
+        device_unmanaged_vector_type manifold_coeffs(_data.manifold_curvature_coefficients_data
                 + target_index*TO_GLOBAL(_data.manifold_NP), _data.manifold_NP);
-        scratch_matrix_right_type P_target_row(_data.P_target_row_data 
+        device_unmanaged_matrix_right_type P_target_row(_data.P_target_row_data 
                 + TO_GLOBAL(local_index)*TO_GLOBAL(_data.P_target_row_dim_0*_data.P_target_row_dim_1), 
                     _data.P_target_row_dim_0, _data.P_target_row_dim_1);
 
