@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <list>
 
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
@@ -235,23 +236,20 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetMatvecParams(RCP<P
           xpExporter->setDistributorParameters(matvecParams);
       }
     }
-    if (level->IsAvailable("P")) {
-      RCP<Matrix> P                = level->Get<RCP<Matrix>>("P");
-      RCP<const Import> xpImporter = P->getCrsGraph()->getImporter();
-      if (!xpImporter.is_null())
-        xpImporter->setDistributorParameters(matvecParams);
-      RCP<const Export> xpExporter = P->getCrsGraph()->getExporter();
-      if (!xpExporter.is_null())
-        xpExporter->setDistributorParameters(matvecParams);
-    }
-    if (level->IsAvailable("R")) {
-      RCP<Matrix> R                = level->Get<RCP<Matrix>>("R");
-      RCP<const Import> xpImporter = R->getCrsGraph()->getImporter();
-      if (!xpImporter.is_null())
-        xpImporter->setDistributorParameters(matvecParams);
-      RCP<const Export> xpExporter = R->getCrsGraph()->getExporter();
-      if (!xpExporter.is_null())
-        xpExporter->setDistributorParameters(matvecParams);
+    const std::list<std::string> matrices = {"P", "R", "D0", "NodeMatrix"};
+    for (auto it = matrices.begin(); it != matrices.end(); ++it) {
+      if (level->IsAvailable(*it)) {
+        RCP<Matrix> mat = level->Get<RCP<Matrix>>(*it);
+        if (!mat.is_null()) {
+          RCP<const Import> xpImporter = mat->getCrsGraph()->getImporter();
+          if (!xpImporter.is_null()) {
+            xpImporter->setDistributorParameters(matvecParams);
+          }
+          RCP<const Export> xpExporter = mat->getCrsGraph()->getExporter();
+          if (!xpExporter.is_null())
+            xpExporter->setDistributorParameters(matvecParams);
+        }
+      }
     }
     if (level->IsAvailable("Importer")) {
       RCP<const Import> xpImporter = level->Get<RCP<const Import>>("Importer");
