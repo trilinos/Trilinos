@@ -43,14 +43,9 @@ PhiEvaluatorPFD<Scalar>::getValidParameters() const
 }
 
 template <class Scalar>
-void PhiEvaluatorPFD<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs)
-{
-  inArgs_lin_ = Teuchos::rcpFromRef(inArgs);
-}
-
-template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> phiv,
-							       int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
+							       const int k, const Scalar cdt,
+							       const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
 {
   // TODO: right now, hard-codes 'CN' method and k == 1. Generalize.
 
@@ -62,7 +57,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
   const Scalar alpha = Scalar(1.0);
   const Scalar beta  = Scalar(0.5) * cdt;
 
-  Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(*inArgs_lin_, phiv, rhs_b, alpha, beta);
+  Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(*this->inArgs_lin_, phiv, rhs_b, alpha, beta);
 
   //TODO: make this configurable
   Teuchos::RCP<Teuchos::FancyOStream> out =
@@ -87,7 +82,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
 
 template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-								Scalar cdt,
+								const Scalar cdt,
 								const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B)
 {
   bool not_phi1 = (rhs_B.size() != 2) || (rhs_B[0] != Teuchos::null);

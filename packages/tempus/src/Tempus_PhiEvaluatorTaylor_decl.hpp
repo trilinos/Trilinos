@@ -38,23 +38,13 @@ class PhiEvaluatorTaylor
   void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
   int getTaylorExpansionOrder() const { return taylorExpOrder_; }
 
-  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) override;
-
-  Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
-					 Scalar cdt,
-					 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B) override;
-
-  Thyra::SolveStatus<Scalar> matrixExponential(const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-					       const Teuchos::RCP<Thyra::VectorBase<Scalar>> v);
+ protected:
+  Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
+					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+					     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) override;
 
  private:
-  mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
-
   int taylorExpOrder_;
-
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> v_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matExp_v_;
 };
 
 /// Nonmember constructor from a ParameterList
