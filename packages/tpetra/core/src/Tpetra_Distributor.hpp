@@ -323,7 +323,7 @@ class Distributor : public Teuchos::Describable,
   /// This is an implementation detail of Tpetra.  Please do not
   /// call this method or rely on it existing in your code.
   Details::EDistributorHowInitialized howInitialized() const {
-    return plan_.howInitialized();
+    return plan_->howInitialized();
   }
 
   //@}
@@ -552,10 +552,10 @@ class Distributor : public Teuchos::Describable,
   ///
   /// FIXME: Delete this method when it's no longer needed for non-blocking
   ///        communication in the DistObject
-  const Details::DistributorPlan& getPlan() const { return plan_; }
+  const Details::DistributorPlan& getPlan() const { return *plan_; }
 
  private:
-  Details::DistributorPlan plan_;
+  Teuchos::RCP<Details::DistributorPlan> plan_;
   Details::DistributorActor actor_;
 
   //! @name Parameters read in from the Teuchos::ParameterList
@@ -616,7 +616,7 @@ Distributor::
     doPostsAndWaits(const ExpView& exports,
                     size_t numPackets,
                     const ImpView& imports) {
-  actor_.doPostsAndWaits(plan_, exports, numPackets, imports);
+  actor_.doPostsAndWaits(*plan_, exports, numPackets, imports);
 }
 
 template <class ExpView, class ImpView>
@@ -626,7 +626,7 @@ Distributor::
                     const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                     const ImpView& imports,
                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID) {
-  actor_.doPostsAndWaits(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+  actor_.doPostsAndWaits(*plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
 }
 
 template <class ExpView, class ImpView>
@@ -635,7 +635,7 @@ Distributor::
     doPosts(const ExpView& exports,
             size_t numPackets,
             const ImpView& imports) {
-  actor_.doPosts(plan_, exports, numPackets, imports);
+  actor_.doPosts(*plan_, exports, numPackets, imports);
 }
 
 template <class ExpView, class ImpView>
@@ -645,7 +645,7 @@ Distributor::
             const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
             const ImpView& imports,
             const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID) {
-  actor_.doPosts(plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
+  actor_.doPosts(*plan_, exports, numExportPacketsPerLID, imports, numImportPacketsPerLID);
 }
 
 template <class ExpView, class ImpView>
@@ -678,7 +678,7 @@ Distributor::
                    const ImpView& imports) {
   // FIXME (mfh 29 Mar 2012) WHY?
   TEUCHOS_TEST_FOR_EXCEPTION(
-      !plan_.getIndicesTo().is_null(), std::runtime_error,
+      !plan_->getIndicesTo().is_null(), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do "
       "reverse communication when original data are blocked by process.");
   if (reverseDistributor_.is_null()) {
@@ -696,7 +696,7 @@ Distributor::
                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID) {
   // FIXME (mfh 29 Mar 2012) WHY?
   TEUCHOS_TEST_FOR_EXCEPTION(
-      !plan_.getIndicesTo().is_null(), std::runtime_error,
+      !plan_->getIndicesTo().is_null(), std::runtime_error,
       "Tpetra::Distributor::doReversePosts(3 args): Can only do "
       "reverse communication when original data are blocked by process.");
   if (reverseDistributor_.is_null()) {
@@ -726,7 +726,7 @@ void Distributor::
   const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 
-  const int myRank = plan_.getComm()->getRank();
+  const int myRank = plan_->getComm()->getRank();
 
   TEUCHOS_TEST_FOR_EXCEPTION(importGIDs.size() != importProcIDs.size(),
                              std::invalid_argument, errPrefix << "On Process " << myRank << ": importProcIDs.size()=" << importProcIDs.size() << " != importGIDs.size()=" << importGIDs.size() << ".");
@@ -742,7 +742,7 @@ void Distributor::
   // Use a temporary Distributor to send the (importGIDs[i], myRank)
   // pairs to importProcIDs[i].
   //
-  Distributor tempPlan(plan_.getComm());
+  Distributor tempPlan(plan_->getComm());
   // mfh 20 Mar 2014: An extra-cautious cast from unsigned to
   // signed, in order to forestall any possible causes for Bug 6069.
   const size_t numExportsAsSizeT =
@@ -797,7 +797,7 @@ void Distributor::
                     Teuchos::Array<int>& exportProcIDs) {
   using std::endl;
   const char errPrefix[] = "Tpetra::Distributor::createFromRecvs: ";
-  const int myRank       = plan_.getComm()->getRank();
+  const int myRank       = plan_->getComm()->getRank();
 
   std::unique_ptr<std::string> prefix;
   if (verbose_) {
@@ -817,7 +817,7 @@ void Distributor::
     const int errProc =
         (remoteGIDs.size() != remoteProcIDs.size()) ? myRank : -1;
     int maxErrProc = -1;
-    reduceAll(*plan_.getComm(), REDUCE_MAX, errProc, outArg(maxErrProc));
+    reduceAll(*plan_->getComm(), REDUCE_MAX, errProc, outArg(maxErrProc));
     TEUCHOS_TEST_FOR_EXCEPTION(maxErrProc != -1, std::runtime_error, errPrefix << "Lists "
                                                                                   "of remote IDs and remote process IDs must have the same "
                                                                                   "size on all participating processes.  Maximum process ID "
@@ -834,7 +834,7 @@ void Distributor::
 
   computeSends(remoteGIDs, remoteProcIDs, exportGIDs, exportProcIDs);
 
-  plan_.createFromRecvs(remoteProcIDs);
+  plan_->createFromRecvs(remoteProcIDs);
 
   if (verbose_) {
     std::ostringstream os;
