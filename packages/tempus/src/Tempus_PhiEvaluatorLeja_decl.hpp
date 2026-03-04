@@ -23,7 +23,10 @@ class PhiEvaluatorLeja
   : virtual public PhiEvaluator<Scalar> {
  public:
   /// Inherit Contructor
-  using PhiEvaluator<Scalar>::PhiEvaluator;
+  PhiEvaluatorLeja<Scalar>(std::string name) : PhiEvaluator<Scalar>(name), maxLejaOrder_(0)
+  { }
+  PhiEvaluatorLeja<Scalar>() : PhiEvaluatorLeja<Scalar>("Phi Evaluator")
+  { }
 
   /// \name Basic PhiEvaluatorLeja Methods
   //@{
@@ -35,10 +38,15 @@ class PhiEvaluatorLeja
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
+  /// Set the parameters from a ParameterList
+  void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
+
  protected:
   Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
 					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
 					     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v) override;
+ private:
+  int maxLejaOrder_;
 };
 
 /// Nonmember constructor from a ParameterList
