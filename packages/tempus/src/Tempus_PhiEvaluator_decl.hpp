@@ -38,6 +38,8 @@ class PhiLinearSolver {
   void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildL(const Scalar dt);
+
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(const Scalar dt);
   void buildK(const Thyra::Ordinal n);
   void buildb(const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B);
@@ -167,10 +169,14 @@ class PhiEvaluator
 						 const Scalar cdt,
 						 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B);
 
+  // TODO: refactor int -> Thyra::Ordinal?
+  //                std::vector -> Teuchos::Array or Teuchos::ArrayRCP or Teuchos::Tuple?
+
  protected:
   std::string name_;
   bool lumpMassMatrix_;
-
+  bool useAtildeForSingleRHS_;
+  
   mutable bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
@@ -186,7 +192,7 @@ class PhiEvaluator
    */
   virtual Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
 						     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-						     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) = 0;
+						     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v) = 0;
 };
 
 }  // namespace Tempus

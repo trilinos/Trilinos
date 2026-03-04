@@ -45,7 +45,7 @@ template <class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
 					    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-					    const Teuchos::RCP<Thyra::VectorBase<Scalar>> v)
+					    const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       phi_order < 0,
@@ -63,8 +63,8 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   for (k = 1; k <= phi_order; ++k)
   {
     inv_factorial /= Scalar(k);
-  }  
-  
+  }
+
   // Iteration vector d_0 = v / (phi_order!)
   Teuchos::RCP<Thyra::VectorBase<Scalar>> d_k = Thyra::createMember(rangeSpace);
 
@@ -72,7 +72,7 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   {
     Thyra::V_StV(d_k.ptr(), inv_factorial, *v);
     // v := d_0
-    Thyra::assign(v.ptr(), *d_k);
+    Thyra::assign(v, *d_k);
   }
   else
   {
@@ -96,7 +96,7 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
     Thyra::V_StV(d_k.ptr(), Scalar(1.) / Scalar(k), *next);
 
     // add d_k to the final result
-    Thyra::Vp_V(v.ptr(), *d_k);
+    Thyra::Vp_V(v, *d_k);
 
     norm_d_k = Thyra::norm_inf(*d_k);
 
@@ -154,7 +154,11 @@ void PhiEvaluatorTaylor<Scalar>::setPhiEvaluatorValues(
 
   setTaylorExpansionOrder(pl->get<int>("Taylor Expansion Order", 10));
 
-  std::cout << "\nParameter List: " << *pl << std::endl;
+  // TODO: make this configurable?
+  this->useAtildeForSingleRHS_ = false;
+
+  std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
+  std::cout << "Parameter List: " << *pl << std::endl;
   std::cout << "Taylor Expansion Order is " << getTaylorExpansionOrder() << std::endl;
 }
 
