@@ -31,13 +31,10 @@ class PhiEvaluatorLeja
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
-  /// Set the linearization point for the Jacobian calculation
-  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) override;
-  
-  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>>,
-					int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
-  
-  //protected:
+ protected:
+  Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
+					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+					     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) override;
 };
 
 /// Nonmember constructor from a ParameterList

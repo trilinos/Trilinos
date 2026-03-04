@@ -13,7 +13,7 @@ namespace Tempus {
 
 /** \brief PhiEvaluatorPFD uses a partial fraction decomposition to evaluate
  *
- *  \f$[x = \varphi_k(J) b]\f$, where 
+ *  \f$[x = \varphi_k(J) b]\f$, where
  *
  *   - b is a right hand side vector
  *   - J is a linear operator
@@ -30,13 +30,27 @@ class PhiEvaluatorPFD
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
-  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) override;
+  /// Set the parameters from a ParameterList
+  void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl);
 
-  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> vphi,
-					int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
+  /// compute the Phi_k function of cdt times Jacobian for right hand side rhs_b
+  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+					const int phi_order, Scalar cdt,
+					const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b) override;
 
- private:
-  mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
+  /// compute the Phi_k function of cdt times Jacobian for a linear combination with right hand side vector rhs_B
+  Thyra::SolveStatus<Scalar> computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+					 const Scalar cdt,
+					 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B) override;
+
+ protected:
+  Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
+					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+					     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) override
+  {
+    // TODO throw error message.
+    return Thyra::SolveStatus<Scalar>();
+  }
 };
 
 /// Nonmember constructor from a ParameterList

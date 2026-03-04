@@ -43,15 +43,11 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
 }
 
 template <class Scalar>
-void PhiEvaluatorLeja<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
+Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int phi_order,
+								     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+								     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v)
 {
-}
-
-
-template <class Scalar>
-Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>>,
-                                         int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
-{
+  // TODO: Implement
   return Thyra::SolveStatus<Scalar>();
 }
   

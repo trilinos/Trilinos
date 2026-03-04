@@ -20,7 +20,7 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Final Time"             type="double" value=".1"/>
+        <Parameter name="Final Time"             type="double" value=".001"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="1000000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.000000001"/>
@@ -49,8 +49,9 @@
 	  <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
       -->
       <ParameterList name="PhiEvaluator">
-	<Parameter name="Taylor Expansion Order" type="int" value="4"/>
+	<Parameter name="Taylor Expansion Order" type="int" value="100"/>
 	<Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
+	<Parameter name="Lump Mass Matrix" type="bool" value="0"/>
       </ParameterList>
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Predictor Stepper Type" type="string" value="None"/>
