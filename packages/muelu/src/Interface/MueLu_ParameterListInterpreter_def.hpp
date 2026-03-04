@@ -1640,7 +1640,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    UpdateFactoryManager_MatrixTransfer(const std::string& VarName, ParameterList& paramList, const ParameterList& /* defaultList */,
+    UpdateFactoryManager_MatrixTransfer(const std::string& VarName, ParameterList& paramList, const ParameterList& defaultList,
                                         FactoryManager& manager, int levelID, std::vector<keep_pair>& /* keeps */) const {
   // NOTE: You would think this would be levelID > 0, but you'd be wrong, since the FactoryManager is basically
   // offset by a level from the things which actually do the work.
@@ -1650,23 +1650,42 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     auto RAP  = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
     auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
     if (!RAP.is_null() || !RAPs.is_null()) {
-      RCP<Factory> fact = rcp(new MatrixTransferFactory());
+      RCP<Factory> mtf = rcp(new MatrixTransferFactory());
 
       ParameterList transferParameters;
       transferParameters.set("Matrix name", VarName);
       transferParameters.set("transpose: use implicit", this->implicitTranspose_);
-      fact->SetParameterList(transferParameters);
+      mtf->SetParameterList(transferParameters);
 
-      fact->SetFactory("P", manager.GetFactory("P"));
+      mtf->SetFactory("P", manager.GetFactory("P"));
       if (!this->implicitTranspose_)
-        fact->SetFactory("R", manager.GetFactory("R"));
-
-      manager.SetFactory(VarName, fact);
+        mtf->SetFactory("R", manager.GetFactory("R"));
 
       if (!RAP.is_null())
-        RAP->AddTransferFactory(manager.GetFactory(VarName));
+        RAP->AddTransferFactory(mtf);
       else
-        RAPs->AddTransferFactory(manager.GetFactory(VarName));
+        RAPs->AddTransferFactory(mtf);
+
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
+      if (!enableRepart) {
+        manager.SetFactory(VarName, mtf);
+      } else {
+        auto rebalFact = rcp(new RebalanceAcFactory());
+        Teuchos::ParameterList rebalParams;
+        rebalParams.set("repartition: use subcommunicators in place", true);
+        rebalParams.set("Matrix name", VarName);
+        rebalFact->SetParameterList(rebalParams);
+        rebalFact->SetFactory("A", mtf);
+        auto inPlaceMapFact = manager.GetFactory("InPlaceMap");
+        rebalFact->SetFactory("InPlaceMap", inPlaceMapFact);
+
+        manager.SetFactory(VarName, rebalFact);
+
+        if (!RAP.is_null())
+          RAP->AddTransferFactory(manager.GetFactory(VarName));
+        else
+          RAPs->AddTransferFactory(manager.GetFactory(VarName));
+      }
     }
   }
 }
