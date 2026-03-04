@@ -573,7 +573,7 @@ void RILUK<MatrixType>::initialize() {
 #if KOKKOS_VERSION >= 5099
             reverse_perm_rcb_ = perm_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "reverse_perm_rcb_"), A_coordinates_lcl.extent(0));
 #endif
-            coors_rcb_  = coors_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coors_rcb_"), A_coordinates_lcl.extent(0), A_coordinates_lcl.extent(1));
+            coors_rcb_ = coors_view_t(Kokkos::view_alloc(Kokkos::WithoutInitializing, "coors_rcb_"), A_coordinates_lcl.extent(0), A_coordinates_lcl.extent(1));
             Kokkos::deep_copy(coors_rcb_, A_coordinates_lcl);
 #if KOKKOS_VERSION >= 5099
             local_ordinal_type n_levels = static_cast<local_ordinal_type>(std::log2(static_cast<double>(num_streams_)) + 1);
