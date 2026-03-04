@@ -411,8 +411,8 @@ void CDR_Model<Scalar>::evalModelImpl(
               (*f)[x_owned_map_->LID(x_ghosted_map_->GID(ne + i))] +=
                   +basis.wt * basis.dz *
                   (basis.uu_dot * basis.phi[i]                  // transient
-                   + (a_ / basis.dz * basis.duu * basis.phi[i]  // convection
-                      + 1.0 / (basis.dz * basis.dz)) *
+                   + (a_ / basis.dz) * basis.duu * basis.phi[i]  // convection
+                      + (1.0 / (basis.dz * basis.dz)) *
                          basis.duu * basis.dphide[i]            // diffusion
                    + k_ * basis.uu * basis.uu * basis.phi[i]);  // source
             }

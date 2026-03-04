@@ -32,8 +32,8 @@ PhiEvaluatorPFD<Scalar>::getValidParameters() const
       "Method to approximate the phi-function evaluation.");
 
   pl->set(
-      "PFD method", "CN",
-      "'PDF method' determines the partial fraction decomposition used to approximate the exponential.  "
+      "PFD Method", "CN",
+      "'PDF Method' determines the partial fraction decomposition used to approximate the exponential.  "
       "'IE' - uses an implicit Euler approximation (order 1).  "
       "'CN' - uses a Crank-Nicolson approximation (order 2).");
 
@@ -43,21 +43,21 @@ PhiEvaluatorPFD<Scalar>::getValidParameters() const
 }
 
 template <class Scalar>
-void PhiEvaluatorPFD<Scalar>::setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs)
-{
-  inArgs_lin_ = Teuchos::rcpFromRef(inArgs);
-}
-
-template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> phiv,
-							       int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
+							       const int k, const Scalar cdt,
+							       const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
 {
   // TODO: right now, hard-codes 'CN' method and k == 1. Generalize.
-  
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      k != 1,
+      std::invalid_argument,
+      "PhiEvaluatorPFD<Scalar>::computePhi is only implemented for k=1");
+
   const Scalar alpha = Scalar(1.0);
   const Scalar beta  = Scalar(0.5) * cdt;
-  
-  Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(*inArgs_lin_, phiv, rhs_b, alpha, beta);
+
+  Thyra::SolveStatus<Scalar> sStatus = this->phiLinSolv_->solveMpJ(*this->inArgs_lin_, phiv, rhs_b, alpha, beta);
 
   //TODO: make this configurable
   Teuchos::RCP<Teuchos::FancyOStream> out =
@@ -79,23 +79,63 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhi(const Teuchos::Pt
 
   return sStatus;
 }
-  
+
+template <class Scalar>
+Thyra::SolveStatus<Scalar> PhiEvaluatorPFD<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
+								const Scalar cdt,
+								const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B)
+{
+  bool not_phi1 = (rhs_B.size() != 2) || (rhs_B[0] != Teuchos::null);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      not_phi1,
+      std::invalid_argument,
+      "PhiEvaluatorPFD<Scalar>::computePhis is only implemented for k=1");
+
+  return this->computePhi(x, 1, cdt, rhs_B[1]);
+}
+
+template <class Scalar>
+void PhiEvaluatorPFD<Scalar>::setPhiEvaluatorValues(
+    Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  PhiEvaluator<Scalar>::setPhiEvaluatorValues(pl);
+
+  //pl->validateParametersAndSetDefaults(*getValidParameters());
+
+  std::string pfdMethod = pl->get<std::string>("PFD Method", "CN");
+  if (pfdMethod != "CN")
+  {
+    Teuchos::RCP<Teuchos::FancyOStream> l_out = this->getOStream();
+    l_out->setOutputToRootOnly(0);
+    *l_out << "PFD Method '" << pfdMethod << "'\n"
+           << "is not yet implemented, continuing with CN!\n";
+  }
+
+  if (this->lumpMassMatrix_ == true)
+  {
+    Teuchos::RCP<Teuchos::FancyOStream> l_out = this->getOStream();
+    l_out->setOutputToRootOnly(0);
+    *l_out << "Option: 'Lump Mass Matrix' is not supported for PFD Solvers, continuing with full matrix.\n";
+    this->setLumpMassMatrix(false);
+  }
+
+  std::cout << "\nParameter List: " << *pl << std::endl;
+}
+
+
 // Nonmember constructors.
 // ------------------------------------------------------------------------
 
 template <class Scalar>
-Teuchos::RCP<PhiEvaluatorPFD<Scalar> > createPhiEvaluatorPFD(
+Teuchos::RCP<PhiEvaluatorPFD<Scalar>> createPhiEvaluatorPFD(
     Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto phi = rcp(new PhiEvaluatorPFD<Scalar>());
   phi->setName("From createPhiEvaluatorPFD");
 
-  if (pl == Teuchos::null || pl->numParams() == 0) return phi;
-
-  pl->validateParametersAndSetDefaults(*phi->getValidParameters());
-
-  phi->setName(pl->name());
-  //phi->setThing(pl->get("Thing", "default"));
+  if (pl != Teuchos::null)
+    phi->setPhiEvaluatorValues(pl);
 
   return phi;
 }
