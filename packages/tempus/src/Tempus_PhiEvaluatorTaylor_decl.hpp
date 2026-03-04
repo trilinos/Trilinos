@@ -8,10 +8,12 @@
 #define Tempus_PhiEvaluatorTaylor_decl_hpp
 
 #include "Tempus_PhiEvaluator.hpp"
+#include "Thyra_ProductVectorBase.hpp"
+
 
 namespace Tempus {
 
-/** \brief PhiEvaluatorTaylor uses a partial fraction decomposition to evaluate
+/** \brief PhiEvaluatorTaylor uses a Taylor expansion to compute
  *
  *  \f$[x = \varphi_k(J) b]\f$, where 
  *
@@ -29,25 +31,20 @@ class PhiEvaluatorTaylor
 
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
-  int getTaylorExpansionOrder() const { return taylorExpOrder_; }
 
-  void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs) override;
-
-  Thyra::SolveStatus<Scalar> computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> vphi,
-					int k, Scalar cdt, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b) override;
-
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matrixExponential(const int expansionOrder);
+  /// Set the parameters from a ParameterList
+  void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
   void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
+  int getTaylorExpansionOrder() const { return taylorExpOrder_; }
+
+ protected:
+  Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
+					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+					     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) override;
 
  private:
-  mutable Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar>> inArgs_lin_;
-
   int taylorExpOrder_;
-
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar>> v_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar>> matExp_v_;
 };
 
 /// Nonmember constructor from a ParameterList

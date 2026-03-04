@@ -11,8 +11,13 @@ IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
 ENDIF()
 
 IF (TEMPUS_ENABLE_EPETRA_STACK OR TEMPUS_ENABLE_TPETRA_STACK)
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_ExponentialEuler_CDR_CopyFiles
-    DEST_FILES Tempus_ExponentialEuler_CDR.xml
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_ExponentialEuler_CDR_PhiPFD_CopyFiles
+    DEST_FILES Tempus_ExponentialEuler_CDR_PhiPFD.xml
+    EXEDEPS ExponentialEuler_CDR
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_ExponentialEuler_CDRTaylor_CopyFiles
+    DEST_FILES Tempus_ExponentialEuler_CDR_PhiTaylor.xml
     EXEDEPS ExponentialEuler_CDR
     )
 ENDIF()
