@@ -20,7 +20,7 @@ namespace Compadre {
 */
 template <typename SolutionData>
 KOKKOS_INLINE_FUNCTION
-void applyTargetsToCoefficients(const SolutionData& data, const member_type& teamMember, scratch_matrix_right_type Q, scratch_matrix_right_type P_target_row) {
+void applyTargetsToCoefficients(const SolutionData& data, const member_type& teamMember, device_unmanaged_matrix_right_type Q, device_unmanaged_matrix_right_type P_target_row) {
 
     const int target_index = data._initial_index_for_batch + teamMember.league_rank();
 
@@ -118,7 +118,7 @@ void applyTargetsToCoefficients(const SolutionData& data, const member_type& tea
     const global_index_type base_offset_index_jmke = data._d_ss.getTargetOffsetIndex(0,0,0,0);
     const global_index_type base_alphas_index = data._d_ss.getAlphaIndex(target_index, base_offset_index_jmke);
 
-    scratch_matrix_right_type this_alphas(data._d_ss._alphas.data() + TO_GLOBAL(base_alphas_index), data._d_ss._total_alpha_values*data._d_ss._max_evaluation_sites_per_target, alphas_per_tile_per_target);
+    device_unmanaged_matrix_right_type this_alphas(data._d_ss._alphas.data() + TO_GLOBAL(base_alphas_index), data._d_ss._total_alpha_values*data._d_ss._max_evaluation_sites_per_target, alphas_per_tile_per_target);
 
     auto n_evaluation_sites_per_target = data.additional_number_of_neighbors_list(target_index) + 1;
     const auto nn = data.number_of_neighbors_list(target_index);

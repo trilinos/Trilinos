@@ -123,54 +123,55 @@ public:
 
     //! Creates a team policy for a parallel_for
     //! parallel_for will break out over loops over teams with each vector lane executing code be default
-    Kokkos::TeamPolicy<device_execution_space> 
+    template <typename execution_space = device_execution_space>
+    Kokkos::TeamPolicy<execution_space> 
         TeamPolicyThreadsAndVectors(const global_index_type batch_size, const int threads_per_team = -1, 
             const int vector_lanes_per_thread = -1) const {
 
         // first create object
-        Kokkos::TeamPolicy<device_execution_space> tp;
+        Kokkos::TeamPolicy<execution_space> tp;
         if (threads_per_team>0 && vector_lanes_per_thread>0) {
-            tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, vector_lanes_per_thread);
+            tp = Kokkos::TeamPolicy<execution_space>(batch_size, threads_per_team, vector_lanes_per_thread);
         } else if (threads_per_team>0) {
             if (_environment_vector_lanes>0) {
-                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, _environment_vector_lanes);
+                tp = Kokkos::TeamPolicy<execution_space>(batch_size, threads_per_team, _environment_vector_lanes);
             } else {
-                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, threads_per_team, Kokkos::AUTO);
+                tp = Kokkos::TeamPolicy<execution_space>(batch_size, threads_per_team, Kokkos::AUTO);
             }
         } else if (vector_lanes_per_thread>0) {
             if (_environment_threads>0) {
-                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, _environment_threads, vector_lanes_per_thread);
+                tp = Kokkos::TeamPolicy<execution_space>(batch_size, _environment_threads, vector_lanes_per_thread);
             } else {
-                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, Kokkos::AUTO, vector_lanes_per_thread);
+                tp = Kokkos::TeamPolicy<execution_space>(batch_size, Kokkos::AUTO, vector_lanes_per_thread);
             }
         } else {
             if (_environment_vector_lanes>0 && _environment_threads>0) {
-                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, _environment_threads, _environment_vector_lanes);
+                tp = Kokkos::TeamPolicy<execution_space>(batch_size, _environment_threads, _environment_vector_lanes);
             } else if (_environment_vector_lanes>0) {
-                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, Kokkos::AUTO, _environment_vector_lanes);
+                tp = Kokkos::TeamPolicy<execution_space>(batch_size, Kokkos::AUTO, _environment_vector_lanes);
             } else if (_environment_threads>0) {
-                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, _environment_threads, Kokkos::AUTO);
+                tp = Kokkos::TeamPolicy<execution_space>(batch_size, _environment_threads, Kokkos::AUTO);
             } else {
-                tp = Kokkos::TeamPolicy<device_execution_space>(batch_size, Kokkos::AUTO, Kokkos::AUTO);
+                tp = Kokkos::TeamPolicy<execution_space>(batch_size, Kokkos::AUTO, Kokkos::AUTO);
             }
         }
-        
+
         if ( (_scratch_team_level_a != _scratch_team_level_b) && (_scratch_thread_level_a != _scratch_thread_level_b) ) {
-            tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-              .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-              .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-              .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
+            tp = tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
+                   .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
+                   .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
+                   .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
         } else if (_scratch_team_level_a != _scratch_team_level_b) {
-            tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
-              .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
-              .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
+            tp = tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a))
+                   .set_scratch_size(_scratch_team_level_b, Kokkos::PerTeam(_team_scratch_size_b))
+                   .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
         } else if (_scratch_thread_level_a != _scratch_thread_level_b) {
-            tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-              .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
-              .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
+            tp = tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
+                   .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a))
+                   .set_scratch_size(_scratch_thread_level_b, Kokkos::PerThread(_thread_scratch_size_b));
         } else {
-            tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
-              .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
+            tp = tp.set_scratch_size(_scratch_team_level_a, Kokkos::PerTeam(_team_scratch_size_a + _team_scratch_size_b))
+                   .set_scratch_size(_scratch_thread_level_a, Kokkos::PerThread(_thread_scratch_size_a + _thread_scratch_size_b));
         }
         return tp;
     }

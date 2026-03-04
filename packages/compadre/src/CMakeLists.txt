@@ -39,13 +39,7 @@ if (KOKKOS_EXISTING_ELSEWHERE) # user points to Kokkos installation
   target_link_libraries(compadre PUBLIC Kokkos::kokkoscore)
 elseif (KOKKOS_IN_TRILINOS) # Kokkos found in Trilinos installation
   target_include_directories(compadre PUBLIC ${Trilinos_INCLUDE_DIRS})
-  if(Trilinos_VERSION VERSION_LESS "13.5")
-    target_link_libraries(compadre PUBLIC kokkoscore)
-  elseif(Trilinos_VERSION VERSION_LESS "14.1")
-    target_link_libraries(compadre PUBLIC KokkosCore::all_libs)
-  else()
-    target_link_libraries(compadre PUBLIC Kokkos::all_libs)
-  endif()
+  target_link_libraries(compadre PUBLIC Kokkos::all_libs)
 elseif (KOKKOS_BUILT_FOR_USER) # Kokkos built for user by this project
   target_link_libraries(compadre PUBLIC Kokkos::kokkoscore)
 endif()
@@ -53,11 +47,7 @@ endif()
 if (KOKKOSKERNELS_EXISTING_ELSEWHERE) # user points to KokkosKernels installation
   target_link_libraries(compadre PUBLIC Kokkos::kokkoskernels)
 elseif (KOKKOSKERNELS_IN_TRILINOS) # KokkosKernels found in Trilinos installation
-  if(Trilinos_VERSION VERSION_LESS "13.5")
-    target_link_libraries(compadre PUBLIC kokkoskernels)
-  else()
-    target_link_libraries(compadre PUBLIC KokkosKernels::all_libs)
-  endif()
+  target_link_libraries(compadre PUBLIC KokkosKernels::all_libs)
 elseif (KOKKOSKERNELS_BUILT_FOR_USER) # Kokkos-Kernels built for user by this project
   target_link_libraries(compadre PUBLIC Kokkos::kokkoskernels)
 endif()
@@ -74,15 +64,10 @@ endif()
 
 bob_export_target(compadre)
 
-set(COMPADRE_TPL
-    tpl/nanoflann.hpp
-    tpl/KokkosBatched_SolveUTV_Decl_Compadre.hpp
-    tpl/KokkosBatched_SolveUTV_TeamVector_Impl_Compadre.hpp
-    tpl/KokkosBatched_SolveUTV_TeamVector_Internal_Compadre.hpp
-)
-
-install(FILES ${COMPADRE_TPL} DESTINATION include/tpl)
-
-install(FILES ${COMPADRE_HEADERS} DESTINATION include)
+if (PYTHON_CALLING_BUILD)
+  install(FILES ${COMPADRE_HEADERS} DESTINATION pycompadre) 
+else()
+  install(FILES ${COMPADRE_HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+endif()
 
 bob_end_subdir()

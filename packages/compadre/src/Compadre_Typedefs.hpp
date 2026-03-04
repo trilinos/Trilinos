@@ -43,6 +43,8 @@ typedef std::size_t global_index_type;
 // execution spaces
 typedef Kokkos::DefaultHostExecutionSpace host_execution_space;
 typedef Kokkos::DefaultExecutionSpace device_execution_space;
+typedef host_execution_space::scratch_memory_space host_scratch;
+typedef device_execution_space::scratch_memory_space device_scratch;
 
 // memory spaces
 typedef typename host_execution_space::memory_space host_memory_space;
@@ -63,25 +65,45 @@ typedef typename host_team_policy::member_type  host_member_type;
 typedef Kokkos::LayoutRight layout_right;
 typedef Kokkos::LayoutLeft layout_left;
 
-// unmanaged data wrappers
-typedef Kokkos::View<double**, layout_right, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+// scratch data wrappers
+typedef Kokkos::View<double**, layout_right, device_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             scratch_matrix_right_type;
-typedef Kokkos::View<double**, layout_left, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<double**, layout_left, device_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             scratch_matrix_left_type;
-typedef Kokkos::View<double*, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<double*, device_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             scratch_vector_type;
-typedef Kokkos::View<int*, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<int*, device_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             scratch_local_index_type;
 
 // host equivalents
-typedef Kokkos::View<double**, layout_right, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<double**, layout_right, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             host_scratch_matrix_right_type;
-typedef Kokkos::View<double**, layout_left, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<double**, layout_left, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             host_scratch_matrix_left_type;
-typedef Kokkos::View<double*, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<double*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             host_scratch_vector_type;
-typedef Kokkos::View<int*, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<int*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             host_scratch_local_index_type;
+
+// unmanaged devicedata deviews
+typedef Kokkos::View<double**, layout_right, device_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            device_unmanaged_matrix_right_type;
+typedef Kokkos::View<double**, layout_left, device_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            device_unmanaged_matrix_left_type;
+typedef Kokkos::View<double*, device_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            device_unmanaged_vector_type;
+typedef Kokkos::View<int*, device_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            device_unmanaged_local_index_type;
+
+// host equivalents
+typedef Kokkos::View<double**, layout_right, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            host_unmanaged_matrix_right_type;
+typedef Kokkos::View<double**, layout_left, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            host_unmanaged_matrix_left_type;
+typedef Kokkos::View<double*, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            host_unmanaged_vector_type;
+typedef Kokkos::View<int*, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            host_unmanaged_local_index_type;
 
 // managed device data views
 typedef Kokkos::View<double**, layout_right, device_memory_space>
