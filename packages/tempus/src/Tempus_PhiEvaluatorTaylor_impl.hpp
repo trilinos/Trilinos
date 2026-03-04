@@ -34,7 +34,7 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
 
   pl->set<int>(
       "Taylor Expansion Order", 10,
-      "The order of the Taylor expansion used in the EPI stepper.\n"
+      "Maximal Taylor expansion used.\n"
       "\n"
       "The default is 10.");
 
@@ -50,7 +50,7 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   TEUCHOS_TEST_FOR_EXCEPTION(
       phi_order < 0,
       std::invalid_argument,
-      "LinOpPhi: phi_order must be nonnegative");
+      "LinOpPhi: phi_order must be nonnegative.");
 
   const int expansionOrder = getTaylorExpansionOrder();
 
