@@ -650,7 +650,7 @@ class RILUK : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar
   mutable std::unique_ptr<MV> reordered_x_;
   mutable std::unique_ptr<MV> reordered_y_;
   perm_view_t perm_rcb_;
-#if KOKKOS_VERSION >= 5099
+#if KOKKOS_VERSION >= 50099
   perm_view_t reverse_perm_rcb_;
   std::vector<local_ordinal_type> partition_sizes_rcb_;
 #endif
