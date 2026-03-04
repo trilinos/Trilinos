@@ -41,7 +41,7 @@ class PhiEvaluatorTaylor
  protected:
   Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
 					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-					     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) override;
+					     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v) override;
 
  private:
   int taylorExpOrder_;
