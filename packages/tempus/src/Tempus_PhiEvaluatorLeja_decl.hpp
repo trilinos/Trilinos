@@ -28,13 +28,17 @@ class PhiEvaluatorLeja
   /// \name Basic PhiEvaluatorLeja Methods
   //@{
 
+  /// Set the linearization point for the Jacobian calculation
+  // TODO: overwrite this, and compute optimal ellipse size in the future
+  //void setLinearizationPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) overwrite;
+
   /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
  protected:
   Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
 					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-					     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) override;
+					     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v) override;
 };
 
 /// Nonmember constructor from a ParameterList

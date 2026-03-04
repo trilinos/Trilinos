@@ -46,9 +46,11 @@ class PhiEvaluatorPFD
  protected:
   Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
 					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-					     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) override
+					     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v) override
   {
-    // TODO throw error message.
+    TEUCHOS_TEST_FOR_EXCEPTION(true,
+			       std::invalid_argument,
+			       "PhiEvaluatorPFD<Scalar>::computeLinOpPhi is not implemented.");
     return Thyra::SolveStatus<Scalar>();
   }
 };
