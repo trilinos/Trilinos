@@ -13,10 +13,7 @@
 
 namespace Tempus {
 
-/*
- * Leja point
- */
-enum LejaType {
+enum LpType {
   LPREAL,
   LPCPLX,
   LPCONJ,
@@ -31,7 +28,7 @@ struct LejaPoint {
   // TODO: how does std::complex<double> interact with Scalar. Leja points are always complex.
   //       Template this on the Scalar tye and get the appropriate complex Scalar types?
   std::complex<double> lp;
-  LejaType lt;
+  LpType lpt;
 
   std::vector<std::complex<double>> get()
   {
@@ -40,11 +37,11 @@ struct LejaPoint {
       case LejaType::LPREAL:
         out.push_back(std::complex(std::real(this->lp), 0.));
         break;
-      case LejaType::LPCONJ:
+      case LPCONJ:
         out.push_back(this->lp);
         out.push_back(std::conj(this->lp));
         break;
-      case LejaType::LPCPLX:
+      case LPCPLX:
         out.push_back(this->lp);
         break;
     };
@@ -54,7 +51,7 @@ struct LejaPoint {
 
 /** \brief PhiEvaluatorLeja uses a Leja point method to evaluate the phi-function vector product
  *
- *  \f$[x = \varphi_k(J) b]\f$, where 
+ *  \f$[x = \varphi_k(J) b]\f$, where
  *
  *   - b is a right hand side vector
  *   - J is a linear operator
@@ -83,7 +80,13 @@ class PhiEvaluatorLeja
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
   /// compute the shift and scale parameters from ellipse a,b,c bounds
-  std::tuple<double, double> getShiftScale();
+  std::tuple<Scalar, Scalar> getShiftScale();
+
+  /// Set the polynomial expansion order
+  void setExpansionOrder(int order) { expansionOrder_ = order; }
+
+  /// Get the polynomial expansion order
+  int getExpansionOrder() const { return expansionOrder_; }
 
  protected:
   Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
@@ -91,6 +94,7 @@ class PhiEvaluatorLeja
 					     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v) override;
  private:
   int maxLejaOrder_;
+  int expansionOrder_;
   double leja_tol_;
   double leja_a_;
   double leja_b_;
