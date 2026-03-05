@@ -9,6 +9,8 @@
 
 #include "Tempus_PhiEvaluator.hpp"
 
+#include <complex>
+
 namespace Tempus {
 
 /*
@@ -23,7 +25,11 @@ enum LejaType {
 /*
  * Leja point container
  */
+
+
 struct LejaPoint {
+  // TODO: how does std::complex<double> interact with Scalar. Leja points are always complex.
+  //       Template this on the Scalar tye and get the appropriate complex Scalar types?
   std::complex<double> lp;
   LejaType lt;
 
@@ -32,11 +38,11 @@ struct LejaPoint {
     std::vector<std::complex<double>> out;
     switch (this->lt) {
       case LejaType::LPREAL:
-        out.push_back(this->lp);
+        out.push_back(std::complex(std::real(this->lp), 0.));
         break;
       case LejaType::LPCONJ:
         out.push_back(this->lp);
-        out.push_back(this->lp * std::complex(0.0, -1.0));
+        out.push_back(std::conj(this->lp));
         break;
       case LejaType::LPCPLX:
         out.push_back(this->lp);
@@ -91,10 +97,13 @@ class PhiEvaluatorLeja
   double leja_c_;
 
   Teuchos::Array<LejaPoint> lp_base_;
-  Teuchos::Array<std::complex<double>> lp_dd_;
 
-  /// TODO: compute the divided differences
-  Teuchos::Array<std::complex<double>> updateDividedDiffs();
+  void initLejaPointsBase();
+
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int k, const Scalar cdt);
+
+  Teuchos::ArrayRCP<LejaPoint> lejaPointsBase_;
+
 };
 
 /// Nonmember constructor from a ParameterList
