@@ -11,10 +11,7 @@
 
 namespace Tempus {
 
-/*
- * Leja point
- */
-enum LejaType {
+enum LpType {
   LPREAL,
   LPCPLX,
   LPCONJ,
@@ -25,20 +22,20 @@ enum LejaType {
  */
 struct LejaPoint {
   std::complex<double> lp;
-  LejaType lt;
+  LpType lpt;
 
   std::vector<std::complex<double>> get()
   {
     std::vector<std::complex<double>> out;
-    switch (this->lt) {
-      case LejaType::LPREAL:
+    switch (this->lpt) {
+      case LPREAL:
         out.push_back(this->lp);
         break;
-      case LejaType::LPCONJ:
+      case LPCONJ:
         out.push_back(this->lp);
         out.push_back(this->lp * std::complex(0.0, -1.0));
         break;
-      case LejaType::LPCPLX:
+      case LPCPLX:
         out.push_back(this->lp);
         break;
     };
