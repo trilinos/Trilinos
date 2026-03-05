@@ -63,11 +63,10 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
                      const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
                      const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v)
 {
-  // TODO: why not use uint instead of int then?
   TEUCHOS_TEST_FOR_EXCEPTION(
-      phi_order < 0,
+      phi_order != 0,
       std::invalid_argument,
-      "LinOpPhi: phi_order must be nonnegative.");
+      "LinOpPhi: phi_order must be zero.");
 
   const int expansionOrder = this->maxLejaOrder_;
 
@@ -82,6 +81,8 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   std::tie(shift, scale) = getShiftScale();
 
   // TODO: update the divided differences (or read from cache)
+  //       this should depend on cdt, but that info is not passed down here
+  auto lp_dd = getDividedDiffs(phi_order, 1.);
 
   // Iteration vector vm_0
   Teuchos::RCP<Thyra::VectorBase<Scalar>> vm_k = Thyra::createMember(rangeSpace);
@@ -91,7 +92,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   Teuchos::RCP<Thyra::VectorBase<Scalar>> av = Thyra::createMember(rangeSpace);
 
   // 0th term of the leja polynomial
-  std::complex<double> coeff = this->lp_dd_.at(0);
+  auto coeff = lp_dd[0];
   Scalar coeff_re = Scalar(coeff.real());
   Thyra::assign(vm_k.ptr(), *v);  // w_m
   Thyra::V_StV(v, coeff_re, *vm_k);
@@ -108,8 +109,10 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   int k = 1;
   while (k < expansionOrder-1)
   {
+    LejaPoint lp = this->lp_base_[k-1];
+
     // extract divided diff
-    std::complex<double> coeff = this->lp_dd_.at(k);
+    std::complex<double> coeff = lp_dd[k];
     coeff_re = Scalar(coeff.real());
 
     // Real leja point case
@@ -140,7 +143,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // conjugate update
       lp_sc_re = Scalar( shift + scale * this->lp_base_.at(k-1).get().at(1).real() );
       lp_sc_im = Scalar( shift + scale * this->lp_base_.at(k-1).get().at(1).imag() );
-      std::complex<double> coeff = this->lp_dd_.at(k+1);
+      std::complex<double> coeff = lp_dd[k+1];
       coeff_re = Scalar(coeff.real());
       Thyra::apply(*L, Thyra::NOTRANS, *qm_k, av.ptr(), tau, 1.0);
       Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *qm_k);
@@ -193,6 +196,38 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   return sStatus;
 }
 
+
+template <class Scalar>
+void PhiEvaluatorLeja<Scalar>::initLejaPointsBase()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      maxLejaOrder_ < 0,
+      std::invalid_argument,
+      "LinOpPhi: maxLejaOrder must be nonnegative.");
+
+  lejaPointsBase_ = Teuchos::arcp<LejaPoint>(maxLejaOrder_);
+}
+
+template <class Scalar>
+Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt)
+{
+  return  Teuchos::arcp<std::complex<double>>(0);
+}
+
+
+template <class Scalar>
+std::tuple<double, double> PhiEvaluatorLeja<Scalar>::getShiftScale()
+{
+  // real half axis
+  double hx_re = (leja_b_ - leja_a_) / 2.0;
+  // imaj half axis
+  double hx_im = leja_c_;
+  // leja ellipse shift and scale parameters
+  double shift = (leja_a_ + leja_b_) / 2.0;
+  double scale = (hx_re + hx_im) / 2.0;
+  return std::make_tuple(shift, scale);
+}
+
 template <class Scalar>
 void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
     Teuchos::RCP<Teuchos::ParameterList> pl)
@@ -213,19 +248,8 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
   std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
   std::cout << "Parameter List: " << *pl << std::endl;
   std::cout << "Leja Order is " << maxLejaOrder_ << std::endl;
-}
 
-template <class Scalar>
-std::tuple<double, double> PhiEvaluatorLeja<Scalar>::getShiftScale()
-{
-  // real half axis
-  double hx_re = (leja_b_ - leja_a_) / 2.0;
-  // imaj half axis
-  double hx_im = leja_c_;
-  // leja ellipse shift and scale parameters
-  double shift = (leja_a_ + leja_b_) / 2.0;
-  double scale = (hx_re + hx_im) / 2.0;
-  return std::make_tuple(shift, scale);
+  initLejaPointsBase();
 }
 
 // Nonmember constructors.
