@@ -27,10 +27,34 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
+          REMOTE=origin
+          
+          # Name for the new master merge branch
+          BRANCH=master_merge_`date +%Y%m%d_%H%M`
+
+          # branch off of develop
+          git checkout -b ${BRANCH}
+
+          # push it back to GitHub
+          git push ${REMOTE} ${BRANCH}
+
+          # create a PR using the new branch
           gh pr create \
           --base master \
-          --head develop \
+          --head $BRANCH \
           --title "Master Merge: Automatic PR from develop to master" \
           --body "Automatic PR from develop to master."
+
+          # delete previously merged branches
+          merged_branches=`git branch --remote --merged master | grep "master_merge_"`
+          for merged_branch in ${merged_branches} ; do
+              # extract branch name
+              merged_branch_name=`echo ${merged_branch} | cut -d "/" -f 2`
+              
+              echo "Branch ${merged_branch_name} can be deleted on remote ${REMOTE}"
+
+              # Delete the branch on origin. Commented out for now.
+              # git push --delete ${REMOTE} ${merged_branch_name}
+          done
 
       
