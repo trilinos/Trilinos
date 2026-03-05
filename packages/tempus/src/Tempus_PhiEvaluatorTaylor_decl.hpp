@@ -15,7 +15,7 @@ namespace Tempus {
 
 /** \brief PhiEvaluatorTaylor uses a Taylor expansion to compute
  *
- *  \f$[x = \varphi_k(J) b]\f$, where 
+ *  \f$[x = \varphi_k(J) b]\f$, where
  *
  *   - b is a right hand side vector
  *   - J is a linear operator
@@ -35,16 +35,19 @@ class PhiEvaluatorTaylor
   /// Set the parameters from a ParameterList
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
-  void setTaylorExpansionOrder(int order) { taylorExpOrder_ = order; }
-  int getTaylorExpansionOrder() const { return taylorExpOrder_; }
+  /// Set the polynomial expansion order
+  void setExpansionOrder(int order) { expansionOrder_ = order; }
+
+  /// Get the polynomial expansion order
+  int getExpansionOrder() const { return expansionOrder_; }
 
  protected:
   Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
-					     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-					     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v) override;
+               const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
+               const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v) override;
 
  private:
-  int taylorExpOrder_;
+  int expansionOrder_;
 };
 
 /// Nonmember constructor from a ParameterList
