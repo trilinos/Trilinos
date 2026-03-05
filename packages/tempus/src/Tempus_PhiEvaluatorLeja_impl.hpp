@@ -35,7 +35,13 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
 
   pl->set<int>(
       "Max Leja Order", 500,
-      "Maximal order of the Leja polynomial used.\n"
+      "Maximum order of the Leja polynomial used.\n"
+      "\n"
+      "The default is 500.");
+
+  pl->set<int>(
+      "Expansion Order", 300,
+      "Order of the Leja polynomial used.\n"
       "\n"
       "The default is 500.");
 
@@ -69,7 +75,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       std::invalid_argument,
       "LinOpPhi: phi_order must be nonnegative.");
 
-  const int expansionOrder = this->maxLejaOrder_;
+  const int expansionOrder = this->getExpansionOrder();
 
   // TODO: optional fractional step size exp(tau*A_tilde)*v
   const Scalar tau = 1.0;
@@ -99,7 +105,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   // storage for error est
   Scalar norm_vm_k = Thyra::norm_inf(*vm_k);
   Scalar overflow = 0.;
-  const Scalar cutoff = 1e22;
   Thyra::SolveStatus<Scalar> sStatus;
 
   Scalar lp_sc_re;
@@ -201,6 +206,7 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
   //pl->validateParametersAndSetDefaults(*getValidParameters());
 
   maxLejaOrder_ = pl->get<int>("Max Leja Order", 500);
+  setExpansionOrder(pl->get<int>("Expansion Order", 300));
   leja_tol_ = pl->get<double>("leja_tol", 1.0e-18);
   leja_a_ = pl->get<double>("leja_a", -1.0);
   leja_b_ = pl->get<double>("leja_b", 0.0);
@@ -215,15 +221,15 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 }
 
 template <class Scalar>
-std::tuple<double, double> PhiEvaluatorLeja<Scalar>::getShiftScale()
+std::tuple<Scalar, Scalar> PhiEvaluatorLeja<Scalar>::getShiftScale()
 {
   // real half axis
   double hx_re = (leja_b_ - leja_a_) / 2.0;
   // imaj half axis
   double hx_im = leja_c_;
   // leja ellipse shift and scale parameters
-  double shift = (leja_a_ + leja_b_) / 2.0;
-  double scale = (hx_re + hx_im) / 2.0;
+  Scalar shift = Scalar( (leja_a_ + leja_b_) / 2.0 );
+  Scalar scale = Scalar( (hx_re + hx_im) / 2.0 );
   return std::make_tuple(shift, scale);
 }
 
