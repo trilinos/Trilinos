@@ -45,7 +45,7 @@ struct LejaPoint {
 
 /** \brief PhiEvaluatorLeja uses a Leja point method to evaluate the phi-function vector product
  *
- *  \f$[x = \varphi_k(J) b]\f$, where 
+ *  \f$[x = \varphi_k(J) b]\f$, where
  *
  *   - b is a right hand side vector
  *   - J is a linear operator
@@ -74,7 +74,13 @@ class PhiEvaluatorLeja
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
   /// compute the shift and scale parameters from ellipse a,b,c bounds
-  std::tuple<double, double> getShiftScale();
+  std::tuple<Scalar, Scalar> getShiftScale();
+
+  /// Set the polynomial expansion order
+  void setExpansionOrder(int order) { expansionOrder_ = order; }
+
+  /// Get the polynomial expansion order
+  int getExpansionOrder() const { return expansionOrder_; }
 
  protected:
   Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
@@ -82,6 +88,7 @@ class PhiEvaluatorLeja
 					     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v) override;
  private:
   int maxLejaOrder_;
+  int expansionOrder_;
   double leja_tol_;
   double leja_a_;
   double leja_b_;
@@ -91,7 +98,7 @@ class PhiEvaluatorLeja
   Teuchos::Array<std::complex<double>> lp_dd_;
 
   /// TODO: compute the divided differences
-  Teuchos::Array<std::complex<double>> updateDividedDiffs();
+  Teuchos::Array<std::complex<double>> updateDividedDiffs(const int phi_order);
 };
 
 /// Nonmember constructor from a ParameterList
