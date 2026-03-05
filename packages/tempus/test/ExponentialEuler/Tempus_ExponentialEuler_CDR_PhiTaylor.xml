@@ -45,8 +45,7 @@
       <Parameter name="Initial Condition Consistency Check" type="bool" value="1"/>
 
       <ParameterList name="PhiEvaluator">
-	<Parameter name="Taylor Expansion Order" type="int" value="400"/>
-	<Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
+	<Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
 	<Parameter name="Lump Mass Matrix" type="bool" value="1"/>
       </ParameterList>
 
