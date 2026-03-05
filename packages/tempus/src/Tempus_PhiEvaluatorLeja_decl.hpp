@@ -95,10 +95,10 @@ class PhiEvaluatorLeja
  private:
   int maxLejaOrder_;
   int expansionOrder_;
-  double leja_tol_;
-  double leja_a_;
-  double leja_b_;
-  double leja_c_;
+  Scalar leja_tol_;
+  Scalar leja_a_;
+  Scalar leja_b_;
+  Scalar leja_c_;
 
   Teuchos::Array<LejaPoint> lp_base_;
 
