@@ -119,7 +119,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // av = (tau*A)*vm
       Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 1.0);
       // vm_k = (av - lp_re[k-1]*vm_k)
-      Thyra::V_VpStV(vm_k.ptr(), *av, lp_sc_re, *vm_k);
+      Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *vm_k);
       // vm_k = vm_k / scale
       Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
       // add vm_k*coeff to the final result
@@ -132,7 +132,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // first update
       lp_sc_re = Scalar( shift + scale * this->lp_base_.at(k-1).get().at(0).real() );
       Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 1.0);
-      Thyra::V_VpStV(qm_k.ptr(), *av, lp_sc_re, *vm_k);
+      Thyra::V_VpStV(qm_k.ptr(), *av, -lp_sc_re, *vm_k);
       Thyra::V_StV(qm_k.ptr(), 1.0 / scale, *qm_k);
       Thyra::Vp_StV(v, coeff_re, *qm_k);
       k += 1;
@@ -143,7 +143,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       std::complex<double> coeff = this->lp_dd_.at(k+1);
       coeff_re = Scalar(coeff.real());
       Thyra::apply(*L, Thyra::NOTRANS, *qm_k, av.ptr(), tau, 1.0);
-      Thyra::V_VpStV(vm_k.ptr(), *av, lp_sc_re, *qm_k);
+      Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *qm_k);
       Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
       Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im / scale) * (lp_sc_im / scale), *vm_k);
       Thyra::Vp_StV(v, coeff_re, *vm_k);
