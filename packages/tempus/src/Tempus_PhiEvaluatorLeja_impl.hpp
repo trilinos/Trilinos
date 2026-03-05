@@ -205,30 +205,59 @@ template <class Scalar>
 void PhiEvaluatorLeja<Scalar>::initLejaPointsBase()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-      maxLejaOrder_ < 0,
+      maxLejaOrder_ < 2,
       std::invalid_argument,
-      "LinOpPhi: maxLejaOrder must be nonnegative.");
+      "LinOpPhi: maxLejaOrder must be greater or equal two.");
 
   lejaPointsBase_ = Teuchos::arcp<LejaPoint>(maxLejaOrder_);
+
+  lejaPointsBase_[0] = {-1., LPREAL};
+  lejaPointsBase_[1] = {1., LPREAL};
+
+  std::complex<double> root_unity(0, 1);
+  int full_half_circle = 1;
+  for (int lpk = 2; lpk < maxLejaOrder_; lpk++)
+  {
+    // get the old leja Point from the last full half circle
+    std::complex<double> next_lp = lejaPointsBase_[lpk - full_half_circle].lp;
+
+    // rotate the leja point by root of unity
+    next_lp *= root_unity;
+
+    // save the new leja point
+    lejaPointsBase_[lpk] = {next_lp, LPCONJ};
+
+    // if we have completed one full half circle (upper complex half plane)
+    if (lpk >= 2*full_half_circle)
+    {
+      full_half_circle *= 2;
+      root_unity = std::sqrt(root_unity);
+    }
+    std::cout << lejaPointsBase_[lpk].lp << std::endl;
+  }
+
+  // swap the first two real leja points (to have 1 first, not essential)
+  //std::swap(lejaPointsBase_[0], lejaPointsBase_[1]);
 }
 
 template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt)
 {
+  // TODO implement.
   return  Teuchos::arcp<std::complex<double>>(0);
 }
 
 
 template <class Scalar>
-std::tuple<double, double> PhiEvaluatorLeja<Scalar>::getShiftScale()
+std::tuple<Scalar, Scalar> PhiEvaluatorLeja<Scalar>::getShiftScale()
 {
   // real half axis
-  double hx_re = (leja_b_ - leja_a_) / 2.0;
+  Scalar hx_re = (leja_b_ - leja_a_) / 2.0;
   // imaj half axis
-  double hx_im = leja_c_;
+  Scalar hx_im = leja_c_;
   // leja ellipse shift and scale parameters
-  double shift = (leja_a_ + leja_b_) / 2.0;
-  double scale = (hx_re + hx_im) / 2.0;
+  Scalar shift = (leja_a_ + leja_b_) / 2.0;
+  Scalar scale = (hx_re + hx_im) / 2.0;
   return std::make_tuple(shift, scale);
 }
 
