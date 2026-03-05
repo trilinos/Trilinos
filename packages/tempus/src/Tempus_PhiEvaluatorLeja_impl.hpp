@@ -35,7 +35,13 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
 
   pl->set<int>(
       "Max Leja Order", 500,
-      "Maximal order of the Leja polynomial used.\n"
+      "Maximum order of the Leja polynomial used.\n"
+      "\n"
+      "The default is 500.");
+
+  pl->set<int>(
+      "Expansion Order", 300,
+      "Order of the Leja polynomial used.\n"
       "\n"
       "The default is 500.");
 
@@ -68,7 +74,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       std::invalid_argument,
       "LinOpPhi: phi_order must be zero.");
 
-  const int expansionOrder = this->maxLejaOrder_;
+  const int expansionOrder = this->getExpansionOrder();
 
   // TODO: optional fractional step size exp(tau*A_tilde)*v
   const Scalar tau = 1.0;
@@ -100,7 +106,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   // storage for error est
   Scalar norm_vm_k = Thyra::norm_inf(*vm_k);
   Scalar overflow = 0.;
-  const Scalar cutoff = 1e22;
   Thyra::SolveStatus<Scalar> sStatus;
 
   Scalar lp_sc_re;
@@ -116,7 +121,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
     coeff_re = Scalar(coeff.real());
 
     // Real leja point case
-    if (this->lp_base_.at(k-1).lt == LejaType::LPREAL) {
+    if (this->lp_base_.at(k-1).lpt == LpType::LPREAL) {
       // compute shifted and scaled leja point
       lp_sc_re = Scalar( shift + scale * this->lp_base_.at(k-1).get().at(0).real() );
       // av = (tau*A)*vm
@@ -131,14 +136,13 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 
       norm_vm_k = Thyra::norm_inf(*vm_k) * coeff_re;
     }
-    else if (this->lp_base_.at(k-1).lt == LejaType::LPCONJ)  {
+    else if (this->lp_base_.at(k-1).lpt == LpType::LPCONJ)  {
       // first update
       lp_sc_re = Scalar( shift + scale * this->lp_base_.at(k-1).get().at(0).real() );
       Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 1.0);
       Thyra::V_VpStV(qm_k.ptr(), *av, -lp_sc_re, *vm_k);
       Thyra::V_StV(qm_k.ptr(), 1.0 / scale, *qm_k);
       Thyra::Vp_StV(v, coeff_re, *qm_k);
-      k += 1;
 
       // conjugate update
       lp_sc_re = Scalar( shift + scale * this->lp_base_.at(k-1).get().at(1).real() );
@@ -150,7 +154,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
       Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im / scale) * (lp_sc_im / scale), *vm_k);
       Thyra::Vp_StV(v, coeff_re, *vm_k);
-      k += 1;
+      k += 2;
 
       norm_vm_k = Thyra::norm_inf(*vm_k) * coeff_re;
     }
@@ -237,6 +241,7 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
   //pl->validateParametersAndSetDefaults(*getValidParameters());
 
   maxLejaOrder_ = pl->get<int>("Max Leja Order", 500);
+  setExpansionOrder(pl->get<int>("Expansion Order", 300));
   leja_tol_ = pl->get<double>("leja_tol", 1.0e-18);
   leja_a_ = pl->get<double>("leja_a", -1.0);
   leja_b_ = pl->get<double>("leja_b", 0.0);

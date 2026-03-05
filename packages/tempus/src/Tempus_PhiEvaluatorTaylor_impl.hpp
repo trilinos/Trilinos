@@ -52,7 +52,7 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
       std::invalid_argument,
       "LinOpPhi: phi_order must be nonnegative.");
 
-  const int expansionOrder = getTaylorExpansionOrder();
+  const int expansionOrder = getExpansionOrder();
 
   // phi_k(L) * v is in range(L)
   const auto rangeSpace = L->range();
@@ -152,14 +152,14 @@ void PhiEvaluatorTaylor<Scalar>::setPhiEvaluatorValues(
 
   //pl->validateParametersAndSetDefaults(*getValidParameters());
 
-  setTaylorExpansionOrder(pl->get<int>("Taylor Expansion Order", 10));
+  setExpansionOrder(pl->get<int>("Taylor Expansion Order", 10));
 
   // TODO: make this configurable?
   this->useAtildeForSingleRHS_ = false;
 
   std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
   std::cout << "Parameter List: " << *pl << std::endl;
-  std::cout << "Taylor Expansion Order is " << getTaylorExpansionOrder() << std::endl;
+  std::cout << "Taylor Expansion Order is " << getExpansionOrder() << std::endl;
 }
 
 
