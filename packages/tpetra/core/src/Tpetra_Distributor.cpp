@@ -29,8 +29,8 @@ const bool tpetraDistributorDebugDefault = false;
 Distributor::
     Distributor(const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                 const Teuchos::RCP<Teuchos::FancyOStream>& /* out */,
-                const Teuchos::RCP<Teuchos::ParameterList>& plist)
-  : plan_(comm) {
+                const Teuchos::RCP<Teuchos::ParameterList>& plist) {
+  plan_ = Teuchos::rcp(new Details::DistributorPlan(comm));
   this->setParameterList(plist);
 }
 
@@ -100,7 +100,7 @@ std::unique_ptr<std::string>
 Distributor::
     createPrefix(const char methodName[]) const {
   return Details::createPrefix(
-      plan_.getComm().getRawPtr(), "Distributor", methodName);
+      plan_->getComm().getRawPtr(), "Distributor", methodName);
 }
 
 void Distributor::
@@ -125,7 +125,7 @@ void Distributor::
     RCP<ParameterList> planParams(plist);
     planParams->remove("Debug", false);
     planParams->remove("VerboseObject", false);
-    plan_.setParameterList(planParams);
+    plan_->setParameterList(planParams);
   }
 }
 
@@ -164,23 +164,23 @@ Distributor::getValidParameters() const {
   return Teuchos::rcp_const_cast<const ParameterList>(plist);
 }
 
-size_t Distributor::getTotalReceiveLength() const { return plan_.getTotalReceiveLength(); }
+size_t Distributor::getTotalReceiveLength() const { return plan_->getTotalReceiveLength(); }
 
-size_t Distributor::getNumReceives() const { return plan_.getNumReceives(); }
+size_t Distributor::getNumReceives() const { return plan_->getNumReceives(); }
 
-bool Distributor::hasSelfMessage() const { return plan_.hasSelfMessage(); }
+bool Distributor::hasSelfMessage() const { return plan_->hasSelfMessage(); }
 
-size_t Distributor::getNumSends() const { return plan_.getNumSends(); }
+size_t Distributor::getNumSends() const { return plan_->getNumSends(); }
 
-size_t Distributor::getMaxSendLength() const { return plan_.getMaxSendLength(); }
+size_t Distributor::getMaxSendLength() const { return plan_->getMaxSendLength(); }
 
-Teuchos::ArrayView<const int> Distributor::getProcsFrom() const { return plan_.getProcsFrom(); }
+Teuchos::ArrayView<const int> Distributor::getProcsFrom() const { return plan_->getProcsFrom(); }
 
-Teuchos::ArrayView<const size_t> Distributor::getLengthsFrom() const { return plan_.getLengthsFrom(); }
+Teuchos::ArrayView<const size_t> Distributor::getLengthsFrom() const { return plan_->getLengthsFrom(); }
 
-Teuchos::ArrayView<const int> Distributor::getProcsTo() const { return plan_.getProcsTo(); }
+Teuchos::ArrayView<const int> Distributor::getProcsTo() const { return plan_->getProcsTo(); }
 
-Teuchos::ArrayView<const size_t> Distributor::getLengthsTo() const { return plan_.getLengthsTo(); }
+Teuchos::ArrayView<const size_t> Distributor::getLengthsTo() const { return plan_->getLengthsTo(); }
 
 Teuchos::RCP<Distributor>
 Distributor::getReverse(bool create) const {
@@ -195,8 +195,9 @@ Distributor::getReverse(bool create) const {
 }
 
 void Distributor::createReverseDistributor() const {
-  reverseDistributor_           = Teuchos::rcp(new Distributor(plan_.getComm()));
-  reverseDistributor_->plan_    = *plan_.getReversePlan();
+  reverseDistributor_           = Teuchos::rcp(new Distributor(plan_->getComm()));
+  auto revPlan                  = plan_->getReversePlan();
+  reverseDistributor_->plan_    = revPlan;
   reverseDistributor_->verbose_ = verbose_;
 
   // requests_: Allocated on demand.
@@ -217,7 +218,7 @@ void Distributor::createReverseDistributor() const {
 }
 
 void Distributor::doWaits() {
-  actor_.doWaits(plan_);
+  actor_.doWaits(*plan_);
 }
 
 void Distributor::doReverseWaits() {
@@ -236,10 +237,10 @@ std::string Distributor::description() const {
     out << "Label: " << label << ", ";
   }
   out << "How initialized: "
-      << Details::DistributorHowInitializedEnumToString(plan_.howInitialized())
+      << Details::DistributorHowInitializedEnumToString(plan_->howInitialized())
       << ", Parameters: {"
       << "Send type: "
-      << DistributorSendTypeEnumToString(plan_.getSendType())
+      << DistributorSendTypeEnumToString(plan_->getSendType())
       << ", Debug: " << (verbose_ ? "true" : "false")
       << "}}";
   return out.str();
@@ -254,7 +255,7 @@ Distributor::
   using Teuchos::VERB_HIGH;
 
   // This preserves current behavior of Distributor.
-  if (vl <= Teuchos::VERB_LOW || plan_.getComm().is_null()) {
+  if (vl <= Teuchos::VERB_LOW || plan_->getComm().is_null()) {
     return std::string();
   }
 
@@ -262,27 +263,27 @@ Distributor::
   auto outp                  = Teuchos::getFancyOStream(outStringP);  // returns RCP
   Teuchos::FancyOStream& out = *outp;
 
-  const int myRank   = plan_.getComm()->getRank();
-  const int numProcs = plan_.getComm()->getSize();
+  const int myRank   = plan_->getComm()->getRank();
+  const int numProcs = plan_->getComm()->getSize();
   out << "Process " << myRank << " of " << numProcs << ":" << endl;
   Teuchos::OSTab tab1(out);
 
   out << "selfMessage: " << hasSelfMessage() << endl;
   out << "numSends: " << getNumSends() << endl;
   if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-    out << "procsTo: " << toString(plan_.getProcsTo()) << endl;
-    out << "lengthsTo: " << toString(plan_.getLengthsTo()) << endl;
+    out << "procsTo: " << toString(plan_->getProcsTo()) << endl;
+    out << "lengthsTo: " << toString(plan_->getLengthsTo()) << endl;
     out << "maxSendLength: " << getMaxSendLength() << endl;
   }
   if (vl == VERB_EXTREME) {
-    out << "startsTo: " << toString(plan_.getStartsTo()) << endl;
-    out << "indicesTo: " << toString(plan_.getIndicesTo()) << endl;
+    out << "startsTo: " << toString(plan_->getStartsTo()) << endl;
+    out << "indicesTo: " << toString(plan_->getIndicesTo()) << endl;
   }
   if (vl == VERB_HIGH || vl == VERB_EXTREME) {
     out << "numReceives: " << getNumReceives() << endl;
     out << "totalReceiveLength: " << getTotalReceiveLength() << endl;
-    out << "lengthsFrom: " << toString(plan_.getLengthsFrom()) << endl;
-    out << "procsFrom: " << toString(plan_.getProcsFrom()) << endl;
+    out << "lengthsFrom: " << toString(plan_->getLengthsFrom()) << endl;
+    out << "procsFrom: " << toString(plan_->getProcsFrom()) << endl;
   }
 
   out.flush();  // make sure the ostringstream got everything
@@ -310,11 +311,11 @@ void Distributor::
   // operations with the other processes.  In that case, it is not
   // even legal to call this method.  The reasonable thing to do in
   // that case is nothing.
-  if (plan_.getComm().is_null()) {
+  if (plan_->getComm().is_null()) {
     return;
   }
-  const int myRank   = plan_.getComm()->getRank();
-  const int numProcs = plan_.getComm()->getSize();
+  const int myRank   = plan_->getComm()->getRank();
+  const int numProcs = plan_->getComm()->getSize();
 
   // Only Process 0 should touch the output stream, but this method
   // in general may need to do communication.  Thus, we may need to
@@ -341,13 +342,13 @@ void Distributor::
     }
     out << "Number of processes: " << numProcs << endl
         << "How initialized: "
-        << Details::DistributorHowInitializedEnumToString(plan_.howInitialized())
+        << Details::DistributorHowInitializedEnumToString(plan_->howInitialized())
         << endl;
     {
       out << "Parameters: " << endl;
       Teuchos::OSTab tab2(out);
       out << "\"Send type\": "
-          << DistributorSendTypeEnumToString(plan_.getSendType()) << endl
+          << DistributorSendTypeEnumToString(plan_->getSendType()) << endl
           << "\"Debug\": " << (verbose_ ? "true" : "false") << endl;
     }
   }  // if myRank == 0
@@ -355,7 +356,7 @@ void Distributor::
   // This is collective over the Map's communicator.
   if (vl > VERB_LOW) {
     const std::string lclStr = this->localDescribeToString(vl);
-    Tpetra::Details::gathervPrint(out, lclStr, *plan_.getComm());
+    Tpetra::Details::gathervPrint(out, lclStr, *plan_->getComm());
   }
 
   out << "Reverse Distributor:";
@@ -370,13 +371,13 @@ void Distributor::
 size_t
 Distributor::
     createFromSends(const Teuchos::ArrayView<const int>& exportProcIDs) {
-  return plan_.createFromSends(exportProcIDs);
+  return plan_->createFromSends(exportProcIDs);
 }
 
 void Distributor::
     createFromSendsAndRecvs(const Teuchos::ArrayView<const int>& exportProcIDs,
                             const Teuchos::ArrayView<const int>& remoteProcIDs) {
-  plan_.createFromSendsAndRecvs(exportProcIDs, remoteProcIDs);
+  plan_->createFromSendsAndRecvs(exportProcIDs, remoteProcIDs);
 }
 
 }  // namespace Tpetra

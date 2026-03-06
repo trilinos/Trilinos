@@ -35,6 +35,7 @@
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_EdgeProlongatorPatternFactory.hpp"
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_FacadeClassFactory.hpp"
@@ -45,6 +46,7 @@
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_LocalOrdinalTransferFactory.hpp"
 #include "MueLu_MatrixAnalysisFactory.hpp"
+#include "MueLu_MatrixTransferFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_NotayAggregationFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
@@ -548,7 +550,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                              Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
   MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-  TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen", "classical", "smoothed reitzinger", "unsmoothed reitzinger", "replicate", "combine"}).count(multigridAlgo) == 0,
+  TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen", "classical", "smoothed reitzinger", "unsmoothed reitzinger", "emin reitzinger", "replicate", "combine"}).count(multigridAlgo) == 0,
                              Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
   TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
@@ -596,6 +598,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   // === Aggregation ===
   if (multigridAlgo == "unsmoothed reitzinger" || multigridAlgo == "smoothed reitzinger")
     UpdateFactoryManager_Reitzinger(paramList, defaultList, manager, levelID, keeps);
+  else if (multigridAlgo == "emin reitzinger")
+    UpdateFactoryManager_EminReitzinger(paramList, defaultList, manager, levelID, keeps);
   else
     UpdateFactoryManager_Aggregation_TentativeP(paramList, defaultList, manager, levelID, keeps);
 
@@ -622,11 +626,14 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   } else if (multigridAlgo == "sa" || multigridAlgo == "smoothed reitzinger") {
     // Smoothed aggregation
-    UpdateFactoryManager_SA(paramList, defaultList, manager, levelID, keeps);
+    UpdateFactoryManager_SA(multigridAlgo, paramList, defaultList, manager, levelID, keeps);
 
   } else if (multigridAlgo == "emin") {
     // Energy minimization
     UpdateFactoryManager_Emin(paramList, defaultList, manager, levelID, keeps);
+
+  } else if (multigridAlgo == "emin reitzinger") {
+    // pass
 
   } else if (multigridAlgo == "replicate") {
     UpdateFactoryManager_Replicate(paramList, defaultList, manager, levelID, keeps);
@@ -655,6 +662,13 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // === RAP ===
   UpdateFactoryManager_RAP(paramList, defaultList, manager, levelID, keeps);
+
+  if (multigridAlgo == "smoothed reitzinger") {
+    // === CurlCurl ===
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: damping factor", double, saDampingFactor);
+    if (saDampingFactor != 0.0)
+      UpdateFactoryManager_MatrixTransfer("CurlCurl", paramList, defaultList, manager, levelID, keeps);
+  }
 
   // == BlockNumber Transfer ==
   UpdateFactoryManager_LocalOrdinalTransfer("BlockNumber", multigridAlgo, paramList, defaultList, manager, levelID, keeps);
@@ -984,7 +998,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 // =====================================================================================================
-// ========================================= TentativeP=================================================
+// ========================================= Reitzinger =================================================
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1012,6 +1026,70 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   manager.SetFactory("Ptent", rFactory);
   manager.SetFactory("D0", rFactory);
   manager.SetFactory("InPlaceMap", rFactory);
+}
+
+// =====================================================================================================
+// =============================== Algorithm: Energy Minimization Reitzinger ===========================
+// =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    UpdateFactoryManager_EminReitzinger(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
+                                        int levelID, std::vector<keep_pair>& keeps) const {
+  ParameterList rParams;
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: enable", bool, rParams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "repartition: use subcommunicators", bool, rParams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: constant column sums", bool, rParams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, rParams);
+
+  RCP<Factory> rFactory = rcp(new ReitzingerPFactory());
+  rFactory->SetParameterList(rParams);
+
+  // These are all going to be user provided, so NoFactory
+  rFactory->SetFactory("Pnodal", NoFactory::getRCP());
+  rFactory->SetFactory("NodeAggMatrix", NoFactory::getRCP());
+  // rFactory->SetFactory("NodeMatrix", NoFactory::getRCP());
+
+  if (levelID > 1)
+    rFactory->SetFactory("D0", this->GetFactoryManager(levelID - 1)->GetFactory("D0"));
+  else
+    rFactory->SetFactory("D0", NoFactory::getRCP());
+
+  manager.SetFactory("Ptent", rFactory);
+  manager.SetFactory("D0", rFactory);
+  manager.SetFactory("InPlaceMap", rFactory);
+
+  MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+
+  // Pattern
+  auto patternFactory = rcp(new EdgeProlongatorPatternFactory());
+  // patternFactory->SetFactory("Pnodal", manager.GetFactory("Pnodal"));
+  manager.SetFactory("Ppattern", patternFactory);
+
+  // Constraint
+  auto constraintFactory = rcp(new ConstraintFactory());
+  ParameterList constraintParams;
+  constraintFactory->SetFactory("Ppattern", manager.GetFactory("Ppattern"));
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: least squares solver type", std::string, constraintParams);
+  constraintParams.set("emin: constraint type", "maxwell");
+  constraintFactory->SetParameterList(constraintParams);
+  manager.SetFactory("Constraint", constraintFactory);
+
+  // Emin Factory
+  auto P = rcp(new EminPFactory());
+
+  // Energy minimization
+  ParameterList Pparams;
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num iterations", int, Pparams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: iterative method", std::string, Pparams);
+  if (reuseType == "emin") {
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: num reuse iterations", int, Pparams);
+    Pparams.set("Keep P0", true);
+    Pparams.set("Keep Constraint0", true);
+  }
+  P->SetParameterList(Pparams);
+  P->SetFactory("P", constraintFactory);
+  P->SetFactory("Constraint", constraintFactory);
+  manager.SetFactory("P", P);
 }
 
 // =====================================================================================================
@@ -1288,6 +1366,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     ptentParams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, ptentParams);
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: build coarse coordinates", bool, ptentParams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: keep tentative prolongator", bool, ptentParams);
   Ptent->SetParameterList(ptentParams);
   Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
   Ptent->SetFactory("CoarseMap", manager.GetFactory("CoarseMap"));
@@ -1552,6 +1631,61 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         RAP->AddTransferFactory(manager.GetFactory(VarName));
       else
         RAPs->AddTransferFactory(manager.GetFactory(VarName));
+    }
+  }
+}
+
+// =====================================================================================================
+// =================================  MatrixTransferFactory ============================================
+// =====================================================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    UpdateFactoryManager_MatrixTransfer(const std::string& VarName, ParameterList& paramList, const ParameterList& defaultList,
+                                        FactoryManager& manager, int levelID, std::vector<keep_pair>& /* keeps */) const {
+  // NOTE: You would think this would be levelID > 0, but you'd be wrong, since the FactoryManager is basically
+  // offset by a level from the things which actually do the work.
+  if (levelID == 0)
+    manager.SetFactory(VarName, NoFactory::getRCP());
+  else if (levelID > 0) {
+    auto RAP  = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
+    auto RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
+    if (!RAP.is_null() || !RAPs.is_null()) {
+      RCP<Factory> mtf = rcp(new MatrixTransferFactory());
+
+      ParameterList transferParameters;
+      transferParameters.set("Matrix name", VarName);
+      transferParameters.set("transpose: use implicit", this->implicitTranspose_);
+      mtf->SetParameterList(transferParameters);
+
+      mtf->SetFactory("P", manager.GetFactory("P"));
+      if (!this->implicitTranspose_)
+        mtf->SetFactory("R", manager.GetFactory("R"));
+
+      if (!RAP.is_null())
+        RAP->AddTransferFactory(mtf);
+      else
+        RAPs->AddTransferFactory(mtf);
+
+      MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: enable", bool, enableRepart);
+      if (!enableRepart) {
+        manager.SetFactory(VarName, mtf);
+      } else {
+        auto rebalFact = rcp(new RebalanceAcFactory());
+        Teuchos::ParameterList rebalParams;
+        rebalParams.set("repartition: use subcommunicators in place", true);
+        rebalParams.set("Matrix name", VarName);
+        rebalFact->SetParameterList(rebalParams);
+        rebalFact->SetFactory("A", mtf);
+        auto inPlaceMapFact = manager.GetFactory("InPlaceMap");
+        rebalFact->SetFactory("InPlaceMap", inPlaceMapFact);
+
+        manager.SetFactory(VarName, rebalFact);
+
+        if (!RAP.is_null())
+          RAP->AddTransferFactory(manager.GetFactory(VarName));
+        else
+          RAPs->AddTransferFactory(manager.GetFactory(VarName));
+      }
     }
   }
 }
@@ -2012,7 +2146,8 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (levelID >= (int)pcoarsen_schedule.size()) {
       // Past the p-coarsening levels, we do Smoothed Aggregation
       // NOTE: We should probably consider allowing other options past p-coarsening
-      UpdateFactoryManager_SA(paramList, defaultList, manager, levelID, keeps);
+      std::string multigridAlgo = "SA";
+      UpdateFactoryManager_SA(multigridAlgo, paramList, defaultList, manager, levelID, keeps);
 
     } else {
       // P-Coarsening
@@ -2050,7 +2185,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 // =====================================================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    UpdateFactoryManager_SA(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int /* levelID */, std::vector<keep_pair>& keeps) const {
+    UpdateFactoryManager_SA(std::string& multigridAlgo, ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
   // Smoothed aggregation
   RCP<Factory> P = rcp(new SaPFactory());
   ParameterList Pparams;
@@ -2059,6 +2194,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   if (defaultList.isSublist("matrixmatrix: kernel params"))
     Pparams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: nodal damping factor", double, Pparams);
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: calculate eigenvalue estimate", bool, Pparams);
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: max eigenvalue", double, Pparams);
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: eigenvalue estimate num iterations", int, Pparams);
@@ -2069,6 +2205,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: enforce constraints", bool, Pparams);
   // MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: eigen-analysis type", std::string, Pparams);
   MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "tentative: calculate qr", bool, Pparams);
+
+  if ((multigridAlgo == "smoothed reitzinger") && (levelID > 0)) {
+    Pparams.set("sa: maxwell1 smoothing", true);
+    if (!Pparams.isType<double>("sa: damping factor") || (Pparams.get<double>("sa: damping factor") != 0.0))
+      P->SetFactory("CurlCurl", this->GetFactoryManager(levelID - 1)->GetFactory("CurlCurl"));
+  }
 
   P->SetParameterList(Pparams);
 
@@ -2170,6 +2312,9 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
   // Constraint
   auto constraintFactory = rcp(new ConstraintFactory());
+  Teuchos::ParameterList constraintParams;
+  MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "emin: least squares solver type", std::string, constraintParams);
+  constraintParams.set("emin: constraint type", "nullspace");
   constraintFactory->SetFactory("Ppattern", manager.GetFactory("Ppattern"));
   constraintFactory->SetFactory("CoarseNullspace", manager.GetFactory("Ptent"));
   manager.SetFactory("Constraint", constraintFactory);

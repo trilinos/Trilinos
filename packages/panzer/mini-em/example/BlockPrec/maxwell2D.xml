@@ -4,9 +4,8 @@
     <Parameter name="Source" type="string" value="Inline Mesh" />
 
     <ParameterList name="Inline Mesh">
-      <Parameter name="Mesh Dimension" type="int" value="2"/>
       <Parameter name="Mesh Type" type="string" value="quad"/>
-      <!-- <Parameter name="Mesh Type" type="string" value="tet"/> -->
+      <!-- <Parameter name="Mesh Type" type="string" value="tri"/> -->
       <Parameter name="CFL" type="double" value="4.0"/>
       <ParameterList name="Mesh Factory Parameter List">
         <Parameter name="X Blocks" type="int" value="1" />

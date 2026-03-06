@@ -28,6 +28,7 @@
 #include "MueLu_CoordinatesTransferFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
 #include "MueLu_EminPFactory_fwd.hpp"
+#include "MueLu_EdgeProlongatorPatternFactory_fwd.hpp"
 #include "MueLu_FacadeClassBase.hpp"
 #include "MueLu_FacadeClassFactory.hpp"
 #include "MueLu_FactoryFactory_fwd.hpp"
@@ -199,17 +200,22 @@ class ParameterListInterpreter : public HierarchyManager<Scalar, LocalOrdinal, G
   void UpdateFactoryManager_LocalOrdinalTransfer(const std::string& VarName, const std::string& multigridAlgo, Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList,
                                                  FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const;
 
+  void UpdateFactoryManager_MatrixTransfer(const std::string& VarName, Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList,
+                                           FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const;
+
   // Algorithm-specific components for UpdateFactoryManager
   void UpdateFactoryManager_SemiCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                         int levelID, std::vector<keep_pair>& keeps) const;
   void UpdateFactoryManager_PCoarsen(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                      int levelID, std::vector<keep_pair>& keeps) const;
-  void UpdateFactoryManager_SA(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+  void UpdateFactoryManager_SA(std::string& multigridAlgo, Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                int levelID, std::vector<keep_pair>& keeps) const;
   void UpdateFactoryManager_Reitzinger(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                        int levelID, std::vector<keep_pair>& keeps) const;
   void UpdateFactoryManager_Emin(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                  int levelID, std::vector<keep_pair>& keeps) const;
+  void UpdateFactoryManager_EminReitzinger(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
+                                           int levelID, std::vector<keep_pair>& keeps) const;
   void UpdateFactoryManager_PG(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,
                                int levelID, std::vector<keep_pair>& keeps) const;
   void UpdateFactoryManager_Replicate(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, FactoryManager& manager,

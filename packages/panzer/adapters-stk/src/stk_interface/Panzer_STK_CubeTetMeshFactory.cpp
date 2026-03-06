@@ -354,19 +354,22 @@ void CubeTetMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,int 
             nodes[6] = nodes[2]+(totalYElems+1)*(totalXElems+1);
             nodes[7] = nodes[3]+(totalYElems+1)*(totalXElems+1);
 
-            buildTetsOnHex(Teuchos::tuple(totalXElems,totalYElems,totalZElems),
-                           Teuchos::tuple(nx,ny,nz),
-                           block,nodes,mesh);
+            // buildTwelveTetsOnHex(Teuchos::tuple(totalXElems,totalYElems,totalZElems),
+            //                      Teuchos::tuple(nx,ny,nz),
+            //                      block,nodes,mesh);
+           buildSixTetsOnHex(Teuchos::tuple(totalXElems,totalYElems,totalZElems),
+                             Teuchos::tuple(nx,ny,nz),
+                             block,nodes,mesh);
          }
       }
    }
 }
 
-void CubeTetMeshFactory::buildTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
-                                        const Teuchos::Tuple<int,3> & element,
-                                        stk::mesh::Part * block,
-                                        const std::vector<stk::mesh::EntityId> & h_nodes,
-                                        STK_Interface & mesh) const
+  void CubeTetMeshFactory::buildTwelveTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
+                                                const Teuchos::Tuple<int,3> & element,
+                                                stk::mesh::Part * block,
+                                                const std::vector<stk::mesh::EntityId> & h_nodes,
+                                                STK_Interface & mesh) const
 {
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setShowProcRank(true);
@@ -419,6 +422,78 @@ void CubeTetMeshFactory::buildTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
       nodes[1] = h_nodes[idSet[i][1]];
       nodes[2] = h_nodes[idSet[i][2]];
       nodes[3] = centroid;
+
+      // add element to mesh
+      mesh.addElement(rcp(new ElementDescriptor(gid_0+i,nodes)),block);
+   }
+}
+
+void CubeTetMeshFactory::buildSixTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
+                                           const Teuchos::Tuple<int,3> & element,
+                                           stk::mesh::Part * block,
+                                           const std::vector<stk::mesh::EntityId> & h_nodes,
+                                           STK_Interface & mesh) const
+{
+   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+   out.setShowProcRank(true);
+   out.setOutputToRootOnly(-1);
+
+   int totalXElems = meshDesc[0]; int totalYElems = meshDesc[1]; int totalZElems = meshDesc[2];
+   int nx = element[0]; int ny = element[1]; int nz = element[2];
+
+   stk::mesh::EntityId hex_id = totalXElems*totalYElems*nz+totalXElems*ny+nx+1;
+   stk::mesh::EntityId gid_0 = 6*(hex_id-1)+1;
+   std::vector<stk::mesh::EntityId> nodes(4);
+
+   // add centroid node
+   stk::mesh::EntityId centroid = 0;
+   {
+      stk::mesh::EntityId largestNode = (totalXElems+1)*(totalYElems+1)*(totalZElems+1);
+      centroid = hex_id+largestNode;
+
+      // compute average of coordinates
+      std::vector<double> coord(3,0.0);
+      for(std::size_t i=0;i<h_nodes.size();i++) {
+         const double * node_coord = mesh.getNodeCoordinates(h_nodes[i]);
+         coord[0] += node_coord[0];
+         coord[1] += node_coord[1];
+         coord[2] += node_coord[2];
+      }
+      coord[0] /= 8.0;
+      coord[1] /= 8.0;
+      coord[2] /= 8.0;
+
+      mesh.addNode(centroid,coord);
+   }
+
+   //
+   // int idSet[][3] = { { 0, 1, 2}, // back
+   //                    { 0, 2, 3},
+   //                    { 0, 5, 1}, // bottom
+   //                    { 0, 4, 5},
+   //                    { 0, 7, 4}, // left
+   //                    { 0, 3, 7},
+   //                    { 6, 1, 5}, // right
+   //                    { 6, 2, 1},
+   //                    { 6, 3, 2}, // top
+   //                    { 6, 7, 3},
+   //                    { 6, 4, 7}, // front
+   //                    { 6, 5, 4} };
+
+   int idSet[][4] = {
+     {0, 3, 7, 6},
+     {0, 7, 4, 6},
+     {0, 5, 4, 6},
+     {0, 1, 5, 6},
+     {0, 1, 2, 6},
+     {0, 2, 3, 6}
+   };
+
+   for(int i=0;i<6;i++) {
+      nodes[0] = h_nodes[idSet[i][0]];
+      nodes[1] = h_nodes[idSet[i][1]];
+      nodes[2] = h_nodes[idSet[i][2]];
+      nodes[3] = h_nodes[idSet[i][3]];
 
       // add element to mesh
       mesh.addElement(rcp(new ElementDescriptor(gid_0+i,nodes)),block);
