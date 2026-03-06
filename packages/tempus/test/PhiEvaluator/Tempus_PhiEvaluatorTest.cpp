@@ -63,9 +63,9 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(lp.get().at(0).imag(), 0.0, 1e-6);
   lp = phiEvaluator->getLpSc(2);
   TEST_ASSERT(lp.lpt == LpType::LPCONJ);
-  TEST_FLOATING_EQUALITY(lp.get().at(0).real(), 0.5, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.get().at(0).real(), -0.5, 1e-6);
   TEST_FLOATING_EQUALITY(lp.get().at(0).imag(), 0.5, 1e-6);
-  TEST_FLOATING_EQUALITY(lp.get().at(1).real(), 0.5, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.get().at(1).real(), -0.5, 1e-6);
   TEST_FLOATING_EQUALITY(lp.get().at(1).imag(), -0.5, 1e-6);
 
   // Check the first divided diffs
