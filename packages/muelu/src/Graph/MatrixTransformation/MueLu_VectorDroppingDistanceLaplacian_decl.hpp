@@ -67,7 +67,7 @@ class VectorDroppingDistanceLaplacian : public VectorDroppingBase<Scalar, LocalO
 
       if (aggregationMayCreateDirichlet) {
         if (symmetrizeDroppedGraph) {
-          auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
+          auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(lclA, mergedA, rowTranslation, colTranslation, boundaryNodes, results);
           VectorDroppingDistanceLaplacian::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
                                                                dist_laplacian_dropping,
                                                                drop_boundaries,
@@ -83,7 +83,7 @@ class VectorDroppingDistanceLaplacian : public VectorDroppingBase<Scalar, LocalO
         }
       } else {
         if (symmetrizeDroppedGraph) {
-          auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
+          auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(lclA, mergedA, rowTranslation, colTranslation, boundaryNodes, results);
           VectorDroppingDistanceLaplacian::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
                                                                dist_laplacian_dropping,
                                                                drop_boundaries,
@@ -97,11 +97,11 @@ class VectorDroppingDistanceLaplacian : public VectorDroppingBase<Scalar, LocalO
         }
       }
     } else if (droppingMethod == "cut-drop") {
-      auto comparison = CutDrop::make_dlap_comparison_functor<SoC>(A, dist2, results);
+      auto comparison = CutDrop::make_dlap_vector_comparison_functor<SoC>(A, mergedA, dist2, results, rowTranslation, colTranslation);
       auto cut_drop   = CutDrop::CutDropFunctor(comparison, threshold);
 
       if (symmetrizeDroppedGraph) {
-        auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(mergedA, rowTranslation, colTranslation, boundaryNodes, results);
+        auto drop_boundaries = Misc::VectorSymmetricDropBoundaryFunctor(lclA, mergedA, rowTranslation, colTranslation, boundaryNodes, results);
         VectorDroppingDistanceLaplacian::runDroppingFunctors(A, mergedA, blkPartSize, rowTranslation, colTranslation, results, filtered_rowptr, graph_rowptr, nnz, useBlocking, level, factory,
                                                              drop_boundaries,
                                                              preserve_diagonals,
