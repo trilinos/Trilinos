@@ -127,7 +127,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   int k = 1;
   // leja point index
   int lp_k = 1;
-  while (k < expansionOrder-1)
+  while (k < expansionOrder-1 && lp_k < lp_.size())
   {
     LejaPoint lp_sc = getLpSc(lp_k-1);
 
@@ -191,13 +191,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
     }
 
     // terminate if the update drops below likely significance
-    if (norm_vm_k < overflow / cutoff)
-    {
-      sStatus.achievedTol = norm_vm_k;
-      sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
-      break;
-    }
-
+    //if (norm_vm_k < overflow / this->leja_tol_)
     // terminate if the update drops below user tol
     if (norm_vm_k < this->leja_tol_)
     {
@@ -250,7 +244,6 @@ void PhiEvaluatorLeja<Scalar>::initLejaPointsBase()
       full_half_circle *= 2;
       root_unity = std::sqrt(root_unity);
     }
-    // std::cout << lejaPointsBase_[lpk].lp << std::endl;
   }
 
   // swap the first two real leja points (to have 1 first, not essential)
@@ -348,6 +341,8 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int phi_order, const Scalar cdt)
 {
+  TEUCHOS_ASSERT(phi_order == 0.0);
+
   int m = getExpansionOrder();
   Teuchos::ArrayRCP<std::complex<double>> out = Teuchos::arcp<std::complex<double>>(m);
 
