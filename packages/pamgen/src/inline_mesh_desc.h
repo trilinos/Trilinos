@@ -26,6 +26,8 @@
 #include <string>
 #include <set>
 
+#include "pamgen_kokkos_utils.h"
+
 class Inline_Mesh_Desc;
 
 namespace PAMGEN_NEVADA {

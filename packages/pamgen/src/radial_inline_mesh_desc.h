@@ -10,6 +10,10 @@
 #ifndef radial_inline_mesh_descH
 #define radial_inline_mesh_descH
 
+#include "inline_mesh_desc.h"
+#include "Vector.h"
+#include "pamgen_kokkos_utils.h"
+
 namespace PAMGEN_NEVADA {
 
 struct Vector;
@@ -33,6 +37,19 @@ public:
                        std::vector<long long> & global_node_vector,
                        std::map <long long, long long> & global_node_map,
                        long long num_nodes);
+
+  // Kokkos version of Populate_Coords
+  void Populate_Coords_Device(View2D<double> coords,
+                             const View1D<long long> global_node_vector,
+                             const View1D<long long> global_node_map_keys,
+                             const View1D<long long> global_node_map_values,
+                             long long num_nodes);
+
+  // Device function for periodic coordinate calculation
+  KOKKOS_INLINE_FUNCTION
+  void calc_coords_periodic_device(double total_theta,
+                                  long long i, long long j, long long k,
+                                  double& x, double& y, double& z) const;
 };
 }// end namespace
 #endif
