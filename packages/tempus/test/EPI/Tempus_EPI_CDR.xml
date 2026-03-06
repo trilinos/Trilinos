@@ -49,7 +49,7 @@
 	  <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
       -->
       <ParameterList name="PhiEvaluator">
-	<Parameter name="Taylor Expansion Order" type="int" value="100"/>
+	<Parameter name="Expansion Order" type="int" value="100"/>
 	<Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
 	<Parameter name="Lump Mass Matrix" type="bool" value="0"/>
       </ParameterList>

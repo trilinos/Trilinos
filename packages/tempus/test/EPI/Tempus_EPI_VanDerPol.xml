@@ -52,7 +52,7 @@
       <Parameter name="Predictor Stepper Type" type="string" value="None"/>
 
       <ParameterList name="PhiEvaluator">
-	<Parameter name="Taylor Expansion Order" type="int" value="3"/>
+	<Parameter name="Expansion Order" type="int" value="3"/>
 	<Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
       </ParameterList>
 
