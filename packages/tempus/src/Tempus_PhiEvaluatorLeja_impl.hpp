@@ -299,11 +299,6 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
   ddMethod_ = pl->get<int>("Leja DD Method", 1);
   maxLejaOrder_ = pl->get<int>("Max Leja Order", 500);
   setExpansionOrder(pl->get<int>("Expansion Order", 300));
-  setLejaEllipse(
-    pl->get<double>("leja_a", -1.0),
-    pl->get<double>("leja_b", 0.0),
-    pl->get<double>("leja_c", 0.5)
-  );
 
   // TODO: has to be set to true, only matrix exponential is implemented
   this->useAtildeForSingleRHS_ = true;
@@ -313,6 +308,11 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
   std::cout << "Leja Order is " << maxLejaOrder_ << std::endl;
 
   initLejaPointsBase();
+  setLejaEllipse(
+    pl->get<double>("leja_a", -1.0),
+    pl->get<double>("leja_b", 0.0),
+    pl->get<double>("leja_c", 0.5)
+  );
 }
 
 template <class Scalar>
