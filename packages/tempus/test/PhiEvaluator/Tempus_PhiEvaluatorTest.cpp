@@ -70,6 +70,8 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
 
   // Check the first divided diffs
   auto lp_dd = phiEvaluator->getDividedDiffs(0, 1.0);
+  std::cout << "lp_dd 0: " << lp_dd[0] << std::endl;
+  std::cout << "lp_dd 1: " << lp_dd[1] << std::endl;
 }
 
 }  // namespace Tempus_Test
