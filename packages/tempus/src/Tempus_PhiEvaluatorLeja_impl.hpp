@@ -334,8 +334,48 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsRC(const int phi_order, const Scalar cdt)
 {
-  // TODO implement.
-  return  Teuchos::arcp<std::complex<double>>(0);
+  TEUCHOS_ASSERT(phi_order == 0.0);
+
+  //TODO: as long as leja points use double, shift and scale should too
+  Scalar shift, scale;
+  std::tie(shift, scale) = getShiftScale();
+
+  const int expansionOrder = getExpansionOrder();
+  Teuchos::ArrayRCP<std::complex<double>> x = Teuchos::arcp<std::complex<double>>(expansionOrder);
+  Teuchos::ArrayRCP<std::complex<double>> d_x = Teuchos::arcp<std::complex<double>>(expansionOrder);
+
+  // initialize list of Leja points and function values
+  int lp_idx = 0;
+  for (int idx = 0; idx < expansionOrder; idx++)
+  {
+    LejaPoint lp = this->lp_[idx];
+    if (lp.lpt == LPCONJ)
+    {
+      x[idx] = shift + scale * lp.lp;
+      d_x[idx] = std::exp(x[idx]);
+      if (++idx < expansionOrder)
+      {
+	x[idx] = std::conj(shift + scale * lp.lp);
+	d_x[idx] = std::exp(x[idx]);
+      }
+    }
+    else
+    {
+      x[idx] = shift + scale * lp.lp;
+      d_x[idx] = std::exp(x[idx]);
+    }
+  }
+
+  for (int idx = 0; idx < expansionOrder-1; idx++)
+  {
+    // Compute the next set of divided differences
+    for (int idy = idx+1; idy < expansionOrder; idy++)
+    {
+      d_x[idy] = (d_x[idy] - d_x[idx]) / (x[idy] - x[idx]);
+    }
+  }
+
+  return d_x;
 }
 
 template <class Scalar>
@@ -375,6 +415,15 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     lp_idx += 1;
   }
 
+  //std::cout << "LP: " << std::endl;
+  //for (const auto& lp : lp_) {
+  //  std::cout << lp.lp << ' ';
+  //}
+  //std::cout << std::endl;
+
+  //std::cout << "Hm: " << std::endl;
+  //Hm.print(std::cout);
+
   // compute diagonal mean
   std::complex<double> diag_sum = std::complex(0.0, 0.0);
   for (int i=0; i < m; ++i) {
@@ -390,41 +439,49 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   // Scaling
   double s_scale = Hm.normInf();
   int n_sq = std::max(int( std::ceil((std::log(s_scale) - std::log(2.0)) / std::log(2.0)) ), 1);
+
+  //n_sq += 2; // increase number of scalings to reduce Taylor poly size.
+
   double h_scale = 1.0 / std::pow(2.0, n_sq);
   Hm.scale(h_scale);
 
-  // compute phi_k(Hm)*e1 by Taylor series
-  Teuchos::SerialDenseMatrix<int, std::complex<double>> Mtmp(m, m);
-  Teuchos::SerialDenseMatrix<int, std::complex<double>> A(m, m);
+  // compute phi_0(Hm) by Taylor series
+  //copy Hm to A
+  Teuchos::SerialDenseMatrix<int, std::complex<double>> A(Teuchos::Copy, Hm);
+
   Teuchos::SerialDenseMatrix<int, std::complex<double>> Ts(m, m);
-  A = Hm;
-
-  auto factorial = [](auto self, double n) -> double {
-      return n <= 1 ? 1 : n * self(self, n - 1);
-  };
-
-  // Ts = I/(p!) + A^1/(1+p)! + A^2/(2+p)! ...
-  int ts_order = 17;
-  // std::cout << "ts_order: " << ts_order << std::endl;
-  // std::cout << "s_scale: " << s_scale << std::endl;
-  // std::cout << "mu: " << mu << std::endl;
-  // std::cout << "n_sq: " << n_sq << std::endl;
-  // std::cout << "h_scale: " << h_scale << std::endl;
-  double coeff = 1.0 / double(factorial(factorial, phi_order));
+  Ts = 0.;
   for (int i=0; i < m; ++i) {
-    Ts(i, i) = coeff * std::complex(1.0, 0.0);
+    Ts(i, i) = std::complex(1.0, 0.0);
   }
+
+  //auto factorial = [](auto self, double n) -> double {
+  //    return n <= 1 ? 1 : n * self(self, n - 1);
+  //};
+  //double coeff = 1.0 / double(factorial(factorial, phi_order));
+
+  // Ts = I/(p!) + Hm^1/(1+p)! + Hm^2/(2+p)! ...
+  int ts_order = 15;
+
+  //std::cout << "ts_order: " << ts_order << std::endl;
+  //std::cout << "s_scale: " << s_scale << std::endl;
+  //std::cout << "mu: " << mu << std::endl;
+  //std::cout << "n_sq: " << n_sq << std::endl;
+  //std::cout << "h_scale: " << h_scale << std::endl;
+
+  Teuchos::SerialDenseMatrix<int, std::complex<double>> Mtmp(m, m);
+  Mtmp = 0.;
+
   for (int k=1; k<ts_order; ++k) {
-    coeff = 1.0 / double(factorial(factorial, phi_order+k));
-    // std::cout << k << " coeff: " << coeff << std::endl;
-    // TODO: Clean this up. The following is clear, but does not compile
-    // Ts += Scalar( coeff ) * A;
-    auto Ts_next = A;
-    Ts_next.scale(coeff);
-    Ts += Ts_next;
-    Mtmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Hm, A, 0.0);
+    Ts += A;
+    // A = Hm^k/(k)!
+
+    // Compute next A = Hm^(k+1)/(k+1)!
+    double scale = 1. / (k+1);
+    Mtmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, scale, Hm, A, 0.0);
     A = Mtmp;
   }
+  Ts += A;
 
   // Squaring
   for (int s=0; s < n_sq; ++s) {
