@@ -50,7 +50,10 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   auto phiEvaluator = Tempus::createPhiEvaluatorLeja<double>(phi_pl);
   phiEvaluator->setModel(model);
   phiEvaluator->initialize();
-  phiEvaluator->setLejaEllipse(-1.0, 0.0, 0.5);
+  double leja_a = -1.0;
+  double leja_b = 0.0;
+  double leja_c = 0.5;
+  phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
 
   // Check the first leja points
   LejaPoint lp = phiEvaluator->getLpSc(0);
@@ -59,19 +62,28 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(lp.get().at(0).imag(), 0.0, 1e-6);
   lp = phiEvaluator->getLpSc(1);
   TEST_ASSERT(lp.lpt == LpType::LPREAL);
-  TEST_FLOATING_EQUALITY(lp.get().at(0).real(), -1.0, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.get().at(0).real(), leja_a, 1e-6);
   TEST_FLOATING_EQUALITY(lp.get().at(0).imag(), 0.0, 1e-6);
   lp = phiEvaluator->getLpSc(2);
   TEST_ASSERT(lp.lpt == LpType::LPCONJ);
-  TEST_FLOATING_EQUALITY(lp.get().at(0).real(), -0.5, 1e-6);
-  TEST_FLOATING_EQUALITY(lp.get().at(0).imag(), 0.5, 1e-6);
-  TEST_FLOATING_EQUALITY(lp.get().at(1).real(), -0.5, 1e-6);
-  TEST_FLOATING_EQUALITY(lp.get().at(1).imag(), -0.5, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.get().at(0).real(), 0.5 * leja_a, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.get().at(0).imag(), leja_c, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.get().at(1).real(), 0.5 * leja_a, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.get().at(1).imag(), -leja_c, 1e-6);
 
   // Check the first divided diffs
   auto lp_dd = phiEvaluator->getDividedDiffs(0, 1.0);
+  // the first divided diff is: y(x_0) == exp(0.0) == 1.0
+  // the second divided diff is: (y(x_1) - y(x_0) / x_1 - x_0)) == (exp(-1.0) - 1.0) / (-1.0 - 0.0)
   std::cout << "lp_dd 0: " << lp_dd[0] << std::endl;
   std::cout << "lp_dd 1: " << lp_dd[1] << std::endl;
+  TEST_FLOATING_EQUALITY(lp_dd[0].real(), std::exp(leja_b), 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[0].imag(), 0.0, 1e-8);
+  // TEST_FLOATING_EQUALITY(lp_dd[1].real(), (std::exp(leja_a) - std::exp(leja_b)) / (leja_a - leja_b), 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[1].real(), 0.316060279414, 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[1].imag(), 0.0, 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[2].real(), 0.075829495185, 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[3].real(), 0.01263699560, 1e-8);
 }
 
 }  // namespace Tempus_Test
