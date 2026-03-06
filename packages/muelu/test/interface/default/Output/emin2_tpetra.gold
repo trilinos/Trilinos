@@ -10,6 +10,8 @@ smoother ->
 
 Level 1
 Prolongator minimization (MueLu::EminPFactory)
+Constraint (MueLu::ConstraintFactory)
+Ppattern (MueLu::PatternFactory)
 Build (MueLu::TentativePFactory)
 Build (MueLu::UncoupledAggregationFactory)
 Build (MueLu::CoalesceDropFactory)
@@ -26,84 +28,8 @@ Fine level nullspace = Nullspace
 Build (MueLu::CoarseMapFactory)
 matrixmatrix: kernel params -> 
  [empty list]
-Constraint (MueLu::ConstraintFactory)
-Ppattern (MueLu::PatternFactory)
 Matrix filtering (MueLu::FilteredAFactory)
 Filtered matrix is not being constructed as no filtering is being done
-[empty list]
-Number of emin iterations = 4
-SD iterations
-emin: num iterations = 4
-emin: iterative method = sd
-Transpose P (MueLu::TransPFactory)
-matrixmatrix: kernel params -> 
- [empty list]
-Computing Ac (MueLu::RAPFactory)
-matrixmatrix: kernel params -> 
- [empty list]
-Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
-smoother -> 
- relaxation: type = Symmetric Gauss-Seidel
- relaxation: sweeps = 1
- relaxation: damping factor = 1
- timer for apply = 0
-
-Level 2
-Prolongator minimization (MueLu::EminPFactory)
-Build (MueLu::TentativePFactory)
-Build (MueLu::UncoupledAggregationFactory)
-Build (MueLu::CoalesceDropFactory)
-Build (MueLu::AmalgamationFactory)
-[empty list]
-algorithm = "classical" classical algorithm = "default": threshold = 0, blocksize = 1
-lightweight wrap = 1
-BuildAggregatesNonKokkos (Phase - (Dirichlet))
-BuildAggregatesNonKokkos (Phase 1 (main))
-BuildAggregatesNonKokkos (Phase 2a (secondary))
-BuildAggregatesNonKokkos (Phase 2b (expansion))
-Nullspace factory (MueLu::NullspaceFactory)
-Fine level nullspace = Nullspace
-Build (MueLu::CoarseMapFactory)
-matrixmatrix: kernel params -> 
- [empty list]
-Constraint (MueLu::ConstraintFactory)
-Ppattern (MueLu::PatternFactory)
-Matrix filtering (MueLu::FilteredAFactory)
-Filtered matrix is not being constructed as no filtering is being done
-[empty list]
-Number of emin iterations = 4
-SD iterations
-emin: num iterations = 4
-emin: iterative method = sd
-Transpose P (MueLu::TransPFactory)
-matrixmatrix: kernel params -> 
- [empty list]
-Computing Ac (MueLu::RAPFactory)
-matrixmatrix: kernel params -> 
- [empty list]
-Max coarse size (<= 2000) achieved
-Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
-presmoother -> 
- Amesos2 -> 
-  [empty list]
-
---------------------------------------------------------------------------------
----                            Multigrid Summary                             ---
---------------------------------------------------------------------------------
-Number of levels    = 3
-Operator complexity = 1.44
-Smoother complexity = <ignored>
-Cycle type          = V
-
-level  rows  nnz    nnz/row  c ratio  procs
-  0  9999  29995  3.00                  1  
-  1  3333  9997   3.00     3.00         1  
-  2  1111  3331   3.00     3.00         1  
-
-Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
-
-Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
-
-Smoother (level 2) pre  : <Direct> solver interface
-Smoother (level 2) post : no smoother
-
+PrepareLeastSquaresSolveDirect (MueLu::DenseConstraint)
+Getting P from coarseLevel
+Caught exception: Belos solver manager SD with standardized name SD has not been registered.

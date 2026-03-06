@@ -14,15 +14,17 @@
 #include <Xpetra_StridedMapFactory.hpp>
 
 #include "MueLu_EminPFactory_decl.hpp"
+#include "MueLu_ProductOperator.hpp"
+#include "MueLu_FlatOperator.hpp"
 
-#include "MueLu_CGSolver.hpp"
 #include "MueLu_Constraint.hpp"
-#include "MueLu_GMRESSolver.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
-#include "MueLu_SolverBase.hpp"
-#include "MueLu_SteepestDescentSolver.hpp"
+
+#include <BelosLinearProblem.hpp>
+#include <BelosSolverFactory.hpp>
+#include <BelosXpetraAdapter.hpp>
 
 namespace MueLu {
 
@@ -88,8 +90,13 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level
   // NOTE: This is a very unique situation, please try not to propagate the
   // mode check any further
 
+  // #define externalSuppliedP0
   if (coarseLevel.GetRequestMode() == Level::REQUEST) {
-    isAvailableP0          = coarseLevel.IsAvailable("P0", this);
+#ifdef externalSuppliedP0
+    isAvailableP0 = coarseLevel.IsAvailable("P0");
+#else
+    isAvailableP0 = coarseLevel.IsAvailable("P0", this);
+#endif
     isAvailableConstraint0 = coarseLevel.IsAvailable("Constraint0", this);
   }
 
@@ -120,24 +127,6 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
     A = Utilities::Transpose(*A, true);
   }
 
-  // Get/make initial guess
-  RCP<Matrix> P0;
-  int numIts;
-  if (coarseLevel.IsAvailable("P0", this)) {
-    // Reuse data
-    P0     = coarseLevel.Get<RCP<Matrix>>("P0", this);
-    numIts = pL.get<int>("emin: num reuse iterations");
-    GetOStream(Runtime0) << "Reusing P0" << std::endl;
-
-  } else {
-    // Construct data
-    P0     = Get<RCP<Matrix>>(coarseLevel, "P");
-    numIts = pL.get<int>("emin: num iterations");
-  }
-  // NOTE: the main assumption here that P0 satisfies both constraints:
-  //   - nonzero pattern
-  //   - nullspace preservation
-
   // Get/make constraint operator
   RCP<Constraint> X;
   if (coarseLevel.IsAvailable("Constraint0", this)) {
@@ -149,19 +138,111 @@ void EminPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fine
     // Construct data
     X = Get<RCP<Constraint>>(coarseLevel, "Constraint");
   }
-  GetOStream(Runtime0) << "Number of emin iterations = " << numIts << std::endl;
+
+  // Get/make initial guess
+  // NOTE: the main assumption here that P0 satisfies both constraints:
+  //   - nonzero pattern
+  //   - nullspace preservation
+  RCP<Matrix> P0;
+  int numIts;
+#ifdef externalSuppliedP0
+  if (coarseLevel.IsAvailable("P0")) {
+#else
+  if (coarseLevel.IsAvailable("P0", this)) {
+#endif
+    // Reuse data
+#ifdef externalSuppliedP0
+    P0 = coarseLevel.Get<RCP<Matrix>>("P0");
+#else
+    P0 = coarseLevel.Get<RCP<Matrix>>("P0", this);
+#endif
+    numIts = pL.get<int>("emin: num reuse iterations");
+    GetOStream(Runtime0) << "Reusing P0" << std::endl;
+
+  } else {
+    GetOStream(Runtime0) << "Getting P from coarseLevel" << std::endl;
+    // Construct data
+    P0     = Get<RCP<Matrix>>(coarseLevel, "P");
+    numIts = pL.get<int>("emin: num iterations");
+  }
+
+  if (IsPrint(Statistics1)) {
+    SubFactoryMonitor m2(*this, "Statistics", coarseLevel);
+    GetOStream(Statistics1) << "Energy norm of P0: " << ComputeProlongatorEnergyNorm(A, P0, GetOStream(Statistics0)) << std::endl;
+    GetOStream(Statistics1) << "Constraint residual norm of P0: " << X->ResidualNorm(P0) << std::endl;
+  }
 
   std::string solverType = pL.get<std::string>("emin: iterative method");
-  RCP<SolverBase> solver;
   if (solverType == "cg")
-    solver = rcp(new CGSolver(numIts));
-  else if (solverType == "sd")
-    solver = rcp(new SteepestDescentSolver(numIts));
+    solverType = "Pseudo Block CG";
   else if (solverType == "gmres")
-    solver = rcp(new GMRESSolver(numIts));
+    solverType = "Pseudo Block GMRES";
 
   RCP<Matrix> P;
-  solver->Iterate(*A, *X, *P0, P);
+  {
+    // Construct diagonal preconditioner
+    RCP<const Vector> invDiagonal = Utilities::GetMatrixDiagonalInverse(*A);
+    auto invD                     = MatrixFactory::Build(invDiagonal);
+    auto flatInvD                 = rcp(new FlatOperator(invD, X));
+
+    // Construct projection of A
+    // In principle we should be using the operator proj * A * proj.
+    // But since the initial guess already satisfies the constraints and all subsequent iterates do too,
+    // the application of proj on the right side is a no-op.
+    auto flatA                     = rcp(new FlatOperator(A, X));
+    std::vector<RCP<Operator>> ops = {X, flatA};  // Instead of ops = {X, flatA, X};
+    RCP<Operator> projectedFlatA   = rcp(new ProductOperator(ops));
+
+    // Vectors for rhs and solution
+    auto B    = MultiVectorFactory::Build(projectedFlatA->getRangeMap(), 1);
+    auto vecP = MultiVectorFactory::Build(projectedFlatA->getDomainMap(), 1);
+    // initialize solution vector to P0
+    X->AssignMatrixEntriesToVector(*P0, *vecP);
+
+    auto belosProjectedFlatA = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(projectedFlatA));
+    auto belosFlatInvDiag    = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(flatInvD));
+
+    {
+      using MV = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+      using OP = Belos::OperatorT<MV>;
+
+      auto problem = rcp(new Belos::LinearProblem<Scalar, MV, OP>());
+      problem->setOperator(belosProjectedFlatA);
+      problem->setRightPrec(belosFlatInvDiag);
+      problem->setLHS(vecP);
+      problem->setRHS(B);
+      problem->setLabel("Emin");
+      TEUCHOS_ASSERT(problem->setProblem());
+
+      auto belosList = rcp(new Teuchos::ParameterList());
+      belosList->set("Timer Label", "Emin");
+      belosList->set("Maximum Iterations", numIts);
+      belosList->set("Implicit Residual Scaling", "None");
+      belosList->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+      belosList->set("Output Frequency", 1);
+      belosList->set("Output Style", Belos::Brief);
+      auto out = GetMueLuOStream();
+      belosList->set("Output Stream", out->getOStream());
+
+      Belos::SolverFactory<Scalar, MV, OP> solverFactory;
+      auto solver = solverFactory.create(solverType, belosList);
+      solver->setProblem(problem);
+
+      if (numIts > 0) solver->solve();
+    }
+    // Convert from vector to matrix
+    if (numIts > 0) P = X->GetMatrixWithEntriesFromVector(*vecP);
+    else P = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(P0);
+    if (P0->IsView("stridedMaps"))
+      P->CreateView("stridedMaps", P0);
+  }
+
+  if (IsPrint(Statistics1)) {
+    SubFactoryMonitor m2(*this, "Statistics", coarseLevel);
+    // Compute constraint residual norm if we are not in a debug build
+    GetOStream(Statistics1) << "Energy norm of P: " << ComputeProlongatorEnergyNorm(A, P, GetOStream(Statistics0)) << std::endl;
+    GetOStream(Statistics1) << "Norm of constraint residual: " << X->ResidualNorm(P) << std::endl;
+  }
 
   // NOTE: EXPERIMENTAL and FRAGILE
   if (!P->IsView("stridedMaps")) {
