@@ -100,12 +100,12 @@ class PhiEvaluatorLeja
   Scalar leja_b_;
   Scalar leja_c_;
 
-  Teuchos::Array<LejaPoint> lp_base_;
-
+  /// Initialize the Leja points
   void initLejaPointsBase();
 
   Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int k, const Scalar cdt);
 
+  /// Storage for the base Leja points
   Teuchos::ArrayRCP<LejaPoint> lejaPointsBase_;
 
 };

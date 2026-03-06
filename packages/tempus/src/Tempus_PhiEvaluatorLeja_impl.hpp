@@ -10,16 +10,22 @@
 #ifndef Tempus_PhiEvaluatorLeja_impl_hpp
 #define Tempus_PhiEvaluatorLeja_impl_hpp
 
+#include <cmath>
+#include <complex>
 #include "Tempus_PhiEvaluatorLeja.hpp"
 //#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 #include "Tempus_PhiEvaluatorLeja_decl.hpp"
 #include "Tempus_PhiEvaluator_decl.hpp"
+#include "Teuchos_ArrayRCPDecl.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_RCPNode.hpp"
 #include "Thyra_LinearOpBase_decl.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Tempus {
 
@@ -117,13 +123,13 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
     LejaPoint lp = this->lp_base_[k-1];
 
     // extract divided diff
-    std::complex<double> coeff = lp_dd[k];
+    coeff = lp_dd[k];
     coeff_re = Scalar(coeff.real());
 
     // Real leja point case
-    if (this->lp_base_.at(k-1).lpt == LpType::LPREAL) {
+    if (this->lp_base_[k-1].lpt == LpType::LPREAL) {
       // compute shifted and scaled leja point
-      lp_sc_re = Scalar( shift + scale * this->lp_base_.at(k-1).get().at(0).real() );
+      lp_sc_re = Scalar( shift + scale * this->lp_base_[k-1].get().at(0).real() );
       // av = (tau*A)*vm
       Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 1.0);
       // vm_k = (av - lp_re[k-1]*vm_k)
@@ -136,18 +142,18 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 
       norm_vm_k = Thyra::norm_inf(*vm_k) * coeff_re;
     }
-    else if (this->lp_base_.at(k-1).lpt == LpType::LPCONJ)  {
+    else if (this->lp_base_[k-1].lpt == LpType::LPCONJ)  {
       // first update
-      lp_sc_re = Scalar( shift + scale * this->lp_base_.at(k-1).get().at(0).real() );
+      lp_sc_re = Scalar( shift + scale * this->lp_base_[k-1].get().at(0).real() );
       Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 1.0);
       Thyra::V_VpStV(qm_k.ptr(), *av, -lp_sc_re, *vm_k);
       Thyra::V_StV(qm_k.ptr(), 1.0 / scale, *qm_k);
       Thyra::Vp_StV(v, coeff_re, *qm_k);
 
       // conjugate update
-      lp_sc_re = Scalar( shift + scale * this->lp_base_.at(k-1).get().at(1).real() );
-      lp_sc_im = Scalar( shift + scale * this->lp_base_.at(k-1).get().at(1).imag() );
-      std::complex<double> coeff = lp_dd[k+1];
+      lp_sc_re = Scalar( shift + scale * this->lp_base_[k-1].get().at(1).real() );
+      lp_sc_im = Scalar( shift + scale * this->lp_base_[k-1].get().at(1).imag() );
+      coeff = lp_dd[k+1];
       coeff_re = Scalar(coeff.real());
       Thyra::apply(*L, Thyra::NOTRANS, *qm_k, av.ptr(), tau, 1.0);
       Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *qm_k);
@@ -284,6 +290,100 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
   std::cout << "Leja Order is " << maxLejaOrder_ << std::endl;
 
   initLejaPointsBase();
+}
+
+template <class Scalar>
+Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int phi_order, const Scalar cdt)
+{
+  int m = getExpansionOrder();
+  Teuchos::ArrayRCP<std::complex<double>> out = Teuchos::arcp<std::complex<double>>(m);
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+  // get shift and scale parameters
+  Scalar shift, scale;
+  std::tie(shift, scale) = getShiftScale();
+
+  // build the shifted and scaled Hm matrix
+  Teuchos::SerialDenseMatrix<int, std::complex<double>> Hm(m, m);
+  // diagonal elements are the leja points
+  int i = 0;
+  while (i < m) {
+    // lower subdiagnoal
+    if (i+1 < m) {
+      Hm(i+1, i) = scale;
+    }
+    // real lp case
+    if (this->lp_base_[i].lpt == LPREAL) {
+      Hm(i, i) = this->lp_base_[i].get().at(0) * scale + shift;
+      i += 1;
+    }
+    // conj lp case
+    if (this->lp_base_[i].lpt == LPCONJ) {
+      Hm(i, i) = this->lp_base_[i].get().at(0) * scale + shift;
+      Hm(i+1, i+1) = this->lp_base_[i].get().at(1) * scale + shift;
+      i += 2;
+    }
+  }
+
+  // compute diagonal mean
+  std::complex<double> diag_sum = std::complex(0.0, 0.0);
+  for (int i=0; i < m; ++i) {
+    diag_sum += Hm(i, i);
+  }
+  std::complex<double> mu = diag_sum / double(m);
+
+  // shift diagonal to zero mean
+  for (int i=0; i < m; ++i) {
+    Hm(i, i) -= mu;
+  }
+
+  // Scaling
+  double s_scale = Hm.normInf();
+  int n_sq = std::max(int( std::ceil((std::log(s_scale) - std::log(2.0)) / std::log(2.0)) ), 1);
+  double h_scale = 1.0 / std::pow(2.0, n_sq);
+  Hm.scale(h_scale);
+
+  // compute phi_k(Hm)*e1 by Taylor series
+  Teuchos::SerialDenseMatrix<int, std::complex<double>> A(m, m);
+  A = Hm;
+  Teuchos::SerialDenseMatrix<int, std::complex<double>> Ts(m, m);
+
+  auto factorial = [](auto self, int n) -> int {
+      return n <= 1 ? 1 : n * self(self, n - 1);
+  };
+
+  // Ts = I/(p!) + A^1/(1+p)! + A^2/(2+p)! ...
+  int ts_order = 17;
+  double coeff = 1.0 / double(factorial(factorial, phi_order));
+  for (int i=0; i < m; ++i) {
+    Ts(i, i) = coeff * std::complex(1.0, 0.0);
+  }
+  for (int k=1; k<ts_order; ++k) {
+    coeff = 1.0 / double(factorial(factorial, phi_order+k));
+    // TODO: Clean this up.
+    // Ts += Scalar( coeff ) * A;
+    auto Ts_next = A;  // tmp copy
+    Ts_next.scale(coeff);
+    Ts += Ts_next;
+    A.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Hm, A, 0.0);
+  }
+
+  // Squaring
+  for (int s=0; s < n_sq; ++s) {
+    Ts.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Ts, Ts, 0.0);
+  }
+
+  // unshift and extract first column
+  for (int i=0; i < m; ++i) {
+    out[i] = std::exp(mu) * Ts(i, 0);
+  }
+#else
+  std::cout << "WARNING: getDividedDiffsTS requires Trilinos configured with Trilinos_ENABLE_COMPLEX=ON" << std::endl;
+  std::cout << "WARNING: falling back to getDividedDiffs." << std::endl;
+  // TODO: implement fallback dd implementation here.
+  return getDividedDiffs(phi_order, cdt);
+#endif
+  return out;
 }
 
 // Nonmember constructors.
