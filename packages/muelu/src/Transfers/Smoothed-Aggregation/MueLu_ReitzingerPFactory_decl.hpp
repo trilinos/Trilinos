@@ -10,10 +10,6 @@
 #ifndef MUELU_REITZINGERPFACTORY_DECL_HPP
 #define MUELU_REITZINGERPFACTORY_DECL_HPP
 
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_SerialQRDenseSolver.hpp>
-
 #include <Xpetra_CrsMatrix_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
@@ -43,7 +39,6 @@ namespace MueLu {
   ### User parameters of ReitzingerPFactory ###
   Parameter | type | default | master.xml | validated | requested | description
   ----------|------|---------|:----------:|:---------:|:---------:|------------
-   A        | Factory | null |   | * | * | Generating factory of the matrix A
    P        | Factory | null |   | * | * | Generating factory of the nodal Prolongator
    D0       | Factory | null |   | * | * | Generating factory of the discrete gradient operator
    NodeMatrix  | Factory | null |   | * | * | Generating factory of the nodal A matrix
