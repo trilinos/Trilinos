@@ -33,7 +33,7 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
       "Method to approximate the phi-function evaluation.");
 
   pl->set<int>(
-      "Taylor Expansion Order", 10,
+      "Expansion Order", 10,
       "Maximal Taylor expansion used.\n"
       "\n"
       "The default is 10.");
@@ -152,14 +152,14 @@ void PhiEvaluatorTaylor<Scalar>::setPhiEvaluatorValues(
 
   //pl->validateParametersAndSetDefaults(*getValidParameters());
 
-  setExpansionOrder(pl->get<int>("Taylor Expansion Order", 10));
+  setExpansionOrder(pl->get<int>("Expansion Order", 10));
 
   // TODO: make this configurable?
   this->useAtildeForSingleRHS_ = false;
 
   std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
   std::cout << "Parameter List: " << *pl << std::endl;
-  std::cout << "Taylor Expansion Order is " << getExpansionOrder() << std::endl;
+  std::cout << "Expansion Order is " << getExpansionOrder() << std::endl;
 }
 
 

@@ -92,7 +92,7 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
     // Read the Taylor order from the xml file with a default of expected_order 
     // and make them the same.
     expected_order = pl->sublist("Demo Stepper").sublist("PhiEvaluator")
-      .get("Taylor Expansion Order", 3);
+      .get("Expansion Order", 3);
 
     integrator = Tempus::createIntegratorBasic<double>(pl, model);
     // Initial Conditions
