@@ -5585,6 +5585,10 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   else if (isGloballyIndexed())
     gblInds_wdv.getHostView(Access::ReadOnly);
 
+  rowMap.lazyPushToHost();
+  if (colMapPtr != NULL)
+    colMapPtr->lazyPushToHost();
+
   Details::disableWDVTracking();
   Kokkos::parallel_scan("Tpetra::CrsGraph::packFillActiveNew: Pack exports",
                         inputRange, [=, &prefix, *this](const LO i, size_t& exportsOffset, const bool final) {

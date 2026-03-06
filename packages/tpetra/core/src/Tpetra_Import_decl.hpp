@@ -84,6 +84,12 @@ class Import : public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, N
   //! The specialization of Map used by this class.
   using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
 
+  using execution_space  = typename Node::execution_space;
+  using memory_space     = typename Node::memory_space;
+  using remote_gids_type = Kokkos::View<GlobalOrdinal*, memory_space>;
+  using remote_lids_type = Kokkos::View<LocalOrdinal*, memory_space>;
+  using remote_pids_type = Kokkos::View<int*, memory_space>;
+
   //! @name Constructors, assignment, and destructor
   //@{
 
@@ -369,7 +375,7 @@ class Import : public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, N
   virtual void print(std::ostream& os) const;
 
   //@}
- private:
+  // private:
   //! @name Initialization helper functions (called by the constructor)
   //@{
 
@@ -427,7 +433,7 @@ class Import : public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, N
   /// This routine does not communicate, except perhaps for the
   /// TPETRA_ABUSE_WARNING (that is only triggered if there are
   /// remote IDs but the source is not distributed).
-  void setupSamePermuteRemote(Teuchos::Array<GlobalOrdinal>& remoteGIDs);
+  remote_gids_type setupSamePermuteRemote();
 
   /// \brief Compute the send communication plan from the receives.
   ///
@@ -458,7 +464,7 @@ class Import : public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, N
   /// This routine fills in the <tt>remoteLIDs_</tt> field of
   /// <tt>TransferData_</tt>.
   void
-  setupExport(Teuchos::Array<GlobalOrdinal>& remoteGIDs,
+  setupExport(remote_gids_type remoteGIDs,
               bool useRemotePIDs, Teuchos::Array<int>& remotePIDs,
               const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
   //@}
@@ -477,6 +483,18 @@ class Import : public ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, N
          Teuchos::Array<LocalOrdinal>& permuteFromLIDs,
          Teuchos::Array<LocalOrdinal>& remoteLIDs,
          Teuchos::Array<LocalOrdinal>& exportLIDs,
+         Teuchos::Array<int>& exportPIDs,
+         Distributor& distributor,
+         const Teuchos::RCP<Teuchos::FancyOStream>& out    = Teuchos::null,
+         const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null);
+
+  Import(const Teuchos::RCP<const map_type>& source,
+         const Teuchos::RCP<const map_type>& target,
+         const size_t numSameID,
+         remote_lids_type permuteToLIDs,
+         remote_lids_type permuteFromLIDs,
+         remote_lids_type remoteLIDs,
+         remote_lids_type exportLIDs,
          Teuchos::Array<int>& exportPIDs,
          Distributor& distributor,
          const Teuchos::RCP<Teuchos::FancyOStream>& out    = Teuchos::null,
