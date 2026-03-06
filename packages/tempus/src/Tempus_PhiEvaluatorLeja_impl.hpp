@@ -381,7 +381,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsTS(const int phi_order, const Scalar cdt)
 {
-  TEUCHOS_ASSERT(phi_order == 0.0);
+  TEUCHOS_ASSERT(phi_order == 0);
 
   int m = getExpansionOrder();
   Teuchos::ArrayRCP<std::complex<double>> out = Teuchos::arcp<std::complex<double>>(m);
@@ -400,14 +400,17 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     LejaPoint lp_sc = getLpSc(lp_idx);
     // conj lp case
     if (lp_sc.lpt == LPCONJ) {
+      if (dd_idx == m) break;
       Hm(dd_idx, dd_idx) = lp_sc.get().at(0);
       if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
       dd_idx += 1;
+      if (dd_idx == m) break;
       Hm(dd_idx, dd_idx) = lp_sc.get().at(1);
       if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
       dd_idx += 1;
     }
     else {
+      if (dd_idx == m) break;
       Hm(dd_idx, dd_idx) = lp_sc.get().at(0);
       if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
       dd_idx += 1;
@@ -451,14 +454,12 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 
   Teuchos::SerialDenseMatrix<int, std::complex<double>> Ts(m, m);
   Ts = 0.;
+
+  //auto fact = [](double n) -> double { return std::tgamma(1.0 + n); };
+
   for (int i=0; i < m; ++i) {
     Ts(i, i) = std::complex(1.0, 0.0);
   }
-
-  //auto factorial = [](auto self, double n) -> double {
-  //    return n <= 1 ? 1 : n * self(self, n - 1);
-  //};
-  //double coeff = 1.0 / double(factorial(factorial, phi_order));
 
   // Ts = I/(p!) + Hm^1/(1+p)! + Hm^2/(2+p)! ...
   int ts_order = 15;
@@ -472,7 +473,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   Teuchos::SerialDenseMatrix<int, std::complex<double>> Mtmp(m, m);
   Mtmp = 0.;
 
-  for (int k=1; k<ts_order; ++k) {
+  for (int k = 1; k < ts_order; ++k) {
     Ts += A;
     // A = Hm^k/(k)!
 
