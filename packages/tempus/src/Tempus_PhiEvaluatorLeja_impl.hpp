@@ -250,11 +250,11 @@ void PhiEvaluatorLeja<Scalar>::initLejaPointsBase()
       full_half_circle *= 2;
       root_unity = std::sqrt(root_unity);
     }
-    std::cout << lejaPointsBase_[lpk].lp << std::endl;
+    // std::cout << lejaPointsBase_[lpk].lp << std::endl;
   }
 
   // swap the first two real leja points (to have 1 first, not essential)
-  //std::swap(lejaPointsBase_[0], lejaPointsBase_[1]);
+  std::swap(lejaPointsBase_[0], lejaPointsBase_[1]);
 }
 
 template <class Scalar>
@@ -274,7 +274,7 @@ template <class Scalar>
 void PhiEvaluatorLeja<Scalar>::setLejaEllipse(Scalar a, Scalar b, Scalar c)
 {
   TEUCHOS_ASSERT(a <= b);
-  TEUCHOS_ASSERT(c >= Tpetra::ZERO);
+  TEUCHOS_ASSERT(c >= 0.0);
   leja_a_ = a;
   leja_b_ = b;
   leja_c_ = c;
