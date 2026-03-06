@@ -83,7 +83,9 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(lp_dd[1].real(), 0.316060279414, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[1].imag(), 0.0, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[2].real(), 0.075829495185, 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[2].imag(), 0.012636995600793, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[3].real(), 0.01263699560, 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[3].imag(), 0.0, 1e-8);
 }
 
 }  // namespace Tempus_Test
