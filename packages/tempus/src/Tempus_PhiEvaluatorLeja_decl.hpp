@@ -100,13 +100,23 @@ class PhiEvaluatorLeja
   Scalar leja_b_;
   Scalar leja_c_;
 
-  Teuchos::Array<LejaPoint> lp_base_;
-
+  /// Initialize the Leja points
   void initLejaPointsBase();
 
+  /// Compute divided differences
   Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt);
 
+  /// Storage for the base Leja points
   Teuchos::ArrayRCP<LejaPoint> lejaPointsBase_;
+
+  /// Storage for the Leja points
+  Teuchos::ArrayRCP<LejaPoint> lp_base_;
+
+  /// Storage for the Newton polynomial divided differences
+  Teuchos::ArrayRCP<std::complex<double>> lp_dd_;
+
+  /// Computes the divided differences via taylor series
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTS(const int phi_order, const Scalar cdt);
 };
 
 /// Nonmember constructor from a ParameterList
