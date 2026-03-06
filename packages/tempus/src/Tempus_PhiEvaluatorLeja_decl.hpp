@@ -22,8 +22,6 @@ enum LpType {
 /*
  * Leja point container
  */
-
-
 struct LejaPoint {
   // TODO: how does std::complex<double> interact with Scalar. Leja points are always complex.
   //       Template this on the Scalar tye and get the appropriate complex Scalar types?
@@ -88,6 +86,12 @@ class PhiEvaluatorLeja
   /// Update the Leja ellipse parameters
   void setLejaEllipse(Scalar a, Scalar b, Scalar c);
 
+  /// Get shifted and scaled leja point (z_i)
+  LejaPoint getLpSc(uint i);
+
+  /// Compute divided differences
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt);
+
   /// Get the polynomial expansion order
   int getExpansionOrder() const { return expansionOrder_; }
 
@@ -106,9 +110,6 @@ class PhiEvaluatorLeja
 
   /// Initialize the Leja points
   void initLejaPointsBase();
-
-  /// Compute divided differences
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt);
 
   /// Computes the divided differences via taylor series
   Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTS(const int phi_order, const Scalar cdt);
