@@ -46,7 +46,7 @@ jobs:
           --body "Automatic PR from develop to master."
 
           # delete previously merged branches
-          merged_branches=`git branch --remote --merged master | grep "master_merge_"`
+          merged_branches=`git branch --remote --merged ${REMOTE}/master | grep "master_merge_"`
           for merged_branch in ${merged_branches} ; do
               # extract branch name
               merged_branch_name=`echo ${merged_branch} | cut -d "/" -f 2`
