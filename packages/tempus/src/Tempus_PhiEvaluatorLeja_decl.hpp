@@ -85,6 +85,9 @@ class PhiEvaluatorLeja
   /// Set the polynomial expansion order
   void setExpansionOrder(int order) { expansionOrder_ = order; }
 
+  /// Update the Leja ellipse parameters
+  void setLejaEllipse(Scalar a, Scalar b, Scalar c);
+
   /// Get the polynomial expansion order
   int getExpansionOrder() const { return expansionOrder_; }
 
@@ -95,6 +98,7 @@ class PhiEvaluatorLeja
  private:
   int maxLejaOrder_;
   int expansionOrder_;
+  int ddMethod_;
   Scalar leja_tol_;
   Scalar leja_a_;
   Scalar leja_b_;
@@ -106,17 +110,17 @@ class PhiEvaluatorLeja
   /// Compute divided differences
   Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt);
 
+  /// Computes the divided differences via taylor series
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTS(const int phi_order, const Scalar cdt);
+
+  /// Computes the divided differences via recurrence relation
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsRC(const int phi_order, const Scalar cdt);
+
   /// Storage for the base Leja points
   Teuchos::ArrayRCP<LejaPoint> lejaPointsBase_;
 
   /// Storage for the Leja points
-  Teuchos::ArrayRCP<LejaPoint> lp_base_;
-
-  /// Storage for the Newton polynomial divided differences
-  Teuchos::ArrayRCP<std::complex<double>> lp_dd_;
-
-  /// Computes the divided differences via taylor series
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTS(const int phi_order, const Scalar cdt);
+  Teuchos::ArrayRCP<LejaPoint> lp_;
 };
 
 /// Nonmember constructor from a ParameterList
