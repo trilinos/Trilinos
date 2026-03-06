@@ -349,15 +349,16 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     if (i+1 < m) {
       Hm(i+1, i) = scale;
     }
+    LejaPoint lp = this->lp_[i];
     // real lp case
-    if (this->lp_[i].lpt == LPREAL) {
-      Hm(i, i) = this->lp_[i].get().at(0) * scale + shift;
+    if (lp.lpt == LPREAL) {
+      Hm(i, i) = lp.get().at(0) * scale + shift;
       i += 1;
     }
     // conj lp case
-    if (this->lp_[i].lpt == LPCONJ) {
-      Hm(i, i) = this->lp_[i].get().at(0) * scale + shift;
-      Hm(i+1, i+1) = this->lp_[i].get().at(1) * scale + shift;
+    if (lp.lpt == LPCONJ) {
+      Hm(i, i) = lp.get().at(0) * scale + shift;
+      Hm(i+1, i+1) = lp.get().at(1) * scale + shift;
       i += 2;
     }
   }
