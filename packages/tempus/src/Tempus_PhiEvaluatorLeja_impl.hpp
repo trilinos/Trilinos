@@ -123,19 +123,22 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   Scalar lp_sc_re;
   Scalar lp_sc_im;
 
+  // leja polynomial term index
   int k = 1;
+  // leja point index
+  int lp_k = 1;
   while (k < expansionOrder-1)
   {
-    LejaPoint lp = this->lp_[k-1];
+    LejaPoint lp_sc = getLpSc(lp_k-1);
 
     // extract divided diff
     coeff = lp_dd[k];
     coeff_re = Scalar(coeff.real());
 
     // Real leja point case
-    if (lp.lpt == LpType::LPREAL) {
+    if (lp_sc.lpt == LpType::LPREAL) {
       // compute shifted and scaled leja point
-      lp_sc_re = Scalar( shift + scale * lp.get().at(0).real() );
+      lp_sc_re = Scalar( lp_sc.get().at(0).real() );
       // av = (tau*A)*vm
       Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 1.0);
       // vm_k = (av - lp_re[k-1]*vm_k)
@@ -145,20 +148,21 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // add vm_k*coeff to the final result
       Thyra::Vp_StV(v, coeff_re, *vm_k);
       k += 1;
+      lp_k += 1;
 
       norm_vm_k = Thyra::norm_inf(*vm_k) * coeff_re;
     }
-    else if (lp.lpt == LpType::LPCONJ)  {
+    else if (lp_sc.lpt == LpType::LPCONJ)  {
       // first update
-      lp_sc_re = Scalar( shift + scale * lp.get().at(0).real() );
+      lp_sc_re = Scalar( lp_sc.get().at(0).real() );
       Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 1.0);
       Thyra::V_VpStV(qm_k.ptr(), *av, -lp_sc_re, *vm_k);
       Thyra::V_StV(qm_k.ptr(), 1.0 / scale, *qm_k);
       Thyra::Vp_StV(v, coeff_re, *qm_k);
 
       // conjugate update
-      lp_sc_re = Scalar( shift + scale * lp.get().at(1).real() );
-      lp_sc_im = Scalar( shift + scale * lp.get().at(1).imag() );
+      lp_sc_re = Scalar( lp_sc.get().at(1).real() );
+      lp_sc_im = Scalar( lp_sc.get().at(1).imag() );
       coeff = lp_dd[k+1];
       coeff_re = Scalar(coeff.real());
       Thyra::apply(*L, Thyra::NOTRANS, *qm_k, av.ptr(), tau, 1.0);
@@ -167,6 +171,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im / scale) * (lp_sc_im / scale), *vm_k);
       Thyra::Vp_StV(v, coeff_re, *vm_k);
       k += 2;
+      lp_k += 1;
 
       norm_vm_k = Thyra::norm_inf(*vm_k) * coeff_re;
     }
@@ -288,6 +293,17 @@ void PhiEvaluatorLeja<Scalar>::setLejaEllipse(Scalar a, Scalar b, Scalar c)
 }
 
 template <class Scalar>
+LejaPoint PhiEvaluatorLeja<Scalar>::getLpSc(uint i)
+{
+  TEUCHOS_ASSERT(i < maxLejaOrder_);
+  Scalar shift, scale;
+  std::tie(shift, scale) = getShiftScale();
+  LejaPoint lp = this->lp_[i];
+  LejaPoint lp_sc = LejaPoint{shift + scale * lp.lp, lp.lpt};
+  return lp_sc;
+}
+
+template <class Scalar>
 void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
     Teuchos::RCP<Teuchos::ParameterList> pl)
 {
@@ -343,24 +359,25 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   // build the shifted and scaled Hm matrix
   Teuchos::SerialDenseMatrix<int, std::complex<double>> Hm(m, m);
   // diagonal elements are the leja points
-  int i = 0;
-  while (i < m) {
-    // lower subdiagnoal
-    if (i+1 < m) {
-      Hm(i+1, i) = scale;
-    }
-    LejaPoint lp = this->lp_[i];
-    // real lp case
-    if (lp.lpt == LPREAL) {
-      Hm(i, i) = lp.get().at(0) * scale + shift;
-      i += 1;
-    }
+  int dd_idx = 0;
+  int lp_idx = 0;
+  while (dd_idx < m) {
+    LejaPoint lp_sc = getLpSc(lp_idx);
     // conj lp case
-    if (lp.lpt == LPCONJ) {
-      Hm(i, i) = lp.get().at(0) * scale + shift;
-      Hm(i+1, i+1) = lp.get().at(1) * scale + shift;
-      i += 2;
+    if (lp_sc.lpt == LPCONJ) {
+      Hm(dd_idx, dd_idx) = lp_sc.get().at(0);
+      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
+      dd_idx += 1;
+      Hm(dd_idx, dd_idx) = lp_sc.get().at(1);
+      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
+      dd_idx += 1;
     }
+    else {
+      Hm(dd_idx, dd_idx) = lp_sc.get().at(0);
+      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
+      dd_idx += 1;
+    }
+    lp_idx += 1;
   }
 
   // compute diagonal mean
