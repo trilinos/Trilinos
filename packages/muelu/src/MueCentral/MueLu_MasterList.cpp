@@ -120,6 +120,7 @@ namespace MueLu {
     if (name == "repartition: put on single proc") { ss << "<Parameter name=\"repartition: put on single proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "maxwell1: dump matrices") { ss << "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "maxwell1: check and fix D0 scaling") { ss << "<Parameter name=\"maxwell1: check and fix D0 scaling\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: mode") { ss << "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: disable addon") { ss << "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
     if (name == "refmaxwell: use as preconditioner") { ss << "<Parameter name=\"refmaxwell: use as preconditioner\" type=\"bool\" value=" << value << "/>"; return ss.str(); }      
@@ -355,6 +356,7 @@ namespace MueLu {
   "<ParameterList name=\"maxwell1: 11list\"/>"
   "<ParameterList name=\"maxwell1: 22list\"/>"
   "<Parameter name=\"maxwell1: dump matrices\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"maxwell1: check and fix D0 scaling\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"maxwell1: nodal smoother fix zero diagonal threshold\" type=\"double\" value=\"1e-10\"/>"
   "<Parameter name=\"refmaxwell: mode\" type=\"string\" value=\"additive\"/>"
   "<Parameter name=\"refmaxwell: disable addon\" type=\"bool\" value=\"true\"/>"
@@ -987,6 +989,8 @@ namespace MueLu {
          ("maxwell1: 22list","maxwell1: 22list")
       
          ("maxwell1: dump matrices","maxwell1: dump matrices")
+      
+         ("maxwell1: check and fix D0 scaling","maxwell1: check and fix D0 scaling")
       
          ("maxwell1: nodal smoother fix zero diagonal threshold","maxwell1: nodal smoother fix zero diagonal threshold")
       

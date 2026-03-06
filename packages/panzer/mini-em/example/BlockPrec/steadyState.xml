@@ -1,3 +1,9 @@
+<!--
+    Instead of setting up a time dependent Maxwell problem, set up a steady state problem
+
+    epsilon E + curl 1/mu curl E
+-->
+
 <ParameterList>
 
   <ParameterList name="Mesh">
@@ -6,23 +12,26 @@
     <!-- <Parameter name="Source" type="string" value="Exodus File" /> -->
 
     <ParameterList name="Exodus File">
-      <Parameter name="dt" type="double" value="6.0e-12"/>
+      <Parameter name="dt" type="double" value="1.0"/>
+      <Parameter name="final time" type="double" value="1.0"/>
       <ParameterList name="Exodus Parameters">
         <Parameter name="File Name" type="string" value="blob/blob.g" />
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Pamgen Mesh">
-      <Parameter name="dt" type="double" value="6.0e-12"/>
+      <Parameter name="dt" type="double" value="1.0"/>
+      <Parameter name="final time" type="double" value="1.0"/>
       <ParameterList name="Pamgen Parameters">
         <Parameter name="File Name" type="string" value="pamgen.gen"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Inline Mesh">
-      <!-- <Parameter name="Mesh Type" type="string" value="hex"/> -->
-      <Parameter name="Mesh Type" type="string" value="tet"/>
-      <Parameter name="CFL" type="double" value="4.0"/>
+      <Parameter name="dt" type="double" value="1.0"/>
+      <Parameter name="final time" type="double" value="1.0"/>
+      <Parameter name="Mesh Type" type="string" value="hex"/>
+      <!-- <Parameter name="Mesh Type" type="string" value="tet"/> -->
       <ParameterList name="Mesh Factory Parameter List">
         <!-- <Parameter name="X Procs" type="int" value="-1" /> -->
         <!-- <Parameter name="Y Procs" type="int" value="-1" /> -->
@@ -30,9 +39,9 @@
         <Parameter name="X Blocks" type="int" value="1" />
         <Parameter name="Y Blocks" type="int" value="1" />
         <Parameter name="Z Blocks" type="int" value="1" />
-        <Parameter name="X Elements" type="int" value="5" />
-        <Parameter name="Y Elements" type="int" value="5" />
-        <Parameter name="Z Elements" type="int" value="5" />
+        <Parameter name="X Elements" type="int" value="15" />
+        <Parameter name="Y Elements" type="int" value="15" />
+        <Parameter name="Z Elements" type="int" value="15" />
         <!-- <ParameterList name="Periodic BCs"> -->
         <!--   <Parameter name="Count" type="int" value="3"/> -->
         <!--   <Parameter name="Periodic Condition 1" type="string" value="xz-all 1e-8: top;bottom"/> -->
@@ -54,17 +63,15 @@
   </ParameterList>
 
    <ParameterList name="Assembly">
-     <Parameter name="Field Order"           type="string" value="blocked: B_face E_edge"/>
+     <Parameter name="Field Order"  type="string" value="blocked: B_face E_edge"/>
    </ParameterList>
 
   <ParameterList name="Physics Blocks">
     <!-- The 2x2 Maxwell system -->
-    <!-- Gets epsilon, sigma and 1/mu from closure model 'electromagnetics' -->
+    <!-- Gets epsilon, sigma and mu from closure model 'electromagnetics' -->
     <ParameterList name="Maxwell Physics">
       <ParameterList name="Maxwell Physics">
         <Parameter name="Type"                 type="string" value="Maxwell"/>
-        <Parameter name="Basis Order"          type="int"    value="1"/>
-        <Parameter name="Integration Order"    type="int"    value="2"/>
         <Parameter name="Model ID"             type="string" value="electromagnetics"/>
         <Parameter name="Permittivity"         type="string" value="epsilon"/>
         <Parameter name="Conductivity"         type="string" value="sigma"/>
@@ -87,7 +94,7 @@
       </ParameterList>
       <!-- Permittivity -->
       <ParameterList name="epsilon">
-        <Parameter name="Value" type="double" value="8.854187817e-12"/>
+        <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
       <!-- Conductivity -->
       <ParameterList name="sigma">
@@ -100,31 +107,9 @@
       </ParameterList>
       <!-- Permeability -->
       <ParameterList name="mu">
-        <Parameter name="Value" type="double" value="1.2566370614e-6"/>
-      </ParameterList>
-      <!-- Add 1/2 * ((E, epsilon * E) + (B, 1/mu * B)) and  -->
-      <!--     1/2/dt^2 * ((E, epsilon * E) + (B, 1/mu * B)) -->
-      <ParameterList name="EM_ENERGY">
-        <Parameter name="Type" type="string" value="ELECTROMAGNETIC ENERGY"/>
+        <Parameter name="Value" type="double" value="1.0"/>
       </ParameterList>
     </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="Responses">
-    <!-- <ParameterList name="Electromagnetic Energy"> -->
-    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
-    <!--   <Parameter name="Field Name" type="string" value="EM_ENERGY"/> -->
-    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
-    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
-    <!-- </ParameterList> -->
-    <!-- <ParameterList name="Electromagnetic Energy/dt^2"> -->
-    <!--   <Parameter name="Type" type="string" value="Functional"/> -->
-    <!--   <Parameter name="Field Name" type="string" value="EM_ENERGY/dt^2"/> -->
-    <!--   <Parameter name="Element Blocks" type="string" value="eblock-0_0_0"/> -->
-    <!--   <Parameter name="Evaluation Types" type="string" value="Residual"/> -->
-    <!--   <Parameter name="Requires Cell Integral" type="bool" value="true"/> -->
-    <!-- </ParameterList> -->
   </ParameterList>
 
   <ParameterList name="Boundary Conditions">
