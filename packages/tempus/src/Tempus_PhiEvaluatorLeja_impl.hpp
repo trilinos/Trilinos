@@ -351,18 +351,18 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     LejaPoint lp = this->lp_[idx];
     if (lp.lpt == LPCONJ)
     {
-      x[idx] = shift + scale * lp.lp;
-      d_x[idx] = std::exp(x[idx]);
+      x[idx] = lp.lp;
+      d_x[idx] = std::exp(shift + scale * lp.lp);
       if (++idx < expansionOrder)
       {
-	x[idx] = std::conj(shift + scale * lp.lp);
-	d_x[idx] = std::exp(x[idx]);
+	x[idx] = std::conj(lp.lp);
+	d_x[idx] = std::exp(shift + scale * lp.lp);
       }
     }
     else
     {
-      x[idx] = shift + scale * lp.lp;
-      d_x[idx] = std::exp(x[idx]);
+      x[idx] = lp.lp;
+      d_x[idx] = std::exp(shift + scale * lp.lp);
     }
   }
 
