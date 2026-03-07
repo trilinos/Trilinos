@@ -328,7 +328,7 @@ template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt)
 {
   // TODO: implement other dd methods
-  return getDividedDiffsTS(k, cdt);
+  return getDividedDiffsRC(k, cdt);
 }
 
 template <class Scalar>
@@ -355,8 +355,8 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
       d_x[idx] = std::exp(shift + scale * lp.lp);
       if (++idx < expansionOrder)
       {
-	x[idx] = std::conj(lp.lp);
-	d_x[idx] = std::exp(shift + scale * lp.lp);
+        x[idx] = std::conj(lp.lp);
+        d_x[idx] = std::exp(std::conj(shift + scale * lp.lp));
       }
     }
     else
