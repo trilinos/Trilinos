@@ -346,7 +346,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 
   // initialize list of Leja points and function values
   int lp_idx = 0;
-  for (int idx = 0; idx < expansionOrder, lp_idx < lp_.size(); idx++)
+  for (int idx = 0; idx < expansionOrder && lp_idx < lp_.size(); idx++)
   {
     LejaPoint lp = this->lp_[lp_idx++];
     if (lp.lpt == LPCONJ)
