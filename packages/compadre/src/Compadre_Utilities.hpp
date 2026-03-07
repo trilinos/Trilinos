@@ -15,7 +15,7 @@
 namespace Compadre {
 
 KOKKOS_INLINE_FUNCTION
-void getMidpointFromCellVertices(const member_type& teamMember, scratch_vector_type midpoint_storage, scratch_matrix_right_type cell_coordinates, const int cell_num, const int dim=3) {
+void getMidpointFromCellVertices(const member_type& teamMember, device_unmanaged_vector_type midpoint_storage, device_unmanaged_matrix_right_type cell_coordinates, const int cell_num, const int dim=3) {
 Kokkos::single(Kokkos::PerThread(teamMember), [&] () {
     auto num_nodes = cell_coordinates.extent(1)/dim;
     for (int j=0; j<dim; ++j) {
