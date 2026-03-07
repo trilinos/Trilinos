@@ -660,14 +660,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, NonStandardMaps, Scalar, Lo
   TEST_EQUALITY(coarseLevel2->GetKeepFlag("R", Rfact.get()), 0);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, PtentEpetraVsTpetra, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
-#include "MueLu_UseShortNames.hpp"
-  MUELU_TESTING_SET_OSTREAM;
-  MUELU_TESTING_LIMIT_EPETRA_SCOPE_TPETRA_IS_DEFAULT(Scalar, GlobalOrdinal, Node);
-  out << "Skipping test because some required packages are not enabled (Tpetra, Epetra, EpetraExt, Ifpack, Ifpack2)." << std::endl;
-
-}  // TentativePFactory_EpetraVsTpetra
-
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node)                                                                       \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, Constructor, Scalar, LO, GO, Node)                        \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, MakeTentative_LapackQR, Scalar, LO, GO, Node)             \
@@ -675,8 +667,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory, PtentEpetraVsTpetra, Scalar
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, MakeTentativeUsingDefaultNullSpace, Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, NoQROption, Scalar, LO, GO, Node)                         \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, ConstantColumnSum, Scalar, LO, GO, Node)                  \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, NonStandardMaps, Scalar, LO, GO, Node)                    \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, PtentEpetraVsTpetra, Scalar, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(TentativePFactory, NonStandardMaps, Scalar, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

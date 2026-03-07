@@ -1,10 +1,5 @@
 # Ensure that these cmake boolean variables are defined
-ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos
-  ${PACKAGE_NAME}_ENABLE_Amesos2
-  ${PACKAGE_NAME}_ENABLE_Belos
-  ${PACKAGE_NAME}_ENABLE_Epetra
-)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2 ${PACKAGE_NAME}_ENABLE_Belos)
 
 #
 # Executable
@@ -30,51 +25,22 @@ TRIBITS_ADD_EXECUTABLE(
 
 IF(${PACKAGE_NAME}_ENABLE_Belos)
 
-  IF(${PACKAGE_NAME}_ENABLE_Epetra
-     AND ${PACKAGE_NAME}_ENABLE_EpetraExt
-     AND ${PACKAGE_NAME}_ENABLE_Ifpack
-     AND ${PACKAGE_NAME}_ENABLE_Amesos
+  TRIBITS_ADD_TEST(
+    Convergence
+    NAME "ConvergenceTpetra"
+    ARGS "--linAlgebra=Tpetra"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    COMM mpi serial
   )
-
-    TRIBITS_ADD_TEST(
-      Convergence
-      NAME "ConvergenceEpetra"
-      ARGS "--linAlgebra=Epetra"
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      COMM mpi serial
-    )
-    TRIBITS_ADD_TEST(
-      Convergence
-      NAME "ConvergenceEpetra"
-      ARGS "--linAlgebra=Epetra"
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 4
-      COMM mpi
-    )
-
-  ENDIF()
-
-  IF(${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-
-    TRIBITS_ADD_TEST(
-      Convergence
-      NAME "ConvergenceTpetra"
-      ARGS "--linAlgebra=Tpetra"
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 1
-      COMM mpi serial
-    )
-    TRIBITS_ADD_TEST(
-      Convergence
-      NAME "ConvergenceTpetra"
-      ARGS "--linAlgebra=Tpetra"
-      STANDARD_PASS_OUTPUT
-      NUM_MPI_PROCS 4
-      COMM mpi
-    )
-
-  ENDIF()
+  TRIBITS_ADD_TEST(
+    Convergence
+    NAME "ConvergenceTpetra"
+    ARGS "--linAlgebra=Tpetra"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 4
+    COMM mpi
+  )
 
 ENDIF()
 

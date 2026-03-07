@@ -109,8 +109,6 @@ Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     }
   }  // if
 
-  // Epetra case
-  std::cout << "Utilities::Transpose() not implemented for Epetra" << std::endl;
   return Teuchos::null;
 
 }  // Transpose

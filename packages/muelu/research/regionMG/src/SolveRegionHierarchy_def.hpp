@@ -189,7 +189,6 @@ void MgCycle(const int levelID,  ///< ID of current level
         // using Utilities = MueLu::Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
         // From here on we switch to Tpetra for simplicity
-        // we could also implement a similar Epetra branch
         using Tpetra_Vector = Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
         //    *fos << "Attempting to use Amesos2 to solve the coarse grid problem" << std::endl;

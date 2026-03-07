@@ -68,7 +68,6 @@
 #include "MueLu_InitialBlockNumberFactory_fwd.hpp"
 #include "MueLu_IndefBlockedDiagonalSmoother_fwd.hpp"
 #include "MueLu_InverseApproximationFactory_fwd.hpp"
-#include "MueLu_IsorropiaInterface_fwd.hpp"
 #include "MueLu_LineDetectionFactory_fwd.hpp"
 #include "MueLu_LocalOrdinalTransferFactory_fwd.hpp"
 #include "MueLu_RepartitionInterface_fwd.hpp"

@@ -264,14 +264,11 @@ INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = DOXYGEN_COMPILE \
                          DOXYGEN_SHOULD_SKIP_THIS \
                          HAVE_MPI \
-                         HAVE_MUELU_AMESOS2 \
                          HAVE_MUELU_AMGX \
-                         HAVE_MUELU_AZTECOO \
                          HAVE_MUELU_BELOS \
                          HAVE_MUELU_BOOST \
                          HAVE_MUELU_EXPERIMENTAL \
                          HAVE_MUELU_GALERI \
-                         HAVE_MUELU_IFPACK2 \
                          HAVE_MUELU_MATLAB \
                          HAVE_MUELU_STRATIMIKOS \
                          HAVE_MUELU_TEKO \

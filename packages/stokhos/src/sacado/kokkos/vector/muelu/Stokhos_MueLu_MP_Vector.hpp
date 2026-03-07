@@ -16,12 +16,8 @@
 // MP includes and specializations
 #include "Stokhos_Tpetra_MP_Vector.hpp"
 #include "MueLu_config.hpp"
-#if defined(HAVE_MUELU_IFPACK2)
 #include "Stokhos_Ifpack2_MP_Vector.hpp"
-#endif
-#if defined(HAVE_MUELU_AMESOS2)
 #include "Stokhos_Amesos2_MP_Vector.hpp"
-#endif
 #if defined(HAVE_MUELU_BELOS)
 #include "BelosXpetraAdapterMultiVector_MP_Vector.hpp"
 #endif

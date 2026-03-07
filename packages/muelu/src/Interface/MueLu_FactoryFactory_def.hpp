@@ -47,7 +47,6 @@
 #include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #include "MueLu_InverseApproximationFactory.hpp"
-#include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_LocalOrdinalTransferFactory.hpp"
 #include "MueLu_RepartitionInterface.hpp"
@@ -229,9 +228,6 @@ RCP<const FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a Zoltan2Interface object: Zoltan2 is disabled: HAVE_MUELU_ZOLTAN2 && HAVE_MPI == false.");
 #endif  // HAVE_MUELU_ZOLTAN2 && HAVE_MPI
-  }
-  if (factoryName == "IsorropiaInterface") {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a IsorropiaInterface object: Isorropia is disabled: HAVE_MUELU_ISORROPIA && HAVE_MPI == false.");
   }
 
   if (factoryName == "NodePartitionInterface") {

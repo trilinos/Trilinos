@@ -63,7 +63,7 @@ namespace MueLu {
   | number of partitions | RepartitionHeuristicFactory   | Integer containing the number of partitions to be built. See below for details
 
   The "number of partitions" variable contains the requested number of partitions for rebalancing. It is needed as input by the Interface classes
-  (see, e.g., ZoltanInterface, Zoltan2Interface, IsorropiaInterface) and the RepartitionFactory. The Interface classes use it as input for the Zoltan
+  (see, e.g., ZoltanInterface, Zoltan2Interface) and the RepartitionFactory. The Interface classes use it as input for the Zoltan
   call which considers the information when finding the rebalanced partition.
 
   If "number of partitions" is 1 (i.e., move all data to one processor), we can skip the call to the Interface classes (see RepartitionFactory).
