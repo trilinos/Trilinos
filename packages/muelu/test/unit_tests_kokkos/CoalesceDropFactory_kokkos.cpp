@@ -678,7 +678,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory_kokkos, DistanceLaplacianC
   out << "version: " << MueLu::Version() << std::endl;
 
   RCP<const Teuchos::Comm<int>> comm = Parameters::getDefaultComm();
-  auto lib                           = TestHelpers_kokkos::Parameters::getLib();
 
   // 1 dof per node
   {
