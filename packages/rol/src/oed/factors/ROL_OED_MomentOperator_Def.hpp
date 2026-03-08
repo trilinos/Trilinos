@@ -64,7 +64,9 @@ Ptr<MomentOperator<Real>> MomentOperator<Real>::clone() const {
   bool hom;
   Ptr<Noise<Real>> noise;
   MomentOperator<Real>::getRegressionInfo(type,hom,noise);
-  return makePtr<MomentOperator<Real>>(type,hom,noise);
+  auto M = makePtr<MomentOperator<Real>>(type,hom,noise);
+  M->setPerturbation(MomentOperator<Real>::getPerturbation());
+  return M;
 }
 
 template<typename Real>
@@ -78,8 +80,40 @@ void MomentOperator<Real>::setFactors(const Ptr<Factors<Real>> &factors) {
 }
 
 template<typename Real>
+const Ptr<Factors<Real>> MomentOperator<Real>::getFactors() const {
+  return factors_;
+}
+
+template<typename Real>
+void MomentOperator<Real>::generateFactors(const Ptr<Constraint<Real>>      &model,
+                                           const Ptr<Vector<Real>>          &theta,
+                                           const Ptr<Vector<Real>>          &obs,
+                                           const Ptr<SampleGenerator<Real>> &sampler,
+                                           bool                              storage,
+                                           const Ptr<Vector<Real>>          &c,
+                                           bool                              ortho) {
+  auto factors = makePtr<Factors<Real>>(model,theta,obs,sampler,storage,c,ortho);
+  setFactors(factors);
+}
+
+template<typename Real>
+void MomentOperator<Real>::generateFactors(const Ptr<Objective<Real>>       &model,
+                                           const Ptr<Vector<Real>>          &theta,
+                                           const Ptr<SampleGenerator<Real>> &sampler,
+                                           bool                              storage,
+                                           bool                              ortho) {
+  auto factors = makePtr<Factors<Real>>(model,theta,sampler,storage,ortho);
+  setFactors(factors);
+}
+
+template<typename Real>
 void MomentOperator<Real>::setPerturbation(const Ptr<LinearOperator<Real>> &pOp) {
   pOp_ = pOp;
+}
+
+template<typename Real>
+const Ptr<LinearOperator<Real>> MomentOperator<Real>::getPerturbation() const {
+  return pOp_;
 }
 
 // Compute M(p)x where M(p) = p_1 X_1 S_1 X_1' + ... + p_N X_N S_N X_N'

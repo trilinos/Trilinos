@@ -23,7 +23,7 @@
 
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_Bounds.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 #include "ROL_Solver.hpp"
 #include "ROL_SingletonVector.hpp"
 #include "ROL_ConstraintFromObjective.hpp"
@@ -32,6 +32,7 @@
 #include "../../../../TOOLS/pdeconstraintK.hpp"
 #include "../../../../TOOLS/pdeobjectiveK.hpp"
 #include "../../../../TOOLS/pdevectorK.hpp"
+#include "../../../../TOOLS/pdeboundsK.hpp"
 #include "../../../../TOOLS/integralconstraintK.hpp"
 
 #include "pde_darcyK.hpp"
@@ -42,21 +43,20 @@ using DeviceT = Kokkos::HostSpace;
 
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
+  int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   ROL::GlobalMPISession mpiSession (&argc, &argv, &bhs);
   Kokkos::ScopeGuard kokkosScope (argc, argv);
-  ROL::Ptr<const Teuchos::Comm<int>> comm
-    = Tpetra::getDefaultComm();
+  auto comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0))
     outStream = ROL::makePtrFromRef(std::cout);
   else
     outStream = ROL::makePtrFromRef(bhs);
-  int errorFlag  = 0;
+  int errorFlag = 0;
 
   // *** Example body.
   try {
@@ -123,24 +123,21 @@ int main(int argc, char *argv[]) {
     auto robj = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj,con,up,zp,pp,true,false);
 
     // Build bound constraint
-    ROL::Ptr<ROL::Vector<RealT>> lp, hp;
+    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd;
     if (useParamVar) {
       auto l0p = ROL::makePtr<ROL::StdVector<RealT>>(dim,ROL::ROL_NINF<RealT>());
       auto h0p = ROL::makePtr<ROL::StdVector<RealT>>(dim,ROL::ROL_INF<RealT>());
-      auto l1_ptr = assembler->createControlVector();
-      auto h1_ptr = assembler->createControlVector();
-      auto l1p = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(l1_ptr,pde,assembler,*parlist);
-      auto h1p = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(h1_ptr,pde,assembler,*parlist);
-      l1p->setScalar(0.0);
-      h1p->setScalar(1.0);
-      lp = ROL::makePtr<PDE_OptVector<RealT>>(l1p,l0p,myRank);
-      hp = ROL::makePtr<PDE_OptVector<RealT>>(h1p,h0p,myRank);
+      auto l1p = assembler->createControlVector(); l1p->putScalar(0.0);
+      auto h1p = assembler->createControlVector(); h1p->putScalar(1.0);
+      auto bnd0 = ROL::makePtr<ROL::Bounds<RealT>>(l0p,h0p);
+      auto bnd1 = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(l1p,h1p);
+      bnd = ROL::makePtr<PDE_OptBounds<RealT>>(bnd1,z1p,bnd0,z0p);
     }
     else {
-      lp = zp->clone(); lp->setScalar(0.0);
-      hp = zp->clone(); hp->setScalar(1.0);
+      auto l1p = assembler->createControlVector(); l1p->putScalar(0.0);
+      auto h1p = assembler->createControlVector(); h1p->putScalar(1.0);
+      bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(l1p,h1p);
     }
-    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(lp, hp);
     // Build optimization problem
     auto optProb = ROL::makePtr<ROL::Problem<RealT>>(robj, zp);
     optProb->addBoundConstraint(bnd);

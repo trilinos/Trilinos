@@ -25,7 +25,7 @@
 #include <algorithm>
 //#include <fenv.h>
 
-#include "ROL_Bounds.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StochasticProblem.hpp"
@@ -169,9 +169,9 @@ int main(int argc, char *argv[]) {
     auto meshMgr = ROL::makePtr<MeshManager_BackwardFacingStepChannel<RealT,DeviceT>>(*parlist);
     // Initialize PDE describing advection-diffusion equation
     auto pde = ROL::makePtr<PDE_NavierStokes<RealT,DeviceT>>(*parlist);
-    con = ROL::makePtr<PDE_Constraint<RealT,DeviceT>>(pde,meshMgr,serial_comm,*parlist,*outStream);
+    auto con = ROL::makePtr<PDE_Constraint<RealT,DeviceT>>(pde,meshMgr,serial_comm,*parlist,*outStream);
     // Cast the constraint and get the assembler.
-    auto assembler = pdecon->getAssembler();
+    auto assembler = con->getAssembler();
     assembler->printMeshData(*outStream);
     con->setSolveParameters(*parlist);
 
@@ -198,15 +198,9 @@ int main(int argc, char *argv[]) {
     z_ptr->randomize();  z_ptr->putScalar(static_cast<RealT>(0));
     dz_ptr->randomize(); //dz_ptr->putScalar(static_cast<RealT>(0));
     yz_ptr->randomize(); //yz_ptr->putScalar(static_cast<RealT>(0));
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> zpde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pde,assembler,*parlist);
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> dzpde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(dz_ptr,pde,assembler,*parlist);
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> yzpde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(yz_ptr,pde,assembler,*parlist);
-    auto zp  = ROL::makePtr<PDE_OptVector<RealT>>(zpde);
-    auto dzp = ROL::makePtr<PDE_OptVector<RealT>>(dzpde);
-    auto yzp = ROL::makePtr<PDE_OptVector<RealT>>(yzpde);
+    auto zp  = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pde,assembler,*parlist);
+    auto dzp = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(dz_ptr,pde,assembler,*parlist);
+    auto yzp = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(yz_ptr,pde,assembler,*parlist);
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
@@ -237,13 +231,7 @@ int main(int argc, char *argv[]) {
     auto zhi_ptr = assembler->createControlVector();
     zlo_ptr->putScalar(static_cast<RealT>(0));
     zhi_ptr->putScalar(ROL::ROL_INF<RealT>());
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> zlopde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zlo_ptr,pde,assembler,*parlist);
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> zhipde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zhi_ptr,pde,assembler,*parlist);
-    auto zlop = ROL::makePtr<PDE_OptVector<RealT>>(zlopde);
-    auto zhip = ROL::makePtr<PDE_OptVector<RealT>>(zhipde);
-    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
+    auto bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(zlo_ptr,zhi_ptr);
     bool useBounds = parlist->sublist("Problem").get("Use bounds", false);
     if (!useBounds) bnd->deactivate();
 
@@ -254,7 +242,7 @@ int main(int argc, char *argv[]) {
     int nsamp_dist = parlist->sublist("Problem").get("Number of output samples",100);
     std::vector<RealT> tmp = {-one,one};
     std::vector<std::vector<RealT>> bounds(stochDim,tmp);
-    auto bman = ROL::makePtr<PDE_OptVector_BatchManager<RealT>>(comm);
+    auto bman = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
     auto sampler = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman);
     auto sampler_dist = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp_dist,bounds,bman);
 
@@ -265,9 +253,7 @@ int main(int argc, char *argv[]) {
     std::vector<RealT> ctrl;
     std::vector<RealT> var;
 
-    std::vector<RealT> alphaArray
-      = ROL::getArrayFromStringParameter<RealT>(parlist->sublist("Problem"),"Confidence Levels");
-    std::vector<RealT> alpha = alphaArray.toVector();
+    auto alpha = ROL::getArrayFromStringParameter<RealT>(parlist->sublist("Problem"),"bPOE Thresholds");
     std::sort(alpha.begin(),alpha.end());
     int N = alpha.size();
 

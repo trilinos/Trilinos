@@ -25,6 +25,7 @@
 
 #include "ROL_Solver.hpp"
 #include "ROL_Bounds.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 #include "ROL_ConstraintFromObjective.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
 
@@ -135,9 +136,9 @@ int main(int argc, char *argv[]) {
 
     // Initialize bound constraints.
     RealT lval = 0.0, uval = 1.0;
-    auto lop = zp->clone(); lop->setScalar(lval);
-    auto hip = zp->clone(); hip->setScalar(uval);
-    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
+    auto lop = assemblerFilter->createControlVector(); lop->putScalar(lval);
+    auto hip = assemblerFilter->createControlVector(); hip->putScalar(uval);
+    auto bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(lop,hip);
 
     // Set up optimization problem.
     auto prob = ROL::makePtr<ROL::Problem<RealT>>(robj_com,zp);

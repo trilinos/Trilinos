@@ -65,6 +65,17 @@ public:
     Teuchos::gatherAll<int,Real>(*comm_,ssize,send,rsize,receive);
   }
 
+  void gather(const Real* send, int ssize, Real *receive, int rsize, int root) const {
+    std::vector<int> rcnt, disp;
+    if (comm_->getRank()==root) rcnt.resize(comm_->getSize());
+    Teuchos::gather<int,int>(&ssize,1,&rcnt[0],1,root,*comm_);
+    if (comm_->getRank()==root) {
+      disp.resize(rcnt.size(),0);
+      for (unsigned i=1u; i<rcnt.size(); ++i) disp[i] = disp[i-1]+rcnt[i-1];
+    }
+    Teuchos::gatherv<int,Real>(send,ssize,receive,rcnt.data(),disp.data(),root,*comm_);
+  }
+
   void broadcast(Real* input, int cnt, int root) {
     Teuchos::broadcast<int,Real>(*comm_,root,cnt,input);
   }

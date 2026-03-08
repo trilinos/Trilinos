@@ -106,7 +106,11 @@ inline Ptr<PolyhedralProjection<Real>> PolyhedralProjectionFactory(const Vector<
                                                                    const Vector<Real>               &mul,
                                                                    const Vector<Real>               &res,
                                                                    ParameterList                    &list) {
-  std::string projectionType = list.sublist("General").sublist("Polyhedral Projection").get("Type","Dykstra");
+  std::string projectionType;
+  if (list.sublist("General").sublist("Polyhedral Projection").isParameter("Type"))
+    projectionType = list.sublist("General").sublist("Polyhedral Projection").get("Type","Dykstra");
+  else
+    projectionType = (res.dimension() == 1) ? "Dai-Fletcher" : "Dykstra";
   EPolyProjAlgo ealg = StringToEPolyProjAlgo(projectionType);
   switch(ealg) {
     case PPA_DAIFLETCHER:     return makePtr<DaiFletcherProjection<Real>>(xprim,xdual,bnd,con,mul,res,list);      break;
