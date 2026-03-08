@@ -636,11 +636,7 @@ class UnscaledDistanceLaplacianVectorComparison {
   results_view results;
 
  private:
-#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS = Kokkos::ArithTraits<scalar_type>;
-#endif
   using magnitudeType = typename ATS::magnitudeType;
   using values_view   = Kokkos::View<magnitudeType*, memory_space>;
 
@@ -674,11 +670,7 @@ class UnscaledDistanceLaplacianVectorComparison {
     using results_view            = Kokkos::View<DecisionType*, memory_space>;
     using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
 
-#if KOKKOS_VERSION >= 40799
     using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-    using ATS = Kokkos::ArithTraits<scalar_type>;
-#endif
     using magnitudeType = typename ATS::magnitudeType;
     using values_view   = Kokkos::View<magnitudeType*, memory_space>;
 
@@ -783,11 +775,7 @@ class ScaledDistanceLaplacianVectorComparison {
   results_view results;
 
  private:
-#if KOKKOS_VERSION >= 40799
   using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-  using ATS = Kokkos::ArithTraits<scalar_type>;
-#endif
   using magnitudeType = typename ATS::magnitudeType;
 
   Teuchos::RCP<diag_vec_type> diagVec;
@@ -828,19 +816,11 @@ class ScaledDistanceLaplacianVectorComparison {
     using memory_space       = typename local_matrix_type2::memory_space;
     using results_view       = Kokkos::View<DecisionType*, memory_space>;
 
-#if KOKKOS_VERSION >= 40799
     using ATS = KokkosKernels::ArithTraits<scalar_type>;
-#else
-    using ATS  = Kokkos::ArithTraits<scalar_type>;
-#endif
-    using magnitudeType = typename ATS::magnitudeType;
-#if KOKKOS_VERSION >= 40799
-    using mATS = KokkosKernels::ArithTraits<magnitudeType>;
-#else
-    using mATS = Kokkos::ArithTraits<magnitudeType>;
-#endif
+    using magnitute_type = typename ATS::magnitudeType;
+    using mATS = KokkosKernels::ArithTraits<magnitute_type>;
 
-    using values_view = Kokkos::View<magnitudeType*, memory_space>;
+    using values_view = Kokkos::View<magnitute_type*, memory_space>;
 
     const local_matrix_type2 A;
     const diag_view_type2 diag;
@@ -852,9 +832,9 @@ class ScaledDistanceLaplacianVectorComparison {
     block_indices_view_type point_to_block;
     block_indices_view_type ghosted_point_to_block;
 
-    const scalar_type one     = ATS::one();
-    const scalar_type zero    = ATS::zero();
-    const magnitudeType mzero = mATS::zero();
+    const scalar_type one      = ATS::one();
+    const scalar_type zero     = ATS::zero();
+    const magnitute_type mzero = mATS::zero();
 
    public:
     KOKKOS_INLINE_FUNCTION
