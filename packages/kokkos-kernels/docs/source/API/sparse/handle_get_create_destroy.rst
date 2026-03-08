@@ -3,7 +3,7 @@ KokkosKernels::Experimental::KokkosKernelsHandle::{get,create,destroy}
 
 Defined in header ``KokkosKernels_Handle.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   KernelHandeType* get_kernel_handle();
   void create_kernel_handle(Args...);
@@ -19,7 +19,7 @@ SpADD
 get
 ---
 
-.. code:: cppkokkos
+.. code:: c++
 
   SPADDHandleType *get_spadd_handle();
 
@@ -30,7 +30,7 @@ Returns a pointer to the spadd sub-handle owned by this ``KokkosKernelsHandle``.
 create
 ------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void create_spadd_handle(bool input_sorted = false, bool input_merged = false);
 
@@ -48,7 +48,7 @@ Parameters
 destroy
 -------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void destroy_spadd_handle();
 
@@ -62,7 +62,7 @@ SpGEMM
 get
 ---
 
-.. code:: cppkokkos
+.. code:: c++
 
   SPGEMMHandleType *get_spgemm_handle();
 
@@ -73,7 +73,7 @@ Returns a pointer to the spgemm sub-handle owned by this ``KokkosKernelsHandle``
 create
 ------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm spgemm_algo = KokkosSparse::SPGEMM_DEFAULT);
 
@@ -89,7 +89,7 @@ Parameters
 destroy
 -------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void destroy_spgemm_handle();
 
@@ -103,7 +103,7 @@ Graph Coloring
 get
 ---
 
-.. code:: cppkokkos
+.. code:: c++
 
   GraphColoringHandleType *get_graph_coloring_handle();
 
@@ -112,7 +112,7 @@ get
 create
 ------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void create_graph_coloring_handle(KokkosGraph::ColoringAlgorithm coloring_type = KokkosGraph::COLORING_DEFAULT);
 
@@ -121,7 +121,7 @@ create
 destroy
 -------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void destroy_graph_coloring_handle()
 
@@ -133,7 +133,7 @@ Distance 2 Graph Coloring
 get
 ---
 
-.. code:: cppkokkos
+.. code:: c++
 
   GraphColorDistance2HandleType *get_distance2_graph_coloring_handle();
 
@@ -142,7 +142,7 @@ get
 create
 ------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void create_distance2_graph_coloring_handle(KokkosGraph::GraphColoringAlgorithmDistance2 coloring_type = KokkosGraph::COLORING_D2_DEFAULT);
 
@@ -151,7 +151,7 @@ create
 destroy
 -------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void destroy_distance2_graph_coloring_handle();
 
@@ -163,7 +163,7 @@ GMRES
 get
 ---
 
-.. code:: cppkokkos
+.. code:: c++
 
   GMRESHandleType *get_gmres_handle();
 
@@ -172,7 +172,7 @@ get
 create
 ------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void create_gmres_handle(const size_type m = 50, const typename GMRESHandleType::float_t tol = 1e-8, const size_type max_restart = 50);
 
@@ -185,7 +185,7 @@ create
 destroy
 -------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void destroy_gmres_handle();
 
@@ -197,7 +197,7 @@ SpILUK
 get
 ---
 
-.. code:: cppkokkos
+.. code:: c++
 
   SPILUKHandleType *get_spiluk_handle();
 
@@ -206,7 +206,7 @@ get
 create
 ------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void create_spiluk_handle(KokkosSparse::Experimental::SPILUKAlgorithm algm, size_type nrows, size_type nnzL,
                             size_type nnzU, size_type block_size = 0);
@@ -216,7 +216,7 @@ create
 destroy
 -------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void destroy_spiluk_handle();
 
@@ -228,7 +228,7 @@ Parallel ILUt
 get
 ---
 
-.. code:: cppkokkos
+.. code:: c++
 
   PAR_ILUTHandleType *get_par_ilut_handle();
 
@@ -237,7 +237,7 @@ get
 create
 ------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void create_par_ilut_handle(const size_type max_iter                                            = 20,
                               const typename PAR_ILUTHandleType::float_t residual_norm_delta_stop = 1e-2,
@@ -249,7 +249,7 @@ create
 destroy
 -------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void destroy_par_ilut_handle();
 
@@ -261,7 +261,7 @@ SpTRSV
 get
 ---
 
-.. code:: cppkokkos
+.. code:: c++
 
   SPTRSVHandleType *get_sptrsv_handle();
 
@@ -270,7 +270,7 @@ get
 create
 ------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void create_sptrsv_handle(KokkosSparse::Experimental::SPTRSVAlgorithm algm, size_type nrows, bool lower_tri,
                             size_type block_size = 0);
@@ -280,7 +280,7 @@ create
 destroy
 -------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void destroy_sptrsv_handle();
 
@@ -292,7 +292,7 @@ Gauss-Seidel
 get
 ---
 
-.. code:: cppkokkos
+.. code:: c++
 
   GaussSeidelHandleType *get_gs_handle();
 
@@ -301,7 +301,7 @@ get
 create
 ------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void create_gs_handle(const HandleExecSpace &handle_exec_space, int num_streams,
                         KokkosSparse::GSAlgorithm gs_algorithm            = KokkosSparse::GS_DEFAULT,
@@ -316,7 +316,7 @@ create
 destroy
 -------
 
-.. code:: cppkokkos
+.. code:: c++
 
   void destroy_gs_handle();
 

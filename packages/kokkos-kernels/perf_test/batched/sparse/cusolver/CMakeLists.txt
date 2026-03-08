@@ -1,11 +1,6 @@
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-KOKKOSKERNELS_ADD_EXECUTABLE(KokkosBatched_Test_cusolverDn
-  SOURCES KokkosBatched_Test_cusolverDn.cpp
-)
-
-KOKKOSKERNELS_ADD_EXECUTABLE(KokkosBatched_Test_cusolverSp
-  SOURCES KokkosBatched_Test_cusolverSp.cpp
-)
+kokkoskernels_add_executable(KokkosBatched_Test_cusolverDn SOURCES KokkosBatched_Test_cusolverDn.cpp)
+kokkoskernels_add_executable(KokkosBatched_Test_cusolverSp SOURCES KokkosBatched_Test_cusolverSp.cpp)

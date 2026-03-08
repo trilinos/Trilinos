@@ -1,8 +1,8 @@
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/test_common)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test_common)
+kokkoskernels_include_directories(${CMAKE_BINARY_DIR}/test_common)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test_common)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
 #####################
 #                   #
@@ -15,80 +15,58 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_C
 # Add GPU backends  #
 #                   #
 #####################
-IF (KOKKOS_ENABLE_CUDA)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+set(TEST_MAIN ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp)
+if(KOKKOS_ENABLE_CUDA)
+  kokkoskernels_add_unit_test(
     blas_cuda
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Cuda_Blas.cpp
-    COMPONENTS blas
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_Cuda_Blas.cpp
+    COMPONENTS blas)
+endif()
 
-IF (KOKKOS_ENABLE_HIP)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_HIP)
+  kokkoskernels_add_unit_test(
     blas_hip
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_HIP_Blas.cpp
-    COMPONENTS blas
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_HIP_Blas.cpp
+    COMPONENTS blas)
+endif()
 
-IF (KOKKOS_ENABLE_SYCL)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_SYCL)
+  kokkoskernels_add_unit_test(
     blas_sycl
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_SYCL_Blas.cpp
-    COMPONENTS blas
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_SYCL_Blas.cpp
+    COMPONENTS blas)
+endif()
 
-IF (KOKKOS_ENABLE_OPENMPTARGET)
+if(KOKKOS_ENABLE_OPENMPTARGET)
   # KOKKOSKERNELS_ADD_UNIT_TEST(
   #   blas_openmptarget
-  #   SOURCES
-  #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-  #     backends/Test_OpenMPTarget_Blas.cpp
+  #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Blas.cpp
   #   COMPONENTS blas
   # )
-ENDIF ()
-
-
+endif()
 
 #####################
 #                   #
 # Add CPU backends  #
 #                   #
 #####################
-IF (KOKKOS_ENABLE_SERIAL)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_SERIAL)
+  kokkoskernels_add_unit_test(
     blas_serial
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Serial_Blas.cpp
-    COMPONENTS blas
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_Serial_Blas.cpp
+    COMPONENTS blas)
+endif()
 
-IF (KOKKOS_ENABLE_OPENMP)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_OPENMP)
+  kokkoskernels_add_unit_test(
     blas_openmp
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_OpenMP_Blas.cpp
-    COMPONENTS blas
-  )
-ENDIF ()
+    SOURCES ${TEST_MAIN} backends/Test_OpenMP_Blas.cpp
+    COMPONENTS blas)
+endif()
 
-IF (KOKKOS_ENABLE_THREADS)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
+if(KOKKOS_ENABLE_THREADS)
+  kokkoskernels_add_unit_test(
     blas_threads
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Threads_Blas.cpp
-    COMPONENTS blas
-  )
-ENDIF ()
-
+    SOURCES ${TEST_MAIN} backends/Test_Threads_Blas.cpp
+    COMPONENTS blas)
+endif()

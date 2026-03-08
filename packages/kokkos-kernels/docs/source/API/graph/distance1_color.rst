@@ -3,7 +3,7 @@ KokkosGraph::graph_color_symbolic
 
 Defined in header: :code:`KokkosGraph_Distance1Color.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
   void graph_color_symbolic(KernelHandle *handle, typename KernelHandle::nnz_lno_t num_rows,
