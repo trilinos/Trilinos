@@ -16,14 +16,16 @@ namespace desul {
 namespace Impl {
 
 // clang-format off
-#define DESUL_IMPL_GCC_HOST_ATOMIC_FETCH_OP_ORDER_SCOPE(_OP, CONSTRAINT, MEMORY_ORDER, MEMORY_SCOPE)                       \
-  template <class T>                                                                                                       \
-  std::enable_if_t<CONSTRAINT<T>::value, T> host_atomic_fetch##_OP  (T* const dest, T value, MEMORY_ORDER, MEMORY_SCOPE) { \
-    return __atomic_fetch##_OP  (dest, value, GCCMemoryOrder<MEMORY_ORDER>::value);                                        \
-  }                                                                                                                        \
-  template <class T>                                                                                                       \
-  std::enable_if_t<CONSTRAINT<T>::value, T> host_atomic##_OP##_fetch(T* const dest, T value, MEMORY_ORDER, MEMORY_SCOPE) { \
-    return __atomic##_OP##_fetch(dest, value, GCCMemoryOrder<MEMORY_ORDER>::value);                                        \
+#define DESUL_IMPL_GCC_HOST_ATOMIC_FETCH_OP_ORDER_SCOPE(_OP, CONSTRAINT, MEMORY_ORDER, MEMORY_SCOPE) \
+  template <class T>                                                                                 \
+  std::enable_if_t<CONSTRAINT<T>::value && host_atomic_always_lock_free<T>, T>                       \
+  host_atomic_fetch##_OP  (T* const dest, T value, MEMORY_ORDER, MEMORY_SCOPE) {                     \
+    return __atomic_fetch##_OP  (dest, value, GCCMemoryOrder<MEMORY_ORDER>::value);                  \
+  }                                                                                                  \
+  template <class T>                                                                                 \
+  std::enable_if_t<CONSTRAINT<T>::value && host_atomic_always_lock_free<T>, T>                       \
+  host_atomic##_OP##_fetch(T* const dest, T value, MEMORY_ORDER, MEMORY_SCOPE) {                     \
+    return __atomic##_OP##_fetch(dest, value, GCCMemoryOrder<MEMORY_ORDER>::value);                  \
   }
 
 #define DESUL_IMPL_GCC_HOST_ATOMIC_FETCH_OP(_OP, CONSTRAINT)                                               \
