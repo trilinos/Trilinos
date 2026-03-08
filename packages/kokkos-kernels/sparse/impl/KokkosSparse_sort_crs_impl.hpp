@@ -15,52 +15,40 @@ struct MatrixShellSortFunctor {
   typedef typename entries_t::non_const_value_type ordinal_type;
   typedef typename values_t::non_const_value_type scalar_type;
 
-  MatrixShellSortFunctor (const rowmap_t& ptr,
-                          const entries_t& ind,
-                          const values_t& val) :
-    ptr_ (ptr),
-    ind_ (ind),
-    val_ (val)
-  {
-    static_assert (std::is_signed<ordinal_type>::value, "The type of each "
-                   "column index -- that is, the type of each entry of ind "
-                   "-- must be signed in order for this functor to work.");
+  MatrixShellSortFunctor(const rowmap_t& ptr, const entries_t& ind, const values_t& val)
+      : ptr_(ptr), ind_(ind), val_(val) {
+    static_assert(std::is_signed<ordinal_type>::value,
+                  "The type of each "
+                  "column index -- that is, the type of each entry of ind "
+                  "-- must be signed in order for this functor to work.");
   }
 
-  KOKKOS_FUNCTION void operator() (const size_t i) const
-  {
-    const size_t nnz = ind_.extent (0);
-    const size_t start = ptr_(i);
+  KOKKOS_FUNCTION void operator()(const size_t i) const {
+    const size_t start   = ptr_(i);
+    const ordinal_type n = static_cast<ordinal_type>(ptr_(i + 1) - start);
+    ordinal_type m       = 1;
+    while (m < n) m = m * 3 + 1;
+    m /= 3;
 
-
-    if (start < nnz) {
-      const size_t NumEntries = ptr_(i+1) - start;
-
-      const ordinal_type n = static_cast<ordinal_type> (NumEntries);
-      ordinal_type m = 1;
-      while (m<n) m = m*3+1;
-      m /= 3;
-
-      while (m > 0) {
-        ordinal_type max = n - m;
-        for (ordinal_type j = 0; j < max; j++) {
-          for (ordinal_type k = j; k >= 0; k -= m) {
-            const size_t sk = start+k;
-            if (ind_(sk+m) >= ind_(sk)) {
-              break;
-            }
-            if constexpr (permute_values_array) {
-              const scalar_type dtemp = val_(sk+m);
-              val_(sk+m)   = val_(sk);
-              val_(sk)     = dtemp;
-            }
-            const ordinal_type itemp = ind_(sk+m);
-            ind_(sk+m) = ind_(sk);
-            ind_(sk)   = itemp;
+    while (m > 0) {
+      ordinal_type max = n - m;
+      for (ordinal_type j = 0; j < max; j++) {
+        for (ordinal_type k = j; k >= 0; k -= m) {
+          const size_t sk = start + k;
+          if (ind_(sk + m) >= ind_(sk)) {
+            break;
           }
+          if constexpr (permute_values_array) {
+            const scalar_type dtemp = val_(sk + m);
+            val_(sk + m)            = val_(sk);
+            val_(sk)                = dtemp;
+          }
+          const ordinal_type itemp = ind_(sk + m);
+          ind_(sk + m)             = ind_(sk);
+          ind_(sk)                 = itemp;
         }
-        m = m/3;
       }
+      m = m / 3;
     }
   }
 
@@ -130,45 +118,35 @@ template <typename rowmap_t, typename entries_t>
 struct GraphShellSortFunctor {
   typedef typename entries_t::non_const_value_type ordinal_type;
 
-  GraphShellSortFunctor (const rowmap_t& ptr,
-                          const entries_t& ind) :
-    ptr_ (ptr),
-    ind_ (ind)
-  {
-    static_assert (std::is_signed<ordinal_type>::value, "The type of each "
-                   "column index -- that is, the type of each entry of ind "
-                   "-- must be signed in order for this functor to work.");
+  GraphShellSortFunctor(const rowmap_t& ptr, const entries_t& ind) : ptr_(ptr), ind_(ind) {
+    static_assert(std::is_signed<ordinal_type>::value,
+                  "The type of each "
+                  "column index -- that is, the type of each entry of ind "
+                  "-- must be signed in order for this functor to work.");
   }
 
-  KOKKOS_FUNCTION void operator() (const size_t i) const
-  {
-    const size_t nnz = ind_.extent (0);
+  KOKKOS_FUNCTION void operator()(const size_t i) const {
     const size_t start = ptr_(i);
 
+    const ordinal_type n = static_cast<ordinal_type>(ptr_(i + 1) - start);
+    ordinal_type m       = 1;
+    while (m < n) m = m * 3 + 1;
+    m /= 3;
 
-    if (start < nnz) {
-      const size_t NumEntries = ptr_(i+1) - start;
-
-      const ordinal_type n = static_cast<ordinal_type> (NumEntries);
-      ordinal_type m = 1;
-      while (m<n) m = m*3+1;
-      m /= 3;
-
-      while (m > 0) {
-        ordinal_type max = n - m;
-        for (ordinal_type j = 0; j < max; j++) {
-          for (ordinal_type k = j; k >= 0; k -= m) {
-            const size_t sk = start+k;
-            if (ind_(sk+m) >= ind_(sk)) {
-              break;
-            }
-            const ordinal_type itemp = ind_(sk+m);
-            ind_(sk+m) = ind_(sk);
-            ind_(sk)   = itemp;
+    while (m > 0) {
+      ordinal_type max = n - m;
+      for (ordinal_type j = 0; j < max; j++) {
+        for (ordinal_type k = j; k >= 0; k -= m) {
+          const size_t sk = start + k;
+          if (ind_(sk + m) >= ind_(sk)) {
+            break;
           }
+          const ordinal_type itemp = ind_(sk + m);
+          ind_(sk + m)             = ind_(sk);
+          ind_(sk)                 = itemp;
         }
-        m = m/3;
       }
+      m = m / 3;
     }
   }
 
@@ -176,6 +154,21 @@ struct GraphShellSortFunctor {
   entries_t ind_;
 };
 
+template <typename rowmap_t, typename entries_t>
+struct GraphStdSortFunctor {
+  typedef typename entries_t::non_const_value_type ordinal_type;
+
+  GraphStdSortFunctor(const rowmap_t& ptr, const entries_t& ind) : ptr_(ptr), ind_(ind) {}
+
+  void operator()(const size_t i) const {
+    const size_t start = ptr_(i);
+    const size_t end   = ptr_(i + 1);
+    std::sort(ind_.data() + start, ind_.data() + end);
+  }
+
+  rowmap_t ptr_;
+  entries_t ind_;
+};
 
 template <typename rowmap_t, typename entries_t>
 struct GraphRadixSortFunctor {

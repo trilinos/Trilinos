@@ -34,7 +34,7 @@ int main(int /*argc*/, char** /*argv*/) {
     using View3DType = Kokkos::View<double***, ExecutionSpace>;
     const int Nb = 10, n = 3;
 
-    // Matrix A in banded storage
+    // Matrix A
     View3DType A("A", Nb, n, n);
 
     // Vector x

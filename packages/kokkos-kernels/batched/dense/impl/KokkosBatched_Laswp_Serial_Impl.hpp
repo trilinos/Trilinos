@@ -13,13 +13,14 @@ namespace KokkosBatched {
 namespace Impl {
 
 template <typename PivViewType, typename AViewType>
-KOKKOS_INLINE_FUNCTION static int checkLaswpInput(const PivViewType &piv, const AViewType &A) {
+KOKKOS_INLINE_FUNCTION static int checkLaswpInput([[maybe_unused]] const PivViewType &piv,
+                                                  [[maybe_unused]] const AViewType &A) {
   static_assert(Kokkos::is_view_v<PivViewType>, "KokkosBatched::laswp: PivViewType is not a Kokkos::View.");
   static_assert(Kokkos::is_view_v<AViewType>, "KokkosBatched::laswp: AViewType is not a Kokkos::View.");
   static_assert(AViewType::rank == 1 || AViewType::rank == 2, "KokkosBatched::laswp: AViewType must have rank 1 or 2.");
   static_assert(PivViewType::rank == 1, "KokkosBatched::laswp: PivViewType must have rank 1.");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int npiv = piv.extent(0);
   const int lda  = A.extent(0);
   if (npiv > lda) {

@@ -208,6 +208,7 @@ TEST_F(TestCategory, axpby_mv_float) {
 TEST_F(TestCategory, axpby_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_double");
   test_axpby<double, double, TestDevice>();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, axpby_mv_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_double");

@@ -66,8 +66,8 @@ Type Requirements
    - ``KokkosBatched::Diag::NonUnit`` for the non-unit triangular matrix :math:`A`
 
 - ``ArgAlgo`` must be one of the following:
-   - ``KokkosBatched::Algo::tbsv::Blocked`` for the blocked algorithm
-   - ``KokkosBatched::Algo::tbsv::Unblocked`` for the unblocked algorithm
+   - ``KokkosBatched::Algo::trsv::Blocked`` for the blocked algorithm
+   - ``KokkosBatched::Algo::trsv::Unblocked`` for the unblocked algorithm
 
 - ``ScalarType`` must be a built-in arithmetic type like ``float``, ``double``, ``Kokkos::complex<float>``, or ``Kokkos::complex<double>``.
 - ``AViewType`` must be a Kokkos `View <https://kokkos.org/kokkos-core-wiki/API/core/view/view.html>`_ of rank 2 containing the band matrix A

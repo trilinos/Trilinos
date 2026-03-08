@@ -122,7 +122,7 @@ void test_method(const std::string label, ode_type& my_ode, const scalar_type& t
 
   EXPECT_EQ(solver_type::order(), order);
   EXPECT_EQ(solver_type::num_stages(), num_stages);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\n" << label << std::endl;
   std::cout << "  order: " << solver_type::order() << std::endl;
   std::cout << "  number of stages: " << solver_type::num_stages() << std::endl;
@@ -132,14 +132,14 @@ void test_method(const std::string label, ode_type& my_ode, const scalar_type& t
   for (int stageIdx = 0; stageIdx < solver_type::num_stages(); ++stageIdx) {
     EXPECT_NEAR_KK(ks(0, stageIdx), kstack_h(stageIdx, 0), 1e-8);
     EXPECT_NEAR_KK(ks(1, stageIdx), kstack_h(stageIdx, 1), 1e-8);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     std::cout << "  k" << stageIdx << "={" << kstack_h(stageIdx, 0) << ", " << kstack_h(stageIdx, 1) << "}"
               << std::endl;
 #endif
   }
   EXPECT_NEAR_KK(sol(0), y_new_h(0), 1e-8);
   EXPECT_NEAR_KK(sol(1), y_new_h(1), 1e-8);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "  y={" << y_new_h(0) << ", " << y_new_h(1) << "}" << std::endl;
   std::cout << "  error={" << Kokkos::abs(y_new_h(0) - y_ref_h(0)) / Kokkos::abs(y_ref_h(0)) << ", "
             << Kokkos::abs(y_new_h(1) - y_ref_h(1)) / Kokkos::abs(y_ref_h(1)) << "}" << std::endl;
@@ -189,7 +189,7 @@ void test_RK() {
     Kokkos::parallel_for(my_policy, wrapper);
 
     Kokkos::deep_copy(y_ref_h, y_ref);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     std::cout << "\nAnalytical solution" << std::endl;
     std::cout << "  y={" << y_ref_h(0) << ", " << y_ref_h(1) << "}" << std::endl;
 #endif
@@ -302,9 +302,11 @@ void test_rate(ode_type& my_ode, const scalar_type& tstart, const scalar_type& t
     Kokkos::deep_copy(y_new_h, y_new);
     error(idx) = Kokkos::abs(y_new_h(0) - y_ref_h(0)) / Kokkos::abs(y_ref_h(0));
 
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     scalar_type dt = (tend - tstart) / num_steps(idx);
-    std::cout << "count=" << count(0) << ", dt=" << dt << ", error=" << error(idx) << ", solution: {" << y_new_h(0)
+    auto h_count   = Kokkos::create_mirror_view(count);
+    Kokkos::deep_copy(h_count, count);
+    std::cout << "h_count=" << h_count(0) << ", dt=" << dt << ", error=" << error(idx) << ", solution: {" << y_new_h(0)
               << ", " << y_new_h(1) << "}" << std::endl;
 #endif
   }
@@ -358,7 +360,7 @@ void test_convergence_rate() {
     Kokkos::parallel_for(my_policy, wrapper);
 
     Kokkos::deep_copy(y_ref_h, y_ref);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     std::cout << "\nAnalytical solution" << std::endl;
     std::cout << "  y={" << y_ref_h(0) << ", " << y_ref_h(1) << "}" << std::endl;
 #endif
@@ -374,7 +376,7 @@ void test_convergence_rate() {
     double actual_ratio = error(idx + 1) / error(idx);
     EXPECT_NEAR_KK_REL(actual_ratio, expected_ratio, 0.15);
 
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     double rel_ratio_diff = Kokkos::abs(actual_ratio - expected_ratio) / Kokkos::abs(expected_ratio);
     std::cout << "error ratio: " << actual_ratio << ", expected ratio: " << expected_ratio
               << ", rel diff: " << rel_ratio_diff << std::endl;
@@ -391,7 +393,7 @@ void test_convergence_rate() {
     double actual_ratio = error(idx + 1) / error(idx);
     EXPECT_NEAR_KK_REL(actual_ratio, expected_ratio, 0.05);
 
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     double rel_ratio_diff = Kokkos::abs(actual_ratio - expected_ratio) / Kokkos::abs(expected_ratio);
     std::cout << "error ratio: " << actual_ratio << ", expected ratio: " << expected_ratio
               << ", rel diff: " << rel_ratio_diff << std::endl;
@@ -408,7 +410,7 @@ void test_convergence_rate() {
     double actual_ratio = error(idx + 1) / error(idx);
     EXPECT_NEAR_KK_REL(actual_ratio, expected_ratio, 0.05);
 
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     double rel_ratio_diff = Kokkos::abs(actual_ratio - expected_ratio) / Kokkos::abs(expected_ratio);
     std::cout << "error ratio: " << actual_ratio << ", expected ratio: " << expected_ratio
               << ", rel diff: " << rel_ratio_diff << std::endl;
@@ -458,7 +460,7 @@ void test_adaptivity() {
     Kokkos::parallel_for(my_policy, wrapper);
 
     Kokkos::deep_copy(y_ref_h, y_ref);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     std::cout << "\nAnalytical solution" << std::endl;
     std::cout << "  y={" << y_ref_h(0) << ", " << y_ref_h(1) << "}" << std::endl;
 #endif
@@ -477,7 +479,7 @@ void test_adaptivity() {
 
   auto y_new_h = Kokkos::create_mirror(y_new);
   Kokkos::deep_copy(y_new_h, y_new);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "Results: " << std::endl;
   std::cout << "  y_ref={ ";
   for (int idx = 0; idx < y_ref_h.extent_int(0); ++idx) {
@@ -494,13 +496,13 @@ void test_adaptivity() {
 #endif
 
   for (int idx = 0; idx < y_new_h.extent_int(0); ++idx) {
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
     error = Kokkos::abs(y_new_h(idx) - y_ref_h(idx)) / Kokkos::abs(y_ref_h(idx));
     std::cout << error << " ";
 #endif
     EXPECT_NEAR_KK_REL(y_new_h(idx), y_ref_h(idx), 1e-7);
   }
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "}" << std::endl;
 #endif
 

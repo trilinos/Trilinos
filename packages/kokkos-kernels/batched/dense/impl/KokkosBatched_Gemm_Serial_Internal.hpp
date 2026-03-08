@@ -72,9 +72,6 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
   // C = beta C + alpha A B
   // C (m x n), A(m x k), B(k x n)
 
-  constexpr int mbAlgo = Algo::Gemm::Blocked::mb();
-  constexpr int nbAlgo = Algo::Gemm::Blocked::mb();
-
   const ScalarType one(1.0), zero(0.0);
 
   if (beta == zero)
@@ -86,43 +83,50 @@ KOKKOS_INLINE_FUNCTION int SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
     if (m <= 0 || n <= 0 || k <= 0) return 0;
     const ValueType alpha_value(alpha);
 
-    InnerGemmFixC<mbAlgo, nbAlgo> inner(as0, as1, bs0, bs1, cs0, cs1);
-    auto gemm = [&](const int ib, const int jb, const int pb, const ValueType *KOKKOS_RESTRICT AA,
-                    const ValueType *KOKKOS_RESTRICT BB,
-                    /**/ ValueType *KOKKOS_RESTRICT CC) {
-      const int mb = mbAlgo, nb = nbAlgo;
-      for (int i = 0; i < ib; i += mb)
-        for (int j = 0; j < jb; j += nb)
-          inner.serial_invoke(opA, opB, alpha_value, AA + i * as0, BB + j * bs1, (i + mb) > ib ? (ib - i) : mb,
-                              (j + nb) > jb ? (jb - j) : nb, pb, CC + i * cs0 + j * cs1);
+    auto host_or_device = [&](auto tag) {
+      constexpr int mb = Algo::Gemm::Blocked::Impl::mb<decltype(tag)>();
+      constexpr int nb = Algo::Gemm::Blocked::Impl::mb<decltype(tag)>();
+      InnerGemmFixC<mb, nb> inner(as0, as1, bs0, bs1, cs0, cs1);
+      auto gemm = [&](const int ib, const int jb, const int pb, const ValueType *KOKKOS_RESTRICT AA,
+                      const ValueType *KOKKOS_RESTRICT BB,
+                      /**/ ValueType *KOKKOS_RESTRICT CC) {
+        for (int i = 0; i < ib; i += mb)
+          for (int j = 0; j < jb; j += nb)
+            inner.serial_invoke(opA, opB, alpha_value, AA + i * as0, BB + j * bs1, (i + mb) > ib ? (ib - i) : mb,
+                                (j + nb) > jb ? (jb - j) : nb, pb, CC + i * cs0 + j * cs1);
+      };
+
+      const bool is_small = true;  //(m*n*k <= 64*64*64);
+      if (is_small) {
+        gemm(m, n, k, A, B, C);
+      } else {
+        // // cache blocking
+        // const int
+        //   nc = nb*10, kc = mb*4, mc = mb*4;
+
+        // for (int jj=0;jj<n;jj+=nc) {
+        //   const int tj = n-jj, jb = (tj < nc ? tj : nc);
+        //   for (int pp=0;pp<k;pp+=kc) {
+        //     const int tp = k-pp, pb = (tp < kc ? tp : kc);
+        //     //const int pb = k, pp = 0;
+        //     for (int ii=0;ii<m;ii+=mc) {
+        //       const int ti = m-ii, ib = (ti < mc ? ti : mc);
+
+        //       const ValueType *KOKKOS_RESTRICT AA = A+ii*as0+pp*as1;
+        //       const ValueType *KOKKOS_RESTRICT BB = B+pp*bs0+jj*bs1;
+        //       /**/  ValueType *KOKKOS_RESTRICT CC = C+ii*cs0+jj*cs1;
+
+        //       gemm(ib, jb, pb, AA, BB, CC);
+        //     } // for ii
+        //   } // for pp
+        // } // for jj
+      }
     };
 
-    const bool is_small = true;  //(m*n*k <= 64*64*64);
-    if (is_small) {
-      gemm(m, n, k, A, B, C);
-    } else {
-      // // cache blocking
-      // const int
-      //   nc = nb*10, kc = mb*4, mc = mb*4;
-
-      // for (int jj=0;jj<n;jj+=nc) {
-      //   const int tj = n-jj, jb = (tj < nc ? tj : nc);
-      //   for (int pp=0;pp<k;pp+=kc) {
-      //     const int tp = k-pp, pb = (tp < kc ? tp : kc);
-      //     //const int pb = k, pp = 0;
-      //     for (int ii=0;ii<m;ii+=mc) {
-      //       const int ti = m-ii, ib = (ti < mc ? ti : mc);
-
-      //       const ValueType *KOKKOS_RESTRICT AA = A+ii*as0+pp*as1;
-      //       const ValueType *KOKKOS_RESTRICT BB = B+pp*bs0+jj*bs1;
-      //       /**/  ValueType *KOKKOS_RESTRICT CC = C+ii*cs0+jj*cs1;
-
-      //       gemm(ib, jb, pb, AA, BB, CC);
-      //     } // for ii
-      //   } // for pp
-      // } // for jj
-    }
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::Gemm::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Gemm::Blocked::Impl::Device{});))
   }
+
   return 0;
 }
 
