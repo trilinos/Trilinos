@@ -15,7 +15,7 @@ namespace Compadre {
 namespace GMLS_LinearAlgebra {
 
 KOKKOS_INLINE_FUNCTION
-void largestTwoEigenvectorsThreeByThreeSymmetric(const member_type& teamMember, scratch_matrix_right_type V, scratch_matrix_right_type PtP, const int dimensions, pool_type& random_number_pool) {
+void largestTwoEigenvectorsThreeByThreeSymmetric(const member_type& teamMember, device_unmanaged_matrix_right_type V, scratch_matrix_right_type PtP, const int dimensions, pool_type& random_number_pool) {
 
     Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
 

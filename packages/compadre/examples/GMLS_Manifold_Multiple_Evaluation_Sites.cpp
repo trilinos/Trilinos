@@ -43,8 +43,8 @@ void AmbientLocalAmbient(XYZ& u, double* T_data, double* P_data) {
     //  using the tangent vector calculated at the extra site (P).
     
 
-    host_scratch_matrix_right_type T(T_data, 3, 3);
-    host_scratch_matrix_right_type P(P_data, 3, 3);
+    host_unmanaged_matrix_right_type T(T_data, 3, 3);
+    host_unmanaged_matrix_right_type P(P_data, 3, 3);
 
     // first get back to local chart
     double local_vec[3] = {0,0};
@@ -533,7 +533,7 @@ Kokkos::initialize(argc, args);
     // loop through the target sites
     for (int i=0; i<number_target_coords; i++) {
 
-        host_scratch_matrix_right_type T
+        host_unmanaged_matrix_right_type T
                 (tangent_directions.data() + TO_GLOBAL(i)*TO_GLOBAL(3)*TO_GLOBAL(3), 3, 3);
         XYZ u;
 
