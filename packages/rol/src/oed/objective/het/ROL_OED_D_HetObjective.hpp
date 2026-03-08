@@ -62,6 +62,12 @@ public:
   Real value( const Vector<Real> &z, Real &tol ) override;
   void gradient( Vector<Real> &g, const Vector<Real> &z, Real &tol ) override;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &z, Real &tol ) override;
+
+  void summarize(std::ostream &stream,
+           const Ptr<BatchManager<Real>> &bman = nullPtr) const override {
+    ObjectiveBase<Real,std::vector<Real>>::summarize(stream,bman);
+    if (con0_!=nullPtr) con0_->summarize(stream,bman);
+  }
 };
 
 } // END Het Namespace

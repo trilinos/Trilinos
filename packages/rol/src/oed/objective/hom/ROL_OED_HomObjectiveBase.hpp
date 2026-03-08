@@ -13,6 +13,7 @@
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_VectorController.hpp"
 
+#include "ROL_OED_BaseObjective.hpp"
 #include "ROL_OED_BilinearConstraint.hpp"
 #include "ROL_OED_LinearObjective.hpp"
 
@@ -40,7 +41,7 @@ namespace Hom {
 //
 
 template<typename Real, typename Key>
-class ObjectiveBase : public Objective<Real> {
+class ObjectiveBase : public BaseObjective<Real> {
 private:
   // Storage for state variables
   const Ptr<VectorController<Real,Key>> stateStore_;
@@ -85,6 +86,22 @@ public:
                        int iter = -1 );
 
   virtual void setParameter( const std::vector<Real> &param );
+
+  virtual void summarize(std::ostream &stream,
+                   const Ptr<BatchManager<Real>> &bman = nullPtr) const {
+    if (obj_!=nullPtr) {
+      obj_->summarize(stream,bman);
+      stream << std::string(80,'-') << std::endl;
+    }
+    if (con_!=nullPtr) {
+      stream << std::string(80,'-') << std::endl;
+      con_->summarize(stream,bman);
+    }
+  }
+  virtual void reset() {
+    if (obj_!=nullPtr) obj_->reset();
+    if (con_!=nullPtr) con_->reset();
+  }
 };
 
 } // End Hom Namespace

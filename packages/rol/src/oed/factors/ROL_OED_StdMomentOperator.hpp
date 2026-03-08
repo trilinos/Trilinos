@@ -32,6 +32,8 @@ private:
   bool isBuilt_, isFactorized_, isSet_, isFullSet_, useSVD_, isPset_;
   std::vector<LA::Matrix<Real>>                       Xdata_, Xfull_;
   int                                                          nobs_;
+  const bool                                           alwaysUseSVD_;
+  const Real                                                 SVDtol_;
 
   void initialize(int nfactors);
   void build(const Vector<Real> &p);
@@ -60,7 +62,9 @@ protected:
 public:
   StdMomentOperator(RegressionType regType = LEASTSQUARES,
                     bool homNoise = true,
-                    const Ptr<Noise<Real>> &noise = nullPtr);
+                    const Ptr<Noise<Real>> &noise = nullPtr,
+                    bool alwaysUseSVD = false,
+                    Real SVDtol = Real(ROL_EPSILON<Real>()));
 
   Ptr<MomentOperator<Real>> clone() const;
 

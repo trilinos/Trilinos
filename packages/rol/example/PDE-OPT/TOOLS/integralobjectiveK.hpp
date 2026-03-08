@@ -338,8 +338,8 @@ public:
 
 private: // Vector accessor functions
 
-  ROL::Ptr<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
-    ROL::Ptr<const Tpetra::MultiVector<> > xp;
+  ROL::Ptr<const Tpetra::MultiVector<>> getConstField(const ROL::Vector<Real> &x) const {
+    ROL::Ptr<const Tpetra::MultiVector<>> xp;
     try {
       xp = dynamic_cast<const ROL::TpetraMultiVector<Real>&>(x).getVector();
     }
@@ -361,8 +361,8 @@ private: // Vector accessor functions
     return xp;
   }
 
-  ROL::Ptr<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
-    ROL::Ptr<Tpetra::MultiVector<> > xp;
+  ROL::Ptr<Tpetra::MultiVector<>> getField(ROL::Vector<Real> &x) const {
+    ROL::Ptr<Tpetra::MultiVector<>> xp;
     try {
       xp = dynamic_cast<ROL::TpetraMultiVector<Real>&>(x).getVector();
     }
@@ -384,8 +384,8 @@ private: // Vector accessor functions
     return xp;
   }
 
-  ROL::Ptr<const std::vector<Real> > getConstParameter(const ROL::Vector<Real> &x) const {
-    ROL::Ptr<const std::vector<Real> > xp;
+  ROL::Ptr<const std::vector<Real>> getConstParameter(const ROL::Vector<Real> &x) const {
+    ROL::Ptr<const std::vector<Real>> xp;
     try {
       xp = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     }
@@ -407,8 +407,8 @@ private: // Vector accessor functions
     return xp;
   }
 
-  ROL::Ptr<std::vector<Real> > getParameter(ROL::Vector<Real> &x) const {
-    ROL::Ptr<std::vector<Real> > xp;
+  ROL::Ptr<std::vector<Real>> getParameter(ROL::Vector<Real> &x) const {
+    ROL::Ptr<std::vector<Real>> xp;
     try {
       xp = dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
     }

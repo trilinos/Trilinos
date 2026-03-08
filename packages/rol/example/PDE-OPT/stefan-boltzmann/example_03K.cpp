@@ -22,7 +22,8 @@
 #include <algorithm>
 //#include <fenv.h>
 
-#include "ROL_Bounds.hpp"
+#include "ROL_StdBoundConstraint.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StochasticProblem.hpp"
@@ -33,6 +34,7 @@
 #include "../TOOLS/pdeconstraintK.hpp"
 #include "../TOOLS/pdeobjectiveK.hpp"
 #include "../TOOLS/pdevectorK.hpp"
+#include "../TOOLS/pdeboundsK.hpp"
 #include "../TOOLS/batchmanagerK.hpp"
 #include "pde_stoch_stefan_boltzmannK.hpp"
 #include "obj_stoch_stefan_boltzmannK.hpp"
@@ -43,7 +45,7 @@ using DeviceT = Kokkos::HostSpace;
 
 template<class Real>
 Real random(const Teuchos::Comm<int> &comm,
-            Real a = -1, Real b = 1) {
+            Real a = Real(-1), Real b = Real(1)) {
   Real val(0), u(0);
   if ( Teuchos::rank<int>(comm)==0 ) {
     u   = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
@@ -57,7 +59,7 @@ int main(int argc, char *argv[]) {
   //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
+  int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
 
@@ -106,13 +108,13 @@ int main(int argc, char *argv[]) {
     u_ptr->randomize();  //u_ptr->putScalar(static_cast<RealT>(1));
     p_ptr->randomize();  //p_ptr->putScalar(static_cast<RealT>(1));
     du_ptr->randomize(); //du_ptr->putScalar(static_cast<RealT>(0));
-    auto up  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler);
-    auto pp  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler);
-    auto dup = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(du_ptr,pde,assembler);
+    auto up  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler,*parlist);
+    auto pp  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler,*parlist);
+    auto dup = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(du_ptr,pde,assembler,*parlist);
     // Create residual vectors
     auto r_ptr = assembler->createResidualVector();
     r_ptr->randomize(); //r_ptr->putScalar(static_cast<RealT>(1));
-    auto rp = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler);
+    auto rp = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler,*parlist);
     // Create control vector --- FIELD
     auto  zbc_ptr = assembler->createControlVector();
     auto dzbc_ptr = assembler->createControlVector();
@@ -120,9 +122,9 @@ int main(int argc, char *argv[]) {
     zbc_ptr->randomize();  zbc_ptr->putScalar(static_cast<RealT>(280));
     dzbc_ptr->randomize(); //dzbc_ptr->putScalar(static_cast<RealT>(0));
     yzbc_ptr->randomize(); //yzbc_ptr->putScalar(static_cast<RealT>(0));
-    auto  zbc = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zbc_ptr,pde,assembler);
-    auto dzbc = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(dzbc_ptr,pde,assembler);
-    auto yzbc = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(yzbc_ptr,pde,assembler);
+    auto  zbc = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zbc_ptr,pde,assembler,*parlist);
+    auto dzbc = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(dzbc_ptr,pde,assembler,*parlist);
+    auto yzbc = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(yzbc_ptr,pde,assembler,*parlist);
     // Create control vector --- PARAMETER
     auto  zp_ptr = ROL::makePtr<std::vector<RealT>>(controlDim);
     auto dzp_ptr = ROL::makePtr<std::vector<RealT>>(controlDim);
@@ -165,19 +167,15 @@ int main(int argc, char *argv[]) {
     auto zhi_bc_ptr = assembler->createControlVector();
     zlo_bc_ptr->putScalar(static_cast<RealT>(lower_bc));
     zhi_bc_ptr->putScalar(static_cast<RealT>(upper_bc));
-    auto zlo_bc = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zlo_bc_ptr,pde,assembler);
-    auto zhi_bc = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zhi_bc_ptr,pde,assembler);
+    auto bnd_bc = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(zlo_bc_ptr,zhi_bc_ptr);
     // Bounds for advection control
     RealT lower = parlist->sublist("Problem").get("Lower Advection Bound",-100.0);
     RealT upper = parlist->sublist("Problem").get("Upper Advection Bound", 100.0);
-    auto zlo_param_ptr = ROL::makePtr<std::vector<RealT>>(controlDim,lower);
-    auto zhi_param_ptr = ROL::makePtr<std::vector<RealT>>(controlDim,upper);
-    auto zlo_adv = ROL::makePtr<ROL::StdVector<RealT>>(zlo_param_ptr);
-    auto zhi_adv = ROL::makePtr<ROL::StdVector<RealT>>(zhi_param_ptr);
+    auto zlo_adv = ROL::makePtr<std::vector<RealT>>(controlDim,lower);
+    auto zhi_adv = ROL::makePtr<std::vector<RealT>>(controlDim,upper);
+    auto bnd_adv = ROL::makePtr<ROL::StdBoundConstraint<RealT>>(*zlo_adv,*zhi_adv);
     // Combined bounds
-    auto zlop = ROL::makePtr<PDE_OptVector<RealT>>(zlo_bc, zlo_adv);
-    auto zhip = ROL::makePtr<PDE_OptVector<RealT>>(zhi_bc, zhi_adv);
-    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
+    auto bnd = ROL::makePtr<PDE_OptBounds<RealT>>(bnd_bc,yzbc,bnd_adv,yzparam);
 
     /*************************************************************************/
     /***************** BUILD SAMPLER *****************************************/

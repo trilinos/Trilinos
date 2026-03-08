@@ -22,18 +22,17 @@
 #include <algorithm>
 //#include <fenv.h>
 
-#include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_Solver.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanagerK.hpp"
 #include "../TOOLS/pdeconstraintK.hpp"
 #include "../TOOLS/pdeobjectiveK.hpp"
 #include "../TOOLS/pdevectorK.hpp"
-//#include "../TOOLS/batchmanagerK.hpp"
 #include "pde_stoch_stefan_boltzmannK.hpp"
 #include "obj_stoch_stefan_boltzmannK.hpp"
 #include "mesh_stoch_stefan_boltzmannK.hpp"
@@ -57,7 +56,7 @@ int main(int argc, char *argv[]) {
   //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
+  int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
 
@@ -106,13 +105,13 @@ int main(int argc, char *argv[]) {
     u_ptr->randomize();  //u_ptr->putScalar(static_cast<RealT>(1));
     p_ptr->randomize();  //p_ptr->putScalar(static_cast<RealT>(1));
     du_ptr->randomize(); //du_ptr->putScalar(static_cast<RealT>(0));
-    auto up  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler);
-    auto pp  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler);
-    auto dup = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(du_ptr,pde,assembler);
+    auto up  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler,*parlist);
+    auto pp  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler,*parlist);
+    auto dup = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(du_ptr,pde,assembler,*parlist);
     // Create residual vectors
     auto r_ptr = assembler->createResidualVector();
     r_ptr->randomize(); //r_ptr->putScalar(static_cast<RealT>(1));
-    auto rp = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler);
+    auto rp = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler,*parlist);
     // Create control vector and set to ones
     auto  z_ptr = assembler->createControlVector();
     auto dz_ptr = assembler->createControlVector();
@@ -120,12 +119,9 @@ int main(int argc, char *argv[]) {
     z_ptr->randomize();  z_ptr->putScalar(static_cast<RealT>(280));
     dz_ptr->randomize(); //dz_ptr->putScalar(static_cast<RealT>(0));
     yz_ptr->randomize(); //yz_ptr->putScalar(static_cast<RealT>(0));
-    auto zp  = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pde,assembler);
-    auto dzp = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(dz_ptr,pde,assembler);
-    auto yzp = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(yz_ptr,pde,assembler);
-    //auto zp  = ROL::makePtr<PDE_OptVector<RealT>>(zpde);
-    //auto dzp = ROL::makePtr<PDE_OptVector<RealT>>(dzpde);
-    //auto yzp = ROL::makePtr<PDE_OptVector<RealT>>(yzpde);
+    auto zp  = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pde,assembler,*parlist);
+    auto dzp = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(dz_ptr,pde,assembler,*parlist);
+    auto yzp = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(yz_ptr,pde,assembler,*parlist);
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
@@ -148,11 +144,7 @@ int main(int argc, char *argv[]) {
     auto zhi_ptr = assembler->createControlVector();
     zlo_ptr->putScalar(static_cast<RealT>(280));
     zhi_ptr->putScalar(static_cast<RealT>(370));
-    auto zlop = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zlo_ptr,pde,assembler);
-    auto zhip = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zhi_ptr,pde,assembler);
-    //auto zlop = ROL::makePtr<PDE_OptVector<RealT>>(zlopde);
-    //auto zhip = ROL::makePtr<PDE_OptVector<RealT>>(zhipde);
-    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
+    auto bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(zlo_ptr,zhi_ptr);
 
     /*************************************************************************/
     /***************** BUILD SAMPLER *****************************************/

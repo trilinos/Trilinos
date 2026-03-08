@@ -23,6 +23,7 @@
 
 #include "ROL_Solver.hpp"
 #include "ROL_Bounds.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 
 #include "../../TOOLS/pdevectorK.hpp"
 
@@ -116,17 +117,17 @@ int main(int argc, char *argv[]) {
                   volFraction);
     else
       qoi_vol = ROL::makePtr<QoI_Volume_TopoOpt<RealT,DeviceT>>(pde->getDensityFE(), volFraction);
-    ROL::Ptr<ROL::Constraint<RealT>> con_vol = ROL::makePtr<TopOptVolumeConstraint<RealT,DeviceT>>(qoi_vol,assemblerFilter,zp);
-    ROL::Ptr<ROL::Vector<RealT>> imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
-    ROL::Ptr<ROL::Vector<RealT>> ilp  = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
-    ROL::Ptr<ROL::Vector<RealT>> iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
+    auto con_vol = ROL::makePtr<TopOptVolumeConstraint<RealT,DeviceT>>(qoi_vol,assemblerFilter,zp);
+    auto imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
+    auto ilp  = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
+    auto iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
     zp->zero(); con_vol->value(*ilp,*zp,tol);
     ROL::Ptr<ROL::BoundConstraint<RealT>> ibnd = ROL::makePtr<ROL::Bounds<RealT>>(ilp,iup);
 
     // Define bound constraint
-    auto zlo = zp->clone(); zlo->setScalar(0.0);
-    auto zhi = zp->clone(); zhi->setScalar(1.0);
-    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlo,zhi);
+    auto zlo = assemblerFilter->createControlVector(); zlo->putScalar(0.0);
+    auto zhi = assemblerFilter->createControlVector(); zhi->putScalar(1.0);
+    auto bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(zlo,zhi);
 
     // Normalize compliance objective function
     zp->setScalar(initDens);
