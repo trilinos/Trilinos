@@ -58,7 +58,7 @@
       -->
       <ParameterList name="PhiEvaluator">
 	<Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
-	<Parameter name="Expansion Order" type="int" value="4"/>
+	<Parameter name="Expansion Order" type="int" value="100"/>
       </ParameterList>
 
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
