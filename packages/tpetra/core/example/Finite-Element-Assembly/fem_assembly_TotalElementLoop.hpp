@@ -618,10 +618,9 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
 
   RCP<crs_graph_type> crs_graph;
   {
-    RCP<TimeMonitor> timerElementLoopGraph   = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
-    auto owned_element_to_node_ids           = mesh.getOwnedElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
-    auto ghost_element_to_node_ids           = mesh.getGhostElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
-    const local_ordinal_type nodesPerElement = owned_element_to_node_ids.extent(1);
+    RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
+    auto owned_element_to_node_ids         = mesh.getOwnedElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
+    auto ghost_element_to_node_ids         = mesh.getGhostElementToNode().getDeviceView(Tpetra::Access::ReadOnly);
 
     // First, build the column map. Each process has the owned GIDs of the domain map, plus all non-owned node GIDs adjacent to ghost elements.
     // Use makeColMap utility function to do this, given a list of GIDs (duplicates allowed)
@@ -690,6 +689,7 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
       Kokkos::parallel_for(
           range_policy(0, owned_element_to_node_ids.size() + ghost_element_to_node_ids.size()),
           KOKKOS_LAMBDA(size_t i) {
+            const local_ordinal_type nodesPerElement = owned_element_to_node_ids.extent(1);
             if (i < owned_element_to_node_ids.size()) {
               local_ordinal_type ownedElementIndex = i / nodesPerElement;
               local_ordinal_type nodeOfElem        = i % nodesPerElement;
@@ -723,7 +723,8 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
       vectorLength <<= 1;
     if (vectorLength > team_policy::vector_length_max())
       vectorLength = team_policy::vector_length_max();
-    int teamSize = nodesPerElement;
+    const local_ordinal_type nodesPerElement = owned_element_to_node_ids.extent(1);
+    int teamSize                             = nodesPerElement;
     // Hash table size: ideally big enough to fit the median number of entries in a row (plus a few extra), but not
     // so big that occupancy suffers. For a reasonable guess, just pick 1 (for the self-loop) plus the expected average
     // entries per row including all the duplicates, but excluding self loops.
