@@ -120,13 +120,16 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   // 0th term of the leja polynomial
   auto coeff = lp_dd[0];
   Scalar coeff_re = Scalar(coeff.real());
+
+  std::cout << "c[0]: " << coeff_re << std::endl;
+  
   Thyra::assign(vm_k.ptr(), *v);
   Thyra::V_StV(v, coeff_re, *vm_k);
 
   // storage for error est
   Scalar norm_vm_k = Thyra::norm_inf(*vm_k);
   // norm of the update
-  Scalar norm_d_k = coeff_re * Thyra::norm_inf(*vm_k);
+  Scalar norm_d_k = std::abs(coeff_re) * norm_vm_k;
   // upper bound on solution size
   Scalar overflow = norm_d_k;
   Thyra::SolveStatus<Scalar> sStatus;
@@ -150,7 +153,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 
     // Real leja point case
     if (lp_sc.lpt == LpType::LPREAL) {
-      //std::cout << "c,lp: " << coeff_re << " " << lp_sc.lp << std::endl;
+      std::cout << "c,lp: " << coeff_re << " " << lp_sc.lp << std::endl;
 
       // compute shifted and scaled leja point
       lp_sc_re = Scalar( lp_sc.get().at(0).real() );
@@ -166,11 +169,11 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       lp_k++;
 
       norm_vm_k = Thyra::norm_inf(*vm_k);
-      norm_d_k = norm_vm_k * coeff_re;
+      norm_d_k = std::abs(coeff_re) * norm_vm_k;
       overflow += norm_d_k;
     }
     else if (lp_sc.lpt == LpType::LPCONJ)  {
-      //std::cout << "c,lp: " << coeff << " " << lp_sc.lp << std::endl;
+      std::cout << "c,lp: " << coeff << " " << lp_sc.lp << std::endl;
 
       // first update
       lp_sc_re = Scalar( lp_sc.get().at(0).real() );
@@ -181,7 +184,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 
       k++;
       norm_vm_k = Thyra::norm_inf(*qm_k);
-      norm_d_k = norm_vm_k * coeff_re;
+      norm_d_k = std::abs(coeff_re) * norm_vm_k;
       overflow += norm_d_k;
 
       if (k < lp_dd.size())
@@ -193,7 +196,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 	coeff_re = Scalar(coeff.real());
 
 	std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
-	//std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
+	std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
 
 	Thyra::apply(*L, Thyra::NOTRANS, *qm_k, av.ptr(), tau, 0.0);
 	Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *qm_k);
@@ -204,7 +207,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 	k++;
 	lp_k++;
 	norm_vm_k = Thyra::norm_inf(*vm_k);
-	norm_d_k = norm_vm_k * coeff_re;
+	norm_d_k = std::abs(coeff_re) * norm_vm_k;
 	overflow += norm_d_k;
       }
     }
