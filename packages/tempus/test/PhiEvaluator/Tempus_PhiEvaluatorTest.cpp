@@ -72,7 +72,8 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(lp.get().at(1).imag(), -leja_c, 1e-6);
 
   // Check the first divided diffs
-  auto lp_dd = phiEvaluator->getDividedDiffs(0, 1.0);
+  const int exp_order = 4;
+  auto lp_dd = phiEvaluator->getDividedDiffs(0, 1.0, exp_order);
   // the first divided diff is: y(x_0) == exp(0.0) == 1.0
   // the second divided diff is: (y(x_1) - y(x_0) / x_1 - x_0)) == (exp(-1.0) - 1.0) / (-1.0 - 0.0)
   std::cout << "lp_dd 0: " << lp_dd[0] << std::endl;
