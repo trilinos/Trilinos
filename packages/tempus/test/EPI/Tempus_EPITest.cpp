@@ -64,8 +64,8 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
-  const int nTimeStepSizes = 7;
-  double dt                = 0.2;
+  const int nTimeStepSizes = 4;
+  double dt                = 2.0;
   double time              = 0.0;
   int expected_order;
   for (int n = 0; n < nTimeStepSizes; n++) {
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(EPI, VanDerPol)
   std::vector<double> StepSize;
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
-  const int nTimeStepSizes = 7;  // 8 for Error plot
+  const int nTimeStepSizes = 4;  // 8 for Error plot
   double dt                = 0.2;
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file

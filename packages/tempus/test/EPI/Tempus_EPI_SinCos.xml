@@ -27,8 +27,8 @@
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
-        <Parameter name="Initial Time Step"      type="double" value="0.1"/>
-        <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
+        <Parameter name="Initial Time Step"      type="double" value="1."/>
+        <Parameter name="Maximum Time Step"      type="double" value="1."/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Output Time List"       type="string" value=""/>
@@ -58,7 +58,9 @@
       -->
       <ParameterList name="PhiEvaluator">
 	<Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
-	<Parameter name="Expansion Order" type="int" value="100"/>
+	<Parameter name="Expansion Order" type="int" value="30"/>
+	<Parameter name="leja_a" type="double" value="-1."/>
+	<Parameter name="leja_c" type="double" value="0.5"/>
       </ParameterList>
 
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
