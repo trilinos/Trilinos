@@ -2316,6 +2316,222 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   }
 }
 
+namespace {
+
+template <class SC, class LO, class GO, class NT>
+auto buildCancellationMatrices(
+    const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& map) {
+  using crs_t = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  const GO gMin = map->getMinAllGlobalIndex();
+  const GO gMax = map->getMaxAllGlobalIndex();
+
+  // each row has 2 entries in both A and P
+  RCP<crs_t> A = rcp(new crs_t(map, 2));
+  RCP<crs_t> P = rcp(new crs_t(map, 2));
+
+  const size_t lclNum = map->getLocalNumElements();
+  for (size_t lid = 0; lid < lclNum; ++lid) {
+    const GO i = map->getGlobalElement(lid);
+
+    // Determine the partner in the 2x2 block:
+    // (even, odd) pairs: (0,1), (2,3), ...
+    const bool iEven = ((i - gMin) % 2 == 0);
+    const GO j       = iEven ? (i + 1) : (i - 1);
+
+    // Only insert the off-diagonal if partner index exists globally
+    const bool hasPartner = (j >= gMin && j <= gMax);
+
+    // --- A: ones on the 2x2 block => row i has (i,i)=1 and (i,j)=1 (if partner exists)
+    {
+      std::vector<GO> cols;
+      std::vector<SC> vals;
+      cols.reserve(2);
+      vals.reserve(2);
+
+      cols.push_back(i);
+      vals.push_back(static_cast<SC>(1));
+
+      if (hasPartner) {
+        cols.push_back(j);
+        vals.push_back(static_cast<SC>(1));
+      }
+      A->insertGlobalValues(i, cols, vals);
+    }
+
+    // --- P block is [[1,1],[1,-1]]
+    // Row even: [1,  1] on columns (i, j)
+    // Row odd:  [1, -1] on columns (j, i) depending how you order; easiest is explicit:
+    {
+      std::vector<GO> cols;
+      std::vector<SC> vals;
+      cols.reserve(2);
+      vals.reserve(2);
+
+      if (hasPartner) {
+        if (iEven) {
+          // row i: col i -> 1, col j -> 1
+          cols.push_back(i);
+          vals.push_back(static_cast<SC>(1));
+          cols.push_back(j);
+          vals.push_back(static_cast<SC>(1));
+        } else {
+          // row i (odd): col j -> 1, col i -> -1  (so block rows match [[1,1],[1,-1]])
+          cols.push_back(j);
+          vals.push_back(static_cast<SC>(1));
+          cols.push_back(i);
+          vals.push_back(static_cast<SC>(-1));
+        }
+      } else {
+        // If no partner (can happen at global end for odd n), just set identity.
+        cols.push_back(i);
+        vals.push_back(static_cast<SC>(1));
+      }
+
+      P->insertGlobalValues(i, cols, vals);
+    }
+  }
+
+  A->fillComplete();
+  P->fillComplete();
+
+  return std::make_tuple(A, P);
+}
+
+// Modify A (already fillComplete) so that each 2x2 block (paired global IDs)
+// becomes
+//   [ alpha  beta ]
+//   [ beta   alpha ]
+// and leave a trailing 1x1 [alpha] if the global size is odd.
+//
+// Preconditions / important:
+// - A must ALREADY have a graph that includes (i,i) and (i,partner) in each row
+//   where a partner exists, otherwise replaceGlobalValues will not insert new
+//   structural entries.
+// - We assume contiguous global IDs on the row map.
+//
+// Postcondition:
+// - A is fillComplete() on return.
+template <class SC, class LO, class GO, class NT>
+void set2x2BlockAlphaBeta(
+    Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
+    const SC alpha,
+    const SC beta) {
+  using map_t = Tpetra::Map<LO, GO, NT>;
+
+  auto rowMapRcp      = A.getRowMap();
+  const map_t& rowMap = *rowMapRcp;
+
+  const GO gMin = rowMap.getMinAllGlobalIndex();
+  const GO gMax = rowMap.getMaxAllGlobalIndex();
+
+  // Put A back into "edit" mode, preserving its existing graph.
+  A.resumeFill();
+
+  // Zero numeric values (graph unchanged).
+  A.setAllToScalar(static_cast<SC>(0));
+
+  const size_t lclNum = rowMap.getLocalNumElements();
+  for (size_t lid = 0; lid < lclNum; ++lid) {
+    const GO i = rowMap.getGlobalElement(lid);
+
+    // partner pairing: (gMin,gMin+1), (gMin+2,gMin+3), ...
+    const bool iEven      = ((i - gMin) % 2 == 0);
+    const GO j            = iEven ? (i + 1) : (i - 1);
+    const bool hasPartner = (j >= gMin && j <= gMax);
+
+    std::vector<GO> cols;
+    std::vector<SC> vals;
+    cols.reserve(2);
+    vals.reserve(2);
+
+    cols.push_back(i);
+    vals.push_back(alpha);
+
+    if (hasPartner) {
+      cols.push_back(j);
+      vals.push_back(beta);
+    }
+
+    // Requires that these entries already exist in A's graph.
+    A.replaceGlobalValues(i, cols, vals);
+  }
+
+  // Return to fillComplete. Use A's existing domain/range maps.
+  // (These should be valid if A was fillComplete on entry.)
+  A.fillComplete(A.getDomainMap(), A.getRangeMap());
+}
+
+}  // namespace
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, cancellation_zero_entry_test, SC, LO, GO, NT) {
+  using crs_t = Tpetra::CrsMatrix<SC, LO, GO, NT>;
+  Tpetra::global_size_t globalNumRows{1000};
+  auto comm = Tpetra::getDefaultComm();
+  auto map  = Tpetra::createUniformContigMapWithNode<LO, GO, NT>(globalNumRows, comm);
+
+  auto my_matrixmatrix_params = Teuchos::make_rcp<Teuchos::ParameterList>();
+  my_matrixmatrix_params->set("MM Skip Explicit Zeros", false);
+  my_matrixmatrix_params->set("compute global constants", true);
+
+  bool fillComplete = true;
+  std::string label = "";
+
+  // Note: structured binding cannot be used here due to lambda expression
+  Teuchos::RCP<crs_t> A, P;
+  std::tie(A, P) = buildCancellationMatrices<SC, LO, GO, NT>(map);
+
+  // P^TA = P^T * A
+  RCP<crs_t> PTA = rcp(new crs_t(P->getDomainMap(), 0));
+  Tpetra::MatrixMatrix::Multiply(*P, true, *A, false, *PTA, fillComplete, label, my_matrixmatrix_params);
+
+  // P^T A P = (P^T A) * P
+  RCP<crs_t> PTAP = rcp(new crs_t(P->getDomainMap(), 0));
+  Tpetra::MatrixMatrix::Multiply(*PTA, false, *P, false, *PTAP, fillComplete, label, my_matrixmatrix_params);
+
+  // Without setting 'MM Skip Explicit Zeros' to false here, the sparsity pattern of RAP will be diagonal in a serial build
+  TEST_ASSERT(PTAP->getGlobalNumEntries() > PTAP->getGlobalNumRows());
+
+  // Confirm P^T*(A*(P*x)) = (P^TAP)*x
+  auto confirm_triple_product_equality = [&]() {
+    auto x = Teuchos::make_rcp<Tpetra::Vector<SC, LO, GO, NT>>(P->getDomainMap());
+    auto y = Teuchos::make_rcp<Tpetra::Vector<SC, LO, GO, NT>>(P->getDomainMap());
+
+    auto Px    = Teuchos::make_rcp<Tpetra::Vector<SC, LO, GO, NT>>(P->getDomainMap());
+    auto APx   = Teuchos::make_rcp<Tpetra::Vector<SC, LO, GO, NT>>(P->getDomainMap());
+    auto PTAPx = Teuchos::make_rcp<Tpetra::Vector<SC, LO, GO, NT>>(P->getRangeMap());
+
+    x->randomize();
+    P->apply(*x, *Px);
+    A->apply(*Px, *APx);
+    P->apply(*APx, *PTAPx, Teuchos::TRANS);
+
+    PTAP->apply(*x, *y);
+
+    y->update(1.0, *PTAPx, -1.0);
+    const auto LinfErr    = y->normInf();
+    const auto LinfX      = x->normInf();
+    const auto relLinfErr = LinfErr / LinfX;
+
+    const auto eps = 1e2 * Teuchos::ScalarTraits<SC>::eps();
+
+    TEST_ASSERT(relLinfErr < eps);
+  };
+
+  confirm_triple_product_equality();
+
+  // Confirm that re-use for RAP works correctly without cancellation
+  auto unity = Teuchos::ScalarTraits<SC>::one();
+  set2x2BlockAlphaBeta(*A, 2.0 * unity, unity);
+
+  TEST_NOTHROW(Tpetra::MatrixMatrix::Multiply(*P, true, *A, false, *PTA, fillComplete, label, my_matrixmatrix_params));
+  TEST_NOTHROW(Tpetra::MatrixMatrix::Multiply(*PTA, false, *P, false, *PTAP, fillComplete, label, my_matrixmatrix_params));
+
+  confirm_triple_product_equality();
+}
+
 namespace AddTestUtils {
 
 // Local matrices of fill-complete matrices should always be sorted.
@@ -2699,17 +2915,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO
 }*/
 
 // These are the tests associated to UNIT_TEST_GROUP_SC_LO_GO_NO that work for all backends.
-#define UNIT_TEST_GROUP_SC_LO_GO_NO_COMMON(SC, LO, GO, NT)                                     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT)      \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT)     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)           \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, same_colmap, SC, LO, GO, NT)          \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT)         \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO, NT)     \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT)   \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_index_base, SC, LO, GO, NT) \
+#define UNIT_TEST_GROUP_SC_LO_GO_NO_COMMON(SC, LO, GO, NT)                                          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT)               \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT)           \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, add_zero_rows, SC, LO, GO, NT)                \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, cancellation_zero_entry_test, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, same_colmap, SC, LO, GO, NT)               \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, transposed_b, SC, LO, GO, NT)              \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, locally_unsorted, SC, LO, GO, NT)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_col_maps, SC, LO, GO, NT)        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatAdd, different_index_base, SC, LO, GO, NT)      \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMatMult, BlockCrsMult, SC, LO, GO, NT)
 
 // FIXME_SYCL requires querying free device memory in KokkosKernels, see

@@ -23,7 +23,7 @@ namespace Compadre {
 */
 template <typename TargetData>
 KOKKOS_INLINE_FUNCTION
-void computeTargetFunctionals(const TargetData& data, const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, scratch_matrix_right_type P_target_row) {
+void computeTargetFunctionals(const TargetData& data, const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, device_unmanaged_matrix_right_type P_target_row) {
 
     // check if VectorOfScalarClonesTaylorPolynomial is used with a scalar sampling functional other than PointSample
     if (data._dimensions > 1) {
@@ -170,7 +170,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
                 double alphaf;
 
                 double triangle_coords[3*3]; //data._global_dimensions*3
-                scratch_matrix_right_type triangle_coords_matrix(triangle_coords, data._global_dimensions, 3); 
+                device_unmanaged_matrix_right_type triangle_coords_matrix(triangle_coords, data._global_dimensions, 3); 
 
                 for (int j=0; j<data._global_dimensions; ++j) {
                     // midpoint
@@ -1052,7 +1052,7 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
 */
 template <typename TargetData>
 KOKKOS_INLINE_FUNCTION
-void computeCurvatureFunctionals(const TargetData& data, const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, scratch_matrix_right_type P_target_row, const scratch_matrix_right_type* V, const local_index_type local_neighbor_index = -1) {
+void computeCurvatureFunctionals(const TargetData& data, const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, device_unmanaged_matrix_right_type P_target_row, const device_unmanaged_matrix_right_type* V, const local_index_type local_neighbor_index = -1) {
 
     compadre_kernel_assert_release((thread_workspace.extent_int(0)>=(data._curvature_poly_order+1)*data._local_dimensions) && "Workspace thread_workspace not large enough.");
 
@@ -1121,7 +1121,7 @@ void computeCurvatureFunctionals(const TargetData& data, const member_type& team
 */
 template <typename TargetData>
 KOKKOS_INLINE_FUNCTION
-void computeTargetFunctionalsOnManifold(const TargetData& data, const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, scratch_matrix_right_type P_target_row, scratch_matrix_right_type V, scratch_vector_type curvature_coefficients) {
+void computeTargetFunctionalsOnManifold(const TargetData& data, const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, device_unmanaged_matrix_right_type P_target_row, device_unmanaged_matrix_right_type V, device_unmanaged_vector_type curvature_coefficients) {
 
     compadre_kernel_assert_release((thread_workspace.extent_int(0)>=(data._poly_order+1)*data._local_dimensions) && "Workspace thread_workspace not large enough.");
 
@@ -1720,8 +1720,8 @@ void computeTargetFunctionalsOnManifold(const TargetData& data, const member_typ
                 for (int j=0; j<data._global_dimensions*3; ++j) G_data[j] = 0;
                 for (int j=0; j<data._global_dimensions*3; ++j) triangle_coords[j] = 0;
                 // 3 is for # vertices in sub-triangle
-                scratch_matrix_right_type G(G_data, data._global_dimensions, 3); 
-                scratch_matrix_right_type triangle_coords_matrix(triangle_coords, data._global_dimensions, 3); 
+                device_unmanaged_matrix_right_type G(G_data, data._global_dimensions, 3); 
+                device_unmanaged_matrix_right_type triangle_coords_matrix(triangle_coords, data._global_dimensions, 3); 
 
                 double radius = 0.0;
                 for (int j=0; j<data._global_dimensions; ++j) {
@@ -1890,8 +1890,8 @@ void computeTargetFunctionalsOnManifold(const TargetData& data, const member_typ
                 for (int j=0; j<data._global_dimensions*TWO; ++j) G_data[j] = 0;
                 for (int j=0; j<data._global_dimensions*TWO; ++j) edge_coords[j] = 0;
                 // 2 is for # vertices on an edge
-                scratch_matrix_right_type G(G_data, data._global_dimensions, TWO); 
-                scratch_matrix_right_type edge_coords_matrix(edge_coords, data._global_dimensions, TWO); 
+                device_unmanaged_matrix_right_type G(G_data, data._global_dimensions, TWO); 
+                device_unmanaged_matrix_right_type edge_coords_matrix(edge_coords, data._global_dimensions, TWO); 
 
                 // neighbor coordinate is assumed to be midpoint
                 // could be calculated, but is correct for sphere

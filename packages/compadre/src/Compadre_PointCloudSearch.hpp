@@ -269,10 +269,10 @@ class PointCloudSearch {
             compadre_assert_release((epsilons.extent(0)==(size_t)num_target_sites)
                         && "epsilons View does not have the correct dimension");
 
-            typedef Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            typedef Kokkos::View<double*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
                     scratch_double_view;
 
-            typedef Kokkos::View<size_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            typedef Kokkos::View<size_t*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
                     scratch_int_view;
 
             // determine scratch space size needed
@@ -281,18 +281,22 @@ class PointCloudSearch {
             team_scratch_size += scratch_int_view::shmem_size(neighbor_lists.extent(1)); // indices
             team_scratch_size += scratch_double_view::shmem_size(_dim); // target coordinate
 
+            auto dim = _dim;
             // maximum number of neighbors found over all target sites' neighborhoods
             size_t max_num_neighbors = 0;
             // part 2. do radius search using window size from knn search
             // each row of neighbor lists is a neighbor list for the target site corresponding to that row
-            Kokkos::parallel_reduce("radius search", host_team_policy(num_target_sites, Kokkos::AUTO)
-                    .set_scratch_size(0 /*shared memory level*/, Kokkos::PerTeam(team_scratch_size)), 
-                    KOKKOS_LAMBDA(const host_member_type& teamMember, size_t& t_max_num_neighbors) {
+            auto scratch_level = (team_scratch_size > 32000) ? 1 : 0;
+            // respects serial scratch size limit of 32k
+            // from kokkos/core/src/Serial/Kokkos_Serial_Parallel_Team.hpp
+            auto policy = host_team_policy(num_target_sites, Kokkos::AUTO)
+                .set_scratch_size(scratch_level /*shared memory level*/, Kokkos::PerTeam(team_scratch_size));
+            auto radius_search = [=,*this](const host_member_type& teamMember, size_t& t_max_num_neighbors) {
 
                 // make unmanaged scratch views
-                scratch_double_view neighbor_distances(teamMember.team_scratch(0 /*shared memory*/), neighbor_lists.extent(1));
-                scratch_int_view neighbor_indices(teamMember.team_scratch(0 /*shared memory*/), neighbor_lists.extent(1));
-                scratch_double_view this_target_coord(teamMember.team_scratch(0 /*shared memory*/), _dim);
+                scratch_double_view neighbor_distances(teamMember.team_scratch(scratch_level /*shared memory*/), neighbor_lists.extent(1));
+                scratch_int_view neighbor_indices(teamMember.team_scratch(scratch_level /*shared memory*/), neighbor_lists.extent(1));
+                scratch_double_view this_target_coord(teamMember.team_scratch(scratch_level /*shared memory*/), dim);
 
                 size_t neighbors_found = 0;
 
@@ -314,17 +318,17 @@ class PointCloudSearch {
                     // target_coords is LayoutLeft on device and its HostMirror, so giving a pointer to 
                     // this data would lead to a wrong result if the device is a GPU
 
-                    for (int j=0; j<_dim; ++j) {
+                    for (int j=0; j<dim; ++j) {
                         this_target_coord(j) = trg_pts_view(i,j);
                     }
 
                     nanoflann::SearchParams sp; // default parameters
                     Compadre::RadiusResultSet<double> rrs(epsilons(i)*epsilons(i), neighbor_distances.data(), neighbor_indices.data(), neighbor_lists.extent(1));
-                    if (_dim==1) {
+                    if (dim==1) {
                         neighbors_found = _tree_1d->template radiusSearchCustomCallback<Compadre::RadiusResultSet<double> >(this_target_coord.data(), rrs, sp) ;
-                    } else if (_dim==2) {
+                    } else if (dim==2) {
                         neighbors_found = _tree_2d->template radiusSearchCustomCallback<Compadre::RadiusResultSet<double> >(this_target_coord.data(), rrs, sp) ;
-                    } else if (_dim==3) {
+                    } else if (dim==3) {
                         neighbors_found = _tree_3d->template radiusSearchCustomCallback<Compadre::RadiusResultSet<double> >(this_target_coord.data(), rrs, sp) ;
                     }
 
@@ -348,7 +352,8 @@ class PointCloudSearch {
                     teamMember.team_barrier();
                 }
 
-            }, Kokkos::Max<size_t>(max_num_neighbors) );
+            };
+            Kokkos::parallel_reduce("radius search 2D", policy, radius_search, Kokkos::Max<size_t>(max_num_neighbors));
             Kokkos::fence();
 
             // check if max_num_neighbors will fit onto pre-allocated space
@@ -416,10 +421,10 @@ class PointCloudSearch {
             compadre_assert_release((epsilons.extent(0)==(size_t)num_target_sites)
                         && "epsilons View does not have the correct dimension");
 
-            typedef Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            typedef Kokkos::View<double*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
                     scratch_double_view;
 
-            typedef Kokkos::View<size_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            typedef Kokkos::View<size_t*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
                     scratch_int_view;
 
             // determine scratch space size needed
@@ -428,16 +433,20 @@ class PointCloudSearch {
             team_scratch_size += scratch_int_view::shmem_size(max_neighbor_list_row_storage_size); // indices
             team_scratch_size += scratch_double_view::shmem_size(_dim); // target coordinate
 
+            auto dim = _dim;
             // part 2. do radius search using window size from knn search
             // each row of neighbor lists is a neighbor list for the target site corresponding to that row
-            Kokkos::parallel_for("radius search", host_team_policy(num_target_sites, Kokkos::AUTO)
-                    .set_scratch_size(0 /*shared memory level*/, Kokkos::PerTeam(team_scratch_size)), 
-                    KOKKOS_LAMBDA(const host_member_type& teamMember) {
+            auto scratch_level = (team_scratch_size > 32000) ? 1 : 0;
+            // respects serial scratch size limit of 32k
+            // from kokkos/core/src/Serial/Kokkos_Serial_Parallel_Team.hpp
+            auto policy = host_team_policy(num_target_sites, Kokkos::AUTO)
+                .set_scratch_size(scratch_level /*shared memory level*/, Kokkos::PerTeam(team_scratch_size));
+            auto radius_search = [=,*this](const host_member_type& teamMember) {
 
                 // make unmanaged scratch views
-                scratch_double_view neighbor_distances(teamMember.team_scratch(0 /*shared memory*/), max_neighbor_list_row_storage_size);
-                scratch_int_view neighbor_indices(teamMember.team_scratch(0 /*shared memory*/), max_neighbor_list_row_storage_size);
-                scratch_double_view this_target_coord(teamMember.team_scratch(0 /*shared memory*/), _dim);
+                scratch_double_view neighbor_distances(teamMember.team_scratch(scratch_level /*shared memory*/), max_neighbor_list_row_storage_size);
+                scratch_int_view neighbor_indices(teamMember.team_scratch(scratch_level /*shared memory*/), max_neighbor_list_row_storage_size);
+                scratch_double_view this_target_coord(teamMember.team_scratch(scratch_level /*shared memory*/), dim);
 
                 size_t neighbors_found = 0;
 
@@ -459,17 +468,17 @@ class PointCloudSearch {
                     // target_coords is LayoutLeft on device and its HostMirror, so giving a pointer to 
                     // this data would lead to a wrong result if the device is a GPU
 
-                    for (int j=0; j<_dim; ++j) {
+                    for (int j=0; j<dim; ++j) {
                         this_target_coord(j) = trg_pts_view(i,j);
                     }
 
                     nanoflann::SearchParams sp; // default parameters
                     Compadre::RadiusResultSet<double> rrs(epsilons(i)*epsilons(i), neighbor_distances.data(), neighbor_indices.data(), max_neighbor_list_row_storage_size);
-                    if (_dim==1) {
+                    if (dim==1) {
                         neighbors_found = _tree_1d->template radiusSearchCustomCallback<Compadre::RadiusResultSet<double> >(this_target_coord.data(), rrs, sp) ;
-                    } else if (_dim==2) {
+                    } else if (dim==2) {
                         neighbors_found = _tree_2d->template radiusSearchCustomCallback<Compadre::RadiusResultSet<double> >(this_target_coord.data(), rrs, sp) ;
-                    } else if (_dim==3) {
+                    } else if (dim==3) {
                         neighbors_found = _tree_3d->template radiusSearchCustomCallback<Compadre::RadiusResultSet<double> >(this_target_coord.data(), rrs, sp) ;
                     }
             
@@ -497,7 +506,8 @@ class PointCloudSearch {
                     teamMember.team_barrier();
                 }
 
-            });
+            };
+            Kokkos::parallel_for("radius search CR", policy, radius_search);
             Kokkos::fence();
             auto nla = CreateNeighborLists(number_of_neighbors_list);
             return nla.getTotalNeighborsOverAllListsHost();
@@ -550,10 +560,10 @@ class PointCloudSearch {
             compadre_assert_release((epsilons.extent(0)==(size_t)num_target_sites)
                         && "epsilons View does not have the correct dimension");
 
-            typedef Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            typedef Kokkos::View<double*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
                     scratch_double_view;
 
-            typedef Kokkos::View<size_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            typedef Kokkos::View<size_t*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
                     scratch_int_view;
 
             // determine scratch space size needed
@@ -562,6 +572,7 @@ class PointCloudSearch {
             team_scratch_size += scratch_int_view::shmem_size(neighbor_lists.extent(1)); // indices
             team_scratch_size += scratch_double_view::shmem_size(_dim); // target coordinate
 
+            auto dim = _dim;
             // minimum number of neighbors found over all target sites' neighborhoods
             size_t min_num_neighbors = 0;
             //
@@ -571,14 +582,17 @@ class PointCloudSearch {
             // as long as neighbor_lists can hold the number of neighbors_needed, we don't need to check
             // that the maximum number of neighbors will fit into neighbor_lists
             //
-            Kokkos::parallel_reduce("knn search", host_team_policy(num_target_sites, Kokkos::AUTO)
-                    .set_scratch_size(0 /*shared memory level*/, Kokkos::PerTeam(team_scratch_size)), 
-                    KOKKOS_LAMBDA(const host_member_type& teamMember, size_t& t_min_num_neighbors) {
+            auto scratch_level = (team_scratch_size > 32000) ? 1 : 0;
+            // respects serial scratch size limit of 32k
+            // from kokkos/core/src/Serial/Kokkos_Serial_Parallel_Team.hpp
+            auto policy = host_team_policy(num_target_sites, Kokkos::AUTO)
+                .set_scratch_size(scratch_level /*shared memory level*/, Kokkos::PerTeam(team_scratch_size));
+            auto knn_search = [=,*this](const host_member_type& teamMember, size_t& t_min_num_neighbors) {
 
                 // make unmanaged scratch views
-                scratch_double_view neighbor_distances(teamMember.team_scratch(0 /*shared memory*/), neighbor_lists.extent(1));
-                scratch_int_view neighbor_indices(teamMember.team_scratch(0 /*shared memory*/), neighbor_lists.extent(1));
-                scratch_double_view this_target_coord(teamMember.team_scratch(0 /*shared memory*/), _dim);
+                scratch_double_view neighbor_distances(teamMember.team_scratch(scratch_level /*shared memory*/), neighbor_lists.extent(1));
+                scratch_int_view neighbor_indices(teamMember.team_scratch(scratch_level /*shared memory*/), neighbor_lists.extent(1));
+                scratch_double_view this_target_coord(teamMember.team_scratch(scratch_level /*shared memory*/), dim);
 
                 size_t neighbors_found = 0;
 
@@ -594,17 +608,17 @@ class PointCloudSearch {
                     // target_coords is LayoutLeft on device and its HostMirror, so giving a pointer to 
                     // this data would lead to a wrong result if the device is a GPU
 
-                    for (int j=0; j<_dim; ++j) { 
+                    for (int j=0; j<dim; ++j) { 
                         this_target_coord(j) = trg_pts_view(i,j);
                     }
 
-                    if (_dim==1) {
+                    if (dim==1) {
                         neighbors_found = _tree_1d->knnSearch(this_target_coord.data(), neighbors_needed, 
                                 neighbor_indices.data(), neighbor_distances.data()) ;
-                    } else if (_dim==2) {
+                    } else if (dim==2) {
                         neighbors_found = _tree_2d->knnSearch(this_target_coord.data(), neighbors_needed, 
                                 neighbor_indices.data(), neighbor_distances.data()) ;
-                    } else if (_dim==3) {
+                    } else if (dim==3) {
                         neighbors_found = _tree_3d->knnSearch(this_target_coord.data(), neighbors_needed, 
                                 neighbor_indices.data(), neighbor_distances.data()) ;
                     }
@@ -628,8 +642,8 @@ class PointCloudSearch {
                                 and search radius needed would exceed this max_search_radius.");
                     // neighbor_distances stores squared distances from neighbor to target, as returned by nanoflann
                 });
-            }, Kokkos::Min<size_t>(min_num_neighbors) );
-            Kokkos::fence();
+            };
+            Kokkos::parallel_reduce("knn search 2D", policy, knn_search, Kokkos::Min<size_t>(min_num_neighbors));
             
             // if no target sites, then min_num_neighbors is set to neighbors_needed
             // which also avoids min_num_neighbors being improperly set by min reduction
@@ -700,10 +714,10 @@ class PointCloudSearch {
             compadre_assert_release((epsilons.extent(0)==(size_t)num_target_sites)
                         && "epsilons View does not have the correct dimension");
 
-            typedef Kokkos::View<double*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            typedef Kokkos::View<double*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
                     scratch_double_view;
 
-            typedef Kokkos::View<size_t*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            typedef Kokkos::View<size_t*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
                     scratch_int_view;
 
             // determine scratch space size needed
@@ -712,6 +726,7 @@ class PointCloudSearch {
             team_scratch_size += scratch_int_view::shmem_size(max_neighbor_list_row_storage_size); // indices
             team_scratch_size += scratch_double_view::shmem_size(_dim); // target coordinate
 
+            auto dim = _dim;
             // minimum number of neighbors found over all target sites' neighborhoods
             size_t min_num_neighbors = 0;
             //
@@ -721,14 +736,17 @@ class PointCloudSearch {
             // as long as neighbor_lists can hold the number of neighbors_needed, we don't need to check
             // that the maximum number of neighbors will fit into neighbor_lists
             //
-            Kokkos::parallel_reduce("knn search", host_team_policy(num_target_sites, Kokkos::AUTO)
-                    .set_scratch_size(0 /*shared memory level*/, Kokkos::PerTeam(team_scratch_size)), 
-                    KOKKOS_LAMBDA(const host_member_type& teamMember, size_t& t_min_num_neighbors) {
+            auto scratch_level = (team_scratch_size > 32000) ? 1 : 0;
+            // respects serial scratch size limit of 32k
+            // from kokkos/core/src/Serial/Kokkos_Serial_Parallel_Team.hpp
+            auto policy = host_team_policy(num_target_sites, Kokkos::AUTO)
+                .set_scratch_size(scratch_level /*shared memory level*/, Kokkos::PerTeam(team_scratch_size));
+            auto knn_search = [=,*this](const host_member_type& teamMember, size_t& t_min_num_neighbors) {
 
                 // make unmanaged scratch views
-                scratch_double_view neighbor_distances(teamMember.team_scratch(0 /*shared memory*/), max_neighbor_list_row_storage_size);
-                scratch_int_view neighbor_indices(teamMember.team_scratch(0 /*shared memory*/), max_neighbor_list_row_storage_size);
-                scratch_double_view this_target_coord(teamMember.team_scratch(0 /*shared memory*/), _dim);
+                scratch_double_view neighbor_distances(teamMember.team_scratch(scratch_level /*shared memory*/), max_neighbor_list_row_storage_size);
+                scratch_int_view neighbor_indices(teamMember.team_scratch(scratch_level /*shared memory*/), max_neighbor_list_row_storage_size);
+                scratch_double_view this_target_coord(teamMember.team_scratch(scratch_level /*shared memory*/), dim);
 
                 size_t neighbors_found = 0;
 
@@ -744,17 +762,17 @@ class PointCloudSearch {
                     // target_coords is LayoutLeft on device and its HostMirror, so giving a pointer to 
                     // this data would lead to a wrong result if the device is a GPU
 
-                    for (int j=0; j<_dim; ++j) { 
+                    for (int j=0; j<dim; ++j) { 
                         this_target_coord(j) = trg_pts_view(i,j);
                     }
 
-                    if (_dim==1) {
+                    if (dim==1) {
                         neighbors_found = _tree_1d->knnSearch(this_target_coord.data(), neighbors_needed, 
                                 neighbor_indices.data(), neighbor_distances.data()) ;
-                    } else if (_dim==2) {
+                    } else if (dim==2) {
                         neighbors_found = _tree_2d->knnSearch(this_target_coord.data(), neighbors_needed, 
                                 neighbor_indices.data(), neighbor_distances.data()) ;
-                    } else if (_dim==3) {
+                    } else if (dim==3) {
                         neighbors_found = _tree_3d->knnSearch(this_target_coord.data(), neighbors_needed, 
                                 neighbor_indices.data(), neighbor_distances.data()) ;
                     }
@@ -775,8 +793,8 @@ class PointCloudSearch {
                                 and search radius needed would exceed this max_search_radius.");
                     // neighbor_distances stores squared distances from neighbor to target, as returned by nanoflann
                 });
-            }, Kokkos::Min<size_t>(min_num_neighbors) );
-            Kokkos::fence();
+            };
+            Kokkos::parallel_reduce("knn search CR", policy, knn_search, Kokkos::Min<size_t>(min_num_neighbors));
             
             // if no target sites, then min_num_neighbors is set to neighbors_needed
             // which also avoids min_num_neighbors being improperly set by min reduction

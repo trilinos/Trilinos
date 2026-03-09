@@ -76,23 +76,23 @@ public:
             }
             for (int mat_num=0; mat_num<num_matrices; ++mat_num) {
                 if (A_is_LR) {
-                    host_scratch_matrix_right_type this_A(A.data() + mat_num*lda*nda, lda, nda);
+                    host_unmanaged_matrix_right_type this_A(A.data() + mat_num*lda*nda, lda, nda);
                     for (size_t ind=0; ind<a_i.size(); ++ind) {
                         this_A(a_i[ind], a_j[ind]) = a_k[ind];
                     }
                 } else {
-                    host_scratch_matrix_left_type this_A(A.data() + mat_num*lda*nda, lda, nda);
+                    host_unmanaged_matrix_left_type this_A(A.data() + mat_num*lda*nda, lda, nda);
                     for (size_t ind=0; ind<a_i.size(); ++ind) {
                         this_A(a_i[ind], a_j[ind]) = a_k[ind];
                     }
                 }
                 if (B_is_LR) {
-                    host_scratch_matrix_right_type this_B(B.data() + mat_num*ldb*ndb, ldb, ndb);
+                    host_unmanaged_matrix_right_type this_B(B.data() + mat_num*ldb*ndb, ldb, ndb);
                     for (size_t ind=0; ind<b_i.size(); ++ind) {
                         this_B(b_i[ind], b_j[ind]) = b_k[ind];
                     }
                 } else {
-                    host_scratch_matrix_left_type this_B(B.data() + mat_num*ldb*ndb, ldb, ndb);
+                    host_unmanaged_matrix_left_type this_B(B.data() + mat_num*ldb*ndb, ldb, ndb);
                     for (size_t ind=0; ind<b_i.size(); ++ind) {
                         this_B(b_i[ind], b_j[ind]) = b_k[ind];
                     }
@@ -138,7 +138,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Same_LDA_NDA_LRA
     //    }
     //}
     //for (int i=0; i<ldb*ndb; ++i) printf("Bi(%d): %.16f\n", i, B(i));
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -164,7 +164,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Same_LDA_NDA_Lar
     //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
     //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -193,7 +193,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDA_NDA_L
     //                   0  -0.285714285714286  -0.142857142857143
     //                   0  -0.071428571428571  -0.535714285714286
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -219,7 +219,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
     //                   0  -0.285714285714286  -0.142857142857143
     //                   0  -0.071428571428571  -0.535714285714286
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -244,7 +244,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
     //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
     //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -278,7 +278,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Same_LDA_NDA_LRA
     //    }
     //}
     //for (int i=0; i<ldb*ndb; ++i) printf("Bi(%d): %.16f\n", i, B(i));
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -304,7 +304,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Same_LDA_NDA_Lar
     //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
     //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -333,7 +333,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDA_NDA_L
     //                   0  -0.285714285714286  -0.142857142857143
     //                   0  -0.071428571428571  -0.535714285714286
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -359,7 +359,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
     //                   0  -0.285714285714286  -0.142857142857143
     //                   0  -0.071428571428571  -0.535714285714286
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -384,7 +384,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
     //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
     //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -418,7 +418,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Same_LDA_NDA_LLA
     //    }
     //}
     //for (int i=0; i<ldb*ndb; ++i) printf("Bi(%d): %.16f\n", i, B(i));
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -444,7 +444,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Same_LDA_NDA_Lar
     //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
     //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -473,7 +473,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDA_NDA_L
     //                   0  -0.285714285714286  -0.142857142857143
     //                   0  -0.071428571428571  -0.535714285714286
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -499,7 +499,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
     //                   0  -0.285714285714286  -0.142857142857143
     //                   0  -0.071428571428571  -0.535714285714286
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -524,7 +524,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
     //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
     //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -558,7 +558,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Same_LDA_NDA_LLA
     //    }
     //}
     //for (int i=0; i<ldb*ndb; ++i) printf("Bi(%d): %.16f\n", i, B(i));
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -584,7 +584,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Same_LDA_NDA_Lar
     //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
     //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -613,7 +613,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDA_NDA_L
     //                   0  -0.285714285714286  -0.142857142857143
     //                   0  -0.071428571428571  -0.535714285714286
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -639,7 +639,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
     //                   0  -0.285714285714286  -0.142857142857143
     //                   0  -0.071428571428571  -0.535714285714286
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -664,7 +664,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
     //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
     //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
     //               ]
-    host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+    host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -696,7 +696,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //    }
 //LLX!    //}
 //LLX!    //for (int i=0; i<ldb*ndb; ++i) printf("Bi(%d): %.16f\n", i, B(i));
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -720,7 +720,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
 //LLX!    //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -747,7 +747,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                   0  -0.285714285714286  -0.142857142857143
 //LLX!    //                   0  -0.071428571428571  -0.535714285714286
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -771,7 +771,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                   0  -0.285714285714286  -0.142857142857143
 //LLX!    //                   0  -0.071428571428571  -0.535714285714286
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -794,7 +794,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
 //LLX!    //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -826,7 +826,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //    }
 //LLX!    //}
 //LLX!    //for (int i=0; i<ldb*ndb; ++i) printf("Bi(%d): %.16f\n", i, B(i));
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -850,7 +850,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
 //LLX!    //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -877,7 +877,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                   0  -0.285714285714286  -0.142857142857143
 //LLX!    //                   0  -0.071428571428571  -0.535714285714286
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -901,7 +901,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                   0  -0.285714285714286  -0.142857142857143
 //LLX!    //                   0  -0.071428571428571  -0.535714285714286
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -924,7 +924,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
 //LLX!    //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -956,7 +956,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //    }
 //LLX!    //}
 //LLX!    //for (int i=0; i<ldb*ndb; ++i) printf("Bi(%d): %.16f\n", i, B(i));
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -980,7 +980,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
 //LLX!    //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1007,7 +1007,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                   0  -0.285714285714286  -0.142857142857143
 //LLX!    //                   0  -0.071428571428571  -0.535714285714286
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1031,7 +1031,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                   0  -0.285714285714286  -0.142857142857143
 //LLX!    //                   0  -0.071428571428571  -0.535714285714286
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1054,7 +1054,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
 //LLX!    //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1086,7 +1086,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //    }
 //LLX!    //}
 //LLX!    //for (int i=0; i<ldb*ndb; ++i) printf("Bi(%d): %.16f\n", i, B(i));
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1110,7 +1110,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
 //LLX!    //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1137,7 +1137,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                   0  -0.285714285714286  -0.142857142857143
 //LLX!    //                   0  -0.071428571428571  -0.535714285714286
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1161,7 +1161,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                   0  -0.285714285714286  -0.142857142857143
 //LLX!    //                   0  -0.071428571428571  -0.535714285714286
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1184,7 +1184,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //LLX!    //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
 //LLX!    //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
 //LLX!    //               ]
-//LLX!    host_scratch_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//LLX!    host_unmanaged_matrix_left_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //LLX!    EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //LLX!    EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1217,7 +1217,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //     //    }
 //     //}
 //     //for (int i=0; i<ldb*ndb; ++i) printf("Bi(%d): %.16f\n", i, B(i));
-//     host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//     host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1241,7 +1241,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //     //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
 //     //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
 //     //               ]
-//     host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//     host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1269,7 +1269,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //     //                   0  -0.285714285714286  -0.142857142857143
 //     //                   0  -0.071428571428571  -0.535714285714286
 //     //               ]
-//     host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//     host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1294,7 +1294,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //     //                   0  -0.285714285714286  -0.142857142857143
 //     //                   0  -0.071428571428571  -0.535714285714286
 //     //               ]
-//     host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//     host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
@@ -1318,7 +1318,7 @@ TEST_F (LinearAlgebraTest, Square_FullRank_batchQRPivotingSolve_Larger_LDB_NDB_L
 //     //                  0  -0.285714285714286  -0.142857142857143  -0.214285714285714
 //     //                  0  -0.071428571428571  -0.535714285714286  -0.803571428571429
 //     //               ]
-//     host_scratch_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
+//     host_unmanaged_matrix_right_type B2(B.data() + 1*ldb*ndb, ldb, ndb);
 //     EXPECT_NEAR(               0.0, B2(0,0), 1e-14);
 //     EXPECT_NEAR(               0.0, B2(1,0), 1e-14);
 //     EXPECT_NEAR(               0.0, B2(2,0), 1e-14);
