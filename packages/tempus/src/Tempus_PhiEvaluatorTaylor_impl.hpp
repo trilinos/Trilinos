@@ -84,7 +84,8 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
 
   Thyra::SolveStatus<Scalar> sStatus;
   Scalar norm_d_k;
-  Scalar overflow = 0.;
+  Scalar overflow = Thyra::norm_inf(*v);
+
   // Iteratively compute d_k = (L^(k-phi_order) d_{k-1}) / (k!) and add to result
   for (k = phi_order + 1; k <= expansionOrder + phi_order; ++k)
   {
@@ -139,7 +140,7 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
      << " achieved in it. " << k << ".";
   sStatus.message = ss.str();
 
-  std::cout << sStatus.message << std::endl;
+  //std::cout << sStatus.message << std::endl;
 
   return sStatus;
 }

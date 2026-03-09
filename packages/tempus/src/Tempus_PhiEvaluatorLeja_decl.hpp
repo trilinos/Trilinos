@@ -90,7 +90,7 @@ class PhiEvaluatorLeja
   LejaPoint getLpSc(uint i);
 
   /// Compute divided differences
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt);
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt, const int exp_order);
 
   /// Get the polynomial expansion order
   int getExpansionOrder() const { return expansionOrder_; }
@@ -114,10 +114,10 @@ class PhiEvaluatorLeja
   Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int k, const Scalar cdt);
 
   /// Computes the divided differences via taylor series
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTS(const int phi_order, const Scalar cdt);
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTS(const int phi_order, const Scalar cdt, const int exp_order);
 
   /// Computes the divided differences via recurrence relation
-  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsRC(const int phi_order, const Scalar cdt);
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsRC(const int phi_order, const Scalar cdt, const int exp_order);
 
   /// Storage for the base Leja points
   Teuchos::ArrayRCP<LejaPoint> lejaPointsBase_;
