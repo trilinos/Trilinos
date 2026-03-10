@@ -7,6 +7,7 @@
 // *****************************************************************************
 //@HEADER
 
+#include "Teuchos_LocalTestingHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -21,6 +22,7 @@
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
+#include "Thyra_VectorStdOps_decl.hpp"
 
 #ifdef TEMPUS_ENABLE_EPETRA_STACK
 #include "../TestModels/CDR_Model.hpp"
@@ -169,24 +171,13 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
     }
   }
 
-  // Check the order and intercept
-  double xSlope                        = 0.0;
-  double xDotSlope                     = 0.0;
-  RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
-  // This is a linear problem, so the expected order is 3 due to 
-  // Taylor expansion order regardless of the integration order.
-  double order                         = (double)expected_order;
-
-  std::cout << "StepSize size: " << StepSize.size() << std::endl;
-  std::cout << "solutions size: " << solutions.size() << std::endl;
-  std::cout << "solutionsDot size: " << solutionsDot.size() << std::endl;
-  
-  writeOrderError("Tempus_EPI_SinCos-Error.dat", stepper, StepSize,
-                  solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
-                  xDotSlope, out);
-
-  TEST_FLOATING_EQUALITY(xSlope, order, 0.01);
-  TEST_FLOATING_EQUALITY(xErrorNorm[0], 4.16603e-05, 1.0e-5);
+  // compute difference between expected and computed
+  auto gold = solutions[solutions.size()-1];
+  for (int i=0; i<solutions.size()-1; ++i) {
+    auto calc = solutions[i];
+    Thyra::Vp_StV(calc.ptr(), -1.0, *gold);
+    TEST_COMPARE(calc->norm_2(), <=, 1e-8);
+  }
 
   Teuchos::TimeMonitor::summarize();
 }
