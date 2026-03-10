@@ -176,6 +176,11 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
   // This is a linear problem, so the expected order is 3 due to 
   // Taylor expansion order regardless of the integration order.
   double order                         = (double)expected_order;
+
+  std::cout << "StepSize size: " << StepSize.size() << std::endl;
+  std::cout << "solutions size: " << solutions.size() << std::endl;
+  std::cout << "solutionsDot size: " << solutionsDot.size() << std::endl;
+  
   writeOrderError("Tempus_EPI_SinCos-Error.dat", stepper, StepSize,
                   solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
                   xDotSlope, out);
