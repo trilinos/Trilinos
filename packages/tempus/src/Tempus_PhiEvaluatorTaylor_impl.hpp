@@ -82,9 +82,12 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   // allocate temporary vector
   Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
 
-  Thyra::SolveStatus<Scalar> sStatus;
-  Scalar norm_d_k;
+  Scalar norm_d_k = Thyra::norm_inf(*d_k);
   Scalar overflow = Thyra::norm_inf(*v);
+
+  Thyra::SolveStatus<Scalar> sStatus;
+  sStatus.achievedTol = norm_d_k;
+  sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
 
   // Iteratively compute d_k = (L^(k-phi_order) d_{k-1}) / (k!) and add to result
   for (k = phi_order + 1; k <= expansionOrder + phi_order; ++k)
@@ -119,15 +122,6 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
     if (norm_d_k < overflow / cutoff)
     {
       sStatus.achievedTol = norm_d_k;
-      sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
-      break;
-    }
-
-    // set status if expansionOrder has been reached
-    if (k >= expansionOrder)
-    {
-      sStatus.achievedTol = norm_d_k;
-      //sStatus.solveStatus = Thyra::SOLVE_STATUS_UNKNOWN;
       sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
       break;
     }

@@ -89,7 +89,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   const int expansionOrder = this->getExpansionOrder();
 
   // TODO: optional fractional step size exp(tau*A_tilde)*v
-  const Scalar tau = 1.0;
+  //const Scalar tau = 1.0;
 
   // phi_k(L) * v is in range(L)
   const auto rangeSpace = L->range();
@@ -123,7 +123,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 
   std::cout << "c[0]: " << coeff_re << std::endl;
   
-  Thyra::assign(vm_k.ptr(), *v);
+  Thyra::V_V(vm_k.ptr(), *v);
   Thyra::V_StV(v, coeff_re, *vm_k);
 
   // storage for error est
@@ -134,78 +134,96 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   Scalar overflow = norm_d_k;
   Thyra::SolveStatus<Scalar> sStatus;
 
-  Scalar lp_sc_re;
-  Scalar lp_sc_im;
-
-  // leja polynomial term index
+  // leja point index k starts at 1
   int k = 1;
-  // leja point index
-  int lp_k = 0;
-  while (k < lp_dd.size() && lp_k < lp_.size())
+  // leja polynomial term index lp_k starts at 0
+  for (int lp_k = 0; k < lp_dd.size() && lp_k < lp_.size(); k++, lp_k++)
   {
     std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
 
+    // compute shifted and scaled leja point
     LejaPoint lp_sc = getLpSc(lp_k);
-
-    // extract divided diff
-    coeff = lp_dd[k];
-    coeff_re = Scalar(coeff.real());
+    const Scalar lp_sc_re = Scalar( lp_sc.lp.real() );
+    const Scalar lp_sc_im = Scalar( lp_sc.lp.imag() );
 
     // Real leja point case
     if (lp_sc.lpt == LpType::LPREAL) {
-      std::cout << "c,lp: " << coeff_re << " " << lp_sc.lp << std::endl;
-
-      // compute shifted and scaled leja point
-      lp_sc_re = Scalar( lp_sc.get().at(0).real() );
+      // extract divided diff
+      coeff = lp_dd[k];
+      coeff_re = Scalar(coeff.real());
+      std::cout << "c,lp: " << coeff << " " << lp_sc.lp << " real" << std::endl;
+      
       // av = (tau*A)*vm
-      Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 0.0);
+      //Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 0.0);
       // vm_k = (av - lp_re[k-1]*vm_k)
-      Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *vm_k);
+      //Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *vm_k);
       // vm_k = vm_k / scale
-      Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
+      //Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
+
+      // copy vm_k to temp vector
+      Thyra::V_V(av.ptr(), *vm_k);
+      // vm_k = (L@vm_k - lp_re[k-1]*vm_k) / scale
+      Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_sc_re/scale);
+
       // add vm_k*coeff to the final result
       Thyra::Vp_StV(v, coeff_re, *vm_k);
-      k++;
-      lp_k++;
 
       norm_vm_k = Thyra::norm_inf(*vm_k);
       norm_d_k = std::abs(coeff_re) * norm_vm_k;
       overflow += norm_d_k;
     }
     else if (lp_sc.lpt == LpType::LPCONJ) {
+      // extract divided diff
+      coeff = lp_dd[k];
+      coeff_re = Scalar(coeff.real());
       std::cout << "c,lp: " << coeff << " " << lp_sc.lp << std::endl;
 
       // first update
-      lp_sc_re = Scalar( lp_sc.get().at(0).real() );
-      Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 0.0);
-      Thyra::V_VpStV(qm_k.ptr(), *av, -lp_sc_re, *vm_k);
-      Thyra::V_StV(qm_k.ptr(), 1.0 / scale, *qm_k);
-      Thyra::Vp_StV(v, coeff_re, *qm_k);
+      //Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 0.0);
+      //Thyra::V_VpStV(qm_k.ptr(), *av, -lp_sc_re, *vm_k);
+      //Thyra::V_StV(qm_k.ptr(), 1.0 / scale, *qm_k);
+      //Thyra::Vp_StV(v, coeff_re, *qm_k);
 
-      k++;
-      norm_vm_k = Thyra::norm_inf(*qm_k);
+      // copy vm_k to temp vector
+      Thyra::V_V(av.ptr(), *vm_k);
+      // vm_k = (L@vm_k - lp_re*vm_k) / scale
+      Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_sc_re/scale);
+
+      // add vm_k*coeff to the final result
+      Thyra::Vp_StV(v, coeff_re, *vm_k);
+      norm_vm_k = Thyra::norm_inf(*vm_k);
       norm_d_k = std::abs(coeff_re) * norm_vm_k;
       overflow += norm_d_k;
+
+      // copy vm_k to qm_k vector to save it
+      Thyra::V_V(qm_k.ptr(), *vm_k);
+
+      // increment polynomial degree, but keep Leja point and handle conjugate pair
+      k++;
 
       if (k < lp_dd.size())
       {
         // conjugate update
-        lp_sc_re = Scalar( lp_sc.get().at(1).real() );
-        lp_sc_im = Scalar( lp_sc.get().at(1).imag() );
         coeff = lp_dd[k];
         coeff_re = Scalar(coeff.real());
 
         std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
         std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
 
-        Thyra::apply(*L, Thyra::NOTRANS, *qm_k, av.ptr(), tau, 0.0);
-        Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *qm_k);
-        Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
-        Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im / scale) * (lp_sc_im / scale), *vm_k);
-        Thyra::Vp_StV(v, coeff_re, *vm_k);
+        //Thyra::apply(*L, Thyra::NOTRANS, *qm_k, av.ptr(), tau, 0.0);
+        //Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *qm_k);
+        //Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
+        //Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im / scale) * (lp_sc_im / scale), *vm_k);
+        //Thyra::Vp_StV(v, coeff_re, *vm_k);
 
-        k++;
-        lp_k++;
+	// copy vm_k to temp vector
+	Thyra::V_V(av.ptr(), *vm_k);
+	// vm_k = (L@vm_k - lp_re*vm_k) / scale + ((lp_im/scale)**2)*qm_k
+	Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_sc_re/scale);
+	Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im/scale) * (lp_sc_im/scale), *qm_k);
+
+	// add vm_k*coeff to the final result
+	Thyra::Vp_StV(v, coeff_re, *vm_k);
         norm_vm_k = Thyra::norm_inf(*vm_k);
         norm_d_k = std::abs(coeff_re) * norm_vm_k;
         overflow += norm_d_k;
