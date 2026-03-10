@@ -224,7 +224,7 @@ PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x
     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Lop = this->phiLinSolv_->buildL(cdt);
 
     // Compute phi-function in place
-    Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(phi_order, Lop, x);
+    Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(phi_order, Lop, x, cdt);
     return sStatus;
   }
 }
@@ -292,7 +292,7 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
 
   // Build initial vector and compute matrix exponential in place
   auto v = this->phiLinSolv_->buildv(Atilde->domain(), rhs_B[0]);
-  Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(0, Atilde, v.ptr());
+  Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(0, Atilde, v.ptr(), cdt);
 
   //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   //Atilde->describe(*out, Teuchos::VERB_EXTREME);

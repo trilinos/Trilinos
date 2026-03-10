@@ -79,7 +79,9 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
 template <class Scalar>
 Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int phi_order,
                      const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-                     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v)
+                     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
+                     const Scalar cdt
+                     )
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       phi_order != 0,
@@ -97,11 +99,14 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   // compute shift and scale parameters
   Scalar shift, scale;
   std::tie(shift, scale) = getShiftScale();
+  // TODO: properly apply cdt factor to leja points and shift scale
+  // shift *= cdt;
+  // scale *= cdt;
 
   // TODO: update the divided differences (or read from cache)
   //       this should depend on cdt, but that info is not passed down here
   // Get divided differences, we need one more than the polynomial order
-  auto lp_dd = getDividedDiffs(phi_order, 1., expansionOrder+1);
+  auto lp_dd = getDividedDiffs(phi_order, 1.0, expansionOrder+1);
   TEUCHOS_ASSERT(lp_dd.size() == expansionOrder+1);
 
   //std::cout << "DD: " << std::endl;
@@ -109,6 +114,10 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   //  std::cout << dd << ' ';
   //}
   //std::cout << std::endl;
+  // TODO: For DEBUG ONLY
+  // Teuchos::RCP<Teuchos::FancyOStream> ostream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  // Teuchos::RCP<Teuchos::FancyOStream> ostream =
+  //   this->getOStream();
 
   // Iteration vector vm_0
   Teuchos::RCP<Thyra::VectorBase<Scalar>> vm_k = Thyra::createMember(rangeSpace);
@@ -139,6 +148,8 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   // leja polynomial term index lp_k starts at 0
   for (int lp_k = 0; k < lp_dd.size() && lp_k < lp_.size(); k++, lp_k++)
   {
+    // print the update vector vm_k
+    // v->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
     std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
 
     // compute shifted and scaled leja point
@@ -151,7 +162,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // extract divided diff
       coeff = lp_dd[k];
       coeff_re = Scalar(coeff.real());
-      std::cout << "c,lp: " << coeff << " " << lp_sc.lp << " real" << std::endl;
+      std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " real " << shift << " " << scale << std::endl;
       
       // av = (tau*A)*vm
       //Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 0.0);
@@ -176,7 +187,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // extract divided diff
       coeff = lp_dd[k];
       coeff_re = Scalar(coeff.real());
-      std::cout << "c,lp: " << coeff << " " << lp_sc.lp << std::endl;
+      std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " " << shift << " " << scale << std::endl;
 
       // first update
       //Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 0.0);
@@ -186,6 +197,10 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 
       // copy vm_k to temp vector
       Thyra::V_V(av.ptr(), *vm_k);
+
+      // copy vm_k to qm_k vector to save it
+      Thyra::V_V(qm_k.ptr(), *vm_k);
+
       // vm_k = (L@vm_k - lp_re*vm_k) / scale
       Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_sc_re/scale);
 
@@ -195,11 +210,10 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       norm_d_k = std::abs(coeff_re) * norm_vm_k;
       overflow += norm_d_k;
 
-      // copy vm_k to qm_k vector to save it
-      Thyra::V_V(qm_k.ptr(), *vm_k);
-
       // increment polynomial degree, but keep Leja point and handle conjugate pair
       k++;
+      // std::cout << "qm" << std::endl;
+      // vm_k->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
 
       if (k < lp_dd.size())
       {
@@ -216,14 +230,18 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
         //Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im / scale) * (lp_sc_im / scale), *vm_k);
         //Thyra::Vp_StV(v, coeff_re, *vm_k);
 
-	// copy vm_k to temp vector
-	Thyra::V_V(av.ptr(), *vm_k);
-	// vm_k = (L@vm_k - lp_re*vm_k) / scale + ((lp_im/scale)**2)*qm_k
-	Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_sc_re/scale);
-	Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im/scale) * (lp_sc_im/scale), *qm_k);
+        // copy vm_k to temp vector
+        Thyra::V_V(av.ptr(), *vm_k);
+        // vm_k = (L@vm_k - lp_re*vm_k) / scale + ((lp_im/scale)**2)*qm_k
+        Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_sc_re/scale);
+        // std::cout << "vm intermediate" << std::endl;
+        // vm_k->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
+        Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im/scale) * (lp_sc_im/scale), *qm_k);
+        // std::cout << "vm" << std::endl;
+        // vm_k->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
 
-	// add vm_k*coeff to the final result
-	Thyra::Vp_StV(v, coeff_re, *vm_k);
+        // add vm_k*coeff to the final result
+        Thyra::Vp_StV(v, coeff_re, *vm_k);
         norm_vm_k = Thyra::norm_inf(*vm_k);
         norm_d_k = std::abs(coeff_re) * norm_vm_k;
         overflow += norm_d_k;
@@ -383,7 +401,7 @@ template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt, const int exp_order)
 {
   // TODO: implement other dd methods
-  return getDividedDiffsRC(k, cdt, exp_order);
+  return getDividedDiffsTS(k, cdt, exp_order);
 }
 
 template <class Scalar>
@@ -395,7 +413,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   Scalar shift, scale;
   std::tie(shift, scale) = getShiftScale();
   auto transform = [&](std::complex<double> x) {
-    return shift + scale * x;
+    return cdt * (shift + scale * x);
   };
 
   Teuchos::ArrayRCP<std::complex<double>> x = Teuchos::arcp<std::complex<double>>(exp_order);
@@ -457,18 +475,18 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     // conj lp case
     if (lp_sc.lpt == LPCONJ) {
       if (dd_idx == m) break;
-      Hm(dd_idx, dd_idx) = lp_sc.get().at(0);
-      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
+      Hm(dd_idx, dd_idx) = cdt*lp_sc.get().at(0);
+      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = cdt*scale;
       dd_idx += 1;
       if (dd_idx == m) break;
-      Hm(dd_idx, dd_idx) = lp_sc.get().at(1);
-      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
+      Hm(dd_idx, dd_idx) = cdt*lp_sc.get().at(1);
+      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = cdt*scale;
       dd_idx += 1;
     }
     else {
       if (dd_idx == m) break;
-      Hm(dd_idx, dd_idx) = lp_sc.get().at(0);
-      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = scale;
+      Hm(dd_idx, dd_idx) = cdt*lp_sc.get().at(0);
+      if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = cdt*scale;
       dd_idx += 1;
     }
     lp_idx += 1;
@@ -518,7 +536,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   }
 
   // Ts = I/(p!) + Hm^1/(1+p)! + Hm^2/(2+p)! ...
-  int ts_order = 15;
+  int ts_order = 17;
 
   //std::cout << "ts_order: " << ts_order << std::endl;
   //std::cout << "s_scale: " << s_scale << std::endl;
