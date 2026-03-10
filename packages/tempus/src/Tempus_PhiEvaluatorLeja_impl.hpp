@@ -172,7 +172,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       norm_d_k = std::abs(coeff_re) * norm_vm_k;
       overflow += norm_d_k;
     }
-    else if (lp_sc.lpt == LpType::LPCONJ)  {
+    else if (lp_sc.lpt == LpType::LPCONJ) {
       std::cout << "c,lp: " << coeff << " " << lp_sc.lp << std::endl;
 
       // first update
@@ -189,26 +189,26 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 
       if (k < lp_dd.size())
       {
-	// conjugate update
-	lp_sc_re = Scalar( lp_sc.get().at(1).real() );
-	lp_sc_im = Scalar( lp_sc.get().at(1).imag() );
-	coeff = lp_dd[k];
-	coeff_re = Scalar(coeff.real());
+        // conjugate update
+        lp_sc_re = Scalar( lp_sc.get().at(1).real() );
+        lp_sc_im = Scalar( lp_sc.get().at(1).imag() );
+        coeff = lp_dd[k];
+        coeff_re = Scalar(coeff.real());
 
-	std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
-	std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
+        std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
+        std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
 
-	Thyra::apply(*L, Thyra::NOTRANS, *qm_k, av.ptr(), tau, 0.0);
-	Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *qm_k);
-	Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
-	Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im / scale) * (lp_sc_im / scale), *vm_k);
-	Thyra::Vp_StV(v, coeff_re, *vm_k);
+        Thyra::apply(*L, Thyra::NOTRANS, *qm_k, av.ptr(), tau, 0.0);
+        Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *qm_k);
+        Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
+        Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im / scale) * (lp_sc_im / scale), *vm_k);
+        Thyra::Vp_StV(v, coeff_re, *vm_k);
 
-	k++;
-	lp_k++;
-	norm_vm_k = Thyra::norm_inf(*vm_k);
-	norm_d_k = std::abs(coeff_re) * norm_vm_k;
-	overflow += norm_d_k;
+        k++;
+        lp_k++;
+        norm_vm_k = Thyra::norm_inf(*vm_k);
+        norm_d_k = std::abs(coeff_re) * norm_vm_k;
+        overflow += norm_d_k;
       }
     }
     else {
