@@ -3,7 +3,7 @@ KokkosSparse::spmv
 
 Defined in header ``KokkosSparse_spmv.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class ExecutionSpace, class Handle, class AlphaType, class AMatrix,
             class XVector, class BetaType, class YVector>

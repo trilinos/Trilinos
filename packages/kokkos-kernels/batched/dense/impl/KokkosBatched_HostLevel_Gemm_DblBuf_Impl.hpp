@@ -182,9 +182,14 @@ class BatchedDblBufGemm {
 
     // Each team solves a single tile. Within each tile, the team solves
     // all __n_tile_k_tiles one at a time.
-    size_t league_size = c_batch_size_ * functor.get_n_sub_tiles();
-    int team_size      = stride_m;
-    int vector_len     = stride_n;
+    size_t league_size                = c_batch_size_ * functor.get_n_sub_tiles();
+    int team_size                     = stride_m;
+    const unsigned int max_vector_len = policy_type::vector_length_max();
+    // vector_len >= 1 and vector_len <= max_vector_len are required preconditions by TeamPolicy ctor
+    unsigned int vector_len =
+        (stride_n > 0) ? (stride_n > max_vector_len ? max_vector_len : (unsigned int)stride_n) : 1;
+    // adjust to power of 2 < vector_len if necessary
+    vector_len = std::bit_floor(vector_len);
 
     const int max_team_size =
         policy_type(league_size, Kokkos::AUTO, vector_len).team_size_max(functor, Kokkos::ParallelForTag());
@@ -192,15 +197,6 @@ class BatchedDblBufGemm {
       std::ostringstream os;
       os << "KokkosBatched::BatchedGemm with kernelAlgoType = " << std::to_string(handle_->get_kernel_algo_type())
          << " does not support team_size > " << std::to_string(max_team_size) << "." << std::endl
-         << " The tile dimensions must be adjusted." << std::endl;
-      KokkosKernels::Impl::throw_runtime_exception(os.str());
-    }
-
-    const int max_vector_len = policy_type(league_size, team_size, Kokkos::AUTO).vector_length_max();
-    if (vector_len > max_vector_len) {
-      std::ostringstream os;
-      os << "KokkosBatched::BatchedGemm with kernelAlgoType = " << std::to_string(handle_->get_kernel_algo_type())
-         << " does not support vector_len > " << std::to_string(max_vector_len) << "." << std::endl
          << " The tile dimensions must be adjusted." << std::endl;
       KokkosKernels::Impl::throw_runtime_exception(os.str());
     }

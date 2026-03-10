@@ -187,6 +187,23 @@ void testSerialRadixSort(size_t k, size_t subArraySize) {
   }
 }
 
+template <typename Key>
+void testSerialRadixSortToRange(size_t n, size_t maxKey) {
+  std::vector<Key> keys(n, 0);
+  if (maxKey) {
+    for (size_t i = 0; i < n; i++) {
+      keys[i] = rand() % maxKey;
+    }
+  }
+  std::vector<Key> keysGold = keys;
+  std::vector<Key> keysAux(n);
+  std::sort(keysGold.begin(), keysGold.end());
+  KokkosKernels::SerialRadixSort<int, Key>(keys.data(), keysAux.data(), n);
+  for (size_t i = 0; i < n; i++) {
+    ASSERT_EQ(keys[i], keysGold[i]);
+  }
+}
+
 template <typename Device, typename Key, typename Value>
 void testSerialRadixSort2(size_t k, size_t subArraySize) {
   // Create a view of randomized data
@@ -334,6 +351,13 @@ TEST_F(TestCategory, common_serial_radix) {
   for (size_t arrayMax = 0; arrayMax < 1000; arrayMax = 1 + 4 * arrayMax) {
     testSerialRadixSort<TestDevice, char>(numArrays, arrayMax);
     testSerialRadixSort<TestDevice, int>(numArrays, arrayMax);
+  }
+  // For more thorough testing, test with a range of maximum keys and data types,
+  // since max key determines how many passes the algorithm takes.
+  for (int maxKey = 0; maxKey < 255; maxKey++) testSerialRadixSortToRange<unsigned char>(253, maxKey);
+  for (size_t maxKey = 0; maxKey < size_t(4e9); maxKey = (maxKey + 1) * 2) {
+    testSerialRadixSortToRange<unsigned int>(127, maxKey);
+    testSerialRadixSortToRange<size_t>(128, maxKey);
   }
 }
 

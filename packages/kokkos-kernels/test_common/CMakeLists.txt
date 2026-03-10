@@ -1,8 +1,4 @@
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-
-KOKKOSKERNELS_ADD_EXECUTABLE(
-  matrix_converter
-  SOURCES KokkosKernels_MatrixConverter.cpp
-  )
+kokkoskernels_add_executable(matrix_converter SOURCES KokkosKernels_MatrixConverter.cpp)

@@ -26,7 +26,7 @@ KOKKOS_INLINE_FUNCTION static int checkPttrsInput([[maybe_unused]] const DViewTy
   static_assert(std::is_same_v<typename BViewType::value_type, typename BViewType::non_const_value_type>,
                 "KokkosBatched::pttrs: BViewType must have non-const value type.");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int nd  = d.extent_int(0);
   const int ne  = e.extent_int(0);
   const int ldb = b.extent_int(0);

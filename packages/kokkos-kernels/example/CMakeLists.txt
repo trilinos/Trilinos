@@ -1,10 +1,10 @@
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../test_common)
 
 #ADD_SUBDIRECTORY(graph)
-ADD_SUBDIRECTORY(wiki)
-ADD_SUBDIRECTORY(gmres)
-ADD_SUBDIRECTORY(batched_solve)
-ADD_SUBDIRECTORY(half)
+add_subdirectory(wiki)
+add_subdirectory(gmres)
+add_subdirectory(batched_solve)
+add_subdirectory(half)

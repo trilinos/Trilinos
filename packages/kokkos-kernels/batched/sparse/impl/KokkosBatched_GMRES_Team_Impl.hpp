@@ -36,7 +36,7 @@ KOKKOS_INLINE_FUNCTION int TeamGMRES<MemberType>::invoke(const MemberType& membe
   typedef typename KokkosKernels::ArithTraits<typename VectorViewType::non_const_value_type>::mag_type MagnitudeType;
   typedef KokkosKernels::ArithTraits<MagnitudeType> ATM;
 
-  using TeamCopy1D = TeamCopy<MemberType, Trans::NoTranspose, 1>;
+  using TeamCopy1D = TeamCopy<MemberType, Trans::NoTranspose>;
 
   const OrdinalType numMatrices = X.extent(0);
   const OrdinalType numRows     = X.extent(1);

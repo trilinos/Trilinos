@@ -80,40 +80,41 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalLower<Algo::Trsv::Blocked>::invoke(
     /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
-  constexpr int mbAlgo = Algo::Trsv::Blocked::mb();
-
   if (alpha == zero)
     KokkosBlas::Impl::TeamSetInternal::invoke(member, m, zero, b, bs0);
   else {
     if (alpha != one) KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, alpha, b, bs0);
     if (m <= 0) return 0;
 
-    /// case GPU: team size is large and blocksize (mb,nb) is small
-    InnerTrsmLeftLowerUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, 0);
-    InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, 0);
+    auto host_or_device = [&](auto tag) {
+      constexpr int mb = Algo::Trsv::Blocked::Impl::mb<decltype(tag)>();
+      InnerTrsmLeftLowerUnitDiag<mb> trsm_u(as0, as1, bs0, 0);
+      InnerTrsmLeftLowerNonUnitDiag<mb> trsm_n(as0, as1, bs0, 0);
 
-    const int mb = mbAlgo;
-    // const int tsize = member.team_size();
-    for (int p = 0; p < m; p += mb) {
-      const int pb = ((p + mb) > m ? (m - p) : mb);
+      // const int tsize = member.team_size();
+      for (int p = 0; p < m; p += mb) {
+        const int pb = ((p + mb) > m ? (m - p) : mb);
 
-      // trsm update
-      const ValueType *KOKKOS_RESTRICT Ap = A + p * as0 + p * as1;
-      /**/ ValueType *KOKKOS_RESTRICT bp  = b + p * bs0;
+        // trsm update
+        const ValueType *KOKKOS_RESTRICT Ap = A + p * as0 + p * as1;
+        /**/ ValueType *KOKKOS_RESTRICT bp  = b + p * bs0;
 
-      member.team_barrier();
-      if (member.team_rank() == 0) {
-        if (use_unit_diag)
-          trsm_u.serial_invoke(Ap, pb, 1, bp);
-        else
-          trsm_n.serial_invoke(Ap, pb, 1, bp);
+        member.team_barrier();
+        if (member.team_rank() == 0) {
+          if (use_unit_diag)
+            trsm_u.serial_invoke(Ap, pb, 1, bp);
+          else
+            trsm_n.serial_invoke(Ap, pb, 1, bp);
+        }
+
+        // gemv update
+        member.team_barrier();
+        KokkosBlas::Impl::TeamGemvInternal<Algo::Gemv::Blocked>::invoke(
+            member, m - p - pb, pb, minus_one, Ap + pb * as0, as0, as1, bp, 1, one, bp + pb * bs0, bs0);
       }
-
-      // gemv update
-      member.team_barrier();
-      KokkosBlas::Impl::TeamGemvInternal<Algo::Gemv::Blocked>::invoke(member, m - p - pb, pb, minus_one, Ap + pb * as0,
-                                                                      as0, as1, bp, 1, one, bp + pb * bs0, bs0);
-    }
+    };
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsv::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsv::Blocked::Impl::Device{});))
   }
   return 0;
 }
@@ -180,8 +181,6 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
     /**/ ValueType *KOKKOS_RESTRICT b, const int bs0) {
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
-
   // note that parallel range is different ( m*n vs m-1*n);
   if (alpha == zero)
     KokkosBlas::Impl::TeamSetInternal::invoke(member, m, zero, b, bs0);
@@ -189,30 +188,35 @@ KOKKOS_INLINE_FUNCTION int TeamTrsvInternalUpper<Algo::Trsv::Blocked>::invoke(
     if (alpha != one) KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, alpha, b, bs0);
     if (m <= 0) return 0;
 
-    InnerTrsmLeftUpperUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, 0);
-    InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, 0);
+    auto host_or_device = [&](auto tag) {
+      constexpr int mb = Algo::Trsm::Blocked::Impl::mb<decltype(tag)>();
+      /// case GPU: team size is large and blocksize (mb,nb) is small
+      InnerTrsmLeftUpperUnitDiag<mb> trsm_u(as0, as1, bs0, 0);
+      InnerTrsmLeftUpperNonUnitDiag<mb> trsm_n(as0, as1, bs0, 0);
 
-    const int mb = mbAlgo;
-    for (int pp = 0; pp < m; pp += mb) {
-      const int ptmp = (m - pp - mb), p = (ptmp < 0 ? 0 : ptmp), pb = (mb + (ptmp < 0) * ptmp);
+      for (int pp = 0; pp < m; pp += mb) {
+        const int ptmp = (m - pp - mb), p = (ptmp < 0 ? 0 : ptmp), pb = (mb + (ptmp < 0) * ptmp);
 
-      // trsm update
-      const ValueType *KOKKOS_RESTRICT Ap = A + p * as0 + p * as1;
-      /**/ ValueType *KOKKOS_RESTRICT bp  = b + p * bs0;
+        // trsm update
+        const ValueType *KOKKOS_RESTRICT Ap = A + p * as0 + p * as1;
+        /**/ ValueType *KOKKOS_RESTRICT bp  = b + p * bs0;
 
-      member.team_barrier();
-      if (member.team_rank() == 0) {
-        if (use_unit_diag)
-          trsm_u.serial_invoke(Ap, pb, 1, bp);
-        else
-          trsm_n.serial_invoke(Ap, pb, 1, bp);
+        member.team_barrier();
+        if (member.team_rank() == 0) {
+          if (use_unit_diag)
+            trsm_u.serial_invoke(Ap, pb, 1, bp);
+          else
+            trsm_n.serial_invoke(Ap, pb, 1, bp);
+        }
+
+        // gemv update
+        member.team_barrier();
+        KokkosBlas::Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(member, p, pb, minus_one, Ap - p * as0, as0,
+                                                                          as1, bp, 1, one, b, bs0);
       }
-
-      // gemv update
-      member.team_barrier();
-      KokkosBlas::Impl::TeamGemvInternal<Algo::Gemv::Unblocked>::invoke(member, p, pb, minus_one, Ap - p * as0, as0,
-                                                                        as1, bp, 1, one, b, bs0);
-    }
+    };
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
   }
   return 0;
 }
