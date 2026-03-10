@@ -43,16 +43,26 @@
       <Parameter name="Use FSAL"       type="bool" value="false"/>
       <Parameter name="Initial Condition Consistency" type="string" value="None"/>
       <!--
-	  <Parameter name="Stepper Type"   type="string" value="Trapezoidal Method"/>
-	  <Parameter name="Use FSAL"       type="bool" value="true"/>
-	  <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
-	  <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
+      <Parameter name="Stepper Type"   type="string" value="Trapezoidal Method"/>
+      <Parameter name="Use FSAL"       type="bool" value="true"/>
+      <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
+      -->
+      <!--
+      <ParameterList name="PhiEvaluator">
+        <Parameter name="Expansion Order" type="int" value="100"/>
+        <Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
+        <Parameter name="Lump Mass Matrix" type="bool" value="0"/>
+      </ParameterList>
       -->
       <ParameterList name="PhiEvaluator">
-	<Parameter name="Expansion Order" type="int" value="100"/>
-	<Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
-	<Parameter name="Lump Mass Matrix" type="bool" value="0"/>
+        <Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
+        <Parameter name="Expansion Order" type="int" value="100"/>
+        <Parameter name="leja_tol" type="double" value="1e-8"/>
+        <Parameter name="leja_a" type="double" value="-1.0"/>
+        <Parameter name="leja_c" type="double" value="0.5"/>
       </ParameterList>
+
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Predictor Stepper Type" type="string" value="None"/>
       <ParameterList name="Demo Solver">
