@@ -193,7 +193,8 @@ class PhiEvaluator
   virtual Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
 						     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
 						     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
-						     const Scalar cdt=1.0) = 0;
+						     const Scalar cdt=1.0
+						     ) = 0;
 };
 
 }  // namespace Tempus
