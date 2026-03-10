@@ -50,12 +50,7 @@ class HostSpace {
   //! This memory space preferred device_type
   using device_type = Kokkos::Device<execution_space, memory_space>;
 
-  HostSpace()                            = default;
-  HostSpace(HostSpace&& rhs)             = default;
-  HostSpace(const HostSpace& rhs)        = default;
-  HostSpace& operator=(HostSpace&&)      = default;
-  HostSpace& operator=(const HostSpace&) = default;
-  ~HostSpace()                           = default;
+  HostSpace() = default;
 
 #ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
   /**\brief  Non-default memory space instance to choose allocation mechansim,

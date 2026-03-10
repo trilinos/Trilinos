@@ -34,6 +34,13 @@ class HIP {
 
   using scratch_memory_space = ScratchMemorySpace<HIP>;
 
+  KOKKOS_DEFAULTED_FUNCTION HIP(const HIP&) = default;
+  KOKKOS_FUNCTION HIP(HIP&& other) : HIP(static_cast<const HIP&>(other)) {}
+  KOKKOS_DEFAULTED_FUNCTION HIP& operator=(const HIP&) = default;
+  KOKKOS_FUNCTION HIP& operator=(HIP&& other) {
+    return *this = static_cast<const HIP&>(other);
+  }
+  ~HIP();
   HIP();
 
   explicit HIP(hipStream_t stream) : HIP(stream, Impl::ManageStream::no) {}

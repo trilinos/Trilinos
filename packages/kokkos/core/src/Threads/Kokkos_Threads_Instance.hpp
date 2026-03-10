@@ -66,9 +66,6 @@ class ThreadsInternal {
   static void first_touch_allocate_thread_private_scratch(ThreadsInternal &,
                                                           const void *);
 
-  ThreadsInternal(const ThreadsInternal &);
-  ThreadsInternal &operator=(const ThreadsInternal &);
-
   static void execute_resize_scratch_in_serial();
 
  public:
@@ -90,6 +87,8 @@ class ThreadsInternal {
 
   static void driver(void);
 
+  ThreadsInternal(const ThreadsInternal &)            = delete;
+  ThreadsInternal &operator=(const ThreadsInternal &) = delete;
   ~ThreadsInternal();
   ThreadsInternal();
 
