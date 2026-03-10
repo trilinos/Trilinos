@@ -45,7 +45,7 @@ template <class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
 					    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-					    const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v)
+					    const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v, const Scalar cdt)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       phi_order < 0,
@@ -134,7 +134,7 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
      << " achieved in it. " << k << ".";
   sStatus.message = ss.str();
 
-  //std::cout << sStatus.message << std::endl;
+  std::cout << sStatus.message << std::endl;
 
   return sStatus;
 }

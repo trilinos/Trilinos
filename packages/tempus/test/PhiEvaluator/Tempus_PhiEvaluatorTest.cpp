@@ -7,6 +7,7 @@
 // *****************************************************************************
 //@HEADER
 #include "Tempus_PhiEvaluatorLeja_decl.hpp"
+#include "Tempus_PhiEvaluatorTaylor_decl.hpp"
 #include "Teuchos_LocalTestingHelpers.hpp"
 #include "Teuchos_TestingHelpers.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
@@ -21,6 +22,10 @@
 #include "Tempus_PhiEvaluatorLeja.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
+#include "Thyra_VectorStdOps_decl.hpp"
+
+#include <math.h>
+# define M_PI 3.14159265358979323846  /* pi */
 
 
 namespace Tempus_Test {
@@ -40,19 +45,26 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   // Read params from .xml file
   RCP<ParameterList> pList =
       getParametersFromXmlFile("Tempus_PhiEvaluator_SinCos.xml");
+  RCP<ParameterList> pListTay =
+      getParametersFromXmlFile("Tempus_PhiEvaluator_SinCos.xml");
 
   // Setup the SinCosModel as mock model
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
   auto model = rcp(new SinCosModel<double>(scm_pl));
+  // auto model_tay = rcp(new SinCosModel<double>(scm_pl));
 
   // Setup the PhiEvaluator
   RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
+  RCP<ParameterList> phi_pl_tay = sublist(pListTay, "PhiEvaluator");
   auto phiEvaluator = Tempus::createPhiEvaluatorLeja<double>(phi_pl);
+  auto phiEvaluatorTay = Tempus::createPhiEvaluatorTaylor<double>(phi_pl_tay);
   phiEvaluator->setModel(model);
   phiEvaluator->initialize();
-  double leja_a = -1.0;
+  phiEvaluatorTay->setModel(model);
+  phiEvaluatorTay->initialize();
+  double leja_a = -1.0e-18;
   double leja_b = 0.0;
-  double leja_c = 0.5;
+  double leja_c = 1.0;
   phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
 
   // Check the first leja points
@@ -87,6 +99,44 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(lp_dd[2].imag(), 0.012636995600793, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[3].real(), 0.01263699560, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[3].imag(), 0.0, 1e-8);
+
+  // compute exp(dt*A)*v using PhiEvaluatorLeja
+  // make a digonal linop from SinCosModel
+  // with A = [[0, -1], [0, 1]]
+  auto x_space = model->get_x_space();
+  Teuchos::RCP<Thyra::VectorBase<double> > xdot_init = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double> > v = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double> > vend = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double> > vend_tay = createMember(x_space);
+
+  // set initial condition v0 = (-1.0, 0)
+  Thyra::assign(v.ptr(), 0.0);
+  Thyra::set_ele(0, -1.0, v.ptr());
+  Thyra::assign(xdot_init.ptr(), 0.0);
+
+  auto inArgs = model->createInArgs();
+  inArgs.set_x(v);
+  inArgs.set_x_dot(xdot_init);
+  inArgs.set_t(0.0);
+  double dt = 1.0;
+  phiEvaluator->setLinearizationPoint(inArgs);
+  phiEvaluator->computePhi(vend.ptr(), 0, dt, v);
+
+  Teuchos::RCP<Teuchos::FancyOStream> ostream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  vend->describe(*ostream, Teuchos::VERB_EXTREME);
+
+  // compare to Taylor PhiEvaluator
+  phiEvaluatorTay->setLinearizationPoint(inArgs);
+  phiEvaluatorTay->computePhi(vend_tay.ptr(), 0, dt, v);
+  vend_tay->describe(*ostream, Teuchos::VERB_EXTREME);
+  TEST_FLOATING_EQUALITY(Thyra::get_ele(*vend_tay, 0), Thyra::get_ele(*vend, 0), 1e-6);
+  TEST_FLOATING_EQUALITY(Thyra::get_ele(*vend_tay, 1), Thyra::get_ele(*vend, 1), 1e-6);
+
+  // compare to analytic solution
+  // v(t) = [-cos(t), sin(t)]
+  std::vector<double> sol = {-std::cos(dt), std::sin(dt)};
+  TEST_FLOATING_EQUALITY(sol[0], Thyra::get_ele(*vend, 0), 1e-6);
+  TEST_FLOATING_EQUALITY(sol[1], Thyra::get_ele(*vend, 1), 1e-6);
 }
 
 }  // namespace Tempus_Test
