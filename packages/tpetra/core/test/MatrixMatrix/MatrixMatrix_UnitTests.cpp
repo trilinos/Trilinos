@@ -2524,7 +2524,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, cancellation_zero_entry_test, S
 
   // Confirm that re-use for RAP works correctly without cancellation
   auto unity = Teuchos::ScalarTraits<SC>::one();
-  set2x2BlockAlphaBeta(*A, 2.0 * unity, unity);
+  set2x2BlockAlphaBeta(*A, SC(2.0) * unity, unity);
 
   TEST_NOTHROW(Tpetra::MatrixMatrix::Multiply(*P, true, *A, false, *PTA, fillComplete, label, my_matrixmatrix_params));
   TEST_NOTHROW(Tpetra::MatrixMatrix::Multiply(*PTA, false, *P, false, *PTAP, fillComplete, label, my_matrixmatrix_params));
