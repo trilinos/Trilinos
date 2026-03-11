@@ -114,10 +114,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   //  std::cout << dd << ' ';
   //}
   //std::cout << std::endl;
-  // TODO: For DEBUG ONLY
-  // Teuchos::RCP<Teuchos::FancyOStream> ostream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  // Teuchos::RCP<Teuchos::FancyOStream> ostream =
-  //   this->getOStream();
 
   // Iteration vector vm_0
   Teuchos::RCP<Thyra::VectorBase<Scalar>> vm_k = Thyra::createMember(rangeSpace);
@@ -130,8 +126,8 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   auto coeff = lp_dd[0];
   Scalar coeff_re = Scalar(coeff.real());
 
-  std::cout << "c[0]: " << coeff_re << std::endl;
-  
+  //std::cout << "c[0]: " << coeff_re << std::endl;
+
   Thyra::V_V(vm_k.ptr(), *v);
   Thyra::V_StV(v, coeff_re, *vm_k);
 
@@ -149,8 +145,8 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   for (int lp_k = 0; k < lp_dd.size() && lp_k < lp_.size(); k++, lp_k++)
   {
     // print the update vector vm_k
-    // v->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
-    std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
+    //v->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
+    //std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
 
     // compute shifted and scaled leja point
     LejaPoint lp_sc = getLpSc(lp_k);
@@ -162,14 +158,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // extract divided diff
       coeff = lp_dd[k];
       coeff_re = Scalar(coeff.real());
-      std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " real " << shift << " " << scale << std::endl;
-      
-      // av = (tau*A)*vm
-      //Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 0.0);
-      // vm_k = (av - lp_re[k-1]*vm_k)
-      //Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *vm_k);
-      // vm_k = vm_k / scale
-      //Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
+      // std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " real " << shift << " " << scale << std::endl;
 
       // copy vm_k to temp vector
       Thyra::V_V(av.ptr(), *vm_k);
@@ -187,22 +176,13 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // extract divided diff
       coeff = lp_dd[k];
       coeff_re = Scalar(coeff.real());
-      std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " " << shift << " " << scale << std::endl;
-
-      // first update
-      //Thyra::apply(*L, Thyra::NOTRANS, *vm_k, av.ptr(), tau, 0.0);
-      //Thyra::V_VpStV(qm_k.ptr(), *av, -lp_sc_re, *vm_k);
-      //Thyra::V_StV(qm_k.ptr(), 1.0 / scale, *qm_k);
-      //Thyra::Vp_StV(v, coeff_re, *qm_k);
-
-      // copy vm_k to temp vector
-      Thyra::V_V(av.ptr(), *vm_k);
+      //std::cout << "c,lp,shift,scale: " << coeff << " " << lp_sc.lp << " " << shift << " " << scale << std::endl;
 
       // copy vm_k to qm_k vector to save it
       Thyra::V_V(qm_k.ptr(), *vm_k);
 
       // vm_k = (L@vm_k - lp_re*vm_k) / scale
-      Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_sc_re/scale);
+      Thyra::apply(*L, Thyra::NOTRANS, *qm_k, vm_k.ptr(), 1/scale, -lp_sc_re/scale);
 
       // add vm_k*coeff to the final result
       Thyra::Vp_StV(v, coeff_re, *vm_k);
@@ -221,24 +201,14 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
         coeff = lp_dd[k];
         coeff_re = Scalar(coeff.real());
 
-        std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
-        std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
+        //std::cout << "Norm d_k: " << norm_d_k << " v_k: " << norm_vm_k << std::endl;
+        //std::cout << "c,lp: " << coeff << " " << std::conj(lp_sc.lp) << std::endl;
 
-        //Thyra::apply(*L, Thyra::NOTRANS, *qm_k, av.ptr(), tau, 0.0);
-        //Thyra::V_VpStV(vm_k.ptr(), *av, -lp_sc_re, *qm_k);
-        //Thyra::V_StV(vm_k.ptr(), 1.0 / scale, *vm_k);
-        //Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im / scale) * (lp_sc_im / scale), *vm_k);
-        //Thyra::Vp_StV(v, coeff_re, *vm_k);
-
-        // copy vm_k to temp vector
+        // copy vm_k to a new temp vector (don't overwrite qm_k)
         Thyra::V_V(av.ptr(), *vm_k);
         // vm_k = (L@vm_k - lp_re*vm_k) / scale + ((lp_im/scale)**2)*qm_k
         Thyra::apply(*L, Thyra::NOTRANS, *av, vm_k.ptr(), 1/scale, -lp_sc_re/scale);
-        // std::cout << "vm intermediate" << std::endl;
-        // vm_k->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
         Thyra::Vp_StV(vm_k.ptr(), (lp_sc_im/scale) * (lp_sc_im/scale), *qm_k);
-        // std::cout << "vm" << std::endl;
-        // vm_k->describe(*this->getOStream(), Teuchos::VERB_EXTREME);
 
         // add vm_k*coeff to the final result
         Thyra::Vp_StV(v, coeff_re, *vm_k);
@@ -251,7 +221,6 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
       // TODO: ERROR
       TEUCHOS_ASSERT(false);
     }
-
     // TODO: refine this and make dependent on Scalar type
     const Scalar cutoff = 1e22;
     if (overflow > cutoff)
@@ -276,6 +245,7 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
   ss << "Leja: Norm of solution=" << Thyra::norm_inf(*v)
      << " overflow=" << overflow
      << " final update=" << norm_d_k
+     << " iteration vector=" << norm_vm_k
      << " achieved in it. " << k << ".";
   sStatus.message = ss.str();
 

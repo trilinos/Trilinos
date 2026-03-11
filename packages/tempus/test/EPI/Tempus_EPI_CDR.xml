@@ -57,10 +57,10 @@
       -->
       <ParameterList name="PhiEvaluator">
         <Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
-        <Parameter name="Expansion Order" type="int" value="100"/>
-        <Parameter name="leja_tol" type="double" value="1e-8"/>
-        <Parameter name="leja_a" type="double" value="-1.0"/>
-        <Parameter name="leja_c" type="double" value="0.5"/>
+        <Parameter name="Expansion Order" type="int" value="200"/>
+        <Parameter name="leja_tol" type="double" value="1e-11"/>
+        <Parameter name="leja_a" type="double" value="-150.0"/>
+        <Parameter name="leja_c" type="double" value="30."/>
       </ParameterList>
 
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
