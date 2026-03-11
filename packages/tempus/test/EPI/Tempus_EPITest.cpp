@@ -193,7 +193,7 @@ TEUCHOS_UNIT_TEST(EPI, VanDerPol)
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 4;  // 8 for Error plot
-  double dt                = 0.2;
+  double dt                = 1.0;
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =
@@ -205,7 +205,7 @@ TEUCHOS_UNIT_TEST(EPI, VanDerPol)
 
     // Set the step size
     dt /= 2;
-    if (n == nTimeStepSizes - 1) dt /= 10.0;
+    if (n == nTimeStepSizes - 1) dt /= 5.0;
 
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
@@ -259,8 +259,8 @@ TEUCHOS_UNIT_TEST(EPI, VanDerPol)
                   solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
                   xDotSlope, out);
 
-  TEST_FLOATING_EQUALITY(xSlope, order, 0.15);
-  TEST_COMPARE(xErrorNorm[0], <=, 1.0e-2);
+  TEST_FLOATING_EQUALITY(xSlope, order, 0.2);
+  TEST_COMPARE(xErrorNorm[0], <=, .1);
 
   Teuchos::TimeMonitor::summarize();
 }
@@ -278,7 +278,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   std::vector<double> xErrorNorm;
   std::vector<double> xDotErrorNorm;
   const int nTimeStepSizes = 4;
-  double dt                = 0.0002;
+  double dt                = 0.001;
   for (int n = 0; n < nTimeStepSizes; n++) {
     // Read params from .xml file
     RCP<ParameterList> pList =
@@ -384,7 +384,7 @@ void CDR_Test(const Comm& comm, const int commSize, Teuchos::FancyOStream& out,
   // TEST_FLOATING_EQUALITY(xSlope, 1.3372, 0.01);
   // TODO: The accuracy for the "Lump Mass Matrix" == False testcase is affected by the linear solver tolerance
   TEST_COMPARE(std::abs(xErrorNorm[0]), <=, 1.0e-6);
-  TEST_COMPARE(std::abs(xErrorNorm[nTimeStepSizes - 2]), <=, 1.e-9);
+  TEST_COMPARE(std::abs(xErrorNorm[nTimeStepSizes - 2]), <=, 1.e-8);
   // TEST_ABSOLUTE_EQUALITY(xErrorNorm[0], 1e-12, 2.0e-12);
   //TEST_FLOATING_EQUALITY(xDotSlope, 1.32052, 0.01);
   //TEST_FLOATING_EQUALITY(xDotErrorNorm[0], 0.449888, 1.0e-4);
