@@ -262,8 +262,9 @@ int main(int argc, char *argv[]) {
     Teuchos::TimeMonitor symboFactTimer(*symboTimer_);
     try {
       solver->symbolicFactorization();
-    } catch (...) {
-      *fos << "\n solver symbolic threw exception.  Exiting...\n" << std::endl;
+    } catch (const std::exception& e) {
+      *fos << "\n == solver symbolic threw exception ==\n"
+           << e.what() << "\n == Exiting ==\n" << std::endl;
       return EXIT_SUCCESS;
     }
     comm->barrier();
@@ -296,8 +297,9 @@ int main(int argc, char *argv[]) {
 
       try {
         solver->numericFactorization();
-      } catch (...) {
-        *fos << "\n solver numeric threw exception.  Exiting...\n" << std::endl;
+      } catch (const std::exception& e) {
+        *fos << "\n == solver numeric threw exception ==\n"
+             << e.what() << "\n == Exiting ==\n" << std::endl;
         return EXIT_SUCCESS;
       }
       comm->barrier();
@@ -309,8 +311,9 @@ int main(int argc, char *argv[]) {
 
       try {
         solver->solve();
-      } catch (...) {
-        *fos << "\n solver solve threw exception.  Exiting...\n" << std::endl;
+      } catch (const std::exception& e) {
+        *fos << "\n == solver solve threw exception ==\n"
+             << e.what() << "\n == Exiting ==\n" << std::endl;
         return EXIT_SUCCESS;
       }
       comm->barrier();
