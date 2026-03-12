@@ -64,13 +64,8 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
                 pass
 
         # Execute the call to ctest.
-        verbosity_flag = "-VV"
-        if "BUILD_NUMBER" in os.environ:
-            print("Running under Jenkins, keeping output less verbose to avoid space issues")
-            verbosity_flag = "-V"
-
         cmd = ['ctest',
-               verbosity_flag,
+                "-V",
                 "-S", f"{self.arg_ctest_driver}",
                f"-Dsource_dir:PATH={self.arg_source_dir}",
                f"-Dbuild_dir:PATH={self.arg_build_dir}",
