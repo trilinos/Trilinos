@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("use-stacked-timer","no-stacked-timer",&useStackedTimer,"Use StackedTimer to print solver timing statistics");
   cmdp.setOption("all-print","root-print",&allprint,"All processors print to out");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return -1;
+    return EXIT_FAILURE;
   }
 
   std::ostream& out = ( (allprint || (myRank == 0)) ? std::cout : blackhole );
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
   RCP<Amesos2::Solver<MAT,MV> > solver;
   if( !Amesos2::query(solvername) ){
     *fos << solvername << " solver not enabled.  Exiting..." << std::endl;
-    return EXIT_SUCCESS;
+    return EXIT_FAILURE;
   }
 
   solver = Amesos2::create<MAT,MV>(solvername, A, X, B);
@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
     } catch (const std::exception& e) {
       *fos << "\n == solver symbolic threw exception ==\n"
            << e.what() << "\n == Exiting ==\n" << std::endl;
-      return EXIT_SUCCESS;
+      return EXIT_FAILURE; //everyone should throw on failure
     }
     comm->barrier();
   }
@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
       } catch (const std::exception& e) {
         *fos << "\n == solver numeric threw exception ==\n"
              << e.what() << "\n == Exiting ==\n" << std::endl;
-        return EXIT_SUCCESS;
+        return EXIT_FAILURE; //everyone should throw on failure
       }
       comm->barrier();
     }
@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
       } catch (const std::exception& e) {
         *fos << "\n == solver solve threw exception ==\n"
              << e.what() << "\n == Exiting ==\n" << std::endl;
-        return EXIT_SUCCESS;
+        return EXIT_FAILURE; //everyone should throw on failure
       }
       comm->barrier();
     }
@@ -374,5 +374,5 @@ int main(int argc, char *argv[]) {
   }
 
   // We are done.
-  return 0;
+  return EXIT_SUCCESS;
 }
