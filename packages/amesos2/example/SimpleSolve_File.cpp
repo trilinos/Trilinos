@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("use-stacked-timer","no-stacked-timer",&useStackedTimer,"Use StackedTimer to print solver timing statistics");
   cmdp.setOption("all-print","root-print",&allprint,"All processors print to out");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return -1;
+    return EXIT_FAILURE;
   }
 
   std::ostream& out = ( (allprint || (myRank == 0)) ? std::cout : blackhole );
@@ -116,9 +116,11 @@ int main(int argc, char *argv[]) {
 
   // Read matrix
   RCP<MAT> A;
+  if( verbose && myRank == 0) std::cout << "Reading A from " << mat_filename << std::endl;
   if (map_filename == "") {
     A = MMReader::readSparseFile(mat_filename, comm);
   } else {
+    if( verbose && myRank == 0) std::cout << " using map file " << map_filename << std::endl;
     RCP<const Map<LO,GO> > rowMap = MMReader::readMapFile(map_filename, comm);
     RCP<const Map<LO,GO> > colMap = Teuchos::null;
     A = MMReader::readSparseFile (mat_filename, rowMap, colMap, rowMap, rowMap);
@@ -147,12 +149,15 @@ int main(int argc, char *argv[]) {
      *   [10]]
      */
     if (true) {
+      if( verbose && myRank == 0) std::cout << "Setting B to be A*[1; ..; 1];" << std::endl;
       X->putScalar(1);
       A->apply(*X, *B);
     } else {
+      if( verbose && myRank == 0) std::cout << "Setting B to be [10; ..; 10];" << std::endl;
       B->putScalar(10);
     }
   } else {
+    if( verbose && myRank == 0) std::cout << "Reading B from " << rhs_filename << std::endl;
     B = MMReader::readDenseFile (rhs_filename, comm, rngmap);
     numVectors = B->getNumVectors();
   }
@@ -227,7 +232,7 @@ int main(int argc, char *argv[]) {
   RCP<Amesos2::Solver<MAT,MV> > solver;
   if( !Amesos2::query(solvername) ){
     *fos << solvername << " solver not enabled.  Exiting..." << std::endl;
-    return EXIT_SUCCESS;
+    return EXIT_FAILURE;
   }
 
   solver = Amesos2::create<MAT,MV>(solvername, A, X, B);
@@ -255,8 +260,13 @@ int main(int argc, char *argv[]) {
   {
     Teuchos::RCP< Teuchos::Time > symboTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Symbolic Factorization");
     Teuchos::TimeMonitor symboFactTimer(*symboTimer_);
-
-    solver->symbolicFactorization();
+    try {
+      solver->symbolicFactorization();
+    } catch (const std::exception& e) {
+      *fos << "\n == solver symbolic threw exception ==\n"
+           << e.what() << "\n == Exiting ==\n" << std::endl;
+      return EXIT_FAILURE; //everyone should throw on failure
+    }
     comm->barrier();
   }
   for (size_t s = 0; s < numSolves; s++) {
@@ -285,7 +295,13 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP< Teuchos::Time > numerTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Numeric Factorization");
       Teuchos::TimeMonitor numerFactTimer(*numerTimer_);
 
-      solver->numericFactorization();
+      try {
+        solver->numericFactorization();
+      } catch (const std::exception& e) {
+        *fos << "\n == solver numeric threw exception ==\n"
+             << e.what() << "\n == Exiting ==\n" << std::endl;
+        return EXIT_FAILURE; //everyone should throw on failure
+      }
       comm->barrier();
     }
     // perform solve
@@ -293,7 +309,13 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP< Teuchos::Time > solveTimer_ = Teuchos::TimeMonitor::getNewCounter ("Time for Solve");
       Teuchos::TimeMonitor solveTimer(*solveTimer_);
 
-      solver->solve();
+      try {
+        solver->solve();
+      } catch (const std::exception& e) {
+        *fos << "\n == solver solve threw exception ==\n"
+             << e.what() << "\n == Exiting ==\n" << std::endl;
+        return EXIT_FAILURE; //everyone should throw on failure
+      }
       comm->barrier();
     }
     if(printSolution) {
@@ -352,5 +374,5 @@ int main(int argc, char *argv[]) {
   }
 
   // We are done.
-  return 0;
+  return EXIT_SUCCESS;
 }
