@@ -102,10 +102,13 @@ def handle_build_errors(args):
         target_info.pretty_print()
 
 
-
-def handle_build_errors(args):
-    print(f"build errors! {args.build_errors}")
-    read_ctest_build_xmls(args.ctest_xml_dir)
+def handle_build_warnings(args):
+    xml_path = args.ctest_xml_dir
+    xml_files = [f.name for f in xml_path.glob("*.xml") if f.is_file() and "warning" in f.name]
+    [print(e) for e in xml_files]
+    for f in xml_files:
+        target_info = parse_into_target_info(xml_path / f)
+        target_info.pretty_print()
 
 
 def parse_args(argv=None):
@@ -119,7 +122,12 @@ def parse_args(argv=None):
     parser.add_argument(
         "--build-errors",
         action="store_true",
-        help="Parse CTest-generated error-*.xml files.",
+        help="Parse CTest-generated warning XML files.",
+    )
+    parser.add_argument(
+        "--build-warnings",
+        action="store_true",
+        help="Parse CTest-generated warning XML files.",
     )
     return parser.parse_args()
 
@@ -129,6 +137,8 @@ def main(argv=None) -> int:
 
     if args.build_errors:
         handle_build_errors(args)
+    if args.build_warnings:
+        handle_build_warnings(args)
 
     return 0
 
