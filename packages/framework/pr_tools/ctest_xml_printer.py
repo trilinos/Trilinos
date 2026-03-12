@@ -49,6 +49,14 @@ class BuildTargetInfo:
     stderr: str
     exit_val: str
 
+    def __str__(self):
+        msg = f"""
+            {self.info_type} when building {self.output_type} {self.output_file}:
+            Command: {self.command}
+            {self.stderr}
+        """
+        return msg
+
     def pretty_print(self):
         print(f"Info type: {self.info_type}")
         print(f"Target: {self.target_name}")
@@ -58,7 +66,6 @@ class BuildTargetInfo:
         print(f"Command: {self.command}")
         print(f"stderr output: {self.stderr}")
         print(f"Exit value: {self.exit_val}")
-        print(f"")
 
 
 def parse_into_target_info(xml_file: str) -> BuildTargetInfo:
@@ -100,7 +107,7 @@ def handle_build_errors(args):
     [print(e) for e in xml_files]
     for f in xml_files:
         target_info = parse_into_target_info(xml_path / f)
-        target_info.pretty_print()
+        print(target_info)
 
 
 def handle_build_warnings(args):
@@ -109,8 +116,7 @@ def handle_build_warnings(args):
     [print(e) for e in xml_files]
     for f in xml_files:
         target_info = parse_into_target_info(xml_path / f)
-        target_info.pretty_print()
-
+        print(target_info)
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser()
