@@ -5,7 +5,6 @@ from dataclasses import dataclass
 
 # TODOs:
 # - Add detailed help message
-# - Reformat output format
 # - Evaluate parse and print vs. parse all then print all
 # - Add GitHub Actions output mode using their error highlighting in logs
 
@@ -101,22 +100,23 @@ def parse_into_target_info(xml_file: str) -> BuildTargetInfo:
     )
 
 
-def handle_build_errors(args):
+def handle_build_errors(args) -> int:
     xml_path = args.ctest_xml_dir
     xml_files = [f.name for f in xml_path.glob("*.xml") if f.is_file() and "error" in f.name]
-    [print(e) for e in xml_files]
     for f in xml_files:
         target_info = parse_into_target_info(xml_path / f)
         print(target_info)
+    return len(xml_files)
 
 
-def handle_build_warnings(args):
+def handle_build_warnings(args) -> int:
     xml_path = args.ctest_xml_dir
     xml_files = [f.name for f in xml_path.glob("*.xml") if f.is_file() and "warning" in f.name]
-    [print(e) for e in xml_files]
     for f in xml_files:
         target_info = parse_into_target_info(xml_path / f)
         print(target_info)
+    return len(xml_files)
+
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser()
@@ -124,7 +124,7 @@ def parse_args(argv=None):
         "--ctest-xml-dir",
         required=True,
         type=Path,
-        help="Path to CTest testing directory.",
+        help="Path to CTest Testing directory.",
     )
     parser.add_argument(
         "--build-errors",
@@ -142,10 +142,15 @@ def parse_args(argv=None):
 def main(argv=None) -> int:
     args = parse_args(argv)
 
+    n_error = 0
+    n_warnings = 0
+
     if args.build_errors:
-        handle_build_errors(args)
+        n_errors = handle_build_errors(args)
     if args.build_warnings:
-        handle_build_warnings(args)
+        n_warnings = handle_build_warnings(args)
+
+    print(f"Summary: total errors: {n_errors}, total warnings: {n_warnings}")
 
     return 0
 
