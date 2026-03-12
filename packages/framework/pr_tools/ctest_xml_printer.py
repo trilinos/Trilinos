@@ -105,7 +105,10 @@ def handle_build_errors(args) -> int:
     xml_files = [f.name for f in xml_path.glob("*.xml") if f.is_file() and "error" in f.name]
     for f in xml_files:
         target_info = parse_into_target_info(xml_path / f)
-        print(target_info)
+        if args.github_actions_mode:
+            print(f"::error::{target_info}")
+        else:
+            print(target_info)
     return len(xml_files)
 
 
@@ -114,7 +117,10 @@ def handle_build_warnings(args) -> int:
     xml_files = [f.name for f in xml_path.glob("*.xml") if f.is_file() and "warning" in f.name]
     for f in xml_files:
         target_info = parse_into_target_info(xml_path / f)
-        print(target_info)
+        if args.github_actions_mode:
+            print(f"::warning::{target_info}")
+        else:
+            print(target_info)
     return len(xml_files)
 
 
@@ -136,6 +142,11 @@ def parse_args(argv=None):
         action="store_true",
         help="Parse CTest-generated warning XML files.",
     )
+    parser.add_argument(
+        "--github-actions-mode",
+        action="store_true",
+        help="Wrap output in fancy GitHub Actions workflow annotations."
+    )
     return parser.parse_args()
 
 
@@ -151,7 +162,6 @@ def main(argv=None) -> int:
         n_warnings = handle_build_warnings(args)
 
     print(f"Summary: total errors: {n_errors}, total warnings: {n_warnings}")
-
     return 0
 
 if __name__ == "__main__":
