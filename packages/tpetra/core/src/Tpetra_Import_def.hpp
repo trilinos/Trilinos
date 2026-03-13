@@ -10,6 +10,8 @@
 #ifndef TPETRA_IMPORT_DEF_HPP
 #define TPETRA_IMPORT_DEF_HPP
 
+#include <cstddef>
+#include <tuple>
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_ImportExportData.hpp"
@@ -21,8 +23,44 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_Profiling.hpp"
 #include "Teuchos_as.hpp"
+#include "Kokkos_Sort.hpp"
 #include <array>
 #include <memory>
+
+template <class LO>
+struct pair_lo {
+  LO numPermutes;
+  LO numRemotes;
+
+  KOKKOS_INLINE_FUNCTION
+  pair_lo() {
+    numPermutes = 0;
+    numRemotes  = 0;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  pair_lo(const pair_lo& rhs) {
+    numPermutes = rhs.numPermutes;
+    numRemotes  = rhs.numRemotes;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  pair_lo& operator+=(const pair_lo& src) {
+    numPermutes += src.numPermutes;
+    numRemotes += src.numRemotes;
+    return *this;
+  }
+};
+
+namespace Kokkos {
+
+template <class LO>
+struct reduction_identity<pair_lo<LO>> {
+  KOKKOS_FORCEINLINE_FUNCTION static pair_lo<LO> sum() {
+    return pair_lo<LO>();
+  }
+};
+}  // namespace Kokkos
 
 namespace Teuchos {
 template <class T>
@@ -58,6 +96,58 @@ std::string toString(const Kokkos::View<const ElementType*, DeviceType>& x) {
 
 namespace Tpetra {
 
+template <class keys_view_type>
+struct LookupComparator {
+  keys_view_type keys;
+
+  LookupComparator(keys_view_type keys_)
+    : keys(keys_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  bool operator()(size_t i, size_t j) const {
+    return keys(i) < keys(j);
+  }
+};
+
+template <class ExecutionSpace, class view_0_type, class view_1_type, class view_2_type>
+void sort3(view_0_type& view_0, view_1_type& view_1, view_2_type& view_2) {
+  using memory_space = view_1_type::memory_space;
+  auto numItems      = view_0.extent(0);
+  if (numItems < 2)
+    return;
+
+  size_t numUnorderedItems;
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<ExecutionSpace>(0, numItems - 1), KOKKOS_LAMBDA(const size_t k, size_t& unorded_items) {
+        if (view_0(k) > view_0(k + 1))
+          ++unorded_items;
+      },
+      numUnorderedItems);
+
+  if (numUnorderedItems == 0)
+    return;
+
+  Kokkos::View<size_t*, memory_space> indices(Kokkos::ViewAllocateWithoutInitializing(""), numItems);
+  Kokkos::parallel_for(
+      Kokkos::RangePolicy<ExecutionSpace>(0, numItems), KOKKOS_LAMBDA(const size_t k) { indices(k) = k; });
+  LookupComparator comparison(view_0);
+  Kokkos::sort(indices, comparison);
+
+  Kokkos::View<typename view_0_type::value_type*, memory_space> view_0_out("view_0_out", view_0.extent(0));
+  Kokkos::View<typename view_1_type::value_type*, memory_space> view_1_out("view_1_out", view_1.extent(0));
+  Kokkos::View<typename view_2_type::value_type*, memory_space> view_2_out("view_2_out", view_2.extent(0));
+  Kokkos::parallel_for(
+      Kokkos::RangePolicy<ExecutionSpace>(0, numItems), KOKKOS_LAMBDA(const size_t k) {
+        auto idx      = indices(k);
+        view_0_out(k) = view_0(idx);
+        view_1_out(k) = view_1(idx);
+        view_2_out(k) = view_2(idx);
+      });
+  Kokkos::deep_copy(view_0, view_0_out);
+  Kokkos::deep_copy(view_1, view_1_out);
+  Kokkos::deep_copy(view_2, view_2_out);
+}
+
 // head:  init(source, target, true, remotePIDs, Teuchos::null);
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -85,7 +175,7 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
     this->verboseOutputStream() << os.str();
   }
 
-  Array<GlobalOrdinal> remoteGIDs;
+  remote_gids_type remoteGIDs;
 
   {
     Tpetra::Details::ProfilingRegion MM("Tpetra:iport_ctor:preIData");
@@ -94,7 +184,7 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
       os << *verbPrefix << "Call setupSamePermuteRemote" << endl;
       this->verboseOutputStream() << os.str();
     }
-    setupSamePermuteRemote(remoteGIDs);
+    remoteGIDs = setupSamePermuteRemote();
   }
   {
     Tpetra::Details::ProfilingRegion MM2("Tpetra:iport_ctor:preSetupExport");
@@ -191,6 +281,62 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
     Import(const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter)
   : base_type(exporter, typename base_type::reverse_tag()) {}
 
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+std::tuple<typename Import<LocalOrdinal, GlobalOrdinal, Node>::remote_gids_type,
+           typename Import<LocalOrdinal, GlobalOrdinal, Node>::remote_lids_type,
+           typename Import<LocalOrdinal, GlobalOrdinal, Node>::remote_pids_type>
+filterRemote(typename Import<LocalOrdinal, GlobalOrdinal, Node>::remote_gids_type tRemoteGIDs,
+             typename Import<LocalOrdinal, GlobalOrdinal, Node>::remote_lids_type tRemoteLIDs,
+             typename Import<LocalOrdinal, GlobalOrdinal, Node>::remote_pids_type tRemotePIDs,
+             const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& target) {
+  // Get rid of IDs that don't exist in SourceMap
+  size_t cnt               = 0;
+  auto indexIntoRemotePIDs = tRemotePIDs.extent(0);
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<typename Import<LocalOrdinal, GlobalOrdinal, Node>::execution_space>(0, indexIntoRemotePIDs), KOKKOS_LAMBDA(const size_t i, size_t& my_cnt) {
+        if (tRemotePIDs(i) == -1)
+          ++my_cnt;
+      },
+      cnt);
+
+  typename Import<LocalOrdinal, GlobalOrdinal, Node>::remote_gids_type newRemoteGIDs;
+  typename Import<LocalOrdinal, GlobalOrdinal, Node>::remote_lids_type newRemoteLIDs;
+  typename Import<LocalOrdinal, GlobalOrdinal, Node>::remote_pids_type newRemotePIDs;
+  if (cnt == 0) {  // done modifying remoteLIDs_
+    // this->TransferData_->remoteLIDs_.sync_device();
+    return std::make_tuple(tRemoteGIDs, tRemoteLIDs, tRemotePIDs);
+
+  } else {
+    if (indexIntoRemotePIDs - cnt > 0) {
+      newRemoteGIDs = decltype(newRemoteGIDs)("newRemoteGIDs", indexIntoRemotePIDs - cnt);
+      newRemoteLIDs = decltype(newRemoteLIDs)("newRemoteLIDs", indexIntoRemotePIDs - cnt);
+      newRemotePIDs = decltype(newRemotePIDs)("newRemotePIDs", indexIntoRemotePIDs - cnt);
+      cnt           = 0;
+
+      auto lclTarget = target->getLocalMap();
+
+      Kokkos::parallel_scan(
+          Kokkos::RangePolicy<typename Import<LocalOrdinal, GlobalOrdinal, Node>::execution_space>(0, indexIntoRemotePIDs), KOKKOS_LAMBDA(const size_t j, size_t& my_cnt, const bool is_final) {
+            if (tRemotePIDs(j) != -1) {
+              if (is_final) {
+                newRemotePIDs(my_cnt) = tRemotePIDs(j);
+                newRemoteGIDs(my_cnt) = tRemoteGIDs(j);
+                newRemoteLIDs(my_cnt) = lclTarget.getLocalElement(tRemoteGIDs(j));
+              }
+              ++my_cnt;
+            }
+          },
+          cnt);
+    } else {  // valid RemoteIDs empty
+      indexIntoRemotePIDs = 0;
+      newRemoteGIDs       = decltype(newRemoteGIDs)();
+      newRemotePIDs       = decltype(newRemotePIDs)();
+      newRemoteLIDs       = decltype(newRemoteLIDs)();
+    }
+  }
+  return std::make_tuple(newRemoteGIDs, newRemoteLIDs, newRemotePIDs);
+}
+
 // cblcbl
 // This is the "createExpert" version of the constructor to be used with pid/gid pairs obtained from
 // reverse communication
@@ -205,16 +351,12 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
            const Teuchos::RCP<Teuchos::FancyOStream>& out)
   : base_type(source, target, out, plist, "Import") {
   using std::endl;
-  using Teuchos::arcp;
   using Teuchos::Array;
-  using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::as;
   using Teuchos::null;
   using Teuchos::rcp;
   using ::Tpetra::Details::makeDualViewFromArrayView;
-  using LO        = LocalOrdinal;
-  using GO        = GlobalOrdinal;
   using size_type = Teuchos::Array<int>::size_type;
 
   std::unique_ptr<std::string> prefix;
@@ -228,16 +370,12 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
     this->verboseOutputStream() << os.str();
   }
 
-  ArrayView<const GO> sourceGIDs = source->getLocalElementList();
-  ArrayView<const GO> targetGIDs = target->getLocalElementList();
-
-  Array<GO> tRemoteGIDs;
   if (this->verbose()) {
     std::ostringstream os;
     os << *prefix << "Call setupSamePermuteRemote" << endl;
     this->verboseOutputStream() << os.str();
   }
-  setupSamePermuteRemote(tRemoteGIDs);
+  auto tRemoteGIDs = setupSamePermuteRemote();
 
   if (this->verbose()) {
     std::ostringstream os;
@@ -245,9 +383,13 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
     this->verboseOutputStream() << os.str();
   }
 
-  auto tRemoteLIDs = this->TransferData_->remoteLIDs_.view_host();
-  this->TransferData_->remoteLIDs_.modify_host();
-  Teuchos::Array<int> tRemotePIDs(userRemotePIDs);
+  auto tRemoteLIDs = this->TransferData_->remoteLIDs_.view_device();
+  remote_pids_type tRemotePIDs;
+  {
+    auto tRemotePIDs_h = Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(userRemotePIDs.data(), userRemotePIDs.size());
+    tRemotePIDs        = Kokkos::create_mirror_view(execution_space(), tRemotePIDs_h);
+    Kokkos::deep_copy(tRemotePIDs, tRemotePIDs_h);
+  }
 
   if (this->verbose() && this->getNumRemoteIDs() > 0 && !source->isDistributed()) {
     std::ostringstream os;
@@ -262,56 +404,28 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
                        std::runtime_error,
                        "::constructExpert: Target Map has remote LIDs but source Map "
                        "is not distributed.  Importing to a submap of the target Map.");
-  TEUCHOS_TEST_FOR_EXCEPTION(tRemotePIDs.size() != tRemoteGIDs.size() ||
-                                 size_t(tRemoteGIDs.size()) != size_t(tRemoteLIDs.extent(0)),
+  TEUCHOS_TEST_FOR_EXCEPTION(tRemotePIDs.size() != tRemoteGIDs.extent(0) ||
+                                 tRemoteGIDs.extent(0) != tRemoteLIDs.extent(0),
                              std::runtime_error,
                              "Import::Import createExpert version: "
                              "Size mismatch on userRemotePIDs, remoteGIDs, and remoteLIDs "
                              "Array's to sort3.");
 
-  sort3(tRemotePIDs.begin(),
-        tRemotePIDs.end(),
-        tRemoteGIDs.begin(),
-        tRemoteLIDs.data());
+  this->TransferData_->remoteLIDs_.modify_device();
+  sort3<execution_space>(tRemotePIDs,
+                         tRemoteGIDs,
+                         tRemoteLIDs);
+  this->TransferData_->remoteLIDs_.sync_host();
 
   // Get rid of IDs that don't exist in SourceMap
-  size_type cnt                 = 0;
-  size_type indexIntoRemotePIDs = tRemotePIDs.size();
-  for (size_type i = 0; i < indexIntoRemotePIDs; ++i) {
-    if (tRemotePIDs[i] == -1) {
-      ++cnt;
-    }
-  }
+  auto [newRemoteGIDs, newRemoteLIDs, newRemotePIDs] = filterRemote<LocalOrdinal, GlobalOrdinal, Node>(tRemoteGIDs,
+                                                                                                       tRemoteLIDs,
+                                                                                                       tRemotePIDs,
+                                                                                                       target);
 
-  if (cnt == 0) {  // done modifying remoteLIDs_
-    this->TransferData_->remoteLIDs_.sync_device();
-  } else {
-    if (indexIntoRemotePIDs - cnt > 0) {
-      Array<GO> newRemoteGIDs(indexIntoRemotePIDs - cnt);
-      Array<LO> newRemoteLIDs(indexIntoRemotePIDs - cnt);
-      Array<int> newRemotePIDs(indexIntoRemotePIDs - cnt);
-      cnt = 0;
-
-      for (size_type j = 0; j < indexIntoRemotePIDs; ++j)
-        if (tRemotePIDs[j] != -1) {
-          newRemoteGIDs[cnt] = tRemoteGIDs[j];
-          newRemotePIDs[cnt] = tRemotePIDs[j];
-          newRemoteLIDs[cnt] = target->getLocalElement(tRemoteGIDs[j]);
-          ++cnt;
-        }
-      indexIntoRemotePIDs = cnt;
-      tRemoteGIDs         = newRemoteGIDs;
-      tRemotePIDs         = newRemotePIDs;
-      makeDualViewFromArrayView(this->TransferData_->remoteLIDs_,
-                                newRemoteLIDs().getConst(),
-                                "remoteLIDs");
-    } else {  // valid RemoteIDs empty
-      indexIntoRemotePIDs = 0;
-      tRemoteGIDs.clear();
-      tRemotePIDs.clear();
-      this->TransferData_->remoteLIDs_ = decltype(this->TransferData_->remoteLIDs_)();
-    }
-  }
+  tRemoteGIDs = newRemoteGIDs;
+  tRemotePIDs = newRemotePIDs;
+  Details::makeDualViewFromOwningDeviceView(this->TransferData_->remoteLIDs_, newRemoteLIDs);
 
   this->TransferData_->exportPIDs_ = Teuchos::Array<int>(userExportPIDs);
   makeDualViewFromArrayView(this->TransferData_->exportLIDs_,
@@ -335,7 +449,10 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
   {
     Tpetra::Details::ProfilingRegion MM3("Tpetra:iport_ctor:cFSAR ");
     Distributor& distributor = this->TransferData_->distributor_;
-    distributor.createFromSendsAndRecvs(this->TransferData_->exportPIDs_, tRemotePIDs);
+    auto tRemotePIDs_h       = Kokkos::create_mirror_view(tRemotePIDs);
+    Kokkos::deep_copy(tRemotePIDs_h, tRemotePIDs);
+    auto tRemotePIDs_a = Kokkos::Compat::getArrayView(tRemotePIDs_h);
+    distributor.createFromSendsAndRecvs(this->TransferData_->exportPIDs_, tRemotePIDs_a);
   }
 
   this->detectRemoteExportLIDsContiguous();
@@ -414,6 +531,82 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
                             "exportLIDs");
   TEUCHOS_ASSERT(size_t(this->TransferData_->exportLIDs_.extent(0)) ==
                  size_t(exportLIDs.size()));
+  this->TransferData_->exportPIDs_.swap(exportPIDs);
+  this->TransferData_->distributor_.swap(distributor);
+
+  this->detectRemoteExportLIDsContiguous();
+
+  TEUCHOS_ASSERT(!this->TransferData_->permuteFromLIDs_.need_sync_device());
+  TEUCHOS_ASSERT(!this->TransferData_->permuteFromLIDs_.need_sync_host());
+  TEUCHOS_ASSERT(!this->TransferData_->permuteToLIDs_.need_sync_device());
+  TEUCHOS_ASSERT(!this->TransferData_->permuteToLIDs_.need_sync_host());
+  TEUCHOS_ASSERT(!this->TransferData_->remoteLIDs_.need_sync_device());
+  TEUCHOS_ASSERT(!this->TransferData_->remoteLIDs_.need_sync_host());
+  TEUCHOS_ASSERT(!this->TransferData_->exportLIDs_.need_sync_device());
+  TEUCHOS_ASSERT(!this->TransferData_->exportLIDs_.need_sync_host());
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Import<LocalOrdinal, GlobalOrdinal, Node>::
+    Import(const Teuchos::RCP<const map_type>& source,
+           const Teuchos::RCP<const map_type>& target,
+           const size_t numSameIDs,
+           remote_lids_type permuteToLIDs,
+           remote_lids_type permuteFromLIDs,
+           remote_lids_type remoteLIDs,
+           remote_lids_type exportLIDs,
+           Teuchos::Array<int>& exportPIDs,
+           Distributor& distributor,
+           const Teuchos::RCP<Teuchos::FancyOStream>& out,
+           const Teuchos::RCP<Teuchos::ParameterList>& plist)
+  : base_type(source, target, out, plist, "Import") {
+  using std::endl;
+  using ::Tpetra::Details::makeDualViewFromArrayView;
+  using ::Tpetra::Details::makeDualViewFromOwningDeviceView;
+
+  std::unique_ptr<std::string> prefix;
+  if (this->verbose()) {
+    auto comm        = source.is_null() ? Teuchos::null : source->getComm();
+    const int myRank = comm.is_null() ? -1 : comm->getRank();
+    std::ostringstream os;
+    os << "Proc " << myRank << ": Tpetra::Import export ctor: ";
+    prefix = std::unique_ptr<std::string>(new std::string(os.str()));
+    os << "Start" << endl;
+    this->verboseOutputStream() << os.str();
+  }
+
+  bool locallyComplete = true;
+  for (Teuchos::Array<int>::size_type i = 0; i < exportPIDs.size(); ++i) {
+    if (exportPIDs[i] == -1) {
+      locallyComplete = false;
+    }
+  }
+  if (this->verbose()) {
+    std::ostringstream os;
+    os << *prefix << "numSameIDs: " << numSameIDs << ", locallyComplete: "
+       << (locallyComplete ? "true" : "false") << endl;
+    this->verboseOutputStream() << os.str();
+  }
+
+  this->TransferData_->isLocallyComplete_ = locallyComplete;
+  this->TransferData_->numSameIDs_        = numSameIDs;
+
+  makeDualViewFromOwningDeviceView(this->TransferData_->permuteToLIDs_,
+                                   permuteToLIDs);
+  TEUCHOS_ASSERT(size_t(this->TransferData_->permuteToLIDs_.extent(0)) ==
+                 size_t(permuteToLIDs.extent(0)));
+  makeDualViewFromOwningDeviceView(this->TransferData_->permuteFromLIDs_,
+                                   permuteFromLIDs);
+  TEUCHOS_ASSERT(size_t(this->TransferData_->permuteFromLIDs_.extent(0)) ==
+                 size_t(permuteFromLIDs.extent(0)));
+  makeDualViewFromOwningDeviceView(this->TransferData_->remoteLIDs_,
+                                   remoteLIDs);
+  TEUCHOS_ASSERT(size_t(this->TransferData_->remoteLIDs_.extent(0)) ==
+                 size_t(remoteLIDs.extent(0)));
+  makeDualViewFromOwningDeviceView(this->TransferData_->exportLIDs_,
+                                   exportLIDs);
+  TEUCHOS_ASSERT(size_t(this->TransferData_->exportLIDs_.extent(0)) ==
+                 size_t(exportLIDs.extent(0)));
   this->TransferData_->exportPIDs_.swap(exportPIDs);
   this->TransferData_->distributor_.swap(distributor);
 
@@ -867,36 +1060,24 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-void Import<LocalOrdinal, GlobalOrdinal, Node>::
-    setupSamePermuteRemote(Teuchos::Array<GlobalOrdinal>& remoteGIDs) {
-  using Teuchos::arcp;
-  using Teuchos::Array;
-  using Teuchos::ArrayRCP;
+Import<LocalOrdinal, GlobalOrdinal, Node>::remote_gids_type Import<LocalOrdinal, GlobalOrdinal, Node>::
+    setupSamePermuteRemote() {
   using Teuchos::ArrayView;
-  using Teuchos::as;
   using Teuchos::null;
-  using ::Tpetra::Details::makeDualViewFromOwningHostView;
   using ::Tpetra::Details::ProfilingRegion;
   using ::Tpetra::Details::view_alloc_no_init;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef typename ArrayView<const GO>::size_type size_type;
+  using LO        = LocalOrdinal;
+  using GO        = GlobalOrdinal;
+  using size_type = typename ArrayView<const GO>::size_type;
   ProfilingRegion regionExport("Tpetra::Import::setupSamePermuteRemote");
 
-  const map_type& source         = *(this->getSourceMap());
-  const map_type& target         = *(this->getTargetMap());
-  ArrayView<const GO> sourceGIDs = source.getLocalElementList();
-  ArrayView<const GO> targetGIDs = target.getLocalElementList();
+  const map_type& source = *(this->getSourceMap());
+  const map_type& target = *(this->getTargetMap());
 
-#ifdef HAVE_TPETRA_DEBUG
-  ArrayView<const GO> rawSrcGids = sourceGIDs;
-  ArrayView<const GO> rawTgtGids = targetGIDs;
-#else
-  const GO* const rawSrcGids = sourceGIDs.getRawPtr();
-  const GO* const rawTgtGids = targetGIDs.getRawPtr();
-#endif  // HAVE_TPETRA_DEBUG
-  const size_type numSrcGids = sourceGIDs.size();
-  const size_type numTgtGids = targetGIDs.size();
+  auto sourceGIDs            = source.getMyGlobalIndicesDevice();
+  auto targetGIDs            = target.getMyGlobalIndicesDevice();
+  const size_type numSrcGids = sourceGIDs.extent(0);
+  const size_type numTgtGids = targetGIDs.extent(0);
   const size_type numGids    = std::min(numSrcGids, numTgtGids);
 
   // Compute numSameIDs_: the number of initial GIDs that are the
@@ -906,8 +1087,16 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
   // otherwise the source and target Maps are the same.  This allows
   // a fast contiguous copy for the initial "same IDs."
   size_type numSameGids = 0;
-  for (; numSameGids < numGids && rawSrcGids[numSameGids] == rawTgtGids[numSameGids]; ++numSameGids) {
-  }  // third clause of 'for' does everything
+
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<execution_space>(0, numGids), KOKKOS_LAMBDA(const size_type lid, size_type& mySameGids) {
+        if (sourceGIDs(lid) != targetGIDs(lid))
+          mySameGids = Kokkos::min(lid, mySameGids);
+      },
+      Kokkos::Min<size_type>(numSameGids));
+  if (numSameGids == Kokkos::Experimental::finite_max_v<size_type>)
+    numSameGids = numGids;
+
   this->TransferData_->numSameIDs_ = numSameGids;
 
   // Compute permuteToLIDs_, permuteFromLIDs_, remoteGIDs, and
@@ -923,51 +1112,67 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
   // Iterate over the target Map's LIDs, since we only need to do
   // GID -> LID lookups for the source Map.
   const LO LINVALID   = Teuchos::OrdinalTraits<LO>::invalid();
-  const LO numTgtLids = as<LO>(numTgtGids);
+  const LO numTgtLids = Teuchos::as<LO>(numTgtGids);
   LO numPermutes      = 0;
 
-  for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
-    const GO curTargetGid = rawTgtGids[tgtLid];
+  auto lclSource = source.getLocalMap();
+
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<execution_space>(numSameGids, numTgtLids), KOKKOS_LAMBDA(const LO tgtLid, LO& myNumPermutes) {
+    const GO curTargetGid = targetGIDs(tgtLid);
     // getLocalElement() returns LINVALID if the GID isn't in the
     // source Map.  This saves us a lookup (which
     // isNodeGlobalElement() would do).
-    const LO srcLid = source.getLocalElement(curTargetGid);
+    const LO srcLid = lclSource.getLocalElement(curTargetGid);
     if (srcLid != LINVALID) {  // if source.isNodeGlobalElement (curTargetGid)
-      ++numPermutes;
-    }
-  }
+      ++myNumPermutes;
+    } }, numPermutes);
+
   const LO numRemotes = (numTgtLids - numSameGids) - numPermutes;
 
-  using host_perm_type =
-      typename decltype(this->TransferData_->permuteToLIDs_)::t_host;
-  host_perm_type permuteToLIDs(view_alloc_no_init("permuteToLIDs"), numPermutes);
-  host_perm_type permuteFromLIDs(view_alloc_no_init("permuteFromLIDs"), numPermutes);
-  typename decltype(this->TransferData_->remoteLIDs_)::t_host remoteLIDs(view_alloc_no_init("permuteFromLIDs"), numRemotes);
+  using dev_perm_type =
+      typename decltype(this->TransferData_->permuteToLIDs_)::t_dev;
+  dev_perm_type permuteToLIDs(view_alloc_no_init("permuteToLIDs"), numPermutes);
+  dev_perm_type permuteFromLIDs(view_alloc_no_init("permuteFromLIDs"), numPermutes);
+  typename decltype(this->TransferData_->remoteLIDs_)::t_dev remoteLIDs(view_alloc_no_init("permuteFromLIDs"), numRemotes);
 
+  remote_gids_type remoteGIDs(view_alloc_no_init("remoteGIDs"), numRemotes);
   {
-    LO numPermutes2 = 0;
-    LO numRemotes2  = 0;
-    for (LO tgtLid = numSameGids; tgtLid < numTgtLids; ++tgtLid) {
-      const GO curTargetGid = rawTgtGids[tgtLid];
-      const LO srcLid       = source.getLocalElement(curTargetGid);
-      if (srcLid != LINVALID) {
-        permuteToLIDs[numPermutes2]   = tgtLid;
-        permuteFromLIDs[numPermutes2] = srcLid;
-        ++numPermutes2;
-      } else {
-        remoteGIDs.push_back(curTargetGid);
-        remoteLIDs[numRemotes2] = tgtLid;
-        ++numRemotes2;
-      }
-    }
+    using my_pair = pair_lo<LO>;
+    my_pair counts;
+    Kokkos::parallel_scan(
+        Kokkos::RangePolicy<LO, execution_space>(numSameGids, numTgtLids),
+        KOKKOS_LAMBDA(const LO tgtLid, my_pair& offsets, const bool is_final) {
+          auto& myNumPermutes   = offsets.numPermutes;
+          auto& myNumRemotes    = offsets.numRemotes;
+          const GO curTargetGid = targetGIDs(tgtLid);
+          const LO srcLid       = lclSource.getLocalElement(curTargetGid);
+          if (srcLid != LINVALID) {
+            if (is_final) {
+              permuteToLIDs(myNumPermutes)   = tgtLid;
+              permuteFromLIDs(myNumPermutes) = srcLid;
+            }
+            ++myNumPermutes;
+          } else {
+            if (is_final) {
+              remoteGIDs(myNumRemotes) = curTargetGid;
+              remoteLIDs(myNumRemotes) = tgtLid;
+            }
+            ++myNumRemotes;
+          }
+        },
+        counts);
+    LO numPermutes2 = counts.numPermutes;
+    LO numRemotes2  = counts.numRemotes;
+
     TEUCHOS_ASSERT(numPermutes == numPermutes2);
     TEUCHOS_ASSERT(numRemotes == numRemotes2);
-    TEUCHOS_ASSERT(size_t(numPermutes) + remoteGIDs.size() == size_t(numTgtLids - numSameGids));
+    TEUCHOS_ASSERT(size_t(numPermutes) + remoteGIDs.extent(0) == size_t(numTgtLids - numSameGids));
   }
 
-  makeDualViewFromOwningHostView(this->TransferData_->permuteToLIDs_, permuteToLIDs);
-  makeDualViewFromOwningHostView(this->TransferData_->permuteFromLIDs_, permuteFromLIDs);
-  makeDualViewFromOwningHostView(this->TransferData_->remoteLIDs_, remoteLIDs);
+  Details::makeDualViewFromOwningDeviceView(this->TransferData_->permuteToLIDs_, permuteToLIDs);
+  Details::makeDualViewFromOwningDeviceView(this->TransferData_->permuteFromLIDs_, permuteFromLIDs);
+  Details::makeDualViewFromOwningDeviceView(this->TransferData_->remoteLIDs_, remoteLIDs);
   if (remoteLIDs.extent(0) != 0 && !source.isDistributed()) {
     // This Import has remote LIDs, meaning that the target Map has
     // entries on this process that are not in the source Map on
@@ -982,11 +1187,12 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
                          "remote LIDs but Source is not distributed globally.  Importing to a "
                          "submap of the target map.");
   }
+  return remoteGIDs;
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 void Import<LocalOrdinal, GlobalOrdinal, Node>::
-    setupExport(Teuchos::Array<GlobalOrdinal>& remoteGIDs,
+    setupExport(Kokkos::View<GlobalOrdinal*, memory_space> remoteGIDs,
                 bool useRemotePIDs,
                 Teuchos::Array<int>& userRemotePIDs,
                 const Teuchos::RCP<Teuchos::ParameterList>& plist) {
@@ -999,6 +1205,8 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
   typedef typename Array<int>::difference_type size_type;
   const char tfecfFuncName[] = "setupExport: ";
   const char suffix[]        = "  Please report this bug to the Tpetra developers.";
+
+  Tpetra::Details::ProfilingRegion regExport("Tpetra:iport_ctor:setupExport");
 
   std::unique_ptr<std::string> prefix;
   if (this->verbose()) {
@@ -1018,15 +1226,13 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
 
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!useRemotePIDs && (userRemotePIDs.size() > 0), std::invalid_argument,
                                         "remotePIDs are non-empty but their use has not been requested.");
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(userRemotePIDs.size() > 0 && remoteGIDs.size() != userRemotePIDs.size(),
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(userRemotePIDs.size() > 0 && size_type(remoteGIDs.extent(0)) != userRemotePIDs.size(),
                                         std::invalid_argument,
                                         "remotePIDs must either be of size zero or match "
                                         "the size of remoteGIDs.");
 
   // For each entry remoteGIDs[i], remoteProcIDs[i] will contain
   // the process ID of the process that owns that GID.
-  ArrayView<GO> remoteGIDsView = remoteGIDs();
-  ArrayView<int> remoteProcIDsView;
 
   // lookup == IDNotPresent means that the source Map wasn't able to
   // figure out to which processes one or more of the GIDs in the
@@ -1046,19 +1252,28 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
   // processes).  That is, there is at least one GID owned by some
   // process in the target Map, which is not owned by _any_ process
   // in the source Map.
-  Array<int> newRemotePIDs;
+  Array<int> newRemotePIDs_a;
   LookupStatus lookup = AllIDsPresent;
 
   if (!useRemotePIDs) {
-    newRemotePIDs.resize(remoteGIDsView.size());
+    auto remoteGIDs_h = Kokkos::create_mirror_view(remoteGIDs);
+    Kokkos::deep_copy(remoteGIDs_h, remoteGIDs);
+    ArrayView<GO> remoteGIDsView = Kokkos::Compat::getArrayView(remoteGIDs_h);
+    ArrayView<int> remoteProcIDsView;
+    newRemotePIDs_a.resize(remoteGIDsView.size());
     if (this->verbose()) {
       std::ostringstream os;
       os << *prefix << "Call sourceMap.getRemoteIndexList" << endl;
       this->verboseOutputStream() << os.str();
     }
-    lookup = source.getRemoteIndexList(remoteGIDsView, newRemotePIDs());
+    lookup = source.getRemoteIndexList(remoteGIDsView, newRemotePIDs_a());
   }
-  Array<int>& remoteProcIDs = useRemotePIDs ? userRemotePIDs : newRemotePIDs;
+  Array<int>& remoteProcIDs_a = useRemotePIDs ? userRemotePIDs : newRemotePIDs_a;
+  remote_pids_type remoteProcIDs;
+  {
+    auto remoteProcIDs_h = Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(remoteProcIDs_a.data(), remoteProcIDs_a.size());
+    remoteProcIDs        = Kokkos::create_mirror_view_and_copy(execution_space(), remoteProcIDs_h);
+  }
 
   if (lookup == IDNotPresent) {
     // There is at least one GID owned by the calling process in the
@@ -1081,7 +1296,7 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
     // process ID of -1.
 
     const size_type numInvalidRemote =
-        std::count_if(remoteProcIDs.begin(), remoteProcIDs.end(),
+        std::count_if(remoteProcIDs_a.begin(), remoteProcIDs_a.end(),
                       std::bind(std::equal_to<int>(), -1, std::placeholders::_1));
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numInvalidRemote == 0, std::logic_error,
                                           "Calling getRemoteIndexList "
@@ -1089,38 +1304,29 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
                                           "\"remote\" process ranks are -1.  Please report this bug to the "
                                           "Tpetra developers.");
 
-    auto MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra:iport_ctor:setupExport:1"));
+    Tpetra::Details::ProfilingRegion reg1("Tpetra:iport_ctor:setupExport:1");
 
     // If all of them are invalid, we can delete the whole array.
     const size_type totalNumRemote = this->getNumRemoteIDs();
     if (numInvalidRemote == totalNumRemote) {
       // all remotes are invalid; we have no remotes; we can delete the remotes
-      remoteProcIDs.clear();
-      remoteGIDs.clear();  // invalidates remoteGIDsView
+      remoteProcIDs = remote_pids_type();
+      remoteGIDs    = Kokkos::View<GlobalOrdinal*, memory_space>();
       this->TransferData_->remoteLIDs_ =
           decltype(this->TransferData_->remoteLIDs_)();
     } else {
       // Some remotes are valid; we need to keep the valid ones.
       // Pack and resize remoteProcIDs, remoteGIDs, and remoteLIDs_.
       size_type numValidRemote = 0;
-#ifdef HAVE_TPETRA_DEBUG
-      ArrayView<GO> remoteGIDsPtr = remoteGIDsView;
-#else
-      GO* const remoteGIDsPtr = remoteGIDsView.getRawPtr();
-#endif  // HAVE_TPETRA_DEBUG
 
-      // Don't mark the DualView modified, since we'll reallocate it.
-      auto remoteLIDs = this->TransferData_->remoteLIDs_.view_host();
+      // count valid remotes
+      Kokkos::parallel_reduce(
+          Kokkos::RangePolicy<execution_space>(0, totalNumRemote), KOKKOS_LAMBDA(const size_type r, size_type& myNumValidRemote) {
+            if (remoteProcIDs[r] != -1)
+              ++myNumValidRemote;
+          },
+          numValidRemote);
 
-      for (size_type r = 0; r < totalNumRemote; ++r) {
-        // Pack in all the valid remote PIDs and GIDs.
-        if (remoteProcIDs[r] != -1) {
-          remoteProcIDs[numValidRemote] = remoteProcIDs[r];
-          remoteGIDsPtr[numValidRemote] = remoteGIDsPtr[r];
-          remoteLIDs[numValidRemote]    = remoteLIDs[r];
-          ++numValidRemote;
-        }
-      }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(numValidRemote != totalNumRemote - numInvalidRemote,
                                             std::logic_error,
                                             "After removing invalid remote GIDs and packing "
@@ -1130,15 +1336,29 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
                                                 << totalNumRemote - numInvalidRemote
                                                 << ".  Please report this bug to the Tpetra developers.");
 
-      remoteProcIDs.resize(numValidRemote);
-      remoteGIDs.resize(numValidRemote);
+      this->TransferData_->remoteLIDs_.sync_device();
+      auto remoteLIDs = this->TransferData_->remoteLIDs_.view_device();
+      remote_pids_type newRemoteProcIDs("newRemoteProcIDs", numValidRemote);
+      remote_gids_type newRemoteGIDs("newRemoteGIDs", numValidRemote);
+      remote_lids_type newRemoteLIDs("newRemoteLIDs", numValidRemote);
 
-      Kokkos::resize(remoteLIDs, numValidRemote);
-      this->TransferData_->remoteLIDs_ = decltype(this->TransferData_->remoteLIDs_)();
-      makeDualViewFromOwningHostView(this->TransferData_->remoteLIDs_, remoteLIDs);
+      Kokkos::parallel_scan(
+          Kokkos::RangePolicy<execution_space>(0, totalNumRemote), KOKKOS_LAMBDA(const size_type r, size_type& myNumValidRemote, const bool is_final) {
+            if (remoteProcIDs(r) != -1) {
+              if (is_final) {
+                newRemoteProcIDs(myNumValidRemote) = remoteProcIDs(r);
+                newRemoteGIDs(myNumValidRemote)    = remoteGIDs(r);
+                newRemoteLIDs(myNumValidRemote)    = remoteLIDs(r);
+              }
+              ++myNumValidRemote;
+            }
+          });
+
+      remoteProcIDs = newRemoteProcIDs;
+      remoteGIDs    = newRemoteGIDs;
+
+      Details::makeDualViewFromOwningDeviceView(this->TransferData_->remoteLIDs_, newRemoteLIDs);
     }
-    // Revalidate the view after clear or resize.
-    remoteGIDsView = remoteGIDs();
   }
 
   // Sort remoteProcIDs in ascending order, and apply the resulting
@@ -1146,13 +1366,12 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
   // remoteProcIDs[i], remoteGIDs[i], and remoteLIDs_[i] all refer
   // to the same thing.
   {
-    this->TransferData_->remoteLIDs_.modify_host();
-    auto remoteLIDs = this->TransferData_->remoteLIDs_.view_host();
-    sort3(remoteProcIDs.begin(),
-          remoteProcIDs.end(),
-          remoteGIDsView.getRawPtr(),
-          remoteLIDs.data());
-    this->TransferData_->remoteLIDs_.sync_device();
+    this->TransferData_->remoteLIDs_.modify_device();
+    auto remoteLIDs = this->TransferData_->remoteLIDs_.view_device();
+    sort3<execution_space>(remoteProcIDs,
+                           remoteGIDs,
+                           remoteLIDs);
+    this->TransferData_->remoteLIDs_.sync_host();
   }
 
   // Call the Distributor's createFromRecvs() method to turn the
@@ -1160,39 +1379,48 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
   // communication plan.  remoteGIDs and remoteProcIDs_ are input;
   // exportGIDs and exportProcIDs_ are output arrays which are
   // allocated by createFromRecvs().
-  Array<GO> exportGIDs;
-
-  auto MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra:iport_ctor:setupExport:3"));
+  Array<GO> exportGIDs_a;
 
   if (this->verbose()) {
     std::ostringstream os;
     os << *prefix << "Call createFromRecvs" << endl;
     this->verboseOutputStream() << endl;
   }
-  this->TransferData_->distributor_.createFromRecvs(remoteGIDsView().getConst(),
-                                                    remoteProcIDs, exportGIDs,
-                                                    this->TransferData_->exportPIDs_);
+
+  {
+    Tpetra::Details::ProfilingRegion reg3("Tpetra:iport_ctor:setupExport:3");
+
+    auto remoteGIDs_h = Kokkos::create_mirror_view(remoteGIDs);
+    Kokkos::deep_copy(remoteGIDs_h, remoteGIDs);
+    auto remoteProcIDs_h = Kokkos::create_mirror_view(remoteProcIDs);
+    Kokkos::deep_copy(remoteProcIDs_h, remoteProcIDs);
+    this->TransferData_->distributor_.createFromRecvs(Kokkos::Compat::getConstArrayView(remoteGIDs_h),
+                                                      Kokkos::Compat::getConstArrayView(remoteProcIDs_h),
+                                                      exportGIDs_a,
+                                                      this->TransferData_->exportPIDs_);
+  }
 
   // Find the LIDs corresponding to the (outgoing) GIDs in
   // exportGIDs.  For sparse matrix-vector multiply, this tells the
   // calling process how to index into the source vector to get the
   // elements which it needs to send.
-  MM = Teuchos::null;
-  MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra:iport_ctor:setupExport:4"));
-
-  // NOTE (mfh 03 Mar 2014) This is now a candidate for a
-  // thread-parallel kernel, but only if using the new thread-safe
-  // Map implementation.
-  const size_type numExportIDs = exportGIDs.size();
+  const size_type numExportIDs = exportGIDs_a.size();
   if (numExportIDs > 0) {
-    typename decltype(this->TransferData_->exportLIDs_)::t_host
-        exportLIDs(view_alloc_no_init("exportLIDs"), numExportIDs);
-    ArrayView<const GO> expGIDs = exportGIDs();
+    Tpetra::Details::ProfilingRegion reg4("Tpetra:iport_ctor:setupExport:4");
 
-    for (size_type k = 0; k < numExportIDs; ++k) {
-      exportLIDs[k] = source.getLocalElement(expGIDs[k]);
-    }
-    makeDualViewFromOwningHostView(this->TransferData_->exportLIDs_, exportLIDs);
+    auto exportGIDs_h = Kokkos::View<GO*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>(exportGIDs_a.data(), exportGIDs_a.size());
+    auto exportGIDs   = Kokkos::create_mirror_view_and_copy(execution_space(), exportGIDs_h);
+
+    auto lclSource = source.getLocalMap();
+
+    typename decltype(this->TransferData_->exportLIDs_)::t_dev
+        exportLIDs(view_alloc_no_init("exportLIDs"), numExportIDs);
+
+    Kokkos::parallel_for(
+        Kokkos::RangePolicy<execution_space>(0, numExportIDs), KOKKOS_LAMBDA(const size_t k) {
+          exportLIDs(k) = lclSource.getLocalElement(exportGIDs(k));
+        });
+    Details::makeDualViewFromOwningDeviceView(this->TransferData_->exportLIDs_, exportLIDs);
   }
 
   if (this->verbose()) {
@@ -1548,44 +1776,38 @@ Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>
 Import<LocalOrdinal, GlobalOrdinal, Node>::
     setUnion() const {
   using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::as;
-  using Teuchos::Comm;
-  using Teuchos::outArg;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::REDUCE_MIN;
-  using Teuchos::reduceAll;
-  typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> unionImport;
-  RCP<const map_type> srcMap = this->getSourceMap();
-  RCP<const map_type> tgtMap = this->getTargetMap();
-  RCP<const Comm<int>> comm  = srcMap->getComm();
 
-  ArrayView<const GO> srcGIDs = srcMap->getLocalElementList();
-  ArrayView<const GO> tgtGIDs = tgtMap->getLocalElementList();
+  auto srcMap = this->getSourceMap();
+  auto tgtMap = this->getTargetMap();
+  auto comm   = srcMap->getComm();
+
+  auto srcGIDs = srcMap->getMyGlobalIndicesDevice();
+  auto tgtGIDs = tgtMap->getMyGlobalIndicesDevice();
 
   // All elements in srcMap will be in the "new" target map, so...
   size_t numSameIDsNew   = srcMap->getLocalNumElements();
   size_t numRemoteIDsNew = this->getNumRemoteIDs();
-  Array<LO> permuteToLIDsNew, permuteFromLIDsNew;  // empty on purpose
+  remote_lids_type permuteToLIDsNew, permuteFromLIDsNew;  // empty on purpose
 
   // Grab some old data
-  ArrayView<const LO> remoteLIDsOld = this->getRemoteLIDs();
-  ArrayView<const LO> exportLIDsOld = this->getExportLIDs();
+  auto remoteLIDsOld = this->getRemoteLIDs_dv().view_device();
+  auto exportLIDsOld = this->getExportLIDs_dv().view_device();
 
   // Build up the new map (same part)
-  Array<GO> GIDs(numSameIDsNew + numRemoteIDsNew);
-  for (size_t i = 0; i < numSameIDsNew; i++)
-    GIDs[i] = srcGIDs[i];
+  remote_gids_type GIDs(Kokkos::ViewAllocateWithoutInitializing("GIDs"), numSameIDsNew + numRemoteIDsNew);
+  Kokkos::deep_copy(Kokkos::subview(GIDs, Kokkos::make_pair((decltype(numSameIDsNew))0, numSameIDsNew)),
+                    Kokkos::subview(srcGIDs, Kokkos::make_pair((decltype(numSameIDsNew))0, numSameIDsNew)));
 
   // Build up the new map (remote part) and remotes list
-  Array<LO> remoteLIDsNew(numRemoteIDsNew);
-  for (size_t i = 0; i < numRemoteIDsNew; i++) {
-    GIDs[numSameIDsNew + i] = tgtGIDs[remoteLIDsOld[i]];
-    remoteLIDsNew[i]        = numSameIDsNew + i;
-  }
+  remote_lids_type remoteLIDsNew(Kokkos::ViewAllocateWithoutInitializing("remoteLIDsNew"), numRemoteIDsNew);
+  Kokkos::parallel_for(
+      "", Kokkos::RangePolicy<execution_space, size_t>(0, numRemoteIDsNew), KOKKOS_LAMBDA(const size_t i) {
+        GIDs(numSameIDsNew + i) = tgtGIDs(remoteLIDsOld(i));
+        remoteLIDsNew(i)        = numSameIDsNew + i;
+      });
 
   // Build the new target map
   GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
@@ -1595,20 +1817,22 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
 
   // Exports are trivial (since the sourcemap doesn't change)
   Array<int> exportPIDsnew(this->getExportPIDs());
-  Array<LO> exportLIDsnew(this->getExportLIDs());
+  auto exportLIDs = this->getExportLIDs_dv().view_device();
+  remote_lids_type exportLIDsnew(Kokkos::ViewAllocateWithoutInitializing("exportLIDsnew"), exportLIDs.extent(0));
+  Kokkos::deep_copy(exportLIDsnew, exportLIDs);
 
   // Copy the Distributor (due to how the Import constructor works)
   Distributor D(this->getDistributor());
 
   // Build the importer using the "expert" constructor
-  unionImport = rcp(new Import<LocalOrdinal, GlobalOrdinal, Node>(srcMap,
-                                                                  targetMapNew,
-                                                                  numSameIDsNew,
-                                                                  permuteToLIDsNew,
-                                                                  permuteFromLIDsNew,
-                                                                  remoteLIDsNew,
-                                                                  exportLIDsnew,
-                                                                  exportPIDsnew, D));
+  auto unionImport = rcp(new Import<LocalOrdinal, GlobalOrdinal, Node>(srcMap,
+                                                                       targetMapNew,
+                                                                       numSameIDsNew,
+                                                                       permuteToLIDsNew,
+                                                                       permuteFromLIDsNew,
+                                                                       remoteLIDsNew,
+                                                                       exportLIDsnew,
+                                                                       exportPIDsnew, D));
 
   return unionImport;
 }
@@ -1680,49 +1904,42 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   // Compute the new Remote LIDs
-  Teuchos::ArrayView<const LO> oldRemoteLIDs = this->getRemoteLIDs();
-  Teuchos::Array<LO> newRemoteLIDs(NumRemotes);
+  auto oldRemoteLIDs = this->getRemoteLIDs_dv().view_device();
+  remote_lids_type newRemoteLIDs("newRemoteLIDs", NumRemotes);
   const map_type& tgtMap = *(this->getTargetMap());
+  auto lclTargetMap      = tgtMap.getLocalMap();
+  auto lclRemoteTarget   = remoteTarget->getLocalMap();
   size_t badCount        = 0;
 
-  std::unique_ptr<std::vector<size_t>> badIndices;
-  if (debug) {
-    badIndices = std::unique_ptr<std::vector<size_t>>(new std::vector<size_t>);
-  }
+  const auto LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  const auto GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
 
-  for (size_t i = 0; i < NumRemotes; ++i) {
-    const LO oldLclInd = oldRemoteLIDs[i];
-    if (oldLclInd == Teuchos::OrdinalTraits<LO>::invalid()) {
-      ++badCount;
-      if (debug) {
-        badIndices->push_back(i);
-      }
-      continue;
+  Kokkos::parallel_reduce(
+      "", Kokkos::RangePolicy<typename Node::execution_space, size_t>(0, NumRemotes), KOKKOS_LAMBDA(const size_t i, size_t& myBadCount) {
+    const auto oldLclInd = oldRemoteLIDs(i);
+    if (oldLclInd == LO_INVALID) {
+      ++myBadCount;
+      return;
     }
-    const GO gblInd = tgtMap.getGlobalElement(oldLclInd);
-    if (gblInd == Teuchos::OrdinalTraits<GO>::invalid()) {
-      ++badCount;
-      if (debug) {
-        badIndices->push_back(i);
-      }
-      continue;
+    const auto gblInd = lclTargetMap.getGlobalElement(oldLclInd);
+    if (gblInd == GO_INVALID) {
+      ++myBadCount;
+      return;
     }
-    const LO newLclInd = remoteTarget->getLocalElement(gblInd);
-    if (newLclInd == Teuchos::OrdinalTraits<LO>::invalid()) {
-      ++badCount;
-      if (debug) {
-        badIndices->push_back(i);
-      }
-      continue;
+    const auto newLclInd = lclRemoteTarget.getLocalElement(gblInd);
+    if (newLclInd == LO_INVALID) {
+      ++myBadCount;
+      return;
     }
-    newRemoteLIDs[i] = newLclInd;
+    newRemoteLIDs(i) = newLclInd; }, badCount);
+
+  if ((badCount == 0) && (NumRemotes > 1)) {
+    Kokkos::parallel_reduce(
+        "", Kokkos::RangePolicy<typename Node::execution_space, size_t>(1, NumRemotes), KOKKOS_LAMBDA(const size_t i, size_t& myBadCount) {
     // Now we make sure these guys are in sorted order (AztecOO-ML ordering)
-    if (i > 0 && newRemoteLIDs[i] < newRemoteLIDs[i - 1]) {
-      ++badCount;
-      if (debug) {
-        badIndices->push_back(i);
-      }
-    }
+    if (newRemoteLIDs(i) < newRemoteLIDs(i-1)) {
+      ++myBadCount;
+    } }, badCount);
   }
 
   if (badCount != 0) {
@@ -1737,19 +1954,19 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
     }
     std::ostringstream lclErr;
     if (lclSuccess != 1) {
-      lclErr << *procPrefix << "Count of bad indices: " << badCount
-             << ", bad indices: [";
-      // TODO (mfh 04 Sep 2019) Limit the maximum number of bad
-      // indices to print.
-      for (size_t k = 0; k < badCount; ++k) {
-        const size_t badIndex = (*badIndices)[k];
-        lclErr << "(" << badIndex << ","
-               << oldRemoteLIDs[badIndex] << ")";
-        if (k + size_t(1) < badCount) {
-          lclErr << ", ";
-        }
-      }
-      lclErr << "]" << endl;
+      lclErr << *procPrefix << "Count of bad indices: " << badCount << std::endl;
+      //            << ", bad indices: [";
+      //     // TODO (mfh 04 Sep 2019) Limit the maximum number of bad
+      //     // indices to print.
+      //     for (size_t k = 0; k < badCount; ++k) {
+      //       const size_t badIndex = (*badIndices)[k];
+      //       lclErr << "(" << badIndex << ","
+      //              << oldRemoteLIDs[badIndex] << ")";
+      //       if (k + size_t(1) < badCount) {
+      //         lclErr << ", ";
+      //       }
+      //     }
+      //     lclErr << "]" << endl;
     }
 
     if (gblSuccess != 1) {
@@ -1779,8 +1996,10 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
   // ruins the existing object if we pass things in directly.  Hence
   // we copy them first.
   Teuchos::Array<int> newExportPIDs(this->getExportPIDs());
-  Teuchos::Array<LO> newExportLIDs(this->getExportLIDs());
-  Teuchos::Array<LO> dummy;
+  auto exportLIDs = this->getExportLIDs_dv().view_device();
+  remote_lids_type newExportLIDs(Kokkos::ViewAllocateWithoutInitializing("newExportLIDs"), exportLIDs.extent(0));
+  Kokkos::deep_copy(newExportLIDs, exportLIDs);
+  remote_lids_type dummy;
   Distributor newDistor(this->getDistributor());
 
   return rcp(new import_type(this->getSourceMap(), remoteTarget,

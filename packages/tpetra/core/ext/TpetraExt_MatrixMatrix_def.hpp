@@ -3010,14 +3010,14 @@ void import_and_extract_views(
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef Scalar SC;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Node NO;
+  using SC = Scalar;
+  using LO = LocalOrdinal;
+  using GO = GlobalOrdinal;
+  using NO = Node;
 
-  typedef Map<LO, GO, NO> map_type;
-  typedef Import<LO, GO, NO> import_type;
-  typedef CrsMatrix<SC, LO, GO, NO> crs_matrix_type;
+  using map_type        = Map<LO, GO, NO>;
+  using import_type     = Import<LO, GO, NO>;
+  using crs_matrix_type = CrsMatrix<SC, LO, GO, NO>;
 
   RCP<Tpetra::Details::ProfilingRegion> MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: I&X Alloc"));
 
@@ -3063,14 +3063,21 @@ void import_and_extract_views(
       // We have a valid prototype importer --- ask it for the remotes
       Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: I&X RemoteMap: Mode1");
 
-      ArrayView<const LO> remoteLIDs = prototypeImporter->getRemoteLIDs();
-      numRemote                      = prototypeImporter->getNumRemoteIDs();
+      auto remoteLIDs_dv = prototypeImporter->getRemoteLIDs_dv();
+      auto remoteLIDs    = remoteLIDs_dv.view_device();
+      numRemote          = prototypeImporter->getNumRemoteIDs();
 
-      Array<GO> remoteRows(numRemote);
-      for (size_t i = 0; i < numRemote; i++)
-        remoteRows[i] = targetMap->getGlobalElement(remoteLIDs[i]);
+      auto lclTargetMap = targetMap->getLocalMap();
 
-      remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
+      Kokkos::View<GlobalOrdinal*, typename Node::device_type> remoteRows(Kokkos::ViewAllocateWithoutInitializing("remoteRows"), numRemote);
+      using execution_space = typename Node::execution_space;
+      using range_type      = Kokkos::RangePolicy<execution_space, size_t>;
+      Kokkos::parallel_for(
+          "RemoteMapMode1", range_type(0, numRemote), KOKKOS_LAMBDA(const size_t i) {
+            remoteRows(i) = lclTargetMap.getGlobalElement(remoteLIDs(i));
+          });
+
+      remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows,
                                       rowMap->getIndexBase(), rowMap->getComm()));
       mode         = 1;
 
@@ -3078,18 +3085,34 @@ void import_and_extract_views(
       // No prototype importer --- count the remotes the hard way
       Tpetra::Details::ProfilingRegion MM2("TpetraExt: MMM: I&X RemoteMap: Mode2");
 
-      ArrayView<const GO> rows = targetMap->getLocalElementList();
-      size_t numRows           = targetMap->getLocalNumElements();
+      auto rows         = targetMap->getMyGlobalIndicesDevice();
+      size_t numRows    = targetMap->getLocalNumElements();
+      auto lclTargetMap = targetMap->getLocalMap();
 
-      Array<GO> remoteRows(numRows);
-      for (size_t i = 0; i < numRows; ++i) {
-        const LO mlid = rowMap->getLocalElement(rows[i]);
+      const auto INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-        if (mlid == Teuchos::OrdinalTraits<LO>::invalid())
-          remoteRows[numRemote++] = rows[i];
-      }
-      remoteRows.resize(numRemote);
-      remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
+      using execution_space = typename Node::execution_space;
+      using range_type      = Kokkos::RangePolicy<execution_space, size_t>;
+      Kokkos::parallel_reduce(
+          "RemoteMapMode2", range_type(0, numRows), KOKKOS_LAMBDA(const size_t i, size_t& numMyRemote) {
+            const auto mlid = lclTargetMap.getLocalElement(rows(i));
+            if (mlid == INVALID) {
+              ++numMyRemote;
+            }
+          },
+          numRemote);
+      Kokkos::View<GlobalOrdinal*, typename Node::device_type> remoteRows(Kokkos::ViewAllocateWithoutInitializing("remoteRows"), numRemote);
+      Kokkos::parallel_scan(
+          "RemoteMapMode2", range_type(0, numRows), KOKKOS_LAMBDA(const size_t i, size_t& numMyRemote, const bool is_final) {
+            const auto mlid = lclTargetMap.getLocalElement(rows(i));
+            if (mlid == INVALID) {
+              if (is_final)
+                remoteRows(numMyRemote) = rows(i);
+              ++numMyRemote;
+            }
+          });
+
+      remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows,
                                       rowMap->getIndexBase(), rowMap->getComm()));
       mode         = 2;
 
