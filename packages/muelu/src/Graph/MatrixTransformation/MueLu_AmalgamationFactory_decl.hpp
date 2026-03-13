@@ -53,7 +53,9 @@ class AmalgamationFactory : public SingleLevelFactoryBase {
   //! Destructor
   virtual ~AmalgamationFactory();
 
-  RCP<const ParameterList> GetValidParameterList() const override;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 
