@@ -2,7 +2,7 @@ AdaptiveSaMLParameterListInterpreter
 AggregationExportFactory
 AggregateQualityEstimateFactory
 AmalgamationFactory
-Amesos2Smoother - #if defined(HAVE_MUELU_AMESOS2)
+Amesos2Smoother
 AMGXOperator - #if defined(HAVE_MUELU_AMGX)
 AlgebraicPermutationStrategy
 BelosSmoother - #if defined(HAVE_MUELU_BELOS)
@@ -52,7 +52,7 @@ HierarchyManager
 HierarchyFactory
 HierarchyUtils
 InterfaceAggregationFactory
-Ifpack2Smoother - #if defined(HAVE_MUELU_IFPACK2)
+Ifpack2Smoother
 IndefBlockedDiagonalSmoother
 InitialBlockNumberFactory
 IntrepidPCoarsenFactory - #ifdef HAVE_MUELU_INTREPID2
@@ -100,7 +100,7 @@ SaPFactory
 ScaledNullspaceFactory
 SchurComplementFactory
 SegregatedAFactory
-ShiftedLaplacian - #if defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS) && defined(HAVE_TPETRA_COMPLEX_DOUBLE)
+ShiftedLaplacian - #if defined(HAVE_MUELU_BELOS) && defined(HAVE_TPETRA_COMPLEX_DOUBLE)
 ShiftedLaplacianOperator - #if defined(HAVE_MUELU_BELOS) && defined(HAVE_TPETRA_COMPLEX_DOUBLE)
 SimpleSmoother
 Smoother

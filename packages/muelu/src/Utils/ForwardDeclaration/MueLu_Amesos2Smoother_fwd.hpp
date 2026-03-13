@@ -10,8 +10,6 @@
 #ifndef MUELU_AMESOS2SMOOTHER_FWD_HPP
 #define MUELU_AMESOS2SMOOTHER_FWD_HPP
 
-#include "MueLu_ConfigDefs.hpp"
-
 namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class Amesos2Smoother;

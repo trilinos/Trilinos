@@ -1,5 +1,5 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Tpetra Xpetra Kokkos KokkosKernels)
-SET(LIB_OPTIONAL_DEP_PACKAGES Amesos2 AvatarT Belos Teko Ifpack2 Intrepid2 Zoltan Zoltan2Core Stratimikos Thyra ThyraTpetraAdapters)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Tpetra Xpetra Kokkos KokkosKernels Amesos2 Ifpack2)
+SET(LIB_OPTIONAL_DEP_PACKAGES AvatarT Belos Teko Intrepid2 Zoltan Zoltan2Core Stratimikos Thyra ThyraTpetraAdapters)
 SET(TEST_REQUIRED_DEP_PACKAGES Galeri)
 SET(TEST_OPTIONAL_DEP_PACKAGES Pamgen)
 SET(LIB_REQUIRED_DEP_TPLS BLAS LAPACK)

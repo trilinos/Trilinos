@@ -50,9 +50,6 @@ using InterfaceAggregationAlgorithm [[maybe_unused]] = MueLu::InterfaceAggregati
 #ifdef MUELU_INTERFACEMAPPINGTRANSFERFACTORY_SHORT
 using InterfaceMappingTransferFactory [[maybe_unused]] = MueLu::InterfaceMappingTransferFactory<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
-#ifdef MUELU_ISORROPIAINTERFACE_SHORT
-using IsorropiaInterface [[maybe_unused]] = MueLu::IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>;
-#endif
 #ifdef MUELU_LWGRAPH_SHORT
 using LWGraph [[maybe_unused]] = MueLu::LWGraph<LocalOrdinal, GlobalOrdinal, Node>;
 #endif
@@ -121,10 +118,4 @@ using VariableContainer [[maybe_unused]] = MueLu::VariableContainer;
 #endif
 #ifdef MUELU_SMOOTHERFACTORYBASE_SHORT
 using SmootherFactoryBase [[maybe_unused]] = MueLu::SmootherFactoryBase;
-#endif
-#ifdef MUELU_AMESOSSMOOTHER_SHORT
-typedef MueLu::AmesosSmoother<Node> AmesosSmoother;
-#endif
-#ifdef MUELU_IFPACKSMOOTHER_SHORT
-typedef MueLu::IfpackSmoother<Node> IfpackSmoother;
 #endif

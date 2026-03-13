@@ -18,9 +18,6 @@
 #include <TpetraCore_ETIHelperMacros.h>
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-// Epetra = on, Tpetra = on
-
-// Epetra = off, Tpetra = on
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_ETI_GROUP)
 
 #endif  // ifndef MUELU_ETI_4ARGUMENT_HPP
