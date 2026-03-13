@@ -48,6 +48,8 @@ class DistributorActor {
   DistributorActor();
   DistributorActor(const DistributorActor& otherActor) = default;
 
+  ~DistributorActor();
+
   template <class ExpView, class ImpView>
   void doPostsAndWaits(const DistributorPlan& plan,
                        const ExpView& exports,
@@ -163,6 +165,12 @@ class DistributorActor {
 
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requestsRecv_;
   Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest<int>>> requestsSend_;
+
+  std::vector<MPI_Request> persistentRequestsRecv_;
+  std::vector<MPI_Request> persistentRequestsSend_;
+
+  void* cachedImportsAddr_;
+  void* cachedExportsAddr_;
 };
 
 template <class ExpView, class ImpView>
@@ -640,12 +648,29 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
 
   requestsRecv_.resize(0);
 
+  using T                                                      = typename ImpView::non_const_value_type;
+  MPI_Datatype rawType                                         = ::Tpetra::Details::MpiTypeTraits<T>::getType(T());
+  Teuchos::RCP<const Teuchos::MpiComm<int>> mpiComm            = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> rawComm = mpiComm->getRawMpiComm();
+
+  const bool setUpPersistentRequests = ((sendType == Details::DISTRIBUTOR_PERSISTENT) && (imports.size() > 0) && ((persistentRequestsRecv_.size() == 0) || (cachedImportsAddr_ != (void*)imports.data())));
+
+  if (setUpPersistentRequests) {
+#ifdef HAVE_TPETRA_MPI
+    for (auto& rawRequest : persistentRequestsRecv_) {
+      MPI_Request_free(&rawRequest);
+    }
+    persistentRequestsRecv_.resize(0);
+    cachedImportsAddr_ = (void*)imports.data();
+#endif
+  }
+
   // Post the nonblocking receives.  It's common MPI wisdom to post
   // receives before sends.  In MPI terms, this means favoring
   // adding to the "posted queue" (of receive requests) over adding
   // to the "unexpected queue" (of arrived messages not yet matched
   // with a receive).
-  {
+  if ((sendType != Details::DISTRIBUTOR_PERSISTENT) || setUpPersistentRequests) {
     ProfilingRegion prr("Tpetra::Distributor::doPostRecvs MPI_Irecv");
 
     for (size_type i = 0; i < actualNumReceives; ++i) {
@@ -667,11 +692,33 @@ void DistributorActor::doPostRecvsImpl(const DistributorPlan& plan,
         // 2. Start the Irecv and save the resulting request.
         imports_view_type recvBuf =
             subview_offset(imports, importStarts[i], totalPacketsFrom_i);
-        requestsRecv_.push_back(ireceive<int>(recvBuf, plan.getProcsFrom()[i],
-                                              mpiTag_, *plan.getComm()));
+
+        if (sendType != Details::DISTRIBUTOR_PERSISTENT) {
+          requestsRecv_.push_back(ireceive<int>(recvBuf, plan.getProcsFrom()[i],
+                                                mpiTag_, *plan.getComm()));
+        } else {
+#ifdef HAVE_TPETRA_MPI
+          MPI_Request rawRequest = MPI_REQUEST_NULL;
+          const int err          = MPI_Recv_init(recvBuf.data(), recvBuf.size(), rawType, plan.getProcsFrom()[i], mpiTag_, (*rawComm)(), &rawRequest);
+          TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS,
+                                     std::runtime_error,
+                                     "MPI_Recv_init failed with the following error: "
+                                         << ::Teuchos::Details::getMpiErrorString(err));
+
+          persistentRequestsRecv_.push_back(rawRequest);
+#endif  // HAVE_TPETRA_MPI
+        }
       }
     }
   }
+
+#ifdef HAVE_TPETRA_MPI
+  if ((sendType == Details::DISTRIBUTOR_PERSISTENT) && (persistentRequestsRecv_.size() > 0)) {
+    const char region[] = "Tpetra::Distributor::doPostRecvs MPI_Startall";
+    ProfilingRegion prp(region);
+    MPI_Startall(persistentRequestsRecv_.size(), persistentRequestsRecv_.data());
+  }
+#endif
 }
 
 template <class ExpView, class ImpView>
@@ -828,44 +875,88 @@ void DistributorActor::doPostSendsImpl(const DistributorPlan& plan,
   size_t selfNum   = 0;
   size_t selfIndex = 0;
 
+  using T                                                      = typename ExpView::non_const_value_type;
+  MPI_Datatype rawType                                         = ::Tpetra::Details::MpiTypeTraits<T>::getType(T());
+  auto comm                                                    = plan.getComm();
+  Teuchos::RCP<const Teuchos::MpiComm<int>> mpiComm            = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int>>(comm);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> rawComm = mpiComm->getRawMpiComm();
+
   if (plan.getIndicesTo().is_null()) {
-    const char isend_region[] = "Tpetra::Distributor::doPostSends MPI_Isend FAST";
-    const char send_region[]  = "Tpetra::Distributor::doPostSends MPI_Send FAST";
-    ProfilingRegion pssf((sendType == Details::DISTRIBUTOR_ISEND) ? isend_region : send_region);
+    const bool setUpPersistentRequests = ((sendType == Details::DISTRIBUTOR_PERSISTENT) && (exports.size() > 0) && ((persistentRequestsSend_.size() == 0) || (cachedExportsAddr_ != (void*)exports.data())));
 
-    // Data are already blocked (laid out) by process, so we don't
-    // need a separate send buffer (besides the exports array).
-    for (size_t i = 0; i < numBlocks; ++i) {
-      size_t p = i + procIndex;
-      if (p > (numBlocks - 1)) {
-        p -= numBlocks;
+    if (setUpPersistentRequests) {
+      for (auto& rawRequest : persistentRequestsSend_) {
+        MPI_Request_free(&rawRequest);
       }
+      persistentRequestsSend_.resize(0);
+      cachedExportsAddr_ = (void*)exports.data();
+    }
 
-      if (plan.getProcsTo()[p] != myRank) {
-        if (exportLengths[p] == 0) {
-          // Do not attempt to send messages of length 0.
-          continue;
+    if ((sendType != Details::DISTRIBUTOR_PERSISTENT) || setUpPersistentRequests) {
+      const std::string isend_region     = "Tpetra::Distributor::doPostSends MPI_Isend FAST";
+      const std::string send_region      = "Tpetra::Distributor::doPostSends MPI_Send FAST";
+      const std::string send_init_region = "Tpetra::Distributor::doPostSends MPI_Send_init FAST";
+      std::string regionLabel;
+      if (sendType == Details::DISTRIBUTOR_ISEND)
+        regionLabel = isend_region;
+      else if (sendType == Details::DISTRIBUTOR_PERSISTENT)
+        regionLabel = send_init_region;
+      else
+        regionLabel = send_region;
+      ProfilingRegion pssf(regionLabel.c_str());
+
+      // Data are already blocked (laid out) by process, so we don't
+      // need a separate send buffer (besides the exports array).
+      for (size_t i = 0; i < numBlocks; ++i) {
+        size_t p = i + procIndex;
+        if (p > (numBlocks - 1)) {
+          p -= numBlocks;
         }
 
-        exports_view_type tmpSend = subview_offset(exports, exportStarts[p], exportLengths[p]);
+        if (plan.getProcsTo()[p] != myRank) {
+          if (exportLengths[p] == 0) {
+            // Do not attempt to send messages of length 0.
+            continue;
+          }
 
-        if (sendType == Details::DISTRIBUTOR_ISEND) {
-          // NOTE: This looks very similar to the tmpSend above, but removing
-          // tmpSendBuf and uses tmpSend leads to a performance hit on Arm
-          // SerialNode builds
-          exports_view_type tmpSendBuf =
-              subview_offset(exports, exportStarts[p], exportLengths[p]);
-          requestsSend_.push_back(isend<int>(tmpSendBuf, plan.getProcsTo()[p],
-                                             mpiTag_, *plan.getComm()));
-        } else {  // DISTRIBUTOR_SEND
-          send<int>(tmpSend,
-                    as<int>(tmpSend.size()),
-                    plan.getProcsTo()[p], mpiTag_, *plan.getComm());
+          exports_view_type tmpSend = subview_offset(exports, exportStarts[p], exportLengths[p]);
+
+          if (sendType == Details::DISTRIBUTOR_ISEND) {
+            // NOTE: This looks very similar to the tmpSend above, but removing
+            // tmpSendBuf and uses tmpSend leads to a performance hit on Arm
+            // SerialNode builds
+            exports_view_type tmpSendBuf =
+                subview_offset(exports, exportStarts[p], exportLengths[p]);
+            requestsSend_.push_back(isend<int>(tmpSendBuf, plan.getProcsTo()[p],
+                                               mpiTag_, *plan.getComm()));
+          } else if (sendType == Details::DISTRIBUTOR_PERSISTENT) {
+#ifdef HAVE_TPETRA_MPI
+            MPI_Request rawRequest = MPI_REQUEST_NULL;
+            const int err          = MPI_Send_init(tmpSend.data(), tmpSend.size(), rawType, plan.getProcsTo()[p], mpiTag_, (*rawComm)(), &rawRequest);
+            TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS,
+                                       std::runtime_error,
+                                       "MPI_Send_init failed with the following error: "
+                                           << ::Teuchos::Details::getMpiErrorString(err));
+            persistentRequestsSend_.push_back(rawRequest);
+#endif              // HAVE_TPETRA_MPI
+          } else {  // DISTRIBUTOR_SEND
+            send<int>(tmpSend,
+                      as<int>(tmpSend.size()),
+                      plan.getProcsTo()[p], mpiTag_, *plan.getComm());
+          }
+        } else {  // "Sending" the message to myself
+          selfNum = p;
         }
-      } else {  // "Sending" the message to myself
-        selfNum = p;
       }
     }
+
+#ifdef HAVE_TPETRA_MPI
+    if (persistentRequestsSend_.size() > 0) {
+      const char region[] = "Tpetra::Distributor::doPostSends MPI_Startall FAST";
+      ProfilingRegion prp(region);
+      MPI_Startall(persistentRequestsSend_.size(), persistentRequestsSend_.data());
+    }
+#endif  // HAVE_TPETRA_MPI
 
     if (plan.hasSelfMessage()) {
       // This is how we "send a message to ourself": we copy from
