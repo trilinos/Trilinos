@@ -120,6 +120,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
   {
     // defaults for command-line options
     int x_elements=-1,y_elements=-1,z_elements=-1,basis_order=1;
+    std::string meshType = "";
     int workset_size=2000;
     std::string pCoarsenScheduleStr = "1";
     double dt=0.0;
@@ -128,8 +129,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     bool matrix_output = false;
     std::string input_file = "maxwell.xml";
     std::string xml = "";
-    solverType solverValues[5] = {AUGMENTATION, MUELU, ML, CG, GMRES};
-    const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
+    solverType solverValues[8] = {AUGMENTATION, MUELU, ML, CG, GMRES, MAXWELL1_RS, MAXWELL1_SA_RS, MAXWELL1_EMIN};
+    const char * solverNames[8] = {"Augmentation", "MueLu", "ML", "CG", "GMRES", "Maxwell1-RS", "Maxwell1-SA-RS", "Maxwell1-Emin"};
     bool preferTPLs = false;
     bool useBarriers = false;
     bool truncateMueLuHierarchy = false;
@@ -149,6 +150,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("x-elements",&x_elements);
     clp.setOption("y-elements",&y_elements);
     clp.setOption("z-elements",&z_elements);
+    clp.setOption("meshType",&meshType);
     clp.setOption("basis-order",&basis_order);
     clp.setOption("workset-size",&workset_size);
     clp.setOption("pCoarsenSchedule",&pCoarsenScheduleStr);
@@ -158,7 +160,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("matrix-output","no-matrix-output",&matrix_output);
     clp.setOption("inputFile",&input_file,"XML file with the problem definitions");
     clp.setOption("solverFile",&xml,"XML file with the solver params");
-    clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
+    clp.setOption<solverType>("solver",&solver,8,solverValues,solverNames,"Solver that is used");
     clp.setOption("tpl", "no-tpl", &preferTPLs, "Prefer TPL usage over fused kernels");
     clp.setOption("barriers", "no-barriers", &useBarriers, "Use barriers in the solver");
     clp.setOption("truncateMueLuHierarchy", "no-truncateMueLuHierarchy", &truncateMueLuHierarchy, "Truncate the MueLu hierarchy");
@@ -258,7 +260,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     {
       Teuchos::TimeMonitor tMmesh(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: build mesh")));
       double mesh_size = 0.;
-      mini_em::getMesh(mesh_pl, meshFile, x_elements, y_elements, z_elements, basis_order, comm, mesh, mesh_factory, mesh_size);
+      mini_em::getMesh(mesh_pl, meshFile, x_elements, y_elements, z_elements, meshType, basis_order, comm, mesh, mesh_factory, mesh_size);
       dim = Teuchos::as<int>(mesh->getDimension());
 
       // set dt
@@ -784,10 +786,10 @@ int main(int argc,char * argv[]){
   const char * linAlgebraNames[2] = {"Tpetra", "Epetra"};
   linearAlgebraType linAlgebra = linAlgTpetra;
   clp.setOption<linearAlgebraType>("linAlgebra",&linAlgebra,2,linAlgebraValues,linAlgebraNames);
-  solverType solverValues[5] = {AUGMENTATION, MUELU, ML, CG, GMRES};
-  const char * solverNames[5] = {"Augmentation", "MueLu", "ML", "CG", "GMRES"};
+  solverType solverValues[8] = {AUGMENTATION, MUELU, ML, CG, GMRES, MAXWELL1_RS, MAXWELL1_SA_RS, MAXWELL1_EMIN};
+  const char * solverNames[8] = {"Augmentation", "MueLu", "ML", "CG", "GMRES", "Maxwell1-RS", "Maxwell1-SA-RS", "Maxwell1-Emin"};
   solverType solver = MUELU;
-  clp.setOption<solverType>("solver",&solver,5,solverValues,solverNames,"Solver that is used");
+  clp.setOption<solverType>("solver",&solver,8,solverValues,solverNames,"Solver that is used");
   // bool useComplex = false;
   // clp.setOption("complex","real",&useComplex);
   clp.recogniseAllOptions(false);

@@ -1,8 +1,8 @@
 // @HEADER
 // *****************************************************************************
-//             Xpetra: A linear algebra interface package
+//        MueLu: A package for multigrid based preconditioning
 //
-// Copyright 2012 NTESS and the Xpetra contributors.
+// Copyright 2012 NTESS and the MueLu contributors.
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER

@@ -13,16 +13,12 @@
 #include <sstream>
 
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_MatrixFactory.hpp>
-#include <Xpetra_MatrixMatrix.hpp>
-#include <Xpetra_MatrixUtils.hpp>
-#include <Xpetra_TripleMatrixMultiply.hpp>
 
 #include "MueLu_RAPFactory_decl.hpp"
 
+#include "MueLu_Utilities.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_PerfUtils.hpp"
 
 namespace MueLu {
 
@@ -76,228 +72,225 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& 
   hasDeclaredInput_ = true;
 }
 
+// template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+// void TripleMatrixProduct(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& R,
+//                          const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
+//                          const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& P,
+//                          Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ac,
+//                          const Teuchos::ParameterList& pL,
+//                          const MueLu::BaseClass& verbObj,
+//                          Teuchos::RCP<Teuchos::ParameterList>& APparams = Teuchos::null,
+//                          Teuchos::RCP<Teuchos::ParameterList>& RAPparams = Teuchos::null,
+//                          Level* coarseLevel = nullptr) {
+//   using Matrix = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+//   using MatrixMatrix = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+//   using MatrixFactory = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+//   using PerfUtils = MueLu::PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+//   const bool doTranspose       = true;
+//   const bool doFillComplete    = true;
+//   const bool doOptimizeStorage = true;
+
+//   std::string levelstr, labelstr;
+//   if (coarseLevel != nullptr) {
+//     std::ostringstream levelss;
+//     levelss << coarseLevel->GetLevelID();
+//     levelstr = levelss.str();
+//     labelstr = FormattingHelper::getColonLabel(coarseLevel->getObjectLabel());
+//   }
+
+//   bool isGPU = Node::is_gpu;
+
+//   // Reuse coarse matrix memory if available (multiple solve)
+//   if (RAPparams.is_null())
+//     RAPparams = rcp(new ParameterList);
+//   if (pL.isSublist("matrixmatrix: kernel params"))
+//     RAPparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+
+//   if (RAPparams->isParameter("graph")) {
+//     Ac = RAPparams->get<RCP<Matrix> >("graph");
+
+//     // Some eigenvalue may have been cached with the matrix in the previous run.
+//     // As the matrix values will be updated, we need to reset the eigenvalue.
+//     Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<Scalar>::one());
+//   }
+
+//   // We *always* need global constants for the RAP, but not for the temps
+//   RAPparams->set("compute global constants: temporaries", RAPparams->get("compute global constants: temporaries", false));
+//   RAPparams->set("compute global constants", true);
+
+//   if (pL.get<bool>("rap: triple product") == false || isGPU) {
+//     if (pL.get<bool>("rap: triple product") && isGPU)
+//       verbObj.GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for "
+//       << Node::execution_space::name() << std::endl;
+
+//     RCP<Matrix> AP;
+
+//     // Reuse pattern if available (multiple solve)
+//     if (APparams.is_null())
+//       APparams = rcp(new ParameterList);
+//     if (pL.isSublist("matrixmatrix: kernel params"))
+//       APparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+
+//     // By default, we don't need global constants for A*P
+//     APparams->set("compute global constants: temporaries", APparams->get("compute global constants: temporaries", false));
+//     APparams->set("compute global constants", APparams->get("compute global constants", false));
+
+//     if (APparams->isParameter("graph"))
+//       AP = APparams->get<RCP<Matrix> >("graph");
+
+//     std::string timerstrAP = "MueLu::A*P";
+//     if (!labelstr.empty())
+//       timerstrAP = labelstr+timerstrAP;
+//     if (!levelstr.empty())
+//       timerstrAP = timerstrAP+"-"+levelstr;
+
+//     {
+//       SubFactoryMonitor subM(verbObj, "MxM: A x P", *coarseLevel);
+
+//       AP = MatrixMatrix::Multiply(*A, !doTranspose, *P, !doTranspose, AP, verbObj.GetOStream(Statistics2),
+//                                   doFillComplete, doOptimizeStorage, timerstrAP, APparams);
+//     }
+
+//     // Allow optimization of storage.
+//     // This is necessary for new faster Epetra MM kernels.
+//     // Seems to work with matrix modifications to repair diagonal entries.
+
+//     std::string timerstrRAP;
+//     if (pL.get<bool>("transpose: use implicit") == true)
+//       timerstrRAP = "MueLu::R*(AP)-implicit";
+//     else
+//       timerstrRAP = "MueLu::R*(AP)-explicit";
+//     if (!labelstr.empty())
+//       timerstrRAP = labelstr+timerstrRAP;
+//     if (!levelstr.empty())
+//       timerstrRAP = timerstrRAP+"-"+levelstr;
+
+//     if (pL.get<bool>("transpose: use implicit") == true) {
+//       SubFactoryMonitor m2(verbObj, "MxM: P' x (AP) (implicit)", *coarseLevel);
+
+//       Ac = MatrixMatrix::Multiply(*P, doTranspose, *AP, !doTranspose, Ac, verbObj.GetOStream(Statistics2),
+//                                   doFillComplete, doOptimizeStorage, timerstrRAP, RAPparams);
+
+//     } else {
+//       SubFactoryMonitor m2(verbObj, "MxM: R x (AP) (explicit)", *coarseLevel);
+
+//       Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, verbObj.GetOStream(Statistics2),
+//                                   doFillComplete, doOptimizeStorage, timerstrRAP, RAPparams);
+//     }
+
+//     if (!isGPU) {
+//       APparams->set("graph", AP);
+//     }
+
+//   } else {
+
+//     std::string timerstrRAP;
+//     if (pL.get<bool>("transpose: use implicit") == true)
+//       timerstrRAP = "MueLu::R*A*P-implicit";
+//     else
+//       timerstrRAP = "MueLu::R*A*P-explicit";
+//     if (!labelstr.empty())
+//       timerstrRAP = labelstr+timerstrRAP;
+//     if (!levelstr.empty())
+//       timerstrRAP = timerstrRAP+"-"+levelstr;
+
+//     if (pL.get<bool>("transpose: use implicit") == true) {
+//       Ac = MatrixFactory::Build(P->getDomainMap(), Teuchos::as<LocalOrdinal>(0));
+
+//       SubFactoryMonitor m2(verbObj, "MxMxM: R x A x P (implicit)", *coarseLevel);
+
+//       Xpetra::TripleMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+//             MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+//                         doOptimizeStorage, timerstrRAP,
+//                         RAPparams);
+//     } else {
+//       Ac = MatrixFactory::Build(R->getRowMap(), Teuchos::as<LocalOrdinal>(0));
+
+//       SubFactoryMonitor m2(verbObj, "MxMxM: R x A x P (explicit)", *coarseLevel);
+
+//       Xpetra::TripleMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+//             MultiplyRAP(*R, !doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+//                         doOptimizeStorage, timerstrRAP,
+//                         RAPparams);
+//     }
+//   }
+
+//   Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double> >("rap: relative diagonal floor")();
+//   if (relativeFloor.size() > 0) {
+//     Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RelativeDiagonalBoost(Ac, relativeFloor, verbObj.GetOStream(Statistics2));
+//   }
+
+//   bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+//   bool checkAc             = pL.get<bool>("CheckMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+
+//   if (checkAc || repairZeroDiagonals) {
+//     using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+//     magnitudeType threshold;
+//     if (pL.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+//       threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
+//     else
+//       threshold = Teuchos::as<magnitudeType>(pL.get<double>("rap: fix zero diagonals threshold"));
+//     Scalar replacement = Teuchos::as<Scalar>(pL.get<double>("rap: fix zero diagonals replacement"));
+//     Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, verbObj.GetOStream(Warnings1), threshold, replacement);
+//   }
+
+//   if (verbObj.IsPrint(Statistics2)) {
+//     RCP<ParameterList> params = rcp(new ParameterList());
+//     params->set("printLoadBalancingInfo", true);
+//     params->set("printCommInfo", true);
+//     verbObj.GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
+//   }
+
+//   if (!isGPU) {
+//     RAPparams->set("graph", Ac);
+//   }
+// }
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
-  const bool doTranspose       = true;
-  const bool doFillComplete    = true;
-  const bool doOptimizeStorage = true;
   RCP<Matrix> Ac;
+
   {
     FactoryMonitor m(*this, "Computing Ac", coarseLevel);
-    std::ostringstream levelstr;
-    levelstr << coarseLevel.GetLevelID();
-    std::string labelstr = FormattingHelper::getColonLabel(coarseLevel.getObjectLabel());
 
     TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_ == false, Exceptions::RuntimeError,
                                "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
 
-    const Teuchos::ParameterList& pL = GetParameterList();
-    RCP<Matrix> A                    = Get<RCP<Matrix> >(fineLevel, "A");
-    RCP<Matrix> P                    = Get<RCP<Matrix> >(coarseLevel, "P"), AP;
+    RCP<Matrix> A = Get<RCP<Matrix> >(fineLevel, "A");
+    RCP<Matrix> P = Get<RCP<Matrix> >(coarseLevel, "P"), AP, R;
     // We don't have a valid P (e.g., # global aggregates = 0) so we bail.
     // This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
-    if (P == Teuchos::null) {
+    if (P.is_null()) {
       Ac = Teuchos::null;
       Set(coarseLevel, "A", Ac);
       return;
     }
 
-    bool isGPU = Node::is_gpu;
+    const Teuchos::ParameterList& pL = GetParameterList();
+    const bool useImplicit           = pL.get<bool>("transpose: use implicit");
+    bool isGPU                       = Node::is_gpu;
 
-    if (pL.get<bool>("rap: triple product") == false || isGPU) {
-      if (pL.get<bool>("rap: triple product") && isGPU)
-        GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for "
-                              << Node::execution_space::name() << std::endl;
+    Teuchos::RCP<Teuchos::ParameterList> APparams;
+    Teuchos::RCP<Teuchos::ParameterList> RAPparams;
+    if (coarseLevel.IsAvailable("AP reuse data", this))
+      APparams = coarseLevel.Get<RCP<ParameterList> >("AP reuse data", this);
+    if (coarseLevel.IsAvailable("RAP reuse data", this))
+      RAPparams = coarseLevel.Get<RCP<ParameterList> >("RAP reuse data", this);
+    if (!useImplicit)
+      R = Get<RCP<Matrix> >(coarseLevel, "R");
+    Utilities::TripleMatrixProduct(R, A, P, Ac, pL, *this, APparams, RAPparams, &coarseLevel);
 
-      // Reuse pattern if available (multiple solve)
-      RCP<ParameterList> APparams = rcp(new ParameterList);
-      if (pL.isSublist("matrixmatrix: kernel params"))
-        APparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-
-      // By default, we don't need global constants for A*P
-      APparams->set("compute global constants: temporaries", APparams->get("compute global constants: temporaries", false));
-      APparams->set("compute global constants", APparams->get("compute global constants", false));
-
-      if (coarseLevel.IsAvailable("AP reuse data", this)) {
-        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
-
-        APparams = coarseLevel.Get<RCP<ParameterList> >("AP reuse data", this);
-
-        if (APparams->isParameter("graph"))
-          AP = APparams->get<RCP<Matrix> >("graph");
-      }
-
-      {
-        SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
-
-        AP = MatrixMatrix::Multiply(*A, !doTranspose, *P, !doTranspose, AP, GetOStream(Statistics2),
-                                    doFillComplete, doOptimizeStorage, labelstr + std::string("MueLu::A*P-") + levelstr.str(), APparams);
-      }
-
-      // Reuse coarse matrix memory if available (multiple solve)
-      RCP<ParameterList> RAPparams = rcp(new ParameterList);
-      if (pL.isSublist("matrixmatrix: kernel params"))
-        RAPparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-
-      if (coarseLevel.IsAvailable("RAP reuse data", this)) {
-        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
-
-        RAPparams = coarseLevel.Get<RCP<ParameterList> >("RAP reuse data", this);
-
-        if (RAPparams->isParameter("graph"))
-          Ac = RAPparams->get<RCP<Matrix> >("graph");
-
-        // Some eigenvalue may have been cached with the matrix in the previous run.
-        // As the matrix values will be updated, we need to reset the eigenvalue.
-        Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-      }
-
-      // We *always* need global constants for the RAP, but not for the temps
-      RAPparams->set("compute global constants: temporaries", RAPparams->get("compute global constants: temporaries", false));
-      RAPparams->set("compute global constants", true);
-
-      // Allow optimization of storage.
-      // This is necessary for new faster Epetra MM kernels.
-      // Seems to work with matrix modifications to repair diagonal entries.
-
-      if (pL.get<bool>("transpose: use implicit") == true) {
-        SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
-
-        Ac = MatrixMatrix::Multiply(*P, doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
-                                    doFillComplete, doOptimizeStorage, labelstr + std::string("MueLu::R*(AP)-implicit-") + levelstr.str(), RAPparams);
-
-      } else {
-        RCP<Matrix> R = Get<RCP<Matrix> >(coarseLevel, "R");
-
-        SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
-
-        Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
-                                    doFillComplete, doOptimizeStorage, labelstr + std::string("MueLu::R*(AP)-explicit-") + levelstr.str(), RAPparams);
-      }
-
-      Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double> >("rap: relative diagonal floor")();
-      if (relativeFloor.size() > 0) {
-        Xpetra::MatrixUtils<SC, LO, GO, NO>::RelativeDiagonalBoost(Ac, relativeFloor, GetOStream(Statistics2));
-      }
-
-      bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
-      bool checkAc             = pL.get<bool>("CheckMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
-      ;
-      if (checkAc || repairZeroDiagonals) {
-        using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
-        magnitudeType threshold;
-        if (pL.isType<magnitudeType>("rap: fix zero diagonals threshold"))
-          threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
-        else
-          threshold = Teuchos::as<magnitudeType>(pL.get<double>("rap: fix zero diagonals threshold"));
-        Scalar replacement = Teuchos::as<Scalar>(pL.get<double>("rap: fix zero diagonals replacement"));
-        Xpetra::MatrixUtils<SC, LO, GO, NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1), threshold, replacement);
-      }
-
-      if (IsPrint(Statistics2)) {
-        RCP<ParameterList> params = rcp(new ParameterList());
-        ;
-        params->set("printLoadBalancingInfo", true);
-        params->set("printCommInfo", true);
-        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
-      }
-
-      if (!Ac.is_null()) {
-        std::ostringstream oss;
-        oss << "A_" << coarseLevel.GetLevelID();
-        Ac->setObjectLabel(oss.str());
-      }
-      Set(coarseLevel, "A", Ac);
-
-      if (!isGPU) {
-        APparams->set("graph", AP);
+    if (!Ac.is_null()) {
+      std::ostringstream oss;
+      oss << "A_" << coarseLevel.GetLevelID();
+      Ac->setObjectLabel(oss.str());
+    }
+    Set(coarseLevel, "A", Ac);
+    if (!isGPU) {
+      if (!useImplicit)
         Set(coarseLevel, "AP reuse data", APparams);
-      }
-      if (!isGPU) {
-        RAPparams->set("graph", Ac);
-        Set(coarseLevel, "RAP reuse data", RAPparams);
-      }
-    } else {
-      RCP<ParameterList> RAPparams = rcp(new ParameterList);
-      if (pL.isSublist("matrixmatrix: kernel params"))
-        RAPparams->sublist("matrixmatrix: kernel params") = pL.sublist("matrixmatrix: kernel params");
-
-      if (coarseLevel.IsAvailable("RAP reuse data", this)) {
-        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
-
-        RAPparams = coarseLevel.Get<RCP<ParameterList> >("RAP reuse data", this);
-
-        if (RAPparams->isParameter("graph"))
-          Ac = RAPparams->get<RCP<Matrix> >("graph");
-
-        // Some eigenvalue may have been cached with the matrix in the previous run.
-        // As the matrix values will be updated, we need to reset the eigenvalue.
-        Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-      }
-
-      // We *always* need global constants for the RAP, but not for the temps
-      RAPparams->set("compute global constants: temporaries", RAPparams->get("compute global constants: temporaries", false));
-      RAPparams->set("compute global constants", true);
-
-      if (pL.get<bool>("transpose: use implicit") == true) {
-        Ac = MatrixFactory::Build(P->getDomainMap(), Teuchos::as<LO>(0));
-
-        SubFactoryMonitor m2(*this, "MxMxM: R x A x P (implicit)", coarseLevel);
-
-        Xpetra::TripleMatrixMultiply<SC, LO, GO, NO>::
-            MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
-                        doOptimizeStorage, labelstr + std::string("MueLu::R*A*P-implicit-") + levelstr.str(),
-                        RAPparams);
-      } else {
-        RCP<Matrix> R = Get<RCP<Matrix> >(coarseLevel, "R");
-        Ac            = MatrixFactory::Build(R->getRowMap(), Teuchos::as<LO>(0));
-
-        SubFactoryMonitor m2(*this, "MxMxM: R x A x P (explicit)", coarseLevel);
-
-        Xpetra::TripleMatrixMultiply<SC, LO, GO, NO>::
-            MultiplyRAP(*R, !doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
-                        doOptimizeStorage, labelstr + std::string("MueLu::R*A*P-explicit-") + levelstr.str(),
-                        RAPparams);
-      }
-
-      Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double> >("rap: relative diagonal floor")();
-      if (relativeFloor.size() > 0) {
-        Xpetra::MatrixUtils<SC, LO, GO, NO>::RelativeDiagonalBoost(Ac, relativeFloor, GetOStream(Statistics2));
-      }
-
-      bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
-      bool checkAc             = pL.get<bool>("CheckMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
-      ;
-      if (checkAc || repairZeroDiagonals) {
-        using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
-        magnitudeType threshold;
-        if (pL.isType<magnitudeType>("rap: fix zero diagonals threshold"))
-          threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
-        else
-          threshold = Teuchos::as<magnitudeType>(pL.get<double>("rap: fix zero diagonals threshold"));
-        Scalar replacement = Teuchos::as<Scalar>(pL.get<double>("rap: fix zero diagonals replacement"));
-        Xpetra::MatrixUtils<SC, LO, GO, NO>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, GetOStream(Warnings1), threshold, replacement);
-      }
-
-      if (IsPrint(Statistics2)) {
-        RCP<ParameterList> params = rcp(new ParameterList());
-        ;
-        params->set("printLoadBalancingInfo", true);
-        params->set("printCommInfo", true);
-        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
-      }
-
-      if (!Ac.is_null()) {
-        std::ostringstream oss;
-        oss << "A_" << coarseLevel.GetLevelID();
-        Ac->setObjectLabel(oss.str());
-      }
-      Set(coarseLevel, "A", Ac);
-
-      if (!isGPU) {
-        RAPparams->set("graph", Ac);
-        Set(coarseLevel, "RAP reuse data", RAPparams);
-      }
+      Set(coarseLevel, "RAP reuse data", RAPparams);
     }
   }
 

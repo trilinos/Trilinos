@@ -14,6 +14,13 @@
 
 #include "MueLu_UtilitiesBase_decl.hpp"
 
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_Monitor.hpp"
+#include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_MatrixUtils.hpp>
+#include <Xpetra_TripleMatrixMultiply.hpp>
+
 #include <Kokkos_Core.hpp>
 #include <KokkosSparse_CrsMatrix.hpp>
 #include <KokkosSparse_getDiagCopy.hpp>
@@ -2093,6 +2100,208 @@ UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         view1D(rcmOrder(numRows - 1 - rowIdx)) = rowIdx;
       });
   return retval;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    TripleMatrixProduct(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& R,
+                        const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& A,
+                        const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& P,
+                        Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ac,
+                        const Teuchos::ParameterList& pL,
+                        const MueLu::BaseClass& verbObj,
+                        Teuchos::RCP<Teuchos::ParameterList>& APparams,
+                        Teuchos::RCP<Teuchos::ParameterList>& RAPparams,
+                        Level* coarseLevel) {
+  using Matrix        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using MatrixMatrix  = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using MatrixFactory = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using PerfUtils     = MueLu::PerfUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+  const bool doTranspose       = true;
+  const bool doFillComplete    = true;
+  const bool doOptimizeStorage = true;
+
+  const bool useImplicit = pL.get<bool>("transpose: use implicit");
+
+  const std::string matrixName      = (pL.isType<std::string>("Matrix name")) ? pL.get<std::string>("Matrix name") : "A";
+  const std::string prolongatorName = (pL.isType<std::string>("Prolongator name")) ? pL.get<std::string>("Prolongator name") : "P";
+  const std::string restrictorName  = (pL.isType<std::string>("Restrictor name")) ? pL.get<std::string>("Restrictor name") : "R";
+  std::string coarseMatrixName;
+  if (pL.isType<std::string>("coarseMatrixName"))
+    coarseMatrixName = pL.get<std::string>("coarseMatrixName");
+  else {
+    if (matrixName.size() == 1)
+      coarseMatrixName = matrixName + "c";
+    else
+      coarseMatrixName = matrixName + "_coarse";
+  }
+
+  std::string levelstr, labelstr;
+  if (coarseLevel != nullptr) {
+    std::ostringstream levelss;
+    levelss << coarseLevel->GetLevelID();
+    levelstr = levelss.str();
+    labelstr = FormattingHelper::getColonLabel(coarseLevel->getObjectLabel());
+  }
+
+  bool isGPU = Node::is_gpu;
+
+  // Reuse coarse matrix memory if available (multiple solve)
+  if (RAPparams.is_null())
+    RAPparams = rcp(new ParameterList);
+  if (pL.isSublist("matrixmatrix: kernel params"))
+    RAPparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+
+  if (RAPparams->isParameter("graph")) {
+    Ac = RAPparams->get<RCP<Matrix>>("graph");
+
+    // Some eigenvalue may have been cached with the matrix in the previous run.
+    // As the matrix values will be updated, we need to reset the eigenvalue.
+    Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<Scalar>::one());
+  }
+
+  // We *always* need global constants for the RAP, but not for the temps
+  RAPparams->set("compute global constants: temporaries", RAPparams->get("compute global constants: temporaries", false));
+  RAPparams->set("compute global constants", true);
+
+  if (pL.get<bool>("rap: triple product") == false || isGPU) {
+    if (pL.get<bool>("rap: triple product") && isGPU)
+      verbObj.GetOStream(Warnings1) << "Switching from triple product to R x (A x P) since triple product has not been implemented for "
+                                    << Node::execution_space::name() << std::endl;
+
+    RCP<Matrix> AP;
+
+    // Reuse pattern if available (multiple solve)
+    if (APparams.is_null())
+      APparams = rcp(new ParameterList);
+    if (pL.isSublist("matrixmatrix: kernel params"))
+      APparams = rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+
+    // By default, we don't need global constants for A*P
+    APparams->set("compute global constants: temporaries", APparams->get("compute global constants: temporaries", false));
+    APparams->set("compute global constants", APparams->get("compute global constants", false));
+
+    if (APparams->isParameter("graph"))
+      AP = APparams->get<RCP<Matrix>>("graph");
+
+    std::string monitorstrAP = "MxM: " + matrixName + " x " + prolongatorName;
+    std::string timerstrAP   = "MueLu::" + matrixName + "*" + prolongatorName;
+    if (!labelstr.empty())
+      timerstrAP = labelstr + timerstrAP;
+    if (!levelstr.empty())
+      timerstrAP = timerstrAP + "-" + levelstr;
+
+    {
+      SubFactoryMonitor subM(verbObj, monitorstrAP, *coarseLevel);
+
+      AP = MatrixMatrix::Multiply(*A, !doTranspose, *P, !doTranspose, AP, verbObj.GetOStream(Statistics2),
+                                  doFillComplete, doOptimizeStorage, timerstrAP, APparams);
+    }
+
+    // Allow optimization of storage.
+    // This is necessary for new faster Epetra MM kernels.
+    // Seems to work with matrix modifications to repair diagonal entries.
+
+    std::string timerstrRAP, monitorstrRAP;
+    if (useImplicit) {
+      monitorstrRAP = "MxM: " + prolongatorName + "' x (" + matrixName + prolongatorName + ") (implicit)";
+      timerstrRAP   = "MueLu::" + restrictorName + "*(" + matrixName + "*" + prolongatorName + ")-implicit";
+    } else {
+      monitorstrRAP = "MxM: " + restrictorName + " x (" + matrixName + prolongatorName + ") (explicit)";
+      timerstrRAP   = "MueLu::" + restrictorName + "*(" + matrixName + "*" + prolongatorName + ")-explicit";
+    }
+    if (!labelstr.empty())
+      timerstrRAP = labelstr + timerstrRAP;
+    if (!levelstr.empty())
+      timerstrRAP = timerstrRAP + "-" + levelstr;
+
+    if (useImplicit) {
+      SubFactoryMonitor m2(verbObj, monitorstrRAP, *coarseLevel);
+
+      Ac = MatrixMatrix::Multiply(*P, doTranspose, *AP, !doTranspose, Ac, verbObj.GetOStream(Statistics2),
+                                  doFillComplete, doOptimizeStorage, timerstrRAP, RAPparams);
+
+    } else {
+      SubFactoryMonitor m2(verbObj, monitorstrRAP, *coarseLevel);
+
+      Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, verbObj.GetOStream(Statistics2),
+                                  doFillComplete, doOptimizeStorage, timerstrRAP, RAPparams);
+    }
+
+    if (!isGPU) {
+      APparams->set("graph", AP);
+    }
+
+  } else {
+    std::string monitorstrRAP;
+    std::string timerstrRAP;
+    if (useImplicit) {
+      monitorstrRAP = "MxMxM: " + restrictorName + " x " + matrixName + " x " + prolongatorName + " (implicit)";
+      timerstrRAP   = "MueLu::" + restrictorName + "*" + matrixName + "*" + prolongatorName + "-implicit";
+    } else {
+      monitorstrRAP = "MxMxM: " + restrictorName + " x " + matrixName + " x " + prolongatorName + " (explicit)";
+      timerstrRAP   = "MueLu::" + restrictorName + "*" + matrixName + "*" + prolongatorName + "-explicit";
+    }
+    if (!labelstr.empty())
+      timerstrRAP = labelstr + timerstrRAP;
+    if (!levelstr.empty())
+      timerstrRAP = timerstrRAP + "-" + levelstr;
+
+    if (useImplicit) {
+      Ac = MatrixFactory::Build(P->getDomainMap(), Teuchos::as<LocalOrdinal>(0));
+
+      SubFactoryMonitor m2(verbObj, monitorstrRAP, *coarseLevel);
+
+      Xpetra::TripleMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+          MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+                      doOptimizeStorage, timerstrRAP,
+                      RAPparams);
+    } else {
+      Ac = MatrixFactory::Build(R->getRowMap(), Teuchos::as<LocalOrdinal>(0));
+
+      SubFactoryMonitor m2(verbObj, monitorstrRAP, *coarseLevel);
+
+      Xpetra::TripleMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+          MultiplyRAP(*R, !doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+                      doOptimizeStorage, timerstrRAP,
+                      RAPparams);
+    }
+  }
+
+  Teuchos::ArrayView<const double> relativeFloor = pL.get<Teuchos::Array<double>>("rap: relative diagonal floor")();
+  if (relativeFloor.size() > 0) {
+    Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RelativeDiagonalBoost(Ac, relativeFloor, verbObj.GetOStream(Statistics2));
+  }
+
+  bool repairZeroDiagonals = pL.get<bool>("RepairMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+  bool checkAc             = pL.get<bool>("CheckMainDiagonal") || pL.get<bool>("rap: fix zero diagonals");
+
+  if (checkAc || repairZeroDiagonals) {
+    using magnitudeType = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
+    magnitudeType threshold;
+    if (pL.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+      threshold = pL.get<magnitudeType>("rap: fix zero diagonals threshold");
+    else
+      threshold = Teuchos::as<magnitudeType>(pL.get<double>("rap: fix zero diagonals threshold"));
+    Scalar replacement = Teuchos::as<Scalar>(pL.get<double>("rap: fix zero diagonals replacement"));
+    Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckRepairMainDiagonal(Ac, repairZeroDiagonals, verbObj.GetOStream(Warnings1), threshold, replacement);
+  }
+
+  if (verbObj.IsPrint(Statistics2)) {
+    RCP<ParameterList> params = rcp(new ParameterList());
+    params->set("printLoadBalancingInfo", true);
+    params->set("printCommInfo", true);
+    verbObj.GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, coarseMatrixName, params);
+  }
+
+  if (!isGPU) {
+    RAPparams->set("graph", Ac);
+  }
+
+#ifdef HAVE_MUELU_DEBUG
+  MatrixUtils::checkLocalRowMapMatchesColMap(*Ac);
+#endif  // HAVE_MUELU_DEBUG
 }
 
 }  // namespace MueLu

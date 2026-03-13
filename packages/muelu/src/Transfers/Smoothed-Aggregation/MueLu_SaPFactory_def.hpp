@@ -40,6 +40,7 @@ RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
   SET_VALID_ENTRY("sa: damping factor");
+  SET_VALID_ENTRY("sa: nodal damping factor");
   SET_VALID_ENTRY("sa: calculate eigenvalue estimate");
   SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
   SET_VALID_ENTRY("sa: use rowsumabs diagonal scaling");
@@ -52,9 +53,12 @@ RCP<const ParameterList> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   SET_VALID_ENTRY("sa: rowsumabs use automatic diagonal tolerance");
   SET_VALID_ENTRY("use kokkos refactor");
 #undef SET_VALID_ENTRY
+  validParamList->set("sa: maxwell1 smoothing", false);
 
-  validParamList->set<RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
-  validParamList->set<RCP<const FactoryBase> >("P", Teuchos::null, "Tentative prolongator factory");
+  validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+  validParamList->set<RCP<const FactoryBase>>("P", Teuchos::null, "Tentative prolongator factory");
+
+  validParamList->set<RCP<const FactoryBase>>("CurlCurl", Teuchos::null, "Generating factory of the matrix CurlCurl used during the prolongator smoothing process for Maxwell1");
 
   // Make sure we don't recursively validate options for the matrixmatrix kernels
   ParameterList norecurse;
@@ -75,6 +79,10 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& 
     initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent");
   }
   coarseLevel.DeclareInput("P", initialPFact.get(), this);
+
+  const ParameterList& pL = GetParameterList();
+  if (pL.get<bool>("sa: maxwell1 smoothing") && pL.get<double>("sa: damping factor") != 0.0)
+    fineLevel.DeclareInput("CurlCurl", GetFactory("CurlCurl").get(), this);
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -103,8 +111,8 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
   const ParameterList& pL = GetParameterList();
 
   // Level Get
-  RCP<Matrix> A     = Get<RCP<Matrix> >(fineLevel, "A");
-  RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix> >("P", initialPFact.get());
+  RCP<Matrix> A     = Get<RCP<Matrix>>(fineLevel, "A");
+  RCP<Matrix> Ptent = coarseLevel.Get<RCP<Matrix>>("P", initialPFact.get());
   RCP<Matrix> finalP;
   // If Tentative facctory bailed out (e.g., number of global aggregates is 0), then SaPFactory bails
   //  This level will ultimately be removed in MueLu_Hierarchy_defs.h via a resize()
@@ -130,10 +138,10 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
   if (coarseLevel.IsAvailable("AP reuse data", this)) {
     GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
-    APparams = coarseLevel.Get<RCP<ParameterList> >("AP reuse data", this);
+    APparams = coarseLevel.Get<RCP<ParameterList>>("AP reuse data", this);
 
     if (APparams->isParameter("graph"))
-      finalP = APparams->get<RCP<Matrix> >("graph");
+      finalP = APparams->get<RCP<Matrix>>("graph");
   }
   // By default, we don't need global constants for SaP
   APparams->set("compute global constants: temporaries", APparams->get("compute global constants: temporaries", false));
@@ -156,45 +164,158 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
   TEUCHOS_TEST_FOR_EXCEPTION(doQRStep && enforceConstraints, Exceptions::RuntimeError,
                              "MueLu::TentativePFactory::MakeTentative: cannot use 'enforce constraints' and 'calculate qr' at the same time");
 
-  if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
-    Scalar lambdaMax;
-    Teuchos::RCP<Vector> invDiag;
-    if (userDefinedMaxEigen == -1.) {
-      SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
-      lambdaMax = A->GetMaxEigenvalueEstimate();
-      if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
-        GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = " << maxEigenIterations << ((useAbsValueRowSum) ? ", use rowSumAbs diagonal)" : ", use point diagonal)") << std::endl;
-        Coordinate stopTol = 1e-4;
-        if (useAbsValueRowSum) {
+  // Are we using the special prolongator smoothing for smoothed Reitzinger-Schoeberl?
+  const bool specialMaxwell1Smoothing = pL.get<bool>("sa: maxwell1 smoothing");
+
+  if (!specialMaxwell1Smoothing) {
+    if (dampingFactor != Teuchos::ScalarTraits<SC>::zero()) {
+      Scalar lambdaMax;
+      Teuchos::RCP<Vector> invDiag;
+      if (userDefinedMaxEigen == -1.) {
+        SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
+        lambdaMax = A->GetMaxEigenvalueEstimate();
+        if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
+          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = " << maxEigenIterations << ((useAbsValueRowSum) ? ", use rowSumAbs diagonal)" : ", use point diagonal)") << std::endl;
+          Coordinate stopTol = 1e-4;
+          if (useAbsValueRowSum) {
+            const bool returnReciprocal = true;
+            invDiag                     = Utilities::GetLumpedMatrixDiagonal(*A, returnReciprocal,
+                                                                             diagonalReplacementTolerance,
+                                                                             diagonalReplacementValue,
+                                                                             replaceSingleEntryRowWithZero,
+                                                                             useAutomaticDiagTol);
+            TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
+                                       "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
+            lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
+          } else
+            lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
+          A->SetMaxEigenvalueEstimate(lambdaMax);
+        } else {
+          GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
+        }
+      } else {
+        lambdaMax = userDefinedMaxEigen;
+        A->SetMaxEigenvalueEstimate(lambdaMax);
+      }
+      GetOStream(Statistics1) << "Prolongator damping factor = " << dampingFactor / lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
+
+      {
+        SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
+        if (!useAbsValueRowSum)
+          invDiag = Utilities::GetMatrixDiagonalInverse(*A);  // default
+        else if (invDiag == Teuchos::null) {
+          GetOStream(Runtime0) << "Using rowsumabs diagonal" << std::endl;
           const bool returnReciprocal = true;
           invDiag                     = Utilities::GetLumpedMatrixDiagonal(*A, returnReciprocal,
                                                                            diagonalReplacementTolerance,
                                                                            diagonalReplacementValue,
                                                                            replaceSingleEntryRowWithZero,
                                                                            useAutomaticDiagTol);
-          TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
-                                     "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
-          lambdaMax = Utilities::PowerMethod(*A, invDiag, maxEigenIterations, stopTol);
-        } else
-          lambdaMax = Utilities::PowerMethod(*A, true, maxEigenIterations, stopTol);
-        A->SetMaxEigenvalueEstimate(lambdaMax);
-      } else {
-        GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
+          TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError, "SaPFactory: diagonal reciprocal is null.");
+        }
+
+        SC omega = dampingFactor / lambdaMax;
+        TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
+
+        {
+          SubFactoryMonitor m3(*this, "MueLu::IteratorOps::Jacobi", coarseLevel);
+          // finalP = (I - \omega D^{-1}A) Ptent
+          finalP = MueLu::IteratorOps<SC, LO, GO, NO>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
+          if (enforceConstraints) {
+            if (!pL.get<bool>("use kokkos refactor")) {
+              if (A->GetFixedBlockSize() == 1)
+                optimalSatisfyPConstraintsForScalarPDEsNonKokkos(finalP);
+              else
+                SatisfyPConstraintsNonKokkos(A, finalP);
+            } else {
+              // if (A->GetFixedBlockSize() == 1)
+              //   optimalSatisfyPConstraintsForScalarPDEs(finalP);
+              // else
+              SatisfyPConstraints(A, finalP);
+            }
+          }
+        }
+      }
+
+    } else {
+      finalP = Ptent;
+    }
+  } else {
+    // We are on the (1,1) hierarchy for Maxwell1.
+    // Instead of smoothing with I - omega * Dinv(A) * A, we are smoothing with
+    //  I - beta * D0 * Dinv(NodeMatrix) * D0^T * A
+    //  I - alpha * Dinv(CurlCurl) * CurlCurl, and
+    // where beta matches the damping that was used for the nodal operator.
+
+    const SC nodalDampingFactor = as<SC>(pL.get<double>("sa: nodal damping factor"));
+
+    const bool nodalAndEdgeSmoothing = ((fineLevel.IsAvailable("D0") && fineLevel.IsAvailable("NodeMatrix")) && (nodalDampingFactor != Teuchos::ScalarTraits<SC>::zero()) && (fineLevel.Get<RCP<Matrix>>("NodeMatrix")->GetMaxEigenvalueEstimate() != -Teuchos::ScalarTraits<SC>::one()));
+    const bool edgeSmoothing         = (dampingFactor != Teuchos::ScalarTraits<SC>::zero());
+
+    RCP<Matrix> P_afterNodalAndEdgeSmoothing;
+    if (nodalAndEdgeSmoothing) {
+      auto D0         = fineLevel.Get<RCP<Matrix>>("D0");
+      auto NodeMatrix = fineLevel.Get<RCP<Matrix>>("NodeMatrix");
+
+      auto lambdaMaxNodal = NodeMatrix->GetMaxEigenvalueEstimate();
+      GetOStream(Statistics1) << "Maxwell1 prolongator nodal damping factor = " << nodalDampingFactor / lambdaMaxNodal << " (" << nodalDampingFactor << " / " << lambdaMaxNodal << ")" << std::endl;
+      TEUCHOS_TEST_FOR_EXCEPTION(lambdaMaxNodal == -Teuchos::ScalarTraits<SC>::one(), Exceptions::RuntimeError, "Prolongator damping factor obtained from NodeMatrix is -1.")
+
+      SC beta = nodalDampingFactor / lambdaMaxNodal;
+      TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(beta)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
+
+      {
+        SubFactoryMonitor m3(*this, "MueLu::IteratorOps::JacobiMaxwell1", coarseLevel);
+        P_afterNodalAndEdgeSmoothing = JacobiMaxwell1(A, NodeMatrix, D0, Ptent, beta);
       }
     } else {
-      lambdaMax = userDefinedMaxEigen;
-      A->SetMaxEigenvalueEstimate(lambdaMax);
+      if (!fineLevel.IsAvailable("D0") || !fineLevel.IsAvailable("NodeMatrix"))
+        GetOStream(Warnings) << "Skipping nodal&edge smoothing step since D0 or NodeMatrix matrix is not available\n";
+      else if (nodalDampingFactor == Teuchos::ScalarTraits<SC>::zero())
+        GetOStream(Statistics1) << "Skipping nodal&edge smoothing step since nodal damping factor is zero\n";
+      else if (fineLevel.Get<RCP<Matrix>>("NodeMatrix")->GetMaxEigenvalueEstimate() == -Teuchos::ScalarTraits<SC>::one())
+        GetOStream(Warnings) << "Skipping nodal&edge smoothing step since NodeMatrix matrix has invalid eigenvalue estimate\n";
+      P_afterNodalAndEdgeSmoothing = Ptent;
     }
-    GetOStream(Statistics1) << "Prolongator damping factor = " << dampingFactor / lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
 
-    {
-      SubFactoryMonitor m2(*this, "Fused (I-omega*D^{-1} A)*Ptent", coarseLevel);
+    if (edgeSmoothing) {
+      auto CurlCurl = fineLevel.Get<RCP<Matrix>>("CurlCurl", GetFactory("CurlCurl").get());
+
+      Scalar lambdaMax;
+      Teuchos::RCP<Vector> invDiag;
+      if (userDefinedMaxEigen == -1.) {
+        SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
+        lambdaMax = CurlCurl->GetMaxEigenvalueEstimate();
+        if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
+          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = " << maxEigenIterations << ((useAbsValueRowSum) ? ", use rowSumAbs diagonal)" : ", use point diagonal)") << std::endl;
+          Coordinate stopTol = 1e-4;
+          if (useAbsValueRowSum) {
+            const bool returnReciprocal = true;
+            invDiag                     = Utilities::GetLumpedMatrixDiagonal(*CurlCurl, returnReciprocal,
+                                                                             diagonalReplacementTolerance,
+                                                                             diagonalReplacementValue,
+                                                                             replaceSingleEntryRowWithZero,
+                                                                             useAutomaticDiagTol);
+            TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError,
+                                       "SaPFactory: eigenvalue estimate: diagonal reciprocal is null.");
+            lambdaMax = Utilities::PowerMethod(*CurlCurl, invDiag, maxEigenIterations, stopTol);
+          } else
+            lambdaMax = Utilities::PowerMethod(*CurlCurl, true, maxEigenIterations, stopTol);
+          CurlCurl->SetMaxEigenvalueEstimate(lambdaMax);
+        } else {
+          GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
+        }
+      } else {
+        lambdaMax = userDefinedMaxEigen;
+        CurlCurl->SetMaxEigenvalueEstimate(lambdaMax);
+      }
+
       if (!useAbsValueRowSum)
-        invDiag = Utilities::GetMatrixDiagonalInverse(*A);  // default
+        invDiag = Utilities::GetMatrixDiagonalInverse(*CurlCurl);  // default
       else if (invDiag == Teuchos::null) {
         GetOStream(Runtime0) << "Using rowsumabs diagonal" << std::endl;
         const bool returnReciprocal = true;
-        invDiag                     = Utilities::GetLumpedMatrixDiagonal(*A, returnReciprocal,
+        invDiag                     = Utilities::GetLumpedMatrixDiagonal(*CurlCurl, returnReciprocal,
                                                                          diagonalReplacementTolerance,
                                                                          diagonalReplacementValue,
                                                                          replaceSingleEntryRowWithZero,
@@ -202,31 +323,23 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLe
         TEUCHOS_TEST_FOR_EXCEPTION(invDiag.is_null(), Exceptions::RuntimeError, "SaPFactory: diagonal reciprocal is null.");
       }
 
-      SC omega = dampingFactor / lambdaMax;
-      TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(omega)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
+      SC alpha = dampingFactor / lambdaMax;
+      TEUCHOS_TEST_FOR_EXCEPTION(!std::isfinite(Teuchos::ScalarTraits<SC>::magnitude(alpha)), Exceptions::RuntimeError, "Prolongator damping factor needs to be finite.");
+
+      GetOStream(Statistics1) << "Maxwell1 prolongator edge damping factor = " << alpha << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
 
       {
         SubFactoryMonitor m3(*this, "MueLu::IteratorOps::Jacobi", coarseLevel);
-        // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = MueLu::IteratorOps<SC, LO, GO, NO>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
-        if (enforceConstraints) {
-          if (!pL.get<bool>("use kokkos refactor")) {
-            if (A->GetFixedBlockSize() == 1)
-              optimalSatisfyPConstraintsForScalarPDEsNonKokkos(finalP);
-            else
-              SatisfyPConstraintsNonKokkos(A, finalP);
-          } else {
-            // if (A->GetFixedBlockSize() == 1)
-            //   optimalSatisfyPConstraintsForScalarPDEs(finalP);
-            // else
-            SatisfyPConstraints(A, finalP);
-          }
-        }
+        // finalP = (I - \omega D^{-1}CurlCurl) P_afterNodalAndEdgeSmoothing
+        finalP = MueLu::IteratorOps<SC, LO, GO, NO>::Jacobi(alpha, *invDiag, *CurlCurl, *P_afterNodalAndEdgeSmoothing, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()), APparams);
       }
+    } else {
+      if (!fineLevel.IsAvailable("CurlCurl") && (dampingFactor != Teuchos::ScalarTraits<SC>::zero()))
+        GetOStream(Warnings) << "Skipping edge-only smoothing step since CurlCurl matrix is not available\n";
+      else
+        GetOStream(Statistics1) << "Maxwell1 prolongator edge smoothing skipped" << std::endl;
+      finalP = P_afterNodalAndEdgeSmoothing;
     }
-
-  } else {
-    finalP = Ptent;
   }
 
   // Level Set
@@ -1003,6 +1116,35 @@ void SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::optimalSatisfyPConst
                        myKernel);
 
 }  // SatsifyPConstraints()
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> SaPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::JacobiMaxwell1(const RCP<Matrix>& SM,
+                                                                                                                                     const RCP<Matrix>& Kn,
+                                                                                                                                     const RCP<Matrix>& D0,
+                                                                                                                                     const RCP<Matrix>& Pe_tent,
+                                                                                                                                     const Scalar beta) const {
+  // Compute Pe := (I - \beta D0 * diag(Kn)^-1 * D0^T SM) * Pe_tent
+  using XMM = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  auto one  = Teuchos::ScalarTraits<Scalar>::one();
+
+  auto diagKnInv = Utilities::GetMatrixDiagonalInverse(*Kn);
+
+  auto D0_diagKnInv = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildCopy(D0, Teuchos::Copy);
+  D0_diagKnInv->rightScale(*diagKnInv);
+
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> dummy;
+  auto D0_diagKnInv_D0T = XMM::Multiply(*D0_diagKnInv, false, *D0, true, dummy, GetOStream(Runtime0));
+  D0_diagKnInv          = Teuchos::null;
+
+  auto SM_Pe_tent                  = XMM::Multiply(*SM, false, *Pe_tent, false, dummy, GetOStream(Runtime0));
+  auto D0_diagKnInv_D0T_SM_Pe_tent = XMM::Multiply(*D0_diagKnInv_D0T, false, *SM_Pe_tent, false, dummy, GetOStream(Runtime0));
+
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Pe;
+  XMM::TwoMatrixAdd(*Pe_tent, false, one, *D0_diagKnInv_D0T_SM_Pe_tent, false, -beta, Pe, GetOStream(Runtime0));
+  Pe->fillComplete(Pe_tent->getDomainMap(), Pe_tent->getRangeMap());
+
+  return Pe;
+}
 
 }  // namespace MueLu
 

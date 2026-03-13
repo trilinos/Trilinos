@@ -116,6 +116,8 @@ class SaPFactory : public PFactory {
 
   bool constrainRow(Scalar* orig, LocalOrdinal nEntries, Scalar leftBound, Scalar rghtBound, Scalar rsumTarget, Scalar* fixedUnsorted, Scalar* scalarData) const;
 
+  RCP<Matrix> JacobiMaxwell1(const RCP<Matrix>& SM, const RCP<Matrix>& Kn, const RCP<Matrix>& D0, const RCP<Matrix>& Pe_tent, const Scalar beta) const;
+
   //@}
 };
 

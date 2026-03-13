@@ -10,204 +10,733 @@
 #ifndef MUELU_CONSTRAINT_DEF_HPP
 #define MUELU_CONSTRAINT_DEF_HPP
 
-#include <Teuchos_BLAS.hpp>
-#include <Teuchos_LAPACK.hpp>
-#include <Teuchos_SerialDenseVector.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
-#include <Teuchos_SerialDenseHelpers.hpp>
-
-#include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Map.hpp>
-#include <Xpetra_Matrix.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_MultiVector.hpp>
-#include <Xpetra_CrsGraph.hpp>
+#include <Xpetra_Matrix.hpp>
+#include "KokkosBatched_Copy_Internal.hpp"
+#include "Teuchos_Assert.hpp"
+#include "Xpetra_MatrixFactory.hpp"
+#include "Xpetra_MatrixMatrix.hpp"
 
 #include "MueLu_Exceptions.hpp"
-
+#include "MueLu_ProductOperator.hpp"
 #include "MueLu_Constraint_decl.hpp"
+#include "MueLu_Utilities.hpp"
+#include "MueLu_Monitor.hpp"
+
+#include "KokkosBlas1_set.hpp"
+#include "KokkosBatched_QR_FormQ_TeamVector_Internal.hpp"
+#include "KokkosBatched_ApplyQ_Decl.hpp"
+#include "KokkosBatched_SetIdentity_Decl.hpp"
+#include "KokkosBatched_SetIdentity_Impl.hpp"
+#include "Kokkos_DualView.hpp"
+#include "Kokkos_Pair.hpp"
+#include "Kokkos_UnorderedMap.hpp"
+#include "KokkosBatched_QR_Decl.hpp"
+#include "KokkosBatched_QR_Serial_Impl.hpp"
+#include "KokkosBatched_QR_TeamVector_Impl.hpp"
+#include "KokkosBatched_QR_FormQ_TeamVector_Internal.hpp"
+#include "KokkosBatched_LU_Decl.hpp"
+#include "KokkosBatched_LU_Team_Impl.hpp"
+#include "KokkosBatched_Trsv_Decl.hpp"
+#include "KokkosBatched_Trsv_TeamVector_Impl.hpp"
+#include "KokkosBatched_Gemm_Decl.hpp"
+#include "KokkosBatched_Gemm_Team_Impl.hpp"
+#include "KokkosBatched_Gemv_Decl.hpp"
+#include "KokkosBatched_Gemv_Team_Impl.hpp"
+#include "KokkosBatched_Copy_Decl.hpp"
+#include "KokkosBatched_Copy_Impl.hpp"
+#include "KokkosBlas1_set.hpp"
 
 namespace MueLu {
 
+template <class LocalGraph, class LocalVector>
+class MinSpmMV {
+ private:
+  using local_ordinal_type = typename LocalVector::value_type;
+
+  LocalGraph lclGraph;
+  LocalVector lhs;
+  LocalVector rhs;
+
+  const local_ordinal_type MAX_VAL = KokkosKernels::ArithTraits<local_ordinal_type>::max();
+
+ public:
+  MinSpmMV(LocalGraph lclGraph_, LocalVector lhs_, LocalVector rhs_)
+    : lclGraph(lclGraph_)
+    , lhs(lhs_)
+    , rhs(rhs_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void init(bool& dst) {
+    dst = false;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join(bool& dst, const bool& src) {
+    dst = dst || src;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const local_ordinal_type i, bool& changed) const {
+    local_ordinal_type val = MAX_VAL;
+    for (local_ordinal_type jj = lclGraph.row_map(i); jj < (local_ordinal_type)lclGraph.row_map(i + 1); ++jj) {
+      auto j = lclGraph.entries(jj);
+      val    = Kokkos::min(val, lhs(j));
+    }
+    auto prev = rhs(i);
+    rhs(i)    = val;
+    changed   = changed || (prev != val);
+  }
+};
+
+template <class LocalGraph, class LocalVector>
+class MinSpmMVT {
+ private:
+  using local_ordinal_type = typename LocalVector::value_type;
+
+  LocalGraph lclGraph;
+  LocalVector lhs;
+  LocalVector rhs;
+
+  const local_ordinal_type MAX_VAL = KokkosKernels::ArithTraits<local_ordinal_type>::max();
+
+ public:
+  MinSpmMVT(LocalGraph lclGraph_, LocalVector lhs_, LocalVector rhs_)
+    : lclGraph(lclGraph_)
+    , lhs(lhs_)
+    , rhs(rhs_) {
+    Kokkos::deep_copy(rhs, MAX_VAL);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const local_ordinal_type i) const {
+    local_ordinal_type val = lhs(i);
+    for (local_ordinal_type jj = lclGraph.row_map(i); jj < lclGraph.row_map(i + 1); ++jj) {
+      auto j = lclGraph.entries(jj);
+      Kokkos::atomic_min(&rhs(j), val);
+    }
+  }
+};
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const RCP<MultiVector>& B, const RCP<MultiVector>& Bc, RCP<const CrsGraph> Ppattern) {
-  B_  = B;
-  Bc_ = Bc;
+class BlockInverseFunctor {
+ public:
+  using CrsGraph          = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
+  using CrsMatrix         = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_graph_type  = typename CrsGraph::local_graph_type;
+  using local_matrix_type = typename CrsMatrix::local_matrix_type;
+  using scalar_type       = typename local_matrix_type::value_type;
+  using ATS               = KokkosKernels::ArithTraits<scalar_type>;
+  using magnitude_type    = typename ATS::magnitudeType;
+  using magATS            = KokkosKernels::ArithTraits<magnitude_type>;
+  using memory_space      = typename Node::memory_space;
 
-  const size_t NSDim = Bc->getNumVectors();
+  using shared_matrix = Kokkos::View<scalar_type**, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
+  using shared_vector = Kokkos::View<scalar_type*, typename Node::execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged>;
 
-  Ppattern_ = Ppattern;
+  BlockInverseFunctor(local_matrix_type A_, local_graph_type blocks_, LocalOrdinal maxBlocksize_, local_matrix_type invA_, Kokkos::View<bool*, memory_space> singular_)
+    : A(A_)
+    , blocks(blocks_)
+    , maxBlocksize(maxBlocksize_)
+    , invA(invA_)
+    , singular(singular_) {}
 
-  size_t numRows = Ppattern_->getLocalNumRows();
-  XXtInv_.resize(numRows);
+  class TagFindSingularBlocks {};
+  class TagCountSingularBlocks {};
+  class TagApply {};
 
-  RCP<const Import> importer = Ppattern_->getImporter();
+ private:
+  const scalar_type zero        = ATS::zero();
+  const magnitude_type mag_zero = magATS::zero();
+  const scalar_type one         = ATS::one();
 
-  X_ = MultiVectorFactory::Build(Ppattern_->getColMap(), NSDim);
-  if (!importer.is_null())
-    X_->doImport(*Bc, *importer, Xpetra::INSERT);
-  else
-    *X_ = *Bc;
+  local_matrix_type A;
+  local_graph_type blocks;
+  LocalOrdinal maxBlocksize;
+  local_matrix_type invA;
+  Kokkos::View<bool*, memory_space> singular;
 
-  std::vector<const SC*> Xval(NSDim);
-  for (size_t j = 0; j < NSDim; j++)
-    Xval[j] = X_->getData(j).get();
+ public:
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagFindSingularBlocks, const typename Kokkos::TeamPolicy<typename Node::execution_space>::member_type& thread) const {
+    using member_type = typename Kokkos::TeamPolicy<typename Node::execution_space>::member_type;
 
-  SC zero = Teuchos::ScalarTraits<SC>::zero();
-  SC one  = Teuchos::ScalarTraits<SC>::one();
+    auto blockId   = thread.league_rank();
+    auto blockRow  = blocks.rowConst(blockId);
+    auto blockSize = blockRow.length;
 
-  Teuchos::BLAS<LO, SC> blas;
-  Teuchos::LAPACK<LO, SC> lapack;
-  LO lwork = 3 * NSDim;
-  ArrayRCP<LO> IPIV(NSDim);
-  ArrayRCP<SC> WORK(lwork);
+    shared_matrix lclA(thread.team_shmem(), blockSize, blockSize);
+    shared_vector lclConst(thread.team_shmem(), blockSize);
+    shared_vector lclAConst(thread.team_shmem(), blockSize);
 
-  for (size_t i = 0; i < numRows; i++) {
-    Teuchos::ArrayView<const LO> indices;
-    Ppattern_->getLocalRowView(i, indices);
+    // Initialize lclA
+    KokkosBlas::TeamSet<member_type>::invoke(thread, zero, lclA);
+    KokkosBlas::TeamSet<member_type>::invoke(thread, one, lclConst);
+    thread.team_barrier();
 
-    size_t nnz = indices.size();
+    // extract block from A
+    for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+      auto i   = blockRow.colidx(ii);
+      auto row = A.rowConst(i);
+      for (LocalOrdinal jj = 0; jj < row.length; ++jj) {
+        auto j = row.colidx(jj);
+        auto d = row.value(jj);
+        for (LocalOrdinal kk = 0; kk < blockSize; ++kk)
+          if (blockRow.colidx(kk) == j) {
+            lclA(ii, kk) += d;
+            break;
+          }
+      }
+    }
 
-    XXtInv_[i]                                 = Teuchos::SerialDenseMatrix<LO, SC>(NSDim, NSDim, false /*zeroOut*/);
-    Teuchos::SerialDenseMatrix<LO, SC>& XXtInv = XXtInv_[i];
+    // lclAConst = lclA * lclConst
+    KokkosBlas::TeamGemv<member_type, KokkosBlas::Trans::NoTranspose, KokkosBlas::Algo::Gemv::Unblocked>::invoke(thread, one, lclA, lclConst, zero, lclAConst);
+    thread.team_barrier();
 
-    if (NSDim == 1) {
-      SC d = zero;
-      for (size_t j = 0; j < nnz; j++)
-        d += Xval[0][indices[j]] * Xval[0][indices[j]];
-      XXtInv(0, 0) = one / d;
+    magnitude_type norm2 = mag_zero;
+    for (LocalOrdinal i = 0; i < blockSize; ++i) {
+      norm2 += ATS::magnitude(lclAConst(i) * lclAConst(i));
+    }
 
+    singular(blockId) = (ATS::magnitude(norm2) < ATS::epsilon());
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagCountSingularBlocks, const typename Kokkos::TeamPolicy<typename Node::execution_space>::member_type& thread, LocalOrdinal& numSingularBlocks) const {
+    auto blockId = thread.league_rank();
+    if (singular(blockId))
+      ++numSingularBlocks;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(TagApply, const typename Kokkos::TeamPolicy<typename Node::execution_space>::member_type& thread) const {
+    using member_type = typename Kokkos::TeamPolicy<typename Node::execution_space>::member_type;
+
+    auto blockId   = thread.league_rank();
+    auto blockRow  = blocks.rowConst(blockId);
+    auto blockSize = blockRow.length;
+
+    shared_matrix lclA(thread.team_shmem(), blockSize, blockSize);
+    shared_matrix lclInvA(thread.team_shmem(), blockSize, blockSize);
+
+    const bool PseudoInverse = (!(singular.extent(0) == 0)) && singular(blockId);
+
+    // Initialize lclA
+    // If PseudoInverse, we shift the constant mode.
+    KokkosBlas::TeamSet<member_type>::invoke(thread, PseudoInverse ? one : zero, lclA);
+    thread.team_barrier();
+
+    // extract block from A
+    for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+      auto i   = blockRow.colidx(ii);
+      auto row = A.rowConst(i);
+      for (LocalOrdinal jj = 0; jj < row.length; ++jj) {
+        auto j = row.colidx(jj);
+        auto d = row.value(jj);
+        for (LocalOrdinal kk = 0; kk < blockSize; ++kk)
+          if (blockRow.colidx(kk) == j) {
+            lclA(ii, kk) += d;
+            break;
+          }
+      }
+    }
+
+    // LU
+    {
+      // LU factorization: lclA = L * U
+      KokkosBatched::TeamLU<member_type, KokkosBlas::Algo::QR::Unblocked>::invoke(thread, lclA);
+
+      // set lclInvA to identity matrix
+      KokkosBatched::TeamSetIdentity<member_type>::invoke(thread, lclInvA);
+      thread.team_barrier();
+
+      // // lclInvA = L^{-1}*lclInvA
+      for (LocalOrdinal j = 0; j < blockSize; ++j)
+        KokkosBatched::TeamVectorTrsv<member_type, KokkosBatched::Uplo::Lower, KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::Unit, KokkosBatched::Algo::Trsv::Unblocked>::invoke(thread, one, lclA, Kokkos::subview(lclInvA, Kokkos::ALL(), j));
+      thread.team_barrier();
+
+      // // lclInvA = R^{-1}*lclInvA
+      for (LocalOrdinal j = 0; j < blockSize; ++j)
+        KokkosBatched::TeamVectorTrsv<member_type, KokkosBatched::Uplo::Upper, KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::NonUnit, KokkosBatched::Algo::Trsv::Unblocked>::invoke(thread, one, lclA, Kokkos::subview(lclInvA, Kokkos::ALL(), j));
+      thread.team_barrier();
+    }
+
+    // The QR in Kokkos Kernels is broken. Once it gets fixed we can use it and remove LU.
+    //
+    // QR
+    // {
+
+    //   shared_vector tau(thread.team_shmem(), blockSize);
+    //   shared_vector work(thread.team_shmem(), blockSize);
+
+    //   // QR factorization: lclA = Q * R
+    //   KokkosBatched::TeamVectorQR<member_type, KokkosBlas::Algo::QR::Unblocked>::invoke(thread, lclA, tau, work);
+
+    //   // set lclInvA to identity matrix
+    //   KokkosBatched::TeamSetIdentity<member_type>::invoke(thread, lclInvA);
+    //   thread.team_barrier();
+
+    //   // lclInvA = Q^T*lclInvA
+    //   KokkosBatched::TeamVectorApplyQ<member_type, KokkosBatched::Side::Left, KokkosBlas::Trans::Transpose, KokkosBlas::Algo::ApplyQ::Unblocked>::invoke(thread, lclA, tau, lclInvA, work);
+    //   thread.team_barrier();
+
+    //   // lclInvA = R^{-1}*lclInvA
+    //   for (LocalOrdinal j = 0; j < blockSize; ++j)
+    //     KokkosBatched::TeamVectorTrsv<member_type, KokkosBatched::Uplo::Upper, KokkosBatched::Trans::NoTranspose, KokkosBatched::Diag::NonUnit, KokkosBatched::Algo::Trsv::Unblocked>::invoke(thread, one, lclA, Kokkos::subview(lclInvA, Kokkos::ALL(), j));
+    //   thread.team_barrier();
+    // }
+
+    if (PseudoInverse) {
+      // Multiply with projection that removes constant vector
+
+      // Set up projection matrix
+      for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+        for (LocalOrdinal kk = 0; kk < blockSize; ++kk) {
+          if (ii == kk) {
+            lclA(ii, kk) = one - one / (scalar_type)blockSize;
+          } else {
+            lclA(ii, kk) = -one / (scalar_type)blockSize;
+          }
+        }
+      }
+      // Copy lclInvA to temp
+      shared_matrix temp(thread.team_shmem(), blockSize, blockSize);
+      KokkosBatched::TeamCopy<member_type, KokkosBatched::Trans::NoTranspose>::invoke(thread, lclInvA, temp);
+      thread.team_barrier();
+
+      // lclInvA = proj * lclInvA
+      KokkosBatched::TeamGemm<member_type, KokkosBatched::Trans::NoTranspose, KokkosBatched::Trans::NoTranspose, KokkosBatched::Algo::Gemm::Unblocked>::invoke(thread, one, lclA, temp, zero, lclInvA);
+      thread.team_barrier();
+    }
+
+    // write inverse of block to invA
+    for (LocalOrdinal ii = 0; ii < blockSize; ++ii) {
+      auto i   = blockRow.colidx(ii);
+      auto row = invA.row(i);
+      for (LocalOrdinal jj = 0; jj < row.length; ++jj) {
+        auto j = row.colidx(jj);
+        for (LocalOrdinal kk = 0; kk < blockSize; ++kk)
+          if (blockRow.colidx(kk) == j) {
+            row.value(jj) = lclInvA(ii, kk);
+            break;
+          }
+      }
+    }
+  }
+
+  // amount of shared memory
+  size_t team_shmem_size(int /* team_size */) const {
+    return 3 * shared_matrix::shmem_size(maxBlocksize, maxBlocksize) + 2 * shared_vector::shmem_size(maxBlocksize);
+  }
+};
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDomainMap() const {
+  return X_->getDomainMap();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getRangeMap() const {
+  return X_->getDomainMap();
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolveBelos(const bool detect_singular_blocks) {
+  Monitor m(*this, "PrepareLeastSquaresSolveBelos");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(!detect_singular_blocks, Exceptions::RuntimeError, "The option \"emin: least squares solver type\" = \"Belos\" is currently only implemented for non-singular constraint solves");
+
+  problem_ = rcp(new Belos::LinearProblem<Scalar, MV, OP>());
+
+  std::vector<RCP<Operator>> ops      = {X_, X_};
+  std::vector<Teuchos::ETransp> modes = {Teuchos::NO_TRANS, Teuchos::TRANS};
+  RCP<Operator> XXt                   = rcp(new ProductOperator(ops, modes));
+  auto belosXXt                       = rcp(new Belos::XpetraOp<Scalar, LocalOrdinal, GlobalOrdinal, Node>(XXt));
+
+  problem_->setOperator(belosXXt);
+  problem_->setLabel("LeastSquares");
+
+  auto belosList = rcp(new Teuchos::ParameterList());
+  belosList->set("Implicit Residual Scaling", "None");
+  belosList->set("Convergence Tolerance", 1e-16);
+  auto out = GetMueLuOStream();
+  belosList->set("Output Stream", out->getOStream());
+  // belosList->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+  // belosList->set("Output Frequency", 1);
+  // belosList->set("Output Style", Belos::Brief);
+
+  Belos::SolverFactory<Scalar, MV, OP> solverFactory;
+  solver_ = solverFactory.create("Pseudo Block CG", belosList);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+allocateBlockDiagonalMatrix(RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> map,
+                            const typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type blocks) {
+  using graph_type      = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type;
+  using matrix_type     = typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type;
+  using execution_space = typename Node::execution_space;
+
+  auto numRows   = map->getLocalNumElements();
+  auto numBlocks = blocks.numRows();
+  typename graph_type::row_map_type::non_const_type rowptr("rowptr", numRows + 1);
+
+  LocalOrdinal nnz = 0;
+  Kokkos::parallel_reduce(
+      "MueLu::Constraint::allocateBlockDiagonalMatrix::1", Kokkos::RangePolicy<execution_space>(0, numBlocks), KOKKOS_LAMBDA(const LocalOrdinal blockId, LocalOrdinal& count) {
+    auto blockRow = blocks.rowConst(blockId);
+    auto blockSize = blockRow.length;
+
+    for (LocalOrdinal k = 0; k < blockSize; ++k) {
+      auto rowId = blockRow.colidx(k);
+      if ((decltype(numRows))rowId+2<numRows+1)
+        Kokkos::atomic_add(&rowptr(rowId+2), blockSize);
+      count += blockSize;
+    } }, nnz);
+
+  Kokkos::parallel_scan(
+      "MueLu::Constraint::allocateBlockDiagonalMatrix::3", Kokkos::RangePolicy<execution_space>(0, numRows), KOKKOS_LAMBDA(const LocalOrdinal rowId, LocalOrdinal& sum, const bool is_final) {
+    sum += rowptr(rowId+1);
+    if (is_final) {
+      rowptr(rowId+1) = sum;
+    } });
+
+  typename graph_type::entries_type::non_const_type indices("lclInvXXt_indices", nnz);
+
+  Kokkos::parallel_for(
+      "MueLu::Constraint::allocateBlockDiagonalMatrix::3", Kokkos::RangePolicy<execution_space>(0, numBlocks), KOKKOS_LAMBDA(const LocalOrdinal blockId) {
+        auto blockRow  = blocks.rowConst(blockId);
+        auto blockSize = blockRow.length;
+
+        for (LocalOrdinal k = 0; k < blockSize; ++k) {
+          auto rowId = blockRow.colidx(k);
+          for (LocalOrdinal jj = 0; jj < blockSize; ++jj) {
+            auto j     = blockRow.colidx(jj);
+            auto l     = Kokkos::atomic_fetch_inc(&rowptr(rowId + 1));
+            indices(l) = j;
+          }
+        }
+      });
+
+  auto lclInvXXtGraph = graph_type(indices, rowptr);
+  typename matrix_type::values_type::non_const_type values("lclInvXXt_values", nnz);
+  auto lclInvXXt = matrix_type("lclInvXXt", numRows, values, lclInvXXtGraph);
+  return Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(lclInvXXt, map, map, map, map);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::FindBlocks(RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>& XXt) {
+  using execution_space = typename Node::execution_space;
+  using memory_space    = typename Node::memory_space;
+  using range_type      = Kokkos::RangePolicy<LocalOrdinal, execution_space>;
+
+  // This is a generic but less efficient implementation that discovers blocks by looping
+  // over the graph of the constraint matrix X. Using additional information, specific constraints
+  // can compute the block structure in simpler fashion.
+
+  auto numConstraints = XXt->getRowMap()->getLocalNumElements();
+
+  Kokkos::View<LocalOrdinal*, memory_space> blockIds("blockIds", numConstraints);
+  Kokkos::View<LocalOrdinal*, memory_space> blockIds2("blockIds2", numConstraints);
+
+  auto lclGraph = XXt->getLocalGraphDevice();
+
+  auto constraint_range = range_type(0, numConstraints);
+
+  // initialize blockIds with constraintIds
+  Kokkos::parallel_for(
+      "MueLu::Constraint::FindBlocks::init_blockIds", constraint_range,
+      KOKKOS_LAMBDA(const LocalOrdinal contraintId) {
+        blockIds(contraintId) = contraintId;
+      });
+  Kokkos::fence();
+
+  // loop over rows of XXt and assign min of encountered blockIds until nothing changes anymore.
+  bool changed    = true;
+  bool resultsIn2 = false;
+  while (changed) {
+    changed = false;
+    if (!resultsIn2) {
+      MinSpmMV functor(lclGraph, blockIds, blockIds2);
+      Kokkos::parallel_reduce("MueLu::Constraint::FindBlocks::minSpmv1", constraint_range, functor, changed);
+      resultsIn2 = true;
     } else {
-      Teuchos::SerialDenseMatrix<LO, SC> locX(NSDim, nnz, false /*zeroOut*/);
-      for (size_t j = 0; j < nnz; j++)
-        for (size_t k = 0; k < NSDim; k++)
-          locX(k, j) = Xval[k][indices[j]];
-
-      // XXtInv_ = (locX*locX^T)^{-1}
-      blas.GEMM(Teuchos::NO_TRANS, Teuchos::CONJ_TRANS, NSDim, NSDim, nnz,
-                one, locX.values(), locX.stride(),
-                locX.values(), locX.stride(),
-                zero, XXtInv.values(), XXtInv.stride());
-
-      LO info;
-      // Compute LU factorization using partial pivoting with row exchanges
-      lapack.GETRF(NSDim, NSDim, XXtInv.values(), XXtInv.stride(), IPIV.get(), &info);
-      // Use the computed factorization to compute the inverse
-      lapack.GETRI(NSDim, XXtInv.values(), XXtInv.stride(), IPIV.get(), WORK.get(), lwork, &info);
+      MinSpmMV functor(lclGraph, blockIds2, blockIds);
+      Kokkos::parallel_reduce("MueLu::Constraint::FindBlocks::minSpmv2", constraint_range, functor, changed);
+      resultsIn2 = false;
     }
+  }
+  if (resultsIn2)
+    Kokkos::deep_copy(blockIds, blockIds2);
+
+  // record all blockIds that are still in use
+  Kokkos::View<bool*, memory_space> blockStatus("blockStatus", numConstraints);
+  Kokkos::parallel_for(
+      "MueLu::Constraint::FindBlocks::set_blockstatus", constraint_range,
+      KOKKOS_LAMBDA(LocalOrdinal contraintId) {
+        Kokkos::atomic_store(&blockStatus(blockIds(contraintId)), true);
+      });
+  Kokkos::fence();
+
+  // renumber blockIds that are still in use consecutively
+  Kokkos::View<LocalOrdinal*, memory_space> newBlockIds("newBlockIds", numConstraints);
+  LocalOrdinal numBlocks = 0;
+  Kokkos::parallel_scan(
+      "MueLu::Constraint::FindBlocks::compute_blockIds", constraint_range,
+      KOKKOS_LAMBDA(LocalOrdinal contraintId, LocalOrdinal & blockId, const bool final) {
+        if (final)
+          newBlockIds(contraintId) = blockId;
+        if (blockStatus(contraintId))
+          ++blockId;
+      },
+      numBlocks);
+
+  // Build graph with block info
+  using graph_type = typename Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type;
+  typename graph_type::row_map_type::non_const_type rowptr("blocks_rowptr", numBlocks + 1);
+  typename graph_type::entries_type::non_const_type indices("blocks_indices", numConstraints);
+
+  Kokkos::parallel_for(
+      "MueLu::Constraint::FindBlocks::count_entries_per_block", constraint_range, KOKKOS_LAMBDA(const LocalOrdinal constraintId) {
+        auto blockId = newBlockIds(blockIds(constraintId));
+        if (blockId + 2 < numBlocks + 1)
+          Kokkos::atomic_inc(&rowptr(blockId + 2));
+      });
+  Kokkos::fence();
+
+  auto block_range = range_type(0, numBlocks);
+
+  // prefix sum
+  Kokkos::parallel_scan(
+      "MueLu::Constraint::FindBlocks::prefix_sum", block_range, KOKKOS_LAMBDA(const LocalOrdinal blockId, LocalOrdinal& sum, const bool final) {
+    sum += rowptr(blockId+1);
+    if (final) {
+      rowptr(blockId+1) = sum;
+    } });
+
+  Kokkos::parallel_for(
+      "MueLu::Constraint::FindBlocks::fill", constraint_range, KOKKOS_LAMBDA(const LocalOrdinal contraintId) {
+        auto blockId    = newBlockIds(blockIds(contraintId));
+        auto offset     = Kokkos::atomic_fetch_inc(&rowptr(blockId + 1));
+        indices(offset) = contraintId;
+      });
+
+  graph_type blocks(indices, rowptr);
+
+  return blocks;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolveDirect(const bool detect_singular_blocks) {
+  using memory_space = typename Node::memory_space;
+  Monitor m(*this, "PrepareLeastSquaresSolveDirect");
+
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> XXt;
+  {
+    SubMonitor m2(*this, "XXt");
+    XXt = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*X_, false, *X_, true, XXt, GetOStream(Runtime0), true, true);
+  }
+
+  auto XXtgraph = XXt->getCrsGraph();
+  auto blocks   = this->FindBlocks(XXtgraph);
+  invXXt_       = allocateBlockDiagonalMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(XXt->getRowMap(), blocks);
+
+  LocalOrdinal numBlocks    = blocks.numRows();
+  LocalOrdinal maxBlocksize = invXXt_->getLocalMaxNumRowEntries();
+
+  // If we pass a view of size 0 to the functor, all blocks are assumed to be non-singular.
+  Kokkos::View<bool*, memory_space> block_is_singular;
+  LocalOrdinal numSingularBlocks = 0;
+  if (detect_singular_blocks)
+    block_is_singular = Kokkos::View<bool*, memory_space>("block_is_singular", numBlocks);
+
+  using functor_type = BlockInverseFunctor<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  functor_type functor(XXt->getLocalMatrixDevice(), blocks, maxBlocksize, invXXt_->getLocalMatrixDevice(), block_is_singular);
+
+  if (detect_singular_blocks) {
+    SubMonitor m2(*this, "singular block detection");
+    Kokkos::parallel_for("MueLu::Constraint::findSingularBlocks", Kokkos::TeamPolicy<typename Node::execution_space, typename functor_type::TagFindSingularBlocks>(numBlocks, 1), functor);
+
+    if (IsPrint(Statistics0)) {
+      Kokkos::parallel_reduce("MueLu::Constraint::countSingularBlocks", Kokkos::TeamPolicy<typename Node::execution_space, typename functor_type::TagCountSingularBlocks>(numBlocks, 1), functor, numSingularBlocks);
+    }
+  }
+
+  {
+    SubMonitor m2(*this, "inversion");
+    Kokkos::parallel_for("MueLu::Constraint::invertBlocks", Kokkos::TeamPolicy<typename Node::execution_space, typename functor_type::TagApply>(numBlocks, 1), functor);
+  }
+
+  if (IsPrint(Statistics0)) {
+    // print some stats
+
+    auto comm = invXXt_->getRowMap()->getComm();
+    GlobalOrdinal globalNumBlocks;
+    GlobalOrdinal globalNumSingularBlocks;
+    MueLu_sumAll(comm, (GlobalOrdinal)numBlocks, globalNumBlocks);
+    MueLu_sumAll(comm, (GlobalOrdinal)numSingularBlocks, globalNumSingularBlocks);
+
+    GetOStream(Statistics0) << "Least-squares problem:\n maximum block size: " << invXXt_->getGlobalMaxNumRowEntries() << "\n Number of blocks: " << globalNumBlocks << "\n Number of singular blocks: " << globalNumSingularBlocks << std::endl;
   }
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ResidualNorm(const RCP<const Matrix> P) const {
-  const auto one = Teuchos::ScalarTraits<Scalar>::one();
-
-  auto residual = MultiVectorFactory::Build(B_->getMap(), B_->getNumVectors());
-  P->apply(*Bc_, *residual, Teuchos::NO_TRANS);
-  residual->update(one, *B_, -one);
-  Teuchos::Array<MagnitudeType> norms(B_->getNumVectors());
-  residual->norm2(norms);
-  MagnitudeType residualNorm = Teuchos::ScalarTraits<MagnitudeType>::zero();
-  for (size_t k = 0; k < B_->getNumVectors(); ++k) {
-    residualNorm += norms[k] * norms[k];
-  }
-  return Teuchos::ScalarTraits<MagnitudeType>::squareroot(residualNorm);
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PrepareLeastSquaresSolve(const std::string& solverType, const bool detect_singular_blocks) {
+  if (solverType == "Belos")
+    PrepareLeastSquaresSolveBelos(detect_singular_blocks);
+  else if (solverType == "direct")
+    PrepareLeastSquaresSolveDirect(detect_singular_blocks);
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be one of (Belos|direct), not \"" << solverType << "\".");
+  solverType_ = solverType;
 }
 
-//! \note We assume that the graph of Projected is the same as Ppattern_
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(const Matrix& P, Matrix& Projected) const {
-  // We check only row maps. Column may be different.
-  TEUCHOS_TEST_FOR_EXCEPTION(!P.getRowMap()->isSameAs(*Projected.getRowMap()), Exceptions::Incompatible,
-                             "Row maps are incompatible");
-  const size_t NSDim   = X_->getNumVectors();
-  const size_t numRows = P.getLocalNumRows();
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::LeastSquaresSolveBelos(const MultiVector& B, MultiVector& C) const {
+  // Solve (X * X^T) * C = B
 
-  const Map& colMap  = *P.getColMap();
-  const Map& PColMap = *Projected.getColMap();
+  problem_->setLHS(rcpFromRef(C));
+  problem_->setRHS(rcpFromRef(B));
+  TEUCHOS_ASSERT(problem_->setProblem());
 
-  Projected.resumeFill();
+  solver_->setProblem(problem_);
+  solver_->solve();
+}
 
-  Teuchos::ArrayView<const LO> indices, pindices;
-  Teuchos::ArrayView<const SC> values, pvalues;
-  Teuchos::Array<SC> valuesAll(colMap.getLocalNumElements()), newValues;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::LeastSquaresSolveDirect(const MultiVector& B, MultiVector& C) const {
+  // Solve (X * X^T) * C = B
+  invXXt_->apply(B, C);
+}
 
-  LO invalid = Teuchos::OrdinalTraits<LO>::invalid();
-  LO oneLO   = Teuchos::OrdinalTraits<LO>::one();
-  SC zero    = Teuchos::ScalarTraits<SC>::zero();
-  SC one     = Teuchos::ScalarTraits<SC>::one();
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::LeastSquaresSolve(const MultiVector& B, MultiVector& C) const {
+  if (solverType_ == "Belos")
+    LeastSquaresSolveBelos(B, C);
+  else if (solverType_ == "direct")
+    LeastSquaresSolveDirect(B, C);
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "solverType must be one of (Belos|direct), not \"" << solverType_ << "\".");
+}
 
-  std::vector<const SC*> Xval(NSDim);
-  for (size_t j = 0; j < NSDim; j++)
-    Xval[j] = X_->getData(j).get();
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::apply(const MultiVector& P,
+                                                                  MultiVector& Projected,
+                                                                  Teuchos::ETransp mode,
+                                                                  Scalar alpha,
+                                                                  Scalar beta) const {
+  const auto one  = Teuchos::ScalarTraits<Scalar>::one();
+  const auto zero = Teuchos::ScalarTraits<Scalar>::zero();
 
-  for (size_t i = 0; i < numRows; i++) {
-    P.getLocalRowView(i, indices, values);
-    Projected.getLocalRowView(i, pindices, pvalues);
+  TEUCHOS_ASSERT(mode == Teuchos::NO_TRANS);
+  TEUCHOS_ASSERT(alpha == one);
+  TEUCHOS_ASSERT(beta == zero);
 
-    size_t nnz  = indices.size();   // number of nonzeros in the supplied matrix
-    size_t pnnz = pindices.size();  // number of nonzeros in the constrained matrix
+  // Projected = P - X^T * (X * X^T)^{-1} * X * P
+  Projected = P;
+  X_->apply(P, *temp1_, Teuchos::NO_TRANS);
+  LeastSquaresSolve(*temp1_, *temp2_);
+  X_->apply(*temp2_, *temp3_, Teuchos::TRANS);
+  Projected.update(-one, *temp3_, one);
+}
 
-    newValues.resize(pnnz);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::residual(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& X,
+                                                                     const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
+                                                                     Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& R) const {
+  const auto one  = Teuchos::ScalarTraits<Scalar>::one();
+  const auto zero = Teuchos::ScalarTraits<Scalar>::zero();
 
-    // Step 1: fix stencil
-    // Projected *must* already have the correct stencil
+  apply(X, R, Teuchos::NO_TRANS, one, zero);
+  R.update(one, B, -one);
+}
 
-    // Step 2: copy correct stencil values
-    // The algorithm is very similar to the one used in the calculation of
-    // Frobenius dot product, see src/Transfers/Energy-Minimization/Solvers/MueLu_CGSolver_def.hpp
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>> Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetPattern() const {
+  return Ppattern_;
+}
 
-    // NOTE: using extra array allows us to skip the search among indices
-    for (size_t j = 0; j < nnz; j++)
-      valuesAll[indices[j]] = values[j];
-    for (size_t j = 0; j < pnnz; j++) {
-      LO ind = colMap.getLocalElement(PColMap.getGlobalElement(pindices[j]));  // FIXME: we could do that before the full loop just once
-      if (ind != invalid)
-        // index indices[j] is part of template, copy corresponding value
-        newValues[j] = valuesAll[ind];
-      else
-        newValues[j] = zero;
-    }
-    for (size_t j = 0; j < nnz; j++)
-      valuesAll[indices[j]] = zero;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetPattern(RCP<const CrsGraph>& Ppattern) {
+  Ppattern_ = Ppattern;
+}
 
-    // Step 3: project to the space
-    Teuchos::SerialDenseMatrix<LO, SC>& XXtInv = XXtInv_[i];
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetConstraintsMatrix(RCP<Matrix>& X) {
+  X_ = X;
 
-    Teuchos::SerialDenseMatrix<LO, SC> locX(NSDim, pnnz, false);
-    for (size_t j = 0; j < pnnz; j++)
-      for (size_t k = 0; k < NSDim; k++)
-        locX(k, j) = Xval[k][pindices[j]];
+  // Allocate memory
+  temp1_ = MultiVectorFactory::Build(X_->getRangeMap(), 1);
+  temp2_ = MultiVectorFactory::Build(X_->getRangeMap(), 1);
+  temp3_ = MultiVectorFactory::Build(X_->getDomainMap(), 1);
+}
 
-    Teuchos::SerialDenseVector<LO, SC> val(pnnz, false), val1(NSDim, false), val2(NSDim, false);
-    for (size_t j = 0; j < pnnz; j++)
-      val[j] = newValues[j];
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetConstraintMatrix() {
+  return X_;
+}
 
-    Teuchos::BLAS<LO, SC> blas;
-    // val1 = locX * val;
-    blas.GEMV(Teuchos::NO_TRANS, NSDim, pnnz,
-              one, locX.values(), locX.stride(),
-              val.values(), oneLO,
-              zero, val1.values(), oneLO);
-    // val2 = XXtInv * val1
-    blas.GEMV(Teuchos::NO_TRANS, NSDim, NSDim,
-              one, XXtInv.values(), XXtInv.stride(),
-              val1.values(), oneLO,
-              zero, val2.values(), oneLO);
-    // val = X^T * val2
-    blas.GEMV(Teuchos::CONJ_TRANS, NSDim, pnnz,
-              one, locX.values(), locX.stride(),
-              val2.values(), oneLO,
-              zero, val.values(), oneLO);
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AssignMatrixEntriesToVector(const Matrix& P,
+                                                                                        const RCP<const CrsGraph>& pattern,
+                                                                                        MultiVector& vecP) const {
+  auto lclPattern       = pattern->getLocalGraphDevice();
+  auto lclPatternRowMap = pattern->getRowMap()->getLocalMap();
+  auto lclPatternColMap = pattern->getColMap()->getLocalMap();
 
-    for (size_t j = 0; j < pnnz; j++)
-      newValues[j] -= val[j];
+  auto lclMat       = P.getLocalMatrixDevice();
+  auto lclMatRowMap = P.getRowMap()->getLocalMap();
+  auto lclMatColMap = P.getColMap()->getLocalMap();
 
-    Projected.replaceLocalValues(i, pindices, newValues);
+  auto lclVec = vecP.getLocalViewDevice(Tpetra::Access::OverwriteAll);
+  TEUCHOS_ASSERT(lclPattern.numRows() == (typename decltype(lclPattern)::size_type)lclMat.numRows());
+  TEUCHOS_ASSERT(lclPattern.entries.extent(0) == lclVec.extent(0));
+  Kokkos::deep_copy(lclVec, 0.);
+
+  using range_type = Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space>;
+  Kokkos::parallel_for(
+      "MueLu::Constraint::AssignMatrixEntriesToVector::filter", range_type(0, lclPattern.numRows()), KOKKOS_LAMBDA(const size_t i) {
+        auto grid    = lclPatternRowMap.getGlobalElement(i);
+        auto row_mat = lclMat.rowConst(lclMatRowMap.getLocalElement(grid));
+
+        if (row_mat.length == 0)
+          return;
+
+        for (size_t jj = lclPattern.row_map(i); jj < lclPattern.row_map(i + 1); ++jj) {
+          auto clid_pattern = lclPattern.entries(jj);
+          auto cgid         = lclPatternColMap.getGlobalElement(clid_pattern);
+          auto clid_mat     = lclMatColMap.getLocalElement(cgid);
+          // find column index in lclMat
+          LocalOrdinal kk = 0;
+          while ((kk + 1 < row_mat.length) && (row_mat.colidx(kk) != clid_mat))
+            ++kk;
+          if (row_mat.colidx(kk) == clid_mat) {
+            lclVec(jj, 0) = row_mat.value(kk);
+          }
+        }
+      });
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AssignMatrixEntriesToVector(const Matrix& P,
+                                                                                        MultiVector& vecP) const {
+  AssignMatrixEntriesToVector(P, GetPattern(), vecP);
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Constraint<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    GetMatrixWithEntriesFromVector(MultiVector& vecP) const {
+  auto Ppattern = GetPattern();
+  RCP<Matrix> P = MatrixFactory::Build(Ppattern);
+  {
+    auto lclMat = P->getLocalMatrixDevice();
+    auto lclVec = vecP.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    TEUCHOS_ASSERT(lclMat.values.extent(0) == lclVec.extent(0));
+    Kokkos::deep_copy(lclMat.values, Kokkos::subview(lclVec, Kokkos::ALL(), 0));
   }
-
-  Projected.fillComplete(Projected.getDomainMap(), Projected.getRangeMap());  // FIXME: maps needed?
+  P->fillComplete(Ppattern->getDomainMap(), Ppattern->getRowMap());
+  return P;
 }
 
 }  // namespace MueLu
