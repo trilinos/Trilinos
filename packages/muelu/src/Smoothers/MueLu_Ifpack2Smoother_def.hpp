@@ -43,7 +43,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
 #include "MueLu_IntrepidPCoarsenFactory_def.hpp"
 #include "Intrepid2_Basis.hpp"
@@ -250,7 +250,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& cu
     SetupChebyshev(currentLevel);
 
   else if (type_ == "TOPOLOGICAL") {
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
     SetupTopological(currentLevel);
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "'TOPOLOGICAL' smoother choice requires Intrepid2");
@@ -433,7 +433,7 @@ void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupAggregate(
   prec_->compute();
 }
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupTopological(Level& currentLevel) {
   /*

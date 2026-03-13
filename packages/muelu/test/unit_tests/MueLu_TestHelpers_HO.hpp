@@ -12,7 +12,7 @@
 #include "MueLu_ConfigDefs.hpp"
 
 // Intrepid
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "Kokkos_DynRankView.hpp"
 
 #include "MueLu_TestHelpers.hpp"
@@ -246,6 +246,6 @@ Build1DPseudoPoissonHigherOrder(GlobalOrdinal nx, int degree,
 
 }  // namespace MueLuTests
 
-#endif  // ifdef HAVE_MUELU_INTREPID2
+#endif  // if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 
 #endif  // ifndef MUELU_TEST_HELPERS_HO_H

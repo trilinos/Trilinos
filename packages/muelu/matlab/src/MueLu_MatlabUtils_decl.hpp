@@ -62,7 +62,7 @@ enum MuemexType {
   AGGREGATES,
   AMALGAMATION_INFO,
   GRAPH
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
   ,
   FIELDCONTAINER_ORDINAL
 #endif
@@ -90,7 +90,7 @@ typedef MueLu::Aggregates<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAggregates;
 typedef MueLu::AmalgamationInfo<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAmalInfo;
 typedef MueLu::LWGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MGraph;
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 typedef Kokkos::DynRankView<mm_LocalOrd, typename mm_node_t::device_type> FieldContainer_ordinal;
 #endif
 
