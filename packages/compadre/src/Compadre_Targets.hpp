@@ -1033,6 +1033,8 @@ void computeTargetFunctionals(const TargetData& data, const member_type& teamMem
           compadre_kernel_assert_release((false) && "Functionality not yet available.");
         }
 
+        (void)additional_evaluation_sites_handled;       // handle unused variable warning/error
+        (void)additional_evaluation_sites_need_handled;  // handle unused variable warning/error
         compadre_kernel_assert_release(((additional_evaluation_sites_need_handled && additional_evaluation_sites_handled) || (!additional_evaluation_sites_need_handled)) && "Auxiliary evaluation coordinates are specified by user, but are calling a target operation that can not handle evaluating additional sites.");
         } // !operation_handled
     }
@@ -2104,6 +2106,8 @@ void computeTargetFunctionalsOnManifold(const TargetData& data, const member_typ
         } else {
             compadre_kernel_assert_release((false) && "Functionality not yet available.");
         }
+        (void)additional_evaluation_sites_handled;       // handle unused variable warning/error
+        (void)additional_evaluation_sites_need_handled;  // handle unused variable warning/error
         compadre_kernel_assert_release(((additional_evaluation_sites_need_handled && additional_evaluation_sites_handled) || (!additional_evaluation_sites_need_handled)) && "Auxiliary evaluation coordinates are specified by user, but are calling a target operation that can not handle evaluating additional sites.");
         } // !operation_handled
     }

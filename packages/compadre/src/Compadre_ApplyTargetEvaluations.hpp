@@ -24,7 +24,7 @@ void applyTargetsToCoefficients(const SolutionData& data, const member_type& tea
 
     const int target_index = data._initial_index_for_batch + teamMember.league_rank();
 
-#if defined(COMPADRE_USE_CUDA)
+#if defined(COMPADRE_USE_CUDA) || defined(COMPADRE_USE_HIP)
 //        // GPU
 //        for (int j=0; j<_operations.size(); ++j) {
 //            for (int k=0; k<_lro_output_tile_size[j]; ++k) {

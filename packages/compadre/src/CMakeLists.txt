@@ -64,10 +64,6 @@ endif()
 
 bob_export_target(compadre)
 
-if (PYTHON_CALLING_BUILD)
-  install(FILES ${COMPADRE_HEADERS} DESTINATION pycompadre) 
-else()
-  install(FILES ${COMPADRE_HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-endif()
+install(FILES ${COMPADRE_HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 bob_end_subdir()
