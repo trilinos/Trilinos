@@ -17,13 +17,14 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Details_Behavior.hpp"
+#include "Tpetra_FEMultiVector_decl.hpp"
 
 namespace Tpetra {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-    FEMultiVector(const Teuchos::RCP<const map_type>& map,
-                  const Teuchos::RCP<const Import<local_ordinal_type, global_ordinal_type, node_type>>& importer,
+    FEMultiVector(const Teuchos::RCP<const typename FEMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::map_type>& map,
+                  const Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>& importer,
                   const size_t numVecs,
                   const bool zeroOut)
   : base_type(importer.is_null() ? map : importer->getTargetMap(),
