@@ -62,11 +62,17 @@ protected:
    void addEdgeBlocks(STK_Interface & mesh) const;
    void addFaceBlocks(STK_Interface & mesh) const;
 
-   void buildTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
-                       const Teuchos::Tuple<int,3> & element,
-                       stk::mesh::Part * block,
-                       const std::vector<stk::mesh::EntityId> & h_nodes,
-                       STK_Interface & mesh) const;
+   void buildTwelveTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
+                             const Teuchos::Tuple<int,3> & element,
+                             stk::mesh::Part * block,
+                             const std::vector<stk::mesh::EntityId> & h_nodes,
+                             STK_Interface & mesh) const;
+
+   void buildSixTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
+                          const Teuchos::Tuple<int,3> & element,
+                          stk::mesh::Part * block,
+                          const std::vector<stk::mesh::EntityId> & h_nodes,
+                          STK_Interface & mesh) const;
 
    double x0_, y0_, z0_;
    double xf_, yf_, zf_;
@@ -83,6 +89,8 @@ protected:
 
    bool createEdgeBlocks_;
    bool createFaceBlocks_;
+
+   bool splitHexIntoTwelveTets_;
 
    std::string edgeBlockName_;
    std::string faceBlockName_;

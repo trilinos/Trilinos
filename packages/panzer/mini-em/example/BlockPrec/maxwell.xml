@@ -20,11 +20,13 @@
     </ParameterList>
 
     <ParameterList name="Inline Mesh">
-      <Parameter name="Mesh Dimension" type="int" value="3"/>
-      <Parameter name="Mesh Type" type="string" value="quad"/>
+      <!-- <Parameter name="Mesh Type" type="string" value="quad"/> -->
+      <!-- <Parameter name="Mesh Type" type="string" value="tri"/> -->
+      <Parameter name="Mesh Type" type="string" value="hex"/>
       <!-- <Parameter name="Mesh Type" type="string" value="tet"/> -->
       <Parameter name="CFL" type="double" value="4.0"/>
       <ParameterList name="Mesh Factory Parameter List">
+        <!-- <Parameter name="Split hex into 12 tets" type="bool" value="false"/> -->
         <!-- <Parameter name="X Procs" type="int" value="-1" /> -->
         <!-- <Parameter name="Y Procs" type="int" value="-1" /> -->
         <!-- <Parameter name="Z Procs" type="int" value="-1" /> -->

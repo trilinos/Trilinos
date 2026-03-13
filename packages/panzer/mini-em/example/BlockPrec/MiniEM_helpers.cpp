@@ -17,6 +17,7 @@ namespace mini_em {
                int &x_elements,
                int &y_elements,
                int &z_elements,
+               std::string meshType,
                int &basis_order,
                Teuchos::RCP<const Teuchos::MpiComm<int> > &comm,
                Teuchos::RCP<panzer_stk::STK_Interface> &mesh,
@@ -54,7 +55,26 @@ namespace mini_em {
       // set mesh factory parameters
       Teuchos::ParameterList & inline_gen_pl = mesh_pl.sublist("Inline Mesh");
       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList(inline_gen_pl.sublist("Mesh Factory Parameter List")));
-      dim = inline_gen_pl.get<int>("Mesh Dimension");
+
+      if (meshType == "") {
+        meshType = inline_gen_pl.get<std::string>("Mesh Type");
+      }
+
+      // build mesh
+      if (meshType == "tet") {
+        dim = 3;
+        mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
+      } else if (meshType == "hex") {
+        dim = 3;
+        mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
+      } else if (meshType == "tri") {
+        dim = 2;
+        mesh_factory = rcp(new panzer_stk::SquareTriMeshFactory());
+      } else if (meshType == "quad") {
+        dim = 2;
+        mesh_factory = rcp(new panzer_stk::SquareQuadMeshFactory());
+      } else
+        throw;
 
       // overrides from command line
       if (x_elements > 0)
@@ -63,23 +83,13 @@ namespace mini_em {
         pl->set<int>("Y Elements",y_elements);
       if (dim == 3 && z_elements > 0)
         pl->set<int>("Z Elements",z_elements);
-
-      // build mesh
-      if (dim == 3) {
-        if (inline_gen_pl.get<std::string>("Mesh Type") == "tet")
-          mesh_factory = rcp(new panzer_stk::CubeTetMeshFactory());
-        else if (inline_gen_pl.get<std::string>("Mesh Type") == "quad")
-          mesh_factory = rcp(new panzer_stk::CubeHexMeshFactory());
-        else
-          throw;
-      } else if (dim == 2) {
-        if (inline_gen_pl.get<std::string>("Mesh Type") == "tet")
-          mesh_factory = rcp(new panzer_stk::SquareTriMeshFactory());
-        else if (inline_gen_pl.get<std::string>("Mesh Type") == "quad")
-          mesh_factory = rcp(new panzer_stk::SquareQuadMeshFactory());
-        else
-          throw;
+      if (dim == 2) {
+        if (pl->isParameter("Z Elements"))
+          pl->remove("Z Elements");
+        if (pl->isParameter("Z Blocks"))
+          pl->remove("Z Blocks");
       }
+
       mesh_factory->setParameterList(pl);
       mesh = mesh_factory->buildUncommitedMesh((*comm->getRawMpiComm())());
 
@@ -146,7 +156,7 @@ namespace mini_em {
             throw;
         else if (solver == ML) {
           updateParams("solverML.xml", lin_solver_pl, comm, out);
-        } else if (solver == MUELU) {
+        } else if ((solver == MUELU) || (solver == MAXWELL1_RS) || (solver == MAXWELL1_SA_RS) || (solver == MAXWELL1_EMIN)) {
           if (linAlgebra == linAlgTpetra) {
             updateParams("solverMueLu.xml", lin_solver_pl, comm, out);
 
@@ -201,7 +211,25 @@ namespace mini_em {
         }
       } else
         updateParams(xml, lin_solver_pl, comm, out);
+
+      Teuchos::ParameterList& S_E_list = lin_solver_pl->sublist("Preconditioner Types").sublist("Teko").sublist("Inverse Factory Library").sublist("Maxwell").sublist("S_E Preconditioner");
+      if (solver == MAXWELL1_RS) {
+        S_E_list.set("Type", "MueLuMaxwell1");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 11list").set("multigrid algorithm", "unsmoothed reitzinger");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 22list").set("multigrid algorithm", "unsmoothed");
+      } else if (solver == MAXWELL1_SA_RS) {
+        S_E_list.set("Type", "MueLuMaxwell1");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 11list").set("multigrid algorithm", "smoothed reitzinger");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 22list").set("multigrid algorithm", "sa");
+      } else if (solver == MAXWELL1_EMIN) {
+        S_E_list.set("Type", "MueLuMaxwell1");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 11list").set("multigrid algorithm", "emin reitzinger");
+        S_E_list.sublist("Preconditioner Types").sublist("MueLuMaxwell1").sublist("maxwell1: 22list").set("multigrid algorithm", "sa");
+      }
+
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(solver == MAXWELL1_EMIN, std::runtime_error, "Maxwelll1 Emin is not yet available.");
 
     return lin_solver_pl;
   }
@@ -343,12 +371,12 @@ namespace mini_em {
           opPostfix = "";
         }
 
-        if (solver == MUELU || solver == ML)
+        if (solver == MUELU || solver == ML || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS || solver == MAXWELL1_EMIN)
           auxFieldOrder += " "+auxNodalField+" "+auxEdgeField;
         else
           auxFieldOrder += " "+auxEdgeField;
 
-        if (solver == MUELU || solver == ML) {
+        if (solver == MUELU || solver == ML || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS|| solver == MAXWELL1_EMIN) {
           // discrete gradient
           auto gradPL = Teuchos::ParameterList();
           gradPL.set("Source", auxNodalField);
@@ -372,7 +400,7 @@ namespace mini_em {
           schurComplementPL.set("Integration Order", 2*polynomialOrder);
           auxPhysicsBlocksPL.sublist("Auxiliary Edge SchurComplement Physics" + opPostfix) = schurComplementPL;
 
-          if (solver == MUELU || solver == ML) {
+          if (solver == MUELU || solver == ML || solver == MAXWELL1_RS || solver == MAXWELL1_SA_RS|| solver == MAXWELL1_EMIN) {
             // Projected Schur complement
             auto projectedSchurComplementPL = Teuchos::ParameterList();
             projectedSchurComplementPL.set("Type", "Auxiliary ProjectedSchurComplement");
