@@ -29,7 +29,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_PerfUtils.hpp"
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "Kokkos_DynRankView.hpp"
 #endif
 
@@ -201,7 +201,7 @@ void MueLu::HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHi
   ExportDataSetKeepFlags(H, materialToPrint_, "Material");
   // NOTE: Aggregates use the next level's Factory
   ExportDataSetKeepFlagsNextLevel(H, aggregatesToPrint_, "Aggregates");
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
   ExportDataSetKeepFlags(H, elementToNodeMapsToPrint_, "pcoarsen: element to node map");
 #endif
 
@@ -255,7 +255,7 @@ void MueLu::HierarchyManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHi
   WriteData<MultiVector>(H, materialToPrint_, "Material");
   WriteDataAggregates(H, aggregatesToPrint_, "Aggregates");
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
   typedef Kokkos::DynRankView<LocalOrdinal, typename Node::device_type> FCi;
   WriteDataFC<FCi>(H, elementToNodeMapsToPrint_, "pcoarsen: element to node map", "el2node");
 #endif

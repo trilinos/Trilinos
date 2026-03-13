@@ -31,7 +31,7 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_CreateXpetraPreconditioner.hpp"
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
 #include "MueLu_IntrepidPCoarsenFactory_def.hpp"  // Why does ETI suddenly decide to hate right here?
 #include "Intrepid2_Types.hpp"

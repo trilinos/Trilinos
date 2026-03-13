@@ -137,7 +137,7 @@
 #include "MueLu_MatlabSmoother_fwd.hpp"
 #endif
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "MueLu_IntrepidPCoarsenFactory_fwd.hpp"
 #endif
 
