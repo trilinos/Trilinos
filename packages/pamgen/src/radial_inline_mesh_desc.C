@@ -13,6 +13,9 @@
 #include "pamgen_fudges.h"
 #include "Vector.h"
 
+#include <Kokkos_Core.hpp>
+#include <cmath>
+
 namespace PAMGEN_NEVADA {
 
   /*****************************************************************************/
@@ -195,29 +198,55 @@ namespace PAMGEN_NEVADA {
 
     /****************************************************************************/
   {
-    Real deg_to_rad = M_PI/180.0;
-    Real total_theta = c_block_dist[1][inline_b[1]];
-    long long global_ind[3];
-    for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
-      long long the_node = global_node_vector[gnv];
-      global_ind[2] = the_node/knstride;
-      global_ind[1] = (the_node-global_ind[2]*knstride)/jnstride;
-      global_ind[0] = the_node - global_ind[2]*knstride-global_ind[1]*jnstride;
+    // Create host and device views for coordinate data
+    // Note: The input coords array uses structure-of-arrays layout (all x, then all y)
+    // but we need array-of-structures layout for the 2D view (x,y for node 0, x,y for node 1, etc.)
+    HostView2D<double> coords_host("coords_host", num_nodes, dimension);
 
-      long long the_local_node = get_map_entry(global_node_map,the_node);
-      coords[the_local_node+0*num_nodes]= IJKcoors[0][global_ind[0]]*cos(IJKcoors[1][global_ind[1]]*deg_to_rad);
-      coords[the_local_node+1*num_nodes]= IJKcoors[0][global_ind[0]]*sin(IJKcoors[1][global_ind[1]]*deg_to_rad);
-      if(dimension == 3){
-        coords[the_local_node+2*num_nodes]= IJKcoors[2][global_ind[2]];
+    // Copy data from flattened structure-of-arrays to array-of-structures layout
+    for (long long i = 0; i < num_nodes; i++) {
+      for (long long axis = 0; axis < dimension; axis++) {
+        coords_host(i, axis) = coords[i + axis * num_nodes];
       }
+    }
 
-      if(enforce_periodic){
-        Vector tv = calc_coords_periodic(total_theta, global_ind[0], global_ind[1], global_ind[2]);
-        coords[the_local_node+0*num_nodes]= tv.X();
-        coords[the_local_node+1*num_nodes]= tv.Y();
-        if(dimension == 3){
-          coords[the_local_node+2*num_nodes]= tv.Z();
-        }
+    // Create device view and copy data
+    auto coords_device = Kokkos::create_mirror_view(Kokkos::DefaultExecutionSpace(), coords_host);
+    Kokkos::deep_copy(coords_device, coords_host);
+
+    // Create host views for node data first
+    View1D<long long> global_node_vector_host("global_node_vector_host", global_node_vector.size());
+    View1D<long long> global_node_map_keys_host("global_node_map_keys_host", global_node_map.size());
+    View1D<long long> global_node_map_values_host("global_node_map_values_host", global_node_map.size());
+
+    // Fill host views with data
+    for (size_t i = 0; i < global_node_vector.size(); ++i) {
+      global_node_vector_host(i) = global_node_vector[i];
+    }
+
+    size_t idx = 0;
+    for (const auto& pair : global_node_map) {
+      global_node_map_keys_host(idx) = pair.first;
+      global_node_map_values_host(idx) = pair.second;
+      idx++;
+    }
+
+    // Create device views and copy data
+    auto global_node_vector_view = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), global_node_vector_host);
+    auto global_node_map_keys = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), global_node_map_keys_host);
+    auto global_node_map_values = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), global_node_map_values_host);
+
+    // Execute device computation
+    Populate_Coords_Device(coords_device, global_node_vector_view,
+                          global_node_map_keys, global_node_map_values, num_nodes);
+
+    // Copy results back to host memory
+    Kokkos::deep_copy(coords_host, coords_device);
+
+    // Copy back from array-of-structures layout to structure-of-arrays layout
+    for (long long i = 0; i < num_nodes; i++) {
+      for (long long axis = 0; axis < dimension; axis++) {
+        coords[i + axis * num_nodes] = coords_host(i, axis);
       }
     }
   }
@@ -299,5 +328,113 @@ namespace PAMGEN_NEVADA {
     return res;
 
   }
+
+
+/****************************************************************************/
+KOKKOS_INLINE_FUNCTION
+void Radial_Inline_Mesh_Desc::calc_coords_periodic_device(double total_theta,
+                                                        long long i, long long j, long long k,
+                                                        double& x, double& y, double& z) const
+{
+  // Device version of periodic coordinate calculation
+  long long per = 0;
+  if (total_theta == 90.0) per = nel_tot[1] / 2;
+  if (total_theta == 180.0) per = nel_tot[1] / 4;
+  if (total_theta == 360.0) per = nel_tot[1] / 8;
+
+  long long jmod = j % per;
+  long long jmult = j / per;
+
+  double deg_to_rad = M_PI / 180.0;
+  double theta = IJKcoors[1][jmod] * deg_to_rad;
+  double r = IJKcoors[0][i];
+
+  // Transform to appropriate octant
+  if (jmult == 1) {
+    x = r * cos(M_PI / 2.0 - theta);
+    y = r * sin(M_PI / 2.0 - theta);
+  } else if (jmult == 2) {
+    x = -r * cos(theta);
+    y = r * sin(theta);
+  } else if (jmult == 3) {
+    x = -r * cos(M_PI / 2.0 - theta);
+    y = -r * sin(M_PI / 2.0 - theta);
+  } else if (jmult == 4) {
+    x = r * cos(theta);
+    y = -r * sin(theta);
+  } else if (jmult == 5) {
+    x = r * cos(theta - M_PI / 2.0);
+    y = r * sin(theta - M_PI / 2.0);
+  } else if (jmult == 6) {
+    x = r * cos(M_PI - theta);
+    y = r * sin(M_PI - theta);
+  } else if (jmult == 7) {
+    x = r * cos(M_PI + theta);
+    y = r * sin(M_PI + theta);
+  } else {
+    x = r * cos(theta);
+    y = r * sin(theta);
+  }
+
+  if (dimension == 3) {
+    z = IJKcoors[2][k];
+  } else {
+    z = 0.0;
+  }
+}
+
+/****************************************************************************/
+void Radial_Inline_Mesh_Desc::Populate_Coords_Device(View2D<double> coords,
+                                                   const View1D<long long> global_node_vector,
+                                                   const View1D<long long> global_node_map_keys,
+                                                   const View1D<long long> global_node_map_values,
+                                                   long long num_nodes)
+/****************************************************************************/
+{
+  double deg_to_rad = M_PI / 180.0;
+  double total_theta = c_block_dist[1][inline_b[1]];
+
+  Kokkos::parallel_for("RadialPopulateCoords", global_node_vector.size(),
+    KOKKOS_LAMBDA(const size_t gnv) {
+      long long the_node = global_node_vector(gnv);
+      long long global_ind[3];
+
+      // Calculate global indices
+      global_ind[2] = the_node / knstride;
+      global_ind[1] = (the_node - global_ind[2] * knstride) / jnstride;
+      global_ind[0] = the_node - global_ind[2] * knstride - global_ind[1] * jnstride;
+
+      // Find the local node using map lookup
+      long long the_local_node = get_map_entry_device(global_node_map_keys,
+                                                     global_node_map_values,
+                                                     the_node,
+                                                     global_node_map_keys.size());
+
+      // Calculate coordinates using radial transformation
+      double x = IJKcoors[0][global_ind[0]] * cos(IJKcoors[1][global_ind[1]] * deg_to_rad);
+      double y = IJKcoors[0][global_ind[0]] * sin(IJKcoors[1][global_ind[1]] * deg_to_rad);
+      double z = 0.0;
+
+      if (dimension == 3) {
+        z = IJKcoors[2][global_ind[2]];
+      }
+
+      // Apply periodic boundary conditions if enabled
+      if (enforce_periodic) {
+        calc_coords_periodic_device(total_theta, global_ind[0], global_ind[1], global_ind[2], x, y, z);
+      }
+
+      // Set coordinates
+      coords(the_local_node, 0) = x;
+      coords(the_local_node, 1) = y;
+      if (dimension == 3) {
+        coords(the_local_node, 2) = z;
+      }
+    });
+
+  // Ensure all device operations are complete
+  Kokkos::fence();
+}
+
 
 }// end namespace PAMGEN_NEVADA
