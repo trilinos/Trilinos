@@ -240,7 +240,6 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
                                            const ValuesViewType& values, const IntView& row_ptr,
                                            const IntView& colIndices, const xViewType& X, const betaViewType& beta,
                                            const yViewType& Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<ValuesViewType>::value, "KokkosBatched::spmv: ValuesViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<IntView>::value, "KokkosBatched::spmv: IntView is not a Kokkos::View.");
     static_assert(Kokkos::is_view<xViewType>::value, "KokkosBatched::spmv: xViewType is not a Kokkos::View.");
@@ -257,6 +256,7 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
     static_assert(alphaViewType::rank == 1, "KokkosBatched::spmv: alphaViewType must have rank 1.");
     static_assert(betaViewType::rank == 1, "KokkosBatched::spmv: betaViewType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::printf(
@@ -323,7 +323,6 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
       const ValuesViewType& values, const IntView& row_ptr, const IntView& colIndices, const xViewType& X,
       const typename KokkosKernels::ArithTraits<typename ValuesViewType::non_const_value_type>::mag_type& beta,
       const yViewType& Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<ValuesViewType>::value, "KokkosBatched::spmv: ValuesViewType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<IntView>::value, "KokkosBatched::spmv: IntView is not a Kokkos::View.");
     static_assert(Kokkos::is_view<xViewType>::value, "KokkosBatched::spmv: xViewType is not a Kokkos::View.");
@@ -334,6 +333,7 @@ struct TeamVectorSpmv<MemberType, Trans::NoTranspose, N_team> {
     static_assert(xViewType::rank == 2, "KokkosBatched::spmv: xViewType must have rank 2.");
     static_assert(yViewType::rank == 2, "KokkosBatched::spmv: yViewType must have rank 2.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (X.extent(0) != Y.extent(0) || X.extent(1) != Y.extent(1)) {
       Kokkos::printf(

@@ -10,7 +10,7 @@
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_ArithTraits.hpp"
 
-#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK)
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACK) || defined(KOKKOSKERNELS_ENABLE_TPL_ACCELERATE)
 
 namespace KokkosLapack {
 namespace Impl {
@@ -24,10 +24,12 @@ struct HostLapack {
                     T *work, int lwork, typename KokkosKernels::ArithTraits<T>::mag_type *rwork, int info);
 
   static int trtri(const char uplo, const char diag, int n, const T *a, int lda);
+
+  static void geqrf(const int m, const int n, T *a, const int lda, T *tau, T *work, int lwork, int *info);
 };
 }  // namespace Impl
 }  // namespace KokkosLapack
 
-#endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK
+#endif  // KOKKOSKERNELS_ENABLE_TPL_LAPACK || KOKKOSKERNELS_ENABLE_TPL_ACCELERATE
 
 #endif  // KOKKOSLAPACK_HOST_TPL_HPP_

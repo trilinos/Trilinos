@@ -334,7 +334,6 @@ struct SerialGesv<Gesv::StaticPivoting> {
   template <typename MatrixType, typename XVectorType, typename YVectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A, const XVectorType X, const YVectorType Y,
                                            const MatrixType tmp) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<XVectorType>::value, "KokkosBatched::gesv: XVectorType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YVectorType>::value, "KokkosBatched::gesv: YVectorType is not a Kokkos::View.");
@@ -342,8 +341,8 @@ struct SerialGesv<Gesv::StaticPivoting> {
     static_assert(XVectorType::rank == 1, "KokkosBatched::gesv: XVectorType must have rank 1.");
     static_assert(YVectorType::rank == 1, "KokkosBatched::gesv: YVectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
-
     if (A.extent(0) != tmp.extent(0) || A.extent(1) + 4 != tmp.extent(1)) {
       Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and tmp do not match: A: "
@@ -397,7 +396,6 @@ struct SerialGesv<Gesv::NoPivoting> {
   template <typename MatrixType, typename XVectorType, typename YVectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MatrixType A, const XVectorType X, const YVectorType Y,
                                            const MatrixType /*tmp*/) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<XVectorType>::value, "KokkosBatched::gesv: XVectorType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<YVectorType>::value, "KokkosBatched::gesv: YVectorType is not a Kokkos::View.");
@@ -405,8 +403,8 @@ struct SerialGesv<Gesv::NoPivoting> {
     static_assert(XVectorType::rank == 1, "KokkosBatched::gesv: XVectorType must have rank 1.");
     static_assert(YVectorType::rank == 1, "KokkosBatched::gesv: YVectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
-
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) || A.extent(0) != Y.extent(0)) {
       Kokkos::printf(
           "KokkosBatched::gesv: dimensions of A and X and Y do not match: A: "
@@ -418,7 +416,7 @@ struct SerialGesv<Gesv::NoPivoting> {
 
     int r_val = SerialLU<Algo::Level3::Unblocked>::invoke(A);
 
-    if (r_val == 0) r_val = SerialCopy<Trans::NoTranspose, 1>::invoke(Y, X);
+    if (r_val == 0) r_val = SerialCopy<Trans::NoTranspose>::invoke(Y, X);
 
     if (r_val == 0)
       r_val = SerialTrsm<Side::Left, Uplo::Lower, Trans::NoTranspose, Diag::Unit, Algo::Level3::Unblocked>::invoke(
@@ -441,12 +439,12 @@ struct TeamGesv<MemberType, Gesv::StaticPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
     static_assert(VectorType::rank == 1, "KokkosBatched::gesv: VectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) || A.extent(0) != Y.extent(0)) {
       Kokkos::printf(
@@ -505,12 +503,12 @@ struct TeamGesv<MemberType, Gesv::NoPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
     static_assert(VectorType::rank == 1, "KokkosBatched::gesv: VectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) || A.extent(0) != Y.extent(0)) {
       Kokkos::printf(
@@ -525,7 +523,7 @@ struct TeamGesv<MemberType, Gesv::NoPivoting> {
     member.team_barrier();
 
     if (r_val == 0) {
-      TeamCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, Y, X);
+      TeamCopy<MemberType, Trans::NoTranspose>::invoke(member, Y, X);
       member.team_barrier();
     }
 
@@ -554,12 +552,12 @@ struct TeamVectorGesv<MemberType, Gesv::StaticPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
     static_assert(VectorType::rank == 1, "KokkosBatched::gesv: VectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) || A.extent(0) != Y.extent(0)) {
       Kokkos::printf(
@@ -619,12 +617,12 @@ struct TeamVectorGesv<MemberType, Gesv::NoPivoting> {
   template <typename MatrixType, typename VectorType>
   KOKKOS_INLINE_FUNCTION static int invoke(const MemberType &member, const MatrixType A, const VectorType X,
                                            const VectorType Y) {
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
     static_assert(Kokkos::is_view<MatrixType>::value, "KokkosBatched::gesv: MatrixType is not a Kokkos::View.");
     static_assert(Kokkos::is_view<VectorType>::value, "KokkosBatched::gesv: VectorType is not a Kokkos::View.");
     static_assert(MatrixType::rank == 2, "KokkosBatched::gesv: MatrixType must have rank 2.");
     static_assert(VectorType::rank == 1, "KokkosBatched::gesv: VectorType must have rank 1.");
 
+#ifndef NDEBUG
     // Check compatibility of dimensions at run time.
     if (A.extent(0) != X.extent(0) || A.extent(1) != X.extent(0) || A.extent(0) != Y.extent(0)) {
       Kokkos::printf(
@@ -639,7 +637,7 @@ struct TeamVectorGesv<MemberType, Gesv::NoPivoting> {
     member.team_barrier();
 
     if (r_val == 0) {
-      TeamVectorCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, Y, X);
+      TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, Y, X);
       member.team_barrier();
     }
 

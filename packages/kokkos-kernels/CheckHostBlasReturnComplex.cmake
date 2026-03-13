@@ -1,20 +1,20 @@
-INCLUDE(CheckCXXSourceRuns)
+include(CheckCXXSourceRuns)
 
-FUNCTION(CHECK_HOST_BLAS_RETURN_COMPLEX VARNAME)
+function(check_host_blas_return_complex VARNAME)
 
-  IF (KOKKOSKERNELS_HAS_TRILINOS)
-    SET(CMAKE_REQUIRED_LIBRARIES ${TPL_BLAS_LIBRARIES})
-  ELSE()
+  if(KOKKOSKERNELS_HAS_TRILINOS)
+    set(CMAKE_REQUIRED_LIBRARIES ${TPL_BLAS_LIBRARIES})
+  else()
     # For TPLs, just pull out the required libraries from the target properies.
-    IF (KOKKOSKERNELS_ENABLE_TPL_ARMPL)
-      GET_TARGET_PROPERTY(CMAKE_REQUIRED_LIBRARIES KokkosKernels::ARMPL INTERFACE_LINK_LIBRARIES)
-    ELSE()
-      SET(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
-    ENDIF()
-  ENDIF()
+    if(KOKKOSKERNELS_ENABLE_TPL_ARMPL)
+      get_target_property(CMAKE_REQUIRED_LIBRARIES KokkosKernels::ARMPL INTERFACE_LINK_LIBRARIES)
+    else()
+      set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
+    endif()
+  endif()
 
-  SET(SOURCE
-  "
+  set(SOURCE
+    "
 #include <complex>
 
 #define F77_BLAS_MANGLE${F77_BLAS_MANGLE}
@@ -39,19 +39,18 @@ int main() {
   F77_BLAS_MANGLE(zdotc,ZDOTC)(&ret, &NUM, f, &INC, f, &INC);
   return (ret.real() == double(5.0) ? 0 : 1);
 }
-  "
-  )
+  ")
 
-# Test whether the above program, which assumes BLAS can give back complex results
-# via pointer arguments, compiles and runs correctly.
-# If it does, assume that we don't need to get complex results as direct return values,
-# which causes -Wreturn-type-c-linkage warnings.
-CHECK_CXX_SOURCE_RUNS("${SOURCE}" KK_BLAS_RESULT_AS_POINTER_ARG)
+  # Test whether the above program, which assumes BLAS can give back complex results
+  # via pointer arguments, compiles and runs correctly.
+  # If it does, assume that we don't need to get complex results as direct return values,
+  # which causes -Wreturn-type-c-linkage warnings.
+  check_cxx_source_runs("${SOURCE}" KK_BLAS_RESULT_AS_POINTER_ARG)
 
-IF(${KK_BLAS_RESULT_AS_POINTER_ARG})
-  SET(${VARNAME} OFF PARENT_SCOPE)
-ELSE()
-  SET(${VARNAME} ON PARENT_SCOPE)
-ENDIF()
+  if(${KK_BLAS_RESULT_AS_POINTER_ARG})
+    set(${VARNAME} OFF PARENT_SCOPE)
+  else()
+    set(${VARNAME} ON PARENT_SCOPE)
+  endif()
 
-ENDFUNCTION()
+endfunction()

@@ -9,13 +9,11 @@
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
-/* CUSPARSE_VERSION < 10301 either doesn't have cusparseSpMM
-   or the non-tranpose version produces incorrect results.
-
-   Version 11702 corresponds to CUDA 11.6.1, which also produces incorrect
+/*
+   Version 11702 corresponds to CUDA 11.6.1, which produces incorrect
    results. 11701 (CUDA 11.6.0) is OK.
 */
-#if defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION) && (CUSPARSE_VERSION != 11702)
+#if defined(CUSPARSE_VERSION) && (CUSPARSE_VERSION != 11702)
 #include "cusparse.h"
 #include "KokkosSparse_Utils_cusparse.hpp"
 
@@ -35,17 +33,10 @@ template <typename AScalar, typename XScalar = AScalar, typename YScalar = AScal
 cudaDataType compute_type() {
   return cuda_data_type_from<AScalar>();
 }
-#if CUSPARSE_VERSION >= 11501
 template <>
 inline cudaDataType compute_type<Kokkos::Experimental::half_t>() {
   return CUDA_R_32F;
 }
-#else
-template <>
-inline cudaDataType compute_type<Kokkos::Experimental::half_t>() {
-  return cuda_data_type_from<Kokkos::Experimental::half_t>();
-}
-#endif
 
 /*! \brief convert a 2D view to a cusparseDnMatDescr_t
 
@@ -131,13 +122,7 @@ void spmv_mv_cusparse(const Kokkos::Cuda &exec, Handle *handle, const char mode[
   cusparseDnMatDescr_t vecY = make_cusparse_dn_mat_descr_t(y);
   cusparseOperation_t opB   = xIsLL ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE;
 
-// CUSPARSE_MM_ALG_DEFAULT was deprecated in CUDA 11.0.1 / cuSPARSE 11.0.0 and
-// removed in CUDA 12.0.0 / cuSPARSE 12.0.0
-#if CUSPARSE_VERSION < 11000
-  cusparseSpMMAlg_t algo = CUSPARSE_MM_ALG_DEFAULT;
-#else
   cusparseSpMMAlg_t algo = CUSPARSE_SPMM_ALG_DEFAULT;
-#endif
 
   // the precision of the SpMV
   const cudaDataType computeType = compute_type<value_type, x_value_type, y_value_type>();
@@ -264,7 +249,7 @@ KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::Experimental::half_t, int, int, Kokkos::La
 
 }  // namespace Impl
 }  // namespace KokkosSparse
-#endif  // defined(CUSPARSE_VERSION) && (10301 <= CUSPARSE_VERSION)
+#endif  // defined(CUSPARSE_VERSION) && (CUSPARSE_VERSION != 11702)
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 
 // rocSPARSE

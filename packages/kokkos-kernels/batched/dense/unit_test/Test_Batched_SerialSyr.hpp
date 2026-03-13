@@ -24,7 +24,6 @@ struct Functor_BatchedSerialSyr {
   AViewType m_A;
   ScalarType m_alpha;
 
-  KOKKOS_INLINE_FUNCTION
   Functor_BatchedSerialSyr(const ScalarType alpha, const XViewType &x, const AViewType &A)
       : m_x(x), m_A(A), m_alpha(alpha) {}
 
@@ -53,7 +52,6 @@ struct Functor_BatchedSerialSyr {
 
 /// \brief Implementation details of batched syr analytical test
 ///        to confirm A:= x*x**T + A is computed correctly
-/// \param Nb [in] Batch size
 ///        alpha = 1.5
 ///        4x4 matrix (upper)
 ///        U: [[1, -3, -2,  0],
@@ -261,6 +259,9 @@ void impl_test_batched_syr(const std::size_t Nb, const std::size_t BlkSize) {
   // When A is a random matrix
   info1 = Functor_BatchedSerialSyr<DeviceType, StridedView2DType, View3DType, ScalarType, ParamTagType>(alpha, x_s, A_s)
               .run();
+
+  EXPECT_EQ(info0, 0);
+  EXPECT_EQ(info1, 0);
 
   // Make a reference at host
   auto h_x      = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);

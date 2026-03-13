@@ -3,11 +3,15 @@ Checks: >
   bugprone-*,
   -bugprone-argument-comment,
   -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
   -bugprone-macro-parentheses,
   -bugprone-narrowing-conversions,
+  -bugprone-random-generator-seed,
   -bugprone-suspicious-include,
+  -bugprone-throwing-static-initialization,
   cppcoreguidelines-pro-type-cstyle-cast,
   cppcoreguidelines-rvalue-reference-param-not-moved,
+  cppcoreguidelines-special-member-functions,
   modernize-type-traits,
   modernize-use-nullptr,
   modernize-use-using,
@@ -15,6 +19,10 @@ Checks: >
 
 CheckOptions:
   - key: cppcoreguidelines-rvalue-reference-param-not-moved.AllowPartialMove
+    value: true
+  - key: cppcoreguidelines-special-member-functions.AllowMissingMoveFunctionsWhenCopyIsDeleted
+    value: true
+  - key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor
     value: true
 
 FormatStyle: file

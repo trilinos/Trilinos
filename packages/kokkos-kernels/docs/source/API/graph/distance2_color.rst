@@ -3,7 +3,7 @@ KokkosGraph::graph_color_distance2
 
 Defined in header: :code:`KokkosGraph_Distance2Color.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class KernelHandle, typename InRowmap, typename InEntries>
   void graph_color_distance2(KernelHandle *handle, typename KernelHandle::nnz_lno_t num_verts, InRowmap row_map,

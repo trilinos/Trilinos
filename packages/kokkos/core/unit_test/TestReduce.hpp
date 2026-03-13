@@ -14,6 +14,7 @@ import kokkos.core;
 #include <Kokkos_TypeInfo.hpp>
 
 #include <cmath>
+#include <random>
 
 namespace Test {
 
@@ -33,9 +34,6 @@ class ReduceFunctor {
 
   KOKKOS_INLINE_FUNCTION
   ReduceFunctor(const size_type& arg_nwork) : nwork(arg_nwork) {}
-
-  KOKKOS_INLINE_FUNCTION
-  ReduceFunctor(const ReduceFunctor& rhs) : nwork(rhs.nwork) {}
 
   /*
     KOKKOS_INLINE_FUNCTION
@@ -232,10 +230,6 @@ class CombinedReduceFunctorSameType {
   KOKKOS_INLINE_FUNCTION
   constexpr explicit CombinedReduceFunctorSameType(const size_type& arg_nwork)
       : nwork(arg_nwork) {}
-
-  KOKKOS_DEFAULTED_FUNCTION
-  constexpr CombinedReduceFunctorSameType(
-      const CombinedReduceFunctorSameType& rhs) = default;
 
   KOKKOS_INLINE_FUNCTION
   void operator()(size_type iwork, ValueType& dst1, ValueType& dst2,
@@ -540,8 +534,6 @@ TEST(TEST_CATEGORY, int64_t_reduce_dynamic_view) {
 #endif
 #endif
 
-// FIXME_OPENMPTARGET: Not yet implemented.
-#ifndef KOKKOS_ENABLE_OPENMPTARGET
 // FIXME_OPENACC: Not yet implemented.
 #ifndef KOKKOS_ENABLE_OPENACC
 TEST(TEST_CATEGORY, int_combined_reduce) {
@@ -638,7 +630,6 @@ TEST(TEST_CATEGORY, int_combined_reduce_mixed) {
   }
 }
 #endif
-#endif
 
 #if defined(NDEBUG)
 // the following test was made for:
@@ -729,12 +720,51 @@ TEST(TEST_CATEGORY, reduction_identity_min_max_floating_point_types) {
   TestReductionOverInfiniteFloat<float>();
   TestReductionOverInfiniteFloat<double>();
 
-#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) &&          \
-    !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENMPTARGET) && \
-    !defined(KOKKOS_ENABLE_OPENACC)
+#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && \
+    !defined(KOKKOS_ENABLE_SYCL) && !defined(KOKKOS_ENABLE_OPENACC)
   TestReductionOverInfiniteFloat<long double>();
 #endif
 }
 KOKKOS_IMPL_DISABLE_UNREACHABLE_WARNINGS_POP()
+
+template <typename ScalarType>
+class TestReductionIdentityBitwiseAndOr {
+ public:
+  TestReductionIdentityBitwiseAndOr() { runTest(); }
+
+  void runTest() {
+    const int N = 100;
+
+    std::random_device r;
+
+    std::default_random_engine e(r());
+    std::uniform_int_distribution<ScalarType> uniform_dist(
+        std::numeric_limits<ScalarType>::min(),
+        std::numeric_limits<ScalarType>::max());
+
+    ScalarType bor_identity = Kokkos::reduction_identity<ScalarType>::bor();
+    for (int i = 0; i < N; ++i) {
+      ScalarType value = uniform_dist(e);
+      EXPECT_EQ(value | bor_identity, value);
+    }
+
+    ScalarType band_identity = Kokkos::reduction_identity<ScalarType>::band();
+    for (int i = 0; i < N; ++i) {
+      ScalarType value = uniform_dist(e);
+      EXPECT_EQ(value & band_identity, value);
+    }
+  }
+};
+
+TEST(TEST_CATEGORY, reduction_identity_bitwise_and_or_integral_types) {
+  TestReductionIdentityBitwiseAndOr<short>();
+  TestReductionIdentityBitwiseAndOr<unsigned short>();
+  TestReductionIdentityBitwiseAndOr<int>();
+  TestReductionIdentityBitwiseAndOr<unsigned int>();
+  TestReductionIdentityBitwiseAndOr<long>();
+  TestReductionIdentityBitwiseAndOr<unsigned long>();
+  TestReductionIdentityBitwiseAndOr<long long>();
+  TestReductionIdentityBitwiseAndOr<unsigned long long>();
+}
 
 }  // namespace Test
