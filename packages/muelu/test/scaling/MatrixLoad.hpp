@@ -37,8 +37,8 @@
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >
 RepartitionMap(
-    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
-    Teuchos::RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> >& coordinates,
+    Teuchos::RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+    Teuchos::RCP<const Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType, LocalOrdinal, GlobalOrdinal, Node> >& coordinates,
     Teuchos::RCP<Teuchos::ParameterList> repartitionParams) {
 #include <MueLu_UseShortNames.hpp>
   auto comm = A->getRowMap()->getComm();
