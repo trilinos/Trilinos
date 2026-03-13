@@ -283,12 +283,14 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::compute(bool reuse) {
   if (!Material_.is_null())
     precList22_.sublist("user data").set("Material", Material_);
 
-  /* We do not need to set up any smoothers or coarse solver for the (2,2) hierarchy. */
-  if (!precList22_.isParameter("smoother: type") && !precList22_.isParameter("smoother: pre type") && !precList22_.isParameter("smoother: post type")) {
-    precList22_.set("smoother: type", "none");
-  }
-  if (!precList22_.isParameter("coarse: type")) {
-    precList22_.set("coarse: type", "none");
+  if (mode_ == MODE_STANDARD) {
+    /* We do not need to set up any smoothers or coarse solver for the (2,2) hierarchy. */
+    if (!precList22_.isParameter("smoother: type") && !precList22_.isParameter("smoother: pre type") && !precList22_.isParameter("smoother: post type")) {
+      precList22_.set("smoother: type", "none");
+    }
+    if (!precList22_.isParameter("coarse: type")) {
+      precList22_.set("coarse: type", "none");
+    }
   }
 
   auto algo11 = precList11_.get<std::string>("multigrid algorithm");
@@ -850,7 +852,7 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::applyInverseRefMaxwell
   if (!allEdgesBoundary_ && X.getNumVectors() != residualFine_->getNumVectors())
     allocateMemory(X.getNumVectors());
 
-  TEUCHOS_TEST_FOR_EXCEPTION(Hierarchy11_.is_null() || Hierarchy11_->GetNumLevels() == 0, Exceptions::RuntimeError, "(1,1) Hiearchy is null.");
+  TEUCHOS_TEST_FOR_EXCEPTION(Hierarchy11_.is_null() || Hierarchy11_->GetNumLevels() == 0, Exceptions::RuntimeError, "(1,1) Hierarchy is null.");
 
   // 1) Run fine pre-smoother using Hierarchy11
   RCP<Level> Fine = Hierarchy11_->GetLevel(0);
@@ -870,14 +872,14 @@ void Maxwell1<Scalar, LocalOrdinal, GlobalOrdinal, Node>::applyInverseRefMaxwell
   if (!P11_.is_null()) {
     RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu Maxwell1: (1,1) correction");
     P11_->apply(*residualFine_, *residual11c_, Teuchos::TRANS);
-    Hierarchy11_->Iterate(*residual11c_, *update11c_, true, 1);
+    Hierarchy11_->Iterate(*residual11c_, *update11c_, 1, true, 1);
   }
 
   // 3b) Restrict residual to (2,2) Hierarchy's level 0 and execute (2,2) hierarchy (use InitialGuessIsZero)
   if (!allNodesBoundary_) {
     RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu Maxwell1: (2,2) correction");
     D0_Matrix_->apply(*residualFine_, *residual22_, Teuchos::TRANS);
-    Hierarchy22_->Iterate(*residual22_, *update22_, true, 0);
+    Hierarchy22_->Iterate(*residual22_, *update22_, 1, true, 0);
   }
 
   // 4) Prolong both updates back into X-vector (Need to do both the P11 null and not null cases
