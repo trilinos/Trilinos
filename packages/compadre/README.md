@@ -70,17 +70,17 @@ If you write a paper using results obtained with the help of the Compadre Toolki
 
 If you are using a particular release of the Compadre Toolkit and would like to help others to reproduce your results, please cite that release specifically. A reference to the most recent release is:
 ```
-@software{compadre_toolkit_v1_6_2,
+@software{compadre_toolkit_v1_7_0,
   author       = {Paul Kuberry and
                   Peter Bosler and
                   Nathaniel Trask},
   title        = {Compadre Toolkit},
-  month        = dec,
-  year         = 2024,
+  month        = mar,
+  year         = 2026,
   publisher    = {Zenodo},
-  version      = {v1.6.0},
-  doi          = {10.5281/zenodo.16573577},
-  url          = {https://doi.org/10.5281/zenodo.16573577}
+  version      = {v1.7.0},
+  doi          = {10.5281/zenodo.18854241},
+  url          = {https://doi.org/10.5281/zenodo.18854241}
 }
 ```
 

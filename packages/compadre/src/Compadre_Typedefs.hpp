@@ -48,8 +48,10 @@ typedef device_execution_space::scratch_memory_space device_scratch;
 
 // memory spaces
 typedef typename host_execution_space::memory_space host_memory_space;
-#ifdef COMPADRE_USE_CUDA
+#if defined(COMPADRE_USE_CUDA)
     typedef typename Kokkos::CudaSpace device_memory_space;
+#elif defined(COMPADRE_USE_HIP)
+    typedef typename Kokkos::HIPSpace device_memory_space;
 #else
     typedef typename device_execution_space::memory_space device_memory_space;
 #endif
@@ -149,6 +151,7 @@ typename std::enable_if<2==T::rank,T>::type createView(std::string str, int dim_
 
 //! compadre_assert_release is used for assertions that should always be checked, but generally 
 //! are not expensive to verify or are not called frequently. 
+#if COMPADRE_BUILD_ABBR == 1 || COMPADRE_BUILD_ABBR == 2
 # define compadre_assert_release(condition) do {                                \
     if ( ! (condition)) {                                               \
       std::stringstream _ss_;                                           \
@@ -157,13 +160,20 @@ typename std::enable_if<2==T::rank,T>::type createView(std::string str, int dim_
         throw std::logic_error(_ss_.str());                             \
     }                                                                   \
   } while (0)
+#else
+# define compadre_assert_release(condition)
+#endif
 
 //! compadre_kernel_assert_release is similar to compadre_assert_release, but is a call on the device, 
 //! namely inside of a function marked KOKKOS_INLINE_FUNCTION
+#if COMPADRE_BUILD_ABBR == 1 || COMPADRE_BUILD_ABBR == 2
 # define compadre_kernel_assert_release(condition) do { \
     if ( ! (condition))                         \
       Kokkos::abort(#condition);                \
   } while (0)
+# else
+# define compadre_kernel_assert_release(condition)
+#endif
 
 //! compadre_assert_debug is used for assertions that are checked in loops, as these significantly
 //! impact performance. When NDEBUG is set, these conditions are not checked.
