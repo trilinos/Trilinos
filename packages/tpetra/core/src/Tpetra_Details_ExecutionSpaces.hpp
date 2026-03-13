@@ -180,7 +180,7 @@ Kokkos::Cuda make_instance() {
   }
   TPETRA_DETAILS_SPACES_CUDA_RUNTIME(
       cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio));
-  return Kokkos::Cuda(stream, true /*Kokkos will manage this stream*/);
+  return Kokkos::Cuda(stream);
 }
 #endif  // KOKKOS_ENABLE_CUDA
 
@@ -220,6 +220,11 @@ class InstanceLifetimeManager {
   using execution_space = ExecSpace;
   using rcp_type        = Teuchos::RCP<const execution_space>;
 
+  InstanceLifetimeManager()
+    : finalizeRegistered_(false) {}
+  InstanceLifetimeManager(const InstanceLifetimeManager &) = delete;
+  InstanceLifetimeManager(InstanceLifetimeManager &&)      = delete;
+
   /*! \brief Retrieve a strong `Teuchos::RCP<const ExecSpace>` to instance `i`
 
       \tparam priority the Spaces::Details::Priority of the provided instance
@@ -230,6 +235,15 @@ class InstanceLifetimeManager {
   rcp_type space_instance(int i = 0) {
     Tpetra::Details::ProfilingRegion region(
         "Tpetra::Details::Spaces::space_instance");
+
+    // the first time an instance is requested, register a cleanup function to run at
+    // Kokkos::finalize() to drop all the stored instance references
+    if (!finalizeRegistered_) {
+      Kokkos::push_finalize_hook([&] {
+        cleanup();
+      });
+      finalizeRegistered_ = true;
+    }
 
     constexpr int p = static_cast<int>(priority);
     static_assert(p < sizeof(instances) / sizeof(instances[0]),
@@ -276,29 +290,30 @@ class InstanceLifetimeManager {
     return r;
   }
 
-  /*! \brief Issue a warning if any Tpetra-managed execution space instances
-   * survive to the end of static lifetime
-   */
   ~InstanceLifetimeManager() {
-    for (int i = 0; i < static_cast<int>(Spaces::Priority::NUM_LEVELS); ++i) {
-      for (const rcp_type &rcp : instances[i]) {
-        if (rcp.is_valid_ptr() && !rcp.is_null()) {
-          // avoid throwing in dtor
-          std::cerr << __FILE__ << ":" << __LINE__
-                    << " execution space instance survived to "
-                       "~InstanceLifetimeManager. strong_count() = "
-                    << rcp.strong_count()
-                    << ". Did a Tpetra object live past Kokkos::finalize()?"
-                    << std::endl;
-        }
-      }
-    }
+    cleanup();
   }
 
  private:
+  /*! \brief Drop all held execution space instance references
+   */
+  void cleanup() {
+    for (int i = 0; i < static_cast<int>(Spaces::Priority::NUM_LEVELS); ++i) {
+      // drop all references
+      // Ideally, we'd be able to check here if anyone is holding any outstanding references to an execution space:
+      //
+      // rcp.is_valid_ptr() && !rcp.is_null()
+      //
+      // However, it's possible THEY ALSO register a hook in Kokkos::finalize() to clean up their reference, and we can't guarantee our hook runs last, so all we can do is clean up ourself and hope they do the same.
+      instances[i].clear();
+    }
+  }
+
   // one vector of instances for each priority level
   std::vector<rcp_type>
       instances[static_cast<int>(Spaces::Priority::NUM_LEVELS)];
+
+  bool finalizeRegistered_;
 };
 
 #if defined(KOKKOS_ENABLE_CUDA)
