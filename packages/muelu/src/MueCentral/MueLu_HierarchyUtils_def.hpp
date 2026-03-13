@@ -113,33 +113,52 @@ void HierarchyUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddNonSerializab
         RCP<const Teuchos::Comm<int>> comm;
         if (!level->GetComm().is_null())
           comm = level->GetComm();
-        else if (level->IsAvailable("A")) {
-          RCP<Matrix> mat;
-          level->Get("A", mat);
-          comm = mat->getMap()->getComm();
+        else if (level->IsAvailable("A") && (level->IsType<RCP<Matrix>>("A") || level->IsType<RCP<Operator>>("A"))) {
+          if (level->IsType<RCP<Matrix>>("A")) {
+            RCP<Matrix> mat;
+            level->Get("A", mat);
+            comm = mat->getMap()->getComm();
+          } else {
+            RCP<Operator> op;
+            level->Get("A", op);
+            comm = op->getDomainMap()->getComm();
+          }
         } else {
           RCP<Level> level0 = H.GetLevel(0);
           if (!level0->GetComm().is_null())
             comm = level0->GetComm();
           else {
-            RCP<Matrix> mat;
-            level0->Get("A", mat);
-            comm = mat->getMap()->getComm();
+            if (level0->IsType<RCP<Matrix>>("A")) {
+              RCP<Matrix> mat;
+              level0->Get("A", mat);
+              comm = mat->getMap()->getComm();
+            } else {
+              RCP<Operator> op;
+              level0->Get("A", op);
+              comm = op->getDomainMap()->getComm();
+            }
           }
         }
         Xpetra::UnderlyingLib lib = level->lib();
 
         if (name == "A") {
-          RCP<Matrix> mat;
-          if (levelListEntry->second.isType<std::string>())
-            // We might also want to read maps here.
-            mat = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(Teuchos::getValue<std::string>(levelListEntry->second), lib, comm);
-          else
-            mat = Teuchos::getValue<RCP<Matrix>>(levelListEntry->second);
-          level->Set(name, mat, NoFactory::get());
-          M->SetFactory(name, NoFactory::getRCP());  // TAW: not sure about this: be aware that this affects all levels
-                                                     //      However, A is accessible through NoFactory anyway, so it should
-                                                     //      be fine here.
+          if (levelListEntry->second.isType<RCP<Operator>>()) {
+            RCP<Operator> mat;
+            mat = Teuchos::getValue<RCP<Operator>>(levelListEntry->second);
+            level->Set(name, mat, NoFactory::get());
+            M->SetFactory(name, NoFactory::getRCP());
+          } else {
+            RCP<Matrix> mat;
+            if (levelListEntry->second.isType<std::string>())
+              // We might also want to read maps here.
+              mat = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Read(Teuchos::getValue<std::string>(levelListEntry->second), lib, comm);
+            else
+              mat = Teuchos::getValue<RCP<Matrix>>(levelListEntry->second);
+            level->Set(name, mat, NoFactory::get());
+            M->SetFactory(name, NoFactory::getRCP());  // TAW: not sure about this: be aware that this affects all levels
+            //      However, A is accessible through NoFactory anyway, so it should
+            //      be fine here.
+          }
         } else if (name == "P" || name == "R" || name == "K" || name == "M") {
           if (levelListEntry->second.isType<RCP<Operator>>()) {
             RCP<Operator> mat;

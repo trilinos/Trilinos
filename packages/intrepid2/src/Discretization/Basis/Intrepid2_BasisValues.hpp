@@ -15,6 +15,8 @@
 #include "Intrepid2_TensorData.hpp"
 #include "Intrepid2_VectorData.hpp"
 
+#include <Teuchos_RCP.hpp>
+
 #ifndef Intrepid2_BasisValues_h
 #define Intrepid2_BasisValues_h
 
@@ -31,6 +33,14 @@
 
 namespace Intrepid2
 {
+  template<typename DeviceType,typename OutputType,typename PointType>
+  class Basis;
+
+    /**  \brief Basis Pointer
+      */
+  template <typename DeviceType, typename OutputType, typename PointType>
+  using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
+
   template<class Scalar, typename DeviceType>
   class BasisValues
   {
@@ -46,6 +56,8 @@ namespace Intrepid2
     int numTensorDataFamilies_ = -1;
     
     Kokkos::View<ordinal_type*,DeviceType> ordinalFilter_;
+    
+    BasisPtr<DeviceType,Scalar,Scalar> basis_; // basis that generated these values
   public:
     //! Constructor for scalar-valued BasisValues with a single family of values.
     BasisValues(TensorDataType tensorData)
@@ -77,6 +89,17 @@ namespace Intrepid2
     numTensorDataFamilies_(0)
     {}
     
+    //! Returns the basis used to generate these values, if specified using setBasis().
+    BasisPtr<DeviceType,Scalar,Scalar> getBasis() const
+    {
+      return basis_;
+    }
+    
+    //! Specifies the basis used to generate these values; required for applying orientations in PAMatrix.
+    void setBasis(BasisPtr<DeviceType,Scalar,Scalar> basis)
+    {
+      basis_ = basis;
+    }
     
     //! copy-like constructor for differing execution spaces.  This does a deep copy of underlying views.
     template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<DeviceType, OtherDeviceType>::value>::type>

@@ -10,6 +10,7 @@
 #ifndef THYRA_MUELU_PRECONDITIONER_FACTORY_DEF_HPP
 #define THYRA_MUELU_PRECONDITIONER_FACTORY_DEF_HPP
 
+#include <sstream>
 #include "Thyra_MueLuPreconditionerFactory_decl.hpp"
 #include "MueLu_TpetraOperatorAsRowMatrix.hpp"
 #include "MueLu_MasterList.hpp"
@@ -52,6 +53,7 @@ bool Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(Pa
   typedef Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> tOp;
   typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tV;
   typedef Thyra::TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> thyTpV;
+  typedef Thyra::MultiVectorBase<Scalar> thyMVbase;
   typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tMV;
   typedef Tpetra::MultiVector<Magnitude, LocalOrdinal, GlobalOrdinal, Node> tMagMV;
 #if defined(MUELU_CAN_USE_MIXED_PRECISION)
@@ -137,6 +139,10 @@ bool Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(Pa
       RCP<XpMat> M = Xpetra::MatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(xpDiag);
       paramList.set<RCP<XpMat> >(parameterName, M);
       return true;
+    } else if (paramList.isType<RCP<thyMVbase> >(parameterName)) {
+      auto thyMV = paramList.get<RCP<thyMVbase> >(parameterName);
+      auto xpMV  = XpThyUtils::toXpetra(thyMV, Teuchos::null);
+      paramList.set(parameterName, xpMV);
     } else if (paramList.isType<RCP<const ThyLinOpBase> >(parameterName)) {
       RCP<const ThyLinOpBase> thyM = paramList.get<RCP<const ThyLinOpBase> >(parameterName);
       paramList.remove(parameterName);
@@ -159,7 +165,9 @@ bool Converters<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceWithXpetra(Pa
       }
       return true;
     } else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter " << parameterName << " has wrong type.");
+      std::stringstream ss;
+      ss << paramList.getEntry(parameterName);
+      TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter " << parameterName << " has wrong type: " + ss.str());
       return false;
     }
   } else
@@ -244,7 +252,8 @@ void MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   TEUCHOS_TEST_FOR_EXCEPT((bIsTpetra == false) && (bIsBlocked == false));
   TEUCHOS_TEST_FOR_EXCEPT((bIsTpetra == true) && bIsBlocked == true);
 
-  RCP<XpMat> A = Teuchos::null;
+  RCP<XpMat> A    = Teuchos::null;
+  RCP<XpOp> xpOpA = Teuchos::null;
   if (bIsBlocked) {
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > ThyBlockedOp =
         Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(fwdOp);
@@ -272,9 +281,16 @@ void MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   } else {
     // wrap the forward operator as an Xpetra::Matrix that MueLu can work with
     // MueLu needs a non-const object as input
-    A = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(fwdOp));
+    try {
+      A = XpThyUtils::toXpetra(Teuchos::rcp_const_cast<ThyLinOpBase>(fwdOp));
+    } catch (std::bad_cast&) {
+      xpOpA = XpThyUtils::toXpetraOperator(Teuchos::rcp_const_cast<ThyLinOpBase>(fwdOp));
+    }
+    if (!A.is_null())
+      xpOpA = rcp_dynamic_cast<XpOp>(A, true);
   }
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(A));
+  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(A) && Teuchos::is_null(xpOpA));
+  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpOpA));
 
   // Retrieve concrete preconditioner object
   const Teuchos::Ptr<DefaultPreconditioner<Scalar> > defaultPrec = Teuchos::ptr(dynamic_cast<DefaultPreconditioner<Scalar>*>(prec));
@@ -293,6 +309,9 @@ void MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     useHalfPrecision = paramList.get<bool>("half precision");
   else if (paramList.isSublist("Hierarchy") && paramList.sublist("Hierarchy").isParameter("half precision"))
     useHalfPrecision = paramList.sublist("Hierarchy").get<bool>("half precision");
+  if (useHalfPrecision) {
+    TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(), MueLu::Exceptions::RuntimeError, "Cannot convert Operator to half precision, only Matrix.")
+  }
 
   RCP<XpOp> xpPrecOp;
   if (startingOver == true) {
@@ -377,7 +396,7 @@ void MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
 
       // build a new MueLu RefMaxwell preconditioner
-      RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > H = MueLu::CreateXpetraPreconditioner(A, paramList);
+      RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > H = MueLu::CreateXpetraPreconditioner(xpOpA, paramList);
       xpPrecOp                                                            = rcp(new MueLuXpOp(H));
     }
   } else {
@@ -425,7 +444,7 @@ void MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       RCP<XpOp> O0             = level0->Get<RCP<XpOp> >("A");
       RCP<XpMat> A0            = rcp_dynamic_cast<XpMat>(O0);
 
-      if (!A0.is_null()) {
+      if (!A0.is_null() && !A.is_null()) {
         // If a user provided a "number of equations" argument in a parameter list
         // during the initial setup, we must honor that settings and reuse it for
         // all consequent setups.
@@ -433,7 +452,10 @@ void MueLuPreconditionerFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
 
       // set new matrix
-      level0->Set("A", A);
+      if (!A.is_null())
+        level0->Set("A", A);
+      else
+        level0->Set("A", xpOpA);
 
       H->SetupRe();
     }
