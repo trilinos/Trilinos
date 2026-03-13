@@ -437,6 +437,8 @@ jobs:
             --num-concurrent-tests=16
       - name: Build output logs
         shell: bash -l {0}
+        env:
+          PYTHONUNBUFFERED: "1"
         run: |
           build_dir=/home/Trilinos/build
           build_tag=$(head -n 1 ${build_dir}/Testing/TAG)
