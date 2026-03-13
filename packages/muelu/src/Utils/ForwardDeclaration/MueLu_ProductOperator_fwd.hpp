@@ -7,16 +7,16 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef MUELU_SOLVERBASE_FWD_HPP
-#define MUELU_SOLVERBASE_FWD_HPP
+#ifndef MUELU_PRODUCTOPERATOR_FWD_HPP
+#define MUELU_PRODUCTOPERATOR_FWD_HPP
 
 namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-class SolverBase;
+class ProductOperator;
 }
 
-#ifndef MUELU_SOLVERBASE_SHORT
-#define MUELU_SOLVERBASE_SHORT
+#ifndef MUELU_PRODUCTOPERATOR_SHORT
+#define MUELU_PRODUCTOPERATOR_SHORT
 #endif
 
-#endif  // MUELU_SOLVERBASE_FWD_HPP
+#endif  // MUELU_PRODUCTOPERATOR_FWD_HPP
