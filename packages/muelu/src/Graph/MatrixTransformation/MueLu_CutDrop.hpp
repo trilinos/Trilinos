@@ -572,6 +572,332 @@ auto make_dlap_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrd
 }
 
 /*!
+  @class UnscaledDistanceLaplacianVectorComparison
+  @brief Orders entries of row \f$i\f$ by \f$|A_{ij}|^2\f$.
+*/
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+class UnscaledDistanceLaplacianVectorComparison {
+ public:
+  using matrix_type             = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_matrix_type       = typename matrix_type::local_matrix_device_type;
+  using scalar_type             = typename local_matrix_type::value_type;
+  using local_ordinal_type      = typename local_matrix_type::ordinal_type;
+  using memory_space            = typename local_matrix_type::memory_space;
+  using diag_vec_type           = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using diag_view_type          = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
+  using results_view            = Kokkos::View<DecisionType*, memory_space>;
+  using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
+
+  local_matrix_type A;
+  results_view results;
+
+ private:
+  using ATS           = KokkosKernels::ArithTraits<scalar_type>;
+  using magnitudeType = typename ATS::magnitudeType;
+  using values_view   = Kokkos::View<magnitudeType*, memory_space>;
+
+  Teuchos::RCP<diag_vec_type> diagVec;
+  diag_view_type diag;
+  DistanceFunctorType dist2;
+  block_indices_view_type point_to_block;
+  block_indices_view_type ghosted_point_to_block;
+  mutable values_view values;
+
+ public:
+  UnscaledDistanceLaplacianVectorComparison(matrix_type& A_, matrix_type& mergedA_, DistanceFunctorType& dist2_, results_view& results_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
+    : A(A_.getLocalMatrixDevice())
+    , results(results_)
+    , dist2(dist2_)
+    , point_to_block(point_to_block_)
+    , ghosted_point_to_block(ghosted_point_to_block_)
+    , values("UnscaledDistanceLaplacianVectorComparison::values", A.nnz()) {
+    // Construct ghosted distance Laplacian diagonal
+    diagVec        = DistanceLaplacian::getDiagonal(mergedA_, dist2);
+    auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
+    diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+  }
+
+  template <class local_matrix_type2, class DistanceFunctorType2, class diag_view_type2>
+  struct Comparator {
+   private:
+    using scalar_type             = typename local_matrix_type2::value_type;
+    using local_ordinal_type      = typename local_matrix_type2::ordinal_type;
+    using memory_space            = typename local_matrix_type2::memory_space;
+    using results_view            = Kokkos::View<DecisionType*, memory_space>;
+    using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
+
+    using ATS           = KokkosKernels::ArithTraits<scalar_type>;
+    using magnitudeType = typename ATS::magnitudeType;
+    using values_view   = Kokkos::View<magnitudeType*, memory_space>;
+
+    const local_matrix_type2 A;
+    const diag_view_type2 diag;
+    const DistanceFunctorType2* dist2;
+    const local_ordinal_type rlid;
+    const local_ordinal_type offset;
+    const results_view results;
+    mutable values_view values;
+    block_indices_view_type point_to_block;
+    block_indices_view_type ghosted_point_to_block;
+
+    const scalar_type one = ATS::one();
+
+   public:
+    KOKKOS_INLINE_FUNCTION
+    Comparator(const local_matrix_type2& A_, const diag_view_type2& diag_, const DistanceFunctorType2* dist2_, local_ordinal_type rlid_, const results_view& results_, values_view& values_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
+      : A(A_)
+      , diag(diag_)
+      , dist2(dist2_)
+      , rlid(rlid_)
+      , offset(A_.graph.row_map(rlid_))
+      , results(results_)
+      , values(Kokkos::subview(values_, Kokkos::make_pair(A.graph.row_map(rlid_), A.graph.row_map(rlid_ + 1))))
+      , point_to_block(point_to_block_)
+      , ghosted_point_to_block(ghosted_point_to_block_) {
+      for (auto i = 0U; i < values.extent(0); ++i) {
+        values(i) = get_value_impl(i);
+      }
+    }
+
+    KOKKOS_FORCEINLINE_FUNCTION
+    magnitudeType get_value(size_t x) const {
+      return values(x);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    bool operator()(size_t x, size_t y) const {
+      if (results(offset + x) != UNDECIDED) {
+        if (results(offset + y) != UNDECIDED) {
+          // does not matter
+          return (x < y);
+        } else {
+          // sort undecided to the right
+          return true;
+        }
+      } else {
+        if (results(offset + y) != UNDECIDED) {
+          // sort undecided to the right
+          return false;
+        } else {
+          return get_value(x) > get_value(y);
+        }
+      }
+    }
+
+   private:
+    KOKKOS_INLINE_FUNCTION
+    magnitudeType get_value_impl(size_t x) const {
+      auto brlid = point_to_block(rlid);
+      auto clid  = A.graph.entries(offset + x);
+      auto bclid = ghosted_point_to_block(clid);
+
+      scalar_type val;
+      if (brlid != bclid) {
+        val = -one / dist2->distance2(brlid, bclid);
+      } else {
+        val = diag(brlid);
+      }
+      auto aij2 = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+      return aij2;
+    }
+  };
+
+  using comparator_type = Comparator<local_matrix_type, DistanceFunctorType, diag_view_type>;
+
+  KOKKOS_INLINE_FUNCTION
+  comparator_type getComparator(local_ordinal_type rlid) const {
+    return comparator_type(A, diag, &dist2, rlid, results, values, point_to_block, ghosted_point_to_block);
+  }
+};
+
+/*!
+  @class ScaledDistanceLaplacianVectorComparison
+  @brief Orders entries of row \f$i\f$ by \f$\frac{|d_{ij}|^2}{|d_{ii}| |d_{jj}|}\f$ where \f$d_ij\f$ is the distance Laplacian.
+*/
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType, Misc::StrengthMeasure measure>
+class ScaledDistanceLaplacianVectorComparison {
+ public:
+  using matrix_type             = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using local_matrix_type       = typename matrix_type::local_matrix_device_type;
+  using scalar_type             = typename local_matrix_type::value_type;
+  using local_ordinal_type      = typename local_matrix_type::ordinal_type;
+  using memory_space            = typename local_matrix_type::memory_space;
+  using diag_vec_type           = Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  using diag_view_type          = typename Kokkos::DualView<const scalar_type*, Kokkos::LayoutStride, typename Node::device_type, Kokkos::MemoryUnmanaged>::t_dev;
+  using results_view            = Kokkos::View<DecisionType*, memory_space>;
+  using block_indices_view_type = Kokkos::View<local_ordinal_type*, memory_space>;
+
+  local_matrix_type A;
+  results_view results;
+
+ private:
+  using ATS           = KokkosKernels::ArithTraits<scalar_type>;
+  using magnitudeType = typename ATS::magnitudeType;
+
+  Teuchos::RCP<diag_vec_type> diagVec;
+  diag_view_type diag;
+  DistanceFunctorType dist2;
+
+  block_indices_view_type point_to_block;
+  block_indices_view_type ghosted_point_to_block;
+
+  using values_view = Kokkos::View<magnitudeType*, memory_space>;
+  mutable values_view values;
+
+ public:
+  ScaledDistanceLaplacianVectorComparison(matrix_type& A_, matrix_type& mergedA_, DistanceFunctorType& dist2_, results_view& results_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
+    : A(A_.getLocalMatrixDevice())
+    , results(results_)
+    , dist2(dist2_)
+    , point_to_block(point_to_block_)
+    , ghosted_point_to_block(ghosted_point_to_block_)
+    , values("ScaledDistanceLaplacianVectorComparison::values", A.nnz()) {
+    // Construct ghosted distance Laplacian diagonal
+    if constexpr ((measure == Misc::SmoothedAggregationMeasure) || (measure == Misc::SignedSmoothedAggregationMeasure)) {
+      diagVec        = DistanceLaplacian::getDiagonal(mergedA_, dist2);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+      diagVec        = DistanceLaplacian::getMaxMinusOffDiagonal(A_, dist2);
+      auto lclDiag2d = diagVec->getLocalViewDevice(Tpetra::Access::ReadOnly);
+      diag           = Kokkos::subview(lclDiag2d, Kokkos::ALL(), 0);
+    }
+  }
+
+  template <class local_matrix_type2, class DistanceFunctorType2, class diag_view_type2>
+  struct Comparator {
+   private:
+    using scalar_type        = typename local_matrix_type2::value_type;
+    using local_ordinal_type = typename local_matrix_type2::ordinal_type;
+    using memory_space       = typename local_matrix_type2::memory_space;
+    using results_view       = Kokkos::View<DecisionType*, memory_space>;
+
+    using ATS            = KokkosKernels::ArithTraits<scalar_type>;
+    using magnitute_type = typename ATS::magnitudeType;
+    using mATS           = KokkosKernels::ArithTraits<magnitute_type>;
+
+    using values_view = Kokkos::View<magnitute_type*, memory_space>;
+
+    const local_matrix_type2 A;
+    const diag_view_type2 diag;
+    const DistanceFunctorType2* dist2;
+    const local_ordinal_type rlid;
+    const local_ordinal_type offset;
+    const results_view results;
+    mutable values_view values;
+    block_indices_view_type point_to_block;
+    block_indices_view_type ghosted_point_to_block;
+
+    const scalar_type one      = ATS::one();
+    const scalar_type zero     = ATS::zero();
+    const magnitute_type mzero = mATS::zero();
+
+   public:
+    KOKKOS_INLINE_FUNCTION
+    Comparator(const local_matrix_type2& A_, const diag_view_type2& diag_, const DistanceFunctorType2* dist2_, local_ordinal_type rlid_, const results_view& results_, values_view& values_, block_indices_view_type point_to_block_, block_indices_view_type ghosted_point_to_block_)
+      : A(A_)
+      , diag(diag_)
+      , dist2(dist2_)
+      , rlid(rlid_)
+      , offset(A_.graph.row_map(rlid_))
+      , results(results_)
+      , values(Kokkos::subview(values_, Kokkos::make_pair(A.graph.row_map(rlid), A.graph.row_map(rlid + 1))))
+      , point_to_block(point_to_block_)
+      , ghosted_point_to_block(ghosted_point_to_block_) {
+      for (auto i = 0U; i < values.extent(0); ++i) {
+        values(i) = get_value_impl(i);
+      }
+    }
+
+    KOKKOS_FORCEINLINE_FUNCTION
+    magnitudeType get_value(size_t x) const {
+      return values(x);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    bool operator()(size_t x, size_t y) const {
+      if (results(offset + x) != UNDECIDED) {
+        if (results(offset + y) != UNDECIDED) {
+          // does not matter
+          return (x < y);
+        } else {
+          // sort undecided to the right
+          return true;
+        }
+      } else {
+        if (results(offset + y) != UNDECIDED) {
+          // sort undecided to the right
+          return false;
+        } else {
+          return get_value(x) > get_value(y);
+        }
+      }
+    }
+
+   private:
+    KOKKOS_INLINE_FUNCTION
+    magnitudeType get_value_impl(size_t x) const {
+      auto brlid = point_to_block(rlid);
+      auto clid  = A.graph.entries(offset + x);
+      auto bclid = ghosted_point_to_block(clid);
+
+      scalar_type val;
+      if (brlid != bclid) {
+        val = -one / dist2->distance2(brlid, bclid);
+      } else {
+        val = diag(brlid);
+      }
+
+      if constexpr (measure == Misc::SmoothedAggregationMeasure) {
+        auto aiiajj = ATS::magnitude(diag(brlid)) * ATS::magnitude(diag(bclid));  // |a_ii|*|a_jj|
+        auto aij2   = ATS::magnitude(val) * ATS::magnitude(val);                  // |a_ij|^2
+        return (aij2 / aiiajj);
+      } else if constexpr (measure == Misc::SignedRugeStuebenMeasure) {
+        auto neg_aij     = -ATS::real(val);
+        auto max_neg_aik = ATS::real(diag(brlid));
+        auto v           = ATS::magnitude(neg_aij / max_neg_aik);
+        if (ATS::real(neg_aij) >= mzero)
+          return v * v;
+        else
+          return -v * v;
+      } else if constexpr (measure == Misc::SignedSmoothedAggregationMeasure) {
+        auto aiiajj               = ATS::magnitude(diag(brlid)) * ATS::magnitude(diag(bclid));  // |a_ii|*|a_jj|
+        const bool is_nonpositive = ATS::real(val) <= mATS::zero();
+        magnitudeType aij2        = ATS::magnitude(val) * ATS::magnitude(val);  // |a_ij|^2
+        // + |a_ij|^2, if a_ij < 0, - |a_ij|^2 if a_ij >=0
+        if (!is_nonpositive)
+          aij2 = -aij2;
+        return aij2 / aiiajj;
+      }
+    }
+  };
+
+  using comparator_type = Comparator<local_matrix_type, DistanceFunctorType, diag_view_type>;
+
+  KOKKOS_INLINE_FUNCTION
+  comparator_type getComparator(local_ordinal_type rlid) const {
+    return comparator_type(A, diag, &dist2, rlid, results, values, point_to_block, ghosted_point_to_block);
+  }
+};
+
+// helper function to allow partial template deduction
+template <Misc::StrengthMeasure measure, class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class DistanceFunctorType>
+auto make_dlap_vector_comparison_functor(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A_,
+                                         Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& mergedA_,
+                                         DistanceFunctorType& dist2_,
+                                         typename ScaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::results_view& results_,
+                                         typename ScaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::block_indices_view_type point_to_block_,
+                                         typename ScaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>::block_indices_view_type ghosted_point_to_block_) {
+  if constexpr (measure == Misc::UnscaledMeasure) {
+    auto functor = UnscaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType>(A_, mergedA_, dist2_, results_, point_to_block_, ghosted_point_to_block_);
+    return functor;
+  } else {
+    auto functor = ScaledDistanceLaplacianVectorComparison<Scalar, LocalOrdinal, GlobalOrdinal, Node, DistanceFunctorType, measure>(A_, mergedA_, dist2_, results_, point_to_block_, ghosted_point_to_block_);
+    return functor;
+  }
+}
+
+/*!
   @class CutDropFunctor
   @brief Order each row by a criterion, compare the ratio of values and drop all entries once the ratio is below the threshold.
 */

@@ -1027,7 +1027,7 @@ public:
     //! Sets target coordinate information. Rows of this 2D-array should correspond to rows of the neighbor lists.
     template<typename view_type>
     void setTargetSites(coordinates_type target_coordinates) {
-        if (this->getAdditionalEvaluationIndices()->getNumberOfTargets() != target_coordinates.extent(0)) {
+        if (this->getAdditionalEvaluationIndices()->getNumberOfTargets() != target_coordinates.extent_int(0)) {
             this->setAuxiliaryEvaluationIndicesLists(
                     Kokkos::View<int*>(),
                     Kokkos::View<int*>("number of additional evaluation indices", 

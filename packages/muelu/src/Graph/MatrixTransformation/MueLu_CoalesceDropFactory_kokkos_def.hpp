@@ -470,6 +470,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     }
   }
   GO numDropped = lclA.nnz() - nnz_filtered;
+  GO numGlobalDropped;
+  Teuchos::reduceAll(*A->getRowMap()->getComm(), Teuchos::REDUCE_SUM, 1, &numDropped, &numGlobalDropped);
   // We now know the number of entries of filtered A and have the final rowptr.
 
   //////////////////////////////////////////////////////////////////////
@@ -479,7 +481,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   RCP<Matrix> filteredA;
   RCP<LWGraph_kokkos> graph;
-  {
+  if (numGlobalDropped > 0) {
     SubFactoryMonitor mFill(*this, "Filtered matrix fill", currentLevel);
 
     local_matrix_type lclFilteredA;
@@ -541,6 +543,10 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
       lclGraph = filteredA->getCrsGraph()->getLocalGraphDevice();
     }
     graph = rcp(new LWGraph_kokkos(lclGraph, filteredA->getRowMap(), filteredA->getColMap(), "amalgamated graph of A"));
+    graph->SetBoundaryNodeMap(boundaryNodes);
+  } else {
+    filteredA = A;
+    graph     = rcp(new LWGraph_kokkos(filteredA->getCrsGraph()->getLocalGraphDevice(), filteredA->getRowMap(), filteredA->getColMap(), "amalgamated graph of A"));
     graph->SetBoundaryNodeMap(boundaryNodes);
   }
 
@@ -891,6 +897,8 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
   LocalOrdinal nnz_graph    = nnz.second;
   GO numTotal               = lclA.nnz();
   GO numDropped             = numTotal - nnz_filtered;
+  GO numGlobalDropped;
+  Teuchos::reduceAll(*A->getRowMap()->getComm(), Teuchos::REDUCE_SUM, 1, &numDropped, &numGlobalDropped);
   // We now know the number of entries of filtered A and have the final rowptr.
 
   //////////////////////////////////////////////////////////////////////
@@ -900,7 +908,7 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
 
   RCP<Matrix> filteredA;
   RCP<LWGraph_kokkos> graph;
-  {
+  if (numGlobalDropped > 0) {
     SubFactoryMonitor mFill(*this, "Filtered matrix fill", currentLevel);
 
     local_matrix_type lclFilteredA;
@@ -953,6 +961,10 @@ std::tuple<GlobalOrdinal, typename MueLu::LWGraph_kokkos<LocalOrdinal, GlobalOrd
     }
 
     graph = rcp(new LWGraph_kokkos(lclGraph, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+    graph->SetBoundaryNodeMap(boundaryNodes);
+  } else {
+    filteredA = A;
+    graph     = rcp(new LWGraph_kokkos(mergedA->getCrsGraph()->getLocalGraphDevice(), uniqueMap, nonUniqueMap, "amalgamated graph of A"));
     graph->SetBoundaryNodeMap(boundaryNodes);
   }
 
