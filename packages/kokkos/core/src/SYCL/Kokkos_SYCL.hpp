@@ -12,12 +12,7 @@ static_assert(false,
 #include <Kokkos_Macros.hpp>
 
 #ifdef KOKKOS_ENABLE_SYCL
-// FIXME_SYCL
-#if __has_include(<sycl/sycl.hpp>)
 #include <sycl/sycl.hpp>
-#else
-#include <CL/sycl.hpp>
-#endif
 #include <SYCL/Kokkos_SYCL_Space.hpp>
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_ScratchSpace.hpp>
@@ -48,6 +43,13 @@ class SYCL {
 
   using scratch_memory_space = ScratchMemorySpace<SYCL>;
 
+  SYCL(const SYCL&) = default;
+  SYCL(SYCL&& other) : SYCL(static_cast<const SYCL&>(other)) {}
+  SYCL& operator=(const SYCL&) = default;
+  SYCL& operator=(SYCL&& other) {
+    return *this = static_cast<const SYCL&>(other);
+  }
+  ~SYCL();
   SYCL();
   explicit SYCL(const sycl::queue&);
 
@@ -55,10 +57,7 @@ class SYCL {
     return m_space_instance->impl_get_instance_id();
   }
 
-  sycl::queue& sycl_queue() const noexcept {
-    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-    return *m_space_instance->m_queue;
-  }
+  sycl::queue& sycl_queue() const noexcept { return m_space_instance->m_queue; }
 
   //@}
   //------------------------------------
@@ -89,11 +88,7 @@ class SYCL {
 
   static void impl_initialize(InitializationSettings const&);
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  static int concurrency();
-#else
   int concurrency() const;
-#endif
 
   static const char* name();
 

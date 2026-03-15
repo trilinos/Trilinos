@@ -51,6 +51,14 @@ class OpenMP {
   using size_type            = memory_space::size_type;
   using scratch_memory_space = ScratchMemorySpace<OpenMP>;
 
+  KOKKOS_DEFAULTED_FUNCTION OpenMP(const OpenMP&) = default;
+  KOKKOS_FUNCTION OpenMP(OpenMP&& other)
+      : OpenMP(static_cast<const OpenMP&>(other)) {}
+  KOKKOS_DEFAULTED_FUNCTION OpenMP& operator=(const OpenMP&) = default;
+  KOKKOS_FUNCTION OpenMP& operator=(OpenMP&& other) {
+    return *this = static_cast<const OpenMP&>(other);
+  }
+  ~OpenMP();
   OpenMP();
 
   explicit OpenMP(int pool_size);
@@ -90,11 +98,7 @@ class OpenMP {
   }
 #endif
 
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  static int concurrency(OpenMP const& = OpenMP());
-#else
   int concurrency() const;
-#endif
 
   static void impl_initialize(InitializationSettings const&);
 
