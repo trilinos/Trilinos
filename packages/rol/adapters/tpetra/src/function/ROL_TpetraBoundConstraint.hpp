@@ -296,7 +296,10 @@ namespace ROL {
     //--------------------------------------------------------------------------
 
 
-    template <class Real, class LO, class GO, class Node>
+    template<class Real,
+             class LO=Tpetra::Map<>::local_ordinal_type,
+             class GO=Tpetra::Map<>::global_ordinal_type,
+             class Node=Tpetra::Map<>::node_type>
     class TpetraBoundConstraint : public BoundConstraint<Real> {
 
 
@@ -311,11 +314,12 @@ namespace ROL {
         private:
             int gblDim_;
             int lclDim_;
+            const MVP lp_, up_;
             ConstViewType l_;           // Kokkos view of Lower bounds
             ConstViewType u_;           // Kokkos view of Upper bounds
             Real min_diff_;
             Real scale_;
-            ROL::Ptr<const Teuchos::Comm<int> > comm_;
+            ROL::Ptr<const Teuchos::Comm<int>> comm_;
 
         ROL::Ptr<const MV> getVector( const ROL::Vector<Real>& x ) {
           return dynamic_cast<const TMV&>(x).getVector();
@@ -330,6 +334,7 @@ namespace ROL {
             TpetraBoundConstraint(MVP lp, MVP up, Real scale = 1.0) :
                 gblDim_(lp->getGlobalLength()),
                 lclDim_(lp->getLocalLength()),
+                lp_(lp), up_(up),
                 l_(lp->getLocalViewDevice(Tpetra::Access::ReadOnly)),
                 u_(up->getLocalViewDevice(Tpetra::Access::ReadOnly)),
                 scale_(scale),
@@ -465,6 +470,14 @@ namespace ROL {
                 KokkosStructs::GradPruneActive<Real,ViewType,ConstViewType> prune(v_lcl,g_lcl,x_lcl,l_,u_,epsn,geps);
 
                 Kokkos::parallel_for(lclDim_,prune);
+            }
+
+            const Ptr<const Vector<Real>> getLowerBound() const {
+              return ROL::makePtr<const ROL::TpetraMultiVector<Real,LO,GO,Node>>(lp_);
+            }
+
+            const Ptr<const Vector<Real>> getUpperBound() const {
+              return ROL::makePtr<const ROL::TpetraMultiVector<Real,LO,GO,Node>>(up_);
             }
       }; // End class TpetraBoundConstraint
 

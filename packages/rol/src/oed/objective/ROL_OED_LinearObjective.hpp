@@ -60,6 +60,25 @@ public:
 
   void hessVec_22( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &u, const Vector<Real> &z, Real &tol ) override;
 
+  void summarize(std::ostream &stream,
+           const Ptr<BatchManager<Real>> &bman = nullPtr) const {
+    ProfiledClass<Real,std::string>::summarize(stream,bman);
+    if (factors_ != nullPtr) {
+      stream << std::string(80,'-') << std::endl;
+      factors_->summarize(stream,bman);
+    }
+    if (traceSampler_ != nullPtr) {
+      stream << std::string(80,'-') << std::endl;
+      traceSampler_->summarize(stream,bman);
+    }
+  }
+
+  void reset() {
+    ProfiledClass<Real,std::string>::reset();
+    if (factors_ != nullPtr) factors_->reset();
+    if (traceSampler_ != nullPtr) traceSampler_->reset();
+  }
+
 }; // class LinearObjective
 
 } // End OED Namespace

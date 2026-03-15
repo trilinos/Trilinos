@@ -36,31 +36,66 @@ void Factors<Real>::setFactors() {
     X_[i] = theta_->dual().clone();
     evaluateModel(*X_[i],sampler_->getMyPoint(i));
   }
+  if (ortho_) mgs2(X_);
   stopTimer("setFactors");
 }
 
 template<typename Real>
+void Factors<Real>::mgs2(const std::vector<Ptr<Vector<Real>>> &Y) const {
+  const int nvec(Y.size()), orthIt(2);
+  const Real zero(0), one(1), orthTol(sqrt(ROL_EPSILON<Real>()));
+  Real rjj(0), rij(0);
+  std::vector<Real> normQ(nvec,0);
+  bool flag(true);
+  for (int j = 0; j < nvec; ++j) {
+    rjj = Y[j]->norm();
+    if (rjj > ROL_EPSILON<Real>()) { // Ignore update if Y[i] is zero.
+      for (int k = 0; k < orthIt; ++k) {
+        for (int i = 0; i < j; ++i) {
+          rij = Y[i]->dot(*Y[j]);
+          Y[j]->axpy(-rij,*Y[i]);
+        }
+        normQ[j] = Y[j]->norm();
+        flag = true;
+        for (int i = 0; i < j; ++i) {
+          rij = std::abs(Y[i]->dot(*Y[j]));
+          if (rij > orthTol*normQ[j]*normQ[i]) {
+            flag = false;
+            break;
+          }
+        }
+        if (flag) break;
+      }
+    }
+    rjj = normQ[j];
+    if (rjj > zero) Y[j]->scale(one/rjj);
+  }
+}
+
+template<typename Real>
 Factors<Real>::Factors(const Ptr<Constraint<Real>>      &model,
-        const Ptr<Vector<Real>>          &theta,
-        const Ptr<Vector<Real>>          &obs,
-        const Ptr<SampleGenerator<Real>> &sampler,
-        bool                              storage,
-        const Ptr<Vector<Real>>          &c)
+                       const Ptr<Vector<Real>>          &theta,
+                       const Ptr<Vector<Real>>          &obs,
+                       const Ptr<SampleGenerator<Real>> &sampler,
+                       bool                              storage,
+                       const Ptr<Vector<Real>>          &c,
+                       bool                              ortho)
   : ProfiledClass<Real,std::string>("OED::Factors"),
     model_(model), theta_(theta), obs_(obs), obs0_(obs_->clone()),
     c_(c == nullPtr ? obs_->dual().clone() : c), sampler_(sampler),
-    storage_(storage), obs1d_(obs_->dimension()==1) {
+    storage_(storage), obs1d_(obs_->dimension()==1), ortho_(ortho) {
   if (c == nullPtr) c_->setScalar(static_cast<Real>(1));
   setFactors();
 }
 
 template<typename Real>
 Factors<Real>::Factors(const Ptr<Objective<Real>>       &model,
-        const Ptr<Vector<Real>>          &theta,
-        const Ptr<SampleGenerator<Real>> &sampler,
-        bool                              storage)
+                       const Ptr<Vector<Real>>          &theta,
+                       const Ptr<SampleGenerator<Real>> &sampler,
+                       bool                              storage,
+                       bool                              ortho)
   : Factors<Real>(makePtr<ConstraintFromObjective<Real>>(model),
-      theta,makePtr<SingletonVector<Real>>(),sampler,storage) {}
+      theta,makePtr<SingletonVector<Real>>(),sampler,storage,nullPtr,ortho) {}
 
 template<typename Real>
 void Factors<Real>::setPredictionVector(const Vector<Real> &c) {
@@ -94,7 +129,7 @@ Real Factors<Real>::apply(const Vector<Real> &x, int k) const {
   startTimer("apply");
   if (k < 0 || k >= sampler_->numMySamples())
     throw Exception::NotImplemented(">>> ROL::OED::Factors::apply : Index is out of bounds!");
-  Real val = x.dot(X_[k]->dual());
+  Real val = X_[k]->apply(x);
   stopTimer("apply");
   return val;
 }
@@ -145,8 +180,8 @@ Real Factors<Real>::applyProduct2(const Vector<Real> &x, const Vector<Real> &y, 
     throw Exception::NotImplemented(">>> ROL::OED::Factors::applyProduct2 : Index is out of bounds!");
   Real val(0);
   if (obs1d_) {
-    Real Fx = get(k)->dot(x.dual());
-    Real Fy = get(k)->dot(y.dual());
+    Real Fx = get(k)->apply(x);
+    Real Fy = get(k)->apply(y);
     val = Fx * Fy;
   }
   else {

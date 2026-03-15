@@ -25,7 +25,7 @@ void ScaledObjective<Real>::setParameter(const std::vector<Real> &param) {
 
 template<typename Real>
 Real ScaledObjective<Real>::value( const Vector<Real> &x, Real &tol ) {
-  return scale_ * obj_->value(x,tol);
+  return scale_ * obj_->value(x,tol) + shift_;
 }
 
 template<typename Real>

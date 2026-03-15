@@ -22,18 +22,17 @@
 #include <algorithm>
 //#include <fenv.h>
 
-#include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_Solver.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanagerK.hpp"
 #include "../TOOLS/pdeconstraintK.hpp"
 #include "../TOOLS/pdeobjectiveK.hpp"
 #include "../TOOLS/pdevectorK.hpp"
-#include "../TOOLS/batchmanagerK.hpp"
 #include "pde_navier-stokesK.hpp"
 #include "obj_navier-stokesK.hpp"
 
@@ -42,7 +41,7 @@ using DeviceT = Kokkos::HostSpace;
 
 template<class Real>
 Real random(const Teuchos::Comm<int> &comm,
-            const Real a = -1, const Real b = 1) {
+            Real a = Real(-1), Real b = Real(1)) {
   Real val(0), u(0);
   if ( Teuchos::rank<int>(comm)==0 ) {
     u   = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
@@ -63,10 +62,8 @@ int main(int argc, char *argv[]) {
   /*** Initialize communicator. ***/
   ROL::GlobalMPISession mpiSession (&argc, &argv, &bhs);
   Kokkos::ScopeGuard kokkosScope (argc, argv);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
-    = Tpetra::getDefaultComm();
-  ROL::Ptr<const Teuchos::Comm<int> > serial_comm
-    = ROL::makePtr<Teuchos::SerialComm<int>>();
+  auto comm = Tpetra::getDefaultComm();
+  auto serial_comm = ROL::makePtr<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0))
     outStream = ROL::makePtrFromRef(std::cout);
@@ -109,9 +106,7 @@ int main(int argc, char *argv[]) {
     auto dup = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(u_ptr,pde,assembler,*parlist);
     auto pp  = ROL::makePtr<PDE_PrimalSimVector<RealT,DeviceT>>(p_ptr,pde,assembler,*parlist);
     auto rp  = ROL::makePtr<PDE_DualSimVector<RealT,DeviceT>>(r_ptr,pde,assembler,*parlist);
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> zpde
-      = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pde,assembler,*parlist);
-    auto zp = ROL::makePtr<PDE_OptVector<RealT>>(zpde);
+    auto zp  = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(z_ptr,pde,assembler,*parlist);
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
 
@@ -139,12 +134,7 @@ int main(int argc, char *argv[]) {
     auto zhi_ptr = assembler->createControlVector();
     zlo_ptr->putScalar(static_cast<RealT>(0));
     zhi_ptr->putScalar(ROL::ROL_INF<RealT>());
-    ROL::Ptr<ROL::TpetraMultiVector<RealT>> zlopde, zhipde;
-    zlopde = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zlo_ptr,pde,assembler,*parlist);
-    zhipde = ROL::makePtr<PDE_PrimalOptVector<RealT,DeviceT>>(zhi_ptr,pde,assembler,*parlist);
-    auto zlop = ROL::makePtr<PDE_OptVector<RealT>>(zlopde);
-    auto zhip = ROL::makePtr<PDE_OptVector<RealT>>(zhipde);
-    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
+    auto bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(zlo_ptr,zhi_ptr);
     bool useBounds = parlist->sublist("Problem").get("Use bounds", false);
     if (!useBounds) bnd->deactivate();
 
@@ -154,7 +144,7 @@ int main(int argc, char *argv[]) {
     int nsamp = parlist->sublist("Problem").get("Number of samples",100);
     std::vector<RealT> tmp = {-one,one};
     std::vector<std::vector<RealT>> bounds(stochDim,tmp);
-    auto bman = ROL::makePtr<PDE_OptVector_BatchManager<RealT,DeviceT>>(comm);
+    auto bman = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
     auto sampler = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman);
 
     /*************************************************************************/

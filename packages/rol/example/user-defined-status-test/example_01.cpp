@@ -1,0 +1,83 @@
+// @HEADER
+// *****************************************************************************
+//               Rapid Optimization Library (ROL) Package
+//
+// Copyright 2014 NTESS and the ROL contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+/*! \file  example_01.cpp
+    \brief Shows how to use a user-defined status test.
+    \addtogroup examples_group
+*/
+
+#define USE_HESSVEC 1
+
+#include "ROL_PoissonInversion.hpp"
+#include "ROL_Solver.hpp"
+#include "ROL_Stream.hpp"
+#include "ROL_GlobalMPISession.hpp"
+
+#include <iostream>
+
+#include "userStatusTest.hpp"
+
+typedef double RealT;
+
+int main(int argc, char *argv[]) {
+
+  ROL::GlobalMPISession mpiSession(&argc, &argv);
+
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  ROL::Ptr<std::ostream> outStream;
+  ROL::nullstream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = ROL::makePtrFromRef(std::cout);
+  else
+    outStream = ROL::makePtrFromRef(bhs);
+
+  int errorFlag  = 0;
+
+  // *** Example body.
+
+  try {
+
+    // Set parameters.
+    ROL::ParameterList parlist;
+    parlist.sublist("General").set("Output Level",1);
+    parlist.sublist("Step").set("Type","Trust Region");
+    parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist.sublist("Status Test").set("Iteration Limit",100);
+
+    // Define optimization problem.
+    int dim      = 256; // Set problem dimension.
+    auto obj     = ROL::makePtr<ROL::ZOO::Objective_PoissonInversion<RealT>>(dim);
+    auto x       = ROL::makePtr<ROL::StdVector<RealT>>(dim, 1.5);
+    auto problem = ROL::makePtr<ROL::Problem<RealT>>(obj,x);
+    problem->finalize(false,true,*outStream);
+
+    // Initialize StatusTest
+    auto startTime = std::chrono::steady_clock::now();
+    auto status = ROL::makePtr<TimeOutStatusTest<RealT>>(startTime, 1.0);
+
+    // Run Algorithm
+    ROL::Solver<RealT> solver(problem,parlist);
+    solver.solve(*outStream,status,true);
+  }
+  catch (std::logic_error& err) {
+    *outStream << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+
+  return 0;
+
+}
+

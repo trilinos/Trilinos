@@ -21,13 +21,8 @@ private:
   std::vector<std::vector<Real>> data_; 
   const std::vector<Ptr<Distribution<Real>>> dist_;
 
-  int  nSamp_;
   const bool use_normal_;
-  const bool use_SA_;
-  const bool adaptive_;
-  const int  numNewSamps_;
   const bool useDist_;
-  const int seed_;
 
   Real sum_val_;
   Real sum_val2_;
@@ -36,7 +31,15 @@ private:
 
   Real ierf(Real input) const;
   Real random(void) const;
-  std::vector<std::vector<Real>> sample(int nSamp, bool store = true, bool refine = false);
+
+protected:
+  int nSamp_;
+  const bool use_SA_;
+  const bool adaptive_;
+  const int  numNewSamps_;
+  const int seed_;
+
+  virtual std::vector<std::vector<Real>> sample(int nSamp, bool store = true, bool refine = false);
 
 public:
   MonteCarloGenerator(int nSamp,
@@ -59,6 +62,12 @@ public:
                       const std::vector<Real> &mean,
                       const std::vector<Real> &std, 
                       const Ptr<BatchManager<Real>> &bman,
+                      bool use_SA = false,
+                      bool adaptive = false,
+                      int numNewSamps = 0,
+                      int seed = 123454321);
+
+  MonteCarloGenerator(const Ptr<BatchManager<Real>>& bman,
                       bool use_SA = false,
                       bool adaptive = false,
                       int numNewSamps = 0,

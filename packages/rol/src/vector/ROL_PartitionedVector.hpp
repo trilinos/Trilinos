@@ -100,7 +100,7 @@ public:
     return std::sqrt(result);
   }
 
-  Vp clone() const {
+  virtual Vp clone() const {
     std::vector<Vp> clonevec;
     for( size_type i=0; i<vecs_.size(); ++i ) {
       clonevec.push_back(vecs_[i]->clone());
@@ -108,7 +108,7 @@ public:
     return ROL::makePtr<PV>(clonevec);
   }
 
-  const V& dual(void) const {
+  virtual const V& dual(void) const {
     for( size_type i=0; i<vecs_.size(); ++i ) {
       dual_vecs_[i]->set(vecs_[i]->dual());
     }
@@ -202,7 +202,7 @@ public:
     }
   }
 
-  void print( std::ostream &outStream ) const {
+  virtual void print( std::ostream &outStream ) const {
     for( size_type i=0; i<vecs_.size(); ++i ) {
       outStream << "V[" << i << "]: ";
       vecs_[i]->print(outStream);
