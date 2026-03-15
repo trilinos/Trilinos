@@ -62,6 +62,35 @@
   template struct Thyra::SolveCriteria<SC>; \
   template struct Thyra::SolveStatus<SC>;
 
+#define BINDER_THYRA_TPETRA_INSTANT(Scalar, LocalOrdinal, GlobalOrdinal, Node) \
+  template Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar >> linearOpWithSolve(const Thyra::LinearOpWithSolveFactoryBase<Scalar> &lowsFactory, \
+                                                                                 const Teuchos::RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp, \
+                                                                                 const Thyra::ESupportSolveUse supportSolveUse); \
+  template Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar >> linearOpWithSolve(const Thyra::LinearOpWithSolveFactoryBase<Scalar> &lowsFactory, \
+                                                                                 const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp, \
+                                                                                 const Thyra::ESupportSolveUse supportSolveUse); \
+  template Teuchos::RCP<Thyra::PreconditionerBase<Scalar >> initializePrec(const Thyra::PreconditionerFactoryBase<Scalar> &precFactory, \
+                                                                           const Teuchos::RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp, \
+                                                                           const Teuchos::RCP<Thyra::PreconditionerBase<Scalar>> &prec, \
+                                                                           const Thyra::ESupportSolveUse supportSolveUse); \
+  template Teuchos::RCP<Thyra::PreconditionerBase<Scalar >> initializePrec(const Thyra::PreconditionerFactoryBase<Scalar> &precFactory, \
+                                                                           const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp, \
+                                                                           const Teuchos::RCP<Thyra::PreconditionerBase<Scalar>> &prec, \
+                                                                           const Thyra::ESupportSolveUse supportSolveUse); \
+  template Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar >> initializePreconditionedOp(const Thyra::LinearOpWithSolveFactoryBase<Scalar> &lowsFactory, \
+                                                                                          const Teuchos::RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp, \
+                                                                                          const Teuchos::RCP<Thyra::PreconditionerBase<Scalar>> &prec, \
+                                                                                          const Thyra::ESupportSolveUse supportSolveUse); \
+  template Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar >> initializePreconditionedOp(const Thyra::LinearOpWithSolveFactoryBase<Scalar> &lowsFactory, \
+                                                                                          const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraFwdOp, \
+                                                                                          const Teuchos::RCP<Thyra::PreconditionerBase<Scalar>> &prec, \
+                                                                                          const Thyra::ESupportSolveUse supportSolveUse); \
+  template Thyra::SolveStatus<Scalar> solve(const Thyra::LinearOpWithSolveBase<Scalar> &A, \
+                                            const Thyra::EOpTransp A_trans, \
+                                            const Teuchos::RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraB, \
+                                            const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraX, \
+                                            const Teuchos::Ptr<const Thyra::SolveCriteria<Scalar>> solveCriteria);
+
 #define BINDER_TPETRA_OPERATOR_INSTANT(SC,LO,GO,NO) \
    template class Tpetra::Operator<SC, LO, GO, NO>;
 
@@ -82,6 +111,7 @@ namespace Thyra {
   BINDER_THYRA_VECTOR_INSTANT(Tpetra::Details::DefaultTypes::scalar_type, Tpetra::Details::DefaultTypes::local_ordinal_type, Tpetra::Details::DefaultTypes::global_ordinal_type, Tpetra::Details::DefaultTypes::node_type)
   BINDER_THYRA_LINEAROP_INSTANT(Tpetra::Details::DefaultTypes::scalar_type, Tpetra::Details::DefaultTypes::local_ordinal_type, Tpetra::Details::DefaultTypes::global_ordinal_type, Tpetra::Details::DefaultTypes::node_type)
   BINDER_THYRA_LINEARSOLVER_INSTANT(Tpetra::Details::DefaultTypes::scalar_type)
+  BINDER_THYRA_TPETRA_INSTANT(Tpetra::Details::DefaultTypes::scalar_type, Tpetra::Details::DefaultTypes::local_ordinal_type, Tpetra::Details::DefaultTypes::global_ordinal_type, Tpetra::Details::DefaultTypes::node_type)
 }
 
 #endif // PYTRILINOS2_THYRA_ETI

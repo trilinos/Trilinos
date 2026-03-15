@@ -41,6 +41,13 @@ endforeach()
 target_link_libraries(PyTrilinos2 PUBLIC ${Trilinos_EXTRA_LINK_FLAGS})
 set_target_properties(PyTrilinos2 PROPERTIES SUFFIX ".so")
 
+find_package(Torch REQUIRED)
+MESSAGE("TORCH_CXX_FLAGS: ${TORCH_CXX_FLAGS}")
+MESSAGE("TORCH_LIBRARIES: ${TORCH_LIBRARIES}")
+find_library(TORCH_PYTHON_LIBRARY torch_python PATH "${TORCH_INSTALL_PREFIX}/lib")
+MESSAGE("TORCH_PYTHON_LIBRARY: ${TORCH_PYTHON_LIBRARY}")
+target_link_libraries(PyTrilinos2 PUBLIC ${TORCH_LIBRARIES} ${TORCH_PYTHON_LIBRARY})
+
 INSTALL(TARGETS PyTrilinos2
   DESTINATION ${PyTrilinos2_INSTALL_DIR})
 
