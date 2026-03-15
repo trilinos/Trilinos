@@ -25,6 +25,7 @@
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 #include "ROL_Solver.hpp"
 #include "ROL_SingletonVector.hpp"
 #include "ROL_ConstraintFromObjective.hpp"
@@ -43,15 +44,14 @@ using DeviceT = Kokkos::HostSpace;
 
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
+  int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   ROL::GlobalMPISession mpiSession (&argc, &argv, &bhs);
   Kokkos::ScopeGuard kokkosScope (argc, argv);
-  ROL::Ptr<const Teuchos::Comm<int>> comm
-    = Tpetra::getDefaultComm();
+  auto comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0))
     outStream = ROL::makePtrFromRef(std::cout);
@@ -112,9 +112,9 @@ int main(int argc, char *argv[]) {
     auto ibnd    = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);
 
     // Build bound constraint
-    auto lp = zp->clone(); lp->setScalar(0.0);
-    auto hp = zp->clone(); hp->setScalar(1.0);
-    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(lp, hp);
+    auto lp = assembler->createControlVector(); lp->putScalar(0.0);
+    auto hp = assembler->createControlVector(); hp->putScalar(1.0);
+    auto bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(lp, hp);
     // Build optimization problem
     auto optProb = ROL::makePtr<ROL::Problem<RealT>>(robj, zp);
     optProb->addBoundConstraint(bnd);

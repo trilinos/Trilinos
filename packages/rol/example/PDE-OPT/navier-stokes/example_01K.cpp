@@ -37,15 +37,14 @@ using DeviceT = Kokkos::HostSpace;
 
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
+  int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   ROL::GlobalMPISession mpiSession (&argc, &argv, &bhs);
   Kokkos::ScopeGuard kokkosScope (argc, argv);
-  ROL::Ptr<const Teuchos::Comm<int>> comm
-    = Tpetra::getDefaultComm();
+  auto comm = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0))
     outStream = ROL::makePtrFromRef(std::cout);

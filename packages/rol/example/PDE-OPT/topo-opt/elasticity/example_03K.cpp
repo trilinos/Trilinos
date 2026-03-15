@@ -27,6 +27,7 @@
 #include "ROL_Solver.hpp"
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_Bounds.hpp"
+#include "ROL_TpetraBoundConstraint.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 #include "ROL_SingletonTeuchosBatchManager.hpp"
@@ -52,17 +53,15 @@ using DeviceT = Kokkos::HostSpace;
 
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
+  int iprint = argc - 1;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   ROL::GlobalMPISession mpiSession (&argc, &argv, &bhs);
   Kokkos::ScopeGuard kokkosScope (argc, argv);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
-    = Tpetra::getDefaultComm();
-  ROL::Ptr<const Teuchos::Comm<int> > serial_comm
-    = ROL::makePtr<Teuchos::SerialComm<int>>();
+  auto comm = Tpetra::getDefaultComm();
+  auto serial_comm = ROL::makePtr<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0))
     outStream = ROL::makePtrFromRef(std::cout);
@@ -256,11 +255,9 @@ int main(int argc, char *argv[]) {
     else {
       // Build Modica-Mortola Energy objective function.
       RealT penParam = parlist->sublist("Problem").get("Phase Field Penalty Parameter",1e-1);
-      ROL::Ptr<QoI<RealT,DeviceT>>
-        qoi_pfe = ROL::makePtr<QoI_ModicaMortolaEnergy_PhaseField<RealT,DeviceT>>(pde->getDensityFE(),
+      auto qoi_pfe = ROL::makePtr<QoI_ModicaMortolaEnergy_PhaseField<RealT,DeviceT>>(pde->getDensityFE(),
                                                                           penParam);
-      ROL::Ptr<IntegralOptObjective<RealT,DeviceT>>
-        obj_pfe = ROL::makePtr<IntegralOptObjective<RealT,DeviceT>>(qoi_pfe,assembler);
+      auto obj_pfe = ROL::makePtr<IntegralOptObjective<RealT,DeviceT>>(qoi_pfe,assembler);
       // Get weights for linear combination objective.
       std::vector<RealT> weights(1,0.0);
       weights[0] = parlist->sublist("Problem").get("Phase Field Energy Objective Scale",0.00064);
@@ -315,10 +312,9 @@ int main(int argc, char *argv[]) {
 
     // Initialize bound constraints.
     RealT lval = (usePhaseField ? -1.0 : 0.0), uval = 1.0;
-    ROL::Ptr<ROL::Vector<RealT>> lop = zp->clone(); lop->setScalar(lval);
-    ROL::Ptr<ROL::Vector<RealT>> hip = zp->clone(); hip->setScalar(uval);
-    ROL::Ptr<ROL::BoundConstraint<RealT>>
-      bnd = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
+    auto lop = assemblerFilter->createControlVector(); lop->putScalar(lval);
+    auto hip = assemblerFilter->createControlVector(); hip->putScalar(uval);
+    auto bnd = ROL::makePtr<ROL::TpetraBoundConstraint<RealT>>(lop,hip);
     if (usePhaseField) bnd->deactivate();
 
     // Build sampler.
@@ -326,12 +322,9 @@ int main(int argc, char *argv[]) {
     //int stochDim = buildSampler.getDimension();
     int nsamp      = parlist->sublist("Problem").get("Number of samples", 1);
     int nsamp_dist = parlist->sublist("Problem").get("Number of output samples",1000);
-    ROL::Ptr<ROL::BatchManager<RealT>>
-      bman = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
-    ROL::Ptr<ROL::SampleGenerator<RealT>>
-      sampler = buildSampler.get(nsamp,bman);
-    ROL::Ptr<ROL::SampleGenerator<RealT>>
-      sampler_dist = buildSampler.get(nsamp_dist,bman);
+    auto bman = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
+    auto sampler = buildSampler.get(nsamp,bman);
+    auto sampler_dist = buildSampler.get(nsamp_dist,bman);
 
     // Set up and solve.
     int cnt = 0;
@@ -343,10 +336,8 @@ int main(int argc, char *argv[]) {
     parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").set("Name","Parabolic");
     parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Lower Bound",0.0);
     parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").sublist("Distribution").sublist("Parabolic").set("Upper Bound",1.0);
-    std::vector<RealT> lambda
-      = ROL::getArrayFromStringParameter<RealT>(parlist->sublist("Problem"), "Convex Combination Parameters");
-    std::vector<RealT> beta
-      = ROL::getArrayFromStringParameter<RealT>(parlist->sublist("Problem"), "Confidence Levels");
+    auto lambda = ROL::getArrayFromStringParameter<RealT>(parlist->sublist("Problem"), "Convex Combination Parameters");
+    auto beta = ROL::getArrayFromStringParameter<RealT>(parlist->sublist("Problem"), "Confidence Levels");
     ROL::Ptr<ROL::StochasticProblem<RealT>> prob;
     for (unsigned i = 0; i < lambda.size(); ++i) {
       parlist->sublist("SOL").sublist("Risk Measure").sublist("CVaR").set("Convex Combination Parameter",lambda[i]);
@@ -365,8 +356,7 @@ int main(int argc, char *argv[]) {
         else if ( minType == "Volume" )
           prob->addConstraint("Compliance",icon,imul,ibnd);
         if ( minType == "Volume" ) {
-          ROL::Ptr<ROL::BatchManager<RealT>>
-            cbman = ROL::makePtr<ROL::SingletonTeuchosBatchManager<RealT,int>>(comm);
+          auto cbman = ROL::makePtr<ROL::SingletonTeuchosBatchManager<RealT,int>>(comm);
           parlist->sublist("SOL").sublist("Compliance") = parlist->sublist("SOL");
           prob->makeConstraintStochastic("Compliance",*parlist,sampler,cbman);
         }

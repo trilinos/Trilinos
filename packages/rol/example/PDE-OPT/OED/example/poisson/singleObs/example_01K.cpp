@@ -260,9 +260,10 @@ int main(int argc, char *argv[]) {
       noisFile_d.open(noisName_d.str());
       factFile_d << std::scientific << std::setprecision(15);
       noisFile_d << std::scientific << std::setprecision(15);
+      auto factors = factory->getFactors(theta);
       for (int i = 0; i < dsampler->numMySamples(); ++i) {
         pt = dsampler->getMyPoint(i);
-        factory->getFactors()->evaluate(*Fp,pt);
+        factors->evaluate(*Fp,pt);
         for (int j = 0; j < numSides; ++j) {
           factFile_d << std::right << std::setw(25)
                      << (*ROL::dynamicPtrCast<ROL::StdVector<RealT>>(Fp)->getVector())[j];
@@ -284,7 +285,7 @@ int main(int argc, char *argv[]) {
       noisFile_o << std::scientific << std::setprecision(15);
       for (int i = 0; i < osampler->numMySamples(); ++i) {
         pt = osampler->getMyPoint(i);
-        factory->getFactors()->evaluate(*Fp,pt);
+        factors->evaluate(*Fp,pt);
         for (int j = 0; j < numSides; ++j) {
           factFile_o << std::right << std::setw(25)
                      << (*ROL::dynamicPtrCast<ROL::StdVector<RealT>>(Fp)->getVector())[j];
