@@ -257,7 +257,6 @@ KOKKOSSPARSE_SPMV_MV_MKL(Kokkos::complex<double>, Kokkos::OpenMP)
 // - Only CUSPARSE_OPERATION_NON_TRANSPOSE is supported
 // - Only CUSPARSE_MATRIX_TYPE_GENERAL is supported.
 //
-#if (9000 <= CUDA_VERSION)
 
 #include "KokkosSparse_Utils_cusparse.hpp"
 
@@ -553,7 +552,6 @@ KOKKOSSPARSE_SPMV_MV_CUSPARSE(Kokkos::complex<float>, int, int, Kokkos::CudaUVMS
 
 }  // namespace Impl
 }  // namespace KokkosSparse
-#endif  // (9000 <= CUDA_VERSION)
 
 #endif  // KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
 

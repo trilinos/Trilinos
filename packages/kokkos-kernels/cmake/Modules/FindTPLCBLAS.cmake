@@ -1,22 +1,22 @@
-IF (NOT CBLAS_ROOT)
-  SET(CBLAS_ROOT $ENV{CBLAS_ROOT})
-ENDIF()
-IF (NOT CBLAS_ROOT)
-  SET(CBLAS_ROOT $ENV{OPENBLAS_ROOT})
-ENDIF()
+if(NOT CBLAS_ROOT)
+  set(CBLAS_ROOT $ENV{CBLAS_ROOT})
+endif()
+if(NOT CBLAS_ROOT)
+  set(CBLAS_ROOT $ENV{OPENBLAS_ROOT})
+endif()
 
-IF (CBLAS_LIBRARIES)
+if(CBLAS_LIBRARIES)
   #we were given the exact list of libraries to find
-  KOKKOSKERNELS_FIND_IMPORTED(CBLAS INTERFACE
-    LIBRARIES ${CBLAS_LIBRARIES}
+  kokkoskernels_find_imported(CBLAS INTERFACE
+    LIBRARIES     ${CBLAS_LIBRARIES}
     LIBRARY_PATHS ${CBLAS_LIBRARY_DIRS}
-    HEADERS cblas.h
-    HEADER_PATHS ${CBLAS_INCLUDE_DIRS})
-ELSE()
+    HEADERS       cblas.h
+    HEADER_PATHS  ${CBLAS_INCLUDE_DIRS})
+else()
   #we need to find one of the valid versions from the list below
-  KOKKOSKERNELS_FIND_IMPORTED(CBLAS
-    LIBRARY cblas openblas blas blis
+  kokkoskernels_find_imported(CBLAS
+    LIBRARY       cblas openblas blas blis
     LIBRARY_PATHS ${CBLAS_LIBRARY_DIRS}
-    HEADERS cblas.h
-    HEADER_PATHS ${CBLAS_INCLUDE_DIRS})
-ENDIF()
+    HEADERS       cblas.h
+    HEADER_PATHS  ${CBLAS_INCLUDE_DIRS})
+endif()

@@ -36,20 +36,19 @@ namespace Kokkos {
 namespace Impl {
 class SerialInternal {
  public:
-  SerialInternal() = default;
+  SerialInternal();
+  ~SerialInternal();
 
-  bool is_initialized();
-
-  void initialize();
-
-  void finalize();
-
-  static SerialInternal& singleton();
+  SerialInternal(SerialInternal const&)            = delete;
+  SerialInternal& operator=(SerialInternal const&) = delete;
 
   std::mutex m_instance_mutex;
 
+  static HostSharedPtr<SerialInternal> default_instance;
   static std::vector<SerialInternal*> all_instances;
   static std::mutex all_instances_mutex;
+
+  void fence(const std::string& name);
 
   // Resize thread team data scratch memory
   void resize_thread_team_data(size_t pool_reduce_bytes,
@@ -58,7 +57,6 @@ class SerialInternal {
                                size_t thread_local_bytes);
 
   HostThreadTeamData m_thread_team_data;
-  bool m_is_initialized = false;
 };
 }  // namespace Impl
 
@@ -100,6 +98,14 @@ class Serial {
 
   //@}
 
+  KOKKOS_DEFAULTED_FUNCTION Serial(const Serial&) = default;
+  KOKKOS_FUNCTION Serial(Serial&& other)
+      : Serial(static_cast<const Serial&>(other)) {}
+  KOKKOS_DEFAULTED_FUNCTION Serial& operator=(const Serial&) = default;
+  KOKKOS_FUNCTION Serial& operator=(Serial&& other) {
+    return *this = static_cast<const Serial&>(other);
+  }
+  ~Serial();
   Serial();
 
   explicit Serial(NewInstance);
@@ -158,32 +164,11 @@ class Serial {
 
   void fence(const std::string& name =
                  "Kokkos::Serial::fence: Unnamed Instance Fence") const {
-#ifdef KOKKOS_ENABLE_ATOMICS_BYPASS
-    auto fence = []() {};
-#else
-    auto fence = [this]() {
-      auto* internal_instance = this->impl_internal_space_instance();
-      std::lock_guard<std::mutex> lock(internal_instance->m_instance_mutex);
-    };
-#endif
-    if (Kokkos::Tools::profileLibraryLoaded()) {
-      Kokkos::Tools::Experimental::Impl::profile_fence_event<Kokkos::Serial>(
-          name, Kokkos::Tools::Experimental::Impl::DirectFenceIDHandle{1},
-          fence);  // TODO: correct device ID
-    } else {
-      fence();
-    }
-#ifndef KOKKOS_ENABLE_ATOMICS_BYPASS
-    Kokkos::memory_fence();
-#endif
+    this->impl_internal_space_instance()->fence(name);
   }
 
   /** \brief  Return the maximum amount of concurrency.  */
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  static int concurrency() { return 1; }
-#else
   int concurrency() const { return 1; }
-#endif
 
   //! Print configuration information to the given output stream.
   void print_configuration(std::ostream& os, bool verbose = false) const;

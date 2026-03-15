@@ -11,11 +11,6 @@
 #include <KokkosKernels_config.h>
 /****** END macros populated by CMake ******/
 
-/****** BEGIN other helper macros ******/
-#ifndef KOKKOSKERNELS_DEBUG_LEVEL
-#define KOKKOSKERNELS_DEBUG_LEVEL 1
-#endif
-
 // If KOKKOSKERNELS_ENABLE_OMP_SIMD is defined, it's legal to place
 // "#pragma omp simd" before a for loop. It's never defined if a GPU-type device
 // is enabled, since in that case, Kokkos::ThreadVectorRange should be used

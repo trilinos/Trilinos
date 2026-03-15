@@ -1,3 +1,3 @@
-ADD_SUBDIRECTORY(blas1)
-ADD_SUBDIRECTORY(blas2)
-ADD_SUBDIRECTORY(blas3)
+add_subdirectory(blas1)
+add_subdirectory(blas2)
+add_subdirectory(blas3)

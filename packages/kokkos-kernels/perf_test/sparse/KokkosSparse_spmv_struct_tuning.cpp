@@ -487,7 +487,6 @@ int main(int argc, char** argv) {
 
     if (compare_cusparse) {
 #if defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE)
-#ifdef CUSPARSE_VERSION
       KokkosKernels::Experimental::Controls controls;
 
       cusparseIndexType_t myCusparseOffsetType = CUSPARSE_INDEX_32I;
@@ -511,12 +510,7 @@ int main(int argc, char** argv) {
       size_t bufferSize = 0;
       void* dBuffer     = NULL;
 
-// CUSPARSE_MM_ALG_DEFAULT was deprecated in CUDA 11.2.1 a.k.a cuSPARSE 11.4.0
-#if CUSPARSE_VERSION >= 11400
       cusparseSpMVAlg_t alg = CUSPARSE_SPMV_ALG_DEFAULT;
-#else
-      cusparseSpMVAlg_t alg = CUSPARSE_MV_ALG_DEFAULT;
-#endif
       KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(
           cusparseSpMV_bufferSize(controls.getCusparseHandle(), CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, A_cusparse,
                                   vecX, &beta, vecY, myCudaDataType, alg, &bufferSize));
@@ -558,85 +552,6 @@ int main(int argc, char** argv) {
       KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecX));
       KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroyDnVec(vecY));
       KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(A_cusparse));
-#else
-      // The data needs to be reformatted for cusparse before launching the
-      // kernel. Step one, extract raw data
-      using graph_type        = typename matrix_type::StaticCrsGraphType;
-      using cusparse_int_type = typename Kokkos::View<int*, typename graph_type::entries_type::array_layout,
-                                                      typename graph_type::device_type>;
-
-      typename graph_type::row_map_type::const_type Arowptr   = A.graph.row_map;
-      typename graph_type::entries_type::const_type Acolind   = A.graph.entries;
-      typename matrix_type::values_type::non_const_type Avals = A.values;
-      cusparse_int_type Arowptr_cusparse("Arowptr", Arowptr.extent(0));
-      cusparse_int_type Acolind_cusparse("Acolind", Acolind.extent(0));
-      copy_crs_data<graph_type> myCopyFunctor(Arowptr, Acolind, Arowptr_cusparse, Acolind_cusparse);
-      myCopyFunctor.doCopy();
-
-      int* rows          = reinterpret_cast<int*>(Arowptr_cusparse.data());
-      int* cols          = reinterpret_cast<int*>(Acolind_cusparse.data());
-      double* vals       = reinterpret_cast<double*>(Avals.data());
-      double* x_cusparse = reinterpret_cast<double*>(x1.data());
-      double* y_cusparse = reinterpret_cast<double*>(y1.data());
-
-      /* Get handle to the CUSPARSE context */
-      cusparseHandle_t cusparseHandle;
-      cusparseStatus_t cusparseStatus;
-      cusparseStatus = cusparseCreate(&cusparseHandle);
-      if (cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-        printf("Error while initialize the cusparse handle!\n");
-      }
-
-      cusparseMatDescr_t descrA = 0;
-      cusparseStatus            = cusparseCreateMatDescr(&descrA);
-      if (cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-        printf("Error while creating the matrix descriptor!\n");
-      }
-
-      cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL);
-      cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO);
-
-      const double alpha = 1.0;
-      const double beta  = 1.0;
-      Kokkos::Profiling::pushRegion("cuSparse spmv test");
-      // Benchmark
-      double min_time = 1.0e32;
-      double max_time = 0.0;
-      double ave_time = 0.0;
-      for (int i = 0; i < loop; i++) {
-        Kokkos::Timer timer;
-        cusparseStatus = cusparseDcsrmv(cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE, static_cast<int>(A.numRows()),
-                                        static_cast<int>(A.numCols()), static_cast<int>(A.nnz()), &alpha, descrA, vals,
-                                        rows, cols, x_cusparse, &beta, y_cusparse);
-        Kokkos::fence();
-        double time = timer.seconds();
-        ave_time += time;
-        if (time > max_time) max_time = time;
-        if (time < min_time) min_time = time;
-      }
-      if (cusparseStatus != CUSPARSE_STATUS_SUCCESS) {
-        printf("Error during the cusparse SpMV!\n");
-      }
-
-      // Performance Output
-      double matrix_size = 1.0 * ((A.nnz() * (sizeof(Scalar) + sizeof(int)) + A.numRows() * sizeof(int))) / 1024 / 1024;
-      double vector_size = 2.0 * A.numRows() * sizeof(Scalar) / 1024 / 1024;
-      double vector_readwrite = (A.nnz() + A.numCols()) * sizeof(Scalar) / 1024 / 1024;
-
-      double problem_size = matrix_size + vector_size;
-      printf(
-          "cusp   %i %i %i %6.2lf ( %6.2lf %6.2lf %6.2lf ) ( %6.3lf %6.3lf "
-          "%6.3lf ) ( %8.5lf %8.5lf %8.5lf )\n",
-          A.nnz(), A.numRows(), A.numCols(), problem_size, (matrix_size + vector_readwrite) / ave_time * loop / 1024,
-          (matrix_size + vector_readwrite) / max_time / 1024, (matrix_size + vector_readwrite) / min_time / 1024,
-          2.0 * A.nnz() * loop / ave_time / 1e9, 2.0 * A.nnz() / max_time / 1e9, 2.0 * A.nnz() / min_time / 1e9,
-          ave_time / loop * 1000, max_time * 1000, min_time * 1000);
-      Kokkos::Profiling::popRegion();
-
-      // Clean-up cusparse and cublas contexts
-      cusparseDestroy(cusparseHandle);
-      // cublasDestroy(cublasHandle);
-#endif
 #else
       printf(
           "Kokkos was not configure with cusparse, the comparison with "

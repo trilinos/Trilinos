@@ -130,11 +130,7 @@ class Cuda {
                  "Kokkos::Cuda::fence(): Unnamed Instance Fence") const;
 
   /** \brief  Return the maximum amount of concurrency.  */
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_4
-  static int concurrency();
-#else
   int concurrency() const;
-#endif
 
   //! Print configuration information to the given output stream.
   void print_configuration(std::ostream& os, bool verbose = false) const;
@@ -143,6 +139,13 @@ class Cuda {
   //--------------------------------------------------
   //! \name  Cuda space instances
 
+  KOKKOS_DEFAULTED_FUNCTION Cuda(const Cuda&) = default;
+  KOKKOS_FUNCTION Cuda(Cuda&& other) : Cuda(static_cast<const Cuda&>(other)) {}
+  KOKKOS_DEFAULTED_FUNCTION Cuda& operator=(const Cuda&) = default;
+  KOKKOS_FUNCTION Cuda& operator=(Cuda&& other) {
+    return *this = static_cast<const Cuda&>(other);
+  }
+  ~Cuda();
   Cuda();
 
   explicit Cuda(cudaStream_t stream) : Cuda(stream, Impl::ManageStream::no) {}
@@ -156,8 +159,6 @@ class Cuda {
 #endif
 
   Cuda(cudaStream_t stream, Impl::ManageStream manage_stream);
-
-  KOKKOS_DEPRECATED Cuda(cudaStream_t stream, bool manage_stream);
 
   //--------------------------------------------------------------------------
   //! Free any resources being consumed by the device.

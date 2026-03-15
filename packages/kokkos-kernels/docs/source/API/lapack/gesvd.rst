@@ -3,7 +3,7 @@ KokkosLapack::svd
 
 Defined in header: :code:`KokkosLapack_svd.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class ExecutionSpace, class AMatrix, class SVector, class UMatrix, class VMatrix>
   void svd(const ExecutionSpace& space, const char jobu[], const char jobvt[], const AMatrix& A,
