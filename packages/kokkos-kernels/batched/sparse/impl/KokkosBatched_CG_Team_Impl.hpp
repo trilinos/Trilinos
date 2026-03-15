@@ -33,7 +33,7 @@ KOKKOS_INLINE_FUNCTION int TeamCG<MemberType>::invoke(const MemberType& member, 
   size_t maximum_iteration      = handle.get_max_iteration();
   const MagnitudeType tolerance = handle.get_tolerance();
 
-  using TeamCopy1D = TeamCopy<MemberType, Trans::NoTranspose, 1>;
+  using TeamCopy1D = TeamCopy<MemberType, Trans::NoTranspose>;
 
   const OrdinalType numMatrices = X.extent(0);
   const OrdinalType numRows     = X.extent(1);

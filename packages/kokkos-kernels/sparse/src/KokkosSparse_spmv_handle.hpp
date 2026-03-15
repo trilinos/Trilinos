@@ -103,14 +103,7 @@ struct CuSparse10_SpMV_Data : public TPL_SpMV_Data<Kokkos::Cuda> {
   ~CuSparse10_SpMV_Data() {
     // Prefer cudaFreeAsync on the stream that last executed a spmv, but
     // async memory management was introduced in 11.2
-#if (CUDA_VERSION >= 11020)
     KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFreeAsync(buffer, exec.cuda_stream()));
-#else
-    // Fence here to ensure spmv is not still using buffer
-    // (cudaFree does not do a device synchronize)
-    exec.fence();
-    KOKKOS_IMPL_CUDA_SAFE_CALL(cudaFree(buffer));
-#endif
     KOKKOSSPARSE_IMPL_CUSPARSE_SAFE_CALL(cusparseDestroySpMat(mat));
   }
 

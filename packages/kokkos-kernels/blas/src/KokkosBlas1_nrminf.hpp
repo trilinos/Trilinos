@@ -28,17 +28,16 @@ typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_va
   static_assert(XVector::rank == 1,
                 "KokkosBlas::nrminf: "
                 "Both Vector inputs must have rank 1.");
-  typedef typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type mag_type;
+  using mag_type = typename Kokkos::Details::InnerProductSpaceTraits<typename XVector::non_const_value_type>::mag_type;
 
-  typedef Kokkos::View<typename XVector::const_value_type*,
-                       typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
-                       typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      XVector_Internal;
+  using XVector_Internal = Kokkos::View<typename XVector::const_value_type*,
+                                        typename KokkosKernels::Impl::GetUnifiedLayout<XVector>::array_layout,
+                                        typename XVector::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   using layout_t = typename XVector_Internal::array_layout;
 
-  typedef Kokkos::View<mag_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      RVector_Internal;
+  using RVector_Internal =
+      Kokkos::View<mag_type, layout_t, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> >;
 
   mag_type result;
   RVector_Internal R = RVector_Internal(&result, layout_t());

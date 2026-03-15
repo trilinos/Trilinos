@@ -16,7 +16,7 @@ KOKKOS_INLINE_FUNCTION static int checkGetrfInput([[maybe_unused]] const AViewTy
   static_assert(Kokkos::is_view_v<PivViewType>, "KokkosBatched::getrf: PivViewType is not a Kokkos::View.");
   static_assert(AViewType::rank == 2, "KokkosBatched::getrf: AViewType must have rank 2.");
   static_assert(PivViewType::rank == 1, "KokkosBatched::getrf: PivViewType must have rank 1.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int m = A.extent(0), n = A.extent(1);
   const int npiv = ipiv.extent(0);
   if (npiv != Kokkos::min(m, n)) {

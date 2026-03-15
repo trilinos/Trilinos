@@ -74,7 +74,7 @@ Type Requirements
 Example
 =======
 
-.. code:: cppkokkos
+.. code:: c++
 
   #include<Kokkos_Core.hpp>
   #include<Kokkos_Random.hpp>

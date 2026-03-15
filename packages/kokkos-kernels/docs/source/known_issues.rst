@@ -1,9 +1,6 @@
 Known issues
 ############
 
-.. role:: cppkokkos(code)
-    :language: cppkokkos
-
 BLAS/LAPACK
 ===========
 

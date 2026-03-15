@@ -199,7 +199,7 @@ void test_BDF_Logistic() {
   scalar_type measured_order;
 
   // Test BDF1
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\nBDF1 convergence test" << std::endl;
 #endif
   for (int idx = 0; idx < num_tests; idx++) {
@@ -220,13 +220,13 @@ void test_BDF_Logistic() {
   }
   measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
   EXPECT_NEAR_KK_REL(measured_order, 2.0, 0.15);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "expected ratio: 2, actual ratio: " << measured_order
             << ", order error=" << Kokkos::abs(measured_order - 2.0) / 2.0 << std::endl;
 #endif
 
   // Test BDF2
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\nBDF2 convergence test" << std::endl;
 #endif
   for (int idx = 0; idx < num_tests; idx++) {
@@ -245,13 +245,13 @@ void test_BDF_Logistic() {
   }
   measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
   EXPECT_NEAR_KK_REL(measured_order, 4.0, 0.15);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "expected ratio: 4, actual ratio: " << measured_order
             << ", order error=" << Kokkos::abs(measured_order - 4.0) / 4.0 << std::endl;
 #endif
 
   // Test BDF3
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\nBDF3 convergence test" << std::endl;
 #endif
   for (int idx = 0; idx < num_tests; idx++) {
@@ -270,13 +270,13 @@ void test_BDF_Logistic() {
   }
   measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
   EXPECT_NEAR_KK_REL(measured_order, 8.0, 0.15);
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "expected ratio: 8, actual ratio: " << measured_order
             << ", order error=" << Kokkos::abs(measured_order - 8.0) / 8.0 << std::endl;
 #endif
 
   // Test BDF4
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\nBDF4 convergence test" << std::endl;
 #endif
   for (int idx = 0; idx < num_tests; idx++) {
@@ -294,13 +294,13 @@ void test_BDF_Logistic() {
     errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) / Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
   }
   measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "expected ratio: 16, actual ratio: " << measured_order
             << ", order error=" << Kokkos::abs(measured_order - 16.0) / 16.0 << std::endl;
 #endif
 
   // Test BDF5
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "\nBDF5 convergence test" << std::endl;
 #endif
   for (int idx = 0; idx < num_tests; idx++) {
@@ -318,7 +318,7 @@ void test_BDF_Logistic() {
     errors[idx] = Kokkos::abs(y_new_h(0) - 1 / (1 + Kokkos::exp(-t_end))) / Kokkos::abs(1 / (1 + Kokkos::exp(-t_end)));
   }
   measured_order = Kokkos::pow(errors[num_tests - 1] / errors[0], 1.0 / (num_tests - 1));
-#if defined(HAVE_KOKKOSKERNELS_DEBUG)
+#ifndef NDEBUG
   std::cout << "expected ratio: 32, actual ratio: " << measured_order
             << ", order error=" << Kokkos::abs(measured_order - 32.0) / 32.0 << std::endl;
 #endif

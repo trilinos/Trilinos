@@ -3,7 +3,7 @@ KokkosSparse::sptrsv_solve
 
 Defined in header ``KokkosSparse_sptrsv.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_,
             typename scalar_nnz_view_t_, class BType, class XType>
@@ -75,7 +75,7 @@ Type Requirements
 Example
 =======
 
-.. code:: cppkokkos
+.. code:: c++
 
   #include <Kokkos_Core.hpp>
   #include <KokkosSparse_CrsMatrix.hpp>

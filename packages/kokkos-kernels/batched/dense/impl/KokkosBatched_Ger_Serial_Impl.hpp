@@ -19,7 +19,7 @@ KOKKOS_INLINE_FUNCTION static int checkGerInput([[maybe_unused]] const XViewType
   static_assert(XViewType::rank == 1, "KokkosBatched::ger: XViewType must have rank 1.");
   static_assert(YViewType::rank == 1, "KokkosBatched::ger: YViewType must have rank 1.");
   static_assert(AViewType::rank == 2, "KokkosBatched::ger: AViewType must have rank 2.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int lda = A.extent_int(0), n = A.extent_int(1);
   const int m = x.extent_int(0);
   if (m < 0) {

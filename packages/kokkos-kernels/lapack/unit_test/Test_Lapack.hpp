@@ -6,5 +6,6 @@
 #include "Test_Lapack_gesv.hpp"
 #include "Test_Lapack_trtri.hpp"
 #include "Test_Lapack_svd.hpp"
+#include "Test_Lapack_geqrf.hpp"
 
 #endif  // TEST_LAPACK_HPP

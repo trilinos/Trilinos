@@ -3,7 +3,7 @@ KokkosSparse::spiluk_symbolic
 
 Defined in header ``KokkosSparse_spiluk.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename KernelHandle, typename ARowMapType, typename AEntriesType, typename LRowMapType,
             typename LEntriesType, typename URowMapType, typename UEntriesType>
@@ -72,73 +72,8 @@ Two main requirements are that the types of the ``rowmap`` and ``entries`` shoul
 Example
 =======
 
-.. code:: cppkokkos
-
-  #include <Kokkos_Core.hpp>
-  #include <KokkosSparse_CrsMatrix.hpp>
-  #include <KokkosSparse_spiluk.hpp>
-  #include <KokkosKernels_IOUtils.hpp>
-
-  int main(int argc, char* argv[]) {
-    Kokkos::initialize();
-    {
-
-      using scalar_t  = double;
-      using lno_t     = int;
-      using size_type = int;
-      using crsMat_t  = typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Kokkos::DefaultExecutionSpace, void, size_type>;
-
-      using graph_t         = typename crsmat_t::StaticCrsGraphType;
-      using lno_view_t      = typename graph_t::row_map_type::non_const_type;
-      using lno_nnz_view_t  = typename graph_t::entries_type::non_const_type;
-      using scalar_view_t   = typename crsmat_t::values_type::non_const_type;
-
-      using ViewVectorType  = Kokkos::View<scalar_t*>;
-      using execution_space = typename ViewVectorType::device_type::execution_space;
-      using memory_space    = typename ViewVectorType::device_type::memory_space;
-
-      using KernelHandle    = KokkosKernels::Experimental::KokkosKernelsHandle <size_type, lno_t, scalar_t, execution_space, memory_space, memory_space>;
-
-      // Read and fill matrix
-      crsmat_t A        = KokkosKernels::Impl::read_kokkos_crst_matrix<crsmat_t>("mtx filename");
-      graph_t  graph    = A.graph;
-      const size_type N = graph.numRows();
-      typename KernelHandle::const_nnz_lno_t fill_lev = lno_t(2) ;
-      const size_type nnzA = A.graph.entries.extent(0);
-
-      // Create KokkosKernelHandle with an spiluk algorithm, limited by configuration at compile-time and set via the handle
-      // Some options: {SEQLVLSCHD_RP, SEQLVLSCHD_TP1}
-      KernelHandle kh;
-
-      //kh.create_spiluk_handle(KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_RP, N, EXPAND_FACT*nnzA*(fill_lev+1), EXPAND_FACT*nnzA*(fill_lev+1));
-      kh.create_spiluk_handle(KokkosSparse::Experimental::SPILUKAlgorithm::SEQLVLSCHD_TP1, N, EXPAND_FACT*nnzA*(fill_lev+1), EXPAND_FACT*nnzA*(fill_lev+1));
-
-      auto spiluk_handle = kh.get_spiluk_handle();
-
-      lno_view_t     L_row_map("L_row_map", N + 1);
-      lno_nnz_view_t L_entries("L_entries", spiluk_handle->get_nnzL());
-      scalar_view_t  L_values ("L_values",  spiluk_handle->get_nnzL());
-      lno_view_t     U_row_map("U_row_map", N + 1);
-      lno_nnz_view_t U_entries("U_entries", spiluk_handle->get_nnzU());
-      scalar_view_t  U_values ("U_values",  spiluk_handle->get_nnzU());
-
-      KokkosSparse::Experimental::spiluk_symbolic(&kh, fill_lev, A.graph.row_map, A.graph.entries, 
-                                                  L_row_map, L_entries, U_row_map, U_entries);
-
-      Kokkos::resize(L_entries, spiluk_handle->get_nnzL());
-      Kokkos::resize(L_values,  spiluk_handle->get_nnzL());
-      Kokkos::resize(U_entries, spiluk_handle->get_nnzU());
-      Kokkos::resize(U_values,  spiluk_handle->get_nnzU());
-
-      spiluk_handle->set_team_size(16);
-	  
-      KokkosSparse::Experimental::spiluk_numeric(&kh, fill_lev, 
-                                                 A.graph.row_map, A.graph.entries, A.values, 
-                                                 L_row_map, L_entries, L_values, U_row_map, U_entries, U_values );
-
-      kh.destroy_spiluk_handle();
-    }
-    Kokkos::finalize();
-  }
+.. literalinclude:: ../../../../example/sparse/KokkosSparse_example_spiluk.cpp
+  :language: c++
+  :lines: 3-
 
 

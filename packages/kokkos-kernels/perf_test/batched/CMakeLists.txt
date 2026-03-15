@@ -1,2 +1,2 @@
-ADD_SUBDIRECTORY(dense)
-ADD_SUBDIRECTORY(sparse)
+add_subdirectory(dense)
+add_subdirectory(sparse)
