@@ -143,7 +143,7 @@ def main():
     x0.doImport(source=x, exporter=export, CM=Tpetra.CombineMode.REPLACE)
 
     if rank == 0 and display:
-        x0_view = x0.getLocalViewHost()
+        x0_view = x0.getLocalViewHost(Tpetra.Access.ReadOnlyStruct()).numpy()
         plt.figure()
         plt.plot(x0_view)
         plt.savefig('x0_view.png', dpi=800, bbox_inches='tight',pad_inches = 0)
