@@ -874,7 +874,7 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         else
 #endif
 #ifdef HAVE_MUELU_TEKO
-            if (preSmootherType == "teko")
+            if (postSmootherType == "teko")
           postSmoother = rcp(new SmootherFactory(rcp(new TekoSmoother(postSmootherParams))));
         else
 #endif
