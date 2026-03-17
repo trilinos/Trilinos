@@ -59,7 +59,7 @@ template <typename T> struct LapackTeam {
     }
 
     template <typename MemberType>
-    static KOKKOS_INLINE_FUNCTION void potrf_upper(const MemberType &member, const int m, const double tol,
+    static KOKKOS_INLINE_FUNCTION void potrf_upper(const MemberType &member, const double tol, const int m, 
                                                    T *KOKKOS_RESTRICT A,
                                                    const int as0, const int as1, int *info) {
       *info = 0;

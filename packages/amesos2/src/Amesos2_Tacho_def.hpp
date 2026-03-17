@@ -77,9 +77,6 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
       this->matrixA_->returnColInd_kokkos_view(host_cols_view_);
     }
 
-    if (data_.diag_shift) {
-      data_.solver.shiftDiagonal();
-    }
     data_.solver.setSolutionMethod(data_.method);
     data_.solver.setLevelSetOptionAlgorithmVariant(data_.variant);
     data_.solver.setSmallProblemThresholdsize(data_.small_problem_threshold_size);
@@ -117,6 +114,9 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
      device_value_type_array device_nzvals_temp;
      this->matrixA_->returnValues_kokkos_view(device_nzvals_temp);
      Kokkos::deep_copy(device_nzvals_view_, device_nzvals_temp);
+    }
+    if (data_.diag_shift) {
+      data_.solver.shiftDiagonal();
     }
     if (data_.pivot_pert) {
       data_.solver.useDefaultPivotTolerance();

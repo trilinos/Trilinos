@@ -135,8 +135,6 @@ int driver(const std::string file, const std::string method_name, const int vari
       std::cout << "  > Using explicit transpose " << std::endl;
       solver.storeExplicitTranspose(true);
     }
-    /// test "shift diag" code path
-    solver.shiftDiagonal();
 
     /// levelset options
     ///  forcing to have a few device factor/solve tasks
@@ -153,7 +151,7 @@ int driver(const std::string file, const std::string method_name, const int vari
       if(r_val == 0) {
         r_val = solver.initialize();
       }
-      int num_solves = (single_solve ? 1 : 5); // number of numeric + solve calls
+      int num_solves = 5; // number of numeric + solve calls
       for (int step = 0; step < num_solves && r_val == 0; step++) {
         if (step > 0) {
           // perturb the first element (diagonal if Laplace), on host
@@ -161,11 +159,20 @@ int driver(const std::string file, const std::string method_name, const int vari
         }
         // copy A to device
         Kokkos::deep_copy(values_on_device, A.Values());
+        if (step%2 == 0) {
+          /// > test "shift diag" code path
+          solver.shiftDiagonal(1);
+          solver.useDefaultPivotTolerance(0);
+        } else {
+          /// > test "replace tiny pivot" code path
+          solver.shiftDiagonal(0);
+          solver.useDefaultPivotTolerance(1);
+        }
         /// do numerical factorization
         if (single_solve) {
           r_val = solver.factorize(values_on_device);
         } else {
-          if (step%2 == 1) {
+          if (single_solve || step%2 == 1) {
             // User-specified method
             r_val = solver.factorize(values_on_device);
           } else {
@@ -174,12 +181,13 @@ int driver(const std::string file, const std::string method_name, const int vari
           }
         }
         typename Tacho::ArithTraits<value_type>::mag_type shift = solver.currentShift();
-        std::cout << "  > Diagonal entries shifted by " << shift << std::endl;
+        std::cout << "  > Diagonal entries shifted by " << shift << std::endl << std::endl;
 
         /// solve
-        DenseMultiVectorType b("b", A.NumRows(), nrhs), // rhs multivector
-          x("x", A.NumRows(), nrhs),                    // solution multivector
-          t("t", A.NumRows(), nrhs);                    // temp workspace (store permuted rhs)
+        int nrhs_s = (step == 0 ? 1 : nrhs);
+        DenseMultiVectorType b("b", A.NumRows(), nrhs_s), // rhs multivector
+          x("x", A.NumRows(), nrhs_s),                    // solution multivector
+          t("t", A.NumRows(), nrhs_s);                    // temp workspace (store permuted rhs)
         if(r_val == 0) {
           const value_type zero(0.0);
           const value_type one (1.0);
