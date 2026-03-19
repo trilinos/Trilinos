@@ -187,10 +187,12 @@ void Brick_Inline_Mesh_Desc::Populate_Coords(double * coords,
   // Create host and device views for coordinate data
   // Note: The input coords array uses structure-of-arrays layout (all x, then all y)
   // but we need array-of-structures layout for the 2D view (x,y for node 0, x,y for node 1, etc.)
-  HostView2D<double> coords_host("coords_host", num_nodes, dimension);
+  // Use global_node_vector.size() instead of num_nodes since we only process those nodes
+  size_t actual_node_count = global_node_vector.size();
+  HostView2D<double> coords_host("coords_host", actual_node_count, dimension);
 
   // Copy data from flattened structure-of-arrays to array-of-structures layout
-  for (long long i = 0; i < num_nodes; i++) {
+  for (long long i = 0; i < actual_node_count; i++) {
     for (long long axis = 0; axis < dimension; axis++) {
       coords_host(i, axis) = coords[i + axis * num_nodes];
     }
@@ -201,9 +203,9 @@ void Brick_Inline_Mesh_Desc::Populate_Coords(double * coords,
   Kokkos::deep_copy(coords_device, coords_host);
 
   // Create host views for node data first
-  View1D<long long> global_node_vector_host("global_node_vector_host", global_node_vector.size());
-  View1D<long long> global_node_map_keys_host("global_node_map_keys_host", global_node_map.size());
-  View1D<long long> global_node_map_values_host("global_node_map_values_host", global_node_map.size());
+  HostView1D<long long> global_node_vector_host("global_node_vector_host", global_node_vector.size());
+  HostView1D<long long> global_node_map_keys_host("global_node_map_keys_host", global_node_map.size());
+  HostView1D<long long> global_node_map_values_host("global_node_map_values_host", global_node_map.size());
 
   // Fill host views with data
   for (size_t i = 0; i < global_node_vector.size(); ++i) {
@@ -222,15 +224,60 @@ void Brick_Inline_Mesh_Desc::Populate_Coords(double * coords,
   auto global_node_map_keys = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), global_node_map_keys_host);
   auto global_node_map_values = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), global_node_map_values_host);
 
-  // Execute device computation
-  Populate_Coords_Device(coords_device, global_node_vector_view,
-                        global_node_map_keys, global_node_map_values, num_nodes);
+  // Convert IJKcoors to device views
+  // Calculate the actual sizes for each axis based on the mesh setup
+  long long ijk_sizes[3];
+  for (int axis = 0; axis < dimension; axis++) {
+    ijk_sizes[axis] = 0;
+    for (long long i = 0; i < inline_b[axis]; i++) {
+      ijk_sizes[axis] += interval[axis][i];
+    }
+    ijk_sizes[axis] += 1; // +1 for the extra node at the end
+  }
+
+  // Find maximum size for the 2D view
+  long long max_ijk_size = 0;
+  for (int axis = 0; axis < 3; axis++) {
+    if (ijk_sizes[axis] > max_ijk_size) max_ijk_size = ijk_sizes[axis];
+  }
+
+  // Create host view for IJKcoors data
+  HostView2D<double> ijkcoors_host("ijkcoors_host", 3, max_ijk_size);
+
+  // Initialize with zeros
+  for (int axis = 0; axis < 3; axis++) {
+    for (long long i = 0; i < max_ijk_size; i++) {
+      ijkcoors_host(axis, i) = 0.0;
+    }
+  }
+
+  // Copy IJKcoors data to host view
+  for (int axis = 0; axis < dimension; axis++) {
+    for (long long i = 0; i < ijk_sizes[axis]; i++) {
+      ijkcoors_host(axis, i) = IJKcoors[axis][i];
+    }
+  }
+
+  // Create device view and copy IJKcoors data
+  auto ijkcoors_device = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), ijkcoors_host);
+
+   // Create device view for ijk_sizes
+   HostView1D<long long> ijk_sizes_host("ijk_sizes_host", 3);
+   for (int axis = 0; axis < 3; axis++) {
+     ijk_sizes_host(axis) = ijk_sizes[axis];
+   }
+   auto ijk_sizes_device = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), ijk_sizes_host);
+
+   // Execute device computation with bounds information
+   Populate_Coords_Device(coords_device, global_node_vector_view,
+                         global_node_map_keys, global_node_map_values,
+                         ijkcoors_device, ijk_sizes_device, num_nodes);
 
   // Copy results back to host memory
   Kokkos::deep_copy(coords_host, coords_device);
 
   // Copy back from array-of-structures layout to structure-of-arrays layout
-  for (long long i = 0; i < num_nodes; i++) {
+  for (long long i = 0; i < actual_node_count; i++) {
     for (long long axis = 0; axis < dimension; axis++) {
       coords[i + axis * num_nodes] = coords_host(i, axis);
     }
@@ -240,21 +287,28 @@ void Brick_Inline_Mesh_Desc::Populate_Coords(double * coords,
 
 /****************************************************************************/
 void Brick_Inline_Mesh_Desc::Populate_Coords_Device(View2D<double> coords,
-                                                         const View1D<long long> global_node_vector,
-                                                         const View1D<long long> global_node_map_keys,
-                                                         const View1D<long long> global_node_map_values,
-                                                         long long num_nodes)
+                                                          const View1D<long long> global_node_vector,
+                                                          const View1D<long long> global_node_map_keys,
+                                                          const View1D<long long> global_node_map_values,
+                                                          const View2D<double> ijkcoors_device,
+                                                          const View1D<long long> ijk_sizes,
+                                                          long long num_nodes)
 /****************************************************************************/
 {
-  Kokkos::parallel_for("BrickPopulateCoords", num_nodes,
+  // Capture member variables explicitly for the lambda
+  long long knstride_val = this->knstride;
+  long long jnstride_val = this->jnstride;
+  long long dimension_val = this->dimension;
+
+  Kokkos::parallel_for("BrickPopulateCoords", global_node_vector.size(),
     KOKKOS_LAMBDA(const size_t gnv) {
       long long the_node = global_node_vector(gnv);
       long long global_ind[3];
 
       // Calculate global indices
-      global_ind[2] = the_node / knstride;
-      global_ind[1] = (the_node - global_ind[2] * knstride) / jnstride;
-      global_ind[0] = the_node - global_ind[2] * knstride - global_ind[1] * jnstride;
+      global_ind[2] = the_node / knstride_val;
+      global_ind[1] = (the_node - global_ind[2] * knstride_val) / jnstride_val;
+      global_ind[0] = the_node - global_ind[2] * knstride_val - global_ind[1] * jnstride_val;
 
       // Find the local node using map lookup
       long long the_local_node = get_map_entry_device(global_node_map_keys,
@@ -262,9 +316,20 @@ void Brick_Inline_Mesh_Desc::Populate_Coords_Device(View2D<double> coords,
                                                      the_node,
                                                      global_node_map_keys.size());
 
-      // Set coordinates
-      for (long long axis = 0; axis < dimension; axis++) {
-        coords(the_local_node, axis) = IJKcoors[axis][global_ind[axis]];
+      // Skip if node not found in map
+      if (the_local_node < 0 || the_local_node >= static_cast<long long>(coords.extent(0))) {
+        return; // Skip this iteration if local node is invalid
+      }
+
+      // Set coordinates with bounds checking
+      for (long long axis = 0; axis < dimension_val; axis++) {
+       // Ensure global_ind[axis] is within valid range for ijkcoors_device
+         if (global_ind[axis] >= 0 && global_ind[axis] < ijk_sizes(axis)) {
+           coords(the_local_node, axis) = ijkcoors_device(axis, global_ind[axis]);
+         } else {
+           // Handle out-of-bounds access gracefully
+           coords(the_local_node, axis) = 0.0; // Default value for invalid access
+         }
       }
     });
 

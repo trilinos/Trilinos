@@ -21,8 +21,8 @@ void convert_map_to_kokkos_views(const std::map<long long, long long>& input_map
 
     // Resize if needed
     if (keys_host.size() < map_size) {
-        keys_host = View1D<long long>(Kokkos::view_alloc("map_keys_host", Kokkos::WithoutInitializing), map_size);
-        values_host = View1D<long long>(Kokkos::view_alloc("map_values_host", Kokkos::WithoutInitializing), map_size);
+        keys_host = HostView1D<long long>(Kokkos::view_alloc("map_keys_host", Kokkos::WithoutInitializing), map_size);
+        values_host = HostView1D<long long>(Kokkos::view_alloc("map_values_host", Kokkos::WithoutInitializing), map_size);
     }
 
     // Fill the host views
@@ -45,7 +45,7 @@ void convert_vector_to_kokkos_view(const std::vector<long long>& input_vector,
 
     // Resize if needed
     if (output_host.size() < input_vector.size()) {
-        output_host = View1D<long long>(Kokkos::view_alloc("vector_view_host", Kokkos::WithoutInitializing), input_vector.size());
+        output_host = HostView1D<long long>(Kokkos::view_alloc("vector_view_host", Kokkos::WithoutInitializing), input_vector.size());
     }
 
     // Copy data

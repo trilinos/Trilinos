@@ -39,6 +39,8 @@ public:
                              const View1D<long long> global_node_vector,
                              const View1D<long long> global_node_map_keys,
                              const View1D<long long> global_node_map_values,
+                             const View2D<double> ijkcoors_device,
+                             const View1D<long long> ijk_sizes,
                              long long num_nodes);
 };
 }// end namespace PAMGEN_NEVADA

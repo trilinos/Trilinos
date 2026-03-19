@@ -43,13 +43,17 @@ public:
                              const View1D<long long> global_node_vector,
                              const View1D<long long> global_node_map_keys,
                              const View1D<long long> global_node_map_values,
+                             const View2D<double> ijkcoors_device,
+                             const View1D<long long> ijk_sizes,
                              long long num_nodes);
 
   // Device function for periodic coordinate calculation
   KOKKOS_INLINE_FUNCTION
   void calc_coords_periodic_device(double total_theta,
                                   long long i, long long j, long long k,
-                                  double& x, double& y, double& z) const;
+                                  double& x, double& y, double& z,
+                                  const View2D<double>& ijkcoors_device,
+                                  const View1D<long long>& ijk_sizes) const;
 };
 }// end namespace
 #endif
