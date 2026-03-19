@@ -54,7 +54,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS "--verbose --filename=orsirr1.hb"
   STANDARD_PASS_OUTPUT
   )
-ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_BlockGMRES_hb_test
