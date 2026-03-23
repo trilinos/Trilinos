@@ -1,0 +1,9 @@
+#ifndef TRILINOS_GIT_SHA_H
+#define TRILINOS_GIT_SHA_H
+
+
+namespace Trilinos {
+ constexpr std::string_view TRILINOS_GIT_SHA = "@TRILINOS_GIT_SHA@";
+} // namespace Trilinos
+
+#endif

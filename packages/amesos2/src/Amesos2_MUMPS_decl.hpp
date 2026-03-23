@@ -119,6 +119,12 @@ private:
   int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
                  const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const;
 
+  /** 
+   * \brief Prints the status information about the current solver with some level
+   * of verbosity
+   */
+  void describe_impl(Teuchos::FancyOStream &out,
+                     const Teuchos::EVerbosityLevel verbLevel) const;
 
   /**
    * \brief Determines whether the shape of the matrix is OK for this solver.
@@ -142,6 +148,7 @@ private:
    *   <li> \c "ICNTL(6)": Permutes the matrix to a zero-free diagonal and/or scale the matrix (default: 7, automatic)</li>
    *   <li> \c "ICNTL(9)": Computes the solution using transpose if not 1 (default: 1, non-transpose solve)</li>
    *   <li> \c "ICNTL(11)": Computes statistics related to an error analysis of the linear system solved (default: 0, no analysis)</li>
+   *   <li> \c "ICNTL(14)": Controls the percentage increase in the estimated working space (default: 20)<\li>
    *</ul>
    *
    */

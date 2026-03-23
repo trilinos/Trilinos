@@ -35,6 +35,8 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Tuple.hpp"
 
+#include "Tpetra_Core.hpp"
+
 #include <stdexcept>
 
 

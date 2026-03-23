@@ -196,6 +196,14 @@ namespace Amesos2 {
     bool loadA_impl(EPhase current_phase);
 
 
+    /** 
+     * \brief Prints the status information about the current solver with some level
+     * of verbosity
+     */
+    void describe_impl(Teuchos::FancyOStream &out,
+                       const Teuchos::EVerbosityLevel verbLevel) const;
+
+
     ////////// Internal routines (not called from outside) //////////
 
     /** \internal

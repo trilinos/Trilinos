@@ -10,18 +10,6 @@ TRIBITS_PACKAGE(Teko)
 # B) Set up package-specific options
 #
 
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Ifpack2_Trilinos
-  HAVE_${PACKAGE_NAME}_ENABLE_Ifpack2
-  "Enable Ifpack2 preconditioners"
-  OFF
-  )
-
-#TRIBITS_ADD_OPTION_AND_DEFINE(Teko_ENABLE_BLOCK_SMOOTHERS
-#  Teko_ENABLE_ML_SMOOTHERS
-#  "Enable ml block smoothers."
-#  OFF )
-
 COMBINED_OPTION( TEKO_HAVE_EPETRA
   DEP_OPTIONS_NAMES Teko_ENABLE_Epetra
                     Teko_ENABLE_ThyraEpetraAdapters

@@ -179,18 +179,18 @@ public:
     }
   }
 
-  size_t getLocalNumIDs() const { return nids; }
+  size_t getLocalNumIDs() const override { return nids; }
 
   void getIDsView(const gno_t *&ids) const override {
     auto kokkosIds = kokkos_gids.view_host();
     ids = kokkosIds.data();
   }
 
-  virtual void getIDsKokkosView(Kokkos::View<const gno_t *, device_t> &ids) const {
+  virtual void getIDsKokkosView(Kokkos::View<const gno_t *, device_t> &ids) const override {
     ids = kokkos_gids.template view<device_t>();
   }
 
-  int getNumWeightsPerID() const { return (kokkos_weights.view_host().size() != 0); }
+  int getNumWeightsPerID() const override { return (kokkos_weights.view_host().size() != 0); }
 
   void getWeightsView(const scalar_t *&wgt, int &stride,
                       int idx = 0) const override
@@ -201,11 +201,11 @@ public:
     stride = 1;
   }
 
-  virtual void getWeightsKokkosView(Kokkos::View<scalar_t **, device_t> & wgt) const {
+  virtual void getWeightsKokkosView(Kokkos::View<scalar_t **, device_t> & wgt) const override {
     wgt = kokkos_weights.template view<device_t>();
   }
 
-  int getNumEntriesPerID() const { return dim; }
+  int getNumEntriesPerID() const override { return dim; }
 
   void getEntriesView(const scalar_t *&elements,
     int &stride, int idx = 0) const override {
@@ -214,7 +214,7 @@ public:
   }
 
   virtual void getEntriesKokkosView(Kokkos::View<scalar_t **,
-    Kokkos::LayoutLeft, device_t> & coo) const {
+    Kokkos::LayoutLeft, device_t> & coo) const override {
     coo = kokkos_coords.template view<device_t>();
   }
 

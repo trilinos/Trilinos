@@ -88,17 +88,17 @@ bool all_passed = true;
     Kokkos::View<double**, Kokkos::DefaultExecutionSpace> source_coords_data("source coordinates", 
             number_source_coords, 3);
     // later accessed through unmanaged memory view
-    scratch_matrix_left_type source_coords_device(source_coords_data.data(), 
+    device_unmanaged_matrix_left_type source_coords_device(source_coords_data.data(), 
             number_source_coords, 3);
-    scratch_matrix_left_type::host_mirror_type source_coords = Kokkos::create_mirror_view(source_coords_device);
+    device_unmanaged_matrix_left_type::host_mirror_type source_coords = Kokkos::create_mirror_view(source_coords_device);
     
     // coordinates of target sites
     // data allocated on device memory space
     Kokkos::View<double**, Kokkos::DefaultExecutionSpace> target_coords_data("target coordinates", 
             number_target_coords, 3);
     // later accessed through unmanaged memory view
-    scratch_matrix_right_type target_coords_device (target_coords_data.data(), number_target_coords, 3);
-    scratch_matrix_right_type::host_mirror_type target_coords = Kokkos::create_mirror_view(target_coords_device);
+    device_unmanaged_matrix_right_type target_coords_device (target_coords_data.data(), number_target_coords, 3);
+    device_unmanaged_matrix_right_type::host_mirror_type target_coords = Kokkos::create_mirror_view(target_coords_device);
     
     
     // fill source coordinates with a uniform grid

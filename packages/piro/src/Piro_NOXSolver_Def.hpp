@@ -56,8 +56,12 @@ NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
   std::string sensitivity_method_str = appParams->get("Sensitivity Method", "Forward");
   this->setSensitivityMethod(sensitivity_method_str);
 
+  // Deep-copy the NOX sublist so that NOX::StatusTest::Factory does not
+  // corrupt the caller's parameter list when it reorganizes the status
+  // test hierarchy during solve.  This allows the NOXSolver to be
+  // called multiple times with a consistent parameter structure.
   const RCP<Teuchos::ParameterList> noxParams =
-      Teuchos::sublist(appParams, "NOX", /*mustAlreadyExist =*/ false);
+      Teuchos::rcp(new Teuchos::ParameterList(appParams->sublist("NOX")));
 
   solver->setParameterList(noxParams);
 

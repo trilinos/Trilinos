@@ -116,7 +116,7 @@ checkConstantVectorView(const ViewType& v,
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
   typedef typename view_type::host_mirror_type host_view_type;
-  typedef typename host_view_type::array_type::value_type scalar_type;
+  typedef typename host_view_type::value_type scalar_type;
 
   // Copy to host
   host_view_type h_v = Kokkos::create_mirror_view(v);

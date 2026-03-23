@@ -70,6 +70,7 @@ class LocalQRDecompFunctor {
   typedef KokkosKernels::ArithTraits<impl_SC> impl_ATS;
   typedef typename impl_ATS::magnitudeType Magnitude;
 
+ public:
   typedef Kokkos::View<impl_SC**, typename execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged> shared_matrix;
   typedef Kokkos::View<impl_SC*, typename execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged> shared_vector;
 
@@ -324,17 +325,6 @@ class LocalQRDecompFunctor {
       for (int j = 0; j < n; j++)
         coarseNS(offset + j, j) = one;
     }
-  }
-
-  // amount of shared memory
-  size_t team_shmem_size(int /* team_size */) const {
-    if (doQRStep) {
-      int m = maxAggDofSize;
-      int n = fineNS.extent(1);
-      return shared_matrix::shmem_size(m, n) +  // r
-             shared_matrix::shmem_size(m, m);   // q
-    } else
-      return 0;
   }
 };
 
@@ -843,13 +833,29 @@ void TentativePFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       // Set up team policy with numAggregates teams and one thread per team.
       // Each team handles a slice of the data associated with one aggregate
       // and performs a local QR decomposition
-      const Kokkos::TeamPolicy<execution_space> policy(numAggregates, 1);  // numAggregates teams a 1 thread
+      Kokkos::TeamPolicy<execution_space> policy(numAggregates, 1);  // numAggregates teams a 1 thread
       LocalQRDecompFunctor<LocalOrdinal, GlobalOrdinal, Scalar, DeviceType, decltype(fineNSRandom),
                            decltype(aggDofSizes /*aggregate sizes in dofs*/), decltype(maxAggSize), decltype(agg2RowMapLO),
                            decltype(statusAtomic), decltype(rows), decltype(rowsAux), decltype(colsAux),
                            decltype(valsAux)>
           localQRFunctor(fineNSRandom, coarseNS, aggDofSizes, maxAggSize, agg2RowMapLO, statusAtomic,
                          rows, rowsAux, colsAux, valsAux, doQRStep);
+      if (doQRStep) {
+        using shared_matrix = typename decltype(localQRFunctor)::shared_matrix;
+        int m               = maxAggSize;
+        int n               = fineNSRandom.extent(1);
+        int size            = shared_matrix::shmem_size(m, n) +  // r
+                   shared_matrix::shmem_size(m, m);              // q
+
+        if (size < policy.scratch_size_max(/*level=*/(int)0))
+          policy.set_scratch_size(/*level=*/(int)0, Kokkos::PerTeam(size));
+        else if (size < policy.scratch_size_max(/*level=*/(int)1))
+          policy.set_scratch_size(/*level=*/(int)1, Kokkos::PerTeam(size));
+        else
+          throw Exceptions::RuntimeError("Neither L0 scratch memory (max size " + std::to_string(policy.scratch_size_max((int)0)) +
+                                         "), nor L1 scratch memory (max size " + std::to_string(policy.scratch_size_max((int)1)) +
+                                         ") is large enough for requested allocation of size " + std::to_string(size));
+      }
       Kokkos::parallel_reduce("MueLu:TentativePF:BuildUncoupled:main_qr_loop", policy, localQRFunctor, nnz);
     }
 

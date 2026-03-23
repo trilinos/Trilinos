@@ -3,6 +3,6 @@ tribits_package_define_dependencies(
     Kokkos KokkosKernels
   LIB_OPTIONAL_TPLS
     MPI CUDA
-  TEST_REQUIRED_TPLS
+  TEST_OPTIONAL_TPLS
     gtest
   )

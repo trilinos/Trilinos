@@ -89,7 +89,7 @@ int driver(const std::string file, const std::string method_name, const int vari
   using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
 
   const bool detail = false;
-  const bool verbose = !single_solve;
+  const bool verbose = true;
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
   std::cout << std::endl << "    --------------------- " << std::endl;
@@ -173,11 +173,13 @@ int driver(const std::string file, const std::string method_name, const int vari
             r_val = solver.factorize(values_on_device, 1);
           }
         }
+        typename Tacho::ArithTraits<value_type>::mag_type shift = solver.currentShift();
+        std::cout << "  > Diagonal entries shifted by " << shift << std::endl;
 
         /// solve
         DenseMultiVectorType b("b", A.NumRows(), nrhs), // rhs multivector
-          x("x", A.NumRows(), nrhs),                  // solution multivector
-          t("t", A.NumRows(), nrhs);                  // temp workspace (store permuted rhs)
+          x("x", A.NumRows(), nrhs),                    // solution multivector
+          t("t", A.NumRows(), nrhs);                    // temp workspace (store permuted rhs)
         if(r_val == 0) {
           const value_type zero(0.0);
           const value_type one (1.0);
@@ -192,16 +194,20 @@ int driver(const std::string file, const std::string method_name, const int vari
         }
         if(r_val == 0) {
           const double tol = 0.0000000001;
-          const double res = solver.computeRelativeResidual(values_on_device, x, b);
+          const double res = solver.computeRelativeResidual(values_on_device, x, b, shift);
           r_val = (res <= tol ? 0 : -1);
-          std::cout << " res = " << res << " tol = " << tol << "(rval = " << r_val << ")"
+          std::cout << " res = " << res << " tol = " << tol << " (rval = " << r_val << ")"
                     << std::endl << std::endl;
         }
       } // end of for steps
     }
+    solver.release();
+    A.clear();
   } catch (const std::exception &e) {
+    r_val = -1;
     std::cerr << "Error: exception is caught: \n" << e.what() << "\n";
   } catch (...) {
+    r_val = -1;
     std::cerr << "Error: unknown exception is caught\n";
   }
   return r_val;
@@ -267,16 +273,20 @@ TEST( Solver, LDL ) {
   EXPECT_EQ(driver<double>(file, "ldl", 0, 1), 0);
   EXPECT_EQ(driver<double>(file, "ldl", 1, 1), 0);
   EXPECT_EQ(driver<double>(file, "ldl", 2, 1), 0);
+  EXPECT_EQ(driver<double>(file, "ldl", 3, 1), 0);
   EXPECT_EQ(driver<double>(file, "ldl", 0, 1, false, false), 0); // with mixed LDL or Chol
   EXPECT_EQ(driver<double>(file, "ldl", 1, 1, false, false), 0);
   EXPECT_EQ(driver<double>(file, "ldl", 2, 1, false, false), 0);
+  EXPECT_EQ(driver<double>(file, "ldl", 3, 1, false, false), 0);
   // > multiple RHSs
   EXPECT_EQ(driver<double>(file, "ldl", 0, 5), 0);
   EXPECT_EQ(driver<double>(file, "ldl", 1, 5), 0);
   EXPECT_EQ(driver<double>(file, "ldl", 2, 5), 0);
+  EXPECT_EQ(driver<double>(file, "ldl", 3, 5), 0);
   EXPECT_EQ(driver<double>(file, "ldl", 0, 5, false, false), 0); // with mixed LDL or Chol
   EXPECT_EQ(driver<double>(file, "ldl", 1, 5, false, false), 0);
   EXPECT_EQ(driver<double>(file, "ldl", 2, 5, false, false), 0);
+  EXPECT_EQ(driver<double>(file, "ldl", 3, 5, false, false), 0);
   #if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   // > sequential path
   EXPECT_EQ(driver<double>(file, "ldl", -1, 1), 0);
@@ -296,7 +306,6 @@ TEST( Solver, NonPivLDL ) {
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 1, false, false), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 1, false, false), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1, false, false), 0);
-  //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1), 0);
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 1, true), 0);
   // > multiple RHSs
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 0, 5), 0);
@@ -307,7 +316,6 @@ TEST( Solver, NonPivLDL ) {
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 1, 5, false, false), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 2, 5, false, false), 0);
   EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5, false, false), 0);
-  //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5), 0);
   //EXPECT_EQ(driver<double>(file, "ldl-nopiv", 3, 5, true), 0);
   //#if !defined(KOKKOS_ENABLE_CUDA) && !defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_SYCL)
   //// > sequential path

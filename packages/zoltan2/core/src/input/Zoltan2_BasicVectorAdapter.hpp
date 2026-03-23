@@ -194,11 +194,11 @@ public:
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const { return numIds_; }
+  size_t getLocalNumIDs() const override { return numIds_; }
 
-  void getIDsView(const gno_t *&ids) const { ids = idList_; }
+  void getIDsView(const gno_t *&ids) const override { ids = idList_; }
 
-  void getIDsKokkosView(typename Base::ConstIdsDeviceView &ids) const {
+  void getIDsKokkosView(typename Base::ConstIdsDeviceView &ids) const override {
     ids = this->kIds_;
   }
 
@@ -212,14 +212,14 @@ public:
     ids = this->kIds_;
   }
 
-  int getNumWeightsPerID() const { return numWeights_; }
+  int getNumWeightsPerID() const override { return numWeights_; }
 
   virtual void
   getWeightsKokkos2dView(typename Base::WeightsDeviceView &wgt) const {
     wgt = kWeights_;
   }
 
-  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const {
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const override {
     AssertCondition((idx >= 0) and (idx < numWeights_),
                     "Invalid weight index.");
 
@@ -272,10 +272,10 @@ public:
   // The VectorAdapter interface.
   ////////////////////////////////////////////////////
 
-  int getNumEntriesPerID() const { return numEntriesPerID_; }
+  int getNumEntriesPerID() const override { return numEntriesPerID_; }
 
   void getEntriesView(const scalar_t *&entries, int &stride,
-                      int idx = 0) const {
+                      int idx = 0) const override {
     if (idx < 0 || idx >= numEntriesPerID_) {
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__ << "  Invalid vector index " << idx
@@ -287,7 +287,7 @@ public:
   }
 
   void getEntriesKokkosView(
-      typename AdapterWithCoords<User>::CoordsDeviceView &entries) const {
+      typename AdapterWithCoords<User>::CoordsDeviceView &entries) const override {
     entries = kEntries_;
   }
 

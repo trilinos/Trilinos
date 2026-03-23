@@ -62,7 +62,7 @@ public:
   void run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
                   const Thyra::ModelEvaluatorBase::OutArgs<Real>& outArgs) const;
   
-  void update( const ROL::Vector<Real> &x, ROL::UpdateType type, int iter = -1 ) {
+  void update( const ROL::Vector<Real> &x, ROL::UpdateType type, int iter = -1 ) override {
     (void) x;
     (void) type;
     (void) iter;

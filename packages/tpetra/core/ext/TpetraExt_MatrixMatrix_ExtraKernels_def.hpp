@@ -103,6 +103,11 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   const SC SC_ZERO     = Teuchos::ScalarTraits<Scalar>::zero();
   const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
 
+  bool skipExplicitZero = true;
+  if (params && params->isParameter("MM Skip Explicit Zeros")) {
+    skipExplicitZero = params->get<bool>("MM Skip Explicit Zeros");
+  }
+
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
   const KCRS Amat = Aview.origMatrix->getLocalMatrixDevice();
   const KCRS Bmat = Bview.origMatrix->getLocalMatrixDevice();
@@ -180,7 +185,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       for (size_t k = Arowptr(i); k < Arowptr(i + 1); k++) {
         LO Aik        = Acolind(k);  // local column index of current entry of A
         const SC Aval = Avals(k);    // value of current entry of A
-        if (Aval == SC_ZERO)
+        if (Aval == SC_ZERO && skipExplicitZero)
           continue;  // skip explicitly stored zero values in A
 
         if (targetMapToOrigRow(Aik) != LO_INVALID) {

@@ -333,7 +333,11 @@ protected:
 
    // get the graph of the crs matrix
    virtual Teuchos::RCP<const CrsGraphType> buildTpetraGraph(int i,int j) const;
+
+
+ public:
    virtual Teuchos::RCP<const CrsGraphType> buildTpetraGhostedGraph(int i,int j) const;
+ protected:
 
    // storage for Tpetra graphs and maps
    Teuchos::RCP<const Teuchos::MpiComm<int> > comm_;

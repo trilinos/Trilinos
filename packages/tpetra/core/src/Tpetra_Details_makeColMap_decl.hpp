@@ -23,7 +23,7 @@
 
 #include "TpetraCore_config.h"
 #include "Tpetra_Map_fwd.hpp"
-#include "Tpetra_RowGraph_fwd.hpp"
+#include "Tpetra_CrsGraph_fwd.hpp"
 #include "Kokkos_Core.hpp"
 #include <ostream>
 
@@ -98,7 +98,7 @@ template <class LO, class GO, class NT>
 int makeColMap(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
                Teuchos::Array<int>& remotePIDs,
                const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
-               const RowGraph<LO, GO, NT>& graph,
+               const CrsGraph<LO, GO, NT>& graph,
                const bool sortEachProcsGids = true,
                std::ostream* errStrm        = NULL);
 

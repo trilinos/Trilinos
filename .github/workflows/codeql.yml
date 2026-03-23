@@ -7,6 +7,7 @@ on:
       - synchronize
   schedule:
     - cron: '41 23 * * 2'
+  workflow_dispatch:
 
 # Cancels any in progress workflows associated with this PR
 concurrency:
@@ -20,7 +21,6 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: [self-hosted, gcc-12.3.0-openmpi-4.1.6]
-    if: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' }}
 
     permissions:
       # required for all workflows
@@ -40,10 +40,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@cdefb33c0f6224e58673d9004f47f7cb3e328b89
+      uses: github/codeql-action/init@b1bff81932f5cdfc8695c7752dcee935dcd061c8
       env:
         NODE_USE_SYSTEM_CA: 1
       with:
@@ -70,9 +70,6 @@ jobs:
       working-directory: ./packages/framework
       run: |
           ./get_dependencies.sh
-
-    - name: Add Googletest
-      uses: ./.github/workflows/actions/add-spack-googletest
 
     - if: matrix.build-mode == 'manual'
       name: Generate CMake fragments
@@ -111,6 +108,6 @@ jobs:
           ninja -j 16
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v3.29.5
+      uses: github/codeql-action/analyze@b1bff81932f5cdfc8695c7752dcee935dcd061c8 # v3.29.5
       with:
         category: "/language:${{matrix.language}}"

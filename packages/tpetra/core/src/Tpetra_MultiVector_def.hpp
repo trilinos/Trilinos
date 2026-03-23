@@ -2099,6 +2099,8 @@ void gblDotImpl(const RV& dotsOut,
   using Teuchos::reduceAll;
   typedef typename RV::non_const_value_type dot_type;
 
+  Details::ProfilingRegion region("Tpetra::gblDotImpl");
+
   const size_t numVecs = dotsOut.extent(0);
 
   // If the MultiVector is distributed over multiple processes, do
@@ -2237,27 +2239,31 @@ multiVectorSingleColumnDot(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal
   if (comm.is_null()) {
     return KokkosKernels::ArithTraits<dot_type>::zero();
   } else {
-    using LO = LocalOrdinal;
-    // The min just ensures that we don't overwrite memory that
-    // doesn't belong to us, in the erroneous input case where x
-    // and y have different numbers of rows.
-    const LO lclNumRows = static_cast<LO>(std::min(x.getLocalLength(),
-                                                   y.getLocalLength()));
-    const Kokkos::pair<LO, LO> rowRng(0, lclNumRows);
     dot_type lclDot = KokkosKernels::ArithTraits<dot_type>::zero();
     dot_type gblDot = KokkosKernels::ArithTraits<dot_type>::zero();
+    {
+      ProfilingRegion regionLclDot("Tpetra::multiVectorSingleColumnDot::lclDot");
+      using LO = LocalOrdinal;
+      // The min just ensures that we don't overwrite memory that
+      // doesn't belong to us, in the erroneous input case where x
+      // and y have different numbers of rows.
+      const LO lclNumRows = static_cast<LO>(std::min(x.getLocalLength(),
+                                                     y.getLocalLength()));
+      const Kokkos::pair<LO, LO> rowRng(0, lclNumRows);
 
-    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-    // const_cast<MV&>(x).sync_device ();
-    // const_cast<MV&>(y).sync_device ();
+      // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
+      // const_cast<MV&>(x).sync_device ();
+      // const_cast<MV&>(y).sync_device ();
 
-    auto x_2d = x.getLocalViewDevice(Access::ReadOnly);
-    auto x_1d = Kokkos::subview(x_2d, rowRng, 0);
-    auto y_2d = y.getLocalViewDevice(Access::ReadOnly);
-    auto y_1d = Kokkos::subview(y_2d, rowRng, 0);
-    lclDot    = KokkosBlas::dot(x_1d, y_1d);
+      auto x_2d = x.getLocalViewDevice(Access::ReadOnly);
+      auto x_1d = Kokkos::subview(x_2d, rowRng, 0);
+      auto y_2d = y.getLocalViewDevice(Access::ReadOnly);
+      auto y_1d = Kokkos::subview(y_2d, rowRng, 0);
+      lclDot    = KokkosBlas::dot(x_1d, y_1d);
+    }
 
     if (x.isDistributed()) {
+      ProfilingRegion regionReduce("Tpetra::multiVectorSingleColumnDot::reduce");
       using Teuchos::outArg;
       using Teuchos::REDUCE_SUM;
       using Teuchos::reduceAll;

@@ -926,6 +926,47 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Distributor, createFromRecvs, Ordinal) {
   TEST_EQUALITY_CONST(globalSuccess_int, 0);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Distributor, reverseAndParams, Ordinal) {
+  // Test that parameters get correctly propagated from Distributor to DistributorPlan.
+
+  RCP<const Comm<int> > comm = getDefaultComm();
+  const int numImages        = comm->getSize();
+  const int myImageID        = comm->getRank();
+  const int length           = numImages;
+  // Set up a distributor.
+  Array<int> importImageIDs;
+  Array<Ordinal> importGIDs;
+  importImageIDs.reserve(length);
+  importGIDs.reserve(length);
+  for (int i = 0; i < length; ++i) {
+    importImageIDs.push_back(i);
+    importGIDs.push_back(as<Ordinal>(generateValue(i, myImageID)));
+  }
+  Distributor distributor(comm);
+  Array<int> exportImageIDs;
+  Array<Ordinal> exportGIDs;
+  distributor.createFromRecvs<Ordinal>(importGIDs, importImageIDs, exportGIDs, exportImageIDs);
+
+  // Trigger construction of reverse distributor and its plan
+  auto revDistributor = distributor.getReverse();
+
+  auto pl = Teuchos::rcp(new Teuchos::ParameterList());
+  pl->set("Send type", Tpetra::Details::DISTRIBUTOR_ISEND);
+
+  // Change send type on distributor and its reverse
+  distributor.setParameterList(pl);
+  distributor.getReverse()->setParameterList(pl);
+
+  // Send type got propagated correctly to distributor's plan
+  TEUCHOS_ASSERT_EQUALITY(distributor.getPlan().getSendType(), Tpetra::Details::DISTRIBUTOR_ISEND);
+
+  // Send type got propagated correctly to reverse distributor's plan
+  TEUCHOS_ASSERT_EQUALITY(distributor.getReverse()->getPlan().getSendType(), Tpetra::Details::DISTRIBUTOR_ISEND);
+
+  // Send type propagated to distributor's plan's reverse which is the same as the reverse distributor's plan
+  TEUCHOS_ASSERT_EQUALITY(distributor.getPlan().getReversePlan()->getSendType(), Tpetra::Details::DISTRIBUTOR_ISEND);
+}
+
 //
 // INSTANTIATIONS
 //
@@ -935,12 +976,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Distributor, createFromRecvs, Ordinal) {
 // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #ifdef HAVE_TPETRA_DEBUG
+#define UNIT_TEST_GROUP_ORDINAL(ORDINAL)                                       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Distributor, createFromRecvs, ORDINAL)  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Distributor, badArgsFromRecvs, ORDINAL) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Distributor, reverseAndParams, ORDINAL)
+#else
 #define UNIT_TEST_GROUP_ORDINAL(ORDINAL)                                      \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Distributor, createFromRecvs, ORDINAL) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Distributor, badArgsFromRecvs, ORDINAL)
-#else
-#define UNIT_TEST_GROUP_ORDINAL(ORDINAL) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Distributor, createFromRecvs, ORDINAL)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Distributor, reverseAndParams, ORDINAL)
 #endif  // HAVE_TPETRA_DEBUG
 
 #ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD

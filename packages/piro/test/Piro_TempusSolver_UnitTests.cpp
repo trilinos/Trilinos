@@ -9,6 +9,8 @@
 
 #include "Piro_ConfigDefs.hpp"
 
+#include "Tpetra_Core.hpp"
+
 #ifdef HAVE_PIRO_TEMPUS
 #include "Piro_TempusSolver.hpp"
 #include "Tempus_StepperFactory.hpp"

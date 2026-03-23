@@ -572,6 +572,20 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 }
 
 
+template <class Matrix, class Vector>
+void
+KLU2<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                   const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " KLU2 current parameters:" << std::endl;
+  out << "  > Trans = " << transFlag_ << std::endl;
+  out << "  > IsContiguous = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << "  > UseCustomGather = " << (use_gather_ ? "YES" : "NO") << std::endl;
+  out << "  > DebugLevel = " << debug_level_ << std::endl;
+  out << std::endl;
+}
+
+
 template<class Matrix, class Vector>
 const char* KLU2<Matrix,Vector>::name = "KLU2";
 

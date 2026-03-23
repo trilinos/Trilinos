@@ -43,11 +43,15 @@ typedef std::size_t global_index_type;
 // execution spaces
 typedef Kokkos::DefaultHostExecutionSpace host_execution_space;
 typedef Kokkos::DefaultExecutionSpace device_execution_space;
+typedef host_execution_space::scratch_memory_space host_scratch;
+typedef device_execution_space::scratch_memory_space device_scratch;
 
 // memory spaces
 typedef typename host_execution_space::memory_space host_memory_space;
-#ifdef COMPADRE_USE_CUDA
+#if defined(COMPADRE_USE_CUDA)
     typedef typename Kokkos::CudaSpace device_memory_space;
+#elif defined(COMPADRE_USE_HIP)
+    typedef typename Kokkos::HIPSpace device_memory_space;
 #else
     typedef typename device_execution_space::memory_space device_memory_space;
 #endif
@@ -63,25 +67,45 @@ typedef typename host_team_policy::member_type  host_member_type;
 typedef Kokkos::LayoutRight layout_right;
 typedef Kokkos::LayoutLeft layout_left;
 
-// unmanaged data wrappers
-typedef Kokkos::View<double**, layout_right, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+// scratch data wrappers
+typedef Kokkos::View<double**, layout_right, device_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             scratch_matrix_right_type;
-typedef Kokkos::View<double**, layout_left, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<double**, layout_left, device_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             scratch_matrix_left_type;
-typedef Kokkos::View<double*, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<double*, device_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             scratch_vector_type;
-typedef Kokkos::View<int*, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<int*, device_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             scratch_local_index_type;
 
 // host equivalents
-typedef Kokkos::View<double**, layout_right, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<double**, layout_right, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             host_scratch_matrix_right_type;
-typedef Kokkos::View<double**, layout_left, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<double**, layout_left, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             host_scratch_matrix_left_type;
-typedef Kokkos::View<double*, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<double*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             host_scratch_vector_type;
-typedef Kokkos::View<int*, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+typedef Kokkos::View<int*, host_scratch, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
             host_scratch_local_index_type;
+
+// unmanaged devicedata deviews
+typedef Kokkos::View<double**, layout_right, device_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            device_unmanaged_matrix_right_type;
+typedef Kokkos::View<double**, layout_left, device_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            device_unmanaged_matrix_left_type;
+typedef Kokkos::View<double*, device_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            device_unmanaged_vector_type;
+typedef Kokkos::View<int*, device_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            device_unmanaged_local_index_type;
+
+// host equivalents
+typedef Kokkos::View<double**, layout_right, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            host_unmanaged_matrix_right_type;
+typedef Kokkos::View<double**, layout_left, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            host_unmanaged_matrix_left_type;
+typedef Kokkos::View<double*, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            host_unmanaged_vector_type;
+typedef Kokkos::View<int*, host_execution_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> > 
+            host_unmanaged_local_index_type;
 
 // managed device data views
 typedef Kokkos::View<double**, layout_right, device_memory_space>
@@ -127,6 +151,7 @@ typename std::enable_if<2==T::rank,T>::type createView(std::string str, int dim_
 
 //! compadre_assert_release is used for assertions that should always be checked, but generally 
 //! are not expensive to verify or are not called frequently. 
+#if COMPADRE_BUILD_ABBR == 1 || COMPADRE_BUILD_ABBR == 2
 # define compadre_assert_release(condition) do {                                \
     if ( ! (condition)) {                                               \
       std::stringstream _ss_;                                           \
@@ -135,13 +160,20 @@ typename std::enable_if<2==T::rank,T>::type createView(std::string str, int dim_
         throw std::logic_error(_ss_.str());                             \
     }                                                                   \
   } while (0)
+#else
+# define compadre_assert_release(condition)
+#endif
 
 //! compadre_kernel_assert_release is similar to compadre_assert_release, but is a call on the device, 
 //! namely inside of a function marked KOKKOS_INLINE_FUNCTION
+#if COMPADRE_BUILD_ABBR == 1 || COMPADRE_BUILD_ABBR == 2
 # define compadre_kernel_assert_release(condition) do { \
     if ( ! (condition))                         \
       Kokkos::abort(#condition);                \
   } while (0)
+# else
+# define compadre_kernel_assert_release(condition)
+#endif
 
 //! compadre_assert_debug is used for assertions that are checked in loops, as these significantly
 //! impact performance. When NDEBUG is set, these conditions are not checked.

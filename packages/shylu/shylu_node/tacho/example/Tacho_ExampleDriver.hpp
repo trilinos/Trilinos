@@ -130,7 +130,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
     std::cout << std::endl << "   ---------------------- " << std::endl;
     Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
     Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace", detail);
-    std::cout << "     Method Name:: " << method_name << std::endl;
+    std::cout << "     Method Name:: " << method_name << " (" << method << ")" << std::endl;
     std::cout << "     Solver Type:: " << variant << std::endl;
     std::cout << "          # RHSs:: " << nrhs << std::endl << std::endl;
     if (default_setup) {

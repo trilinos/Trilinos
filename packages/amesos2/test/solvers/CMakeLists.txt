@@ -327,6 +327,7 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLUDist)
     # Disabled --refactor which fails now that refactor properly tests a vector not all 0 - TODO
     ARGS "--xml-params=superludist_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves"
     STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 2
     COMM mpi
     )
 

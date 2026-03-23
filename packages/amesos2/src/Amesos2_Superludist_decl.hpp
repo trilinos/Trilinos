@@ -250,6 +250,14 @@ private:
   bool loadA_impl(EPhase current_phase);
 
 
+  /** 
+   * \brief Prints the status information about the current solver with some level
+   * of verbosity
+   */
+  void describe_impl(Teuchos::FancyOStream &out,
+                     const Teuchos::EVerbosityLevel verbLevel) const;
+
+
   // struct holds all data necessary to make a superlu factorization or solve call
   mutable struct SLUData {
     SLUD::SuperMatrix A;

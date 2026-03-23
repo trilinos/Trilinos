@@ -1325,12 +1325,17 @@ void mult_A_B(
     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
     CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
     const std::string& /* label */,
-    const Teuchos::RCP<Teuchos::ParameterList>& /* params */) {
+    const Teuchos::RCP<Teuchos::ParameterList>& params) {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::null;
   using Teuchos::OrdinalTraits;
+
+  bool skipExplicitZero = true;
+  if (params && params->isParameter("MM Skip Explicit Zeros")) {
+    skipExplicitZero = params->get<bool>("MM Skip Explicit Zeros");
+  }
 
   typedef Teuchos::ScalarTraits<Scalar> STS;
   // TEUCHOS_FUNC_TIME_MONITOR_DIFF("mult_A_B", mult_A_B);
@@ -1435,7 +1440,7 @@ void mult_A_B(
     for (k = Arowptr[i]; k < Arowptr[i + 1]; ++k) {
       LocalOrdinal Ak   = Acol2Brow[Acolind[k]];
       const Scalar Aval = Avals[k];
-      if (Aval == STS::zero())
+      if (Aval == STS::zero() && skipExplicitZero)
         continue;
 
       if (Ak == LO_INVALID)
@@ -1477,7 +1482,7 @@ void mult_A_B(
     for (k = Arowptr[i]; k < Arowptr[i + 1]; ++k) {
       LocalOrdinal Ak   = Acol2Brow[Acolind[k]];
       const Scalar Aval = Avals[k];
-      if (Aval == STS::zero())
+      if (Aval == STS::zero() && skipExplicitZero)
         continue;
 
       if (Ak != LO_INVALID) continue;
@@ -1950,6 +1955,11 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
   const LO LO_INVALID     = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO        = Teuchos::ScalarTraits<Scalar>::zero();
 
+  bool skipExplicitZero = true;
+  if (params && params->isParameter("MM Skip Explicit Zeros")) {
+    skipExplicitZero = params->get<bool>("MM Skip Explicit Zeros");
+  }
+
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m                    = Aview.origMatrix->getLocalNumRows();
@@ -2016,7 +2026,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
     for (size_t k = Arowptr[i]; k < Arowptr[i + 1]; k++) {
       LO Aik        = Acolind[k];  // local column index of current entry of A
       const SC Aval = Avals[k];    // value of current entry of A
-      if (Aval == SC_ZERO)
+      if (Aval == SC_ZERO && skipExplicitZero)
         continue;  // skip explicitly stored zero values in A
 
       if (targetMapToOrigRow[Aik] != LO_INVALID) {

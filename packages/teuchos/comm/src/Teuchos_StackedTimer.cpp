@@ -17,6 +17,9 @@
 #include <fstream>
 #include <sstream>
 
+#include "Trilinos_git_sha.h"
+
+
 namespace Teuchos {
 
 
@@ -750,7 +753,7 @@ std::string
 StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   const char* rawWatchrDir = getenv("WATCHR_PERF_DIR");
   const char* rawBuildName = getenv("WATCHR_BUILD_NAME");
-  const char* rawGitSHA = getenv("TRILINOS_GIT_SHA");
+  std::string gitSHA(Trilinos::TRILINOS_GIT_SHA);
   const char* rawBuildDateOverride = getenv("WATCHR_BUILD_DATE");
   //WATCHR_PERF_DIR is required (will also check nonempty below)
   if(!rawWatchrDir)
@@ -826,12 +829,8 @@ StackedTimer::reportWatchrXML(const std::string& name, Teuchos::RCP<const Teucho
     std::vector<bool> printed(flat_names_.size(), false);
     os << "<?xml version=\"1.0\"?>\n";
     os << "<performance-report date=\"" << timestamp << "\" name=\"nightly_run_" << datestamp << "\" time-units=\"seconds\">\n";
-    if(rawGitSHA)
+    if(gitSHA != "UNDEFINED")
     {
-      std::string gitSHA(rawGitSHA);
-      //Output the first 10 (hex) characters
-      if(gitSHA.length() > 10)
-        gitSHA = gitSHA.substr(0, 10);
       os << "  <metadata key=\"Trilinos Version\" value=\"" << gitSHA << "\"/>\n";
     }
     auto systemInfo = SystemInformation::collectSystemInformation();

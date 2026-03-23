@@ -77,6 +77,7 @@ template <typename ValueType, typename DeviceType> class NumericToolsFactory;
   } while (false)
 
 #define TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_MEMBER                                                                    \
+  bool _store_transpose;                                                                                               \
   ordinal_type _variant;                                                                                               \
   ordinal_type _device_level_cut;                                                                                      \
   ordinal_type _device_factor_thres;                                                                                   \
@@ -86,6 +87,7 @@ template <typename ValueType, typename DeviceType> class NumericToolsFactory;
 #define TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER                                                                \
   do {                                                                                                                 \
     _variant = variant;                                                                                                \
+    _store_transpose = store_transpose;                                                                                \
     _device_level_cut = device_level_cut;                                                                              \
     _device_factor_thres = device_factor_thres;                                                                        \
     _device_solve_thres = device_solve_thres;                                                                          \
@@ -102,15 +104,15 @@ template <typename ValueType, typename DeviceType> class NumericToolsFactory;
                                            _stree_children, _stree_level, _stree_roots);                               \
   } while (false)
 
-#define TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_name)                                         \
-  do {                                                                                                                 \
-    if (object == nullptr)                                                                                             \
-      object = (numeric_tools_base_type *)::operator new(sizeof(numeric_tools_levelset_name));                         \
-    new (object) numeric_tools_levelset_name(_method, _m, _ap, _aj, _perm, _peri, _nsupernodes, _supernodes, _gid_ptr, \
-                                             _gid_colidx, _sid_ptr, _sid_colidx, _blk_colidx, _stree_parent,           \
-                                             _stree_ptr, _stree_children, _stree_level, _stree_roots);                 \
-    numeric_tools_levelset_name *N = dynamic_cast<numeric_tools_levelset_name *>(object);                              \
-    N->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _nstreams, _verbose);                  \
+#define TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_name)                                          \
+  do {                                                                                                                  \
+    if (object == nullptr)                                                                                              \
+      object = (numeric_tools_base_type *)::operator new(sizeof(numeric_tools_levelset_name));                          \
+    new (object) numeric_tools_levelset_name(_method, _m, _ap, _aj, _perm, _peri, _nsupernodes, _supernodes, _gid_ptr,  \
+                                             _gid_colidx, _sid_ptr, _sid_colidx, _blk_colidx, _stree_parent,            \
+                                             _stree_ptr, _stree_children, _stree_level, _stree_roots);                  \
+    numeric_tools_levelset_name *N = dynamic_cast<numeric_tools_levelset_name *>(object);                               \
+    N->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _nstreams, _store_transpose, _verbose); \
   } while (false)
 
 ///
@@ -150,7 +152,7 @@ public:
 
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
-                         const ordinal_type nstreams) {
+                         const bool store_transpose, const ordinal_type nstreams) {
     TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
   }
 
@@ -220,7 +222,7 @@ public:
 
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
-                         const ordinal_type nstreams) {
+                         const bool store_transpose, const ordinal_type nstreams) {
     TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
   }
 
@@ -290,7 +292,7 @@ public:
 
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
-                         const ordinal_type nstreams) {
+                         const bool store_transpose, const ordinal_type nstreams) {
     TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
   }
 
@@ -309,11 +311,7 @@ public:
       break;
     }
     case 3: {
-      if (_method != 2) {
-        TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
-      } else {
-        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
-      }
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
       break;
     }
     default: {
@@ -359,7 +357,7 @@ public:
 
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
-                         const ordinal_type nstreams) {
+                         const bool store_transpose, const ordinal_type nstreams) {
     TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
   }
 
@@ -378,11 +376,7 @@ public:
       break;
     }
     case 3: {
-      if (_method != 2) {
-        TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
-      } else {
-        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Invalid variant input");
-      }
+      TACHO_NUMERIC_TOOLS_FACTORY_LEVELSET_BODY(numeric_tools_levelset_var3_type);
       break;
     }
     default: {
@@ -429,7 +423,7 @@ public:
 
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
-                         const ordinal_type nstreams) {
+                         const bool store_transpose, const ordinal_type nstreams) {
     TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
   }
 

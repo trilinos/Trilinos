@@ -21,6 +21,7 @@
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Util.hpp"  // need this here for sort2
 #include "Tpetra_Details_WrappedDualView.hpp"
+#include "Tpetra_Details_makeColMap.hpp"
 
 #include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
@@ -1630,6 +1631,16 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
                                                              typename CrsGraphType::global_ordinal_type,
                                                              typename CrsGraphType::node_type>>& rangeMap,
                                 const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+  // Friend declaration for nonmember function.
+  template <class LO, class GO, class NT>
+  friend int
+  Details::makeColMap(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
+                      Teuchos::Array<int>& remotePIDs,
+                      const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
+                      const CrsGraph<LO, GO, NT>& graph,
+                      const bool sortEachProcsGids,
+                      std::ostream* errStrm);
 
  public:
   /// \brief Import from <tt>this</tt> to the given destination

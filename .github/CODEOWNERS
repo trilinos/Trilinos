@@ -48,6 +48,8 @@
 
 /packages/PyTrilinos/        @trilinos/pytrilinos
 
+/packages/PyTrilinos2/       @trilinos/pytrilinos2
+
 /packages/rol/               @trilinos/rol
 
 /packages/rtop/              @trilinos/rtop

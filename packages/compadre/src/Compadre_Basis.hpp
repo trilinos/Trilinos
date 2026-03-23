@@ -31,7 +31,7 @@ namespace Compadre {
 */
 template <typename BasisData>
 KOKKOS_INLINE_FUNCTION
-void calcPij(const BasisData& data, const member_type& teamMember, double* delta, double* thread_workspace, const int target_index, int neighbor_index, const double alpha, const int dimension, const int poly_order, bool specific_order_only = false, const scratch_matrix_right_type* V = NULL, const ReconstructionSpace reconstruction_space = ReconstructionSpace::ScalarTaylorPolynomial, const SamplingFunctional polynomial_sampling_functional = PointSample, const int evaluation_site_local_index = 0) {
+void calcPij(const BasisData& data, const member_type& teamMember, double* delta, double* thread_workspace, const int target_index, int neighbor_index, const double alpha, const int dimension, const int poly_order, bool specific_order_only = false, const device_unmanaged_matrix_right_type* V = NULL, const ReconstructionSpace reconstruction_space = ReconstructionSpace::ScalarTaylorPolynomial, const SamplingFunctional polynomial_sampling_functional = PointSample, const int evaluation_site_local_index = 0) {
 /*
  * This class is under two levels of hierarchical parallelism, so we
  * do not put in any finer grain parallelism in this function
@@ -316,8 +316,8 @@ void calcPij(const BasisData& data, const member_type& teamMember, double* delta
         for (int i=0; i<data._global_dimensions*TWO; ++i) G_data[i] = 0;
         for (int i=0; i<data._global_dimensions*TWO; ++i) edge_coords[i] = 0;
         // 2 is for # vertices on an edge
-        scratch_matrix_right_type G(G_data, data._global_dimensions, TWO); 
-        scratch_matrix_right_type edge_coords_matrix(edge_coords, data._global_dimensions, TWO); 
+        device_unmanaged_matrix_right_type G(G_data, data._global_dimensions, TWO); 
+        device_unmanaged_matrix_right_type edge_coords_matrix(edge_coords, data._global_dimensions, TWO); 
 
         // neighbor coordinate is assumed to be midpoint
         // could be calculated, but is correct for sphere
@@ -497,8 +497,8 @@ void calcPij(const BasisData& data, const member_type& teamMember, double* delta
         for (int i=0; i<data._global_dimensions*3; ++i) G_data[i] = 0;
         for (int i=0; i<data._global_dimensions*3; ++i) triangle_coords[i] = 0;
         // 3 is for # vertices in sub-triangle
-        scratch_matrix_right_type G(G_data, data._global_dimensions, 3); 
-        scratch_matrix_right_type triangle_coords_matrix(triangle_coords, data._global_dimensions, 3); 
+        device_unmanaged_matrix_right_type G(G_data, data._global_dimensions, 3); 
+        device_unmanaged_matrix_right_type triangle_coords_matrix(triangle_coords, data._global_dimensions, 3); 
 
         // neighbor coordinate is assumed to be midpoint
         // could be calculated, but is correct for sphere
@@ -678,7 +678,7 @@ void calcPij(const BasisData& data, const member_type& teamMember, double* delta
 */
 template <typename BasisData>
 KOKKOS_INLINE_FUNCTION
-void calcGradientPij(const BasisData& data, const member_type& teamMember, double* delta, double* thread_workspace, const int target_index, int neighbor_index, const double alpha, const int partial_direction, const int dimension, const int poly_order, bool specific_order_only, const scratch_matrix_right_type* V, const ReconstructionSpace reconstruction_space, const SamplingFunctional polynomial_sampling_functional, const int evaluation_site_local_index = 0) {
+void calcGradientPij(const BasisData& data, const member_type& teamMember, double* delta, double* thread_workspace, const int target_index, int neighbor_index, const double alpha, const int partial_direction, const int dimension, const int poly_order, bool specific_order_only, const device_unmanaged_matrix_right_type* V, const ReconstructionSpace reconstruction_space, const SamplingFunctional polynomial_sampling_functional, const int evaluation_site_local_index = 0) {
 /*
  * This class is under two levels of hierarchical parallelism, so we
  * do not put in any finer grain parallelism in this function
@@ -766,7 +766,7 @@ void calcGradientPij(const BasisData& data, const member_type& teamMember, doubl
 */
 template <typename BasisData>
 KOKKOS_INLINE_FUNCTION
-void calcHessianPij(const BasisData& data, const member_type& teamMember, double* delta, double* thread_workspace, const int target_index, int neighbor_index, const double alpha, const int partial_direction_1, const int partial_direction_2, const int dimension, const int poly_order, bool specific_order_only, const scratch_matrix_right_type* V, const ReconstructionSpace reconstruction_space, const SamplingFunctional polynomial_sampling_functional, const int evaluation_site_local_index = 0) {
+void calcHessianPij(const BasisData& data, const member_type& teamMember, double* delta, double* thread_workspace, const int target_index, int neighbor_index, const double alpha, const int partial_direction_1, const int partial_direction_2, const int dimension, const int poly_order, bool specific_order_only, const device_unmanaged_matrix_right_type* V, const ReconstructionSpace reconstruction_space, const SamplingFunctional polynomial_sampling_functional, const int evaluation_site_local_index = 0) {
 /*
  * This class is under two levels of hierarchical parallelism, so we
  * do not put in any finer grain parallelism in this function
@@ -847,7 +847,7 @@ void calcHessianPij(const BasisData& data, const member_type& teamMember, double
 */
 template <typename BasisData>
 KOKKOS_INLINE_FUNCTION
-void createWeightsAndP(const BasisData& data, const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, scratch_matrix_right_type P, scratch_vector_type w, const int dimension, int polynomial_order, bool weight_p = false, scratch_matrix_right_type* V = NULL, const ReconstructionSpace reconstruction_space = ReconstructionSpace::ScalarTaylorPolynomial, const SamplingFunctional polynomial_sampling_functional = PointSample) {
+void createWeightsAndP(const BasisData& data, const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, device_unmanaged_matrix_right_type P, device_unmanaged_vector_type w, const int dimension, int polynomial_order, bool weight_p = false, device_unmanaged_matrix_right_type* V = NULL, const ReconstructionSpace reconstruction_space = ReconstructionSpace::ScalarTaylorPolynomial, const SamplingFunctional polynomial_sampling_functional = PointSample) {
     /*
      * Creates sqrt(W)*P
      */
@@ -944,7 +944,7 @@ _order*the spatial dimension of the polynomial basis.
 */
 template <typename BasisData>
 KOKKOS_INLINE_FUNCTION
-void createWeightsAndPForCurvature(const BasisData& data, const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, scratch_matrix_right_type P, scratch_vector_type w, const int dimension, bool only_specific_order, scratch_matrix_right_type* V = NULL) {
+void createWeightsAndPForCurvature(const BasisData& data, const member_type& teamMember, scratch_vector_type delta, scratch_vector_type thread_workspace, device_unmanaged_matrix_right_type P, device_unmanaged_vector_type w, const int dimension, bool only_specific_order, device_unmanaged_matrix_right_type* V = NULL) {
 /*
  * This function has two purposes
  * 1.) Used to calculate specifically for 1st order polynomials, from which we can reconstruct a tangent plane

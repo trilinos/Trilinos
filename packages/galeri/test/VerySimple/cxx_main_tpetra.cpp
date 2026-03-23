@@ -20,7 +20,7 @@
 #else
 #define GO long long
 #endif
-#define Scalar int
+#define Scalar double
 #define LO int
 #define Node Tpetra::KokkosClassic::DefaultNode::DefaultNodeType
 
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
 
   try {
     // Creation of the map
-    auto map = RCP{Galeri::Xpetra::CreateMap<Scalar, GO, Tpetra_Map>(mapType, comm, mapParameters)};
+    auto map = RCP{Galeri::Xpetra::CreateMap<LO, GO, Tpetra_Map>(mapType, comm, mapParameters)};
 
     // Creation of linear problem
     auto problem = Galeri::Xpetra::BuildProblem<Scalar, LO, GO, Tpetra_Map, Tpetra_CrsMatrix, Tpetra_MultiVector>("Laplace2D", map, mapParameters);

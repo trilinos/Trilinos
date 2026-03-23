@@ -1,5 +1,10 @@
 # CHANGELOG
 
+5.27.3-patch (STK_VERSION 5270301) 2/16/26
+  Unusual patch release. Partial stk update.
+  stk_ngp_test: remove RDC requirement for recent ROCM versions
+                (still required for 6.2)
+
 5.27.3    (STK_VERSION 5270300) 12/16/25
   stk_mesh: initial GPU Mesh mod: NgpMesh::batch_change_entity_parts
             and NgpMesh::update_bulk_data

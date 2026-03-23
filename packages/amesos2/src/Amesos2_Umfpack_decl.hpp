@@ -157,6 +157,13 @@ private:
    */
   bool loadA_impl(EPhase current_phase);
 
+  /** 
+   * \brief Prints the status information about the current solver with some level
+   * of verbosity
+   */
+  void describe_impl(Teuchos::FancyOStream &out,
+                     const Teuchos::EVerbosityLevel verbLevel) const;
+
   // struct holds all data necessary to make a umfpack factorization or solve call
   mutable struct UMFPACKData {
     // Umfpack internal opaque object

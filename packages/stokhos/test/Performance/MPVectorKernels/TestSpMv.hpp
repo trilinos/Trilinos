@@ -118,9 +118,15 @@ test_mpvector_spmv(const int ensemble_length,
     // The VectorType may be dynamic (with allocated memory)
     // so cannot pass a VectorType value to the device.
     // Get an array-of-intrinsic View and fill that view.
+#ifdef KOKKOS_ENABLE_DEPRECATED_CODE_5
     typename vector_type::array_type xx( x );
     typename vector_type::array_type yy( y );
     typename matrix_values_type::array_type mm( matrix_values );
+#else
+    typename vector_type::type xx( x );
+    typename vector_type::type yy( y );
+    typename matrix_values_type::type mm( matrix_values );
+#endif
 
     Kokkos::deep_copy( xx , value_type(1.0) );
     Kokkos::deep_copy( yy , value_type(1.0) );

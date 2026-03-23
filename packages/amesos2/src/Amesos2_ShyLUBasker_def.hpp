@@ -671,6 +671,39 @@ ShyLUBasker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 }
 
 
+template <class Matrix, class Vector>
+void
+ShyLUBasker<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " ShyLUBasker current parameters:" << std::endl;
+  out << "  > IsContiguous       = " << (is_contiguous_ ? "YES" : "NO") << std::endl;
+  out << "  > UseCustomGather    = " << (use_gather_ ? "YES" : "NO") << std::endl;
+  out << "  > num_threads        = " << num_threads << std::endl;
+  out << "  > worker_threads     = " << ShyLUbasker->Options.worker_threads << std::endl;
+  out << "  > pivot              = " << ShyLUbasker->Options.no_pivot << std::endl;
+  out << "  > pivot_tol          = " << ShyLUbasker->Options.pivot_tol << std::endl;
+  out << "  > realloc            = " << ShyLUbasker->Options.realloc << std::endl;
+  out << "  > verbose            = " << (ShyLUbasker->Options.verbose ? "YES" : "NO") << std::endl;
+  out << "  > btf                = " << (ShyLUbasker->Options.btf ? "YES" : "NO") << std::endl;
+  out << "  > use_metis          = " << (ShyLUbasker->Options.use_metis ? "YES" : "NO") << std::endl;
+  out << "  > use_nodeNDP        = " << (ShyLUbasker->Options.use_nodeNDP ? "YES" : "NO") << std::endl;
+  out << "  > run_nd_on_leaves   = " << (ShyLUbasker->Options.run_nd_on_leaves ? "YES" : "NO") << std::endl;
+  out << "  > run_amd_on_leaves  = " << (ShyLUbasker->Options.run_amd_on_leaves ? "YES" : "NO") << std::endl;
+  out << "  > amd_on_blocks      = " << (ShyLUbasker->Options.amd_dom ? "YES" : "NO") << std::endl;
+  out << "  > transpose          = " << (this->control_.useTranspose_ ? "YES" : "NO") << std::endl;
+  out << "  > threaded_solve     = " << (ShyLUbasker->Options.threaded_solve ? "YES" : "NO") << std::endl;
+  out << "  > user_fill          = " << ShyLUbasker->Options.user_fill << std::endl;
+  out << "  > prune              = " << (ShyLUbasker->Options.prune ? "YES" : "NO") << std::endl;
+  out << "  > replace_zero_pivot = " << (ShyLUbasker->Options.replace_zero_pivot ? "YES" : "NO") << std::endl;
+  out << "  > replace_tiny_pivot = " << (ShyLUbasker->Options.replace_tiny_pivot ? "YES" : "NO") << std::endl;
+  out << "  > btf_matching       = " << (ShyLUbasker->Options.btf_matching ? "YES" : "NO") << std::endl;
+  out << "  > blk_matching       = " << (ShyLUbasker->Options.blk_matching ? "YES" : "NO") << std::endl;
+  out << "  > use_sequential_diag_facto = " << (ShyLUbasker->Options.use_sequential_diag_facto ? "YES" : "NO") << std::endl;
+  out << std::endl;
+}
+
+
 template<class Matrix, class Vector>
 const char* ShyLUBasker<Matrix,Vector>::name = "ShyLUBasker";
 

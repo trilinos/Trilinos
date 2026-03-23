@@ -10,6 +10,8 @@
 #include <iostream>
 #include <string>
 
+#include "Tpetra_Core.hpp"
+
 #include "MockModelEval_C_Tpetra.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"

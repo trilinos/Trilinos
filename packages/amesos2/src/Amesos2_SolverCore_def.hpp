@@ -615,6 +615,7 @@ SolverCore<ConcreteSolver,Matrix,Vector>::describe(
     std::string p = name();
     Util::printLine(out);
     out << this->description() << std::endl << std::endl;
+    static_cast<const solver_type*>(this)->describe_impl(out, verbLevel);
 
     out << p << "Matrix has " << globalNumRows_ << " rows"
         << " and " << globalNumNonZeros_ << " nonzeros"

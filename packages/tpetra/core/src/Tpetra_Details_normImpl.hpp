@@ -25,6 +25,7 @@
 #include "Teuchos_CommHelpers.hpp"
 #include "KokkosBlas.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
+#include "Tpetra_Details_Profiling.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
@@ -83,6 +84,8 @@ void lclNormImpl(const RV& normsOut,
   using Kokkos::ALL;
   using Kokkos::subview;
   using mag_type = typename RV::non_const_value_type;
+
+  Details::ProfilingRegion region("Tpetra::Details::lclNormImpl");
 
   static_assert(static_cast<int>(RV::rank) == 1,
                 "Tpetra::MultiVector::lclNormImpl: "
@@ -176,6 +179,8 @@ void gblNormImpl(const RV& normsOut,
   using Teuchos::REDUCE_SUM;
   using Teuchos::reduceAll;
   typedef typename RV::non_const_value_type mag_type;
+
+  Details::ProfilingRegion region("Tpetra::Details::gblNormImpl");
 
   const size_t numVecs = normsOut.extent(0);
 

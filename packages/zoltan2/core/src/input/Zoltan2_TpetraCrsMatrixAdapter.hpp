@@ -75,6 +75,8 @@ public:
   TpetraCrsMatrixAdapter(const RCP<const User> &inmatrix,
                          int nWeightsPerRow=0);
 
+  void init(const RCP<const User> &inmatrix);
+
   /*! \brief Access to user's matrix
    */
   RCP<const User> getUserMatrix() const { return this->matrix_; }
@@ -93,30 +95,33 @@ public:
 /////////////////////////////////////////////////////////////////
 
   template <typename User, typename UserCoord>
+  void TpetraCrsMatrixAdapter<User,UserCoord>::init(const RCP<const User> &inmatrix) {
+    auto colIdsDevice = inmatrix->getLocalIndicesDevice();
+
+    auto colIdsGlobalDevice =
+      typename TpetraCrsMatrixAdapter<User, UserCoord>::Base::IdsDeviceView("colIdsGlobalDevice", colIdsDevice.extent(0));
+    auto colMap = inmatrix->getColMap();
+    auto lclColMap = colMap->getLocalMap();
+
+    // Convert to global IDs using Tpetra::Map
+    Kokkos::parallel_for("colIdsGlobalDevice",
+                         Kokkos::RangePolicy<typename User::node_type::execution_space>(
+                                                                                        0, colIdsGlobalDevice.extent(0)),
+                         KOKKOS_LAMBDA(const int i) {
+      colIdsGlobalDevice(i) =
+        lclColMap.getGlobalElement(colIdsDevice(i));
+    });
+
+    this->colIdsDevice_ =   colIdsGlobalDevice;
+    this->offsDevice_ = inmatrix->getLocalRowPtrsDevice();
+  }
+
+  template <typename User, typename UserCoord>
   TpetraCrsMatrixAdapter<User,UserCoord>::TpetraCrsMatrixAdapter(
     const RCP<const User> &inmatrix, int nWeightsPerRow):
       RowMatrix(nWeightsPerRow, inmatrix) {
 
-  auto colIdsHost = inmatrix->getLocalIndicesHost();
-
-  auto colIdsGlobalHost =
-      typename Base::IdsHostView("colIdsGlobalHost", colIdsHost.extent(0));
-  auto colMap = inmatrix->getColMap();
-
-  // Convert to global IDs using Tpetra::Map
-  Kokkos::parallel_for("colIdsGlobalHost",
-                       Kokkos::RangePolicy<Kokkos::HostSpace::execution_space>(
-                           0, colIdsGlobalHost.extent(0)),
-                       [=](const int i) {
-                         colIdsGlobalHost(i) =
-                             colMap->getGlobalElement(colIdsHost(i));
-                       });
-
-  auto colIdsDevice = Kokkos::create_mirror_view_and_copy(
-      typename Base::device_t(), colIdsGlobalHost);
-
-  this->colIdsDevice_ = colIdsDevice;
-  this->offsDevice_ = inmatrix->getLocalRowPtrsDevice();
+  init(inmatrix);
 
   if (this->nWeightsPerRow_ > 0) {
 

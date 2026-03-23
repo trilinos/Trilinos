@@ -745,7 +745,7 @@ public:
     double getTangentBundle(const int target_index, const int direction, const int component) const {
         // Component index 0.._dimensions-2 will return tangent direction
         // Component index _dimensions-1 will return the normal direction
-        scratch_matrix_right_type::host_mirror_type 
+        device_unmanaged_matrix_right_type::host_mirror_type 
                 T(_host_T.data() + target_index*_dimensions*_dimensions, _dimensions, _dimensions);
         return T(direction, component);
     }
@@ -753,8 +753,8 @@ public:
     //! Get component of tangent or normal directions for manifold problems
     double getReferenceNormalDirection(const int target_index, const int component) const {
         compadre_assert_debug(_reference_outward_normal_direction_provided && 
-                "getRefenceNormalDirection called, but reference outwrad normal directions were never provided.");
-        scratch_vector_type::host_mirror_type 
+                "getRefenceNormalDirection called, but reference outward normal directions were never provided.");
+        device_unmanaged_vector_type::host_mirror_type 
                 ref_N(_host_ref_N.data() + target_index*_dimensions, _dimensions);
         return ref_N(component);
     }
@@ -1027,7 +1027,7 @@ public:
     //! Sets target coordinate information. Rows of this 2D-array should correspond to rows of the neighbor lists.
     template<typename view_type>
     void setTargetSites(coordinates_type target_coordinates) {
-        if (this->getAdditionalEvaluationIndices()->getNumberOfTargets() != target_coordinates.extent(0)) {
+        if (this->getAdditionalEvaluationIndices()->getNumberOfTargets() != target_coordinates.extent_int(0)) {
             this->setAuxiliaryEvaluationIndicesLists(
                     Kokkos::View<int*>(),
                     Kokkos::View<int*>("number of additional evaluation indices", 
@@ -1085,7 +1085,7 @@ public:
         auto this_T = _T;
         // rearrange data on device from data given on host
         Kokkos::parallel_for("copy tangent vectors", Kokkos::RangePolicy<device_execution_space>(0, num_targets), KOKKOS_LAMBDA(const int i) {
-            scratch_matrix_right_type T(this_T.data() + i*this_dimensions*this_dimensions, this_dimensions, this_dimensions);
+            device_unmanaged_matrix_right_type T(this_T.data() + i*this_dimensions*this_dimensions, this_dimensions, this_dimensions);
             for (int j=0; j<this_dimensions; ++j) {
                 for (int k=0; k<this_dimensions; ++k) {
                     T(j,k) = tangent_directions(i, j, k);

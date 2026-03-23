@@ -106,8 +106,8 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, BallParabolic)
       x_exact_plot                                    = model->getExactSolution(time_i).get_x();
       ftmp << time_i << "   " << get_ele(*(x_plot), 0) << "   "
            << get_ele(*(x_exact_plot), 0) << std::endl;
-      if (abs(get_ele(*(x_plot), 0) - get_ele(*(x_exact_plot), 0)) > err)
-        err = abs(get_ele(*(x_plot), 0) - get_ele(*(x_exact_plot), 0));
+      if (std::abs(get_ele(*(x_plot), 0) - get_ele(*(x_exact_plot), 0)) > err)
+        err = std::abs(get_ele(*(x_plot), 0) - get_ele(*(x_exact_plot), 0));
     }
     ftmp.close();
     out << "Max error = " << err << "\n \n";

@@ -34,6 +34,7 @@ TachoSolver<Matrix,Vector>::TachoSolver(
   data_.pivot_pert = false; // Pertub small pivot
   data_.diag_shift = false; // Shift diagonal
   data_.verbose    = false; // verbose
+  data_.small_problem_threshold_size = 1024;
 }
 
 
@@ -225,7 +226,9 @@ TachoSolver<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
 
   // factorization type
   auto method_name = parameterList->get<std::string> ("method", "chol");
-  if (method_name == "chol")
+  if (method_name == "ldl-nopiv")
+    data_.method = 0;
+  else if (method_name == "chol")
     data_.method = 1;
   else if (method_name == "ldl")
     data_.method = 2;
@@ -353,6 +356,28 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
   }
 
   return true;
+}
+
+
+template <class Matrix, class Vector>
+void
+TachoSolver<Matrix,Vector>::describe_impl(Teuchos::FancyOStream &out,
+                                          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  out << " Tacho current parameters:" << std::endl;
+  out << " > method  = " << data_.method;
+  if (data_.method == 0) out << " (ldl-nopiv)" << std::endl;
+  if (data_.method == 1) out << " (chol)" << std::endl;
+  if (data_.method == 2) out << " (ldl)" << std::endl;
+  if (data_.method == 3) out << " (lu)" << std::endl;
+  out << " > variant = " << data_.variant << std::endl;
+  out << " > verbose = " << data_.verbose << std::endl;
+  out << " > num-streams   = " << data_.streams << std::endl;
+  out << " > dofs-per-node = " << data_.dofs_per_node << std::endl;
+  out << " > perturb-pivo  = " << (data_.pivot_pert ? "YES" : "NO") << std::endl;
+  out << " > shift-diag    = " << (data_.diag_shift ? "YES" : "NO") << std::endl;
+  out << " > small problem threshold size = " << data_.small_problem_threshold_size << std::endl;
+  out << std::endl;
 }
 
 

@@ -4,11 +4,20 @@
 #include "Reporter.hpp"
 #include "stk_util/ngp/NgpSpaces.hpp"
 #include "NgpTestDeviceMacros.hpp"
+#if defined(KOKKOS_ENABLE_HIP)
+ #if __has_include(<rocm-core/rocm_version.h>)
+  #include <rocm-core/rocm_version.h>
+ #else
+  #include <rocm_version.h>
+ #endif
+#endif
 
 // RDC is required for HIP build since registering a static global variable
-// on an inline variable is not functional as of rocm 6.2.7
+// on an inline variable is not available until rocm 6.3.0
 #if defined(KOKKOS_ENABLE_HIP) && !defined(KOKKOS_ENABLE_HIP_RELOCATABLE_DEVICE_CODE)
+#if (ROCM_VERSION_MAJOR < 6) || (ROCM_VERSION_MAJOR == 6 && ROCM_VERSION_MINOR < 3)
 #error "Kokkos_ENABLE_HIP_RELOCATABLE_DEVICE_CODE is required for HIP build"
+#endif
 #endif
 
 namespace ngp_testing {
