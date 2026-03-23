@@ -816,6 +816,9 @@ namespace BaskerNS
       inc_lvl    = BASKER_INC_LVL_VALUE;
       inc_tol    = BASKER_INC_TOL_VALUE;
       user_fill  = BASKER_FILL_USER;
+
+      // Partial Factorization Option
+      dense_schur = BASKER_FALSE;
     }
 
     //Reuse Pattern (Save time if same pattern can be used)
@@ -891,6 +894,8 @@ namespace BaskerNS
     BASKER_MAGNITUDE inc_tol;    //Not Used
     BASKER_MAGNITUDE user_fill;
     
+    // Partial Factorization Option
+    BASKER_BOOL dense_schur;
     /* ---- todo add more ----*/
   }; // end bask_options
 

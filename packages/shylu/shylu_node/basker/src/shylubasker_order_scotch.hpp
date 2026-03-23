@@ -183,6 +183,7 @@ namespace BaskerNS
       // root
       sg.treetab[0] = -1;
     } else {
+      // TODO: put each partitioning option to a separate function.
       #if defined (HAVE_SHYLU_NODEBASKER_METIS) || defined(HAVE_SHYLU_NODEBASKER_SCOTCH)
       if (Options.use_metis == BASKER_TRUE) {
         #if !defined(HAVE_SHYLU_NODEBASKER_METIS)

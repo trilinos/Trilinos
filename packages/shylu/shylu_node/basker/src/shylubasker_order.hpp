@@ -80,7 +80,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int,Entry,Exe_Space>::btf_order2()
+  int Basker<Int,Entry,Exe_Space>::btf_order()
   {
     #ifdef BASKER_TIMER
     double order_time = 0.0;
@@ -147,9 +147,9 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     // where A is one "large" diagonal block for threaded factorization, and
     //       B contains "small" diagonabl blocks for sequential factorization
     //printf("outer num_threads:%d \n", num_threads);
-    if (find_btf2(A) != BASKER_SUCCESS) {
+    if (find_btf(A) != BASKER_SUCCESS) {
         if(Options.verbose == BASKER_TRUE) {
-            std::cout << " ++ find_btf2 failed ++ " << std::endl;
+            std::cout << " ++ find_btf failed ++ " << std::endl;
         }
         return BASKER_ERROR;
     }
@@ -283,7 +283,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     #endif
     
     return BASKER_SUCCESS;
-  }//end btf_order2
+  }//end btf_order
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -309,7 +309,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
       //printf("outter num_threads:%d \n", num_threads);
       MALLOC_INT_1DARRAY(btf_schedule, num_threads+1);
       init_value(btf_schedule, num_threads+1, (Int)0);
-      find_btf2(A);
+      find_btf(A);
     }
     else
     {

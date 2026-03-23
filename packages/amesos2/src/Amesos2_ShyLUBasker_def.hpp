@@ -79,6 +79,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   num_threads = 1;
 #endif
   ShyLUbasker->Options.worker_threads = false;
+  ShyLUbasker->Options.dense_schur = false;
 
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
@@ -164,14 +165,24 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
           std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
       // In this case, colptr_, rowind_, nzvals_ are invalid
-      info = ShyLUbasker->Symbolic(this->globalNumRows_,
-          this->globalNumCols_,
-          this->globalNumNonZeros_,
-          sp_rowptr.data(),
-          sp_colind.data(),
-          sp_values,
-          true); // true = _crs_transpose_needed
-
+      if (ShyLUbasker->Options.dense_schur) {
+        info = ShyLUbasker->Symbolic(this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            sp_rowptr.data(),
+            sp_colind.data(),
+            schur_part,
+            sp_values,
+            true); // true = _crs_transpose_needed
+      } else {
+        info = ShyLUbasker->Symbolic(this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            sp_rowptr.data(),
+            sp_colind.data(),
+            sp_values,
+            true); // true = _crs_transpose_needed
+      }
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
           std::runtime_error, "Error in ShyLUBasker Symbolic");
     }
@@ -179,13 +190,22 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
     { //follow original code path if conditions not met
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
       shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
-      info = ShyLUbasker->Symbolic(this->globalNumRows_,
-          this->globalNumCols_,
-          this->globalNumNonZeros_,
-          colptr_view_.data(),
-          rowind_view_.data(),
-          sp_values);
-
+      if (ShyLUbasker->Options.dense_schur) {
+        info = ShyLUbasker->Symbolic(this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            colptr_view_.data(),
+            rowind_view_.data(),
+            schur_part,
+            sp_values);
+      } else {
+        info = ShyLUbasker->Symbolic(this->globalNumRows_,
+            this->globalNumCols_,
+            this->globalNumNonZeros_,
+            colptr_view_.data(),
+            rowind_view_.data(),
+            sp_values);
+      }
       TEUCHOS_TEST_FOR_EXCEPTION(info != 0,
           std::runtime_error, "Error in ShyLUBasker Symbolic");
     }
@@ -524,6 +544,15 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     {
       ShyLUbasker->Options.min_block_size = parameterList->get<int>("min_block_size");
     }
+
+  if(parameterList->isParameter("GetDenseSchur"))
+    {
+      ShyLUbasker->Options.dense_schur = parameterList->get<bool>("GetDenseSchur");
+    }
+  if(parameterList->isParameter("SchurPart"))
+    {
+      schur_part = parameterList->get<const local_ordinal_type*>("SchurPart");
+    }
 }
 
 template <class Matrix, class Vector>
@@ -593,6 +622,14 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "Use sequential algorithm to factor each diagonal block");
       pl->set("user_fill", (double)BASKER_FILL_USER,
               "User-provided padding for the fill ratio");
+
+      const local_ordinal_type *dummy_ptr;
+      pl->set("GetDenseSchur", false,
+              "Perform partial factorization to extract dense Schur complement");
+      //pl->set("SchurPart",Kokkos::View<int*>("SchurPart",0),
+      //        "Specify rows/columns belonging to Schur complement for partial factorization");
+      pl->set("SchurPart",dummy_ptr,
+              "Specify rows/columns belonging to Schur complement for partial factorization");
       valid_params = pl;
     }
   return valid_params;

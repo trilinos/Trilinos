@@ -59,13 +59,10 @@ namespace BaskerNS
     int InitMatrix(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
 
     BASKER_INLINE
-    int Symbolic(Int option);
-
-    BASKER_INLINE
     int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val, bool transpose_needed = false);
 
     BASKER_INLINE
-    int Factor(Int option);
+    int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, const Int *schur_part_in, Entry *val, bool transpose_needed = false);
 
     BASKER_INLINE
     int Factor(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
@@ -228,7 +225,7 @@ namespace BaskerNS
 
 
     BASKER_INLINE
-    int btf_order2();
+    int btf_order();
 
     BASKER_INLINE
     void order_incomplete();
@@ -391,10 +388,10 @@ namespace BaskerNS
 
     
     BASKER_INLINE
-    int find_btf2(BASKER_MATRIX &M);
+    int find_btf(BASKER_MATRIX &M);
 
     BASKER_INLINE
-    int break_into_parts2(BASKER_MATRIX &M, Int nblks, INT_1DARRAY btf_tabs);
+    int break_into_parts(BASKER_MATRIX &M, Int nblks, INT_1DARRAY btf_tabs);
     
     BASKER_INLINE
     void find_btf_schedule(BASKER_MATRIX &M, Int nblks, INT_1DARRAY btf_tabs);
@@ -1265,8 +1262,8 @@ namespace BaskerNS
     ENTRY_1DARRAY perm_comp_fworkspace_array;
 
     // Matrix dims stored within Symbolic
-    Int sym_gn;
-    Int sym_gm;
+    Int symbolic_gn;
+    Int symbolic_gm;
 
     // sfactor_copy2 mapping of input vals to reordered vals
     INT_1DARRAY vals_perm_composition; //this will store the btf permutation+sorts of val (for use in Factor)
@@ -1409,6 +1406,9 @@ namespace BaskerNS
     void amd_order(BASKER_MATRIX &M,INT_1DARRAY p);
     
     void csymamd_order(BASKER_MATRIX &M, INT_1DARRAY p, INT_1DARRAY cmember);
+
+    // partial factorization
+    INT_1DARRAY schur_part;
   };
 
 }//End namespace Basker

@@ -257,13 +257,9 @@ namespace BaskerNS
       printf("done with fanin\n");
       */
 
-      volatile BASKER_BOOL spin = BASKER_TRUE;
-
       if(Kokkos::atomic_fetch_add(&(value), Int(1)) == (l_size-1))
       {
         value = 0;
-        //Kokkos::atomic_fetch_add(&(value), -1*l_size);
-        //spin = BASKER_FALSE;
       }
       else
       {
