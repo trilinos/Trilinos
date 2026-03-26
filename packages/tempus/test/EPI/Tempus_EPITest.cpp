@@ -20,6 +20,7 @@
 #include "Tempus_StepperEPI.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
+#include "../TestModels/ReactionModel.hpp"
 #include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
@@ -180,6 +181,139 @@ TEUCHOS_UNIT_TEST(EPI, SinCos)
   }
 
   Teuchos::TimeMonitor::summarize();
+}
+
+TEUCHOS_UNIT_TEST(EPI, Reaction)
+{
+  // Run EPI integrator logic with different PhiEvaluator configurations
+  std::vector<std::string> xml_cases = {
+    "Tempus_EPI_Reaction",
+    "Tempus_EPI_Leja_Reaction",
+  };
+  for (const auto& xml_case : xml_cases ){
+
+  RCP<Tempus::IntegratorBasic<double>> integrator;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+  std::vector<RCP<Thyra::VectorBase<double>>> solutionsDot;
+  std::vector<double> StepSize;
+  std::vector<double> xErrorNorm;
+  std::vector<double> xDotErrorNorm;
+  const int nTimeStepSizes = 7;
+  double dt                = 0.2;
+  double time              = 0.0;
+  // int expected_order;
+  for (int n = 0; n < nTimeStepSizes; n++) {
+    // Read params from .xml file
+    RCP<ParameterList> pList = getParametersFromXmlFile(xml_case + ".xml");
+
+    // Setup the ReactionModel
+    RCP<ParameterList> scm_pl = sublist(pList, "ReactionModel", true);
+    // RCP<ReactionModel<double> > model = sineCosineModel(scm_pl);
+    auto model = rcp(new ReactionModel<double>(scm_pl));
+
+    dt /= 2;
+
+    // Setup the Integrator and reset initial time step
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+    pl->sublist("Demo Integrator")
+        .sublist("Time Step Control")
+        .set("Initial Time Step", dt);
+    // Read the Taylor order from the xml file with a default of expected_order
+    // and make them the same.
+    // expected_order = pl->sublist("Demo Stepper").sublist("PhiEvaluator")
+    //  .get("Expansion Order", 6);
+
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
+    // Initial Conditions
+    // During the Integrator construction, the initial SolutionState
+    // is set by default to model->getNominalVales().get_x().  However,
+    // the application can set it also by integrator->initializeSolutionHistory.
+    RCP<Thyra::VectorBase<double>> x0 =
+        model->getNominalValues().get_x()->clone_v();
+
+    integrator->initializeSolutionHistory(0.0, x0);
+    integrator->initialize();
+
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
+
+    // Test PhysicsState
+    RCP<Tempus::PhysicsState<double>> physicsState =
+        integrator->getSolutionHistory()->getCurrentState()->getPhysicsState();
+    TEST_EQUALITY(physicsState->getName(), "Tempus::PhysicsState");
+
+    // Test if at 'Final Time'
+    time             = integrator->getTime();
+    double timeFinal = pl->sublist("Demo Integrator")
+                           .sublist("Time Step Control")
+                           .get<double>("Final Time");
+    TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+
+    // Time-integrated solution and the exact solution
+    RCP<Thyra::VectorBase<double>> x = integrator->getX();
+    RCP<const Thyra::VectorBase<double>> x_exact =
+        model->getExactSolution(time).get_x();
+
+    // Plot sample solution and exact solution
+    if (n == nTimeStepSizes - 1) {
+      RCP<const SolutionHistory<double>> solutionHistory =
+          integrator->getSolutionHistory();
+      writeSolution(xml_case + ".dat", solutionHistory);
+    // solutionHistory->printHistory("high");
+
+      auto solnHistExact = rcp(new Tempus::SolutionHistory<double>());
+      for (int i = 0; i < solutionHistory->getNumStates(); i++) {
+        double time_i = (*solutionHistory)[i]->getTime();
+        auto state    = Tempus::createSolutionStateX(
+               rcp_const_cast<Thyra::VectorBase<double>>(
+                model->getExactSolution(time_i).get_x()),
+               rcp_const_cast<Thyra::VectorBase<double>>(
+                model->getExactSolution(time_i).get_x_dot()));
+        state->setTime((*solutionHistory)[i]->getTime());
+        solnHistExact->addState(state);
+      }
+      writeSolution(xml_case + "-Ref.dat", solnHistExact);
+    }
+
+    // Store off the final solution and step size
+    StepSize.push_back(dt);
+    auto solution = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getX()), solution.ptr());
+    solutions.push_back(solution);
+    auto solutionDot = Thyra::createMember(model->get_x_space());
+    Thyra::copy(*(integrator->getXDot()), solutionDot.ptr());
+    solutionsDot.push_back(solutionDot);
+    if (n == nTimeStepSizes - 1) {  // Add exact solution last in vector.
+      StepSize.push_back(0.0);
+      auto solutionExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x()),
+                  solutionExact.ptr());
+      solutions.push_back(solutionExact);
+      auto solutionDotExact = Thyra::createMember(model->get_x_space());
+      Thyra::copy(*(model->getExactSolution(time).get_x_dot()),
+                  solutionDotExact.ptr());
+      solutionsDot.push_back(solutionDotExact);
+    }
+  }
+
+  // Check against exact solution
+  double xSlope                        = 0.0;
+  double xDotSlope                     = 0.0;
+  RCP<Tempus::Stepper<double>> stepper = integrator->getStepper();
+  writeOrderError(xml_case + "-Error.dat", stepper, StepSize,
+                  solutions, xErrorNorm, xSlope, solutionsDot, xDotErrorNorm,
+                  xDotSlope, out);
+
+  for (int i=0; i < nTimeStepSizes - 1; ++i) {
+    // TEST_COMPARE(xErrorNorm[0], <=, 1.0e-5);
+    // Linear problem, expect near exact solution from exp. integrator
+    // for all time step sizes.
+    TEST_COMPARE(xErrorNorm[i], <=, 1.0e-10);
+  }
+
+  Teuchos::TimeMonitor::summarize();
+  }
 }
 
 // ************************************************************
