@@ -62,9 +62,9 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   phiEvaluator->initialize();
   phiEvaluatorTay->setModel(model);
   phiEvaluatorTay->initialize();
-  double leja_a = -1.0e-18;
+  double leja_a = -1.0;
   double leja_b = 0.0;
-  double leja_c = 1.0;
+  double leja_c = 0.5;
   phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
 
   // Check the first leja points
@@ -92,13 +92,16 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   std::cout << "lp_dd 1: " << lp_dd[1] << std::endl;
   TEST_FLOATING_EQUALITY(lp_dd[0].real(), std::exp(leja_b), 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[0].imag(), 0.0, 1e-8);
-  // TEST_FLOATING_EQUALITY(lp_dd[1].real(), (std::exp(leja_a) - std::exp(leja_b)) / (leja_a - leja_b), 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[1].real(), 0.316060279414, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[1].imag(), 0.0, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[2].real(), 0.075829495185, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[2].imag(), 0.012636995600793, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[3].real(), 0.01263699560, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[3].imag(), 0.0, 1e-8);
+
+  leja_a = -1.0e-18;
+  leja_c = 1.0;
+  phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
 
   // compute exp(dt*A)*v using PhiEvaluatorLeja
   // make a digonal linop from SinCosModel
