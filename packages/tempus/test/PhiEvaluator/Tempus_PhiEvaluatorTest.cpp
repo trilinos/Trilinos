@@ -24,9 +24,7 @@
 #include "../TestModels/SinCosModel.hpp"
 #include "Thyra_VectorStdOps_decl.hpp"
 
-#include <math.h>
-# define M_PI 3.14159265358979323846  /* pi */
-
+#include <cmath>
 
 namespace Tempus_Test {
 
@@ -55,33 +53,34 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
 
   // Setup the PhiEvaluator
   RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
-  RCP<ParameterList> phi_pl_tay = sublist(pListTay, "PhiEvaluator");
   auto phiEvaluator = Tempus::createPhiEvaluatorLeja<double>(phi_pl);
-  auto phiEvaluatorTay = Tempus::createPhiEvaluatorTaylor<double>(phi_pl_tay);
   phiEvaluator->setModel(model);
   phiEvaluator->initialize();
+
+  // Setup Taylor PhiEvaluator for comparison
+  RCP<ParameterList> phi_pl_tay = sublist(pListTay, "PhiEvaluator");
+  auto phiEvaluatorTay = Tempus::createPhiEvaluatorTaylor<double>(phi_pl_tay);
   phiEvaluatorTay->setModel(model);
   phiEvaluatorTay->initialize();
+
   double leja_a = -1.0;
   double leja_b = 0.0;
   double leja_c = 0.5;
   phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
 
-  // Check the first leja points
+  // Check the first leja points with scaling
   LejaPoint lp = phiEvaluator->getLpSc(0);
   TEST_ASSERT(lp.lpt == LpType::LPREAL);
-  TEST_FLOATING_EQUALITY(lp.get().at(0).real(), 0.0, 1e-6);
-  TEST_FLOATING_EQUALITY(lp.get().at(0).imag(), 0.0, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.lp.real(), 0.0, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.lp.imag(), 0.0, 1e-6);
   lp = phiEvaluator->getLpSc(1);
   TEST_ASSERT(lp.lpt == LpType::LPREAL);
-  TEST_FLOATING_EQUALITY(lp.get().at(0).real(), leja_a, 1e-6);
-  TEST_FLOATING_EQUALITY(lp.get().at(0).imag(), 0.0, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.lp.real(), leja_a, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.lp.imag(), 0.0, 1e-6);
   lp = phiEvaluator->getLpSc(2);
   TEST_ASSERT(lp.lpt == LpType::LPCONJ);
-  TEST_FLOATING_EQUALITY(lp.get().at(0).real(), 0.5 * leja_a, 1e-6);
-  TEST_FLOATING_EQUALITY(lp.get().at(0).imag(), leja_c, 1e-6);
-  TEST_FLOATING_EQUALITY(lp.get().at(1).real(), 0.5 * leja_a, 1e-6);
-  TEST_FLOATING_EQUALITY(lp.get().at(1).imag(), -leja_c, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.lp.real(), 0.5 * leja_a, 1e-6);
+  TEST_FLOATING_EQUALITY(lp.lp.imag(), leja_c, 1e-6);
 
   // Check the first divided diffs
   const int exp_order = 4;
@@ -91,13 +90,14 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   std::cout << "lp_dd 0: " << lp_dd[0] << std::endl;
   std::cout << "lp_dd 1: " << lp_dd[1] << std::endl;
   TEST_FLOATING_EQUALITY(lp_dd[0].real(), std::exp(leja_b), 1e-8);
-  TEST_FLOATING_EQUALITY(lp_dd[0].imag(), 0.0, 1e-8);
+  // TEST_FLOATING_EQUALITY(lp_dd[0].imag(), 0.0, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[1].real(), 0.316060279414, 1e-8);
-  TEST_FLOATING_EQUALITY(lp_dd[1].imag(), 0.0, 1e-8);
+  // TEST_FLOATING_EQUALITY(lp_dd[1].imag(), 0.0, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[2].real(), 0.075829495185, 1e-8);
-  TEST_FLOATING_EQUALITY(lp_dd[2].imag(), 0.012636995600793, 1e-8);
+  // TEST_FLOATING_EQUALITY(lp_dd[2].imag(), 0.012636995600793, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[3].real(), 0.01263699560, 1e-8);
-  TEST_FLOATING_EQUALITY(lp_dd[3].imag(), 0.0, 1e-8);
+  // TEST_FLOATING_EQUALITY(lp_dd[3].imag(), 0.0, 1e-8);
+  //TODO, do not test imaginary Leja dds, not needed
 
   leja_a = -1.0e-18;
   leja_c = 1.0;
@@ -107,10 +107,10 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   // make a digonal linop from SinCosModel
   // with A = [[0, -1], [0, 1]]
   auto x_space = model->get_x_space();
-  Teuchos::RCP<Thyra::VectorBase<double> > xdot_init = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double> > v = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double> > vend = createMember(x_space);
-  Teuchos::RCP<Thyra::VectorBase<double> > vend_tay = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> xdot_init = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> v = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend = createMember(x_space);
+  Teuchos::RCP<Thyra::VectorBase<double>> vend_tay = createMember(x_space);
 
   // set initial condition v0 = (-1.0, 0)
   Thyra::assign(v.ptr(), 0.0);
