@@ -329,7 +329,7 @@ void PhiEvaluatorLeja<Scalar>::setLejaEllipse(Scalar a, Scalar b, Scalar c)
 }
 
 template <class Scalar>
-LejaPoint PhiEvaluatorLeja<Scalar>::getLpSc(uint i)
+LejaPoint PhiEvaluatorLeja<Scalar>::getLpSc(int i)
 {
   TEUCHOS_ASSERT(i < maxLejaOrder_);
   Scalar shift, scale;
@@ -371,7 +371,7 @@ template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt, const int exp_order)
 {
   // TODO: implement other dd methods
-  return getDividedDiffsTS(k, cdt, exp_order);
+  return getDividedDiffsTSR(k, cdt, exp_order);
 }
 
 template <class Scalar>
@@ -549,6 +549,117 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   // TODO: implement fallback dd implementation here.
   return getDividedDiffsRC(phi_order, cdt);
 #endif
+  return out;
+}
+
+template <class Scalar>
+Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsTSR(const int phi_order, const Scalar cdt, const int exp_order)
+{
+  TEUCHOS_ASSERT(phi_order == 0);
+
+  const int m = exp_order;
+
+  //TODO: still need a complex output for compatibility although result is real
+  Teuchos::ArrayRCP<std::complex<double>> out = Teuchos::arcp<std::complex<double>>(m);
+
+  // get shift and scale parameters
+  Scalar shift, scale;
+  std::tie(shift, scale) = getShiftScale();
+
+  // build the shifted and scaled Hm matrix
+  Teuchos::SerialDenseMatrix<int, Scalar> Hm(m, m);
+  // diagonal elements are the leja points
+
+  for (int lp_idx = 0, dd_idx = 0; lp_idx < maxLejaOrder_ && dd_idx < m; lp_idx++, dd_idx++) {
+    LejaPoint lp_sc = getLpSc(lp_idx);
+    // conj lp case
+    if (lp_sc.lpt == LPCONJ) {
+      Hm(dd_idx, dd_idx) = cdt * lp_sc.lp.real();
+      if (dd_idx + 1 < m) Hm(dd_idx + 1, dd_idx) = cdt * scale;
+
+      if (++dd_idx < m) {
+        Hm(dd_idx - 1, dd_idx) = - cdt * lp_sc.lp.imag() * lp_sc.lp.imag() / scale;
+        Hm(dd_idx, dd_idx) = cdt * lp_sc.lp.real();
+        if (dd_idx + 1 < m)
+          Hm(dd_idx + 1, dd_idx) = cdt * scale;
+      }
+    }
+    else {
+      Hm(dd_idx, dd_idx) = cdt * lp_sc.lp.real();
+      if (dd_idx + 1 < m)
+        Hm(dd_idx + 1, dd_idx) = cdt * scale;
+    }
+  }
+
+  // compute diagonal mean
+  Scalar diag_sum = 0;
+  for (int i = 0; i < m; ++i) {
+    diag_sum += Hm(i, i);
+  }
+  double mu = diag_sum / double(m);
+
+  // shift diagonal to zero mean
+  for (int i = 0; i < m; ++i) {
+    Hm(i, i) -= mu;
+  }
+
+  // Scaling
+  double s_scale = Hm.normInf();
+  int n_sq = std::max(int( std::ceil((std::log(s_scale) - std::log(2.0)) / std::log(2.0)) ), 1);
+
+  //n_sq += 2; // increase number of scalings to reduce Taylor poly size.
+
+  double h_scale = 1.0 / std::pow(2.0, n_sq);
+  Hm.scale(h_scale);
+
+  // compute phi_0(Hm) by Taylor series
+  //copy Hm to A
+  Teuchos::SerialDenseMatrix<int, Scalar> A(Teuchos::Copy, Hm);
+
+  Teuchos::SerialDenseMatrix<int, Scalar> Ts(m, m);
+  Ts = 0.;
+
+  //auto fact = [](double n) -> double { return std::tgamma(1.0 + n); };
+
+  for (int i = 0; i < m; ++i) {
+    Ts(i, i) = 1.0;
+  }
+
+  // Ts = I/(p!) + Hm^1/(1+p)! + Hm^2/(2+p)! ...
+  int ts_order = 17;
+
+  //std::cout << "ts_order: " << ts_order << std::endl;
+  //std::cout << "s_scale: " << s_scale << std::endl;
+  //std::cout << "mu: " << mu << std::endl;
+  //std::cout << "n_sq: " << n_sq << std::endl;
+  //std::cout << "h_scale: " << h_scale << std::endl;
+
+  Teuchos::SerialDenseMatrix<int, Scalar> Mtmp(m, m);
+  Mtmp = 0.;
+
+  for (int k = 1; k < ts_order; ++k) {
+    Ts += A;
+    // A = Hm^k/(k)!
+
+    // Compute next A = Hm^(k+1)/(k+1)!
+    double scale = 1. / (k+1);
+    Mtmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, scale, Hm, A, 0.0);
+    A = Mtmp;
+  }
+  Ts += A;
+
+  // Squaring
+  for (int s = 0; s < n_sq; ++s) {
+    // TODO: Can this work without tmp output storage?
+    Mtmp.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, Ts, Ts, 0.0);
+    Ts = Mtmp;
+  }
+
+  // unshift and extract first column
+  for (int i = 0; i < m; ++i) {
+    out[i] = std::exp(mu) * Ts(i, 0);
+  }
+
   return out;
 }
 

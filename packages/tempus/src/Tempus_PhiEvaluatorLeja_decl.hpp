@@ -87,7 +87,7 @@ class PhiEvaluatorLeja
   void setLejaEllipse(Scalar a, Scalar b, Scalar c);
 
   /// Get shifted and scaled leja point (z_i)
-  LejaPoint getLpSc(uint i);
+  LejaPoint getLpSc(int i);
 
   /// Compute divided differences
   Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt, const int exp_order);
@@ -115,6 +115,9 @@ class PhiEvaluatorLeja
 
   /// Computes the divided differences via taylor series
   Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTS(const int phi_order, const Scalar cdt, const int exp_order);
+
+  /// Computes the divided differences via taylor series
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsTSR(const int phi_order, const Scalar cdt, const int exp_order);
 
   /// Computes the divided differences via recurrence relation
   Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsRC(const int phi_order, const Scalar cdt, const int exp_order);
