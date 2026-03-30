@@ -1319,7 +1319,8 @@ namespace FROSch {
 
     template <class SC,class LO,class GO,class NO>
     ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const Matrix<SC,LO,GO,NO> > matrix,
-                                            RCP<const Map<LO,GO,NO> > repeatedMap)
+                                            RCP<const Map<LO,GO,NO> > repeatedMap,
+                                            typename ScalarTraits<SC>::magnitudeType tol)
     {
         FROSCH_DETAILTIMER_START(findOneEntryOnlyRowsGlobalTime,"FindOneEntryOnlyRowsGlobal");
         RCP<Matrix<SC,LO,GO,NO> > repeatedMatrix = MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap,2*matrix->getGlobalMaxNumRowEntries());
@@ -1341,7 +1342,7 @@ namespace FROSch {
                 tmp++;
             } else {
                 for (LO j=0; j<values.size(); j++) {
-                    if (fabs(values[j])<1.0e-12) {
+                    if (fabs(values[j])<tol) {
                         nnz--;
                     }
                 }
