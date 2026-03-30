@@ -135,7 +135,7 @@ namespace FROSch {
         /////////////////////////////////////
         // Determine dirichletBoundaryDofs //
         /////////////////////////////////////
-        if (dirichletBoundaryDofs.is_null()) {
+        /*if (dirichletBoundaryDofs.is_null()) {
             FROSCH_DETAILTIMER_START_LEVELID(determineDirichletRowsTime,"Determine Dirichlet Rows");
             typename ScalarTraits<SC>::magnitudeType tol = this->ParameterList_->get("DirichletBoundary Numerical Tolerance",1.0e-12);
 #ifdef FindOneEntryOnlyRowsGlobal_Matrix
@@ -143,7 +143,7 @@ namespace FROSch {
 #else
             dirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_->getCrsGraph(),repeatedMap, tol);
 #endif
-        }
+        }*/
 
         ////////////////////////////////////
         // Initialize OverlappingOperator //
