@@ -1327,6 +1327,7 @@ namespace FROSch {
         RCP<Import<LO,GO,NO> > scatter = ImportFactory<LO,GO,NO>::Build(matrix->getRowMap(),repeatedMap);
         repeatedMatrix->doImport(*matrix,*scatter,ADD);
 
+        typename ScalarTraits<SC>::magnitudeType zero (0.0);
         ArrayRCP<GO> oneEntryOnlyRows(repeatedMatrix->getLocalNumRows());
         LO tmp = 0;
         LO nnz;
@@ -1340,7 +1341,7 @@ namespace FROSch {
             if (indices.size()==1) {
                 oneEntryOnlyRows[tmp] = row;
                 tmp++;
-            } else {
+            } else if (tol > zero) {
                 for (LO j=0; j<values.size(); j++) {
                     if (fabs(values[j])<tol) {
                         nnz--;
