@@ -515,6 +515,7 @@ bool Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(int coarseLevel
       Levels_[nextLevelID - 2]->Release(*coarseFact);
     }
     Levels_.resize(actualNumLevels);
+    levelManagers_.resize(actualNumLevels);
   }
 
   // I think this is the proper place for graph so that it shows every dependence
