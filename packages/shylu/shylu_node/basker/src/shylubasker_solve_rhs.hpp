@@ -211,7 +211,7 @@ namespace BaskerNS
 
     if (Options.no_pivot == BASKER_FALSE) {
       // apply partial pivoting from numeric
-      //for (Int i = 0; i < gn; i++) printf( " gperm(%d) = %d\n",i,gperm(i) );
+      //for (Int i = 0; i < gn; i++) printf( " gperm(%d) = %d %s\n",i,gperm(i),(gperm(i) < 0 || gperm(i) >= gn ? "(warning)" : "") );
       permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
       //printf( " > after partial-pivot:\n" );
       //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );

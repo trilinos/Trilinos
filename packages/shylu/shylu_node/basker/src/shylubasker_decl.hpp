@@ -29,6 +29,24 @@
 
 namespace BaskerNS
 {
+  template <typename iType>
+  struct partition_graph
+  {
+    static_assert( std::is_same<iType,int32_t>::value || std::is_same<iType,int64_t>::value
+                 , "ShyLU Basker Error: partition_graph members must be templated on type int32_t or int64_t only");
+    partition_graph()
+    {};
+    iType m;
+    iType nz;
+    iType *Ap;
+    iType *Ai;
+    iType cblk;
+    iType *permtab;
+    iType *peritab;
+    iType *rangtab;
+    iType *treetab;
+  };
+
   template <class Int, class Entry, class Exe_Space>
   class Basker
   {
@@ -237,15 +255,15 @@ namespace BaskerNS
     int match_ordering(int option);
 
     BASKER_INLINE
-    int apply_scotch_partition(BASKER_BOOL keep_zeros = BASKER_TRUE,
-                               BASKER_BOOL compute_nd = BASKER_TRUE,
-                               BASKER_BOOL apply_nd   = BASKER_TRUE);
+    int compute_partition(BASKER_BOOL keep_zeros = BASKER_TRUE,
+                          BASKER_BOOL compute_nd = BASKER_TRUE,
+                          BASKER_BOOL apply_nd   = BASKER_TRUE);
 
     BASKER_INLINE
-    int scotch_partition(BASKER_MATRIX &M, BASKER_BOOL apply_nd = BASKER_TRUE);
+    int partition(BASKER_MATRIX &M, BASKER_BOOL apply_nd = BASKER_TRUE);
 
     BASKER_INLINE
-    int scotch_partition(BASKER_MATRIX &M, BASKER_MATRIX &MMT, BASKER_BOOL apply_nd = BASKER_TRUE);
+    int partition(BASKER_MATRIX &M, BASKER_MATRIX &MMT, BASKER_BOOL apply_nd = BASKER_TRUE);
 
     BASKER_INLINE
     int permute_inv(INT_1DARRAY, INT_1DARRAY, Int);
@@ -377,10 +395,20 @@ namespace BaskerNS
     BASKER_INLINE
     int AplusAT(BASKER_MATRIX &M, BASKER_MATRIX &C, BASKER_BOOL keep_zeros = BASKER_TRUE);
 
-    int part_scotch(BASKER_MATRIX &M, BASKER_TREE &BT);
+    int nested_dissect(BASKER_MATRIX &M, BASKER_TREE &BT);
 
     BASKER_INLINE
-    int part_scotch(BASKER_MATRIX &M, BASKER_TREE &BT, Int num_domains);
+    int nested_dissect(BASKER_MATRIX &M, BASKER_TREE &BT, Int num_domains);
+
+    #if SHYLU_SCOTCH_64
+    using graph_integral_type = int64_t; //NDE: make this depend on the scotch type
+    #else
+    using graph_integral_type = int32_t; //NDE: make this depend on the scotch type
+    #endif
+    BASKER_INLINE
+    int nested_dissect_metis (BASKER_MATRIX &M, BASKER_TREE &BT, Int num_domains, partition_graph<graph_integral_type>& sg);
+    int nested_dissect_scotch(BASKER_MATRIX &M, BASKER_TREE &BT, Int num_domains, partition_graph<graph_integral_type>& sg);
+
 
     void to_complete_tree(Int lvl, Int iblks, Int nblks, INT_1DARRAY tabs, INT_1DARRAY tree);
 

@@ -243,7 +243,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
         BASKER_BOOL keep_zeros = true;
         BASKER_BOOL compute_nd = true;
         BASKER_BOOL apply_nd   = true; //!(Options.static_delayed_pivot);
-        int info_scotch = apply_scotch_partition(keep_zeros, compute_nd, apply_nd);
+        int info_scotch = compute_partition(keep_zeros, compute_nd, apply_nd);
         if (info_scotch != BASKER_SUCCESS) {
           return info_scotch;
         }
@@ -326,7 +326,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     if(Options.btf == BASKER_TRUE && btf_tabs_offset != 0)
     {
       MALLOC_INT_1DARRAY(vals_order_scotch_array, BTF_A.nnz);
-      scotch_partition(BTF_A);
+      partition(BTF_A);
       if(btf_nblks > 1)
       {
         permute_row(BTF_B, part_tree.permtab);
@@ -369,7 +369,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     else
     {
       MALLOC_INT_1DARRAY(vals_order_scotch_array, A.nnz);
-      scotch_partition(A);
+      partition(A);
       init_tree_thread();
       //Add domain order options
       matrix_to_views_2D(A);
@@ -395,12 +395,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     if(Options.btf == BASKER_FALSE)
     {
       MALLOC_INT_1DARRAY(vals_order_scotch_array, A.nnz);
-      scotch_partition(A);
+      partition(A);
     }
     else
     {
       MALLOC_INT_1DARRAY(vals_order_scotch_array, BTF_A.nnz);
-      scotch_partition(BTF_A);
+      partition(BTF_A);
     }
     return 0;
   }//end partition()
@@ -641,7 +641,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::apply_scotch_partition(BASKER_BOOL keep_zeros, BASKER_BOOL compute_nd, BASKER_BOOL apply_nd)
+  int Basker<Int, Entry, Exe_Space>::compute_partition(BASKER_BOOL keep_zeros, BASKER_BOOL compute_nd, BASKER_BOOL apply_nd)
   {
     #if 1//def BASKER_TIMER
     Kokkos::Timer scotch_timer;
@@ -652,7 +652,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     //currently finds ND and permute BTF_A
     //Would like to change so finds permuation, 
     //and move into 2D-Structure
-    //printf(" in apply_scotch_partition\n" );
+    //printf(" in compute_partition\n" );
     //AAT.print_matrix("T.dat");
     BASKER_MATRIX AAT;
     if(Options.symmetric == BASKER_TRUE) {
@@ -676,12 +676,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     int info_scotch = 0;
     if (compute_nd) {
       if (Options.symmetric == BASKER_TRUE) {
-        info_scotch = scotch_partition(BTF_A, apply_nd);
+        info_scotch = partition(BTF_A, apply_nd);
       } else {
-        info_scotch = scotch_partition(BTF_A, AAT, apply_nd);
+        info_scotch = partition(BTF_A, AAT, apply_nd);
       }
     } else if (apply_nd) {
-      // permtab is applied inside scotch_partition (also stored in vals_order_scotch_array, which is not needed) if compute_nd
+      // permtab is applied inside partition (also stored in vals_order_scotch_array, which is not needed) if compute_nd
       permute_row(BTF_A, part_tree.permtab);
       permute_col(BTF_A, part_tree.permtab);
     }
@@ -691,12 +691,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     if (info_scotch != BASKER_SUCCESS || !apply_nd) {
       if(Options.verbose == BASKER_TRUE) {
-        std::cout << " > scotch_partition returned info = " << info_scotch << " with apply_nd = " << apply_nd << std::endl;
+        std::cout << " > partition returned info = " << info_scotch << " with apply_nd = " << apply_nd << std::endl;
       }
       return info_scotch;
     }
     if (Options.symmetric != BASKER_TRUE) {
-      // apply ND to AAT (scotch_partition applies to BTF_A, only)
+      // apply ND to AAT (partition applies to BTF_A, only)
       // TODO: just call permute_row & permute_col?
       INT_1DARRAY col_ptr;
       INT_1DARRAY row_idx;
@@ -975,15 +975,15 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::scotch_partition(BASKER_MATRIX &M, BASKER_BOOL apply_nd)
+  int Basker<Int, Entry, Exe_Space>::partition(BASKER_MATRIX &M, BASKER_BOOL apply_nd)
   {
     int info_scotch = 0;
     if(Options.symmetric == BASKER_TRUE) {
-      info_scotch = scotch_partition(M, M, apply_nd);
+      info_scotch = partition(M, M, apply_nd);
     } else {
       BASKER_MATRIX MMT;
       AplusAT(M,MMT);
-      info_scotch = scotch_partition(M, MMT, apply_nd);
+      info_scotch = partition(M, MMT, apply_nd);
       FREE(MMT);
     }
     return info_scotch;
@@ -991,18 +991,18 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
-  int Basker<Int, Entry, Exe_Space>::scotch_partition(BASKER_MATRIX &M, BASKER_MATRIX &MMT, BASKER_BOOL apply_nd)
+  int Basker<Int, Entry, Exe_Space>::partition(BASKER_MATRIX &M, BASKER_MATRIX &MMT, BASKER_BOOL apply_nd)
   {
     nd_flag = BASKER_FALSE;
 
-    int info_scotch = part_scotch(MMT, part_tree);
+    int info_scotch = nested_dissect(MMT, part_tree);
     if (info_scotch != BASKER_SUCCESS || !apply_nd) {
       if(Options.verbose == BASKER_TRUE) {
-        std::cout << " > scotch_partition returned with info = " << info_scotch << " and apply_nd = " << apply_nd << std::endl;
+        std::cout << " > partition returned with info = " << info_scotch << " and apply_nd = " << apply_nd << std::endl;
       }
       return info_scotch;
     } else if(Options.verbose == BASKER_TRUE) {
-      printf( "\n part_scotch done (num_threads = %d,%lu)\n",int(num_threads),part_tree.leaf_nnz.extent(0) );
+      printf( "\n nested_dissect done (num_threads = %d,%lu)\n",int(num_threads),part_tree.leaf_nnz.extent(0) );
       //for (Int i = 0; i < num_threads; i++) printf( " nnz_leaf[%d] = %d\n",i,part_tree.leaf_nnz[i] ); printf( "\n" );
     }
     nd_flag = BASKER_TRUE;
@@ -1023,7 +1023,7 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
 
     //May need to sort row_idx
     return BASKER_SUCCESS; 
-  }//end scotch_partition()
+  }//end partition()
 
 
   template <class Int, class Entry, class Exe_Space>

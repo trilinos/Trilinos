@@ -1567,7 +1567,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       #ifdef BASKER_TIMER
       printf(" > leaf nnz: (t_nnz = %ld + ncol = %ld) / 2 = %ld\n", (long)t_nnz,(long)M.ncol,(long)(t_nnz+M.ncol)/2);
       #endif
-      t_nnz = long(t_nnz+M.ncol)/2;
+      t_nnz = Int(double(t_nnz)/2.0 +double(M.ncol)/2.0);
 
       //double nnz_shoulder = 1.05;
       double fill_factor = BASKER_DOM_NNZ_OVER+Options.user_fill; // used to boost fill estimate

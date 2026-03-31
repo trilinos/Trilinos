@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
     if (Amesos2::tolower (solvername) == "shylubasker") {
       // Partial factorization (only for ShyLU-Basker)
       Teuchos::ParameterList& shylubasker_params = amesos2_params.sublist("ShyLUBasker");
-      bool dense_schur = shylubasker_params.get<bool>("GetDenseSchur");
+      bool dense_schur = (shylubasker_params.isParameter("GetDenseSchur") ? shylubasker_params.get<bool>("GetDenseSchur") : false);
       if (dense_schur && myRank == 0) {
         LO indexBase = 0;
         RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::MpiComm<LO>(MPI_COMM_SELF));

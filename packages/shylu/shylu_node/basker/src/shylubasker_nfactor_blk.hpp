@@ -590,8 +590,9 @@ namespace BaskerNS
                 explicit_pivot = true;
               }
             } else if (Options.replace_zero_pivot && normA_blk > abs(zero)) {
-              // just insert tiny pivot on diagonal
-              maxindex = k;
+              // just insert tiny pivot to first available pivot row
+              //maxindex = k;
+              maxindex = 0;
               while (gperm(maxindex+brow_g) != BASKER_MAX_IDX && maxindex < M.ncol-1) {
                 maxindex ++;
               }
@@ -608,6 +609,10 @@ namespace BaskerNS
               }
             }
             if (!explicit_pivot) {
+              if (Options.verbose == BASKER_TRUE)
+              {
+                std::cout << "  thread-" << kid << " Failed to find pivot for zero pivot " << std::endl;
+              }
               thread_array(kid).error_type =
                 BASKER_ERROR_SINGULAR;
               thread_array(kid).error_blk    = b;

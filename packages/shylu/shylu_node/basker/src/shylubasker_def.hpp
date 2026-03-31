@@ -1467,7 +1467,7 @@ namespace BaskerNS
         } else {
           // ----------------------------------------------------------------------------------------------
           // compute & apply ND on a big block A
-          info_scotch = apply_scotch_partition(keep_zeros);
+          info_scotch = compute_partition(keep_zeros);
         }
         if (info_scotch != BASKER_SUCCESS) {
           return info_scotch;
