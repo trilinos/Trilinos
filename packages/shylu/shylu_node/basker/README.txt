@@ -52,7 +52,7 @@ Basker/src/                Source files
    basker_order_match.hpp  Definition of interface to mathcing ordering
    basker_order_scotch.hpp Definition of interface to ND from Scotch
    basker_sfactor.hpp      Definition of interface to symbolic factor
-   basker_nfactor_blk.hpp  Definitions of private numerical factorization (ND Blks)
+   basker_nfactor_dom.hpp  Definitions of private numerical factorization (ND Blks)
    basker_nfactor_sep.hpp  Definitions of private numerical factorization (Sep Blks)
    basker_nfactor_sep2.hpp Definitions of private numerical factorization (Sep Blks)
    basker_solve_rhs.hpp    Definitions of private solve phase

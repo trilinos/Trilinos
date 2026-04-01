@@ -17,7 +17,7 @@
 #include "shylubasker_matrix_view_decl.hpp"
 #include "shylubasker_matrix_view_def.hpp"
 
-#include "shylubasker_nfactor_blk.hpp"
+#include "shylubasker_nfactor_dom.hpp"
 #include "shylubasker_nfactor_sep.hpp"
 #include "shylubasker_nfactor_sep2.hpp"
 #include "shylubasker_nfactor_diag.hpp"

@@ -18,7 +18,7 @@
 #include "shylubasker_stats.hpp"
 #include "shylubasker_thread.hpp"
 
-#include "shylubasker_nfactor_blk.hpp"
+#include "shylubasker_nfactor_dom.hpp"
 #include "shylubasker_nfactor_sep.hpp"
 
 #include <Kokkos_Core.hpp>
@@ -90,7 +90,7 @@ namespace BaskerNS
     // this routine performs left-looking factorization of the diagonabl block LU(U_col)(U_row)
     //
     // before the call to nfactor_sep: off-diagonal blocks of L have been already factored
-    // as part of nfactor_blk
+    // as part of nfactor_dom
     //
     // so, this routine:
     // 1) compute the previous blocks U(1:U_col-1)(U_row)

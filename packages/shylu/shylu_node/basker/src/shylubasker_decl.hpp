@@ -138,12 +138,12 @@ namespace BaskerNS
 
  
     BASKER_INLINE
-    int t_nfactor_blk(const TeamMember &thread);
+    int t_nfactor_dom(const TeamMember &thread);
 
     BASKER_INLINE
-    int t_nfactor_blk_inc_lvl(Int kid);
+    int t_nfactor_dom_inc_lvl(Int kid);
 
-    int t_nfactor_blk_old(Int kid);
+    int t_nfactor_dom_old(Int kid);
 
     BASKER_INLINE
     void t_init_workspace(bool flag, Int kid);

@@ -19,7 +19,7 @@
 #include "shylubasker_matrix_view_decl.hpp"
 #include "shylubasker_matrix_view_def.hpp"
 
-#include "shylubasker_nfactor_blk_inc.hpp"
+#include "shylubasker_nfactor_dom_inc.hpp"
 #include "shylubasker_nfactor_sep_inc.hpp"
 
 #include "shylubasker_error_manager.hpp"

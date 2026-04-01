@@ -18,8 +18,8 @@
 #include "shylubasker_stats.hpp"
 #include "shylubasker_thread.hpp"
 
-#include "shylubasker_nfactor_blk.hpp"
-#include "shylubasker_nfactor_blk_inc.hpp"
+#include "shylubasker_nfactor_dom.hpp"
+#include "shylubasker_nfactor_dom_inc.hpp"
 #include "shylubasker_nfactor_sep_inc.hpp"
 
 #include <Kokkos_Core.hpp>

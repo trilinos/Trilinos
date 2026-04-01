@@ -15,7 +15,7 @@
 #include "shylubasker_thread.hpp"
 #include "shylubasker_util.hpp"
 
-#include "shylubasker_nfactor_blk_inc.hpp"
+#include "shylubasker_nfactor_dom_inc.hpp"
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Timer.hpp>
@@ -570,7 +570,7 @@ namespace BaskerNS
 	  }
       }
 
-    #ifdef BASKER_DEBUG_NFACTOR_BLK
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     printf("find_leader, kid: %d l: %d leader: %d \n",
 	   kid, l, my_loc);
     #endif
@@ -2230,7 +2230,7 @@ namespace BaskerNS
    INC_LVL_TEMP(maxindex+brow) = BASKER_MAX_IDX;
    lnnz++;
 
-   #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+   #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
    printf("add L(%d) 1.0 lvl: %d \n",
 	  maxindex+brow, L.inc_lvl(lnnz));
    #endif
@@ -2309,7 +2309,7 @@ namespace BaskerNS
 	       L.row_idx(lnnz) = j;
 	       L.val(lnnz) = EntryOP::divide(X(j), pivot);
 	       
-               #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+               #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	       printf("add L(%d) [%d %d]: %g lvl %d \n",
 		      j+brow,
 		      k+L.scol, 
