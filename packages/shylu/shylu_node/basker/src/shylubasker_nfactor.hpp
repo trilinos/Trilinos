@@ -20,7 +20,7 @@
 #include "shylubasker_nfactor_dom.hpp"
 #include "shylubasker_nfactor_sep.hpp"
 #include "shylubasker_nfactor_sep2.hpp"
-#include "shylubasker_nfactor_diag.hpp"
+#include "shylubasker_nfactor_btf.hpp"
 
 #include "shylubasker_error_manager.hpp"
 
@@ -149,9 +149,9 @@ namespace BaskerNS
             printf("\n restart factorization\n");
           }
           kokkos_nfactor_domain_remalloc <Int, Entry, Exe_Space>
-            diag_nfactor_remalloc(this, thread_start);
+            nfactor_dom_remalloc(this, thread_start);
           Kokkos::parallel_for(TeamPolicy(num_threads,1),
-              diag_nfactor_remalloc);
+              nfactor_dom_remalloc);
           Kokkos::fence();
         }
       }//end while
@@ -267,11 +267,11 @@ namespace BaskerNS
         timer.reset();
       }
 
-      //======Call diag factor====
-      kokkos_nfactor_diag <Int, Entry, Exe_Space> 
-        diag_nfactor(this);
+      //======Call BTF factor====
+      kokkos_nfactor_btf <Int, Entry, Exe_Space> 
+        nfactor_btf(this);
       Kokkos::parallel_for(TeamPolicy(num_threads,1),
-        diag_nfactor);
+        nfactor_btf);
       Kokkos::fence();
 
       //=====Check for error======
@@ -285,8 +285,8 @@ namespace BaskerNS
         MALLOC_INT_1DARRAY(thread_start_top, num_threads+1);
         init_value(thread_start_top, num_threads+1, (Int) BASKER_MAX_IDX);
 
-        info = nfactor_diag_error(thread_start_top, thread_start);
-        //printf( " nfactor_diag: info = %d\n\n",(int)info );
+        info = nfactor_btf_error(thread_start_top, thread_start);
+        //printf( " nfactor_btf: info = %d\n\n",(int)info );
         //printf("RETURNED: %d (success=%d, error=%d)\n", info, BASKER_SUCCESS, BASKER_ERROR);
         if(info == BASKER_SUCCESS)
         {
@@ -296,7 +296,7 @@ namespace BaskerNS
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            printf("%s: nfactor_diagonal_error reports info=%d and max restartt reached (%d)\n",__FILE__, info, (int)btf_restart);
+            printf("%s: nfactor_btfonal_error reports info=%d and max restartt reached (%d)\n",__FILE__, info, (int)btf_restart);
           }
           break;
         }
@@ -304,7 +304,7 @@ namespace BaskerNS
         {
           if(Options.verbose == BASKER_TRUE)
           {
-            printf("%s: nfactor_diagonal_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
+            printf("%s: nfactor_btfonal_error reports BASKER_ERROR - numeric factorization failed\n",__FILE__);
           }
           break;
         }
@@ -315,12 +315,12 @@ namespace BaskerNS
           {
             printf("\n restart factorization\n");
           }
-          kokkos_nfactor_diag_remalloc <Int, Entry, Exe_Space>
-            diag_nfactor_remalloc(this, thread_start_top, thread_start);
+          kokkos_nfactor_btf_remalloc <Int, Entry, Exe_Space>
+            nfactor_btf_remalloc(this, thread_start_top, thread_start);
           Kokkos::parallel_for(TeamPolicy(num_threads,1),
-            diag_nfactor_remalloc);
+            nfactor_btf_remalloc);
           Kokkos::fence();
-          //printf( " diag_nfactor_remalloc done\n\n" );
+          //printf( " nfactor_btf_remalloc done\n\n" );
         }
       }//end while
 

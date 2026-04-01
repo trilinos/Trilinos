@@ -172,7 +172,7 @@ namespace BaskerNS
     Int t_get_kid(const TeamMember &thread);
 
     //BTF array
-    int t_nfactor_diag(Int kid, Int schunk, Int nchunk);
+    int t_nfactor_btf(Int kid, Int schunk, Int nchunk);
 
     INT_1DARRAY   btf_tabs; // stores starting col id (global) of btf blocks
     Int           btf_tabs_offset; // stores offset of first btf block in BTF_C, after the nd blocks BTF_A
@@ -583,7 +583,7 @@ namespace BaskerNS
     int nfactor_sep_error(INT_1DARRAY);
 
     BASKER_INLINE
-    int nfactor_diag_error(INT_1DARRAY, INT_1DARRAY);
+    int nfactor_btf_error(INT_1DARRAY, INT_1DARRAY);
     
     BASKER_INLINE
     void reset_error();
@@ -932,7 +932,7 @@ namespace BaskerNS
     Int find_leader_inc_lvl(Int kid, Int l);
 
 
-    //basker_nfactor_diag
+    //basker_nfactor_btf
     BASKER_INLINE
     int t_single_nfactor(Int kid, Int c);
 

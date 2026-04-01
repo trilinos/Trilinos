@@ -232,7 +232,7 @@ namespace BaskerNS
 	
 	//======Call diag factor====
 	/*
-	kokkos_nfactor_diag <Int, Entry, Exe_Space> 
+	kokkos_nfactor_btf <Int, Entry, Exe_Space> 
 	  diag_nfactor(this);
 	Kokkos::parallel_for(TeamPolicy(num_threads,1),
 			     diag_nfactor);
@@ -245,7 +245,7 @@ namespace BaskerNS
 	    // MALLOC_INT_1DARRAY(thread_start, num_threads+1);
 	    //init_value(thread_start, num_threads+1, 
 	    //	       (Int) BASKER_MAX_IDX);
-	    //int nt = nfactor_diag_error(thread_start);
+	    //int nt = nfactor_btf_error(thread_start);
 	    // if(nt == BASKER_SUCCESS)
 	    //  {
 	    ///		break;
@@ -255,7 +255,7 @@ namespace BaskerNS
 		/*
 		break;
 		printf("restart \n");
-		kokkos_nfactor_diag_remalloc <Int, Entry, Exe_Space>
+		kokkos_nfactor_btf_remalloc <Int, Entry, Exe_Space>
 		  diag_nfactor_remalloc(this, thread_start);
 		Kokkos::parallel_for(TeamPolicy(num_threads,1),
 				     diag_nfactor);
