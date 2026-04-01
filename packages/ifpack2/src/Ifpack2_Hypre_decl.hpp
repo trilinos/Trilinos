@@ -144,7 +144,7 @@ class Hypre : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar
                               global_ordinal_type, node_type>
       multivector_type;
 
-  explicit Hypre(const Teuchos::RCP<const row_matrix_type>& A) { throw NotImplemented("Ifpack2::Hypre only works when instantiated on <HYPRE_REAL, LocalOrdinal, HYPRE_Int, Node>"); }
+  explicit Hypre(const Teuchos::RCP<const row_matrix_type>& A) { throw NotImplemented("Ifpack2::Hypre only works when instantiated on <HYPRE_REAL, LocalOrdinal, HYPRE_BigInt, Node>"); }
 
   // @}
   // @{ Construction methods
@@ -286,20 +286,20 @@ class Hypre : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar
 };
 
 template <class LocalOrdinal, class Node>
-class Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> > : virtual public Ifpack2::Preconditioner<HYPRE_Real,
+class Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> > : virtual public Ifpack2::Preconditioner<HYPRE_Real,
                                                                                                                     LocalOrdinal,
-                                                                                                                    HYPRE_Int,
+                                                                                                                    HYPRE_BigInt,
                                                                                                                     Node>,
                                                                              virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<HYPRE_Real,
                                                                                                                                                 LocalOrdinal,
-                                                                                                                                                HYPRE_Int,
+                                                                                                                                                HYPRE_BigInt,
                                                                                                                                                 Node> > {
  public:
   //! \name Typedefs
   //@{
 
   //! The template parameter of this class.
-  typedef Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> MatrixType;
+  typedef Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> MatrixType;
 
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
@@ -357,7 +357,7 @@ class Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> > : vir
   // This will need to be either int or long long depending on how Hypre was built
   //    typedef global_ordinal_type global_ordinal_type;
 
-  typedef global_ordinal_type (*HYPRE_PtrToParSolverFcn)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+  typedef HYPRE_Int (*HYPRE_PtrToParSolverFcn)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
 
   //@}
   // \name Constructors and destructors
@@ -785,7 +785,7 @@ class Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_Int, Node> > : vir
   HYPRE_Int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver* solver);
 
   //! Map generation function
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, HYPRE_Int, Node> >
+  Teuchos::RCP<const Tpetra::Map<LocalOrdinal, HYPRE_BigInt, Node> >
   MakeContiguousColumnMap(Teuchos::RCP<const crs_matrix_type>& Matrix) const;
 
   //! Destroy
