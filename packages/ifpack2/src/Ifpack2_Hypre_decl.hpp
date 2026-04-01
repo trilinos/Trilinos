@@ -287,13 +287,13 @@ class Hypre : virtual public Ifpack2::Preconditioner<typename MatrixType::scalar
 
 template <class LocalOrdinal, class Node>
 class Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> > : virtual public Ifpack2::Preconditioner<HYPRE_Real,
-                                                                                                                    LocalOrdinal,
-                                                                                                                    HYPRE_BigInt,
-                                                                                                                    Node>,
-                                                                             virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<HYPRE_Real,
-                                                                                                                                                LocalOrdinal,
-                                                                                                                                                HYPRE_BigInt,
-                                                                                                                                                Node> > {
+                                                                                                                       LocalOrdinal,
+                                                                                                                       HYPRE_BigInt,
+                                                                                                                       Node>,
+                                                                                virtual public Ifpack2::Details::CanChangeMatrix<Tpetra::RowMatrix<HYPRE_Real,
+                                                                                                                                                   LocalOrdinal,
+                                                                                                                                                   HYPRE_BigInt,
+                                                                                                                                                   Node> > {
  public:
   //! \name Typedefs
   //@{
