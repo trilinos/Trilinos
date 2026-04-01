@@ -168,7 +168,7 @@ private:
 
   // Members
   int num_threads;
-  const local_ordinal_type *schur_part;
+  host_ordinal_type_array schur_part;
 
   // The following Kokkos::View's are persisting storage for A's CCS arrays
   /// Stores the values of the nonzero entries for Umfpack

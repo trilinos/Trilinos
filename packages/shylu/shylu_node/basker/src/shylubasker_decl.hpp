@@ -80,7 +80,7 @@ namespace BaskerNS
     int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val, bool transpose_needed = false);
 
     BASKER_INLINE
-    int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, const Int *schur_part_in, Entry *val, bool transpose_needed = false);
+    int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Int * schur_part_in, Entry *val, bool transpose_needed = false);
 
     BASKER_INLINE
     int Factor(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);

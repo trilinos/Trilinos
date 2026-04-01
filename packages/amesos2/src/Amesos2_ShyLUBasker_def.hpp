@@ -171,7 +171,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
             this->globalNumNonZeros_,
             sp_rowptr.data(),
             sp_colind.data(),
-            schur_part,
+            schur_part.data(),
             sp_values,
             true); // true = _crs_transpose_needed
       } else {
@@ -196,7 +196,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
             this->globalNumNonZeros_,
             colptr_view_.data(),
             rowind_view_.data(),
-            schur_part,
+            schur_part.data(),
             sp_values);
       } else {
         info = ShyLUbasker->Symbolic(this->globalNumRows_,
@@ -551,7 +551,10 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     }
   if(parameterList->isParameter("SchurPart"))
     {
-      schur_part = parameterList->get<const local_ordinal_type*>("SchurPart");
+      // store schur-part to the internal view
+      auto schur_part_ptr = parameterList->get<const local_ordinal_type*>("SchurPart");
+      Kokkos::resize(schur_part, this->globalNumCols_);
+      for (int i=0; i<this->globalNumCols_; i++) schur_part(i) = schur_part_ptr[i];
     }
 }
 
@@ -626,8 +629,6 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
       const local_ordinal_type *dummy_ptr;
       pl->set("GetDenseSchur", false,
               "Perform partial factorization to extract dense Schur complement");
-      //pl->set("SchurPart",Kokkos::View<int*>("SchurPart",0),
-      //        "Specify rows/columns belonging to Schur complement for partial factorization");
       pl->set("SchurPart",dummy_ptr,
               "Specify rows/columns belonging to Schur complement for partial factorization");
       valid_params = pl;

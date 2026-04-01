@@ -96,10 +96,9 @@ namespace BaskerNS {
     template < typename U >
     BASKER_INLINE
     int Symbolic
-    (Int nrow, Int ncol, typename std::enable_if< !std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, const Int *schur_part, Entry *val, bool _crs_transpose_needed = false)
+    (Int nrow, Int ncol, typename std::enable_if< !std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Int * schur_part, Entry *val, bool _crs_transpose_needed = false)
     {
       // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
-      //Int* matching_type_col_ptr = new Int[ncol+1];
       matching_type_col_ptr = new Int[ncol+1];
 
     #ifdef KOKKOS_ENABLE_OPENMP
@@ -109,7 +108,6 @@ namespace BaskerNS {
       {
         matching_type_col_ptr[i] = col_ptr[i];
       }
-
 
       int return_value =
         BaskerNS::Basker<Int, Entry, Exe_Space>::Symbolic
@@ -132,10 +130,9 @@ namespace BaskerNS {
     template < typename U >
     BASKER_INLINE
     int Symbolic
-    (Int nrow, Int ncol, typename std::enable_if< std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, const Int* schur_part, Entry *val, bool _crs_transpose_needed = false)
+    (Int nrow, Int ncol, typename std::enable_if< std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx,
+     Int* schur_part, Entry *val, bool _crs_transpose_needed = false)
     {
-      // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
-
       int return_value =
         BaskerNS::Basker<Int, Entry, Exe_Space>::Symbolic
         (

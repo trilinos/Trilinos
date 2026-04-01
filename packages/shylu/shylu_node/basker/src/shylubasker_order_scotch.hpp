@@ -508,31 +508,140 @@ namespace BaskerNS
         std::cout << std::endl << " > METIS_SetDefaultOptions failed < " << std::endl << std::endl;
         return BASKER_ERROR; // TODO: what to do here?
       }
-      // remove diagonals
-      idx_t nnz_k =0;
-      metis_rowptr[0] = 0;
-      for(Int j = 0; j < metis_size; j++) {
-        for(Int k = M.col_ptr(j); k < M.col_ptr(j+1); k++)
-        {
-          Int i = M.row_idx(k);
-          if(i != j) {
-            metis_colidx[nnz_k] = i;
-            nnz_k ++;
-          }
-        }
-        metis_rowptr[j+1] = nnz_k;
-      }
       idx_t *vwgt = nullptr;    // contraints (n * num_constraints)
       Int num_leaves = pow(2.0, (double)(num_levels));
       METIS_1DARRAY metis_sep_sizes (BASKER_KOKKOS_NOINIT("metis_isizes_k"), 2*num_doms-1);
-      if (Options.verbose == BASKER_TRUE) {
-        std::cout << std::endl << " > calling METIS_NodeNDP ( n = " << metis_size
-                  << ", num_leaves = " << num_leaves << " ) << " << std::endl;
+      if (Options.dense_schur == BASKER_TRUE) {
+
+        // Map to push Schur to the end
+        METIS_1DARRAY part_map (BASKER_KOKKOS_NOINIT("part_map"), metis_size);
+        idx_t n_interior = 0;
+        idx_t n_schur = 0;
+        for (idx_t i=0; i<metis_size; i++) {
+          if (schur_part(i) == 0) {
+            part_map(i) = n_interior;
+            n_interior ++;
+          } else {
+            n_schur ++;
+            part_map(i) = -n_schur;
+          }
+        }
+        for (idx_t i=0; i<metis_size; i++) {
+          if (schur_part(i) == 1) {
+            part_map(i) = n_interior-part_map(i)-1;
+          }
+        }
+
+        // extract interior without boundary/schur complement
+        //  into metis_rowptr/metis_colidx
+        idx_t nnz_k = 0;
+        metis_rowptr[0] = 0;
+#if 1
+        n_interior = 0;
+        for (idx_t j=0; j<metis_size; j++) {
+          if (schur_part(j) == 0) {
+            for(Int k = M.col_ptr(j); k < M.col_ptr(j+1); k++) {
+              Int i = M.row_idx(k);
+              if (i != j && schur_part(i) == 0) {
+                metis_colidx[nnz_k] = part_map(i);
+                nnz_k ++;
+              }
+            }
+            metis_rowptr[n_interior+1] = nnz_k;
+            n_interior ++;
+          }
+        }
+#else
+        for(Int j = 0; j < metis_size; j++) {
+          for(Int k = M.col_ptr(j); k < M.col_ptr(j+1); k++)
+          {
+            Int i = M.row_idx(k);
+            if(i != j) {
+              metis_colidx[nnz_k] = i;
+              nnz_k ++;
+            }
+          }
+          metis_rowptr[j+1] = nnz_k;
+        }
+#endif
+        /*{
+          FILE *fp = fopen("m.dat","w");
+          for(Int j = 0; j < n_interior; j++) for (Int k = metis_rowptr(j); k < metis_rowptr(j+1); k++) fprintf(fp,"%d %d\n",j,metis_colidx(k));
+          fclose(fp);
+        }*/
+        // Calling METIS
+        if (Options.verbose == BASKER_TRUE) {
+          std::cout << std::endl << " > calling METIS_NodeNDP on Interior ( n_interior = " << n_interior
+                    << ", n_schur = " << n_schur << ", n = " << metis_size << ", num_leaves = " << num_leaves << " ) << " << std::endl;
+        }
+        METIS_1DARRAY metis_perm_i  (BASKER_KOKKOS_NOINIT("metis_perm_k"),  n_interior);
+        METIS_1DARRAY metis_iperm_i (BASKER_KOKKOS_NOINIT("metis_iperm_k"), n_interior);
+        timer_metis.reset();
+        METIS_NodeNDP(n_interior, &(metis_rowptr(0)), &(metis_colidx(0)), vwgt,
+                      num_leaves, options, &(metis_perm_i(0)), &(metis_iperm_i(0)), &(metis_sep_sizes(0)));
+        time_metis += timer_metis.seconds();
+
+        // add schur complement to top separator
+#if 1
+        /*{
+          FILE *fp = fopen("q.dat","w");
+          for(Int j = 0; j < n_interior; j++) fprintf(fp,"%d %d\n",metis_perm_i(j),metis_iperm_i(j));
+          fclose(fp);
+        }*/
+        // apply map to push schur to end, and then metis on interior
+        n_interior = 0;
+        for (idx_t j=0; j<metis_size; j++) {
+          if (schur_part(j) == 0) {
+            // j is mapped to n_interior, and then metis
+            metis_iperm_k(j) = metis_iperm_i(n_interior);
+            n_interior ++;
+          } else {
+            // j is mapped to schur
+            metis_iperm_k(j) = part_map(j);
+          }
+        }
+        for (idx_t j=0; j<metis_size; j++) metis_perm_k(metis_iperm_k(j)) = j;
+        //for (int i=0; i<2*num_leaves-1; i++) {
+        //  printf( " metis_size[%d] = %d\n",i,metis_sep_sizes(i) );
+        //}
+        metis_sep_sizes[2*num_leaves-2] += n_schur;
+        //printf( "   -> metis_size[%d] = %d\n",2*num_leaves-2,metis_sep_sizes(2*num_leaves-2) );
+#endif
+      } else {
+        // Calling METIS on Original matrix
+        //  Copy graph into metis_rowptr/metis_colidx, while removing diagonals
+        idx_t nnz_k =0;
+        metis_rowptr[0] = 0;
+        for(Int j = 0; j < metis_size; j++) {
+          for(Int k = M.col_ptr(j); k < M.col_ptr(j+1); k++)
+          {
+            Int i = M.row_idx(k);
+            if(i != j) {
+              metis_colidx[nnz_k] = i;
+              nnz_k ++;
+            }
+          }
+          metis_rowptr[j+1] = nnz_k;
+        }
+        if (Options.verbose == BASKER_TRUE) {
+          std::cout << std::endl << " > calling METIS_NodeNDP ( n = " << metis_size
+                    << ", num_leaves = " << num_leaves << " ) << " << std::endl;
+        }
+        timer_metis.reset();
+        METIS_NodeNDP(metis_size, &(metis_rowptr(0)), &(metis_colidx(0)), vwgt,
+                      num_leaves, options, &(metis_perm_k(0)), &(metis_iperm_k(0)), &(metis_sep_sizes(0)));
+        time_metis += timer_metis.seconds();
       }
-      timer_metis.reset();
-      METIS_NodeNDP(metis_size, &(metis_rowptr(0)), &(metis_colidx(0)), vwgt,
-                    num_leaves, options, &(metis_perm_k(0)), &(metis_iperm_k(0)), &(metis_sep_sizes(0)));
-      time_metis += timer_metis.seconds();
+      /*{
+        FILE *fp = fopen("a.dat","w");
+        for(Int j = 0; j < metis_size; j++) for (Int k = M.col_ptr(j); k < M.col_ptr(j+1); k++) fprintf(fp,"%d %d\n",j,M.row_idx(k));
+        fclose(fp);
+        fp = fopen("p.dat","w");
+        for(Int j = 0; j < metis_size; j++) fprintf(fp,"%d %d %d\n",metis_perm_k(j),metis_iperm_k(j),schur_part(j));
+        fclose(fp);
+        for (int i=0; i<2*num_leaves; i++) printf( " metis_size[%d] = %d\n",i,metis_sep_sizes(i) );
+      }*/
+
       #if 0
       // debug: merging all the subdomains into one domain
       //metis_sep_sizes(0) = metis_size;

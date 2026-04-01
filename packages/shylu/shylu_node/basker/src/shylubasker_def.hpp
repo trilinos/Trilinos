@@ -477,15 +477,17 @@ namespace BaskerNS
    Int nnz, 
    Int *col_ptr, 
    Int *row_idx, 
-   const Int *schur_part_in,
+   Int *schur_part_in,
    Entry *val,
    bool crs_transpose_needed_
   )
   {
     if (Options.dense_schur == BASKER_TRUE) {
+      // store schur-part into internal view
       MALLOC_INT_1DARRAY(schur_part, nrow);
       for (Int i=0; i<nrow; i++) schur_part(i) = schur_part_in[i];
 
+      Options.amd_dom = 0; // no AMD (since partitioned, and AMD/ND on each leaf)
       Options.btf_matching = -1;  // no global matching
       Options.blk_matching = 0;   // no local matching (on one big blk)
     }
