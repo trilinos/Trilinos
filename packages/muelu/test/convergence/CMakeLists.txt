@@ -1,5 +1,5 @@
 # Ensure that these cmake boolean variables are defined
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2 ${PACKAGE_NAME}_ENABLE_Belos)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos)
 
 #
 # Executable

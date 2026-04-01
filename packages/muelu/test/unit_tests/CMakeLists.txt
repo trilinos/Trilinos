@@ -154,10 +154,8 @@ APPEND_SET(SOURCES Adapters/TpetraOperatorAdapter.cpp Adapters/LinearSolverAdapt
 # first ensure that these cmake boolean variables are defined
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos ${PACKAGE_NAME}_ENABLE_Zoltan)
 
-IF(${PACKAGE_NAME}_ENABLE_Ifpack2)
-  APPEND_SET(SOURCES Smoothers/Ifpack2Smoother.cpp)
-  APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedSmoother.cpp)
-ENDIF()
+APPEND_SET(SOURCES Smoothers/Ifpack2Smoother.cpp)
+APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedSmoother.cpp)
 
 IF(${PACKAGE_NAME}_ENABLE_Belos)
   APPEND_SET(SOURCES Smoothers/BelosSmoother.cpp)
@@ -167,10 +165,8 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
   APPEND_SET(SOURCES Smoothers/StratimikosSmoother.cpp)
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_Amesos2)
-  APPEND_SET(SOURCES Smoothers/Amesos2Smoother.cpp)
-  APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedDirectSolver.cpp)
-ENDIF()
+APPEND_SET(SOURCES Smoothers/Amesos2Smoother.cpp)
+APPEND_SET(SOURCES_BLOCKED Smoothers/BlockedDirectSolver.cpp)
 
 IF(${PACKAGE_NAME}_ENABLE_AmgX)
   APPEND_SET(SOURCES Adapters/AmgxOperatorAdapter.cpp)
@@ -216,10 +212,7 @@ IF(${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   )
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_Experimental
-   AND ${PACKAGE_NAME}_ENABLE_Ifpack2
-   AND ${PACKAGE_NAME}_ENABLE_Amesos2
-)
+IF(${PACKAGE_NAME}_ENABLE_Experimental)
   APPEND_SET(
     SOURCES_REGION
     RegionMatrix.cpp
