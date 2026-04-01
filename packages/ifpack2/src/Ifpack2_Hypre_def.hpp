@@ -395,7 +395,7 @@ int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> >::Set
     }
     HYPRE_BigInt GlobalRow[1];
     HYPRE_Int numEntries = (HYPRE_Int)indices.extent(0);
-    GlobalRow[0]  = GloballyContiguousRowMap_->getGlobalElement(i);
+    GlobalRow[0]         = GloballyContiguousRowMap_->getGlobalElement(i);
     IFPACK2_CHK_ERR(HYPRE_IJMatrixSetValues(HypreG_, 1, &numEntries, GlobalRow, new_indices.data(), values.data()));
   }
   IFPACK2_CHK_ERR(HYPRE_IJMatrixAssemble(HypreG_));
@@ -548,10 +548,10 @@ int Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> >::Cal
 //==============================================================================
 template <class LocalOrdinal, class Node>
 void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> >::apply(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &X,
-                                                                                 Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &Y,
-                                                                                 Teuchos::ETransp mode,
-                                                                                 scalar_type alpha,
-                                                                                 scalar_type beta) const {
+                                                                                    Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &Y,
+                                                                                    Teuchos::ETransp mode,
+                                                                                    scalar_type alpha,
+                                                                                    scalar_type beta) const {
   using LO = local_ordinal_type;
   using SC = scalar_type;
   const std::string timerName("Ifpack2::Hypre::apply");
@@ -621,8 +621,8 @@ void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> >::ap
 //==============================================================================
 template <class LocalOrdinal, class Node>
 void Hypre<Tpetra::RowMatrix<HYPRE_Real, LocalOrdinal, HYPRE_BigInt, Node> >::applyMat(const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &X,
-                                                                                    Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &Y,
-                                                                                    Teuchos::ETransp mode) const {
+                                                                                       Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> &Y,
+                                                                                       Teuchos::ETransp mode) const {
   A_->apply(X, Y, mode);
 }  // applyMat()
 
