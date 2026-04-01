@@ -18,8 +18,8 @@
 #include "shylubasker_matrix_view_def.hpp"
 
 #include "shylubasker_nfactor_blk.hpp"
-#include "shylubasker_nfactor_col.hpp"
-#include "shylubasker_nfactor_col2.hpp"
+#include "shylubasker_nfactor_sep.hpp"
+#include "shylubasker_nfactor_sep2.hpp"
 #include "shylubasker_nfactor_diag.hpp"
 
 #include "shylubasker_error_manager.hpp"

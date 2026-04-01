@@ -7,8 +7,8 @@
 // *****************************************************************************
 // @HEADER
 
-#ifndef SHYLUBASKER_NFACTOR_COL_INC_HPP
-#define SHYLUBASKER_NFACTOR_COL_INC_HPP
+#ifndef SHYLUBASKER_NFACTOR_SEP_INC_HPP
+#define SHYLUBASKER_NFACTOR_SEP_INC_HPP
 
 #include "shylubasker_types.hpp"
 #include "shylubasker_stats.hpp"
@@ -72,7 +72,7 @@ namespace BaskerNS
 
     int upper_error = BASKER_MAX_IDX;
     
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     printf("\n\n  LVL=%d  ----- kid: %d --\n\n",
 	   lvl, kid);
     #endif
@@ -85,7 +85,7 @@ namespace BaskerNS
      for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
       {
 
-	#ifdef BASKER_DEBUG_NFACTOR_COL2
+	#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	printf("UPPER, kid: %d k: %d \n",
 	       kid, k);
 	#endif
@@ -108,7 +108,7 @@ namespace BaskerNS
 	
       }//over all columns / domains / old sublevel 0
 
-     #ifdef BASKER_DEBUG_NFACTOR_COL2
+     #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
      printf("\n\n\n done with UPPER, kid: %d \n\n\n", kid);
      #endif
 
@@ -156,7 +156,7 @@ namespace BaskerNS
 	for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
 	  {
 	    
-	    #ifdef BASKER_DEBUG_NFACTOR_COL2
+	    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	    printf("\n\nSep, upper update, kid: %d k=%d %d\n\n",
 		   kid, k,k+LU(U_col)(U_row).scol);
 	    #endif
@@ -171,7 +171,7 @@ namespace BaskerNS
 		my_leader = find_leader_inc_lvl(kid,l);
 		b_size    = pow(2,l+1);
 		
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 		printf("\n\n\n SEP UPPER, kid: %d \n\n",
 		       kid);
 		#endif
@@ -217,7 +217,7 @@ namespace BaskerNS
     t_basker_barrier_inc_lvl(thread, kid, my_leader,
 		     b_size, 7, LU(U_col)(U_row).scol, 0);
 
-    #ifdef BASKER_DEBUG_NFACTOR_COL_INC
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     if(kid == 0)
       {
     printf("\n\n======= LOWER, KID: %d [%d %d] ======= \n\n", 
@@ -232,7 +232,7 @@ namespace BaskerNS
      for(Int k = 0; k < LU(U_col)(U_row).ncol; ++k)
       {
 
-	#ifdef BASKER_DEBUG_NFACTOR_COL2
+	#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	printf("\n*******lower_update, kid: %d k: %d \n",
 	       kid, k+LU(U_col)(U_row).scol);
 	#endif
@@ -247,7 +247,7 @@ namespace BaskerNS
 	  {
 
 	    
-	    #ifdef BASKER_DEBUG_NFACTOR_COL2
+	    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	    printf("\n lower factor, kid: %d k: %d \n",
 		   kid, k+LU(U_col)(U_row).scol);
 	    #endif
@@ -256,7 +256,7 @@ namespace BaskerNS
 			       lvl, lvl-1, 
 			       k, pivot);
 	    
-	    #ifdef BASKER_DEBUG_NFACTOR_COL2
+	    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	    printf("\n lower factor return, kid: %d k: %d \n",
 		   kid, k+LU(U_col)(U_row).scol);
 	    #endif
@@ -273,13 +273,13 @@ namespace BaskerNS
 	t_basker_barrier_inc_lvl(thread, kid, my_leader,
 			 b_size, 8, k, lvl-1);
 	
-	#ifdef BASKER_DEBUG_NFACTOR_COL2
+	#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	printf("lower diag factor, kid: %d k: %d \n",
 	       kid, k);
 	#endif
 	
 
-	//printf("\n\n===========AFTER LOWER COL FACTOR =======\n\n");
+	//printf("\n\n===========AFTER LOWER SEP INC FACTOR =======\n\n");
 
         //if((kid == 0)||(kid==1))
 	t_lower_col_factor_offdiag2_inc_lvl(kid, lvl, lvl-1, k, pivot);
@@ -333,7 +333,7 @@ namespace BaskerNS
     for(Int sl = 0; sl <=l; ++sl)
       {
 		
-	#ifdef BASKER_DEBUG_NFACTOR_COL2
+	#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	if(lower == BASKER_FALSE)
 	  {
 	printf("extend up, kid: %d sl: %d l: %d lvl: %d \n",
@@ -419,7 +419,7 @@ namespace BaskerNS
       {
 	
 	
-	#ifdef BASKER_DEBUG_NFACTOR_COL2
+	#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	if(lower == BASKER_FALSE)
 	  {
 	printf("extend up, kid: %d sl: %d l: %d lvl: %d \n",
@@ -627,7 +627,7 @@ namespace BaskerNS
     const Int X_row = l; //X_row = lower(L)
     //const Int col_idx_offset = 0; //we might be able to remove
   
-    #ifdef BASKER_DEBUG_NFACTOR_COL
+    #ifdef BASKER_DEBUG_NFACTOR_sEP_INC
     if(kid >= 0)
     printf("kid %d, upper using L: %d %d  U: %d %d  X %d %d\n",
 	   kid, L_col, L_row, U_col, U_row, X_col, X_row);
@@ -688,13 +688,13 @@ namespace BaskerNS
     Int lcnt = 0;
     Int ucnt = 0; 
     
-    #ifdef BASKER_DEBUG_NFACTOR_COL
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     if(kid >= 0)
     printf("kid: %d col_start Unnz: %d %d \n", kid, unnz, uunnz);
     #endif
 
 
-    #ifdef BASKER_DEBUG_NFACTOR_COL
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     printf("---------Checking Workspace, kid: %d-------\n", 
 	   kid);
     BASKER_ASSERT(top == ws_size, "top == ws_size");
@@ -726,7 +726,7 @@ namespace BaskerNS
     for(Int i = B.col_ptr(k-k_offset); 
 	i < B.col_ptr(k-k_offset+1); ++i)
       {
-	#ifdef BASKER_DEBUG_NFACTOR_COL
+	#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	if(kid>=0)
 	printf("kid: %d index: %d %d\n", 
 	       kid, i, B.row_idx(i));
@@ -744,7 +744,7 @@ namespace BaskerNS
 
 	//INC_LVL_TEMP(j+brow) = 0;
 
-	#ifdef BASKER_DEBUG_NFACTOR_COL
+	#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	if(kid==0)
         printf("kid: %d i: %d  val: %g  top: %d \n", 
 	       kid,i, B.val(i), top);
@@ -844,7 +844,7 @@ namespace BaskerNS
    
     //return 0;
  
-    #ifdef BASKER_DEBUG_NFACTOR_COL
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     if(kid>=0)
     printf("xnnz: %d ws_size: %d top: %d , kid: %d\n",
 	   xnnz, ws_size, top, kid);
@@ -875,7 +875,7 @@ namespace BaskerNS
      //Note: This +1 causes some trouble
      //ucnt = ws_size - top - lcnt +1;
      
-     #ifdef BASKER_DEBUG_NFACTOR_COL
+     #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
      if(kid>=0)
        printf("lcnt: %d ucnt: %d , kid: %d \n", lcnt, ucnt, kid);
      #endif
@@ -938,7 +938,7 @@ namespace BaskerNS
 	 pattern[i] = 0;
 	 t = gperm(j+brow);
 	 
-	 #ifdef BASKER_DEBUG_NFACTOR_COL
+	 #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	 //if(kid>=0)
 	   {
 	     printf("HERE considering j: %d t:%d lvl %d val: %e, kid: %d \n",
@@ -954,7 +954,7 @@ namespace BaskerNS
 	    //we might get this to unroll!!!
 	    if(t != BASKER_MAX_IDX)
               {
-                #ifdef BASKER_DEBUG_NFACTOR_COL
+                #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 		if(kid==0)
 		{
 		printf("U add kid: %d adding x[%d %d] %g to U inc_lvl: %d\n", kid, k+U.scol, j+U.srow, X(j), INC_LVL_TEMP(j+brow));
@@ -1105,7 +1105,7 @@ namespace BaskerNS
     BASKER_MATRIX     &U   = LU(U_col)(U_row);
     //const Int         bcol = U.scol;
          
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     if(L_row >= LL_size(L_col))
       {
 	printf("assert error. Lrow:%d L_col: %d size: %d kid: %d\n",
@@ -1116,7 +1116,7 @@ namespace BaskerNS
     #endif
     
 
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     //if(lower == BASKER_TRUE)
       {
     printf("Upper_ffact_offdiag, kid: %d leader: %d l: %d lvl: %d works_size: %d X: %d %d L: %d %d U: %d %d k: %d \n",
@@ -1124,7 +1124,7 @@ namespace BaskerNS
       }
      #endif
 
-      #ifdef BASKER_DEBUG_NFACTOR_COL2
+      #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     //if(lower == BASKER_TRUE)
       {
     printf("OFF-DIAG, kid: %d, l: %d  X: %d %d L: %d %d \n",
@@ -1176,7 +1176,7 @@ namespace BaskerNS
 	L_row++;
 	for(; X_row < LL_size(X_col);++X_row, ++L_row)
 	  {
-	    #ifdef BASKER_DEBUG_NFACTOR_COL2
+	    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	    printf("LLL OFF-DIAG,kid:%d, l: %d X: %d %d L: %d %d U: %d %d \n",
 		   kid, l,X_col, X_row, L_col, L_row, U_col, U_row);
 	    #endif
@@ -1437,7 +1437,7 @@ namespace BaskerNS
     BASKER_MATRIX     &U   = LU(U_col)(U_row);
     //const Int         bcol = U.scol;
          
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     if(L_row >= LL_size(L_col))
       {
 	printf("assert error. Lrow:%d L_col: %d size: %d kid: %d\n",
@@ -1448,7 +1448,7 @@ namespace BaskerNS
     #endif
     
 
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     //if(lower == BASKER_TRUE)
       {
     printf("Upper_fact_offdiag, kid: %d leader: %d l: %d lvl: %d works_size: %d X: %d %d L: %d %d U: %d %d k: %d \n",
@@ -1456,7 +1456,7 @@ namespace BaskerNS
       }
      #endif
 
-     #ifdef BASKER_DEBUG_NFACTOR_COL2
+     #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     //if(lower == BASKER_TRUE)
       {
     printf("OFF-DIAG, kid: %d, l: %d  X: %d %d L: %d %d \n",
@@ -1484,7 +1484,7 @@ namespace BaskerNS
 	L_row++;
 	for(; X_row < LL_size(X_col);++X_row, ++L_row)
 	  {
-	    #ifdef BASKER_DEBUG_NFACTOR_COL2
+	    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	    printf("LLL OFF-DIAG,kid:%d, l: %d X: %d %d L: %d %d U: %d %d \n",
 		   kid, l,X_col, X_row, L_col, L_row, U_col, U_row);
 	    #endif
@@ -1715,7 +1715,7 @@ namespace BaskerNS
     //Int *pattern      = &(color[ws_size]);
     //Int *stack        = &(pattern[ws_size]); //used for fill
 
-    #ifdef BASKER_DEBUG_NFACTOR_COL2    
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC    
     printf("copy, kid: %d bl: %d  A: %d %d \n", 
 	   kid, bl, A_col, A_row);
     #endif
@@ -1785,7 +1785,7 @@ namespace BaskerNS
     Int *pattern = &(color[ws_size]);
     Int *stack   = &(pattern[ws_size]);
     
-    #ifdef BASKER_DEBUG_NFACTOR_COL2
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     //printf("moving, kid: %d  A: %d %d %d %d p_size: %d \n", 
     //	   kid, A_col, A_row, team_leader, bl,p_size);
     #endif
@@ -1796,7 +1796,7 @@ namespace BaskerNS
       {
 	//Int j = pattern[jj];
 	Int j = jj;
-        #ifdef BASKER_DEBUG_NFACTOR_COL22
+        #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	printf("considering: %d %d %f, kid: %d\n",
 	       j,brow,X[j], kid);
         #endif
@@ -1807,7 +1807,7 @@ namespace BaskerNS
 	  {
 	    if(bl == l+1)
 	      {
-                #ifdef BASKER_DEBUG_NFACTOR_COL22
+                #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 		printf("moving X[%d] %f kid: %d nnz: %d Csize: %d \n",
 		       j+brow, X(j), kid, nnz, C.nrow);
                 #endif
@@ -1827,7 +1827,7 @@ namespace BaskerNS
 	      }
 	    else
 	      {
-		#ifdef BASKER_DEBUG_NFACTOR_COL22
+		#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 		printf("counting [%d] %f kid: %d \n",
 		       j+brow, X[j], kid);
                 #endif
@@ -1873,10 +1873,10 @@ namespace BaskerNS
     //Int col_idx_offset = 0; //can we get rid of now?
     
 
-    #ifdef BASKER_DEBUG_NFACTOR_COL
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     if(kid == 0)
       {
-    printf("LOWER_COL_FACTOR kid: %d \n", kid);
+    printf("LOWER_SEP_INC_FACTOR kid: %d \n", kid);
     printf("kid %d using L: %d %d  U: %d %d  X %d \n",
 	   kid, L_col, L_row, U_col, U_row, X_col);
       }
@@ -1888,7 +1888,7 @@ namespace BaskerNS
    
     BASKER_MATRIX        &B = thread_array(kid).C;
     
-    #ifdef BASKER_DEBUG_NFACTOR_COL
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     if(kid >= 0)
       {
 	printf("---------------LOWER FACTOR KID: %d ------\n",
@@ -1941,13 +1941,13 @@ namespace BaskerNS
     lnnz = lval;
     unnz = uval;
 
-    #ifdef BASKER_DEBUG_NFACTOR_COL
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     printf("-------------lower_col_factor-------\n");
     printf("JB ecol: %d L.nnz: %d U.nnz: %d brow: %d ws_size: %d  kid: %d\n",
 	   U.scol+U.ncol, llnnz, uunnz, brow, ws_size, kid);
     #endif
 
-    #ifdef BASKER_DEBUG_NFACTOR_COL
+    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     printf("\n----------------- K = %d --------------\n", 
 	   k+U.scol);
     #endif
@@ -1959,7 +1959,7 @@ namespace BaskerNS
     lcnt = 0;
     ucnt = 0;
     
-   #ifdef BASKER_DEBUG_NFACTOR_COL
+   #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
    BASKER_ASSERT(top == ws_size);
    for(i = 0 ; i < ws_size; i++){
      if(X[i] !=0)
@@ -1971,7 +1971,7 @@ namespace BaskerNS
    #endif
 
 
-   #ifdef BASKER_DEBUG_NFACTOR_COL
+   #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
    printf("--------------PAST ASSERT----------- \n");
    printf("B.col(k): %d  B.col(k+1): %d \n", 
 	  B.col_ptr[0], B.col_ptr[1]);
@@ -1983,7 +1983,7 @@ namespace BaskerNS
      {
              
        j = B.row_idx(i);
-       #ifdef BASKER_DEBUG_NFACTOR_COL
+       #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
        if(kid==0)
        printf("j: %d i: %d \n", j, i);
        #endif
@@ -1995,7 +1995,7 @@ namespace BaskerNS
 
        X(j) = B.val(i);
         
-       #ifdef BASKER_DEBUG_NFACTOR_COL
+       #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
        if(kid==0)
 	 {
 	   printf("i: %ld  j: %ld %ld  val: %g  top: %d \n", 
@@ -2061,7 +2061,7 @@ namespace BaskerNS
      }//if same pattern
    xnnz = ws_size - top;
    
-   #ifdef BASKER_DEBUG_NFACTOR_COL
+   #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
    if(kid==0)
      {
        printf("==DEBUG===\n");
@@ -2147,7 +2147,7 @@ namespace BaskerNS
    //opivot = pivot;
 
    
-   #ifdef BASKER_DEBUG_NFACTOR_COL
+   #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
    if(kid>=0)
    printf("pivot found: %f , kid: %d \n", pivot, kid);
    #endif
@@ -2244,7 +2244,7 @@ namespace BaskerNS
        pattern[i] = 0;
        t = gperm(j+brow);
        
-       #ifdef BASKER_DEBUG_NFACTOR_COL
+       #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
        if(k>=0)
 	 printf("j %d  t %d val: %g , kid: %d \n", j, t, kid, 
 		X(j));
@@ -2254,7 +2254,7 @@ namespace BaskerNS
        if((Options.same_pattern == BASKER_TRUE) ||
 	  (INC_LVL_TEMP(j+brow) <= Options.inc_lvl))
 	 {
-           #ifdef BASKER_DEBUG_NFACTOR_COL
+           #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	   #ifdef BASKER_2DL
 	   if(kid>=0)
 	     {
@@ -2279,7 +2279,7 @@ namespace BaskerNS
 		   U.val(unnz) = X(j);
 		   unnz++;
 		   
-		   #ifdef BASKER_DEBUG_NFACTOR_COL_INC
+		   #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 		   printf("add U(%d) [%d %d]: %g lvl: %d \n",
 			  U.row_idx(unnz-1),
 			  k+brow,
@@ -2298,7 +2298,7 @@ namespace BaskerNS
 	     }
 	   else if (t == BASKER_MAX_IDX)
 	     {
-               #ifdef BASKER_DEBUG_NFACTOR_COL
+               #ifdef BASKER_DEBUG_NFACTOR_SEP
 	       if(kid>=0)
 		 {
 		   printf("inserting %f at %d into %d \n", 
@@ -2347,7 +2347,7 @@ namespace BaskerNS
    xnnz = 0;
    top = ws_size;
    
-   #ifdef BASKER_DEBUG_NFACTOR_COL
+   #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
    printf("setting col: %d %d %d %d\n",
 	  k, cu_ltop, k+1-bcol, lnnz);
    #endif
@@ -2360,7 +2360,7 @@ namespace BaskerNS
    U.col_ptr(k+1) = unnz;
    cu_utop = unnz;
 
-   #ifdef BASKER_DEBUG_NFACTOR_COL
+   #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
    if(kid>=0)
    printf("col_fact k: %d Unnz: %d   Lnnz: %d \n",
 	  k, unnz, lnnz);
@@ -2374,7 +2374,7 @@ namespace BaskerNS
    #ifdef BASKER_2DL
    //----Update offdiag (this can be done in parallel l>0)---//
    //-Need to fix
-   #ifdef BASKER_DEBUG_NFACTOR_COL
+   #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
    printf("k: %d -----TTTEST(blk_row-- %d %d \n",
      kid, lvl+1, LL_size[L_col]);
    printf("k: %d -----TTTEST(x_row)--- %d %d \n",
@@ -2757,11 +2757,11 @@ namespace BaskerNS
     const Int leader_idx = S(0)(team_leader);
     //Int loop_col_idx     = S(l)(kid); NU
 
-    //#ifdef BASKER_DEBUG_NFACTOR_COL2
+    //#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     if(lower == BASKER_TRUE)
       {
 	
-	#ifdef BASKER_DEBUG_NFACTOR_COL2
+	#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
     printf("Called t_blk_col_copy_atomic kid: %d \n " , kid);
     printf("Copying col, kid: %d  k: %d lvl: %d l: %d \n", 
 	   kid,k,lvl, l);
@@ -2802,7 +2802,7 @@ namespace BaskerNS
 //	Int      brow     = LL(my_idx)(blk).srow; //NU //NDE - warning: unused
 	//Int      browL    = LL(leader_idx)(blk).srow; //NU
 
-	#ifdef BASKER_DEBUG_NFACTOR_COL2
+	#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	if(lower == BASKER_TRUE)
 	  {
 	printf("kid: %d  COPY INDEX %d %d to %d %d \n",
@@ -2815,7 +2815,7 @@ namespace BaskerNS
 //	Int *patternL = &(colorL[ws_sizeL]); //NDE - warning: unused 
 //	Int *stackL   = &(patternL[ws_sizeL]); //NDE - warning: unused
 
-        #ifdef BASKER_DEBUG_NFACTOR_COL2
+        #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	if(lower == BASKER_TRUE)
 	  {
 	printf("t_b_col_copy, kid: %d wsize: %d \n", 
@@ -2830,7 +2830,7 @@ namespace BaskerNS
 	  {
 	    color[jj] = 0;
 		
-	    #ifdef BASKER_DEBUG_NFACTOR_COL2
+	    #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	    if(lower == BASKER_TRUE)
 	      {
 		printf("kid: %d jj: %d nrows: %d xsize: %d %d \n",
@@ -2847,7 +2847,7 @@ namespace BaskerNS
 //	    if(X(jj) !=0)
 	    if(X(jj) != (Entry)(0))
 	      {
-		#ifdef BASKER_DEBUG_NFACTOR_COL2
+		#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 		//if(lower == BASKER_TRUE)
 		  {
 		printf("Atomic Adding X(%d) %f to XL(%d) %f, kid: %d\n",
@@ -2858,7 +2858,7 @@ namespace BaskerNS
 		XL(jj) += X(jj);
 		X(jj)   = 0;
 		
-                #ifdef BASKER_DEBUG_NFACTOR_COL_INC
+                #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 		printf("Copy over mfill: %d lfill:%d \n",
 		       stack[jj], stackL[jj]);
 		#endif
@@ -2875,7 +2875,7 @@ namespace BaskerNS
 	    stack[jj] = BASKER_MAX_IDX;
 	  }//for - over all nnz
 	   
-	#ifdef BASKER_DEBUG_NFACTOR_COL2
+	#ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	if(lower == BASKER_TRUE)
 	  {
 	printf("----DEBUG--- X %d %d brow: %d kid: %d ws_size: %d\n",
@@ -2895,7 +2895,7 @@ namespace BaskerNS
 	  }
 	else
 	  {
-           #ifdef BASKER_DEBUG_NFACTOR_COL22
+           #ifdef BASKER_DEBUG_NFACTOR_SEP_INC
 	    printf("SETTING PS: %d L:%d %d kid: %d\n",
 		   p_sizeL, leader_idx, blk, kid);
 	    #endif
@@ -2909,4 +2909,4 @@ namespace BaskerNS
 
 }//end namespace BaskerNS
 
-#endif //end def BASKER_NFACTOR_COL_INC_HPP
+#endif //end def BASKER_NFACTOR_SEP_INC_HPP
