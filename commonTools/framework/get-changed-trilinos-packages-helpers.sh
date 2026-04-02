@@ -90,7 +90,7 @@ function generate_trilinos_package_dependencies_xml_file() {
   cmake \
     -D Trilinos_DEPS_XML_OUTPUT_FILE=TrilinosPackageDependencies.xml \
     -P $TRIBITS_DIR/ci_support/TribitsDumpDepsXmlScript.cmake \
-    &> TribitsDumpDepsXmlScript.log
+    &> TribitsDumpDepsXmlScript.log || ( cat TribitsDumpDepsXmlScript.log ; exit 1 )
   echo "Wrote the file 'TrilinosPackageDependencies.xml'"
 }
 
