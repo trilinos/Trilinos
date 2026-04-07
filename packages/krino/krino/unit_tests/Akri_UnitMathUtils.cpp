@@ -88,7 +88,7 @@ void test_invert_3x3(const MAT & A)
   const bool success = invert3x3(A, Ainv);
   EXPECT_TRUE(success);
 
-  const std::array<std::array<double,3>,3> identity = {1.,0.,0., 0.,1.,0., 0.,0.,1.};
+  const std::array<std::array<double,3>,3> identity{{ {{1.,0.,0.}}, {{0.,1.,0.}}, {{0.,0.,1.}} }};
 
   MAT shouldBeIdentity;
   multiply_3x3_3x3(A, Ainv, shouldBeIdentity);

@@ -121,9 +121,9 @@ void ML_Model_with_Gradient<NUMVAR>::create(const std::string & modelBaseName)
 {
   using FADType = Sacado::Fad::SFad<double,NUMVAR>;
 #if POCKET_TENSOR_SUPPORTS_FAD
-  myModel = PocketTensorInterface<Sacado::Fad::SFad<double,NUMVAR>>::create(modelBaseName);
+  myModel = PocketTensorInterface<FADType>::create(modelBaseName);
 #else
-  myModel = UnsupportedPocketTensorInterface<Sacado::Fad::SFad<double,NUMVAR>>::create(modelBaseName);
+  myModel = UnsupportedPocketTensorInterface<FADType>::create(modelBaseName);
 #endif
 }
 

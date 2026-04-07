@@ -31,7 +31,7 @@ update_package() {
   exe git add --all packages/$1
 }
 
-export SIERRA=${SIERRA:-/fgs/$USER/projects/code}
+export SIERRA=${SIERRA:-/fgs/$USER/projects/code_votd}
 export SIERRA_BRANCH=master
 export TRILINOS=${TRILINOS:-/fgs/$USER/projects/Trilinos}
 export TRILINOS_BRANCH=develop
@@ -51,17 +51,6 @@ exe repo sync
 STK_VERSION_STRING=$(./stk/stk_util/stk_util/registry/stk_version_gen.sh)
 
 exe cd $TRILINOS
-verify_clean_repo $TRILINOS
-
-#Pull request workflow
-exe git fetch --all
-exe git checkout master
-exe git merge upstream/master
-exe git push origin master
-
-exe git branch -f $SNAPSHOT_BRANCH
-exe git checkout $SNAPSHOT_BRANCH
-exe git reset --hard upstream/$TRILINOS_BRANCH
 
 update_package krino
 exe git rm -rf packages/krino/krino_sierra packages/krino/Jamfile packages/krino/.clang-format
