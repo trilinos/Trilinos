@@ -279,7 +279,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const Matrix<SC,LO,GO,NO> > matrix,
                                             RCP<const Map<LO,GO,NO> > repeatedMap,
-                                            typename ScalarTraits<SC>::magnitudeType tol = 1.0e-12);
+                                            typename ScalarTraits<SC>::magnitudeType tol = 0.0);
 
     template <class LO,class GO,class NO>
     ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(RCP<const CrsGraph<LO,GO,NO> > graph,
