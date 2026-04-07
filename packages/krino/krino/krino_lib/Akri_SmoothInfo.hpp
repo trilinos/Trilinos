@@ -26,12 +26,14 @@ public:
         const int owner,
         const stk::math::Vector3d & preSmoothLocation,
         const stk::math::Vector3d & postSmoothLocation,
+        const double improvement,
         const std::vector<ExclusionIdentifierType> & globalIdsOfCavityElems,
         const std::vector<int> & procsThatNeedToKnowAboutThisInfo)
     : mUniqueId{nodeId},
       mOwner(owner),
       mPreSmoothLocation(preSmoothLocation),
       mPostSmoothLocation(postSmoothLocation),
+      mImprovement(improvement),
       mGlobalIdsOfSmoothNodeElems(globalIdsOfCavityElems),
       mProcsThatNeedToKnowAboutThisInfo(procsThatNeedToKnowAboutThisInfo)
     {
@@ -44,6 +46,7 @@ public:
     const std::vector<int> &get_procs_that_need_to_know_about_this_info() const { return mProcsThatNeedToKnowAboutThisInfo; }
     const stk::math::Vector3d & get_pre_smooth_location() const { return mPreSmoothLocation; }
     const stk::math::Vector3d & get_post_smooth_location() const { return mPostSmoothLocation; }
+    double get_improvement() const { return mImprovement; }
     const std::vector<ExclusionIdentifierType> &get_conflicting_ids() const { return mGlobalIdsOfSmoothNodeElems; }
     const std::vector<stk::mesh::EntityId> &get_ids_of_elements_impacted_by_smoothing() const { return mGlobalIdsOfSmoothNodeElems; }
 
@@ -59,6 +62,7 @@ private:
   int mOwner;
   stk::math::Vector3d mPreSmoothLocation;
   stk::math::Vector3d mPostSmoothLocation;
+  double mImprovement;
   std::vector<ExclusionIdentifierType> mGlobalIdsOfSmoothNodeElems;
   std::vector<int> mProcsThatNeedToKnowAboutThisInfo;
 };

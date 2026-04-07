@@ -46,6 +46,7 @@ public:
   void execute(const double time);
 
   Composite_Surface & get_surfaces() { return surface_list; }
+  const Composite_Surface & get_surfaces() const { return surface_list; }
 private:
   void compute_IC_error_indicator();
 private:

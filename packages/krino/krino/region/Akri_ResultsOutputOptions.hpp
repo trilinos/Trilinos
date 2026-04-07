@@ -28,8 +28,7 @@ namespace krino {
   public:
 
     ResultsOutputOptions() :
-      my_scheduler(),
-      my_numStepIncrements(0)
+      my_scheduler()
     {
       my_scheduler.set_lookahead(1);
       my_filename = "default_filename";
@@ -45,12 +44,24 @@ namespace krino {
 
     void set_filename(std::string filename) { my_filename = filename; }
     const std::string & get_filename() const { return my_filename; }
+    bool is_output_enabled() const { return !my_filename.empty(); }
 
-    void add_step_increment(int start, int increment) {
+    void set_surface_shells_filename(std::string filename) { mySurfaceShellsFilename = filename; }
+    const std::string & get_surface_shells_filename() const { return mySurfaceShellsFilename; }
+    bool is_surface_output_enabled() const { return !mySurfaceShellsFilename.empty(); }
+    const std::set<std::string> & get_surface_shells_surface_names() const { return mySurfaceShellsSurfaceNames; }
+    void add_surface_shell_surface(const std::string & surfaceName) { mySurfaceShellsSurfaceNames.insert(surfaceName); }
+    stk::util::Scheduler & get_surface_output_scheduler() { return mySurfaceShellScheduler; }
+
+    void add_step_increment(int start, int increment)
+    {
       my_scheduler.add_interval(start, increment);
-      my_numStepIncrements++;
     }
-    unsigned get_num_step_increments() const { return my_numStepIncrements; }
+
+    void add_surface_shell_step_increment(int start, int increment)
+    {
+      mySurfaceShellScheduler.add_interval(start, increment);
+    }
 
     void add_nodal_field(const std::string & internalName, const std::string & newName)
     {
@@ -71,10 +82,12 @@ namespace krino {
 
   private:
     stk::util::Scheduler my_scheduler;
-    unsigned my_numStepIncrements;
+    stk::util::Scheduler mySurfaceShellScheduler;
     std::string my_name;
     std::string my_title;
     std::string my_filename;
+    std::string mySurfaceShellsFilename;
+    std::set<std::string> mySurfaceShellsSurfaceNames;
     std::set<FieldName_OutputName_Pair> my_nodal_fields;
     std::set<FieldName_OutputName_Pair> my_element_fields;
     Ioss::PropertyManager my_properties;

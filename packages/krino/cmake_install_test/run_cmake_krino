@@ -36,15 +36,21 @@ rm -rf CMakeFiles CMakeCache.txt
 cmake \
 -DCMAKE_INSTALL_PREFIX=$trilinos_install_dir \
 -DCMAKE_BUILD_TYPE=${build_type^^} \
+-DCMAKE_CXX_STANDARD:STRING=20 \
 -DBUILD_SHARED_LIBS=OFF \
+-DTrilinos_ENABLE_TESTS:BOOL=ON \
+-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
+-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF \
+-DTrilinos_ASSERT_MISSING_PACKAGES=OFF \
 -DTPL_ENABLE_MPI:BOOL=ON \
 -DTrilinos_ENABLE_Krino:BOOL=ON \
--DKrino_ENABLE_TESTS:BOOL=ON \
 -DTPL_ENABLE_yamlcpp=${enable_yaml} \
 -Dyamlcpp_INCLUDE_DIRS=${yaml_install_dir}/include \
 -Dyamlcpp_LIBRARY_DIRS=${yaml_install_dir}/lib \
 -DTPL_ENABLE_Netcdf:BOOL=ON \
 -DTPL_ENABLE_HDF5:BOOL=ON \
 -DTPL_HDF5_LIBRARIES="-lhdf5" \
+-DTPL_ENABLE_gtest:BOOL=ON \
+-DGTest_DIR=/fgs/william/googletest/install_gcc-12.3.0/lib64/cmake/GTest \
 ${trilinos_src_dir}/
 

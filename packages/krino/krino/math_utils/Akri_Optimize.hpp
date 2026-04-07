@@ -2,27 +2,32 @@
 #define KRINO_KRINO_MATH_UTILS_AKRI_OPTIMIZE_HPP_
 
 #include <functional>
-#include <tuple>
+#include <stk_math/StkVector.hpp>
+#include <Akri_DistributedVector.hpp>
 
 namespace krino {
 
-std::tuple<double,double> line_search_armijo_1d(const std::function<double(double)> & fn, const double f0, const double dirDeriv0, const double xmin = 1.e-8);
+using Vector3dObjectiveFn = std::function<double(const stk::math::Vector3d&)>;
+using Vector3dObjectiveSensFn = std::function<void(const stk::math::Vector3d&, stk::math::Vector3d&)>;
+using DistributedVectorObjectiveFn = std::function<double(const DistributedVector&)>;
+using DistributedVectorObjectiveSensFn = std::function<void(const DistributedVector&, DistributedVector&)>;
 
 template<typename VEC>
-std::tuple<VEC,double> line_search_armijo_vector(const std::function<double(const VEC&)> & fn,
-    const VEC& x0,
-    const VEC& dir,
-    const double f0,
-    const VEC& gradf0,
-    const double xmin = 1.e-8);
+void steepest_descent(const std::function<double(const VEC&)> & calc_objective,
+    const std::function<void(const VEC&, VEC&)> & fill_gradient,
+    VEC& x,
+    const double xTol = 1e-6,
+    const double gradTol = 1e-6,
+    const unsigned maxIter = 200);
 
 template<typename VEC>
-VEC bfgs(const std::function<double(const VEC&)> & fn,
-    const std::function<VEC(const VEC&)> & gradient,
-    const VEC& x0,
-    const double tol = 1e-6,
-    const int maxIter = 50);
-
+void lbfgs(const std::function<double(const VEC&)> & calc_objective,
+    const std::function<void(const VEC&, VEC&)> & fill_gradient,
+    VEC& x,
+    const double xTol = 1e-6,
+    const double gradTol = 1e-6,
+    const unsigned maxIter = 200,
+    const unsigned maxLevels = 10);
 }
 
 #endif /* KRINO_KRINO_MATH_UTILS_AKRI_OPTIMIZE_HPP_ */

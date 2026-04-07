@@ -27,8 +27,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_util/environment/EnvData.hpp>
 
-using krino::expect_near;
-
 static void setup_fields_for_conforming_decomposition(stk::mesh::MetaData & meta, const std::vector<krino::LS_Field> & lsFields, const bool doSetupSnapping, const bool doSetupNodalLevelsetGradient)
 {
   krino::CDFEM_Support & cdfemSupport = krino::CDFEM_Support::get(meta);
@@ -244,7 +242,7 @@ protected:
     for (auto & dCoordsdParentLevelSet : sens.dCoordsdParentLevelSets)
       sumSens += dCoordsdParentLevelSet;
 
-    expect_near(goldSens, sumSens);
+    krino::expect_near(goldSens, sumSens);
   }
 };
 
@@ -416,7 +414,7 @@ protected:
       for (auto & dCoordsdParentLevelSet : sens.dCoordsdParentLevelSets)
         sumSens += dCoordsdParentLevelSet;
 
-      expect_near(goldSens, sumSens, 0.05);
+      krino::expect_near(goldSens, sumSens, 0.05);
     }
   }
 };
@@ -501,7 +499,7 @@ TEST_F(DecomposeMeshAndComputeSensitivitiesForCircleOrSphere, createSnappedMeshF
   build_circle_or_sphere_conforming_mesh_and_test_sensitivity(2, 0.2, 0.6, true, true, false);
 }
 
-class DecomposeMeshAndCheckConvergenceForSensitivitiesForSphere : public ::testing::Test
+class DecomposeMeshAndCheckConvergenceForSensitivitiesForSphere : public krino::OptimizedOnlyTest
 {
 protected:
   double build_sphere_conforming_mesh_and_compute_sensitivity_error(const double meshSize, const double radius, const bool doComputeClosestPointSensitivities, const bool doSnapping, const bool doWriteMesh)
@@ -857,7 +855,7 @@ TEST(DecomposeMeshAndComputeSensitivities, readMeshInitializeDecomposeAndMoveVol
   test_moving_islands_to_separate_phase(island_removal_method, islandPhaseName);
 }
 
-class DecomposeMeshAndCheckConvergenceOfAreaAndSensitivity : public ::testing::Test
+class DecomposeMeshAndCheckConvergenceOfAreaAndSensitivity : public krino::OptimizedOnlyTest
 {
 protected:
 

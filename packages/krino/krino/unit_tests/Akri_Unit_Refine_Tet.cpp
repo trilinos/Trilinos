@@ -9,6 +9,7 @@
 #include <random>
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <Akri_OutputUtils.hpp>
+#include <Akri_UnitTestUtils.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 
 namespace krino {
@@ -263,16 +264,16 @@ TEST_F(UMRRegularTetRefinement, fuzzTest)
   if (doWriteMesh)
     write_mesh("test.e");
 
-  const int fuzz_iterations = 10000;
+  const int fuzz_iterations = num_random_test_cases(1000, 10000);
   std::mt19937 rand_gen;
 
   int count = 0;
-  for (size_t i=0; i < fuzz_iterations; ++i)
+  for (int i=0; i < fuzz_iterations; ++i)
   {
     randomly_mark_elements(rand_gen);
 
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
   }
@@ -287,7 +288,7 @@ TEST_F(UMRRegularTetRefinement, fuzzTestWithCustomGhosting)
 
   if (doWriteMesh) write_mesh("test.e");
 
-  const int fuzz_iterations = 10000;
+  const int fuzz_iterations = num_random_test_cases(1000, 10000);
   std::mt19937 rand_gen;
 
   mMesh.modification_begin();
@@ -298,7 +299,7 @@ TEST_F(UMRRegularTetRefinement, fuzzTestWithCustomGhosting)
   std::vector<stk::mesh::Entity> elems_to_ghost;
   std::vector<stk::mesh::EntityProc> ghost_elems_and_procs;
   std::uniform_int_distribution<> rank_dist(0, this->parallel_size() - 1);
-  for (size_t i = 0; i < fuzz_iterations; ++i)
+  for (int i = 0; i < fuzz_iterations; ++i)
   {
     mMesh.modification_begin();
     mMesh.destroy_ghosting(ghosting);
@@ -316,7 +317,7 @@ TEST_F(UMRRegularTetRefinement, fuzzTestWithCustomGhosting)
     randomly_mark_elements(rand_gen);
 
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
   }
@@ -331,7 +332,7 @@ TEST_F(UMRRegularTetRefinement, performanceUniformRefinementTest)
   // NP=4 Time:     8669 ms
   // NP=8 Time:     3001 ms
 
-  if(!is_valid_proc_size_for_test())
+  if(is_debug() || !is_valid_proc_size_for_test())
     return;
 
   const std::vector<size_t> goldNumElementsByRefinementLevel = {64, 512, 4096, 32768, 262144}; //, 2097152};
@@ -371,7 +372,7 @@ TEST_F(UMRRegularTetRefinement, performanceRefinementThenUnrefinementTest)
   // NP=4 Percept: 32157 ms
   // NP=8 Percept: 28709 ms
 
-  if(!is_valid_proc_size_for_test())
+  if(is_debug() || !is_valid_proc_size_for_test())
     return;
 
   const bool doWriteMesh = false;
@@ -387,7 +388,7 @@ TEST_F(UMRRegularTetRefinement, performanceRefinementThenUnrefinementTest)
     mark_elements_spanning_x_equal_0();
 
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
 
@@ -404,7 +405,7 @@ TEST_F(UMRRegularTetRefinement, performanceRefinementThenUnrefinementTest)
     mark_all_elements_for_unrefinement();
 
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
 
@@ -472,7 +473,7 @@ TEST_F(UMRRegularTetRefinement, refinementAndUnrefinementElementVariables)
   {
     mark_elements_spanning_z_equal_0_and_populate_elem_field(flip);
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
     const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
@@ -489,7 +490,7 @@ TEST_F(UMRRegularTetRefinement, refinementAndUnrefinementElementVariables)
     mark_all_elements_for_unrefinement();
 
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
     const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
@@ -526,7 +527,7 @@ TEST_F(UMRRegularTetRefinement, refinePartiallyRefinedElementsWithElementVariabl
     else  
       mark_elements_spanning_z_equal_0_and_populate_elem_field(flip);
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
     const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);
@@ -543,7 +544,7 @@ TEST_F(UMRRegularTetRefinement, refinePartiallyRefinedElementsWithElementVariabl
     mark_all_elements_for_unrefinement();
 
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
     const size_t numElements = get_global_num_entities(mMesh, stk::topology::ELEMENT_RANK);

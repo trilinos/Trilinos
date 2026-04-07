@@ -116,15 +116,6 @@ std::vector<const FACET *> facets_to_pointers(const std::vector<FACET> & srcFace
   return facetPtrs;
 }
 
-bool does_file_exist(const std::string& filename)
-{
-  if (std::ifstream(filename))
-    return true;
-  return false;
-}
-
-
-
 TEST(skin_facets,demo)
 {
   const std::string inputStlFilename = "geom.stl";

@@ -273,6 +273,41 @@ double compute_point_to_facets_distance_by_average_normal(const stk::math::Vecto
   }
 }
 
+template<class FACET>
+stk::math::Vector3d compute_closest_point_normal(const stk::math::Vector3d &x, const std::vector<const FACET*> & nearestFacets)
+{
+  const std::vector<FacetDistanceQuery<FACET>> facetDistQueries = build_distance_queries(x, nearestFacets);
+  STK_ThrowRequireMsg(!facetDistQueries.empty(), "All facets are degenerate in compute_point_to_facets_distance_by_average_normal.");
+
+  const FacetDistanceQuery<FACET> & closestQuery = find_closest_facet(facetDistQueries);
+
+  if (!is_closest_point_on_facet_edge_or_vertex(closestQuery.closest_point_weights(), FACET::DIM))
+  {
+    return closestQuery.facet().facet_normal();
+  }
+
+  const stk::math::Vector3d pseudoNormal = compute_pseudo_normal(facetDistQueries, closestQuery);
+
+  if (pseudoNormal.length_squared() == 0.0)
+  {
+    krinolog << "Warning:  Cannot determine the average facet normal for computing the level set distance at point " << x
+        << ".  This can happen when faceted facet include coincident facets with opposite normals.  The normal may be wrongly oriented." << stk::diag::dendl;
+    return closestQuery.facet().facet_normal();
+  }
+
+  constexpr double sqrTolSoCloseThatItIsOnSurface = 1.e-12;
+  if ( closestQuery.distance_squared()/closestQuery.facet().mean_squared_edge_length() < sqrTolSoCloseThatItIsOnSurface )
+    return pseudoNormal.unit_vector();
+
+  stk::math::Vector3d unitDiff = x-closestQuery.closest_point();
+  unitDiff.unitize();
+
+  if (Dot(pseudoNormal, x-closestQuery.closest_point()) > 0)
+    return unitDiff;
+  else
+    return -unitDiff;
+}
+
 bool is_projection_of_point_inside_enlarged_triangle(const stk::math::Vector3d & triPt0, const stk::math::Vector3d & triPt1, const stk::math::Vector3d & triPt2, const stk::math::Vector3d& p)
 {
   constexpr double expand {1e-10};
@@ -358,6 +393,8 @@ stk::math::Vector3d compute_pseudo_normal(const stk::math::Vector3d &x, const st
 
 template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & nearestFacets);
 template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & nearestFacets);
+template stk::math::Vector3d compute_closest_point_normal(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & nearestFacets);
+template stk::math::Vector3d compute_closest_point_normal(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & nearestFacets);
 template double point_distance_given_nearest_facets<Facet2d>(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
 template double point_distance_given_nearest_facets<Facet3d>(const stk::math::Vector3d &x, const std::vector<const Facet3d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
 template double compute_point_to_facets_distance_by_average_normal<Facet2d>(const stk::math::Vector3d &x, const std::vector<const Facet2d*> & facets);
@@ -370,6 +407,7 @@ template double compute_intersection_between_surface_facets_and_edge<Facet2d>(co
 template double compute_intersection_between_surface_facets_and_edge<Facet3d>(const std::vector<const Facet3d*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1);
 
 template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets);
+template stk::math::Vector3d compute_closest_point_normal(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets);
 template double point_distance_given_nearest_facets<FacetWithVelocity2d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
 template double compute_point_to_facets_distance_by_average_normal<FacetWithVelocity2d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & facets);
 template stk::math::Vector3d compute_pseudo_normal<FacetWithVelocity2d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity2d*> & nearestFacets);
@@ -377,6 +415,7 @@ template std::pair<int, double> compute_facet_edge_intersection<FacetWithVelocit
 template double compute_intersection_between_surface_facets_and_edge<FacetWithVelocity2d>(const std::vector<const FacetWithVelocity2d*> & candidates, const stk::math::Vector3d & edgePt0, const stk::math::Vector3d & edgePt1);
 
 template stk::math::Vector3d compute_closest_point(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets);
+template stk::math::Vector3d compute_closest_point_normal(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets);
 template double point_distance_given_nearest_facets<FacetWithVelocity3d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets, const double narrow_band_size, const double far_field_value, const bool compute_signed_distance);
 template double compute_point_to_facets_distance_by_average_normal<FacetWithVelocity3d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & facets);
 template stk::math::Vector3d compute_pseudo_normal<FacetWithVelocity3d>(const stk::math::Vector3d &x, const std::vector<const FacetWithVelocity3d*> & nearestFacets);

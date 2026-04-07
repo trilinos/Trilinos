@@ -348,6 +348,19 @@ stk::math::Vector3d Faceted_Surface<FACET>::closest_point(const stk::math::Vecto
 }
 
 template<class FACET>
+stk::math::Vector3d Faceted_Surface<FACET>::closest_point_normal(const stk::math::Vector3d &x) const
+{
+  if (my_facet_tree->empty())
+    return stk::math::Vector3d::ZERO;
+
+  std::vector<const FACET*> nearestFacets;
+  my_facet_tree->find_closest_entities( x, nearestFacets, 0. );
+  STK_ThrowRequire( !nearestFacets.empty() );
+
+  return compute_closest_point_normal(x, nearestFacets);
+}
+
+template<class FACET>
 size_t Faceted_Surface<FACET>::storage_size() const
 {
   size_t store_size = sizeof(Faceted_Surface<FACET>);

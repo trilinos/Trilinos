@@ -127,7 +127,6 @@ public:
   bool is_nonconformal(const stk::mesh::Part & io_part) const;
   bool is_conformal(const stk::mesh::Part & io_part) const;
   bool is_interface(const stk::mesh::Part & io_part) const;
-  stk::mesh::Part & debug_find_conformal_io_part(const stk::mesh::Part & io_part, const PhaseTag & phase) const;
   stk::mesh::Part & find_conformal_io_part(const stk::mesh::Part & io_part, const PhaseTag & phase) const;
   stk::mesh::Part & find_nonconformal_part(const stk::mesh::Part & io_part) const;
   stk::mesh::Part & find_original_part(const stk::mesh::Part & part) const;

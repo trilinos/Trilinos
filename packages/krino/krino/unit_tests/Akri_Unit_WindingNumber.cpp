@@ -1,6 +1,8 @@
+#include <Akri_UnitTestUtils.hpp>
 #include <gtest/gtest.h>
 #include <stk_math/StkVector.hpp>
 #include <Akri_WindingNumber.hpp>
+#include <stk_util/environment/EnvData.hpp>
 #include <stk_util/environment/WallTime.hpp>
 
 namespace krino {
@@ -170,6 +172,8 @@ TEST(approximateWindingNumber, showConvergenceAndAgreementBetweenApproximateMeth
 
 TEST(approximateWindingNumber, compareCPUTimesForApproximateAndExactMethods)
 {
+  SkipTestMsgIf(is_debug() || stk::EnvData::parallel_size() > 1, "Skipping test debug or in parallel");
+
   const std::vector<std::array<stk::math::Vector3d,3>> surfFacets = initialize_nonplanar_facets(6);
 
   const unsigned dim=20;

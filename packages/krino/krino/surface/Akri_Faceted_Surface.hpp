@@ -111,6 +111,8 @@ public:
   std::vector<FACET> & get_facets() { return myLocalFacets; }
 
   virtual stk::math::Vector3d closest_point(const stk::math::Vector3d &x) const override;
+  virtual bool can_approximate_closest_point_normal() const override { return true; }
+  virtual stk::math::Vector3d closest_point_normal(const stk::math::Vector3d &x) const override;
 
 public:
   stk::math::Vector3d pseudo_normal_at_closest_point(const stk::math::Vector3d &x) const;

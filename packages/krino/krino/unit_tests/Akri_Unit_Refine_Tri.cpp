@@ -403,7 +403,7 @@ TEST_F(RightTri6SurroundedByEdgeTrisRefinement, checkAllPossibleRefinementsInPar
   if(!is_valid_proc_size_for_test())
     return;
 
-  const bool doWriteMesh = true;
+  const bool doWriteMesh = false;
 
   for (int i=0; i<8; ++i)
   {
@@ -569,7 +569,7 @@ TEST_F(UMRRegularTriRefinement, refinementThenUnrefinementTest)
     mark_elements_spanning_x_equal_0();
 
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
 
@@ -586,7 +586,7 @@ TEST_F(UMRRegularTriRefinement, refinementThenUnrefinementTest)
     mark_all_elements_for_unrefinement();
 
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
 
@@ -664,7 +664,7 @@ TEST_F(UMRRegularTriShellRefinement, refinementThenUnrefinementTest)
     mark_elements_spanning_x_equal_0();
 
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
 
@@ -681,7 +681,7 @@ TEST_F(UMRRegularTriShellRefinement, refinementThenUnrefinementTest)
     mark_all_elements_for_unrefinement();
 
     if (doWriteMesh)
-      refine_marked_elements(create_file_name("test", ++count));
+      refine_marked_elements(create_file_name("test.e", ++count));
     else
       refine_marked_elements();
 

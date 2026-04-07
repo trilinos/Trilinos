@@ -936,13 +936,7 @@ compute_element_volume_to_edge_ratio(stk::mesh::BulkData & mesh, stk::mesh::Enti
   {
     const std::array<stk::math::Vector3d,4> nodes = gather_tet_coordinates(mesh, element, coordsField);
     const double vol = compute_tet_volume(nodes);
-    const double edge_rms = std::sqrt(
-        ((nodes[1]-nodes[0]).length_squared() +
-         (nodes[2]-nodes[0]).length_squared() +
-         (nodes[3]-nodes[0]).length_squared() +
-         (nodes[3]-nodes[1]).length_squared() +
-         (nodes[3]-nodes[2]).length_squared() +
-         (nodes[2]-nodes[1]).length_squared())/6.);
+    const double edge_rms = compute_simplex_RMS_edge_lengths(nodes);
     return vol/(edge_rms*edge_rms*edge_rms);
   }
   ThrowRuntimeError("Topology " << elem_topology << " not supported in compute_element_volume_to_edge_ratio.");
@@ -1343,6 +1337,8 @@ check_shared_entity_nodes(const stk::mesh::BulkData & mesh, stk::mesh::EntityKey
   stk::mesh::Entity entity = mesh.get_entity(remote_entity_key);
   if (!mesh.is_valid(entity))
   {
+    if (!mesh.is_automatic_aura_on())
+      return true; // This is definitely an error if aura is enabled, but it's not so return true and hope for the best
     krinolog << "Shared entity error, local entity does not exist, remote entity: " << remote_entity_key << stk::diag::dendl;
     return false;
   }
@@ -2551,14 +2547,10 @@ static int determine_new_owner_for_owned_node_to_assure_selected_owned_element(c
   return newOwner;
 }
 
-bool fix_node_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
+static bool fix_node_ownership_to_assure_selected_owned_element_using_aura(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
 {
-  // This method exploits aura to choose which processor the faces and edges should be owned by
-  if (!mesh.is_automatic_aura_on())
-  {
-    // Make no changes, hope for the best.
-    return false;
-  }
+  // This method exploits aura to choose which processor should own each node.
+  STK_ThrowRequireMsg(mesh.is_automatic_aura_on() || mesh.parallel_size() == 1, "Method requires automatic aura.");
 
   const int parallelRank = mesh.parallel_rank();
   stk::mesh::Selector nodeSelector = mesh.mesh_meta_data().locally_owned_part();
@@ -2581,6 +2573,111 @@ bool fix_node_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & m
     return true;
   }
 
+  return false;
+}
+
+static bool node_has_selected_element(const stk::mesh::BulkData & mesh, const stk::mesh::Entity node, const stk::mesh::Selector & elementSelector)
+{
+  for (auto elem : StkMeshEntities{mesh.begin_elements(node), mesh.end_elements(node)})
+    if (is_entity_selected(mesh, elementSelector, elem))
+      return true;
+  return false;
+}
+
+static
+void pack_for_owning_procs(const stk::mesh::BulkData & mesh,
+    const std::vector<stk::mesh::Entity> & entities,
+    stk::CommSparse &commSparse)
+{
+  std::vector<int> elemCommProcs;
+  stk::pack_and_communicate(commSparse,[&]()
+  {
+    for (auto entity : entities)
+    {
+      if (!mesh.bucket(entity).owned())
+      {
+        commSparse.send_buffer(mesh.parallel_owner_rank(entity)).pack(mesh.entity_key(entity));
+      }
+    }
+  });
+}
+
+static std::vector<int> unpack_procs_that_have_selected_elements_for_nodes(const stk::mesh::BulkData & mesh,
+    const std::vector<stk::mesh::Entity> & sortedNodes,
+    stk::CommSparse &commSparse)
+{
+  std::vector<int> procsWithSelectedElem(sortedNodes.size(), mesh.parallel_size());
+  stk::unpack_communications(commSparse, [&](int procId)
+  {
+    stk::CommBuffer & buffer = commSparse.recv_buffer(procId);
+
+    while ( buffer.remaining() )
+    {
+      stk::mesh::EntityId nodeId;
+      commSparse.recv_buffer(procId).unpack(nodeId);
+      stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeId);
+      STK_ThrowRequire(mesh.is_valid(node));
+      const auto iter = std::lower_bound(sortedNodes.begin(), sortedNodes.end(), node, stk::mesh::EntityLess(mesh));
+      if (iter != sortedNodes.end() && *iter == node)
+      {
+        const size_t index = std::distance(sortedNodes.begin(), iter);
+        procsWithSelectedElem[index] = std::min(procsWithSelectedElem[index], procId);
+      }
+    }
+  });
+  return procsWithSelectedElem;
+}
+
+static bool fix_node_ownership_to_assure_selected_owned_element_without_using_aura(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
+{
+  std::vector<stk::mesh::Entity> ownedNodesWithoutSelectedElems;
+  std::vector<stk::mesh::Entity> unownedNodesWithSelectedElems;
+
+  for (auto && bucket : mesh.buckets(stk::topology::NODE_RANK))
+  {
+    if (bucket->owned())
+    {
+      for (auto && node : *bucket)
+        if (!node_has_selected_element(mesh, node, elementSelector))
+          ownedNodesWithoutSelectedElems.push_back(node);
+    }
+    else
+    {
+      for (auto && node : *bucket)
+        if (node_has_selected_element(mesh, node, elementSelector))
+          unownedNodesWithSelectedElems.push_back(node);
+    }
+  }
+
+  if(stk::is_true_on_all_procs(mesh.parallel(), ownedNodesWithoutSelectedElems.empty()))
+    return false;
+
+  std::sort(ownedNodesWithoutSelectedElems.begin(), ownedNodesWithoutSelectedElems.end(), stk::mesh::EntityLess(mesh));
+
+  stk::CommSparse commSparse(mesh.parallel());
+  pack_for_owning_procs(mesh, unownedNodesWithSelectedElems, commSparse);
+  const std::vector<int> newOwners = unpack_procs_that_have_selected_elements_for_nodes(mesh, ownedNodesWithoutSelectedElems, commSparse);
+
+  std::vector<stk::mesh::EntityProc> entitiesToMove;
+  STK_ThrowRequire(newOwners.size() == ownedNodesWithoutSelectedElems.size());
+  entitiesToMove.reserve(ownedNodesWithoutSelectedElems.size());
+  for (size_t i=0; i<ownedNodesWithoutSelectedElems.size(); ++i)
+  {
+    STK_ThrowRequireMsg(newOwners[i] < mesh.parallel_size(), "Cannot find proc with selected element for node " << mesh.identifier(ownedNodesWithoutSelectedElems[i]));
+    entitiesToMove.emplace_back(ownedNodesWithoutSelectedElems[i], newOwners[i]);
+  }
+
+  mesh.change_entity_owner(entitiesToMove);
+  return true;
+}
+
+bool fix_node_ownership_to_assure_selected_owned_element(stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
+{
+  if (mesh.parallel_size() == 1)
+    return false;
+  if (mesh.is_automatic_aura_on())
+    return fix_node_ownership_to_assure_selected_owned_element_using_aura(mesh, elementSelector);
+  return fix_node_ownership_to_assure_selected_owned_element_without_using_aura(mesh, elementSelector);
   return false;
 }
 
@@ -3000,24 +3097,6 @@ void communicate_owned_entities_to_ghosting_procs(const stk::mesh::BulkData & me
   unpack_entities(mesh, entities, commSparse);
 }
 
-static
-void pack_for_owning_procs(const stk::mesh::BulkData & mesh,
-    const std::vector<stk::mesh::Entity> & entities,
-    stk::CommSparse &commSparse)
-{
-  std::vector<int> elemCommProcs;
-  stk::pack_and_communicate(commSparse,[&]()
-  {
-    for (auto entity : entities)
-    {
-      if (!mesh.bucket(entity).owned())
-      {
-        commSparse.send_buffer(mesh.parallel_owner_rank(entity)).pack(mesh.entity_key(entity));
-      }
-    }
-  });
-}
-
 void communicate_entities_to_owning_proc(const stk::mesh::BulkData & mesh, const std::vector<stk::mesh::Entity> & entitiesToSend, std::vector<stk::mesh::Entity> & entitiesReceived)
 {
   stk::CommSparse commSparse(mesh.parallel());
@@ -3180,6 +3259,19 @@ void parallel_sync_fields(const stk::mesh::BulkData & mesh, const stk::mesh::Fie
 void parallel_sync_all_fields(const stk::mesh::BulkData & mesh)
 {
   parallel_sync_fields(mesh, mesh.mesh_meta_data().get_fields());
+}
+
+static bool mesh_has_selected_higher_order_elements_locally(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
+{
+  for ( auto && bucket_ptr : mesh.get_buckets(stk::topology::ELEMENT_RANK, elementSelector) )
+    if (bucket_ptr->topology() != bucket_ptr->topology().base())
+      return true;
+  return false;
+}
+
+bool mesh_has_selected_higher_order_elements(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & elementSelector)
+{
+  return stk::is_true_on_any_proc(mesh.parallel(), mesh_has_selected_higher_order_elements_locally(mesh,elementSelector));
 }
 
 } // namespace krino

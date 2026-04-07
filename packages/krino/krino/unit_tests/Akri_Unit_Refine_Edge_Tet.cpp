@@ -63,7 +63,7 @@ void test_edge_refinement(FIXTURE & fixture, const std::vector<size_t> & goldNum
     fixture.mark_edges_crossing_x_value(0.01);
 
     if (doWriteMesh)
-      fixture.refine_marked_edges(create_file_name("test", ++count));
+      fixture.refine_marked_edges(create_file_name("test.e", ++count));
     else
       fixture.refine_marked_edges();
 

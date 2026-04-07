@@ -16,10 +16,14 @@
 #include <stk_io/DatabasePurpose.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/environment/FileUtils.hpp>
 #include <Akri_Faceted_Surface.hpp>
+#include <Akri_FacetsFromSides.hpp>
 #include <Akri_MeshHelpers.hpp>
 #include <Ioss_SubSystem.h>
 #include <Ioss_PropertyManager.h>
+#include <Ioss_DynamicTopologyFileControl.h>
+#include <stk_util/environment/FileUtils.hpp>
 
 namespace krino {
 
@@ -30,6 +34,12 @@ bool is_parallel_io_enabled()
 #else
   return false;
 #endif
+}
+
+bool does_file_exist(const std::string& filename)
+{
+  std::ifstream f(filename);
+  return f.good();
 }
 
 static void enable_compose_results_if_supported(Ioss::PropertyManager & properties)
@@ -113,25 +123,25 @@ void output_mesh_with_fields(const stk::mesh::BulkData & mesh, const stk::mesh::
   output_mesh_with_fields_and_properties(mesh, outputSelector, fileName, step, time, properties, purpose);
 }
 
-std::string create_filename_from_base_filename(const std::string & baseFileName, const int numFileRevisions)
-{
-  size_t lastIndex = baseFileName.find_last_of(".");
-  STK_ThrowRequire(lastIndex != std::string::npos);
-  const std::string fileBaseName = baseFileName.substr(0, lastIndex);
-  return create_file_name(fileBaseName, numFileRevisions);
-}
-
 std::string create_file_name(const std::string & fileBaseName, const int fileIndex)
 {
   STK_ThrowAssert(fileIndex >= 0);
-  if (fileIndex < 1)
-    return fileBaseName + ".e";
+  std::string stepFileName = Ioss::DynamicTopologyFileControl::get_linear_database_filename(fileBaseName, fileIndex+1);
+  stk::util::filename_substitution(stepFileName);
+  std::cout << "fileBaseName fileIndex output " << fileBaseName << " " << fileIndex << " " << stepFileName << std::endl;
+  return stepFileName;
+}
 
-  STK_ThrowAssert(fileIndex <= 9998);
-  char counterChar[32] = {'\0'};
-  std::snprintf(counterChar, 32, "%.4d", fileIndex+1);
-  const std::string filename = fileBaseName + ".e-s" + std::string(counterChar);
-  return filename;
+void write_shells_for_surfaces(const stk::mesh::BulkData & mesh, const FieldRef coordsField, const std::vector<stk::mesh::Part*> & surfaces, const stk::mesh::Part & activePart, const std::string & fileBaseName, const int fileIndex)
+{
+  std::unique_ptr<FacetedSurfaceBase> interfaceFacets = FacetedSurfaceBase::build(mesh.mesh_meta_data().spatial_dimension());
+  for (auto * surface : surfaces)
+  {
+    const stk::mesh::Selector interfaceSelector = *surface;
+    const stk::mesh::Selector negativeSideBlockSelector = stk::mesh::selectUnion(mesh.mesh_meta_data().get_blocks_touching_surface(surface));
+    append_interface_conforming_facets(mesh, interfaceSelector, negativeSideBlockSelector, activePart, coordsField, *interfaceFacets);
+  }
+  write_facets(mesh, *interfaceFacets, fileBaseName, fileIndex);
 }
 
 template<class FACET>
@@ -150,7 +160,7 @@ void write_facets( const std::vector<FACET> & facets, const std::string & fileBa
   properties.add(Ioss::Property("base_filename", create_file_name(fileBaseName, 0)));
   if (fileIndex > 0)
     properties.add(Ioss::Property("state_offset", fileIndex));
-  Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", create_file_name(fileBaseName, fileIndex), Ioss::WRITE_RESULTS, comm, properties);
+  Ioss::DatabaseIO *db = Ioss::IOFactory::create("exodusII", fileName, Ioss::WRITE_RESULTS, comm, properties);
   STK_ThrowRequireMsg(db != nullptr && db->ok(), "ERROR: Could not open output database '" << fileName << "' of type 'exodus'\n");
   Ioss::Region io(db, "FacetRegion");
 
@@ -246,6 +256,14 @@ void write_facets( const std::vector<FACET> & facets, const std::string & fileBa
   io.begin_state(currentOutputStep);
   io.end_state(currentOutputStep);
   io.end_mode(Ioss::STATE_TRANSIENT);
+}
+
+void write_facets(const stk::mesh::BulkData & mesh, const FacetedSurfaceBase & facets, const std::string & fileBaseName, const int fileIndex)
+{
+  if (2 == mesh.mesh_meta_data().spatial_dimension())
+    krino::write_facets(facets.get_facets_2d(), fileBaseName, fileIndex, mesh.parallel());
+  else
+    krino::write_facets(facets.get_facets_3d(), fileBaseName, fileIndex, mesh.parallel());
 }
 
 stk::mesh::PartVector turn_off_output_for_empty_io_parts(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & outputSelector)

@@ -9,12 +9,18 @@ namespace krino {
 
 class FacetedSurfaceBase;
 
+void append_interface_conforming_facets(const stk::mesh::BulkData & mesh,
+    const stk::mesh::Selector interfaceSelector,
+    const stk::mesh::Selector negativeSideBlockSelector,
+    const stk::mesh::Part & activePart,
+    const FieldRef coordsField,
+    FacetedSurfaceBase & facets);
+
 void build_interface_conforming_facets(const stk::mesh::BulkData & mesh,
     const stk::mesh::Selector interfaceSelector,
     const stk::mesh::Selector negativeSideBlockSelector,
     const stk::mesh::Part & activePart,
     const FieldRef coordsField,
-    const Surface_Identifier lsIdentifier,
     FacetedSurfaceBase & facets);
 
 void build_interface_conforming_facets_with_interface_velocity(const stk::mesh::BulkData & mesh,
@@ -24,7 +30,6 @@ void build_interface_conforming_facets_with_interface_velocity(const stk::mesh::
     const FieldRef coordsField,
     const FieldRef interfaceVelocity,
     const unsigned numVelocityStates,
-    const Surface_Identifier lsIdentifier,
     FacetedSurfaceBase & facets);
 
 }

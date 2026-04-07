@@ -8,6 +8,7 @@
 #include <stk_mesh/base/FieldBLAS.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <Akri_ParallelErrorMessage.hpp>
+#include <Akri_RefinementRebalance.hpp>
 #include "Akri_DiagWriter.hpp"
 #include "Akri_MeshHelpers.hpp"
 #include "Akri_ReportHandler.hpp"
@@ -469,10 +470,17 @@ bool RefinementManager::do_refinement(const int /*debugLevel*/)
   krinolog << "Number of elements marked for unrefinement = " << numUnrefine << stk::diag::dendl;
 
   std::vector<size_t> counts;
-  stk::mesh::comm_mesh_counts(mesh, counts);
 
+  const FieldRef markerField = get_marker_field_and_sync_to_host();
+
+  const stk::mesh::Selector selector = stk::mesh::selectField(markerField) &
+      AuxMetaData::get(myMeta).active_part() & myMeta.locally_owned_part() &
+      !myRefinement.parent_part();
+
+  stk::mesh::comm_mesh_counts(mesh, counts, &selector);
+  
   //if it can be uniformly refined, and all elements are marked for refinement just do uniform refinement
-  if (is_supported_uniform_refinement_element() && counts[3] == numRefine && (counts[3]+numRefine) > 0)
+  if (is_supported_uniform_refinement_element() && (counts[3] == numRefine) && (counts[3]+numRefine) > 0)
   {
     return do_uniform_refinement(1);
   }
@@ -486,7 +494,7 @@ bool RefinementManager::do_refinement(const int /*debugLevel*/)
     didMakeAnyChanges = myRefinement.do_refinement(get_marker());
   }
 
-  stk::mesh::comm_mesh_counts(mesh, counts);
+  stk::mesh::comm_mesh_counts(mesh, counts, &selector);
 
   krinolog << "Adapt: after refine, mesh has  " << counts[0] << " nodes, " << counts[1]
            << " edges, " << counts[2] << " faces, " << counts[3] << " elements" << stk::diag::dendl;
@@ -518,6 +526,22 @@ bool RefinementManager::do_uniform_refinement(const int numUniformRefinementLeve
   ParallelThrowAssert(mesh.parallel(), check_face_and_edge_relations(mesh));
 
   return didMakeAnyChanges;
+}
+
+bool RefinementManager::do_rebalance()
+{
+  stk::mesh::BulkData & mesh = myMeta.mesh_bulk_data();
+  if (mesh.parallel_size() > 1)
+  {
+    const bool didRebal = rebalance_refined_mesh(myRefinement, mesh);
+    if (didRebal)
+    {
+      AuxMetaData & auxMeta = AuxMetaData::get(myMeta);
+      fix_node_ownership_to_assure_selected_owned_element(mesh, auxMeta.active_part());
+    }
+    return didRebal;
+  }
+  return false;
 }
 
 void RefinementManager::restore_after_restart()

@@ -281,11 +281,8 @@ LevelSet::write_facets(void)
   /* %TRACE[ON]% */ Trace trace__("krino::LevelSet::facets_exoii(void)"); /* %TRACE% */
   if (stk::is_true_on_all_procs(mesh().parallel(), (!facets || facets->size() == 0)))
     return;
-  const std::string fileBaseName = "facets_" + name();
-  if (2 == mesh().mesh_meta_data().spatial_dimension())
-    krino::write_facets(facets->get_facets_2d(), fileBaseName, my_facetFileIndex++, mesh().parallel());
-  else
-    krino::write_facets(facets->get_facets_3d(), fileBaseName, my_facetFileIndex++, mesh().parallel());
+  const std::string fileBaseName = "facets_" + name() + ".e";
+  krino::write_facets(mesh(), *facets, fileBaseName, my_facetFileIndex++);
 }
 
 //-----------------------------------------------------------------------------------
@@ -845,7 +842,7 @@ static void build_levelset_conforming_facets_with_interface_velocity(const stk::
   const stk::mesh::Selector interfaceSelector = phaseSupport.get_negative_levelset_interface_selector(lsIdentifier);
   const stk::mesh::Selector negativeSideBlockSelector = phaseSupport.get_negative_levelset_block_selector(lsIdentifier);
 
-  build_interface_conforming_facets_with_interface_velocity(mesh, interfaceSelector, negativeSideBlockSelector, activePart, coordsField, interfaceVelocity, numVelocityStates, lsIdentifier, facets);
+  build_interface_conforming_facets_with_interface_velocity(mesh, interfaceSelector, negativeSideBlockSelector, activePart, coordsField, interfaceVelocity, numVelocityStates, facets);
 }
 
 static void build_levelset_conforming_facets(const stk::mesh::BulkData & mesh,
@@ -858,7 +855,7 @@ static void build_levelset_conforming_facets(const stk::mesh::BulkData & mesh,
   const stk::mesh::Selector interfaceSelector = phaseSupport.get_negative_levelset_interface_selector(lsIdentifier);
   const stk::mesh::Selector negativeSideBlockSelector = phaseSupport.get_negative_levelset_block_selector(lsIdentifier);
 
-  build_interface_conforming_facets(mesh, interfaceSelector, negativeSideBlockSelector, activePart, coordsField, lsIdentifier, facets);
+  build_interface_conforming_facets(mesh, interfaceSelector, negativeSideBlockSelector, activePart, coordsField, facets);
 }
 
 void
