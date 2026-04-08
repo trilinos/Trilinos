@@ -1,3 +1,3 @@
-tribits_package_define_dependencies(LIB_OPTIONAL_TPLS Pthread CUDA HWLOC DLlib)
+tribits_package_define_dependencies(LIB_OPTIONAL_TPLS Pthread CUDA HWLOC DLlib quadmath)
 
 tribits_tpl_tentatively_enable(DLlib)
