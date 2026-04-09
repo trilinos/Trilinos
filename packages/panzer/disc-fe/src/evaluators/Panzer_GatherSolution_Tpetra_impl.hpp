@@ -564,7 +564,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    else {
      TEUCHOS_ASSERT(false);
    }
-   
+
    // turn off sensitivies: this may be faster if we don't expand the term
    // but I suspect not because anywhere it is used the full complement of
    // sensitivies will be needed anyway.
