@@ -28,15 +28,13 @@ find_package(pybind11 REQUIRED)
 
 ###################################################################################################
 
-ASSERT_DEFINED(
-  BUILD_SHARED_LIBS
-  Python3_EXECUTABLE
-  Python3_VERSION_MAJOR
-  Python3_VERSION_MINOR
-  ${PACKAGE_NAME}_ENABLE_MueLu
-  Tpetra_INST_OPENMP
-  BINDER_EXECUTABLE
-)
+ASSERT_DEFINED(BUILD_SHARED_LIBS)
+ASSERT_DEFINED(Python3_EXECUTABLE)
+ASSERT_DEFINED(Python3_VERSION_MAJOR)
+ASSERT_DEFINED(Python3_VERSION_MINOR)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_MueLu)
+ASSERT_DEFINED(Tpetra_INST_OPENMP)
+ASSERT_DEFINED(BINDER_EXECUTABLE)
 
 ###################################################################################################
 
