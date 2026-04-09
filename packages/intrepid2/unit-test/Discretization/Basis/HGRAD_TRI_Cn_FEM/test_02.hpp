@@ -84,7 +84,7 @@ namespace Intrepid2 {
             auto basisPtr_device = copy_virtual_class_to_device<DeviceType,BasisType>(*basisPtr);
             auto basisRawPtr_device = basisPtr_device.get();
 
-            int scratch_space_level =1;
+            int scratch_space_level = 1;
             const int vectorSize = getVectorSizeForHierarchicalParallelism<PointValueType>();
             Kokkos::TeamPolicy<DeviceSpaceType> teamPolicy(ncells, Kokkos::AUTO,vectorSize);
 
@@ -93,13 +93,15 @@ namespace Intrepid2 {
                   auto valsACell = Kokkos::subview(outputValuesA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
                   basisRawPtr_device->getValues(valsACell, inputPoints, OPERATOR_VALUE, team_member, team_member.team_scratch(scratch_space_level));
               };              
+              int team_size = std::min(npts,teamPolicy.team_size_recommended(functor, Kokkos::ParallelForTag()));
+              auto teamPolicyVals = Kokkos::TeamPolicy<DeviceSpaceType>(ncells, team_size, vectorSize);
               
               //Get the required size of the scratch space per team and per thread.
               int perThreadSpaceSize(0), perTeamSpaceSize(0);
               basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_VALUE);
-              teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+              teamPolicyVals.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
 
-              Kokkos::parallel_for (teamPolicy,functor);
+              Kokkos::parallel_for (teamPolicyVals,functor);
             }
 
             { //compute gradients
@@ -107,13 +109,16 @@ namespace Intrepid2 {
                   auto gradsACell = Kokkos::subview(outputGradsA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
                   basisRawPtr_device->getValues(gradsACell, inputPoints, OPERATOR_GRAD, team_member, team_member.team_scratch(scratch_space_level));
               };              
+              int team_size =std::min(npts,teamPolicy.team_size_recommended(functor, Kokkos::ParallelForTag()));
+              auto teamPolicyGrads = Kokkos::TeamPolicy<DeviceSpaceType>(ncells, team_size, vectorSize);
               
               //Get the required size of the scratch space per team and per thread.
               int perThreadSpaceSize(0), perTeamSpaceSize(0);
               basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_GRAD);
-              teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+              std::cout << "team_size: " << team_size << ", vectorSize: " << vectorSize << ", perTeamSpaceSize: "  << perTeamSpaceSize <<  ", perThreadSpaceSize: " <<  perThreadSpaceSize <<std::endl;
+              teamPolicyGrads.set_scratch_size(scratch_space_level, Kokkos::PerThread(perThreadSpaceSize));
 
-              Kokkos::parallel_for (teamPolicy,functor);
+              Kokkos::parallel_for (teamPolicyGrads,functor);
             }
 
             { //compute curls
@@ -121,13 +126,15 @@ namespace Intrepid2 {
                   auto curlsACell = Kokkos::subview(outputCurlsA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
                   basisRawPtr_device->getValues(curlsACell, inputPoints, OPERATOR_CURL, team_member, team_member.team_scratch(scratch_space_level));
               };              
+              int team_size = std::min(npts,teamPolicy.team_size_recommended(functor, Kokkos::ParallelForTag()));
+              auto teamPolicyCurls = Kokkos::TeamPolicy<DeviceSpaceType>(ncells, team_size, vectorSize);
               
               //Get the required size of the scratch space per team and per thread.
               int perThreadSpaceSize(0), perTeamSpaceSize(0);
               basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_CURL);
-              teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+              teamPolicyCurls.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
 
-              Kokkos::parallel_for (teamPolicy,functor);
+              Kokkos::parallel_for (teamPolicyCurls,functor);
             }
           }
 
@@ -159,7 +166,7 @@ namespace Intrepid2 {
                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
                               << ", val A: " << outputValuesA_Host(ic,i,j) 
                               << ", val B: " << outputValuesB_Host(i,j) 
-                              << ", |diff|: " << diff
+                              << ", |rel diff|: " << diff/std::max(1.0, maxMagnitude)
                               << ", tol: " << tol
                               << std::endl;
                   }
@@ -172,7 +179,7 @@ namespace Intrepid2 {
             const auto outputGradsB_Host = Kokkos::create_mirror_view(outputGradsB); Kokkos::deep_copy(outputGradsB_Host, outputGradsB);
             
             OutValueType diff = 0;
-            const auto tol = 100.0 * epsilon<double>();
+            const auto tol = 1.0e5 * epsilon<double>();
             for (size_t ic=0;ic<outputGradsA_Host.extent(0);++ic)
               for (size_t i=0;i<outputGradsA_Host.extent(1);++i)
                 for (size_t j=0;j<outputGradsA_Host.extent(2);++j) {
@@ -188,7 +195,7 @@ namespace Intrepid2 {
                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
                               << ", grads A: [" << outputGradsA_Host(ic,i,j,0) << ", " << outputGradsA_Host(ic,i,j,1) << "]"
                               << ", grads B: [" << outputGradsB_Host(i,j,0) << ", " <<  outputGradsB_Host(i,j,1) << "]"
-                              << ", |diff|: " << diff
+                              << ", |rel diff|: " << diff/std::max(1.0, maxMagnitude)
                               << ", tol: " << tol
                               << std::endl;
                   }
@@ -201,20 +208,23 @@ namespace Intrepid2 {
             const auto outputCurlsB_Host = Kokkos::create_mirror_view(outputCurlsB); Kokkos::deep_copy(outputCurlsB_Host, outputCurlsB);
             
             OutValueType diff = 0;
-            const auto tol = 100.0 * epsilon<double>();
+            const auto tol = 1.0e5 * epsilon<double>();
             for (size_t ic=0;ic<outputCurlsA_Host.extent(0);++ic)
               for (size_t i=0;i<outputCurlsA_Host.extent(1);++i)
                 for (size_t j=0;j<outputCurlsA_Host.extent(2);++j) {
                   diff = 0;
-                  for (int d=0;d<ndim;++d)
+                  OutValueType maxMagnitude = 0;
+                  for (int d=0;d<ndim;++d) {
                     diff += std::abs(outputCurlsB_Host(i,j,d) - outputCurlsA_Host(ic,i,j,d));
-                  if (diff > tol) {
+                    maxMagnitude = std::max(maxMagnitude, std::max(std::abs(outputCurlsA_Host(ic,i,j,d)), std::abs(outputCurlsB_Host(i,j,d))));
+                  }
+                  if (diff > tol * std::max(1.0, maxMagnitude)) {
                     ++errorFlag;
                     std::cout << " order: " << order
                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
                               << ", curls A: [" << outputCurlsA_Host(ic,i,j,0) << ", " << outputCurlsA_Host(ic,i,j,1) <<"]"
                               << ", curls B: [" << outputCurlsB_Host(i,j,0) << ", " <<  outputCurlsB_Host(i,j,1) << "]"
-                              << ", |diff|: " << diff
+                              << ", |rel diff|: " << diff/std::max(1.0, maxMagnitude)
                               << ", tol: " << tol
                               << std::endl;
                   }

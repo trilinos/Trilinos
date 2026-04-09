@@ -78,7 +78,7 @@ namespace Intrepid2 {
             auto basisPtr_device = copy_virtual_class_to_device<DeviceType,BasisType>(*basisPtr);
             auto basisRawPtr_device = basisPtr_device.get();
 
-            int scratch_space_level =1;
+            int scratch_space_level = 1;
             const int vectorSize = getVectorSizeForHierarchicalParallelism<PointValueType>();
             Kokkos::TeamPolicy<DeviceSpaceType> teamPolicy(ncells, Kokkos::AUTO,vectorSize);
 
@@ -86,14 +86,16 @@ namespace Intrepid2 {
               auto functor = KOKKOS_LAMBDA (typename Kokkos::TeamPolicy<DeviceSpaceType>::member_type team_member) {
                   auto valsACell = Kokkos::subview(outputValuesA, team_member.league_rank(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
                   basisRawPtr_device->getValues(valsACell, inputPoints, OPERATOR_VALUE, team_member, team_member.team_scratch(scratch_space_level));
-              };              
+               };              
+               int team_size = std::min(npts,teamPolicy.team_size_recommended(functor, Kokkos::ParallelForTag()));
+               auto teamPolicyVals = Kokkos::TeamPolicy<DeviceSpaceType>(ncells, team_size, vectorSize);
               
-              //Get the required size of the scratch space per team and per thread.
-              int perThreadSpaceSize(0), perTeamSpaceSize(0);
-              basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_VALUE);
-              teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
-
-              Kokkos::parallel_for (teamPolicy,functor);
+               //Get the required size of the scratch space per team and per thread.
+               int perThreadSpaceSize(0), perTeamSpaceSize(0);
+               basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_VALUE);
+               teamPolicyVals.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
+ 
+               Kokkos::parallel_for (teamPolicyVals,functor);
             }
           }
 
@@ -119,13 +121,13 @@ namespace Intrepid2 {
                   const auto maxMagnitude = std::max(std::abs(valA), std::abs(valB));
                   if (diff > tol * std::max(1.0, maxMagnitude)) {
                     ++errorFlag;
-                    std::cout << " order: " << order
-                              << ", ic: " << ic << ", i: " << i << ", j: " << j 
-                              << ", val A: " << outputValuesA_Host(ic,i,j) 
-                              << ", val B: " << outputValuesB_Host(i,j) 
-                              << ", |diff|: " << diff
-                              << ", tol: " << tol
-                              << std::endl;
+                   std::cout << " order: " << order
+                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
+                               << ", val A: " << outputValuesA_Host(ic,i,j) 
+                               << ", val B: " << outputValuesB_Host(i,j) 
+                               << ", |rel diff|: " << diff/std::max(1.0, maxMagnitude)
+                               << ", tol: " << tol
+                               << std::endl;
                   }
                 }
           }

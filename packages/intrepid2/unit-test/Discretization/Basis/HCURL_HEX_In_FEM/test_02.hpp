@@ -81,7 +81,7 @@ namespace Intrepid2 {
             auto basisPtr_device = copy_virtual_class_to_device<DeviceType,BasisType>(*basisPtr);
             auto basisRawPtr_device = basisPtr_device.get();
 
-            int scratch_space_level =1;
+            int scratch_space_level = 1;
             const int vectorSize = getVectorSizeForHierarchicalParallelism<PointValueType>();
             Kokkos::TeamPolicy<DeviceSpaceType> teamPolicy(ncells, Kokkos::AUTO,vectorSize);
 
@@ -111,18 +111,14 @@ namespace Intrepid2 {
                   basisRawPtr_device->getValues(curlsACell, inputPoints, OPERATOR_CURL, team_member, team_member.team_scratch(scratch_space_level));
               };     
               
-              // avoid using a team size larger than needed, to reduce allocated scrach space memory
-              ordinal_type team_size = teamPolicy.team_size_recommended(functor, Kokkos::ParallelForTag());
-              *outStream << "Max Recommended team size: " << team_size << ", Requested team size: " << npts <<std::endl;
-              team_size = std::min(team_size, npts);
-              teamPolicy = Kokkos::TeamPolicy<typename DeviceType::execution_space>(ncells, team_size,vectorSize);         
-              
-              //Get the required size of the scratch space per team and per thread.
-              int perThreadSpaceSize(0), perTeamSpaceSize(0);
-              basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_CURL);
-              teamPolicy.set_scratch_size(scratch_space_level, Kokkos::PerTeam(perTeamSpaceSize), Kokkos::PerThread(perThreadSpaceSize));
-
-              Kokkos::parallel_for (teamPolicy,functor);
+               int team_size = std::min(npts,teamPolicy.team_size_recommended(functor, Kokkos::ParallelForTag()));
+               auto teamPolicyVals = Kokkos::TeamPolicy<DeviceSpaceType>(ncells, team_size, vectorSize);
+               //Get the required size of the scratch space per team and per thread.
+               int perThreadSpaceSize(0), perTeamSpaceSize(0);
+               basisPtr->getScratchSpaceSize(perTeamSpaceSize,perThreadSpaceSize,inputPoints, OPERATOR_CURL);
+               teamPolicyVals.set_scratch_size(scratch_space_level, Kokkos::PerThread(perThreadSpaceSize));
+ 
+               Kokkos::parallel_for (teamPolicyVals,functor);
             }
           }
 
@@ -151,13 +147,13 @@ namespace Intrepid2 {
                   }
                   if (diff > tol * std::max(1.0, maxMagnitude)) {
                     ++errorFlag;
-                    std::cout << " order: " << order
-                              << ", ic: " << ic << ", i: " << i << ", j: " << j 
+                   std::cout << " order: " << order
+                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
                               << ", val A: [" << outputValuesA_Host(ic,i,j,0) << ", " << outputValuesA_Host(ic,i,j,1) << "]"
                               << ", val B: [" << outputValuesB_Host(i,j,0) << ", " << outputValuesB_Host(i,j,1) << "]"
-                              << ", |diff|: " << diff
-                              << ", tol: " << tol
-                              << std::endl;
+                               << ", |rel diff|: " << diff/std::max(1.0, maxMagnitude)
+                               << ", tol: " << tol
+                               << std::endl;
                   }
                 }
           }
@@ -180,13 +176,13 @@ namespace Intrepid2 {
                   }
                   if (diff > tol * std::max(1.0, maxMagnitude)) {
                     ++errorFlag;
-                    std::cout << " order: " << order
-                              << ", ic: " << ic << ", i: " << i << ", j: " << j 
-                              << ", curls A: [" << outputCurlsA_Host(ic,i,j,0)<< ", " << outputCurlsA_Host(ic,i,j,1) << ", " << outputCurlsA_Host(ic,i,j,2) << "]"
-                              << ", curls B: [" << outputCurlsB_Host(i,j,0) << ", " << outputCurlsB_Host(i,j,1)<< ", " << outputCurlsB_Host(i,j,2) << "]"
-                              << ", |diff|: " << diff
-                              << ", tol: " << tol
-                              << std::endl;
+                   std::cout << " order: " << order
+                               << ", ic: " << ic << ", i: " << i << ", j: " << j 
+                               << ", curls A: [" << outputCurlsA_Host(ic,i,j,0)<< ", " << outputCurlsA_Host(ic,i,j,1) << ", " << outputCurlsA_Host(ic,i,j,2) << "]"
+                               << ", curls B: [" << outputCurlsB_Host(i,j,0) << ", " << outputCurlsB_Host(i,j,1)<< ", " << outputCurlsB_Host(i,j,2) << "]"
+                               << ", |rel diff|: " << diff/std::max(1.0, maxMagnitude)
+                               << ", tol: " << tol
+                               << std::endl;
                   }
                 }
           }
