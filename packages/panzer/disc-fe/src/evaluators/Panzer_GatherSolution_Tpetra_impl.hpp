@@ -563,10 +563,6 @@ evaluateFields(typename TRAITS::EvalData workset)
      }
    }
 
-      std::cout << "GatherSolution_Tpetra field="
-          << " useTimeDerivativeSolutionVector_="
-          << useTimeDerivativeSolutionVector_
-          << " seed=" << seed_value << "\n";
    // Interface worksets handle DOFs from two element blocks.  The
    // derivative offset for the other element block must be shifted by
    // the derivative side of my element block.
