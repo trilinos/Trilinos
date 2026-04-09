@@ -1,4 +1,5 @@
-ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
+ASSERT_DEFINED(PACKAGE_SOURCE_DIR)
+ASSERT_DEFINED(CMAKE_CURRENT_SOURCE_DIR)
 
 # Unit test static library containing 'int main' that initializes:
 #   - Teuchos MPI Comm
