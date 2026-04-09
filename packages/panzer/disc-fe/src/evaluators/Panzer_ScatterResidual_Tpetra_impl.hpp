@@ -408,6 +408,17 @@ public:
 
        // Sum Jacobian
        jac.sumIntoValues(lid, &lids(cell,0), numIds, &vals(cell,0), true, true);
+
+       if (cell == 0 && basis == 0) {
+  printf("scatterField.val = %e\n", scatterField.val());
+  printf("row lid = %d\n", (int)lid);
+  for (int sensIndex = 0; sensIndex < numIds; ++sensIndex) {
+    printf("  col lid = %d  dx[%d] = %e\n",
+           (int)lids(cell,sensIndex),
+           sensIndex,
+           scatterField.fastAccessDx(sensIndex));
+  }
+}
     } // end basis
   }
 };

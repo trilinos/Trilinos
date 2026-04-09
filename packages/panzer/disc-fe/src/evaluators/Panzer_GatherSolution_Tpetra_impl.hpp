@@ -564,13 +564,17 @@ evaluateFields(typename TRAITS::EvalData workset)
    else {
      TEUCHOS_ASSERT(false);
    }
-
+   
    // turn off sensitivies: this may be faster if we don't expand the term
    // but I suspect not because anywhere it is used the full complement of
    // sensitivies will be needed anyway.
    if(!applySensitivities_)
       seed_value = 0.0;
 
+      std::cout << "GatherSolution_Tpetra field="
+          << " useTimeDerivativeSolutionVector_="
+          << useTimeDerivativeSolutionVector_
+          << " seed=" << seed_value << "\n";
    // Interface worksets handle DOFs from two element blocks.  The
    // derivative offset for the other element block must be shifted by
    // the derivative side of my element block.
@@ -602,7 +606,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      // setup functor data
      functor_data.offsets = scratch_offsets_[fieldIndex];
      functor_data.field   = gatherFields_[fieldIndex];
-
+      
      if(use_seed)
        Kokkos::parallel_for(workset.num_cells,*this);
      else
@@ -644,7 +648,7 @@ operator()(const NoSeed,const int worksetCellIndex) const
     LO lid    = functor_data.lids(worksetCellIndex,offset);
 
     // set the value and seed the FAD object
-    functor_data.field(worksetCellIndex,basis).val() = functor_data.x_data(lid,0);
+    functor_data.field(worksetCellIndex,basis) = ScalarT(functor_data.x_data(lid,0));
   }
 }
 
