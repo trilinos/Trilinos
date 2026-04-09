@@ -43,12 +43,10 @@ APPEND_SET(SOURCES Galeri.cpp)
 ### Tests that require other Trilinos packages
 
 # First ensure that these cmake boolean variables are defined
-ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos2
-  ${PACKAGE_NAME}_ENABLE_Ifpack2
-  ${PACKAGE_NAME}_ENABLE_Belos
-  ${PACKAGE_NAME}_ENABLE_Zoltan
-)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos2)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack2)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Belos)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zoltan)
 
 TRIBITS_ADD_EXECUTABLE(
   UnitTests_kokkos
