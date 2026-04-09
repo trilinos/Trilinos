@@ -546,6 +546,20 @@ template <> struct ExecSpaceFactory<Kokkos::HIP> {
 };
 #endif
 
+#if defined(KOKKOS_ENABLE_CUDA)
+template <typename ExecSpace>
+struct ExecSpaceHelper {
+  static cudaStream_t getStream(ExecSpace &exec_instance) {
+    return 0;
+  }
+};
+
+template <> struct ExecSpaceHelper<Kokkos::Cuda> {
+  static cudaStream_t getStream(Kokkos::Cuda & exec_instance) {
+    return exec_instance.cuda_stream();
+  }
+};
+#endif
 } // namespace Tacho
 
 #endif
