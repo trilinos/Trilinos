@@ -571,10 +571,6 @@ evaluateFields(typename TRAITS::EvalData workset)
    if(!applySensitivities_)
       seed_value = 0.0;
 
-      std::cout << "GatherSolution_Tpetra field="
-          << " useTimeDerivativeSolutionVector_="
-          << useTimeDerivativeSolutionVector_
-          << " seed=" << seed_value << "\n";
    // Interface worksets handle DOFs from two element blocks.  The
    // derivative offset for the other element block must be shifted by
    // the derivative side of my element block.
@@ -606,7 +602,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      // setup functor data
      functor_data.offsets = scratch_offsets_[fieldIndex];
      functor_data.field   = gatherFields_[fieldIndex];
-      
+
      if(use_seed)
        Kokkos::parallel_for(workset.num_cells,*this);
      else

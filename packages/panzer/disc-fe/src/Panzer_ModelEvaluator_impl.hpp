@@ -1227,21 +1227,6 @@ evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
     oneTimeDirichletBeta_on_ = false;
   }
 
-  std::cout << "evalModel_D2fDx2 supports alpha = "
-          << inArgs.supports(Thyra::ModelEvaluatorBase::IN_ARG_alpha) << "\n";
-std::cout << "evalModel_D2fDx2 supports beta  = "
-          << inArgs.supports(Thyra::ModelEvaluatorBase::IN_ARG_beta) << "\n";
-std::cout << "evalModel_D2fDx2 alpha = " << inArgs.get_alpha() << "\n";
-std::cout << "evalModel_D2fDx2 beta  = " << inArgs.get_beta() << "\n";
-std::cout << "x_dot null? " << (inArgs.get_x_dot().is_null() ? "yes" : "no") << "\n";
-
-std::cout << "ae alpha = " << ae_inargs.alpha << "\n";
-std::cout << "ae beta  = " << ae_inargs.beta << "\n";
-std::cout << "ae evaluate_transient_terms = "
-          << ae_inargs.evaluate_transient_terms << "\n";
-std::cout << "ae apply_dirichlet_beta = "
-          << ae_inargs.apply_dirichlet_beta << "\n";
-
   // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::ThyraObjContainer<Scalar> > thGlobalContainer =
     Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(ae_inargs.container_);
@@ -1342,21 +1327,6 @@ evalModel_D2fDxDp(int pIndex,
 
     oneTimeDirichletBeta_on_ = false;
   }
-
-  std::cout << "evalModel_D2fDxDp supports alpha = "
-          << inArgs.supports(Thyra::ModelEvaluatorBase::IN_ARG_alpha) << "\n";
-std::cout << "evalModel_D2fDxDp supports beta  = "
-          << inArgs.supports(Thyra::ModelEvaluatorBase::IN_ARG_beta) << "\n";
-std::cout << "evalModel_D2fDxDp alpha = " << inArgs.get_alpha() << "\n";
-std::cout << "evalModel_D2fDxDp beta  = " << inArgs.get_beta() << "\n";
-std::cout << "x_dot null? " << (inArgs.get_x_dot().is_null() ? "yes" : "no") << "\n";
-
-std::cout << "ae alpha = " << ae_inargs.alpha << "\n";
-std::cout << "ae beta  = " << ae_inargs.beta << "\n";
-std::cout << "ae evaluate_transient_terms = "
-          << ae_inargs.evaluate_transient_terms << "\n";
-std::cout << "ae apply_dirichlet_beta = "
-          << ae_inargs.apply_dirichlet_beta << "\n";
 
   // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::ThyraObjContainer<Scalar> > thGlobalContainer =
@@ -1591,21 +1561,6 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     oneTimeDirichletBeta_on_ = false;
   }
-
-  std::cout << "basic supports alpha = "
-          << inArgs.supports(Thyra::ModelEvaluatorBase::IN_ARG_alpha) << "\n";
-std::cout << "basic supports beta  = "
-          << inArgs.supports(Thyra::ModelEvaluatorBase::IN_ARG_beta) << "\n";
-std::cout << "basic alpha = " << inArgs.get_alpha() << "\n";
-std::cout << "basic beta  = " << inArgs.get_beta() << "\n";
-std::cout << "x_dot null? " << (inArgs.get_x_dot().is_null() ? "yes" : "no") << "\n";
-
-std::cout << "ae alpha = " << ae_inargs.alpha << "\n";
-std::cout << "ae beta  = " << ae_inargs.beta << "\n";
-std::cout << "ae evaluate_transient_terms = "
-          << ae_inargs.evaluate_transient_terms << "\n";
-std::cout << "ae apply_dirichlet_beta = "
-          << ae_inargs.apply_dirichlet_beta << "\n";
 
   // here we are building a container, this operation is fast, simply allocating a struct
   const RCP<panzer::ThyraObjContainer<Scalar> > thGlobalContainer =

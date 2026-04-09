@@ -93,9 +93,6 @@ evaluate(const panzer::AssemblyEngineInArgs& in, const EvaluationFlags flags)
     this->evaluateVolume(in);
   }
 
-  std::cout << "AssemblyEngine::evaluate alpha = " << in.alpha << "\n";
-std::cout << "AssemblyEngine::evaluate beta  = " << in.beta << "\n";
-std::cout << "flags = " << flags.getValue() << "\n";
   // *********************
   // BC fill
   // *********************
@@ -212,9 +209,6 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
       workset.gather_seeds = in.gather_seeds;
       workset.evaluate_transient_terms = in.evaluate_transient_terms;
 
-      std::cout << "workset.alpha = " << workset.alpha << "\n";
-      std::cout << "workset.beta  = " << workset.beta << "\n";
-      std::cout << "time = " << workset.time << "\n";
       fm->template evaluateFields<EvalT>(workset);
     }
 
