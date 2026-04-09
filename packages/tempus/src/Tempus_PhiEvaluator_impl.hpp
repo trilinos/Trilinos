@@ -389,14 +389,15 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 
     lumpedMassMatrix_ = Thyra::diagonal(lumpedMassDiagonal_);
     inverseMassMatrix_ = Thyra::diagonal(invLumpedMassDiagonal);
-  }
-  // std::cout << "mass matrix for Phi evaluation." << std::endl;
-  //   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
+    // std::cout << "Using lumped mass matrix for Phi evaluation." << std::endl;
+    // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
     // lumpedMassDiagonal_->describe(*out, Teuchos::VERB_EXTREME);
     // fullMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
     // lumpMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
     // invMassMatrix_->describe(*out, Teuchos::VERB_EXTREME);
+  }
 }
 
 template <class Scalar>
