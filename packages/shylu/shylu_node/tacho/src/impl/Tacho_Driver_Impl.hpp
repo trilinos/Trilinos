@@ -35,7 +35,7 @@ Driver<VT, DT>::Driver()
       #else
       _variant(-1), // sequential by default
       #endif
-      _nstreams(16), _shift_diag(0), _shift(0.0), _replace_tiny_pivot(0), _pivot_tol(0.0),
+      _nstreams(16), _team_on_user_stream(false), _shift_diag(0), _shift(0.0), _replace_tiny_pivot(0), _pivot_tol(0.0),
 #if defined(KOKKOS_ENABLE_HIP)
       _store_transpose(true)
 #else
@@ -201,8 +201,9 @@ template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionAlgori
   _variant = variant;
 }
 
-template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionNumStreams(const ordinal_type nstreams) {
+template <typename VT, typename DT> void Driver<VT, DT>::setLevelSetOptionNumStreams(const ordinal_type nstreams, const bool team_on_user_stream) {
   _nstreams = nstreams;
+  _team_on_user_stream = team_on_user_stream;
 }
 
 template <typename VT, typename DT> void Driver<VT, DT>::setPivotTolerance(const mag_type pivot_tol) {
@@ -429,7 +430,7 @@ template <typename VT, typename DT> int Driver<VT, DT>::initialize() {
                           _blk_super_panel_colidx, _stree_parent, _stree_ptr, _stree_children, _stree_level, _stree_roots,
                           _verbose);
 
-    factory.setLevelSetMember(_variant, _device_level_cut, _device_factor_thres, _device_solve_thres, _store_transpose, _nstreams);
+    factory.setLevelSetMember(_variant, _device_level_cut, _device_factor_thres, _device_solve_thres, _store_transpose, _nstreams, _team_on_user_stream);
 
     factory.createObject(_N);
   }

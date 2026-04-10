@@ -206,6 +206,7 @@ private:
 
   // cuda stream
   int _nstreams;
+  bool _team_on_user_stream;
 
   // workspace for SpMV
   bool _is_spmv_extracted;
@@ -419,7 +420,7 @@ public:
   /// initialization / release
   ///
   inline void initialize(const ordinal_type device_level_cut, const ordinal_type device_factorize_thres,
-                         const ordinal_type device_solve_thres, const int nstreams_in = 1,
+                         const ordinal_type device_solve_thres, const int nstreams_in = 1, const bool team_on_user_stream = false,
                          const bool store_transpose = false, const ordinal_type verbose = 0) {
     stat_level.n_level = 0;
     stat_level.n_device_factorize = 0;
@@ -706,6 +707,7 @@ public:
     _solve_mode = Kokkos::create_mirror_view_and_copy(exec_memory_space(), _h_solve_mode);
     track_alloc(_solve_mode.span() * sizeof(ordinal_type));
 
+    _team_on_user_stream = team_on_user_stream;
     createStream(nstreams, verbose);
     if (variant == 3 && _keep_zeros) {
       // compress each partitioned inverse at each level into CRS matrix
@@ -737,6 +739,10 @@ public:
       }
       }
       print_stat_init();
+      printf("  Execution Mode\n");
+      printf("             # of streams:                                      %d\n",nstreams);
+      printf("               Team kernels on %s\n",(_team_on_user_stream ? "User Stream-0" : "Default Stream"));
+      printf("\n");
       fflush(stdout);
     }
   }
@@ -771,6 +777,7 @@ public:
     _bufsize_factorize = 0;
     _bufsize_solve = 0;
     _nstreams = 0;
+    _team_on_user_stream = 0;
     _keep_zeros = false;
     stat_level = stat_level();
   }
@@ -792,6 +799,7 @@ public:
                   blk_colidx, stree_parent, stree_ptr, stree_children, stree_level, stree_roots) {
     _keep_zeros = false;
     _nstreams = 0;
+    _team_on_user_stream = false;
     _is_spmv_extracted = 0;
 #if defined(KOKKOS_ENABLE_CUDA)
     _is_cublas_created = 0;
@@ -5219,10 +5227,13 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
+    const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
+    const auto perm_exec_instance = _exec_instances[0];
+    const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
+
     // 0. permute (from METIS) and copy b -> t
-    const auto exec_instance = exec_space();
-    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, b, _perm, t);
-    exec_space().fence();
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
+    if(need_fence) exec_space().fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -5275,8 +5286,8 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              policy_solve = team_policy_solve(team_exec_instance, pcnt, team_size_solve[idx], vector_size_solve[idx]);
+              policy_update = team_policy_update(team_exec_instance, pcnt, team_size_update[idx], vector_size_update[idx]);
             }
 #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
             const auto policy_solve_with_work_property =
@@ -5298,12 +5309,14 @@ public:
             }
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             solveLDL_LowerOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
-            Kokkos::fence();
+            if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+              Kokkos::fence(); // fence solve on device before updating on default
 
             if (variant != 3) {
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
-              exec_space().fence();
+              if (need_fence && (lvl > 0 && _h_num_device_calls_solve(lvl-1) > 0))
+                exec_space().fence(); // synch update on default before next solve on device
             }
           }
         }
@@ -5343,8 +5356,8 @@ public:
               policy_update = team_policy_update(pcnt, 1, 1);
             } else {
               const ordinal_type idx = lvl > half_level;
-              policy_solve = team_policy_solve(pcnt, team_size_solve[idx], vector_size_solve[idx]);
-              policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              policy_solve = team_policy_solve(team_exec_instance, pcnt, team_size_solve[idx], vector_size_solve[idx]);
+              policy_update = team_policy_update(team_exec_instance, pcnt, team_size_update[idx], vector_size_update[idx]);
             }
 #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
             const auto policy_solve_with_work_property =
@@ -5358,7 +5371,8 @@ public:
             if (variant != 3) {
               Kokkos::parallel_for("update upper", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
-              exec_space().fence();
+              if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+                exec_space().fence(); // synch update befor solve on device
 
               if (lvl < _device_level_cut) {
                 // do nothing
@@ -5371,7 +5385,8 @@ public:
 
             const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
             solveLDL_UpperOnDevice(lvl, _team_serial_level_cut, pbeg, pend, h_buf_solve_ptr, t);
-            Kokkos::fence();
+            if (need_fence && _h_num_device_calls_solve(lvl) > 0)
+              Kokkos::fence(); // synch solve on device before next update
           }
         }
       } /// end of upper tri solve
@@ -5379,9 +5394,9 @@ public:
     stat.t_solve = timer.seconds();
 
     // permute (from METIS) and copy t -> x
-    Kokkos::fence(); // synch user or default streams
+    if (need_fence) Kokkos::fence(); // synch user or default streams
     timer.reset();
-    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(exec_instance, t, _peri, x);
+    ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, t, _peri, x);
     stat.t_extra += timer.seconds();
 
     if (verbose) {
@@ -5591,11 +5606,9 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
-    const bool batch_on_stream0 = true; // TODO: add user-parameter
-    const bool need_fence = (!batch_on_stream0 || _nstreams > 1);
-
+    const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
     const auto perm_exec_instance = _exec_instances[0];
-    const auto team_exec_instance = (batch_on_stream0 ? _exec_instances[0] : exec_space());
+    const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
     if (need_fence) perm_exec_instance.fence();
@@ -5679,7 +5692,7 @@ public:
 
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
-              if (need_fence && (lvl == 0 || _h_num_device_calls_solve(lvl-1) > 0)) // TODO: synch if batched-call at lvl=0
+              if (need_fence && (lvl == 0 || _h_num_device_calls_solve(lvl-1) > 0))
                 exec_space().fence(); // synch update on default before next solve on device
             }
           }

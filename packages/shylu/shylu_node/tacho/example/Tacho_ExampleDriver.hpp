@@ -62,6 +62,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   int device_solve_thres = 128;
   int variant = 0;
   int nstreams = 8;
+  bool team_on_user_stream = false;
   bool no_warmup = false;
   int niters = 1;
   int nfacts = 2;
@@ -93,6 +94,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
   opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
   opts.set_option<int>("variant", "algorithm variant in levelset scheduling; 0, 1 and 2", &variant);
   opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
+  opts.set_option<bool>("team-on-user-stream", "Use stream-0 to launch team-kernels", &team_on_user_stream);
   opts.set_option<bool>("one-rhs", "Set RHS to be ones", &onesRHS);
   opts.set_option<bool>("random-rhs", "Set RHS to be random", &randomRHS);
   opts.set_option<bool>("no-warmup", "Flag to turn off warmup", &no_warmup);
@@ -138,7 +140,8 @@ template <typename value_type> int driver(int argc, char *argv[]) {
       std::cout << "   Using default Parameters " << std::endl;
     } else {
       std::cout << "   Using non default Parameters " << std::endl;
-      std::cout << "       # Streams:: " << nstreams << std::endl;
+      std::cout << "       # Streams:: " << nstreams
+                << (team_on_user_stream ? "(Team on stream-0)" : "(Team on default stream)") <<std::endl;
       std::cout << "    Small Poblem:: " << small_problem_thres << std::endl;
       std::cout << "   Device Thresh:: " << device_factor_thres << ", " << device_solve_thres << std::endl;
     }
@@ -229,7 +232,7 @@ template <typename value_type> int driver(int argc, char *argv[]) {
         solver.setGraphAlgorithmType(graph_algo_type);
       }
       /// levelset options
-      solver.setLevelSetOptionNumStreams(nstreams);
+      solver.setLevelSetOptionNumStreams(nstreams, team_on_user_stream);
       solver.setSmallProblemThresholdsize(small_problem_thres);
       solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
       solver.storeExplicitTranspose(storeTranspose);

@@ -168,6 +168,7 @@ private:
   ordinal_type _device_solve_thres;  // bigger than this threshold, device function is used
   ordinal_type _variant;             // algorithmic variant in levelset 0: naive, 1: invert diagonals
   ordinal_type _nstreams;            // on cuda, multi streams are used
+  bool _team_on_user_stream;         // run team/batched kernel on user steram-0
 
   int _shift_diag;                   // shift diagonal with small perturbation
   mag_type _shift;
@@ -224,7 +225,7 @@ public:
   void setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut);
   void setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
                                                 const ordinal_type device_solve_thres);
-  void setLevelSetOptionNumStreams(const ordinal_type nstreams);
+  void setLevelSetOptionNumStreams(const ordinal_type nstreams, const bool team_on_user_stream = false);
   void setLevelSetOptionAlgorithmVariant(const ordinal_type variant);
 
   void shiftDiagonal(const int option = 1);
