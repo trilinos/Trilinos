@@ -42,12 +42,6 @@ PhiEvaluatorLeja<Scalar>::getValidParameters() const
       "Method to approximate the phi-function evaluation.");
 
   pl->set<int>(
-      "Max Leja Order", 500,
-      "Maximum order of the Leja polynomial used.\n"
-      "\n"
-      "The default is 500.");
-
-  pl->set<int>(
       "Expansion Order", 300,
       "Order of the Leja polynomial used.\n"
       "\n"
@@ -258,19 +252,25 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 template <class Scalar>
 void PhiEvaluatorLeja<Scalar>::initLejaPointsBase()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      maxLejaOrder_ < 2,
-      std::invalid_argument,
-      "LinOpPhi: maxLejaOrder must be greater or equal two.");
+  const int exp_order = this->getExpansionOrder();
 
-  lejaPointsBase_ = Teuchos::arcp<LejaPoint>(maxLejaOrder_);
+  // The maximum number of Leja points is: exp_order + 1, but due to conjugacy, we technically need less points stored:
+  // For real Leja points given as the real part of the points below,
+  //    this is perfect, since every conjugate Leja point maps to a single real point
+  // For imaginary Leja points given as the imaginary part,
+  //    this mostly correct but sufficient for exp_order + 1 > 2, since the first two points map both to 0
+  // For conjugate Leja points, we only need 2 + exp_order / 2,
+  //    this still works since it is an upper bound
+  const int maxLejaOrder = std::max(2, exp_order + 1);
+
+  lejaPointsBase_ = Teuchos::arcp<LejaPoint>(maxLejaOrder);
 
   lejaPointsBase_[0] = {-1., LPREAL};
   lejaPointsBase_[1] = {1., LPREAL};
 
   std::complex<double> root_unity(0, 1);
   int full_half_circle = 1;
-  for (int lpk = 2; lpk < maxLejaOrder_; lpk++)
+  for (int lpk = 2; lpk < lejaPointsBase_.size(); lpk++)
   {
     // get the old leja Point from the last full half circle
     std::complex<double> next_lp = lejaPointsBase_[lpk - full_half_circle].lp;
@@ -307,6 +307,19 @@ std::tuple<Scalar, Scalar> PhiEvaluatorLeja<Scalar>::getShiftScale()
 }
 
 template <class Scalar>
+void PhiEvaluatorLeja<Scalar>::setExpansionOrder(int order)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      order <= 0,
+      std::invalid_argument,
+      "setExpansionOrder: order must be positive.");
+
+  expansionOrder_ = order;
+
+  initLejaPointsBase();
+}
+
+template <class Scalar>
 void PhiEvaluatorLeja<Scalar>::setLejaEllipse(Scalar a, Scalar b, Scalar c)
 {
   TEUCHOS_ASSERT(a <= b);
@@ -316,7 +329,7 @@ void PhiEvaluatorLeja<Scalar>::setLejaEllipse(Scalar a, Scalar b, Scalar c)
   leja_c_ = c;
 
   // update the leja points
-  lp_ = Teuchos::arcp<LejaPoint>(maxLejaOrder_);
+  lp_ = Teuchos::arcp<LejaPoint>(lejaPointsBase_.size());
   Scalar hx_re = (leja_b_ - leja_a_) / 2.0;
   Scalar hx_im = leja_c_;
   Scalar scale = (hx_re + hx_im) / 2.0;
@@ -331,7 +344,7 @@ void PhiEvaluatorLeja<Scalar>::setLejaEllipse(Scalar a, Scalar b, Scalar c)
 template <class Scalar>
 LejaPoint PhiEvaluatorLeja<Scalar>::getLpSc(int i)
 {
-  TEUCHOS_ASSERT(i < maxLejaOrder_);
+  TEUCHOS_ASSERT(i < lp_.size());
   Scalar shift, scale;
   std::tie(shift, scale) = getShiftScale();
   LejaPoint lp = this->lp_[i];
@@ -349,7 +362,6 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 
   leja_tol_ = pl->get<double>("leja_tol", 1.0e-18);
   ddMethod_ = pl->get<int>("Leja DD Method", 1);
-  maxLejaOrder_ = pl->get<int>("Max Leja Order", 500);
   setExpansionOrder(pl->get<int>("Expansion Order", 300));
 
   // TODO: has to be set to true, only matrix exponential is implemented
@@ -357,9 +369,8 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 
   std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
   std::cout << "Parameter List: " << *pl << std::endl;
-  std::cout << "Leja Order is " << maxLejaOrder_ << std::endl;
+  std::cout << "Expansion Order is " << getExpansionOrder() << std::endl;
 
-  initLejaPointsBase();
   setLejaEllipse(
     pl->get<double>("leja_a", -1.0),
     pl->get<double>("leja_b", 0.0),
@@ -570,7 +581,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   Teuchos::SerialDenseMatrix<int, Scalar> Hm(m, m);
   // diagonal elements are the leja points
 
-  for (int lp_idx = 0, dd_idx = 0; lp_idx < maxLejaOrder_ && dd_idx < m; lp_idx++, dd_idx++) {
+  for (int lp_idx = 0, dd_idx = 0; lp_idx < lp_.size() && dd_idx < m; lp_idx++, dd_idx++) {
     LejaPoint lp_sc = getLpSc(lp_idx);
     // conj lp case
     if (lp_sc.lpt == LPCONJ) {
