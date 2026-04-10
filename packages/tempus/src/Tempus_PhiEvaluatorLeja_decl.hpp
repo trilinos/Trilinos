@@ -59,7 +59,7 @@ class PhiEvaluatorLeja
   : virtual public PhiEvaluator<Scalar> {
  public:
   /// Inherit Contructor
-  PhiEvaluatorLeja<Scalar>(std::string name) : PhiEvaluator<Scalar>(name), maxLejaOrder_(0)
+  PhiEvaluatorLeja<Scalar>(std::string name) : PhiEvaluator<Scalar>(name)
   { }
   PhiEvaluatorLeja<Scalar>() : PhiEvaluatorLeja<Scalar>("Phi Evaluator")
   { }
@@ -81,7 +81,7 @@ class PhiEvaluatorLeja
   std::tuple<Scalar, Scalar> getShiftScale();
 
   /// Set the polynomial expansion order
-  void setExpansionOrder(int order) { expansionOrder_ = order; }
+  void setExpansionOrder(int order);
 
   /// Update the Leja ellipse parameters
   void setLejaEllipse(Scalar a, Scalar b, Scalar c);
@@ -102,7 +102,6 @@ class PhiEvaluatorLeja
                const Scalar cdt=1.0
 					     ) override;
  private:
-  int maxLejaOrder_;
   int expansionOrder_;
   int ddMethod_;
   Scalar leja_tol_;
