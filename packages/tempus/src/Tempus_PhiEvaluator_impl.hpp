@@ -199,7 +199,7 @@ PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x
   TEUCHOS_TEST_FOR_EXCEPTION(
     phi_order < 0, std::logic_error,
     "Error - PhiEvaluator::computePhi() phi_order must be non-negative!\n");
-  
+
   if (useAtildeForSingleRHS_ && phi_order > 0)
   {
     // Use linear combination extension formula and matrix exponential
@@ -210,7 +210,7 @@ PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x
   else
   {
     // Call LinOpPhi directly
-    
+
     // TODO: move to setLinearizationPoint (have to change PFD solver to use these matrices)
     this->phiLinSolv_->setLumpMassMatrix(this->lumpMassMatrix_);
     this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);

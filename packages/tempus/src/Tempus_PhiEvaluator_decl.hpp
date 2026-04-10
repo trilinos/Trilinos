@@ -57,12 +57,12 @@ class PhiLinearSolver {
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> fullMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lumpedMassMatrix_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > lumpedMassDiagonal_;
-  
+
   // the inverseMassMatrix_ is either lumped, or not, depending on bool lumpMass_
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> inverseMassMatrix_;
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> jacobianMatrix_;
-  
+
   // internal variables for extended matrix strategy
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> expMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
@@ -160,7 +160,7 @@ class PhiEvaluator
 
   /** \brief  Compute the Phi function of cdt times Jacobian for a linear combination with right hand side vectors Mrhs_B
    *
-   *  The vectors in Mrhs_B are at the index of the vector corresponding to the phi_order of the 
+   *  The vectors in Mrhs_B are at the index of the vector corresponding to the phi_order of the
    *  respective Phi function, Mrhs_b[0] is the rhs for the matrix exponential.
    *  For an implicit model, the right hand side contains a multiplication with the mass matrix M,
    *  which is solved as part of this method.
@@ -176,7 +176,7 @@ class PhiEvaluator
   std::string name_;
   bool lumpMassMatrix_;
   bool useAtildeForSingleRHS_;
-  
+
   mutable bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>> appModel_;
