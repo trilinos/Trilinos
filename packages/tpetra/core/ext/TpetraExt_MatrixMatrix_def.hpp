@@ -1207,7 +1207,12 @@ void mult_AT_B_newmatrix(
     Ctemp = rcp(&C, false);
   }
 
-  mult_A_B_newmatrix(Aview, Bview, *Ctemp, label, params);
+  RCP<Teuchos::ParameterList> multParams = Teuchos::rcp(new ParameterList);
+  if (!params.is_null()) {
+    multParams->setParameters(*params);
+  }
+  multParams->set("compute global constants", !needs_final_export);
+  mult_A_B_newmatrix(Aview, Bview, *Ctemp, label, multParams);
 
   /*************************************************************/
   /* 4) exportAndFillComplete matrix                           */
@@ -1571,11 +1576,11 @@ void mult_A_B_newmatrix(
 
     // Choose the right variant of setUnion
     if (!Bimport.is_null() && !Iimport.is_null()) {
-      Cimport = Bimport->setUnion(*Iimport);
+      Cimport = Bimport->setUnion(*Iimport, params);
     } else if (!Bimport.is_null() && Iimport.is_null()) {
-      Cimport = Bimport->setUnion();
+      Cimport = Bimport->setUnion(params);
     } else if (Bimport.is_null() && !Iimport.is_null()) {
-      Cimport = Iimport->setUnion();
+      Cimport = Iimport->setUnion(params);
     } else {
       throw std::runtime_error("TpetraExt::MMM status of matrix importers is nonsensical");
     }
@@ -2366,14 +2371,14 @@ void jacobi_A_B_newmatrix(
 
     // Choose the right variant of setUnion
     if (!Bimport.is_null() && !Iimport.is_null()) {
-      Cimport = Bimport->setUnion(*Iimport);
+      Cimport = Bimport->setUnion(*Iimport, params);
       Ccolmap = Cimport->getTargetMap();
 
     } else if (!Bimport.is_null() && Iimport.is_null()) {
-      Cimport = Bimport->setUnion();
+      Cimport = Bimport->setUnion(params);
 
     } else if (Bimport.is_null() && !Iimport.is_null()) {
-      Cimport = Iimport->setUnion();
+      Cimport = Iimport->setUnion(params);
 
     } else
       throw std::runtime_error("TpetraExt::Jacobi status of matrix importers is nonsensical");
