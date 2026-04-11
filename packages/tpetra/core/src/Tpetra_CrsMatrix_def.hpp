@@ -37,7 +37,6 @@
 #include "Tpetra_Details_rightScaleLocalCrsMatrix.hpp"
 #include "Tpetra_Details_ScalarViewTraits.hpp"
 #include "Tpetra_Details_copyConvert.hpp"
-#include "Tpetra_Details_iallreduce.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
 #include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
@@ -45,7 +44,6 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DataAccess.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"  // unused here, could delete
 #include "KokkosBlas1_scal.hpp"
 #include "KokkosSparse_getDiagCopy.hpp"
 #include "KokkosSparse_spmv.hpp"
@@ -7502,11 +7500,9 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   bool reverseMode  = false;  // Are we in reverse mode?
   bool restrictComm = false;  // Do we need to restrict the communicator?
 
-  int mm_optimization_core_count =
-      Behavior::TAFC_OptimizationCoreCount();
   RCP<ParameterList> matrixparams;  // parameters for the destination matrix
-  bool overrideAllreduce = false;
-  bool useKokkosPath     = false;
+  bool useKokkosPath             = false;
+  int mm_optimization_core_count = Behavior::TAFC_OptimizationCoreCount();
   if (!params.is_null()) {
     matrixparams               = sublist(params, "CrsMatrix");
     reverseMode                = params->get("Reverse Mode", reverseMode);
@@ -7515,26 +7511,9 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     auto& slist                = params->sublist("matrixmatrix: kernel params", false);
     isMM                       = slist.get("isMatrixMatrix_TransferAndFillComplete", false);
     mm_optimization_core_count = slist.get("MM_TAFC_OptimizationCoreCount", mm_optimization_core_count);
-
-    overrideAllreduce = slist.get("MM_TAFC_OverrideAllreduceCheck", false);
-    if (getComm()->getSize() < mm_optimization_core_count && isMM) isMM = false;
-    if (reverseMode) isMM = false;
   }
-
-  // Only used in the sparse matrix-matrix multiply (isMM) case.
-  std::shared_ptr<::Tpetra::Details::CommRequest> iallreduceRequest;
-  int mismatch         = 0;
-  int reduced_mismatch = 0;
-  if (isMM && !overrideAllreduce) {
-    // Test for pathological matrix transfer
-    const bool source_vals = !getGraph()->getImporter().is_null();
-    const bool target_vals = !(rowTransfer.getExportLIDs().size() == 0 ||
-                               rowTransfer.getRemoteLIDs().size() == 0);
-    mismatch               = (source_vals != target_vals) ? 1 : 0;
-    iallreduceRequest =
-        ::Tpetra::Details::iallreduce(mismatch, reduced_mismatch,
-                                      Teuchos::REDUCE_MAX, *(getComm()));
-  }
+  if (getComm()->getSize() < mm_optimization_core_count) isMM = false;
+  if (reverseMode) isMM = false;
 
   std::string tlstr = isMM ? "Tpetra: TAFC All:MMOpt" : "Tpetra: TAFC All:MMLegacy";
   Tpetra::Details::ProfilingRegion MMall(tlstr.c_str());
@@ -8538,21 +8517,6 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   Teuchos::ParameterList esfc_params;
 
   RCP<import_type> MyImport;
-
-  // Fulfull the non-blocking allreduce on reduced_mismatch.
-  if (iallreduceRequest.get() != nullptr) {
-    if (verbose) {
-      std::ostringstream os;
-      os << *verbosePrefix << "Calling iallreduceRequest->wait()"
-         << endl;
-      std::cerr << os.str();
-    }
-    iallreduceRequest->wait();
-    if (reduced_mismatch != 0) {
-      isMM = false;
-    }
-  }
-
   if (isMM) {
     Tpetra::Details::ProfilingRegion MMisMM("Tpetra isMM Block");
     // Combine all type1/2/3 lists, [filter them], then call the expert import constructor.
