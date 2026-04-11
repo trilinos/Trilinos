@@ -162,6 +162,11 @@ double Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetOperatorComplexi
       return 0.0;
     }
 
+    if (!Am->haveGlobalConstants()) {
+      GetOStream(Warnings0) << "Some level operators are do not have global constants computed, operator complexity calculation aborted" << std::endl;
+      return 0.0;
+    }
+
     totalNnz += as<double>(Am->getGlobalNumEntries());
     if (i == 0)
       lev0Nnz = totalNnz;
@@ -1241,8 +1246,9 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::Fan
     std::vector<Xpetra::global_size_t> nnzPerLevel;
     std::vector<Xpetra::global_size_t> rowsPerLevel;
     std::vector<int> numProcsPerLevel;
-    bool someOpsNotMatrices             = false;
-    const Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+    bool someOpsNotMatrices                 = false;
+    const Xpetra::global_size_t OPERATOR    = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+    const Xpetra::global_size_t UNAVAILABLE = Teuchos::OrdinalTraits<Xpetra::global_size_t>::max();
     for (int i = 0; i < numLevels; i++) {
       TEUCHOS_TEST_FOR_EXCEPTION(!(Levels_[i]->IsAvailable("A")), Exceptions::RuntimeError,
                                  "Operator A is not available on level " << i);
@@ -1254,13 +1260,16 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::Fan
       RCP<Matrix> Am = rcp_dynamic_cast<Matrix>(A);
       if (Am.is_null()) {
         someOpsNotMatrices = true;
-        nnzPerLevel.push_back(INVALID);
+        nnzPerLevel.push_back(OPERATOR);
         rowsPerLevel.push_back(A->getDomainMap()->getGlobalNumElements());
         numProcsPerLevel.push_back(A->getDomainMap()->getComm()->getSize());
       } else {
-        LO storageblocksize       = Am->GetStorageBlockSize();
-        Xpetra::global_size_t nnz = Am->getGlobalNumEntries() * storageblocksize * storageblocksize;
-        nnzPerLevel.push_back(nnz);
+        LO storageblocksize = Am->GetStorageBlockSize();
+        if (Am->haveGlobalConstants()) {
+          Xpetra::global_size_t nnz = Am->getGlobalNumEntries() * storageblocksize * storageblocksize;
+          nnzPerLevel.push_back(nnz);
+        } else
+          nnzPerLevel.push_back(UNAVAILABLE);
         rowsPerLevel.push_back(Am->getGlobalNumRows() * storageblocksize);
         numProcsPerLevel.push_back(Am->getRowMap()->getComm()->getSize());
       }
@@ -1312,7 +1321,7 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::Fan
       }
       for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
         tt = nnzPerLevel[i];
-        if (tt != INVALID)
+        if ((tt != OPERATOR) && (tt != UNAVAILABLE))
           break;
         tt = 100;  // This will get used if all levels are operators.
       }
@@ -1333,12 +1342,15 @@ void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::describe(Teuchos::Fan
       for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
         oss << "  " << i << "  ";
         oss << std::setw(rowspacer) << rowsPerLevel[i];
-        if (nnzPerLevel[i] != INVALID) {
+        if ((nnzPerLevel[i] != OPERATOR) && (nnzPerLevel[i] != UNAVAILABLE)) {
           oss << std::setw(nnzspacer) << nnzPerLevel[i];
           oss << std::setprecision(2) << std::setiosflags(std::ios::fixed);
           oss << std::setw(9) << as<double>(nnzPerLevel[i]) / rowsPerLevel[i];
         } else {
-          oss << std::setw(nnzspacer) << "Operator";
+          if (nnzPerLevel[i] == OPERATOR)
+            oss << std::setw(nnzspacer) << "Operator";
+          else
+            oss << std::setw(nnzspacer) << "N/A";
           oss << std::setprecision(2) << std::setiosflags(std::ios::fixed);
           oss << std::setw(9) << "     ";
         }
