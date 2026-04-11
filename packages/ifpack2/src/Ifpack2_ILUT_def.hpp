@@ -20,6 +20,7 @@
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
+#include "Ifpack2_Details_getCrsMatrix.hpp"
 #include "Ifpack2_Parameters.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
 
@@ -1052,9 +1053,11 @@ std::string ILUT<MatrixType>::description() const {
   if (A_.is_null()) {
     os << "Matrix: null";
   } else {
+    auto crsMat = Details::getCrsMatrix(A_);
     os << "Global matrix dimensions: ["
-       << A_->getGlobalNumRows() << ", " << A_->getGlobalNumCols() << "]"
-       << ", Global nnz: " << A_->getGlobalNumEntries();
+       << A_->getGlobalNumRows() << ", " << A_->getGlobalNumCols() << "]";
+    if (!crsMat.is_null() && crsMat->haveGlobalConstants())
+      os << ", Global nnz: " << A_->getGlobalNumEntries();
   }
 
   os << "}";
@@ -1097,7 +1100,8 @@ void ILUT<MatrixType>::
         << "Relative threshold: " << getRelativeThreshold() << endl
         << "Relax value: " << getRelaxValue() << endl;
 
-    if (isComputed() && vl >= VERB_HIGH) {
+    auto crsMat = Details::getCrsMatrix(A_);
+    if (isComputed() && (!crsMat.is_null() && crsMat->haveGlobalConstants()) && vl >= VERB_HIGH) {
       const double fillFraction =
           (double)getGlobalNumEntries() / (double)A_->getGlobalNumEntries();
       const double nnzToRows =
