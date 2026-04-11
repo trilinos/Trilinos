@@ -98,9 +98,10 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLev
       return;
     }
 
-    const Teuchos::ParameterList& pL = GetParameterList();
-    const bool useImplicit           = pL.get<bool>("transpose: use implicit");
-    bool isGPU                       = Node::is_gpu;
+    const bool computeGlobalConstantsForAc = IsPrint(Statistics1);
+    const Teuchos::ParameterList& pL       = GetParameterList();
+    const bool useImplicit                 = pL.get<bool>("transpose: use implicit");
+    bool isGPU                             = Node::is_gpu;
 
     Teuchos::RCP<Teuchos::ParameterList> APparams;
     Teuchos::RCP<Teuchos::ParameterList> RAPparams;
@@ -116,6 +117,7 @@ void RAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLev
     } else {
       RAPparams = Teuchos::rcp(new Teuchos::ParameterList());
     }
+    RAPparams->set("compute global constants", computeGlobalConstantsForAc);
     if (!useImplicit)
       R = Get<RCP<Matrix> >(coarseLevel, "R");
     Utilities::TripleMatrixProduct(R, A, P, Ac, pL, *this, APparams, RAPparams, &coarseLevel);
