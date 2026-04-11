@@ -1303,7 +1303,8 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>
 Import<LocalOrdinal, GlobalOrdinal, Node>::
-    setUnion(const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const {
+    setUnion(const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs,
+             const Teuchos::RCP<Teuchos::ParameterList>& params) const {
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::as;
@@ -1428,7 +1429,7 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
   const GST INVALID       = Teuchos::OrdinalTraits<GST>::invalid();
   const GO indexBaseUnion = std::min(tgtMap1->getIndexBase(), tgtMap2->getIndexBase());
   RCP<const map_type> unionTgtMap =
-      rcp(new map_type(INVALID, unionTgtGIDs(), indexBaseUnion, comm));
+      rcp(new map_type(INVALID, unionTgtGIDs(), indexBaseUnion, comm, params));
 
   MM2      = Teuchos::null;
   auto MM3 = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Import::setUnion : Export GIDs"));
@@ -1545,7 +1546,7 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>>
 Import<LocalOrdinal, GlobalOrdinal, Node>::
-    setUnion() const {
+    setUnion(const Teuchos::RCP<Teuchos::ParameterList>& params) const {
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::as;
@@ -1590,7 +1591,7 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
   GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
   RCP<const map_type> targetMapNew =
       rcp(new map_type(GO_INVALID, GIDs, tgtMap->getIndexBase(),
-                       tgtMap->getComm()));
+                       tgtMap->getComm(), params));
 
   // Exports are trivial (since the sourcemap doesn't change)
   Array<int> exportPIDsnew(this->getExportPIDs());
