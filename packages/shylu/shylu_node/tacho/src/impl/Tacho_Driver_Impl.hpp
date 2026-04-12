@@ -450,7 +450,6 @@ template <typename VT, typename DT> int Driver<VT, DT>::factorize(const value_ty
   const mag_type zero(0);
   mag_type shift(0.0);
   if (_shift_diag != 0 || _replace_tiny_pivot > 1) {
-    const value_type zero(0.0);
     const ordinal_type m = _m;
     Kokkos::RangePolicy<exec_space> range_policy(0, m);
 
