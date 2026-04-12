@@ -857,9 +857,10 @@ public:
   inline void createStream(const ordinal_type nstreams, const ordinal_type verbose = 0) {
     // # of streams needs to be at least 1
     if (nstreams <= 0) return;
-
     _nstreams = nstreams;
-    if (_streams.size() == size_t(nstreams)) return;
+
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    if (_streams.size() == size_t(nstreams)) return; // nothing to do
 
 #if defined(KOKKOS_ENABLE_CUDA)
     // destroy previously created streams
@@ -897,7 +898,7 @@ public:
       checkDeviceBlasStatus("rocblasSetStream(handles[qid])");
     }
 #endif
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+    // reinitialize execution instances with the streams
     _exec_instances.clear();
     _exec_instances.resize(_nstreams);
     for (ordinal_type i = 0; i < _nstreams; ++i) {
@@ -4853,8 +4854,13 @@ public:
     allocateWorkspaceSolve(nrhs);
 
     const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     const auto perm_exec_instance = _exec_instances[0];
     const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
+#else
+    const auto perm_exec_instance = exec_space();
+    const auto team_exec_instance = perm_exec_instance;
+#endif
 
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
@@ -4942,7 +4948,7 @@ public:
 
               // copy from buffer to t
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
-              if (need_fence && _h_num_device_calls_solve(lvl-1) > 0)
+              if (need_fence && (lvl > 0 && _h_num_device_calls_solve(lvl-1) > 0))
                 exec_space().fence(); // sync default, for next device solve calls
               ++stat_level.n_kernel_launching;
             }
@@ -5231,8 +5237,13 @@ public:
     allocateWorkspaceSolve(nrhs);
 
     const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     const auto perm_exec_instance = _exec_instances[0];
     const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
+#else
+    const auto perm_exec_instance = exec_space();
+    const auto team_exec_instance = perm_exec_instance;
+#endif
 
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
@@ -5610,8 +5621,14 @@ public:
     allocateWorkspaceSolve(nrhs);
 
     const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     const auto perm_exec_instance = _exec_instances[0];
     const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
+#else
+    const auto perm_exec_instance = exec_space();
+    const auto team_exec_instance = perm_exec_instance;
+#endif
+
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
     if (need_fence) perm_exec_instance.fence();
@@ -5695,7 +5712,7 @@ public:
 
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
-              if (need_fence && (lvl == 0 || _h_num_device_calls_solve(lvl-1) > 0))
+              if (need_fence && (lvl > 0 && _h_num_device_calls_solve(lvl-1) > 0))
                 exec_space().fence(); // synch update on default before next solve on device
             }
           }
