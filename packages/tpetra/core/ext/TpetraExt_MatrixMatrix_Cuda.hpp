@@ -18,7 +18,7 @@ namespace MMdetails {
 
 template <>
 struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosCudaWrapperNode> {
-  static constexpr bool use_time_monitor = false;
+  static constexpr bool use_time_monitor = true;
   static std::string parameter_prefix() { return "cuda"; }
   static std::string algorithm_label() { return "Cuda"; }
   static std::string wrapper_label() { return "CudaWrapper"; }

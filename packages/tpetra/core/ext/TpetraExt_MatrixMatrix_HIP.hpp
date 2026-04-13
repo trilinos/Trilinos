@@ -18,7 +18,7 @@ namespace MMdetails {
 
 template <>
 struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosHIPWrapperNode> {
-  static constexpr bool use_time_monitor = false;
+  static constexpr bool use_time_monitor = true;
   static std::string parameter_prefix() { return "hip"; }
   static std::string algorithm_label() { return "HIP"; }
   static std::string wrapper_label() { return "HIPWrapper"; }
