@@ -89,6 +89,23 @@ void import_and_extract_views(
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter = Teuchos::null,
     bool userAssertsThereAreNoRemotes                                                = false);
 
+template <class Scalar,
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class LocalOrdinalViewType>
+void kokkos_kernels_mult_A_B_newmatrix(
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+    const LocalOrdinalViewType& Acol2Brow,
+    const LocalOrdinalViewType& Acol2Irow,
+    const LocalOrdinalViewType& Bcol2Ccol,
+    const LocalOrdinalViewType& Icol2Ccol,
+    CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > Cimport,
+    const std::string& label                           = std::string(),
+    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
 struct KernelWrappers;
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalOrdinalViewType>
