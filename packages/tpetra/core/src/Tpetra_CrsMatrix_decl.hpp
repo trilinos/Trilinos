@@ -3937,6 +3937,20 @@ class CrsMatrix : public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,
       bool userAssertsThereAreNoRemotes,
       const std::string& label,
       const Teuchos::RCP<Teuchos::ParameterList>& params);
+  // Friend the shared MatrixMatrix SpGEMM helper introduced by the backend
+  // refactor so it can reuse the cached integer row pointers.
+  template <typename S, typename LO, typename GO, typename NODE, typename LOV>
+  friend void Tpetra::MMdetails::kokkos_kernels_mult_A_B_newmatrix(
+      CrsMatrixStruct<S, LO, GO, NODE>& Aview,
+      CrsMatrixStruct<S, LO, GO, NODE>& Bview,
+      const LOV& Acol2Brow,
+      const LOV& Acol2Irow,
+      const LOV& Bcol2Ccol,
+      const LOV& Icol2Ccol,
+      CrsMatrix<S, LO, GO, NODE>& C,
+      Teuchos::RCP<const Import<LO, GO, NODE> > Cimport,
+      const std::string& label,
+      const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   /// \brief Swaps the data from *this with the data and maps from crsMatrix
   ///
