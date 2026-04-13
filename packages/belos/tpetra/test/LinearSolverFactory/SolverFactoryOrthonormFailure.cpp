@@ -159,7 +159,7 @@ testSolver (Teuchos::FancyOStream& out,
   std::cout << "Set up the solver" << endl;
   solver->setProblem (problem);
 
-  std::cout << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'MaxItersReached' unconverged cause." << endl;
+  std::cout << "Apply solver to \"solve\" AX=B for X, and check if it fails to converge with 'OrthonormFailure' unconverged cause." << endl;
   Belos::ReturnType ret;
   Belos::UnconvergedCauseType unconvergedCause;
 
@@ -176,7 +176,7 @@ testSolver (Teuchos::FancyOStream& out,
       << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << endl;
 
-  if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::MaxItersReached) ) {
+  if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::OrthonormFailure) ) {
     success = false;
     return;
   }
@@ -212,25 +212,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT
   RCP<MV> X = rcp (new MV (X_exact->getMap (), numVecs));
 
   Belos::SolverFactory<SC, MV, OP> factory;
-  // FIXME (mfh 23 Aug 2015) Not all Belos solvers can handle solves
-  // with the identity matrix.  BiCGSTAB might need a bit of work, for
-  // example.  I'm not so worried about that for now but we should go
-  // back and revisit this at some point.
-  //
-  // Teuchos::Array<std::string> solverNames = factory.supportedSolverNames ();
-  // const int numSolvers = static_cast<int> (solverNames.size ());
-  const char* solverNames[10] = {
-    "BICGSTAB",
-    "BLOCK CG",
+  const char* solverNames[2] = {
     "BLOCK GMRES",
-    "FIXED POINT",
-    "GCRODR",
-    "MINRES",
-    "PSEUDOBLOCK CG",
-    "PSEUDOBLOCK GMRES",
-    "PSEUDOBLOCK TFQMR",
-    "TFQMR"};
-  const int numSolvers = 10;
+    "GCRODR"};
+  const int numSolvers = 2;
 
   int numSolversTested = 0;
   for (int k = 0; k < numSolvers; ++k) {
