@@ -1139,13 +1139,14 @@ namespace BaskerNS
     #endif
 
     //printf( " t_basker_barrier(size = %d, thread.team_size = %d: my_id = %d, leader_id = %d)\n",size,thread.team_size(), my_kid,leader_kid ); fflush(stdout);
-    //if(size < 0)
     if(size <= thread.team_size())
     {
+      // synch only within team
       thread.team_barrier();
     }
     else
     {
+      // synch between teams (two sibling teams in ND tree)
       basker_barrier.BarrierDomain(leader_kid,
          my_kid, 
          function_n,
@@ -1159,37 +1160,6 @@ namespace BaskerNS
     #endif
 
   }//end t_basker_barrier
-
-
-  template <class Int, class Entry,class Exe_Space>
-  BASKER_INLINE
-  void Basker<Int,Entry,Exe_Space>::t_basker_barrier_old
-  (
-   const TeamMember &thread,
-   const Int leader_kid,
-   const Int sublvl,
-   const Int function_n, 
-   const Int size
-  )
-  {
-
-    if(size <= thread.team_size())
-    {
-      thread.team_barrier();
-    }
-    else
-    {
-
-      //basker_barrier.Barrier(leader_kid, 
-
-      /* Old Atomic Barrier
-         BaskerBarrier<Int,Entry,Exe_Space> BB;
-         BB.Barrier(thread_array(leader_kid).token[sublvl][function_n],
-         thread_array(leader_kid).token[sublvl][1],
-         size);
-         */
-    }
-  }//end t_basker_barrier()
 
 }//end namespace BaskerNS--functions
 

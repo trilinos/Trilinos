@@ -1844,7 +1844,8 @@ namespace BaskerNS
     if(Options.verbose == BASKER_TRUE) {
       sfactorcopy_time += timer_sfactorcopy.seconds();
       std::cout << "Basker Factor sfactor_copy2 time: " << sfactorcopy_time << std::endl;
-      std::cout << " >> error = " << err << std::endl;
+      if (err != 0) std::cout << " >> error (" << err << ")" << std::endl;
+      else          std::cout << " >> success (" << err << ")" << std::endl;
     }
     if(err == BASKER_ERROR)
     { return BASKER_ERROR; }
@@ -2030,8 +2031,16 @@ namespace BaskerNS
     #else
     check_value = 1;
     #endif
-    if(nthreads > check_value)
-    {
+    // TODO: can we have nthreads = num leaves (not 2x num-leaves, where half of them are empty)
+    /*if (Options.dense_schur == BASKER_TRUE) {
+      if (nthreads > 2*check_value) {
+        if(Options.verbose == BASKER_TRUE) {
+          printf("Basker SetThreads Assert: Number of thread not available (%d > 2*%d). Resetting to %d.",
+                  int(nthreads), int(check_value), int(2*check_value));
+        }
+        nthreads = 2*check_value;
+      }
+    } else*/ if(nthreads > check_value) {
       if(Options.verbose == BASKER_TRUE) {
         printf("Basker SetThreads Assert: Number of thread not available (%d > %d). Resetting to %d.",
                 int(nthreads), int(check_value), int(check_value));

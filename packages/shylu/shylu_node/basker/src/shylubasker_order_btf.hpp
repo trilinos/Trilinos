@@ -415,7 +415,9 @@ namespace BaskerNS
       #endif
       if (Options.dense_schur == BASKER_TRUE)
       {
-        printf("Basker: Forcing to perform ND factorization of one BTF block for partial factorization\n");
+        if(Options.verbose == BASKER_TRUE) {
+          printf("Basker: Forcing to perform ND factorization of one BTF block for partial factorization\n");
+        }
         break_work_size = 0.0;
         break_block_size = 0.0;
       }

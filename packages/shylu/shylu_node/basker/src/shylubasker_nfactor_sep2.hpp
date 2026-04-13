@@ -33,8 +33,6 @@
 #endif
 
 //#define BASKER_DEBUG_NFACTOR_SEP2
-//#define BASKER_DEBUG_TIME
-//#define BASKER_COUNT_OPS
 //#define BASKER_TIMER
 
 namespace BaskerNS
@@ -62,14 +60,12 @@ namespace BaskerNS
     BASKER_INLINE
     void operator()(const TeamMember &thread) const
     {
-      Int kid = basker->t_get_kid(thread);
-      Int team_leader = (Int)(thread.league_rank()*thread.team_size());
-
+      //printf( " kokkos_nfactor_sep2(%d of %d) with leageu-size=%d team-size=%d\n",thread.team_rank(),thread.league_rank(),thread.league_size(),thread.team_size() ); fflush(stdout);
       #ifdef HAVE_VTUNE
       __itt_pause();
       #endif
       {
-        basker->t_nfactor_sep2(kid, lvl, team_leader, thread);
+        basker->t_nfactor_sep2(lvl, thread);
       }
       #ifdef HAVE_VTUNE
       __itt_resume();
@@ -81,9 +77,7 @@ namespace BaskerNS
   template <class Int, class Entry, class Exe_Space>
   int Basker<Int,Entry,Exe_Space>::t_nfactor_sep2
   (
-   const Int kid,
    const Int lvl,
-   const Int team_leader,
    const TeamMember &thread
    )
   {
@@ -113,14 +107,20 @@ namespace BaskerNS
     // 3) t_lower_col_factor          : factor A(7,7), sequential
     // 4) t_lower_col_factor_offdiag2 : compute L(8:end, 7)
 
+    const Int league_rank = thread.league_rank();
+    const Int team_size = thread.team_size();
+    const Int team_rank = thread.team_rank();
+    const Int team_leader = league_rank*team_size;
+    const Int kid = team_leader + team_rank;
+
     const Int U_col = S(lvl)(kid);
     const Int U_row = 0;
     Int ncol = LU(U_col)(U_row).ncol;
     Int my_leader = find_leader(kid, 0);
-    if(Options.verbose == BASKER_TRUE && kid == my_leader)
+    if(Options.verbose == BASKER_TRUE)// && kid == my_leader)
     {
-      printf(" > kid = %ld(%ld): factoring_col current_chunk: lvl = %ld size=%ld\n",
-            (long)kid, (long)my_leader, (long)lvl, (long)ncol);
+      printf(" > kid = %ld(my_leader=%ld, team_leader=%ld): factoring_col current_chunk: lvl = %ld ncols=%ld (league rank = %d with %d threads)\n",
+            (long)kid, (long)my_leader, (long)team_leader, (long)lvl, (long)ncol, league_rank,team_size); fflush(stdout);
     }
 
     #ifdef BASKER_TIMER
@@ -145,7 +145,7 @@ namespace BaskerNS
     }//over all columns / domains / old sublevel 0
 
     #ifdef BASKER_TIMER
-    printf("Time Upper-Col1(%d): %lf (ncol=%d)\n", (int)kid, timer.seconds(), ncol); fflush(stdout);
+    printf("Time Upper-Col1(%d:%d/%d): %lf (ncol=%d)\n", (int)my_leader, (int)kid, (int)team_size, timer.seconds(), ncol); fflush(stdout);
     timer.reset();
     #endif
     //------Need because extend does not 
@@ -155,7 +155,8 @@ namespace BaskerNS
     #ifdef USE_TEAM_BARRIER_NFACTOR_SEP2
     thread.team_barrier();
     #else
-    Int b_size = pow(2, 1);
+    // TODO: can we skip synching with empty threads/blocks for dense-schur option?
+    Int b_size = pow(2, 1); // e.g., (dense_schur ? 1 : 2) ??
     t_basker_barrier(thread, kid, my_leader,
                      b_size, 0, LU(U_col)(U_row).scol, 0);
     for(Int tid = 0; tid < num_threads; tid++) {
@@ -386,7 +387,9 @@ namespace BaskerNS
       #endif
     }
 
-    //printf( " >> kid=%d: returning with t_nfactor_sep2 with info = %d\n",kid,info );
+    #ifdef BASKER_DEBUG_NFACTOR_SEP2
+    printf( " >> kid=%d: returning with t_nfactor_sep2 with info = %d\n",kid,info ); fflush(stdout);
+    #endif
     return info;
   }//end t_nfactor_sep2
 

@@ -512,7 +512,6 @@ namespace BaskerNS
       Int num_leaves = pow(2.0, (double)(num_levels));
       METIS_1DARRAY metis_sep_sizes (BASKER_KOKKOS_NOINIT("metis_isizes_k"), 2*num_doms-1);
       if (Options.dense_schur == BASKER_TRUE) {
-
         // Map to push Schur to the end
         METIS_1DARRAY part_map (BASKER_KOKKOS_NOINIT("part_map"), metis_size);
         idx_t n_interior = 0;
@@ -536,7 +535,6 @@ namespace BaskerNS
         //  into metis_rowptr/metis_colidx
         idx_t nnz_k = 0;
         metis_rowptr[0] = 0;
-#if 1
         n_interior = 0;
         for (idx_t j=0; j<metis_size; j++) {
           if (schur_part(j) == 0) {
@@ -551,19 +549,6 @@ namespace BaskerNS
             n_interior ++;
           }
         }
-#else
-        for(Int j = 0; j < metis_size; j++) {
-          for(Int k = M.col_ptr(j); k < M.col_ptr(j+1); k++)
-          {
-            Int i = M.row_idx(k);
-            if(i != j) {
-              metis_colidx[nnz_k] = i;
-              nnz_k ++;
-            }
-          }
-          metis_rowptr[j+1] = nnz_k;
-        }
-#endif
         /*{
           FILE *fp = fopen("m.dat","w");
           for(Int j = 0; j < n_interior; j++) for (Int k = metis_rowptr(j); k < metis_rowptr(j+1); k++) fprintf(fp,"%d %d\n",j,metis_colidx(k));
@@ -574,15 +559,30 @@ namespace BaskerNS
           std::cout << std::endl << " > calling METIS_NodeNDP on Interior ( n_interior = " << n_interior
                     << ", n_schur = " << n_schur << ", n = " << metis_size << ", num_leaves = " << num_leaves << " ) << " << std::endl;
         }
-        METIS_1DARRAY metis_perm_i  (BASKER_KOKKOS_NOINIT("metis_perm_k"),  n_interior);
-        METIS_1DARRAY metis_iperm_i (BASKER_KOKKOS_NOINIT("metis_iperm_k"), n_interior);
+        METIS_1DARRAY metis_perm_i  (BASKER_KOKKOS_NOINIT("metis_perm_k"),   n_interior);
+        METIS_1DARRAY metis_iperm_i (BASKER_KOKKOS_NOINIT("metis_iperm_k"),  n_interior);
+#ifdef MERGE_SCHUR_TO_TOP_SEPARATOR
         timer_metis.reset();
         METIS_NodeNDP(n_interior, &(metis_rowptr(0)), &(metis_colidx(0)), vwgt,
                       num_leaves, options, &(metis_perm_i(0)), &(metis_iperm_i(0)), &(metis_sep_sizes(0)));
         time_metis += timer_metis.seconds();
+#else
+        METIS_1DARRAY metis_sizes_i (BASKER_KOKKOS_NOINIT("metis_isizes_k"), num_doms-1);
+        timer_metis.reset();
+        if (num_leaves/2 > 1) {
+          METIS_NodeNDP(n_interior, &(metis_rowptr(0)), &(metis_colidx(0)), vwgt,
+                        num_leaves/2, options, &(metis_perm_i(0)), &(metis_iperm_i(0)), &(metis_sizes_i(0)));
+        } else {
+          // put it into one block
+          for (Int i=0; i<n_interior; i++) {
+            metis_perm_i(i) = metis_iperm_i(i) = i;
+          }
+          metis_sizes_i(0) = n_interior;
+        }
+        time_metis += timer_metis.seconds();
+#endif
 
         // add schur complement to top separator
-#if 1
         /*{
           FILE *fp = fopen("q.dat","w");
           for(Int j = 0; j < n_interior; j++) fprintf(fp,"%d %d\n",metis_perm_i(j),metis_iperm_i(j));
@@ -601,11 +601,45 @@ namespace BaskerNS
           }
         }
         for (idx_t j=0; j<metis_size; j++) metis_perm_k(metis_iperm_k(j)) = j;
-        //for (int i=0; i<2*num_leaves-1; i++) {
-        //  printf( " metis_size[%d] = %d\n",i,metis_sep_sizes(i) );
-        //}
+#ifdef MERGE_SCHUR_TO_TOP_SEPARATOR
+        for (int i=0; i<2*num_leaves-1; i++) {
+          printf( " + metis_size[%d] = %d\n",i,metis_sep_sizes(i) );
+        }
         metis_sep_sizes[2*num_leaves-2] += n_schur;
-        //printf( "   -> metis_size[%d] = %d\n",2*num_leaves-2,metis_sep_sizes(2*num_leaves-2) );
+        printf( "   -> metis_size[%d] = %d\n",2*num_leaves-2,metis_sep_sizes(2*num_leaves-2) );
+#else
+        if(Options.verbose == BASKER_TRUE) {
+          printf( "\n Output from METIS with %d subdomains\n",num_leaves/2 );
+          for (int i=0; i<num_leaves-1; i++) {
+            printf( " * metis_size[%d] = %d\n",i,metis_sizes_i(i) );
+          }
+          printf("\n");
+        }
+        Int k = 2*num_leaves-2;
+        metis_sep_sizes[k] = n_schur;
+        for (Int level_k = 1; level_k <= num_levels; level_k++) {
+          Int first_sep1  = pow(2.0, (double)(  level_k)) - 1; // id of the first leaf at this level         (top-to-bottom)
+          Int first_leaf1 = pow(2.0, (double)(1+level_k)) - 1; // id of the first new leaf at the next level (top-to-bottom)
+          Int num_leaves = (first_leaf1 - first_sep1)/2;
+          //printf("\n - level = %d (%d:%d) -\n",level_k,first_sep1,first_leaf1 );
+          for (Int j = first_sep1; j < first_sep1+num_leaves; j++) {
+            metis_sep_sizes[k-1] = 0;
+            //printf( " x metis_sep_size[%d] = 0\n",k-1 );
+            k --;
+          }
+          for (Int j = first_sep1+num_leaves; j < first_leaf1; j++) {
+            metis_sep_sizes[k-1] = metis_sizes_i[(k+num_leaves)/2-1];
+            //printf( " > metis_sep_size[%d] = metis_sizes_i[%d] = %d\n",k-1,k/2-1,metis_sizes_i((k+num_leaves)/2-1) );
+            k --;
+          }
+        }
+        if(Options.verbose == BASKER_TRUE) {
+          printf( "\n After adding Schur complement to the top\n" );
+          for (int i=0; i<2*num_leaves-1; i++) {
+            printf( " + metis_size[%d] = %d\n",i,metis_sep_sizes(i) );
+          }
+          printf("\n");
+	}
 #endif
       } else {
         // Calling METIS on Original matrix
@@ -822,60 +856,62 @@ namespace BaskerNS
                         << " at final level " << level << ", size = " << metis_size_k << ", sep-id = " << sep_id
                         << " < " << std::endl;
             }
-            if (run_nd_on_leaves) {
-              // calling ND
-              // perm(i) of the original matrix is i-th row in the new matrix
-              timer_metis.reset();
-              info = METIS_NodeND(&metis_size_k,
-                                  &(metis_rowptr(0)),
-                                  &(metis_colidx(0)),
-                                   nullptr,
-                                   options,
-                                  &(metis_perm_k(0)),
-                                  &(metis_iperm_k(0)));
-              time_metis += timer_metis.seconds();
-              if (info != METIS_OK) {
-                std::cout << std::endl << " > METIS_NodeND failed < " << std::endl << std::endl;
-                return BASKER_ERROR; // TODO: what to do here?
-              }
-            }
-            else if (run_amd_on_leaves) {
-              // calling AMD
-              // just copying for now, in case of Int and idx_t type-mismatch
-              for (Int i = 0; i <= metis_size_k; i++) amd_rowptr(i) = metis_rowptr(i);
-              for (Int i = 0; i <  nnz_k; i++) amd_colidx(i) = metis_colidx(i);
-              double l_nnz, lu_work;
-              info = BaskerSSWrapper<Int>::amd_order(metis_size_k,
-                                                     &(amd_rowptr(0)),
-                                                     &(amd_colidx(0)),
-                                                     &(amd_perm_k(0)),
-                                                     l_nnz, lu_work, Options.verbose);
-              for (Int i = 0; i < metis_size_k; i++) metis_perm_k(i) = amd_perm_k(i);
-
-              if (info != TRILINOS_AMD_OUT_OF_MEMORY && info != TRILINOS_AMD_INVALID) {
-                for(Int i = 0; i < metis_size_k; i++) {
-                  metis_iperm_k(metis_perm_k(i)) = i;
+            if (metis_size_k > 0) {
+              if (run_nd_on_leaves) {
+                // calling ND
+                // perm(i) of the original matrix is i-th row in the new matrix
+                timer_metis.reset();
+                info = METIS_NodeND(&metis_size_k,
+                                    &(metis_rowptr(0)),
+                                    &(metis_colidx(0)),
+                                     nullptr,
+                                     options,
+                                    &(metis_perm_k(0)),
+                                    &(metis_iperm_k(0)));
+                time_metis += timer_metis.seconds();
+                if (info != METIS_OK) {
+                  std::cout << std::endl << " > METIS_NodeND failed < " << std::endl << std::endl;
+                  return BASKER_ERROR; // TODO: what to do here?
                 }
-                if (Options.verbose == BASKER_TRUE) {
-                  std::cout << std::endl << " > Basker AMD on leaf : estimated nnz(L(" << leaf_id << ") = " << l_nnz
-                            << " <" << std::endl << std::endl;
-                }
-                info = METIS_OK;
-              } else {
-                std::cout << std::endl << " > Basker AMD failed < " << std::endl << std::endl;
-                return BASKER_ERROR; // TODO: what to do here?
               }
-              BT.leaf_nnz(leaf_id) = l_nnz;
-            }
+              else if (run_amd_on_leaves) {
+                // calling AMD
+                // just copying for now, in case of Int and idx_t type-mismatch
+                for (Int i = 0; i <= metis_size_k; i++) amd_rowptr(i) = metis_rowptr(i);
+                for (Int i = 0; i <  nnz_k; i++) amd_colidx(i) = metis_colidx(i);
+                double l_nnz, lu_work;
+                info = BaskerSSWrapper<Int>::amd_order(metis_size_k,
+                                                       &(amd_rowptr(0)),
+                                                       &(amd_colidx(0)),
+                                                       &(amd_perm_k(0)),
+                                                       l_nnz, lu_work, Options.verbose);
+                for (Int i = 0; i < metis_size_k; i++) metis_perm_k(i) = amd_perm_k(i);
 
-            // update perm/
-            for(Int i = 0; i < metis_size_k; i++) {
-              // metis_part_k[i] is the original global index before ND
-              metis_part_k[i] = sg.peritab[frow + metis_perm_k[i]];
-            }
-            for(Int i = 0; i < metis_size_k; i++) {
-              sg.peritab[frow + i] = metis_part_k[i];
-              sg.permtab[sg.peritab[frow + i]] = frow + i;
+                if (info != TRILINOS_AMD_OUT_OF_MEMORY && info != TRILINOS_AMD_INVALID) {
+                  for(Int i = 0; i < metis_size_k; i++) {
+                    metis_iperm_k(metis_perm_k(i)) = i;
+                  }
+                  if (Options.verbose == BASKER_TRUE) {
+                    std::cout << std::endl << " > Basker AMD on leaf : estimated nnz(L(" << leaf_id << ") = " << l_nnz
+                              << " <" << std::endl << std::endl;
+                  }
+                  info = METIS_OK;
+                } else {
+                  std::cout << std::endl << " > Basker AMD failed < " << std::endl << std::endl;
+                  return BASKER_ERROR; // TODO: what to do here?
+                }
+                BT.leaf_nnz(leaf_id) = l_nnz;
+              }
+
+              // update perm/
+              for(Int i = 0; i < metis_size_k; i++) {
+                // metis_part_k[i] is the original global index before ND
+                metis_part_k[i] = sg.peritab[frow + metis_perm_k[i]];
+              }
+              for(Int i = 0; i < metis_size_k; i++) {
+                sg.peritab[frow + i] = metis_part_k[i];
+                sg.permtab[sg.peritab[frow + i]] = frow + i;
+              }
             }
           } else {
             // ===============================================

@@ -833,7 +833,7 @@ namespace BaskerNS
           #ifdef BASKER_DEBUG_NFACTOR_DOM
           printf("Zeroing element: %d \n", j);
           #endif
-#ifdef SHYLU_BASKER_WORKER_THREAD_VERSION_1
+#if defined(SHYLU_BASKER_WORKER_THREAD_VERSION_1)
           // X(maxindex) store pivot val,
           // which is also stored as the last entry of U
           if (j != maxindex)
@@ -893,7 +893,7 @@ namespace BaskerNS
         t_prune(kid, 0, 0, k, maxindex);
       }
 
-#ifdef SHYLU_BASKER_WORKER_THREAD_VERSION_1
+#if defined(SHYLU_BASKER_WORKER_THREAD_VERSION_1)
       // !! Synch threads !!
       thread.team_barrier();
       if (team_rank == worker_thread_id) {
@@ -915,7 +915,7 @@ namespace BaskerNS
         timer1.reset();
         #endif
 
-#ifndef SHYLU_BASKER_WORKER_THREAD_VERSION_1
+#if !defined(SHYLU_BASKER_WORKER_THREAD_VERSION_1)
         if (team_size > 1) {
           // busy-wait for main thread to finish factoring the column
           Int check_k = atomic_check(0);

@@ -18,7 +18,6 @@
 #include "shylubasker_matrix_view_def.hpp"
 
 #include "shylubasker_nfactor_dom.hpp"
-#include "shylubasker_nfactor_sep.hpp"
 #include "shylubasker_nfactor_sep2.hpp"
 #include "shylubasker_nfactor_btf.hpp"
 
@@ -93,20 +92,25 @@ namespace BaskerNS
       // -------------------------------------------------------- //
       // -----------------------Domain--------------------------- //
       Int nworker_threads = (Options.worker_threads ? 2 : 1);
+      Int num_doms = num_threads;
       if(Options.verbose == BASKER_TRUE)
       {
-        printf("Factoring Dom num_threads: %ld with %ld worker threads\n", (long)num_threads,(long)nworker_threads);
-        //for (int tid = 0; tid < num_threads; tid ++) {
+        printf("Factoring Dom(# teams = %ld with # threads = %ld)\n", (long)num_doms,(long)nworker_threads);
+        //for (int tid = 0; tid < num_doms; tid ++) {
         //  printf( " error[%d] = %d\n",tid,thread_array(tid).error_type );
         //}
         fflush(stdout);
         timer.reset();
       }
+      //if(Options.dense_schur) {
+      //  if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",num_doms,num_doms/2 );
+      //  num_doms /= 2;
+      //}
 
       Int domain_restart = 0;
       kokkos_nfactor_domain <Int,Entry,Exe_Space>
         domain_nfactor(this);
-      Kokkos::parallel_for(TeamPolicy(num_threads,nworker_threads),
+      Kokkos::parallel_for(TeamPolicy(num_doms,nworker_threads),
           domain_nfactor);
       Kokkos::fence();
 
@@ -114,8 +118,8 @@ namespace BaskerNS
       while(info != BASKER_ERROR)
       {
         INT_1DARRAY thread_start;
-        MALLOC_INT_1DARRAY(thread_start, num_threads+1);
-        init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
+        MALLOC_INT_1DARRAY(thread_start, num_doms+1);
+        init_value(thread_start, num_doms+1, (Int) BASKER_MAX_IDX);
 
         info = nfactor_domain_error(thread_start);
         if(Options.verbose == BASKER_TRUE) {
@@ -150,7 +154,7 @@ namespace BaskerNS
           }
           kokkos_nfactor_domain_remalloc <Int, Entry, Exe_Space>
             nfactor_dom_remalloc(this, thread_start);
-          Kokkos::parallel_for(TeamPolicy(num_threads,1),
+          Kokkos::parallel_for(TeamPolicy(num_doms,nworker_threads),
               nfactor_dom_remalloc);
           Kokkos::fence();
         }
@@ -183,12 +187,15 @@ namespace BaskerNS
           //#endif
 
           Int sep_restart = 0;
-
           if(Options.verbose == BASKER_TRUE)
           {
-            printf("Factoring Sep(lnteams = %ld, lthreads = %ld)\n",
-                   (long)lnteams, (long)lthreads);
+            printf("Factoring Sep(# teams = %ld with # threads = %ld) at level = %d\n",
+                   (long)lnteams, (long)lthreads, l); fflush(stdout);
           }
+          //if(Options.dense_schur) {
+          //  if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",lnteams,lnteams/2 );
+          //  lnteams /= 2;
+          //}
 
           kokkos_nfactor_sep2 <Int, Entry, Exe_Space> sep_nfactor(this, l);
           Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),
@@ -203,7 +210,6 @@ namespace BaskerNS
             init_value(thread_start, num_threads+1, (Int) BASKER_MAX_IDX);
 
             info = nfactor_sep_error(thread_start);
-            //printf( "\n ***** nfactor_separator: info = %d *****\n",(int)info );
             if(info == BASKER_SUCCESS)
             {
               FREE_INT_1DARRAY(thread_start);
@@ -336,7 +342,7 @@ namespace BaskerNS
       A = ATEMP;
     }
     //printf("Switch back: %f \n",
-    //	    tzback.seconds());
+    //            tzback.seconds());
 
     return info;
   }//end factor_notoken()
