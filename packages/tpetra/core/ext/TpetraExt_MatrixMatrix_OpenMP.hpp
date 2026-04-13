@@ -16,6 +16,7 @@ namespace MMdetails {
 
 template <>
 struct KokkosKernelsSPGEMMBackend<Tpetra::KokkosCompat::KokkosOpenMPWrapperNode> {
+  static constexpr bool use_time_monitor = true;
   static std::string parameter_prefix() { return "openmp"; }
   static std::string algorithm_label() { return "OpenMP"; }
   static std::string wrapper_label() { return "OpenMPWrapper"; }
