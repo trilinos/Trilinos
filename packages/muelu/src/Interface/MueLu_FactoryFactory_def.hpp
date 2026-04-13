@@ -116,7 +116,7 @@
 #include "MueLu_MatlabSmoother.hpp"
 #endif
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 #include "MueLu_IntrepidPCoarsenFactory.hpp"
 #endif
 
@@ -284,7 +284,7 @@ RCP<const FactoryBase> FactoryFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   if (factoryName == "MatlabSmoother") return BuildMatlabSmoother(paramList, factoryMapIn, factoryManagersIn);
 #endif
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
   if (factoryName == "IntrepidPCoarsenFactory") return Build2<IntrepidPCoarsenFactory>(paramList, factoryMapIn, factoryManagersIn);
 #endif
 

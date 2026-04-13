@@ -56,13 +56,15 @@ class TpetraMap
   TpetraMap(global_size_t numGlobalElements,
             const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
             GlobalOrdinal indexBase,
-            const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+            const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
   //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution passed as a Kokkos::View.
   TpetraMap(global_size_t numGlobalElements,
             const Kokkos::View<const GlobalOrdinal *, typename Node::device_type> &indexList,
             GlobalOrdinal indexBase,
-            const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+            const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+            const Teuchos::RCP<Teuchos::ParameterList> &params = Teuchos::null);
 
   //! Destructor
   ~TpetraMap();

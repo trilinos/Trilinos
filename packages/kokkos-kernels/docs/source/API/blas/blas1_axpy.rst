@@ -52,33 +52,11 @@ Type Requirements
 Example
 =======
 
-.. code:: c++
+.. literalinclude:: ../../../../example/wiki/blas/KokkosBlas1_wiki_axpy.cpp
+  :language: c++
 
-  #include<Kokkos_Core.hpp>
-  #include<KokkosBlas1_axpby.hpp>
+output:
 
-  int main(int argc, char* argv[]) {
-    Kokkos::initialize();
-    {
+.. code::
 
-      int N = atoi(argv[1]);
-
-      Kokkos::View<double*> x("X",N);
-      Kokkos::View<double*> y("Y",N);
-      Kokkos::deep_copy(x,3.0);
-      Kokkos::deep_copy(y,2.0);
-
-      double alpha = 1.5;
-
-      KokkosBlas::axpy(alpha,x,y);
-
-      double sum = 0.0;
-      Kokkos::parallel_reduce("CheckValue", N, KOKKOS_LAMBDA (const int& i, double& lsum) {
-        lsum += y(i);
-      },sum);
-
-      printf("Sum: %lf Expected: %lf Diff: %e\n",sum,1.0*N*(2.0+1.5*3.0),sum-1.0*N);
-    }
-
-    Kokkos::finalize();
-  }
+  Sum: 65, Expected: 65, Diff: 0

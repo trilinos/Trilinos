@@ -18,7 +18,7 @@ KOKKOS_INLINE_FUNCTION static int checkTrsmInput([[maybe_unused]] const AViewTyp
   static_assert(Kokkos::is_view_v<BViewType>, "KokkosBatched::trsm: BViewType is not a Kokkos::View.");
   static_assert(AViewType::rank == 2, "KokkosBatched::trsm: AViewType must have rank 2.");
   static_assert(BViewType::rank == 1 || BViewType::rank == 2, "KokkosBatched::trsm: BViewType must have rank 1 or 2.");
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   const int m = B.extent(0), n = B.extent(1);
   const int nrowa = std::is_same_v<ArgSide, Side::Left> ? m : n;
   const int lda   = A.extent(0);

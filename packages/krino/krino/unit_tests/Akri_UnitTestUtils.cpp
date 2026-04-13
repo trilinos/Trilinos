@@ -10,8 +10,27 @@
 #include <stk_math/StkVector.hpp>
 #include <Akri_Facet.hpp>
 #include <gtest/gtest.h>
+#include <stk_util/util/ReportHandler.hpp>
 
 namespace krino {
+
+bool is_debug()
+{
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
+
+int num_random_test_cases(const int numDebugCases, const int numOptimizedCases)
+{
+#ifdef NDEBUG
+  return numOptimizedCases;
+#else
+  return numDebugCases;
+#endif
+}
 
 static bool is_near_absolute(const stk::math::Vector3d & gold, const stk::math::Vector3d & result, const double absoluteTol)
 {
@@ -35,6 +54,35 @@ void expect_eq(const stk::math::Vector3d & gold, const stk::math::Vector3d & res
 void expect_eq_absolute(const stk::math::Vector3d & gold, const stk::math::Vector3d & result, const double absoluteTol)
 {
   EXPECT_TRUE(is_near_absolute(gold, result, absoluteTol)) << "Failed vector comparison: gold: " << gold << " actual:" << result << " absolute tol:" << absoluteTol;;
+}
+
+static double vector_norm(const std::vector<double> & v)
+{
+  double sqrMag = 0;
+  for(double val : v)
+    sqrMag += val*val;
+  return std::sqrt(sqrMag);
+}
+
+static double error_norm(const std::vector<double> & gold, const std::vector<double> & result)
+{
+  STK_ThrowRequire(gold.size() == result.size());
+  double sqrErr = 0;
+  for (size_t i=0; i<gold.size(); ++i)
+    sqrErr += (gold[i]-result[i])*(gold[i]-result[i]);
+  return std::sqrt(sqrErr);
+}
+
+void expect_near_relative(const std::vector<double> & gold, const std::vector<double> & result, const double relativeTol)
+{
+  STK_ThrowRequire(gold.size() == result.size());
+  const double solnNorm = 0.5 * (vector_norm(gold) + vector_norm(result));
+  EXPECT_LE(error_norm(gold, result), relativeTol*solnNorm);
+}
+
+void expect_near_absolute(const std::vector<double> & gold, const std::vector<double> & result, const double absoluteTol)
+{
+  EXPECT_LE(error_norm(gold, result), absoluteTol);
 }
 
 bool is_near_relative(const Facet2d & gold, const Facet2d & result, const double relativeTol)

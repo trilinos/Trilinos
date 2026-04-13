@@ -224,6 +224,10 @@
           
 \cbb{emin: use filtered matrix}{bool}{true}{Matrix to use for smoothing for energy minimization. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
           
+\cbb{emin: constraint type}{string}{nullspace}{Type of constraint to enforce. Valid values are "nullspace" and "maxwell".}
+          
+\cbb{emin: least squares solver type}{string}{direct}{Type of solver to use for least squares problem. Valid values are "direct" and "Belos". "Belos" only works for nullspace constraints.}
+          
 \cbb{repartition: enable}{bool}{false}{Rebalancing on/off switch.}
           
 \cbb{repartition: partitioner}{string}{"zoltan2"}{Partitioning package to use. Possible values: "zoltan" (\zoltan{} library), "zoltan2" (\zoltantwo{} library).}
@@ -257,6 +261,8 @@
 \cba{maxwell1: 22list}{\parameterlist}{Specifies the multigrid solver for the 22 block}
           
 \cbb{maxwell1: dump matrices}{bool}{false}{Dump matrices to disk.}
+          
+\cbb{maxwell1: check and fix D0 scaling}{bool}{false}{Check that D0 is scaled appropriately and rescale if necessary.}
           
 \cbb{maxwell1: nodal smoother fix zero diagonal threshold}{double}{1e-10}{Specifies the fix zero diagonals threshold to be used for the nodal smoothing matrices.}
           

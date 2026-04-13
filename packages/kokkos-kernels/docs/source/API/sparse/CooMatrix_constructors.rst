@@ -1,7 +1,7 @@
 KokkosSparse::CooMatrix<>::CooMatrix
 ####################################
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION CooMatrix();
 

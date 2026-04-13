@@ -561,7 +561,8 @@ CDMesh::modify_mesh()
     batch_create_sides(stk_bulk(), side_requests);
 
     stk::mesh::toggle_sideset_updaters(stk_bulk(), true);
-    activate_selected_entities_touching_active_elements(stk_bulk(), stk::topology::NODE_RANK, stk_meta().universal_part(), aux_meta().active_part()); // we should be able to skip this step if there are no higher order elements
+    if (mesh_has_selected_higher_order_elements(stk_bulk(), my_phase_support.get_all_decomposed_blocks_selector()))
+      activate_selected_entities_touching_active_elements(stk_bulk(), stk::topology::NODE_RANK, stk_meta().universal_part(), aux_meta().active_part());
     update_element_side_parts();
 
     ParallelThrowAssert(stk_bulk().parallel(), check_element_side_connectivity(stk_bulk(), aux_meta().exposed_boundary_part(), aux_meta().active_part()));
@@ -675,17 +676,6 @@ CDMesh::decomposition_needs_update(const stk::mesh::BulkData & mesh, const Inter
 }
 
 void
-CDMesh::mark_interface_elements_for_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const RefinementSupport & refinementSupport, const InterfaceGeometry & interfaceGeometry, const int num_refinements)
-{
-  krino::mark_interface_elements_for_adaptivity(mesh,
-      refinementSupport.get_non_interface_conforming_refinement(),
-      interfaceGeometry,
-      refinementSupport,
-      coordsField,
-      num_refinements);
-}
-
-void
 CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coordsField, const InterfaceGeometry & interfaceGeometry)
 {
   const auto & refinementSupport = RefinementSupport::get(mesh.mesh_meta_data());
@@ -713,7 +703,12 @@ CDMesh::nonconformal_adaptivity(stk::mesh::BulkData & mesh, const FieldRef coord
   {
     markerFunction = [&mesh, &coordsField, &refinementSupport, &interfaceGeometry](int num_refinements)
     {
-      mark_interface_elements_for_adaptivity(mesh, coordsField, refinementSupport, interfaceGeometry, num_refinements);
+      krino::mark_interface_elements_for_adaptivity(mesh,
+            refinementSupport.get_non_interface_conforming_refinement(),
+            interfaceGeometry,
+            refinementSupport,
+            coordsField,
+            num_refinements);
     };
   }
 
@@ -768,7 +763,8 @@ CDMesh::rebuild_from_restart_mesh(stk::mesh::BulkData & mesh)
   cdmesh.generate_nonconformal_elements();
   cdmesh.restore_subelements();
 
-  activate_selected_entities_touching_active_elements(cdmesh.stk_bulk(), stk::topology::NODE_RANK, cdmesh.stk_meta().universal_part(), cdmesh.aux_meta().active_part()); // we should be able to skip this step if there are no higher order elements
+  if (mesh_has_selected_higher_order_elements(mesh, mesh.mesh_meta_data().universal_part()))
+    activate_selected_entities_touching_active_elements(cdmesh.stk_bulk(), stk::topology::NODE_RANK, cdmesh.stk_meta().universal_part(), cdmesh.aux_meta().active_part());
   cdmesh.update_element_side_parts(); // rebuild conformal side parts
 
   delete_extraneous_inactive_sides(mesh, cdmesh.myRefinementSupport, cdmesh.get_parent_part(), cdmesh.get_active_part());

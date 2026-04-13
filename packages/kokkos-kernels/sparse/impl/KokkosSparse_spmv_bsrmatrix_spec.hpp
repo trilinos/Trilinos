@@ -106,6 +106,8 @@ struct SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, 
 
   static void spmv_bsrmatrix(const ExecutionSpace &space, Handle *handle, const char mode[], const YScalar &alpha,
                              const AMatrix &A, const XVector &X, const YScalar &beta, const YVector &Y) {
+    std::string label = "KokkosSparse::spmv[NATIVE,BSRMATRIX," + KokkosKernels::ArithTraits<YScalar>::name() + "]";
+    Kokkos::Profiling::pushRegion(label);
     const bool modeIsNoTrans        = (mode[0] == NoTranspose[0]);
     const bool modeIsConjugate      = (mode[0] == Conjugate[0]);
     const bool modeIsConjugateTrans = (mode[0] == ConjugateTranspose[0]);
@@ -114,9 +116,13 @@ struct SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, 
     // use V41 if requested
     if (handle->algo == SPMV_BSR_V41) {
       if (modeIsNoTrans || modeIsConjugate) {
-        return Bsr::spMatVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+        Bsr::spMatVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+        Kokkos::Profiling::popRegion();
+        return;
       } else if (modeIsTrans || modeIsConjugateTrans) {
-        return Bsr::spMatVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+        Bsr::spMatVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+        Kokkos::Profiling::popRegion();
+        return;
       }
     }
 
@@ -124,17 +130,23 @@ struct SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, false, 
     if (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace> || handle->algo == SPMV_BSR_V42) {
       if (modeIsNoTrans) {
         ::KokkosSparse::Impl::apply_v42(space, alpha, A, X, beta, Y);
+        Kokkos::Profiling::popRegion();
         return;
       }
     }
 
     // fall back to V41 all else fails
     if (modeIsNoTrans || modeIsConjugate) {
-      return Bsr::spMatVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+      Bsr::spMatVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+      Kokkos::Profiling::popRegion();
+      return;
     } else if (modeIsTrans || modeIsConjugateTrans) {
-      return Bsr::spMatVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+      Bsr::spMatVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+      Kokkos::Profiling::popRegion();
+      return;
     }
 
+    Kokkos::Profiling::popRegion();
     {
       std::stringstream ss;
       ss << __FILE__ << ":" << __LINE__ << " ";
@@ -157,6 +169,8 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
 
   static void spmv_mv_bsrmatrix(const ExecutionSpace &space, Handle *handle, const char mode[], const YScalar &alpha,
                                 const AMatrix &A, const XVector &X, const YScalar &beta, const YVector &Y) {
+    std::string label = "KokkosSparse::spmv[NATIVE,MV,BSRMATRIX," + KokkosKernels::ArithTraits<YScalar>::name() + "]";
+    Kokkos::Profiling::pushRegion(label);
 #if defined(KOKKOS_ENABLE_CUDA) && (defined(KOKKOS_ARCH_AMPERE) || defined(KOKKOS_ARCH_VOLTA))
     Method method = Method::Fallback;
     {
@@ -192,11 +206,13 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
           case KokkosSparse::Experimental::Bsr_TC_Precision::Mixed: {
             BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, half, XVector, half, YVector, float, 16, 16,
                                               16>::dispatch(space, alpha, A, X, beta, Y);
+            Kokkos::Profiling::popRegion();
             return;
           }
           case KokkosSparse::Experimental::Bsr_TC_Precision::Double: {
             BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, double, XVector, double, YVector, double, 8, 8,
                                               4>::dispatch(space, alpha, A, X, beta, Y);
+            Kokkos::Profiling::popRegion();
             return;
           }
           case KokkosSparse::Experimental::Bsr_TC_Precision::Automatic:
@@ -207,10 +223,12 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
             if (operandsHalfHalfFloat) {
               BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, half, XVector, half, YVector, float, 16, 16,
                                                 16>::dispatch(space, alpha, A, X, beta, Y);
+              Kokkos::Profiling::popRegion();
               return;
             } else {
               BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, double, XVector, double, YVector, double, 8, 8,
                                                 4>::dispatch(space, alpha, A, X, beta, Y);
+              Kokkos::Profiling::popRegion();
               return;
             }
           }
@@ -225,6 +243,7 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
       if (Method::TensorCores == method) {
         BsrMatrixSpMVTensorCoreDispatcher<ExecutionSpace, AMatrix, half, XVector, half, YVector, float, 16, 16,
                                           16>::dispatch(space, alpha, A, X, beta, Y);
+        Kokkos::Profiling::popRegion();
         return;
       }
     }
@@ -238,9 +257,13 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
     // use V41 if requested
     if (handle->algo == SPMV_BSR_V41) {
       if (modeIsNoTrans || modeIsConjugate) {
-        return Bsr::spMatMultiVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+        Bsr::spMatMultiVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+        Kokkos::Profiling::popRegion();
+        return;
       } else if (modeIsTrans || modeIsConjugateTrans) {
-        return Bsr::spMatMultiVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+        Bsr::spMatMultiVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+        Kokkos::Profiling::popRegion();
+        return;
       }
     }
 
@@ -248,17 +271,23 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, fals
     if (KokkosKernels::Impl::is_gpu_exec_space_v<ExecutionSpace> || handle->algo == SPMV_BSR_V42) {
       if (modeIsNoTrans) {
         ::KokkosSparse::Impl::apply_v42(space, alpha, A, X, beta, Y);
+        Kokkos::Profiling::popRegion();
         return;
       }
     }
 
     // use V41 as the ultimate fallback
     if (modeIsNoTrans || modeIsConjugate) {
-      return Bsr::spMatMultiVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+      Bsr::spMatMultiVec_no_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugate);
+      Kokkos::Profiling::popRegion();
+      return;
     } else if (modeIsTrans || modeIsConjugateTrans) {
-      return Bsr::spMatMultiVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+      Bsr::spMatMultiVec_transpose(space, handle, alpha, A, X, beta, Y, modeIsConjugateTrans);
+      Kokkos::Profiling::popRegion();
+      return;
     }
 
+    Kokkos::Profiling::popRegion();
     {
       std::stringstream ss;
       ss << __FILE__ << ":" << __LINE__ << " ";
@@ -278,12 +307,15 @@ struct SPMV_MV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, XVector, YVector, true
                                 const AMatrix &A, const XVector &X, const YScalar &beta, const YVector &Y) {
     static_assert(std::is_integral_v<typename AMatrix::non_const_value_type>,
                   "This implementation is only for integer Scalar types.");
+    std::string label = "KokkosSparse::spmv[NATIVE,MV,BSRMATRIX," + KokkosKernels::ArithTraits<YScalar>::name() + "]";
+    Kokkos::Profiling::pushRegion(label);
     for (size_t j = 0; j < X.extent(1); ++j) {
       const auto x_j = Kokkos::subview(X, Kokkos::ALL(), j);
       auto y_j       = Kokkos::subview(Y, Kokkos::ALL(), j);
       typedef SPMV_BSRMATRIX<ExecutionSpace, Handle, AMatrix, decltype(x_j), decltype(y_j)> impl_type;
       impl_type::spmv_bsrmatrix(space, handle, mode, alpha, A, x_j, beta, y_j);
     }
+    Kokkos::Profiling::popRegion();
   }
 };
 #endif  // !defined(KOKKOSKERNELS_ETI_ONLY) ||

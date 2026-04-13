@@ -5,6 +5,8 @@
 #define KOKKOSBATCHED_GETRS_SERIAL_INTERNAL_HPP_
 
 #include <KokkosBatched_Util.hpp>
+#include <KokkosBatched_Laswp.hpp>
+#include <KokkosBatched_Trsm_Decl.hpp>
 
 namespace KokkosBatched {
 namespace Impl {

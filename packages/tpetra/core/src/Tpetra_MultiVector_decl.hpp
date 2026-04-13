@@ -24,7 +24,11 @@
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_Range1D.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_5
+#include "KokkosKernels_InnerProductSpaceTraits.hpp"
+#else
 #include "Kokkos_InnerProductSpaceTraits.hpp"
+#endif
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
 #include "Tpetra_Access.hpp"
 #include "Tpetra_Details_WrappedDualView.hpp"
@@ -384,8 +388,13 @@ class MultiVector : public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   /// This is usually the same as <tt>impl_scalar_type</tt>, but may
   /// differ if <tt>impl_scalar_type</tt> is e.g., an uncertainty
   /// quantification type from the Stokhos package.
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_5
+  using dot_type =
+      typename KokkosKernels::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type;
+#else
   using dot_type =
       typename Kokkos::Details::InnerProductSpaceTraits<impl_scalar_type>::dot_type;
+#endif
 
   /// \brief Type of a norm result.
   ///

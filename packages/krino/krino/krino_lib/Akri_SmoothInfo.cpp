@@ -31,12 +31,8 @@ to_string(const Container & container)
 
 bool SmoothInfo::Comparator::is_first_higher_priority_than_second(const SmoothInfo& a, const SmoothInfo& b) const
 {
-  const double infoASqrLen = (a.get_post_smooth_location()-a.get_pre_smooth_location()).length_squared();
-  const double infoBSqrLen = (b.get_post_smooth_location()-b.get_pre_smooth_location()).length_squared();
-  if (infoASqrLen > infoBSqrLen)
+  if (a.get_improvement() > b.get_improvement())
     return true;
-  else if (infoBSqrLen > infoASqrLen)
-    return false;
 
   return false;
 }
@@ -51,10 +47,10 @@ bool SmoothInfo::Comparator::does_first_win_priority_tie_with_second(const Smoot
 
 std::ostream & operator<<(std::ostream & os, const SmoothInfo& smoothInfo)
 {
-    os << "  Owner: " << smoothInfo.get_owner() << "\n";
-    os << "Smooth Node: " << smoothInfo.get_node_global_id() << "\n";
-    os << "Pre-smooth location: " << smoothInfo.get_pre_smooth_location().to_string(16) << "\n";
-    os << "Post-smooth location: " << smoothInfo.get_post_smooth_location().to_string(16) << "\n";
+    os << "  Owner: " << smoothInfo.get_owner() << ", ";
+    os << "Smooth Node: " << smoothInfo.get_node_global_id() << ", ";
+    os << "Pre-smooth location: " << smoothInfo.get_pre_smooth_location().to_string(16) << ", ";
+    os << "Post-smooth location: " << smoothInfo.get_post_smooth_location().to_string(16) << ", ";
     os << "GetProcsThatNeedToKnow: " << to_string(smoothInfo.get_procs_that_need_to_know_about_this_info()) << "\n";
     return os;
 }

@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Tpetra TeuchosCore TeuchosComm TeuchosParameterList Xpetra Zoltan)
+SET(LIB_REQUIRED_DEP_PACKAGES Kokkos KokkosKernels Tpetra TeuchosCore TeuchosComm TeuchosParameterList Xpetra Zoltan)
 SET(LIB_OPTIONAL_DEP_PACKAGES SCORECgmi SCORECpcu SCORECapf SCORECmds SCORECparma)
 SET(TEST_REQUIRED_DEP_PACKAGES Tpetra TeuchosCore TeuchosComm TeuchosParameterList Xpetra Zoltan)
 SET(TEST_OPTIONAL_DEP_PACKAGES Galeri Pamgen SCORECgmi SCORECpcu SCORECapf SCORECmds SCORECparma)

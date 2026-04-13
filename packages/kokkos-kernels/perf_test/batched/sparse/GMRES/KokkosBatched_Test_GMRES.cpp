@@ -3,8 +3,6 @@
 
 #include <fstream>
 
-#define KOKKOSKERNELS_DEBUG_LEVEL 0
-
 /// Kokkos headers
 #include "Kokkos_Core.hpp"
 

@@ -28,7 +28,7 @@ struct CmdLineOpts {
   bool saveMM;
   // repetitions - how many times to execute the kernel for testing
   size_t repetitions;
-  // Use Kokkos assembly for matrix
+  // Use Kokkos kernels for graph and matrix assembly
   bool useKokkosAssembly;
   // Number of doubles per element (for simulated state transfer)
   int numStateDoublesPerElement;
@@ -65,7 +65,7 @@ void setCmdLineOpts(struct CmdLineOpts& opts,
   clp.setOption("timing", "without-timing", &(opts.timing), "Print out timing information at the end of execution.");
   clp.setOption("save-mm", "without-save-mm", &(opts.saveMM), "Save the generated CrsMatrix into a Matrix Market file.");
   clp.setOption("repetitions", &(opts.repetitions), "Number of times to repeat the kernel.");
-  clp.setOption("kokkos", "no-kokkos", &(opts.useKokkosAssembly), "Use Kokkos assembly.");
+  clp.setOption("with-kokkos", "without-kokkos", &(opts.useKokkosAssembly), "Use Kokkos assembly.");
   clp.setOption("state-per-element", &(opts.numStateDoublesPerElement), "Number of doubles per element to store element state");
   clp.setOption("with-insert-global-indices-fe", "without-insert-global-indices-fe", &(opts.execInsertGlobalIndicesFE),
                 "Execute the Insert FECrsMatrix Global Indices FEM Assembly kernel.");

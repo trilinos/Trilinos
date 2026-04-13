@@ -139,7 +139,12 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map, const Entries
   {
     size_t free_byte, total_byte;
     KokkosKernels::Impl::kk_get_free_total_memory<memory_space>(free_byte, total_byte);
-    avail_byte = static_cast<size_t>(0.85 * static_cast<double>(free_byte) / static_cast<double>(nstreams));
+    using nnz_scalar_t           = typename IlukHandle::nnz_scalar_t;
+    const double min_buffer_size = 512 * 1024 * 1024;  // 512 MB
+    double orig_matrix_bytes =
+        std::max(min_buffer_size, double(entries.extent(0) * (sizeof(nnz_scalar_t) + sizeof(nnz_lno_t))));
+    avail_byte = static_cast<size_t>(std::min(0.85 * static_cast<double>(free_byte), orig_matrix_bytes) /
+                                     static_cast<double>(nstreams));
   }
 #endif
 

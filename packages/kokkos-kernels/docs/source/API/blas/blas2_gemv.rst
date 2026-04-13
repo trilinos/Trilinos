@@ -3,7 +3,7 @@ KokkosBlas::gemv
 
 Defined in header: :code:`KokkosBlas2_gemv.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class ExecutionSpace, class AViewType, class XViewType, class YViewType>
   void gemv(const ExecutionSpace& space, const char trans[], typename AViewType::const_value_type& alpha,
@@ -62,7 +62,7 @@ Type Requirements
 Example
 =======
 
-.. code:: cppkokkos
+.. code:: c++
   
   #include<Kokkos_Core.hpp>
   #include<KokkosBlas2_gemv.hpp>

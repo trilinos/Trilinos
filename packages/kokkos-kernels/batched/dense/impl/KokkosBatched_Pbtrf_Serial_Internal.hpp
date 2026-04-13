@@ -39,7 +39,7 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrfInternalLower<Algo::Pbtrf::Unblocked>::inv
     auto a_jj = KokkosKernels::ArithTraits<ValueType>::real(AB[0 * as0 + j * as1]);
 
     // Check if L (j, j) is positive definite
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
     if (a_jj <= 0) {
       return j + 1;
     }
@@ -92,7 +92,7 @@ KOKKOS_INLINE_FUNCTION int SerialPbtrfInternalUpper<Algo::Pbtrf::Unblocked>::inv
     auto a_jj = KokkosKernels::ArithTraits<ValueType>::real(AB[kd * as0 + j * as1]);
 
     // Check if U (j,j) is positive definite
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
     if (a_jj <= 0) {
       return j + 1;
     }

@@ -807,7 +807,7 @@ void add(const Scalar& alpha,
                          ConvertGlobalToLocalFunctor<LocalOrdinal, GlobalOrdinal,
                                                      col_inds_array, global_col_inds_array,
                                                      typename map_type::local_map_type>(localColinds, globalColinds, CcolMap->getLocalMap()));
-    KokkosSparse::sort_crs_matrix<exec_space, row_ptrs_array, col_inds_array, values_array>(rowptrs, localColinds, vals);
+    Import_Util::sortCrsEntries(rowptrs, localColinds, vals, ::KokkosSparse::SortAlgorithm::SHELL);
     C.setAllValues(rowptrs, localColinds, vals);
     C.fillComplete(CDomainMap, CRangeMap, params);
     if (!doFillComplete)
@@ -2099,8 +2099,10 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
     Tpetra::Details::ProfilingRegion MM3("TpetraExt: MMM: Newmatrix Final Sort");
 
     // Final sort & set of CRS arrays
-    if (params.is_null() || params->get("sort entries", true))
-      Import_Util::sortCrsEntries(Crowptr, Ccolind, Cvals);
+    if (params.is_null() || params->get("sort entries", true)) {
+      // Tpetra's serial SpGEMM results in almost sorted matrices. Use shell sort.
+      Import_Util::sortCrsEntries(Crowptr, Ccolind, Cvals, ::KokkosSparse::SortAlgorithm::SHELL);
+    }
     C.setAllValues(Crowptr, Ccolind, Cvals);
   }
 
@@ -2717,8 +2719,10 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
     // TODO (mfh 27 Sep 2016) Will the thread-parallel "local" sparse
     // matrix-matrix multiply routine sort the entries for us?
     // Final sort & set of CRS arrays
-    if (params.is_null() || params->get("sort entries", true))
-      Import_Util::sortCrsEntries(Crowptr, Ccolind, Cvals);
+    if (params.is_null() || params->get("sort entries", true)) {
+      // Tpetra's serial SpGEMM results in almost sorted matrices. Use shell sort.
+      Import_Util::sortCrsEntries(Crowptr, Ccolind, Cvals, ::KokkosSparse::SortAlgorithm::SHELL);
+    }
     C.setAllValues(Crowptr, Ccolind, Cvals);
   }
   {
@@ -3071,7 +3075,7 @@ void import_and_extract_views(
         remoteRows[i] = targetMap->getGlobalElement(remoteLIDs[i]);
 
       remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
-                                      rowMap->getIndexBase(), rowMap->getComm()));
+                                      rowMap->getIndexBase(), rowMap->getComm(), params));
       mode         = 1;
 
     } else if (prototypeImporter.is_null()) {
@@ -3090,7 +3094,7 @@ void import_and_extract_views(
       }
       remoteRows.resize(numRemote);
       remoteRowMap = rcp(new map_type(Teuchos::OrdinalTraits<global_size_t>::invalid(), remoteRows(),
-                                      rowMap->getIndexBase(), rowMap->getComm()));
+                                      rowMap->getIndexBase(), rowMap->getComm(), params));
       mode         = 2;
 
     } else {
@@ -3106,16 +3110,9 @@ void import_and_extract_views(
     }
 
     //
-    // Now we will import the needed remote rows of A, if the global maximum
-    // value of numRemote is greater than 0.
+    // Now we will import the needed remote rows of A, if the remoteRowMap has entries
     //
-    MM = Teuchos::null;
-    MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: I&X Collective-0"));
-
-    global_size_t globalMaxNumRemote = 0;
-    Teuchos::reduceAll(*(rowMap->getComm()), Teuchos::REDUCE_MAX, (global_size_t)numRemote, Teuchos::outArg(globalMaxNumRemote));
-
-    if (globalMaxNumRemote > 0) {
+    if (!remoteRowMap.is_null() && (remoteRowMap->getGlobalNumElements() > 0)) {
       MM = Teuchos::null;
       MM = rcp(new Tpetra::Details::ProfilingRegion("TpetraExt: MMM: I&X Import-2"));
 
@@ -3282,14 +3279,11 @@ void import_and_extract_views(
     return;
   }
 
-  // Now we will import the needed remote rows of M, if the global maximum
-  // value of numRemote is greater than 0.
-  global_size_t globalMaxNumRemote = 0;
-  Teuchos::reduceAll(*(rowMap->getComm()), Teuchos::REDUCE_MAX, (global_size_t)numRemote, Teuchos::outArg(globalMaxNumRemote));
+  // Now we will import the needed remote rows of M, if the remoteRowMap has entries
 
   RCP<const import_type> importer;
 
-  if (globalMaxNumRemote > 0) {
+  if (!remoteRowMap.is_null() && (remoteRowMap->getGlobalNumElements() > 0)) {
     // Create an importer with target-map remoteRowMap and source-map rowMap.
     if (mode == 1)
       importer = prototypeImporter->createRemoteOnlyImport(remoteRowMap);

@@ -1,8 +1,8 @@
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/test_common)
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test_common)
+kokkoskernels_include_directories(${CMAKE_BINARY_DIR}/test_common)
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${PACKAGE_SOURCE_DIR}/test_common)
 
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
 #####################
 #                   #
@@ -10,96 +10,68 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_C
 #                   #
 #####################
 
-SET(KK_ENABLE_GRAPH_TESTS ON)
+set(KK_ENABLE_GRAPH_TESTS ON)
 
-IF (KokkosKernels_TEST_ETI_ONLY)
-  IF (NOT KokkosKernels_INST_DOUBLE AND NOT KokkosKernels_INST_FLOAT)
-    MESSAGE(WARNING "Because only ETI'd type combinations are enabled for testing, the Kokkos Kernels graph tests require that double or float is enabled in ETI.")
-    SET(KK_ENABLE_GRAPH_TESTS OFF)
-  ENDIF ()
-ENDIF ()
+if(KokkosKernels_TEST_ETI_ONLY)
+  if(NOT KokkosKernels_INST_DOUBLE AND NOT KokkosKernels_INST_FLOAT)
+    message(WARNING
+      "Because only ETI'd type combinations are enabled for testing, the Kokkos Kernels graph tests require that double or float is enabled in ETI.")
+    set(KK_ENABLE_GRAPH_TESTS OFF)
+  endif()
+endif()
 
-IF(KK_ENABLE_GRAPH_TESTS)
+set(TEST_MAIN ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp)
+if(KK_ENABLE_GRAPH_TESTS)
 
-#####################
-#                   #
-# Add GPU backends  #
-#                   #
-#####################
-IF (KOKKOS_ENABLE_CUDA)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    graph_cuda
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Cuda_Graph.cpp
-    COMPONENTS graph
-  )
-ENDIF ()
+  #####################
+  #                   #
+  # Add GPU backends  #
+  #                   #
+  #####################
+  if(KOKKOS_ENABLE_CUDA)
+    kokkoskernels_add_unit_test(graph_cuda
+      SOURCES ${TEST_MAIN} backends/Test_Cuda_Graph.cpp
+      COMPONENTS graph)
+  endif()
 
-IF (KOKKOS_ENABLE_HIP)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    graph_hip
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_HIP_Graph.cpp
-    COMPONENTS graph
-  )
-ENDIF ()
+  if(KOKKOS_ENABLE_HIP)
+    kokkoskernels_add_unit_test(graph_hip
+      SOURCES ${TEST_MAIN} backends/Test_HIP_Graph.cpp
+      COMPONENTS graph)
+  endif()
 
-IF (KOKKOS_ENABLE_SYCL)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    graph_sycl
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_SYCL_Graph.cpp
-    COMPONENTS graph
-  )
-ENDIF ()
+  if(KOKKOS_ENABLE_SYCL)
+    kokkoskernels_add_unit_test(graph_sycl
+      SOURCES ${TEST_MAIN} backends/Test_SYCL_Graph.cpp
+      COMPONENTS graph)
+  endif()
 
-IF (KOKKOS_ENABLE_OPENMPTARGET)
-  # KOKKOSKERNELS_ADD_UNIT_TEST(
-  #   graph_openmptarget
-  #   SOURCES
-  #     ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-  #     backends/Test_OpenMPTarget_Graph.cpp
-  #   COMPONENTS graph
-  # )
-ENDIF ()
+  if(KOKKOS_ENABLE_OPENMPTARGET)
+    # KOKKOSKERNELS_ADD_UNIT_TEST(graph_openmptarget
+    #   SOURCES ${TEST_MAIN} backends/Test_OpenMPTarget_Graph.cpp
+    #   COMPONENTS graph)
+  endif()
 
+  #####################
+  #                   #
+  # Add CPU backends  #
+  #                   #
+  #####################
+  if(KOKKOS_ENABLE_SERIAL)
+    kokkoskernels_add_unit_test(graph_serial
+      SOURCES ${TEST_MAIN} backends/Test_Serial_Graph.cpp
+      COMPONENTS graph)
+  endif()
 
+  if(KOKKOS_ENABLE_OPENMP)
+    kokkoskernels_add_unit_test(graph_openmp
+      SOURCES ${TEST_MAIN} backends/Test_OpenMP_Graph.cpp
+      COMPONENTS graph)
+  endif()
 
-#####################
-#                   #
-# Add CPU backends  #
-#                   #
-#####################
-IF (KOKKOS_ENABLE_SERIAL)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    graph_serial
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Serial_Graph.cpp
-    COMPONENTS graph
-  )
-ENDIF ()
-
-IF (KOKKOS_ENABLE_OPENMP)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    graph_openmp
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_OpenMP_Graph.cpp
-    COMPONENTS graph
-  )
-ENDIF ()
-
-IF (KOKKOS_ENABLE_THREADS)
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    graph_threads
-    SOURCES
-      ${PACKAGE_SOURCE_DIR}/test_common/Test_Main.cpp
-      backends/Test_Threads_Graph.cpp
-    COMPONENTS graph
-  )
-ENDIF ()
-ENDIF ()
+  if(KOKKOS_ENABLE_THREADS)
+    kokkoskernels_add_unit_test(graph_threads
+      SOURCES ${TEST_MAIN} backends/Test_Threads_Graph.cpp
+      COMPONENTS graph)
+  endif()
+endif()

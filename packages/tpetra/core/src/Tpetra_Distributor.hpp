@@ -725,6 +725,7 @@ void Distributor::
   const char errPrefix[] = "Tpetra::Distributor::computeSends: ";
   const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
+  Tpetra::Details::ProfilingRegion pr("Tpetra::Distributor::computeSends");
 
   const int myRank = plan_->getComm()->getRank();
 

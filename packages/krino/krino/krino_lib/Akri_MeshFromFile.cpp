@@ -12,7 +12,7 @@
 
 namespace krino {
 
-MeshFromFile::MeshFromFile(const std::string & fileName, stk::ParallelMachine comm, const std::string & decompMethod, const bool useAllSidesForShells)
+MeshFromFile::MeshFromFile(const std::string & fileName, stk::ParallelMachine comm, const std::string & decompMethod, const bool useAllSidesForShells, const bool readFields)
 : myComm(comm)
 {
   myIOBroker = std::make_unique<stk::io::StkMeshIoBroker>(comm);
@@ -32,7 +32,7 @@ MeshFromFile::MeshFromFile(const std::string & fileName, stk::ParallelMachine co
   }
 
   myIOBroker->create_input_mesh();
-  myIOBroker->add_all_mesh_fields_as_input_fields();
+  if(readFields) myIOBroker->add_all_mesh_fields_as_input_fields();
   myMeta = &myIOBroker->meta_data();
 
   AuxMetaData::create(*myMeta);

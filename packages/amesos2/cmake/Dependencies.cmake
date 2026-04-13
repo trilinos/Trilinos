@@ -2,7 +2,7 @@
 # Need a flag for LGPL vs BSD, SuperLU is required only for BSD.
 #
 # SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Tpetra KLU2)
-SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Tpetra TrilinosSS Kokkos)
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Tpetra TrilinosSS Kokkos KokkosKernels)
 SET(LIB_OPTIONAL_DEP_PACKAGES ShyLU_NodeBasker ShyLU_NodeTacho)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES ShyLU_NodeBasker ShyLU_NodeTacho Kokkos TrilinosSS Xpetra Zoltan2Core Galeri)

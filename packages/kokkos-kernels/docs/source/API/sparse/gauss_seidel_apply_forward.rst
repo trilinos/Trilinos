@@ -3,7 +3,7 @@ KokkosSparse::forward_sweep_gauss_seidel_apply
 
 Defined in header ``KokkosSparse_gauss_seidel.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class ExecutionSpace, KokkosSparse::SparseMatrixFormat format = KokkosSparse::SparseMatrixFormat::CRS,
             class KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_, typename scalar_nnz_view_t_,

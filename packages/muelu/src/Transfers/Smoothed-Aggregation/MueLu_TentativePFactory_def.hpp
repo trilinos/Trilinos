@@ -153,11 +153,14 @@ void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level&
     for (LO i = 0; i < numCoarseNodes; i++) {
       nodeList[i] = (elementAList[i * blkSize] - indexBase) / blkSize + indexBase;
     }
+    Teuchos::RCP<Teuchos::ParameterList> params = Teuchos::rcp(new Teuchos::ParameterList());
+    params->set("compute global constants", false);
     RCP<const Map> coarseCoordsMap = MapFactory::Build(fineCoords->getMap()->lib(),
-                                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                                       blkSize * coarseMap->getGlobalNumElements(),
                                                        nodeList,
                                                        indexBase,
-                                                       fineCoords->getMap()->getComm());
+                                                       fineCoords->getMap()->getComm(),
+                                                       params);
     coarseCoords                   = RealValuedMultiVectorFactory::Build(coarseCoordsMap, numDimensions);
 
     // Create overlapped fine coordinates to reduce global communication

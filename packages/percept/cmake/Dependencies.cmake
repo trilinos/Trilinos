@@ -1,4 +1,4 @@
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
-  LIB_REQUIRED_PACKAGES Intrepid2 SEACASIoss STKUtil STKIO STKMesh STKExprEval STKSearch STKTransfer Zoltan
+  LIB_REQUIRED_PACKAGES Anasazi Kokkos Intrepid2 Shards SEACASIoss STKUtil STKIO STKMesh STKExprEval STKSearch STKTransfer STKTopology Teuchos Zoltan
   LIB_OPTIONAL_TPLS OpenNURBS
   )

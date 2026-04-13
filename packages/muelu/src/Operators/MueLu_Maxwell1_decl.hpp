@@ -295,7 +295,7 @@ class Maxwell1 : public VerboseObject, public Xpetra::Operator<Scalar, LocalOrdi
   //! Material
   Teuchos::RCP<MultiVector> Material_;
   //! Some options
-  bool useKokkos_, allEdgesBoundary_, allNodesBoundary_, dump_matrices_, enable_reuse_, syncTimers_;
+  bool useKokkos_, allEdgesBoundary_, allNodesBoundary_, dump_matrices_, check_D0_scaling_, enable_reuse_, syncTimers_;
   bool applyBCsTo22_;
 
   //! Execution modes

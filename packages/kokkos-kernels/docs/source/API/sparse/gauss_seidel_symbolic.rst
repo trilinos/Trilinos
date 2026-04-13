@@ -3,7 +3,7 @@ KokkosSparse::gauss_seidel_symbolic
 
 Defined in header ``KokkosSparse_gauss_seidel.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename ExecutionSpace, typename KernelHandle, typename lno_row_view_t_, typename lno_nnz_view_t_>
   void gauss_seidel_symbolic(const ExecutionSpace &space, KernelHandle *handle,

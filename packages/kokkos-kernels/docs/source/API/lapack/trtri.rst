@@ -3,7 +3,7 @@ KokkosLapack::trtri
 
 Defined in header: :code:`KokkosLapack_trtri.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class AViewType>
   int trtri(const char uplo[], const char diag[], const AViewType& A);

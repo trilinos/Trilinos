@@ -6,9 +6,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+#include <Akri_CramersRuleSolver.hpp>
 #include <Akri_DiagWriter.hpp>
 #include <Akri_MathUtil.hpp>
-#include <Akri_Optimize.hpp>
+#include <Akri_Unit_LogRedirecter.hpp>
 #include <gtest/gtest.h>
 #include <functional>
 
@@ -80,57 +81,79 @@ TEST(compute_edge_values, singleCrossings)
   expect_quadratic_crossing(0.77, compute_edge_values(0.77, 1.25));
 }
 
-std::tuple<double,double> minimize_function_along_gradient(const std::function<double(double)> & fn, const std::function<double(double)> & dfdx, const double x0, const double /*maxDeltax*/, const double /*tol*/)
+template <typename MAT>
+void test_invert_3x3(const MAT & A)
 {
-  const auto vecfn = [&](const std::vector<double>& x) { return fn(x[0]); };
-  const auto vecgrad = [&](const std::vector<double>& x) { return std::vector{dfdx(x[0])}; };
-  std::cout << "Minimization starting at " << x0 << " " << fn(x0) << std::endl;
-  const std::vector soln = bfgs<std::vector<double>>(vecfn, vecgrad, std::vector{x0});
-  double xmin = soln[0];
-  double fmin = fn(xmin);
-  return {xmin, fmin};
+  MAT Ainv;
+  const bool success = invert3x3(A, Ainv);
+  EXPECT_TRUE(success);
+
+  const std::array<std::array<double,3>,3> identity{{ {{1.,0.,0.}}, {{0.,1.,0.}}, {{0.,0.,1.}} }};
+
+  MAT shouldBeIdentity;
+  multiply_3x3_3x3(A, Ainv, shouldBeIdentity);
+
+  for (int i=0; i < 3; ++i)
+    for (int j=0; j < 3; ++j)
+      EXPECT_NEAR( shouldBeIdentity[i][j], identity[i][j], 1e-14 );
+
+  MAT reInverse;
+  invert3x3(Ainv,reInverse);
+
+  for (int i=0; i < 3; ++i)
+    for (int j=0; j < 3; ++j)
+       EXPECT_NEAR( reInverse[i][j], A[i][j], 1e-14 );
 }
 
-void expect_find_minimum_along_gradient(const std::function<double(double)> & fn, const std::function<double(double)> & dfdx, const double x0, const double goldXmin, const double tol)
+template <typename MAT>
+void fill_test_matrix(MAT & A)
 {
-  const auto & [xmin, fmin] = minimize_function_along_gradient(fn, dfdx, x0, 1., tol);
-  EXPECT_NEAR(goldXmin, xmin, tol);
+  A[0][0] = 4.2;
+  A[1][1] = -1.7;
+  A[2][2] = 2.8;
+
+  A[0][1] = 4.6;
+  A[1][2] = 3.7;
+  A[2][0] = 2.9;
+
+  A[1][0] = 1.8;
+  A[2][1] = -0.8;
+  A[0][2] = 0.2;
 }
 
-TEST(minimize_function, quadraticFunction)
+TEST(Invert3x3, multipleStorageMethods)
 {
-  const double tol = 1.e-4;
-  const auto f = [](const double x) { return std::pow(x-5.,2); };
-  const auto dfdx = [](const double x) { return 2.*(x-5.); };
+  std::array<std::array<double,3>,3> A_array;
+  fill_test_matrix(A_array);
+  test_invert_3x3(A_array);
 
-  expect_find_minimum_along_gradient(f, dfdx, -5, 5., tol);
-  expect_find_minimum_along_gradient(f, dfdx, 0., 5., tol);
-  expect_find_minimum_along_gradient(f, dfdx, 5., 5., tol);
-  expect_find_minimum_along_gradient(f, dfdx, 10., 5., tol);
+  double A_carray[3][3];
+  fill_test_matrix(A_carray);
+  test_invert_3x3(A_carray);
+
+  std::array<stk::math::Vector3d,3> A_rowVecs;
+  fill_test_matrix(A_rowVecs);
+  test_invert_3x3(A_rowVecs);
 }
 
-TEST(minimize_function, absFunction)
+TEST(Invert3x3, compareToCramersRuleSolver)
 {
-  const double tol = 0.03;
-  const auto f = [](const double x) { return std::pow(std::abs(x-5.)/5., 3); };
-  const auto dfdx = [](const double x) { return (x<5.) ? (-3/5.*std::pow((5.-x)/5.,2)) : (3/5.*std::pow((x-5.)/5.,2)); };
+  std::array<std::array<double,3>,3> A;
+  fill_test_matrix(A);
 
-  expect_find_minimum_along_gradient(f, dfdx, 1.1, 5., tol);
-  expect_find_minimum_along_gradient(f, dfdx, 2.1, 5., tol);
-  expect_find_minimum_along_gradient(f, dfdx, 5., 5., tol);
-  expect_find_minimum_along_gradient(f, dfdx, 8.1, 5., tol);
-}
+  std::array<double,3> b = {0.3, 1.2, 4.5};
 
-TEST(minimize_function, quarticFunction)
-{
-  const double tol = 0.3; // large tol because function is so flat near minimum
-  const auto f = [](const double x) { return std::pow((x-5.)/5., 4); };
-  const auto dfdx = [](const double x) { return 0.8*pow((x-5.)/5.,3); };
+  const auto solnFromCramersRule = CramersRuleSolver::solve3x3(A, b);
 
-  expect_find_minimum_along_gradient(f, dfdx, 1.1, 5., tol);
-  expect_find_minimum_along_gradient(f, dfdx, 2.1, 5., tol);
-  expect_find_minimum_along_gradient(f, dfdx, 5., 5., tol);
-  expect_find_minimum_along_gradient(f, dfdx, 8.1, 5., tol);
+  std::array<std::array<double,3>,3> Ainv;
+  const bool success = invert3x3(A, Ainv);
+  EXPECT_TRUE(success);
+
+  std::array<double,3> solnFromInverse;
+  multiply_3x3_vec3(Ainv, b, solnFromInverse);
+
+  for (int i=0; i < 3; ++i)
+    EXPECT_NEAR( solnFromCramersRule[i], solnFromInverse[i], 1e-14 );
 }
 
 }

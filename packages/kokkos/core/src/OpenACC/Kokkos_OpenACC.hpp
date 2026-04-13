@@ -62,6 +62,13 @@ class OpenACC {
 
   using scratch_memory_space = ScratchMemorySpace<OpenACC>;
 
+  OpenACC(const OpenACC&) = default;
+  OpenACC(OpenACC&& other) : OpenACC(static_cast<const OpenACC&>(other)) {}
+  OpenACC& operator=(const OpenACC&) = default;
+  OpenACC& operator=(OpenACC&& other) {
+    return *this = static_cast<const OpenACC&>(other);
+  }
+  ~OpenACC();
   OpenACC();
 
   explicit OpenACC(int async_arg);

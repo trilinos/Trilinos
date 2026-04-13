@@ -1,0 +1,13 @@
+#!/bin/bash
+rm -rf CMakeCache.txt CMakeFiles
+cmake \
+-GNinja \
+-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+-DTPL_ENABLE_MPI=ON \
+-DTrilinos_ENABLE_Fortran=OFF \
+-DCMAKE_C_COMPILER=$(which mpicc) \
+-DCMAKE_CXX_COMPILER=$(which mpicxx) \
+-D CTEST_BUILD_FLAGS=-j$(nproc) \
+-D CTEST_PARALLEL_LEVEL=$(nproc) \
+"$@" \
+../..

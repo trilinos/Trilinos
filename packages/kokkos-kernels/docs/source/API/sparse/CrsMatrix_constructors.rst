@@ -1,7 +1,7 @@
 KokkosSparse::CrsMatrix<>::CrsMatrix
 ####################################
 
-.. code:: cppkokkos
+.. code:: c++
 
   KOKKOS_INLINE_FUNCTION CrsMatrix();
 

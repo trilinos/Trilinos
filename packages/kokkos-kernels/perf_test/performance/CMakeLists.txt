@@ -1,5 +1,5 @@
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_BINARY_DIR})
+kokkoskernels_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # Add the two performance tests for the Performance class
 # located in Kokkos_Performance.hpp.
@@ -9,16 +9,7 @@ KOKKOSKERNELS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #don't assert that this is defined anymore
 #ASSERT_DEFINED(TPL_ENABLE_yamlcpp)
 
-IF(${PACKAGE_NAME}_ENABLE_yamlcpp)
-
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    performance_validate
-    SOURCES performance_validate.cpp
-    )
-
-  KOKKOSKERNELS_ADD_UNIT_TEST(
-    performance_example
-    SOURCES performance_example.cpp
-    )
-
-ENDIF()
+if(${PACKAGE_NAME}_ENABLE_yamlcpp)
+  kokkoskernels_add_unit_test(performance_validate SOURCES performance_validate.cpp)
+  kokkoskernels_add_unit_test(performance_example  SOURCES performance_example.cpp)
+endif()

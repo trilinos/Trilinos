@@ -107,27 +107,20 @@ def main():
     Tpetra_Export = Tpetra.Export()
 
     timer.start("Build matrix and vectors")
-    tpetra_A = assemble1DLaplacian(args.problemSize, comm)
-    tpetra_map = tpetra_A.getRowMap()
+    A = assemble1DLaplacian(args.problemSize, comm)
+    tpetra_map = A.getRowMap()
 
     n0 = (args.problemSize if comm.getRank() == 0 else 0)
     tpetra_map0 = Tpetra_Map(args.problemSize, n0, 0, comm)
 
-    tpetra_x = Tpetra_Vector(tpetra_map, True)
-    tpetra_b = Tpetra_Vector(tpetra_map, False)
-    tpetra_residual = Tpetra_Vector(tpetra_map, False)
+    x = Tpetra_Vector(tpetra_map, True)
+    b = Tpetra_Vector(tpetra_map, False)
+    residual = Tpetra_Vector(tpetra_map, False)
 
-    tpetra_b.putScalar(1.)
+    b.putScalar(1.)
 
-    tpetra_A.describe(out)
+    A.describe(out)
     timer.stop("Build matrix and vectors")
-
-    # Wrap Tpetra objects as Thyra objects
-    thyra_map = Thyra.tpetraVectorSpace(tpetra_map)
-    thyra_x = Thyra.tpetraVector(thyra_map, tpetra_x)
-    thyra_b = Thyra.tpetraVector(thyra_map, tpetra_b)
-    thyra_residual = Thyra.tpetraVector(thyra_map, tpetra_residual)
-    thyra_A = Thyra.tpetraLinearOp(thyra_map, thyra_map, tpetra_A)
 
     # Set up linear solver
     linearSolverBuilder = Stratimikos.LinearSolverBuilder['double']()
@@ -206,19 +199,19 @@ def main():
     solverFactory = Thyra.createLinearSolveStrategy(linearSolverBuilder)
 
     timer.start("Setup solver")
-    thyra_invA = Thyra.linearOpWithSolve(solverFactory, thyra_A)
+    invA = Thyra.linearOpWithSolve(solverFactory, A)
     timer.stop("Setup solver")
-    assert thyra_invA.solveSupports(Thyra.NOTRANS)
+    assert invA.solveSupports(Thyra.NOTRANS)
 
     # Solve
     timer.start("Solve")
-    status = thyra_invA.solve(Thyra.NOTRANS, thyra_b, thyra_x)
+    status = invA.solve(Thyra.NOTRANS, b, x)
     timer.stop("Solve")
 
     # Compute residual
-    tpetra_A.apply(tpetra_x, tpetra_residual)
-    tpetra_residual.update(1, tpetra_b, -1)
-    resNorm = tpetra_residual.norm2()
+    A.apply(x, residual)
+    residual.update(1, b, -1)
+    resNorm = residual.norm2()
 
     if comm.getRank() == 0:
         print("Solver choice:                   ", args.solver)
@@ -233,9 +226,9 @@ def main():
         print('Norm of residual = {} '.format(resNorm))
 
     # Gather solution vector on rank 0
-    tpetra_x0 = Tpetra_Vector(tpetra_map0, True)
+    x0 = Tpetra_Vector(tpetra_map0, True)
     export = Tpetra_Export(tpetra_map0, tpetra_map)
-    tpetra_x0.doImport(source=tpetra_x, exporter=export, CM=Tpetra.CombineMode.REPLACE)
+    x0.doImport(source=x, exporter=export, CM=Tpetra.CombineMode.REPLACE)
 
     # Print timings
     timer.stop("Main")
@@ -244,7 +237,7 @@ def main():
     timer.report(out, comm, options)
 
     if comm.getRank() == 0 and display:
-        x0_view = tpetra_x0.getLocalViewHost()
+        x0_view = x0.getLocalViewHost(Tpetra.Access.ReadOnlyStruct()).numpy()
         plt.figure()
         plt.plot(x0_view)
         plt.savefig('x0_view.png', dpi=800, bbox_inches='tight', pad_inches=0)

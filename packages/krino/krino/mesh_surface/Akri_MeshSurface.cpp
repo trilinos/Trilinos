@@ -851,74 +851,118 @@ MeshSurface<FACET>::MeshSurface(const stk::mesh::MetaData & meta,
 {
 }
 
-template <class FACET>
-void MeshSurface<FACET>::build_local_facets(const BoundingBox & /*proc_bbox*/)
+static bool determine_polarity_for_side(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & volumeSelector, const stk::mesh::Entity side)
 {
-  /* %TRACE[ON]% */ Trace trace__("krino::MeshSurface::build_local_facets()"); /* %TRACE% */
+  const stk::topology sideTopology = mesh.bucket(side).topology();
+  const unsigned numSideElems = mesh.num_elements(side);
+  const stk::mesh::Entity * sideElems = mesh.begin_elements(side);
+  const stk::mesh::Permutation * sideElemPermutatons = mesh.begin_permutations(side, stk::topology::ELEMENT_RANK);
+
+  for (unsigned iElem = 0; iElem < numSideElems; ++iElem)
+    if (volumeSelector(mesh.bucket(sideElems[iElem])))
+      return sideTopology.is_positive_polarity(sideElemPermutatons[iElem]);
+
+  // We can get here in parallel without aura.  Check for orientation wrt non-selected elements
+  for (unsigned iElem = 0; iElem < numSideElems; ++iElem)
+    if (!volumeSelector(mesh.bucket(sideElems[iElem])))
+      return !sideTopology.is_positive_polarity(sideElemPermutatons[iElem]);
+
+  STK_ThrowRequireMsg(false, "determine_polarity_for_negative_side_of_interface has no touching element.");
+  return false;
+}
+
+static bool should_side_be_flipped(const stk::mesh::BulkData& mesh, const stk::mesh::Selector & volumeSelector, const stk::mesh::Entity side, const int sign)
+{
+  if (volumeSelector.is_null() || determine_polarity_for_side(mesh, volumeSelector, side))
+    return sign < 0;
+  return sign >= 0;
+}
+
+template <class FACET>
+void MeshSurface<FACET>::add_side_facet(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & volumeSelector, const stk::topology sideTopology, const stk::mesh::Entity side)
+{
+  const bool doFlip = should_side_be_flipped(mesh, volumeSelector, side, my_sign);
+  if (stk::topology::TRI_3 == sideTopology)
+  {
+    add_facet3d(mesh, side, doFlip, 0,1,2);
+  }
+  else if (stk::topology::QUAD_4 == sideTopology)
+  {
+    add_quad3d(mesh, side, doFlip, 0,1,2,3);
+  }
+  else if (stk::topology::TRI_6 == sideTopology)
+  {
+    add_facet3d(mesh, side, doFlip, 0,3,5);
+    add_facet3d(mesh, side, doFlip, 1,4,3);
+    add_facet3d(mesh, side, doFlip, 2,5,4);
+    add_facet3d(mesh, side, doFlip, 3,4,5);
+  }
+  else if (stk::topology::LINE_2 == sideTopology)
+  {
+    add_facet2d(mesh, side, doFlip, 0,1);
+  }
+  else if (stk::topology::LINE_3 == sideTopology)
+  {
+    add_facet2d(mesh, side, doFlip, 0,2);
+    add_facet2d(mesh, side, doFlip, 2,1);
+  }
+  else
+  {
+    ThrowRuntimeError("Elements with side topology " << sideTopology.name() << " not supported for mesh surface initialization.");
+  }
+}
+
+template <class FACET>
+void MeshSurface<FACET>::add_selected_side_facets(const stk::mesh::BulkData & mesh, const stk::mesh::Selector & volumeSelector, const stk::mesh::Selector & sideSelector)
+{
+  for (auto * bucket : mesh.get_buckets(my_mesh_meta.side_rank(), sideSelector))
+  {
+    const stk::topology sideTopology = bucket->topology();
+    for (auto side : *bucket)
+      add_side_facet(mesh, volumeSelector, sideTopology, side);
+  }
+}
+
+template <class FACET>
+void MeshSurface<FACET>::build_local_facets(const BoundingBox &)
+{
   const stk::mesh::BulkData & mesh = my_mesh_meta.mesh_bulk_data();
   stk::mesh::Selector active_locally_owned_selector =
       (NULL != my_mesh_meta.get_part("ACTIVE_CONTEXT_BIT")) ?
       (*my_mesh_meta.get_part("ACTIVE_CONTEXT_BIT") & my_mesh_meta.locally_owned_part()) :
       stk::mesh::Selector(my_mesh_meta.locally_owned_part());
 
-  stk::mesh::Selector active_locally_owned_part_selector = active_locally_owned_selector & my_surface_selector;
-
-  stk::mesh::BucketVector const& buckets = mesh.get_buckets( my_mesh_meta.side_rank(), active_locally_owned_part_selector);
-
   Faceted_Surface<FACET>::clear();
 
-  stk::mesh::BucketVector::const_iterator ib = buckets.begin();
-  stk::mesh::BucketVector::const_iterator ib_end = buckets.end();
-
-  for ( ; ib != ib_end ; ++ib )
+  if (my_surface_selector.is_all_unions())
   {
-    const stk::mesh::Bucket & b = **ib;
-    const unsigned length = b.size();
-
-    for ( unsigned iSide = 0; iSide < length; ++iSide )
+    stk::mesh::PartVector surfaceParts;
+    my_surface_selector.get_parts(surfaceParts);
+    for (auto * surfacePart : surfaceParts)
     {
-      stk::mesh::Entity side = b[iSide];
-
-      stk::topology side_topology = mesh.bucket(side).topology();
-      if (stk::topology::TRI_3 == side_topology)
-      {
-        add_facet3d(mesh,side,0,1,2);
-      }
-      else if (stk::topology::QUAD_4 == side_topology)
-      {
-        add_quad3d(mesh,side,0,1,2,3);
-      }
-      else if (stk::topology::TRI_6 == side_topology)
-      {
-        add_facet3d(mesh,side,0,3,5);
-        add_facet3d(mesh,side,1,4,3);
-        add_facet3d(mesh,side,2,5,4);
-        add_facet3d(mesh,side,3,4,5);
-      }
-      else if (stk::topology::LINE_2 == side_topology)
-      {
-        add_facet2d(mesh,side,0,1);
-      }
-      else if (stk::topology::LINE_3 == side_topology)
-      {
-        add_facet2d(mesh,side,0,2);
-        add_facet2d(mesh,side,2,1);
-      }
-      else
-      {
-        ThrowRuntimeError("Elements with side topology " << side_topology.name() << " not supported for mesh surface initialization.");
-      }
+      const stk::mesh::Selector activeOwnedSurfSelector = active_locally_owned_selector & *surfacePart;
+      const auto touchingVols = my_mesh_meta.get_blocks_touching_surface(surfacePart);
+      const stk::mesh::Selector volSelector = stk::mesh::selectUnion(touchingVols);
+      krinolog << "Building facets for " << surfacePart->name() << " oriented with respect to " << volSelector << stk::diag::dendl;
+      add_selected_side_facets(mesh, volSelector, activeOwnedSurfSelector);
     }
+  }
+  else
+  {
+    krinolog << "Not considering side part connectivity or polarity for mesh surface with non-union surface selector " << my_surface_selector << stk::diag::dendl;
+    const stk::mesh::Selector emptySelector;
+    const stk::mesh::Selector activeOwnedSurfSelector = active_locally_owned_selector & my_surface_selector;
+    add_selected_side_facets(mesh, emptySelector, activeOwnedSurfSelector);
   }
 }
 
 template <class FACET>
-void MeshSurface<FACET>::add_facet2d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1)
+void MeshSurface<FACET>::add_facet2d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1)
 {
   STK_ThrowAssert(2 == my_mesh_meta.spatial_dimension());
   stk::math::Vector3d pt[2];
   
-  if (my_sign == -1)
+  if (doFlip)
   {
     // permute to flip normal direction
     const unsigned tmp = p0;
@@ -942,12 +986,12 @@ void MeshSurface<FACET>::add_facet2d(const stk::mesh::BulkData& mesh, stk::mesh:
 }
 
 template <class FACET>
-void MeshSurface<FACET>::add_facet3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1, unsigned p2)
+void MeshSurface<FACET>::add_facet3d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1, unsigned p2)
 {
   STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
   stk::math::Vector3d pt[3];
   
-  if (my_sign == -1)
+  if (doFlip)
   {
     // permute to flip normal direction
     const unsigned tmp = p1;
@@ -965,12 +1009,12 @@ void MeshSurface<FACET>::add_facet3d(const stk::mesh::BulkData& mesh, stk::mesh:
 }
 
 template <class FACET>
-void MeshSurface<FACET>::add_quad3d(const stk::mesh::BulkData& mesh, stk::mesh::Entity side, unsigned p0, unsigned p1, unsigned p2, unsigned p3)
+void MeshSurface<FACET>::add_quad3d(const stk::mesh::BulkData& mesh, const stk::mesh::Entity side, const bool doFlip, unsigned p0, unsigned p1, unsigned p2, unsigned p3)
 {
   STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
   stk::math::Vector3d pt[5];
 
-  if (my_sign == -1)
+  if (doFlip)
   {
     // permute to flip normal direction
     const unsigned tmp = p1;
@@ -1009,14 +1053,14 @@ void MeshSurface<FACET>::add_quad3d(const stk::mesh::BulkData& mesh, stk::mesh::
 }
 
 template <class FACET>
-void MeshSurface<FACET>::add_facet2d(stk::math::Vector3d & p0, stk::math::Vector3d & p1)
+void MeshSurface<FACET>::add_facet2d(const stk::math::Vector3d & p0, const stk::math::Vector3d & p1)
 {
   STK_ThrowAssert(2 == my_mesh_meta.spatial_dimension());
   Faceted_Surface<FACET>::emplace_back_2d( p0, p1 );
 }
 
 template <class FACET>
-void MeshSurface<FACET>::add_facet3d(stk::math::Vector3d & p0, stk::math::Vector3d & p1, stk::math::Vector3d & p2)
+void MeshSurface<FACET>::add_facet3d(const stk::math::Vector3d & p0, const stk::math::Vector3d & p1, const stk::math::Vector3d & p2)
 {
   STK_ThrowAssert(3 == my_mesh_meta.spatial_dimension());
   Faceted_Surface<FACET>::emplace_back_3d( p0, p1, p2 );

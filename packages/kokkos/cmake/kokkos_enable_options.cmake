@@ -36,7 +36,6 @@ kokkos_enable_option(
 # As of 09/2024, cudaMallocAsync causes issues with ICP and older version of UCX
 # as MPI communication layer.
 kokkos_enable_option(IMPL_CUDA_MALLOC_ASYNC OFF "Whether to enable CudaMallocAsync (requires CUDA Toolkit 11.2)")
-kokkos_enable_option(IMPL_NVHPC_AS_DEVICE_COMPILER OFF "Whether to allow nvc++ as Cuda device compiler")
 kokkos_enable_option(IMPL_CUDA_UNIFIED_MEMORY OFF "Whether to leverage unified memory architectures for CUDA")
 
 kokkos_enable_option(DEPRECATED_CODE_4 OFF "Whether code deprecated in major release 4 is available")
@@ -59,6 +58,9 @@ kokkos_enable_option(IMPL_SYCL_OUT_OF_ORDER_QUEUES OFF "Whether to make Kokkos u
 kokkos_enable_option(TESTS OFF "Whether to build the unit tests")
 kokkos_enable_option(BENCHMARKS OFF "Whether to build the benchmarks")
 kokkos_enable_option(EXAMPLES OFF "Whether to build the examples")
+if(Kokkos_ENABLE_BENCHMARKS)
+  kokkos_enable_option(BENCHMARKS_HEAVY OFF "Whether to build and run the long benchmarks")
+endif()
 string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPERCASE_CMAKE_BUILD_TYPE)
 if(UPPERCASE_CMAKE_BUILD_TYPE STREQUAL "DEBUG")
   set(DEBUG_DEFAULT ON)

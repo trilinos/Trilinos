@@ -16,6 +16,11 @@ namespace krino {
 namespace ResultsOutput_Parser {
   void parse(const Parser::Node & node, Region & region);
 }
+
+namespace ResultsSurfaceShellOutput_Parser{
+  void parse(const Parser::Node & node, Region & region);
+}
+
 }
 
 #endif // Akri_ResultsOutput_Parser_h

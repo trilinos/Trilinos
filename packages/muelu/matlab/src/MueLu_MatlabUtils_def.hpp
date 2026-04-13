@@ -119,7 +119,7 @@ MuemexType getMuemexType(const RCP<MGraph>& data) { return GRAPH; }
 template <>
 MuemexType getMuemexType<RCP<MGraph> >() { return GRAPH; }
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 template <>
 MuemexType getMuemexType(const RCP<FieldContainer_ordinal>& data) { return FIELDCONTAINER_ORDINAL; }
 template <>
@@ -564,7 +564,7 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph> >(const mxArray* mxa) {
   return mgraph;
 }
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 template <>
 RCP<FieldContainer_ordinal> loadDataFromMatlab<RCP<FieldContainer_ordinal> >(const mxArray* mxa) {
   if (mxGetClassID(mxa) != mxINT32_CLASS)
@@ -1118,7 +1118,7 @@ mxArray* saveDataToMatlab(RCP<MGraph>& data) {
   return out[0];
 }
 
-#ifdef HAVE_MUELU_INTREPID2
+#if defined(HAVE_MUELU_INTREPID2) && defined(HAVE_MUELU_EXPERIMENTAL)
 template <>
 mxArray* saveDataToMatlab(RCP<FieldContainer_ordinal>& data) {
   int rank = data->rank();

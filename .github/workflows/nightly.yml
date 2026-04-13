@@ -1,0 +1,39 @@
+name: Nightly
+run-name: Nightly Pipeline (#${{ github.run_number }})
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+      timezone: "America/Denver"
+      branches:
+        - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+
+# TODO:
+# - Cancel any job runs with previous successful runs (working tree hash)
+
+jobs:
+  cuda-kokkos-bounds-check:
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'cuda-12.4.1-gcc-12.3.0-openmpi-4.1.6', '20251204', 'gpu:A100']"
+      genconfig-string: "rhel_cuda-12-gcc-openmpi_debug_static_Ampere80_no-asan_complex_no-fpic_mpi_pt_no-rdc_no-uvm_deprecated-on_all"
+      cdash-track: "Nightly"
+      dashboard-build-name: ${AT2_IMAGE}_release_static_bounds-check
+      max-cores-allowed: 56
+      num-concurrent-tests: 112
+      slots-per-gpu: 8
+
+  address-sanitizer:
+    uses: ./.github/workflows/ci.yml
+    with:
+      target-runner-labels: "['self-hosted', 'clang-19.1.6-openmpi-4.1.6', '20251204']"
+      genconfig-string: "rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all"
+      cdash-track: "Nightly"
+      dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_address-sanitizer
+      max-cores-allowed: 29
+      num-concurrent-tests: 16

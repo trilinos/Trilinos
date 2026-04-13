@@ -3,7 +3,7 @@ KokkosBlas::ger
 
 Defined in header: :code:`KokkosBlas2_ger.hpp`
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <class ExecutionSpace, class XViewType, class YViewType, class AViewType>
   void ger(const ExecutionSpace& space, const char trans[],

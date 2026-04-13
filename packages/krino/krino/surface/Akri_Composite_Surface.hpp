@@ -40,6 +40,7 @@ public:
   
   virtual void set_transformation(Transformation * trans) override { Surface::set_transformation(trans); for (auto && subsurf : my_subsurfaces) subsurf->set_transformation(trans);}
   void set_composition_method(const CompositionMethod composition_method) { my_composition_method = composition_method; }
+  CompositionMethod get_composition_method() const { return my_composition_method; }
   void insert_into(BoundingBox & bbox) const override;
   bool does_intersect(const BoundingBox & bbox) const override;
   virtual double truncated_point_signed_distance(const stk::math::Vector3d &x, const double truncation_length, const double far_field_value) const override;

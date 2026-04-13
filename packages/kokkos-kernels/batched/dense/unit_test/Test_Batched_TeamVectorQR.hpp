@@ -61,7 +61,7 @@ struct Functor_TestBatchedTeamVectorQR {
     member.team_barrier();
 
     /// xx = bb;
-    TeamVectorCopy<MemberType, Trans::NoTranspose, 1>::invoke(member, bb, xx);
+    TeamVectorCopy<MemberType, Trans::NoTranspose>::invoke(member, bb, xx);
     member.team_barrier();
 
     /// xx = Q^{T}xx;

@@ -9,6 +9,7 @@
 #include <Akri_AnalyticSurfaceInterfaceGeometry.hpp>
 #include <Akri_CDFEM_Parent_Edges.hpp>
 #include <Akri_CDFEM_Support.hpp>
+#include <Akri_CDMesh_Refinement.hpp>
 #include <Akri_Edge.hpp>
 #include <Akri_Element_Intersections.hpp>
 #include <Akri_ElementCutterUtils.hpp>
@@ -22,6 +23,7 @@
 #include "Akri_PhaseTag.hpp"
 #include "Akri_SnapInfo.hpp"
 #include <Akri_Sign.hpp>
+#include <Akri_SimplexCurvature.hpp>
 
 namespace krino {
 
@@ -29,20 +31,6 @@ static int surface_sign_at_position(const Surface & surface, const stk::math::Ve
 {
   const double phi = surface.point_signed_distance(pt);
   return sign(phi);
-}
-
-static int compute_uncrossed_element_sign(const Surface & surface, const std::vector<stk::math::Vector3d> & elemNodesCoords)
-{
-  // Can't just test centroid due to curved penetrating surfaces
-  // Do we need to add centroid check to handle case where all nodes are on surface but centroid is not?
-  double signedDistWithMaxMag = 0.;
-  for (auto & nodeCoords : elemNodesCoords)
-  {
-    const double nodeSignedDist = surface.point_signed_distance(nodeCoords);
-    if (std::abs(nodeSignedDist) > std::abs(signedDistWithMaxMag))
-      signedDistWithMaxMag = nodeSignedDist;
-  }
-  return signedDistWithMaxMag < 0. ? -1 : 1;
 }
 
 static stk::math::Vector3d get_centroid(const std::vector<stk::math::Vector3d> & elemNodesCoords)
@@ -54,6 +42,22 @@ static stk::math::Vector3d get_centroid(const std::vector<stk::math::Vector3d> &
   }
   centroid *= 1./elemNodesCoords.size();
   return centroid;
+}
+
+static int compute_uncrossed_element_sign(const Surface & surface, const std::vector<stk::math::Vector3d> & elemNodesCoords)
+{
+  // Can't just test centroid due to curved penetrating surfaces
+  double signedDistWithMaxMag = 0.;
+  for (auto & nodeCoords : elemNodesCoords)
+  {
+    const double nodeSignedDist = surface.point_signed_distance(nodeCoords);
+    if (std::abs(nodeSignedDist) > std::abs(signedDistWithMaxMag))
+      signedDistWithMaxMag = nodeSignedDist;
+  }
+  const double centroidSignedDist = surface.point_signed_distance(get_centroid(elemNodesCoords));
+  if (std::abs(centroidSignedDist) > std::abs(signedDistWithMaxMag))
+    signedDistWithMaxMag = centroidSignedDist;
+  return signedDistWithMaxMag < 0. ? -1 : 1;
 }
 
 static bool does_any_surface_have_sharp_features(const std::vector<const Surface *> & surfaces)
@@ -657,6 +661,89 @@ PhaseTag AnalyticSurfaceInterfaceGeometry::get_starting_phase(const ElementCutte
   for (size_t i=0; i<mySurfaceIdentifiers.size(); ++i)
     phase.add(mySurfaceIdentifiers[i], elementSigns[i]);
   return phase;
+}
+
+static double tri_closest_point_normal_curvature_magnitude(const std::vector<stk::math::Vector3d> & elemNodesCoords,
+    const std::vector<stk::math::Vector3d> & elemNodesClosestPtNormals)
+{
+  const auto & [vol, normalDivergence] = tri_area_and_divergence_of_node_normals(
+      elemNodesCoords[0], elemNodesCoords[1], elemNodesCoords[2],
+      elemNodesClosestPtNormals[0], elemNodesClosestPtNormals[1], elemNodesClosestPtNormals[2]);
+  return std::abs(normalDivergence);
+}
+
+static double tet_closest_point_normal_mean_curvature_magnitude(const std::vector<stk::math::Vector3d> & elemNodesCoords,
+    const std::vector<stk::math::Vector3d> & elemNodesClosestPtNormals)
+{
+  const auto & [vol, normalDivergence] = tet_volume_and_divergence_of_node_normals(
+      elemNodesCoords[0], elemNodesCoords[1], elemNodesCoords[2], elemNodesCoords[3],
+      elemNodesClosestPtNormals[0], elemNodesClosestPtNormals[1], elemNodesClosestPtNormals[2], elemNodesClosestPtNormals[3]);
+  return 0.5*std::abs(normalDivergence);
+}
+
+static double finite_difference_curvature_magnitude_2d(const Surface & surf, const stk::math::Vector3d & x0, const double delta)
+{
+  auto f = [&surf](const stk::math::Vector3d & x) { return surf.point_signed_distance(x); };
+  const stk::math::Vector3d dx(delta,0,0);
+  const stk::math::Vector3d dy(0,delta,0);
+
+  const double normalDivergence = finite_difference_divergence_of_normal_2d(delta, f(x0),
+      f(x0-dx), f(x0+dx), f(x0-dy), f(x0+dy),
+      f(x0-dx-dy), f(x0-dx+dy), f(x0+dx-dy), f(x0+dx+dy));
+  return std::abs(normalDivergence);
+}
+
+static double finite_difference_mean_curvature_magnitude_3d(const Surface & surf, const stk::math::Vector3d & x0, const double delta)
+{
+  auto f = [&surf](const stk::math::Vector3d & x) { return surf.point_signed_distance(x); };
+  const stk::math::Vector3d dx(delta,0,0);
+  const stk::math::Vector3d dy(0,delta,0);
+  const stk::math::Vector3d dz(0,0,delta);
+
+  const double normalDivergence = finite_difference_divergence_of_normal_3d(delta, f(x0),
+      f(x0-dx), f(x0+dx), f(x0-dy), f(x0+dy), f(x0-dz), f(x0+dz),
+      f(x0-dx-dy), f(x0-dx+dy), f(x0+dx-dy), f(x0+dx+dy),
+      f(x0-dx-dz), f(x0-dx+dz), f(x0+dx-dz), f(x0+dx+dz),
+      f(x0-dy-dz), f(x0-dy+dz), f(x0+dy-dz), f(x0+dy+dz));
+  return 0.5*std::abs(normalDivergence);
+}
+
+std::vector<stk::math::Vector3d> compute_closest_point_normal_for_points(const Surface & surface, const std::vector<stk::math::Vector3d> & coords)
+{
+  std::vector<stk::math::Vector3d> pointClosestPtNormals;
+  pointClosestPtNormals.reserve(coords.size());
+  for (auto & ptCoords : coords)
+    pointClosestPtNormals.push_back(surface.closest_point_normal(ptCoords));
+  return pointClosestPtNormals;
+}
+
+static double calculate_surface_curvature_magnitude(const unsigned dim, const Surface & surface, const std::vector<stk::math::Vector3d> & elemNodesCoords, const double elemSize)
+{
+  if (surface.can_approximate_closest_point_normal())
+  {
+    const auto elemNodesClosestPtNormals = compute_closest_point_normal_for_points(surface, elemNodesCoords);
+    if (3 == dim)
+      return tet_closest_point_normal_mean_curvature_magnitude(elemNodesCoords, elemNodesClosestPtNormals);
+    return tri_closest_point_normal_curvature_magnitude(elemNodesCoords, elemNodesClosestPtNormals);
+  }
+  const stk::math::Vector3d centroid = get_centroid(elemNodesCoords);
+  if (3 == dim)
+    return finite_difference_mean_curvature_magnitude_3d(surface, centroid, 0.5*elemSize);
+  return finite_difference_curvature_magnitude_2d(surface, centroid, 0.5*elemSize);
+}
+
+double AnalyticSurfaceInterfaceGeometry::estimate_element_distance_error(const stk::mesh::BulkData & mesh, stk::mesh::Entity element) const
+{
+  std::vector<stk::math::Vector3d> elemNodesCoords;
+  fill_element_node_coordinates(mesh, element, get_coordinates_field(mesh), elemNodesCoords);
+  const double elemSize = compute_simplex_RMS_edge_lengths(elemNodesCoords);
+
+  double err = 0;
+  for (auto * surf : mySurfaces)
+  {
+    err += elemSize * calculate_surface_curvature_magnitude(mesh.mesh_meta_data().spatial_dimension(), *surf, elemNodesCoords, elemSize);
+  }
+  return err;
 }
 
 } // namespace krino

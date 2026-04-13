@@ -13,7 +13,11 @@
 #include "Tpetra_Map.hpp"
 #include "Kokkos_Core.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
+#ifndef KOKKOS_ENABLE_DEPRECATED_CODE_5
+#include "KokkosKernels_InnerProductSpaceTraits.hpp"
+#else
 #include "Kokkos_InnerProductSpaceTraits.hpp"
+#endif
 #include "Tpetra_Details_crsMatrixAssembleElement.hpp"
 #include <typeinfo>  // methods on std::type_info
 #include <utility>   // std::pair

@@ -13,6 +13,8 @@
 /// \file Tpetra_CrsGraph_def.hpp
 /// \brief Definition of the Tpetra::CrsGraph class
 
+#include <memory>
+#include "Tpetra_Details_iallreduce.hpp"
 #ifdef KOKKOS_ENABLE_SYCL
 #include <sycl/sycl.hpp>
 #endif
@@ -3112,7 +3114,7 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
                              const Teuchos::RCP<const export_type>& exporter,
                              const Teuchos::RCP<Teuchos::ParameterList>& params) {
   const char tfecfFuncName[] = "expertStaticFillComplete: ";
-  auto MM                    = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra ESFC-G-Setup"));
+  Tpetra::Details::ProfilingRegion prESFC("Tpetra::CrsGraph::expertStaticFillComplete");
 
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       domainMap.is_null() || rangeMap.is_null(),
@@ -3154,21 +3156,21 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   indicesAreGlobal_ = false;
 
   // set domain/range map: may clear the import/export objects
-  MM = Teuchos::null;
-  MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra ESFC-G-Maps"));
-  setDomainRangeMaps(domainMap, rangeMap);
+  {
+    Tpetra::Details::ProfilingRegion pr("Tpetra ESFC-G-Maps");
+    setDomainRangeMaps(domainMap, rangeMap);
+  }
 
   // Presume the user sorted and merged the arrays first
   indicesAreSorted_ = true;
   noRedundancies_   = true;
 
   // makeImportExport won't create a new importer/exporter if I set one here first.
-  MM = Teuchos::null;
-  MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra ESFC-G-mIXcheckI"));
 
   importer_ = Teuchos::null;
   exporter_ = Teuchos::null;
   if (importer != Teuchos::null) {
+    Tpetra::Details::ProfilingRegion pr("Tpetra ESFC-G-mIXcheckI");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         !importer->getSourceMap()->isSameAs(*getDomainMap()) ||
             !importer->getTargetMap()->isSameAs(*getColMap()),
@@ -3176,10 +3178,8 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     importer_ = importer;
   }
 
-  MM = Teuchos::null;
-  MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra ESFC-G-mIXcheckE"));
-
   if (exporter != Teuchos::null) {
+    Tpetra::Details::ProfilingRegion pr("Tpetra ESFC-G-mIXcheckE");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         !exporter->getSourceMap()->isSameAs(*getRowMap()) ||
             !exporter->getTargetMap()->isSameAs(*getRangeMap()),
@@ -3187,25 +3187,25 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     exporter_ = exporter;
   }
 
-  MM = Teuchos::null;
-  MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra ESFC-G-mIXmake"));
-  Teuchos::Array<int> remotePIDs(0);  // unused output argument
-  this->makeImportExport(remotePIDs, false);
+  {
+    Tpetra::Details::ProfilingRegion pr("Tpetra ESFC-G-mIXmake");
+    Teuchos::Array<int> remotePIDs(0);  // unused output argument
+    this->makeImportExport(remotePIDs, false);
+  }
 
-  MM = Teuchos::null;
-  MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra ESFC-G-fLG"));
-  this->fillLocalGraph(params);
+  {
+    Tpetra::Details::ProfilingRegion pr("Tpetra ESFC-G-fLG");
+    this->fillLocalGraph(params);
+  }
 
   const bool callComputeGlobalConstants = params.get() == nullptr ||
                                           params->get("compute global constants", true);
 
   if (callComputeGlobalConstants) {
-    MM = Teuchos::null;
-    MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra ESFC-G-cGC (const)"));
+    Tpetra::Details::ProfilingRegion pr("Tpetra ESFC-G-cGC (const)");
     this->computeGlobalConstants();
   } else {
-    MM = Teuchos::null;
-    MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra ESFC-G-cGC (noconst)"));
+    Tpetra::Details::ProfilingRegion pr("Tpetra ESFC-G-cGC (noconst)");
     this->computeLocalConstants();
   }
 
@@ -3859,13 +3859,19 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
 
   ProfilingRegion regionCGC("Tpetra::CrsGraph::computeGlobalConstants");
 
+  GST lcl, gbl;
+  std::shared_ptr<Details::CommRequest> req;
+  if (!this->haveGlobalConstants_) {
+    lcl = static_cast<GST>(this->getLocalNumEntries());
+    req = Details::iallreduce(lcl, gbl, Teuchos::REDUCE_SUM, *this->getComm());
+  }
+
   this->computeLocalConstants();
 
   // Compute global constants from local constants.  Processes that
   // already have local constants still participate in the
   // all-reduces, using their previously computed values.
   if (!this->haveGlobalConstants_) {
-    const Teuchos::Comm<int>& comm = *(this->getComm());
     // Promote all the nodeNum* and nodeMaxNum* quantities from
     // size_t to global_size_t, when doing the all-reduces for
     // globalNum* / globalMaxNum* results.
@@ -3878,15 +3884,13 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
     // good idea to use nonblocking all-reduces (MPI 3), so that we
     // don't have to wait around for the first one to finish before
     // starting the second one.
-    GST lcl, gbl;
-    lcl = static_cast<GST>(this->getLocalNumEntries());
+    const GST lclMaxNumRowEnt = static_cast<GST>(this->nodeMaxNumRowEntries_);
+    auto req2                 = Details::iallreduce(lclMaxNumRowEnt, this->globalMaxNumRowEntries_, Teuchos::REDUCE_MAX, *this->getComm());
 
-    reduceAll<int, GST>(comm, Teuchos::REDUCE_SUM, 1, &lcl, &gbl);
+    req->wait();
     this->globalNumEntries_ = gbl;
 
-    const GST lclMaxNumRowEnt = static_cast<GST>(this->nodeMaxNumRowEntries_);
-    reduceAll<int, GST>(comm, Teuchos::REDUCE_MAX, lclMaxNumRowEnt,
-                        outArg(this->globalMaxNumRowEntries_));
+    req2->wait();
     this->haveGlobalConstants_ = true;
   }
 }
@@ -4051,7 +4055,7 @@ CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
                                           "indices from global to local, we encountered "
               << lclNumErrs
               << " ind" << (pluralNumErrs ? "ices" : "ex")
-              << " that do" << (pluralNumErrs ? "es" : "")
+              << " that do" << (pluralNumErrs ? "" : "es")
               << " not live in the column Map on this process." << endl;
     }
 
@@ -6791,7 +6795,8 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
                                                     CSR_colind_GID(),
                                                     BaseDomainMap,
                                                     TargetPids, RemotePids,
-                                                    MyColMap);
+                                                    MyColMap,
+                                                    params);
 
   /*******************************************************/
   /**** 4) Second communicator restriction phase      ****/
@@ -6819,7 +6824,8 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   if ((!reverseMode && xferAsImport != nullptr) ||
       (reverseMode && xferAsExport != nullptr)) {
     Import_Util::sortCrsEntries(CSR_rowptr(),
-                                CSR_colind_LID());
+                                CSR_colind_LID(),
+                                ::KokkosSparse::SortAlgorithm::DEFAULT);
   } else if ((!reverseMode && xferAsExport != nullptr) ||
              (reverseMode && xferAsImport != nullptr)) {
     Import_Util::sortAndMergeCrsEntries(CSR_rowptr(),

@@ -26,6 +26,8 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <Akri_RefinementSupport.hpp>
+#include <Akri_Sign.hpp>
+#include <Akri_Surface.hpp>
 
 namespace krino {
 
@@ -239,15 +241,49 @@ static void initialize_marker(const stk::mesh::BulkData& /*mesh*/,
   stk::mesh::field_fill(initialVal, elementMarkerField);
 }
 
-int determine_refinement_marker(const bool isElementIndicated, const int interfaceMinRefineLevel, const int elementRefineLevel, const bool isDefaultCoarsen)
+Refinement_Marker determine_interface_refinement_marker(const bool isElementOnInterface, const int interfaceMinRefineLevel, const int elementRefineLevel, const bool isDefaultCoarsen)
 {
   auto marker = isDefaultCoarsen ? Refinement_Marker::COARSEN : Refinement_Marker::NOTHING;
-  const int targetRefineLevel = isElementIndicated ? interfaceMinRefineLevel : 0;
-  if (elementRefineLevel < targetRefineLevel)
-    marker = Refinement_Marker::REFINE;
-  else if (elementRefineLevel == targetRefineLevel)
-    marker = Refinement_Marker::NOTHING;
-  return static_cast<int>(marker);
+  if (isElementOnInterface)
+  {
+    if (elementRefineLevel < interfaceMinRefineLevel)
+      marker = Refinement_Marker::REFINE;
+    else
+      marker = Refinement_Marker::NOTHING;
+  }
+
+  return marker;
+}
+
+Refinement_Marker determine_interface_refinement_marker_with_error_estimate(const bool isElementOnInterface,
+  const int interfaceMinRefineLevel,
+  const int interfaceMaxRefineLevel,
+  const int elementRefineLevel,
+  const bool isDefaultCoarsen,
+  const std::function<double()> & estimate_error,
+  const double refineErrTol,
+  const double unrefineErrTol)
+
+{
+  Refinement_Marker marker = determine_interface_refinement_marker(isElementOnInterface, interfaceMinRefineLevel, elementRefineLevel, isDefaultCoarsen);
+
+  if (interfaceMaxRefineLevel > interfaceMinRefineLevel && isElementOnInterface)
+  {
+    // Error estimate can be expensive so only evaluate it if the marker depends on it
+    const bool doRefineIfErrorLargerThanTol = marker != Refinement_Marker::REFINE && elementRefineLevel < interfaceMaxRefineLevel;
+    const bool doUnrefineIfErrorSmallerThanTol = marker != Refinement_Marker::COARSEN && elementRefineLevel > interfaceMinRefineLevel && isDefaultCoarsen;
+    const bool markerDependsOnErrorEst = doRefineIfErrorLargerThanTol || doUnrefineIfErrorSmallerThanTol;
+    if (markerDependsOnErrorEst)
+    {
+      const double elemErrEst = estimate_error();
+
+      if (doRefineIfErrorLargerThanTol && elemErrEst > refineErrTol)
+        marker = Refinement_Marker::REFINE;
+      else if (doUnrefineIfErrorSmallerThanTol && elemErrEst < unrefineErrTol)
+        marker = Refinement_Marker::COARSEN;
+    }
+  }
+  return marker;
 }
 
 static void mark_given_elements(const stk::mesh::BulkData& /*mesh*/,
@@ -264,7 +300,7 @@ static void mark_given_elements(const stk::mesh::BulkData& /*mesh*/,
     int & marker = *field_data<int>(elementMarkerField, elem);
     const int elementRefineLevel = refinement.fully_refined_level(elem);
 
-    marker = determine_refinement_marker(doMarkElement, minRefineLevel, elementRefineLevel, isDefaultCoarsen);
+    marker = static_cast<int>(determine_interface_refinement_marker(doMarkElement, minRefineLevel, elementRefineLevel, isDefaultCoarsen));
   }
 }
 
@@ -388,7 +424,7 @@ mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
 
   const FieldRef elementMarkerField = refinement.get_marker_field_and_sync_to_host();
 
-  const stk::mesh::Selector locally_owned_selector(mesh.mesh_meta_data().locally_owned_part());
+  const stk::mesh::Selector locallyOwnedNotParent = mesh.mesh_meta_data().locally_owned_part() & !refinement.parent_part();
   const int interfaceMinRefineLevel = refinementSupport.get_interface_minimum_refinement_level();
   const int interfaceMaxRefineLevel = refinementSupport.get_interface_maximum_refinement_level();
   std::vector<stk::mesh::Entity> entities;
@@ -401,20 +437,35 @@ mark_interface_elements_for_adaptivity(const stk::mesh::BulkData& mesh,
   FieldRef nodeMarkerField = refinementSupport.get_nonconforming_refinement_node_marker_field();
   mark_nearest_node_on_cut_edges(mesh, edgeIntersections, nodeMarkerField);
 
-  stk::mesh::get_selected_entities( locally_owned_selector, mesh.buckets( stk::topology::ELEMENT_RANK ), entities );
+  const double refineErrTol = refinementSupport.get_interface_refinement_curvature_tolerance();
+  const double unrefineErrTol = refineErrTol/4;
+
+  stk::mesh::get_selected_entities( locallyOwnedNotParent, mesh.buckets( stk::topology::ELEMENT_RANK ), entities );
   for( auto&& elem : entities )
   {
-    bool hasCrossing = element_has_marked_node(mesh, elem, nodeMarkerField);
+    bool hasNearbyCrossing = element_has_marked_node(mesh, elem, nodeMarkerField);
 
     const int elementRefineLevel = refinement.fully_refined_level(elem);
 
+    Refinement_Marker refMarker;
+
+    if (interfaceMaxRefineLevel > interfaceMinRefineLevel)
+    {
+      const auto estimate_error = [&]() { return interfaceGeometry.estimate_element_distance_error(mesh, elem); };
+      refMarker = determine_interface_refinement_marker_with_error_estimate(hasNearbyCrossing, interfaceMinRefineLevel, interfaceMaxRefineLevel, elementRefineLevel, isDefaultCoarsen, estimate_error, refineErrTol, unrefineErrTol);
+    }
+    else
+    {
+      refMarker = determine_interface_refinement_marker(hasNearbyCrossing, interfaceMinRefineLevel, elementRefineLevel, isDefaultCoarsen);
+    }
+
     int & marker = *field_data<int>(elementMarkerField, elem);
-    marker = determine_refinement_marker(hasCrossing, interfaceMinRefineLevel, elementRefineLevel, isDefaultCoarsen);
+    marker = static_cast<int>(refMarker);
   }
 
   write_refinement_level_sizes(mesh, refinement, coordsField, entities, interfaceMaxRefineLevel);
 
-  if (interfaceMinRefineLevel > interfaceMaxRefineLevel)
+  if (false && interfaceMinRefineLevel > interfaceMaxRefineLevel)
   {
     resolve_fine_features(mesh, refinement, interfaceGeometry.get_surface_identifiers(), edgeIntersections, interfaceMaxRefineLevel, elementMarkerField, nodeMarkerField);
   }

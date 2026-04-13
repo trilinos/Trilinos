@@ -5,8 +5,10 @@
 
 #include "KokkosKernels_IOUtils.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_SellMatrix.hpp"
 
 #include <regex>
+#include <random>
 
 namespace KokkosSparse {
 namespace Impl {
@@ -373,10 +375,9 @@ bsrMat_t kk_generate_sparse_matrix(typename bsrMat_t::const_ordinal_type block_d
                                    typename bsrMat_t::non_const_size_type &nnz,
                                    typename bsrMat_t::const_ordinal_type row_size_variance,
                                    typename bsrMat_t::const_ordinal_type bandwidth) {
-  typedef KokkosSparse::CrsMatrix<typename bsrMat_t::value_type, typename bsrMat_t::ordinal_type,
-                                  typename bsrMat_t::device_type, typename bsrMat_t::memory_traits,
-                                  typename bsrMat_t::size_type>
-      crsMat_t;
+  using crsMat_t = KokkosSparse::CrsMatrix<typename bsrMat_t::value_type, typename bsrMat_t::ordinal_type,
+                                           typename bsrMat_t::device_type, typename bsrMat_t::memory_traits,
+                                           typename bsrMat_t::size_type>;
 
   const auto crs_mtx =
       kk_generate_sparse_matrix<crsMat_t>(nrows * block_dim, ncols * block_dim, nnz, row_size_variance, bandwidth);
@@ -384,6 +385,79 @@ bsrMat_t kk_generate_sparse_matrix(typename bsrMat_t::const_ordinal_type block_d
   return bsrmat;
 }
 // TODO: need to fix the size_type. All over the reading inputs are lno_t.
+
+template <class sellMat_t>
+sellMat_t kk_generate_sell_sparse_matrix(typename sellMat_t::const_ordinal_type nrows,
+                                         typename sellMat_t::const_ordinal_type ncols,
+                                         typename sellMat_t::const_ordinal_type row_length,
+                                         const double row_size_variance,
+                                         typename sellMat_t::const_ordinal_type bandwidth)
+  requires KokkosSparse::Experimental::SellFormat<sellMat_t>
+{
+  using offsets_type = typename sellMat_t::offsets_type;
+  using ordinal_type = typename sellMat_t::non_const_ordinal_type;
+  using entries_type = typename sellMat_t::entries_type;
+  using values_type  = typename sellMat_t::values_type;
+
+  ordinal_type bandwidth_val;
+  if (ncols / 2 < bandwidth) {
+    bandwidth_val = ncols / 2 - 1;
+  } else {
+    bandwidth_val = bandwidth;
+  }
+
+  const ordinal_type padded_nnz     = nrows * row_length;
+  const ordinal_type rows_per_slice = nrows;
+  ordinal_type nnz                  = padded_nnz;
+
+  offsets_type slice_offsets("slice offsets", 2);  // currently we only support one slice that contains the whole matrix
+  entries_type colinds("column indices", padded_nnz);
+  values_type values("entry values", padded_nnz);
+
+  {
+    typename offsets_type::host_mirror_type slice_offsets_h = Kokkos::create_mirror_view(slice_offsets);
+    typename entries_type::host_mirror_type colinds_h       = Kokkos::create_mirror_view(colinds);
+    typename values_type::host_mirror_type values_h         = Kokkos::create_mirror_view(values);
+
+    slice_offsets_h(0) = 0;
+    slice_offsets_h(1) = padded_nnz;
+
+    // Set up a random number generator
+    // A normal distribution is chosen to
+    // draw how many entires will be padding
+    // in a given row of the matrix.
+    std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::normal_distribution<double> padding_distribution{0, row_size_variance};
+    std::uniform_int_distribution<ordinal_type> colind_distribution(-bandwidth_val, bandwidth_val);
+    std::uniform_real_distribution<double> values_distribution(-10, 10);
+
+    ordinal_type row_padding = 0;
+    for (ordinal_type rowIdx = 0; rowIdx < nrows; ++rowIdx) {
+      row_padding = std::lround(std::abs(padding_distribution(gen)));
+      nnz -= row_padding;
+
+      for (ordinal_type colIdx = 0; colIdx < row_length; ++colIdx) {
+        if (colIdx < row_length - row_padding) {
+          int random_offset                  = colind_distribution(gen);
+          int column_index                   = (-1 < Kokkos::min(rowIdx, ncols - 1) + random_offset &&
+                              Kokkos::min(rowIdx, ncols - 1) + random_offset < ncols)
+                                                   ? Kokkos::min(rowIdx, ncols - 1) + random_offset
+                                                   : Kokkos::min(rowIdx, ncols) - random_offset;
+          colinds_h(rowIdx + colIdx * nrows) = column_index;
+          values_h(rowIdx + colIdx * nrows)  = values_distribution(gen);  // some random value
+        } else {
+          colinds_h(rowIdx + colIdx * nrows) = -1;
+          values_h(rowIdx + colIdx * nrows)  = 0;
+        }
+      }
+    }
+  }
+
+  sellMat_t A(nrows, ncols, nnz, padded_nnz, rows_per_slice, slice_offsets, colinds, values);
+
+  return A;
+}
 
 template <typename idx>
 void convert_crs_to_lower_triangle_edge_list(idx nv, idx *xadj, idx *adj, idx *lower_triangle_srcs,

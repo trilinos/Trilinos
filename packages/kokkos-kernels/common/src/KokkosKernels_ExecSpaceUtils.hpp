@@ -91,7 +91,7 @@ constexpr KOKKOS_INLINE_FUNCTION bool kk_is_x86_64_mem_space() {
   return false;
 }
 
-#if __x86_64__
+#if defined(__x86_64__)
 template <>
 constexpr KOKKOS_INLINE_FUNCTION bool kk_is_x86_64_mem_space<Kokkos::HostSpace>() {
   return true;

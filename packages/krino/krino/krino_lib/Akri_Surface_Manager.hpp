@@ -34,11 +34,14 @@ public:
 
   const std::vector< std::unique_ptr<BoundingSurface> > & get_bounding_surfaces() const { return myBoundingSurfaces; }
   bool has_bounding_surface(const std::string & name) const;
+  BoundingSurface & get_bounding_surface(const std::string & surfName) const;
   void add_bounding_surface(BoundingSurface * surf);
 
   const std::vector< std::unique_ptr<LevelSet> > & get_levelsets() const { return myLevelSetSurfaces; }
   bool has_levelset(const std::string & name) const;
+  LevelSet & get_levelset(const std::string & surfName) const;
   void add_levelset(LevelSet * ls);
+  void clear();
 
 private:
   static std::map<std::string,std::unique_ptr<Surface_Manager>> theModeltoManagerMap;

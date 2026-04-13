@@ -74,8 +74,6 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invok
     const MemberType &member, const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
-
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
   // note that parallel range is different ( m*n vs m-1*n);
@@ -90,39 +88,44 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftLower<Algo::Trsm::Blocked>::invok
 
     ///
     /// case GPU: team size is large and blocksize (mb,nb) is small
-    InnerTrsmLeftLowerUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, bs1);
-    InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
 
     auto trsm = [&](const int ib, const int jb, const ValueType *KOKKOS_RESTRICT AA,
                     /**/ ValueType *KOKKOS_RESTRICT BB) {
-      const int mb    = mbAlgo;
-      const int tsize = member.team_size();
-      // Made this non-const in order to WORKAROUND issue #349
-      int nb = (jb / tsize + jb % tsize > 0);
-      int np = jb % nb;
-      for (int p = 0; p < ib; p += mb) {
+      auto host_or_device = [&](auto tag) {
+        constexpr int mb = Algo::Trsm::Blocked::Impl::mb<decltype(tag)>();
+        InnerTrsmLeftLowerUnitDiag<mb> trsm_u(as0, as1, bs0, bs1);
+        InnerTrsmLeftLowerNonUnitDiag<mb> trsm_n(as0, as1, bs0, bs1);
+
+        const int tsize = member.team_size();
         // Made this non-const in order to WORKAROUND issue #349
-        int pb = ((p + mb) > ib ? (ib - p) : mb);
-
-        // trsm update
-        const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
-        /**/ ValueType *KOKKOS_RESTRICT Bp  = BB + p * bs0;
-
-        member.team_barrier();
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, (jb / nb) + (np > 0)), [&](const int jj) {
+        int nb = (jb / tsize + jb % tsize > 0);
+        int np = jb % nb;
+        for (int p = 0; p < ib; p += mb) {
           // Made this non-const in order to WORKAROUND issue #349
-          int j = jj * nb, qb = (j + nb) > jb ? np : nb;
-          if (use_unit_diag)
-            trsm_u.serial_invoke(Ap, pb, qb, Bp + j * bs1);
-          else
-            trsm_n.serial_invoke(Ap, pb, qb, Bp + j * bs1);
-        });
-        member.team_barrier();
+          int pb = ((p + mb) > ib ? (ib - p) : mb);
 
-        // gemm update
-        TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, ib - p - pb, jb, pb, minus_one, Ap + pb * as0, as0, as1,
-                                                      Bp, bs0, bs1, one, Bp + pb * bs0, bs0, bs1);
-      }
+          // trsm update
+          const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
+          /**/ ValueType *KOKKOS_RESTRICT Bp  = BB + p * bs0;
+
+          member.team_barrier();
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, (jb / nb) + (np > 0)), [&](const int jj) {
+            // Made this non-const in order to WORKAROUND issue #349
+            int j = jj * nb, qb = (j + nb) > jb ? np : nb;
+            if (use_unit_diag)
+              trsm_u.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+            else
+              trsm_n.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+          });
+          member.team_barrier();
+
+          // gemm update
+          TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, ib - p - pb, jb, pb, minus_one, Ap + pb * as0, as0, as1,
+                                                        Bp, bs0, bs1, one, Bp + pb * bs0, bs0, bs1);
+        }
+      };
+      KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
     };
 
     const bool is_small = true;  //(m*n <= 64*64);
@@ -199,8 +202,6 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invok
     const MemberType &member, const bool use_unit_diag, const int m, const int n, const ScalarType alpha,
     const ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     /**/ ValueType *KOKKOS_RESTRICT B, const int bs0, const int bs1) {
-  constexpr int mbAlgo = Algo::Trsm::Blocked::mb();
-
   const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
   // note that parallel range is different ( m*n vs m-1*n);
@@ -210,37 +211,41 @@ KOKKOS_INLINE_FUNCTION int TeamTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invok
     if (alpha != one) KokkosBlas::Impl::TeamScaleInternal::invoke(member, m, n, alpha, B, bs0, bs1);
     if (m <= 0 || n <= 0) return 0;
 
-    InnerTrsmLeftUpperUnitDiag<mbAlgo> trsm_u(as0, as1, bs0, bs1);
-    InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
-
     auto trsm = [&](const int ib, const int jb, const ValueType *KOKKOS_RESTRICT AA,
                     /**/ ValueType *KOKKOS_RESTRICT BB) {
-      const int mb    = mbAlgo;  //(ib <=5 ? ib : mbAlgo);
-      const int tsize = member.team_size();
-      // Made this non-const in order to WORKAROUND issue #349
-      int nb = (jb / tsize + jb % tsize > 0);
-      int np = jb % nb;
-      for (int pp = 0; pp < ib; pp += mb) {
-        const int ptmp = (ib - pp - mb), p = (ptmp < 0 ? 0 : ptmp), pb = (mb + (ptmp < 0) * ptmp);
+      auto host_or_device = [&](auto tag) {
+        constexpr int mb = Algo::Trsm::Blocked::Impl::mb<decltype(tag)>();
+        InnerTrsmLeftUpperUnitDiag<mb> trsm_u(as0, as1, bs0, bs1);
+        InnerTrsmLeftUpperNonUnitDiag<mb> trsm_n(as0, as1, bs0, bs1);
 
-        // trsm update
-        const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
-        /**/ ValueType *KOKKOS_RESTRICT Bp  = BB + p * bs0;
+        const int tsize = member.team_size();
+        // Made this non-const in order to WORKAROUND issue #349
+        int nb = (jb / tsize + jb % tsize > 0);
+        int np = jb % nb;
+        for (int pp = 0; pp < ib; pp += mb) {
+          const int ptmp = (ib - pp - mb), p = (ptmp < 0 ? 0 : ptmp), pb = (mb + (ptmp < 0) * ptmp);
 
-        member.team_barrier();
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, (jb / nb) + (np > 0)), [&](const int &jj) {
-          const int j = jj * nb, qb = (j + nb) > jb ? np : nb;
-          if (use_unit_diag)
-            trsm_u.serial_invoke(Ap, pb, qb, Bp + j * bs1);
-          else
-            trsm_n.serial_invoke(Ap, pb, qb, Bp + j * bs1);
-        });
-        member.team_barrier();
+          // trsm update
+          const ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
+          /**/ ValueType *KOKKOS_RESTRICT Bp  = BB + p * bs0;
 
-        // gemm update
-        TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, p, jb, pb, minus_one, Ap - p * as0, as0, as1, Bp, bs0,
-                                                      bs1, one, BB, bs0, bs1);
-      }
+          member.team_barrier();
+          Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, (jb / nb) + (np > 0)), [&](const int &jj) {
+            const int j = jj * nb, qb = (j + nb) > jb ? np : nb;
+            if (use_unit_diag)
+              trsm_u.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+            else
+              trsm_n.serial_invoke(Ap, pb, qb, Bp + j * bs1);
+          });
+          member.team_barrier();
+
+          // gemm update
+          TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, p, jb, pb, minus_one, Ap - p * as0, as0, as1, Bp, bs0,
+                                                        bs1, one, BB, bs0, bs1);
+        }
+      };
+      KOKKOS_IF_ON_HOST((host_or_device(Algo::Trsm::Blocked::Impl::Host{});))
+      KOKKOS_IF_ON_DEVICE((host_or_device(Algo::Trsm::Blocked::Impl::Device{});))
     };
 
     const bool is_small = true;  //(m*n <= 64*64);

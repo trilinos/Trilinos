@@ -6039,6 +6039,15 @@ class Writer {
     RCP<const map_type> domainMap = matrix.getDomainMap();
     RCP<const map_type> rangeMap  = matrix.getRangeMap();
 
+    if (!rowMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(rowMap)->computeGlobalConstants();
+    if (!colMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(colMap)->computeGlobalConstants();
+    if (!domainMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(domainMap)->computeGlobalConstants();
+    if (!rangeMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(rangeMap)->computeGlobalConstants();
+
     const global_size_t numRows = rangeMap->getMaxAllGlobalIndex() + 1 - rangeMap->getIndexBase();
     const global_size_t numCols = domainMap->getMaxAllGlobalIndex() + 1 - domainMap->getIndexBase();
 
@@ -6331,6 +6340,15 @@ class Writer {
     auto colMap    = graph.getColMap();
     auto domainMap = graph.getDomainMap();
     auto rangeMap  = graph.getRangeMap();
+
+    if (!rowMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(rowMap)->computeGlobalConstants();
+    if (!colMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(colMap)->computeGlobalConstants();
+    if (!domainMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(domainMap)->computeGlobalConstants();
+    if (!rangeMap->haveGlobalConstants())
+      Teuchos::rcp_const_cast<map_type>(rangeMap)->computeGlobalConstants();
 
     const global_size_t numRows = rangeMap->getGlobalNumElements();
     const global_size_t numCols = domainMap->getGlobalNumElements();

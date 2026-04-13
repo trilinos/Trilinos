@@ -180,7 +180,15 @@ Kokkos::Cuda make_instance() {
   }
   TPETRA_DETAILS_SPACES_CUDA_RUNTIME(
       cudaStreamCreateWithPriority(&stream, cudaStreamNonBlocking, prio));
-  return Kokkos::Cuda(stream, true /*Kokkos will manage this stream*/);
+
+  Kokkos::push_finalize_hook([=] {
+    if (stream != nullptr) {
+      TPETRA_DETAILS_SPACES_CUDA_RUNTIME(cudaStreamSynchronize(stream));
+      TPETRA_DETAILS_SPACES_CUDA_RUNTIME(cudaStreamDestroy(stream));
+    }
+  });
+
+  return Kokkos::Cuda(stream);
 }
 #endif  // KOKKOS_ENABLE_CUDA
 

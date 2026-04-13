@@ -39,12 +39,13 @@ function make_and_install()
 function build_yaml()
 {
     productName=yaml
+    buildType=$1
 
     cd_to_new_dir ${output_dir}/${productName}
     execute tar -xzf ${sierra_proj}/TPLs_src/spack/spack_tpls/yaml-cpp/*.tar.gz
     cd_to_new_dir ${productName}_build
 
-    execute cmake -DCMAKE_BUILD_TYPE=${build_type^^} -DYAML_CPP_BUILD_TESTS=false -DCMAKE_INSTALL_PREFIX=../${productName}_install ../yaml-cpp
+    execute cmake -DCMAKE_BUILD_TYPE=${buildType} -DYAML_CPP_BUILD_TESTS=false -DCMAKE_INSTALL_PREFIX=../${productName}_install ../yaml-cpp
     make_and_install $productName
 }
 
@@ -52,11 +53,7 @@ function setup_trilinos_with_krino()
 {
     productName=trilinos
     
-    trilinos_dir=${output_dir}/${productName}
-    if [ ! -d ${trilinos_dir} ] ; then
-      execute mkdir ${trilinos_dir}
-    fi
-    execute cd ${trilinos_dir}
+    cd_to_new_dir ${output_dir}/${productName}
     
     if [ ! -d Trilinos ] ; then
       execute git clone -b develop https://github.com/trilinos/Trilinos.git Trilinos
@@ -82,15 +79,14 @@ function setup_trilinos_with_krino()
 function build_trilinos_with_krino()
 {
     productName=trilinos
+    buildType=$1
 
     execute cd ${output_dir}/${productName}
     
-    rm -rf ${productName}_install
-    cd_to_new_dir ${productName}_build
-
-    export TRILINOS_INSTALL_DIR=../${productName}_install
-    execute $sierra_proj/krino/cmake_install_test/run_cmake_krino
-    make_and_install $productName    
+    execute rm -rf ${productName}_${buildType}_install
+    cd_to_new_dir ${productName}_${buildType}_build
+    execute "TRILINOS_INSTALL_DIR=../${productName}_${buildType}_install CMAKE_BUILD_TYPE=${buildType} $sierra_proj/krino/cmake_install_test/run_cmake_krino"
+    make_and_install $productName  
 }
 
 function setup_environment()
@@ -106,26 +102,29 @@ function setup_environment()
 
 function runTests()
 {
-    cd $1
-    ctest -j 16 || exit_with_message "$2 tests failed"
-    cd ../..
+    buildType=$1
+    execute cd ${output_dir}/${productName}/${productName}_${buildType}_build
+    execute ctest -j 16 || exit_with_message "$2 tests failed"
 }
 
 sierra_proj=${SIERRA_PROJ:-${PWD}}
 output_dir=${OUTPUT_DIR:-${PWD}/../krino-cmake-testing}
 
 cuda_on_or_off=${CUDA:-OFF}
-build_type=${CMAKE_BUILD_TYPE:-release}
 date_suffix=`date +%F_%H-%M-%S`
 
 if [ ! -d ${output_dir} ] ; then
   execute mkdir ${output_dir}
 fi
-execute rm -rf ${output_dir}/yaml
 
 setup_trilinos_with_krino
 setup_environment
 
-build_trilinos_with_krino
-build_yaml
-build_trilinos_with_krino
+execute cd ${output_dir}
+
+build_trilinos_with_krino release
+build_yaml release
+build_trilinos_with_krino release
+runTests release
+build_trilinos_with_krino debug
+runTests debug

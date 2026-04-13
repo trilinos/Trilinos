@@ -42,6 +42,7 @@
 #include <Akri_MeshSpecs.hpp>
 #include <Akri_OutputUtils.hpp>
 #include <Akri_RefinementManager.hpp>
+#include <Akri_UnitTestUtils.hpp>
 #include <stk_mesh/base/FieldBLAS.hpp>
 
 namespace krino
@@ -51,15 +52,6 @@ class LevelSet;
 
 namespace
 {
-
-int num_random_cases(const int numDebugCases, const int numOptimizedCases)
-{
-#ifdef NDEBUG
-  return numOptimizedCases;
-#else
-  return numDebugCases;
-#endif
-}
 
 template <class DECOMP_FIXTURE>
 void build_one_tet4_mesh(DECOMP_FIXTURE & fixture,
@@ -1053,7 +1045,7 @@ TEST_F(UMRRegularTriOn1Or2Procs3LSPerPhase, Random_Decompositions)
 
   std::mt19937 mt(std::mt19937::default_seed + stk::parallel_machine_rank(mComm));
 
-  for (int i = 0; i < num_random_cases(1000, 5000); ++i)
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
@@ -1108,7 +1100,7 @@ TEST_F(UMRRegularTetOn1Or2Procs3LSPerPhase, Random_Decompositions)
 
   std::mt19937 mt(std::mt19937::default_seed + stk::parallel_machine_rank(mComm));
 
-  for (int i = 0; i < num_random_cases(200, 1000); ++i)
+  for (int i = 0; i < num_random_test_cases(200, 1000); ++i)
   {
     if (i % 100 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
@@ -1138,7 +1130,7 @@ TEST_F(TwoRightTetsWith2BlocksOn1or2ProcsDecompositionFixture, Random_TwoTet4_In
 
   std::mt19937 mt(std::mt19937::default_seed + stk::parallel_machine_rank(mComm));
 
-  for (int i = 0; i < num_random_cases(1000, 5000); ++i)
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
@@ -1190,7 +1182,7 @@ TEST_F(CDMeshTestsBboxMesh2D, Random_SnapMesh)
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
 
-  for (int i = 0; i < num_random_cases(1000, 5000); ++i)
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
@@ -1289,7 +1281,7 @@ TEST_F(CDMeshTestsBboxMesh2DLSPerPhase, Random_SnapMesh)
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
 
-  for (int i = 0; i < num_random_cases(1000, 5000); ++i)
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
@@ -1378,7 +1370,7 @@ TEST_F(CDMeshTestsBboxMesh3D, Random_SnapMesh)
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
 
-  for (int i = 0; i < num_random_cases(250, 1000); ++i)
+  for (int i = 0; i < num_random_test_cases(250, 1000); ++i)
   {
     if (i % 250 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
@@ -1479,7 +1471,7 @@ TEST_F(CDMeshTestsBboxMesh3DBCC, Random_SnapMesh)
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
 
-  for (int i = 0; i < num_random_cases(250, 1000); ++i)
+  for (int i = 0; i < num_random_test_cases(250, 1000); ++i)
   {
     if (i % 250 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
@@ -1622,7 +1614,7 @@ TEST_F(TwoRightTrisOn1Or2Procs3LSPerPhaseDecompositionFixture, Random_TwoTri3_In
 
   std::mt19937 mt(std::mt19937::default_seed + stk::parallel_machine_rank(mComm));
 
-  for (int i = 0; i < num_random_cases(1000, 5000); ++i)
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
@@ -1677,7 +1669,7 @@ TEST_F(CDMeshTests3DLSPerInterface, Random_OneTet4)
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
 
-  for (int i = 0; i < num_random_cases(1000, 5000); ++i)
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
@@ -1821,7 +1813,7 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset)
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
 
-  for (int i = 0; i < num_random_cases(1000, 5000); ++i)
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 
@@ -1892,7 +1884,7 @@ TEST_F(CDMeshTests3DLSPerPhase, Random_TwoTet4_InternalSideset_Snap)
 
   std::mt19937 mt(std::mt19937::default_seed + parallel_rank);
 
-  for (int i = 0; i < num_random_cases(1000, 5000); ++i)
+  for (int i = 0; i < num_random_test_cases(1000, 5000); ++i)
   {
     if (i % 1000 == 0) std::cout << "Testing random configuration " << i << std::endl;
 

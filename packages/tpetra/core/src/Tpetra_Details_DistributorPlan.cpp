@@ -143,6 +143,7 @@ size_t DistributorPlan::createFromSends(const Teuchos::ArrayView<const int>& exp
   using Teuchos::REDUCE_MAX;
   using Teuchos::reduceAll;
   const char rawPrefix[] = "Tpetra::DistributorPlan::createFromSends";
+  Tpetra::Details::ProfilingRegion pr("Tpetra::DistributorPlan::createFromSends");
 
   const size_t numExports = exportProcIDs.size();
   const int myProcID      = comm_->getRank();
@@ -688,6 +689,7 @@ void DistributorPlan::computeReceives() {
   using Teuchos::scatter;
   using Teuchos::send;
   using Teuchos::waitAll;
+  Tpetra::Details::ProfilingRegion pr("Tpetra::DistributorPlan::computeReceives");
 
   const int myRank   = comm_->getRank();
   const int numProcs = comm_->getSize();

@@ -1,0 +1,4 @@
+#!/bin/bash
+./do-configure.base \
+-DTrilinos_ENABLE_TESTS=ON \
+"$@"

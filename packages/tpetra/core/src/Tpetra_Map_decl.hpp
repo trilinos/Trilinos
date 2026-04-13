@@ -15,6 +15,7 @@
 ///   nonmember constructors.
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Details_iallreduce.hpp"
 #include "Tpetra_Map_fwd.hpp"
 #include "Tpetra_Directory_fwd.hpp"
 #include "Tpetra_TieBreak_fwd.hpp"
@@ -191,9 +192,7 @@ namespace Tpetra {
 /// product functions produce small dense matrices that are required
 /// by all images.  Replicated local objects handle these
 /// situations.
-template <class LocalOrdinal,
-          class GlobalOrdinal,
-          class Node>
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 class Map : public Teuchos::Describable {
  public:
   //! @name Typedefs
@@ -355,6 +354,10 @@ class Map : public Teuchos::Describable {
    * std::invalid_argument on all processes in the given
    * communicator.
    *
+   * By default, global map constants are computed using global
+   * reductions. This communication can be skipped by setting
+   * "compute global constants" to false in the the parameterlist.
+   *
    * \param numGlobalElements [in] If <tt>numGlobalElements ==
    *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
    *   the number of global elements will be computed (via a global
@@ -376,11 +379,16 @@ class Map : public Teuchos::Describable {
    * \param comm [in] Communicator over which to distribute the
    *   indices.  This constructor must be called as a collective
    *   over this communicator.
+   *
+   * \param params [in/out] Optional list of parameters.  If not
+   *   null, any missing parameters will be filled in with their
+   *   default values.
    */
   Map(const global_size_t numGlobalElements,
       const Kokkos::View<const global_ordinal_type*, device_type>& indexList,
       const global_ordinal_type indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+      const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
   /** \brief Constructor with arbitrary (possibly noncontiguous
    *   and/or nonuniform and/or overlapping) distribution, taking
@@ -399,6 +407,10 @@ class Map : public Teuchos::Describable {
    * build.  If it does check and any check fails, it will throw
    * std::invalid_argument on all processes in the given
    * communicator.
+   *
+   * By default, global map constants are computed using global
+   * reductions. This communication can be skipped by setting
+   * "compute global constants" to false in the the parameterlist.
    *
    * \param numGlobalElements [in] If <tt>numGlobalElements ==
    *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
@@ -422,12 +434,17 @@ class Map : public Teuchos::Describable {
    *
    * \param comm [in] Communicator over which to distribute the
    *   elements.
+   *
+   * \param params [in/out] Optional list of parameters.  If not
+   *   null, any missing parameters will be filled in with their
+   *   default values.
    */
   Map(const global_size_t numGlobalElements,
       const global_ordinal_type indexList[],
       const local_ordinal_type indexListSize,
       const global_ordinal_type indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+      const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
   /** \brief Constructor with arbitrary (possibly noncontiguous
    *   and/or nonuniform and/or overlapping) distribution, taking
@@ -447,6 +464,10 @@ class Map : public Teuchos::Describable {
    * build.  If it does check and any check fails, it will throw
    * std::invalid_argument on all processes in the given
    * communicator.
+   *
+   * By default, global map constants are computed using global
+   * reductions. This communication can be skipped by setting
+   * "compute global constants" to false in the the parameterlist.
    *
    * \param numGlobalElements [in] If <tt>numGlobalElements ==
    *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
@@ -469,11 +490,16 @@ class Map : public Teuchos::Describable {
    * \param comm [in] Communicator over which to distribute the
    *   indices.  This constructor must be called as a collective
    *   over this communicator.
+   *
+   * \param params [in/out] Optional list of parameters.  If not
+   *   null, any missing parameters will be filled in with their
+   *   default values.
    */
   Map(const global_size_t numGlobalElements,
       const Teuchos::ArrayView<const global_ordinal_type>& indexList,
       const global_ordinal_type indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+      const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
   /// \brief Default constructor (that does nothing).
   ///
@@ -603,6 +629,7 @@ class Map : public Teuchos::Describable {
   ///   assuming that you refer to the Map by value or reference,
   ///   not by Teuchos::RCP.
   global_ordinal_type getMinAllGlobalIndex() const {
+    TEUCHOS_TEST_FOR_EXCEPTION(!haveGlobalConstants(), std::logic_error, "\"Map::getMinAllGlobalIndex\" called, but global constants have not been computed with \"Map::computeGlobalConstants\".");
     return minAllGID_;
   }
 
@@ -612,6 +639,7 @@ class Map : public Teuchos::Describable {
   ///   assuming that you refer to the Map by value or reference,
   ///   not by Teuchos::RCP.
   global_ordinal_type getMaxAllGlobalIndex() const {
+    TEUCHOS_TEST_FOR_EXCEPTION(!haveGlobalConstants(), std::logic_error, "\"Map::getMaxAllGlobalIndex\" called, but global constants have not been computed with \"Map::computeGlobalConstants\".");
     return maxAllGID_;
   }
 
@@ -1093,7 +1121,8 @@ class Map : public Teuchos::Describable {
                          Kokkos::HostSpace,
                          Kokkos::MemoryUnmanaged>& entryList,
       const global_ordinal_type indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+      const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
  public:
   /// \brief Push the device data to host, if needed
@@ -1172,6 +1201,17 @@ class Map : public Teuchos::Describable {
   /// documentation of isDistributed() for a definition of these two
   /// mutually exclusive terms.
   bool distributed_;
+
+ private:
+  bool haveGlobalConstants_ = false;
+
+ public:
+  bool haveGlobalConstants() const { return haveGlobalConstants_; }
+
+  /// \brief Compute global constants for the map. This method needs
+  /// to be called collectively over all processes in the Map's
+  /// communicator.
+  void computeGlobalConstants();
 
   /// \brief A mapping from local IDs to global IDs.
   ///
@@ -1428,6 +1468,16 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>
 createOneToOne(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& M,
                const ::Tpetra::Details::TieBreak<LocalOrdinal, GlobalOrdinal>& tie_break);
+
+/// \brief Creates a one-to-one version of the given Map where each
+///   GID lives on only one process. It also replaces the input argument
+///   with a map that is locally fitted to the one-to-one map.
+///
+/// \relatesalso Map
+
+template <class LO, class GO, class NT>
+Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>
+createOneToOneAndMakeOverlappingMapFitted(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& M);
 
 }  // namespace Tpetra
 

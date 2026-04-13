@@ -8,8 +8,6 @@
 
 #include <Akri_IO_Helpers.hpp>
 
-#include <Ioss_Region.h>
-#include <Ioss_ElementBlock.h>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -77,18 +75,5 @@ void Block_Surface_Connectivity::add_surface(const stk::mesh::PartOrdinal & surf
   }
 }
 
-std::vector<std::string>
-get_input_mesh_block_names( const Ioss::Region & io_region )
-{
-  std::vector<std::string> mesh_elem_blocks;
-  for(auto && elem_block : io_region.get_element_blocks())
-  {
-    if (stk::io::include_entity(elem_block))
-    {
-      mesh_elem_blocks.push_back(elem_block->name());
-    }
-  }
-  return mesh_elem_blocks;
-}
  // namespace krino
 }

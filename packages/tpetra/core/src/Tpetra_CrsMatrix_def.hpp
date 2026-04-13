@@ -4503,7 +4503,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (!sorted) {
       // For this to work correctly, we require that the unused column entries have been filled
       // with indices that get ordered last.
-      KokkosSparse::sort_crs_matrix(rowptr, colinds, values);
+      Import_Util::sortCrsEntries(rowptr, colinds, values, ::KokkosSparse::SortAlgorithm::DEFAULT);
       graph.indicesAreSorted_ = true;  // we just sorted every row
     }
     if (!merged) {
@@ -8258,7 +8258,8 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                               BaseDomainMap,
                                                               TargetPids,
                                                               RemotePids,
-                                                              MyColMap);
+                                                              MyColMap,
+                                                              params);
     }
 
     if (verbose) {
@@ -8316,7 +8317,8 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Tpetra::Details::ProfilingRegion MMrc("Tpetra TAFC sortCrsEntries");
       Import_Util::sortCrsEntries(CSR_rowptr(),
                                   CSR_colind_LID(),
-                                  CSR_vals());
+                                  CSR_vals(),
+                                  ::KokkosSparse::SortAlgorithm::DEFAULT);
     } else if ((!reverseMode && xferAsExport != nullptr) ||
                (reverseMode && xferAsImport != nullptr)) {
       if (verbose) {
@@ -8430,7 +8432,8 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
                                                         BaseDomainMap,
                                                         TargetPids_d,
                                                         RemotePids,
-                                                        MyColMap);
+                                                        MyColMap,
+                                                        params);
     }
 
     if (verbose) {
@@ -8489,7 +8492,8 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Tpetra::Details::ProfilingRegion MMrc("Tpetra TAFC sortCrsEntries");
       Import_Util::sortCrsEntries(CSR_rowptr_d,
                                   CSR_colind_LID_d,
-                                  CSR_vals_d);
+                                  CSR_vals_d,
+                                  ::KokkosSparse::SortAlgorithm::DEFAULT);
     } else if ((!reverseMode && xferAsExport != nullptr) ||
                (reverseMode && xferAsImport != nullptr)) {
       if (verbose) {
@@ -8501,7 +8505,8 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Tpetra::Details::ProfilingRegion MMrc("Tpetra TAFC sortAndMergeCrsEntries");
       Import_Util::sortAndMergeCrsEntries(CSR_rowptr_d,
                                           CSR_colind_LID_d,
-                                          CSR_vals_d);
+                                          CSR_vals_d,
+                                          ::KokkosSparse::SortAlgorithm::DEFAULT);
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(
           true, std::logic_error,

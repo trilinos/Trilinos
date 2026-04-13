@@ -1,3 +1,15 @@
+# first ensure that these cmake boolean variables are defined
+ASSERT_DEFINED(
+  ${PACKAGE_NAME}_ENABLE_Amesos
+  ${PACKAGE_NAME}_ENABLE_Amesos2
+  ${PACKAGE_NAME}_ENABLE_Ifpack
+  ${PACKAGE_NAME}_ENABLE_Ifpack2
+  ${PACKAGE_NAME}_ENABLE_Epetra
+  ${PACKAGE_NAME}_ENABLE_EpetraExt
+  ${PACKAGE_NAME}_ENABLE_Belos
+  ${PACKAGE_NAME}_ENABLE_Zoltan
+)
+
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/)
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 TRIBITS_INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
@@ -33,7 +45,6 @@ APPEND_SET(
   CoarseMapFactory.cpp
   CrsMatrixUtils.cpp
   ClassicalPFactory.cpp
-  Emin.cpp
   FineLevelInputDataFactory.cpp
   GeneralGeometricPFactory.cpp
   GenericRFactory.cpp
@@ -83,6 +94,10 @@ APPEND_SET(
   ML2MueLuParameterTranslator.cpp
   Zoltan2InitialRebalance.cpp
 )
+
+IF(${PACKAGE_NAME}_ENABLE_Belos)
+  APPEND_SET(SOURCES Emin.cpp)
+ENDIF()
 
 APPEND_SET(SOURCES_INTREPID2 MueLu_UnitTests.cpp MueLu_TestHelpers.cpp)
 
@@ -138,17 +153,6 @@ ENDIF()
 
 ### Tests that require other Trilinos packages
 
-# first ensure that these cmake boolean variables are defined
-ASSERT_DEFINED(
-  ${PACKAGE_NAME}_ENABLE_Amesos
-  ${PACKAGE_NAME}_ENABLE_Amesos2
-  ${PACKAGE_NAME}_ENABLE_Ifpack
-  ${PACKAGE_NAME}_ENABLE_Ifpack2
-  ${PACKAGE_NAME}_ENABLE_Epetra
-  ${PACKAGE_NAME}_ENABLE_EpetraExt
-  ${PACKAGE_NAME}_ENABLE_Belos
-  ${PACKAGE_NAME}_ENABLE_Zoltan
-)
 APPEND_SET(SOURCES Adapters/TpetraOperatorAdapter.cpp)
 
 IF(${PACKAGE_NAME}_ENABLE_Ifpack2)

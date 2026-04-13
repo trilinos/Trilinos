@@ -1,8 +1,13 @@
 # Zoltan
+
 Zoltan Dynamic Load Balancing and Graph Algorithm Toolkit -- Distribution site
 
+Zoltan is a toolkit of parallel services for dynamic, unstructured, and/or adaptive simulations. Zoltan provides parallel dynamic load balancing and related services for a wide variety of applications, including finite element methods, matrix operations, particle methods, and crash simulations. Zoltan also provides parallel graph coloring, matrix ordering, unstructured communication tools, and distributed data directories.
+
+The zoltan home page: [https://sandialabs.github.io/Zoltan](https://sandialabs.github.io/Zoltan/)
+
 The most up-to-date version of Zoltan is in the Trilinos framework
-at https://github.com/trilinos/Trilinos.
+at https://github.com/trilinos/Trilinos/tree/master/packages/zoltan.
 
 This site provides stand-alone releases of Zoltan, separate from
 Trilinos:  https://github.com/sandialabs/Zoltan/releases.  Stand-alone
@@ -10,8 +15,7 @@ releases of Zoltan may lag the Trilinos repo code.
 
 You can download individual releases of Zoltan from this site, or
 clone the Trilinos repository https://github.com/trilinos/Trilinos
-to get the most up-to-date version of Zoltan.  Individual releases
-are tarballs that can be unzipped and built with autotools/make.
+to get the most up-to-date version of Zoltan.
 
 Trilinos clones include Zoltan in directory Trilinos/packages/zoltan.
 In this directory, you can build Zoltan separately from Trilinos
@@ -19,34 +23,34 @@ using autotools/make.  Or in the Trilinos repository, you can build
 Zoltan using Trilinos' cmake system.
 
 See
-https://htmlpreview.github.io/?https://github.com/sandialabs/zoltan/blob/master/doc/Zoltan_html/ug_html/ug_usage.html
+https://sandialabs.github.io/Zoltan/ug_html/ug_usage.html
 for details on building Zoltan.
-
-The main Zoltan page is http://cs.sandia.gov/Zoltan.
-
 
 ## INSTALLATION
 
 Instructions for building and installing Zoltan using CMAKE or Autotools
 are at the following web site:
 
- http://www.cs.sandia.gov/zoltan/ug_html/ug_usage.html
+ https://sandialabs.github.io/Zoltan/ug_html/ug_usage.html
 
+## Questions?
+
+Contact the lead developers:
+
+- **Zoltan Team**: GitHub handle @trilinos/zoltan
+- **Erik Boman**:  GitHub handle: [egboman](https://github.com/egboman) or egboman@sandia.gov)
 
 ## Copyright and License
-See zoltan/COPYRIGHT, zoltan/LICENSE, https://trilinos.github.io/license.html and individual file headers for additional information.
 
+For general copyright and license information, refer to the Trilinos [License and Copyright](https://trilinos.github.io/about.html#license-and-copyright) page.
 
-## Questions? 
-Contact lead developers:
+For Zoltan-specific copyright and license details, refer to the [zoltan/COPYRIGHT](COPYRIGHT) and [zoltan/LICENSE](LICENSE) files located in the `zoltan` directory. Additional copyright information may also be found in the headers of individual source files.
 
-* Zoltan team     (GitHub handle: @trilinos/zoltan)
-* Erik Boman      (GitHub handle: [egboman](https://github.com/egboman) or egboman@sandia.gov)
-
+For developers, general guidance on documenting copyrights and licenses can be found in the Trilinos [Guidance on Copyrights and Licenses](https://github.com/trilinos/Trilinos/wiki/Guidance-on-Copyrights-and-Licenses) document.
 
 ## Release History
 
-https://htmlpreview.github.io/?https://github.com/sandialabs/zoltan/blob/master/doc/Zoltan_html/ug_html/ug_release.html
+[Zoltan Release Notes](https://sandialabs.github.io/Zoltan/ug_html/ug_release.html)
 
 * Version 3.90 (4/08/21; as in Trilinos v13; d328e0e2a8a5c48a4e01d6541cd8c0eb7f364823)
 * Version 3.83 (1/28/16; as in Trilinos v12.6; aaf328db7e43001ee2d3148f72f12147e51c3293)

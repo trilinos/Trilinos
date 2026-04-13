@@ -47,7 +47,10 @@ namespace mini_em {
     MUELU,
     ML,
     CG,
-    GMRES
+    GMRES,
+    MAXWELL1_RS,
+    MAXWELL1_SA_RS,
+    MAXWELL1_EMIN
   };
 
   void getMesh(Teuchos::ParameterList &mesh_pl,
@@ -55,6 +58,7 @@ namespace mini_em {
                int &x_elements,
                int &y_elements,
                int &z_elements,
+               std::string meshType,
                int &basis_order,
                Teuchos::RCP<const Teuchos::MpiComm<int> > &comm,
                Teuchos::RCP<panzer_stk::STK_Interface> &mesh,

@@ -79,55 +79,57 @@ template <typename MemberType, typename ValueType>
 KOKKOS_INLINE_FUNCTION int TeamLU_Internal<Algo::LU::Blocked>::invoke(
     const MemberType &member, const int m, const int n, ValueType *KOKKOS_RESTRICT A, const int as0, const int as1,
     const typename MagnitudeScalarType<ValueType>::type /*tiny*/) {
-  constexpr int mbAlgo = Algo::LU::Blocked::mb();
-
   const int k = (m < n ? m : n);
   if (k <= 0) return 0;
 
   const typename MagnitudeScalarType<ValueType>::type one(1.0), minus_one(-1.0);
 
-  InnerLU<mbAlgo> lu(as0, as1);
-
-  InnerTrsmLeftLowerUnitDiag<mbAlgo> trsm_llu(as0, as1, as0, as1);
-  InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_run(as1, as0, as1, as0);
   auto lu_factorize = [&](const int ib, const int jb, ValueType *KOKKOS_RESTRICT AA) {
     const int tsize = member.team_size();
-    // Made this non-const in order to WORKAROUND issue #349
-    int mb = mbAlgo;
-    int nb = ((jb - mb) + (ib - mb)) > 0 ? ((jb - mb) + (ib - mb)) / tsize + (((jb - mb) + (ib - mb)) % tsize > 0) : 1;
-    const int kb = ib < jb ? ib : jb;
 
-    for (int p = 0; p < kb; p += mb) {
-      const int pb = (p + mb) > kb ? (kb - p) : mb;
+    auto host_or_device = [&](auto tag) {
+      constexpr int mb = Algo::LU::Blocked::Impl::mb<decltype(tag)>();
+      InnerLU<mb> lu(as0, as1);
+      InnerTrsmLeftLowerUnitDiag<mb> trsm_llu(as0, as1, as0, as1);
+      InnerTrsmLeftLowerNonUnitDiag<mb> trsm_run(as1, as0, as1, as0);
+      int nb =
+          ((jb - mb) + (ib - mb)) > 0 ? ((jb - mb) + (ib - mb)) / tsize + (((jb - mb) + (ib - mb)) % tsize > 0) : 1;
+      const int kb = ib < jb ? ib : jb;
 
-      // diagonal block
-      ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
+      for (int p = 0; p < kb; p += mb) {
+        const int pb = (p + mb) > kb ? (kb - p) : mb;
 
-      // lu on a block
-      member.team_barrier();
-      if (member.team_rank() == 0) lu.serial_invoke(pb, Ap);
-      member.team_barrier();
+        // diagonal block
+        ValueType *KOKKOS_RESTRICT Ap = AA + p * as0 + p * as1;
 
-      // Made this non-const in order to WORKAROUND issue #349
-      int m_abr = ib - p - mb, n_abr = jb - p - mb, mp_abr = m_abr % nb, np_abr = n_abr % nb,
-          mq_abr = (m_abr / nb) + (mp_abr > 0), nq_abr = (n_abr / nb) + (np_abr > 0);
+        // lu on a block
+        member.team_barrier();
+        if (member.team_rank() == 0) lu.serial_invoke(pb, Ap);
+        member.team_barrier();
 
-      // trsm update
-      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, mq_abr + nq_abr), [&](const int &ij) {
-        if (ij < nq_abr) {
-          const int j = (ij)*nb, qb = (j + nb) > n_abr ? np_abr : nb;
-          trsm_llu.serial_invoke(Ap, pb, qb, Ap + (j + mb) * as1);
-        } else {
-          const int i = (ij - nq_abr) * nb, qb = (i + nb) > m_abr ? mp_abr : nb;
-          trsm_run.serial_invoke(Ap, pb, qb, Ap + (i + mb) * as0);
-        }
-      });
-      member.team_barrier();
+        // Made this non-const in order to WORKAROUND issue #349
+        int m_abr = ib - p - mb, n_abr = jb - p - mb, mp_abr = m_abr % nb, np_abr = n_abr % nb,
+            mq_abr = (m_abr / nb) + (mp_abr > 0), nq_abr = (n_abr / nb) + (np_abr > 0);
 
-      // gemm update
-      TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
-                                                    Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
-    }
+        // trsm update
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, 0, mq_abr + nq_abr), [&](const int &ij) {
+          if (ij < nq_abr) {
+            const int j = (ij)*nb, qb = (j + nb) > n_abr ? np_abr : nb;
+            trsm_llu.serial_invoke(Ap, pb, qb, Ap + (j + mb) * as1);
+          } else {
+            const int i = (ij - nq_abr) * nb, qb = (i + nb) > m_abr ? mp_abr : nb;
+            trsm_run.serial_invoke(Ap, pb, qb, Ap + (i + mb) * as0);
+          }
+        });
+        member.team_barrier();
+
+        // gemm update
+        TeamGemmInternal<Algo::Gemm::Blocked>::invoke(member, m_abr, n_abr, pb, minus_one, Ap + mb * as0, as0, as1,
+                                                      Ap + mb * as1, as0, as1, one, Ap + mb * as0 + mb * as1, as0, as1);
+      }
+    };
+    KOKKOS_IF_ON_HOST((host_or_device(Algo::LU::Blocked::Impl::Host{});))
+    KOKKOS_IF_ON_DEVICE((host_or_device(Algo::LU::Blocked::Impl::Device{});))
   };
 
   const bool is_small = true;  //(m*n <= 64*64);

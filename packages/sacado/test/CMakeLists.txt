@@ -1,4 +1,4 @@
-IF (Sacado_ENABLE_GTest)
+IF (Sacado_ENABLE_gtest)
   ADD_SUBDIRECTORY(GTestSuite)
 ENDIF()
 ADD_SUBDIRECTORY(UnitTests)

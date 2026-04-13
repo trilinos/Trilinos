@@ -20,7 +20,7 @@ KOKKOS_INLINE_FUNCTION static int checkTbsvInput([[maybe_unused]] const AViewTyp
   static_assert(AViewType::rank == 2, "KokkosBatched::tbsv: AViewType must have rank 2.");
   static_assert(XViewType::rank == 1, "KokkosBatched::tbsv: XViewType must have rank 1.");
 
-#if (KOKKOSKERNELS_DEBUG_LEVEL > 0)
+#ifndef NDEBUG
   if (k < 0) {
     Kokkos::printf(
         "KokkosBatched::tbsv: input parameter k must not be less than 0: k = "

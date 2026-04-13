@@ -51,6 +51,14 @@ class OpenMP {
   using size_type            = memory_space::size_type;
   using scratch_memory_space = ScratchMemorySpace<OpenMP>;
 
+  KOKKOS_DEFAULTED_FUNCTION OpenMP(const OpenMP&) = default;
+  KOKKOS_FUNCTION OpenMP(OpenMP&& other)
+      : OpenMP(static_cast<const OpenMP&>(other)) {}
+  KOKKOS_DEFAULTED_FUNCTION OpenMP& operator=(const OpenMP&) = default;
+  KOKKOS_FUNCTION OpenMP& operator=(OpenMP&& other) {
+    return *this = static_cast<const OpenMP&>(other);
+  }
+  ~OpenMP();
   OpenMP();
 
   explicit OpenMP(int pool_size);

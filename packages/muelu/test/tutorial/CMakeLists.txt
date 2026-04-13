@@ -2,7 +2,12 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 # first ensure that these cmake boolean variables are defined
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Galeri ${PACKAGE_NAME}_ENABLE_Isorropia ${PACKAGE_NAME}_ENABLE_Tpetra)
+ASSERT_DEFINED(
+  ${PACKAGE_NAME}_ENABLE_Galeri
+  ${PACKAGE_NAME}_ENABLE_Isorropia
+  ${PACKAGE_NAME}_ENABLE_Tpetra
+  ${PACKAGE_NAME}_ENABLE_Belos
+)
 
 SET(XML_FILES_ALL
     challenges/Elasticity2D_reference.xml
@@ -61,7 +66,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     tmpl/muelu_easy.xml_TMPL
 )
 
-IF(${PACKAGE_NAME}_ENABLE_Galeri)
+IF(${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Belos)
 
   # TRIBITS_ADD_EXECUTABLE(
   #   Tutorial_MLParameterList

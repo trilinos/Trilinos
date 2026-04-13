@@ -56,7 +56,8 @@ class MapFactory {
         global_size_t numGlobalElements,
         const Teuchos::ArrayView<const GlobalOrdinal>& elementList,
         GlobalOrdinal indexBase,
-        const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+        const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
   /*!
     @brief Map constructor generating degrees of freedom with numDofPerNode for given nodeMap
@@ -78,7 +79,8 @@ class MapFactory {
         global_size_t numGlobalElements,
         const Kokkos::View<const GlobalOrdinal*, typename Node::device_type>& indexList,
         GlobalOrdinal indexBase,
-        const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+        const Teuchos::RCP<const Teuchos::Comm<int>>& comm,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
   //! Create a locally replicated Map with the default node.
   static Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>

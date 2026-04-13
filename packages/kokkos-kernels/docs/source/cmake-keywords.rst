@@ -35,19 +35,72 @@ Examples Options
 Component Options
 =================
 
-- ``KokkosKernels_ENABLED_COMPONENTS``: BOOL
+Component configuration is split across two independent mechanisms: one that controls which components are compiled into the library, and one that controls which component tests are enabled.
 
-  - A list of components to enable in testing and building
-  - Default: ALL
-  - Valid: BATCHED BLAS LAPACK GRAPH SPARSE ALL
+Controlling What Gets Compiled
+-------------------------------
 
 - ``KokkosKernels_ENABLE_ALL_COMPONENTS``: BOOL
+
+  - When ``ON``, all ``ENABLE_COMPONENT_*`` flags are silently overridden to ``ON`` regardless of their individual values.
+  - Default: ``ON``
+
+  .. note::
+     To build only a subset of components, set ``KokkosKernels_ENABLE_ALL_COMPONENTS=OFF`` and then enable individual components with the flags below.
+
 - ``KokkosKernels_ENABLE_COMPONENT_BATCHED``: BOOL
+
+  - Whether to compile the Batched component.
+  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
+
 - ``KokkosKernels_ENABLE_COMPONENT_BLAS``: BOOL
+
+  - Whether to compile the BLAS component.
+  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
+
 - ``KokkosKernels_ENABLE_COMPONENT_LAPACK``: BOOL
+
+  - Whether to compile the LAPACK component.
+  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
+
 - ``KokkosKernels_ENABLE_COMPONENT_SPARSE``: BOOL
+
+  - Whether to compile the Sparse component.
+  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
+  - Enabling SPARSE also enables BATCHED, BLAS, LAPACK, and GRAPH.
+
 - ``KokkosKernels_ENABLE_COMPONENT_GRAPH``: BOOL
+
+  - Whether to compile the Graph component.
+  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
+  - Enabling GRAPH also enables SPARSE (and it's dependencies).
+
 - ``KokkosKernels_ENABLE_COMPONENT_ODE``: BOOL
+
+  - Whether to compile the ODE component.
+  - Default: ``OFF`` (``ON`` when ``ENABLE_ALL_COMPONENTS=ON``)
+
+Controlling Which Tests Are Registered
+----------------------------------------
+
+- ``KokkosKernels_ENABLED_COMPONENTS``: STRING
+
+  - A semicolon-separated list of component names whose tests enabled.
+    Tests that declare a required component not present in this list are silently skipped during CMake configuration.
+  - Default: ``ALL``
+  - Valid entries: ``BATCHED``, ``BLAS``, ``LAPACK``, ``GRAPH``, ``SPARSE``, ``ODE``, ``ALL``
+  - ``ALL`` unconditionally registers every component's tests.
+  - Example - register only BLAS and Sparse tests::
+
+      -DKokkosKernels_ENABLED_COMPONENTS="BLAS;SPARSE"
+
+Interaction Between the Two Mechanisms
+----------------------------------------
+
+``ENABLED_COMPONENTS`` (STRING) and the ``ENABLE_COMPONENT_*`` / ``ENABLE_ALL_COMPONENTS`` BOOLs are completely independent of each other.
+
+* ``ENABLED_COMPONENTS`` controls test registration. It has no effect on which library source files are compiled.
+* The ``ENABLE_COMPONENT_*`` BOOLs only control compilation. They do not affect which tests are registered.
 
 ETI Options
 ===========

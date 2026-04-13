@@ -5,8 +5,7 @@
 
 // Serial kernels
 #include "Test_Batched_SerialAxpy.hpp"
-#include "Test_Batched_SerialAxpy_Real.hpp"
-#include "Test_Batched_SerialAxpy_Complex.hpp"
+#include "Test_Batched_Copy.hpp"
 #include "Test_Batched_SerialEigendecomposition.hpp"
 #include "Test_Batched_SerialEigendecomposition_Real.hpp"
 #include "Test_Batched_SerialGesv.hpp"
@@ -47,6 +46,7 @@
 #include "Test_Batched_SerialGetrs.hpp"
 #include "Test_Batched_SerialGer.hpp"
 #include "Test_Batched_SerialSyr.hpp"
+#include "Test_Batched_SerialSyr2.hpp"
 #include "Test_Batched_SerialLacgv.hpp"
 #include "Test_Batched_SerialGbtrf.hpp"
 #include "Test_Batched_SerialGbtrs.hpp"
@@ -54,8 +54,6 @@
 
 // Team Kernels
 #include "Test_Batched_TeamAxpy.hpp"
-#include "Test_Batched_TeamAxpy_Real.hpp"
-#include "Test_Batched_TeamAxpy_Complex.hpp"
 #include "Test_Batched_TeamGesv.hpp"
 #include "Test_Batched_TeamGesv_Real.hpp"
 #include "Test_Batched_TeamInverseLU.hpp"
@@ -76,8 +74,6 @@
 
 // TeamVector Kernels
 #include "Test_Batched_TeamVectorAxpy.hpp"
-#include "Test_Batched_TeamVectorAxpy_Real.hpp"
-#include "Test_Batched_TeamVectorAxpy_Complex.hpp"
 #include "Test_Batched_TeamVectorEigendecomposition.hpp"
 #include "Test_Batched_TeamVectorEigendecomposition_Real.hpp"
 #include "Test_Batched_TeamVectorGesv.hpp"

@@ -21,10 +21,6 @@
 
 #include <spmv/KokkosKernels_spmv_data.hpp>
 
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-#include <PerfTestUtilities.hpp>
-#endif
-
 #ifdef KOKKOSKERNELS_ENABLE_TPL_ARMPL
 #include <spmv/ArmPL_SPMV.hpp>
 #endif
@@ -107,43 +103,3 @@ struct SPMVConfiguration {
   int schedule;
   int loop;
 };
-
-#ifdef KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE
-
-namespace readers {
-template <>
-struct test_reader<SPMVConfiguration> {
-  static SPMVConfiguration read(const std::string& filename) {
-    std::ifstream input(filename);
-    SPMVConfiguration config;
-    input >> config.test >> config.rows_per_thread >> config.team_size >> config.vector_length >> config.schedule >>
-        config.loop;
-    return config;
-  }
-};
-
-}  // namespace readers
-test_list construct_kernel_base(const rajaperf::RunParams& run_params) {
-  using matrix_type = SPMVTestData::matrix_type;
-  srand(17312837);
-  data_retriever<matrix_type, SPMVConfiguration> reader("sparse/spmv/", "sample.mtx", "config.cfg");
-  std::vector<rajaperf::KernelBase*> test_cases;
-  for (auto test_case : reader.test_cases) {
-    auto& config = std::get<1>(test_case.test_data);
-    test_cases.push_back(rajaperf::make_kernel_base(
-        "Sparse_SPMV:" + test_case.filename, run_params,
-        [=](const int, const int) {
-          spmv_additional_data data(config.test);
-          return std::make_tuple(setup_test(&data, std::get<0>(test_case.test_data), config.rows_per_thread,
-                                            config.team_size, config.vector_length, config.schedule, config.loop));
-        },
-        [&](const int, const int, SPMVTestData& data) { run_benchmark(data); }));
-  }
-  return test_cases;
-}
-
-std::vector<rajaperf::KernelBase*> make_spmv_kernel_base(const rajaperf::RunParams& params) {
-  return construct_kernel_base(params);
-}
-
-#endif  // KOKKOSKERNELS_ENABLE_TESTS_AND_PERFSUITE

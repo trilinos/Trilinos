@@ -1,0 +1,160 @@
+name: Single build and test pipeline
+
+on:
+  workflow_call:
+    inputs:
+      target-runner-labels:
+        required: true
+        type: string
+      genconfig-string:
+        required: true
+        type: string
+      target-branch:
+        required: false
+        type: string
+        default: "develop"
+      max-cores-allowed:
+        description: 'Max cores allowed that is detected on the system.'
+        required: false
+        type: number
+        default: 12
+      ctest-drop-site:
+        required: false
+        type: string
+        default: "sems-cdash-son.sandia.gov/cdash"
+      cdash-track:
+        description: 'Pull Request, Nightly, or Experimental'
+        required: false
+        type: string
+        default: "Pull Request"
+      dashboard-build-name:
+        required: false
+        type: string
+        default:
+      num-concurrent-tests:
+        description: 'Number of concurrent tests allowed in CTest.'
+        required: false
+        type: number
+        default: -1
+      slots-per-gpu:
+        description: 'On a GPU machine, this is number of slots allowed per GPU. (e.g. 4 allows 4 MPI ranks per GPU)'
+        required: false
+        type: number
+        default: 0
+      extra-pr-driver-args:
+        description: 'Extra arguments to be used when calling PullRequestLinuxDriverTest.py'
+        required: false
+        type: string
+
+# Cancels any in progress 'workflows' associated with this workflow ref
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ${{ fromJson(inputs.target-runner-labels) }}
+    steps:
+      - name: Clone Trilinos
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 1
+      - name: Print debug outputs
+        shell: bash -l {0}
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "::group::Loaded environment variables"
+          env
+          echo "::endgroup::"
+
+          echo "::group::Loaded modules"
+          module list
+          echo "::endgroup::"
+
+          echo "::group::Ccache stats"
+          ccache --show-stats --verbose
+          echo "::endgroup::"
+
+          echo "::group::Cloned repository status"
+          pwd
+          ls -lhat
+          git status
+          git branch -vv
+          git branch -a
+          echo "::endgroup::"
+      - name: Get CI script dependencies
+        working-directory: ./packages/framework
+        run: |
+          mkdir -p /home/Trilinos/build
+          git fetch origin ${{ inputs.target-branch }}
+          ./get_dependencies.sh
+      - name: Run build and test driver script
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          # python is python3 hackery
+          pwd
+          mkdir bin
+          pushd bin
+          ln -s $(type -p python3) python
+          export PATH=$(pwd):${PATH}
+          popd
+
+          export TRILINOS_DIR=${GITHUB_WORKSPACE:?}
+          export BUILD_DIR=/home/Trilinos/build
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/GenConfig
+          export PYTHONPATH=${PYTHONPATH}:${TRILINOS_DIR}/packages/framework/pr_tools
+          printf "\n\n\n"
+
+          echo "image: ${AT2_IMAGE_FULLPATH:-${AT2_IMAGE:-unknown}}"
+          type python
+          python3 ${TRILINOS_DIR}/packages/framework/pr_tools/PullRequestLinuxDriverTest.py \
+            --target-branch-name ${{ inputs.target-branch }} \
+            --genconfig-build-name ${{ inputs.genconfig-string }} \
+            --pullrequest-number ${{ github.event.pull_request.number }} \
+            --pullrequest-env-config-file ${TRILINOS_DIR}/packages/framework/pr_tools/trilinos_pr.ini \
+            --pullrequest-gen-config-file ${TRILINOS_DIR}/packages/framework/GenConfig/src/gen-config.ini \
+            --workspace-dir ${TRILINOS_DIR}/../ \
+            --source-dir ${TRILINOS_DIR} \
+            --build-dir ${BUILD_DIR} \
+            --dashboard-build-name=${{ inputs.dashboard-build-name }} \
+            --ctest-driver ${TRILINOS_DIR}/cmake/SimpleTesting/cmake/ctest-driver.cmake \
+            --ctest-drop-site ${{ inputs.ctest-drop-site }} \
+            --pullrequest-cdash-track ${{ inputs.cdash-track }} \
+            --filename-subprojects ./package_subproject_list.cmake \
+            --filename-packageenables ./packageEnables.cmake \
+            --max-cores-allowed=${{ inputs.max-cores-allowed }} \
+            --num-concurrent-tests=${{ inputs.num-concurrent-tests }} \
+            --slots-per-gpu=${{ inputs.slots-per-gpu }} \
+            ${{ inputs.extra-pr-driver-args }}
+      - name: Filtered build error logs
+        if: success() || failure()
+        shell: bash -l {0}
+        run: |
+          build_dir=/home/Trilinos/build
+          build_tag=$(head -n 1 ${build_dir}/Testing/TAG)
+          python3 ${GITHUB_WORKSPACE}/packages/framework/pr_tools/ctest_xml_printer.py \
+            --ctest-xml-dir /home/Trilinos/build/Testing/${build_tag}/Build \
+            --print-errors \
+            --github-actions-mode
+      - name: Copy artifacts
+        if: success() || failure()
+        shell: bash -l {0}
+        working-directory: /home/Trilinos/build
+        run: |
+          cp ./packageEnables.cmake /home/runner/artifacts/
+          cp ./configure_command.txt /home/runner/artifacts/
+          cp ./genconfig_build_name.txt /home/runner/artifacts/
+      - name: Upload artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        env:
+          NODE_USE_SYSTEM_CA: 1
+        with:
+          name: ${{ github.job }}-artifacts
+          path: /home/runner/artifacts/*
+          retention-days: 90
+      - name: Write Summary
+        if: ${{ !cancelled() }}
+        uses: ./.github/workflows/actions/summary

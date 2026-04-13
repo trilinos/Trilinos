@@ -22,6 +22,10 @@
 #include "Tpetra_Details_Profiling.hpp"
 #include "Teuchos_as.hpp"
 #include <array>
+#include <algorithm>
+#include <numeric>
+#include <vector>
+#include "Tpetra_Details_iallreduce.hpp"
 #include <memory>
 
 namespace Teuchos {
@@ -1061,6 +1065,7 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
   Array<int>& remoteProcIDs = useRemotePIDs ? userRemotePIDs : newRemotePIDs;
 
   if (lookup == IDNotPresent) {
+    Tpetra::Details::ProfilingRegion pr("Tpetra:iport_ctor:setupExport:1");
     // There is at least one GID owned by the calling process in the
     // target Map, which is not owned by any process in the source
     // Map.
@@ -1088,8 +1093,6 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
                                           "on the source Map returned IDNotPresent, but none of the returned "
                                           "\"remote\" process ranks are -1.  Please report this bug to the "
                                           "Tpetra developers.");
-
-    auto MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra:iport_ctor:setupExport:1"));
 
     // If all of them are invalid, we can delete the whole array.
     const size_type totalNumRemote = this->getNumRemoteIDs();
@@ -1146,6 +1149,7 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
   // remoteProcIDs[i], remoteGIDs[i], and remoteLIDs_[i] all refer
   // to the same thing.
   {
+    Tpetra::Details::ProfilingRegion pr("Tpetra:iport_ctor:setupExport:2");
     this->TransferData_->remoteLIDs_.modify_host();
     auto remoteLIDs = this->TransferData_->remoteLIDs_.view_host();
     sort3(remoteProcIDs.begin(),
@@ -1161,24 +1165,23 @@ void Import<LocalOrdinal, GlobalOrdinal, Node>::
   // exportGIDs and exportProcIDs_ are output arrays which are
   // allocated by createFromRecvs().
   Array<GO> exportGIDs;
+  {
+    Tpetra::Details::ProfilingRegion pr("Tpetra:iport_ctor:setupExport:3");
 
-  auto MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra:iport_ctor:setupExport:3"));
-
-  if (this->verbose()) {
-    std::ostringstream os;
-    os << *prefix << "Call createFromRecvs" << endl;
-    this->verboseOutputStream() << endl;
+    if (this->verbose()) {
+      std::ostringstream os;
+      os << *prefix << "Call createFromRecvs" << endl;
+      this->verboseOutputStream() << endl;
+    }
+    this->TransferData_->distributor_.createFromRecvs(remoteGIDsView().getConst(),
+                                                      remoteProcIDs, exportGIDs,
+                                                      this->TransferData_->exportPIDs_);
   }
-  this->TransferData_->distributor_.createFromRecvs(remoteGIDsView().getConst(),
-                                                    remoteProcIDs, exportGIDs,
-                                                    this->TransferData_->exportPIDs_);
-
   // Find the LIDs corresponding to the (outgoing) GIDs in
   // exportGIDs.  For sparse matrix-vector multiply, this tells the
   // calling process how to index into the source vector to get the
   // elements which it needs to send.
-  MM = Teuchos::null;
-  MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra:iport_ctor:setupExport:4"));
+  Tpetra::Details::ProfilingRegion pr("Tpetra:iport_ctor:setupExport:4");
 
   // NOTE (mfh 03 Mar 2014) This is now a candidate for a
   // thread-parallel kernel, but only if using the new thread-safe
@@ -1315,13 +1318,12 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
   using ::Tpetra::Details::Behavior;
-  using GST         = Tpetra::global_size_t;
   using LO          = LocalOrdinal;
   using GO          = GlobalOrdinal;
   using import_type = Import<LO, GO, Node>;
   using size_type   = typename Array<GO>::size_type;
 
-  auto MM = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Import::setUnion"));
+  Tpetra::Details::ProfilingRegion pr("Tpetra::Import::setUnion(rhs)");
 
   RCP<const map_type> srcMap  = this->getSourceMap();
   RCP<const map_type> tgtMap1 = this->getTargetMap();
@@ -1353,86 +1355,97 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
   // Alas, the two target Maps are not the same.  That means we have
   // to compute their union, and the union Import object.
 
-  // Get the same GIDs (same GIDs are a subview of the first numSame target
-  // GIDs)
-  const size_type numSameGIDs1  = this->getNumSameIDs();
-  ArrayView<const GO> sameGIDs1 = (tgtMap1->getLocalElementList())(0, numSameGIDs1);
-
-  const size_type numSameGIDs2  = rhs.getNumSameIDs();
-  ArrayView<const GO> sameGIDs2 = (tgtMap2->getLocalElementList())(0, numSameGIDs2);
-
-  // Get permute GIDs
-  ArrayView<const LO> permuteToLIDs1 = this->getPermuteToLIDs();
-  Array<GO> permuteGIDs1(permuteToLIDs1.size());
-  for (size_type k = 0; k < permuteGIDs1.size(); k++)
-    permuteGIDs1[k] = tgtMap1->getGlobalElement(permuteToLIDs1[k]);
-
-  ArrayView<const LO> permuteToLIDs2 = rhs.getPermuteToLIDs();
-  Array<GO> permuteGIDs2(permuteToLIDs2.size());
-  for (size_type k = 0; k < permuteGIDs2.size(); k++)
-    permuteGIDs2[k] = tgtMap2->getGlobalElement(permuteToLIDs2[k]);
-
-  // Get remote GIDs
-  ArrayView<const LO> remoteLIDs1 = this->getRemoteLIDs();
-  Array<GO> remoteGIDs1(remoteLIDs1.size());
-  for (size_type k = 0; k < remoteLIDs1.size(); k++)
-    remoteGIDs1[k] = this->getTargetMap()->getGlobalElement(remoteLIDs1[k]);
-
-  ArrayView<const LO> remoteLIDs2 = rhs.getRemoteLIDs();
-  Array<GO> remoteGIDs2(remoteLIDs2.size());
-  for (size_type k = 0; k < remoteLIDs2.size(); k++)
-    remoteGIDs2[k] = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
-
-  // Get remote PIDs
-  Array<int> remotePIDs1;
-  Tpetra::Import_Util::getRemotePIDs(*this, remotePIDs1);
-
-  Array<int> remotePIDs2;
-  Tpetra::Import_Util::getRemotePIDs(rhs, remotePIDs2);
-
-  // Get the union of the target GIDs
   Array<GO> unionTgtGIDs;
-  Array<std::pair<int, GO>> remotePGIDs;
+  Array<LO> remoteLIDsUnion;
+  Array<GO> remoteGIDsUnion;
+  Array<int> remotePIDsUnion;
   size_type numSameIDsUnion, numPermuteIDsUnion, numRemoteIDsUnion;
+  Array<LO> permuteToLIDsUnion;
+  Array<LO> permuteFromLIDsUnion;
+  global_size_t unionNumLocalElements;
+  global_size_t unionNumGlobalElements;
+  std::shared_ptr<Details::CommRequest> req;
+  {
+    Tpetra::Details::ProfilingRegion prTgtMapLookups("Tpetra::Import::setUnion : Target Map lookups");
 
-  findUnionTargetGIDs(unionTgtGIDs, remotePGIDs,
-                      numSameIDsUnion, numPermuteIDsUnion, numRemoteIDsUnion,
-                      sameGIDs1, sameGIDs2, permuteGIDs1, permuteGIDs2,
-                      remoteGIDs1, remoteGIDs2, remotePIDs1, remotePIDs2);
+    // Get the same GIDs (same GIDs are a subview of the first numSame target
+    // GIDs)
+    const size_type numSameGIDs1  = this->getNumSameIDs();
+    ArrayView<const GO> sameGIDs1 = (tgtMap1->getLocalElementList())(0, numSameGIDs1);
 
-  // Extract GIDs and compute LIDS, PIDs for the remotes in the union
-  Array<LO> remoteLIDsUnion(numRemoteIDsUnion);
-  Array<GO> remoteGIDsUnion(numRemoteIDsUnion);
-  Array<int> remotePIDsUnion(numRemoteIDsUnion);
-  const size_type unionRemoteIDsStart = numSameIDsUnion + numPermuteIDsUnion;
-  for (size_type k = 0; k < numRemoteIDsUnion; ++k) {
-    remoteLIDsUnion[k] = unionRemoteIDsStart + k;
-    remotePIDsUnion[k] = remotePGIDs[k].first;
-    remoteGIDsUnion[k] = remotePGIDs[k].second;
+    const size_type numSameGIDs2  = rhs.getNumSameIDs();
+    ArrayView<const GO> sameGIDs2 = (tgtMap2->getLocalElementList())(0, numSameGIDs2);
+
+    // Get permute GIDs
+    ArrayView<const LO> permuteToLIDs1 = this->getPermuteToLIDs();
+    Array<GO> permuteGIDs1(permuteToLIDs1.size());
+    for (size_type k = 0; k < permuteGIDs1.size(); k++)
+      permuteGIDs1[k] = tgtMap1->getGlobalElement(permuteToLIDs1[k]);
+
+    ArrayView<const LO> permuteToLIDs2 = rhs.getPermuteToLIDs();
+    Array<GO> permuteGIDs2(permuteToLIDs2.size());
+    for (size_type k = 0; k < permuteGIDs2.size(); k++)
+      permuteGIDs2[k] = tgtMap2->getGlobalElement(permuteToLIDs2[k]);
+
+    // Get remote GIDs
+    ArrayView<const LO> remoteLIDs1 = this->getRemoteLIDs();
+    Array<GO> remoteGIDs1(remoteLIDs1.size());
+    for (size_type k = 0; k < remoteLIDs1.size(); k++)
+      remoteGIDs1[k] = this->getTargetMap()->getGlobalElement(remoteLIDs1[k]);
+
+    ArrayView<const LO> remoteLIDs2 = rhs.getRemoteLIDs();
+    Array<GO> remoteGIDs2(remoteLIDs2.size());
+    for (size_type k = 0; k < remoteLIDs2.size(); k++)
+      remoteGIDs2[k] = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
+
+    // Get remote PIDs
+    Array<int> remotePIDs1;
+    Tpetra::Import_Util::getRemotePIDs(*this, remotePIDs1);
+
+    Array<int> remotePIDs2;
+    Tpetra::Import_Util::getRemotePIDs(rhs, remotePIDs2);
+
+    // Get the union of the target GIDs
+    Array<std::pair<int, GO>> remotePGIDs;
+    findUnionTargetGIDs(unionTgtGIDs, remotePGIDs,
+                        numSameIDsUnion, numPermuteIDsUnion, numRemoteIDsUnion,
+                        sameGIDs1, sameGIDs2, permuteGIDs1, permuteGIDs2,
+                        remoteGIDs1, remoteGIDs2, remotePIDs1, remotePIDs2);
+    unionNumLocalElements = static_cast<global_size_t>(unionTgtGIDs.size());
+    req                   = Details::iallreduce(unionNumLocalElements,
+                                                unionNumGlobalElements, Teuchos::REDUCE_SUM, *comm);
+
+    // Extract GIDs and compute LIDS, PIDs for the remotes in the union
+    remoteLIDsUnion                     = Array<LO>(numRemoteIDsUnion);
+    remoteGIDsUnion                     = Array<GO>(numRemoteIDsUnion);
+    remotePIDsUnion                     = Array<int>(numRemoteIDsUnion);
+    const size_type unionRemoteIDsStart = numSameIDsUnion + numPermuteIDsUnion;
+    for (size_type k = 0; k < numRemoteIDsUnion; ++k) {
+      remoteLIDsUnion[k] = unionRemoteIDsStart + k;
+      remotePIDsUnion[k] = remotePGIDs[k].first;
+      remoteGIDsUnion[k] = remotePGIDs[k].second;
+    }
+
+    // Compute the permute-to LIDs (in the union target Map).
+    // Convert the permute GIDs to permute-from LIDs in the source Map.
+    permuteToLIDsUnion   = Array<LO>(numPermuteIDsUnion);
+    permuteFromLIDsUnion = Array<LO>(numPermuteIDsUnion);
+
+    for (size_type k = 0; k < numPermuteIDsUnion; ++k) {
+      size_type idx           = numSameIDsUnion + k;
+      permuteToLIDsUnion[k]   = static_cast<LO>(idx);
+      permuteFromLIDsUnion[k] = srcMap->getLocalElement(unionTgtGIDs[idx]);
+    }
   }
 
-  // Compute the permute-to LIDs (in the union target Map).
-  // Convert the permute GIDs to permute-from LIDs in the source Map.
-  Array<LO> permuteToLIDsUnion(numPermuteIDsUnion);
-  Array<LO> permuteFromLIDsUnion(numPermuteIDsUnion);
-
-  for (size_type k = 0; k < numPermuteIDsUnion; ++k) {
-    size_type idx           = numSameIDsUnion + k;
-    permuteToLIDsUnion[k]   = static_cast<LO>(idx);
-    permuteFromLIDsUnion[k] = srcMap->getLocalElement(unionTgtGIDs[idx]);
+  RCP<const map_type> unionTgtMap;
+  {
+    // Create the union target Map.
+    Tpetra::Details::ProfilingRegion prTgtMap("Tpetra::Import::setUnion : Construct Target Map");
+    const GO indexBaseUnion = std::min(tgtMap1->getIndexBase(), tgtMap2->getIndexBase());
+    req->wait();
+    unionTgtMap = rcp(new map_type(unionNumGlobalElements, unionTgtGIDs(), indexBaseUnion, comm));
   }
-
-  MM       = Teuchos::null;
-  auto MM2 = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Import::setUnion : Construct Target Map"));
-
-  // Create the union target Map.
-  const GST INVALID       = Teuchos::OrdinalTraits<GST>::invalid();
-  const GO indexBaseUnion = std::min(tgtMap1->getIndexBase(), tgtMap2->getIndexBase());
-  RCP<const map_type> unionTgtMap =
-      rcp(new map_type(INVALID, unionTgtGIDs(), indexBaseUnion, comm));
-
-  MM2      = Teuchos::null;
-  auto MM3 = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Import::setUnion : Export GIDs"));
 
   // Thus far, we have computed the following in the union Import:
   //   - numSameIDs
@@ -1442,104 +1455,65 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
   // Now it's time to compute the export IDs and initialize the
   // Distributor.
 
-  Array<GO> exportGIDsUnion;
   Array<LO> exportLIDsUnion;
   Array<int> exportPIDsUnion;
   Distributor distributor(comm, this->TransferData_->out_);
+  {
+    Tpetra::Details::ProfilingRegion prExportGIDs("Tpetra::Import::setUnion : Export GIDs");
 
-#ifdef TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
-  // Compute the export IDs without communication, by merging the
-  // lists of (export LID, export PID) pairs from the two input
-  // Import objects.  The export LIDs in both input Import objects
-  // are LIDs in the source Map.  Then, use the export PIDs to
-  // initialize the Distributor via createFromSends.
+    const size_type numExportIDs1 = this->getNumExportIDs();
+    const size_type numExportIDs2 = rhs.getNumExportIDs();
 
-  // const size_type numExportIDs1 = this->getNumExportIDs ();
-  ArrayView<const LO> exportLIDs1 = this->getExportLIDs();
-  ArrayView<const LO> exportPIDs1 = this->getExportPIDs();
+    exportLIDsUnion = Array<LO>(numExportIDs1 + numExportIDs2);
+    exportPIDsUnion = Array<int>(numExportIDs1 + numExportIDs2);
 
-  // const size_type numExportIDs2 = rhs.getNumExportIDs ();
-  ArrayView<const LO> exportLIDs2 = rhs.getExportLIDs();
-  ArrayView<const LO> exportPIDs2 = rhs.getExportPIDs();
+    if (numExportIDs1 + numExportIDs2 > 0) {
+      auto exportLIDs1 = this->getExportLIDs();
+      auto exportPIDs1 = this->getExportPIDs();
 
-  // We have to keep the export LIDs in PID-sorted order, then merge
-  // them.  So, first key-value merge (LID,PID) pairs, treating PIDs
-  // as values, merging values by replacement.  Then, sort the
-  // (LID,PID) pairs again by PID.
+      auto exportLIDs2 = rhs.getExportLIDs();
+      auto exportPIDs2 = rhs.getExportPIDs();
 
-  // Sort (LID,PID) pairs by LID for the later merge, and make
-  // each sequence unique by LID.
-  Array<LO> exportLIDs1Copy(exportLIDs1.begin(), exportLIDs1.end());
-  Array<int> exportPIDs1Copy(exportLIDs1.begin(), exportLIDs1.end());
-  sort2(exportLIDs1Copy.begin(), exportLIDs1Copy.end(),
-        exportPIDs1Copy.begin());
-  typename ArrayView<LO>::iterator exportLIDs1_end = exportLIDs1Copy.end();
-  typename ArrayView<LO>::iterator exportPIDs1_end = exportPIDs1Copy.end();
-  merge2(exportLIDs1_end, exportPIDs1_end,
-         exportLIDs1Copy.begin(), exportLIDs1_end,
-         exportPIDs1Copy.begin(), exportPIDs1_end,
-         project1st<LO, LO>());
+      std::copy(exportLIDs1.begin(), exportLIDs1.end(), exportLIDsUnion.begin());
+      std::copy(exportLIDs2.begin(), exportLIDs2.end(), exportLIDsUnion.begin() + numExportIDs1);
 
-  Array<LO> exportLIDs2Copy(exportLIDs2.begin(), exportLIDs2.end());
-  Array<int> exportPIDs2Copy(exportLIDs2.begin(), exportLIDs2.end());
-  sort2(exportLIDs2Copy.begin(), exportLIDs2Copy.end(),
-        exportPIDs2Copy.begin());
-  typename ArrayView<LO>::iterator exportLIDs2_end = exportLIDs2Copy.end();
-  typename ArrayView<LO>::iterator exportPIDs2_end = exportPIDs2Copy.end();
-  merge2(exportLIDs2_end, exportPIDs2_end,
-         exportLIDs2Copy.begin(), exportLIDs2_end,
-         exportPIDs2Copy.begin(), exportPIDs2_end,
-         project1st<LO, LO>());
+      std::copy(exportPIDs1.begin(), exportPIDs1.end(), exportPIDsUnion.begin());
+      std::copy(exportPIDs2.begin(), exportPIDs2.end(), exportPIDsUnion.begin() + numExportIDs1);
 
-  // Merge export (LID,PID) pairs.  In this merge operation, the
-  // LIDs are the "keys" and the PIDs their "values."  We combine
-  // the "values" (PIDs) in the pairs by replacement, rather than
-  // by adding them together.
-  keyValueMerge(exportLIDs1Copy.begin(), exportLIDs1Copy.end(),
-                exportPIDs1Copy.begin(), exportPIDs1Copy.end(),
-                exportLIDs2Copy.begin(), exportLIDs2Copy.end(),
-                exportPIDs2Copy.begin(), exportPIDs2Copy.end(),
-                std::back_inserter(exportLIDsUnion),
-                std::back_inserter(exportPIDsUnion),
-                project1st<int, int>());
+      std::vector<LO> idx(numExportIDs1 + numExportIDs2);
+      std::iota(idx.begin(), idx.end(), 0);
+      std::sort(idx.begin(), idx.end(), [&exportPIDsUnion, &exportLIDsUnion](const LO i1, const LO i2) { return (exportPIDsUnion[i1] == exportPIDsUnion[i2]) ? (exportLIDsUnion[i1] < exportLIDsUnion[i2]) : (exportPIDsUnion[i1] < exportPIDsUnion[i2]); });
 
-  // Resort the merged (LID,PID) pairs by PID.
-  sort2(exportPIDsUnion.begin(), exportPIDsUnion.end(),
-        exportLIDsUnion.begin());
+      Tpetra::SortDetails::apply_permutation(exportLIDsUnion.begin(), exportLIDsUnion.end(), idx);
+      Tpetra::SortDetails::apply_permutation(exportPIDsUnion.begin(), exportPIDsUnion.end(), idx);
 
-  // Initialize the Distributor.  Using createFromSends instead of
-  // createFromRecvs avoids the initialization and use of a
-  // temporary Distributor object.
-  (void)distributor.createFromSends(exportPIDsUnion().getConst());
-#else   // NOT TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
+      size_t knew = 0;
+      for (size_type k = 1; k < numExportIDs1 + numExportIDs2; ++k) {
+        if (!((exportPIDsUnion[knew] == exportPIDsUnion[k]) && (exportLIDsUnion[knew] == exportLIDsUnion[k]))) {
+          ++knew;
+          exportLIDsUnion[knew] = exportLIDsUnion[k];
+          exportPIDsUnion[knew] = exportPIDsUnion[k];
+        }
+      }
+      exportLIDsUnion.resize(knew + 1);
+      exportPIDsUnion.resize(knew + 1);
+    }
 
-  // Call the Distributor's createFromRecvs() method to turn the
-  // remote GIDs and their owning processes into a send-and-receive
-  // communication plan.  remoteGIDsUnion and remotePIDsUnion are
-  // input; exportGIDsUnion and exportPIDsUnion are output arrays
-  // which are allocated by createFromRecvs().
-  distributor.createFromRecvs(remoteGIDsUnion().getConst(),
-                              remotePIDsUnion().getConst(),
-                              exportGIDsUnion, exportPIDsUnion);
-
-  // Find the (source Map) LIDs corresponding to the export GIDs.
-  const size_type numExportIDsUnion = exportGIDsUnion.size();
-  exportLIDsUnion.resize(numExportIDsUnion);
-  for (size_type k = 0; k < numExportIDsUnion; ++k) {
-    exportLIDsUnion[k] = srcMap->getLocalElement(exportGIDsUnion[k]);
+    distributor.createFromSendsAndRecvs(exportPIDsUnion, remotePIDsUnion);
   }
-#endif  // TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
 
-  // Create and return the union Import. This uses the "expert" constructor
-  MM3      = Teuchos::null;
-  auto MM4 = Teuchos::rcp(new Tpetra::Details::ProfilingRegion("Tpetra::Import::setUnion : Construct Import"));
-  RCP<const import_type> unionImport =
-      rcp(new import_type(srcMap, unionTgtMap,
-                          as<size_t>(numSameIDsUnion),
-                          permuteToLIDsUnion, permuteFromLIDsUnion,
-                          remoteLIDsUnion, exportLIDsUnion,
-                          exportPIDsUnion, distributor,
-                          this->TransferData_->out_));
+  RCP<const import_type> unionImport;
+  {
+    // Create and return the union Import. This uses the "expert" constructor
+    Tpetra::Details::ProfilingRegion prImport("Tpetra::Import::setUnion : Construct Import");
+    unionImport =
+        rcp(new import_type(srcMap, unionTgtMap,
+                            as<size_t>(numSameIDsUnion),
+                            permuteToLIDsUnion, permuteFromLIDsUnion,
+                            remoteLIDsUnion, exportLIDsUnion,
+                            exportPIDsUnion, distributor,
+                            this->TransferData_->out_));
+  }
   return unionImport;
 }
 
@@ -1558,6 +1532,9 @@ Import<LocalOrdinal, GlobalOrdinal, Node>::
   using Teuchos::reduceAll;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
+
+  Tpetra::Details::ProfilingRegion pr("Tpetra::Import::setUnion()");
+
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node>> unionImport;
   RCP<const map_type> srcMap = this->getSourceMap();
   RCP<const map_type> tgtMap = this->getTargetMap();

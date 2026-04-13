@@ -2631,8 +2631,7 @@ solveSingleVectorNew(const typename Kokkos::TeamPolicy<typename impl_type::execu
   } else {
     const local_ordinal_type ws0 = WW.stride(0);
     auto W                       = WW.data() + v;
-    KOKKOSBATCHED_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(default_mode_type,
-                                                           member, blocksize, X, xs0, W, ws0);
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(member, blocksize), [&](int i) { W[i * ws0] = X[i * xs0]; });
     member.team_barrier();
     KOKKOSBATCHED_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(default_mode_type, default_algo_type,
                                                     member,
@@ -4361,8 +4360,7 @@ struct SolveTridiags {
     } else {
       const local_ordinal_type ws0 = WW.stride(0);
       auto W                       = WW.data() + v;
-      KOKKOSBATCHED_COPY_VECTOR_NO_TRANSPOSE_INTERNAL_INVOKE(default_mode_type,
-                                                             member, blocksize, X, xs0, W, ws0);
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(member, blocksize), [&](int i) { W[i * ws0] = X[i * xs0]; });
       member.team_barrier();
       KOKKOSBATCHED_GEMV_NO_TRANSPOSE_INTERNAL_INVOKE(default_mode_type, default_algo_type,
                                                       member,

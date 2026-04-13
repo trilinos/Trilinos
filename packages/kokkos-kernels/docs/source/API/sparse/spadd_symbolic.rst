@@ -3,7 +3,7 @@ KokkosSparse::spadd_symbolic
 
 Defined in header ``KokkosSparse_spadd.hpp``
 
-.. code:: cppkokkos
+.. code:: c++
 
   template <typename ExecSpace, typename KernelHandle, typename alno_row_view_t_,
             typename alno_nnz_view_t_, typename blno_row_view_t_,

@@ -252,6 +252,7 @@ IF(${PACKAGE_NAME}_ENABLE_MueLu)
 ENDIF()
 IF(PYTRILINOS2_VERBOSE)
   list(APPEND BINDER_OPTIONS -v)
+  list(APPEND BINDER_OPTIONS --annotate-includes)
 ENDIF()
 IF(PYTRILINOS2_SUPPRESS_ERRORS)
   list(APPEND BINDER_OPTIONS --suppress-errors)
@@ -262,7 +263,11 @@ IF(TPL_ENABLE_CUDA)
   list(APPEND BINDER_OPTIONS -x cuda --cuda-host-only)
 ENDIF()
 list(APPEND BINDER_OPTIONS ${PyTrilinos2_BINDER_FLAGS})
-list(APPEND BINDER_OPTIONS -std=c++17)
+if ("${CMAKE_CXX_STANDARD}" MATCHES "20")
+  list(APPEND BINDER_OPTIONS -std=c++20)
+else()
+  MESSAGE(FATAL_ERROR "PyTrilinos2 is hard coded to use CMAKE_CXX_STANDARD 20")
+endif()
 if (NOT(MPI_BASE_DIR STREQUAL ""))
   list(APPEND BINDER_OPTIONS -I${MPI_BASE_DIR}/include)
 ENDIF()
@@ -295,7 +300,7 @@ ELSE()
   list(APPEND BINDER_OPTIONS "-I${TPL_MPI_INCLUDE_DIRS}")
 ENDIF()
 list(APPEND BINDER_OPTIONS -DNDEBUG)
-list(APPEND BINDER_OPTIONS -DPYBIND11_DETAILED_ERROR_MESSAGES)
+# list(APPEND BINDER_OPTIONS -DPYBIND11_DETAILED_ERROR_MESSAGES)
 
 message("BINDER_OPTIONS='${BINDER_OPTIONS}'")
 
@@ -343,16 +348,6 @@ IF(NOT Mpi4Py_VERSION_ERROR)
   MESSAGE("  -- Mpi4Py Enabled.")
 ELSE()
   MESSAGE(FATAL_ERROR "Mpi4Py_VERSION_ERROR is defined; the python executable cannot access mpi4py.")
-ENDIF()
-
-EXECUTE_PROCESS(COMMAND
-  ${Python3_EXECUTABLE} -c "import mpi4py; print(mpi4py.get_config()['mpicxx'])"
-  OUTPUT_VARIABLE Mpi4Py_MPICXX
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-
-IF(NOT ${Mpi4Py_MPICXX} STREQUAL ${CMAKE_CXX_COMPILER})
-  MESSAGE(WARNING "the cpp compiler used to compile mpi4py ${Mpi4Py_MPICXX} is not consistent with CMAKE_CXX_COMPILER = ${CMAKE_CXX_COMPILER}")
 ENDIF()
 
 ###################################################################################################

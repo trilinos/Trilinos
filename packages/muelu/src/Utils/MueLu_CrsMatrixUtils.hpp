@@ -1,8 +1,8 @@
 // @HEADER
 // *****************************************************************************
-//             Xpetra: A linear algebra interface package
+//        MueLu: A package for multigrid based preconditioning
 //
-// Copyright 2012 NTESS and the Xpetra contributors.
+// Copyright 2012 NTESS and the MueLu contributors.
 // SPDX-License-Identifier: BSD-3-Clause
 // *****************************************************************************
 // @HEADER
@@ -40,7 +40,8 @@ class CrsMatrixUtils {
                              const Teuchos::ArrayView<Scalar>& CRS_vals,
                              const UnderlyingLib lib) {
     if (lib == Xpetra::UseTpetra) {
-      Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
+      Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals,
+                                          ::KokkosSparse::SortAlgorithm::DEFAULT);
     }
 
     return;

@@ -246,8 +246,10 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPSort"))));
 #endif
     // Sort & set values
-    if (params.is_null() || params->get("sort entries", true))
-      Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+    if (params.is_null() || params->get("sort entries", true)) {
+      // Tpetra's OpenMP SpGEMM results in almost sorted matrices. Use shell sort.
+      Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC, ::KokkosSparse::SortAlgorithm::SHELL);
+    }
     C.setAllValues(row_mapC, entriesC, valuesC);
 
   }  // end OMP KokkosKernels loop
@@ -582,8 +584,10 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
 #endif
 
   // Sort & set values
-  if (params.is_null() || params->get("sort entries", true))
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+  if (params.is_null() || params->get("sort entries", true)) {
+    // Tpetra's OpenMP SpGEMM results in almost sorted matrices. Use shell sort.
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC, ::KokkosSparse::SortAlgorithm::SHELL);
+  }
   C.setAllValues(row_mapC, entriesC, valuesC);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS

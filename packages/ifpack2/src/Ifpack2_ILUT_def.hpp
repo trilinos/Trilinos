@@ -463,6 +463,7 @@ void ILUT<MatrixType>::initialize() {
       par_ilut_handle->set_residual_norm_delta_stop(par_ilut_options_.residual_norm_delta_stop);
       par_ilut_handle->set_team_size(par_ilut_options_.team_size);
       par_ilut_handle->set_vector_size(par_ilut_options_.vector_size);
+      par_ilut_handle->set_max_iter(par_ilut_options_.max_iter);
       par_ilut_handle->set_fill_in_limit(par_ilut_options_.fill_in_limit);
       par_ilut_handle->set_verbose(par_ilut_options_.verbose);
       par_ilut_handle->set_async_update(false);

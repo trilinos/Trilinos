@@ -1,0 +1,9 @@
+#!/bin/bash
+./do-configure.base \
+-DTrilinos_ENABLE_TESTS=ON \
+-DCTEST_SITE=$(cat /etc/hostname) \
+-DCTEST_DROP_SITE="my.cdash.org" \
+-DCTEST_PROJECT_NAME="Trilinos" \
+-DCTEST_DROP_LOCATION="/submit.php?project=ExternalTrilinos" \
+-DTRIBITS_2ND_CTEST_DROP_SITE="" \
+"$@"
