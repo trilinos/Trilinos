@@ -5036,6 +5036,7 @@ public:
     if (need_fence) Kokkos::fence(); // synch user or default streams
     timer.reset();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, t, _peri, x);
+    perm_exec_instance.fence();
     stat.t_extra += timer.seconds();
 
     if (verbose) {
@@ -5411,6 +5412,7 @@ public:
     if (need_fence) Kokkos::fence(); // synch user or default streams
     timer.reset();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, t, _peri, x);
+    perm_exec_instance.fence();
     stat.t_extra += timer.seconds();
 
     if (verbose) {
@@ -5798,7 +5800,7 @@ public:
     if (need_fence) Kokkos::fence();
     timer.reset();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, t, _peri, x);
-    //perm_exec_instance.fence();
+    perm_exec_instance.fence();
     stat.t_extra += timer.seconds();
 
     if (verbose) {
