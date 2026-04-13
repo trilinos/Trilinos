@@ -921,7 +921,7 @@ LSQRSolMgr<ScalarType,MV,OP,false>::solve ()
       this->unconvergedCause_ = MaxItersReached;
       isConverged = false;
     } else {
-      this->unconvergedCause_ = UnknownAndException;
+      this->unconvergedCause_ = InconsistentState;
       TEUCHOS_TEST_FOR_EXCEPTION(true,
          std::logic_error, "Belos::LSQRSolMgr::solve: "
          "LSQRIteration::iterate returned without either the convergence test "

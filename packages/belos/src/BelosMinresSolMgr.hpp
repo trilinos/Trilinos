@@ -727,7 +727,7 @@ namespace Belos {
             notConverged.push_back (currentRHS);
             break;
           } else {
-            this->unconvergedCause_ = UnknownAndException;
+            this->unconvergedCause_ = InconsistentState;
             // If we get here, we returned from iterate(), but none of
             // our status tests Passed.  Something is wrong, and it is
             // probably our fault.

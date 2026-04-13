@@ -1789,7 +1789,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
-            this->unconvergedCause_ = UnknownAndException;
+            this->unconvergedCause_ = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,
               std::logic_error, "Belos::GCRODRSolMgr::solve: "
               "Invalid return from GCRODRIter::iterate().");

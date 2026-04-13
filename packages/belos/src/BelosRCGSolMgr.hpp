@@ -1722,7 +1722,7 @@ ReturnType RCGSolMgr<ScalarType,MV,OP,true>::solve() {
           //
           ////////////////////////////////////////////////////////////////////////////////////
           else {
-            this->unconvergedCause_ = UnknownAndException;
+            this->unconvergedCause_ = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::RCGSolMgr::solve(): Invalid return from RCGIter::iterate().");
           }

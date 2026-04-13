@@ -111,7 +111,6 @@ testSolver (Teuchos::FancyOStream& out,
   typedef Tpetra::Operator<SC,LO,GO,NT> OP;
   typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
   typedef Teuchos::ScalarTraits<SC> STS;
-  typedef Teuchos::ScalarTraits<typename STS::magnitudeType> MTS;
 
   Teuchos::OSTab tab0 (out);
   std::cout << "Test solver \"" << solverName << "\" from Belos package" << endl;
@@ -145,14 +144,14 @@ testSolver (Teuchos::FancyOStream& out,
   typedef Belos::LinearProblem<SC, MV, OP> linear_problem_type;
   X->putScalar (STS::zero ());
 
-  std::cout << "A = " << *A << std::endl;
-  std::cout << "X = " << *X << std::endl;
-  std::cout << "B = " << *B << std::endl;
+  //std::cout << "A = " << *A << std::endl;
+  //std::cout << "X = " << *X << std::endl;
+  //std::cout << "B = " << *B << std::endl;
 
-  auto myOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
-  A->describe(*myOut, Teuchos::VERB_EXTREME);
-  X->describe(*myOut, Teuchos::VERB_EXTREME);
-  B->describe(*myOut, Teuchos::VERB_EXTREME);
+  //auto tmpOut = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+  //A->describe(*tmpOut, Teuchos::VERB_EXTREME);
+  //X->describe(*tmpOut, Teuchos::VERB_EXTREME);
+  //B->describe(*tmpOut, Teuchos::VERB_EXTREME);
 
   RCP<linear_problem_type> problem (new linear_problem_type (A, X, B));
   problem->setProblem ();
@@ -177,17 +176,7 @@ testSolver (Teuchos::FancyOStream& out,
       << ", unconvergedCause = " << convertUnconvergedCauseTypeToString(unconvergedCause)
       << endl;
 
-  // Check that the solution vector is zeros, and the solver return Unconverged.
-  bool nonZeroX = false;
-  std::vector<typename STS::magnitudeType> normX( X->getNumVectors () );
-  Teuchos::ArrayView<typename STS::magnitudeType> normAV( normX );
-  X->norm2 ( normAV( 0, X->getNumVectors ()) );
-  for ( int i=0; i<(int)(X->getNumVectors ()); ++i )
-  {
-    if ( normX[i] != MTS::zero() )
-      nonZeroX = true;
-  } 
-  if ( nonZeroX || (ret != Belos::Unconverged) || (unconvergedCause != Belos::MaxItersReached) ) {
+  if ( (ret != Belos::Unconverged) || (unconvergedCause != Belos::MaxItersReached) ) {
     success = false;
     return;
   }

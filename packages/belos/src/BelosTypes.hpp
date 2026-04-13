@@ -135,13 +135,13 @@ namespace Belos {
   enum UnconvergedCauseType {
     SolverConverged,        /*!< Most recent solve() returned 'Converged'. */
     MaxItersReached,        /*!< Most recent solve() returned 'Unconverged' because the maximum number of iterations was reached. */
-    MaxRestartsReached,     /*!< Most recent solve() returned 'Unconverged' because the maximum number of restarts was reached. */
-    OrthonormFailure,       /*!< Most recent solve() returned 'Unconverged' because the orthonormalization failed. */
+    MaxRestartsReached,     /*!< Most recent solve() returned 'Unconverged' because the maximum number of restarts was reached. */ // GMRES
+    OrthonormFailure,       /*!< Most recent solve() returned 'Unconverged' because the orthonormalization failed. */ // BlockCG
     NaNDetected,            /*!< Most recent solve() returned 'Unconverged' because a NaN was detected. */
-    BreakdownDetected,      /*!< Most recent solve() returned 'Unconverged' because a breakdown was detected. */
-    LossOfAccuracyDetected, /*!< Most recent solve() returned 'Unconverged' because loss of accuracty was detected. */
+    BreakdownDetected,      /*!< Most recent solve() returned 'Unconverged' because a breakdown was detected. */ // BlockCG
+    LossOfAccuracyDetected, /*!< Most recent solve() returned 'Unconverged' because loss of accuracty was detected. */ // GMRES
     NonspecificException,   /*!< Most recent solve() returned 'Unconverged' because it caught a nonspecific exception. */
-    UnknownAndException,    /*!< Most recent solve() returned 'Unconverged': the code detected the situation, but could not explain why, thus throwing an exception. */
+    InconsistentState,      /*!< Most recent solve() returned 'Unconverged': the code detected an inconsistency (and throwed an exception) */
     Undetermined            /*!< Most recent solve() returned 'Unconverged', but without setting the cause (upon entrance, solve() always initializes cause to 'Undetermined'). */
   };
 

@@ -862,7 +862,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
           // Something is wrong, and it is probably the developers fault.
           //
           ////////////////////////////////////////////////////////////////////////////////////
-            this->unconvergedCause_ = UnknownAndException;
+            this->unconvergedCause_ = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                                "Belos::PCPGSolMgr::solve(): Invalid return from PCPGIter::iterate().");
           } // end if

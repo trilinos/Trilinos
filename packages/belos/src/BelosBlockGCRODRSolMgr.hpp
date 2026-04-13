@@ -2236,7 +2236,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
         // Something is wrong, and it is probably our fault.
         // ****************************************************************
         else {
-          this->unconvergedCause_ = UnknownAndException;
+          this->unconvergedCause_ = InconsistentState;
           TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::BlockGCRODRSolMgr::solve(): Invalid return from BlockGCRODRIter::iterate().");
         } //end else (no status test passed)
 

@@ -194,8 +194,8 @@ namespace Belos {
       return "LossOfAccuracyDetected";
     } else if (unconvergedCause == Belos::NonspecificException) {
       return "NonspecificException";
-    } else if (unconvergedCause == Belos::UnknownAndException) {
-      return "UnknownAndException";
+    } else if (unconvergedCause == Belos::InconsistentState) {
+      return "InconsistentState";
     } else if (unconvergedCause == Belos::Undetermined) {
       return "Undetermined";
     } else {

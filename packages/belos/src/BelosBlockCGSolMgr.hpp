@@ -990,7 +990,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
           // This indicates a bug.
           //
           else {
-            this->unconvergedCause_ = UnknownAndException;
+            this->unconvergedCause_ = InconsistentState;
             TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
               "Belos::BlockCGSolMgr::solve(): Neither the convergence test nor "
               "the maximum iteration count test passed.  Please report this bug "
