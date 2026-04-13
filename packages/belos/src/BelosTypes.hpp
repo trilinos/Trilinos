@@ -141,7 +141,7 @@ namespace Belos {
     BreakdownDetected,      /*!< Most recent solve() returned 'Unconverged' because a breakdown was detected. */ // BlockCG
     LossOfAccuracyDetected, /*!< Most recent solve() returned 'Unconverged' because loss of accuracty was detected. */ // GMRES
     NonspecificException,   /*!< Most recent solve() returned 'Unconverged' because it caught a nonspecific exception. */
-    InconsistentState,      /*!< Most recent solve() returned 'Unconverged': the code detected an inconsistency (and throwed an exception) */
+    InconsistentState,      /*!< Most recent solve() returned 'Unconverged' because it detected an inconsistency (and threw an exception) */
     Undetermined            /*!< Most recent solve() returned 'Unconverged', but without setting the cause (upon entrance, solve() always initializes cause to 'Undetermined'). */
   };
 
