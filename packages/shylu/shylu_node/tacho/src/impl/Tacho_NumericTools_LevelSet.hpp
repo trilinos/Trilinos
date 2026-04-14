@@ -4864,7 +4864,7 @@ public:
 
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
-    if (need_fence) exec_space().fence();
+    if (need_fence) perm_exec_instance.fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -4949,7 +4949,7 @@ public:
               // copy from buffer to t
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
               if (need_fence && (lvl > 0 && _h_num_device_calls_solve(lvl-1) > 0))
-                exec_space().fence(); // sync default, for next device solve calls
+                team_exec_instance.fence(); // sync default, for next device solve calls
               ++stat_level.n_kernel_launching;
             }
           }
@@ -5006,7 +5006,7 @@ public:
             if (variant != 3) {
               Kokkos::parallel_for("update upper", policy_update_with_work_property, functor);
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
-                exec_space().fence(); // sync default, before next device solve-upper calls
+                team_exec_instance.fence(); // sync default, before next device solve-upper calls
               ++stat_level.n_kernel_launching;
 
               if (lvl < _device_level_cut) {
@@ -5248,7 +5248,7 @@ public:
 
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
-    if(need_fence) exec_space().fence();
+    if(need_fence) perm_exec_instance.fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -5331,7 +5331,7 @@ public:
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
               if (need_fence && (lvl > 0 && _h_num_device_calls_solve(lvl-1) > 0))
-                exec_space().fence(); // synch update on default before next solve on device
+                team_exec_instance.fence(); // synch update on default before next solve on device
             }
           }
         }
@@ -5387,7 +5387,7 @@ public:
               Kokkos::parallel_for("update upper", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
-                exec_space().fence(); // synch update befor solve on device
+                team_exec_instance.fence(); // synch update befor solve on device
 
               if (lvl < _device_level_cut) {
                 // do nothing
@@ -5715,7 +5715,7 @@ public:
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
               if (need_fence && (lvl > 0 && _h_num_device_calls_solve(lvl-1) > 0))
-                exec_space().fence(); // synch update on default before next solve on device
+                team_exec_instance.fence(); // synch update on default before next solve on device
             }
           }
         }
@@ -5771,7 +5771,7 @@ public:
               Kokkos::parallel_for("update upper", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
               if (need_fence && _h_num_device_calls_solve(lvl) > 0)
-                exec_space().fence(); // synch update on default before solve on device
+                team_exec_instance.fence(); // synch update on default before solve on device
 
               if (lvl < _device_level_cut) {
                 // do nothing
