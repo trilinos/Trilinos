@@ -157,22 +157,8 @@ namespace BaskerNS
     //#define USE_TEAM_BARRIER_NFACTOR_SEP2
     // TODO: can we skip synching with empty threads/blocks for dense-schur option?
     Int b_size = pow(2, 1);
-#ifdef USE_BASKER_BARRIER_SEP
     info = basker_barrier_sep(thread, kid, my_leader, num_threads,
                               b_size, 0, LU(U_col)(U_row).scol, 0, true);
-#else
-    #ifdef USE_TEAM_BARRIER_NFACTOR_SEP2
-    thread.team_barrier();
-    #else
-    t_basker_barrier(thread, kid, my_leader,
-                     b_size, 0, LU(U_col)(U_row).scol, 0);
-    for(Int tid = 0; tid < num_threads; tid++) {
-      if (thread_array(tid).error_type != BASKER_SUCCESS) {
-        info = BASKER_ERROR;
-      }
-    }
-    #endif
-#endif
     #ifdef BASKER_DEBUG_NFACTOR_SEP2
     printf("\n done with 1st UPPER, kid: %d \n\n", kid); fflush(stdout);
     #endif
@@ -224,29 +210,14 @@ namespace BaskerNS
     #endif
 
     //---------Lower Factor (old sublevel lvl-1)-------
-    
     //printf("\n\n");
     //printf("lower team size: %d \n", thread.team_size());
+
+    // Barrier
     my_leader = find_leader(kid, lvl-1);
     b_size    = pow(2, lvl);
-#ifdef USE_BASKER_BARRIER_SEP
     info = basker_barrier_sep(thread, kid, my_leader, num_threads,
                               b_size, 3, LU(U_col)(U_row).scol, 0, true);
-#else
-    #ifdef USE_TEAM_BARRIER_NFACTOR_SEP2
-    thread.team_barrier();
-    #else
-    // printf("[3] barrier test, kid: %d leader: %d b_size: %d lvl: %d \n",
-    //        kid,  my_leader, b_size, lvl);
-    t_basker_barrier(thread, kid, my_leader,
-                     b_size, 3, LU(U_col)(U_row).scol, 0);
-    for(Int ti = 0; ti < num_threads; ti++) {
-      if (thread_array(kid).error_type != BASKER_SUCCESS) {
-        info = BASKER_ERROR;
-      }
-    }
-    #endif
-#endif
     #ifdef BASKER_DEBUG_NFACTOR_SEP2
     printf("\n done with UPPER, kid: %d \n\n", kid);
     printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
@@ -314,37 +285,20 @@ namespace BaskerNS
           else {
             printf(" + skipping lower factor, kid: %d k: %d \n", kid, k); fflush(stdout);
           }
-          #endif
-          #ifdef BASKER_DEBUG_NFACTOR_SEP2
           printf(" > done calling lower factor, kid: %d k: %d info=%d\n", kid, k, info); fflush(stdout);
           #endif
-          //need barrier if multiple thread uppdate
+
+          // Barrier since multiple thread uppdate
           my_leader = find_leader(kid, lvl-1);
           b_size    = pow(2, lvl);
-          #ifdef USE_BASKER_BARRIER_SEP
           info = basker_barrier_sep(thread, kid, my_leader, num_threads,
                                     b_size, 4, k, lvl-1, true);
-          #else
-          #ifdef USE_TEAM_BARRIER_NFACTOR_SEP2
-          thread.team_barrier();
-          #else
-          #ifdef BASKER_DEBUG_NFACTOR_SEP2
-          printf("barrier test-4: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d \n",
-                 kid, k, my_leader, b_size, lvl); fflush(stdout);
-          #endif
-          t_basker_barrier(thread, kid, my_leader,
-                           b_size, 4, k, lvl-1);
-          for(Int tid = 0; tid < num_threads; tid++) {
-            if (thread_array(tid).error_type != BASKER_SUCCESS) {
-              info = BASKER_ERROR;
-            }
-          }
-          #endif
           #ifdef BASKER_DEBUG_NFACTOR_SEP2
           printf("barrier test-4 done: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d, info = %d \n",
                  kid, k, my_leader, b_size, lvl, info); fflush(stdout);
           #endif
-          #endif
+
+
           #ifdef BASKER_TIMER
           time_faccol += timer_faccol.seconds();
           #endif
@@ -367,23 +321,12 @@ namespace BaskerNS
                  kid, k); fflush(stdout);
           #endif
 
+          // Barrier
           my_leader = find_leader(kid, lvl-1);
           b_size    = pow(2, lvl);
-          #ifdef USE_BASKER_BARRIER_SEP
           info = basker_barrier_sep(thread, kid, my_leader, num_threads,
                                     b_size, 5, k, lvl-1, false);
-          #else
-          #ifdef USE_TEAM_BARRIER_NFACTOR_SEP2
-          thread.team_barrier();
-          #else
-          #ifdef BASKER_DEBUG_NFACTOR_SEP2
-          printf("barrier test-5: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d \n",
-                 kid, k, my_leader, b_size, lvl); fflush(stdout);
-          #endif
-          t_basker_barrier(thread, kid, my_leader,
-                           b_size, 5, k, lvl-1);
-          #endif
-          #endif
+
           #ifdef BASKER_DEBUG_NFACTOR_SEP2
           printf("barrier test-5 done: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d \n",
                  kid, k, my_leader, b_size, lvl); fflush(stdout);
@@ -393,10 +336,7 @@ namespace BaskerNS
           #endif
         }
       }
-
       //Trick for sep = 1
-      //t_basker_barrier(thread, kid, kid,
-      //                 1, 1, LU(U_col)(U_row).ncol+1, lvl-1);
       //t_basker_barrier(thread, kid, kid,
       //                 1, 1, LU(U_col)(U_row).ncol+1, lvl-1);
       #ifdef BASKER_TIMER
@@ -458,16 +398,11 @@ namespace BaskerNS
       if(thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
         t_upper_col_factor_offdiag2(kid, lvl, sl,l, k, lower);
       }
-      //Barrier--Start
-      #ifdef USE_TEAM_BARRIER_NFACTOR_SEP2
-      thread.team_barrier();
-      #else
+      //Barrier
       my_leader = find_leader(kid,sl);
       b_size    = pow(2,sl+1);
-      t_basker_barrier(thread, kid, my_leader,
-                       b_size, 1, k+k_offset, sl);
-      #endif
-      //Barrier--End
+      basker_barrier_sep(thread, kid, my_leader, num_threads,
+                         b_size, 1, k+k_offset, sl, false);
 
       if(kid%((Int)pow(2,sl)) == 0 &&
          thread_array(kid).error_type == BASKER_ERROR_NOERROR) {
@@ -475,15 +410,11 @@ namespace BaskerNS
                                      lvl, sl, l, k, lower);
       }
 
-      //Barrier--Start
+      //Barrier
       //printf("[2] Barrier test, kid: %d leader: %d k: %d sl: %d \n",
       //     kid, my_leader, k, sl);
-      #ifdef USE_TEAM_BARRIER_NFACTOR_SEP2
-      thread.team_barrier();
-      #else
-      t_basker_barrier(thread, kid, my_leader,
-                       b_size, 2, k+k_offset, sl);
-      #endif
+      basker_barrier_sep(thread, kid, my_leader, num_threads,
+                         b_size, 2, k+k_offset, sl, false);
     }//over all sublevels
 
     if(thread_array(kid).error_type == BASKER_ERROR_NOERROR) {

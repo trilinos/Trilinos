@@ -266,8 +266,8 @@ int main(int argc, char *argv[]) {
           SchurPart = rcp(new ID(SerialMap, 1));
           SchurPart->putScalar(0); // no schur
         }
-	Teuchos::ArrayRCP<const LO> schurPart = SchurPart->getData(0);
-	shylubasker_params.set("SchurPart", schurPart.getRawPtr());
+        Teuchos::ArrayRCP<const LO> schurPart = SchurPart->getData(0);
+        shylubasker_params.set("SchurPart", schurPart.getRawPtr());
       }
     }
     *fos << amesos2_params.currentParametersString() << std::endl;
