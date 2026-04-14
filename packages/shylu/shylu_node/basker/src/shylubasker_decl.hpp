@@ -154,7 +154,7 @@ namespace BaskerNS
                     BASKER_BOOL keep_zeros = BASKER_TRUE);
 
 
-    int t_nfactor_sep2(const Int lvl, const TeamMember &thread);
+    int t_nfactor_sep2(const Int lvl, const Int tot_lvl, const TeamMember &thread);
 
     void t_nfactor_sep2_inc_lvl(const Int kid, const Int lvl, const Int team_leader, const TeamMember &thread);
 
@@ -962,7 +962,17 @@ namespace BaskerNS
                           const Int size,
                           const Int function_n,
                           const Int k, 
-                          const Int l);
+                          const Int lvl);
+    inline
+    Int basker_barrier_sep(const TeamMember &thread,
+                           const Int my_kid,
+                           const Int my_leader,
+                           const Int num_threads, 
+                           const Int size,
+                           const Int function_n,
+                           const Int k, 
+                           const Int lvl,
+                           const bool flag);
                           
     inline
     void t_basker_barrier_inc_lvl(const TeamMember &thread,
@@ -971,7 +981,7 @@ namespace BaskerNS
                           const Int size,
                           const Int function_n,
                           const Int k, 
-                          const Int l);
+                          const Int lvl);
 
 
     //basker_util.hpp

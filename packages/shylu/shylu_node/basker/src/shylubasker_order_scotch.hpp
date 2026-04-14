@@ -511,7 +511,7 @@ namespace BaskerNS
       idx_t *vwgt = nullptr;    // contraints (n * num_constraints)
       Int num_leaves = pow(2.0, (double)(num_levels));
       METIS_1DARRAY metis_sep_sizes (BASKER_KOKKOS_NOINIT("metis_isizes_k"), 2*num_doms-1);
-      if (Options.dense_schur == BASKER_TRUE) {
+      if (Options.dense_schur != 0) {
         // Map to push Schur to the end
         METIS_1DARRAY part_map (BASKER_KOKKOS_NOINIT("part_map"), metis_size);
         idx_t n_interior = 0;

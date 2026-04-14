@@ -79,7 +79,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   num_threads = 1;
 #endif
   ShyLUbasker->Options.worker_threads = false;
-  ShyLUbasker->Options.dense_schur = false;
+  ShyLUbasker->Options.dense_schur = 0;
 
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
@@ -134,7 +134,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
       (nthreads < 2, std::runtime_error,
        "ShyLU-Basker dense Schur option requires # of threads (2x # of leaves) to be greater than 1 (" << nthreads << ")");
     #else
-    if (ShyLUbasker->Options.dense_schur) {
+    if (ShyLUbasker->Options.dense_schur != 0) {
         // double the number threads to have one extra level (half of interior/separator blocks are empty at each level)
         if (ShyLUbasker->Options.verbose && this->root_) {
           std::cout << "Amesos2::ShyLUBasker:: increase num threads from " << nthreads << " to " << nthreads*2
@@ -184,7 +184,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
           std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
       // In this case, colptr_, rowind_, nzvals_ are invalid
-      if (ShyLUbasker->Options.dense_schur) {
+      if (ShyLUbasker->Options.dense_schur != 0) {
         info = ShyLUbasker->Symbolic(this->globalNumRows_,
             this->globalNumCols_,
             this->globalNumNonZeros_,
@@ -209,7 +209,7 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
     { //follow original code path if conditions not met
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
       shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
-      if (ShyLUbasker->Options.dense_schur) {
+      if (ShyLUbasker->Options.dense_schur != 0) {
         info = ShyLUbasker->Symbolic(this->globalNumRows_,
             this->globalNumCols_,
             this->globalNumNonZeros_,
@@ -566,7 +566,7 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
 
   if(parameterList->isParameter("GetDenseSchur"))
     {
-      ShyLUbasker->Options.dense_schur = parameterList->get<bool>("GetDenseSchur");
+      ShyLUbasker->Options.dense_schur = parameterList->get<int>("GetDenseSchur");
     }
   if(parameterList->isParameter("SchurPart"))
     {
@@ -646,9 +646,9 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "User-provided padding for the fill ratio");
 
       const local_ordinal_type *dummy_ptr;
-      pl->set("GetDenseSchur", false,
-              "Perform partial factorization to extract dense Schur complement");
-      pl->set("SchurPart",dummy_ptr,
+      pl->set("GetDenseSchur", 0,
+              "Perform partial factorization to extract dense Schur complement (0: no, 1: form + factor Schur, 2: ony form");
+      pl->set("SchurPart", dummy_ptr,
               "Specify rows/columns belonging to Schur complement for partial factorization");
       valid_params = pl;
     }

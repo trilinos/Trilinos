@@ -482,7 +482,7 @@ namespace BaskerNS
    bool crs_transpose_needed_
   )
   {
-    if (Options.dense_schur == BASKER_TRUE) {
+    if (Options.dense_schur != 0) {
       // store schur-part into internal view
       MALLOC_INT_1DARRAY(schur_part, nrow);
       for (Int i=0; i<nrow; i++) schur_part(i) = schur_part_in[i];
@@ -2032,7 +2032,7 @@ namespace BaskerNS
     check_value = 1;
     #endif
     // TODO: can we have nthreads = num leaves (not 2x num-leaves, where half of them are empty)
-    /*if (Options.dense_schur == BASKER_TRUE) {
+    /*if (Options.dense_schur != 0) {
       if (nthreads > 2*check_value) {
         if(Options.verbose == BASKER_TRUE) {
           printf("Basker SetThreads Assert: Number of thread not available (%d > 2*%d). Resetting to %d.",

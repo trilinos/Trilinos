@@ -1128,7 +1128,7 @@ namespace BaskerNS
    const Int size,
    const Int function_n,
    const Int k, 
-   const Int l
+   const Int lvl
   )
   {
     //printf("before call. lkid: %d kid: %d task: %d size: %d k: %d \n",
@@ -1152,7 +1152,7 @@ namespace BaskerNS
          function_n,
          size, 
          k, 
-         l );
+         lvl);
     }
 
     #ifdef HAVE_VTUNE
@@ -1160,6 +1160,38 @@ namespace BaskerNS
     #endif
 
   }//end t_basker_barrier
+
+  template <class Int, class Entry, class Exe_Space>
+  BASKER_INLINE
+  Int Basker<Int,Entry,Exe_Space>::basker_barrier_sep
+  (
+   const TeamMember &thread,
+   const Int my_kid,
+   const Int my_leader,
+   const Int num_threads,
+   const Int size,
+   const Int function_n,
+   const Int k,
+   const Int lvl,
+   const bool flag
+  )
+  {
+    Int info = BASKER_SUCCESS;
+    #ifdef USE_TEAM_BARRIER_NFACTOR_SEP2
+    thread.team_barrier();
+    #else
+    t_basker_barrier(thread, my_kid, my_leader, 
+                     size, function_n, k, lvl);
+    if (flag) {
+      for(Int tid = 0; tid < num_threads; tid++) {
+        if (thread_array(tid).error_type != BASKER_SUCCESS) {
+          info = BASKER_ERROR;
+        }
+      }
+    }
+    #endif
+    return info;
+  }
 
 }//end namespace BaskerNS--functions
 

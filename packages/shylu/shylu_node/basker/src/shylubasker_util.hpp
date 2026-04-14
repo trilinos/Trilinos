@@ -2383,8 +2383,7 @@ namespace BaskerNS
 
     return my_loc;
   }//end find_leader()
-
-
+ 
   //Added print function
   //I like printf because it is not a thread race dependend like 
   //c++ streams, however be may get compiler warnings

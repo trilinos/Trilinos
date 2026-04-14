@@ -1784,7 +1784,7 @@ namespace BaskerNS
     #endif
 
     //SPMV
-    //printf("x_offset: %d \n", x_offset);
+    //printf("x_offset: %d..%d \n", x_offset,x_offset+x_size-1);
     const Entry zero (0.0);
     for(Int i = 0; i < x_size; ++i)
     {
@@ -1821,7 +1821,6 @@ namespace BaskerNS
     }//over all nonzero in left
 
     #ifdef BASKER_2DL
-    //LL(X_col)(X_row).p_size = nnz;
     LL(X_col)(X_row).p_size = nnz;
     #endif
 
