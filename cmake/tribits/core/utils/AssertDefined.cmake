@@ -43,8 +43,8 @@
 # same.  This is the best that can be done in CMake unfortunately to catch
 # usage of misspelled undefined variables.
 #
-function(assert_defined VARS)
-  foreach(VAR ${VARS})
+function(assert_defined)
+  foreach(VAR ${ARGV})
     if(NOT DEFINED ${VAR})
       message(SEND_ERROR "Error, the variable ${VAR} is not defined!")
     endif()
