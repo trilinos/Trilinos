@@ -188,7 +188,6 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
     Tpetra::MMdetails::kokkos_kernels_mult_A_B_newmatrix(
         Aview, Bview, Acol2Brow, Acol2Irow, Bcol2Ccol, Icol2Ccol, C, Cimport, label, params);
   }
-}
 
 #if 0
   {
