@@ -258,16 +258,14 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 /************* FUNCTION DECLARATIONS FOR SIMPLE BASIS FACTORY *********************/
 /**********************************************************************************/
 
-/** \brief  Simple factory that chooses basis function based on cell topology.
+/** \brief  Simple factory that chooses HGRAD basis function based on cell topology.
 
     \param  cellTopology  [in]    Shards cell topology
-    \param  order         [in]    basis function order, currently unused
-    \param  basis         [out]   pointer to Intrepid basis
 
     \return Intrepid basis
  */
-
-int getDimension(const ShardsCellTopology & cellTopology);
+template<typename DeviceType, typename Scalar>
+Teuchos::RCP<Intrepid2::Basis<DeviceType, Scalar, Scalar> > getHGradBasis(const ShardsCellTopology & cellTopology);
 
 /**********************************************************************************/
 /**********************************************************************************/
@@ -669,10 +667,8 @@ int main_(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Select basis from the cell topology
-  int order = 1;
-  spaceDim = getDimension(cellType);
-  auto HGradBasis = Intrepid2::getBasis<Intrepid2::DerivedNodalBasisFamily<device_type> >(cellType, Intrepid2::FUNCTION_SPACE_HGRAD, order);
-
+  spaceDim = cellType.getDimension();
+  auto HGradBasis = getHGradBasis<device_type,SC>(cellType);
 
   int numFieldsG = HGradBasis->getCardinality();
 
@@ -1407,18 +1403,19 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 /**********************************************************************************/
 
 
-int getDimension( const ShardsCellTopology & cellTopology) {
+template<typename DeviceType, typename Scalar>
+Teuchos::RCP<Intrepid2::Basis<DeviceType, Scalar, Scalar> > getHGradBasis( const ShardsCellTopology & cellTopology) {
+  Teuchos::RCP<Intrepid2::Basis<DeviceType, Scalar, Scalar> > r_val;
   switch (cellTopology.getKey()) {
-  case shards::Tetrahedron<4>::key:
-  case shards::Hexahedron<8>::key:
-    return 3;
-  case shards::Triangle<3>::key:
-  case shards::Quadrilateral<4>::key:
-    return 2;
-  default:
-    TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
-			       "Unknown cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4, Quadrilateral_4 or Triangle_3");
+    case shards::Triangle<3>::key:      r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM    <DeviceType,Scalar,Scalar>()); break;
+    case shards::Quadrilateral<4>::key: r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM   <DeviceType,Scalar,Scalar>()); break;
+    case shards::Tetrahedron<4>::key:   r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_TET_C1_FEM    <DeviceType,Scalar,Scalar>()); break;
+    case shards::Hexahedron<8>::key:    r_val = Teuchos::rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM    <DeviceType,Scalar,Scalar>()); break;
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
+              "Unexpected cell topology for basis selction. Please use Hexahedron_8 or Tetrahedron_4, Quadrilateral_4 or Triangle_3");
   }
+  return r_val;
 }
 
 
