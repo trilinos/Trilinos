@@ -10,12 +10,12 @@
 
 # @FUNCTION: assert_defined()
 #
-# Assert that a variable is defined and if not call ``message(SEND_ERROR
+# Assert that one or more variables are defined and if not call ``message(SEND_ERROR
 # ...)``.
 #
 # Usage::
 #
-#   assert_defined(<varName>)
+#   assert_defined(<varName1> [, <varName2>, ...])
 #
 # This is used to get around the problem of CMake not asserting the
 # dereferencing of undefined variables.  For example, how does one know if one
@@ -50,7 +50,3 @@ function(assert_defined)
     endif()
   endforeach()
 endfunction()
-
-# ToDo: The VARS arg This really needs to be replaced with ${ARGV}.  I fear
-# that only the first arg passed in is asserted.  However, to change this now
-# is breaking backward compatibility.
