@@ -211,7 +211,7 @@ namespace BaskerNS
 
     if (Options.no_pivot == BASKER_FALSE) {
       // apply partial pivoting from numeric
-      //for (Int i = 0; i < gn; i++) printf( " gperm(%d) = %d %s\n",i,gperm(i),(gperm(i) < 0 || gperm(i) >= gn ? "(warning)" : "") );
+      //for (Int i = 0; i < gn; i++) printf( " gperm(%d) = %d %s\n",i,gperm(i),(gperm(i) < 0 || gperm(i) >= gn ? "(warning)" : "") ); fflush(stdout);
       permute_inv_with_workspace(x_view_ptr_copy, gperm, gn);
       //printf( " > after partial-pivot:\n" );
       //for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i, x_view_ptr_copy(i),y_view_ptr_copy(i) );
@@ -324,6 +324,7 @@ namespace BaskerNS
     }
     printf("\n\n");
     #endif
+    //printf( "\n solve_interface(%s)\n",(Options.btf == BASKER_FALSE ? "serial" : "btf") ); fflush(stdout);
 
     if(Options.btf == BASKER_FALSE)
     {
@@ -392,6 +393,7 @@ namespace BaskerNS
   {
     #ifdef BASKER_TIMER
     Kokkos::Timer timer;
+    printf("\n serial_btf_solve\n" ); fflush(stdout);
     #endif
     //Start in C and go backwards
     //In first level, only do U\L\x->y
@@ -454,9 +456,6 @@ namespace BaskerNS
     printf( " t1 = [\n" );
     for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x(i),y(i) );
     printf( "];\n\n" );
-    #endif
-
-    #ifdef BASKER_DEBUG_SOLVE_RHS
     printf("Done, BTF-C Solve \n"); fflush(stdout);
     for (Int i = 0; i < gn; i++) printf( " %e %e\n",x(i),y(i));
     printf( "\n");
@@ -496,8 +495,6 @@ namespace BaskerNS
     printf("Done, serial_forward \n"); fflush(stdout);
     for (Int i = 0; i < gn; i++) printf( "%d  %e %e\n",i,x(i),y(i));
     printf( "\n");
-    #endif
-    #ifdef BASKER_DEBUG_SOLVE_RHS
     printf( " t3 = [\n" );
     for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x(i),y(i) );
     printf( "];\n\n" );
@@ -518,8 +515,6 @@ namespace BaskerNS
     printf("Done, serial_backward \n"); fflush(stdout);
     for (Int i = 0; i < gn; i++) printf( " %d %e %e\n",i,x(i),y(i));
     printf( "\n");
-    #endif
-    #ifdef BASKER_DEBUG_SOLVE_RHS
     printf( " t4 = [\n" );
     for (Int i = 0; i < gn; i++) printf( " %d %.16e %.16e\n",i,x(i),y(i) );
     printf( "];\n\n" );
@@ -728,10 +723,19 @@ namespace BaskerNS
     //Forward solve on A
     for(Int b = 0; b < tree.nblks; ++b)
     {
-      BASKER_MATRIX &L = LL(b)(0);
-
       //L\x -> y
-      lower_tri_solve(L, x, y, scol_top);
+      BASKER_MATRIX &L = LL(b)(0);
+      if (b == tree.nblks-1 && Options.dense_schur == 2) {
+        // copy rhs to sol for the top schur complement
+        const Int bcol = L.scol + scol_top;
+        const Int brow = L.scol + scol_top;
+        for(Int k = 0; k < L.ncol; ++k)
+        {
+          y(k+brow) = x(k+bcol);
+        }
+      } else {
+        lower_tri_solve(L, x, y, scol_top);
+      }
       #ifdef BASKER_DEBUG_SOLVE_RHS
       printf("Lower Solve blk (%d, 0): size=(%dx%d) srow=%d, scol=%d\n",b,(int)L.nrow,(int)L.ncol, (int)L.srow,(int)L.scol);
       printf("[\n");
@@ -868,13 +872,23 @@ namespace BaskerNS
     for(Int b = tree.nblks-1; b >=0; b--)
     {
       #ifdef BASKER_DEBUG_SOLVE_RHS
-      printf("Upper solve blk: %d, %d \n", b,LU_size(b)-1);
+      printf("Upper solve blk: LU(%d)(%d) \n", b,LU_size(b)-1);
       #endif
 
       //U\y -> x
       BASKER_MATRIX &U = LU(b)(LU_size(b)-1);
-      upper_tri_solve(U, y, x, scol_top); // NDE: y , x positions swapped...
-                                          //      seems role of x and y changed...
+      if (b == tree.nblks-1 && Options.dense_schur == 2) {
+        // copy rhs to sol for top schur complement
+        const Int bcol = U.scol + scol_top;
+        const Int brow = U.srow + scol_top;
+        for(Int k = U.ncol; k >= 1; k--)
+        {
+          x(k+brow-1) = y(k+bcol-1);
+        }
+      } else {
+        upper_tri_solve(U, y, x, scol_top); // NDE: y , x positions swapped...
+                                            //      seems role of x and y changed...
+      }
       #ifdef BASKER_DEBUG_SOLVE_RHS
       {
         char filename[200];

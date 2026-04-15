@@ -96,7 +96,8 @@ namespace BaskerNS {
     template < typename U >
     BASKER_INLINE
     int Symbolic
-    (Int nrow, Int ncol, typename std::enable_if< !std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx, Int * schur_part, Entry *val, bool _crs_transpose_needed = false)
+    (Int nrow, Int ncol, typename std::enable_if< !std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx,
+     Entry *val, Int * schur_part, Entry *schur_out, bool _crs_transpose_needed = false)
     {
       // NDE: Allocate a new array for the non-matching type; copy into that then pass that along
       matching_type_col_ptr = new Int[ncol+1];
@@ -117,8 +118,9 @@ namespace BaskerNS {
          nnz,
          matching_type_col_ptr,
          row_idx,
-         schur_part,
          val,
+         schur_part,
+         schur_out,
          _crs_transpose_needed
         );
 
@@ -131,7 +133,7 @@ namespace BaskerNS {
     BASKER_INLINE
     int Symbolic
     (Int nrow, Int ncol, typename std::enable_if< std::is_same<Int,U>::value, Int>::type nnz, U *col_ptr, Int *row_idx,
-     Int* schur_part, Entry *val, bool _crs_transpose_needed = false)
+     Entry * val, Int* schur_part, Entry *schur_out, bool _crs_transpose_needed = false)
     {
       int return_value =
         BaskerNS::Basker<Int, Entry, Exe_Space>::Symbolic
@@ -141,8 +143,9 @@ namespace BaskerNS {
          nnz,
          col_ptr,
          row_idx,
-         schur_part,
          val,
+         schur_part,
+         schur_out,
          _crs_transpose_needed
         );
 

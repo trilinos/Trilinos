@@ -80,7 +80,7 @@ namespace BaskerNS
     int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val, bool transpose_needed = false);
 
     BASKER_INLINE
-    int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Int * schur_part_in, Entry *val, bool transpose_needed = false);
+    int Symbolic(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val, Int * schur_part_in, Entry *schur_out, bool transpose_needed = false);
 
     BASKER_INLINE
     int Factor(Int nrow, Int ncol, Int nnz, Int *col_ptr, Int *row_idx, Entry *val);
@@ -1440,7 +1440,11 @@ namespace BaskerNS
     void csymamd_order(BASKER_MATRIX &M, INT_1DARRAY p, INT_1DARRAY cmember);
 
     // partial factorization
+    Int schur_size;
+    Int * schur_part_ptr;
+    Entry * schur_out_ptr;
     INT_1DARRAY schur_part;
+    ENTRY_RANK2DARRAY schur_out;
   };
 
 }//End namespace Basker

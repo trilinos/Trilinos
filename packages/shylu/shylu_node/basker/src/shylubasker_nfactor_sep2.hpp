@@ -264,7 +264,27 @@ namespace BaskerNS
         // ------------------------------------------------------- //
         // > factor the k-th column of LU(U_col)(U_row)
         Entry pivot (0.0);
-        if (lvl < tot_lvl-1 || Options.dense_schur < 2) { // skip if asked to return the last top schur
+        if (lvl == tot_lvl && Options.dense_schur == 2) {
+          // skip if asked to return the last top schur
+          if((kid%(Int)(pow(2,lvl))) == 0) {
+            // > initialize perm
+            const Int U_col = S(lvl)(kid);
+            const Int U_row = LU_size(U_col)-1;
+            BASKER_MATRIX &U = LU(U_col)(U_row); 
+
+            Int   scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
+            const Int brow_a  = U.srow; // offset within A
+            const Int brow_g  = brow_a + scol_top; // global offset
+            gpermi(k+brow_g) = k+brow_g;
+            gperm(k+brow_g) = k+brow_g;
+            // > extract the k-th column of the schur complement
+            BASKER_MATRIX &B = thread_array(kid).C;
+            for(Int i = B.col_ptr(0); i < B.col_ptr(1); ++i)
+            {
+              schur_out(B.row_idx(i), k) = B.val(i);
+            }
+          }
+        } else {
           #ifdef BASKER_TIMER
           timer_faccol.reset();
           #endif
@@ -298,7 +318,6 @@ namespace BaskerNS
                  kid, k, my_leader, b_size, lvl, info); fflush(stdout);
           #endif
 
-
           #ifdef BASKER_TIMER
           time_faccol += timer_faccol.seconds();
           #endif
@@ -306,19 +325,17 @@ namespace BaskerNS
 
         // ------------------------------------------------------- //
         // > factor the k-th column of the off-diagonal blocks
-        if (info == BASKER_SUCCESS) {
+        if (info == BASKER_SUCCESS && (lvl < tot_lvl || Options.dense_schur < 2)) {
           #ifdef BASKER_TIMER
           timer_facoff.reset();
           #endif
 
           #ifdef BASKER_DEBUG_NFACTOR_SEP2
-          printf(" calling lower offdiag factor, kid: %d k: %d \n",
-                 kid, k); fflush(stdout);
+          printf(" calling lower offdiag factor, kid: %d k: %d \n", kid, k); fflush(stdout);
           #endif
           t_lower_col_factor_offdiag2(kid, lvl, lvl-1, k, pivot);
           #ifdef BASKER_DEBUG_NFACTOR_SEP2
-          printf(" done lower offdiag factor, kid: %d k: %d \n",
-                 kid, k); fflush(stdout);
+          printf(" done lower offdiag factor, kid: %d k: %d \n", kid, k); fflush(stdout);
           #endif
 
           // Barrier
@@ -326,7 +343,6 @@ namespace BaskerNS
           b_size    = pow(2, lvl);
           info = basker_barrier_sep(thread, kid, my_leader, num_threads,
                                     b_size, 5, k, lvl-1, false);
-
           #ifdef BASKER_DEBUG_NFACTOR_SEP2
           printf("barrier test-5 done: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d \n",
                  kid, k, my_leader, b_size, lvl); fflush(stdout);
@@ -470,7 +486,7 @@ namespace BaskerNS
 
     // backward-solve on first block
     Int col_idx_offset  = 0;
-    //printf(" + offd, kid: %d ptr = %d:%d (%d)\n", kid, U.col_ptr(k),U.col_ptr(k+1)-1,U.col_ptr(k+1)-U.col_ptr(k));
+    //if (k == 0) printf(" + offd, kid: %d ptr = %d:%d (%d)\n", kid, U.col_ptr(k),U.col_ptr(k+1)-1,U.col_ptr(k+1)-U.col_ptr(k));
     t_dense_back_solve_offdiag(kid,
                                L_col, L_row,
                                X_col, X_row,
@@ -838,7 +854,7 @@ namespace BaskerNS
     
     L_row += (kid-leader_id)+1;
     X_row += (kid-leader_id)+1;
-    //printf( " t_lower_col_factor_offdiag2(kid=%d): L_row = %d .. %d\n",kid,L_row,LL_size(L_col) );
+    //if (k==0) printf( " t_lower_col_factor_offdiag2(kid=%d): L(%d:%d:%d, %d) with X(%d,%d)\n",kid,L_row,lteam_size,LL_size(L_col),L_col, X_row,X_col );
     for( ; 
          L_row < LL_size(L_col);
          X_row+=(lteam_size), L_row+=(lteam_size))
@@ -861,6 +877,7 @@ namespace BaskerNS
       */
 
       //We might still have to do sparse here
+      //if (k==0) printf( " > %d: L(%d,%d) with X(%d,%d)\n",kid, L_row,L_col, X_row,X_col );
       t_dense_back_solve_offdiag(leader_id,
                                  L_col, L_row,
                                  X_col, X_row,

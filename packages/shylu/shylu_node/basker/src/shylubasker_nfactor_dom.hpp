@@ -276,7 +276,7 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      printf(" thread-%ld: >  factoring_blk : b = %d, size = %ld, brow = %ld\n",
+      printf(" thread-%ld: >  factoring_dom : b = %d, size = %ld, brow = %ld\n",
           (long)kid, (int)b, (long)M.ncol, (long)brow_g); fflush(stdout);
     }
     //#define MY_DEBUG_BASKER
@@ -930,8 +930,7 @@ namespace BaskerNS
         }
         //printf( " -> %d:%d: pivot = %e (col_ptr(%d)=%d, %d)\n",league_rank,team_rank, pivot, M.ncol,U.col_ptr(M.ncol),k); fflush(stdout);
 #endif
-
-        //if (kid == 0) printf( "\n blk_row = %d:%d\n",1,LL_size(b)-1 );
+        //if (k == 0) printf( "\n %d: blk_row = %d:%d\n",kid, 1,LL_size(b)-1 );
         // for each row of remainng L, apply the inverse with the k-th column of U
         for(Int blk_row = 1; blk_row < LL_size(b); ++blk_row)
         {

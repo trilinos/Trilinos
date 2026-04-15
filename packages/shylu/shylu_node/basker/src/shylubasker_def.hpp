@@ -477,15 +477,23 @@ namespace BaskerNS
    Int nnz, 
    Int *col_ptr, 
    Int *row_idx, 
-   Int *schur_part_in,
    Entry *val,
+   Int *schur_part_in,
+   Entry *schur_out_in,
    bool crs_transpose_needed_
   )
   {
     if (Options.dense_schur != 0) {
-      // store schur-part into internal view
+      // store schur-part into internal view (in case user-pointer goes out of scope?)
+      schur_size = 0;
       MALLOC_INT_1DARRAY(schur_part, nrow);
-      for (Int i=0; i<nrow; i++) schur_part(i) = schur_part_in[i];
+      for (Int i=0; i<nrow; i++) {
+        schur_part(i) = schur_part_in[i];
+        if (schur_part(i) == 1) schur_size ++;
+      }
+      // allocate storage for schur complement (schur_out_ptr may be nullptr, if user does not want it)
+      MALLOC_ENTRY_RANK2DARRAY(schur_out, schur_size, schur_size);
+      schur_out_ptr = schur_out_in;
 
       Options.amd_dom = 0; // no AMD (since partitioned, and AMD/ND on each leaf)
       Options.btf_matching = -1;  // no global matching

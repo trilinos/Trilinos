@@ -38,6 +38,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   : SolverCore<Amesos2::ShyLUBasker,Matrix,Vector>(A, X, B)
   , is_contiguous_(true)
   , use_gather_(true)
+  , schur_out_ptr(nullptr)
 {
 
   //Nothing
@@ -185,13 +186,15 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
 
       // In this case, colptr_, rowind_, nzvals_ are invalid
       if (ShyLUbasker->Options.dense_schur != 0) {
+        shylubasker_dtype * sp_schur_out = function_map::convert_scalar(schur_out.data());
         info = ShyLUbasker->Symbolic(this->globalNumRows_,
             this->globalNumCols_,
             this->globalNumNonZeros_,
             sp_rowptr.data(),
             sp_colind.data(),
-            schur_part.data(),
             sp_values,
+            schur_part.data(),
+            sp_schur_out,
             true); // true = _crs_transpose_needed
       } else {
         info = ShyLUbasker->Symbolic(this->globalNumRows_,
@@ -210,13 +213,15 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
       shylubasker_dtype * sp_values = function_map::convert_scalar(nzvals_view_.data());
       if (ShyLUbasker->Options.dense_schur != 0) {
+        shylubasker_dtype * sp_schur_out = function_map::convert_scalar(schur_out.data());
         info = ShyLUbasker->Symbolic(this->globalNumRows_,
             this->globalNumCols_,
             this->globalNumNonZeros_,
             colptr_view_.data(),
             rowind_view_.data(),
+            sp_values,
             schur_part.data(),
-            sp_values);
+            sp_schur_out);
       } else {
         info = ShyLUbasker->Symbolic(this->globalNumRows_,
             this->globalNumCols_,
@@ -292,6 +297,16 @@ ShyLUBasker<Matrix,Vector>::numericFactorization_impl()
             colptr_view_.data(),
             rowind_view_.data(),
             sp_values);
+      }
+      if (ShyLUbasker->Options.dense_schur != 0) {
+        if (schur_out_ptr != nullptr) {
+          // copy schur out if the output pointer is valid (assuming enough space has been allocated)
+          for (int i = 0; i < schur_size; i++) {
+            for (int j = 0; j < schur_size; j++) {
+              schur_out_ptr[i+j*schur_size] = schur_out[i+j*schur_size];
+            }
+          }
+        }
       }
 
       //ShyLUbasker->DEBUG_PRINT();
@@ -570,10 +585,21 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
     }
   if(parameterList->isParameter("SchurPart"))
     {
-      // store schur-part to the internal view
+      // copy schur-part to the internal view (in case the user-pointer go out of scope?)
       auto schur_part_ptr = parameterList->get<const local_ordinal_type*>("SchurPart");
       Kokkos::resize(schur_part, this->globalNumCols_);
-      for (int i=0; i<this->globalNumCols_; i++) schur_part(i) = schur_part_ptr[i];
+      schur_size = 0;
+      for (int i=0; i<this->globalNumCols_; i++) {
+        schur_part(i) = schur_part_ptr[i];
+        if (schur_part(i) == 1) schur_size ++;
+      }
+      // allocate internal storage to store the schur complement (user may not want it and may not provide a valid pointer?)
+      Kokkos::resize(schur_out, schur_size*schur_size);
+    }
+  if(parameterList->isParameter("SchurOut"))
+    {
+      // store schur-part to the internal view (if user wants the output, then the pointer should stay, so no need for internal view?)
+      schur_out_ptr = parameterList->get<scalar_type*>("SchurOut");
     }
 }
 
@@ -645,11 +671,15 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
       pl->set("user_fill", (double)BASKER_FILL_USER,
               "User-provided padding for the fill ratio");
 
-      const local_ordinal_type *dummy_ptr;
+      // TODO: should these be const or not
+      scalar_type *dummy_scalar_ptr;
+      const local_ordinal_type *dummy_ordinal_ptr;
       pl->set("GetDenseSchur", 0,
               "Perform partial factorization to extract dense Schur complement (0: no, 1: form + factor Schur, 2: ony form");
-      pl->set("SchurPart", dummy_ptr,
+      pl->set("SchurPart", dummy_ordinal_ptr,
               "Specify rows/columns belonging to Schur complement for partial factorization");
+      pl->set("SchurOut", dummy_scalar_ptr,
+              "Store output Schur complement from partial factorization");
       valid_params = pl;
     }
   return valid_params;

@@ -572,7 +572,7 @@ namespace BaskerNS
     BASKER_MATRIX        &U = LU(U_col)(U_row); 
    
     BASKER_MATRIX        &B = thread_array(kid).C;
-    
+    //if (k==0) printf( " %d: t_lower_col_factor: B = thread_array(%d).C\n",kid,kid );
     #ifdef BASKER_DEBUG_NFACTOR_SEP
     if(kid >= 0)
     {

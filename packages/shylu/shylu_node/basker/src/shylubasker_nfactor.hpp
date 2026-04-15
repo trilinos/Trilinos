@@ -172,6 +172,10 @@ namespace BaskerNS
       // -------------------------------------------------------- //
       // ---------------------------Sep-------------------------- //
       if(info == BASKER_SUCCESS) {
+        if(Options.dense_schur == 2) {
+          // zero out schur complement
+          for (Int i=0; i<schur_size*schur_size; i++) schur_out_ptr[i] = Entry(0.0);
+        }
         #ifdef BASKER_NO_LAMBDA
         for(Int l=1; l <= tree.nlvls; l++)
         {
@@ -247,11 +251,18 @@ namespace BaskerNS
           printf(" > Time INNERSEP %ld: %lf \n", (long int)l, timer_inner_sep.seconds());
           #endif
         }//end over each level
+        if(Options.dense_schur == 2 && schur_out_ptr != nullptr) {
+          // copy out schur complement
+          for (Int i=0; i<schur_size; i++) {
+            for (Int j=0; j<schur_size; j++) schur_out_ptr[i+j*schur_size] = schur_out(i,j);
+          }
+        }
         #else //ELSE BASKER_NO_LAMBDA
         //Note: to be added
         #endif //end BASKER_NO_LAMBDA
         //-------------------------End Sep----------------//
       }// info != BASKER_ERROR
+
       //printf( " End Sep: info = %d (%d, %d)\n",info,BASKER_SUCCESS,BASKER_ERROR );
       if(Options.verbose == BASKER_TRUE)
       {

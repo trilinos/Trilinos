@@ -246,14 +246,17 @@ int main(int argc, char *argv[]) {
     std::cout << solver->description() << std::endl << std::endl;
   }
 
+  int n2 = 0;
+  int dense_schur = 0;
   RCP<ID> SchurPart;
+  Teuchos::Array<Scalar> schurOut;
   if (xml_filename != "") {
     Teuchos::ParameterList test_params = Teuchos::ParameterXMLFileReader(xml_filename).getParameters();
     Teuchos::ParameterList& amesos2_params = test_params.sublist("Amesos2");
     if (Amesos2::tolower (solvername) == "shylubasker") {
       // Partial factorization (only for ShyLU-Basker)
       Teuchos::ParameterList& shylubasker_params = amesos2_params.sublist("ShyLUBasker");
-      int dense_schur = (shylubasker_params.isParameter("GetDenseSchur") ? shylubasker_params.get<int>("GetDenseSchur") : 0);
+      dense_schur = (shylubasker_params.isParameter("GetDenseSchur") ? shylubasker_params.get<int>("GetDenseSchur") : 0);
       if (dense_schur != 0 && myRank == 0) {
         LO indexBase = 0;
         RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::MpiComm<LO>(MPI_COMM_SELF));
@@ -268,6 +271,11 @@ int main(int argc, char *argv[]) {
         }
         Teuchos::ArrayRCP<const LO> schurPart = SchurPart->getData(0);
         shylubasker_params.set("SchurPart", schurPart.getRawPtr());
+
+        // storage for output Schur
+        for (int i=0; i<nrows; i++) if (schurPart[i] == 1) n2 ++;
+        schurOut.resize(n2*n2);
+        shylubasker_params.set("SchurOut", schurOut.getRawPtr());
       }
     }
     *fos << amesos2_params.currentParametersString() << std::endl;
@@ -327,6 +335,14 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE; //everyone should throw on failure
       }
       comm->barrier();
+      if (dense_schur == 2 && myRank == 0 && printMatrix) {
+        printf("S=[\n");
+        for (int i = 0; i < n2; i++) {
+          for (int j = 0; j < n2; j++) printf("%.16e ",schurOut[i+j*n2]);
+          printf("\n");
+        }
+        printf("];\n");
+      }
     }
     // perform solve
     {
