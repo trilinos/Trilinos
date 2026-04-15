@@ -251,6 +251,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
                                  Teuchos::RCP<Tpetra_MultiVector> & b,
                                  Teuchos::RCP<Tpetra_MultiVector> & uh,
 				 Teuchos::RCP<Tpetra_MultiVector> & coords,
+                                 Teuchos::RCP<Tpetra_CrsMatrix>   & MassMatrix,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol);
 
@@ -376,6 +377,12 @@ int main_(int argc, char *argv[]) {
   clp.setOption ("matrixFilename", &matrixFilename, "If nonempty, dump the "
 		  "generated matrix to that file in MatrixMarket format.");
 
+  // If massmatFilename is nonempty, dump the mass matrix to that file
+  // in MatrixMarket format.
+  std::string massmatFilename;
+  clp.setOption ("massmatFilename", &massmatFilename, "If nonempty, dump the "
+		  "generated mass matrix to that file in MatrixMarket format.");
+
   // If rhsFilename is nonempty, dump the rhs to that file
   // in MatrixMarket format.
   std::string rhsFilename;
@@ -394,6 +401,8 @@ int main_(int argc, char *argv[]) {
   clp.setOption ("coordsFilename", &coordsFilename, "If nonempty, dump the "
 		  "generated coordinates to that file in MatrixMarket format.");
 
+  bool buildMassMatrix = false;
+  clp.setOption("buildMassMat", "dontBuildMassMat", &buildMassMatrix, "build a mass matrix");
 
 
   switch (clp.parse(argc, argv)) {
@@ -783,6 +792,8 @@ int main_(int argc, char *argv[]) {
   /**********************************************************************************/
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("5) Matrix/RHS Assembly")));
   RCP<Tpetra_FECrsMatrix> StiffMatrix = rcp(new Tpetra_FECrsMatrix(StiffGraph));
+  RCP<Tpetra_FECrsMatrix> MassMatrix;
+  if (buildMassMatrix) MassMatrix = rcp(new Tpetra_FECrsMatrix(StiffGraph));
 
   // Define desired workset size and count how many worksets there are on this processor's mesh block
   //int desiredWorksetSize = numElems;                   // change to desired workset size!
@@ -801,10 +812,10 @@ int main_(int argc, char *argv[]) {
   }
 
 
-
   // Start assembly
   RCP<Tpetra_FEMultiVector> rhsVector = rcp (new Tpetra_FEMultiVector(globalMapG,StiffGraph->getImporter(),1));
-  Tpetra::beginAssembly(*StiffMatrix,*rhsVector);
+  if (buildMassMatrix) Tpetra::beginAssembly(*MassMatrix,*StiffMatrix,*rhsVector);
+  else  Tpetra::beginAssembly(*StiffMatrix,*rhsVector);
 
   // Right now, this loop only increments once:
   //   numWorkset = 1
@@ -866,6 +877,9 @@ int main_(int argc, char *argv[]) {
 
     // Containers for workset contributions to the discretization matrix and the right hand side
     Intrepid2ScalarView worksetStiffMatrix ("worksetStiffMatrix", worksetSize, numFieldsG, numFieldsG);
+    Intrepid2ScalarView worksetMassMatrix;
+    if (buildMassMatrix)
+      worksetMassMatrix  = Intrepid2ScalarView("worksetMassMatrix" , worksetSize, numFieldsG, numFieldsG);
     Intrepid2ScalarView worksetRHS         ("worksetRHS", worksetSize, numFieldsG);
 
 
@@ -936,6 +950,12 @@ int main_(int argc, char *argv[]) {
                                        worksetBasisValuesWeighted);
 
     /**********************************************************************************/
+    /*                         Compute Mass Matrix                                    */
+    /**********************************************************************************/
+    if (buildMassMatrix)
+       Intrepid2FSTools::integrate(worksetMassMatrix, worksetBasisValues,worksetBasisValuesWeighted);
+
+    /**********************************************************************************/
     /***************************** STATISTICS (Part II) ******************************/
     /**********************************************************************************/
     /*
@@ -973,6 +993,11 @@ int main_(int argc, char *argv[]) {
             Teuchos::Array<SC> val(1); val[0] = operatorMatrixContribution;
             StiffMatrix->sumIntoGlobalValues(globalRow, col(), val());
 
+            if (buildMassMatrix) {
+              double MassMatrixContribution = worksetMassMatrix(worksetCellOrdinal, cellRow, cellCol);
+              Teuchos::Array<SC> massval(1); massval[0] = MassMatrixContribution;
+              MassMatrix->sumIntoGlobalValues(globalRow,  col(), massval());
+            }
           }// end cell col loop
 
         }// end cell row loop
@@ -986,7 +1011,8 @@ int main_(int argc, char *argv[]) {
   }// end workset loop
 
 
-  Tpetra::endAssembly(*StiffMatrix,*rhsVector);
+  if (buildMassMatrix) Tpetra::endAssembly(*MassMatrix,*StiffMatrix,*rhsVector);
+  else Tpetra::endAssembly(*StiffMatrix,*rhsVector);
 
 /**********************************************************************************/
 /***************************** STATISTICS (Part IIb) ******************************/
@@ -1048,6 +1074,9 @@ int main_(int argc, char *argv[]) {
     if (matrixFilename != "") {
       writer_type::writeSparseFile (matrixFilename, StiffMatrix);
     }
+    if ( (massmatFilename != "") && buildMassMatrix ) {
+      writer_type::writeSparseFile (massmatFilename, MassMatrix);
+    }
     if (rhsFilename != "") {
       writer_type::writeDenseFile (rhsFilename, rhsVector);
     }
@@ -1091,12 +1120,17 @@ int main_(int argc, char *argv[]) {
 
   Teuchos::RCP<Tpetra_CrsMatrix> Acrs = Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(StiffMatrix);
   Teuchos::RCP<Tpetra_MultiVector> rhsMV = Teuchos::rcp_dynamic_cast<Tpetra_MultiVector>(rhsVector);
+  Teuchos::RCP<Tpetra_CrsMatrix> Mcrs;
+
+  if (buildMassMatrix) {
+    Mcrs = Teuchos::rcp_dynamic_cast<Tpetra_CrsMatrix>(MassMatrix);
+  }
   tm = Teuchos::null;
   tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("8) Linear solve")));
-  TestMultiLevelPreconditioner(probType,             MLList,
-                               Acrs,                 exactNodalVals,
-                               rhsMV,                lhsVector, nCoord,
-                               TotalErrorResidual,   TotalErrorExactSol);
+  TestMultiLevelPreconditioner(probType,           MLList,
+                               Acrs,               exactNodalVals,
+                               rhsMV,              lhsVector, nCoord, Mcrs,
+                               TotalErrorResidual, TotalErrorExactSol);
 
    // Timer Output
    tm = Teuchos::null;
@@ -1339,6 +1373,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
                                  Teuchos::RCP<Tpetra_MultiVector> & b,
                                  Teuchos::RCP<Tpetra_MultiVector> & uh,
 				 Teuchos::RCP<Tpetra_MultiVector> & coords,
+                                 Teuchos::RCP<Tpetra_CrsMatrix> & MassMatrix,
                                  double & TotalErrorResidual,
                                  double & TotalErrorExactSol)
 {
@@ -1361,6 +1396,10 @@ int TestMultiLevelPreconditioner(char ProblemType[],
     mueluParams = MLList.sublist("MueLu");
   // Xpetrify coordinates
   mueluParams.sublist("user data").set("Coordinates",Xpetra::toXpetra(coords));
+  // Future versions of muelu can use a mass matrix (or a mass matrix inverse)
+  // to define a strength-of-connection matrix that guides coarsening decisions
+  if (!MassMatrix.is_null())
+    mueluParams.sublist("user data").set("M",Xpetra::toXpetra(MassMatrix));
   if(A->getMap()->getComm()->getRank()==0)
     std::cout<<"*** MueLu Params ***" <<std::endl<<mueluParams<<std::endl;
 
