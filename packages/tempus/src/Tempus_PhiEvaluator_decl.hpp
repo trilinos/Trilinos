@@ -38,6 +38,8 @@ class PhiLinearSolver {
   void computeJacobian(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs);
   void applyJacobian(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> Jf, const Teuchos::RCP<const Thyra::VectorBase<Scalar>> f) const;
 
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildL(const Scalar dt);
+
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> buildATilde(const Scalar dt);
   void buildK(const Thyra::Ordinal n);
   void buildb(const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B);
@@ -55,12 +57,12 @@ class PhiLinearSolver {
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> fullMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> lumpedMassMatrix_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > lumpedMassDiagonal_;
-  
+
   // the inverseMassMatrix_ is either lumped, or not, depending on bool lumpMass_
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> inverseMassMatrix_;
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar>> jacobianMatrix_;
-  
+
   // internal variables for extended matrix strategy
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> expMassMatrix_;
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde_;
@@ -158,7 +160,7 @@ class PhiEvaluator
 
   /** \brief  Compute the Phi function of cdt times Jacobian for a linear combination with right hand side vectors Mrhs_B
    *
-   *  The vectors in Mrhs_B are at the index of the vector corresponding to the phi_order of the 
+   *  The vectors in Mrhs_B are at the index of the vector corresponding to the phi_order of the
    *  respective Phi function, Mrhs_b[0] is the rhs for the matrix exponential.
    *  For an implicit model, the right hand side contains a multiplication with the mass matrix M,
    *  which is solved as part of this method.
@@ -167,9 +169,13 @@ class PhiEvaluator
 						 const Scalar cdt,
 						 const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B);
 
+  // TODO: refactor int -> Thyra::Ordinal?
+  //                std::vector -> Teuchos::Array or Teuchos::ArrayRCP or Teuchos::Tuple?
+
  protected:
   std::string name_;
   bool lumpMassMatrix_;
+  bool useAtildeForSingleRHS_;
 
   mutable bool isInitialized_;  ///< Bool if PhiEvaluator is initialized.
 
@@ -186,7 +192,9 @@ class PhiEvaluator
    */
   virtual Thyra::SolveStatus<Scalar> computeLinOpPhi(const int phi_order,
 						     const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-						     const Teuchos::RCP<Thyra::VectorBase<Scalar>> v) = 0;
+						     const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v,
+						     const Scalar cdt=1.0
+						     ) = 0;
 };
 
 }  // namespace Tempus

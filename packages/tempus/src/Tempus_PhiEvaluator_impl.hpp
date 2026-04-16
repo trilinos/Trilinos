@@ -44,13 +44,15 @@ namespace Tempus {
 
 template <class Scalar>
 PhiEvaluator<Scalar>::PhiEvaluator()
-  : name_("Phi Evaluator"), isInitialized_(false), lumpMassMatrix_(false)
+  : PhiEvaluator<Scalar>("Phi Evaluator")
 {
 }
 
 template <class Scalar>
 PhiEvaluator<Scalar>::PhiEvaluator(std::string name)
-  : isInitialized_(false), lumpMassMatrix_(false)
+  : isInitialized_(false),
+    lumpMassMatrix_(false),
+    useAtildeForSingleRHS_(true) // TODO: make this configurable
 {
   setName(name);
 }
@@ -168,7 +170,6 @@ void PhiEvaluator<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluat
 {
   appModel_ = appModel;
 
-  // TODO: read this in from the xml file
   phiLinSolv_ = Teuchos::rcp(new PhiLinearSolver<Scalar>(appModel_, lumpMassMatrix_));
 }
 
@@ -193,19 +194,39 @@ template<class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluator<Scalar>::computePhi(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> x,
 				 const int phi_order, const Scalar cdt,
-				 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> rhs_b)
+				 const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mrhs_b)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     phi_order < 0, std::logic_error,
     "Error - PhiEvaluator::computePhi() phi_order must be non-negative!\n");
 
-  //TODO: Could also invert mass and call
-  //       this->computeLinOpPhi(0, MinvJ, rhs_b);
-  //      This impl is easier but less efficient.
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> rhs_B(phi_order+1);
-  rhs_B[phi_order] = rhs_b;
+  if (useAtildeForSingleRHS_ && phi_order > 0)
+  {
+    // Use linear combination extension formula and matrix exponential
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar>>> Mrhs_B(phi_order+1);
+    Mrhs_B[phi_order] = Mrhs_b;
+    return this->computePhis(x, cdt, Mrhs_B);
+  }
+  else
+  {
+    // Call LinOpPhi directly
 
-  return computePhis(x, cdt, rhs_B);
+    // TODO: move to setLinearizationPoint (have to change PFD solver to use these matrices)
+    this->phiLinSolv_->setLumpMassMatrix(this->lumpMassMatrix_);
+    this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
+    this->phiLinSolv_->computeJacobian(*inArgs_lin_);
+
+    // Invert the mass matrix out of the right hand side and store in x
+    Thyra::assign(x, 0.0);
+    this->phiLinSolv_->solveMass(x, Mrhs_b);
+
+    // Build linop with Jacobian and mass matrix
+    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Lop = this->phiLinSolv_->buildL(cdt);
+
+    // Compute phi-function in place
+    Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(phi_order, Lop, x, cdt);
+    return sStatus;
+  }
 }
 
 
@@ -218,16 +239,17 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
   const int max_phi_order = Mrhs_B.size() - 1;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-      max_phi_order < 1,
+      max_phi_order < 0,
       std::invalid_argument,
-      "Error - PhiEvaluator::computePhis() list of rhs must have at least two entries.");
+      "Error - PhiEvaluator::computePhis() list of rhs must have at least one entry.");
 
-  // support max_phi_order == 0
-  //if (max_phi_order == 0)
-  //{
-  //  return computePhi(x, 0, cdt, Mrhs_B[0]);
-  //}
+  // support max_phi_order == 0 by calling the non-extended solver
+  if (max_phi_order == 0)
+  {
+    return computePhi(x, 0, cdt, Mrhs_B[0]);
+  }
 
+  // TODO: move to setLinearizationPoint (have to change PFD solver to use these matrices)
   this->phiLinSolv_->setLumpMassMatrix(this->lumpMassMatrix_);
   this->phiLinSolv_->computeMassMatrix(*inArgs_lin_);
   this->phiLinSolv_->computeJacobian(*inArgs_lin_);
@@ -266,11 +288,11 @@ PhiEvaluator<Scalar>::computePhis(const Teuchos::Ptr<Thyra::VectorBase<Scalar>> 
   // Build extended matrix
   this->phiLinSolv_->buildK(max_phi_order);
   this->phiLinSolv_->buildb(rhs_B);
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde = this->phiLinSolv_->buildATilde(cdt);
+  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> Atilde = this->phiLinSolv_->buildATilde(cdt);
 
   // Build initial vector and compute matrix exponential in place
   auto v = this->phiLinSolv_->buildv(Atilde->domain(), rhs_B[0]);
-  Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(0, Atilde, v);
+  Thyra::SolveStatus<Scalar> sStatus = this->computeLinOpPhi(0, Atilde, v.ptr(), cdt);
 
   //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   //Atilde->describe(*out, Teuchos::VERB_EXTREME);
@@ -295,12 +317,9 @@ void PhiLinearSolver<Scalar>::setLumpMassMatrix(bool lump)
 
 template <class Scalar>
 void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
-// void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs)
 {
 
   typedef Thyra::ModelEvaluatorBase MEB;
-
-  // MEB::InArgs<Scalar> inArgs = appModel_->getNominalValues();
 
   // first allocate space for the mass matrix
   fullMassMatrix_ = appModel_->create_W_op();
@@ -382,8 +401,17 @@ void PhiLinearSolver<Scalar>::computeMassMatrix(const Thyra::ModelEvaluatorBase:
 }
 
 template <class Scalar>
-Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildATilde(
-    const Scalar dt)   // time step
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildL(const Scalar dt)
+{
+  // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L
+    = Thyra::scale(-dt, Thyra::multiply<Scalar>(inverseMassMatrix_, jacobianMatrix_));
+
+  return L;
+}
+
+template <class Scalar>
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> PhiLinearSolver<Scalar>::buildATilde(const Scalar dt)
 {
   // Combine linear operators M_inv and J and multiply by -dt (minus is for implicit to explicit conversion)
   // Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -591,6 +619,9 @@ Thyra::SolveStatus<Scalar> PhiLinearSolver<Scalar>::solveMpJ(const Thyra::ModelE
 							     const Teuchos::RCP<const Thyra::VectorBase<Scalar>> Mf,
 							     Scalar alpha, Scalar beta) const
 {
+  //TODO: change this method to use existing M and J to support mass lumping.
+  // require computeMass and computeJacobian before invocation.
+
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 

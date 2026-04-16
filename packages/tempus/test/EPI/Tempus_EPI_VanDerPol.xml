@@ -51,9 +51,19 @@
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
       <Parameter name="Predictor Stepper Type" type="string" value="None"/>
 
+      <!--
       <ParameterList name="PhiEvaluator">
-	<Parameter name="Taylor Expansion Order" type="int" value="3"/>
-	<Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
+        <Parameter name="Expansion Order" type="int" value="30"/>
+        <Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
+      </ParameterList>
+      -->
+
+      <ParameterList name="PhiEvaluator">
+        <Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
+        <Parameter name="Expansion Order" type="int" value="100"/>
+        <Parameter name="leja_tol" type="double" value="1e-8"/>
+        <Parameter name="leja_a" type="double" value="-1.0"/>
+        <Parameter name="leja_c" type="double" value="0.5"/>
       </ParameterList>
 
       <ParameterList name="Demo Solver">

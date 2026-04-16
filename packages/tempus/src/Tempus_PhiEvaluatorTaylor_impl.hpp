@@ -33,8 +33,8 @@ PhiEvaluatorTaylor<Scalar>::getValidParameters() const
       "Method to approximate the phi-function evaluation.");
 
   pl->set<int>(
-      "Taylor Expansion Order", 10,
-      "The order of the Taylor expansion used in the EPI stepper.\n"
+      "Expansion Order", 10,
+      "Maximal Taylor expansion used.\n"
       "\n"
       "The default is 10.");
 
@@ -45,14 +45,14 @@ template <class Scalar>
 Thyra::SolveStatus<Scalar>
 PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
 					    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar>> L,
-					    const Teuchos::RCP<Thyra::VectorBase<Scalar>> v)
+					    const Teuchos::Ptr<Thyra::VectorBase<Scalar>> v, const Scalar cdt)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
       phi_order < 0,
       std::invalid_argument,
-      "LinOpPhi: phi_order must be nonnegative");
+      "LinOpPhi: phi_order must be nonnegative.");
 
-  const int expansionOrder = getTaylorExpansionOrder();
+  const int expansionOrder = getExpansionOrder();
 
   // phi_k(L) * v is in range(L)
   const auto rangeSpace = L->range();
@@ -63,8 +63,8 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   for (k = 1; k <= phi_order; ++k)
   {
     inv_factorial /= Scalar(k);
-  }  
-  
+  }
+
   // Iteration vector d_0 = v / (phi_order!)
   Teuchos::RCP<Thyra::VectorBase<Scalar>> d_k = Thyra::createMember(rangeSpace);
 
@@ -72,7 +72,7 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   {
     Thyra::V_StV(d_k.ptr(), inv_factorial, *v);
     // v := d_0
-    Thyra::assign(v.ptr(), *d_k);
+    Thyra::assign(v, *d_k);
   }
   else
   {
@@ -82,9 +82,13 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
   // allocate temporary vector
   Teuchos::RCP<Thyra::VectorBase<Scalar>> next = Thyra::createMember(rangeSpace);
 
+  Scalar norm_d_k = Thyra::norm_inf(*d_k);
+  Scalar overflow = Thyra::norm_inf(*v);
+
   Thyra::SolveStatus<Scalar> sStatus;
-  Scalar norm_d_k;
-  Scalar overflow = 0.;
+  sStatus.achievedTol = norm_d_k;
+  sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
+
   // Iteratively compute d_k = (L^(k-phi_order) d_{k-1}) / (k!) and add to result
   for (k = phi_order + 1; k <= expansionOrder + phi_order; ++k)
   {
@@ -96,7 +100,7 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
     Thyra::V_StV(d_k.ptr(), Scalar(1.) / Scalar(k), *next);
 
     // add d_k to the final result
-    Thyra::Vp_V(v.ptr(), *d_k);
+    Thyra::Vp_V(v, *d_k);
 
     norm_d_k = Thyra::norm_inf(*d_k);
 
@@ -118,15 +122,6 @@ PhiEvaluatorTaylor<Scalar>::computeLinOpPhi(const int phi_order,
     if (norm_d_k < overflow / cutoff)
     {
       sStatus.achievedTol = norm_d_k;
-      sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
-      break;
-    }
-
-    // set status if expansionOrder has been reached
-    if (k >= expansionOrder)
-    {
-      sStatus.achievedTol = norm_d_k;
-      //sStatus.solveStatus = Thyra::SOLVE_STATUS_UNKNOWN;
       sStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
       break;
     }
@@ -152,10 +147,14 @@ void PhiEvaluatorTaylor<Scalar>::setPhiEvaluatorValues(
 
   //pl->validateParametersAndSetDefaults(*getValidParameters());
 
-  setTaylorExpansionOrder(pl->get<int>("Taylor Expansion Order", 10));
+  setExpansionOrder(pl->get<int>("Expansion Order", 10));
 
-  std::cout << "\nParameter List: " << *pl << std::endl;
-  std::cout << "Taylor Expansion Order is " << getTaylorExpansionOrder() << std::endl;
+  // TODO: make this configurable?
+  this->useAtildeForSingleRHS_ = false;
+
+  std::cout << "\nuseAtildeForSingleRHS_: " << this->useAtildeForSingleRHS_ << std::endl;
+  std::cout << "Parameter List: " << *pl << std::endl;
+  std::cout << "Expansion Order is " << getExpansionOrder() << std::endl;
 }
 
 
