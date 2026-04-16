@@ -318,6 +318,7 @@ GTEST_DISABLE_MSC_WARNINGS_POP_()  //  4251
 #include <wctype.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <iomanip>
 #include <limits>
 #include <list>
