@@ -25,9 +25,15 @@ enum LpType {
 struct LejaPoint {
   // TODO: how does std::complex<double> interact with Scalar. Leja points are always complex.
   //       Template this on the Scalar tye and get the appropriate complex Scalar types?
+
+  // A Leja point is based on a point on the complex plane.
   std::complex<double> lp;
+  // LPREAL means that lp is supposed to be real, any imaginary component must be disregarded.
+  // LPCPLX means that lp is complex.
+  // LPCONJ means that lp is complex, and represents a conjugate pair, both lp and std::conj(lp).
   LpType lpt;
 
+  // get the list of sanitized and expanded Leja points
   std::vector<std::complex<double>> get()
   {
     std::vector<std::complex<double>> out;

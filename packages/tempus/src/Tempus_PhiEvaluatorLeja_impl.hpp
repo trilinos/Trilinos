@@ -456,17 +456,17 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     // conj lp case
     if (lp_sc.lpt == LPCONJ) {
       if (dd_idx == m) break;
-      Hm(dd_idx, dd_idx) = cdt*lp_sc.get().at(0);
+      Hm(dd_idx, dd_idx) = cdt*lp_sc.lp;
       if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = cdt*scale;
       dd_idx += 1;
       if (dd_idx == m) break;
-      Hm(dd_idx, dd_idx) = cdt*lp_sc.get().at(1);
+      Hm(dd_idx, dd_idx) = cdt*std::conj(lp_sc.lp);
       if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = cdt*scale;
       dd_idx += 1;
     }
     else {
       if (dd_idx == m) break;
-      Hm(dd_idx, dd_idx) = cdt*lp_sc.get().at(0);
+      Hm(dd_idx, dd_idx) = cdt*lp_sc.lp;
       if (dd_idx+1 < m) Hm(dd_idx+1, dd_idx) = cdt*scale;
       dd_idx += 1;
     }
