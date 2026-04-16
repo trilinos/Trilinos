@@ -2,7 +2,7 @@ find_package(ROCSPARSE)
 if(ROCSPARSE_FOUND)
 
   get_target_property(kk_rocsparse_include_dir_list roc::rocsparse INTERFACE_INCLUDE_DIRECTORIES)
-  list(GET kk_rocsparse_include_dir_list 0 ROCSPARSE_INCLUDE_DIRS)
+  set(ROCSPARSE_INCLUDE_DIRS ${kk_rocsparse_include_dir_list})
 
   set(kk_rocsparse_config "")
   get_target_property(kk_rocsparse_configs roc::rocsparse IMPORTED_CONFIGURATIONS)

@@ -2,7 +2,7 @@ find_package(CUDAToolkit)
 
 if(CUDAToolkit_FOUND)
   get_target_property(kk_cusparse_include_dir_list CUDA::cusparse INTERFACE_INCLUDE_DIRECTORIES)
-  list(GET kk_cusparse_include_dir_list 0 kk_cusparse_include_dir)
+  set(kk_cusparse_include_dir ${kk_cusparse_include_dir_list})
   get_target_property(kk_cusparse_library CUDA::cusparse IMPORTED_LOCATION)
   get_filename_component(kk_cusparse_library_dir ${kk_cusparse_library} DIRECTORY)
   kokkoskernels_find_imported(CUSPARSE INTERFACE

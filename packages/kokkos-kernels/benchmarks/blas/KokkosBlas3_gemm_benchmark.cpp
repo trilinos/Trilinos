@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
   // or -1, for no such selection
   const int device_id = params.use_cuda
                             ? params.use_cuda - 1
-                            : (params.use_sycl ? params.use_sycl - 1 : (params.use_hip ? params.use_hip - 1 : -1));
+                            : (params.use_sycl ? params.use_sycl - 1 : (params.use_hip ? params.use_hip - 1 : 0));
 
   Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
   benchmark::Initialize(&argc, argv);

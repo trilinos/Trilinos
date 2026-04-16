@@ -20,7 +20,7 @@
 #define KOKKOSKERNELS_KOKKOSBLAS_GEMV_TEST_RPS_HPP
 
 #include <Kokkos_Core.hpp>
-#include "blas/KokkosBlas1_dot.hpp"
+#include "KokkosBlas1_dot.hpp"
 #include <Kokkos_Random.hpp>
 
 // These headers are required for RPS perf test implementation

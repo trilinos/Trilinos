@@ -141,10 +141,15 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map, const Entries
   nnz_lno_view_host_t lnchunks       = thandle.get_level_nchunks();
   nnz_lno_view_host_t lnrowsperchunk = thandle.get_level_nrowsperchunk();
 
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   using memory_space = typename IlukHandle::memory_space;
   size_t avail_byte  = 0;
-  if (std::is_same<memory_space, Kokkos::CudaSpace>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
+  if (std::is_same<memory_space, Kokkos::CudaSpace>::value)
+#elif defined(KOKKOS_ENABLE_HIP)
+  if (std::is_same<memory_space, Kokkos::HIPSpace>::value)
+#endif
+  {
     size_t free_byte, total_byte;
     KokkosKernels::Impl::kk_get_free_total_memory<memory_space>(free_byte, total_byte);
     avail_byte = static_cast<size_t>(0.85 * static_cast<double>(free_byte) / static_cast<double>(nstreams));
@@ -158,9 +163,14 @@ void level_sched_tp(IlukHandle& thandle, const RowMapType row_map, const Entries
     if (maxrows < lnrows) {
       maxrows = lnrows;
     }
-#ifdef KOKKOS_ENABLE_CUDA
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     size_t required_size = static_cast<size_t>(lnrows) * nrows * sizeof(nnz_lno_t);
-    if (std::is_same<memory_space, Kokkos::CudaSpace>::value) {
+#if defined(KOKKOS_ENABLE_CUDA)
+    if (std::is_same<memory_space, Kokkos::CudaSpace>::value)
+#elif defined(KOKKOS_ENABLE_HIP)
+    if (std::is_same<memory_space, Kokkos::HIPSpace>::value)
+#endif
+    {
       lnchunks(i)       = required_size / avail_byte + 1;
       lnrowsperchunk(i) = (lnrows % lnchunks(i) == 0) ? (lnrows / lnchunks(i)) : (lnrows / lnchunks(i) + 1);
     } else

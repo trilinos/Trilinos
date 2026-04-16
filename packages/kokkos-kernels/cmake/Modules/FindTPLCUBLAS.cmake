@@ -2,7 +2,7 @@ find_package(CUDAToolkit)
 
 if(CUDAToolkit_FOUND)
   get_target_property(kk_cublas_include_dir_list CUDA::cublas INTERFACE_INCLUDE_DIRECTORIES)
-  list(GET kk_cublas_include_dir_list 0 kk_cublas_include_dir)
+  set(kk_cublas_include_dir ${kk_cublas_include_dir_list})
   get_target_property(kk_cublas_library CUDA::cublas IMPORTED_LOCATION)
   get_filename_component(kk_cublas_library_dir ${kk_cublas_library} DIRECTORY)
   kokkoskernels_find_imported(CUBLAS INTERFACE

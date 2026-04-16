@@ -1305,9 +1305,8 @@ KOKKOS_INLINE_FUNCTION T *alignPtrTo(InPtr *p) {
 }  // namespace KokkosKernels
 
 // Define the identity for array_sum_reduce
-namespace Kokkos {
 template <typename scalar_t, int N>
-struct reduction_identity<KokkosKernels::Impl::array_sum_reduce<scalar_t, N>> {
+struct Kokkos::reduction_identity<KokkosKernels::Impl::array_sum_reduce<scalar_t, N>> {
   typedef KokkosKernels::Impl::array_sum_reduce<scalar_t, N> T;
   KOKKOS_FORCEINLINE_FUNCTION static T sum() {
     // default constructor default-initializes each element (this should always
@@ -1315,6 +1314,5 @@ struct reduction_identity<KokkosKernels::Impl::array_sum_reduce<scalar_t, N>> {
     return T();
   }
 };
-}  // namespace Kokkos
 
 #endif

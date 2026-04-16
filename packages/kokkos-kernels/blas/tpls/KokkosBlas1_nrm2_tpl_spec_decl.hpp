@@ -313,7 +313,9 @@ namespace Impl {
       if (numElems <= static_cast<size_type>(std::numeric_limits<std::int64_t>::max())) {                             \
         nrm2_print_specialization<RV, XV>();                                                                          \
         const std::int64_t N = static_cast<std::int64_t>(numElems);                                                   \
-        TPL_NRM2(space.sycl_queue(), N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1, &R());                        \
+        Kokkos::View<typename RV::value_type, MEMSPACE> device_result("device_result");                               \
+        TPL_NRM2(space.sycl_queue(), N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1, device_result.data());        \
+        Kokkos::deep_copy(R, device_result);                                                                          \
         if (!take_sqrt) R() = R() * R();                                                                              \
       } else {                                                                                                        \
         Nrm2<EXECSPACE, RV, XV, 1, false, ETI_SPEC_AVAIL>::nrm2(space, R, X, take_sqrt);                              \

@@ -2,7 +2,7 @@ find_package(ROCBLAS)
 if(ROCBLAS_FOUND)
 
   get_target_property(kk_rocblas_include_dir_list roc::rocblas INTERFACE_INCLUDE_DIRECTORIES)
-  list(GET kk_rocblas_include_dir_list 0 ROCBLAS_INCLUDE_DIRS)
+  set(ROCBLAS_INCLUDE_DIRS ${kk_rocblas_include_dir_list})
 
   set(kk_rocblas_config "")
   get_target_property(kk_rocblas_configs roc::rocblas IMPORTED_CONFIGURATIONS)
