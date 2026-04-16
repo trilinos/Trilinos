@@ -452,6 +452,13 @@ struct TestReducers {
     auto h_values        = Kokkos::create_mirror_view(values);
     Scalar reference_sum = 0;
 
+// FIXME spurious warnings like
+// error: 'SR.14123' may be used uninitialized [-Werror=maybe-uninitialized]
+#if defined(KOKKOS_COMPILER_GNU) && KOKKOS_COMPILER_GNU >= 1500
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
     for (int i = 0; i < N; i++) {
       int denom = sizeof(Scalar) <= 2 ? 10 : 100;
       // clang-format off
@@ -472,6 +479,13 @@ struct TestReducers {
       h_values(i) = (Scalar)((rand() % denom) & mask);
       reference_sum += h_values(i);
     }
+
+// FIXME spurious warnings like
+// error: 'SR.14123' may be used uninitialized [-Werror=maybe-uninitialized]
+#if defined(KOKKOS_COMPILER_GNU) && KOKKOS_COMPILER_GNU >= 1500
+#pragma GCC diagnostic pop
+#endif
+
     Kokkos::deep_copy(values, h_values);
 
     SumFunctor f;

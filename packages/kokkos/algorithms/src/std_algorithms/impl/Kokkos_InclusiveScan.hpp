@@ -59,7 +59,11 @@
 #include <thrust/scan.h>
 #pragma pop_macro("_CubLog")
 #else
+#if CUDA_VERSION >= 13010
+#include <cuda/std/iterator>
+#else
 #include <thrust/distance.h>
+#endif
 #include <thrust/scan.h>
 #endif
 
@@ -166,7 +170,11 @@ OutputIteratorType inclusive_scan_default_op_exespace_impl(
 
   Kokkos::Profiling::popRegion();
 
+#if CUDA_VERSION >= 13010
+  const auto num_elements = cuda::std::distance(first_from, last_from);
+#else
   const auto num_elements = thrust::distance(first_from, last_from);
+#endif
 
   return first_dest + num_elements;
 }
@@ -252,7 +260,11 @@ OutputIteratorType inclusive_scan_custom_binary_op_exespace_impl(
 
   Kokkos::Profiling::popRegion();
 
+#if CUDA_VERSION >= 13010
+  const auto num_elements = cuda::std::distance(first_from, last_from);
+#else
   const auto num_elements = thrust::distance(first_from, last_from);
+#endif
 
   return first_dest + num_elements;
 }

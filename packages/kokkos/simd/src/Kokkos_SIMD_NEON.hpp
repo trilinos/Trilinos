@@ -437,6 +437,11 @@ class basic_simd<double, simd_abi::neon_fixed_size<2>> {
       case 1: return vgetq_lane_f64(m_value, 1);
       default: Kokkos::abort("Index out of bound"); break;
     }
+// missing return statement warning with cuda >= 12.9
+#if defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC >= 1290) && \
+    defined(KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK)
+    return value_type{};
+#endif
   }
 
   KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd operator-() const noexcept {
@@ -689,6 +694,10 @@ class basic_simd<float, simd_abi::neon_fixed_size<2>> {
       case 1: return vget_lane_f32(m_value, 1);
       default: Kokkos::abort("Index out of bound"); break;
     }
+#if defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC >= 1290) && \
+    defined(KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK)
+    return value_type{};
+#endif
   }
 
   KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd operator-() const noexcept {
@@ -937,6 +946,10 @@ class basic_simd<float, simd_abi::neon_fixed_size<4>> {
       case 3: return vgetq_lane_f32(m_value, 3);
       default: Kokkos::abort("Index out of bound"); break;
     }
+#if defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC >= 1290) && \
+    defined(KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK)
+    return value_type{};
+#endif
   }
 
   KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd operator-() const noexcept {
@@ -1182,6 +1195,10 @@ class basic_simd<std::int32_t, simd_abi::neon_fixed_size<2>> {
       case 1: return vget_lane_s32(m_value, 1);
       default: Kokkos::abort("Index out of bound"); break;
     }
+#if defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC >= 1290) && \
+    defined(KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK)
+    return value_type{};
+#endif
   }
 
   KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd operator-() const noexcept {
@@ -1389,6 +1406,10 @@ class basic_simd<std::int32_t, simd_abi::neon_fixed_size<4>> {
       case 3: return vgetq_lane_s32(m_value, 3);
       default: Kokkos::abort("Index out of bound"); break;
     }
+#if defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC >= 1290) && \
+    defined(KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK)
+    return value_type{};
+#endif
   }
 
   KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd operator-() const noexcept {
@@ -1590,6 +1611,10 @@ class basic_simd<std::int64_t, simd_abi::neon_fixed_size<2>> {
       case 1: return vgetq_lane_s64(m_value, 1);
       default: Kokkos::abort("Index out of bound"); break;
     }
+#if defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC >= 1290) && \
+    defined(KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK)
+    return value_type{};
+#endif
   }
 
   KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION basic_simd operator-() const noexcept {
@@ -1792,6 +1817,10 @@ class basic_simd<std::uint64_t, simd_abi::neon_fixed_size<2>> {
       case 1: return vgetq_lane_u64(m_value, 1);
       default: Kokkos::abort("Index out of bound"); break;
     }
+#if defined(KOKKOS_COMPILER_NVCC) && (KOKKOS_COMPILER_NVCC >= 1290) && \
+    defined(KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK)
+    return value_type{};
+#endif
   }
 
   KOKKOS_IMPL_HOST_FORCEINLINE_FUNCTION friend basic_simd operator-(
