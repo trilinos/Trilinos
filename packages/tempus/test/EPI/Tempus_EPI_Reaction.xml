@@ -1,13 +1,13 @@
-<ParameterList name="ForwardEuler_SinCos">
-  <ParameterList name="SinCosModel">
+<ParameterList name="EPI_Reaction">
+  <ParameterList name="ReactionModel">
     <Parameter name="Accept model parameters"    type="bool" value="false"/>
     <Parameter name="Provide nominal values"     type="bool" value="true"/>
-    <Parameter name="Coeff a" type="double" value="0.0"/>
-    <!--<Parameter name="Coeff f" type="double" value="1.5707963267948966"/>-->
-    <Parameter name="Coeff f" type="double" value="1.0"/>
-    <Parameter name="Coeff L" type="double" value="1.0"/>
-    <Parameter name="IC x0"   type="double" value="0.0"/>
-    <Parameter name="IC x1"   type="double" value="1.0"/>
+    <Parameter name="Coeff L1" type="double" value="1.0"/>
+    <Parameter name="Coeff L2" type="double" value="0.1"/>
+    <Parameter name="Coeff L3" type="double" value="0.01"/>
+    <Parameter name="IC x0"   type="double" value="1.0"/>
+    <Parameter name="IC x1"   type="double" value="0.0"/>
+    <Parameter name="IC x2"   type="double" value="0.0"/>
     <Parameter name="IC t0"   type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
@@ -28,8 +28,8 @@
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
-        <Parameter name="Initial Time Step"      type="double" value="1."/>
-        <Parameter name="Maximum Time Step"      type="double" value="1."/>
+        <Parameter name="Initial Time Step"      type="double" value="0.1"/>
+        <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Output Time List"       type="string" value=""/>
@@ -51,18 +51,9 @@
       <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
       <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
 
-      <!--
       <ParameterList name="PhiEvaluator">
         <Parameter name="PhiEvaluator Type" type="string" value="Taylor"/>
-        <Parameter name="Expansion Order" type="int" value="20"/>
-      </ParameterList>
-      -->
-
-      <ParameterList name="PhiEvaluator">
-        <Parameter name="PhiEvaluator Type" type="string" value="Leja"/>
-        <Parameter name="Expansion Order" type="int" value="30"/>
-        <Parameter name="leja_a" type="double" value="-1.0e-2"/>
-        <Parameter name="leja_c" type="double" value="1.0"/>
+        <Parameter name="Expansion Order" type="int" value="16"/>
       </ParameterList>
 
       <Parameter name="Solver Name"    type="string" value="Demo Solver"/>
