@@ -87,7 +87,7 @@ public:
   FieldDataBytes();
   FieldDataBytes(EntityRank entityRank, Ordinal fieldOrdinal, const std::string& fieldName,
                  const DataTraits& dataTraits, Layout dataLayout);
-  virtual ~FieldDataBytes() override = default;
+  KOKKOS_FUNCTION virtual ~FieldDataBytes() override {}
 
   FieldDataBytes(const FieldDataBytes& fieldData) = default;
   FieldDataBytes(FieldDataBytes&&) = default;
