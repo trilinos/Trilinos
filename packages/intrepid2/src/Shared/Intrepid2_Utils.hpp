@@ -335,6 +335,25 @@ namespace Intrepid2 {
   };
 
 
+  template <class DataType, class... Properties>
+  KOKKOS_INLINE_FUNCTION auto
+  as_scalar_1d_view(const Kokkos::View<DataType, Properties...> &view) {
+    using view_t = Kokkos::View<DataType, Properties...>;
+#ifdef HAVE_INTREPID2_SACADO
+    if constexpr (Kokkos::is_view_fad<view_t>::value) {
+      return Sacado::as_scalar_view(view);
+    } else
+#endif
+    return Kokkos::View<typename view_t::value_type*, Properties...>(view.data(), view.mapping().required_span_size());
+  }
+
+  template <class... Args>
+  KOKKOS_INLINE_FUNCTION auto
+  as_scalar_1d_view(const Kokkos::DynRankView<Args...> &dyn) {
+    return as_scalar_1d_view(dyn.ConstDownCast());
+  }
+
+
   namespace Impl
   {
     //! @brief Factory to create a view based on the properties of input views
