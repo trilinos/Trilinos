@@ -1201,15 +1201,7 @@ TEST(TEST_CATEGORY, then_host) {
     });
     // clang-format on
 
-    // The SYCL host node moves the functor, but the functor's view is not
-    // properly moved. So we get one more reference count.
-#if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_IMPL_SYCL_GRAPH_SUPPORT) && \
-    defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
-    constexpr size_t expt_use_count =
-        1 + 1 + std::is_same_v<TEST_EXECSPACE, Kokkos::SYCL>;
-#else
-      constexpr size_t expt_use_count = 1 + 1;
-#endif
+    constexpr size_t expt_use_count = 1 + 1;
     ASSERT_EQ(counter.use_count(), expt_use_count);
 
     using namespace Kokkos::Test::Tools;
@@ -1271,15 +1263,7 @@ void test_mixed_host_device_nodes();
       });
       // clang-format on
 
-      // The SYCL host node moves the functor, but the functor's view is not
-      // properly moved. So we get one more reference count.
-#if defined(KOKKOS_ENABLE_SYCL) && defined(KOKKOS_IMPL_SYCL_GRAPH_SUPPORT) && \
-    defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
-      constexpr size_t expt_use_count =
-          1 + 3 + std::is_same_v<TEST_EXECSPACE, Kokkos::SYCL>;
-#else
       constexpr size_t expt_use_count = 1 + 3;
-#endif
       ASSERT_EQ(counter.use_count(), expt_use_count);
 
       graph.submit(exec);

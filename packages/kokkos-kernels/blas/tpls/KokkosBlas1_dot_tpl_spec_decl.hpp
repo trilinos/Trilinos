@@ -233,8 +233,10 @@ namespace Impl {
       if (numElems <= static_cast<size_type>(std::numeric_limits<std::int64_t>::max())) {                            \
         dot_print_specialization<RV, XV, XV>();                                                                      \
         const std::int64_t N = static_cast<std::int64_t>(numElems);                                                  \
+        Kokkos::View<typename RV::value_type, MEMSPACE> device_result("device_result");                              \
         TPL_DOT(exec.sycl_queue(), N, reinterpret_cast<const TPL_TYPE*>(X.data()), 1,                                \
-                reinterpret_cast<const TPL_TYPE*>(Y.data()), 1, reinterpret_cast<TPL_TYPE*>(&R()));                  \
+                reinterpret_cast<const TPL_TYPE*>(Y.data()), 1, reinterpret_cast<TPL_TYPE*>(device_result.data()));  \
+        Kokkos::deep_copy(R, device_result);                                                                         \
       } else {                                                                                                       \
         Dot<EXECSPACE, RV, XV, XV, 1, 1, false, ETI_SPEC_AVAIL>::dot(exec, R, X, Y);                                 \
       }                                                                                                              \

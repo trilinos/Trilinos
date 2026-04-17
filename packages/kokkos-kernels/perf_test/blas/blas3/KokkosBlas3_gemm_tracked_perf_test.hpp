@@ -22,7 +22,7 @@
 #define KOKKOSKERNELS_KOKKOSBLAS_GEMM_TEST_RPS_HPP
 
 #include <Kokkos_Core.hpp>
-#include "blas/KokkosBlas3_gemm.hpp"
+#include "KokkosBlas3_gemm.hpp"
 #include <Kokkos_Random.hpp>
 
 // These headers are required for RPS tracked perf testing

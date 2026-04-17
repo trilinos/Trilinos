@@ -1,4 +1,33 @@
 # Change Log
+## [4.7.04](https://github.com/kokkos/kokkos-kernels/tree/4.7.04)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.03...4.7.04)
+
+### Bug Fixes and Improvements:
+- Prefer bit manipulation functions from Kokkos Core [\#2786](https://github.com/kokkos/kokkos-kernels/pull/2786)
+
+## [4.7.03](https://github.com/kokkos/kokkos-kernels/tree/4.7.03)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.02...4.7.03)
+
+### Bug Fixes and Improvements:
+- Some changes in SPILUK symbolic and numeric [\#2887](https://github.com/kokkos/kokkos-kernels/pull/2887)
+- Reduce spiluk test matrix sizes [\#2897](https://github.com/kokkos/kokkos-kernels/pull/2897)
+- Add missing `popRegion()` [\#2863](https://github.com/kokkos/kokkos-kernels/pull/2863)
+- Fix template argument in sort_and_merge_graph [\#2918](https://github.com/kokkos/kokkos-kernels/pull/2918)
+- swap: add missing include [\#2984](https://github.com/kokkos/kokkos-kernels/pull/2984)
+- Transpose improvement [\#2904](https://github.com/kokkos/kokkos-kernels/pull/2904)
+- Common - ExecUtils: fix pre-processor warning [\#2996](https://github.com/kokkos/kokkos-kernels/pull/2996)
+- Fix FindTPLCUBLAS.cmake and friends [\#2956](https://github.com/kokkos/kokkos-kernels/pull/2956)
+- Fixed blas includes [\#2776](https://github.com/kokkos/kokkos-kernels/pull/2776)
+- Avoid opening the Kokkos namespace [\#2800](https://github.com/kokkos/kokkos-kernels/pull/2800)
+- Kokkos Batched InnerTrsm: Allocate in inner scope to avoid warnings with Sacado types [\#2810](https://github.com/kokkos/kokkos-kernels/pull/2810)
+- Fix batched assertions [\#2853](https://github.com/kokkos/kokkos-kernels/pull/2853)
+- Define Fortran interface macros for LAPACK [\#2802](https://github.com/kokkos/kokkos-kernels/pull/2802)
+
+## [4.7.02](https://github.com/kokkos/kokkos-kernels/tree/4.7.02)
+[Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.01...4.7.02)
+
+### Bug Fixes:
+- Fix SYCL issues with MKL on Aurora [\#2865](https://github.com/kokkos/kokkos-kernels/pull/2865)
 
 ## [4.7.01](https://github.com/kokkos/kokkos-kernels/tree/4.7.01)
 [Full Changelog](https://github.com/kokkos/kokkos-kernels/compare/4.7.00...4.7.01)

@@ -353,12 +353,12 @@ struct SpilukTest {
 
   static void run_test_spiluk_scale() {
     // Create a diagonally dominant sparse matrix to test:
-    constexpr auto nrows         = 5000;
+    constexpr auto nrows         = 300;
     constexpr auto diagDominance = 2;
 
     size_type nnz = 10 * nrows;
     auto A        = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(nrows, nrows, nnz, 0,
-                                                                                    lno_t(0.01 * nrows), diagDominance);
+                                                                                    lno_t(0.05 * nrows), diagDominance);
 
     KokkosSparse::sort_crs_matrix(A);
 
@@ -379,7 +379,7 @@ struct SpilukTest {
 
   static void run_test_spiluk_scale_blocks() {
     // Create a diagonally dominant sparse matrix to test:
-    constexpr auto nrows         = 5000;
+    constexpr auto nrows         = 300;
     constexpr auto diagDominance = 2;
 
     RowMapType brow_map;
@@ -390,7 +390,7 @@ struct SpilukTest {
 
     size_type nnz = 10 * nrows;
     auto A        = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(nrows, nrows, nnz, 0,
-                                                                                    lno_t(0.01 * nrows), diagDominance);
+                                                                                    lno_t(0.05 * nrows), diagDominance);
 
     KokkosSparse::sort_crs_matrix(A);
 
@@ -646,7 +646,7 @@ struct SpilukTest {
     // Create a diagonally dominant sparse matrix to test:
     using sp_matrix_type = std::conditional_t<UseBlocks, Bsr, Crs>;
 
-    constexpr auto nrows         = 5000;
+    constexpr auto nrows         = 300;
     constexpr auto m             = 15;
     constexpr auto diagDominance = 2;
     constexpr auto tol           = 1e-5;
@@ -666,7 +666,7 @@ struct SpilukTest {
 
     size_type nnz    = 10 * nrows;
     auto A_unblocked = KokkosSparse::Impl::kk_generate_diagonally_dominant_sparse_matrix<Crs>(
-        nrows, nrows, nnz, 0, lno_t(0.01 * nrows), diagDominance);
+        nrows, nrows, nnz, 0, lno_t(0.05 * nrows), diagDominance);
 
     KokkosSparse::sort_crs_matrix(A_unblocked);
 

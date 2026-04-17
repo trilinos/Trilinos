@@ -2,7 +2,7 @@ find_package(ROCSOLVER)
 if(ROCSOLVER_FOUND)
 
   get_target_property(kk_rocsolver_include_dir_list roc::rocsolver INTERFACE_INCLUDE_DIRECTORIES)
-  list(GET kk_rocsolver_include_dir_list 0 ROCSOLVER_INCLUDE_DIRS)
+  set(ROCSOLVER_INCLUDE_DIRS ${kk_rocsolver_include_dir_list})
 
   set(kk_rocsolver_config "")
   get_target_property(kk_rocsolver_configs roc::rocsolver IMPORTED_CONFIGURATIONS)

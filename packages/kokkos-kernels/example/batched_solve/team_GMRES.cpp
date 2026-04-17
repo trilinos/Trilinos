@@ -160,6 +160,7 @@ struct Functor_TestBatchedTeamVectorGMRES {
     timer.reset();
     Kokkos::parallel_for(name.c_str(), policy, *this);
     exec_space().fence();
+    Kokkos::Profiling::popRegion();
     double sec = timer.seconds();
 
     return sec;

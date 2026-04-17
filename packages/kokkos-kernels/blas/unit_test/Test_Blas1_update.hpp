@@ -248,6 +248,7 @@ TEST_F(TestCategory, update_mv_float) {
 TEST_F(TestCategory, update_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::update_double");
   test_update<double, double, double, TestDevice>();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, update_mv_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::update_mv_double");

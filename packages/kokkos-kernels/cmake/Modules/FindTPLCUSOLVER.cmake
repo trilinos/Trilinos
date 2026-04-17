@@ -2,7 +2,7 @@ find_package(CUDAToolkit)
 
 if(CUDAToolkit_FOUND)
   get_target_property(kk_cusolver_include_dir_list CUDA::cusolver INTERFACE_INCLUDE_DIRECTORIES)
-  list(GET kk_cusolver_include_dir_list 0 kk_cusolver_include_dir)
+  set(kk_cusolver_include_dir ${kk_cusolver_include_dir_list})
   get_target_property(kk_cusolver_library CUDA::cusolver IMPORTED_LOCATION)
   get_filename_component(kk_cusolver_library_dir ${kk_cusolver_library} DIRECTORY)
   kokkoskernels_find_imported(CUSOLVER INTERFACE

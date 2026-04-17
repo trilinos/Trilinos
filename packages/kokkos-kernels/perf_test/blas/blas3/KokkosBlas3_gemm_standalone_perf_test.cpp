@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
   }
   const int num_threads = params.use_openmp;  // Assumption is that use_openmp variable is provided
                                               // as number of threads
-  const int device_id = params.use_cuda - 1;
+  const int device_id = params.use_cuda > 0 ? params.use_cuda - 1 : 0;
 
   Kokkos::initialize(Kokkos::InitializationSettings().set_num_threads(num_threads).set_device_id(device_id));
 

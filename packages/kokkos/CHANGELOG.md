@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 4.7.03
+
+### CUDA
+* Fix compiling with Cuda 13.1 [\#9020](https://github.com/kokkos/kokkos/pull/9020)
+
+### HIP
+* Disable MallocAsync for ROCm by default and thus supporting ROCM 7 [\#9022](https://github.com/kokkos/kokkos/pull/9022)
+* Adding support for AMD MI355 and MI350 [\#9025]((https://github.com/kokkos/kokkos/pull/9025)
+
+### Bug Fixes
+* Identify homebrew llvm and hombrew gcc as KOKKOS_COMPILER_CLANG and KOKKOS_COMPILER_GNU [\#9019](https://github.com/kokkos/kokkos/pull/9019)
+* Relax compiler flags checks fatal error to warning [\#9024](https://github.com/kokkos/kokkos/pull/9024)
+* Fix misalignment issues for CUDA and HIP combined reducers [\#9026]((https://github.com/kokkos/kokkos/pull/9026)
+
+## 4.7.02
+
+### Bug Fixes
+* Link kokkoscore directly with CMAKE_DL_LIBS [\#8456](https://github.com/kokkos/kokkos/pull/8456)
+* mdspan fixes for cuda >= 12.9 [\#8562](https://github.com/kokkos/kokkos/pull/8562), [\#8615](https://github.com/kokkos/kokkos/pull/8615)
+* Replace cudaMemAdvise_v2 with cudaMemAdvise when CUDART_VERSION >= 13000 [\#8726](https://github.com/kokkos/kokkos/pull/8726)
+
 ## 4.7.01
 
 [Full Changelog](https://github.com/kokkos/kokkos/compare/4.7.00...4.7.01)

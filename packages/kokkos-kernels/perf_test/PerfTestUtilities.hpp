@@ -22,6 +22,7 @@
 #include "KokkosKernels_default_types.hpp"
 #include "KokkosKernels_config.h"
 #include "KokkosKernels_IOUtils.hpp"
+#include "KokkosSparse_IOUtils.hpp"
 #include <common/RunParams.hpp>
 #include <common/QuickKernelBase.hpp>
 #include <common/KernelBase.hpp>
@@ -81,7 +82,7 @@ struct test_reader;
 template <class Scalar, class Ordinal, class ExecutionSpace, class Offset>
 struct test_reader<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>> {
   static matrix_type<Scalar, Ordinal, ExecutionSpace, Offset> read(const std::string &filename) {
-    return KokkosKernels::Impl::read_kokkos_crst_matrix<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>>(
+    return KokkosSparse::Impl::read_kokkos_crst_matrix<matrix_type<Scalar, Ordinal, ExecutionSpace, Offset>>(
         filename.c_str());
   }
 };

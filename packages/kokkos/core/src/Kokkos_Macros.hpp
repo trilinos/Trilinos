@@ -147,7 +147,8 @@
 // CRAY compiler for host code
 #define KOKKOS_COMPILER_CRAYC _CRAYC
 
-#elif defined(__APPLE_CC__)
+#elif defined(__APPLE_CC__) && defined(__clang__) && \
+    defined(__apple_build_version__)
 #define KOKKOS_COMPILER_APPLECC __APPLE_CC__
 
 #elif defined(__NVCOMPILER)
@@ -206,7 +207,7 @@
 
 #ifndef KOKKOS_IMPL_ALIGN_PTR
 #if defined(_WIN32)
-#define KOKKOS_IMPL_ALIGN_PTR(size) __declspec(align_value(size))
+#define KOKKOS_IMPL_ALIGN_PTR(size)
 #else
 #define KOKKOS_IMPL_ALIGN_PTR(size) __attribute__((align_value(size)))
 #endif

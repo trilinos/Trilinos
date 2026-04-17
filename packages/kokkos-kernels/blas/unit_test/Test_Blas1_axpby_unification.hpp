@@ -2506,6 +2506,7 @@ TEST_F(TestCategory, axpby_mv_unification_float) {
 TEST_F(TestCategory, axpby_unification_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_unification_double");
   test_axpby_unification<double, double, double, double, TestDevice>();
+  Kokkos::Profiling::popRegion();
 }
 TEST_F(TestCategory, axpby_mv_unification_double) {
   Kokkos::Profiling::pushRegion("KokkosBlas::Test::axpby_mv_unification_double");
