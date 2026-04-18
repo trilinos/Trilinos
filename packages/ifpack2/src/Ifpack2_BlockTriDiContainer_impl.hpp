@@ -57,6 +57,7 @@
 // #undef  IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
 #include "cuda_profiler_api.h"
+#include "Ifpack2_CudaSafeCall.hpp"
 #endif
 
 // I am not 100% sure about the mpi 3 on cuda
@@ -149,10 +150,10 @@ struct BlockTridiagScalarType<double> {
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKTRIDICONTAINER_ENABLE_PROFILE)
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN \
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaProfilerStart());
+  IFPACK2_IMPL_CUDA_SAFE_CALL(cudaProfilerStart());
 
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_END \
-  { KOKKOS_IMPL_CUDA_SAFE_CALL(cudaProfilerStop()); }
+  { IFPACK2_IMPL_CUDA_SAFE_CALL(cudaProfilerStop()); }
 #else
 /// later put vtune profiler region
 #define IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN

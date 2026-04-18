@@ -12,6 +12,10 @@
 
 #include "Ifpack2_BlockHelper_Timers.hpp"
 
+#if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKHELPER_ENABLE_PROFILE)
+#include "Ifpack2_CudaSafeCall.hpp"
+#endif
+
 namespace Ifpack2 {
 
 namespace BlockHelperDetails {
@@ -182,10 +186,10 @@ struct ExecutionSpaceFactory<Kokkos::Experimental::SYCL> {
 
 #if defined(KOKKOS_ENABLE_CUDA) && defined(IFPACK2_BLOCKHELPER_ENABLE_PROFILE)
 #define IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN \
-  KOKKOS_IMPL_CUDA_SAFE_CALL(cudaProfilerStart());
+  IFPACK2_IMPL_CUDA_SAFE_CALL(cudaProfilerStart());
 
 #define IFPACK2_BLOCKHELPER_PROFILER_REGION_END \
-  { KOKKOS_IMPL_CUDA_SAFE_CALL(cudaProfilerStop()); }
+  { IFPACK2_IMPL_CUDA_SAFE_CALL(cudaProfilerStop()); }
 #else
 /// later put vtune profiler region
 #define IFPACK2_BLOCKHELPER_PROFILER_REGION_BEGIN

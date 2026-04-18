@@ -60,6 +60,10 @@ Ifpack2_UnitTestTemplate.cpp
 Ifpack2_UnitTestTriDiSolver.cpp
 )
 
+IF(Kokkos_ENABLE_CUDA)
+  APPEND_SET(SOURCES Ifpack2_UnitTestCudaSafeCall.cpp)
+ENDIF()
+
 IF(${PACKAGE_NAME}_ENABLE_HYPRE AND ${PACKAGE_NAME}_ENABLE_MPI)
   APPEND_SET(SOURCES Ifpack2_UnitTestHypre.cpp)
 ENDIF()
