@@ -43,8 +43,9 @@ namespace Impl {
 #ifndef KOKKOS_COMPILER_NVHPC
 [[noreturn]]
 #endif
-inline void cuda_internal_error_abort(cudaError e, const char *name, const char *file,
-                                      int line) {
+inline void
+cuda_internal_error_abort(cudaError e, const char *name, const char *file,
+                          int line) {
   std::ostringstream out;
   out << name << " error( " << cudaGetErrorName(e) << "): " << cudaGetErrorString(e);
   if (file) {
