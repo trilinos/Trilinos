@@ -41,6 +41,7 @@ Ifpack2_UnitTestAmesos2solver.cpp
 Ifpack2_UnitTestBlockRelaxation.cpp
 Ifpack2_UnitTestChebyshev.cpp
 Ifpack2_UnitTestContainer.cpp
+Ifpack2_UnitTestCudaSafeCall.cpp
 Ifpack2_UnitTestCreateOverlapGraph.cpp
 Ifpack2_UnitTestDenseSolver.cpp
 Ifpack2_UnitTestDiagonal.cpp
@@ -59,10 +60,6 @@ Ifpack2_UnitTestRILUK.cpp
 Ifpack2_UnitTestTemplate.cpp
 Ifpack2_UnitTestTriDiSolver.cpp
 )
-
-IF(Kokkos_ENABLE_CUDA)
-  APPEND_SET(SOURCES Ifpack2_UnitTestCudaSafeCall.cpp)
-ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_HYPRE AND ${PACKAGE_NAME}_ENABLE_MPI)
   APPEND_SET(SOURCES Ifpack2_UnitTestHypre.cpp)
