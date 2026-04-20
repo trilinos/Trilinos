@@ -777,7 +777,7 @@ public:
     _bufsize_factorize = 0;
     _bufsize_solve = 0;
     _nstreams = 0;
-    _team_on_user_stream = 0;
+    _team_on_user_stream = false;
     _keep_zeros = false;
     stat_level = stat_level();
   }
@@ -4948,7 +4948,7 @@ public:
 
               // copy from buffer to t
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
-              if (need_fence && (lvl > 0 && _h_num_device_calls_solve(lvl-1) > 0))
+              if (need_fence && (lvl == 0 || _h_num_device_calls_solve(lvl-1) > 0))
                 team_exec_instance.fence(); // sync default, for next device solve calls
               ++stat_level.n_kernel_launching;
             }
@@ -5330,7 +5330,7 @@ public:
             if (variant != 3) {
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
-              if (need_fence && (lvl > 0 && _h_num_device_calls_solve(lvl-1) > 0))
+              if (need_fence && (lvl == 0 || _h_num_device_calls_solve(lvl-1) > 0))
                 team_exec_instance.fence(); // synch update on default before next solve on device
             }
           }
@@ -5714,7 +5714,7 @@ public:
 
               Kokkos::parallel_for("update lower", policy_update_with_work_property, functor);
               ++stat_level.n_kernel_launching;
-              if (need_fence && (lvl > 0 && _h_num_device_calls_solve(lvl-1) > 0))
+              if (need_fence && (lvl == 0 || _h_num_device_calls_solve(lvl-1) > 0))
                 team_exec_instance.fence(); // synch update on default before next solve on device
             }
           }
