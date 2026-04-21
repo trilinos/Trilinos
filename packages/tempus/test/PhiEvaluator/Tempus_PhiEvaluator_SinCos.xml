@@ -9,6 +9,9 @@
     <Parameter name="IC x1"   type="double" value="1.0"/>
     <Parameter name="IC t0"   type="double" value="0.0"/>
   </ParameterList>
-  <ParameterList name="PhiEvaluator">
+  <ParameterList name="Tempus">
+    <ParameterList name="PhiEvaluator">
+      <Parameter name="Leja DD Method" type="int" value="2"/>
+    </ParameterList>
   </ParameterList>
 </ParameterList>

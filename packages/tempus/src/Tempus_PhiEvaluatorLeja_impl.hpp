@@ -381,9 +381,153 @@ void PhiEvaluatorLeja<Scalar>::setPhiEvaluatorValues(
 template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffs(const int k, const Scalar cdt, const int exp_order)
 {
-  // TODO: implement other dd methods
+  if (ddMethod_ == 2) {
+    std::cout << "Calling dd_phi divided difference method" << std::endl;
+    return getDividedDiffsPhi(k, cdt, exp_order);
+  }
+  // Default: Taylor series (real arithmetic)
+  std::cout << "Calling taylor series divided difference method" << std::endl;
   return getDividedDiffsTSR(k, cdt, exp_order);
 }
+
+template <class Scalar>
+Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsPhi(
+    const int phi_order, const Scalar cdt, const int exp_order)
+{
+  // Compute Newton divided differences of phi_{phi_order} at the Leja points using
+  // the Zivcovich (2019) H-factorization + scaling-and-squaring method.
+  //
+  // Ref: F. Zivcovich. "Fast and accurate computation of divided differences for
+  //      analytic functions, with an application to the exponential function."
+  //      Dolomites Research Notes on Approximation. 12. 2019.
+  using cplx = std::complex<double>;
+  using cplxl = std::complex<long double>;
+
+  const int n_leja = exp_order;                   // number of output coefficients
+  const int l      = phi_order;                   // leading zeros for phi_l
+  const int total  = l + n_leja;                  // total interpolation points
+  const int n      = total - 1;                   // highest index (0-based)
+  const int p      = 30;                          // Taylor truncation terms
+  const int cap_n  = n + p;                       // Taylor degree N in the paper
+
+  // get spectrum shift/scale
+  Scalar shift, scale;
+  std::tie(shift, scale) = getShiftScale();
+
+  // build z[0..total]
+  // z[0..l]         = 0  (leading zeros encode the phi_k recurrence)
+  // z[l..total]     = cdt * lp_sc(i), expanding LPCONJ pairs to (lp, conj(lp))
+  std::vector<cplxl> z(total, cplx(0.0, 0.0));
+  {
+    int z_idx = l;
+    for (int lp_idx = 0; lp_idx < lp_.size() && z_idx < total; ++lp_idx)
+    {
+      LejaPoint lp_sc = getLpSc(lp_idx);
+      if (lp_sc.lpt == LPCONJ)
+      {
+        // upper-half-plane point
+        z[z_idx++] = cplx(cdt * lp_sc.lp.real(),  cdt * lp_sc.lp.imag());
+        // conjugate (lower-half-plane)
+        if (z_idx < total)
+          z[z_idx++] = cplx(cdt * lp_sc.lp.real(), -cdt * lp_sc.lp.imag());
+      }
+      else  // LPREAL: zero out any floating-point imaginary noise
+      {
+        z[z_idx++] = cplx(cdt * lp_sc.lp.real(), 0.0);
+      }
+    }
+  }
+
+  // shift by mean mu
+  cplx mu(0.0, 0.0);
+  for (int i = 0; i < total; ++i) mu += z[i];
+  mu /= double(total);
+  for (int i = 0; i < total; ++i) z[i] -= mu;
+
+  // build lower-triangle of F
+  Teuchos::SerialDenseMatrix<int, cplx> F_mat(total, total);
+  F_mat.putScalar(cplx(0.0, 0.0));
+  for (int i0 = 0; i0 < n; ++i0)
+    for (int j0 = i0 + 1; j0 <= n; ++j0)
+      F_mat(j0, i0) = z[i0] - z[j0];
+
+  // number of squarings
+  double max_abs = 0.0;
+  for (int i0 = 0; i0 < n; ++i0)
+    for (int j0 = i0 + 1; j0 <= n; ++j0)
+    {
+      double v = std::abs(F_mat(j0, i0));
+      if (v > max_abs) max_abs = v;
+    }
+  const int    s     = std::max(int(std::ceil(max_abs / 3.5)), 1);
+  const double s_dbl = double(s);
+
+  // seed dd[0..cap_n]: dd[kk] = 1 / (kk! * s^kk)
+  std::vector<cplxl> dd(cap_n + 1, cplxl(0.0, 0.0));
+  dd[0] = cplx(1.0, 0.0);
+  // avoid overflow
+  long double running_denom = 1.0;
+  for (int kk = 1; kk <= cap_n; ++kk)
+  {
+    running_denom *= kk * s_dbl;
+    dd[kk] = cplxl(1.0 / running_denom, 0.0);
+  }
+
+  // H-factorization sweep
+  for (int j = n; j >= 0; --j)
+  {
+    // First inner loop: Taylor remainder sweep
+    // k0 from cap_n-1 downto n-j (inclusive): dd[k0] += z[j] * dd[k0+1]
+    for (int k0 = cap_n - 1; k0 >= (n - j); --k0)
+      dd[k0] = dd[k0] + z[j] * dd[k0 + 1];
+
+    // Second inner loop: divided-difference sweep using F lower triangle
+    // k0 from (n-j-1) downto 0: dd[k0] += F(k0+j+1, j) * dd[k0+1]
+    for (int k0 = (n - j) - 1; k0 >= 0; --k0)
+      dd[k0] = dd[k0] + (cplxl) F_mat(k0 + j + 1, j) * dd[k0 + 1];
+
+    // Store dd[0..=n-j] into upper-triangle row j of F
+    for (int col = 0; col <= (n - j); ++col)
+      F_mat(j, j + col) = dd[col];
+  }
+
+  // overwrite diagonal: F(i,i) = exp(z[i] / s)
+  for (int i = 0; i <= n; ++i)
+    F_mat(i, i) = std::exp(cplx(z[i].real() / s_dbl, z[i].imag() / s_dbl));
+
+  // zero lower triangle
+  for (int i = 1; i <= n; ++i)
+    for (int j = 0; j < i; ++j)
+      F_mat(i, j) = cplx(0.0, 0.0);
+
+  // squaring
+  Teuchos::SerialDenseMatrix<int, cplx> dd_row(1, total);
+  for (int j = 0; j < total; ++j)
+    dd_row(0, j) = F_mat(0, j);
+
+  Teuchos::SerialDenseMatrix<int, cplx> tmp_row(1, total);
+  for (int sq = 0; sq < s - 1; ++sq)
+  {
+    tmp_row.putScalar(cplx(0.0, 0.0));
+    // tmp_row = 1.0 * dd_row * F_mat + 0.0 * tmp_row
+    tmp_row.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, cplx(1.0, 0.0), dd_row, F_mat, cplx(0.0, 0.0));
+    dd_row = tmp_row;
+  }
+
+  // out[i] = exp(mu) * scale^i * dd_row[l + i]
+  Teuchos::ArrayRCP<cplx> out = Teuchos::arcp<cplx>(n_leja);
+  const cplx exp_mu   = std::exp(mu);
+  const cplx scale_c  = cplx(double(scale), 0.0);
+  cplx       scale_pw = cplx(1.0, 0.0);
+  for (int i = 0; i < n_leja; ++i)
+  {
+    out[i]   = exp_mu * scale_pw * dd_row(0, l + i);
+    scale_pw *= scale_c;
+  }
+
+  return out;
+}
+
 
 template <class Scalar>
 Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiffsRC(const int phi_order, const Scalar cdt, const int exp_order)

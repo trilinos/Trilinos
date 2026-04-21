@@ -127,6 +127,12 @@ class PhiEvaluatorLeja
   /// Computes the divided differences via recurrence relation
   Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsRC(const int phi_order, const Scalar cdt, const int exp_order);
 
+  /// Computes divided differences of phi_k via the Zivcovich (2019) dd_phi method.
+  /// Ref: F. Zivcovich. "Fast and accurate computation of divided differences for analytic
+  /// functions, with an application to the exponential function."
+  /// Dolomites Research Notes on Approximation. 12. 2019.
+  Teuchos::ArrayRCP<std::complex<double>> getDividedDiffsPhi(const int phi_order, const Scalar cdt, const int exp_order);
+
   /// Storage for the base Leja points
   Teuchos::ArrayRCP<LejaPoint> lejaPointsBase_;
 
