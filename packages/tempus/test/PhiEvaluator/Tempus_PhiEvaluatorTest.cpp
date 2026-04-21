@@ -25,6 +25,7 @@
 #include "Thyra_VectorStdOps_decl.hpp"
 
 #include <cmath>
+#include <chrono>
 
 namespace Tempus_Test {
 
@@ -53,9 +54,18 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
 
   // Setup the PhiEvaluator
   RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
+  phi_pl->set("Leja DD Method", 2);
+  phi_pl->set("Expansion Order", 300);
   auto phiEvaluator = Tempus::createPhiEvaluatorLeja<double>(phi_pl);
   phiEvaluator->setModel(model);
   phiEvaluator->initialize();
+
+  RCP<ParameterList> phi_pl_leja_dd_tay = sublist(pList, "PhiEvaluator");
+  phi_pl_leja_dd_tay->set("Leja DD Method", 1);
+  phi_pl_leja_dd_tay->set("Expansion Order", 300);
+  auto phiEvaluatorLejaTay = Tempus::createPhiEvaluatorLeja<double>(phi_pl_leja_dd_tay);
+  phiEvaluatorLejaTay->setModel(model);
+  phiEvaluatorLejaTay->initialize();
 
   // Setup Taylor PhiEvaluator for comparison
   RCP<ParameterList> phi_pl_tay = sublist(pListTay, "PhiEvaluator");
@@ -67,6 +77,7 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   double leja_b = 0.0;
   double leja_c = 0.5;
   phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
+  phiEvaluatorLejaTay->setLejaEllipse(leja_a, leja_b, leja_c);
 
   // Check the first leja points with scaling
   LejaPoint lp = phiEvaluator->getLpSc(0);
@@ -83,12 +94,17 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(lp.lp.imag(), leja_c, 1e-6);
 
   // Check the first divided diffs
-  const int exp_order = 4;
+  const int exp_order = 300;
+  auto tic = std::chrono::high_resolution_clock::now();
   auto lp_dd = phiEvaluator->getDividedDiffs(0, 1.0, exp_order);
+  auto toc = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> walltime_dd_phi = toc - tic;
   // the first divided diff is: y(x_0) == exp(0.0) == 1.0
   // the second divided diff is: (y(x_1) - y(x_0) / x_1 - x_0)) == (exp(-1.0) - 1.0) / (-1.0 - 0.0)
   std::cout << "lp_dd 0: " << lp_dd[0] << std::endl;
   std::cout << "lp_dd 1: " << lp_dd[1] << std::endl;
+  std::cout << "lp_dd 2: " << lp_dd[2] << std::endl;
+  std::cout << "lp_dd 3: " << lp_dd[3] << std::endl;
   TEST_FLOATING_EQUALITY(lp_dd[0].real(), std::exp(leja_b), 1e-8);
   // TEST_FLOATING_EQUALITY(lp_dd[0].imag(), 0.0, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[1].real(), 0.316060279414, 1e-8);
@@ -98,6 +114,17 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(lp_dd[3].real(), 0.01263699560, 1e-8);
   // TEST_FLOATING_EQUALITY(lp_dd[3].imag(), 0.0, 1e-8);
   //TODO, do not test imaginary Leja dds, not needed
+
+  // check divided differnce calculation against taylor series impl
+  tic = std::chrono::high_resolution_clock::now();
+  auto lp_dd_tay = phiEvaluatorLejaTay->getDividedDiffs(0, 1.0, exp_order);
+  toc = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> walltime_dd_tay = toc - tic;
+  std::cout << "walltime dd_phi: " << walltime_dd_phi.count() << " walltime dd_tay: " << walltime_dd_tay.count() << std::endl;
+  TEST_FLOATING_EQUALITY(lp_dd[0].real(), lp_dd_tay[0], 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[1].real(), lp_dd_tay[1], 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[2].real(), lp_dd_tay[2], 1e-8);
+  TEST_FLOATING_EQUALITY(lp_dd[3].real(), lp_dd_tay[3], 1e-8);
 
   leja_a = -1.0e-18;
   leja_c = 1.0;
