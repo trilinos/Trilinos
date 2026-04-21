@@ -19,16 +19,13 @@
 #include "BelosKokkosDenseAdapter.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 
-// I/O for Harwell-Boeing files
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
-#include <Tpetra_MatrixIO.hpp>
-
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_MatrixIO.hpp>
 
 using namespace Teuchos;
 using Tpetra::Operator;

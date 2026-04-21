@@ -14,8 +14,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT 
 )
 
-IF (${PACKAGE_NAME}_ENABLE_Triutils)
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_KokkosDense_minres_hb_test
   SOURCES test_kokkos_minres_hb.cpp
@@ -58,5 +56,3 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_CopyTestMinresFiles
   SOURCE_FILES bcsstk14.hb
   EXEDEPS Tpetra_minres_hb_test Tpetra_KokkosDense_minres_hb_test
   )
-
-ENDIF()

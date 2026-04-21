@@ -991,7 +991,7 @@ namespace Belos {
         // a) This would cost a lot of extra syncs.
         // b) solver developer only has to worry about syncing before
         // calling other DenseMatTraits functions. 
-        mv.update (alpha*B.h_view(0,0), A, beta); 
+        mv.update (alpha*B.view_host()(0,0), A, beta); 
         if(dm.need_sync_host()){
           dm.sync_host();
         } 
@@ -1041,7 +1041,7 @@ namespace Belos {
       if (numRowsC == size_t (1) && numColsC == size_t (1)) {
         if (alpha == ZERO) {
           // Short-circuit, as required by BLAS semantics.
-          C.h_view(0,0) = IST(alpha);
+          C.view_host()(0,0) = IST(alpha);
           C.modify_host();
           C.sync_device(); //TODO should this be counted somehow? Not in a DMT interface.
           return;
@@ -1049,11 +1049,11 @@ namespace Belos {
         //TODO This case has build problems. Pushing to multiply for now.
         //LATER: Check performance. Should we be calling do instead? 
         //
-        /*auto subview1d = Kokkos::subview(C.h_view,Kokkos::ALL,1);
+        /*auto subview1d = Kokkos::subview(C.view_host(),Kokkos::ALL,1);
         A.dot (B, subview1d);
         C.modify_host();
         if (alpha != Teuchos::ScalarTraits<Scalar>::one()) {
-          C.h_view(0,0) *= alpha;
+          C.view_host()(0,0) *= alpha;
         }
         return;*/
       }
