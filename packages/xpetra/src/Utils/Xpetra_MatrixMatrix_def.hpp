@@ -112,7 +112,8 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(const Mat
   // transfer striding information
   RCP<Matrix> rcpA = Teuchos::rcp_const_cast<Matrix>(Teuchos::rcpFromRef(A));
   RCP<Matrix> rcpB = Teuchos::rcp_const_cast<Matrix>(Teuchos::rcpFromRef(B));
-  C.CreateView("stridedMaps", rcpA, transposeA, rcpB, transposeB);  // TODO use references instead of RCPs
+  if (A.IsView("stridedMaps") || B.IsView("stridedMaps"))
+    C.CreateView("stridedMaps", rcpA, transposeA, rcpB, transposeB);  // TODO use references instead of RCPs
 }  // end Multiply
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
