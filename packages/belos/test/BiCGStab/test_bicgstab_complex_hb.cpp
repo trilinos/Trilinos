@@ -19,14 +19,10 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Tpetra_Util_iohb.h"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
-#endif
-
-// I/O for Harwell-Boeing files
-#ifdef HAVE_BELOS_TRIUTILS
-#include "Trilinos_Util_iohb.h"
 #endif
 
 #include "MyMultiVec.hpp"
@@ -83,23 +79,14 @@ bool proc_verbose = false;
   if (!verbose)
     frequency = -1;  // reset frequency if test is not verbose
 
-
-#ifndef HAVE_BELOS_TRIUTILS
-  std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
-  if (MyPID==0) {
-    std::cout << "End Result: TEST FAILED" << std::endl;
-  }
-  return -1;
-#endif
-
   // Get the data from the HB file
   int dim,dim2,nnz;
   MT *dvals;
   int *colptr,*rowind;
   ST *cvals;
   nnz = -1;
-  info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
-                              &colptr,&rowind,&dvals);
+  info = Tpetra::HB::readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
+        &colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
     if (MyPID==0) {
       std::cout << "Error reading '" << filename << "'" << std::endl;

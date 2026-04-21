@@ -19,9 +19,7 @@
 #include "BelosKokkosDenseAdapter.hpp"
 #include "BelosMinresSolMgr.hpp"
 
-// I/O for Harwell-Boeing files
-#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
-#include <Tpetra_MatrixIO.hpp>
+#include <Tpetra_MatrixIO.hpp> // I/O for Harwell-Boeing files
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
