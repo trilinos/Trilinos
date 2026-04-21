@@ -34,7 +34,7 @@ namespace Belos {
 
   //! Helper function for copying Kokkos::DualView into conjugate Kokkos::DualView
   template<typename V>
-  void kokkos_transpose(V& dst, const V& src)
+  void kokkos_transpose(const V& dst, const V& src)
   {
     Kokkos::parallel_for(Kokkos::MDRangePolicy<typename V::execution_space, Kokkos::Rank<2>>({0, 0}, {dst.extent(0), dst.extent(1)}),
     KOKKOS_LAMBDA(int i, int j)
@@ -308,12 +308,12 @@ namespace Belos {
                                  (Kokkos::view_alloc(Kokkos::WithoutInitializing,"BelosDenseCreateCopy"),dm.extent_int(1),dm.extent_int(0)));
         if(tmpCopyRCP->need_sync_device()) {
           // tmpCopyRCP is only up to date on the host
-          kokkos_transpose(tmpCopyRCP->h_view, dm.h_view);
+          kokkos_transpose(tmpCopyRCP->view_host(), dm.view_host());
           tmpCopyRCP->clear_sync_state();
           tmpCopyRCP->modify_host();
         }
         else {
-          kokkos_transpose(tmpCopyRCP->d_view, dm.d_view);
+          kokkos_transpose(tmpCopyRCP->view_device(), dm.view_device());
           tmpCopyRCP->clear_sync_state();
           tmpCopyRCP->modify_device();
         }
@@ -484,7 +484,7 @@ namespace Belos {
       if(dm.need_sync_host()){
         if(dm.view_host().span_is_contiguous() && dm.view_device().span_is_contiguous()){
         std::cout << "Syncing d2h the easy way... " << dm.extent_int(0) << " , " << dm.extent_int(1) << std::endl;
-        //Stupidness to print type info: int int1 = dm.d_view;
+        //Stupidness to print type info: int int1 = dm.view_device();
         dm.sync_host();}
         else{
           std::cout << "d2h sync the hard way in progress..." << std::endl;
