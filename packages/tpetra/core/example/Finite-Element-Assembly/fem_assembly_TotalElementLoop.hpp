@@ -20,7 +20,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "KokkosSparse_SortCrs.hpp"
+#include "Tpetra_Import_Util2.hpp"
 
 #include "fem_assembly_typedefs.hpp"
 #include "fem_assembly_MeshDatabase.hpp"
@@ -787,7 +787,7 @@ int executeTotalElementLoopSPKokkos_(const Teuchos::RCP<const Teuchos::Comm<int>
     }
     // The local graph is now fully constructed. Sort it and build the fill-complete CrsGraph.
     local_graph_type localGraph(localEntries, localRowptrs);
-    KokkosSparse::sort_crs_graph(localGraph);
+    Tpetra::Import_Util::sortCrsGraph(localGraph);
     timerElementLoopGraph = Teuchos::null;
     {
       TimeMonitor timer(*TimeMonitor::getNewTimer("2) FillComplete (Graph)"));

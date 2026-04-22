@@ -248,7 +248,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
     // Sort & set values
     if (params.is_null() || params->get("sort entries", true)) {
       // Tpetra's OpenMP SpGEMM results in almost sorted matrices. Use shell sort.
-      Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC, ::KokkosSparse::SortAlgorithm::SHELL);
+      Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
     }
     C.setAllValues(row_mapC, entriesC, valuesC);
 
@@ -586,7 +586,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::
   // Sort & set values
   if (params.is_null() || params->get("sort entries", true)) {
     // Tpetra's OpenMP SpGEMM results in almost sorted matrices. Use shell sort.
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC, ::KokkosSparse::SortAlgorithm::SHELL);
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   }
   C.setAllValues(row_mapC, entriesC, valuesC);
 
