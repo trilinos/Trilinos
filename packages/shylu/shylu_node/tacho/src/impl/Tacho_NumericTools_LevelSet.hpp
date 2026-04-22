@@ -4875,7 +4875,7 @@ public:
 
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
-    if (need_fence) perm_exec_instance.fence();
+    if (variant != 3 && need_fence) perm_exec_instance.fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -5044,7 +5044,7 @@ public:
     stat.t_solve = timer.seconds();
 
     // permute (from METIS) and copy t -> x
-    if (need_fence) Kokkos::fence(); // synch user or default streams
+    if (variant != 3 && need_fence) Kokkos::fence(); // synch user or default streams
     timer.reset();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, t, _peri, x);
     perm_exec_instance.fence();
@@ -5259,7 +5259,7 @@ public:
 
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
-    if(need_fence) perm_exec_instance.fence();
+    if(variant != 3 && need_fence) perm_exec_instance.fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -5420,7 +5420,7 @@ public:
     stat.t_solve = timer.seconds();
 
     // permute (from METIS) and copy t -> x
-    if (need_fence) Kokkos::fence(); // synch user or default streams
+    if (variant != 3 && need_fence) Kokkos::fence(); // synch user or default streams
     timer.reset();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, t, _peri, x);
     perm_exec_instance.fence();
@@ -5644,7 +5644,7 @@ public:
 
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
-    if (need_fence) perm_exec_instance.fence();
+    if (variant != 3 && need_fence) perm_exec_instance.fence();
     stat.t_extra = timer.seconds();
 
     timer.reset();
@@ -5808,7 +5808,7 @@ public:
     stat.t_solve = timer.seconds();
 
     // permute (from METIS) and copy t -> x
-    if (need_fence) Kokkos::fence();
+    if (variant != 3 && need_fence) Kokkos::fence();
     timer.reset();
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, t, _peri, x);
     perm_exec_instance.fence();
