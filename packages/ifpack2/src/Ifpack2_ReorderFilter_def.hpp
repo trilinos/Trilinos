@@ -10,6 +10,7 @@
 #ifndef IFPACK2_REORDERFILTER_DEF_HPP
 #define IFPACK2_REORDERFILTER_DEF_HPP
 #include "Ifpack2_ReorderFilter_decl.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 #include <vector>
 
 #include "Tpetra_ConfigDefs.hpp"
@@ -430,8 +431,7 @@ void ReorderFilter<MatrixType>::
       "Ifpack2::ReorderFilter::permuteReorderedToOriginal: "
       "X.getNumVectors() != Y.getNumVectors().");
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     Teuchos::Array<magnitude_type> norms(reorderedX.getNumVectors());
     reorderedX.norm2(norms());
@@ -449,7 +449,6 @@ void ReorderFilter<MatrixType>::
         "permuteReorderedToOriginalTempl: The 2-norm of the input reorderedX is "
         "NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = reorderedX.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> > y_ptr        = originalY.get2dViewNonConst();
@@ -464,8 +463,7 @@ void ReorderFilter<MatrixType>::
     }
   }
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
     Teuchos::Array<magnitude_type> norms(originalY.getNumVectors());
     originalY.norm2(norms());
@@ -483,7 +481,6 @@ void ReorderFilter<MatrixType>::
         "permuteReorderedToOriginalTempl: The 2-norm of the output originalY is "
         "NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 }
 
 }  // namespace Ifpack2

@@ -42,6 +42,7 @@
 #include "Ifpack2_ReorderFilter.hpp"
 #include "Ifpack2_SingletonFilter.hpp"
 #include "Ifpack2_Details_AdditiveSchwarzFilter.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -60,8 +61,6 @@ namespace Details {
 extern void registerLinearSolverFactory();
 }  // namespace Details
 }  // namespace Ifpack2
-
-#ifdef HAVE_IFPACK2_DEBUG
 
 namespace {  // (anonymous)
 
@@ -84,8 +83,6 @@ bool anyBad(const MV& X) {
 }
 
 }  // namespace
-
-#endif  // HAVE_IFPACK2_DEBUG
 
 namespace Ifpack2 {
 
@@ -311,24 +308,22 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
   TEUCHOS_TEST_FOR_EXCEPTION(beta != STS::zero(), std::logic_error,
                              prefix << "Not implemented for beta != 0.");
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     const bool bad = anyBad(B);
     TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                "Ifpack2::AdditiveSchwarz::apply: "
                                "The 2-norm of the input B is NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
-#ifdef HAVE_IFPACK2_DEBUG
-  if (!ZeroStartingSolution_) {
-    const bool bad = anyBad(Y);
-    TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
-                               "Ifpack2::AdditiveSchwarz::apply: "
-                               "On input, the initial guess Y has 2-norm NaN or Inf "
-                               "(ZeroStartingSolution_ is false).");
+  if (Ifpack2::Details::Behavior::debug()) {
+    if (!ZeroStartingSolution_) {
+      const bool bad = anyBad(Y);
+      TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
+                                 "Ifpack2::AdditiveSchwarz::apply: "
+                                 "On input, the initial guess Y has 2-norm NaN or Inf "
+                                 "(ZeroStartingSolution_ is false).");
+    }
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   const std::string timerName("Ifpack2::AdditiveSchwarz::apply");
   RCP<Time> timer = TimeMonitor::lookupCounter(timerName);
@@ -405,15 +400,13 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
     C->putScalar(ZERO);
 
     for (int ni = 0; ni < NumIterations_; ++ni) {
-#ifdef HAVE_IFPACK2_DEBUG
-      {
+      if (Ifpack2::Details::Behavior::debug()) {
         const bool bad = anyBad(Y);
         TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                    "Ifpack2::AdditiveSchwarz::apply: "
                                    "At top of iteration "
                                        << ni << ", the 2-norm of Y is NaN or Inf.");
       }
-#endif  // HAVE_IFPACK2_DEBUG
 
       Tpetra::deep_copy(*R, B);
 
@@ -424,8 +417,7 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
         // calculate residual
         Matrix_->apply(Y, *R, mode, -STS::one(), STS::one());
 
-#ifdef HAVE_IFPACK2_DEBUG
-        {
+        if (Ifpack2::Details::Behavior::debug()) {
           const bool bad = anyBad(*R);
           TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                      "Ifpack2::AdditiveSchwarz::apply: "
@@ -433,7 +425,6 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
                                          << ni << ", the 2-norm of R (result of computing "
                                                   "residual with Y) is NaN or Inf.");
         }
-#endif  // HAVE_IFPACK2_DEBUG
       }
 
       // do communication if necessary
@@ -458,8 +449,7 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
           version), and not to ILU-type preconditioners."
         */
 
-#ifdef HAVE_IFPACK2_DEBUG
-        {
+        if (Ifpack2::Details::Behavior::debug()) {
           const bool bad = anyBad(*OverlappingB);
           TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                      "Ifpack2::AdditiveSchwarz::apply: "
@@ -467,12 +457,10 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
                                          << ni << ", result of importMultiVector from R "
                                                   "to OverlappingB, has 2-norm NaN or Inf.");
         }
-#endif  // HAVE_IFPACK2_DEBUG
       } else {
         globalOverlappingB->doImport(*R, *DistributedImporter_, Tpetra::INSERT);
 
-#ifdef HAVE_IFPACK2_DEBUG
-        {
+        if (Ifpack2::Details::Behavior::debug()) {
           const bool bad = anyBad(*globalOverlappingB);
           TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                      "Ifpack2::AdditiveSchwarz::apply: "
@@ -480,11 +468,9 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
                                          << ni << ", result of doImport from R, has 2-norm "
                                                   "NaN or Inf.");
         }
-#endif  // HAVE_IFPACK2_DEBUG
       }
 
-#ifdef HAVE_IFPACK2_DEBUG
-      {
+      if (Ifpack2::Details::Behavior::debug()) {
         const bool bad = anyBad(*OverlappingB);
         TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                    "Ifpack2::AdditiveSchwarz::apply: "
@@ -492,13 +478,11 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
                                        << ni << ", right before localApply, the 2-norm of "
                                                 "OverlappingB is NaN or Inf.");
       }
-#endif  // HAVE_IFPACK2_DEBUG
 
       // local solve
       localApply(*OverlappingB, *OverlappingY);
 
-#ifdef HAVE_IFPACK2_DEBUG
-      {
+      if (Ifpack2::Details::Behavior::debug()) {
         const bool bad = anyBad(*OverlappingY);
         TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                    "Ifpack2::AdditiveSchwarz::apply: "
@@ -506,10 +490,8 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
                                        << ni << ", after localApply and before export / "
                                                 "copy, the 2-norm of OverlappingY is NaN or Inf.");
       }
-#endif  // HAVE_IFPACK2_DEBUG
 
-#ifdef HAVE_IFPACK2_DEBUG
-      {
+      if (Ifpack2::Details::Behavior::debug()) {
         const bool bad = anyBad(*C);
         TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                    "Ifpack2::AdditiveSchwarz::apply: "
@@ -517,7 +499,6 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
                                        << ni << ", before export / copy, the 2-norm of C "
                                                 "is NaN or Inf.");
       }
-#endif  // HAVE_IFPACK2_DEBUG
 
       // do communication if necessary
       if (IsOverlapping_) {
@@ -543,8 +524,7 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
         Tpetra::deep_copy(*C_view, *OverlappingY);
       }
 
-#ifdef HAVE_IFPACK2_DEBUG
-      {
+      if (Ifpack2::Details::Behavior::debug()) {
         const bool bad = anyBad(*C);
         TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                    "Ifpack2::AdditiveSchwarz::apply: "
@@ -552,10 +532,8 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
                                        << ni << ", before Y := C + Y, the 2-norm of C "
                                                 "is NaN or Inf.");
       }
-#endif  // HAVE_IFPACK2_DEBUG
 
-#ifdef HAVE_IFPACK2_DEBUG
-      {
+      if (Ifpack2::Details::Behavior::debug()) {
         const bool bad = anyBad(Y);
         TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                    "Ifpack2::AdditiveSchwarz::apply: "
@@ -563,12 +541,10 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
                                        << ni << ", the 2-norm of Y "
                                                 "is NaN or Inf.");
       }
-#endif  // HAVE_IFPACK2_DEBUG
 
       Y.update(UpdateDamping_, *C, STS::one());
 
-#ifdef HAVE_IFPACK2_DEBUG
-      {
+      if (Ifpack2::Details::Behavior::debug()) {
         const bool bad = anyBad(Y);
         TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                    "Ifpack2::AdditiveSchwarz::apply: "
@@ -576,19 +552,16 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::
                                        << ni << ", after Y := C + Y, the 2-norm of Y "
                                                 "is NaN or Inf.");
       }
-#endif  // HAVE_IFPACK2_DEBUG
-    }   // for each iteration
+    }  // for each iteration
 
   }  // Stop timing here
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     const bool bad = anyBad(Y);
     TEUCHOS_TEST_FOR_EXCEPTION(bad, std::runtime_error,
                                "Ifpack2::AdditiveSchwarz::apply: "
                                "The 2-norm of the output Y is NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   ++NumApply_;
 

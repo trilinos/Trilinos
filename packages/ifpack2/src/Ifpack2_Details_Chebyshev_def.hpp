@@ -22,6 +22,7 @@
 #include "Ifpack2_Details_Chebyshev_Weights.hpp"
 // #include "Ifpack2_Details_ScaledDampedResidual.hpp"
 #include "Ifpack2_Details_ChebyshevKernel.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 #include "KokkosKernels_ArithTraits.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -564,7 +565,7 @@ void Chebyshev<ScalarType, MV>::
   // Only fill in Ifpack2's name, not ML's or Ifpack's.
   if (plist.isParameter("smoother: sweeps")) {  // ML compatibility
     numIters = plist.get<int>("smoother: sweeps");
-  }                                               // Ifpack's name overrides ML's name.
+  }  // Ifpack's name overrides ML's name.
   if (plist.isParameter("relaxation: sweeps")) {  // Ifpack compatibility
     numIters = plist.get<int>("relaxation: sweeps");
   }  // Ifpack2's name overrides Ifpack's name.
@@ -1351,11 +1352,7 @@ void Chebyshev<ScalarType, MV>::
                     const ST eigRatio,
                     const V& D_inv) {
   using std::endl;
-#ifdef HAVE_IFPACK2_DEBUG
-  const bool debug = debug_;
-#else
-  const bool debug = false;
-#endif
+  const bool debug = Ifpack2::Details::Behavior::debug() ? debug_ : false;
 
   if (debug) {
     *out_ << " \\|B\\|_{\\infty} = " << maxNormInf(B) << endl;
