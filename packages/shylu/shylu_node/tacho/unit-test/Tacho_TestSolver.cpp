@@ -152,6 +152,9 @@ int driver(const std::string file, const std::string method_name, const int vari
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
 
     int num_setups = (single_setup ? 1 : 2); // number of symbolic calls
+    DenseMultiVectorType b("b", A.NumRows(), 1), // rhs multivector
+      x("x", A.NumRows(), 1),                    // solution multivector
+      t("t", A.NumRows(), 1);                    // temp workspace (store permuted rhs)
     for (int s = 0; s < num_setups; s++) {
       /// initialize
       r_val = solver.analyze(A.NumRows(), A.RowPtr(), A.Cols());
@@ -191,10 +194,12 @@ int driver(const std::string file, const std::string method_name, const int vari
         std::cout << "  > Diagonal entries shifted by " << shift << std::endl << std::endl;
 
         /// solve
-        int nrhs_s = (step == 0 ? 1 : nrhs);
-        DenseMultiVectorType b("b", A.NumRows(), nrhs_s), // rhs multivector
-          x("x", A.NumRows(), nrhs_s),                    // solution multivector
-          t("t", A.NumRows(), nrhs_s);                    // temp workspace (store permuted rhs)
+        if (step == 1) {
+          // first solve with one RHS, and then with "nrhs" for the rest
+          Kokkos::resize(b, A.NumRows(), nrhs); // rhs multivector
+          Kokkos::resize(x, A.NumRows(), nrhs); // solution multivector
+          Kokkos::resize(t, A.NumRows(), nrhs); // temp workspace (store permuted rhs)
+        }
         if(r_val == 0) {
           const value_type zero(0.0);
           const value_type one (1.0);
