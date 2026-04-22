@@ -565,7 +565,7 @@ void Chebyshev<ScalarType, MV>::
   // Only fill in Ifpack2's name, not ML's or Ifpack's.
   if (plist.isParameter("smoother: sweeps")) {  // ML compatibility
     numIters = plist.get<int>("smoother: sweeps");
-  }  // Ifpack's name overrides ML's name.
+  }                                               // Ifpack's name overrides ML's name.
   if (plist.isParameter("relaxation: sweeps")) {  // Ifpack compatibility
     numIters = plist.get<int>("relaxation: sweeps");
   }  // Ifpack2's name overrides Ifpack's name.

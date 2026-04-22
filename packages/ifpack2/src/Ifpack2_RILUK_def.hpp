@@ -634,7 +634,7 @@ void RILUK<MatrixType>::initialize() {
                                                                                              A_local_diagblks_ColMap,
                                                                                              A_local_diagblks_v_[i]));
           Graph_v_[i]                                              = rcp(new Ifpack2::IlukGraph<crs_graph_type, kk_handle_type>(A_local_diagblks->getCrsGraph(),
-                                                                                                                                LevelOfFill_, 0, Overalloc_));
+                                                                                   LevelOfFill_, 0, Overalloc_));
         }
       }
     }

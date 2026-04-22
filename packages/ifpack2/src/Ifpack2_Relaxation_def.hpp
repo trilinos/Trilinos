@@ -153,7 +153,7 @@ void Relaxation<MatrixType>::
       map.get() != cachedMV_->getMap().get() ||
       cachedMV_->getNumVectors() != numVecs) {
     using MV  = Tpetra::MultiVector<scalar_type, local_ordinal_type,
-                                    global_ordinal_type, node_type>;
+                                   global_ordinal_type, node_type>;
     cachedMV_ = Teuchos::rcp(new MV(map, numVecs, false));
   }
 }
@@ -1698,7 +1698,7 @@ void Relaxation<MatrixType>::
       X_colMap->doImport(X, *importer, Tpetra::INSERT);
     }
     copyBackOutput = true;  // Don't forget to copy back at end.
-  }  // if column and domain Maps are (not) the same
+  }                         // if column and domain Maps are (not) the same
 
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (!importer.is_null() && sweep > 0) {
@@ -1972,7 +1972,7 @@ void Relaxation<MatrixType>::
       X_colMap->doImport(X, *importer, Tpetra::CombineMode::INSERT);
     }
     copyBackOutput = true;  // Don't forget to copy back at end.
-  }  // if column and domain Maps are (not) the same
+  }                         // if column and domain Maps are (not) the same
 
   // The Gauss-Seidel / SOR kernel expects multivectors of constant
   // stride.  X_colMap is by construction, but B might not be.  If

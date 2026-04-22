@@ -553,20 +553,20 @@ void MDF<MatrixType>::compute() {
   {
     auto L_mdf = MDF_handle_->getL();
     L_         = rcp(new crs_matrix_type(
-        A_local_->getRowMap(),
-        A_local_->getColMap(),
-        Details::MDFImpl::copy_view(L_mdf.graph.row_map),
-        Details::MDFImpl::copy_view(L_mdf.graph.entries),
-        Details::MDFImpl::copy_view(L_mdf.values)));
+                A_local_->getRowMap(),
+                A_local_->getColMap(),
+                Details::MDFImpl::copy_view(L_mdf.graph.row_map),
+                Details::MDFImpl::copy_view(L_mdf.graph.entries),
+                Details::MDFImpl::copy_view(L_mdf.values)));
   }
   {
     auto U_mdf = MDF_handle_->getU();
     U_         = rcp(new crs_matrix_type(
-        A_local_->getRowMap(),
-        A_local_->getColMap(),
-        Details::MDFImpl::copy_view(U_mdf.graph.row_map),
-        Details::MDFImpl::copy_view(U_mdf.graph.entries),
-        Details::MDFImpl::copy_view(U_mdf.values)));
+                A_local_->getRowMap(),
+                A_local_->getColMap(),
+                Details::MDFImpl::copy_view(U_mdf.graph.row_map),
+                Details::MDFImpl::copy_view(U_mdf.graph.entries),
+                Details::MDFImpl::copy_view(U_mdf.values)));
   }
   L_->fillComplete();
   U_->fillComplete();
