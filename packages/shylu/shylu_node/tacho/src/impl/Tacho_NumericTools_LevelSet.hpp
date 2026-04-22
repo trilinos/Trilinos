@@ -2147,6 +2147,8 @@ public:
     }
     // create cusparse handle
     cusparseCreate(&cusparseHandle);
+    // attach handle to stream-0
+    cusparseSetStream(cusparseHandle, _streams[0]);
     // attach to Cusparse data struct
     cusparseCreateDnMat(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), computeType, CUSPARSE_ORDER_COL);
     cusparseCreateDnVec(&vecW, m, (void*)(_w_vec.data()), computeType);
@@ -2162,21 +2164,24 @@ public:
     }
     // create rocsparse handle
     _status = rocsparse_create_handle(&rocsparseHandle);
-    checkDeviceBlasStatus("rocblas_create_handle");
+    checkDeviceBlasStatus("rocsparse_create_handle");
+    // attach handle to stream-0
+    rocsparse_set_stream(rocsparseHandle, _streams[0]);
+    checkDeviceBlasStatus("rocsparse_create_handle");
     // attach to Rocsparse data struct
     _status = rocsparse_create_dnmat_descr(&matW, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnmat_descr");
     _status = rocsparse_create_dnvec_descr(&vecW, m, (void*)(_w_vec.data()), rocsparse_compute_type);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnmat_descr");
     // also to T, to be destroyed before each SpMV call
     _status = rocsparse_create_dnmat_descr(&matL, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnmat_descr");
     _status = rocsparse_create_dnvec_descr(&vecL, m, (void*)(_w_vec.data()), rocsparse_compute_type);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnvec_descr");
     _status = rocsparse_create_dnmat_descr(&matU, m, nrhs, ldw, (void*)(_w_vec.data()), rocsparse_compute_type, rocsparse_order_column);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnmat_descr");
     _status = rocsparse_create_dnvec_descr(&vecU, m, (void*)(_w_vec.data()), rocsparse_compute_type);
-    checkDeviceBlasStatus("rocblas_dnmat_descr");
+    checkDeviceBlasStatus("rocsparse_dnvec_descr");
 #endif
 #endif
 
@@ -3324,7 +3329,12 @@ public:
         const UnmanagedViewType<nzvals_view> matD(s0.nzvalsD, _m);
 
         using policy_type = Kokkos::RangePolicy<exec_space>;
+#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        const auto policy = policy_type(_exec_instances[0], 0, _m);
+#else
+        // TODO: initialize _exec_instance[0] as exec_space(); with serial build?
         const auto policy = policy_type(0, _m);
+#endif
         Kokkos::parallel_for(
             policy, KOKKOS_LAMBDA(const ordinal_type &i) {
               for (ordinal_type j = 0; j < nrhs; j++) matY(i,j) = matY(i, j) / matD(i); 
@@ -4858,6 +4868,7 @@ public:
     const auto perm_exec_instance = _exec_instances[0];
     const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
 #else
+    // TODO: initialize _exec_instance[0] as exec_space(); with serial build?
     const auto perm_exec_instance = exec_space();
     const auto team_exec_instance = perm_exec_instance;
 #endif
