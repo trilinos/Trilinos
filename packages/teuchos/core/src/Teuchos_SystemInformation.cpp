@@ -264,7 +264,7 @@ void initializeCollection() {
   registerCommand("sycl-ls", "sycl-ls --verbose", "sycl-ls");
 
   // package namespaced environment variables
-  for (auto &prefix : {"TEUCHOS", "KOKKOS", "TPETRA", "STK"})
+  for (auto &prefix : {"TEUCHOS", "KOKKOS", "TPETRA", "STK", "MUELU", "IFPACK2"})
     registerEnvironmentVariablePrefix(prefix);
 }
 
