@@ -254,9 +254,9 @@ private:
 
 #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
   stream_array_host _streams;
+#endif
   using exec_instance_array_host = std::vector<exec_space>;
   exec_instance_array_host _exec_instances;
-#endif
 
   ///
   /// statistics
@@ -811,12 +811,12 @@ public:
   }
 
   virtual ~NumericToolsLevelSet() {
-#if defined(KOKKOS_ENABLE_CUDA)
     /// kokkos execution space may fence and it uses the wrapped stream when it is deallocated   
     /// on cuda, deallocting streams first does not cause any errors while hip generates errors.
     /// here, we just follow the consistent destruction process as hip does.
     _exec_instances.clear();
 
+#if defined(KOKKOS_ENABLE_CUDA)
     if (_is_cusolver_dn_created) {
       _status = cusolverDnDestroy(_handle_lapack);
       checkDeviceLapackStatus("cusolverDnDestroy");
@@ -833,9 +833,6 @@ public:
     _streams.clear();
 #endif
 #if defined(KOKKOS_ENABLE_HIP)
-    /// kokkos execution space may fence and it uses the wrapped stream when it is deallocated   
-    _exec_instances.clear();
-
     if (_is_rocblas_created) {
       _status = rocblas_destroy_handle(_handle_lapack);
       checkDeviceLapackStatus("rocblasDestroy");
@@ -904,6 +901,11 @@ public:
     for (ordinal_type i = 0; i < _nstreams; ++i) {
       ExecSpaceFactory<exec_space>::createInstance(_streams[i], _exec_instances[i]);
     }
+#else
+    // just one default execution space..
+    _exec_instances.clear();
+    _exec_instances.resize(1);
+    _exec_instances[0] = exec_space();
 #endif
     if (verbose) {
       printf("Summary: CreateStream : %3d\n", _nstreams);
@@ -3329,12 +3331,7 @@ public:
         const UnmanagedViewType<nzvals_view> matD(s0.nzvalsD, _m);
 
         using policy_type = Kokkos::RangePolicy<exec_space>;
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
         const auto policy = policy_type(_exec_instances[0], 0, _m);
-#else
-        // TODO: initialize _exec_instance[0] as exec_space(); with serial build?
-        const auto policy = policy_type(0, _m);
-#endif
         Kokkos::parallel_for(
             policy, KOKKOS_LAMBDA(const ordinal_type &i) {
               for (ordinal_type j = 0; j < nrhs; j++) matY(i,j) = matY(i, j) / matD(i); 
@@ -4863,15 +4860,10 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
+    // execution spaces for non-device calls
     const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     const auto perm_exec_instance = _exec_instances[0];
     const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
-#else
-    // TODO: initialize _exec_instance[0] as exec_space(); with serial build?
-    const auto perm_exec_instance = exec_space();
-    const auto team_exec_instance = perm_exec_instance;
-#endif
 
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
@@ -5248,14 +5240,10 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
+    // execution spaces for non-device calls
     const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     const auto perm_exec_instance = _exec_instances[0];
     const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
-#else
-    const auto perm_exec_instance = exec_space();
-    const auto team_exec_instance = perm_exec_instance;
-#endif
 
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
@@ -5633,14 +5621,10 @@ public:
     timer.reset();
     allocateWorkspaceSolve(nrhs);
 
+    // execution spaces for non-device calls
     const bool need_fence = (!_team_on_user_stream || _nstreams > 1);
-#if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
     const auto perm_exec_instance = _exec_instances[0];
     const auto team_exec_instance = (_team_on_user_stream ? _exec_instances[0] : exec_space());
-#else
-    const auto perm_exec_instance = exec_space();
-    const auto team_exec_instance = perm_exec_instance;
-#endif
 
     // 0. permute (from METIS) and copy b -> t
     ApplyPermutation<Side::Left, Trans::NoTranspose, Algo::OnDevice>::invoke(perm_exec_instance, b, _perm, t);
