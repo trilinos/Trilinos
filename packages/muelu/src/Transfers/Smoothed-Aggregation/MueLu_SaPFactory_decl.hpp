@@ -82,7 +82,9 @@ class SaPFactory : public PFactory {
   //! Destructor.
   virtual ~SaPFactory();
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

@@ -107,7 +107,9 @@ class HybridAggregationFactory : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~HybridAggregationFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

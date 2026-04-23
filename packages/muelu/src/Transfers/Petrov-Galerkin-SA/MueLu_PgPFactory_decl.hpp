@@ -64,7 +64,9 @@ class PgPFactory : public PFactory {
   //! @name Set methods.
   //@{
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Set minimization mode (L2NORM for cheapest, ANORM more expensive, DINVANORM = default)
   void SetMinimizationMode(MinimizationNorm minnorm);

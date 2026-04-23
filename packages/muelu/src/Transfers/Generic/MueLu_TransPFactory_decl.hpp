@@ -48,7 +48,9 @@ class TransPFactory : public TwoLevelFactoryBase {
   //! Destructor.
   virtual ~TransPFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

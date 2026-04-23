@@ -115,7 +115,9 @@ class UncoupledAggregationFactory : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~UncoupledAggregationFactory();
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   void DoGraphColoring(Level& currentLevel,
                        const std::string& aggAlgo,

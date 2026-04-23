@@ -48,7 +48,9 @@ class ToggleCoordinatesTransferFactory : public TwoLevelFactoryBase {
   //! Destructor.
   virtual ~ToggleCoordinatesTransferFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

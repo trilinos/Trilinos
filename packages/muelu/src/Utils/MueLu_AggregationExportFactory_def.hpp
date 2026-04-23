@@ -53,7 +53,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~AggregationExportFactory() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   std::string output_msg =

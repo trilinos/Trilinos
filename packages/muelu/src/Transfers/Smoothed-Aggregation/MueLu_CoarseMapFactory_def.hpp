@@ -36,7 +36,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~CoarseMapFactory() = default;
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Generating factory for aggregates.");

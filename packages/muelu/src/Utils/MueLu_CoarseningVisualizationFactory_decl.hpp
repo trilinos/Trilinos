@@ -67,7 +67,9 @@ class CoarseningVisualizationFactory : public TwoLevelFactoryBase, public Visual
   virtual ~CoarseningVisualizationFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{

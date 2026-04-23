@@ -119,7 +119,9 @@ class CoalesceDropFactory_kokkos
   //! Destructor
   virtual ~CoalesceDropFactory_kokkos() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

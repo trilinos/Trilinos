@@ -51,7 +51,9 @@ class ClassicalPFactory : public PFactory {
   virtual ~ClassicalPFactory() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{

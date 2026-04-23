@@ -80,7 +80,9 @@ class StructuredAggregationFactory : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~StructuredAggregationFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

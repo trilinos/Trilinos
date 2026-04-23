@@ -86,7 +86,9 @@ class CoarseMapFactory : public SingleLevelFactoryBase {
   //! @name Input
   //@{
 
-  RCP<const ParameterList> GetValidParameterList() const override;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   /*!
     @brief Specifies the data that this class needs, and the factories that generate that data.

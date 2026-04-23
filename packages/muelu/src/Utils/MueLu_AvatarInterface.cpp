@@ -60,7 +60,7 @@ extern "C" {
 namespace MueLu {
 
 // ***********************************************************************
-RCP<const ParameterList> AvatarInterface::GetValidParameterList() const {
+RCP<const ParameterList> AvatarInterface::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   Teuchos::ParameterList pl_dummy;

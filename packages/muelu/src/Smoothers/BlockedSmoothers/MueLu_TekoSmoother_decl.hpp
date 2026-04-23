@@ -66,7 +66,7 @@ class TekoSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdina
 
   //! Input
   //@{
-  RCP<const ParameterList> GetValidParameterList() const {
+  RCP<const ParameterList> GetValidParameterListImpl() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     return validParamList;
   }
@@ -171,7 +171,7 @@ class TekoSmoother<double, int, GlobalOrdinal, Node> : public SmootherPrototype<
 
   //! Input
   //@{
-  RCP<const ParameterList> GetValidParameterList() const {
+  RCP<const ParameterList> GetValidParameterListImpl() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     validParamList->set<RCP<const FactoryBase> >("A", null, "Generating factory of the matrix A");

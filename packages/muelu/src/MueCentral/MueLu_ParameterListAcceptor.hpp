@@ -129,6 +129,12 @@ class ParameterListAcceptorImpl : public ParameterListAcceptor {
   // Do we need that too?
 };
 
+#define MUELU_GETVALIDPARAMETERLIST()                                        \
+  Teuchos::RCP<const Teuchos::ParameterList> GetValidParameterList() const { \
+    static auto valid_pl = GetValidParameterListImpl();                      \
+    return valid_pl;                                                         \
+  }
+
 }  // namespace MueLu
 
 #endif  // MUELU_PARAMETERLISTACCEPTOR_HPP

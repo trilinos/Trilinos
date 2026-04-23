@@ -94,7 +94,9 @@ class IntrepidPCoarsenFactory : public PFactory {
   //! Destructor.
   virtual ~IntrepidPCoarsenFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

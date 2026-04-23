@@ -39,7 +39,7 @@ void BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddFactor
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> BraessSarazinSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   SC one = Teuchos::ScalarTraits<SC>::one();

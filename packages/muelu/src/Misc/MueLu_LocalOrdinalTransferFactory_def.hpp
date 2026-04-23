@@ -26,7 +26,7 @@
 namespace MueLu {
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> LocalOrdinalTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> LocalOrdinalTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<RCP<const FactoryBase> >(TransferVecName_, Teuchos::null, "Factory for TransferVec generation");

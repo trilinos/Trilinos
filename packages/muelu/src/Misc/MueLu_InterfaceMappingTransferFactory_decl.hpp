@@ -50,7 +50,9 @@ class InterfaceMappingTransferFactory : public TwoLevelFactoryBase {
   //! Destructor.
   ~InterfaceMappingTransferFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const override;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
   void DeclareInput(Level &fineLevel, Level &coarseLevel) const override;
   void Build(Level &fineLevel, Level &coarseLevel) const override;
 };

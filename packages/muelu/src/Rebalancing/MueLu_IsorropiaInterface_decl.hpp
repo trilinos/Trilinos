@@ -91,7 +91,9 @@ class IsorropiaInterface : public SingleLevelFactoryBase {
   virtual ~IsorropiaInterface() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! @name Input
   //@{

@@ -88,7 +88,9 @@ class RepartitionHeuristicFactory : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~RepartitionHeuristicFactory();
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 

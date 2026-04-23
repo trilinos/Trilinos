@@ -32,7 +32,12 @@ class KokkosTuningInterface : public BaseClass {
 
   virtual ~KokkosTuningInterface() {}
 
-  Teuchos::RCP<const Teuchos::ParameterList> GetValidParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> GetValidParameterList() const {
+    static auto valid_pl = GetValidParameterListImpl();
+    return valid_pl;
+  }
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   // Sets the input parameters for the KokkosTuneInterface
   // NOTE: These are *not* the parameters which KokkosTuning is going to overwrite, rather the

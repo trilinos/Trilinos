@@ -93,7 +93,9 @@ class TentativePFactory_kokkos : public PFactory {
   virtual ~TentativePFactory_kokkos() {}
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{

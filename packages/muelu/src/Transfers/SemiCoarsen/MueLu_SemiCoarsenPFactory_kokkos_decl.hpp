@@ -82,7 +82,9 @@ class SemiCoarsenPFactory_kokkos : public PFactory {
   virtual ~SemiCoarsenPFactory_kokkos() = default;
   //@}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //! Input
   //@{

@@ -23,7 +23,7 @@
 namespace MueLu {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> LowPrecisionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> LowPrecisionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<std::string>("matrix key", "A", "");
@@ -58,7 +58,7 @@ void LowPrecisionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
 #if defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_FLOAT)
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> LowPrecisionFactory<double, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> LowPrecisionFactory<double, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<std::string>("matrix key", "A", "");
@@ -105,7 +105,7 @@ void LowPrecisionFactory<double, LocalOrdinal, GlobalOrdinal, Node>::Build(Level
 
 #if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-RCP<const ParameterList> LowPrecisionFactory<std::complex<double>, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+RCP<const ParameterList> LowPrecisionFactory<std::complex<double>, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterListImpl() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
   validParamList->set<std::string>("matrix key", "A", "");

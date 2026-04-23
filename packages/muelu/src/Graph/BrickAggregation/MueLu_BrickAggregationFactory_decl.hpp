@@ -84,7 +84,9 @@ class BrickAggregationFactory : public SingleLevelFactoryBase {
   //! Destructor.
   virtual ~BrickAggregationFactory() {}
 
-  RCP<const ParameterList> GetValidParameterList() const;
+  MUELU_GETVALIDPARAMETERLIST();
+
+  RCP<const ParameterList> GetValidParameterListImpl() const;
 
   //@}
 
