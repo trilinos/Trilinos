@@ -263,7 +263,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   // Sort & set values
   if (params.is_null() || params->get("sort entries", true)) {
     // Tpetra's SpGEMM results in almost sorted matrices. Use shell sort.
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC, ::KokkosSparse::SortAlgorithm::SHELL);
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   }
   C.setAllValues(row_mapC, entriesC, valuesC);
 }
@@ -659,7 +659,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   // Sort & set values
   if (params.is_null() || params->get("sort entries", true)) {
     // Tpetra's SpGEMM results in almost sorted matrices. Use shell sort.
-    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC, ::KokkosSparse::SortAlgorithm::SHELL);
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
   }
   C.setAllValues(row_mapC, entriesC, valuesC);
 }
@@ -1226,7 +1226,7 @@ static inline void mult_R_A_P_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct
 
   // Final sort & set of CRS arrays
   // Tpetra's SpGEMM results in almost sorted matrices. Use shell sort.
-  Import_Util::sortCrsEntries(rowmapAc, entriesAc, valuesAc, ::KokkosSparse::SortAlgorithm::SHELL);
+  Import_Util::sortCrsEntries(rowmapAc, entriesAc, valuesAc);
   // mfh 27 Sep 2016: This just sets pointers.
   Ac.setAllValues(rowmapAc, entriesAc, valuesAc);
 

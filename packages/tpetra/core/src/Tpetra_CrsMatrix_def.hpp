@@ -4503,7 +4503,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (!sorted) {
       // For this to work correctly, we require that the unused column entries have been filled
       // with indices that get ordered last.
-      Import_Util::sortCrsEntries(rowptr, colinds, values, ::KokkosSparse::SortAlgorithm::DEFAULT);
+      Import_Util::sortCrsEntries(rowptr, colinds, values);
       graph.indicesAreSorted_ = true;  // we just sorted every row
     }
     if (!merged) {
@@ -8317,8 +8317,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Tpetra::Details::ProfilingRegion MMrc("Tpetra TAFC sortCrsEntries");
       Import_Util::sortCrsEntries(CSR_rowptr(),
                                   CSR_colind_LID(),
-                                  CSR_vals(),
-                                  ::KokkosSparse::SortAlgorithm::DEFAULT);
+                                  CSR_vals());
     } else if ((!reverseMode && xferAsExport != nullptr) ||
                (reverseMode && xferAsImport != nullptr)) {
       if (verbose) {
@@ -8492,8 +8491,7 @@ void CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       Tpetra::Details::ProfilingRegion MMrc("Tpetra TAFC sortCrsEntries");
       Import_Util::sortCrsEntries(CSR_rowptr_d,
                                   CSR_colind_LID_d,
-                                  CSR_vals_d,
-                                  ::KokkosSparse::SortAlgorithm::DEFAULT);
+                                  CSR_vals_d);
     } else if ((!reverseMode && xferAsExport != nullptr) ||
                (reverseMode && xferAsImport != nullptr)) {
       if (verbose) {

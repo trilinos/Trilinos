@@ -173,7 +173,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Tpetra::KokkosCompat::K
 #if defined(KOKKOS_ENABLE_CUDA) && defined(KOKKOSKERNELS_ENABLE_TPL_CUSPARSE) && ((CUDA_VERSION < 11000) || (CUDA_VERSION >= 11040))
   if constexpr (std::is_same_v<typename device_t::execution_space, Kokkos::Cuda>) {
     if (!KokkosSparse::isCrsGraphSorted(Bmerged.graph.row_map, Bmerged.graph.entries)) {
-      KokkosSparse::sort_crs_matrix(Bmerged);
+      Import_Util::sortCrsMatrix(Bmerged);
     }
   }
 #endif

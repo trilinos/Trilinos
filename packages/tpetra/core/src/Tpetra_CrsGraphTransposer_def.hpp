@@ -20,6 +20,7 @@
 #include "KokkosSparse_Utils.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosSparse_spadd.hpp"
+#include "Tpetra_Import_Util2.hpp"
 
 namespace Tpetra {
 
@@ -310,7 +311,7 @@ CrsGraphTransposer<LocalOrdinal, GlobalOrdinal, Node>::
 
   bool sort = true;
   if (sort)
-    KokkosSparse::sort_crs_graph<execution_space, row_ptrs_array, col_inds_array>(rowptrsSym, colindsSym);
+    Import_Util::sortCrsEntries(rowptrsSym, colindsSym);
 
   local_graph_device_type lclGraphSym = local_graph_device_type(colindsSym, rowptrsSym);
 
@@ -407,11 +408,7 @@ CrsGraphTransposer<LocalOrdinal, GlobalOrdinal, Node>::
       lclGraphT_rowmap, lclGraphT_entries);
 
   if (sort)
-    KokkosSparse::sort_crs_graph<
-        typename local_graph_device_type::execution_space,
-        rowmap_t, entries_t>(
-        lclGraphT_rowmap,
-        lclGraphT_entries);
+    Import_Util::sortCrsEntries(lclGraphT_rowmap, lclGraphT_entries);
 
   // And construct the transpose local_graph_device_type
   local_graph_device_type lclGraphT = local_graph_device_type(lclGraphT_entries, lclGraphT_rowmap);
