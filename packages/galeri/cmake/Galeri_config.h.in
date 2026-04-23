@@ -14,9 +14,6 @@
 /* Define if you want to build export makefiles. */
 #cmakedefine HAVE_EXPORT_MAKEFILES
 
-/* Define if want to build with galeri enabled */
-#cmakedefine HAVE_GALERI_EPETRAEXT
-
 /* Define if want to build galeri-examples */
 #cmakedefine HAVE_GALERI_EXAMPLES
 
@@ -40,16 +37,9 @@
 
 /* Optional Deps */
 #cmakedefine HAVE_GALERI_XPETRA
-#cmakedefine HAVE_GALERI_TPETRA
-#cmakedefine HAVE_GALERI_KOKKOS
-#cmakedefine HAVE_GALERI_KOKKOSKERNELS
-
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
 #cmakedefine inline
 #endif
-
-/* Define if want to build with Triutils support enabled. */
-#cmakedefine HAVE_GALERI_TRIUTILS
