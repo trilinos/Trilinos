@@ -6813,8 +6813,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, Teko_Setup_Apply, Scalar, Loc
 
     RCP<ParameterList> tekoParams = rcp(new ParameterList());
     {
-      ParameterList& invLib   = tekoParams->sublist("Inverse Factory Library");
-      ParameterList& tekoDiag = invLib.sublist("TekoDiag");
+      ParameterList& tekoDiag = tekoParams->sublist("TekoDiag");
       tekoDiag.set("Type", "Block Jacobi");
     }
 
