@@ -189,7 +189,8 @@ RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MatrixM
   const size_t B_inner = transposeB ? B.Cols() : B.Rows();
   TEUCHOS_TEST_FOR_EXCEPTION(A_inner != B_inner, Exceptions::RuntimeError,
                              "TwoMatrixMultiplyBlock: Block dimensions are not compatible for multiplication. "
-                             "A has " << A_inner << " block columns and B has " << B_inner << " block rows.");
+                             "A has "
+                                 << A_inner << " block columns and B has " << B_inner << " block rows.");
 
   RCP<const MapExtractor> rgmapextractor = transposeA ? A.getDomainMapExtractor() : A.getRangeMapExtractor();
   RCP<const MapExtractor> domapextractor = transposeB ? B.getRangeMapExtractor() : B.getDomainMapExtractor();
