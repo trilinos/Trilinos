@@ -449,8 +449,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(MatrixMatrix, BlockedMultiply_Tpetra, M, MA, S
   cases.push_back({false, true, xABt, twoABt, Teuchos::null, xABt, true, true, false, true, "NT"});
   cases.push_back({true, true, xAtBt, xAtBt, xAtBt, twoAtBt, true, true, true, true, "TT"});
 
-  for (const auto & tc : cases) {
-
+  for (const auto& tc : cases) {
     out << "Testing blocked multiply case " << tc.label
         << " transposeA=" << tc.transposeA
         << " transposeB=" << tc.transposeB << std::endl;

@@ -465,7 +465,7 @@ void MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(const
           bC->setMatrix(i, j, Teuchos::null);
         }
       }  // loop over columns j
-    }  // loop over rows i
+    }    // loop over rows i
 
   }  // end blocked recursive algorithm
 }  // MatrixMatrix::TwoMatrixAdd()
