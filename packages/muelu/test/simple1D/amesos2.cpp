@@ -19,11 +19,9 @@
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_IfpackSmoother.hpp"
 #include "MueLu_Ifpack2Smoother.hpp"
 #include "MueLu_GenericPRFactory.hpp"
 
-#include "MueLu_AmesosSmoother.hpp"
 #include "MueLu_Amesos2Smoother.hpp"
 #include "MueLu_Utilities.hpp"
 
@@ -73,7 +71,7 @@ int main(int argc, char *argv[]) {
   std::string coarseSolver = "amesos2";
   clp.setOption("maxLevels", &maxLevels, "maximum number of levels allowed");
   clp.setOption("its", &its, "number of multigrid cycles");
-  clp.setOption("coarseSolver", &coarseSolver, "amesos2 or ifpack2 (Tpetra specific. Ignored for Epetra)");
+  clp.setOption("coarseSolver", &coarseSolver, "amesos2 or ifpack2");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED: return EXIT_SUCCESS;

@@ -1616,10 +1616,6 @@ void UtilitiesBase<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   std::srand(mySeed);
   // For Tpetra, we could use Kokkos' random number generator here.
   Teuchos::ScalarTraits<Scalar>::seedrandom(mySeed);
-  // Epetra
-  //   MultiVector::Random() -> Epetra_Util::RandomDouble() -> Epetra_Utils::RandomInt()
-  // Its own random number generator, based on Seed_. Seed_ is initialized in Epetra_Util constructor with std::rand()
-  // So our setting std::srand() affects that too
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
