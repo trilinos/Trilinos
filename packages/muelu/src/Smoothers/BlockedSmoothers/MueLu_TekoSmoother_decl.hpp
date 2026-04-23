@@ -73,7 +73,7 @@ class TekoSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdina
 
   void DeclareInput(Level &currentLevel) const {}
 
-  void SetTekoParameters(RCP<ParameterList> tekoParams) {};
+  void SetTekoParameters(RCP<ParameterList> tekoParams){};
   //@}
 
   //! @name Setup and Apply methods.
@@ -163,7 +163,7 @@ class TekoSmoother<double, int, GlobalOrdinal, Node> : public SmootherPrototype<
     , bA_(Teuchos::null)
     , bThyOp_(Teuchos::null)
     , tekoParams_(Teuchos::null)
-    , inverseOp_(Teuchos::null) {};
+    , inverseOp_(Teuchos::null){};
 
   //! Destructor
   virtual ~TekoSmoother() {}
@@ -357,7 +357,7 @@ class TekoSmoother<double, int, GlobalOrdinal, Node> : public SmootherPrototype<
   RCP<ParameterList> tekoParams_;  // < ! parameter list containing Teko parameters. These parameters are not administrated by the factory and not validated.
 
   Teko::LinearOp inverseOp_;  // < ! Teko inverse operator
-};  // class TekoSmoother (specialization on SC=double)
+};                            // class TekoSmoother (specialization on SC=double)
 }  // namespace MueLu
 
 #define MUELU_TEKOSMOOTHER_SHORT
