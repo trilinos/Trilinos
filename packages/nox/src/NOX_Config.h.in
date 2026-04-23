@@ -95,20 +95,11 @@
 /* define if the compiler supports the isnan() function */
 #undef HAVE_NAN_SUPPORT
 
-/* Define if want to build with amesos enabled */
-#undef HAVE_NOX_AMESOS
-
 /* define that Belos is activated in nox */
 #undef HAVE_NOX_BELOS
 
 /* Define to build NOX in debug mode. */
 #undef HAVE_NOX_DEBUG
-
-/* Define if want to build with epetraext enabled */
-#undef HAVE_NOX_EPETRAEXT
-
-/* Define if want to build with ml enabled */
-#undef HAVE_NOX_ML_EPETRA
 
 /* Define if want to build with sacado enabled */
 #undef HAVE_NOX_SACADO
