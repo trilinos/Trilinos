@@ -5,6 +5,32 @@ include(${CMAKE_CURRENT_LIST_DIR}/ctest-functions.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/ctest-common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/ctest-cdash-setup.cmake)
 
+macro(trilinos_ctest_compute_asan_memcheck_route)
+  set(TRILINOS_CTEST_USE_ASAN_MEMCHECK FALSE)
+  set(TRILINOS_CTEST_USE_ASAN_MEMCHECK_REASON "")
+  if(DEFINED CTEST_BUILD_NAME AND CTEST_BUILD_NAME MATCHES ".*_asan_.*")
+    set(TRILINOS_CTEST_USE_ASAN_MEMCHECK TRUE)
+    set(TRILINOS_CTEST_USE_ASAN_MEMCHECK_REASON "CTEST_BUILD_NAME matches .*_asan_.*")
+  endif()
+  if(DEFINED CTEST_BINARY_DIRECTORY)
+    set(_trilinos_genconfig_bn_file "${CTEST_BINARY_DIRECTORY}/genconfig_build_name.txt")
+    if(EXISTS "${_trilinos_genconfig_bn_file}")
+      file(READ "${_trilinos_genconfig_bn_file}" _trilinos_genconfig_bn_content)
+      string(STRIP "${_trilinos_genconfig_bn_content}" _trilinos_genconfig_bn_content)
+      if(_trilinos_genconfig_bn_content MATCHES ".*_asan_.*")
+        set(TRILINOS_CTEST_USE_ASAN_MEMCHECK TRUE)
+        if(TRILINOS_CTEST_USE_ASAN_MEMCHECK_REASON STREQUAL "")
+          set(TRILINOS_CTEST_USE_ASAN_MEMCHECK_REASON
+              "genconfig_build_name.txt matches .*_asan_.*")
+        else()
+          set(TRILINOS_CTEST_USE_ASAN_MEMCHECK_REASON
+              "${TRILINOS_CTEST_USE_ASAN_MEMCHECK_REASON}; genconfig_build_name.txt matches .*_asan_.*")
+        endif()
+      endif()
+    endif()
+  endif()
+endmacro()
+
 
 # -----------------------------------------------------------
 # -- Test
@@ -13,8 +39,11 @@ banner("START test step")
 
 set(STAGE_TEST_ERROR OFF)
 
+trilinos_ctest_compute_asan_memcheck_route()
+
 if(NOT SKIP_RUN_TESTS)
-    if(CTEST_BUILD_NAME MATCHES .*_asan_.*)
+    if(TRILINOS_CTEST_USE_ASAN_MEMCHECK)
+        message(">>> AddressSanitizer memcheck route: ${TRILINOS_CTEST_USE_ASAN_MEMCHECK_REASON}")
         set(CTEST_MEMORYCHECK_TYPE "AddressSanitizer")
         set(ENV{LSAN_OPTIONS} "suppressions=${CTEST_SOURCE_DIRECTORY}/packages/framework/asan_assets/lsan.supp")
         set(ENV{LD_PRELOAD} ${CTEST_SOURCE_DIRECTORY}/packages/framework/asan_assets/dummy_dlclose.so)
@@ -24,6 +53,7 @@ if(NOT SKIP_RUN_TESTS)
         unset(ENV{LD_PRELOAD})
         submit_by_parts( "MemCheck" )
     else()
+        message(">>> Plain ctest_test route (not AddressSanitizer memcheck)")
         ctest_test(PARALLEL_LEVEL ${TEST_PARALLEL_LEVEL}
                    CAPTURE_CMAKE_ERROR captured_cmake_error
                    RETURN_VALUE test_error)
