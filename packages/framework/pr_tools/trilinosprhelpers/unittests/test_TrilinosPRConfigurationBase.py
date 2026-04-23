@@ -715,6 +715,28 @@ class TrilinosPRConfigurationTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(pr_config.arg_filename_subprojects))
 
 
+    def test_TrilinosPRConfigurationBase_using_asan_true(self):
+        """
+        Test that the `using_address_sanitizer` property is True if the build key contains `_asan_`.
+        """
+        args = self.dummy_args()
+        args.genconfig_build_name = "rhel8_sems-gnu-openmpi_release_static_no-kokkos-arch_asan_no-complex_no-fpic_mpi_no-pt_no-rdc_all"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
+        self.assertTrue(pr_config.using_address_sanitizer)
+
+
+    def test_TrilinosPRConfigurationBase_using_asan_false(self):
+        """
+        Test that the `using_address_sanitizer` property is False if the build key contains `_no-asan_`.
+        """
+        args = self.dummy_args()
+        args.genconfig_build_name = "rhel8_sems-gnu-openmpi_release_static_no-kokkos-arch_no-asan_no-complex_no-fpic_mpi_no-pt_no-rdc_all"
+        pr_config = trilinosprhelpers.TrilinosPRConfigurationBase(args)
+
+        self.assertFalse(pr_config.using_address_sanitizer)
+
+
     def test_TrilinosPRConfigurationBase_prepare_test_FAIL(self):
         """
         Test the prepare_test method where it would fail due to

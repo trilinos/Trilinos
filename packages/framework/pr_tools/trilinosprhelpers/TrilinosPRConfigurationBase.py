@@ -371,6 +371,13 @@ class TrilinosPRConfigurationBase(object):
     # --------------------
 
     @property
+    def using_address_sanitizer(self):
+        """
+        Determine whether LLVM AddressSanitizer is being used.
+        """
+        return "_asan_" in self.arg_genconfig_build_name
+
+    @property
     def working_directory_ctest(self):
         """
         Generate the working directory for where we should launch the CTest command from.
