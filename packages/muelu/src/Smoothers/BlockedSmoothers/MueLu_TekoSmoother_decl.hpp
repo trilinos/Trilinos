@@ -73,7 +73,7 @@ class TekoSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdina
 
   void DeclareInput(Level &currentLevel) const {}
 
-  void SetTekoParameters(RCP<ParameterList> tekoParams){};
+  void SetTekoParameters(RCP<ParameterList> tekoParams) {};
   //@}
 
   //! @name Setup and Apply methods.
@@ -163,7 +163,7 @@ class TekoSmoother<double, int, GlobalOrdinal, Node> : public SmootherPrototype<
     , bA_(Teuchos::null)
     , bThyOp_(Teuchos::null)
     , tekoParams_(Teuchos::null)
-    , inverseOp_(Teuchos::null){};
+    , inverseOp_(Teuchos::null) {};
 
   //! Destructor
   virtual ~TekoSmoother() {}
@@ -239,36 +239,62 @@ class TekoSmoother<double, int, GlobalOrdinal, Node> : public SmootherPrototype<
   @param B right-hand side
   @param InitialGuessIsZero This option has no effect.
   */
-  void Apply(MultiVector &X, const MultiVector &B, bool /* InitialGuessIsZero */ = false) const {
+  void Apply(MultiVector &X, const MultiVector &B, bool InitialGuessIsZero = false) const {
     TEUCHOS_TEST_FOR_EXCEPTION(this->IsSetup() == false, Exceptions::RuntimeError,
                                "MueLu::TekoSmoother::Apply(): Setup() has not been called");
 
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = X.getMap()->getComm();
+    auto comm           = X.getMap()->getComm();
+    auto rgMapExtractor = bA_->getRangeMapExtractor();
 
-    Teuchos::RCP<const MapExtractor> rgMapExtractor = bA_->getRangeMapExtractor();
-    TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgMapExtractor));
+    if (InitialGuessIsZero) {
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgMapExtractor));
 
-    // copy initial solution vector X to Ptr<Thyra::MultiVectorBase> YY
+      // create a Thyra RHS vector
+      auto thyB     = Thyra::createMembers(Teuchos::rcp_dynamic_cast<const Thyra::VectorSpaceBase<Scalar> >(bThyOp_->productRange()), Teuchos::as<int>(B.getNumVectors()));
+      auto thyProdB = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Scalar> >(thyB);
+      TEUCHOS_TEST_FOR_EXCEPTION(thyProdB.is_null(), Exceptions::BadCast,
+                                 "MueLu::TekoSmoother::Apply: Failed to cast range space to product range space.");
 
-    // create a Thyra RHS vector
-    Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > thyB = Thyra::createMembers(Teuchos::rcp_dynamic_cast<const Thyra::VectorSpaceBase<Scalar> >(bThyOp_->productRange()), Teuchos::as<int>(B.getNumVectors()));
-    Teuchos::RCP<Thyra::ProductMultiVectorBase<Scalar> > thyProdB =
-        Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Scalar> >(thyB);
+      // copy RHS vector B to Thyra::MultiVectorBase thyProdB
+      Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::updateThyra(Teuchos::rcpFromRef(B), rgMapExtractor, thyProdB);
+
+      // create a Thyra SOL vector
+      auto thyX     = Thyra::createMembers(Teuchos::rcp_dynamic_cast<const Thyra::VectorSpaceBase<Scalar> >(bThyOp_->productDomain()), Teuchos::as<int>(X.getNumVectors()));
+      auto thyProdX = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Scalar> >(thyX);
+      TEUCHOS_TEST_FOR_EXCEPTION(thyProdX.is_null(), Exceptions::BadCast,
+                                 "MueLu::TekoSmoother::Apply: Failed to cast domain space to product domain space.");
+
+      // copy RHS vector X to Thyra::MultiVectorBase thyProdX
+      Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::updateThyra(Teuchos::rcpFromRef(X), rgMapExtractor, thyProdX);
+
+      inverseOp_->apply(
+          Thyra::NOTRANS,
+          *thyB,       // const MultiVectorBase<Scalar> &X,
+          thyX.ptr(),  // const Ptr<MultiVectorBase<Scalar> > &Y,
+          1.0,
+          0.0);
+
+      // copy back content of Ptr<Thyra::MultiVectorBase> thyX into X
+      Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > XX =
+          Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toXpetra(thyX, comm);
+
+      X.update(Teuchos::ScalarTraits<Scalar>::one(), *XX, Teuchos::ScalarTraits<Scalar>::zero());
+      return;
+    }
+
+    auto residual = Utilities::Residual(*A_, X, B);
+
+    auto thyB     = Thyra::createMembers(Teuchos::rcp_dynamic_cast<const Thyra::VectorSpaceBase<Scalar> >(bThyOp_->productRange()), Teuchos::as<int>(residual->getNumVectors()));
+    auto thyProdB = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Scalar> >(thyB);
     TEUCHOS_TEST_FOR_EXCEPTION(thyProdB.is_null(), Exceptions::BadCast,
                                "MueLu::TekoSmoother::Apply: Failed to cast range space to product range space.");
+    // copy residual vector to Thyra::MultiVectorBase thyProdB
+    Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::updateThyra(residual, rgMapExtractor, thyProdB);
 
-    // copy RHS vector B to Thyra::MultiVectorBase thyProdB
-    Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::updateThyra(Teuchos::rcpFromRef(B), rgMapExtractor, thyProdB);
-
-    // create a Thyra SOL vector
-    Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > thyX = Thyra::createMembers(Teuchos::rcp_dynamic_cast<const Thyra::VectorSpaceBase<Scalar> >(bThyOp_->productDomain()), Teuchos::as<int>(X.getNumVectors()));
-    Teuchos::RCP<Thyra::ProductMultiVectorBase<Scalar> > thyProdX =
-        Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Scalar> >(thyX);
+    auto thyX     = Thyra::createMembers(Teuchos::rcp_dynamic_cast<const Thyra::VectorSpaceBase<Scalar> >(bThyOp_->productDomain()), Teuchos::as<int>(X.getNumVectors()));
+    auto thyProdX = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Scalar> >(thyX);
     TEUCHOS_TEST_FOR_EXCEPTION(thyProdX.is_null(), Exceptions::BadCast,
                                "MueLu::TekoSmoother::Apply: Failed to cast domain space to product domain space.");
-
-    // copy RHS vector X to Thyra::MultiVectorBase thyProdX
-    Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::updateThyra(Teuchos::rcpFromRef(X), rgMapExtractor, thyProdX);
 
     inverseOp_->apply(
         Thyra::NOTRANS,
@@ -281,7 +307,7 @@ class TekoSmoother<double, int, GlobalOrdinal, Node> : public SmootherPrototype<
     Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > XX =
         Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::toXpetra(thyX, comm);
 
-    X.update(Teuchos::ScalarTraits<Scalar>::one(), *XX, Teuchos::ScalarTraits<Scalar>::zero());
+    X.update(Teuchos::ScalarTraits<Scalar>::one(), *XX, Teuchos::ScalarTraits<Scalar>::one());
   }
   //@}
 
@@ -331,7 +357,7 @@ class TekoSmoother<double, int, GlobalOrdinal, Node> : public SmootherPrototype<
   RCP<ParameterList> tekoParams_;  // < ! parameter list containing Teko parameters. These parameters are not administrated by the factory and not validated.
 
   Teko::LinearOp inverseOp_;  // < ! Teko inverse operator
-};                            // class TekoSmoother (specialization on SC=double)
+};  // class TekoSmoother (specialization on SC=double)
 }  // namespace MueLu
 
 #define MUELU_TEKOSMOOTHER_SHORT
