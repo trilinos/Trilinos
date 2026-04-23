@@ -50,6 +50,9 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include <locale>  // std::toupper
+#include <fstream>
+#include <sstream>
+#include <string>
 
 #include <Tpetra_BlockMultiVector.hpp>
 
@@ -80,6 +83,53 @@ bool anyBad(const MV& X) {
     }
   }
   return !good;
+}
+
+template <class RowMatrixType>
+void writeLocalMatrixMarketPerRank(const Teuchos::RCP<RowMatrixType>& A_local,
+                                   const int rank,
+                                   const std::string& basePath) {
+  typedef typename RowMatrixType::local_ordinal_type local_ordinal_type;
+  typedef typename RowMatrixType::scalar_type scalar_type;
+  typedef typename RowMatrixType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename RowMatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+  std::ostringstream fname;
+  fname << basePath << ".rank_" << rank << ".mtx";
+
+  std::ofstream out(fname.str().c_str());
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      !out.is_open(), std::runtime_error,
+      "Ifpack2::AdditiveSchwarz: Failed to open debug MatrixMarket file \""
+          << fname.str() << "\".");
+
+  const auto numRows = A_local->getLocalNumRows();
+  const auto numCols = A_local->getLocalNumCols();
+  const auto nnz     = A_local->getLocalNumEntries();
+
+  if (STS::isComplex) {
+    out << "%%MatrixMarket matrix coordinate complex general\n";
+  } else {
+    out << "%%MatrixMarket matrix coordinate real general\n";
+  }
+  out << numRows << " " << numCols << " " << nnz << "\n";
+
+  nonconst_local_inds_host_view_type indices("indices", A_local->getLocalMaxNumRowEntries());
+  nonconst_values_host_view_type values("values", A_local->getLocalMaxNumRowEntries());
+
+  for (local_ordinal_type i = 0; i < static_cast<local_ordinal_type>(numRows); ++i) {
+    size_t numEntries = 0;
+    A_local->getLocalRowCopy(i, indices, values, numEntries);
+    for (size_t k = 0; k < numEntries; ++k) {
+      out << (i + 1) << " " << (indices[k] + 1);
+      if (STS::isComplex) {
+        out << " " << STS::real(values[k]) << " " << STS::imag(values[k]) << "\n";
+      } else {
+        out << " " << values[k] << "\n";
+      }
+    }
+  }
 }
 
 }  // namespace
@@ -1071,6 +1121,11 @@ void AdditiveSchwarz<MatrixType, LocalInverseType>::compute() {
   }
   // Now, whether the Inverse_'s matrix is the AdditiveSchwarzFilter's local matrix or simply Matrix_/OverlappingMatrix_,
   // it will be able to see the new values and update itself accordingly.
+
+  if (Ifpack2::Details::Behavior::writeAdditiveSchwarzLocalMatrix()) {
+    const int rank = Matrix_->getComm()->getRank();
+    writeLocalMatrixMarketPerRank(innerMatrix_, rank, "Ifpack2_AdditiveSchwarz_innerMatrix");
+  }
 
   {  // Start timing here.
 

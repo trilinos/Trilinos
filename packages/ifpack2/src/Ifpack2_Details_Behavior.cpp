@@ -15,6 +15,8 @@ namespace Details {
 namespace {
 
 constexpr const char DEBUG[] = "IFPACK2_DEBUG";
+constexpr const char WRITE_ADDITIVE_SCHWARZ_LOCAL_MATRIX[] =
+    "IFPACK2_WRITE_ADDITIVE_SCHWARZ_LOCAL_MATRIX";
 
 constexpr bool debugDefault() {
 #ifdef HAVE_IFPACK2_DEBUG
@@ -33,6 +35,15 @@ bool Behavior::debug() {
   static bool initialized_ = false;
   return Teuchos::idempotentlyGetEnvironmentVariable(
       value_, initialized_, DEBUG, defaultValue);
+}
+
+bool Behavior::writeAdditiveSchwarzLocalMatrix() {
+  constexpr bool defaultValue = false;
+
+  static bool value_       = defaultValue;
+  static bool initialized_ = false;
+  return Teuchos::idempotentlyGetEnvironmentVariable(
+      value_, initialized_, WRITE_ADDITIVE_SCHWARZ_LOCAL_MATRIX, defaultValue);
 }
 
 }  // namespace Details

@@ -59,6 +59,13 @@ class Behavior {
   /// "Debug mode" means that Ifpack2 may do extra error checks and may
   /// produce more detailed error messages or debug output.
   static bool debug();
+
+  /// \brief Whether to write the AdditiveSchwarz local matrix.
+  ///
+  /// This is intended for debugging and inspection.  You may control this
+  /// at run time via the
+  /// <tt>IFPACK2_WRITE_ADDITIVE_SCHWARZ_LOCAL_MATRIX</tt> environment variable.
+  static bool writeAdditiveSchwarzLocalMatrix();
 };
 
 }  // namespace Details
