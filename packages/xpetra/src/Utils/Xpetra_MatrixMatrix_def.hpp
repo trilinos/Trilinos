@@ -185,6 +185,11 @@ RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MatrixM
   // Preconditions
   TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
   TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
+  const size_t A_inner = transposeA ? A.Rows() : A.Cols();
+  const size_t B_inner = transposeB ? B.Cols() : B.Rows();
+  TEUCHOS_TEST_FOR_EXCEPTION(A_inner != B_inner, Exceptions::RuntimeError,
+                             "TwoMatrixMultiplyBlock: Block dimensions are not compatible for multiplication. "
+                             "A has " << A_inner << " block columns and B has " << B_inner << " block rows.");
 
   RCP<const MapExtractor> rgmapextractor = transposeA ? A.getDomainMapExtractor() : A.getRangeMapExtractor();
   RCP<const MapExtractor> domapextractor = transposeB ? B.getRangeMapExtractor() : B.getDomainMapExtractor();
@@ -195,7 +200,8 @@ RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MatrixM
     for (size_t j = 0; j < B.Cols(); ++j) {  // loop over all block columns of B
       RCP<Matrix> Cij;
 
-      for (size_t l = 0; l < B.Rows(); ++l) {  // loop for calculating entry C_{ij}
+      const size_t innerDim = transposeB ? B.Cols() : B.Rows();
+      for (size_t l = 0; l < innerDim; ++l) {  // loop for calculating entry C_{ij}
         RCP<Matrix> crmat1 = transposeA ? A.getMatrix(l, i) : A.getMatrix(i, l);
         RCP<Matrix> crmat2 = transposeB ? B.getMatrix(j, l) : B.getMatrix(l, j);
 
