@@ -6787,8 +6787,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, Teko_Setup_Apply, Scalar, Loc
   using Teuchos::ParameterList;
 
   MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
-    if (!std::is_same<Scalar, double>::value || !std::is_same<LocalOrdinal, int>::value) {
-      out << "Skipping Teko test: TekoSmoother is only available for Scalar=double, LocalOrdinal=int." << std::endl;
+    if (!std::is_same<Scalar, Teko::ST>::value || !std::is_same<LocalOrdinal, Teko::LO>::value) {
+      out << "Skipping Teko test: TekoSmoother is only available for Scalar=Teko::ST, LocalOrdinal=Teko::LO." << std::endl;
+      return;
+    }
+
+    if (!std::is_same<Node, Teko::NT>::value) {
+      out << "Skipping Teko test: TekoSmoother is only available for Node=Teko::NT." << std::endl;
       return;
     }
 
