@@ -518,10 +518,12 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   Teuchos::ArrayRCP<cplx> out = Teuchos::arcp<cplx>(n_leja);
   const cplx exp_mu   = std::exp(mu);
   const cplx scale_c  = cplx(double(scale), 0.0);
-  cplx       scale_pw = cplx(1.0, 0.0);
+  cplxl       scale_pw = cplxl(1.0, 0.0);
   for (int i = 0; i < n_leja; ++i)
   {
-    out[i]   = exp_mu * scale_pw * dd_row(0, l + i);
+    out[i]   = (cplxl) exp_mu * scale_pw * (cplxl) dd_row(0, l + i);
+    // long double avoids overflow when
+    // n_leja > 200 and the conj ellipse is large
     scale_pw *= scale_c;
   }
 
