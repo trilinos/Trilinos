@@ -253,7 +253,7 @@ class AdditiveSchwarzFilter : public Ifpack2::Details::RowMatrix<MatrixType> {
     \param Indices  - (Out) Global column indices corresponding to values.
     \param Values   - (Out) Row values
     \pre <tt>isGloballyIndexed() == false</tt>
-    \post <tt>indices.size() == getNumEntriesInDropRow(LocalRow)</tt>
+    \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
 
     Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
   */
