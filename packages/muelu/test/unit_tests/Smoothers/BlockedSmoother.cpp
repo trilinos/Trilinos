@@ -30,6 +30,10 @@
 #include <Xpetra_ReorderedBlockedCrsMatrix.hpp>
 #include <Xpetra_ReorderedBlockedMultiVector.hpp>
 
+#ifdef HAVE_MUELU_TEKO
+#include <MueLu_TekoSmoother.hpp>
+#endif
+
 namespace MueLuTests {
 
 // this namespace already has:  #include "MueLu_UseShortNames.hpp"
@@ -6774,6 +6778,172 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, SplitReorder, Scalar, LocalOr
   }  // end UseTpetra
 }
 
+#ifdef HAVE_MUELU_TEKO
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, Teko_Setup_Apply, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include <MueLu_UseShortNames.hpp>
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, Node);
+
+  using Teuchos::ParameterList;
+
+  MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+    if (!std::is_same<Scalar, double>::value || !std::is_same<LocalOrdinal, int>::value) {
+      out << "Skipping Teko test: TekoSmoother is only available for Scalar=double, LocalOrdinal=int." << std::endl;
+      return;
+    }
+
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+
+    // Teko wants a blocked Thyra-capable operator
+    int noBlocks                             = 2;
+    Teuchos::RCP<const BlockedCrsMatrix> bop = CreateBlockDiagonalExampleMatrixThyra<Scalar, LocalOrdinal, GlobalOrdinal, Node, TpetraMap>(noBlocks, *comm);
+    Teuchos::RCP<const Matrix> Aconst        = Teuchos::rcp_dynamic_cast<const Matrix>(bop);
+    Teuchos::RCP<Matrix> A                   = Teuchos::rcp_const_cast<Matrix>(Aconst);
+
+    Level level;
+    TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createSingleLevelHierarchy(level);
+    level.Set("A", A);
+
+    //////////////////////////////////////////////////////////////////////
+    // Teko smoother
+    RCP<TekoSmoother> smootherPrototype =
+        rcp(new TekoSmoother());
+
+    smootherPrototype->SetParameter("Inverse Type", Teuchos::ParameterEntry(std::string("TekoDiag")));
+
+    RCP<ParameterList> tekoParams = rcp(new ParameterList());
+    {
+      ParameterList& invLib   = tekoParams->sublist("Inverse Factory Library");
+      ParameterList& tekoDiag = invLib.sublist("TekoDiag");
+      tekoDiag.set("Type", "Block Jacobi");
+    }
+
+    smootherPrototype->SetTekoParameters(tekoParams);
+
+    RCP<SmootherFactory> smootherFact = rcp(new SmootherFactory(smootherPrototype));
+
+    FactoryManager M;
+    M.SetFactory("Smoother", smootherFact);
+
+    MueLu::SetFactoryManager SFM(Teuchos::rcpFromRef(level), Teuchos::rcpFromRef(M));
+
+    level.Request("Smoother", smootherFact.get());
+    level.Request("PreSmoother", smootherFact.get());
+    level.Request("PostSmoother", smootherFact.get());
+
+    smootherFact->Build(level);
+
+    level.print(std::cout, Teuchos::VERB_EXTREME);
+
+    RCP<SmootherBase> tekoSmoother = level.Get<RCP<SmootherBase> >("PreSmoother", smootherFact.get());
+
+    RCP<MultiVector> X   = MultiVectorFactory::Build(A->getDomainMap(), 1);
+    RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRangeMap(), 1);
+
+    // Random exact solution
+    X->setSeed(846930886);
+    X->randomize();
+
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+    // Normalize X
+    Array<magnitude_type> norms(1);
+    X->norm2(norms);
+    X->scale(1 / norms[0]);
+
+    // Build RHS = A * X_exact
+    A->apply(*X, *RHS, Teuchos::NO_TRANS, (SC)1.0, (SC)0.0);
+
+    // Reset X to 0
+    X->putScalar((SC)0.0);
+
+    RHS->norm2(norms);
+    out << "||RHS|| = " << std::setiosflags(std::ios::fixed)
+        << std::setprecision(10) << norms[0] << std::endl;
+
+    magnitude_type tol = 100. * Teuchos::ScalarTraits<Scalar>::eps();
+
+    //
+    // Case 1: zero initial guess
+    //
+    out << "solve with zero initial guess" << std::endl;
+    Teuchos::Array<magnitude_type> initialNorms(1);
+    X->norm2(initialNorms);
+    out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed)
+        << std::setprecision(10) << initialNorms[0] << std::endl;
+
+    tekoSmoother->Apply(*X, *RHS, true);
+
+    Teuchos::Array<magnitude_type> finalNorms(1);
+    X->norm2(finalNorms);
+    Teuchos::Array<magnitude_type> residualNorm1 = Utilities::ResidualNorm(*A, *X, *RHS);
+    out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed)
+        << std::setprecision(20) << residualNorm1[0] << std::endl;
+    out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed)
+        << std::setprecision(10) << finalNorms[0] << std::endl;
+
+    TEUCHOS_TEST_COMPARE(residualNorm1[0], <, tol, out, success);
+    TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
+
+    //
+    // Case 2: InitialGuessIsZero=true with nonzero/garbage X
+    //
+    out << "solve with zero initial guess, and unreliable nonzeroed vector X" << std::endl;
+    X->randomize();
+    X->norm2(initialNorms);
+    out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed)
+        << std::setprecision(10) << initialNorms[0] << std::endl;
+
+    tekoSmoother->Apply(*X, *RHS, true);
+
+    X->norm2(finalNorms);
+    Teuchos::Array<magnitude_type> residualNorm2 = Utilities::ResidualNorm(*A, *X, *RHS);
+    out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed)
+        << std::setprecision(20) << residualNorm2[0] << std::endl;
+    out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed)
+        << std::setprecision(10) << finalNorms[0] << std::endl;
+
+    TEUCHOS_TEST_COMPARE(residualNorm2[0], <, tol, out, success);
+    TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
+
+    //
+    // Case 3: random initial guess, InitialGuessIsZero=false
+    //
+    out << "solve with random initial guess" << std::endl;
+    X->randomize();
+    X->norm2(initialNorms);
+    out << "  ||X_initial|| = " << std::setiosflags(std::ios::fixed)
+        << std::setprecision(10) << initialNorms[0] << std::endl;
+
+    tekoSmoother->Apply(*X, *RHS, false);
+
+    X->norm2(finalNorms);
+    Teuchos::Array<magnitude_type> residualNorm3 = Utilities::ResidualNorm(*A, *X, *RHS);
+    out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed)
+        << std::setprecision(20) << residualNorm3[0] << std::endl;
+    out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed)
+        << std::setprecision(10) << finalNorms[0] << std::endl;
+
+    TEUCHOS_TEST_COMPARE(residualNorm3[0], <, tol, out, success);
+    TEUCHOS_TEST_COMPARE(finalNorms[0] - Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one()), <, tol, out, success);
+
+    if (comm->getSize() == 1) {
+      TEST_EQUALITY(residualNorm1[0] == residualNorm2[0], true);
+      TEST_EQUALITY(residualNorm1[0] != residualNorm3[0], true);
+    } else {
+      out << "Pass/Fail is only checked in serial." << std::endl;
+    }
+  }  // end UseTpetra
+}
+#endif  // HAVE_MUELU_TEKO
+
+#ifdef HAVE_MUELU_TEKO
+#define MUELU_ETI_GROUP_TEKO(SC, LO, GO, NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, Teko_Setup_Apply, SC, LO, GO, NO)
+#else
+#define MUELU_ETI_GROUP_TEKO(SC, LO, GO, NO)
+#endif
+
 #define MUELU_ETI_GROUP(SC, LO, GO, NO)                                                                          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, Jacobi_Setup_Apply, SC, LO, GO, NO)                      \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, BGS_Setup_Apply, SC, LO, GO, NO)                         \
@@ -6812,7 +6982,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, SplitReorder, Scalar, LocalOr
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, NestedI2I01II_Thyra_Indef_Setup_Apply, SC, LO, GO, NO)   \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, NestedII01I2I_Thyra_Indef_Setup_Apply2, SC, LO, GO, NO)  \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, NestedI0I21II_Thyra_Indef_Setup_Apply3, SC, LO, GO, NO)  \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, SplitReorder, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother, SplitReorder, SC, LO, GO, NO)                            \
+  MUELU_ETI_GROUP_TEKO(SC, LO, GO, NO)
 
 #include <MueLu_ETI_4arg.hpp>
 
