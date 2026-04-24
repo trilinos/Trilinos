@@ -1046,6 +1046,7 @@ void SymbolicTools::evaporateSymbolicFactors(const ordinal_type_array &aw, const
   if (verbose) {
     printf("Summary: EvaporateSymbolicFactors\n");
     printf("=================================\n");
+    printf( "  Using %d ~ %d DoFs / grid\n",minval, maxval);
 
     // const double kilo(1024);
     switch (verbose) {

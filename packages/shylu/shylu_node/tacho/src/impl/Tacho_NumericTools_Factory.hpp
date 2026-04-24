@@ -82,7 +82,8 @@ template <typename ValueType, typename DeviceType> class NumericToolsFactory;
   ordinal_type _device_level_cut;                                                                                      \
   ordinal_type _device_factor_thres;                                                                                   \
   ordinal_type _device_solve_thres;                                                                                    \
-  ordinal_type _nstreams
+  ordinal_type _nstreams;                                                                                              \
+  bool _team_on_user_stream
 
 #define TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER                                                                \
   do {                                                                                                                 \
@@ -92,6 +93,7 @@ template <typename ValueType, typename DeviceType> class NumericToolsFactory;
     _device_factor_thres = device_factor_thres;                                                                        \
     _device_solve_thres = device_solve_thres;                                                                          \
     _nstreams = nstreams;                                                                                              \
+    _team_on_user_stream = team_on_user_stream;                                                                        \
   } while (false)
 
 #define TACHO_NUMERIC_TOOLS_FACTORY_SERIAL_BODY                                                                        \
@@ -112,7 +114,7 @@ template <typename ValueType, typename DeviceType> class NumericToolsFactory;
                                              _gid_colidx, _sid_ptr, _sid_colidx, _blk_colidx, _stree_parent,            \
                                              _stree_ptr, _stree_children, _stree_level, _stree_roots);                  \
     numeric_tools_levelset_name *N = dynamic_cast<numeric_tools_levelset_name *>(object);                               \
-    N->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _nstreams, _store_transpose, _verbose); \
+    N->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _nstreams, _team_on_user_stream, _store_transpose, _verbose); \
   } while (false)
 
 ///
@@ -152,7 +154,7 @@ public:
 
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
-                         const bool store_transpose, const ordinal_type nstreams) {
+                         const bool store_transpose, const ordinal_type nstreams, const bool team_on_user_stream) {
     TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
   }
 
@@ -222,7 +224,7 @@ public:
 
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
-                         const bool store_transpose, const ordinal_type nstreams) {
+                         const bool store_transpose, const ordinal_type nstreams, const bool team_on_user_stream) {
     TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
   }
 
@@ -292,7 +294,7 @@ public:
 
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
-                         const bool store_transpose, const ordinal_type nstreams) {
+                         const bool store_transpose, const ordinal_type nstreams, const bool team_on_user_stream) {
     TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
   }
 
@@ -357,7 +359,7 @@ public:
 
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
-                         const bool store_transpose, const ordinal_type nstreams) {
+                         const bool store_transpose, const ordinal_type nstreams, const bool team_on_user_stream) {
     TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
   }
 
@@ -423,7 +425,7 @@ public:
 
   void setLevelSetMember(const ordinal_type variant, const ordinal_type device_level_cut,
                          const ordinal_type device_factor_thres, const ordinal_type device_solve_thres,
-                         const bool store_transpose, const ordinal_type nstreams) {
+                         const bool store_transpose, const ordinal_type nstreams, const bool team_on_user_stream) {
     TACHO_NUMERIC_TOOLS_FACTORY_SET_LEVELSET_MEMBER;
   }
 

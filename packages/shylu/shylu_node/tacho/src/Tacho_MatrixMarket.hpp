@@ -172,6 +172,13 @@ template <typename ValueType> struct MatrixMarket {
           return -1;
         }
         impl_read_value_from_file(file, cmplx, row, col, val);
+        if (row < mm_base || row > m-1+mm_base ||
+            col < mm_base || col > n-1+mm_base) {
+          std::cout << " ERROR: (" << row << ", " << col
+                    << ") out of row or col range for the " << m << "x" << n
+                    << " matrix with base = " << mm_base << std::endl << std::endl;
+          return -1;
+        }
 
         row -= mm_base;
         col -= mm_base;
