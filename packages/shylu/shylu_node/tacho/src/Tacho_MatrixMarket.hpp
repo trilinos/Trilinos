@@ -113,7 +113,7 @@ template <typename ValueType> struct MatrixMarket {
   template <typename DeviceType>
   static int read(const std::string &filename, CrsMatrixBase<ValueType, DeviceType> &A,
                   const ordinal_type mm_base = 1, const ordinal_type sanitize = 0, const ordinal_type verbose = 0) {
-    static_assert(Kokkos::Impl::MemorySpaceAccess<Kokkos::HostSpace, typename DeviceType::memory_space>::assignable,
+    static_assert(Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename DeviceType::memory_space>::assignable,
                   "DeviceType is not assignable from HostSpace");
 
     Kokkos::Timer timer;
@@ -266,7 +266,7 @@ template <typename ValueType> struct MatrixMarket {
   static void write(std::ofstream &file, const CrsMatrixBase<ValueType, DeviceType> &A,
                     const int uplo = 0, // 0 - all, 1 - upper, 2 - lower
                     const std::string comment = "%% Tacho::MatrixMarket::Export") {
-    static_assert(Kokkos::Impl::MemorySpaceAccess<Kokkos::HostSpace, typename DeviceType::memory_space>::assignable,
+    static_assert(Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename DeviceType::memory_space>::assignable,
                   "DeviceType is not assignable from HostSpace");
 
     typedef ValueType value_type;
