@@ -210,12 +210,12 @@ class OverlappingRowGraph : virtual public Ifpack2::Details::RowGraph<GraphType>
   /// \param localRow [in] Local index of the row.
   /// \param indices [out] Local column indices in that row that are
   ///   owned by the calling process.
-  /// \param numIndices [out] Number of indices returned in \c gblColInds.
+  /// \param numIndices [out] Number of indices returned in \c indices.
   ///
-  /// This method throws std::runtime_error if \c gblColInds is not large
+  /// This method throws std::runtime_error if \c indices is not large
   /// enough to hold the column indices in row \c localRow.  If row
   /// <tt>localRow</tt> does not belong to this process, then
-  /// <tt>gblColInds</tt> is not modified and \c numIndices is set to
+  /// <tt>indices</tt> is not modified and \c numIndices is set to
   /// Teuchos::OrdinalTraits<size_t>::invalid() on output.
   virtual void
   getLocalRowCopy(local_ordinal_type localRow,

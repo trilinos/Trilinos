@@ -508,6 +508,7 @@ int readTriples(std::istream& inputStream,
 /// \param tolerant [in] Whether to read tolerantly.
 /// \param errStrm [in] If not NULL, print any error messages to this
 ///   stream.
+/// \param debug [in] If true, print debug messages.
 template <class SC, class GO>
 int readAndSendOneBatchOfTriples(std::istream& inputStream,
                                  std::size_t& curLineNum,
@@ -751,6 +752,7 @@ int readAndSendOneBatchOfTriples(std::istream& inputStream,
 /// \param tolerant [in] Whether to read tolerantly.
 /// \param errStrm [in] If not NULL, print any error messages to this
 ///   stream.
+/// \param debug [in] If true, print debug messages.
 template <class SC, class GO, class CommRequestPtr>
 int recvOneBatchOfTriples(std::vector<GO>& rowInds,
                           std::vector<GO>& colInds,
@@ -870,10 +872,12 @@ int recvOneBatchOfTriples(std::vector<GO>& rowInds,
 ///   is an error code, that is zero if and only if the closure
 ///   succeeded.  We intend for you to use this to call
 ///   CooMatrix::insertEntry.
+/// \param maxNumEntPerMsg [in] Maximum number of entries per message.
 /// \param comm [in] Communicator to use for receiving the triples.
 /// \param tolerant [in] Whether to read tolerantly.
 /// \param errStrm [in] If not NULL, print any error messages to this
 ///   stream.
+/// \param debug [in] Whether to print debug output.
 ///
 /// \return Error code; 0 if and only if success.
 template <class SC, class GO>

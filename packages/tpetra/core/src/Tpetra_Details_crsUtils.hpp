@@ -105,12 +105,17 @@ enum class PadCrsAction {
 
 /// \brief Implementation of padCrsArrays
 ///
-/// \param row_ptr_beg [in] Offset to beginning of each row.
-/// \param row_ptr_end [in] Offset to end of each row.
-///
 /// Each row lclRow has row_ptr_end[lclRow] - row_ptr_beg[lclRow]
 /// entries.  Offsets row_ptr_end[lclRow] to
 /// row_ptr_beg[lclRow+1] - 1 (inclusive) are extra space.
+/// \param action [in] Whether to pad indices only, or indices and values.
+/// \param row_ptr_beg [in] Offset to beginning of each row.
+/// \param row_ptr_end [in] Offset to end of each row.
+/// \param indices_wdv [in/out] Indices to pad.
+/// \param values_wdv [in/out] Values to pad.
+/// \param padding [in] Padding information.
+/// \param my_rank [in] My process rank.
+/// \param verbose [in] Whether to print verbose messages.
 template <class RowPtr, class Indices, class Values, class Padding>
 void pad_crs_arrays(
     const PadCrsAction action,
@@ -553,7 +558,9 @@ size_t find_crs_indices_sorted(
 ///        column index (in the indices array) of row i.
 /// \param indices_wdv [in/out] array containing column indices of nonzeros in
 ///        CRS representation.
-///
+/// \param padding [in] Padding specification for extra space.
+/// \param my_rank [in] My process rank, for verbose output.
+/// \param verbose [in] Whether to print verbose output.
 template <class RowPtr, class Indices, class Padding>
 void padCrsArrays(
     const RowPtr& rowPtrBeg,

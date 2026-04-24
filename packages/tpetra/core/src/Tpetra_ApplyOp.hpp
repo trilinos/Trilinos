@@ -83,6 +83,12 @@ class ApplyOp : public Tpetra::Operator<Scalar,
   /// \brief Compute <tt>Y = beta*Y + alpha*Op(A)*X</tt>, where
   ///   <tt>Op(A)</tt> is either A, \f$A^T\f$, or \f$A^H\f$.
   ///
+  /// \param X [in] Input MultiVector.
+  /// \param Y [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS, Teuchos::TRANS, Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
+  ///
   /// This method calls the underlying Operator object's
   /// applyTempl<Scalar,Scalar>() method.
   void
