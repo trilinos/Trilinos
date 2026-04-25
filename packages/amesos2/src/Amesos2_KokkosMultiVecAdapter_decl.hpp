@@ -98,7 +98,7 @@ namespace Amesos2 {
     /// Returns the Teuchos::Comm object associated with this multi-vector
     Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
     {
-      return Tpetra::getDefaultComm(); // serial only for Kokkos adapter right now
+      return Teuchos::rcp(new Teuchos::SerialComm<int>());
     }
 
     /// Get the length of vectors local to the calling node
