@@ -29,6 +29,8 @@
 #include "Galeri_ConfigDefs.h"
 
 #include "Galeri_XpetraCartesian.hpp"
+#include "Galeri_XpetraUtils.hpp"
+#include "Galeri_Exception.h"
 
 #ifdef HAVE_GALERI_XPETRA
 #include <Xpetra_ConfigDefs.hpp>
