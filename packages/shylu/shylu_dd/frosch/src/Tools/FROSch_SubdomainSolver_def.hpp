@@ -259,13 +259,6 @@ namespace FROSch {
     int SubdomainSolver<SC,LO,GO,NO>::initialize()
     {
         FROSCH_TIMER_START_SUBDOMAINSOLVER(initializeTime,"SubdomainSolver::initialize");
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
-        if (!ParameterList_->get("SolverType","Amesos2").compare("Amesos")) {
-            IsInitialized_ = true;
-            IsComputed_ = false;
-            AMESOS_CHK_ERR(AmesosSolver_->SymbolicFactorization());
-        } else
-#endif
         if (!ParameterList_->get("SolverType","Amesos2").compare("Amesos2")) {
             {
                 IsInitialized_ = true;
@@ -311,12 +304,6 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_SUBDOMAINSOLVER(computeTime,"SubdomainSolver::compute");
         FROSCH_ASSERT(this->IsInitialized_,"ERROR: SubdomainSolver has to be initialized before calling compute()");
-#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
-        if (!ParameterList_->get("SolverType","Amesos2").compare("Amesos")) {
-            IsComputed_ = true;
-            AMESOS_CHK_ERR(AmesosSolver_->NumericFactorization());
-        } else
-#endif
         if (!ParameterList_->get("SolverType","Amesos2").compare("Amesos2")) {
             {
                 IsComputed_ = true;

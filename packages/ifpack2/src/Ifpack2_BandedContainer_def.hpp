@@ -12,6 +12,7 @@
 
 #include "Teuchos_LAPACK.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -351,34 +352,34 @@ void BandedContainer<MatrixType, LocalScalarType>::
                Teuchos::ETransp mode,
                const LSC alpha,
                const LSC beta) const {
-#ifdef HAVE_IFPACK2_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      X.extent(0) != Y.extent(0),
-      std::logic_error,
-      "Ifpack2::BandedContainer::solveBlock: X and Y have "
-      "incompatible dimensions ("
-          << X.extent(0) << " resp. "
-          << Y.extent(0) << ").  Please report this bug to "
-                            "the Ifpack2 developers.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      X.extent(0) != static_cast<size_t>(mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numCols() : diagBlocks_[blockIndex].numRows()),
-      std::logic_error,
-      "Ifpack2::BandedContainer::solveBlock: The input "
-      "multivector X has incompatible dimensions from those of the "
-      "inverse operator ("
-          << X.extent(0) << " vs. "
-          << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numCols() : diagBlocks_[blockIndex].numRows())
-          << ").  Please report this bug to the Ifpack2 developers.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      Y.extent(0) != static_cast<size_t>(mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRows() : diagBlocks_[blockIndex].numCols()),
-      std::logic_error,
-      "Ifpack2::BandedContainer::solveBlock: The output "
-      "multivector Y has incompatible dimensions from those of the "
-      "inverse operator ("
-          << Y.extent(0) << " vs. "
-          << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRows() : diagBlocks_[blockIndex].numCols())
-          << ").  Please report this bug to the Ifpack2 developers.");
-#endif
+  if (Ifpack2::Details::Behavior::debug()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        X.extent(0) != Y.extent(0),
+        std::logic_error,
+        "Ifpack2::BandedContainer::solveBlock: X and Y have "
+        "incompatible dimensions ("
+            << X.extent(0) << " resp. "
+            << Y.extent(0) << ").  Please report this bug to "
+                              "the Ifpack2 developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        X.extent(0) != static_cast<size_t>(mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numCols() : diagBlocks_[blockIndex].numRows()),
+        std::logic_error,
+        "Ifpack2::BandedContainer::solveBlock: The input "
+        "multivector X has incompatible dimensions from those of the "
+        "inverse operator ("
+            << X.extent(0) << " vs. "
+            << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numCols() : diagBlocks_[blockIndex].numRows())
+            << ").  Please report this bug to the Ifpack2 developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        Y.extent(0) != static_cast<size_t>(mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRows() : diagBlocks_[blockIndex].numCols()),
+        std::logic_error,
+        "Ifpack2::BandedContainer::solveBlock: The output "
+        "multivector Y has incompatible dimensions from those of the "
+        "inverse operator ("
+            << Y.extent(0) << " vs. "
+            << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRows() : diagBlocks_[blockIndex].numCols())
+            << ").  Please report this bug to the Ifpack2 developers.");
+  }
 
   size_t numRows = X.extent(0);
   size_t numVecs = X.extent(1);

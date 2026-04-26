@@ -56,7 +56,6 @@
 #include <MueLu_SmootherFactory.hpp>
 #include <MueLu_RebalanceAcFactory.hpp>
 #include <MueLu_RepartitionInterface.hpp>
-#include <MueLu_IsorropiaInterface.hpp>
 #include <MueLu_RebalanceTransferFactory.hpp>
 #include <MueLu_RepartitionFactory.hpp>
 #include "MueLu_CoordinatesTransferFactory.hpp"

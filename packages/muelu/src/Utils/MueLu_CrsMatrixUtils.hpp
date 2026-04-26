@@ -40,11 +40,8 @@ class CrsMatrixUtils {
                              const Teuchos::ArrayView<Scalar>& CRS_vals,
                              const UnderlyingLib lib) {
     if (lib == Xpetra::UseTpetra) {
-      Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals,
-                                          ::KokkosSparse::SortAlgorithm::DEFAULT);
+      Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
     }
-
-    return;
   }
 
   /// \brief Sort and merge the entries of the (raw CSR) matrix by column index
@@ -56,8 +53,6 @@ class CrsMatrixUtils {
     if (lib == Xpetra::UseTpetra) {
       Tpetra::Import_Util::sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
     }
-
-    return;
   }
 
 };  // end class CrsMatrixUtils

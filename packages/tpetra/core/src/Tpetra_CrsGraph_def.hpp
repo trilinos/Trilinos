@@ -4234,7 +4234,7 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
       if (!sorted) {
         // For this to work correctly, we require that the unused column entries have been filled
         // with indices that get ordered last.
-        KokkosSparse::sort_crs_graph(rowptr, colinds);
+        Import_Util::sortCrsEntries(rowptr, colinds);
         this->indicesAreSorted_ = true;  // we just sorted every row
       }
       if (!merged) {
@@ -4246,7 +4246,7 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
       auto rowptr  = rowPtrsPacked_dev_;
       auto colinds = lclIndsPacked_wdv.getDeviceView(Access::ReadWrite);
       if (!sorted && merged) {
-        KokkosSparse::sort_crs_graph(rowptr, colinds);
+        Import_Util::sortCrsEntries(rowptr, colinds);
         this->indicesAreSorted_ = true;  // we just sorted every row
       } else {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::logic_error,
@@ -6824,8 +6824,7 @@ void CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   if ((!reverseMode && xferAsImport != nullptr) ||
       (reverseMode && xferAsExport != nullptr)) {
     Import_Util::sortCrsEntries(CSR_rowptr(),
-                                CSR_colind_LID(),
-                                ::KokkosSparse::SortAlgorithm::DEFAULT);
+                                CSR_colind_LID());
   } else if ((!reverseMode && xferAsExport != nullptr) ||
              (reverseMode && xferAsImport != nullptr)) {
     Import_Util::sortAndMergeCrsEntries(CSR_rowptr(),

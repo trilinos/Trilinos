@@ -485,6 +485,44 @@ struct AtomicAddKernel {
 };
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, AsScalarView, FadType, Layout, Device )
+{
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+  typedef Kokkos::View<FadType**,Layout,Device> ViewType;
+  typedef typename ViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  ViewType v("view", num_rows, num_cols, fad_size+1);
+  auto va = Sacado::as_scalar_view(v);
+
+  const size_type expected_extent = global_num_rows * global_num_cols * (global_fad_size + 1);
+  TEUCHOS_TEST_EQUALITY(va.extent(0), expected_extent, out, success);
+#endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, DynRankAsScalarView, FadType, Layout, Device )
+{
+#if KOKKOS_VERSION >= 40799 && !defined (SACADO_DISABLE_FAD_VIEW_SPEC) && !defined(KOKKOS_ENABLE_IMPL_VIEW_LEGACY)
+  typedef Kokkos::DynRankView<FadType,Layout,Device> ViewType;
+  typedef typename ViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  ViewType v("view", num_rows, num_cols, fad_size+1);
+  auto va = Sacado::as_scalar_view(v);
+
+  const size_type expected_extent = global_num_rows * global_num_cols * (global_fad_size + 1);
+  TEUCHOS_TEST_EQUALITY(va.extent(0), expected_extent, out, success);
+#endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, Size, FadType, Layout, Device )
 {
   typedef Kokkos::View<FadType*,Layout,Device> ViewType;
@@ -1476,7 +1514,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, DynRankDimensionScalar, FadType, Layout, Device )
 {
-  typedef Kokkos::DynRankView<double,Layout,Device> DoubleViewType;
+  typedef typename Kokkos::inner_layout<Layout>::type DoubleLayout; // extract inner layout from LayoutContiguous
+  typedef Kokkos::DynRankView<double,DoubleLayout,Device> DoubleViewType;
   typedef Kokkos::DynRankView<FadType,Layout,Device> FadViewType;
   typedef typename FadViewType::size_type size_type;
 
@@ -2738,6 +2777,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
 #define VIEW_FAD_TESTS_FLD( F, L, D )                                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Size, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AsScalarView, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankAsScalarView, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy_ConstantScalar, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DeepCopy_ConstantZero, F, L, D ) \

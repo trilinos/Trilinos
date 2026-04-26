@@ -11,6 +11,7 @@
 #define IFPACK2_ADDITIVE_SCHWARZ_FILTER_DEF_HPP
 
 #include "Ifpack2_Details_AdditiveSchwarzFilter_decl.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 #include "KokkosKernels_Sorting.hpp"
 #include "KokkosSparse_SortCrs.hpp"
 #include "Kokkos_Bitset.hpp"
@@ -232,16 +233,16 @@ void AdditiveSchwarzFilter<MatrixType>::
   local_matrix_type localMatrix("AdditiveSchwarzFilter", numLocalRows, numLocalRows, numLocalEntries, localValues, localRowptrs, localEntries);
   fillLocalMatrix(localMatrix);
   // Create a serial comm and the map for the final filtered CrsMatrix (each process uses its own local map)
-#ifdef HAVE_IFPACK2_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      !mapPairsAreFitted(*A_unfiltered_), std::invalid_argument,
-      "Ifpack2::LocalFilter: "
-      "A's Map pairs are not fitted to each other on Process "
-          << A_->getRowMap()->getComm()->getRank() << " of the input matrix's "
-                                                      "communicator.  "
-                                                      "This means that LocalFilter does not currently know how to work with A.  "
-                                                      "This will change soon.  Please see discussion of Bug 5992.");
-#endif  // HAVE_IFPACK2_DEBUG
+  if (Ifpack2::Details::Behavior::debug()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        !mapPairsAreFitted(*A_unfiltered_), std::invalid_argument,
+        "Ifpack2::LocalFilter: "
+        "A's Map pairs are not fitted to each other on Process "
+            << A_->getRowMap()->getComm()->getRank() << " of the input matrix's "
+                                                        "communicator.  "
+                                                        "This means that LocalFilter does not currently know how to work with A.  "
+                                                        "This will change soon.  Please see discussion of Bug 5992.");
+  }
 
   // Build the local communicator (containing this process only).
   RCP<const Teuchos::Comm<int> > localComm;

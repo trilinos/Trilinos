@@ -17,6 +17,7 @@
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
 #include "Ifpack2_Details_getCrsMatrix.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 #include "Kokkos_Sort.hpp"
 #include "KokkosSparse_spiluk.hpp"
 #include "KokkosSparse_Utils.hpp"
@@ -1224,8 +1225,7 @@ void RILUK<MatrixType>::
       "Ifpack2::RILUK::apply: mode = Teuchos::CONJ_TRANS is not implemented for "
       "complex Scalar type.  Please talk to the Ifpack2 developers to get this "
       "fixed.  There is a FIXME in this file about this very issue.");
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     if (!isKokkosKernelsStream_) {
       const magnitude_type D_nrm1 = D_->norm1();
       TEUCHOS_TEST_FOR_EXCEPTION(STM::isnaninf(D_nrm1), std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the stored diagonal is NaN or Inf.");
@@ -1241,7 +1241,6 @@ void RILUK<MatrixType>::
     }
     TEUCHOS_TEST_FOR_EXCEPTION(!good, std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the input X is NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   const scalar_type one  = STS::one();
   const scalar_type zero = STS::zero();
@@ -1410,8 +1409,7 @@ void RILUK<MatrixType>::
     }
   }  // end timing
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     Teuchos::Array<magnitude_type> norms(Y.getNumVectors());
     Y.norm1(norms());
     bool good = true;
@@ -1423,7 +1421,6 @@ void RILUK<MatrixType>::
     }
     TEUCHOS_TEST_FOR_EXCEPTION(!good, std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the output Y is NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   ++numApply_;
   applyTime_ += (timer.wallTime() - startTime);

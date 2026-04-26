@@ -18,6 +18,7 @@
 #endif
 #include "Kokkos_Core_fwd.hpp"
 #include "Kokkos_Layout.hpp"
+#include "Kokkos_DynRankView.hpp"
 #ifdef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
 #undef KOKKOS_IMPL_PUBLIC_INCLUDE
 #undef KOKKOS_IMPL_PUBLIC_INCLUDE_NOTDEFINED_CORE
@@ -83,36 +84,131 @@ struct inner_layout< LayoutContiguous<Layout, Stride> > {
   typedef Layout type;
 };
 
+namespace Impl {
+
+  // Specialize DynRankDimTraits for LayoutContiguous.
+  // Weirdly, we need a full specialization on bool for the non-legacy View impl case
+  // because of this code in Kokkos_DynRankView.hpp (around line 429):
+  // #ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+  //   using drdtraits = Impl::DynRankDimTraits<typename view_type::specialize>;
+  // #else
+  //   using drdtraits = Impl::DynRankDimTraits<
+  //       std::conditional_t<view_type::traits::impl_is_customized, bool, void>>;
+  // #endif
+  template <>
+#ifdef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+  struct DynRankDimTraits<ViewSpecializeSacadoFadContiguous> {
+#else
+  struct DynRankDimTraits<bool> {
+#endif
+    using drdtraits = DynRankDimTraits<void>;
+    enum : size_t { unspecified = drdtraits::unspecified };
+
+    // Compute the rank of the view from the nonzero dimension arguments.
+    KOKKOS_INLINE_FUNCTION
+    static size_t computeRank(const size_t N0, const size_t N1, const size_t N2,
+                              const size_t N3, const size_t N4, const size_t N5,
+                              const size_t N6, const size_t N7) {
+      return drdtraits::computeRank(N0,N1,N2,N3,N4,N5,N6,N7);
+    }
+
+    // Compute the rank of the view from the nonzero layout arguments.
+    template <typename Layout>
+    KOKKOS_INLINE_FUNCTION static size_t computeRank(const Layout& layout) {
+      return drdtraits::computeRank(layout);
+    }
+
+    // Extra overload to match that for specialize types v2
+    template <typename Layout, typename... P>
+    KOKKOS_INLINE_FUNCTION static size_t computeRank(
+        const Kokkos::Impl::ViewCtorProp<P...>& prop ,
+        const Layout& layout) {
+      return drdtraits::computeRank(prop, layout);
+    }
+
+    // Create the layout for the rank-7 view.
+    // Because the underlying View is rank-7, preserve "unspecified" for
+    // dimension 8.
+
+    // Non-contiguous Layout
+    template <typename Layout>
+    KOKKOS_INLINE_FUNCTION static std::enable_if_t<
+        !(is_layout_contiguous<Layout>::value),
+        Layout>
+    createLayout(const Layout& layout,
+                size_t new_rank = unspecified) {
+      return drdtraits::createLayout(layout, new_rank);
+    }
+
+    // Contiguous Layout
+    template <typename Layout>
+    KOKKOS_INLINE_FUNCTION static std::enable_if_t<
+        (is_layout_contiguous<Layout>::value),
+        Layout >
+    createLayout(const Layout& layout,
+                size_t new_rank = unspecified) {
+      return Layout(drdtraits::createLayout(layout.base_layout(), new_rank));
+    }
+
+    // Extra overload to match that for specialize types
+    template <typename Traits, typename... P>
+    KOKKOS_INLINE_FUNCTION static std::enable_if_t<
+        !(is_layout_contiguous<typename Traits::array_layout>::value),
+        typename Traits::array_layout>
+    createLayout(const Kokkos::Impl::ViewCtorProp<P...>& prop,
+                typename Traits::array_layout layout) {
+      //return drdtraits::template createLayout<Traits,P...>(prop, layout);
+#ifndef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+      if constexpr (Traits::impl_is_customized &&
+                    !Kokkos::Impl::ViewCtorProp<P...>::has_accessor_arg) {
+        auto rank              = computeRank(prop, layout) - 1;
+        layout.dimension[rank] = unspecified;
+      }
+#endif
+      return createLayout(layout);
+    }
+
+    // Extra overload to match that for specialize types
+    template <typename Traits, typename... P>
+    KOKKOS_INLINE_FUNCTION static std::enable_if_t<
+        (is_layout_contiguous<typename Traits::array_layout>::value),
+        typename Traits::array_layout>
+    createLayout(const Kokkos::Impl::ViewCtorProp<P...>& prop,
+                typename Traits::array_layout layout) {
+      //return Layout(drdtraits::template createLayout<Traits,P...>(prop, layout.base_layout()));
+#ifndef KOKKOS_ENABLE_IMPL_VIEW_LEGACY
+      if constexpr (Traits::impl_is_customized &&
+                    !Kokkos::Impl::ViewCtorProp<P...>::has_accessor_arg) {
+        auto rank              = computeRank(prop, layout) - 1;
+        layout.dimension[rank] = unspecified;
+      }
+#endif
+      return createLayout(layout);
+    }
+
+    // Create a view from the given dimension arguments.
+    // This is only necessary because the shmem constructor doesn't take a layout.
+    //   NDE shmem View's are not compatible with the added view_alloc value_type
+    //   / fad_dim deduction functionality
+    template <typename ViewType, typename ViewArg>
+    static ViewType createView(const ViewArg& arg, const size_t N0,
+                              const size_t N1, const size_t N2, const size_t N3,
+                              const size_t N4, const size_t N5, const size_t N6,
+                              const size_t N7) {
+      return drdtraits::createView(arg, N0, N1, N2, N3, N4, N5, N6, N7);
+    }
+  };
+
+  // Overload reconstructLayout for LayoutContiguous
+  template <typename Layout, unsigned Stride, typename iType>
+  KOKKOS_INLINE_FUNCTION LayoutContiguous<Layout,Stride>
+  reconstructLayout(const LayoutContiguous<Layout,Stride>& layout, iType dynrank) {
+    return LayoutContiguous<Layout,Stride>(reconstructLayout(layout.base_layout(), dynrank));
+  }
+
+} // namespace Impl
+
 } // namespace Kokkos
-
-// FIXME This is evil and needs refactoring urgently.
-// Make LayoutContiguous<Layout> equivalent to Layout
-namespace std {
-
-  template <class Layout, unsigned Stride>
-  struct is_same< Kokkos::LayoutContiguous<Layout,Stride>, Layout> {
-    static const bool value = true;
-  };
-
-  template <class Layout, unsigned Stride>
-#if defined(KOKKOS_COMPILER_INTEL)
-  inline constexpr bool is_same_v< Kokkos::LayoutContiguous<Layout,Stride>, Layout> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
-#else
-  static constexpr bool is_same_v< Kokkos::LayoutContiguous<Layout,Stride>, Layout> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
-#endif
-
-  template <class Layout, unsigned Stride>
-  struct is_same< Layout, Kokkos::LayoutContiguous<Layout,Stride> > {
-    static const bool value = true;
-  };
-
-  template <class Layout, unsigned Stride>
-#if defined(KOKKOS_COMPILER_INTEL)
-  inline constexpr bool is_same_v< Layout, Kokkos::LayoutContiguous<Layout,Stride>> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
-#else
-  static constexpr bool is_same_v< Layout, Kokkos::LayoutContiguous<Layout,Stride>> = is_same<Kokkos::LayoutContiguous<Layout,Stride>, Layout>::value;
-#endif
-}
 
 #include "View/Kokkos_ViewMapping.hpp"
 

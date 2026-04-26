@@ -17,6 +17,7 @@
 #include "Tpetra_BlockView.hpp"
 #include "Ifpack2_Utilities.hpp"
 #include "Ifpack2_Details_getCrsMatrix.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_Details_residual.hpp"
 #include <cstdlib>
@@ -933,21 +934,21 @@ void Relaxation<MatrixType>::computeBlockCrs() {
 
     // In a debug build, do an extra test to make sure that all the
     // factorizations were computed correctly.
-#ifdef HAVE_IFPACK2_DEBUG
-    const int numResults = 2;
-    // Use "max = -min" trick to get min and max in a single all-reduce.
-    int lclResults[2], gblResults[2];
-    lclResults[0] = info;
-    lclResults[1] = -info;
-    gblResults[0] = 0;
-    gblResults[1] = 0;
-    reduceAll<int, int>(*(A_->getGraph()->getComm()), REDUCE_MIN,
-                        numResults, lclResults, gblResults);
-    TEUCHOS_TEST_FOR_EXCEPTION(gblResults[0] != 0 || gblResults[1] != 0, std::runtime_error,
-                               "Ifpack2::Relaxation::compute: When processing the input "
-                               "Tpetra::BlockCrsMatrix, one or more diagonal block LU factorizations "
-                               "failed on one or more (MPI) processes.");
-#endif  // HAVE_IFPACK2_DEBUG
+    if (Ifpack2::Details::Behavior::debug()) {
+      const int numResults = 2;
+      // Use "max = -min" trick to get min and max in a single all-reduce.
+      int lclResults[2], gblResults[2];
+      lclResults[0] = info;
+      lclResults[1] = -info;
+      gblResults[0] = 0;
+      gblResults[1] = 0;
+      reduceAll<int, int>(*(A_->getGraph()->getComm()), REDUCE_MIN,
+                          numResults, lclResults, gblResults);
+      TEUCHOS_TEST_FOR_EXCEPTION(gblResults[0] != 0 || gblResults[1] != 0, std::runtime_error,
+                                 "Ifpack2::Relaxation::compute: When processing the input "
+                                 "Tpetra::BlockCrsMatrix, one or more diagonal block LU factorizations "
+                                 "failed on one or more (MPI) processes.");
+    }
     serialGaussSeidel_ = rcp(new SerialGaussSeidel(blockCrsA, blockDiag_, localSmoothingIndices_, DampingFactor_));
   }  // end TimeMonitor scope
 
@@ -1176,11 +1177,7 @@ void Relaxation<MatrixType>::compute() {
                               fixTinyDiagEntries_, minDiagValMag);
       savedDiagOffsets_ = true;
 
-      // mfh 27 May 2019: Later on, we should introduce an IFPACK2_DEBUG
-      // environment variable to control this behavior at run time.
-#ifdef HAVE_IFPACK2_DEBUG
-      debugAgainstSlowPath = true;
-#endif
+      debugAgainstSlowPath = Ifpack2::Details::Behavior::debug();
     }
 
     if (crsMat.is_null() || !crsMat->isFillComplete() || debugAgainstSlowPath) {
@@ -1632,8 +1629,7 @@ void Relaxation<MatrixType>::
   RCP<const map_type> rowMap    = A.getGraph()->getRowMap();
   RCP<const map_type> colMap    = A.getGraph()->getColMap();
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     // The relation 'isSameAs' is transitive.  It's also a
     // collective, so we don't have to do a "shared" test for
     // exception (i.e., a global reduction on the test value).
@@ -1658,7 +1654,6 @@ void Relaxation<MatrixType>::
         "Tpetra::CrsMatrix::gaussSeidelCopy requires that the domain Map and "
         "the range Map of the matrix be the same.");
   }
-#endif
 
   // Fetch a (possibly cached) temporary column Map multivector
   // X_colMap, and a domain Map view X_domainMap of it.  Both have
@@ -1870,13 +1865,12 @@ void Relaxation<MatrixType>::
       "domain, and range Maps be the same.  This cannot be the case, because "
       "the matrix has a nontrivial Export object.");
 
-  RCP<const map_type> domainMap = crsMat->getDomainMap();
-  RCP<const map_type> rangeMap  = crsMat->getRangeMap();
-  RCP<const map_type> rowMap    = crsMat->getGraph()->getRowMap();
-  RCP<const map_type> colMap    = crsMat->getGraph()->getColMap();
+  RCP<const map_type> domainMap                 = crsMat->getDomainMap();
+  RCP<const map_type> colMap                    = crsMat->getGraph()->getColMap();
+  [[maybe_unused]] RCP<const map_type> rangeMap = crsMat->getRangeMap();
+  [[maybe_unused]] RCP<const map_type> rowMap   = crsMat->getGraph()->getRowMap();
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     // The relation 'isSameAs' is transitive.  It's also a
     // collective, so we don't have to do a "shared" test for
     // exception (i.e., a global reduction on the test value).
@@ -1897,11 +1891,6 @@ void Relaxation<MatrixType>::
         "Ifpack2::Relaxation::MTGaussSeidel requires that the domain Map and "
         "the range Map of the matrix be the same.");
   }
-#else
-  // Forestall any compiler warnings for unused variables.
-  (void)rangeMap;
-  (void)rowMap;
-#endif  // HAVE_IFPACK2_DEBUG
 
   // Fetch a (possibly cached) temporary column Map multivector
   // X_colMap, and a domain Map view X_domainMap of it.  Both have

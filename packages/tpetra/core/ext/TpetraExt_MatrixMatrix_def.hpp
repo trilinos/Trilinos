@@ -807,7 +807,7 @@ void add(const Scalar& alpha,
                          ConvertGlobalToLocalFunctor<LocalOrdinal, GlobalOrdinal,
                                                      col_inds_array, global_col_inds_array,
                                                      typename map_type::local_map_type>(localColinds, globalColinds, CcolMap->getLocalMap()));
-    Import_Util::sortCrsEntries(rowptrs, localColinds, vals, ::KokkosSparse::SortAlgorithm::SHELL);
+    Import_Util::sortCrsEntries(rowptrs, localColinds, vals);
     C.setAllValues(rowptrs, localColinds, vals);
     C.fillComplete(CDomainMap, CRangeMap, params);
     if (!doFillComplete)
@@ -2101,7 +2101,7 @@ void KernelWrappers<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalViewT
     // Final sort & set of CRS arrays
     if (params.is_null() || params->get("sort entries", true)) {
       // Tpetra's serial SpGEMM results in almost sorted matrices. Use shell sort.
-      Import_Util::sortCrsEntries(Crowptr, Ccolind, Cvals, ::KokkosSparse::SortAlgorithm::SHELL);
+      Import_Util::sortCrsEntries(Crowptr, Ccolind, Cvals);
     }
     C.setAllValues(Crowptr, Ccolind, Cvals);
   }
@@ -2721,7 +2721,7 @@ void KernelWrappers2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalOrdinalView
     // Final sort & set of CRS arrays
     if (params.is_null() || params->get("sort entries", true)) {
       // Tpetra's serial SpGEMM results in almost sorted matrices. Use shell sort.
-      Import_Util::sortCrsEntries(Crowptr, Ccolind, Cvals, ::KokkosSparse::SortAlgorithm::SHELL);
+      Import_Util::sortCrsEntries(Crowptr, Ccolind, Cvals);
     }
     C.setAllValues(Crowptr, Ccolind, Cvals);
   }

@@ -48,7 +48,9 @@ namespace Sacado {
         ,LESS_THAN_EQUAL
         ,EQUAL
         ,EXP
+        ,EXPM1
         ,LOG
+        ,LOG1P
         ,LOG10
         ,SQRT
         ,CBRT
@@ -429,7 +431,9 @@ namespace Sacado {
 
     // Unary functions
     SCALAR_FLOP_COUNTER_UNARY_FUNC(exp,FlopCounts::EXP)
+    SCALAR_FLOP_COUNTER_UNARY_FUNC(expm1,FlopCounts::EXPM1)
     SCALAR_FLOP_COUNTER_UNARY_FUNC(log,FlopCounts::LOG)
+    SCALAR_FLOP_COUNTER_UNARY_FUNC(log1p,FlopCounts::LOG1P)
     SCALAR_FLOP_COUNTER_UNARY_FUNC(log10,FlopCounts::LOG10)
     SCALAR_FLOP_COUNTER_UNARY_FUNC(sqrt,FlopCounts::SQRT)
     SCALAR_FLOP_COUNTER_UNARY_FUNC(cbrt,FlopCounts::CBRT)

@@ -23,11 +23,9 @@
 #include <MueLu_SaPFactory.hpp>
 #include <MueLu_TransPFactory.hpp>
 #include <MueLu_RAPFactory.hpp>
-#include <MueLu_AmesosSmoother.hpp>
 #include <MueLu_TrilinosSmoother.hpp>
 #include <MueLu_SmootherFactory.hpp>
 #include <MueLu_TentativePFactory.hpp>
-#include <MueLu_AmesosSmoother.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
 
@@ -341,12 +339,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
     ConstOverloadFixture<SC, LO, GO, NO> fx(/*rowsPerRank=*/6561);
     Teuchos::ParameterList baseList;
+    baseList.set("aggregation: deterministic", true);
     auto precs = fx.makeNonConstVsConstOperator(baseList);
     auto RHS   = fx.makeRandomRHS(/*numVec=*/1, /*seed=*/846930886u);
 
     expectEquivalentPreconditioner(out, success, fx, *precs.first, *precs.second, RHS,
                                    static_cast<magnitude_type>(0.95),
-                                   static_cast<magnitude_type>(0.15),
+                                   1000 * Teuchos::ScalarTraits<magnitude_type>::eps(),
                                    "CreatePreconditioner_ConstOperator");
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
@@ -370,12 +369,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
     ConstOverloadFixture<SC, LO, GO, NO> fx(/*rowsPerRank=*/6561);
     Teuchos::ParameterList baseList;
+    baseList.set("aggregation: deterministic", true);
     auto precs = fx.makeNonConstVsConstOperator(baseList);
     auto RHS   = fx.makeRandomRHS(/*numVec=*/1, /*seed=*/846930886u);
 
     expectEquivalentPreconditioner(out, success, fx, *precs.first, *precs.second, RHS,
                                    static_cast<magnitude_type>(0.95),
-                                   static_cast<magnitude_type>(0.15),
+                                   1000 * Teuchos::ScalarTraits<magnitude_type>::eps(),
                                    "CreatePreconditioner_ConstOperator_NoParameterList");
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
@@ -398,12 +398,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
     ConstOverloadFixture<SC, LO, GO, NO> fx(/*rowsPerRank=*/243);
     Teuchos::ParameterList baseList;
+    baseList.set("aggregation: deterministic", true);
     auto precs = fx.makeNonConstVsConstOperator(baseList);
     auto RHS   = fx.makeRandomRHS(/*numVec=*/1, /*seed=*/123456789u);
 
     expectEquivalentPreconditioner(out, success, fx, *precs.first, *precs.second, RHS,
                                    static_cast<magnitude_type>(0.95),
-                                   static_cast<magnitude_type>(0.15),
+                                   1000 * Teuchos::ScalarTraits<magnitude_type>::eps(),
                                    "CreatePreconditioner_ConstOperator_SmallGrid");
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
@@ -424,6 +425,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
     ConstOverloadFixture<SC, LO, GO, NO> fx(/*rowsPerRank=*/2187);
     Teuchos::ParameterList baseList;
+    baseList.set("aggregation: deterministic", true);
     auto precs = fx.makeNonConstVsConstOperator(baseList);
 
     expectEquivalentHierarchyLevels(out, success, *precs.first, *precs.second,
@@ -449,12 +451,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_ConstOper
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
     ConstOverloadFixture<SC, LO, GO, NO> fx(/*rowsPerRank=*/729);
     Teuchos::ParameterList baseList;
+    baseList.set("aggregation: deterministic", true);
     auto precs = fx.makeNonConstVsConstOperator(baseList);
     auto RHS   = fx.makeRandomRHS(/*numVec=*/2, /*seed=*/97531u);
 
     expectEquivalentPreconditioner(out, success, fx, *precs.first, *precs.second, RHS,
                                    static_cast<magnitude_type>(0.95),
-                                   static_cast<magnitude_type>(0.15),
+                                   1000 * Teuchos::ScalarTraits<magnitude_type>::eps(),
                                    "CreatePreconditioner_ConstOperator_TwoVectors");
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
@@ -477,13 +480,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, ReuseTpetraPreconditioner_Cons
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
     ConstOverloadFixture<SC, LO, GO, NO> fx(/*rowsPerRank=*/2187);
     Teuchos::ParameterList baseList;
+    baseList.set("aggregation: deterministic", true);
     auto precs = fx.makeNonConstVsConstOperator(baseList);
     fx.reuseOnConstNonConstCrsMatrix(*precs.first, *precs.second);
 
     auto RHS = fx.makeRandomRHS(/*numVec=*/1, /*seed=*/314159265u);
     expectEquivalentPreconditioner(out, success, fx, *precs.first, *precs.second, RHS,
                                    static_cast<magnitude_type>(0.95),
-                                   static_cast<magnitude_type>(0.15),
+                                   1000 * Teuchos::ScalarTraits<magnitude_type>::eps(),
                                    "ReuseTpetraPreconditioner_ConstCrsMatrix");
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;
@@ -508,12 +512,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TpetraOperator, CreatePreconditioner_RcpCrsMat
   if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra) {
     ConstOverloadFixture<SC, LO, GO, NO> fx(/*rowsPerRank=*/6561);
     Teuchos::ParameterList baseList;
+    baseList.set("aggregation: deterministic", true);
     auto precs = fx.makeCrsMatrixVsOperator(baseList);
     auto RHS   = fx.makeRandomRHS(/*numVec=*/1, /*seed=*/846930886u);
 
     expectEquivalentPreconditioner(out, success, fx, *precs.first, *precs.second, RHS,
                                    static_cast<magnitude_type>(0.95),
-                                   static_cast<magnitude_type>(0.15),
+                                   1000 * Teuchos::ScalarTraits<magnitude_type>::eps(),
                                    "CreatePreconditioner_RcpCrsMatrixOverload");
   } else {
     out << "This test is enabled only for linAlgebra=Tpetra." << std::endl;

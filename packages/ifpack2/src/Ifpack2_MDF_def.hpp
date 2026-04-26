@@ -16,6 +16,7 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Sort.hpp"
 #include "KokkosSparse_mdf.hpp"
@@ -652,8 +653,7 @@ void MDF<MatrixType>::
       "Ifpack2::MDF::apply: mode = Teuchos::CONJ_TRANS is not implemented for "
       "complex Scalar type.  Please talk to the Ifpack2 developers to get this "
       "fixed.  There is a FIXME in this file about this very issue.");
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     Teuchos::Array<magnitude_type> norms(X.getNumVectors());
     X.norm1(norms());
     bool good = true;
@@ -665,7 +665,6 @@ void MDF<MatrixType>::
     }
     TEUCHOS_TEST_FOR_EXCEPTION(!good, std::runtime_error, "Ifpack2::MDF::apply: The 1-norm of the input X is NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   Teuchos::Time timer("MDF::apply");
   double startTime = timer.wallTime();
@@ -674,8 +673,7 @@ void MDF<MatrixType>::
     apply_impl(X, Y, mode, alpha, beta);
   }  // end timing
 
-#ifdef HAVE_IFPACK2_DEBUG
-  {
+  if (Ifpack2::Details::Behavior::debug()) {
     Teuchos::Array<magnitude_type> norms(Y.getNumVectors());
     Y.norm1(norms());
     bool good = true;
@@ -687,7 +685,6 @@ void MDF<MatrixType>::
     }
     TEUCHOS_TEST_FOR_EXCEPTION(!good, std::runtime_error, "Ifpack2::MDF::apply: The 1-norm of the output Y is NaN or Inf.");
   }
-#endif  // HAVE_IFPACK2_DEBUG
 
   ++numApply_;
   applyTime_ += (timer.wallTime() - startTime);

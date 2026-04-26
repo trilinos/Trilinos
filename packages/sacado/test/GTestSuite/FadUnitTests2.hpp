@@ -273,6 +273,19 @@ TYPED_TEST_P(FadOpsUnitTest2, testExp) {
   COMPARE_FADS(c_fad, t1);
 }
 
+TYPED_TEST_P(RealFadOpsUnitTest2, testExpm1) {
+  typedef decltype(this->a_fad_) FadType;
+  auto a_fad = this->a_fad_;
+  auto c_fad = this->c_fad_;
+  auto n = this->n_;
+
+  c_fad = std::expm1(a_fad);
+  FadType t1(n, std::expm1(a_fad.val()));
+  for (int i=0; i<n; i++)
+    t1.fastAccessDx(i) = std::exp(a_fad.val())*a_fad.dx(i);
+  COMPARE_FADS(c_fad, t1);
+}
+
 TYPED_TEST_P(FadOpsUnitTest2, testLog) {
   typedef decltype(this->a_fad_) FadType;
   auto a_fad = this->a_fad_;
@@ -283,6 +296,19 @@ TYPED_TEST_P(FadOpsUnitTest2, testLog) {
   FadType t1(n, std::log(a_fad.val()));
   for (int i=0; i<n; i++)
     t1.fastAccessDx(i) = a_fad.dx(i)/a_fad.val();
+  COMPARE_FADS(c_fad, t1);
+}
+
+TYPED_TEST_P(RealFadOpsUnitTest2, testLog1p) {
+  typedef decltype(this->a_fad_) FadType;
+  auto a_fad = this->a_fad_;
+  auto c_fad = this->c_fad_;
+  auto n = this->n_;
+
+  c_fad = std::log1p(a_fad);
+  FadType t1(n, std::log1p(a_fad.val()));
+  for (int i=0; i<n; i++)
+    t1.fastAccessDx(i) = a_fad.dx(i)/(1.0+a_fad.val());
   COMPARE_FADS(c_fad, t1);
 }
 
@@ -1069,6 +1095,8 @@ REGISTER_TYPED_TEST_SUITE_P(
   testGreaterThanOrEquals,
   testLessThan,
   testGreaterThan,
+  testExpm1,
+  testLog1p,
   testACos,
   testASin,
   testATan,

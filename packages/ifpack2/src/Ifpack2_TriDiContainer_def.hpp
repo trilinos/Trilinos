@@ -11,6 +11,7 @@
 #define IFPACK2_TRIDICONTAINER_DEF_HPP
 
 #include "Teuchos_LAPACK.hpp"
+#include "Ifpack2_Details_Behavior.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -74,12 +75,12 @@ void TriDiContainer<MatrixType, LocalScalarType>::initialize() {
 
 template <class MatrixType, class LocalScalarType>
 void TriDiContainer<MatrixType, LocalScalarType>::compute() {
-#ifdef HAVE_IFPACK2_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      ipiv_.size() != this->blockRows_.size() * this->scalarsPerRow_, std::logic_error,
-      "Ifpack2::TriDiContainer::compute: ipiv_ array has the wrong size.  "
-      "Please report this bug to the Ifpack2 developers.");
-#endif
+  if (Ifpack2::Details::Behavior::debug()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        ipiv_.size() != this->blockRows_.size() * this->scalarsPerRow_, std::logic_error,
+        "Ifpack2::TriDiContainer::compute: ipiv_ array has the wrong size.  "
+        "Please report this bug to the Ifpack2 developers.");
+  }
 
   this->IsComputed_ = false;
   if (!this->isInitialized()) {
@@ -233,34 +234,34 @@ void TriDiContainer<MatrixType, LocalScalarType>::
   size_t numVecs = X.extent(1);
   size_t numRows = X.extent(0);
 
-#ifdef HAVE_IFPACK2_DEBUG
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      X.extent(0) != Y.extent(0),
-      std::logic_error,
-      "Ifpack2::TriDiContainer::solveBlock: X and Y have "
-      "incompatible dimensions ("
-          << X.extent(0) << " resp. "
-          << Y.extent(0) << ").  Please report this bug to "
-                            "the Ifpack2 developers.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      X.extent(0) != static_cast<size_t>(diagBlocks_[blockIndex].numRowsCols()),
-      std::logic_error,
-      "Ifpack2::TriDiContainer::solveBlock: The input "
-      "multivector X has incompatible dimensions from those of the "
-      "inverse operator ("
-          << X.extent(0) << " vs. "
-          << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRowsCols() : diagBlocks_[blockIndex].numRowsCols())
-          << ").  Please report this bug to the Ifpack2 developers.");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-      Y.extent(0) != static_cast<size_t>(diagBlocks_[blockIndex].numRowsCols()),
-      std::logic_error,
-      "Ifpack2::TriDiContainer::solveBlock: The output "
-      "multivector Y has incompatible dimensions from those of the "
-      "inverse operator ("
-          << Y.extent(0) << " vs. "
-          << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRowsCols() : diagBlocks_[blockIndex].numRowsCols())
-          << ").  Please report this bug to the Ifpack2 developers.");
-#endif
+  if (Ifpack2::Details::Behavior::debug()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        X.extent(0) != Y.extent(0),
+        std::logic_error,
+        "Ifpack2::TriDiContainer::solveBlock: X and Y have "
+        "incompatible dimensions ("
+            << X.extent(0) << " resp. "
+            << Y.extent(0) << ").  Please report this bug to "
+                              "the Ifpack2 developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        X.extent(0) != static_cast<size_t>(diagBlocks_[blockIndex].numRowsCols()),
+        std::logic_error,
+        "Ifpack2::TriDiContainer::solveBlock: The input "
+        "multivector X has incompatible dimensions from those of the "
+        "inverse operator ("
+            << X.extent(0) << " vs. "
+            << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRowsCols() : diagBlocks_[blockIndex].numRowsCols())
+            << ").  Please report this bug to the Ifpack2 developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        Y.extent(0) != static_cast<size_t>(diagBlocks_[blockIndex].numRowsCols()),
+        std::logic_error,
+        "Ifpack2::TriDiContainer::solveBlock: The output "
+        "multivector Y has incompatible dimensions from those of the "
+        "inverse operator ("
+            << Y.extent(0) << " vs. "
+            << (mode == Teuchos::NO_TRANS ? diagBlocks_[blockIndex].numRowsCols() : diagBlocks_[blockIndex].numRowsCols())
+            << ").  Please report this bug to the Ifpack2 developers.");
+  }
 
   if (alpha == zero) {  // don't need to solve the linear system
     if (beta == zero) {

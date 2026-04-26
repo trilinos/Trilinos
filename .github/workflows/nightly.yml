@@ -33,8 +33,8 @@ jobs:
     uses: ./.github/workflows/ci.yml
     with:
       target-runner-labels: "['self-hosted', 'clang-19.1.6-openmpi-4.1.6', '20251204']"
-      genconfig-string: "rhel_clang-openmpi_release-debug_shared_no-kokkos-arch_asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all"
+      genconfig-string: "rhel_clang-openmpi_debug_shared_no-kokkos-arch_asan_no-complex_no-fpic_mpi_no-pt_no-rdc_no-uvm_deprecated-on_all"
       cdash-track: "Nightly"
-      dashboard-build-name: ${AT2_IMAGE}_release-debug_shared_address-sanitizer
+      dashboard-build-name: ${AT2_IMAGE}_debug_shared_address-sanitizer
       max-cores-allowed: 29
       num-concurrent-tests: 16
