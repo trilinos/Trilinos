@@ -456,8 +456,8 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   // Ref: F. Zivcovich. "Fast and accurate computation of divided differences for
   //      analytic functions, with an application to the exponential function."
   //      Dolomites Research Notes on Approximation. 12. 2019.
+
   using cplx = std::complex<double>;
-  using cplxl = std::complex<long double>;
 
   const int n_leja = exp_order;                   // number of output coefficients
   const int total  = phi_order + n_leja;          // total interpolation points
@@ -471,7 +471,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   // build z[0..total]
   // z[0..phi_order]         = 0  (leading zeros encode the phi_k recurrence)
   // z[phi_order..total]     = cdt * lp_sc(i), expanding LPCONJ pairs to (lp, conj(lp))
-  std::vector<cplxl> z(total, cplx(0.0, 0.0));
+  std::vector<cplx> z(total, cplx(0.0, 0.0));
   {
     int z_idx = phi_order;
     for (int lp_idx = 0; lp_idx < lp_.size() && z_idx < total; ++lp_idx)
@@ -516,35 +516,40 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
 
   // Find the number of subdivisions s of the unit interval such that max(F) / s < 3.5
   //   the corresponding number of squarings is log2(s), if s happens to be a power of 2
-  // alternative: const int log2_s = std::max(int( std::ceil(std::log2(max_abs / 3.5)), 0);
+  // alternative:
+  // const int log2_s   = std::max(int( std::ceil(std::log2(max_abs / 3.5)), 0);
+  // const double s_dbl = spd::pow(double(log2_s), 2.0);
   const int    s     = std::max(int(std::ceil(max_abs / 3.5)), 1);
   const double s_dbl = double(s);
 
-  // seed dd[0..cap_n]: dd[kk] = 1 / (kk! * s^kk)
-  std::vector<cplxl> dd(cap_n + 1, cplxl(0.0, 0.0));
+  // seed dd[0..cap_n]: dd[kk] = scale^kk / (kk! * s^kk)
+  std::vector<cplx> dd(cap_n + 1, cplx(0.0, 0.0));
   dd[0] = cplx(1.0, 0.0);
-  // avoid overflow
-  long double running_denom = 1.0;
+  // avoid overflow but tolerate underflow
+  double running_fraction = 1.0;
+  std::cout << "initial dd:  ";
   for (int kk = 1; kk <= cap_n; ++kk)
   {
-    running_denom *= kk * s_dbl;
-    dd[kk] = cplxl(1.0 / running_denom, 0.0);
+    running_fraction *= scale / (kk * s_dbl);
+    dd[kk] = cplx(running_fraction, 0.0);
+    std::cout << dd[kk] << ", ";
   }
-  std::cout << "denom: " << running_denom << " ";
   std::cout << std::endl;
+
+  const cplx scale_cplx = cplx(scale, 0.0);
 
   // H-factorization sweep
   for (int j = total - 1; j >= 0; --j)
   {
     // First inner loop: Taylor remainder sweep
-    // k0 from cap_n-1 down to total-2-j (exclusive): dd[k0] += z[j] * dd[k0+1]
+    // k0 from cap_n-1 down to total-2-j (exclusive): dd[k0] += (z[j] / scale) * dd[k0+1]
     for (int k0 = cap_n - 1; k0 > total - 2 - j; --k0)
-      dd[k0] = dd[k0] + z[j] * dd[k0 + 1];
+      dd[k0] = dd[k0] + (z[j] / scale_cplx) * dd[k0 + 1];
 
     // Second inner loop: divided-difference sweep using F lower triangle
-    // k0 from (total-2-j) downto 0: dd[k0] += F(k0+j+1, j) * dd[k0+1]
+    // k0 from (total-2-j) downto 0: dd[k0] += (F(k0+j+1, j) / scale) * dd[k0+1]
     for (int k0 = total - 2 - j; k0 >= 0; --k0)
-      dd[k0] = dd[k0] + (cplxl) F_mat(k0 + j + 1, j) * dd[k0 + 1];
+      dd[k0] = dd[k0] + (F_mat(k0 + j + 1, j) / scale_cplx) * dd[k0 + 1];
 
     // Store dd[0..total-j] into upper-triangle row j of F
     for (int col = 0; col < total - j; ++col)
@@ -560,33 +565,31 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     for (int j = 0; j < i; ++j)
       F_mat(i, j) = cplx(0.0, 0.0);
 
-  // squaring
+  // substepping s times (squaring)
+  // build the vector that is F_mat * unit_vector_e1
   Teuchos::SerialDenseMatrix<int, cplx> dd_row(1, total);
   for (int j = 0; j < total; ++j)
     dd_row(0, j) = F_mat(0, j);
 
+  // apply the matrix s-1 times to the vector.
   Teuchos::SerialDenseMatrix<int, cplx> tmp_row(1, total);
-  for (int sq = 0; sq < s - 1; ++sq)
+  for (int i_s = 0; i_s < s - 1; ++i_s)
   {
-    tmp_row.putScalar(cplx(0.0, 0.0));
-    // tmp_row = 1.0 * dd_row * F_mat + 0.0 * tmp_row
-    tmp_row.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, cplx(1.0, 0.0), dd_row, F_mat, cplx(0.0, 0.0));
-    dd_row = tmp_row;
+    // copy dd_row for matvec
+    tmp_row = dd_row;
+    // dd_row = 1.0 * tmp_row * F_mat + 0.0 * dd_row
+    dd_row.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, cplx(1.0, 0.0), tmp_row, F_mat, cplx(0.0, 0.0));
   }
 
-  // out[i] = exp(mu) * scale^i * dd_row[phi_order + i]
+  // out[i] = exp(mu) * dd_row[phi_order + i]
   Teuchos::ArrayRCP<cplx> out = Teuchos::arcp<cplx>(n_leja);
   const cplx exp_mu   = std::exp(mu);
-  const cplx scale_c  = cplx(double(scale), 0.0);
-  cplxl      scale_pw = cplxl(1.0, 0.0);
+  std::cout << "final dd:  ";
   for (int i = 0; i < n_leja; ++i)
   {
-    out[i]   = (cplxl) exp_mu * scale_pw * (cplxl) dd_row(0, phi_order + i);
-    // long double avoids overflow when
-    // n_leja > 200 and the conj ellipse is large
-    scale_pw *= scale_c;
+    out[i]   = exp_mu * dd_row(0, phi_order + i);
+    std::cout << out[i] << ", ";
   }
-  std::cout << "scale_pw: " << scale_pw << " ";
   std::cout << std::endl;
 
   return out;
