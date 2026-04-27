@@ -459,7 +459,8 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
       double v = std::abs(F_mat(j0, i0));
       if (v > max_abs) max_abs = v;
     }
-  const int    s     = std::max(int(std::ceil(max_abs / 3.5)), 1);
+  // const int    s     = std::max(int(std::ceil(max_abs / 3.5)), 1);
+  const int s = std::max(int( std::ceil((std::log(max_abs) - std::log(2.0)) / std::log(2.0)) ), 1);
   const double s_dbl = double(s);
 
   // seed dd[0..cap_n]: dd[kk] = 1 / (kk! * s^kk)
