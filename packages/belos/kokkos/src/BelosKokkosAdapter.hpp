@@ -64,6 +64,10 @@ public:
         Kokkos::View<ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
   using UMHostConstViewMatrixType =
         Kokkos::View<const ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using UMHostViewMatrixType2 =
+        Kokkos::View<ScalarType**,Kokkos::LayoutStride, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+  using UMHostConstViewMatrixType2 =
+        Kokkos::View<const ScalarType**,Kokkos::LayoutStride, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
 
 protected:
   ViewMatrixType myView;
@@ -409,10 +413,28 @@ public:
       ConstViewVectorType Asub = Kokkos::subview(A_vec->GetInternalViewConst(), Kokkos::ALL, 0);
       KokkosBlas::axpby(scal1, Asub, beta, mysub);
     }
-    else{
-      UMHostConstViewMatrixType mat_h(B.values(), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
+    else {
       ViewMatrixType mat_d(Kokkos::view_alloc(Kokkos::WithoutInitializing,"mat"), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
-      Kokkos::deep_copy(mat_d, mat_h);
+      if (B.numRows() == B.stride()) {
+        UMHostConstViewMatrixType mat_h(B.values(), mat_d.extent(0), mat_d.extent(1));
+        Kokkos::deep_copy(mat_d, mat_h);
+      }
+      else {
+        Kokkos::LayoutStride layout(mat_d.extent(0), 1, mat_d.extent(1), B.stride());
+		UMHostConstViewMatrixType2 mat_h(B.values(), layout);   
+        constexpr bool DstExecCanAccessSrc = Kokkos::SpaceAccessibility<typename ViewMatrixType::device_type::execution_space,
+                                                                        typename UMHostConstViewMatrixType2::device_type::memory_space>::accessible;
+        constexpr bool SrcExecCanAccessDst = Kokkos::SpaceAccessibility<typename UMHostConstViewMatrixType2::device_type::execution_space,
+                                                                        typename ViewMatrixType::device_type::memory_space>::accessible;
+        if (!DstExecCanAccessSrc && !SrcExecCanAccessDst) {
+          Kokkos::View<ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace> tmp_h(Kokkos::view_alloc(Kokkos::WithoutInitializing,"tmp_h"), mat_d.extent(0), mat_d.extent(1));
+          Kokkos::deep_copy(tmp_h, mat_h);
+          Kokkos::deep_copy(mat_d, tmp_h);
+        }
+        else {
+          Kokkos::deep_copy(mat_d, mat_h);
+        }
+      }
       if( myView.extent(1) == 1 ){ // B has only 1 col
           ConstViewVectorType Bsub = Kokkos::subview(mat_d, Kokkos::ALL, 0);
           ViewVectorType mysub = Kokkos::subview(myView, Kokkos::ALL, 0);
@@ -480,11 +502,29 @@ public:
    //     B(i,0) = soln(i);
    //   }
    // }
-    else{
-      UMHostViewMatrixType soln_h(B.values(), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
+    else {
       ViewMatrixType soln_d(Kokkos::view_alloc(Kokkos::WithoutInitializing,"mat"), A_vec->GetInternalViewConst().extent(1), myView.extent(1));
       KokkosBlas::gemm("C", "N", alpha, A_vec->GetInternalViewConst(), myView, ScalarType(0.0), soln_d);
-      Kokkos::deep_copy(soln_h, soln_d);
+      if (B.numRows() == B.stride()) {
+        UMHostViewMatrixType soln_h(B.values(), soln_d.extent(0), soln_d.extent(1));
+        Kokkos::deep_copy(soln_h, soln_d);
+      }
+      else {
+        Kokkos::LayoutStride layout(soln_d.extent(0), 1, soln_d.extent(1), B.stride());
+		UMHostViewMatrixType2 soln_h(B.values(), layout);   
+        constexpr bool SrcExecCanAccessDst = Kokkos::SpaceAccessibility<typename ViewMatrixType::device_type::execution_space,
+                                                                        typename UMHostViewMatrixType2::device_type::memory_space>::accessible;
+        constexpr bool DstExecCanAccessSrc = Kokkos::SpaceAccessibility<typename UMHostViewMatrixType2::device_type::execution_space,
+                                                                        typename ViewMatrixType::device_type::memory_space>::accessible;
+        if (!DstExecCanAccessSrc && !SrcExecCanAccessDst) {
+          Kokkos::View<ScalarType**,Kokkos::LayoutLeft, Kokkos::HostSpace> tmp_h(Kokkos::view_alloc(Kokkos::WithoutInitializing,"tmp_h"), soln_d.extent(0), soln_d.extent(1));
+          Kokkos::deep_copy(tmp_h, soln_d);
+          Kokkos::deep_copy(soln_h, tmp_h);
+        }
+        else {
+          Kokkos::deep_copy(soln_h, soln_d);
+        }
+      }
     }
   }
 
