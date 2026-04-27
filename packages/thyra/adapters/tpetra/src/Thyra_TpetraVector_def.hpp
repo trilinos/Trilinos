@@ -22,8 +22,11 @@ namespace Thyra {
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector()
-{}
+TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraVector() = default;
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~TpetraVector() = default;
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -571,8 +574,46 @@ getConstTpetraVector(const RCP<const VectorBase<Scalar> >& v) const
   }
 }
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+tpetraVector(
+  const RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVectorSpace,
+  const RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVector
+  )
+{
+  RCP<TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > v =
+    Teuchos::rcp(new TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>);
+  v->initialize(tpetraVectorSpace, tpetraVector);
+  return v;
+}
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+constTpetraVector(
+  const RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVectorSpace,
+  const RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVector
+  )
+{
+  RCP<TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > v =
+    Teuchos::rcp(new TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>);
+  v->constInitialize(tpetraVectorSpace, tpetraVector);
+  return v;
+}
+
 
 } // end namespace Thyra
 
+#define THYRATPETRAADAPTERS_TPETRAVECTOR_INSTANT(S, LO, GO, N)                 \
+  template class Thyra::TpetraVector<S, LO, GO, N>;                            \
+                                                                               \
+  template Teuchos::RCP<Thyra::TpetraVector<S, LO, GO, N>>                     \
+  Thyra::tpetraVector(                                                         \
+      const Teuchos::RCP<const Thyra::TpetraVectorSpace<S, LO, GO, N>> &,      \
+      const Teuchos::RCP<Tpetra::Vector<S, LO, GO, N>> &);                     \
+                                                                               \
+  template Teuchos::RCP<const Thyra::TpetraVector<S, LO, GO, N>>               \
+  Thyra::constTpetraVector(                                                    \
+      const Teuchos::RCP<const Thyra::TpetraVectorSpace<S, LO, GO, N>> &,      \
+      const Teuchos::RCP<const Tpetra::Vector<S, LO, GO, N>> &);
 
 #endif // THYRA_TPETRA_VECTOR_HPP
