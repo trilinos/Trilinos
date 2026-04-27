@@ -1,0 +1,333 @@
+// @HEADER
+// *****************************************************************************
+//        MueLu: A package for multigrid based preconditioning
+//
+// Copyright 2012 NTESS and the MueLu contributors.
+// SPDX-License-Identifier: BSD-3-Clause
+// *****************************************************************************
+// @HEADER
+
+#include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_DefaultComm.hpp>
+
+#include "MueLu_TestHelpers.hpp"
+#include "MueLu_Version.hpp"
+
+#include <Xpetra_StridedMapFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Matrix.hpp>
+#include <Xpetra_CrsMatrixWrap.hpp>
+
+#include "MueLu_CombinePFactory.hpp"
+#include "MueLu_Exceptions.hpp"
+
+namespace MueLuTests {
+
+/////////////////////////
+// Helper: build a simple tridiagonal matrix with stencil (b, a, c)
+// on the given range/domain maps. This follows the style of
+// BlockedPFactory.cpp and creates square subblocks that are suitable
+// for use as Psubblock# inputs to CombinePFactory.
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+GenerateProblemMatrix(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rangemap,
+                      const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > domainmap,
+                      Scalar a = 2.0, Scalar b = -1.0, Scalar c = -1.0) {
+#include "MueLu_UseShortNames.hpp"
+  Teuchos::RCP<CrsMatrixWrap> mtx = Galeri::Xpetra::MatrixTraits<Map, CrsMatrixWrap>::Build(rangemap, 3);
+
+  LocalOrdinal NumMyRowElements = rangemap->getLocalNumElements();
+
+  GlobalOrdinal minGColId       = domainmap->getMinAllGlobalIndex();
+  GlobalOrdinal maxGColId       = domainmap->getMaxAllGlobalIndex();
+  GlobalOrdinal numGColElements = domainmap->getGlobalNumElements();
+  TEUCHOS_TEST_FOR_EXCEPTION(maxGColId - minGColId != numGColElements - 1,
+                             MueLu::Exceptions::RuntimeError,
+                             "GenerateProblemMatrix: inconsistent number of domain map elements.");
+
+  GlobalOrdinal minGRowId = rangemap->getMinAllGlobalIndex();
+  GlobalOrdinal maxGRowId = rangemap->getMaxAllGlobalIndex();
+  TEUCHOS_TEST_FOR_EXCEPTION(maxGRowId - minGRowId != maxGColId - minGColId,
+                             MueLu::Exceptions::RuntimeError,
+                             "GenerateProblemMatrix: inconsistent number of elements between range and domain maps.");
+
+  GlobalOrdinal offset = minGColId - minGRowId;
+
+  GlobalOrdinal NumEntries;
+  LocalOrdinal nnz = 2;
+  std::vector<Scalar> Values(nnz);
+  std::vector<GlobalOrdinal> Indices(nnz);
+
+  for (LocalOrdinal i = 0; i < NumMyRowElements; ++i) {
+    GlobalOrdinal grid = rangemap->getGlobalElement(i);
+    if (grid == minGRowId) {
+      NumEntries = 1;
+      Values[0]  = c;
+      Indices[0] = minGColId + 1;
+    } else if (grid == maxGRowId) {
+      NumEntries = 1;
+      Values[0]  = b;
+      Indices[0] = maxGColId - 1;
+    } else {
+      NumEntries = 2;
+      Indices[0] = offset + rangemap->getMinGlobalIndex() + i - 1;
+      Indices[1] = offset + rangemap->getMinGlobalIndex() + i + 1;
+      Values[0]  = b;
+      Values[1]  = c;
+    }
+
+    Teuchos::ArrayView<Scalar> av(&Values[0], NumEntries);
+    Teuchos::ArrayView<GlobalOrdinal> iv(&Indices[0], NumEntries);
+    mtx->insertGlobalValues(rangemap->getGlobalElement(i), iv, av);
+
+    mtx->insertGlobalValues(grid,
+                            Teuchos::tuple<GlobalOrdinal>(offset + rangemap->getMinGlobalIndex() + i),
+                            Teuchos::tuple<Scalar>(a));
+  }
+
+  mtx->fillComplete(domainmap, rangemap);
+  return mtx;
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, Constructor, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+
+  RCP<CombinePFactory> combinePFactory = rcp(new CombinePFactory());
+  TEST_EQUALITY(combinePFactory != Teuchos::null, true);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineTwoSubblocks, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
+
+  const GO numElements0 = 200;
+  const GO numElements1 = 200;
+  const GO numElements  = numElements0 + numElements1;
+
+  std::vector<size_t> stridingInfo;
+  stridingInfo.push_back(1);
+
+  // Build two subblock maps with contiguous global IDs:
+  // block0: [0, ..., numElements0-1]
+  // block1: [numElements0, ..., numElements-1]
+  RCP<const Map> map0 = StridedMapFactory::Build(lib, numElements0, 0, stridingInfo, comm);
+  RCP<const Map> map1 = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm);
+
+  // Combined fine-level map
+  RCP<const Map> bigMap = StridedMapFactory::Build(lib, numElements, 0, stridingInfo, comm);
+
+  // Fine-level A only needs a compatible row map and communicator. A simple tridiagonal
+  // on the combined map is sufficient.
+  RCP<CrsMatrixWrap> A = GenerateProblemMatrix<Scalar, LO, GO, Node>(bigMap, bigMap, 2.0, -1.0, -1.0);
+
+  // Build two subblock prolongators. We use square matrices here for simplicity;
+  // CombinePFactory only cares that they are valid matrices with compatible maps.
+  RCP<CrsMatrixWrap> P0 = GenerateProblemMatrix<Scalar, LO, GO, Node>(map0, map0, 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> P1 = GenerateProblemMatrix<Scalar, LO, GO, Node>(map1, map1, 3.0, -2.0, -1.0);
+
+  TEST_EQUALITY(P0 != Teuchos::null, true);
+  TEST_EQUALITY(P1 != Teuchos::null, true);
+
+  Level fineLevel, coarseLevel;
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+  fineLevel.SetFactoryManager(Teuchos::null);
+  coarseLevel.SetFactoryManager(Teuchos::null);
+
+  fineLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(A));
+  coarseLevel.Set("Psubblock0", Teuchos::rcp_dynamic_cast<Matrix>(P0));
+  coarseLevel.Set("Psubblock1", Teuchos::rcp_dynamic_cast<Matrix>(P1));
+
+  RCP<CombinePFactory> PFact = rcp(new CombinePFactory());
+  Teuchos::ParameterList params;
+  params.set("combine: numBlks", 2);
+  params.set("combine: useMaxLevels", false);
+  PFact->SetParameterList(params);
+
+  coarseLevel.Request("P", PFact.get());
+  TEST_EQUALITY(coarseLevel.IsRequested("P", PFact.get()), true);
+
+  RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact.get());
+  TEST_EQUALITY(P != Teuchos::null, true);
+
+  // Structural checks
+  TEST_EQUALITY(P->getRowMap()->getGlobalNumElements(), numElements);
+  TEST_EQUALITY(P->getDomainMap()->getGlobalNumElements(),
+                P0->getDomainMap()->getGlobalNumElements() + P1->getDomainMap()->getGlobalNumElements());
+  TEST_EQUALITY(P->getGlobalNumEntries(), P0->getGlobalNumEntries() + P1->getGlobalNumEntries());
+
+  // Functional check: P * [1;1] should equal [P0*1; P1*1]
+  RCP<Vector> x0 = VectorFactory::Build(P0->getDomainMap());
+  RCP<Vector> x1 = VectorFactory::Build(P1->getDomainMap());
+  x0->putScalar(1.0);
+  x1->putScalar(1.0);
+
+  RCP<Vector> y0 = VectorFactory::Build(P0->getRangeMap());
+  RCP<Vector> y1 = VectorFactory::Build(P1->getRangeMap());
+  P0->apply(*x0, *y0);
+  P1->apply(*x1, *y1);
+
+  RCP<Vector> x = VectorFactory::Build(P->getDomainMap());
+  x->putScalar(1.0);
+
+  RCP<Vector> y = VectorFactory::Build(P->getRangeMap());
+  P->apply(*x, *y);
+
+  // Since domain/range maps are concatenated in the same block order, the 1-norm
+  // and infinity-norm of the combined result should match the blockwise assembled result.
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm1 =
+      y0->norm1() + y1->norm1();
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType actualNorm1 = y->norm1();
+
+  TEST_EQUALITY(actualNorm1, expectedNorm1);
+  TEST_COMPARE(actualNorm1, ==, expectedNorm1);
+
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedInf =
+      std::max(y0->normInf(), y1->normInf());
+  TEST_EQUALITY(y->normInf(), expectedInf);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineSingleBlockDegenerate, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
+
+  const GO numElements = 200;
+
+  std::vector<size_t> stridingInfo;
+  stridingInfo.push_back(1);
+
+  RCP<const Map> map0 = StridedMapFactory::Build(lib, numElements, 0, stridingInfo, comm);
+
+  RCP<CrsMatrixWrap> A  = GenerateProblemMatrix<Scalar, LO, GO, Node>(map0, map0, 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> P0 = GenerateProblemMatrix<Scalar, LO, GO, Node>(map0, map0, 3.0, -2.0, -1.0);
+
+  Level fineLevel, coarseLevel;
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+  fineLevel.SetFactoryManager(Teuchos::null);
+  coarseLevel.SetFactoryManager(Teuchos::null);
+
+  fineLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(A));
+  coarseLevel.Set("Psubblock0", Teuchos::rcp_dynamic_cast<Matrix>(P0));
+
+  RCP<CombinePFactory> PFact = rcp(new CombinePFactory());
+  Teuchos::ParameterList params;
+  params.set("combine: numBlks", 1);
+  params.set("combine: useMaxLevels", false);
+  PFact->SetParameterList(params);
+
+  coarseLevel.Request("P", PFact.get());
+
+  RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact.get());
+  TEST_EQUALITY(P != Teuchos::null, true);
+
+  TEST_EQUALITY(P->getRowMap()->getGlobalNumElements(), P0->getRowMap()->getGlobalNumElements());
+  TEST_EQUALITY(P->getDomainMap()->getGlobalNumElements(), P0->getDomainMap()->getGlobalNumElements());
+  TEST_EQUALITY(P->getGlobalNumEntries(), P0->getGlobalNumEntries());
+
+  RCP<Vector> x = VectorFactory::Build(P0->getDomainMap());
+  x->putScalar(1.0);
+
+  RCP<Vector> yRef = VectorFactory::Build(P0->getRangeMap());
+  RCP<Vector> y    = VectorFactory::Build(P->getRangeMap());
+
+  P0->apply(*x, *yRef);
+  P->apply(*x, *y);
+
+  TEST_EQUALITY(y->norm1(), yRef->norm1());
+  TEST_EQUALITY(y->normInf(), yRef->normInf());
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithIdentityFallback, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
+
+  const GO numElements0 = 200;
+  const GO numElements1 = 200;
+  const GO numElements  = numElements0 + numElements1;
+
+  std::vector<size_t> stridingInfo;
+  stridingInfo.push_back(1);
+
+  RCP<const Map> map0 = StridedMapFactory::Build(lib, numElements0, 0, stridingInfo, comm);
+  RCP<const Map> map1 = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm);
+
+  RCP<const Map> bigMap = StridedMapFactory::Build(lib, numElements, 0, stridingInfo, comm);
+
+  RCP<CrsMatrixWrap> Acombo = GenerateProblemMatrix<Scalar, LO, GO, Node>(bigMap, bigMap, 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> P0     = GenerateProblemMatrix<Scalar, LO, GO, Node>(map0, map0, 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> A1     = GenerateProblemMatrix<Scalar, LO, GO, Node>(map1, map1, 3.0, -2.0, -1.0);
+
+  Level fineLevel, coarseLevel;
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+  fineLevel.SetFactoryManager(Teuchos::null);
+  coarseLevel.SetFactoryManager(Teuchos::null);
+
+  fineLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(Acombo));
+  coarseLevel.Set("Psubblock0", Teuchos::rcp_dynamic_cast<Matrix>(P0));
+
+  // Provide Operatorsubblock1 but intentionally omit Psubblock1, so that
+  // CombinePFactory constructs an identity prolongator for block 1.
+  coarseLevel.Set("Operatorsubblock1",
+                  Teuchos::rcp_dynamic_cast<Operator>(A1));
+
+  RCP<CombinePFactory> PFact = rcp(new CombinePFactory());
+  Teuchos::ParameterList params;
+  params.set("combine: numBlks", 2);
+  params.set("combine: useMaxLevels", true);
+  PFact->SetParameterList(params);
+
+  coarseLevel.Request("P", PFact.get());
+
+  RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact.get());
+  TEST_EQUALITY(P != Teuchos::null, true);
+
+  TEST_EQUALITY(P->getRowMap()->getGlobalNumElements(), numElements);
+  TEST_EQUALITY(P->getDomainMap()->getGlobalNumElements(),
+                P0->getDomainMap()->getGlobalNumElements() + A1->getDomainMap()->getGlobalNumElements());
+
+  // Action check with ones:
+  // y = [P0*1; I*1] = [P0*1; 1]
+  RCP<Vector> x = VectorFactory::Build(P->getDomainMap());
+  x->putScalar(1.0);
+
+  RCP<Vector> y = VectorFactory::Build(P->getRangeMap());
+  P->apply(*x, *y);
+
+  RCP<Vector> y0   = VectorFactory::Build(P0->getRangeMap());
+  RCP<Vector> one1 = VectorFactory::Build(A1->getRangeMap());
+  RCP<Vector> x0   = VectorFactory::Build(P0->getDomainMap());
+
+  x0->putScalar(1.0);
+  P0->apply(*x0, *y0);
+  one1->putScalar(1.0);
+
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType expectedNorm1 =
+      y0->norm1() + one1->norm1();
+  TEST_EQUALITY(y->norm1(), expectedNorm1);
+  TEST_COMPARE(y->normInf(), >=, one1->normInf());
+}
+
+#define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                               \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CombinePFactory, Constructor, SC, LO, GO, Node)                  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CombinePFactory, CombineTwoSubblocks, SC, LO, GO, Node)          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CombinePFactory, CombineSingleBlockDegenerate, SC, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CombinePFactory, CombineWithIdentityFallback, SC, LO, GO, Node)
+
+#include <MueLu_ETI_4arg.hpp>
+
+}  // namespace MueLuTests

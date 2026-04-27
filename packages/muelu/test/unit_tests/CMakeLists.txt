@@ -138,6 +138,7 @@ APPEND_SET(
   SOURCES_BLOCKED
   BlockedCoarseMapFactory.cpp
   BlockedPFactory.cpp
+  CombinePFactory.cpp
   BlockedRAPFactory.cpp
   InverseApproximationFactory.cpp
   SchurComplementFactory.cpp
