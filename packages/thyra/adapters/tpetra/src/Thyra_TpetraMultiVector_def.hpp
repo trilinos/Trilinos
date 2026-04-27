@@ -24,8 +24,11 @@ namespace Thyra {
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraMultiVector()
-{}
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TpetraMultiVector() = default;
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~TpetraMultiVector() = default;
 
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -651,7 +654,50 @@ getConstTpetraMultiVector(const RCP<const MultiVectorBase<Scalar> >& mv) const
 }
 
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+tpetraMultiVector(
+  const RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVectorSpace,
+  const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
+  const RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraMultiVector
+  )
+{
+  RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmv =
+    Teuchos::rcp(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>);
+  tmv->initialize(tpetraVectorSpace, domainSpace, tpetraMultiVector);
+  return tmv;
+}
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+constTpetraMultiVector(
+  const RCP<const TpetraVectorSpace<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraVectorSpace,
+  const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
+  const RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &tpetraMultiVector
+  )
+{
+  RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tmv =
+    Teuchos::rcp(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>);
+  tmv->constInitialize(tpetraVectorSpace, domainSpace, tpetraMultiVector);
+  return tmv;
+}
+
 } // end namespace Thyra
 
+#define THYRATPETRAADAPTERS_TPETRAMULTIVECTOR_INSTANT(S, LO, GO, N)            \
+  template class Thyra::TpetraMultiVector<S, LO, GO, N>;                       \
+                                                                               \
+  template Teuchos::RCP<Thyra::TpetraMultiVector<S, LO, GO, N>>                \
+  Thyra::tpetraMultiVector(                                                    \
+      const Teuchos::RCP<const Thyra::TpetraVectorSpace<S, LO, GO, N>> &,      \
+      const Teuchos::RCP<const Thyra::ScalarProdVectorSpaceBase<S>> &,         \
+      const Teuchos::RCP<Tpetra::MultiVector<S, LO, GO, N>> &);                \
+                                                                               \
+  template Teuchos::RCP<const Thyra::TpetraMultiVector<S, LO, GO, N>>          \
+  Thyra::constTpetraMultiVector(                                               \
+      const Teuchos::RCP<const Thyra::TpetraVectorSpace<S, LO, GO, N>> &,      \
+      const Teuchos::RCP<const Thyra::ScalarProdVectorSpaceBase<S>> &,         \
+      const Teuchos::RCP<const Tpetra::MultiVector<S, LO, GO, N>> &r);
 
 #endif // THYRA_TPETRA_MULTIVECTOR_HPP

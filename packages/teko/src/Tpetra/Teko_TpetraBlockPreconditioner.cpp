@@ -13,6 +13,7 @@
 // Thyra includes
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
 
 // Teuchos includes
 #include "Teuchos_Time.hpp"

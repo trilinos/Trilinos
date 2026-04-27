@@ -204,7 +204,7 @@ initializePreconditionedOp(
  * \relates LinearOpWithSolveBase
  */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-inline SolveStatus<Scalar>
+SolveStatus<Scalar>
 solve(
   const LinearOpWithSolveBase<Scalar> &A, const EOpTransp A_trans,
   const RCP<const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> &tpetraB,
