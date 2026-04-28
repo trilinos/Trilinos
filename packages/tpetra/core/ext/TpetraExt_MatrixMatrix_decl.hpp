@@ -59,6 +59,8 @@ namespace MatrixMatrix {
 /// \param call_FillComplete_on_result [in] Optional argument;
 ///   defaults to true.  If false, C will <i>not</i> be fill complete
 ///   on output.
+/// \param label [in] Label for \c Teuchos::TimeMonitor.
+/// \param params [in/out] List of parameters.
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -88,6 +90,7 @@ void Multiply(
 /// \param transposeB [in] Whether to use transpose of matrix B. This is
 ///   currently not implemented.
 /// \param C [in/out] output matrix. Must be null.
+/// \param label [in] Label for \c Teuchos::TimeMonitor.
 template <class Scalar,
           class LocalOrdinal,
           class GlobalOrdinal,
@@ -135,11 +138,11 @@ void Add(
 /// \pre A and B must both be fillComplete and have matching domain and
 ///   range Maps.
 ///
-/// \param scalarA [in] Scalar multiplier for A in the sum.
+/// \param alpha [in] Scalar multiplier for A in the sum.
 /// \param transposeA [in] If true, use the transpose of A.
 /// \param A [in] The first input matrix.
 ///
-/// \param scalarB [in] Scalar multiplier for B in the sum.
+/// \param beta [in] Scalar multiplier for B in the sum.
 /// \param transposeB [in] If true, use the transpose of B.
 /// \param B [in] The second input matrix.
 ///
@@ -186,10 +189,10 @@ add(const Scalar& alpha,
 /// \pre A and B must both be fillComplete and have matching domain and
 ///   range Maps.
 ///
-/// \param scalarA [in] Scalar multiplier for A in the sum.
+/// \param alpha [in] Scalar multiplier for A in the sum.
 /// \param transposeA [in] If true, use the transpose of A.
 /// \param A [in] The first input matrix.
-/// \param scalarB [in] Scalar multiplier for B in the sum.
+/// \param beta [in] Scalar multiplier for B in the sum.
 /// \param transposeB [in] If true, use the transpose of B.
 /// \param B [in] The second input matrix.
 /// \param C [out] The result matrix, which we expect to be 'new' (no entries inserted) on input.
@@ -319,12 +322,14 @@ void Add(
            will be produced when forming the product A*B. On exit,
            C.FillComplete() will have been called, unless the last argument
            to this function is specified to be false.
-  @param call_fillComplete_on_result Optional argument, defaults to true.
+  @param call_FillComplete_on_result Optional argument, defaults to true.
          Power users may specify this argument to be false if they *DON'T*
          want this function to call C.fillComplete. (It is often useful
          to allow this function to call C.fillComplete, in cases where
          one or both of the input matrices are rectangular and it is not
          trivial to know which maps to use for the domain- and range-maps.)
+  @param label [in] Label for \c Teuchos::TimeMonitor.
+  @param params [in/out] List of parameters.
 */
 template <class Scalar,
           class LocalOrdinal,

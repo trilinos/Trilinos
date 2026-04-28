@@ -521,6 +521,13 @@ class CrsGraph : public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
   /// \param lclGraph [in] The local graph.  In almost all cases the
   ///   local graph must be sorted on input,
   ///   but if it isn't sorted, "sorted" must be set to false in params.
+  /// \param rowMap [in] Row map.
+  /// \param colMap [in] Column map.
+  /// \param domainMap [in] Domain map.
+  /// \param rangeMap [in] Range map.
+  /// \param importer [in] Import.
+  /// \param exporter [in] Export.
+  /// \param params [in/out] Optional list of parameters.
   CrsGraph(const local_graph_device_type& lclGraph,
            const Teuchos::RCP<const map_type>& rowMap,
            const Teuchos::RCP<const map_type>& colMap,

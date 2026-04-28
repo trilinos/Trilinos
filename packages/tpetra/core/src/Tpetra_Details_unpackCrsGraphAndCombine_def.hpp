@@ -787,6 +787,9 @@ void unpackAndCombineIntoCrsArrays(
 /// copies back in to the Teuchos::ArrayView objects, if needed).  When
 /// CrsGraph migrates fully to adopting Kokkos::DualView objects for its storage
 /// of data, this procedure could be bypassed.
+///
+/// \param numSameIDs [in] Number of IDs that are the same.
+
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 size_t
 unpackAndCombineWithOwningPIDsCount(

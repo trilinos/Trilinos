@@ -36,6 +36,14 @@ class LocalOperator {
 
   virtual ~LocalOperator() = default;
 
+  /// \brief Compute <tt>Y := beta*Y + alpha*Op(A)*X</tt>.
+  ///
+  /// \param X [in] Input MultiVector.
+  /// \param Y [in/out] Output MultiVector.
+  /// \param mode [in] Whether to apply the transpose (Teuchos::NO_TRANS,
+  ///   Teuchos::TRANS, Teuchos::CONJ_TRANS).
+  /// \param alpha [in] Scaling factor for the result.
+  /// \param beta [in] Scaling factor for Y before adding the result.
   virtual void
   apply(Kokkos::View<const scalar_type**, array_layout,
                      device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >

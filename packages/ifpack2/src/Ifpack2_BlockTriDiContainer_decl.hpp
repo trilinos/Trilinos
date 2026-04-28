@@ -143,7 +143,7 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
 
   /// \brief Constructor.
   ///
-  /// \brief matrix [in] The original input matrix.  This Container
+  /// \param matrix [in] The original input matrix.  This Container
   ///   will construct a local diagonal block from the rows given by
   ///   <tt>localRows</tt>.
   ///
@@ -156,6 +156,11 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ///   different processes. If partitions is empty, then a local
   ///   block-Jacobi preconditioner is formed; this is equivalent to
   ///   every part of partitions having size 1.
+  ///
+  /// \param importer [in] Import object for communication.
+  /// \param pointIndexed [in] If the input matrix is a \c Tpetra::BlockCrsMatrix,
+  ///    whether elements of \c partitions[k] identify rows within blocks (true) or
+  ///    whole blocks (false).
   BlockTriDiContainer(const Teuchos::RCP<const row_matrix_type>& matrix,
                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                       const Teuchos::RCP<const import_type>& importer,
@@ -167,6 +172,9 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   /// main constructor for documentation. This constructor removes the
   /// Container-general arguments that are not used in BlockTriDiContainer.
   ///
+  /// \param matrix [in] The original input matrix.
+  /// \param partitions [in] Partitioning of local rows into blocks.
+  /// \param n_subparts_per_part [in] Number of subparts per partition.
   /// \param overlapCommAndComp [in] Overlap communication and computation. This
   ///   is not always better; it depends on (at least) the MPI implementation
   ///   and the machine architecture. Defaults to false. It has to be specified
@@ -175,6 +183,8 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ///
   /// \param useSequentialMethod [in] This is for development and testing
   ///   purposes only.
+  /// \param block_size [in] Block size for the container.
+  /// \param explicitConversion [in] Whether to use explicit conversion.
   BlockTriDiContainer(const Teuchos::RCP<const row_matrix_type>& matrix,
                       const Teuchos::Array<Teuchos::Array<local_ordinal_type> >& partitions,
                       const int n_subparts_per_part = 1,
@@ -255,6 +265,8 @@ class BlockTriDiContainer<MatrixType, BlockTriDiContainerDetails::ImplSimdTag>
   ComputeParameters createDefaultComputeParameters() const;
 
   /// \brief Extract the local tridiagonal block and prepare the solver.
+  ///
+  /// \param input [in] Compute parameters.
   ///
   /// This version of <tt>applyInverseJacobi</tt> is meant to be called by
   /// direct users of this class, rather than by <tt>BlockRelaxation</tt>.

@@ -1101,14 +1101,9 @@ void unpackAndCombineIntoCrsArrays(
 ///   to expect a possibly /// different ("nonconstant") number of packets per local index
 ///   (i.e., a possibly different number of entries per row).
 ///
-/// \param distor [in] The distributor (not used)
+/// \param constantNumPackets [in] Whether number of packets is constant.
 ///
 /// \param combineMode [in] the mode to use for combining values
-///
-/// \param atomic [in] whether or not do atomic adds/replaces in to the matrix
-///
-/// \warning The allowed \c combineMode are:
-///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
 ///
 /// This is the public interface to the unpack and combine machinery and
 /// converts passed Teuchos::ArrayView objects to Kokkos::View objects (and
@@ -1250,7 +1245,7 @@ void unpackCrsMatrixAndCombineNew(
 ///
 /// \param combineMode [in] the mode to use for combining values
 ///
-/// \param numSameIds [in]
+/// \param numSameIDs [in]
 ///
 /// \param permuteToLIDs [in]
 ///

@@ -7,7 +7,7 @@
 // *****************************************************************************
 // @HEADER
 
-/// @file Ifpack2_fildl_def.hpp
+/// @file Ifpack2_Details_Fildl_def.hpp
 
 #ifndef __IFPACK2_FILDL_DEF_HPP__
 #define __IFPACK2_FILDL_DEF_HPP__

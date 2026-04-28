@@ -105,6 +105,8 @@ int makeColMap(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
 /// \brief Construct a column map for the given set of gids (always sorting remote GIDs within each remote process).
 /// \param colMap [out] Will be set to the new column map.
 /// \param domMap [in] The domain map, used to determine which global columns are locally owned.
+/// \param gids [in] Global indices for constructing the column map.
+/// \param errStrm [out] Optional output stream for error messages.
 template <class LO, class GO, class NT>
 int makeColMap(Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
                const Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& domMap,
