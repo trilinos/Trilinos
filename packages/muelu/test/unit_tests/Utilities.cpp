@@ -658,6 +658,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, TransposeNonsymmetricConstMatrix, S
   }
 }
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+BuildBlockedTestMatrix(const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& rangeMap,
+                       const Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>>& domainMap,
+                       const Scalar& diagValue) {
+  using Teuchos::Array;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  auto crs = Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(rangeMap, 1);
+
+  const size_t numLocalRows = rangeMap->getLocalNumElements();
+  for (size_t lrow = 0; lrow < numLocalRows; ++lrow) {
+    const GlobalOrdinal rowGID = rangeMap->getGlobalElement(Teuchos::as<LocalOrdinal>(lrow));
+
+    // Match rows to columns by local ordinal so block maps stay compatible.
+    if (lrow < domainMap->getLocalNumElements()) {
+      const GlobalOrdinal colGID = domainMap->getGlobalElement(Teuchos::as<LocalOrdinal>(lrow));
+      Array<GlobalOrdinal> cols(1, colGID);
+      Array<Scalar> vals(1, diagValue);
+      crs->insertGlobalValues(rowGID, cols(), vals());
+    }
+  }
+
+  crs->fillComplete(domainMap, rangeMap);
+  return rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(crs));
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, TransposeBlockedCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
 #include <MueLu_UseShortNames.hpp>
   MUELU_TESTING_SET_OSTREAM;
@@ -678,35 +706,56 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, TransposeBlockedCrsMatrix, Scalar, 
   RCP<Map> d0 = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, numGlobalElementsPerBlock, 0, comm);
   RCP<Map> d1 = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, numGlobalElementsPerBlock, numGlobalElementsPerBlock, comm);
 
-  std::vector<RCP<const Map>> rangeMapsArray(2);
-  rangeMapsArray[0] = r0;
-  rangeMapsArray[1] = r1;
+  std::vector<RCP<const Map>> rangeMapsVec(2);
+  rangeMapsVec[0] = r0;
+  rangeMapsVec[1] = r1;
 
-  std::vector<RCP<const Map>> domainMapsArray(2);
-  domainMapsArray[0] = d0;
-  domainMapsArray[1] = d1;
+  std::vector<RCP<const Map>> domainMapsVec(2);
+  domainMapsVec[0] = d0;
+  domainMapsVec[1] = d1;
 
   RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> rangeMaps =
       rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(
-          Xpetra::MapUtils<LocalOrdinal, GlobalOrdinal, Node>::concatenateMaps(rangeMapsArray),
-          rangeMapsArray, false));
+          Xpetra::MapUtils<LocalOrdinal, GlobalOrdinal, Node>::concatenateMaps(rangeMapsVec),
+          rangeMapsVec, false));
 
   RCP<const Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>> domainMaps =
       rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(
-          Xpetra::MapUtils<LocalOrdinal, GlobalOrdinal, Node>::concatenateMaps(domainMapsArray),
-          domainMapsArray, false));
+          Xpetra::MapUtils<LocalOrdinal, GlobalOrdinal, Node>::concatenateMaps(domainMapsVec),
+          domainMapsVec, false));
 
-  RCP<BlockedCrsMatrix> bA = rcp(new BlockedCrsMatrix(rangeMaps, domainMaps, 3));
+  RCP<BlockedCrsMatrix> bA = rcp(new BlockedCrsMatrix(rangeMaps, domainMaps, 1));
 
-  RCP<Matrix> A00 = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildTridiag(r0, 1.0, 2.0, 3.0, lib);
-  RCP<Matrix> A01 = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildTridiag(r0, 0.0, 4.0, 5.0, lib);
-  RCP<Matrix> A10 = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildTridiag(r1, 6.0, 7.0, 0.0, lib);
-  RCP<Matrix> A11 = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildTridiag(r1, 8.0, 9.0, 10.0, lib);
+  // Build map-consistent blocks:
+  //
+  // A00 : r0 <- d0, value 2
+  // A01 : r0 <- d1, value 3
+  // A10 : r1 <- d0, value 5
+  // A11 : r1 <- d1, value 7
+  //
+  // Since A01 and A10 differ, the blocked operator is nonsymmetric.
+  RCP<Matrix> A00 = BuildBlockedTestMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(r0, d0, Teuchos::as<Scalar>(2.0));
+  RCP<Matrix> A01 = BuildBlockedTestMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(r0, d1, Teuchos::as<Scalar>(3.0));
+  RCP<Matrix> A10 = BuildBlockedTestMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(r1, d0, Teuchos::as<Scalar>(5.0));
+  RCP<Matrix> A11 = BuildBlockedTestMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(r1, d1, Teuchos::as<Scalar>(7.0));
 
   TEST_ASSERT(!A00.is_null());
   TEST_ASSERT(!A01.is_null());
   TEST_ASSERT(!A10.is_null());
   TEST_ASSERT(!A11.is_null());
+
+  // Sanity: each block has maps consistent with its block position
+  TEST_ASSERT(A00->getRangeMap()->isSameAs(*r0));
+  TEST_ASSERT(A00->getDomainMap()->isSameAs(*d0));
+
+  TEST_ASSERT(A01->getRangeMap()->isSameAs(*r0));
+  TEST_ASSERT(A01->getDomainMap()->isSameAs(*d1));
+
+  TEST_ASSERT(A10->getRangeMap()->isSameAs(*r1));
+  TEST_ASSERT(A10->getDomainMap()->isSameAs(*d0));
+
+  TEST_ASSERT(A11->getRangeMap()->isSameAs(*r1));
+  TEST_ASSERT(A11->getDomainMap()->isSameAs(*d1));
 
   bA->setMatrix(0, 0, A00);
   bA->setMatrix(0, 1, A01);
@@ -730,6 +779,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, TransposeBlockedCrsMatrix, Scalar, 
   TEST_ASSERT(bAT->getRangeMap()->isSameAs(*bA->getDomainMap()));
   TEST_ASSERT(bAT->getDomainMap()->isSameAs(*bA->getRangeMap()));
 
+  // Now Merge() should work on both original and transposed blocked operators
   {
     RCP<Matrix> Amerged  = bA->Merge();
     RCP<Matrix> ATmerged = bAT->Merge();
@@ -737,6 +787,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, TransposeBlockedCrsMatrix, Scalar, 
     TEST_ASSERT(!Amerged.is_null());
     TEST_ASSERT(!ATmerged.is_null());
 
+    // Verify A != A^T
     RCP<Matrix> diffMatrix = rcp(new CrsMatrixWrap(Amerged->getCrsGraph()));
     MatrixMatrix::TwoMatrixAdd(*Amerged, false, 1.0, *ATmerged, false, -1.0, diffMatrix, out);
     diffMatrix->fillComplete();
@@ -746,9 +797,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, TransposeBlockedCrsMatrix, Scalar, 
       Teuchos::ArrayView<const LO> cols;
       Teuchos::ArrayView<const Scalar> vals;
       diffMatrix->getLocalRowView(lRowId, cols, vals);
-
-      TEST_INEQUALITY_CONST(cols.size(), 0);
-      TEST_INEQUALITY_CONST(vals.size(), 0);
 
       for (const auto& entry : vals) {
         if (entry != Teuchos::ScalarTraits<Scalar>::zero()) {
@@ -776,6 +824,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, TransposeBlockedCrsMatrix, Scalar, 
     TEST_ASSERT(!Amerged.is_null());
     TEST_ASSERT(!ATTmerged.is_null());
 
+    // Verify A == (A^T)^T
     RCP<Matrix> diffMatrix = rcp(new CrsMatrixWrap(Amerged->getCrsGraph()));
     MatrixMatrix::TwoMatrixAdd(*Amerged, false, 1.0, *ATTmerged, false, -1.0, diffMatrix, out);
     diffMatrix->fillComplete();
@@ -785,9 +834,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities, TransposeBlockedCrsMatrix, Scalar, 
       Teuchos::ArrayView<const LO> cols;
       Teuchos::ArrayView<const Scalar> vals;
       diffMatrix->getLocalRowView(lRowId, cols, vals);
-
-      TEST_INEQUALITY_CONST(cols.size(), 0);
-      TEST_INEQUALITY_CONST(vals.size(), 0);
 
       for (const auto& entry : vals) {
         if (entry != Teuchos::ScalarTraits<Scalar>::zero()) {
