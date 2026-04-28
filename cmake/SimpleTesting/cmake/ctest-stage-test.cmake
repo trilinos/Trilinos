@@ -14,7 +14,7 @@ banner("START test step")
 set(STAGE_TEST_ERROR OFF)
 
 if(NOT SKIP_RUN_TESTS)
-    if(CTEST_BUILD_NAME MATCHES .*_asan_.*)
+    if(ENABLE_ASAN)
         set(CTEST_MEMORYCHECK_TYPE "AddressSanitizer")
         set(ENV{LSAN_OPTIONS} "suppressions=${CTEST_SOURCE_DIRECTORY}/packages/framework/asan_assets/lsan.supp")
         set(ENV{LD_PRELOAD} ${CTEST_SOURCE_DIRECTORY}/packages/framework/asan_assets/dummy_dlclose.so)
