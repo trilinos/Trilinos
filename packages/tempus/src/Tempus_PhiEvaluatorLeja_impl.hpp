@@ -427,10 +427,14 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
     std::cout << "Calling dd_phi divided difference method" << std::endl;
     return getDividedDiffsPhi(k, cdt, exp_order);
     break;
+  case 3:
+    std::cout << "Calling dd_phi real taylor series method" << std::endl;
+    return getDividedDiffsTSR(k, cdt, exp_order);
+    break;
   case 1:
   default:
     std::cout << "Calling dd_phi taylor series method" << std::endl;
-    return getDividedDiffsTSR(k, cdt, exp_order);
+    return getDividedDiffsTS(k, cdt, exp_order);
   }
 }
 
@@ -575,14 +579,14 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   dd[0] = cplx(1.0, 0.0);
   // avoid overflow but tolerate underflow
   double running_fraction = 1.0;
-  std::cout << "initial dd:  ";
+  // std::cout << "initial dd:  ";
   for (int kk = 1; kk <= cap_n; ++kk)
   {
     running_fraction *= scale / (kk * s_dbl);
     dd[kk] = cplx(running_fraction, 0.0);
-    std::cout << dd[kk] << ", ";
+    // std::cout << dd[kk] << ", ";
   }
-  std::cout << std::endl;
+  // std::cout << std::endl;
 
   // H-factorization sweep:
   //  In contrast to Zivcovich, the z points are scaled.
@@ -633,13 +637,13 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   // out[i] = exp(mu) * dd_row[phi_order + i]
   Teuchos::ArrayRCP<cplx> out = Teuchos::arcp<cplx>(n_leja);
   const cplx exp_mu = std::exp(mu);
-  std::cout << "final dd:  ";
+  // std::cout << "final dd:  ";
   for (int i = 0; i < n_leja; ++i)
   {
     out[i]   = exp_mu * dd_row(0, phi_order + i);
-    std::cout << out[i] << ", ";
+    // std::cout << out[i] << ", ";
   }
-  std::cout << std::endl;
+  // std::cout << std::endl;
 
   return out;
 #else
