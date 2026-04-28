@@ -54,7 +54,7 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   // auto model_tay = rcp(new SinCosModel<double>(scm_pl));
 
   // Setup the PhiEvaluator
-  const int expansion_order = 200;//20;
+  const int expansion_order = 20;
   RCP<ParameterList> phi_pl = sublist(pList, "PhiEvaluator");
   phi_pl->set("Leja DD Method", 2);
   phi_pl->set("Expansion Order", expansion_order);
@@ -96,7 +96,7 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   TEST_FLOATING_EQUALITY(lp.lp.imag(), leja_c, 1e-6);
 
   // Check the first divided diffs
-  auto lp_dd          = phiEvaluator->getDividedDiffs(0, 1.0, expansion_order);
+  auto lp_dd = phiEvaluator->getDividedDiffs(0, 1.0, expansion_order);
   // the first divided diff is: y(x_0) == exp(0.0) == 1.0
   // the second divided diff is: (y(x_1) - y(x_0) / x_1 - x_0)) == (exp(-1.0) - 1.0) / (-1.0 - 0.0)
   std::cout << "lp_dd 0: " << lp_dd[0] << std::endl;
@@ -104,14 +104,13 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   std::cout << "lp_dd 2: " << lp_dd[2] << std::endl;
   std::cout << "lp_dd 3: " << lp_dd[3] << std::endl;
   TEST_FLOATING_EQUALITY(lp_dd[0].real(), std::exp(leja_b), 1e-8);
-  // TEST_FLOATING_EQUALITY(lp_dd[0].imag(), 0.0, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[1].real(), 0.316060279414, 1e-8);
   // TEST_FLOATING_EQUALITY(lp_dd[1].imag(), 0.0, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[2].real(), 0.075829495185, 1e-8);
   // TEST_FLOATING_EQUALITY(lp_dd[2].imag(), 0.012636995600793, 1e-8);
   TEST_FLOATING_EQUALITY(lp_dd[3].real(), 0.01263699560, 1e-8);
   // TEST_FLOATING_EQUALITY(lp_dd[3].imag(), 0.0, 1e-8);
-  //TODO, do not test imaginary Leja dds, not needed
+  // we do not test imaginary Leja dds, not needed, and not provied by all implementations
 
   // test large ellipse and runtime
   leja_a = -100.0;
@@ -122,15 +121,17 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   // update for new ellipse
   const int exp_order_high = 200;
   auto tic = std::chrono::steady_clock::now();
-  lp_dd          = phiEvaluator->getDividedDiffs(0, 1.0, exp_order_high);
+  lp_dd = phiEvaluator->getDividedDiffs(0, 1.0, exp_order_high);
   auto toc = std::chrono::steady_clock::now();
   auto walltime_dd_phi = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic);
+
   // check divided difference calculation against taylor series impl
   tic = std::chrono::steady_clock::now();
   auto lp_dd_tay = phiEvaluatorLejaTay->getDividedDiffs(0, 1.0, exp_order_high);
   toc = std::chrono::steady_clock::now();
   auto walltime_dd_tay = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic);
-  std::cout << "walltime dd_phi: " << walltime_dd_phi.count() << " walltime dd_tay: " << walltime_dd_tay.count() << " microseconds" << std::endl;
+  std::cout << "walltime dd_phi: " << walltime_dd_phi.count()
+            << " μs walltime dd_tay: " << walltime_dd_tay.count() << " μs" << std::endl;
 
   for (int k = 0; k < exp_order_high; k++)
   {
@@ -139,6 +140,7 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   leja_a = -1.0e-18;
   leja_c = 1.0;
   phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
+  phiEvaluator->setExpansionOrder(expansion_order);
 
   // compute exp(dt*A)*v using PhiEvaluatorLeja
   // make a digonal linop from SinCosModel
