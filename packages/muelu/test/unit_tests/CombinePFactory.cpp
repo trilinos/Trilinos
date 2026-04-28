@@ -23,6 +23,10 @@
 #include "MueLu_CombinePFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 
+#include <Xpetra_StridedMapFactory.hpp>
+#include <Xpetra_MapExtractorFactory.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
+
 namespace MueLuTests {
 
 /////////////////////////
@@ -322,11 +326,100 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithIdentityFallback, 
   TEST_COMPARE(y->normInf(), >=, one1->normInf());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
+#include "MueLu_UseShortNames.hpp"
+  MUELU_TESTING_SET_OSTREAM;
+  MUELU_TESTING_LIMIT_SCOPE(Scalar, GlobalOrdinal, NO);
+
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  Xpetra::UnderlyingLib lib           = MueLuTests::TestHelpers::Parameters::getLib();
+
+  const GO numElements0 = 200;
+  const GO numElements1 = 200;
+
+  std::vector<size_t> stridingInfo;
+  stridingInfo.push_back(1);
+
+  // Zero-based maps for subblock prolongators, as required by CombinePFactory
+  RCP<const Map> subMap0 = StridedMapFactory::Build(lib, numElements0, 0, stridingInfo, comm);
+  RCP<const Map> subMap1 = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm);
+
+  // Build maps for a blocked fine operator with contiguous global IDs
+  RCP<const Map> rangeMap0 = StridedMapFactory::Build(lib, numElements0, 0, stridingInfo, comm);
+  RCP<const Map> rangeMap1 = StridedMapFactory::Build(lib, numElements1, numElements0, stridingInfo, comm);
+
+  std::vector<GlobalOrdinal> localGids;
+  {
+    Teuchos::ArrayView<const GlobalOrdinal> map0eleList = rangeMap0->getLocalElementList();
+    localGids.insert(localGids.end(), map0eleList.begin(), map0eleList.end());
+    Teuchos::ArrayView<const GlobalOrdinal> map1eleList = rangeMap1->getLocalElementList();
+    localGids.insert(localGids.end(), map1eleList.begin(), map1eleList.end());
+  }
+  Teuchos::ArrayView<GlobalOrdinal> eleList(&localGids[0], localGids.size());
+  RCP<const Map> bigMap = StridedMapFactory::Build(lib, numElements0 + numElements1, eleList, 0, stridingInfo, comm);
+
+  std::vector<RCP<const Map> > maps;
+  maps.push_back(rangeMap0);
+  maps.push_back(rangeMap1);
+
+  Teuchos::RCP<const MapExtractor> mapExtractor = MapExtractorFactory::Build(bigMap, maps);
+
+  // Build a simple blocked fine operator
+  RCP<CrsMatrixWrap> A00 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap0, rangeMap0, 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> A01 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap0, rangeMap1, 1.0, 0.0, 0.0);
+  RCP<CrsMatrixWrap> A10 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap1, rangeMap0, 1.0, 0.0, 0.0);
+  RCP<CrsMatrixWrap> A11 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap1, rangeMap1, 3.0, -2.0, -1.0);
+
+  RCP<BlockedCrsMatrix> bA = Teuchos::rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
+  bA->setMatrix(0, 0, A00);
+  bA->setMatrix(0, 1, A01);
+  bA->setMatrix(1, 0, A10);
+  bA->setMatrix(1, 1, A11);
+  bA->fillComplete();
+
+  TEST_EQUALITY(bA != Teuchos::null, true);
+  TEST_EQUALITY(bA->Rows(), 2);
+  TEST_EQUALITY(bA->Cols(), 2);
+
+  // Valid CombinePFactory subblocks
+  RCP<CrsMatrixWrap> P0 = GenerateProblemMatrix<Scalar, LO, GO, Node>(subMap0, subMap0, 2.0, -1.0, -1.0);
+  RCP<CrsMatrixWrap> P1 = GenerateProblemMatrix<Scalar, LO, GO, Node>(subMap1, subMap1, 3.0, -2.0, -1.0);
+
+  Level fineLevel, coarseLevel;
+  TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
+  fineLevel.SetFactoryManager(Teuchos::null);
+  coarseLevel.SetFactoryManager(Teuchos::null);
+
+  fineLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bA));
+  coarseLevel.Set("Psubblock0", Teuchos::rcp_dynamic_cast<Matrix>(P0));
+  coarseLevel.Set("Psubblock1", Teuchos::rcp_dynamic_cast<Matrix>(P1));
+
+  RCP<CombinePFactory> PFact = rcp(new CombinePFactory());
+  Teuchos::ParameterList params;
+  params.set("combine: numBlks", 2);
+  params.set("combine: useMaxLevels", false);
+  PFact->SetParameterList(params);
+
+  coarseLevel.Request("P", PFact.get());
+
+  bool threw = false;
+  try {
+    RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact.get());
+    (void)P;
+  } catch (const std::exception& e) {
+    threw = true;
+    out << "Caught expected exception: " << e.what() << std::endl;
+  }
+
+  TEST_EQUALITY(threw, true);
+}
+
 #define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                               \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CombinePFactory, Constructor, SC, LO, GO, Node)                  \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CombinePFactory, CombineTwoSubblocks, SC, LO, GO, Node)          \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CombinePFactory, CombineSingleBlockDegenerate, SC, LO, GO, Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CombinePFactory, CombineWithIdentityFallback, SC, LO, GO, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CombinePFactory, CombineWithIdentityFallback, SC, LO, GO, Node)  \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(CombinePFactory, CombineWithBlockedFineMatrix, SC, LO, GO, Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
