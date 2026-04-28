@@ -397,7 +397,7 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   Teuchos::TimeMonitor ddtimer(*timerDD_);
 
   // ensure that we have enough Leja points
-  if (exp_order > this->getExpansionOrder()) {
+  if (exp_order > this->getExpansionOrder()+1) {
     setExpansionOrder(exp_order);
     initLejaPointsBase();
   }
