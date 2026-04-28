@@ -1168,7 +1168,7 @@ namespace BaskerNS
    const TeamMember &thread,
    const Int my_kid,
    const Int my_leader,
-   const Int num_threads,
+   const Int num_threads_in,
    const Int size,
    const Int function_n,
    const Int k,
@@ -1183,7 +1183,7 @@ namespace BaskerNS
     t_basker_barrier(thread, my_kid, my_leader, 
                      size, function_n, k, lvl);
     if (flag) {
-      for(Int tid = 0; tid < num_threads; tid++) {
+      for(Int tid = 0; tid < num_threads_in; tid++) {
         if (thread_array(tid).error_type != BASKER_SUCCESS) {
           info = BASKER_ERROR;
         }

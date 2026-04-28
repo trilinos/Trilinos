@@ -123,7 +123,7 @@ namespace BaskerNS
     if(Options.verbose == BASKER_TRUE)// && kid == my_leader)
     {
       printf(" > t_nfactor_sep2(kid = %ld(my_leader=%ld, team_leader=%ld): factoring_col current_chunk: lvl = %ld/%ld ncols=%ld (league rank = %d with %d threads))\n",
-            (long)kid, (long)my_leader, (long)team_leader, (long)lvl,(long)tot_lvl, (long)ncol, league_rank,team_size); fflush(stdout);
+            (long)kid, (long)my_leader, (long)team_leader, (long)lvl,(long)tot_lvl, (long)ncol, (int)league_rank,(int)team_size); fflush(stdout);
     }
 
     #ifdef BASKER_TIMER
@@ -268,9 +268,9 @@ namespace BaskerNS
           // skip if asked to return the last top schur
           if((kid%(Int)(pow(2,lvl))) == 0) {
             // > initialize perm
-            const Int U_col = S(lvl)(kid);
-            const Int U_row = LU_size(U_col)-1;
-            BASKER_MATRIX &U = LU(U_col)(U_row); 
+            const Int U_col_k = S(lvl)(kid);
+            const Int U_row_k = LU_size(U_col_k)-1;
+            BASKER_MATRIX &U = LU(U_col_k)(U_row_k);
 
             Int   scol_top = btf_tabs[btf_top_tabs_offset]; // the first column index of A
             const Int brow_a  = U.srow; // offset within A

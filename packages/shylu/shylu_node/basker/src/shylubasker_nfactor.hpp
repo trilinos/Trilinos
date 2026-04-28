@@ -194,7 +194,7 @@ namespace BaskerNS
           if(Options.verbose == BASKER_TRUE)
           {
             printf("Factoring Sep(# teams = %ld with # threads = %ld) at level = %d\n",
-                   (long)lnteams, (long)lthreads, l); fflush(stdout);
+                   (long)lnteams, (long)lthreads, (int)l); fflush(stdout);
           }
           //if(Options.dense_schur != 0) {
           //  if(Options.verbose == BASKER_TRUE) printf( " > halving # teams for partial factorization (%d -> %d)\n",lnteams,lnteams/2 );

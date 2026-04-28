@@ -36,9 +36,9 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   Teuchos::RCP<Vector>       X,
   Teuchos::RCP<const Vector> B )
   : SolverCore<Amesos2::ShyLUBasker,Matrix,Vector>(A, X, B)
+  , schur_out_ptr(nullptr)
   , is_contiguous_(true)
   , use_gather_(true)
-  , schur_out_ptr(nullptr)
 {
 
   //Nothing
@@ -592,7 +592,7 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       auto schur_part_ptr = parameterList->get<const local_ordinal_type*>("SchurPart");
       Kokkos::resize(schur_part, this->globalNumCols_);
       schur_size = 0;
-      for (int i=0; i<this->globalNumCols_; i++) {
+      for (global_size_type i=0; i<this->globalNumCols_; i++) {
         schur_part(i) = schur_part_ptr[i];
         if (schur_part(i) == 1) schur_size ++;
       }
