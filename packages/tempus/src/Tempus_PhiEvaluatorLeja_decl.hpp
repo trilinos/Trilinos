@@ -86,6 +86,12 @@ class PhiEvaluatorLeja
   /// compute the shift and scale parameters from ellipse a,b,c bounds
   std::tuple<Scalar, Scalar> getShiftScale();
 
+  /// compute the scale, normalized shift and normalized anisotropy parameters from ellipse a,b,c bounds
+  constexpr std::tuple<Scalar, Scalar, Scalar> getScaleFromBase();
+
+  // transform base LejaPoint to shifted anisotropic transformed Leja point (not scaled)
+  constexpr LejaPoint transformLejaPoint(const LejaPoint& lp_base, const std::tuple<const Scalar, const Scalar, const Scalar>& scale_params);
+
   /// Set the polynomial expansion order
   void setExpansionOrder(int order);
 
