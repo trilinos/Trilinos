@@ -2,7 +2,7 @@ name: Flag PRs to master by adding the AT WIP keyword
 # Unless you are the autotester, of course
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened]
     branches: [master]
 
@@ -23,5 +23,5 @@ jobs:
       if: "!contains(github.event.sender.login,'snapshot-app[bot]')"
       with:
          message: |
-            You seem to have created a PR on master.  This is not allowed behavior, so we've blocked your PR.  Please switch your PR to target the develop branch and remove the AT: WIP label.
+            You seem to have created a PR on master.  This is not allowed behavior, so we've blocked your PR.  Please switch your PR to target the develop branch.
       
