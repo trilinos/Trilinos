@@ -819,6 +819,8 @@ namespace BaskerNS
 
       // Partial Factorization Option, 0: no, 1: form + factor, 2: only form
       dense_schur = 0;
+      only_forward_solve = false;
+      only_backward_solve = false;
     }
 
     //Reuse Pattern (Save time if same pattern can be used)
@@ -896,6 +898,8 @@ namespace BaskerNS
     
     // Partial Factorization Option
     int dense_schur;
+    bool only_forward_solve;
+    bool only_backward_solve;
     /* ---- todo add more ----*/
   }; // end bask_options
 

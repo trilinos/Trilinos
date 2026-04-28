@@ -239,6 +239,7 @@ namespace BaskerNS
     {
       std::cout << "\n == Basker Symbolic ==" << std::endl;
       std::cout << "Matrix dims: " << nrow << " x " << ncol << ", nnz = " << nnz << std::endl;
+      std::cout << std::flush;
     }
 
     //Init Matrix A.
@@ -487,12 +488,16 @@ namespace BaskerNS
       // store schur-part into internal view (in case user-pointer goes out of scope?)
       schur_size = 0;
       MALLOC_INT_1DARRAY(schur_part, nrow);
-      for (Int i=0; i<nrow; i++) {
-        schur_part(i) = schur_part_in[i];
-        if (schur_part(i) == 1) schur_size ++;
+      if (schur_part_in == nullptr) {
+        for (Int i=0; i<nrow; i++) schur_part(i) = 0;
+      } else {
+        for (Int i=0; i<nrow; i++) {
+          schur_part(i) = schur_part_in[i];
+          if (schur_part(i) == 1) schur_size ++;
+        }
+        // allocate storage for schur complement (schur_out_ptr may be nullptr, if user does not want it)
+        MALLOC_ENTRY_RANK2DARRAY(schur_out, schur_size, schur_size);
       }
-      // allocate storage for schur complement (schur_out_ptr may be nullptr, if user does not want it)
-      MALLOC_ENTRY_RANK2DARRAY(schur_out, schur_size, schur_size);
       schur_out_ptr = schur_out_in;
 
       Options.amd_dom = 0; // no AMD (since partitioned, and AMD/ND on each leaf)

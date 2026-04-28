@@ -80,7 +80,10 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   num_threads = 1;
 #endif
   ShyLUbasker->Options.worker_threads = false;
+  // partial factorization
   ShyLUbasker->Options.dense_schur = 0;
+  ShyLUbasker->Options.only_forward_solve = false;
+  ShyLUbasker->Options.only_backward_solve = false;
 
 #else
  TEUCHOS_TEST_FOR_EXCEPTION(1 != 0,
@@ -129,21 +132,21 @@ ShyLUBasker<Matrix,Vector>::symbolicFactorization_impl()
   if(this->root_)
   {
     int nthreads = num_threads;
-    #if 1 // TODO:
-    // User needs to provide 2x threads, to avoid dead-lock due to busy-wait
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (nthreads < 2, std::runtime_error,
-       "ShyLU-Basker dense Schur option requires # of threads (2x # of leaves) to be greater than 1 (" << nthreads << ")");
-    #else
     if (ShyLUbasker->Options.dense_schur != 0) {
+    #if 1 // TODO:
+      // User needs to provide 2x threads, to avoid dead-lock due to busy-wait
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (nthreads < 2, std::runtime_error,
+         "ShyLU-Basker dense Schur option requires # of threads (2x # of leaves) to be greater than 1 (" << nthreads << ")");
+    #else
         // double the number threads to have one extra level (half of interior/separator blocks are empty at each level)
         if (ShyLUbasker->Options.verbose && this->root_) {
           std::cout << "Amesos2::ShyLUBasker:: increase num threads from " << nthreads << " to " << nthreads*2
                     << " for partial factorization" << std::endl;
         }
         nthreads *= 2;
-    }
     #endif
+    }
     if (ShyLUbasker->Options.worker_threads) {
       if (nthreads > 1) {
         // keep one worker-thread / subdomain (where originally subdomain = num_threads)
@@ -601,6 +604,14 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       // store schur-part to the internal view (if user wants the output, then the pointer should stay, so no need for internal view?)
       schur_out_ptr = parameterList->get<scalar_type*>("SchurOut");
     }
+  if(parameterList->isParameter("OnlyForwardSolve"))
+    {
+      ShyLUbasker->Options.only_forward_solve = parameterList->get<bool>("OnlyForwardSolve");
+    }
+  if(parameterList->isParameter("OnlyBackwardSolve"))
+    {
+      ShyLUbasker->Options.only_backward_solve = parameterList->get<bool>("OnlyBackwardSolve");
+    }
 }
 
 template <class Matrix, class Vector>
@@ -680,6 +691,10 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
               "Specify rows/columns belonging to Schur complement for partial factorization");
       pl->set("SchurOut", dummy_scalar_ptr,
               "Store output Schur complement from partial factorization");
+      pl->set("OnlyForwardSolve", false,
+              "Perform only the forward substitution");
+      pl->set("OnlyBackwardSolve", false,
+              "Perform only the backward substitution");
       valid_params = pl;
     }
   return valid_params;
