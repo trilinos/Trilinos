@@ -223,6 +223,7 @@ struct ExplicitGraphCoarsening {
     // distinct clusters
     int vectorSize = KokkosKernels::Impl::kk_get_suggested_vector_size(
         numFineVerts, fineEntries.extent(0), KokkosKernels::Impl::kk_get_exec_space_type<exec_space>());
+    vectorSize = (vectorSize < team_pol::vector_length_max() ? vectorSize : team_pol::vector_length_max());
     bitset_t crossClusterEdgeMask(fineEntries.extent(0));
     size_type numClusterEdges;
     {

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // SPDX-FileCopyrightText: Copyright Contributors to the Kokkos project
 #include <cstdio>
+#include <cstddef>
+#include <array>
+#include <memory>
 
 #include <ctime>
 #include <cstring>
@@ -25,8 +28,12 @@ typedef int LocalOrdinalType;
 template <typename ScalarType, typename OrdinalType>
 int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType& nrows, OrdinalType& ncols, OrdinalType& nnz,
                                    ScalarType*& values, OrdinalType*& rowPtr, OrdinalType*& colInd) {
-  FILE* file = fopen(filename, "r");
-  char line[512];
+  auto file = std::unique_ptr<FILE, decltype(&fclose)>(fopen(filename, "r"), &fclose);
+  if (!file) {
+    fprintf(stderr, "SparseMatrix_MatrixMarket_read: could not open \"%s\"\n", filename);
+    return -1;
+  }
+  std::array<char, 512> line{};
   line[0]         = '%';
   int count       = -1;
   char* symmetric = NULL;
@@ -44,15 +51,29 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType& nrows, Ord
     newFileSize = fread (buffer,1,fileSize,file);*/
 
   while (line[0] == '%') {
-    fgets(line, 511, file);
+    if (!fgets(line.data(), static_cast<int>(line.size()), file.get())) {
+      fprintf(stderr, "SparseMatrix_MatrixMarket_read: unexpected EOF in header of \"%s\"\n", filename);
+      return -1;
+    }
     count++;
-    if (count == 0) symmetric = strstr(line, "symmetric");
+    if (count == 0) symmetric = strstr(line.data(), "symmetric");
   }
-  rewind(file);
-  for (int i = 0; i < count; i++) fgets(line, 511, file);
-  fscanf(file, "%i", &nrows);
-  fscanf(file, "%i", &ncols);
-  fscanf(file, "%i", &nlines);
+  rewind(file.get());
+  for (int i = 0; i < count; i++) {
+    if (!fgets(line.data(), static_cast<int>(line.size()), file.get())) {
+      fprintf(stderr, "SparseMatrix_MatrixMarket_read: unexpected EOF rewinding \"%s\"\n", filename);
+      return -1;
+    }
+  }
+  if (fscanf(file.get(), "%i", &nrows) != 1 || fscanf(file.get(), "%i", &ncols) != 1 ||
+      fscanf(file.get(), "%i", &nlines) != 1) {
+    fprintf(stderr, "SparseMatrix_MatrixMarket_read: invalid dimension line in \"%s\"\n", filename);
+    return -1;
+  }
+  if (nrows <= 0 || ncols <= 0 || nlines < 0) {
+    fprintf(stderr, "SparseMatrix_MatrixMarket_read: non-positive dimensions in \"%s\"\n", filename);
+    return -1;
+  }
   printf("Matrix dimension: %i %i %i %s\n", nrows, ncols, nlines, symmetric ? "Symmetric" : "General");
   if (symmetric)
     nnz = nlines * 2;
@@ -67,7 +88,7 @@ int SparseMatrix_MatrixMarket_read(const char* filename, OrdinalType& nrows, Ord
   for (int i = 0; i < nrows; i++) lastEntryWithRowInd[i] = -1;
   nnz = 0;
   for (int ii = 0; ii < nlines; ii++) {
-    fscanf(file, "%i %i %le", &rowIndtmp[nnz], &colIndtmp[nnz], &valuestmp[nnz]);
+    fscanf(file.get(), "%i %i %le", &rowIndtmp[nnz], &colIndtmp[nnz], &valuestmp[nnz]);
     priorEntrySameRowInd[nnz]               = lastEntryWithRowInd[rowIndtmp[nnz] - 1];
     lastEntryWithRowInd[rowIndtmp[nnz] - 1] = nnz;
     if ((symmetric) && (rowIndtmp[nnz] != colIndtmp[nnz])) {
@@ -110,6 +131,7 @@ template <typename ScalarType, typename OrdinalType>
 int SparseMatrix_ExtractBinaryGraph(const char* filename, OrdinalType& nrows, OrdinalType& ncols, OrdinalType& nnz,
                                     ScalarType*& values, OrdinalType*& rowPtr, OrdinalType*& colInd) {
   nnz = SparseMatrix_MatrixMarket_read<ScalarType, OrdinalType>(filename, nrows, ncols, nnz, values, rowPtr, colInd);
+  if (nnz < 0) return -1;
   char* filename_row = new char[strlen(filename) + 5];
   char* filename_col = new char[strlen(filename) + 5];
   strcpy(filename_row, filename);
@@ -132,29 +154,52 @@ int SparseMatrix_ReadBinaryGraph(const char* filename, OrdinalType& nrows, Ordin
   char* filename_descr = new char[strlen(filename) + 7];
   strcpy(filename_descr, filename);
   strcat(filename_descr, "_descr");
-  FILE* file = fopen(filename_descr, "r");
-  char line[512];
+  auto file = std::unique_ptr<FILE, decltype(&fclose)>(fopen(filename_descr, "r"), &fclose);
+  if (!file) {
+    fprintf(stderr, "SparseMatrix_ReadBinaryGraph: could not open \"%s\"\n", filename_descr);
+    delete[] filename_descr;
+    return -1;
+  }
+  std::array<char, 512> line{};
   line[0]         = '%';
   int count       = -1;
   char* symmetric = NULL;
   int nlines;
 
   while (line[0] == '%') {
-    fgets(line, 511, file);
+    if (!fgets(line.data(), static_cast<int>(line.size()), file.get())) {
+      fprintf(stderr, "SparseMatrix_ReadBinaryGraph: unexpected EOF in \"%s\"\n", filename_descr);
+      delete[] filename_descr;
+      return -1;
+    }
     count++;
-    if (count == 0) symmetric = strstr(line, "symmetric");
+    if (count == 0) symmetric = strstr(line.data(), "symmetric");
   }
-  rewind(file);
-  for (int i = 0; i < count; i++) fgets(line, 511, file);
-  fscanf(file, "%i", &nrows);
-  fscanf(file, "%i", &ncols);
-  fscanf(file, "%i", &nlines);
+  rewind(file.get());
+  for (int i = 0; i < count; i++) {
+    if (!fgets(line.data(), static_cast<int>(line.size()), file.get())) {
+      fprintf(stderr, "SparseMatrix_ReadBinaryGraph: unexpected EOF rewinding \"%s\"\n", filename_descr);
+      delete[] filename_descr;
+      return -1;
+    }
+  }
+  if (fscanf(file.get(), "%i", &nrows) != 1 || fscanf(file.get(), "%i", &ncols) != 1 ||
+      fscanf(file.get(), "%i", &nlines) != 1) {
+    fprintf(stderr, "SparseMatrix_ReadBinaryGraph: invalid dimension line in \"%s\"\n", filename_descr);
+    delete[] filename_descr;
+    return -1;
+  }
+  if (nrows <= 0 || ncols <= 0 || nlines < 0) {
+    fprintf(stderr, "SparseMatrix_ReadBinaryGraph: non-positive dimensions in \"%s\"\n", filename_descr);
+    delete[] filename_descr;
+    return -1;
+  }
   printf("Matrix dimension: %i %i %i %s\n", nrows, ncols, nlines, symmetric ? "Symmetric" : "General");
   if (symmetric)
     nnz = nlines * 2;
   else
     nnz = nlines;
-  fclose(file);
+  delete[] filename_descr;
 
   char* filename_row = new char[strlen(filename) + 5];
   char* filename_col = new char[strlen(filename) + 5];
@@ -164,15 +209,35 @@ int SparseMatrix_ReadBinaryGraph(const char* filename, OrdinalType& nrows, Ordin
   strcat(filename_col, "_col");
   FILE* RowFile = fopen(filename_row, "r");
   FILE* ColFile = fopen(filename_col, "r");
+  if (!RowFile || !ColFile) {
+    fprintf(stderr, "SparseMatrix_ReadBinaryGraph: could not open row/col binary for \"%s\"\n", filename);
+    if (RowFile) fclose(RowFile);
+    if (ColFile) fclose(ColFile);
+    delete[] filename_row;
+    delete[] filename_col;
+    return -1;
+  }
 
   values = new ScalarType[nnz];
   rowPtr = new OrdinalType[nrows + 1];
   colInd = new OrdinalType[nnz];
 
-  fread(rowPtr, sizeof(OrdinalType), nrows + 1, RowFile);
-  fread(colInd, sizeof(OrdinalType), nnz, ColFile);
+  if (fread(rowPtr, sizeof(OrdinalType), nrows + 1, RowFile) != static_cast<size_t>(nrows + 1) ||
+      fread(colInd, sizeof(OrdinalType), nnz, ColFile) != static_cast<size_t>(nnz)) {
+    fprintf(stderr, "SparseMatrix_ReadBinaryGraph: short read row/col data for \"%s\"\n", filename);
+    delete[] values;
+    delete[] rowPtr;
+    delete[] colInd;
+    fclose(RowFile);
+    fclose(ColFile);
+    delete[] filename_row;
+    delete[] filename_col;
+    return -1;
+  }
   fclose(RowFile);
   fclose(ColFile);
+  delete[] filename_row;
+  delete[] filename_col;
   return nnz;
 }
 
@@ -223,6 +288,11 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
     nnz = SparseMatrix_MatrixMarket_read<Scalar, LocalOrdinalType>(filename, numRows, numCols, nnz, val, row, col);
   else
     nnz = SparseMatrix_ReadBinaryGraph<Scalar, LocalOrdinalType>(filename, numRows, numCols, nnz, val, row, col);
+
+  if (nnz < 0) {
+    fprintf(stderr, "test_crs_matrix_test: failed to read matrix from \"%s\"\n", filename ? filename : "");
+    return -1;
+  }
 
   matrix_type A("CRS::A", numRows, numCols, nnz, val, row, col, false);
 
@@ -336,6 +406,11 @@ int test_crs_matrix_test_singlevec(int numRows, int numCols, int nnz, int test, 
     nnz = SparseMatrix_MatrixMarket_read<Scalar, int>(filename, numRows, numCols, nnz, val, row, col);
   else
     nnz = SparseMatrix_ReadBinaryGraph<Scalar, int>(filename, numRows, numCols, nnz, val, row, col);
+
+  if (nnz < 0) {
+    fprintf(stderr, "test_crs_matrix_test_singlevec: failed to read matrix from \"%s\"\n", filename ? filename : "");
+    return -1;
+  }
 
   matrix_type A("CRS::A", numRows, numCols, nnz, val, row, col, false);
 
