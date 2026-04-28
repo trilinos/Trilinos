@@ -48,66 +48,84 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
 Utilities<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     Transpose(Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Op, bool /* optimizeTranspose */, const std::string& label, const Teuchos::RCP<Teuchos::ParameterList>& params) {
-  std::string TorE = "tpetra";
+  auto blockOp = rcp_dynamic_cast<BlockedCrsMatrix>(rcpFromRef(Op));
+  if (blockOp != Teuchos::null) {
+    auto numEntPerRow = blockOp->getLocalMaxNumRowEntries();
 
-  if (TorE == "tpetra") {
-    using Helpers = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    /***************************************************************/
-    if (Helpers::isTpetraCrs(Op)) {
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = toTpetra(Op);
+    // swap domain/range for transpose
+    auto rangeMaps  = blockOp->getBlockedDomainMap();
+    auto domainMaps = blockOp->getBlockedRangeMap();
 
-      RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A;
-      Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp), label);  // more than meets the eye
-
-      {
-        using Teuchos::ParameterList;
-        using Teuchos::rcp;
-        RCP<ParameterList> transposeParams = params.is_null() ? rcp(new ParameterList) : rcp(new ParameterList(*params));
-        transposeParams->set("sort", false);
-        A = transposer.createTranspose(transposeParams);
+    auto blockOpT = make_rcp<BlockedCrsMatrix>(rangeMaps, domainMaps, numEntPerRow);
+    for (size_t row = 0; row < blockOp->Rows(); ++row) {
+      for (size_t col = 0; col < blockOp->Cols(); ++col) {
+        auto A_ij   = blockOp->getMatrix(row, col);
+        auto A_ij_T = Utilities::Transpose(*A_ij);
+        blockOpT->setMatrix(col, row, A_ij_T);
       }
-
-      RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> AA = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A));
-      RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> AAA      = rcp_implicit_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(AA);
-      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> AAAA        = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(AAA));
-      if (!AAAA->isFillComplete())
-        AAAA->fillComplete(Op.getRangeMap(), Op.getDomainMap());
-
-      if (Op.IsView("stridedMaps"))
-        AAAA->CreateView("stridedMaps", Teuchos::rcpFromRef(Op), true /*doTranspose*/);
-
-      return AAAA;
-    } else if (Helpers::isTpetraBlockCrs(Op)) {
-      using XMatrix        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-      using XCrsMatrix     = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-      using XCrsMatrixWrap = Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-      using BCRS           = Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-      // using CRS  = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-      const BCRS& tpetraOp = toTpetraBlock(Op);
-
-      RCP<BCRS> At;
-      {
-        Tpetra::BlockCrsMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp), label);
-
-        using Teuchos::ParameterList;
-        using Teuchos::rcp;
-        RCP<ParameterList> transposeParams = params.is_null() ? rcp(new ParameterList) : rcp(new ParameterList(*params));
-        transposeParams->set("sort", false);
-        At = transposer.createTranspose(transposeParams);
-      }
-
-      RCP<Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> AA = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(At));
-      RCP<XCrsMatrix> AAA                                                             = rcp_implicit_cast<XCrsMatrix>(AA);
-      RCP<XMatrix> AAAA                                                               = rcp(new XCrsMatrixWrap(AAA));
-
-      if (Op.IsView("stridedMaps"))
-        AAAA->CreateView("stridedMaps", Teuchos::rcpFromRef(Op), true /*doTranspose*/);
-
-      return AAAA;
-    } else {
-      throw Exceptions::RuntimeError("Utilities::Transpose failed, perhaps because matrix is not a Crs matrix");
     }
-  }  // if
+
+    blockOpT->fillComplete();
+
+    return blockOpT;
+  }
+
+  using Helpers = Xpetra::Helpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+  /***************************************************************/
+  if (Helpers::isTpetraCrs(Op)) {
+    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = toTpetra(Op);
+
+    RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> A;
+    Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp), label);  // more than meets the eye
+
+    {
+      using Teuchos::ParameterList;
+      using Teuchos::rcp;
+      RCP<ParameterList> transposeParams = params.is_null() ? rcp(new ParameterList) : rcp(new ParameterList(*params));
+      transposeParams->set("sort", false);
+      A = transposer.createTranspose(transposeParams);
+    }
+
+    RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> AA = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A));
+    RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> AAA      = rcp_implicit_cast<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>(AA);
+    RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> AAAA        = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(AAA));
+    if (!AAAA->isFillComplete())
+      AAAA->fillComplete(Op.getRangeMap(), Op.getDomainMap());
+
+    if (Op.IsView("stridedMaps"))
+      AAAA->CreateView("stridedMaps", Teuchos::rcpFromRef(Op), true /*doTranspose*/);
+
+    return AAAA;
+  } else if (Helpers::isTpetraBlockCrs(Op)) {
+    using XMatrix        = Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using XCrsMatrix     = Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using XCrsMatrixWrap = Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    using BCRS           = Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    // using CRS  = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+    const BCRS& tpetraOp = toTpetraBlock(Op);
+
+    RCP<BCRS> At;
+    {
+      Tpetra::BlockCrsMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp), label);
+
+      using Teuchos::ParameterList;
+      using Teuchos::rcp;
+      RCP<ParameterList> transposeParams = params.is_null() ? rcp(new ParameterList) : rcp(new ParameterList(*params));
+      transposeParams->set("sort", false);
+      At = transposer.createTranspose(transposeParams);
+    }
+
+    RCP<Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> AA = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(At));
+    RCP<XCrsMatrix> AAA                                                             = rcp_implicit_cast<XCrsMatrix>(AA);
+    RCP<XMatrix> AAAA                                                               = rcp(new XCrsMatrixWrap(AAA));
+
+    if (Op.IsView("stridedMaps"))
+      AAAA->CreateView("stridedMaps", Teuchos::rcpFromRef(Op), true /*doTranspose*/);
+
+    return AAAA;
+  } else {
+    throw Exceptions::RuntimeError("Utilities::Transpose failed, perhaps because matrix is not a Crs matrix");
+  }
 
   return Teuchos::null;
 
