@@ -259,7 +259,11 @@ int main(int argc, char *argv[]) {
       dense_schur = (shylubasker_params.isParameter("GetDenseSchur") ? shylubasker_params.get<int>("GetDenseSchur") : 0);
       if (dense_schur != 0 && myRank == 0) {
         LO indexBase = 0;
+        #ifdef HAVE_MPI
         RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::MpiComm<LO>(MPI_COMM_SELF));
+        #else
+        RCP<const Teuchos::Comm<LO> > SerialComm = rcp(new Teuchos::SerialComm<int>());
+        #endif  // HAVE_MPI
         RCP<const MAP> SerialMap (new MAP (nrows, indexBase, SerialComm));
 
         if (schur_filename != "") {
