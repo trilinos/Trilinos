@@ -84,24 +84,16 @@ Thyra::SolveStatus<Scalar> PhiEvaluatorLeja<Scalar>::computeLinOpPhi(const int p
 
   const int expansionOrder = this->getExpansionOrder();
 
-  // TODO: optional fractional step size exp(tau*A_tilde)*v
-  //const Scalar tau = 1.0;
-
   // phi_k(L) * v is in range(L)
   const auto rangeSpace = L->range();
 
   // get scale and transform parameters
   std::tuple<Scalar, Scalar, Scalar> transform_params = getScaleFromBase();
   // scale the Leja ellipse by the provided (fractional) timestep
-  // TODO remove
-  //const Scalar scale = cdt * std::get<0>(transform_params);
-  const Scalar scale = 1. * std::get<0>(transform_params);
-  // TODO: properly apply cdt factor to leja points and shift scale
+  const Scalar scale = cdt * std::get<0>(transform_params);
 
-  // TODO: update the divided differences (or read from cache)
-  //       this should depend on cdt, but that info is not passed down here
   // Get divided differences, we need one more than the polynomial order
-  auto lp_dd = getDividedDiffs(phi_order, 1.0, expansionOrder+1);
+  auto lp_dd = getDividedDiffs(phi_order, cdt, expansionOrder+1);
   TEUCHOS_ASSERT(lp_dd.size() == expansionOrder+1);
 
   //std::cout << "DD: " << std::endl;
@@ -295,19 +287,6 @@ void PhiEvaluatorLeja<Scalar>::initLejaPointsBase()
 }
 
 template <class Scalar>
-std::tuple<Scalar, Scalar> PhiEvaluatorLeja<Scalar>::getShiftScale()
-{
-  // real half axis
-  Scalar hx_re = (leja_b_ - leja_a_) / 2.0;
-  // imaj half axis
-  Scalar hx_im = leja_c_;
-  // leja ellipse shift and scale parameters
-  Scalar shift = (leja_a_ + leja_b_) / 2.0;
-  Scalar scale = (hx_re + hx_im) / 2.0;
-  return std::make_tuple(shift, scale);
-}
-
-template <class Scalar>
 constexpr std::tuple<Scalar, Scalar, Scalar> PhiEvaluatorLeja<Scalar>::getScaleFromBase()
 {
   // real half axis
@@ -356,28 +335,22 @@ void PhiEvaluatorLeja<Scalar>::setLejaEllipse(Scalar a, Scalar b, Scalar c)
   leja_a_ = a;
   leja_b_ = b;
   leja_c_ = c;
-
-  // update the leja points
-  lp_ = Teuchos::arcp<LejaPoint>(lejaPointsBase_.size());
-  Scalar hx_re = (leja_b_ - leja_a_) / 2.0;
-  Scalar hx_im = leja_c_;
-  Scalar scale = (hx_re + hx_im) / 2.0;
-  for (int i=0; i < lejaPointsBase_.size(); ++i) {
-    auto lp_real = lejaPointsBase_[i].lp.real();
-    auto lp_imag = lejaPointsBase_[i].lp.imag();
-    auto lp = std::complex(lp_real * hx_re / scale, lp_imag * hx_im / scale);
-    lp_[i] = {lp, lejaPointsBase_[i].lpt};
-  }
 }
 
 template <class Scalar>
-LejaPoint PhiEvaluatorLeja<Scalar>::getLpSc(int i)
+LejaPoint PhiEvaluatorLeja<Scalar>::getLpSc(const int lp_idx)
 {
-  TEUCHOS_ASSERT(i < lp_.size());
-  Scalar shift, scale;
-  std::tie(shift, scale) = getShiftScale();
-  LejaPoint lp = this->lp_[i];
-  LejaPoint lp_sc = LejaPoint{shift + scale * lp.lp, lp.lpt};
+  TEUCHOS_ASSERT(lp_idx < lejaPointsBase_.size());
+
+  // get scale and transform parameters
+  std::tuple<Scalar, Scalar, Scalar> transform_params = getScaleFromBase();
+  const Scalar scale = std::get<0>(transform_params);
+
+  // transform but do not scale Leja point
+  const LejaPoint lp = transformLejaPoint(lejaPointsBase_[lp_idx], transform_params);
+
+  // return scaled and transformed Leja point
+  LejaPoint lp_sc = LejaPoint{scale * lp.lp, lp.lpt};
   return lp_sc;
 }
 
@@ -414,7 +387,6 @@ Teuchos::ArrayRCP<std::complex<double>> PhiEvaluatorLeja<Scalar>::getDividedDiff
   if (exp_order > this->getExpansionOrder()) {
     setExpansionOrder(exp_order);
     initLejaPointsBase();
-    setLejaEllipse(leja_a_, leja_b_, leja_c_); //TODO: have to reset leja ellipse to update leja points.
   }
 
   switch (ddMethod_)
