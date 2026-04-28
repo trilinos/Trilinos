@@ -9,6 +9,7 @@
 
 #include "Tempus_PhiEvaluator.hpp"
 #include "Thyra_ProductVectorBase.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 
 namespace Tempus {
@@ -25,7 +26,20 @@ class PhiEvaluatorTaylor
   : virtual public PhiEvaluator<Scalar> {
  public:
   /// Inherit Contructor
-  using PhiEvaluator<Scalar>::PhiEvaluator;
+  PhiEvaluatorTaylor<Scalar>(std::string name) : PhiEvaluator<Scalar>(name)
+  {
+    std::stringstream ss;
+    ss << "Tempus::" << name ;
+
+    std::string phiLabel = ss.str() + ": PhiEval";
+    timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
+
+    std::string linOpLabel = ss.str() + ": LinOp";
+    timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
+  }
+  PhiEvaluatorTaylor<Scalar>() : PhiEvaluatorTaylor<Scalar>("PhiEvaluatorTaylor")
+  { }
+
 
   /// \name Basic PhiEvaluatorTaylor Methods
 
@@ -50,6 +64,8 @@ class PhiEvaluatorTaylor
 
  private:
   int expansionOrder_;
+
+  Teuchos::RCP<Teuchos::Time> timerLinOp_, timerPhi_;
 };
 
 /// Nonmember constructor from a ParameterList

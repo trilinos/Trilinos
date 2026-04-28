@@ -69,18 +69,18 @@ class PhiEvaluatorLeja
   PhiEvaluatorLeja<Scalar>(std::string name) : PhiEvaluator<Scalar>(name)
   {
     std::stringstream ss;
-    ss << "Tempus::" << name + " Leja";
+    ss << "Tempus::" << name;
 
     std::string ddLabel = ss.str() + ": dd_phi";
     timerDD_ = Teuchos::TimeMonitor::getNewCounter(ddLabel);
 
-    std::string phiLabel = ss.str() + ": PhiLeja";
+    std::string phiLabel = ss.str() + ": PhiEval";
     timerPhi_ = Teuchos::TimeMonitor::getNewCounter(phiLabel);
 
     std::string linOpLabel = ss.str() + ": LinOp";
     timerLinOp_ = Teuchos::TimeMonitor::getNewCounter(linOpLabel);
   }
-  PhiEvaluatorLeja<Scalar>() : PhiEvaluatorLeja<Scalar>("Phi Evaluator")
+  PhiEvaluatorLeja<Scalar>() : PhiEvaluatorLeja<Scalar>("PhiEvaluatorLeja")
   { }
 
   /// \name Basic PhiEvaluatorLeja Methods
