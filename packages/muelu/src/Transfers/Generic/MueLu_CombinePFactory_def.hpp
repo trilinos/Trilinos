@@ -97,8 +97,8 @@ void CombinePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& f
                                                                         Level& coarseLevel) const {
   FactoryMonitor m(*this, "Build", coarseLevel);
 
-  RCP<Matrix> A = Get<RCP<Matrix>>(fineLevel, "A");
-  auto A_blockedCrs    = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A);
+  RCP<Matrix> A     = Get<RCP<Matrix>>(fineLevel, "A");
+  auto A_blockedCrs = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A);
   if (A->getRowMap()->lib() == Xpetra::UseTpetra && A_blockedCrs != Teuchos::null) {
     this->BuildPBlocked(fineLevel, coarseLevel);
     return;

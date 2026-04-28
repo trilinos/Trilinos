@@ -337,14 +337,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   const GO numElements0 = 200;
   const GO numElements1 = 200;
 
-  std::vector<size_t> stridingInfo;
-  stridingInfo.push_back(1);
+  std::vector<size_t> stridingInfo(1, 1);
 
-  // Zero-based maps for subblock prolongators, as required by CombinePFactory
+  // CombinePFactory expects each Psubblock to use index base 0
   RCP<const Map> subMap0 = StridedMapFactory::Build(lib, numElements0, 0, stridingInfo, comm);
   RCP<const Map> subMap1 = StridedMapFactory::Build(lib, numElements1, 0, stridingInfo, comm);
 
-  // Build maps for a blocked fine operator with contiguous global IDs
+  // Fine blocked operator uses contiguous global IDs across its blocks
   RCP<const Map> rangeMap0 = StridedMapFactory::Build(lib, numElements0, 0, stridingInfo, comm);
   RCP<const Map> rangeMap1 = StridedMapFactory::Build(lib, numElements1, numElements0, stridingInfo, comm);
 
@@ -364,7 +363,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
 
   Teuchos::RCP<const MapExtractor> mapExtractor = MapExtractorFactory::Build(bigMap, maps);
 
-  // Build a simple blocked fine operator
+  // Build blocked fine operator
   RCP<CrsMatrixWrap> A00 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap0, rangeMap0, 2.0, -1.0, -1.0);
   RCP<CrsMatrixWrap> A01 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap0, rangeMap1, 1.0, 0.0, 0.0);
   RCP<CrsMatrixWrap> A10 = GenerateProblemMatrix<Scalar, LO, GO, Node>(rangeMap1, rangeMap0, 1.0, 0.0, 0.0);
@@ -381,9 +380,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
   TEST_EQUALITY(bA->Rows(), 2);
   TEST_EQUALITY(bA->Cols(), 2);
 
-  // Valid CombinePFactory subblocks
+  // Valid subblock prolongators
   RCP<CrsMatrixWrap> P0 = GenerateProblemMatrix<Scalar, LO, GO, Node>(subMap0, subMap0, 2.0, -1.0, -1.0);
   RCP<CrsMatrixWrap> P1 = GenerateProblemMatrix<Scalar, LO, GO, Node>(subMap1, subMap1, 3.0, -2.0, -1.0);
+
+  TEST_EQUALITY(P0 != Teuchos::null, true);
+  TEST_EQUALITY(P1 != Teuchos::null, true);
 
   Level fineLevel, coarseLevel;
   TestHelpers::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
@@ -402,16 +404,49 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CombinePFactory, CombineWithBlockedFineMatrix,
 
   coarseLevel.Request("P", PFact.get());
 
+#ifdef HAVE_XPETRA_THYRA
+  RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact.get());
+  TEST_EQUALITY(P != Teuchos::null, true);
+
+  RCP<BlockedCrsMatrix> bP = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(P);
+  TEST_EQUALITY(bP != Teuchos::null, true);
+
+  TEST_EQUALITY(bP->Rows(), 2);
+  TEST_EQUALITY(bP->Cols(), 2);
+
+  // Since BuildPBlocked sets only diagonal blocks, verify off-diagonals are null
+  TEST_EQUALITY(bP->getMatrix(0, 0) != Teuchos::null, true);
+  TEST_EQUALITY(bP->getMatrix(1, 1) != Teuchos::null, true);
+
+  // Off-diagonal operators are stored as 0 blocks
+  RCP<Matrix> P01 = bP->getMatrix(0, 1);
+  RCP<Matrix> P10 = bP->getMatrix(1, 0);
+
+  TEST_EQUALITY(P01 != Teuchos::null, true);
+  TEST_EQUALITY(P10 != Teuchos::null, true);
+
+  TEST_EQUALITY(P01->getGlobalNumEntries(), 0);
+  TEST_EQUALITY(P10->getGlobalNumEntries(), 0);
+  TEST_EQUALITY(P01->getLocalNumEntries(), 0);
+  TEST_EQUALITY(P10->getLocalNumEntries(), 0);
+
+  // Structural checks on the two diagonal blocks
+  TEST_EQUALITY(bP->getMatrix(0, 0)->getGlobalNumRows(), P0->getGlobalNumRows());
+  TEST_EQUALITY(bP->getMatrix(1, 1)->getGlobalNumRows(), P1->getGlobalNumRows());
+  TEST_EQUALITY(bP->getMatrix(0, 0)->getGlobalNumEntries(), P0->getGlobalNumEntries());
+  TEST_EQUALITY(bP->getMatrix(1, 1)->getGlobalNumEntries(), P1->getGlobalNumEntries());
+
+#else
   bool threw = false;
   try {
     RCP<Matrix> P = coarseLevel.Get<RCP<Matrix> >("P", PFact.get());
     (void)P;
   } catch (const std::exception& e) {
     threw = true;
-    out << "Caught expected exception: " << e.what() << std::endl;
+    out << "Caught expected exception without Xpetra/Thyra support: " << e.what() << std::endl;
   }
-
   TEST_EQUALITY(threw, true);
+#endif
 }
 
 #define MUELU_ETI_GROUP(SC, LO, GO, Node)                                                               \
