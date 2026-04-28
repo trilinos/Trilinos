@@ -83,9 +83,6 @@ class PhiEvaluatorLeja
   /// Set the parameters from a ParameterList
   void setPhiEvaluatorValues(Teuchos::RCP<Teuchos::ParameterList> pl) override;
 
-  /// compute the shift and scale parameters from ellipse a,b,c bounds
-  std::tuple<Scalar, Scalar> getShiftScale();
-
   /// compute the scale, normalized shift and normalized anisotropy parameters from ellipse a,b,c bounds
   constexpr std::tuple<Scalar, Scalar, Scalar> getScaleFromBase();
 
@@ -99,7 +96,7 @@ class PhiEvaluatorLeja
   void setLejaEllipse(Scalar a, Scalar b, Scalar c);
 
   /// Get shifted and scaled leja point (z_i)
-  LejaPoint getLpSc(int i);
+  LejaPoint getLpSc(const int lp_idx);
 
   /// Compute divided differences
   Teuchos::ArrayRCP<std::complex<double>> getDividedDiffs(const int phi_order, const Scalar cdt, const int exp_order);
@@ -141,9 +138,6 @@ class PhiEvaluatorLeja
 
   /// Storage for the base Leja points
   Teuchos::ArrayRCP<LejaPoint> lejaPointsBase_;
-
-  /// Storage for the Leja points
-  Teuchos::ArrayRCP<LejaPoint> lp_;
 };
 
 /// Nonmember constructor from a ParameterList

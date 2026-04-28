@@ -63,7 +63,7 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   phiEvaluator->initialize();
 
   RCP<ParameterList> phi_pl_leja_dd_tay = sublist(pList, "PhiEvaluator");
-  phi_pl_leja_dd_tay->set("Leja DD Method", 3);
+  phi_pl_leja_dd_tay->set("Leja DD Method", 1);
   phi_pl_leja_dd_tay->set("Expansion Order", expansion_order);
   auto phiEvaluatorLejaTay = Tempus::createPhiEvaluatorLeja<double>(phi_pl_leja_dd_tay);
   phiEvaluatorLejaTay->setModel(model);
@@ -113,15 +113,20 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   // we do not test imaginary Leja dds, not needed, and not provied by all implementations
 
   // test large ellipse and runtime
-  leja_a = -1000.0;
-  leja_c = 50;
+  const int exp_order_high = 300;
+  leja_a                   = -1000.0;
+  leja_c                   = 50.0;
+  // test dt scaling: scale Leja ellipse in one case, use dt as argument in another
+  double dt                = 0.5;
+
   phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
-  phiEvaluatorLejaTay->setLejaEllipse(leja_a, leja_b, leja_c);
+  phiEvaluator->setExpansionOrder(exp_order_high);
+  phiEvaluatorLejaTay->setLejaEllipse(dt*leja_a, dt*leja_b, dt*leja_c);
+  phiEvaluatorLejaTay->setExpansionOrder(exp_order_high);
 
   // update for new ellipse
-  const int exp_order_high = 300;
   auto tic = std::chrono::steady_clock::now();
-  lp_dd = phiEvaluator->getDividedDiffs(0, 1.0, exp_order_high);
+  lp_dd = phiEvaluator->getDividedDiffs(0, dt, exp_order_high);
   auto toc = std::chrono::steady_clock::now();
   auto walltime_dd_phi = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic);
 
@@ -133,11 +138,12 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   std::cout << "walltime dd_phi: " << walltime_dd_phi.count()
             << " μs walltime dd_tay: " << walltime_dd_tay.count() << " μs" << std::endl;
 
-  for (int k = 0; k < exp_order_high; k++)
-  {
-    TEST_FLOATING_EQUALITY(lp_dd[k].real(), lp_dd_tay[k].real(), 1e-11);
-    std::cout << "k: " << k  << " dd_phi_k: " << lp_dd[k].real() << " dd_taylor_k: " << lp_dd_tay[k].real() << std::endl;
-  }
+  TEST_COMPARE_FLOATING_ARRAYS(lp_dd, lp_dd_tay, 1e-11);
+  // for (int k = 0; k < exp_order_high; k++)
+  // {
+  //  TEST_FLOATING_EQUALITY(lp_dd[k].real(), lp_dd_tay[k].real(), 1e-11);
+  //  std::cout << "k: " << k  << " dd_phi_k: " << lp_dd[k].real() << " dd_taylor_k: " << lp_dd_tay[k].real() << std::endl;
+  // }
   leja_a = -1.0e-18;
   leja_c = 1.0;
   phiEvaluator->setLejaEllipse(leja_a, leja_b, leja_c);
@@ -161,7 +167,7 @@ TEUCHOS_UNIT_TEST(PhiEvaluator, Leja_SinCos)
   inArgs.set_x(v);
   inArgs.set_x_dot(xdot_init);
   inArgs.set_t(0.0);
-  double dt = 1.0;
+  dt = 1.0;
   phiEvaluator->setLinearizationPoint(inArgs);
   phiEvaluator->computePhi(vend.ptr(), 0, dt, v);
 
