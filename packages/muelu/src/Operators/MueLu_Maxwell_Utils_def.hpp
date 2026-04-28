@@ -153,14 +153,13 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Maxwell_Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     removeExplicitZeros(const RCP<Matrix>& A,
                         const magnitudeType tolerance,
-                        const bool keepDiagonal,
-                        const size_t expectedNNZperRow) {
+                        const bool keepDiagonal) {
   Level fineLevel;
   fineLevel.SetFactoryManager(null);
   fineLevel.SetLevelID(0);
   fineLevel.Set("A", A);
   fineLevel.setlib(A->getDomainMap()->lib());
-  RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A", tolerance, keepDiagonal, expectedNNZperRow));
+  RCP<ThresholdAFilterFactory> ThreshFact = rcp(new ThresholdAFilterFactory("A", tolerance, keepDiagonal));
   fineLevel.Request("A", ThreshFact.get());
   ThreshFact->Build(fineLevel);
   return fineLevel.Get<RCP<Matrix> >("A", ThreshFact.get());
@@ -178,7 +177,7 @@ void Maxwell_Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::removeExplicitZer
   // In the construction of the prolongator we use the graph of the
   // matrix, so zero entries mess it up.
   if (parameterList_.get<bool>("refmaxwell: filter D0", true) && D0_Matrix_->getLocalMaxNumRowEntries() > 2) {
-    D0_Matrix_ = removeExplicitZeros(D0_Matrix_, 1e-8, false, 2);
+    D0_Matrix_ = removeExplicitZeros(D0_Matrix_, 1e-8, false);
 
     // If D0 has too many zeros, maybe SM and M1 do as well.
     defaultFilter = true;

@@ -88,11 +88,17 @@ void InverseApproximationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Bui
     const RCP<const Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, tol, one));
     Ainv                      = MatrixFactory::Build(D);
   } else if (method == "sparseapproxinverse") {
-    RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedGraph(A, tol, A->getGlobalMaxNumRowEntries());
-    GetOStream(Statistics1) << "NNZ Graph(A): " << A->getCrsGraph()->getGlobalNumEntries() << " , NNZ Tresholded Graph(A): " << sparsityPattern->getGlobalNumEntries() << std::endl;
+    RCP<CrsGraph> sparsityPattern = Utilities::GetThresholdedGraph(A, tol);
+    if (IsPrint(Statistics1)) {
+      sparsityPattern->computeGlobalConstants();
+      GetOStream(Statistics1) << "NNZ Graph(A): " << A->getCrsGraph()->getGlobalNumEntries() << " , NNZ Tresholded Graph(A): " << sparsityPattern->getGlobalNumEntries() << std::endl;
+    }
     RCP<Matrix> pAinv = GetSparseInverse(A, sparsityPattern);
-    Ainv              = Utilities::GetThresholdedMatrix(pAinv, tol, fixing, pAinv->getGlobalMaxNumRowEntries());
-    GetOStream(Statistics1) << "NNZ Ainv: " << pAinv->getGlobalNumEntries() << ", NNZ Tresholded Ainv (parameter: " << tol << "): " << Ainv->getGlobalNumEntries() << std::endl;
+    Ainv              = Utilities::GetThresholdedMatrix(pAinv, tol, fixing);
+    if (IsPrint(Statistics1)) {
+      rcp_const_cast<CrsGraph>(Ainv->getCrsGraph())->computeGlobalConstants();
+      GetOStream(Statistics1) << "NNZ Ainv: " << pAinv->getGlobalNumEntries() << ", NNZ Tresholded Ainv (parameter: " << tol << "): " << Ainv->getGlobalNumEntries() << std::endl;
+    }
   }
 
   GetOStream(Statistics1) << "Approximate inverse calculated by: " << method << "." << std::endl;
