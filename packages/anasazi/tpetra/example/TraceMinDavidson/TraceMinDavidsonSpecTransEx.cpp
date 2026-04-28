@@ -133,7 +133,7 @@ main (int argc, char *argv[])
   MyPL.set("Which", "LM");
 
   //
-  // Create an Epetra_MultiVector for an initial vector to start the solver.
+  // Create an Tpetra::MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
   //
   RCP<MV> ivec = Teuchos::rcp( new MV(K->getRowMap(), numRestartBlocks*blockSize) );
